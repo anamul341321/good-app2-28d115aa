@@ -116,6 +116,42 @@ function HomePage() {
       />
       </div>
 
+      {/* Premium hero submit button — placed near the top so it's the first thing users see. */}
+      {(firstEmpty || allSubmitted) && (
+        <button
+          onClick={() => {
+            if (firstEmpty) {
+              router.navigate({ to: "/task/$slot", params: { slot: String(firstEmpty.slot) } });
+              return;
+            }
+            addSlots.mutate();
+          }}
+          disabled={!firstEmpty && addSlots.isPending}
+          className="submit-hero w-full rounded-3xl px-5 py-5 text-white font-black btn-press flex items-center gap-3 disabled:opacity-70"
+        >
+          <span className="shrink-0 w-14 h-14 rounded-2xl bg-white/25 backdrop-blur flex items-center justify-center text-3xl border border-white/40 shadow-inner">
+            {addSlots.isPending && !firstEmpty
+              ? <Loader2 className="w-7 h-7 animate-spin" />
+              : <span className="rocket">🚀</span>}
+          </span>
+          <span className="flex-1 text-left leading-tight">
+            <span className="block text-[10px] uppercase tracking-[0.2em] text-white/85 font-bold">
+              {firstEmpty ? "এক ট্যাপে সাক্ষী যোগ" : "নতুন ব্যাচ আনলক"}
+            </span>
+            <span className="block text-2xl font-black drop-shadow-sm mt-0.5">
+              {firstEmpty ? "জমা দিন" : "আরও ১০ Slot"}
+            </span>
+            <span className="block text-[11px] text-white/90 font-bold mt-0.5">
+              {firstEmpty
+                ? `Slot #${firstEmpty.slot} · এখনই ছবি তুলুন`
+                : "১০ জন সম্পন্ন — আরও যোগ করুন"}
+            </span>
+          </span>
+          <span className="shrink-0 text-2xl">→</span>
+        </button>
+      )}
+
+
       {/* Main identity card */}
       {mainTask && (
         <div data-tour="main-identity" data-voice="home.main" className="premium-panel rounded-2xl p-3 relative overflow-hidden"
