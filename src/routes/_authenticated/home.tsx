@@ -294,14 +294,25 @@ function HomePage() {
         </p>
       </div>
 
-      <a href="https://t.me/goodappbuy" target="_blank" rel="noopener noreferrer"
-         className="block rounded-2xl p-3 text-center shadow-md btn-press"
-         style={{ background: "linear-gradient(120deg,#0088cc,#06b6d4)" }}>
-        <p className="text-sm font-black text-white flex items-center justify-center gap-2">
-          <MessageCircle className="w-4 h-4" /> সাপোর্ট / সাহায্য · টেলিগ্রাম গ্রুপ
-        </p>
-        <p className="text-[11px] text-white/90 mt-0.5">যেকোনো সমস্যা হলে এখানে মেসেজ দিন</p>
-      </a>
+      <div className="grid grid-cols-2 gap-2">
+        <a href="https://t.me/goodappbuy" target="_blank" rel="noopener noreferrer"
+           className="block rounded-2xl p-3 text-center shadow-md btn-press"
+           style={{ background: "linear-gradient(120deg,#0088cc,#06b6d4)" }}>
+          <p className="text-xs font-black text-white flex items-center justify-center gap-1.5">
+            <MessageCircle className="w-3.5 h-3.5" /> টেলিগ্রাম
+          </p>
+          <p className="text-[10px] text-white/90 mt-0.5">গ্রুপে মেসেজ দিন</p>
+        </a>
+        <a href="https://wa.me/8801892564963" target="_blank" rel="noopener noreferrer"
+           className="block rounded-2xl p-3 text-center shadow-md btn-press"
+           style={{ background: "linear-gradient(120deg,#25D366,#128C7E)" }}>
+          <p className="text-xs font-black text-white flex items-center justify-center gap-1.5">
+            <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
+          </p>
+          <p className="text-[10px] text-white/90 mt-0.5 mono-num">01892564963</p>
+        </a>
+      </div>
+
 
       <div className="text-center py-2 space-y-2">
         <p className="text-[11px] text-muted-foreground italic">
