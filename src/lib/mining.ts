@@ -14,7 +14,7 @@ export function computeLiveBalance(input: {
 }): number {
   const now = input.now ?? Date.now();
   let total = input.accrued;
-  const eff = Math.max(0, Math.min(TOTAL_TASKS, input.effectiveTaskCount ?? 0));
+  const eff = Math.max(0, input.effectiveTaskCount ?? 0);
   const refs = Math.max(0, input.qualifyingReferees ?? 0);
   const rate = MINING_RATE_BDT_PER_SEC * (eff / TOTAL_TASKS + 0.10 * refs);
   if (input.isActive && input.lastCreditedAt && rate > 0) {

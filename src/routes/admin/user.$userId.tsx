@@ -63,6 +63,7 @@ function UserDetail() {
   const liveBal = m ? computeLiveBalance({
     accrued: Number(m.accrued_amount), withdrawn: Number(m.withdrawn_amount),
     isActive: m.is_active, lastCreditedAt: m.last_credited_at,
+    effectiveTaskCount: Number(m.effective_task_count ?? 0), qualifyingReferees: Number(m.qualifying_referees ?? 0),
   }) : 0;
   const copy = (s: string) => { navigator.clipboard.writeText(s); toast.success("Copy হয়েছে"); };
 

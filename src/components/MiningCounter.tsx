@@ -98,7 +98,7 @@ export function MiningCounter({
 
         <p className="text-xs mt-3 font-bold" style={{ color: "color-mix(in oklch, white 88%, transparent)" }}>
           {live
-            ? `${effectiveTaskCount}/১০ ঘর সক্রিয় · ${ratePerMonth.toFixed(0)}৳ / মাস`
+            ? `${effectiveTaskCount} ঘর সক্রিয় · ${ratePerMonth.toFixed(0)}৳ / মাস`
             : "১০টি ঘর সম্পন্ন করলে মাইনিং শুরু হবে"}
         </p>
 
