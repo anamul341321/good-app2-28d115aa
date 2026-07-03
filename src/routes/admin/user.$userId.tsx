@@ -32,9 +32,16 @@ function UserDetail() {
 
   const toggle = useMutation({
     mutationFn: (active: boolean) => adminToggleMining({ data: { userId, active } }),
-    onSuccess: () => { toast.success("Mining updated"); refetch(); },
+    onSuccess: () => { toast.success("Mining override সেট হয়েছে"); refetch(); },
     onError: (e: any) => toast.error(e.message),
   });
+
+  const clearOverride = useMutation({
+    mutationFn: () => adminClearMiningOverride({ data: { userId } }),
+    onSuccess: () => { toast.success("Auto rule চালু হয়েছে (10/10 + whitelist)"); refetch(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
 
   const reset = useMutation({
     mutationFn: (taskId: string) => adminResetTask({ data: { taskId } }),
