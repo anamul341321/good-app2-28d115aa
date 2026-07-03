@@ -168,14 +168,48 @@ function HomePage() {
           </div>
         </div>
 
-        <div className={`grid gap-1.5 ${witnessTasks.length <= 9 ? "grid-cols-3" : witnessTasks.length <= 12 ? "grid-cols-4" : "grid-cols-5"}`}>
-          {witnessTasks.map((t) => (
-            <TaskCell key={t.slot} task={t}
-              onStart={() => router.navigate({ to: "/task/$slot", params: { slot: String(t.slot) } })}
-              onReverify={() => router.navigate({ to: "/reverify" })}
-              onOpenPhoto={(url) => setLightbox({ url, label: `সাক্ষী #${t.slot} · ${t.face_label || "মুখ"}` })} />
-          ))}
-        </div>
+        {(() => {
+          const PAGE_SIZE = 10;
+          const pageCount = Math.max(1, Math.ceil(witnessTasks.length / PAGE_SIZE));
+          const safePage = Math.min(witnessPage, pageCount - 1);
+          const pageTasks = witnessTasks.slice(safePage * PAGE_SIZE, safePage * PAGE_SIZE + PAGE_SIZE);
+          return (
+            <>
+              {pageCount > 1 && (
+                <div className="flex items-center justify-between mb-2 gap-2">
+                  <button onClick={() => setWitnessPage(Math.max(0, safePage - 1))}
+                    disabled={safePage === 0}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-surface-2 border border-border text-xs font-bold disabled:opacity-40 btn-press">
+                    <ChevronLeft className="w-3.5 h-3.5" /> আগের
+                  </button>
+                  <div className="flex gap-1.5 overflow-x-auto">
+                    {Array.from({ length: pageCount }).map((_, i) => (
+                      <button key={i} onClick={() => setWitnessPage(i)}
+                        className={`min-w-8 h-8 px-2 rounded-lg text-[11px] font-black btn-press ${
+                          i === safePage ? "bg-rose text-white shadow" : "bg-surface-2 border border-border text-muted-foreground"
+                        }`}>
+                        {i * PAGE_SIZE + 1}–{Math.min((i + 1) * PAGE_SIZE, witnessTasks.length)}
+                      </button>
+                    ))}
+                  </div>
+                  <button onClick={() => setWitnessPage(Math.min(pageCount - 1, safePage + 1))}
+                    disabled={safePage >= pageCount - 1}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-surface-2 border border-border text-xs font-bold disabled:opacity-40 btn-press">
+                    পরের <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
+              <div className="grid gap-2 grid-cols-3 sm:grid-cols-4">
+                {pageTasks.map((t) => (
+                  <TaskCell key={t.slot} task={t}
+                    onStart={() => router.navigate({ to: "/task/$slot", params: { slot: String(t.slot) } })}
+                    onReverify={() => router.navigate({ to: "/reverify" })}
+                    onOpenPhoto={(url) => setLightbox({ url, label: `সাক্ষী #${t.slot} · ${t.face_label || "মুখ"}` })} />
+                ))}
+              </div>
+            </>
+          );
+        })()}
 
         {allSubmitted && (
           <button onClick={() => addSlots.mutate()} disabled={addSlots.isPending}
