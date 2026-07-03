@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { getDashboard } from "@/lib/dashboard.functions";
 import { addMoreSlots } from "@/lib/tasks.functions";
 import { MiningCounter } from "@/components/MiningCounter";
