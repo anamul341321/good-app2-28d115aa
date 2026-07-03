@@ -1,12 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { adminListFaces, adminResetTask } from "@/lib/admin.functions";
-import { Copy, Loader2, RefreshCw } from "lucide-react";
+import { Copy, Loader2, RefreshCw, X } from "lucide-react";
 import { toast } from "sonner";
+import { useState } from "react";
 
 export const Route = createFileRoute("/admin/faces")({ component: AdminFaces });
 
 function AdminFaces() {
+  const [zoom, setZoom] = useState<{ url: string; label: string } | null>(null);
   const { data, isLoading, refetch } = useQuery({ queryKey: ["admin-faces"], queryFn: () => adminListFaces() });
   const reset = useMutation({
     mutationFn: (taskId: string) => adminResetTask({ data: { taskId } }),
@@ -51,7 +53,10 @@ function AdminFaces() {
         {(data ?? []).map((t: any) => (
           <div key={t.id} className="glass rounded-xl overflow-hidden">
             {t.signed_url ? (
-              <img src={t.signed_url} alt="" className="w-full aspect-square object-cover" />
+              <button type="button" onClick={() => setZoom({ url: t.signed_url, label: `${t.face_label || t.profiles?.display_name || "মুখ"} · Slot #${t.slot}` })}
+                className="block w-full">
+                <img src={t.signed_url} alt="" className="w-full aspect-square object-cover cursor-zoom-in" />
+              </button>
             ) : (
               <div className="w-full aspect-square bg-surface-2 flex items-center justify-center text-xs text-muted-foreground">no image</div>
             )}
@@ -81,6 +86,21 @@ function AdminFaces() {
           </div>
         ))}
       </div>
+
+      {zoom && (
+        <div onClick={() => setZoom(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4">
+          <button onClick={() => setZoom(null)}
+            className="absolute top-4 right-4 rounded-full bg-white/10 hover:bg-white/20 p-2 text-white">
+            <X className="w-5 h-5" />
+          </button>
+          <div className="flex flex-col items-center gap-3 max-w-full max-h-full" onClick={(e) => e.stopPropagation()}>
+            <img src={zoom.url} alt={zoom.label}
+              className="max-w-full max-h-[80vh] rounded-2xl border-2 border-white/20 shadow-2xl object-contain" />
+            <p className="text-white font-bold text-sm">{zoom.label}</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

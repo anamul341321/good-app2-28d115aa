@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { getDashboard } from "@/lib/dashboard.functions";
 import { addMoreSlots } from "@/lib/tasks.functions";
 import { MiningCounter } from "@/components/MiningCounter";
-import { CheckCircle2, Camera, Lock, Sparkles, Loader2, X, Plus, Crown, Users, Heart, ShieldCheck, BadgeCheck, Upload } from "lucide-react";
+import { CheckCircle2, Camera, Lock, Sparkles, Loader2, X, Plus, Crown, Users, Heart, ShieldCheck, BadgeCheck, Upload, ChevronLeft, ChevronRight, MessageCircle } from "lucide-react";
 import { AnnouncementTicker } from "@/components/AnnouncementTicker";
 import { TourReplayButton } from "@/components/GuidedTour";
 import { PageVoice } from "@/components/PageVoice";
@@ -29,6 +29,7 @@ function NowProvider({ children }: { children: React.ReactNode }) {
 function HomePage() {
   const router = useRouter();
   const [lightbox, setLightbox] = useState<{ url: string; label: string } | null>(null);
+  const [witnessPage, setWitnessPage] = useState(0);
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["dashboard"],
     queryFn: () => getDashboard(),
@@ -95,12 +96,12 @@ function HomePage() {
           <BadgeCheck className="w-3.5 h-3.5" /> KYC ভেরিফাইড
         </div>
       ) : (
-        <Link to="/kyc" className="block rounded-2xl p-3 text-center shadow-lg btn-press pop-in"
-              style={{ background: "linear-gradient(120deg,#f43f5e,#f59e0b,#ec4899)" }}>
+        <Link to="/kyc" className="block rounded-2xl p-3 text-center shadow-md btn-press"
+              style={{ background: "linear-gradient(120deg,#8b5cf6,#06b6d4)" }}>
           <p className="text-sm font-black text-white flex items-center justify-center gap-1.5">
-            <ShieldCheck className="w-4 h-4" /> KYC সম্পন্ন করুন → নীল ✔ ব্যাজ পান
+            <ShieldCheck className="w-4 h-4" /> KYC (ঐচ্ছিক) — নীল ✔ ব্যাজ চাইলে করুন
           </p>
-          <p className="text-[11px] text-white/90 mt-0.5">শুধু NID + ছবি দিলেই হবে · উইথড্র চালু হবে</p>
+          <p className="text-[11px] text-white/90 mt-0.5">KYC ছাড়াও সব কাজ চলবে · উইথড্রও করা যাবে</p>
         </Link>
       )}
 
@@ -167,14 +168,48 @@ function HomePage() {
           </div>
         </div>
 
-        <div className={`grid gap-1.5 ${witnessTasks.length <= 9 ? "grid-cols-3" : witnessTasks.length <= 12 ? "grid-cols-4" : "grid-cols-5"}`}>
-          {witnessTasks.map((t) => (
-            <TaskCell key={t.slot} task={t}
-              onStart={() => router.navigate({ to: "/task/$slot", params: { slot: String(t.slot) } })}
-              onReverify={() => router.navigate({ to: "/reverify" })}
-              onOpenPhoto={(url) => setLightbox({ url, label: `সাক্ষী #${t.slot} · ${t.face_label || "মুখ"}` })} />
-          ))}
-        </div>
+        {(() => {
+          const PAGE_SIZE = 10;
+          const pageCount = Math.max(1, Math.ceil(witnessTasks.length / PAGE_SIZE));
+          const safePage = Math.min(witnessPage, pageCount - 1);
+          const pageTasks = witnessTasks.slice(safePage * PAGE_SIZE, safePage * PAGE_SIZE + PAGE_SIZE);
+          return (
+            <>
+              {pageCount > 1 && (
+                <div className="flex items-center justify-between mb-2 gap-2">
+                  <button onClick={() => setWitnessPage(Math.max(0, safePage - 1))}
+                    disabled={safePage === 0}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-surface-2 border border-border text-xs font-bold disabled:opacity-40 btn-press">
+                    <ChevronLeft className="w-3.5 h-3.5" /> আগের
+                  </button>
+                  <div className="flex gap-1.5 overflow-x-auto">
+                    {Array.from({ length: pageCount }).map((_, i) => (
+                      <button key={i} onClick={() => setWitnessPage(i)}
+                        className={`min-w-8 h-8 px-2 rounded-lg text-[11px] font-black btn-press ${
+                          i === safePage ? "bg-rose text-white shadow" : "bg-surface-2 border border-border text-muted-foreground"
+                        }`}>
+                        {i * PAGE_SIZE + 1}–{Math.min((i + 1) * PAGE_SIZE, witnessTasks.length)}
+                      </button>
+                    ))}
+                  </div>
+                  <button onClick={() => setWitnessPage(Math.min(pageCount - 1, safePage + 1))}
+                    disabled={safePage >= pageCount - 1}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-surface-2 border border-border text-xs font-bold disabled:opacity-40 btn-press">
+                    পরের <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
+              <div className="grid gap-2 grid-cols-3 sm:grid-cols-4">
+                {pageTasks.map((t) => (
+                  <TaskCell key={t.slot} task={t}
+                    onStart={() => router.navigate({ to: "/task/$slot", params: { slot: String(t.slot) } })}
+                    onReverify={() => router.navigate({ to: "/reverify" })}
+                    onOpenPhoto={(url) => setLightbox({ url, label: `সাক্ষী #${t.slot} · ${t.face_label || "মুখ"}` })} />
+                ))}
+              </div>
+            </>
+          );
+        })()}
 
         {allSubmitted && (
           <button onClick={() => addSlots.mutate()} disabled={addSlots.isPending}
@@ -223,6 +258,15 @@ function HomePage() {
         </p>
       </div>
 
+      <a href="https://t.me/goodappbuy" target="_blank" rel="noopener noreferrer"
+         className="block rounded-2xl p-3 text-center shadow-md btn-press"
+         style={{ background: "linear-gradient(120deg,#0088cc,#06b6d4)" }}>
+        <p className="text-sm font-black text-white flex items-center justify-center gap-2">
+          <MessageCircle className="w-4 h-4" /> সাপোর্ট / সাহায্য · টেলিগ্রাম গ্রুপ
+        </p>
+        <p className="text-[11px] text-white/90 mt-0.5">যেকোনো সমস্যা হলে এখানে মেসেজ দিন</p>
+      </a>
+
       <div className="text-center py-2 space-y-2">
         <p className="text-[11px] text-muted-foreground italic">
           🌸 "হাজার জনের সহযোগিতা, একজনের হাসি" 🌸
@@ -246,7 +290,7 @@ function HomePage() {
       )}
     </div>
 
-    {/* Persistent submit button — always visible even if grid failed to render. */}
+    {/* Big animated persistent submit button — impossible to miss. */}
     {(firstEmpty || allSubmitted) && (
       <button
         onClick={() => {
@@ -257,11 +301,17 @@ function HomePage() {
           addSlots.mutate();
         }}
         disabled={!firstEmpty && addSlots.isPending}
-        className="fixed z-40 bottom-24 right-4 rounded-full px-4 py-3 shadow-xl flex items-center gap-2 text-white font-black text-sm btn-press"
-        style={{ background: "linear-gradient(120deg,#ef476f,#f59e0b)", boxShadow: "0 12px 28px -6px rgba(239,71,111,0.55)" }}
+        className="fixed z-40 bottom-24 left-4 right-4 rounded-2xl px-5 py-4 shadow-2xl flex items-center justify-center gap-2 text-white font-black text-base btn-press shine pulse-glow"
+        style={{
+          background: "linear-gradient(120deg,#ef476f,#f59e0b 50%,#ec4899)",
+          boxShadow: "0 18px 40px -8px rgba(239,71,111,0.7)",
+          animation: "submit-pop 1.6s ease-in-out infinite",
+        }}
       >
-        {addSlots.isPending && !firstEmpty ? <Loader2 className="w-4 h-4 animate-spin" /> : firstEmpty ? <Upload className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-        {firstEmpty ? "জমা দিন" : "আরও ১০ slot"}
+        {addSlots.isPending && !firstEmpty
+          ? <Loader2 className="w-5 h-5 animate-spin" />
+          : firstEmpty ? <Upload className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
+        <span className="tracking-wide text-lg">{firstEmpty ? "🚀 জমা দিন" : "➕ আরও ১০ Slot"}</span>
       </button>
     )}
     </NowProvider>
@@ -307,7 +357,7 @@ function MainIdentityCell({ task, onStart, onReverify, onOpenPhoto }: { task: an
   if (isVerified && readyToReverify) {
     return (
       <button onClick={onReverify} data-voice="reverify.button"
-        className="relative w-24 h-24 rounded-2xl overflow-hidden border-2 shadow-[0_10px_28px_-6px_rgba(139,92,246,0.75)] active:scale-95 transition pulse-glow"
+        className="relative w-24 h-24 rounded-2xl overflow-hidden border-2 shadow-[0_10px_28px_-6px_rgba(139,92,246,0.75)] active:scale-95 transition"
         style={{ borderColor: "var(--color-violet)" }}>
         {faceUrl ? <img src={faceUrl} className="absolute inset-0 h-full w-full object-cover" alt="main" />
                  : <div className="absolute inset-0 task-cell-reverify" />}
@@ -325,7 +375,7 @@ function MainIdentityCell({ task, onStart, onReverify, onOpenPhoto }: { task: an
   let icon = <Camera className="w-8 h-8 text-white drop-shadow" />;
   let cellClass = "task-cell-empty";
   if (task.status === "done") { cellClass = "task-cell-done"; icon = <CheckCircle2 className="w-8 h-8 text-white drop-shadow" />; }
-  else if (readyToReverify) { cellClass = "task-cell-reverify pulse-glow"; icon = <Sparkles className="w-8 h-8 text-white drop-shadow" />; }
+  else if (readyToReverify) { cellClass = "task-cell-reverify"; icon = <Sparkles className="w-8 h-8 text-white drop-shadow" />; }
 
   return (
     <button onClick={onStart} data-voice="home.main"
@@ -377,16 +427,15 @@ function TaskCell({ task, onStart, onReverify, onOpenPhoto }: { task: any; onSta
   if (isVerified && readyToReverify) {
     return (
       <button onClick={onReverify} data-voice="reverify.button"
-        className="relative aspect-square rounded-xl overflow-hidden border border-violet/70 shadow-[0_8px_18px_-5px_rgba(139,92,246,0.75)] active:scale-95 transition pulse-glow">
+        className="relative aspect-square rounded-xl overflow-hidden border-2 border-violet shadow-[0_8px_18px_-5px_rgba(139,92,246,0.75)] active:scale-95 transition">
         {faceUrl ? <img src={faceUrl} className="absolute inset-0 h-full w-full object-cover" alt="" />
                  : <div className="absolute inset-0 task-cell-reverify" />}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/88 via-violet/20 to-black/25" />
-        <span className="absolute top-1 left-1 text-[10px] font-black text-white mono-num leading-none px-1.5 py-0.5 rounded-md bg-black/45 backdrop-blur-[2px]">#{task.slot}</span>
-        <span className="absolute top-1 right-1 rounded-full bg-violet p-0.5 shadow"><Sparkles className="w-2.5 h-2.5 text-white" /></span>
-        <div className="absolute bottom-0.5 left-0 right-0 px-1">
-          <p className="text-[9px] font-black text-white text-center drop-shadow leading-tight rounded-md bg-white/15 backdrop-blur-[2px] py-0.5">
-            রি-ভেরিফাই
-          </p>
+        <div className="absolute inset-0 bg-gradient-to-t from-violet/95 via-violet/40 to-violet/70" />
+        <span className="absolute top-1 left-1 text-[10px] font-black text-white mono-num leading-none px-1.5 py-0.5 rounded-md bg-black/50">#{task.slot}</span>
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 px-1">
+          <Sparkles className="w-6 h-6 text-white drop-shadow" />
+          <p className="text-[11px] font-black text-white text-center drop-shadow leading-tight">রি-ভেরিফাই</p>
+          <p className="text-[8px] font-bold text-white/90 text-center leading-none">চাপুন</p>
         </div>
       </button>
     );
@@ -396,7 +445,7 @@ function TaskCell({ task, onStart, onReverify, onOpenPhoto }: { task: any; onSta
   let icon = <Camera className="w-5 h-5 text-white drop-shadow" />;
   let label = "শুরু";
   if (isDone) { cellClass = "task-cell-done"; icon = <CheckCircle2 className="w-5 h-5 text-white drop-shadow" />; label = "সম্পন্ন"; }
-  else if (readyToReverify) { cellClass = "task-cell-reverify pulse-glow"; icon = <Sparkles className="w-5 h-5 text-white drop-shadow" />; label = "রি-ভেরিফাই"; }
+  else if (readyToReverify) { cellClass = "task-cell-reverify"; icon = <Sparkles className="w-5 h-5 text-white drop-shadow" />; label = "রি-ভেরিফাই"; }
 
   return (
     <button onClick={onStart} data-voice="home.tap.slot"

@@ -107,7 +107,7 @@ function ReverifyPage() {
     try {
       const ok = await isWhitelisted(selected.wallet_address);
       if (!ok) {
-        toast.error("হোয়াইটলিস্টে পাওয়া যায়নি — গুডডলারে ভেরিফাই শেষ করুন");
+        toast.error("হোয়াইটলিস্টে পাওয়া যায়নি — good-app ভেরিফাই শেষ করুন");
         return;
       }
       setStep("photo");
