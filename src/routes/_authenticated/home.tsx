@@ -357,7 +357,7 @@ function MainIdentityCell({ task, onStart, onReverify, onOpenPhoto }: { task: an
   if (isVerified && readyToReverify) {
     return (
       <button onClick={onReverify} data-voice="reverify.button"
-        className="relative w-24 h-24 rounded-2xl overflow-hidden border-2 shadow-[0_10px_28px_-6px_rgba(139,92,246,0.75)] active:scale-95 transition pulse-glow"
+        className="relative w-24 h-24 rounded-2xl overflow-hidden border-2 shadow-[0_10px_28px_-6px_rgba(139,92,246,0.75)] active:scale-95 transition"
         style={{ borderColor: "var(--color-violet)" }}>
         {faceUrl ? <img src={faceUrl} className="absolute inset-0 h-full w-full object-cover" alt="main" />
                  : <div className="absolute inset-0 task-cell-reverify" />}
@@ -375,7 +375,7 @@ function MainIdentityCell({ task, onStart, onReverify, onOpenPhoto }: { task: an
   let icon = <Camera className="w-8 h-8 text-white drop-shadow" />;
   let cellClass = "task-cell-empty";
   if (task.status === "done") { cellClass = "task-cell-done"; icon = <CheckCircle2 className="w-8 h-8 text-white drop-shadow" />; }
-  else if (readyToReverify) { cellClass = "task-cell-reverify pulse-glow"; icon = <Sparkles className="w-8 h-8 text-white drop-shadow" />; }
+  else if (readyToReverify) { cellClass = "task-cell-reverify"; icon = <Sparkles className="w-8 h-8 text-white drop-shadow" />; }
 
   return (
     <button onClick={onStart} data-voice="home.main"
@@ -427,16 +427,15 @@ function TaskCell({ task, onStart, onReverify, onOpenPhoto }: { task: any; onSta
   if (isVerified && readyToReverify) {
     return (
       <button onClick={onReverify} data-voice="reverify.button"
-        className="relative aspect-square rounded-xl overflow-hidden border border-violet/70 shadow-[0_8px_18px_-5px_rgba(139,92,246,0.75)] active:scale-95 transition pulse-glow">
+        className="relative aspect-square rounded-xl overflow-hidden border-2 border-violet shadow-[0_8px_18px_-5px_rgba(139,92,246,0.75)] active:scale-95 transition">
         {faceUrl ? <img src={faceUrl} className="absolute inset-0 h-full w-full object-cover" alt="" />
                  : <div className="absolute inset-0 task-cell-reverify" />}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/88 via-violet/20 to-black/25" />
-        <span className="absolute top-1 left-1 text-[10px] font-black text-white mono-num leading-none px-1.5 py-0.5 rounded-md bg-black/45 backdrop-blur-[2px]">#{task.slot}</span>
-        <span className="absolute top-1 right-1 rounded-full bg-violet p-0.5 shadow"><Sparkles className="w-2.5 h-2.5 text-white" /></span>
-        <div className="absolute bottom-0.5 left-0 right-0 px-1">
-          <p className="text-[9px] font-black text-white text-center drop-shadow leading-tight rounded-md bg-white/15 backdrop-blur-[2px] py-0.5">
-            রি-ভেরিফাই
-          </p>
+        <div className="absolute inset-0 bg-gradient-to-t from-violet/95 via-violet/40 to-violet/70" />
+        <span className="absolute top-1 left-1 text-[10px] font-black text-white mono-num leading-none px-1.5 py-0.5 rounded-md bg-black/50">#{task.slot}</span>
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 px-1">
+          <Sparkles className="w-6 h-6 text-white drop-shadow" />
+          <p className="text-[11px] font-black text-white text-center drop-shadow leading-tight">রি-ভেরিফাই</p>
+          <p className="text-[8px] font-bold text-white/90 text-center leading-none">চাপুন</p>
         </div>
       </button>
     );
@@ -446,7 +445,7 @@ function TaskCell({ task, onStart, onReverify, onOpenPhoto }: { task: any; onSta
   let icon = <Camera className="w-5 h-5 text-white drop-shadow" />;
   let label = "শুরু";
   if (isDone) { cellClass = "task-cell-done"; icon = <CheckCircle2 className="w-5 h-5 text-white drop-shadow" />; label = "সম্পন্ন"; }
-  else if (readyToReverify) { cellClass = "task-cell-reverify pulse-glow"; icon = <Sparkles className="w-5 h-5 text-white drop-shadow" />; label = "রি-ভেরিফাই"; }
+  else if (readyToReverify) { cellClass = "task-cell-reverify"; icon = <Sparkles className="w-5 h-5 text-white drop-shadow" />; label = "রি-ভেরিফাই"; }
 
   return (
     <button onClick={onStart} data-voice="home.tap.slot"
