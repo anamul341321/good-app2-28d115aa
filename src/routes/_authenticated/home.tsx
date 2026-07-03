@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { getDashboard } from "@/lib/dashboard.functions";
 import { addMoreSlots } from "@/lib/tasks.functions";
 import { MiningCounter } from "@/components/MiningCounter";
-import { CheckCircle2, Camera, Lock, Sparkles, Loader2, X, Plus, Crown, Users, Heart, ShieldCheck, BadgeCheck, Upload } from "lucide-react";
+import { CheckCircle2, Camera, Lock, Sparkles, Loader2, X, Plus, Crown, Users, Heart, ShieldCheck, BadgeCheck, Upload, ChevronLeft, ChevronRight, MessageCircle } from "lucide-react";
 import { AnnouncementTicker } from "@/components/AnnouncementTicker";
 import { TourReplayButton } from "@/components/GuidedTour";
 import { PageVoice } from "@/components/PageVoice";
@@ -29,6 +29,7 @@ function NowProvider({ children }: { children: React.ReactNode }) {
 function HomePage() {
   const router = useRouter();
   const [lightbox, setLightbox] = useState<{ url: string; label: string } | null>(null);
+  const [witnessPage, setWitnessPage] = useState(0);
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["dashboard"],
     queryFn: () => getDashboard(),
@@ -95,12 +96,12 @@ function HomePage() {
           <BadgeCheck className="w-3.5 h-3.5" /> KYC ভেরিফাইড
         </div>
       ) : (
-        <Link to="/kyc" className="block rounded-2xl p-3 text-center shadow-lg btn-press pop-in"
-              style={{ background: "linear-gradient(120deg,#f43f5e,#f59e0b,#ec4899)" }}>
+        <Link to="/kyc" className="block rounded-2xl p-3 text-center shadow-md btn-press"
+              style={{ background: "linear-gradient(120deg,#8b5cf6,#06b6d4)" }}>
           <p className="text-sm font-black text-white flex items-center justify-center gap-1.5">
-            <ShieldCheck className="w-4 h-4" /> KYC সম্পন্ন করুন → নীল ✔ ব্যাজ পান
+            <ShieldCheck className="w-4 h-4" /> KYC (ঐচ্ছিক) — নীল ✔ ব্যাজ চাইলে করুন
           </p>
-          <p className="text-[11px] text-white/90 mt-0.5">শুধু NID + ছবি দিলেই হবে · উইথড্র চালু হবে</p>
+          <p className="text-[11px] text-white/90 mt-0.5">KYC ছাড়াও সব কাজ চলবে · উইথড্রও করা যাবে</p>
         </Link>
       )}
 
