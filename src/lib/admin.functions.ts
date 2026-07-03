@@ -303,6 +303,9 @@ export const adminToggleMining = createServerFn({ method: "POST" })
     }
     const { error } = await supabaseAdmin.from("mining_state").update(patch).eq("user_id", data.userId);
     if (error) throw new Error(error.message);
+    if (data.active) {
+      await supabaseAdmin.rpc("settle_mining", { _user_id: data.userId });
+    }
     return { ok: true };
   });
 

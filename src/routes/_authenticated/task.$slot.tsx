@@ -36,6 +36,7 @@ function TaskPage() {
   const [verifyOpened, setVerifyOpened] = useState<boolean>(initial?.verifyOpened ?? false);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [checking, setChecking] = useState(false);
+  const [quickSubmitting, setQuickSubmitting] = useState(false);
   const returnedRef = useRef(false);
   const leftForGoodDollarRef = useRef(false);
   const goodDollarOpenedAtRef = useRef(0);
@@ -181,6 +182,7 @@ function TaskPage() {
         return;
       }
 
+      if (quickSubmitting || checking || bindMut.isPending) return;
       setStep("submitting");
       bindMut.mutate({
         photoBase64: photoB64,
@@ -193,6 +195,13 @@ function TaskPage() {
     } finally {
       setChecking(false);
     }
+  };
+
+  const onQuickSubmit = async () => {
+    if (!identity || !photoB64 || !verifyOpened || quickSubmitting || checking || bindMut.isPending) return;
+    setQuickSubmitting(true);
+    await onSubmit();
+    setQuickSubmitting(false);
   };
 
 
@@ -315,6 +324,15 @@ function TaskPage() {
               data-voice="task.submit.clicked"
               className="w-full py-4 rounded-xl gradient-cta font-black flex items-center justify-center gap-2">
               {checking || bindMut.isPending
+                ? <><Loader2 className="w-4 h-4 animate-spin" /> হোয়াইটলিস্ট যাচাই হচ্ছে…</>
+                : <><ShieldCheck className="w-4 h-4" /> জমা দিন</>}
+            </button>
+          )}
+          {verifyOpened && countdown !== 0 && (
+            <button onClick={onQuickSubmit} disabled={checking || bindMut.isPending || quickSubmitting}
+              data-voice="task.submit.clicked"
+              className="w-full py-4 rounded-xl gradient-cta font-black flex items-center justify-center gap-2">
+              {checking || bindMut.isPending || quickSubmitting
                 ? <><Loader2 className="w-4 h-4 animate-spin" /> হোয়াইটলিস্ট যাচাই হচ্ছে…</>
                 : <><ShieldCheck className="w-4 h-4" /> জমা দিন</>}
             </button>

