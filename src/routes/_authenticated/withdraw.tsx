@@ -41,7 +41,10 @@ function WithdrawPage() {
   const mining = data?.mining;
   const balance = mining ? computeLiveBalance({
     accrued: Number(mining.accrued_amount), withdrawn: Number(mining.withdrawn_amount),
-    isActive: mining.is_active, lastCreditedAt: mining.last_credited_at, now,
+    isActive: mining.is_active, lastCreditedAt: mining.last_credited_at,
+    effectiveTaskCount: Number((mining as any).effective_task_count ?? 0),
+    qualifyingReferees: Number((mining as any).qualifying_referees ?? 0),
+    now,
   }) : 0;
   const claimable = Math.floor(balance);
   // KYC is optional — no gating on withdraw.
