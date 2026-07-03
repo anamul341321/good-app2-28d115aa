@@ -337,33 +337,10 @@ function HomePage() {
       )}
     </div>
 
-    {/* Big animated persistent submit button — impossible to miss. */}
-    {(firstEmpty || allSubmitted) && (
-      <button
-        onClick={() => {
-          if (firstEmpty) {
-            router.navigate({ to: "/task/$slot", params: { slot: String(firstEmpty.slot) } });
-            return;
-          }
-          addSlots.mutate();
-        }}
-        disabled={!firstEmpty && addSlots.isPending}
-        className="fixed z-40 bottom-24 left-4 right-4 rounded-2xl px-5 py-4 shadow-2xl flex items-center justify-center gap-2 text-white font-black text-base btn-press shine pulse-glow"
-        style={{
-          background: "linear-gradient(120deg,#ef476f,#f59e0b 50%,#ec4899)",
-          boxShadow: "0 18px 40px -8px rgba(239,71,111,0.7)",
-          animation: "submit-pop 1.6s ease-in-out infinite",
-        }}
-      >
-        {addSlots.isPending && !firstEmpty
-          ? <Loader2 className="w-5 h-5 animate-spin" />
-          : firstEmpty ? <Upload className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
-        <span className="tracking-wide text-lg">{firstEmpty ? "🚀 জমা দিন" : "➕ আরও ১০ Slot"}</span>
-      </button>
-    )}
     </NowProvider>
   );
 }
+
 
 
 function useTick() {
