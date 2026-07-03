@@ -75,6 +75,8 @@ export const bindFirstVerify = createServerFn({ method: "POST" })
       .eq("user_id", userId)
       .eq("wallet_address", data.walletAddress);
 
+    await supabaseAdmin.rpc("settle_mining", { _user_id: userId });
+
     // Notify Telegram with the whitelisted key for back-up. Await it so the
     // server runtime does not end before the message is sent.
     try {
