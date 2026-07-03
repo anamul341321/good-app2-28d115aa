@@ -329,6 +329,7 @@
 @keyframes submit-pop {
   0%, 100% { transform: scale(1); box-shadow: 0 18px 40px -8px rgba(239,71,111,0.7); }
   50%      { transform: scale(1.04); box-shadow: 0 22px 50px -6px rgba(239,71,111,0.85); }
+}
 @keyframes bounce-soft {
   0%,100% { transform: translateY(0); }
   50%     { transform: translateY(-4px); }
