@@ -56,8 +56,13 @@ function HomePage() {
   const mainTask = tasks.find((t) => t.slot === 1);
   const witnessTasks = tasks.filter((t) => t.slot !== 1);
 
+  // First empty slot — target for the persistent "জমা দিন" button.
+  const firstEmpty = tasks.find((t) => t.status === "empty");
+
   return (
+    <NowProvider>
     <div className="space-y-3 pt-2 pb-6">
+
       <PageVoice pageId="home" steps={["home.welcome","home.mining","home.claim","home.main","home.witness","home.tap.slot","home.open.photo","reverify.button"]} />
       <AnnouncementTicker />
 
