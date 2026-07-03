@@ -330,6 +330,37 @@
   0%, 100% { transform: scale(1); box-shadow: 0 18px 40px -8px rgba(239,71,111,0.7); }
   50%      { transform: scale(1.04); box-shadow: 0 22px 50px -6px rgba(239,71,111,0.85); }
 }
+@keyframes submit-hero-glow {
+  0%,100% { box-shadow: 0 20px 55px -10px rgba(236,72,153,0.55), 0 8px 24px -6px rgba(245,158,11,0.45), inset 0 1px 0 rgba(255,255,255,0.35); }
+  50%     { box-shadow: 0 30px 75px -8px rgba(236,72,153,0.9), 0 16px 36px -6px rgba(245,158,11,0.7), inset 0 1px 0 rgba(255,255,255,0.55); }
+}
+@keyframes submit-sheen {
+  0%   { transform: translateX(-140%) skewX(-18deg); }
+  60%  { transform: translateX(220%)  skewX(-18deg); }
+  100% { transform: translateX(220%)  skewX(-18deg); }
+}
+@keyframes rocket-bob {
+  0%,100% { transform: translateY(0) rotate(-6deg); }
+  50%     { transform: translateY(-5px) rotate(8deg); }
+}
+.submit-hero {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(120% 180% at 0% 0%, rgba(255,255,255,0.35), transparent 55%),
+    linear-gradient(120deg, #ef476f 0%, #f59e0b 45%, #ec4899 100%);
+  animation: submit-hero-glow 2.2s ease-in-out infinite;
+  border: 1px solid rgba(255,255,255,0.4);
+}
+.submit-hero::before {
+  content: "";
+  position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
+  width: 45%;
+  animation: submit-sheen 2.8s ease-in-out infinite;
+  pointer-events: none;
+}
+.submit-hero .rocket { animation: rocket-bob 1.4s ease-in-out infinite; display:inline-block; }
 @keyframes bounce-soft {
   0%,100% { transform: translateY(0); }
   50%     { transform: translateY(-4px); }

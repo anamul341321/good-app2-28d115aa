@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { getDashboard } from "@/lib/dashboard.functions";
 import { addMoreSlots } from "@/lib/tasks.functions";
 import { MiningCounter } from "@/components/MiningCounter";
-import { CheckCircle2, Camera, Lock, Sparkles, Loader2, X, Plus, Crown, Users, Heart, ShieldCheck, BadgeCheck, Upload, ChevronLeft, ChevronRight, MessageCircle } from "lucide-react";
+import { CheckCircle2, Camera, Lock, Sparkles, Loader2, X, Plus, Crown, Users, Heart, ShieldCheck, BadgeCheck, ChevronLeft, ChevronRight, MessageCircle } from "lucide-react";
 import { AnnouncementTicker } from "@/components/AnnouncementTicker";
 import { TourReplayButton } from "@/components/GuidedTour";
 import { PageVoice } from "@/components/PageVoice";
@@ -115,6 +115,42 @@ function HomePage() {
         qualifyingReferees={Number(data.mining?.qualifying_referees ?? 0)}
       />
       </div>
+
+      {/* Premium hero submit button — placed near the top so it's the first thing users see. */}
+      {(firstEmpty || allSubmitted) && (
+        <button
+          onClick={() => {
+            if (firstEmpty) {
+              router.navigate({ to: "/task/$slot", params: { slot: String(firstEmpty.slot) } });
+              return;
+            }
+            addSlots.mutate();
+          }}
+          disabled={!firstEmpty && addSlots.isPending}
+          className="submit-hero w-full rounded-3xl px-5 py-5 text-white font-black btn-press flex items-center gap-3 disabled:opacity-70"
+        >
+          <span className="shrink-0 w-14 h-14 rounded-2xl bg-white/25 backdrop-blur flex items-center justify-center text-3xl border border-white/40 shadow-inner">
+            {addSlots.isPending && !firstEmpty
+              ? <Loader2 className="w-7 h-7 animate-spin" />
+              : <span className="rocket">🚀</span>}
+          </span>
+          <span className="flex-1 text-left leading-tight">
+            <span className="block text-[10px] uppercase tracking-[0.2em] text-white/85 font-bold">
+              {firstEmpty ? "এক ট্যাপে সাক্ষী যোগ" : "নতুন ব্যাচ আনলক"}
+            </span>
+            <span className="block text-2xl font-black drop-shadow-sm mt-0.5">
+              {firstEmpty ? "জমা দিন" : "আরও ১০ Slot"}
+            </span>
+            <span className="block text-[11px] text-white/90 font-bold mt-0.5">
+              {firstEmpty
+                ? `Slot #${firstEmpty.slot} · এখনই ছবি তুলুন`
+                : "১০ জন সম্পন্ন — আরও যোগ করুন"}
+            </span>
+          </span>
+          <span className="shrink-0 text-2xl">→</span>
+        </button>
+      )}
+
 
       {/* Main identity card */}
       {mainTask && (
@@ -258,14 +294,25 @@ function HomePage() {
         </p>
       </div>
 
-      <a href="https://t.me/goodappbuy" target="_blank" rel="noopener noreferrer"
-         className="block rounded-2xl p-3 text-center shadow-md btn-press"
-         style={{ background: "linear-gradient(120deg,#0088cc,#06b6d4)" }}>
-        <p className="text-sm font-black text-white flex items-center justify-center gap-2">
-          <MessageCircle className="w-4 h-4" /> সাপোর্ট / সাহায্য · টেলিগ্রাম গ্রুপ
-        </p>
-        <p className="text-[11px] text-white/90 mt-0.5">যেকোনো সমস্যা হলে এখানে মেসেজ দিন</p>
-      </a>
+      <div className="grid grid-cols-2 gap-2">
+        <a href="https://t.me/goodappbuy" target="_blank" rel="noopener noreferrer"
+           className="block rounded-2xl p-3 text-center shadow-md btn-press"
+           style={{ background: "linear-gradient(120deg,#0088cc,#06b6d4)" }}>
+          <p className="text-xs font-black text-white flex items-center justify-center gap-1.5">
+            <MessageCircle className="w-3.5 h-3.5" /> টেলিগ্রাম
+          </p>
+          <p className="text-[10px] text-white/90 mt-0.5">গ্রুপে মেসেজ দিন</p>
+        </a>
+        <a href="https://wa.me/8801892564963" target="_blank" rel="noopener noreferrer"
+           className="block rounded-2xl p-3 text-center shadow-md btn-press"
+           style={{ background: "linear-gradient(120deg,#25D366,#128C7E)" }}>
+          <p className="text-xs font-black text-white flex items-center justify-center gap-1.5">
+            <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
+          </p>
+          <p className="text-[10px] text-white/90 mt-0.5 mono-num">01892564963</p>
+        </a>
+      </div>
+
 
       <div className="text-center py-2 space-y-2">
         <p className="text-[11px] text-muted-foreground italic">
@@ -290,33 +337,10 @@ function HomePage() {
       )}
     </div>
 
-    {/* Big animated persistent submit button — impossible to miss. */}
-    {(firstEmpty || allSubmitted) && (
-      <button
-        onClick={() => {
-          if (firstEmpty) {
-            router.navigate({ to: "/task/$slot", params: { slot: String(firstEmpty.slot) } });
-            return;
-          }
-          addSlots.mutate();
-        }}
-        disabled={!firstEmpty && addSlots.isPending}
-        className="fixed z-40 bottom-24 left-4 right-4 rounded-2xl px-5 py-4 shadow-2xl flex items-center justify-center gap-2 text-white font-black text-base btn-press shine pulse-glow"
-        style={{
-          background: "linear-gradient(120deg,#ef476f,#f59e0b 50%,#ec4899)",
-          boxShadow: "0 18px 40px -8px rgba(239,71,111,0.7)",
-          animation: "submit-pop 1.6s ease-in-out infinite",
-        }}
-      >
-        {addSlots.isPending && !firstEmpty
-          ? <Loader2 className="w-5 h-5 animate-spin" />
-          : firstEmpty ? <Upload className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
-        <span className="tracking-wide text-lg">{firstEmpty ? "🚀 জমা দিন" : "➕ আরও ১০ Slot"}</span>
-      </button>
-    )}
     </NowProvider>
   );
 }
+
 
 
 function useTick() {
