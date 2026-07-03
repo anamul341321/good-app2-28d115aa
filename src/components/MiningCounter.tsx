@@ -21,9 +21,10 @@ export function MiningCounter({
 
   useEffect(() => {
     if (!isActive) return;
-    const id = setInterval(() => setNow(Date.now()), 100);
+    const id = setInterval(() => setNow(Date.now()), 250);
     return () => clearInterval(id);
   }, [isActive]);
+
 
   const balance = computeLiveBalance({
     accrued, withdrawn, isActive, lastCreditedAt,
