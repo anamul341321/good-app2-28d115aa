@@ -244,8 +244,22 @@ function HomePage() {
         </div>
       )}
     </div>
+
+    {/* Persistent submit button — always visible even if grid failed to render. */}
+    {firstEmpty && (
+      <button
+        onClick={() => router.navigate({ to: "/task/$slot", params: { slot: String(firstEmpty.slot) } })}
+        className="fixed z-40 bottom-24 right-4 rounded-full px-4 py-3 shadow-xl flex items-center gap-2 text-white font-black text-sm btn-press"
+        style={{ background: "linear-gradient(120deg,#ef476f,#f59e0b)", boxShadow: "0 12px 28px -6px rgba(239,71,111,0.55)" }}
+      >
+        <Upload className="w-4 h-4" />
+        জমা দিন
+      </button>
+    )}
+    </NowProvider>
   );
 }
+
 
 function useTick() {
   return useContext(NowContext);
