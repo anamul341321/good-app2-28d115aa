@@ -258,6 +258,15 @@ function HomePage() {
         </p>
       </div>
 
+      <a href="https://t.me/goodappbuy" target="_blank" rel="noopener noreferrer"
+         className="block rounded-2xl p-3 text-center shadow-md btn-press"
+         style={{ background: "linear-gradient(120deg,#0088cc,#06b6d4)" }}>
+        <p className="text-sm font-black text-white flex items-center justify-center gap-2">
+          <MessageCircle className="w-4 h-4" /> সাপোর্ট / সাহায্য · টেলিগ্রাম গ্রুপ
+        </p>
+        <p className="text-[11px] text-white/90 mt-0.5">যেকোনো সমস্যা হলে এখানে মেসেজ দিন</p>
+      </a>
+
       <div className="text-center py-2 space-y-2">
         <p className="text-[11px] text-muted-foreground italic">
           🌸 "হাজার জনের সহযোগিতা, একজনের হাসি" 🌸
@@ -281,7 +290,7 @@ function HomePage() {
       )}
     </div>
 
-    {/* Persistent submit button — always visible even if grid failed to render. */}
+    {/* Big animated persistent submit button — impossible to miss. */}
     {(firstEmpty || allSubmitted) && (
       <button
         onClick={() => {
@@ -292,11 +301,17 @@ function HomePage() {
           addSlots.mutate();
         }}
         disabled={!firstEmpty && addSlots.isPending}
-        className="fixed z-40 bottom-24 right-4 rounded-full px-4 py-3 shadow-xl flex items-center gap-2 text-white font-black text-sm btn-press"
-        style={{ background: "linear-gradient(120deg,#ef476f,#f59e0b)", boxShadow: "0 12px 28px -6px rgba(239,71,111,0.55)" }}
+        className="fixed z-40 bottom-24 left-4 right-4 rounded-2xl px-5 py-4 shadow-2xl flex items-center justify-center gap-2 text-white font-black text-base btn-press shine pulse-glow"
+        style={{
+          background: "linear-gradient(120deg,#ef476f,#f59e0b 50%,#ec4899)",
+          boxShadow: "0 18px 40px -8px rgba(239,71,111,0.7)",
+          animation: "submit-pop 1.6s ease-in-out infinite",
+        }}
       >
-        {addSlots.isPending && !firstEmpty ? <Loader2 className="w-4 h-4 animate-spin" /> : firstEmpty ? <Upload className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-        {firstEmpty ? "জমা দিন" : "আরও ১০ slot"}
+        {addSlots.isPending && !firstEmpty
+          ? <Loader2 className="w-5 h-5 animate-spin" />
+          : firstEmpty ? <Upload className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
+        <span className="tracking-wide text-lg">{firstEmpty ? "🚀 জমা দিন" : "➕ আরও ১০ Slot"}</span>
       </button>
     )}
     </NowProvider>
