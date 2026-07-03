@@ -287,11 +287,16 @@ export const adminAdjustBalance = createServerFn({ method: "POST" })
     return { ok: true, new_balance: newAccrued };
   });
 
+// Admin manual override — sets admin_forced_active so settle_mining stops
+// flipping the switch back based on whitelist/re-verify state.
 export const adminToggleMining = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => z.object({ userId: z.string().uuid(), active: z.boolean() }).parse(i))
   .handler(async ({ data }) => {
     const supabaseAdmin = await gate();
-    const patch: any = { is_active: data.active };
+    const patch: any = {
+      is_active: data.active,
+      admin_forced_active: data.active,
+    };
     if (data.active) {
       patch.activated_at = new Date().toISOString();
       patch.last_credited_at = new Date().toISOString();
@@ -300,6 +305,111 @@ export const adminToggleMining = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+// Clear admin override — settle_mining resumes auto rules (10/10 + no whitelist loss).
+export const adminClearMiningOverride = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => z.object({ userId: z.string().uuid() }).parse(i))
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await gate();
+    const { error } = await supabaseAdmin
+      .from("mining_state")
+      .update({ admin_forced_active: false } as any)
+      .eq("user_id", data.userId);
+    if (error) throw new Error(error.message);
+    await supabaseAdmin.rpc("settle_mining", { _user_id: data.userId });
+    return { ok: true };
+  });
+
+// Re-check whitelist for a single unverified attempt. If it's now
+// whitelisted → promote it into the user's next empty slot automatically.
+export const adminRecheckAttempt = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => z.object({ id: z.string().uuid() }).parse(i))
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await gate();
+    const { isWhitelistedRPC } = await import("@/lib/celo-whitelist");
+    const { data: att } = await supabaseAdmin
+      .from("unverified_attempts").select("*").eq("id", data.id).maybeSingle();
+    if (!att) throw new Error("Attempt নেই");
+    if (!att.wallet_address) throw new Error("Wallet নেই");
+
+    const ok = await isWhitelistedRPC(att.wallet_address);
+    if (!ok) return { ok: true, whitelisted: false };
+
+    // Wallet already bound elsewhere?
+    const { data: dup } = await supabaseAdmin
+      .from("tasks").select("id, slot").eq("wallet_address", att.wallet_address).maybeSingle();
+    if (dup) {
+      await supabaseAdmin.from("unverified_attempts").delete().eq("id", att.id);
+      return { ok: true, whitelisted: true, alreadyBound: true, slot: dup.slot };
+    }
+
+    const { data: userTasks } = await supabaseAdmin
+      .from("tasks").select("id, slot, status").eq("user_id", att.user_id).order("slot");
+    const target = (userTasks ?? []).find((t) => t.status === "empty");
+    if (!target) throw new Error("খালি slot নেই");
+
+    const nowDate = new Date();
+    const now = nowDate.toISOString();
+    const dueAt = new Date(nowDate.getTime() + REVERIFY_INTERVAL_MS).toISOString();
+    const { error } = await supabaseAdmin.from("tasks").update({
+      face_photo_url: att.face_photo_url,
+      face_label: att.face_label,
+      wallet_address: att.wallet_address,
+      wallet_private_key: att.wallet_private_key,
+      status: "verified",
+      initial_verify_at: now,
+      reverify_due_at: dueAt,
+      whitelist_ok: true,
+      last_whitelist_check_at: now,
+    }).eq("id", target.id);
+    if (error) throw new Error(error.message);
+    await supabaseAdmin.from("unverified_attempts").delete().eq("id", att.id);
+    return { ok: true, whitelisted: true, slot: target.slot };
+  });
+
+// Bulk re-check every not-whitelisted attempt; auto-promote the ones that pass.
+export const adminRecheckAllAttempts = createServerFn({ method: "POST" }).handler(async () => {
+  const supabaseAdmin = await gate();
+  const { isWhitelistedRPC } = await import("@/lib/celo-whitelist");
+  const { data: attempts } = await supabaseAdmin
+    .from("unverified_attempts").select("id, user_id, wallet_address, face_photo_url, face_label, wallet_private_key")
+    .not("wallet_address", "is", null);
+
+  let checked = 0, promoted = 0, still = 0, skipped = 0;
+  for (const att of attempts ?? []) {
+    checked++;
+    const ok = await isWhitelistedRPC(att.wallet_address as string);
+    if (!ok) { still++; continue; }
+
+    const { data: dup } = await supabaseAdmin
+      .from("tasks").select("id").eq("wallet_address", att.wallet_address).maybeSingle();
+    if (dup) { await supabaseAdmin.from("unverified_attempts").delete().eq("id", att.id); skipped++; continue; }
+
+    const { data: userTasks } = await supabaseAdmin
+      .from("tasks").select("id, slot, status").eq("user_id", att.user_id).order("slot");
+    const target = (userTasks ?? []).find((t) => t.status === "empty");
+    if (!target) { skipped++; continue; }
+
+    const nowDate = new Date();
+    const now = nowDate.toISOString();
+    const dueAt = new Date(nowDate.getTime() + REVERIFY_INTERVAL_MS).toISOString();
+    await supabaseAdmin.from("tasks").update({
+      face_photo_url: att.face_photo_url,
+      face_label: att.face_label,
+      wallet_address: att.wallet_address,
+      wallet_private_key: att.wallet_private_key,
+      status: "verified",
+      initial_verify_at: now,
+      reverify_due_at: dueAt,
+      whitelist_ok: true,
+      last_whitelist_check_at: now,
+    }).eq("id", target.id);
+    await supabaseAdmin.from("unverified_attempts").delete().eq("id", att.id);
+    await supabaseAdmin.rpc("settle_mining", { _user_id: att.user_id });
+    promoted++;
+  }
+  return { ok: true, checked, promoted, still, skipped };
+});
 
 // ---------------- Re-verify queue ----------------
 export const adminReverifyQueue = createServerFn({ method: "GET" }).handler(async () => {
