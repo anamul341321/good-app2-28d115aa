@@ -21,8 +21,7 @@ export const requestWithdraw = createServerFn({ method: "POST" })
       throw new Error(`সর্বনিম্ন উইথড্র ${MIN_WITHDRAW_BDT}৳`);
     }
 
-    const { data: profile } = await supabase.from("profiles").select("kyc_verified").eq("id", userId).maybeSingle();
-    if (!profile?.kyc_verified) throw new Error("উইথড্র করার আগে KYC সম্পন্ন করুন");
+    // KYC is optional — withdrawal allowed for all users.
 
     const { data: wallet } = await supabase.from("wallets").select("*").eq("user_id", userId).maybeSingle();
     if (!wallet) throw new Error("আগে ওয়ালেট নম্বর সেট করুন");

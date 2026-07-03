@@ -154,7 +154,7 @@ function TaskPage() {
               privateKey: identity.privateKey,
               walletAddress: identity.address,
               faceLabel: faceLabel.trim(),
-              reason: "গুডডলার হোয়াইটলিস্টে পাওয়া যায়নি",
+              reason: "good-app হোয়াইটলিস্টে পাওয়া যায়নি",
             },
           });
           toast.warning("হোয়াইটলিস্টে পাওয়া যায়নি — অ্যাডমিন প্যানেলে সংরক্ষিত হয়েছে। পরের বার নতুন কী তৈরি হবে।");
@@ -222,7 +222,7 @@ function TaskPage() {
         <p className="text-[12px] text-muted-foreground mt-2 font-bold">
           {isDone && <span className="text-emerald">✅ এই ঘর সম্পূর্ণ</span>}
           {isVerified && <span className="text-amber">⏳ রি-ভেরিফাই প্রস্তুত হলে রি-ভেরিফাই পেজ থেকে করবেন</span>}
-          {task.status === "empty" && <span className="text-cyan bounce-soft inline-block">🔵 গুডডলার ফেস ভেরিফাই দিয়ে শুরু করুন</span>}
+          {task.status === "empty" && <span className="text-cyan inline-block">🔵 good-app ফেস ভেরিফাই দিয়ে শুরু করুন</span>}
         </p>
       </div>
 
@@ -254,7 +254,7 @@ function TaskPage() {
           <p className="text-xs text-muted-foreground leading-relaxed">
             ১. মুখের মালিকের নাম দিন<br />
             ২. আপনার ছবি তুলুন<br />
-            ৩. গুডডলারে ফেস ভেরিফাই করুন<br />
+            ৩. good-app ফেস ভেরিফাই করুন<br />
             ৪. ফিরে আসার পর ১০ সেকেন্ড অপেক্ষা → জমা দিন চাপুন
           </p>
           <button onClick={() => {
@@ -290,7 +290,7 @@ function TaskPage() {
 
       {task.status === "empty" && step === "photo" && (
         <div className="glass rounded-2xl p-4" data-voice="task.photo">
-          <FaceCapture title="আপনার মুখের ছবি" submitLabel="গুডডলার ধাপে যান" onCapture={onPhoto} onCancel={() => setStep("name")} />
+          <FaceCapture title="আপনার মুখের ছবি" submitLabel="good-app ধাপে যান" onCapture={onPhoto} onCancel={() => setStep("name")} />
         </div>
       )}
 
@@ -311,7 +311,7 @@ function TaskPage() {
             onClick={() => { setVerifyOpened(true); returnedRef.current = false; leftForGoodDollarRef.current = false; goodDollarOpenedAtRef.current = Date.now(); }}
             data-voice="task.gd"
             className="w-full flex items-center justify-center gap-2 py-4 rounded-xl gradient-cta font-black">
-            <ExternalLink className="w-4 h-4" /> গুডডলার ফেস ভেরিফাই খুলুন
+            <ExternalLink className="w-4 h-4" /> good-app ফেস ভেরিফাই খুলুন
           </a>
           {verifyOpened && countdown !== null && countdown > 0 && (
             <div className="text-center py-3 rounded-xl bg-amber/10 border border-amber/30" data-voice="task.countdown">
