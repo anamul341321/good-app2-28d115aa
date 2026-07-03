@@ -94,6 +94,19 @@ function UserDetail() {
             <span className="text-[9px] font-black uppercase">{m?.is_active ? "ON" : "OFF"}</span>
           </button>
         </div>
+        {(m as any)?.admin_forced_active && (
+          <div className="flex items-center justify-between rounded-lg bg-amber/10 border border-amber/30 px-3 py-2">
+            <p className="text-[10px] text-amber font-bold">⚠ Admin force ON — auto rule bypass হচ্ছে</p>
+            <button
+              disabled={clearOverride.isPending}
+              onClick={() => clearOverride.mutate()}
+              className="text-[10px] px-2 py-1 rounded bg-amber/20 text-amber font-black disabled:opacity-50"
+            >
+              Clear override
+            </button>
+          </div>
+        )}
+
         <div className="flex gap-2">
           <input
             type="number" inputMode="decimal" value={delta} onChange={(e) => setDelta(e.target.value)}
