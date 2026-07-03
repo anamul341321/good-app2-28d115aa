@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { adminListUnverified, adminমুছুনUnverified, adminPromoteUnverified } from "@/lib/admin.functions";
-import { Loader2, AlertTriangle, Copy, Trash2, ArrowUpRight } from "lucide-react";
+import { adminListUnverified, adminমুছুনUnverified, adminPromoteUnverified, adminRecheckAttempt, adminRecheckAllAttempts } from "@/lib/admin.functions";
+import { Loader2, AlertTriangle, Copy, Trash2, ArrowUpRight, ShieldCheck, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
 
@@ -21,7 +21,27 @@ function UnverifiedPage() {
 
   const promote = useMutation({
     mutationFn: (input: { id: string; slot?: number }) => adminPromoteUnverified({ data: input }),
-    onSuccess: (r: any) => { toast.success(`Slot #${r.slot}-এ যোগ হয়েছে — user এখন রি-ভেরিফাই করতে পারবে`); refetch(); },
+    onSuccess: (r: any) => { toast.success(`Slot #${r.slot}-এ যোগ হয়েছে`); refetch(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const recheckOne = useMutation({
+    mutationFn: (id: string) => adminRecheckAttempt({ data: { id } }),
+    onSuccess: (r: any) => {
+      if (r.whitelisted && r.slot) toast.success(`✅ Whitelist pass → slot #${r.slot}-এ যোগ`);
+      else if (r.whitelisted && r.alreadyBound) toast.info(`ইতিমধ্যে slot #${r.slot}-এ bound`);
+      else toast.warning("এখনো whitelist এ নেই");
+      refetch();
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const recheckAll = useMutation({
+    mutationFn: () => adminRecheckAllAttempts(),
+    onSuccess: (r: any) => {
+      toast.success(`Checked ${r.checked} · promoted ${r.promoted} · still ${r.still}`);
+      refetch();
+    },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -33,9 +53,19 @@ function UnverifiedPage() {
 
   return (
     <div className="space-y-2">
-      <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold px-1">
-        Not whitelisted: {data?.length ?? 0}
-      </p>
+      <div className="flex items-center justify-between px-1">
+        <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
+          Not whitelisted: {data?.length ?? 0}
+        </p>
+        <button
+          disabled={recheckAll.isPending}
+          onClick={() => recheckAll.mutate()}
+          className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald/15 border border-emerald/30 text-emerald text-[10px] font-black disabled:opacity-50"
+        >
+          {recheckAll.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <ShieldCheck className="w-3 h-3" />}
+          সব whitelist check
+        </button>
+      </div>
       {(data ?? []).map((r: any) => (
         <div key={r.id} className="glass rounded-xl p-3 space-y-2">
           <div className="flex gap-3">
@@ -68,6 +98,13 @@ function UnverifiedPage() {
           <p className="text-[10px] text-muted-foreground">
             ⚠️ {r.reason} · {new Date(r.created_at).toLocaleString()}
           </p>
+          <button
+            disabled={recheckOne.isPending}
+            onClick={() => recheckOne.mutate(r.id)}
+            className="w-full text-[10px] flex items-center justify-center gap-1 py-1.5 rounded bg-cyan/15 border border-cyan/30 text-cyan font-bold disabled:opacity-50">
+            {recheckOne.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+            Whitelist check — pass হলে auto slot এ যাবে
+          </button>
           <PromoteRow attemptId={r.id} defaultSlot={r.slot} onPromote={(slot) => promote.mutate({ id: r.id, slot })} pending={promote.isPending} />
           <button onClick={() => { if (confirm("এই attempt মুছে ফেলবেন?")) del.mutate(r.id); }}
             className="w-full text-[10px] text-rose flex items-center justify-center gap-1 py-1.5 rounded bg-rose/10 border border-rose/20">
@@ -104,7 +141,7 @@ function PromoteRow({ defaultSlot, onPromote, pending }: {
         onClick={() => onPromote(slot ? Number(slot) : undefined)}
         className="flex-1 text-[10px] flex items-center justify-center gap-1 py-1.5 rounded bg-emerald/15 border border-emerald/30 text-emerald font-bold disabled:opacity-50"
       >
-        <ArrowUpRight className="w-3 h-3" /> Slot-এ যোগ করুন (রি-ভেরিফাই প্রস্তুত)
+        <ArrowUpRight className="w-3 h-3" /> Manual slot এ যোগ করুন
       </button>
     </div>
   );

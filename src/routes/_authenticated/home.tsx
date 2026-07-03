@@ -1,10 +1,10 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { getDashboard } from "@/lib/dashboard.functions";
 import { addMoreSlots } from "@/lib/tasks.functions";
 import { MiningCounter } from "@/components/MiningCounter";
-import { CheckCircle2, Camera, Lock, Sparkles, Loader2, X, Plus, Crown, Users, Heart, ShieldCheck, BadgeCheck } from "lucide-react";
+import { CheckCircle2, Camera, Lock, Sparkles, Loader2, X, Plus, Crown, Users, Heart, ShieldCheck, BadgeCheck, Upload } from "lucide-react";
 import { AnnouncementTicker } from "@/components/AnnouncementTicker";
 import { TourReplayButton } from "@/components/GuidedTour";
 import { PageVoice } from "@/components/PageVoice";
@@ -12,6 +12,19 @@ import { PageVoice } from "@/components/PageVoice";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/home")({ component: HomePage });
+
+// Single shared ticker for every task cell — 11+ cells all calling
+// setInterval(setState, 1000) individually was jank-scrolling on low-end phones.
+const NowContext = createContext<number>(Date.now());
+function NowProvider({ children }: { children: React.ReactNode }) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  return <NowContext.Provider value={now}>{children}</NowContext.Provider>;
+}
+
 
 function HomePage() {
   const router = useRouter();
@@ -43,8 +56,13 @@ function HomePage() {
   const mainTask = tasks.find((t) => t.slot === 1);
   const witnessTasks = tasks.filter((t) => t.slot !== 1);
 
+  // First empty slot — target for the persistent "জমা দিন" button.
+  const firstEmpty = tasks.find((t) => t.status === "empty");
+
   return (
+    <NowProvider>
     <div className="space-y-3 pt-2 pb-6">
+
       <PageVoice pageId="home" steps={["home.welcome","home.mining","home.claim","home.main","home.witness","home.tap.slot","home.open.photo","reverify.button"]} />
       <AnnouncementTicker />
 
@@ -226,17 +244,27 @@ function HomePage() {
         </div>
       )}
     </div>
+
+    {/* Persistent submit button — always visible even if grid failed to render. */}
+    {firstEmpty && (
+      <button
+        onClick={() => router.navigate({ to: "/task/$slot", params: { slot: String(firstEmpty.slot) } })}
+        className="fixed z-40 bottom-24 right-4 rounded-full px-4 py-3 shadow-xl flex items-center gap-2 text-white font-black text-sm btn-press"
+        style={{ background: "linear-gradient(120deg,#ef476f,#f59e0b)", boxShadow: "0 12px 28px -6px rgba(239,71,111,0.55)" }}
+      >
+        <Upload className="w-4 h-4" />
+        জমা দিন
+      </button>
+    )}
+    </NowProvider>
   );
 }
 
+
 function useTick() {
-  const [now, setNow] = useState(Date.now());
-  useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(id);
-  }, []);
-  return now;
+  return useContext(NowContext);
 }
+
 
 function MainIdentityCell({ task, onStart, onReverify, onOpenPhoto }: { task: any; onStart: () => void; onReverify: () => void; onOpenPhoto: (url: string) => void }) {
   const now = useTick();

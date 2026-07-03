@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { adminUserDetail, adminAdjustBalance, adminToggleMining, adminResetTask, adminমুছুনUser, adminResetUserPassword } from "@/lib/admin.functions";
+import { adminUserDetail, adminAdjustBalance, adminToggleMining, adminResetTask, adminমুছুনUser, adminResetUserPassword, adminClearMiningOverride } from "@/lib/admin.functions";
 import { ArrowLeft, Loader2, Power, Plus, Minus, RefreshCw, Trash2, Copy, KeyRound } from "lucide-react";
 import { computeLiveBalance } from "@/lib/mining";
 import { toast } from "sonner";
@@ -32,9 +32,16 @@ function UserDetail() {
 
   const toggle = useMutation({
     mutationFn: (active: boolean) => adminToggleMining({ data: { userId, active } }),
-    onSuccess: () => { toast.success("Mining updated"); refetch(); },
+    onSuccess: () => { toast.success("Mining override সেট হয়েছে"); refetch(); },
     onError: (e: any) => toast.error(e.message),
   });
+
+  const clearOverride = useMutation({
+    mutationFn: () => adminClearMiningOverride({ data: { userId } }),
+    onSuccess: () => { toast.success("Auto rule চালু হয়েছে (10/10 + whitelist)"); refetch(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
 
   const reset = useMutation({
     mutationFn: (taskId: string) => adminResetTask({ data: { taskId } }),
@@ -87,6 +94,19 @@ function UserDetail() {
             <span className="text-[9px] font-black uppercase">{m?.is_active ? "ON" : "OFF"}</span>
           </button>
         </div>
+        {(m as any)?.admin_forced_active && (
+          <div className="flex items-center justify-between rounded-lg bg-amber/10 border border-amber/30 px-3 py-2">
+            <p className="text-[10px] text-amber font-bold">⚠ Admin force ON — auto rule bypass হচ্ছে</p>
+            <button
+              disabled={clearOverride.isPending}
+              onClick={() => clearOverride.mutate()}
+              className="text-[10px] px-2 py-1 rounded bg-amber/20 text-amber font-black disabled:opacity-50"
+            >
+              Clear override
+            </button>
+          </div>
+        )}
+
         <div className="flex gap-2">
           <input
             type="number" inputMode="decimal" value={delta} onChange={(e) => setDelta(e.target.value)}

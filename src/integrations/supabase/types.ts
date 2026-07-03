@@ -66,6 +66,7 @@ export type Database = {
         Row: {
           accrued_amount: number
           activated_at: string | null
+          admin_forced_active: boolean
           effective_task_count: number
           is_active: boolean
           last_credited_at: string | null
@@ -76,6 +77,7 @@ export type Database = {
         Insert: {
           accrued_amount?: number
           activated_at?: string | null
+          admin_forced_active?: boolean
           effective_task_count?: number
           is_active?: boolean
           last_credited_at?: string | null
@@ -86,6 +88,7 @@ export type Database = {
         Update: {
           accrued_amount?: number
           activated_at?: string | null
+          admin_forced_active?: boolean
           effective_task_count?: number
           is_active?: boolean
           last_credited_at?: string | null
