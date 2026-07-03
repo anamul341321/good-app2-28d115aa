@@ -1,12 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { adminListFaces, adminResetTask } from "@/lib/admin.functions";
-import { Copy, Loader2, RefreshCw } from "lucide-react";
+import { Copy, Loader2, RefreshCw, X } from "lucide-react";
 import { toast } from "sonner";
+import { useState } from "react";
 
 export const Route = createFileRoute("/admin/faces")({ component: AdminFaces });
 
 function AdminFaces() {
+  const [zoom, setZoom] = useState<{ url: string; label: string } | null>(null);
   const { data, isLoading, refetch } = useQuery({ queryKey: ["admin-faces"], queryFn: () => adminListFaces() });
   const reset = useMutation({
     mutationFn: (taskId: string) => adminResetTask({ data: { taskId } }),
@@ -51,7 +53,10 @@ function AdminFaces() {
         {(data ?? []).map((t: any) => (
           <div key={t.id} className="glass rounded-xl overflow-hidden">
             {t.signed_url ? (
-              <img src={t.signed_url} alt="" className="w-full aspect-square object-cover" />
+              <button type="button" onClick={() => setZoom({ url: t.signed_url, label: `${t.face_label || t.profiles?.display_name || "মুখ"} · Slot #${t.slot}` })}
+                className="block w-full">
+                <img src={t.signed_url} alt="" className="w-full aspect-square object-cover cursor-zoom-in" />
+              </button>
             ) : (
               <div className="w-full aspect-square bg-surface-2 flex items-center justify-center text-xs text-muted-foreground">no image</div>
             )}
