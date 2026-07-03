@@ -44,7 +44,7 @@ function WithdrawPage() {
     isActive: mining.is_active, lastCreditedAt: mining.last_credited_at, now,
   }) : 0;
   const claimable = Math.floor(balance);
-  const kycVerified = !!(data?.profile as any)?.kyc_verified;
+  // KYC is optional — no gating on withdraw.
 
   return (
     <div className="space-y-4 pt-2">
@@ -68,14 +68,7 @@ function WithdrawPage() {
       </div>
 
 
-      {!kycVerified ? (
-        <Link to="/kyc" className="block rounded-2xl p-4 text-center shadow-lg btn-press"
-              style={{ background: "linear-gradient(120deg,#f43f5e,#f59e0b)" }}>
-          <Lock className="w-6 h-6 text-white mx-auto mb-1" />
-          <p className="text-sm font-black text-white">KYC ছাড়া উইথড্র করা যাবে না</p>
-          <p className="text-[11px] text-white/90 mt-1">এখানে ট্যাপ করে NID + ছবি দিয়ে KYC সম্পন্ন করুন</p>
-        </Link>
-      ) : !wallet ? (
+      {!wallet ? (
         <Link to="/wallet" className="block rounded-2xl border border-amber/40 bg-amber/10 p-4 text-center">
           <p className="text-sm font-bold text-amber">প্রথমে ওয়ালেট সেট করুন</p>
         </Link>
