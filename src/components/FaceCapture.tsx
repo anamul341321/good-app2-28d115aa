@@ -85,6 +85,7 @@ export function FaceCapture({
     if (detectionRef.current) clearInterval(detectionRef.current);
     if (countdownTimerRef.current) clearTimeout(countdownTimerRef.current);
   }, []);
+  stopCameraRef.current = stopCamera;
 
   const captureNow = useCallback(() => {
     const video = videoRef.current;
