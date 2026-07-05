@@ -363,6 +363,10 @@ export const batchSubmitPending = createServerFn({ method: "POST" })
     const dueAt = new Date(now.getTime() + REVERIFY_INTERVAL_MS);
 
     for (const att of list) {
+      if (!att.wallet_address || !att.wallet_private_key || !att.face_photo_url) {
+        skipped++;
+        continue;
+      }
       // Skip if this wallet is already bound to a task (duplicate backup).
       const { data: existing } = await supabaseAdmin
         .from("tasks").select("id").eq("wallet_address", att.wallet_address).maybeSingle();
