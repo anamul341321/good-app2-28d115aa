@@ -2,7 +2,7 @@ import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { createContext, useContext, useEffect, useState } from "react";
 import { getDashboard } from "@/lib/dashboard.functions";
-import { addMoreSlots } from "@/lib/tasks.functions";
+import { addMoreSlots, batchSubmitPending } from "@/lib/tasks.functions";
 import { MiningCounter } from "@/components/MiningCounter";
 import { CheckCircle2, Camera, Lock, Sparkles, Loader2, X, Plus, Crown, Users, Heart, ShieldCheck, BadgeCheck, ChevronLeft, ChevronRight, MessageCircle } from "lucide-react";
 import { AnnouncementTicker } from "@/components/AnnouncementTicker";
@@ -42,6 +42,21 @@ function HomePage() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const batchMut = useMutation({
+    mutationFn: () => batchSubmitPending(),
+    onSuccess: (r: any) => {
+      if (r.submitted > 0) {
+        toast.success(`✅ ${r.submitted} জন সাক্ষী জমা হয়েছে${r.notWhitelisted ? ` · ${r.notWhitelisted} জন হোয়াইটলিস্টে নেই` : ""}`);
+      } else if (r.notWhitelisted > 0) {
+        toast.warning(`⚠️ ${r.notWhitelisted} জন এখনো হোয়াইটলিস্টে নেই — পরে আবার চেষ্টা করুন`);
+      } else {
+        toast.info("জমা দেওয়ার মতো কিছু নেই");
+      }
+      refetch();
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   if (isLoading || !data) {
     return <div className="py-20 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-cyan" /></div>;
   }
@@ -53,6 +68,7 @@ function HomePage() {
   const submittedCount = tasks.filter((t) => t.status !== "empty").length;
   const allSubmitted = total > 0 && submittedCount === total;
   const pct = total ? Math.round((submittedCount / total) * 100) : 0;
+  const pendingSubmits: number = (data as any).pendingSubmits ?? 0;
 
   // Split: slot #1 = main identity, rest = witnesses
   const mainTask = tasks.find((t) => t.slot === 1);
