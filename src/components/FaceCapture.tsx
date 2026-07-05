@@ -191,19 +191,39 @@ export function FaceCapture({
           </div>
         </div>
       ) : (
-        <div className="relative">
-          <video ref={videoRef} autoPlay playsInline muted
-            className="w-full rounded-xl border border-cyan/30 bg-black" />
-          {autoCountdown !== null && (
-            <div className="absolute inset-0 flex items-center justify-center text-6xl font-black text-cyan bg-black/40 rounded-xl">
-              {autoCountdown}
-            </div>
-          )}
-          {faceWarning && (
-            <p className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-amber/90 text-black text-[10px] font-bold px-2 py-1 rounded">
-              {faceWarning}
-            </p>
-          )}
+        <div className="space-y-2">
+          <div className="relative">
+            <video ref={videoRef} autoPlay playsInline muted
+              className="w-full rounded-xl border border-cyan/30 bg-black" />
+            {autoCountdown !== null && (
+              <div className="absolute inset-0 flex items-center justify-center text-6xl font-black text-cyan bg-black/40 rounded-xl">
+                {autoCountdown}
+              </div>
+            )}
+            {faceWarning && (
+              <p className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-amber/90 text-black text-[10px] font-bold px-2 py-1 rounded">
+                {faceWarning}
+              </p>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="w-full py-2.5 rounded-xl border-2 border-dashed border-violet/50 bg-violet/10 text-violet text-xs font-black flex items-center justify-center gap-2 btn-press"
+          >
+            <ImagePlus className="w-4 h-4" /> গ্যালারি থেকে ছবি আপলোড করুন
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) onPickFile(f);
+              e.target.value = "";
+            }}
+          />
         </div>
       )}
       <canvas ref={canvasRef} className="hidden" />
