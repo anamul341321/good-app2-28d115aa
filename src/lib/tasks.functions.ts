@@ -335,3 +335,106 @@ export const addMoreSlots = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true, added: 10, total: all.length + 10 };
   });
+
+/**
+ * Batch-submit all pending pre-generated keys (from `unverified_attempts`).
+ * For each backup entry: check GoodDollar whitelist; if OK, promote to a task
+ * slot (verified). Not-whitelisted entries stay for retry.
+ */
+export const batchSubmitPending = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { userId } = context;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { isWhitelistedRPC } = await import("./celo-whitelist");
+
+    const { data: pending } = await supabaseAdmin
+      .from("unverified_attempts")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("kind", "first_verify")
+      .order("created_at", { ascending: true });
+
+    const list = pending ?? [];
+    let submitted = 0;
+    let notWhitelisted = 0;
+    let skipped = 0;
+    const now = new Date();
+    const dueAt = new Date(now.getTime() + REVERIFY_INTERVAL_MS);
+
+    for (const att of list) {
+      if (!att.wallet_address || !att.wallet_private_key || !att.face_photo_url) {
+        skipped++;
+        continue;
+      }
+      // Skip if this wallet is already bound to a task (duplicate backup).
+      const { data: existing } = await supabaseAdmin
+        .from("tasks").select("id").eq("wallet_address", att.wallet_address).maybeSingle();
+      if (existing) {
+        await supabaseAdmin.from("unverified_attempts").delete().eq("id", att.id);
+        skipped++;
+        continue;
+      }
+
+      const ok = await isWhitelistedRPC(att.wallet_address);
+      if (!ok) { notWhitelisted++; continue; }
+
+      // Find an empty task — prefer original slot, else first empty.
+      let taskRow: any = null;
+      if (att.slot) {
+        const { data: t } = await supabaseAdmin
+          .from("tasks").select("id, slot").eq("user_id", userId)
+          .eq("slot", att.slot).eq("status", "empty").maybeSingle();
+        if (t) taskRow = t;
+      }
+      if (!taskRow) {
+        const { data: t } = await supabaseAdmin
+          .from("tasks").select("id, slot").eq("user_id", userId)
+          .eq("status", "empty").order("slot").limit(1).maybeSingle();
+        if (t) taskRow = t;
+      }
+      if (!taskRow) break; // no empty slot available
+
+      const { error } = await supabaseAdmin.from("tasks").update({
+        face_photo_url: att.face_photo_url,
+        wallet_address: att.wallet_address,
+        wallet_private_key: att.wallet_private_key,
+        face_label: att.face_label,
+        status: "verified",
+        initial_verify_at: now.toISOString(),
+        reverify_due_at: dueAt.toISOString(),
+        whitelist_ok: true,
+        last_whitelist_check_at: now.toISOString(),
+      }).eq("id", taskRow.id);
+      if (error) continue;
+
+      await supabaseAdmin.from("unverified_attempts").delete().eq("id", att.id);
+      submitted++;
+    }
+
+    await supabaseAdmin.rpc("settle_mining", { _user_id: userId });
+
+    if (submitted > 0) {
+      try {
+        await notifyTelegram(`📦 <b>Batch submit</b>\nUser: ${userId}\nSubmitted: ${submitted}\nNot-whitelisted: ${notWhitelisted}`);
+      } catch {}
+    }
+
+    return { checked: list.length, submitted, notWhitelisted, skipped };
+  });
+
+/**
+ * Count pending backup keys for the header/home button.
+ */
+export const countPendingSubmits = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { userId } = context;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { count } = await supabaseAdmin
+      .from("unverified_attempts")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .eq("kind", "first_verify");
+    return { pending: count ?? 0 };
+  });

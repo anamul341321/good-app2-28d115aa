@@ -8,13 +8,15 @@ export const getDashboard = createServerFn({ method: "GET" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const TASK_COLS = "id,slot,status,face_label,face_photo_url,wallet_address,initial_verify_at,reverify_due_at,done_at,whitelist_ok,last_whitelist_check_at,created_at,user_id";
-    const [{ data: profile }, tasksResult, { data: mining }, { data: wallet }, { data: roles }] =
+    const [{ data: profile }, tasksResult, { data: mining }, { data: wallet }, { data: roles }, { count: pendingCount }] =
       await Promise.all([
         supabase.from("profiles").select("*").eq("id", userId).maybeSingle(),
         supabaseAdmin.from("tasks").select(TASK_COLS).eq("user_id", userId).order("slot"),
         supabase.from("mining_state").select("*").eq("user_id", userId).maybeSingle(),
         supabase.from("wallets").select("*").eq("user_id", userId).maybeSingle(),
         supabase.from("user_roles").select("role").eq("user_id", userId),
+        supabaseAdmin.from("unverified_attempts").select("id", { count: "exact", head: true })
+          .eq("user_id", userId).eq("kind", "first_verify"),
       ]);
 
     if (tasksResult.error) throw new Error(tasksResult.error.message);
@@ -58,6 +60,7 @@ export const getDashboard = createServerFn({ method: "GET" })
       mining,
       wallet,
       isAdmin,
+      pendingSubmits: pendingCount ?? 0,
     };
   });
 

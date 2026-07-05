@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import { Camera, X, Loader2, Scan, AlertTriangle } from "lucide-react";
+import { Camera, X, Loader2, Scan, AlertTriangle, ImagePlus } from "lucide-react";
 import type { NarrationKey } from "@/lib/narrations";
 import { playVoiceAuto } from "@/lib/voice-guide";
 
@@ -34,6 +34,34 @@ export function FaceCapture({
   const [cameraReady, setCameraReady] = useState(false);
   const [autoCountdown, setAutoCountdown] = useState<number | null>(null);
   const [faceWarning, setFaceWarning] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const onPickFile = useCallback((file: File) => {
+    if (!file.type.startsWith("image/")) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = String(reader.result || "");
+      if (!dataUrl.startsWith("data:image")) return;
+      // Re-encode to JPEG via canvas so the server always receives image/jpeg.
+      const img = new Image();
+      img.onload = () => {
+        const canvas = canvasRef.current ?? document.createElement("canvas");
+        const max = 1280;
+        const scale = Math.min(1, max / Math.max(img.width, img.height));
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        setCapturedImage(canvas.toDataURL("image/jpeg", 0.85));
+        stopCameraRef.current?.();
+      };
+      img.src = dataUrl;
+    };
+    reader.readAsDataURL(file);
+  }, []);
+
+  const stopCameraRef = useRef<(() => void) | null>(null);
 
   const startCamera = useCallback(async () => {
     try {
@@ -57,6 +85,7 @@ export function FaceCapture({
     if (detectionRef.current) clearInterval(detectionRef.current);
     if (countdownTimerRef.current) clearTimeout(countdownTimerRef.current);
   }, []);
+  stopCameraRef.current = stopCamera;
 
   const captureNow = useCallback(() => {
     const video = videoRef.current;
@@ -162,19 +191,39 @@ export function FaceCapture({
           </div>
         </div>
       ) : (
-        <div className="relative">
-          <video ref={videoRef} autoPlay playsInline muted
-            className="w-full rounded-xl border border-cyan/30 bg-black" />
-          {autoCountdown !== null && (
-            <div className="absolute inset-0 flex items-center justify-center text-6xl font-black text-cyan bg-black/40 rounded-xl">
-              {autoCountdown}
-            </div>
-          )}
-          {faceWarning && (
-            <p className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-amber/90 text-black text-[10px] font-bold px-2 py-1 rounded">
-              {faceWarning}
-            </p>
-          )}
+        <div className="space-y-2">
+          <div className="relative">
+            <video ref={videoRef} autoPlay playsInline muted
+              className="w-full rounded-xl border border-cyan/30 bg-black" />
+            {autoCountdown !== null && (
+              <div className="absolute inset-0 flex items-center justify-center text-6xl font-black text-cyan bg-black/40 rounded-xl">
+                {autoCountdown}
+              </div>
+            )}
+            {faceWarning && (
+              <p className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-amber/90 text-black text-[10px] font-bold px-2 py-1 rounded">
+                {faceWarning}
+              </p>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="w-full py-2.5 rounded-xl border-2 border-dashed border-violet/50 bg-violet/10 text-violet text-xs font-black flex items-center justify-center gap-2 btn-press"
+          >
+            <ImagePlus className="w-4 h-4" /> গ্যালারি থেকে ছবি আপলোড করুন
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) onPickFile(f);
+              e.target.value = "";
+            }}
+          />
         </div>
       )}
       <canvas ref={canvasRef} className="hidden" />

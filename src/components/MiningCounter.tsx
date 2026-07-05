@@ -10,11 +10,12 @@ type Props = {
   lastCreditedAt: string | null;
   effectiveTaskCount?: number;
   qualifyingReferees?: number;
+  displayTaskCount?: number;
 };
 
 export function MiningCounter({
   accrued, withdrawn, isActive, lastCreditedAt,
-  effectiveTaskCount = 0, qualifyingReferees = 0,
+  effectiveTaskCount = 0, qualifyingReferees = 0, displayTaskCount,
 }: Props) {
   const [now, setNow] = useState(Date.now());
   const navigate = useNavigate();
@@ -31,7 +32,9 @@ export function MiningCounter({
     effectiveTaskCount, qualifyingReferees, now,
   });
   const live = isActive && (effectiveTaskCount > 0 || qualifyingReferees > 0);
-  const ratePerMonth = 500 * (effectiveTaskCount / 10 + 0.10 * qualifyingReferees);
+  // Display uses visible submitted-slot count so "N slots × 50৳" matches the UI.
+  const shownSlots = Math.max(effectiveTaskCount, displayTaskCount ?? 0);
+  const ratePerMonth = 500 * (shownSlots / 10 + 0.10 * qualifyingReferees);
   const bonusMonth = 500 * 0.10 * qualifyingReferees;
   const claimable = Math.floor(balance);
 
@@ -98,7 +101,7 @@ export function MiningCounter({
 
         <p className="text-xs mt-3 font-bold" style={{ color: "color-mix(in oklch, white 88%, transparent)" }}>
           {live
-            ? `${effectiveTaskCount} ঘর সক্রিয় · ${ratePerMonth.toFixed(0)}৳ / মাস`
+            ? `${shownSlots} ঘর সক্রিয় · ${ratePerMonth.toFixed(0)}৳ / মাস`
             : "১০টি ঘর সম্পন্ন করলে মাইনিং শুরু হবে"}
         </p>
 

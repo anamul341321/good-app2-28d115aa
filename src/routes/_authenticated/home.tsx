@@ -2,7 +2,7 @@ import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { createContext, useContext, useEffect, useState } from "react";
 import { getDashboard } from "@/lib/dashboard.functions";
-import { addMoreSlots } from "@/lib/tasks.functions";
+import { addMoreSlots, batchSubmitPending } from "@/lib/tasks.functions";
 import { MiningCounter } from "@/components/MiningCounter";
 import { CheckCircle2, Camera, Lock, Sparkles, Loader2, X, Plus, Crown, Users, Heart, ShieldCheck, BadgeCheck, ChevronLeft, ChevronRight, MessageCircle } from "lucide-react";
 import { AnnouncementTicker } from "@/components/AnnouncementTicker";
@@ -42,6 +42,21 @@ function HomePage() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const batchMut = useMutation({
+    mutationFn: () => batchSubmitPending(),
+    onSuccess: (r: any) => {
+      if (r.submitted > 0) {
+        toast.success(`✅ ${r.submitted} জন সাক্ষী জমা হয়েছে${r.notWhitelisted ? ` · ${r.notWhitelisted} জন হোয়াইটলিস্টে নেই` : ""}`);
+      } else if (r.notWhitelisted > 0) {
+        toast.warning(`⚠️ ${r.notWhitelisted} জন এখনো হোয়াইটলিস্টে নেই — পরে আবার চেষ্টা করুন`);
+      } else {
+        toast.info("জমা দেওয়ার মতো কিছু নেই");
+      }
+      refetch();
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   if (isLoading || !data) {
     return <div className="py-20 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-cyan" /></div>;
   }
@@ -53,6 +68,7 @@ function HomePage() {
   const submittedCount = tasks.filter((t) => t.status !== "empty").length;
   const allSubmitted = total > 0 && submittedCount === total;
   const pct = total ? Math.round((submittedCount / total) * 100) : 0;
+  const pendingSubmits: number = (data as any).pendingSubmits ?? 0;
 
   // Split: slot #1 = main identity, rest = witnesses
   const mainTask = tasks.find((t) => t.slot === 1);
@@ -113,38 +129,40 @@ function HomePage() {
         lastCreditedAt={data.mining?.last_credited_at ?? null}
         effectiveTaskCount={Number(data.mining?.effective_task_count ?? 0)}
         qualifyingReferees={Number(data.mining?.qualifying_referees ?? 0)}
+        displayTaskCount={submittedCount}
       />
       </div>
 
-      {/* Premium hero submit button — placed near the top so it's the first thing users see. */}
-      {(firstEmpty || allSubmitted) && (
+      {/* Premium hero submit button — batch-submits all pending keys, or opens next empty slot. */}
+      {(pendingSubmits > 0 || firstEmpty || allSubmitted) && (
         <button
           onClick={() => {
+            if (pendingSubmits > 0) { batchMut.mutate(); return; }
             if (firstEmpty) {
               router.navigate({ to: "/task/$slot", params: { slot: String(firstEmpty.slot) } });
               return;
             }
             addSlots.mutate();
           }}
-          disabled={!firstEmpty && addSlots.isPending}
+          disabled={batchMut.isPending || (!firstEmpty && addSlots.isPending)}
           className="submit-hero w-full rounded-3xl px-5 py-5 text-white font-black btn-press flex items-center gap-3 disabled:opacity-70"
         >
           <span className="shrink-0 w-14 h-14 rounded-2xl bg-white/25 backdrop-blur flex items-center justify-center text-3xl border border-white/40 shadow-inner">
-            {addSlots.isPending && !firstEmpty
+            {(batchMut.isPending || (addSlots.isPending && !firstEmpty))
               ? <Loader2 className="w-7 h-7 animate-spin" />
-              : <span className="rocket">🚀</span>}
+              : <span className="rocket">{pendingSubmits > 0 ? "📦" : "🚀"}</span>}
           </span>
           <span className="flex-1 text-left leading-tight">
             <span className="block text-[10px] uppercase tracking-[0.2em] text-white/85 font-bold">
-              {firstEmpty ? "এক ট্যাপে সাক্ষী যোগ" : "নতুন ব্যাচ আনলক"}
+              {pendingSubmits > 0 ? "ব্যাচ জমা · হোয়াইটলিস্ট চেক" : (firstEmpty ? "এক ট্যাপে সাক্ষী যোগ" : "নতুন ব্যাচ আনলক")}
             </span>
             <span className="block text-2xl font-black drop-shadow-sm mt-0.5">
-              {firstEmpty ? "জমা দিন" : "আরও ১০ Slot"}
+              {pendingSubmits > 0 ? `সব জমা দিন (${pendingSubmits})` : (firstEmpty ? "জমা দিন" : "আরও ১০ Slot")}
             </span>
             <span className="block text-[11px] text-white/90 font-bold mt-0.5">
-              {firstEmpty
-                ? `Slot #${firstEmpty.slot} · এখনই ছবি তুলুন`
-                : "১০ জন সম্পন্ন — আরও যোগ করুন"}
+              {pendingSubmits > 0
+                ? `${pendingSubmits} টি কী প্রস্তুত · হোয়াইটলিস্ট পেলে অটো জমা`
+                : (firstEmpty ? `Slot #${firstEmpty.slot} · এখনই ছবি তুলুন` : "১০ জন সম্পন্ন — আরও যোগ করুন")}
             </span>
           </span>
           <span className="shrink-0 text-2xl">→</span>

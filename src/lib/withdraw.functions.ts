@@ -29,11 +29,15 @@ export const requestWithdraw = createServerFn({ method: "POST" })
     const { data: mining } = await supabase.from("mining_state").select("*").eq("user_id", userId).maybeSingle();
     if (!mining) throw new Error("ব্যালেন্স পাওয়া যায়নি");
 
+    const eff = Number((mining as any).effective_task_count ?? 0);
+    const refs = Number((mining as any).qualifying_referees ?? 0);
     const balance = computeLiveBalance({
       accrued: Number(mining.accrued_amount),
       withdrawn: Number(mining.withdrawn_amount),
       isActive: mining.is_active,
       lastCreditedAt: mining.last_credited_at,
+      effectiveTaskCount: eff,
+      qualifyingReferees: refs,
     });
 
     if (amount > balance) {
@@ -46,8 +50,11 @@ export const requestWithdraw = createServerFn({ method: "POST" })
     const nowMs = now.getTime();
     const lastMs = mining.last_credited_at ? new Date(mining.last_credited_at).getTime() : nowMs;
     const elapsedSec = Math.max(0, (nowMs - lastMs) / 1000);
-    const { MINING_RATE_BDT_PER_SEC } = await import("./constants");
-    const newAccrued = Number(mining.accrued_amount) + elapsedSec * MINING_RATE_BDT_PER_SEC;
+    const { MINING_RATE_BDT_PER_SEC, TOTAL_TASKS } = await import("./constants");
+    const activeRate = mining.is_active
+      ? MINING_RATE_BDT_PER_SEC * (eff / TOTAL_TASKS + 0.10 * refs)
+      : 0;
+    const newAccrued = Number(mining.accrued_amount) + elapsedSec * activeRate;
     const newWithdrawn = Number(mining.withdrawn_amount) + amount;
 
     const { error: mErr } = await supabaseAdmin
