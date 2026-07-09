@@ -569,3 +569,58 @@ function TaskCell({ task, onStart, onReverify, onOpenPhoto }: { task: any; onSta
 }
 
 function s(totalSec: number) { return totalSec % 60; }
+
+function BonusClaimCard({
+  title, subtitle, progress, amount, claimed, claimable, loading, onClaim, accent,
+}: {
+  title: string; subtitle: string; progress: number; amount: number;
+  claimed: boolean; claimable: boolean; loading: boolean;
+  onClaim: () => void; accent: "cyan" | "amber";
+}) {
+  const pct = Math.min(100, Math.round((progress / 10) * 100));
+  const gradient = accent === "cyan"
+    ? "linear-gradient(135deg,#06b6d4,#3b82f6)"
+    : "linear-gradient(135deg,#f59e0b,#ef4444)";
+  return (
+    <div
+      className={`rounded-2xl p-3 relative overflow-hidden border ${
+        claimed ? "border-emerald/40 bg-emerald/10" :
+        claimable ? "border-transparent claim-pulse text-white" :
+        "border-border bg-surface-2"
+      }`}
+      style={claimable && !claimed ? { background: gradient } : undefined}
+    >
+      <p className={`text-[10px] uppercase tracking-[0.15em] font-black ${
+        claimed ? "text-emerald" : claimable ? "text-white/90" : "text-muted-foreground"
+      }`}>{title}</p>
+      <p className={`text-lg font-black leading-none mt-0.5 ${
+        claimed ? "text-emerald" : claimable ? "text-white drop-shadow" : "text-navy"
+      }`}>
+        {claimed ? "✅ পেয়েছেন" : `+${amount}৳`}
+      </p>
+      <p className={`text-[10px] mt-0.5 font-bold ${
+        claimed ? "text-emerald/80" : claimable ? "text-white/90" : "text-muted-foreground"
+      }`}>{subtitle}</p>
+
+      {!claimed && (
+        <>
+          <div className="mt-2 h-1.5 rounded-full bg-black/15 overflow-hidden">
+            <div className="h-full rounded-full transition-all"
+                 style={{ width: `${pct}%`, background: claimable ? "white" : gradient }} />
+          </div>
+          <p className={`text-[10px] font-black mt-1 mono-num ${claimable ? "text-white" : "text-muted-foreground"}`}>
+            {Math.min(progress, 10)}/১০
+          </p>
+        </>
+      )}
+
+      {claimable && !claimed && (
+        <button onClick={onClaim} disabled={loading}
+          className="mt-2 w-full py-2 rounded-xl bg-white text-navy text-xs font-black shadow-md btn-press flex items-center justify-center gap-1 disabled:opacity-70">
+          {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "🎁"} Claim করুন
+        </button>
+      )}
+    </div>
+  );
+}
+
