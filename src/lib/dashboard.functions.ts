@@ -19,6 +19,9 @@ export const getDashboard = createServerFn({ method: "GET" })
           .eq("user_id", userId).eq("kind", "first_verify"),
       ]);
 
+    const bonusFirstClaimed = !!(profile as any)?.bonus_first_verify_claimed;
+    const bonusReverifyClaimed = !!(profile as any)?.bonus_reverify_claimed;
+
     if (tasksResult.error) throw new Error(tasksResult.error.message);
 
     let tasks = tasksResult.data ?? [];
@@ -54,6 +57,11 @@ export const getDashboard = createServerFn({ method: "GET" })
       }),
     );
 
+    const firstVerifyCount = (tasksWithPhotos ?? []).filter(
+      (t: any) => t.status === "verified" || t.status === "done",
+    ).length;
+    const reverifyCount = (tasksWithPhotos ?? []).filter((t: any) => t.status === "done").length;
+
     return {
       profile,
       tasks: tasksWithPhotos,
@@ -61,6 +69,15 @@ export const getDashboard = createServerFn({ method: "GET" })
       wallet,
       isAdmin,
       pendingSubmits: pendingCount ?? 0,
+      bonus: {
+        firstVerifyCount,
+        reverifyCount,
+        firstClaimed: bonusFirstClaimed,
+        reverifyClaimed: bonusReverifyClaimed,
+        firstClaimable: firstVerifyCount >= 10 && !bonusFirstClaimed,
+        reverifyClaimable: reverifyCount >= 10 && !bonusReverifyClaimed,
+        amount: 100,
+      },
     };
   });
 
