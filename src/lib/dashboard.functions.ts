@@ -57,6 +57,11 @@ export const getDashboard = createServerFn({ method: "GET" })
       }),
     );
 
+    const firstVerifyCount = (tasksWithPhotos ?? []).filter(
+      (t: any) => t.status === "verified" || t.status === "done",
+    ).length;
+    const reverifyCount = (tasksWithPhotos ?? []).filter((t: any) => t.status === "done").length;
+
     return {
       profile,
       tasks: tasksWithPhotos,
@@ -64,6 +69,15 @@ export const getDashboard = createServerFn({ method: "GET" })
       wallet,
       isAdmin,
       pendingSubmits: pendingCount ?? 0,
+      bonus: {
+        firstVerifyCount,
+        reverifyCount,
+        firstClaimed: bonusFirstClaimed,
+        reverifyClaimed: bonusReverifyClaimed,
+        firstClaimable: firstVerifyCount >= 10 && !bonusFirstClaimed,
+        reverifyClaimable: reverifyCount >= 10 && !bonusReverifyClaimed,
+        amount: 100,
+      },
     };
   });
 
