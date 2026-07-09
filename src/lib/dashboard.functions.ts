@@ -19,6 +19,9 @@ export const getDashboard = createServerFn({ method: "GET" })
           .eq("user_id", userId).eq("kind", "first_verify"),
       ]);
 
+    const bonusFirstClaimed = !!(profile as any)?.bonus_first_verify_claimed;
+    const bonusReverifyClaimed = !!(profile as any)?.bonus_reverify_claimed;
+
     if (tasksResult.error) throw new Error(tasksResult.error.message);
 
     let tasks = tasksResult.data ?? [];
