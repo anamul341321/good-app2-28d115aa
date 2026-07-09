@@ -14,6 +14,8 @@ type FaceCaptureProps = {
   cancelVoice?: NarrationKey;
 };
 
+type Mode = "choice" | "camera" | "review";
+
 export function FaceCapture({
   onCapture,
   onCancel,
@@ -29,20 +31,63 @@ export function FaceCapture({
   const streamRef = useRef<MediaStream | null>(null);
   const detectionRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const countdownTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [mode, setMode] = useState<Mode>("choice");
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [cameraReady, setCameraReady] = useState(false);
   const [autoCountdown, setAutoCountdown] = useState<number | null>(null);
   const [faceWarning, setFaceWarning] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const stopCamera = useCallback(() => {
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
+    if (detectionRef.current) clearInterval(detectionRef.current);
+    if (countdownTimerRef.current) clearTimeout(countdownTimerRef.current);
+    setCameraReady(false);
+    setAutoCountdown(null);
+    setFaceWarning(null);
+  }, []);
+
+  const startCamera = useCallback(async () => {
+    setCameraError(null);
+    setMode("camera");
+    try {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        setCameraError("এই ব্রাউজারে ক্যামেরা সাপোর্ট নেই — গ্যালারি ব্যবহার করুন");
+        return;
+      }
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } },
+      });
+      streamRef.current = stream;
+      // wait a tick so the video element is mounted
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          videoRef.current.onloadedmetadata = () => setCameraReady(true);
+        }
+      }, 30);
+    } catch (err: any) {
+      const name = err?.name || "";
+      const msg =
+        name === "NotAllowedError" || name === "PermissionDeniedError"
+          ? "ক্যামেরা অনুমতি দেওয়া হয়নি — ব্রাউজার সেটিংস থেকে অনুমতি দিন, বা গ্যালারি ব্যবহার করুন"
+          : name === "NotFoundError" || name === "DevicesNotFoundError"
+          ? "ক্যামেরা পাওয়া যায়নি — গ্যালারি থেকে ছবি আপলোড করুন"
+          : "ক্যামেরা চালু হয়নি — গ্যালারি ব্যবহার করুন";
+      setCameraError(msg);
+    }
+  }, []);
 
   const onPickFile = useCallback((file: File) => {
     if (!file.type.startsWith("image/")) return;
+    stopCamera();
     const reader = new FileReader();
     reader.onload = () => {
       const dataUrl = String(reader.result || "");
       if (!dataUrl.startsWith("data:image")) return;
-      // Re-encode to JPEG via canvas so the server always receives image/jpeg.
       const img = new Image();
       img.onload = () => {
         const canvas = canvasRef.current ?? document.createElement("canvas");
@@ -54,38 +99,12 @@ export function FaceCapture({
         if (!ctx) return;
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         setCapturedImage(canvas.toDataURL("image/jpeg", 0.85));
-        stopCameraRef.current?.();
+        setMode("review");
       };
       img.src = dataUrl;
     };
     reader.readAsDataURL(file);
-  }, []);
-
-  const stopCameraRef = useRef<(() => void) | null>(null);
-
-  const startCamera = useCallback(async () => {
-    try {
-      setCameraError(null);
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } },
-      });
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.onloadedmetadata = () => setCameraReady(true);
-      }
-    } catch {
-      setCameraError("Camera chalu hoini — permission din");
-    }
-  }, []);
-
-  const stopCamera = useCallback(() => {
-    streamRef.current?.getTracks().forEach((t) => t.stop());
-    streamRef.current = null;
-    if (detectionRef.current) clearInterval(detectionRef.current);
-    if (countdownTimerRef.current) clearTimeout(countdownTimerRef.current);
-  }, []);
-  stopCameraRef.current = stopCamera;
+  }, [stopCamera]);
 
   const captureNow = useCallback(() => {
     const video = videoRef.current;
@@ -98,12 +117,13 @@ export function FaceCapture({
     ctx.drawImage(video, 0, 0);
     const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
     setCapturedImage(dataUrl);
+    setMode("review");
     stopCamera();
   }, [stopCamera]);
 
-  // Naive skin-tone-based face presence check (no ML dep)
+  // Simple skin-tone detection auto-capture
   useEffect(() => {
-    if (!cameraReady || capturedImage) return;
+    if (mode !== "camera" || !cameraReady) return;
     const video = videoRef.current;
     const canvas = canvasRef.current;
     if (!video || !canvas) return;
@@ -140,7 +160,7 @@ export function FaceCapture({
           countdownTimerRef.current = setTimeout(tick, 800);
         }
       } else {
-        setFaceWarning("Mukh frame e anun");
+        setFaceWarning("মুখ ফ্রেমে আনুন");
         setAutoCountdown(null);
         if (countdownTimerRef.current) clearTimeout(countdownTimerRef.current);
       }
@@ -149,16 +169,13 @@ export function FaceCapture({
     return () => {
       if (detectionRef.current) clearInterval(detectionRef.current);
     };
-  }, [cameraReady, capturedImage, autoCountdown, captureNow]);
+  }, [mode, cameraReady, autoCountdown, captureNow]);
+
+  useEffect(() => () => stopCamera(), [stopCamera]);
 
   useEffect(() => {
-    startCamera();
-    return () => stopCamera();
-  }, [startCamera, stopCamera]);
-
-  useEffect(() => {
-    if (capturedImage) playVoiceAuto(readyVoice);
-  }, [capturedImage, readyVoice]);
+    if (mode === "review") playVoiceAuto(readyVoice);
+  }, [mode, readyVoice]);
 
   const submit = () => {
     if (!capturedImage) return;
@@ -166,19 +183,96 @@ export function FaceCapture({
     onCapture(base64);
   };
 
+  const backToChoice = () => {
+    stopCamera();
+    setCapturedImage(null);
+    setCameraError(null);
+    setMode("choice");
+  };
+
   return (
     <div className="space-y-3">
       {title && <p className="text-xs font-bold text-cyan text-center">{title}</p>}
-      {cameraError ? (
-        <div className="rounded-xl bg-rose/10 border border-rose/40 p-4 text-center">
-          <AlertTriangle className="w-6 h-6 text-rose mx-auto mb-1" />
-          <p className="text-xs text-rose">{cameraError}</p>
+
+      {mode === "choice" && (
+        <div className="space-y-2">
+          <p className="text-center text-[11px] text-muted-foreground">
+            কিভাবে ছবি দিবেন সেটা বেছে নিন
+          </p>
+          <button
+            type="button"
+            onClick={startCamera}
+            className="w-full py-4 rounded-2xl gradient-cta text-white font-black flex items-center justify-center gap-2 shadow-lg btn-press"
+          >
+            <Camera className="w-5 h-5" /> ক্যামেরা দিয়ে তুলুন
+          </button>
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="w-full py-4 rounded-2xl border-2 border-dashed border-violet/60 bg-violet/10 text-violet font-black flex items-center justify-center gap-2 btn-press"
+          >
+            <ImagePlus className="w-5 h-5" /> গ্যালারি থেকে আপলোড করুন
+          </button>
+          <p className="text-[10px] text-muted-foreground text-center leading-snug">
+            ক্যামেরায় অনুমতি না দিলে গ্যালারি থেকেই দিন — একই কাজ হবে
+          </p>
         </div>
-      ) : capturedImage ? (
+      )}
+
+      {mode === "camera" && (
+        <div className="space-y-2">
+          {cameraError ? (
+            <div className="rounded-xl bg-rose/10 border border-rose/40 p-4 text-center space-y-2">
+              <AlertTriangle className="w-6 h-6 text-rose mx-auto" />
+              <p className="text-xs text-rose leading-snug">{cameraError}</p>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full py-2.5 rounded-xl bg-violet text-white text-xs font-black flex items-center justify-center gap-2"
+              >
+                <ImagePlus className="w-4 h-4" /> গ্যালারি থেকে আপলোড করুন
+              </button>
+              <button
+                type="button"
+                onClick={backToChoice}
+                className="w-full py-2 rounded-xl border border-border text-[11px] text-muted-foreground"
+              >
+                পিছনে যান
+              </button>
+            </div>
+          ) : (
+            <>
+              <div className="relative">
+                <video ref={videoRef} autoPlay playsInline muted
+                  className="w-full rounded-xl border border-cyan/30 bg-black" />
+                {autoCountdown !== null && (
+                  <div className="absolute inset-0 flex items-center justify-center text-6xl font-black text-cyan bg-black/40 rounded-xl">
+                    {autoCountdown}
+                  </div>
+                )}
+                {faceWarning && (
+                  <p className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-amber/90 text-black text-[10px] font-bold px-2 py-1 rounded">
+                    {faceWarning}
+                  </p>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={backToChoice}
+                className="w-full py-2 rounded-xl border border-border text-[11px] text-muted-foreground"
+              >
+                পিছনে যান / গ্যালারি ব্যবহার করুন
+              </button>
+            </>
+          )}
+        </div>
+      )}
+
+      {mode === "review" && capturedImage && (
         <div className="space-y-2">
           <img src={capturedImage} alt="" className="w-full rounded-xl border border-cyan/30" />
           <div className="flex gap-2">
-            <button onClick={() => { setCapturedImage(null); startCamera(); }}
+            <button onClick={backToChoice}
               disabled={isUploading}
               data-voice={retryVoice}
               className="flex-1 py-2 rounded-xl bg-surface-2 text-xs font-bold">Retry</button>
@@ -190,48 +284,25 @@ export function FaceCapture({
             </button>
           </div>
         </div>
-      ) : (
-        <div className="space-y-2">
-          <div className="relative">
-            <video ref={videoRef} autoPlay playsInline muted
-              className="w-full rounded-xl border border-cyan/30 bg-black" />
-            {autoCountdown !== null && (
-              <div className="absolute inset-0 flex items-center justify-center text-6xl font-black text-cyan bg-black/40 rounded-xl">
-                {autoCountdown}
-              </div>
-            )}
-            {faceWarning && (
-              <p className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-amber/90 text-black text-[10px] font-bold px-2 py-1 rounded">
-                {faceWarning}
-              </p>
-            )}
-          </div>
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="w-full py-2.5 rounded-xl border-2 border-dashed border-violet/50 bg-violet/10 text-violet text-xs font-black flex items-center justify-center gap-2 btn-press"
-          >
-            <ImagePlus className="w-4 h-4" /> গ্যালারি থেকে ছবি আপলোড করুন
-          </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) onPickFile(f);
-              e.target.value = "";
-            }}
-          />
-        </div>
       )}
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) onPickFile(f);
+          e.target.value = "";
+        }}
+      />
       <canvas ref={canvasRef} className="hidden" />
+
       <button onClick={onCancel} data-voice={cancelVoice}
         className="w-full py-2 rounded-xl border border-border text-xs text-muted-foreground flex items-center justify-center gap-1">
         <X className="w-3 h-3" /> বাতিল
       </button>
-      <p className="sr-only"><Camera className="w-3 h-3" /></p>
     </div>
   );
 }
