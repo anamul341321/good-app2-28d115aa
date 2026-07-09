@@ -58,6 +58,17 @@ function HomePage() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const claimFirstMut = useMutation({
+    mutationFn: () => claimFirstVerifyBonus(),
+    onSuccess: (r: any) => { toast.success(`🎁 ${r.amount}৳ বোনাস পেয়েছেন!`); refetch(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+  const claimReverifyMut = useMutation({
+    mutationFn: () => claimReverifyBonus(),
+    onSuccess: (r: any) => { toast.success(`🎉 ${r.amount}৳ বোনাস পেয়েছেন — মাইনিং চালু!`); refetch(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   if (isLoading || !data) {
     return <div className="py-20 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-cyan" /></div>;
   }
