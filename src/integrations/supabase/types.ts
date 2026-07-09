@@ -109,6 +109,8 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          bonus_first_verify_claimed: boolean
+          bonus_reverify_claimed: boolean
           created_at: string
           date_of_birth: string | null
           display_name: string | null
@@ -133,6 +135,8 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          bonus_first_verify_claimed?: boolean
+          bonus_reverify_claimed?: boolean
           created_at?: string
           date_of_birth?: string | null
           display_name?: string | null
@@ -157,6 +161,8 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          bonus_first_verify_claimed?: boolean
+          bonus_reverify_claimed?: boolean
           created_at?: string
           date_of_birth?: string | null
           display_name?: string | null
