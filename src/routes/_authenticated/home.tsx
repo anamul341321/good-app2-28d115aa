@@ -145,6 +145,63 @@ function HomePage() {
       />
       </div>
 
+      {/* Welcome bonus banner + claim cards (new users only, max 200৳) */}
+      {(() => {
+        const b = (data as any).bonus;
+        if (!b) return null;
+        const bothClaimed = b.firstClaimed && b.reverifyClaimed;
+        if (bothClaimed) return null;
+        const remaining =
+          (b.firstClaimed ? 0 : b.amount) + (b.reverifyClaimed ? 0 : b.amount);
+        return (
+          <div className="space-y-2">
+            <div className="welcome-bonus-banner rounded-2xl p-4 relative overflow-hidden text-white">
+              <div className="welcome-bonus-shimmer" />
+              <div className="relative flex items-center gap-3">
+                <div className="text-4xl animate-bounce">🎁</div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-white/90">
+                    Welcome Bonus
+                  </p>
+                  <p className="text-2xl font-black leading-tight drop-shadow">
+                    {remaining}৳ <span className="text-sm">অপেক্ষমান</span>
+                  </p>
+                  <p className="text-[11px] text-white/95 leading-snug mt-0.5 font-bold">
+                    ১০ ভেরিফাই = ১০০৳ · ১০ রি-ভেরিফাই = আরও ১০০৳
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <BonusClaimCard
+                title="প্রথম ভেরিফাই"
+                subtitle="১০টি স্লট ভেরিফাই করুন"
+                progress={b.firstVerifyCount}
+                amount={b.amount}
+                claimed={b.firstClaimed}
+                claimable={b.firstClaimable}
+                loading={claimFirstMut.isPending}
+                onClaim={() => claimFirstMut.mutate()}
+                accent="cyan"
+              />
+              <BonusClaimCard
+                title="রি-ভেরিফাই"
+                subtitle="১০টি স্লট রি-ভেরিফাই"
+                progress={b.reverifyCount}
+                amount={b.amount}
+                claimed={b.reverifyClaimed}
+                claimable={b.reverifyClaimable}
+                loading={claimReverifyMut.isPending}
+                onClaim={() => claimReverifyMut.mutate()}
+                accent="amber"
+              />
+            </div>
+          </div>
+        );
+      })()}
+
+
       {/* Premium hero submit button — batch-submits all pending keys, or opens next empty slot. */}
       {(pendingSubmits > 0 || firstEmpty || allSubmitted) && (
         <button
