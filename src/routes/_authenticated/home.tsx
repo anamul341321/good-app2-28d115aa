@@ -575,11 +575,29 @@ function TaskCell({ task, onStart, onReverify, onOpenPhoto }: { task: any; onSta
     );
   }
 
+  if (isVerified && readyToReverify) {
+    return (
+      <button onClick={onReverify} data-voice="reverify.button"
+        className="relative flex flex-col overflow-hidden rounded-xl border-2 border-rose shadow-[0_8px_18px_-5px_rgba(239,71,111,0.65)] active:scale-95 transition bg-surface-2">
+        <div className="relative aspect-square">
+          {faceUrl ? <img src={faceUrl} className="absolute inset-0 h-full w-full object-cover" alt="" />
+                   : <div className="absolute inset-0 task-cell-reverify" />}
+          <span className="absolute top-1 left-1 text-[10px] font-black text-white mono-num leading-none px-1.5 py-0.5 rounded-md bg-black/55 backdrop-blur-[2px]">#{task.slot}</span>
+          <span className="absolute top-1 right-1 rounded-full bg-rose p-1 shadow animate-pulse">
+            <Sparkles className="w-3 h-3 text-white" />
+          </span>
+        </div>
+        <div className="bg-rose text-white text-[10px] font-black text-center py-1 leading-tight animate-pulse">
+          রি-ভেরিফাই করুন
+        </div>
+      </button>
+    );
+  }
+
   let cellClass = "task-cell-empty";
   let icon = <Camera className="w-5 h-5 text-white drop-shadow" />;
   let label = "শুরু";
   if (isDone) { cellClass = "task-cell-done"; icon = <CheckCircle2 className="w-5 h-5 text-white drop-shadow" />; label = "সম্পন্ন"; }
-  else if (readyToReverify) { cellClass = "task-cell-reverify"; icon = <Sparkles className="w-5 h-5 text-white drop-shadow" />; label = "রি-ভেরিফাই"; }
 
   return (
     <button onClick={onStart} data-voice="home.tap.slot"
@@ -590,6 +608,7 @@ function TaskCell({ task, onStart, onReverify, onOpenPhoto }: { task: any; onSta
     </button>
   );
 }
+
 
 function s(totalSec: number) { return totalSec % 60; }
 
