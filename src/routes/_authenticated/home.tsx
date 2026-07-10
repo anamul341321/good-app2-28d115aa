@@ -491,20 +491,21 @@ function MainIdentityCell({ task, onStart, onReverify, onOpenPhoto }: { task: an
   if (isVerified && readyToReverify) {
     return (
       <button onClick={onReverify} data-voice="reverify.button"
-        className="relative w-24 h-24 rounded-2xl overflow-hidden border-2 shadow-[0_10px_28px_-6px_rgba(139,92,246,0.75)] active:scale-95 transition"
-        style={{ borderColor: "var(--color-violet)" }}>
-        {faceUrl ? <img src={faceUrl} className="absolute inset-0 h-full w-full object-cover" alt="main" />
-                 : <div className="absolute inset-0 task-cell-reverify" />}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-violet/20 to-black/20" />
-        <span className="absolute top-1 right-1 rounded-full p-1 shadow" style={{ background: "var(--color-violet)" }}>
-          <Sparkles className="w-3 h-3 text-white" />
-        </span>
-        <p className="absolute bottom-1 left-1 right-1 rounded-lg bg-white/18 backdrop-blur-[3px] text-[9px] font-black text-white text-center leading-tight py-1 drop-shadow">
-          রি-ভেরিফাই
-        </p>
+        className="flex flex-col overflow-hidden rounded-2xl border-2 border-rose shadow-[0_10px_28px_-6px_rgba(239,71,111,0.7)] active:scale-95 transition bg-surface-2">
+        <div className="relative w-24 h-24">
+          {faceUrl ? <img src={faceUrl} className="absolute inset-0 h-full w-full object-cover" alt="main" />
+                   : <div className="absolute inset-0 task-cell-reverify" />}
+          <span className="absolute top-1 right-1 rounded-full p-1 shadow animate-pulse" style={{ background: "var(--color-rose)" }}>
+            <Sparkles className="w-3 h-3 text-white" />
+          </span>
+        </div>
+        <div className="w-24 bg-rose text-white text-[10px] font-black text-center py-1 leading-tight animate-pulse">
+          রি-ভেরিফাই করুন
+        </div>
       </button>
     );
   }
+
 
   let icon = <Camera className="w-8 h-8 text-white drop-shadow" />;
   let cellClass = "task-cell-empty";
