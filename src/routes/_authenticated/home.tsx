@@ -60,23 +60,12 @@ function HomePage() {
     onError: (e: any) => toast.error(e.message),
   });
 
-  const claimFirstMut = useMutation({
-    mutationFn: () => claimFirstVerifyBonus(),
-    onSuccess: (r: any) => { toast.success(`🎁 ${r.amount}৳ বোনাস পেয়েছেন!`); refetch(); },
-    onError: (e: any) => toast.error(e.message),
-  });
-  const claimReverifyMut = useMutation({
-    mutationFn: () => claimReverifyBonus(),
-    onSuccess: (r: any) => { toast.success(`🎉 ${r.amount}৳ বোনাস পেয়েছেন — মাইনিং চালু!`); refetch(); },
-    onError: (e: any) => toast.error(e.message),
-  });
-
-  // Show welcome bonus popup once per session while bonuses are unclaimed
+  // Show welcome bonus popup once per session while bonuses are pending
   useEffect(() => {
     if (!data) return;
     const b = (data as any).bonus;
     if (!b) return;
-    if (b.firstClaimed && b.reverifyClaimed) return;
+    if (b.referrerPaid && b.userReverifyPaid) return;
     if (sessionStorage.getItem("welcome-bonus-seen")) return;
     setShowWelcome(true);
     sessionStorage.setItem("welcome-bonus-seen", "1");
