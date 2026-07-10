@@ -294,47 +294,68 @@ function HomePage() {
         </div>
 
         {(() => {
-          const PAGE_SIZE = 10;
-          const pageCount = Math.max(1, Math.ceil(witnessTasks.length / PAGE_SIZE));
-          const safePage = Math.min(witnessPage, pageCount - 1);
-          const pageTasks = witnessTasks.slice(safePage * PAGE_SIZE, safePage * PAGE_SIZE + PAGE_SIZE);
+          const BOX_SIZE = 10;
+          const boxCount = Math.max(1, Math.ceil(witnessTasks.length / BOX_SIZE));
+          const boxes = Array.from({ length: boxCount }).map((_, i) => {
+            const start = i * BOX_SIZE;
+            const items = witnessTasks.slice(start, start + BOX_SIZE);
+            const doneInBox = items.filter((t) => t.status !== "empty").length;
+            const readyInBox = items.filter((t) => {
+              const dueMs = t.reverify_due_at ? new Date(t.reverify_due_at).getTime() : 0;
+              return t.status === "verified" && (t.whitelist_ok === false || dueMs <= Date.now());
+            }).length;
+            return { i, start, items, doneInBox, readyInBox };
+          });
           return (
-            <>
-              {pageCount > 1 && (
-                <div className="flex items-center justify-between mb-2 gap-2">
-                  <button onClick={() => setWitnessPage(Math.max(0, safePage - 1))}
-                    disabled={safePage === 0}
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-surface-2 border border-border text-xs font-bold disabled:opacity-40 btn-press">
-                    <ChevronLeft className="w-3.5 h-3.5" /> আগের
-                  </button>
-                  <div className="flex gap-1.5 overflow-x-auto">
-                    {Array.from({ length: pageCount }).map((_, i) => (
-                      <button key={i} onClick={() => setWitnessPage(i)}
-                        className={`min-w-8 h-8 px-2 rounded-lg text-[11px] font-black btn-press ${
-                          i === safePage ? "bg-rose text-white shadow" : "bg-surface-2 border border-border text-muted-foreground"
-                        }`}>
-                        {i * PAGE_SIZE + 1}–{Math.min((i + 1) * PAGE_SIZE, witnessTasks.length)}
-                      </button>
-                    ))}
+            <div className="space-y-2">
+              {boxes.map(({ i, start, items, doneInBox, readyInBox }) => {
+                const isOpen = openBox === i;
+                const rangeEnd = Math.min(start + BOX_SIZE, witnessTasks.length);
+                return (
+                  <div key={i} className="rounded-2xl border border-border bg-surface-2/50 overflow-hidden">
+                    <button
+                      onClick={() => setOpenBox(isOpen ? -1 : i)}
+                      className="w-full flex items-center gap-3 p-3 btn-press"
+                    >
+                      <div className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-white font-black text-sm shadow-md ${
+                        readyInBox > 0 ? "animate-pulse" : ""
+                      }`} style={{
+                        background: readyInBox > 0
+                          ? "linear-gradient(135deg,#ef4444,#f59e0b)"
+                          : "linear-gradient(135deg,#06b6d4,#8b5cf6)"
+                      }}>
+                        📦
+                      </div>
+                      <div className="flex-1 text-left min-w-0">
+                        <p className="text-sm font-black text-navy leading-tight">
+                          Box #{i + 1} · Slot {start + 1}–{rangeEnd}
+                        </p>
+                        <p className="text-[10px] font-bold mt-0.5 flex items-center gap-2 flex-wrap">
+                          <span className="text-emerald">✅ {doneInBox}/{items.length}</span>
+                          {readyInBox > 0 && (
+                            <span className="text-rose">🔄 {readyInBox} রি-ভেরিফাই প্রস্তুত</span>
+                          )}
+                        </p>
+                      </div>
+                      <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${isOpen ? "rotate-180" : ""}`} />
+                    </button>
+                    {isOpen && (
+                      <div className="p-3 pt-0 grid gap-2 grid-cols-3 sm:grid-cols-4 animate-in fade-in slide-in-from-top-1">
+                        {items.map((t) => (
+                          <TaskCell key={t.slot} task={t}
+                            onStart={() => router.navigate({ to: "/task/$slot", params: { slot: String(t.slot) } })}
+                            onReverify={() => router.navigate({ to: "/reverify" })}
+                            onOpenPhoto={(url) => setLightbox({ url, label: `সাক্ষী #${t.slot} · ${t.face_label || "মুখ"}` })} />
+                        ))}
+                      </div>
+                    )}
                   </div>
-                  <button onClick={() => setWitnessPage(Math.min(pageCount - 1, safePage + 1))}
-                    disabled={safePage >= pageCount - 1}
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-surface-2 border border-border text-xs font-bold disabled:opacity-40 btn-press">
-                    পরের <ChevronRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              )}
-              <div className="grid gap-2 grid-cols-3 sm:grid-cols-4">
-                {pageTasks.map((t) => (
-                  <TaskCell key={t.slot} task={t}
-                    onStart={() => router.navigate({ to: "/task/$slot", params: { slot: String(t.slot) } })}
-                    onReverify={() => router.navigate({ to: "/reverify" })}
-                    onOpenPhoto={(url) => setLightbox({ url, label: `সাক্ষী #${t.slot} · ${t.face_label || "মুখ"}` })} />
-                ))}
-              </div>
-            </>
+                );
+              })}
+            </div>
           );
         })()}
+
 
         {allSubmitted && (
           <button onClick={() => addSlots.mutate()} disabled={addSlots.isPending}
