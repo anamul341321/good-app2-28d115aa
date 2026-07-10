@@ -22,9 +22,10 @@ export function AnnouncementTicker() {
           <Megaphone className="w-3.5 h-3.5 text-white animate-pulse" />
           <span className="text-[10px] font-black text-white tracking-widest uppercase">ঘোষণা</span>
         </div>
-        <div className="flex-1 overflow-hidden">
-          <div className="ticker-track whitespace-nowrap py-2 pr-8 text-sm font-bold">
-            <span className="ticker-text">{loopText}   ★   {loopText}</span>
+        <div className="flex-1 overflow-hidden py-2 pr-2">
+          <div className="ticker-track text-sm font-bold">
+            <span className="ticker-text">{loopText}   ★   </span>
+            <span className="ticker-text" aria-hidden="true">{loopText}   ★   </span>
           </div>
         </div>
       </div>
