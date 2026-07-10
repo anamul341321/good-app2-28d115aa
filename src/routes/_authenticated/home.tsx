@@ -31,7 +31,8 @@ function NowProvider({ children }: { children: React.ReactNode }) {
 function HomePage() {
   const router = useRouter();
   const [lightbox, setLightbox] = useState<{ url: string; label: string } | null>(null);
-  const [witnessPage, setWitnessPage] = useState(0);
+  const [openBox, setOpenBox] = useState<number>(0);
+  const [showWelcome, setShowWelcome] = useState<boolean>(false);
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["dashboard"],
     queryFn: () => getDashboard(),
