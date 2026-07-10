@@ -496,7 +496,10 @@ function HomePage() {
                   🎉 নতুন ইউজার অফার 🎉
                 </p>
                 <p className="relative text-4xl font-black text-white leading-tight mt-1 drop-shadow-lg">
-                  ২০০৳ বোনাস!
+                  ৩০০৳ বোনাস!
+                </p>
+                <p className="relative text-[11px] font-black text-white/90 mt-1">
+                  ১০০৳ রেফার + ২০০৳ রি-ভেরিফাই = <span className="text-amber-200">মোট ৩০০৳</span>
                 </p>
                 <p className="relative text-[13px] font-black text-white/95 mt-1">
                   একদম <span className="underline decoration-white/70">ফ্রি</span> — আজই নিন!
