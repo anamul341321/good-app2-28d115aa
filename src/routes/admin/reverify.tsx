@@ -53,7 +53,7 @@ function ReverifyQueue() {
       </button>
 
       <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold px-1">
-        Total in queue: {rows.length} · Ready now: {ready.length} · Auto runs daily 6 PM
+        Total in queue: {rows.length} · Ready now: {ready.length} · Auto চেক প্রতি ৫ মিনিটে
       </p>
 
       {ready.length > 0 && (
