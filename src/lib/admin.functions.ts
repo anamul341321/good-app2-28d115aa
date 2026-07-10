@@ -496,54 +496,80 @@ export const adminResetUserPassword = createServerFn({ method: "POST" })
   });
 
 // ---------------- Manual whitelist re-check (admin) ----------------
-// Parallel batches — sequential loop was hitting the ~30s worker cutoff
-// and surfacing as "Failed to fetch" in the admin UI.
-export const adminRunWhitelistCheck = createServerFn({ method: "POST" }).handler(async () => {
-  const supabaseAdmin = await gate();
-  const { isWhitelistedRPC } = await import("@/lib/celo-whitelist");
+// Paginated: client loops with offset until remaining === 0.
+// Each call handles at most BATCH tasks so we stay well under the
+// Worker time limit ("Failed to fetch" was the 30s cutoff on big sets).
+export const adminRunWhitelistCheck = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => {
+    const v = (i ?? {}) as { offset?: number; limit?: number };
+    return { offset: Math.max(0, v.offset ?? 0), limit: Math.min(60, Math.max(1, v.limit ?? 40)) };
+  })
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await gate();
+    const { isWhitelistedRPC } = await import("@/lib/celo-whitelist");
 
-  const { data: tasks } = await supabaseAdmin
-    .from("tasks")
-    .select("id, user_id, wallet_address, status, whitelist_ok")
-    .in("status", ["verified", "done"])
-    .not("wallet_address", "is", null);
+    const { count: total } = await supabaseAdmin
+      .from("tasks")
+      .select("id", { count: "exact", head: true })
+      .in("status", ["verified", "done"])
+      .not("wallet_address", "is", null);
 
-  const list = tasks ?? [];
-  let checked = 0, flipped = 0, restored = 0;
-  const affected = new Set<string>();
-  const now = new Date().toISOString();
-  const CONCURRENCY = 15;
+    const { data: tasks } = await supabaseAdmin
+      .from("tasks")
+      .select("id, user_id, wallet_address, status, whitelist_ok")
+      .in("status", ["verified", "done"])
+      .not("wallet_address", "is", null)
+      .order("id")
+      .range(data.offset, data.offset + data.limit - 1);
 
-  for (let i = 0; i < list.length; i += CONCURRENCY) {
-    const chunk = list.slice(i, i + CONCURRENCY);
-    const okFlags = await Promise.all(
-      chunk.map((t) => isWhitelistedRPC(t.wallet_address as string).catch(() => null)),
+    const list = tasks ?? [];
+    let checked = 0, flipped = 0, restored = 0;
+    const affected = new Set<string>();
+    const now = new Date().toISOString();
+    const CONCURRENCY = 20;
+
+    for (let i = 0; i < list.length; i += CONCURRENCY) {
+      const chunk = list.slice(i, i + CONCURRENCY);
+      const okFlags = await Promise.all(
+        chunk.map((t) => isWhitelistedRPC(t.wallet_address as string).catch(() => null)),
+      );
+      checked += chunk.length;
+
+      await Promise.all(chunk.map(async (t, j) => {
+        const ok = okFlags[j];
+        if (ok === null) return;
+        if (!ok && (t.whitelist_ok ?? true)) {
+          await supabaseAdmin.from("tasks").update({
+            whitelist_ok: false, last_whitelist_check_at: now,
+            status: "verified", reverify_due_at: now,
+          }).eq("id", t.id);
+          affected.add(t.user_id); flipped++;
+        } else if (ok && !(t.whitelist_ok ?? true)) {
+          await supabaseAdmin.from("tasks").update({
+            whitelist_ok: true, last_whitelist_check_at: now,
+          }).eq("id", t.id);
+          restored++;
+        } else {
+          await supabaseAdmin.from("tasks").update({ last_whitelist_check_at: now }).eq("id", t.id);
+        }
+      }));
+    }
+
+    await Promise.all(
+      Array.from(affected).map((uid) => supabaseAdmin.rpc("settle_mining", { _user_id: uid })),
     );
-    checked += chunk.length;
 
-    await Promise.all(chunk.map(async (t, j) => {
-      const ok = okFlags[j];
-      if (ok === null) return;
-      if (!ok && (t.whitelist_ok ?? true)) {
-        await supabaseAdmin.from("tasks").update({
-          whitelist_ok: false, last_whitelist_check_at: now,
-          status: "verified", reverify_due_at: now,
-        }).eq("id", t.id);
-        affected.add(t.user_id); flipped++;
-      } else if (ok && !(t.whitelist_ok ?? true)) {
-        await supabaseAdmin.from("tasks").update({
-          whitelist_ok: true, last_whitelist_check_at: now,
-        }).eq("id", t.id);
-        restored++;
-      } else {
-        await supabaseAdmin.from("tasks").update({ last_whitelist_check_at: now }).eq("id", t.id);
-      }
-    }));
-  }
+    const nextOffset = data.offset + list.length;
+    const totalCount = total ?? 0;
+    const remaining = Math.max(0, totalCount - nextOffset);
+    return {
+      ok: true, checked, flipped, restored,
+      affected: affected.size,
+      offset: nextOffset,
+      total: totalCount,
+      remaining,
+      done: list.length === 0 || remaining === 0,
+    };
+  });
 
-  await Promise.all(
-    Array.from(affected).map((uid) => supabaseAdmin.rpc("settle_mining", { _user_id: uid })),
-  );
-  return { ok: true, checked, flipped, restored, affected: affected.size };
-});
 
