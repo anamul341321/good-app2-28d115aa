@@ -71,6 +71,17 @@ function HomePage() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  // Show welcome bonus popup once per session while bonuses are unclaimed
+  useEffect(() => {
+    if (!data) return;
+    const b = (data as any).bonus;
+    if (!b) return;
+    if (b.firstClaimed && b.reverifyClaimed) return;
+    if (sessionStorage.getItem("welcome-bonus-seen")) return;
+    setShowWelcome(true);
+    sessionStorage.setItem("welcome-bonus-seen", "1");
+  }, [data]);
+
   if (isLoading || !data) {
     return <div className="py-20 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-cyan" /></div>;
   }
