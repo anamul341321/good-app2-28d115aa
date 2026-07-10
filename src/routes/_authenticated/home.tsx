@@ -456,7 +456,75 @@ function HomePage() {
           </div>
         </div>
       )}
+
+      {showWelcome && (() => {
+        const b = (data as any).bonus;
+        if (!b) return null;
+        return (
+          <div onClick={() => setShowWelcome(false)}
+            className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-md p-4 animate-in fade-in">
+            <div onClick={(e) => e.stopPropagation()}
+              className="welcome-popup relative w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl">
+              <button onClick={() => setShowWelcome(false)}
+                className="absolute top-3 right-3 z-10 rounded-full bg-black/40 hover:bg-black/60 p-2 text-white">
+                <X className="w-4 h-4" />
+              </button>
+              <div className="welcome-popup-bg relative p-5 pb-6 text-center">
+                <div className="welcome-popup-confetti" />
+                <img src={bonusGirl} alt="Bonus" width={200} height={200}
+                  className="relative w-40 h-40 mx-auto drop-shadow-2xl animate-bounce" />
+                <p className="relative text-[10px] uppercase tracking-[0.3em] font-black text-white/95 mt-1">
+                  🎉 নতুন ইউজার অফার 🎉
+                </p>
+                <p className="relative text-4xl font-black text-white leading-tight mt-1 drop-shadow-lg">
+                  ২০০৳ বোনাস!
+                </p>
+                <p className="relative text-[13px] font-black text-white/95 mt-1">
+                  একদম <span className="underline decoration-white/70">ফ্রি</span> — আজই নিন!
+                </p>
+              </div>
+              <div className="bg-white p-4 space-y-3">
+                <div className="rounded-2xl p-3 border-2 border-cyan/30 bg-cyan/5">
+                  <p className="text-sm font-black text-cyan flex items-center gap-1.5">
+                    <Gift className="w-4 h-4" /> ১০০৳ — প্রথম ভেরিফাই বোনাস
+                  </p>
+                  <p className="text-[11px] text-navy mt-1 font-medium leading-snug">
+                    ১০ জন সাক্ষীর <b>প্রথম মুখ ভেরিফাই</b> শেষ হলেই সাথে সাথে ১০০৳ পেয়ে যাবেন — ক্লেইম বাটনে চাপ দিলেই ব্যালেন্সে জমা!
+                  </p>
+                </div>
+                <div className="rounded-2xl p-3 border-2 border-amber/40 bg-amber/5">
+                  <p className="text-sm font-black text-amber flex items-center gap-1.5">
+                    <Gift className="w-4 h-4" /> আরও ১০০৳ — রি-ভেরিফাই বোনাস
+                  </p>
+                  <p className="text-[11px] text-navy mt-1 font-medium leading-snug">
+                    ৩ দিন পর ঐ ১০ জনের <b>রি-ভেরিফাই</b> সম্পন্ন করলেই আরও ১০০৳ + সাথে সাথে <b>মাইনিং চালু</b> হয়ে যাবে!
+                  </p>
+                </div>
+                <details className="rounded-xl bg-surface-2 p-2.5">
+                  <summary className="text-[11px] font-black text-navy cursor-pointer">
+                    ❓ রি-ভেরিফাই কেন লাগে?
+                  </summary>
+                  <p className="text-[11px] text-muted-foreground mt-2 leading-relaxed">
+                    সাধারণত একবার রি-ভেরিফাই করলেই যথেষ্ট — আর চাওয়া হয় না। শুধু যদি
+                    সিস্টেমে কোনো <b>সন্দেহজনক</b> কিছু ধরা পড়ে (যেমন মুখ মেলে না, বা হোয়াইটলিস্ট বাতিল হয়ে যায়) তবেই আবার চাওয়া হবে।
+                    এটা আপনাকে জালিয়াতি থেকে বাঁচানোর জন্য।
+                  </p>
+                </details>
+                <button onClick={() => setShowWelcome(false)}
+                  className="w-full py-3 rounded-2xl gradient-cta text-white font-black text-sm shadow-lg btn-press">
+                  🚀 চলুন শুরু করি!
+                </button>
+                <p className="text-[10px] text-center text-muted-foreground">
+                  {b.firstClaimed ? "✅" : "⏳"} প্রথম ভেরিফাই &nbsp;·&nbsp;
+                  {b.reverifyClaimed ? "✅" : "⏳"} রি-ভেরিফাই
+                </p>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
+
 
     </NowProvider>
   );
