@@ -789,3 +789,33 @@
   50% { transform: scale(1.03); box-shadow: 0 12px 32px -6px rgba(6,182,212,0.85); }
 }
 
+/* ==== Welcome popup ==== */
+.welcome-popup {
+  animation: welcome-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+@keyframes welcome-pop {
+  0% { transform: scale(0.6) translateY(30px); opacity: 0; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+.welcome-popup-bg {
+  background: linear-gradient(135deg, #f59e0b 0%, #ef4444 45%, #8b5cf6 100%);
+  background-size: 200% 200%;
+  animation: welcome-bg 5s ease-in-out infinite;
+}
+.welcome-popup-confetti {
+  position: absolute; inset: 0;
+  background-image:
+    radial-gradient(circle at 20% 20%, rgba(255,255,255,0.35) 2px, transparent 3px),
+    radial-gradient(circle at 80% 40%, rgba(255,255,0,0.4) 2px, transparent 3px),
+    radial-gradient(circle at 40% 70%, rgba(255,255,255,0.3) 1.5px, transparent 2.5px),
+    radial-gradient(circle at 70% 85%, rgba(255,220,50,0.4) 2px, transparent 3px),
+    radial-gradient(circle at 10% 60%, rgba(255,255,255,0.35) 1.5px, transparent 2.5px);
+  animation: confetti-drift 4s linear infinite;
+  pointer-events: none;
+}
+@keyframes confetti-drift {
+  0% { background-position: 0 0, 0 0, 0 0, 0 0, 0 0; }
+  100% { background-position: 20px 40px, -30px 50px, 25px -40px, -20px 30px, 30px 25px; }
+}
+
+

@@ -5,7 +5,8 @@ import { getDashboard } from "@/lib/dashboard.functions";
 import { addMoreSlots, batchSubmitPending } from "@/lib/tasks.functions";
 import { claimFirstVerifyBonus, claimReverifyBonus } from "@/lib/bonus.functions";
 import { MiningCounter } from "@/components/MiningCounter";
-import { CheckCircle2, Camera, Lock, Sparkles, Loader2, X, Plus, Crown, Users, Heart, ShieldCheck, BadgeCheck, ChevronLeft, ChevronRight, MessageCircle } from "lucide-react";
+import bonusGirl from "@/assets/bonus-girl.png";
+import { CheckCircle2, Camera, Lock, Sparkles, Loader2, X, Plus, Crown, Users, Heart, ShieldCheck, BadgeCheck, ChevronDown, MessageCircle, Gift } from "lucide-react";
 import { AnnouncementTicker } from "@/components/AnnouncementTicker";
 import { TourReplayButton } from "@/components/GuidedTour";
 import { PageVoice } from "@/components/PageVoice";
@@ -30,7 +31,8 @@ function NowProvider({ children }: { children: React.ReactNode }) {
 function HomePage() {
   const router = useRouter();
   const [lightbox, setLightbox] = useState<{ url: string; label: string } | null>(null);
-  const [witnessPage, setWitnessPage] = useState(0);
+  const [openBox, setOpenBox] = useState<number>(0);
+  const [showWelcome, setShowWelcome] = useState<boolean>(false);
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["dashboard"],
     queryFn: () => getDashboard(),
@@ -68,6 +70,17 @@ function HomePage() {
     onSuccess: (r: any) => { toast.success(`🎉 ${r.amount}৳ বোনাস পেয়েছেন — মাইনিং চালু!`); refetch(); },
     onError: (e: any) => toast.error(e.message),
   });
+
+  // Show welcome bonus popup once per session while bonuses are unclaimed
+  useEffect(() => {
+    if (!data) return;
+    const b = (data as any).bonus;
+    if (!b) return;
+    if (b.firstClaimed && b.reverifyClaimed) return;
+    if (sessionStorage.getItem("welcome-bonus-seen")) return;
+    setShowWelcome(true);
+    sessionStorage.setItem("welcome-bonus-seen", "1");
+  }, [data]);
 
   if (isLoading || !data) {
     return <div className="py-20 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-cyan" /></div>;
@@ -292,47 +305,68 @@ function HomePage() {
         </div>
 
         {(() => {
-          const PAGE_SIZE = 10;
-          const pageCount = Math.max(1, Math.ceil(witnessTasks.length / PAGE_SIZE));
-          const safePage = Math.min(witnessPage, pageCount - 1);
-          const pageTasks = witnessTasks.slice(safePage * PAGE_SIZE, safePage * PAGE_SIZE + PAGE_SIZE);
+          const BOX_SIZE = 10;
+          const boxCount = Math.max(1, Math.ceil(witnessTasks.length / BOX_SIZE));
+          const boxes = Array.from({ length: boxCount }).map((_, i) => {
+            const start = i * BOX_SIZE;
+            const items = witnessTasks.slice(start, start + BOX_SIZE);
+            const doneInBox = items.filter((t) => t.status !== "empty").length;
+            const readyInBox = items.filter((t) => {
+              const dueMs = t.reverify_due_at ? new Date(t.reverify_due_at).getTime() : 0;
+              return t.status === "verified" && (t.whitelist_ok === false || dueMs <= Date.now());
+            }).length;
+            return { i, start, items, doneInBox, readyInBox };
+          });
           return (
-            <>
-              {pageCount > 1 && (
-                <div className="flex items-center justify-between mb-2 gap-2">
-                  <button onClick={() => setWitnessPage(Math.max(0, safePage - 1))}
-                    disabled={safePage === 0}
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-surface-2 border border-border text-xs font-bold disabled:opacity-40 btn-press">
-                    <ChevronLeft className="w-3.5 h-3.5" /> আগের
-                  </button>
-                  <div className="flex gap-1.5 overflow-x-auto">
-                    {Array.from({ length: pageCount }).map((_, i) => (
-                      <button key={i} onClick={() => setWitnessPage(i)}
-                        className={`min-w-8 h-8 px-2 rounded-lg text-[11px] font-black btn-press ${
-                          i === safePage ? "bg-rose text-white shadow" : "bg-surface-2 border border-border text-muted-foreground"
-                        }`}>
-                        {i * PAGE_SIZE + 1}–{Math.min((i + 1) * PAGE_SIZE, witnessTasks.length)}
-                      </button>
-                    ))}
+            <div className="space-y-2">
+              {boxes.map(({ i, start, items, doneInBox, readyInBox }) => {
+                const isOpen = openBox === i;
+                const rangeEnd = Math.min(start + BOX_SIZE, witnessTasks.length);
+                return (
+                  <div key={i} className="rounded-2xl border border-border bg-surface-2/50 overflow-hidden">
+                    <button
+                      onClick={() => setOpenBox(isOpen ? -1 : i)}
+                      className="w-full flex items-center gap-3 p-3 btn-press"
+                    >
+                      <div className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-white font-black text-sm shadow-md ${
+                        readyInBox > 0 ? "animate-pulse" : ""
+                      }`} style={{
+                        background: readyInBox > 0
+                          ? "linear-gradient(135deg,#ef4444,#f59e0b)"
+                          : "linear-gradient(135deg,#06b6d4,#8b5cf6)"
+                      }}>
+                        📦
+                      </div>
+                      <div className="flex-1 text-left min-w-0">
+                        <p className="text-sm font-black text-navy leading-tight">
+                          Box #{i + 1} · Slot {start + 1}–{rangeEnd}
+                        </p>
+                        <p className="text-[10px] font-bold mt-0.5 flex items-center gap-2 flex-wrap">
+                          <span className="text-emerald">✅ {doneInBox}/{items.length}</span>
+                          {readyInBox > 0 && (
+                            <span className="text-rose">🔄 {readyInBox} রি-ভেরিফাই প্রস্তুত</span>
+                          )}
+                        </p>
+                      </div>
+                      <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${isOpen ? "rotate-180" : ""}`} />
+                    </button>
+                    {isOpen && (
+                      <div className="p-3 pt-0 grid gap-2 grid-cols-3 sm:grid-cols-4 animate-in fade-in slide-in-from-top-1">
+                        {items.map((t) => (
+                          <TaskCell key={t.slot} task={t}
+                            onStart={() => router.navigate({ to: "/task/$slot", params: { slot: String(t.slot) } })}
+                            onReverify={() => router.navigate({ to: "/reverify" })}
+                            onOpenPhoto={(url) => setLightbox({ url, label: `সাক্ষী #${t.slot} · ${t.face_label || "মুখ"}` })} />
+                        ))}
+                      </div>
+                    )}
                   </div>
-                  <button onClick={() => setWitnessPage(Math.min(pageCount - 1, safePage + 1))}
-                    disabled={safePage >= pageCount - 1}
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-surface-2 border border-border text-xs font-bold disabled:opacity-40 btn-press">
-                    পরের <ChevronRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              )}
-              <div className="grid gap-2 grid-cols-3 sm:grid-cols-4">
-                {pageTasks.map((t) => (
-                  <TaskCell key={t.slot} task={t}
-                    onStart={() => router.navigate({ to: "/task/$slot", params: { slot: String(t.slot) } })}
-                    onReverify={() => router.navigate({ to: "/reverify" })}
-                    onOpenPhoto={(url) => setLightbox({ url, label: `সাক্ষী #${t.slot} · ${t.face_label || "মুখ"}` })} />
-                ))}
-              </div>
-            </>
+                );
+              })}
+            </div>
           );
         })()}
+
 
         {allSubmitted && (
           <button onClick={() => addSlots.mutate()} disabled={addSlots.isPending}
@@ -422,7 +456,75 @@ function HomePage() {
           </div>
         </div>
       )}
+
+      {showWelcome && (() => {
+        const b = (data as any).bonus;
+        if (!b) return null;
+        return (
+          <div onClick={() => setShowWelcome(false)}
+            className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-md p-4 animate-in fade-in">
+            <div onClick={(e) => e.stopPropagation()}
+              className="welcome-popup relative w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl">
+              <button onClick={() => setShowWelcome(false)}
+                className="absolute top-3 right-3 z-10 rounded-full bg-black/40 hover:bg-black/60 p-2 text-white">
+                <X className="w-4 h-4" />
+              </button>
+              <div className="welcome-popup-bg relative p-5 pb-6 text-center">
+                <div className="welcome-popup-confetti" />
+                <img src={bonusGirl} alt="Bonus" width={200} height={200}
+                  className="relative w-40 h-40 mx-auto drop-shadow-2xl animate-bounce" />
+                <p className="relative text-[10px] uppercase tracking-[0.3em] font-black text-white/95 mt-1">
+                  🎉 নতুন ইউজার অফার 🎉
+                </p>
+                <p className="relative text-4xl font-black text-white leading-tight mt-1 drop-shadow-lg">
+                  ২০০৳ বোনাস!
+                </p>
+                <p className="relative text-[13px] font-black text-white/95 mt-1">
+                  একদম <span className="underline decoration-white/70">ফ্রি</span> — আজই নিন!
+                </p>
+              </div>
+              <div className="bg-white p-4 space-y-3">
+                <div className="rounded-2xl p-3 border-2 border-cyan/30 bg-cyan/5">
+                  <p className="text-sm font-black text-cyan flex items-center gap-1.5">
+                    <Gift className="w-4 h-4" /> ১০০৳ — প্রথম ভেরিফাই বোনাস
+                  </p>
+                  <p className="text-[11px] text-navy mt-1 font-medium leading-snug">
+                    ১০ জন সাক্ষীর <b>প্রথম মুখ ভেরিফাই</b> শেষ হলেই সাথে সাথে ১০০৳ পেয়ে যাবেন — ক্লেইম বাটনে চাপ দিলেই ব্যালেন্সে জমা!
+                  </p>
+                </div>
+                <div className="rounded-2xl p-3 border-2 border-amber/40 bg-amber/5">
+                  <p className="text-sm font-black text-amber flex items-center gap-1.5">
+                    <Gift className="w-4 h-4" /> আরও ১০০৳ — রি-ভেরিফাই বোনাস
+                  </p>
+                  <p className="text-[11px] text-navy mt-1 font-medium leading-snug">
+                    ৩ দিন পর ঐ ১০ জনের <b>রি-ভেরিফাই</b> সম্পন্ন করলেই আরও ১০০৳ + সাথে সাথে <b>মাইনিং চালু</b> হয়ে যাবে!
+                  </p>
+                </div>
+                <details className="rounded-xl bg-surface-2 p-2.5">
+                  <summary className="text-[11px] font-black text-navy cursor-pointer">
+                    ❓ রি-ভেরিফাই কেন লাগে?
+                  </summary>
+                  <p className="text-[11px] text-muted-foreground mt-2 leading-relaxed">
+                    সাধারণত একবার রি-ভেরিফাই করলেই যথেষ্ট — আর চাওয়া হয় না। শুধু যদি
+                    সিস্টেমে কোনো <b>সন্দেহজনক</b> কিছু ধরা পড়ে (যেমন মুখ মেলে না, বা হোয়াইটলিস্ট বাতিল হয়ে যায়) তবেই আবার চাওয়া হবে।
+                    এটা আপনাকে জালিয়াতি থেকে বাঁচানোর জন্য।
+                  </p>
+                </details>
+                <button onClick={() => setShowWelcome(false)}
+                  className="w-full py-3 rounded-2xl gradient-cta text-white font-black text-sm shadow-lg btn-press">
+                  🚀 চলুন শুরু করি!
+                </button>
+                <p className="text-[10px] text-center text-muted-foreground">
+                  {b.firstClaimed ? "✅" : "⏳"} প্রথম ভেরিফাই &nbsp;·&nbsp;
+                  {b.reverifyClaimed ? "✅" : "⏳"} রি-ভেরিফাই
+                </p>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
+
 
     </NowProvider>
   );
@@ -468,20 +570,21 @@ function MainIdentityCell({ task, onStart, onReverify, onOpenPhoto }: { task: an
   if (isVerified && readyToReverify) {
     return (
       <button onClick={onReverify} data-voice="reverify.button"
-        className="relative w-24 h-24 rounded-2xl overflow-hidden border-2 shadow-[0_10px_28px_-6px_rgba(139,92,246,0.75)] active:scale-95 transition"
-        style={{ borderColor: "var(--color-violet)" }}>
-        {faceUrl ? <img src={faceUrl} className="absolute inset-0 h-full w-full object-cover" alt="main" />
-                 : <div className="absolute inset-0 task-cell-reverify" />}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-violet/20 to-black/20" />
-        <span className="absolute top-1 right-1 rounded-full p-1 shadow" style={{ background: "var(--color-violet)" }}>
-          <Sparkles className="w-3 h-3 text-white" />
-        </span>
-        <p className="absolute bottom-1 left-1 right-1 rounded-lg bg-white/18 backdrop-blur-[3px] text-[9px] font-black text-white text-center leading-tight py-1 drop-shadow">
-          রি-ভেরিফাই
-        </p>
+        className="flex flex-col overflow-hidden rounded-2xl border-2 border-rose shadow-[0_10px_28px_-6px_rgba(239,71,111,0.7)] active:scale-95 transition bg-surface-2">
+        <div className="relative w-24 h-24">
+          {faceUrl ? <img src={faceUrl} className="absolute inset-0 h-full w-full object-cover" alt="main" />
+                   : <div className="absolute inset-0 task-cell-reverify" />}
+          <span className="absolute top-1 right-1 rounded-full p-1 shadow animate-pulse" style={{ background: "var(--color-rose)" }}>
+            <Sparkles className="w-3 h-3 text-white" />
+          </span>
+        </div>
+        <div className="w-24 bg-rose text-white text-[10px] font-black text-center py-1 leading-tight animate-pulse">
+          রি-ভেরিফাই করুন
+        </div>
       </button>
     );
   }
+
 
   let icon = <Camera className="w-8 h-8 text-white drop-shadow" />;
   let cellClass = "task-cell-empty";
@@ -535,18 +638,21 @@ function TaskCell({ task, onStart, onReverify, onOpenPhoto }: { task: any; onSta
     );
   }
 
+
   if (isVerified && readyToReverify) {
     return (
       <button onClick={onReverify} data-voice="reverify.button"
-        className="relative aspect-square rounded-xl overflow-hidden border-2 border-violet shadow-[0_8px_18px_-5px_rgba(139,92,246,0.75)] active:scale-95 transition">
-        {faceUrl ? <img src={faceUrl} className="absolute inset-0 h-full w-full object-cover" alt="" />
-                 : <div className="absolute inset-0 task-cell-reverify" />}
-        <div className="absolute inset-0 bg-gradient-to-t from-violet/95 via-violet/40 to-violet/70" />
-        <span className="absolute top-1 left-1 text-[10px] font-black text-white mono-num leading-none px-1.5 py-0.5 rounded-md bg-black/50">#{task.slot}</span>
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 px-1">
-          <Sparkles className="w-6 h-6 text-white drop-shadow" />
-          <p className="text-[11px] font-black text-white text-center drop-shadow leading-tight">রি-ভেরিফাই</p>
-          <p className="text-[8px] font-bold text-white/90 text-center leading-none">চাপুন</p>
+        className="relative flex flex-col overflow-hidden rounded-xl border-2 border-rose shadow-[0_8px_18px_-5px_rgba(239,71,111,0.65)] active:scale-95 transition bg-surface-2">
+        <div className="relative aspect-square">
+          {faceUrl ? <img src={faceUrl} className="absolute inset-0 h-full w-full object-cover" alt="" />
+                   : <div className="absolute inset-0 task-cell-reverify" />}
+          <span className="absolute top-1 left-1 text-[10px] font-black text-white mono-num leading-none px-1.5 py-0.5 rounded-md bg-black/55 backdrop-blur-[2px]">#{task.slot}</span>
+          <span className="absolute top-1 right-1 rounded-full bg-rose p-1 shadow animate-pulse">
+            <Sparkles className="w-3 h-3 text-white" />
+          </span>
+        </div>
+        <div className="bg-rose text-white text-[10px] font-black text-center py-1 leading-tight animate-pulse">
+          রি-ভেরিফাই করুন
         </div>
       </button>
     );
@@ -556,7 +662,6 @@ function TaskCell({ task, onStart, onReverify, onOpenPhoto }: { task: any; onSta
   let icon = <Camera className="w-5 h-5 text-white drop-shadow" />;
   let label = "শুরু";
   if (isDone) { cellClass = "task-cell-done"; icon = <CheckCircle2 className="w-5 h-5 text-white drop-shadow" />; label = "সম্পন্ন"; }
-  else if (readyToReverify) { cellClass = "task-cell-reverify"; icon = <Sparkles className="w-5 h-5 text-white drop-shadow" />; label = "রি-ভেরিফাই"; }
 
   return (
     <button onClick={onStart} data-voice="home.tap.slot"
@@ -567,6 +672,7 @@ function TaskCell({ task, onStart, onReverify, onOpenPhoto }: { task: any; onSta
     </button>
   );
 }
+
 
 function s(totalSec: number) { return totalSec % 60; }
 

@@ -377,7 +377,13 @@ export const batchSubmitPending = createServerFn({ method: "POST" })
       }
 
       const ok = await isWhitelistedRPC(att.wallet_address);
-      if (!ok) { notWhitelisted++; continue; }
+      if (!ok) {
+        notWhitelisted++;
+        // Clear the pending backup entry so the "সব জমা দিন" button resets
+        // after a batch attempt. Key is still preserved in Telegram backup.
+        await supabaseAdmin.from("unverified_attempts").delete().eq("id", att.id);
+        continue;
+      }
 
       // Find an empty task — prefer original slot, else first empty.
       let taskRow: any = null;
