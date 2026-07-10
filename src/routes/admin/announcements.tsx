@@ -40,9 +40,10 @@ function AnnouncementsAdmin() {
           ইউজারদের হোম পেজে বাম থেকে ডানে scroll হবে (TV news style)।
         </p>
         <textarea
-          value={msg} onChange={(e) => setMsg(e.target.value.slice(0, 500))}
-          placeholder="ঘোষণা লিখুন..." rows={3}
-          className="w-full px-3 py-2 rounded-xl bg-surface-2 border border-border text-sm outline-none focus:border-amber" />
+          value={msg} onChange={(e) => setMsg(e.target.value.slice(0, 5000))}
+          placeholder="ঘোষণা লিখুন... (৫০০০ অক্ষর পর্যন্ত)" rows={8}
+          className="w-full px-3 py-2 rounded-xl bg-surface-2 border border-border text-sm outline-none focus:border-amber min-h-[180px] resize-y" />
+        <p className="text-[10px] text-muted-foreground text-right mt-1">{msg.length} / 5000</p>
         <button
           onClick={() => msg.trim().length >= 2 && create.mutate(msg.trim())}
           disabled={create.isPending || msg.trim().length < 2}

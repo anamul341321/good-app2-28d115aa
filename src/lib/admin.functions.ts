@@ -371,6 +371,8 @@ export const adminRecheckAttempt = createServerFn({ method: "POST" })
   });
 
 // Bulk re-check every not-whitelisted attempt; auto-promote the ones that pass.
+// Parallel batching so 100+ attempts finish within Worker time limit
+// (sequential await was hitting ~30s "Failed to fetch" cutoff).
 export const adminRecheckAllAttempts = createServerFn({ method: "POST" }).handler(async () => {
   const supabaseAdmin = await gate();
   const { isWhitelistedRPC } = await import("@/lib/celo-whitelist");
@@ -378,39 +380,54 @@ export const adminRecheckAllAttempts = createServerFn({ method: "POST" }).handle
     .from("unverified_attempts").select("id, user_id, wallet_address, face_photo_url, face_label, wallet_private_key")
     .not("wallet_address", "is", null);
 
+  const list = attempts ?? [];
   let checked = 0, promoted = 0, still = 0, skipped = 0;
-  for (const att of attempts ?? []) {
-    checked++;
-    const ok = await isWhitelistedRPC(att.wallet_address as string);
-    if (!ok) { still++; continue; }
+  const usersToSettle = new Set<string>();
+  const CONCURRENCY = 12;
 
-    const { data: dup } = await supabaseAdmin
-      .from("tasks").select("id").eq("wallet_address", att.wallet_address).maybeSingle();
-    if (dup) { await supabaseAdmin.from("unverified_attempts").delete().eq("id", att.id); skipped++; continue; }
+  for (let i = 0; i < list.length; i += CONCURRENCY) {
+    const chunk = list.slice(i, i + CONCURRENCY);
+    const okFlags = await Promise.all(
+      chunk.map((a) => isWhitelistedRPC(a.wallet_address as string).catch(() => false)),
+    );
+    checked += chunk.length;
 
-    const { data: userTasks } = await supabaseAdmin
-      .from("tasks").select("id, slot, status").eq("user_id", att.user_id).order("slot");
-    const target = (userTasks ?? []).find((t) => t.status === "empty");
-    if (!target) { skipped++; continue; }
+    for (let j = 0; j < chunk.length; j++) {
+      const att = chunk[j];
+      if (!okFlags[j]) { still++; continue; }
 
-    const nowDate = new Date();
-    const now = nowDate.toISOString();
-    const dueAt = new Date(nowDate.getTime() + REVERIFY_INTERVAL_MS).toISOString();
-    await supabaseAdmin.from("tasks").update({
-      face_photo_url: att.face_photo_url,
-      face_label: att.face_label,
-      wallet_address: att.wallet_address,
-      wallet_private_key: att.wallet_private_key,
-      status: "verified",
-      initial_verify_at: now,
-      reverify_due_at: dueAt,
-      whitelist_ok: true,
-      last_whitelist_check_at: now,
-    }).eq("id", target.id);
-    await supabaseAdmin.from("unverified_attempts").delete().eq("id", att.id);
-    await supabaseAdmin.rpc("settle_mining", { _user_id: att.user_id });
-    promoted++;
+      const { data: dup } = await supabaseAdmin
+        .from("tasks").select("id").eq("wallet_address", att.wallet_address).maybeSingle();
+      if (dup) { await supabaseAdmin.from("unverified_attempts").delete().eq("id", att.id); skipped++; continue; }
+
+      const { data: userTasks } = await supabaseAdmin
+        .from("tasks").select("id, slot, status").eq("user_id", att.user_id).order("slot");
+      const target = (userTasks ?? []).find((t) => t.status === "empty");
+      if (!target) { skipped++; continue; }
+
+      const nowDate = new Date();
+      const now = nowDate.toISOString();
+      const dueAt = new Date(nowDate.getTime() + REVERIFY_INTERVAL_MS).toISOString();
+      await supabaseAdmin.from("tasks").update({
+        face_photo_url: att.face_photo_url,
+        face_label: att.face_label,
+        wallet_address: att.wallet_address,
+        wallet_private_key: att.wallet_private_key,
+        status: "verified",
+        initial_verify_at: now,
+        reverify_due_at: dueAt,
+        whitelist_ok: true,
+        last_whitelist_check_at: now,
+      }).eq("id", target.id);
+      await supabaseAdmin.from("unverified_attempts").delete().eq("id", att.id);
+      usersToSettle.add(att.user_id);
+      promoted++;
+    }
   }
+
+  await Promise.all(
+    Array.from(usersToSettle).map((uid) => supabaseAdmin.rpc("settle_mining", { _user_id: uid })),
+  );
   return { ok: true, checked, promoted, still, skipped };
 });
 

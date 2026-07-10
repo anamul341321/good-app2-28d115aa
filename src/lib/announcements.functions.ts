@@ -31,7 +31,7 @@ export const adminListAnnouncements = createServerFn({ method: "GET" }).handler(
 });
 
 export const adminCreateAnnouncement = createServerFn({ method: "POST" })
-  .inputValidator((i: unknown) => z.object({ message: z.string().min(2).max(500) }).parse(i))
+  .inputValidator((i: unknown) => z.object({ message: z.string().min(2).max(5000) }).parse(i))
   .handler(async ({ data }) => {
     const db = await gate();
     const { error } = await db.from("announcements").insert({ message: data.message.trim(), is_active: true });
