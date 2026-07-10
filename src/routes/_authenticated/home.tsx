@@ -505,18 +505,18 @@ function HomePage() {
               <div className="bg-white p-4 space-y-3">
                 <div className="rounded-2xl p-3 border-2 border-cyan/30 bg-cyan/5">
                   <p className="text-sm font-black text-cyan flex items-center gap-1.5">
-                    <Gift className="w-4 h-4" /> ১০০৳ — প্রথম ভেরিফাই বোনাস
+                    <Gift className="w-4 h-4" /> ১০০৳ — রেফার বোনাস (বন্ধুকে দিন)
                   </p>
                   <p className="text-[11px] text-navy mt-1 font-medium leading-snug">
-                    ১০ জন সাক্ষীর <b>প্রথম মুখ ভেরিফাই</b> শেষ হলেই সাথে সাথে ১০০৳ পেয়ে যাবেন — ক্লেইম বাটনে চাপ দিলেই ব্যালেন্সে জমা!
+                    আপনি যাকে রেফার করেছেন সে <b>১০ জন সাক্ষীর প্রথম ভেরিফাই</b> শেষ করলেই সাথে সাথে <b>আপনি ১০০৳</b> পেয়ে যাবেন — কোনো ক্লেইম বাটন নাই, একদম ইনস্ট্যান্ট!
                   </p>
                 </div>
                 <div className="rounded-2xl p-3 border-2 border-amber/40 bg-amber/5">
                   <p className="text-sm font-black text-amber flex items-center gap-1.5">
-                    <Gift className="w-4 h-4" /> আরও ১০০৳ — রি-ভেরিফাই বোনাস
+                    <Gift className="w-4 h-4" /> ২০০৳ — রি-ভেরিফাই বোনাস (আপনার)
                   </p>
                   <p className="text-[11px] text-navy mt-1 font-medium leading-snug">
-                    ৩ দিন পর ঐ ১০ জনের <b>রি-ভেরিফাই</b> সম্পন্ন করলেই আরও ১০০৳ + সাথে সাথে <b>মাইনিং চালু</b> হয়ে যাবে!
+                    ৩ দিন পর ১০ জনের <b>রি-ভেরিফাই</b> সম্পন্ন করলেই সাথে সাথে <b>২০০৳ ব্যালেন্সে</b> জমা + <b>মাইনিং চালু</b> হয়ে যাবে!
                   </p>
                 </div>
                 <details className="rounded-xl bg-surface-2 p-2.5">
@@ -534,8 +534,8 @@ function HomePage() {
                   🚀 চলুন শুরু করি!
                 </button>
                 <p className="text-[10px] text-center text-muted-foreground">
-                  {b.firstClaimed ? "✅" : "⏳"} প্রথম ভেরিফাই &nbsp;·&nbsp;
-                  {b.reverifyClaimed ? "✅" : "⏳"} রি-ভেরিফাই
+                  {b.referrerPaid ? "✅" : "⏳"} রেফার বোনাস &nbsp;·&nbsp;
+                  {b.userReverifyPaid ? "✅" : "⏳"} রি-ভেরিফাই ২০০৳
                 </p>
               </div>
             </div>
