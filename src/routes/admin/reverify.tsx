@@ -12,10 +12,30 @@ function ReverifyQueue() {
   const [now, setNow] = useState(Date.now());
   useEffect(() => { const id = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(id); }, []);
 
+  const [progress, setProgress] = useState<string>("");
   const run = useMutation({
-    mutationFn: () => adminRunWhitelistCheck(),
-    onSuccess: (r: any) => { toast.success(`Checked ${r.checked} · ${r.flipped} dropped · ${r.restored} restored`); refetch(); },
-    onError: (e: any) => toast.error(e.message),
+    mutationFn: async () => {
+      let offset = 0;
+      let totals = { checked: 0, flipped: 0, restored: 0, total: 0 };
+      // Loop paginated calls until server says done
+      // (avoids the 30s "Failed to fetch" cutoff)
+      for (let guard = 0; guard < 200; guard++) {
+        const r: any = await adminRunWhitelistCheck({ data: { offset, limit: 40 } });
+        totals = {
+          checked: totals.checked + (r.checked ?? 0),
+          flipped: totals.flipped + (r.flipped ?? 0),
+          restored: totals.restored + (r.restored ?? 0),
+          total: r.total ?? totals.total,
+        };
+        setProgress(`${totals.checked} / ${totals.total} চেক হয়েছে…`);
+        if (r.done) break;
+        offset = r.offset ?? (offset + 40);
+      }
+      setProgress("");
+      return totals;
+    },
+    onSuccess: (r: any) => { toast.success(`✅ Checked ${r.checked} · ${r.flipped} dropped · ${r.restored} restored`); refetch(); },
+    onError: (e: any) => { setProgress(""); toast.error(e.message); },
   });
 
   if (isLoading) return <div className="py-10 flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-amber" /></div>;
