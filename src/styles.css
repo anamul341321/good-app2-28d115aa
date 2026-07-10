@@ -469,14 +469,16 @@
   0%   { transform: translateX(0); }
   100% { transform: translateX(-50%); }
 }
-.ticker-track { display: inline-block; }
-.ticker-text {
-  display: inline-block;
-  padding-left: 100%;
-  animation: ticker-scroll 12s linear infinite;
+.ticker-track {
+  display: inline-flex;
+  white-space: nowrap;
+  animation: ticker-scroll 40s linear infinite;
+  will-change: transform;
   color: white;
   text-shadow: 0 1px 2px rgba(0,0,0,.35);
 }
+.ticker-track:hover { animation-play-state: paused; }
+.ticker-text { display: inline-block; padding-right: 3rem; }
 
 /* ===== Colourful bottom nav ===== */
 .nav-item { transition: transform .25s ease, color .25s ease; }

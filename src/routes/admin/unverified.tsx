@@ -36,13 +36,30 @@ function UnverifiedPage() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const [rprogress, setRprogress] = useState("");
   const recheckAll = useMutation({
-    mutationFn: () => adminRecheckAllAttempts(),
+    mutationFn: async () => {
+      let offset = 0;
+      let totals = { checked: 0, promoted: 0, still: 0 };
+      for (let guard = 0; guard < 200; guard++) {
+        const r: any = await adminRecheckAllAttempts({ data: { offset, limit: 25 } });
+        totals = {
+          checked: totals.checked + (r.checked ?? 0),
+          promoted: totals.promoted + (r.promoted ?? 0),
+          still: totals.still + (r.still ?? 0),
+        };
+        setRprogress(`${totals.checked} চেক · ${totals.promoted} প্রমোট`);
+        if (r.done) break;
+        offset = r.offset ?? offset;
+      }
+      setRprogress("");
+      return totals;
+    },
     onSuccess: (r: any) => {
-      toast.success(`Checked ${r.checked} · promoted ${r.promoted} · still ${r.still}`);
+      toast.success(`✅ Checked ${r.checked} · promoted ${r.promoted} · still ${r.still}`);
       refetch();
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: any) => { setRprogress(""); toast.error(e.message); },
   });
 
   if (isLoading) {
@@ -63,7 +80,7 @@ function UnverifiedPage() {
           className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald/15 border border-emerald/30 text-emerald text-[10px] font-black disabled:opacity-50"
         >
           {recheckAll.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <ShieldCheck className="w-3 h-3" />}
-          সব whitelist check
+          {recheckAll.isPending ? (rprogress || "চেক চলছে…") : "সব whitelist check"}
         </button>
       </div>
       {(data ?? []).map((r: any) => (
