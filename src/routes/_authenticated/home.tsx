@@ -558,22 +558,6 @@ function TaskCell({ task, onStart, onReverify, onOpenPhoto }: { task: any; onSta
     );
   }
 
-  if (isVerified && readyToReverify) {
-    return (
-      <button onClick={onReverify} data-voice="reverify.button"
-        className="relative aspect-square rounded-xl overflow-hidden border-2 border-violet shadow-[0_8px_18px_-5px_rgba(139,92,246,0.75)] active:scale-95 transition">
-        {faceUrl ? <img src={faceUrl} className="absolute inset-0 h-full w-full object-cover" alt="" />
-                 : <div className="absolute inset-0 task-cell-reverify" />}
-        <div className="absolute inset-0 bg-gradient-to-t from-violet/95 via-violet/40 to-violet/70" />
-        <span className="absolute top-1 left-1 text-[10px] font-black text-white mono-num leading-none px-1.5 py-0.5 rounded-md bg-black/50">#{task.slot}</span>
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 px-1">
-          <Sparkles className="w-6 h-6 text-white drop-shadow" />
-          <p className="text-[11px] font-black text-white text-center drop-shadow leading-tight">রি-ভেরিফাই</p>
-          <p className="text-[8px] font-bold text-white/90 text-center leading-none">চাপুন</p>
-        </div>
-      </button>
-    );
-  }
 
   if (isVerified && readyToReverify) {
     return (
