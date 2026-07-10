@@ -49,7 +49,7 @@ function ReverifyQueue() {
       <button onClick={() => run.mutate()} disabled={run.isPending}
         className="w-full gradient-cta rounded-xl py-2.5 text-xs font-black flex items-center justify-center gap-2 disabled:opacity-60">
         {run.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
-        Whitelist auto-check chalu
+        {run.isPending ? (progress || "চেক চলছে…") : "Whitelist auto-check চালু"}
       </button>
 
       <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold px-1">
