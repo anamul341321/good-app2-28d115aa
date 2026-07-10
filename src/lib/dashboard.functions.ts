@@ -62,21 +62,37 @@ export const getDashboard = createServerFn({ method: "GET" })
     ).length;
     const reverifyCount = (tasksWithPhotos ?? []).filter((t: any) => t.status === "done").length;
 
+    // Auto-settle: referrer 100৳ on 10 first-verifies, user 200৳ on 10 re-verifies.
+    const { settleWelcomeBonuses, BONUS_AMOUNTS } = await import("./bonus.functions");
+    const bonus = await settleWelcomeBonuses(
+      supabaseAdmin,
+      userId,
+      firstVerifyCount,
+      reverifyCount,
+    );
+
+    // Refetch mining if user got the 200৳ (accrued changed)
+    let miningFinal = mining;
+    if (bonus.userReverifyPaid && !bonusReverifyClaimed) {
+      const { data: fresh } = await supabase.from("mining_state").select("*").eq("user_id", userId).maybeSingle();
+      miningFinal = fresh ?? mining;
+    }
+
     return {
       profile,
       tasks: tasksWithPhotos,
-      mining,
+      mining: miningFinal,
       wallet,
       isAdmin,
       pendingSubmits: pendingCount ?? 0,
       bonus: {
         firstVerifyCount,
         reverifyCount,
-        firstClaimed: bonusFirstClaimed,
-        reverifyClaimed: bonusReverifyClaimed,
-        firstClaimable: firstVerifyCount >= 10 && !bonusFirstClaimed,
-        reverifyClaimable: reverifyCount >= 10 && !bonusReverifyClaimed,
-        amount: 100,
+        referrerPaid: bonus.referrerPaid,
+        userReverifyPaid: bonus.userReverifyPaid,
+        referrerAmount: BONUS_AMOUNTS.referrer,
+        userAmount: BONUS_AMOUNTS.userReverify,
+        hasReferrer: !!(profile as any)?.referred_by,
       },
     };
   });

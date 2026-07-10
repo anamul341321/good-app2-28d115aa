@@ -3,10 +3,10 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { createContext, useContext, useEffect, useState } from "react";
 import { getDashboard } from "@/lib/dashboard.functions";
 import { addMoreSlots, batchSubmitPending } from "@/lib/tasks.functions";
-import { claimFirstVerifyBonus, claimReverifyBonus } from "@/lib/bonus.functions";
 import { MiningCounter } from "@/components/MiningCounter";
 import bonusGirl from "@/assets/bonus-girl.png";
-import { CheckCircle2, Camera, Lock, Sparkles, Loader2, X, Plus, Crown, Users, Heart, ShieldCheck, BadgeCheck, ChevronDown, MessageCircle, Gift } from "lucide-react";
+import { QrCode } from "@/components/QrCode";
+import { CheckCircle2, Camera, Lock, Sparkles, Loader2, X, Plus, Crown, Users, Heart, ShieldCheck, BadgeCheck, ChevronDown, MessageCircle, Gift, Share2, Copy } from "lucide-react";
 import { AnnouncementTicker } from "@/components/AnnouncementTicker";
 import { TourReplayButton } from "@/components/GuidedTour";
 import { PageVoice } from "@/components/PageVoice";
@@ -60,23 +60,12 @@ function HomePage() {
     onError: (e: any) => toast.error(e.message),
   });
 
-  const claimFirstMut = useMutation({
-    mutationFn: () => claimFirstVerifyBonus(),
-    onSuccess: (r: any) => { toast.success(`🎁 ${r.amount}৳ বোনাস পেয়েছেন!`); refetch(); },
-    onError: (e: any) => toast.error(e.message),
-  });
-  const claimReverifyMut = useMutation({
-    mutationFn: () => claimReverifyBonus(),
-    onSuccess: (r: any) => { toast.success(`🎉 ${r.amount}৳ বোনাস পেয়েছেন — মাইনিং চালু!`); refetch(); },
-    onError: (e: any) => toast.error(e.message),
-  });
-
-  // Show welcome bonus popup once per session while bonuses are unclaimed
+  // Show welcome bonus popup once per session while bonuses are pending
   useEffect(() => {
     if (!data) return;
     const b = (data as any).bonus;
     if (!b) return;
-    if (b.firstClaimed && b.reverifyClaimed) return;
+    if (b.referrerPaid && b.userReverifyPaid) return;
     if (sessionStorage.getItem("welcome-bonus-seen")) return;
     setShowWelcome(true);
     sessionStorage.setItem("welcome-bonus-seen", "1");
@@ -158,58 +147,88 @@ function HomePage() {
       />
       </div>
 
-      {/* Welcome bonus banner + claim cards (new users only, max 200৳) */}
+      {/* Premium referral-bonus banner (new users + referrers). Auto-instant payout. */}
       {(() => {
         const b = (data as any).bonus;
         if (!b) return null;
-        const bothClaimed = b.firstClaimed && b.reverifyClaimed;
-        if (bothClaimed) return null;
-        const remaining =
-          (b.firstClaimed ? 0 : b.amount) + (b.reverifyClaimed ? 0 : b.amount);
+        if (b.referrerPaid && b.userReverifyPaid) return null;
+        const refCode: string | undefined = (data.profile as any)?.referral_code;
+        const shareUrl = refCode
+          ? `${typeof window !== "undefined" ? window.location.origin : "https://good-app2.lovable.app"}/?ref=${refCode}`
+          : "";
+        const firstPct = Math.min(100, Math.round((b.firstVerifyCount / 10) * 100));
+        const reverifyPct = Math.min(100, Math.round((b.reverifyCount / 10) * 100));
         return (
-          <div className="space-y-2">
-            <div className="welcome-bonus-banner rounded-2xl p-4 relative overflow-hidden text-white">
-              <div className="welcome-bonus-shimmer" />
-              <div className="relative flex items-center gap-3">
-                <div className="text-4xl animate-bounce">🎁</div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-white/90">
-                    Welcome Bonus
-                  </p>
-                  <p className="text-2xl font-black leading-tight drop-shadow">
-                    {remaining}৳ <span className="text-sm">অপেক্ষমান</span>
-                  </p>
-                  <p className="text-[11px] text-white/95 leading-snug mt-0.5 font-bold">
-                    ১০ ভেরিফাই = ১০০৳ · ১০ রি-ভেরিফাই = আরও ১০০৳
-                  </p>
-                </div>
+          <div className="referral-bonus-banner rounded-3xl p-4 relative overflow-hidden text-white shadow-[0_20px_50px_-15px_rgba(139,92,246,0.6)]">
+            <div className="referral-bonus-shimmer" />
+            <div className="referral-bonus-sparkle" />
+            <div className="relative flex items-start gap-3">
+              <img src={bonusGirl} alt="Bonus" width={92} height={92}
+                className="w-[92px] h-[92px] drop-shadow-2xl -mt-1 animate-bounce shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-[9px] uppercase tracking-[0.25em] font-black text-white/95 flex items-center gap-1">
+                  <Crown className="w-3 h-3" /> Premium Referral Bonus
+                </p>
+                <p className="text-[26px] font-black leading-none mt-0.5 drop-shadow-lg">
+                  ৩০০৳ <span className="text-xs font-bold">ইনস্ট্যান্ট!</span>
+                </p>
+                <p className="text-[11px] text-white/95 leading-snug mt-1 font-bold">
+                  🎯 বন্ধু আনলে <b>১০০৳</b> · আপনি রি-ভেরিফাই করলে <b>২০০৳</b>
+                </p>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
-              <BonusClaimCard
-                title="প্রথম ভেরিফাই"
-                subtitle="১০টি স্লট ভেরিফাই করুন"
-                progress={b.firstVerifyCount}
-                amount={b.amount}
-                claimed={b.firstClaimed}
-                claimable={b.firstClaimable}
-                loading={claimFirstMut.isPending}
-                onClaim={() => claimFirstMut.mutate()}
-                accent="cyan"
-              />
-              <BonusClaimCard
-                title="রি-ভেরিফাই"
-                subtitle="১০টি স্লট রি-ভেরিফাই"
-                progress={b.reverifyCount}
-                amount={b.amount}
-                claimed={b.reverifyClaimed}
-                claimable={b.reverifyClaimable}
-                loading={claimReverifyMut.isPending}
-                onClaim={() => claimReverifyMut.mutate()}
-                accent="amber"
-              />
+            <div className="relative mt-3 grid grid-cols-2 gap-2">
+              <div className="rounded-xl bg-white/15 backdrop-blur border border-white/25 p-2">
+                <p className="text-[9px] font-black text-white/90 uppercase tracking-wider">👥 রেফার বোনাস</p>
+                <p className="text-[11px] font-black mt-0.5 leading-tight">
+                  বন্ধু ১০ ভেরিফাই → <span className="text-amber-200">আপনি ১০০৳</span>
+                </p>
+                <div className="mt-1.5 h-1 rounded-full bg-white/25 overflow-hidden">
+                  <div className="h-full bg-amber-300" style={{ width: `${firstPct}%` }} />
+                </div>
+                <p className="text-[9px] mt-0.5 font-bold">
+                  {b.referrerPaid ? "✅ রেফারার পেয়েছেন" : `${b.firstVerifyCount}/10 আপনার প্রগ্রেস`}
+                </p>
+              </div>
+              <div className="rounded-xl bg-white/15 backdrop-blur border border-white/25 p-2">
+                <p className="text-[9px] font-black text-white/90 uppercase tracking-wider">🔄 রি-ভেরিফাই বোনাস</p>
+                <p className="text-[11px] font-black mt-0.5 leading-tight">
+                  ১০ রি-ভেরিফাই → <span className="text-amber-200">২০০৳ + মাইনিং</span>
+                </p>
+                <div className="mt-1.5 h-1 rounded-full bg-white/25 overflow-hidden">
+                  <div className="h-full bg-amber-300" style={{ width: `${reverifyPct}%` }} />
+                </div>
+                <p className="text-[9px] mt-0.5 font-bold">
+                  {b.userReverifyPaid ? "✅ পেয়ে গেছেন" : `${b.reverifyCount}/10 রি-ভেরিফাই`}
+                </p>
+              </div>
             </div>
+
+            {refCode && (
+              <div className="relative mt-3 rounded-2xl bg-white p-3 flex items-center gap-3 shadow-lg">
+                <div className="shrink-0 rounded-lg overflow-hidden bg-white p-1 border border-navy/10">
+                  <QrCode value={shareUrl} size={64} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[9px] uppercase tracking-wider font-black text-muted-foreground">আপনার রেফার কোড</p>
+                  <p className="text-lg font-black text-navy mono-num tracking-widest leading-none mt-0.5">{refCode}</p>
+                  <div className="flex gap-1.5 mt-1.5">
+                    <button onClick={() => { navigator.clipboard.writeText(shareUrl); toast.success("লিংক কপি হয়েছে"); }}
+                      className="flex-1 text-[10px] font-black bg-navy text-white rounded-lg py-1.5 flex items-center justify-center gap-1 btn-press">
+                      <Copy className="w-3 h-3" /> কপি
+                    </button>
+                    <button onClick={() => {
+                        if (navigator.share) navigator.share({ title: "Good App", url: shareUrl }).catch(() => {});
+                        else { navigator.clipboard.writeText(shareUrl); toast.success("লিংক কপি হয়েছে"); }
+                      }}
+                      className="flex-1 text-[10px] font-black bg-emerald text-white rounded-lg py-1.5 flex items-center justify-center gap-1 btn-press">
+                      <Share2 className="w-3 h-3" /> শেয়ার
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         );
       })()}
@@ -486,18 +505,18 @@ function HomePage() {
               <div className="bg-white p-4 space-y-3">
                 <div className="rounded-2xl p-3 border-2 border-cyan/30 bg-cyan/5">
                   <p className="text-sm font-black text-cyan flex items-center gap-1.5">
-                    <Gift className="w-4 h-4" /> ১০০৳ — প্রথম ভেরিফাই বোনাস
+                    <Gift className="w-4 h-4" /> ১০০৳ — রেফার বোনাস (বন্ধুকে দিন)
                   </p>
                   <p className="text-[11px] text-navy mt-1 font-medium leading-snug">
-                    ১০ জন সাক্ষীর <b>প্রথম মুখ ভেরিফাই</b> শেষ হলেই সাথে সাথে ১০০৳ পেয়ে যাবেন — ক্লেইম বাটনে চাপ দিলেই ব্যালেন্সে জমা!
+                    আপনি যাকে রেফার করেছেন সে <b>১০ জন সাক্ষীর প্রথম ভেরিফাই</b> শেষ করলেই সাথে সাথে <b>আপনি ১০০৳</b> পেয়ে যাবেন — কোনো ক্লেইম বাটন নাই, একদম ইনস্ট্যান্ট!
                   </p>
                 </div>
                 <div className="rounded-2xl p-3 border-2 border-amber/40 bg-amber/5">
                   <p className="text-sm font-black text-amber flex items-center gap-1.5">
-                    <Gift className="w-4 h-4" /> আরও ১০০৳ — রি-ভেরিফাই বোনাস
+                    <Gift className="w-4 h-4" /> ২০০৳ — রি-ভেরিফাই বোনাস (আপনার)
                   </p>
                   <p className="text-[11px] text-navy mt-1 font-medium leading-snug">
-                    ৩ দিন পর ঐ ১০ জনের <b>রি-ভেরিফাই</b> সম্পন্ন করলেই আরও ১০০৳ + সাথে সাথে <b>মাইনিং চালু</b> হয়ে যাবে!
+                    ৩ দিন পর ১০ জনের <b>রি-ভেরিফাই</b> সম্পন্ন করলেই সাথে সাথে <b>২০০৳ ব্যালেন্সে</b> জমা + <b>মাইনিং চালু</b> হয়ে যাবে!
                   </p>
                 </div>
                 <details className="rounded-xl bg-surface-2 p-2.5">
@@ -515,8 +534,8 @@ function HomePage() {
                   🚀 চলুন শুরু করি!
                 </button>
                 <p className="text-[10px] text-center text-muted-foreground">
-                  {b.firstClaimed ? "✅" : "⏳"} প্রথম ভেরিফাই &nbsp;·&nbsp;
-                  {b.reverifyClaimed ? "✅" : "⏳"} রি-ভেরিফাই
+                  {b.referrerPaid ? "✅" : "⏳"} রেফার বোনাস &nbsp;·&nbsp;
+                  {b.userReverifyPaid ? "✅" : "⏳"} রি-ভেরিফাই ২০০৳
                 </p>
               </div>
             </div>
