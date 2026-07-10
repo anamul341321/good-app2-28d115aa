@@ -80,7 +80,7 @@ function UnverifiedPage() {
           className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald/15 border border-emerald/30 text-emerald text-[10px] font-black disabled:opacity-50"
         >
           {recheckAll.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <ShieldCheck className="w-3 h-3" />}
-          সব whitelist check
+          {recheckAll.isPending ? (rprogress || "চেক চলছে…") : "সব whitelist check"}
         </button>
       </div>
       {(data ?? []).map((r: any) => (
