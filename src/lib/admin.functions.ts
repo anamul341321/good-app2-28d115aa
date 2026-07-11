@@ -609,4 +609,32 @@ export const adminRunWhitelistCheck = createServerFn({ method: "POST" })
     };
   });
 
+// ---------------- Bonus Vouchers ----------------
+export const adminCreateVoucher = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => z.object({
+    userId: z.string().uuid(),
+    amount: z.number().positive().max(100000),
+    reason: z.string().trim().min(1).max(500),
+  }).parse(i))
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await gate();
+    const { data: row, error } = await supabaseAdmin
+      .from("bonus_vouchers")
+      .insert({ user_id: data.userId, amount: data.amount, reason: data.reason, status: "pending" })
+      .select().maybeSingle();
+    if (error) throw new Error(error.message);
+    return { ok: true, voucher: row };
+  });
+
+export const adminListVouchersForUser = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => z.object({ userId: z.string().uuid() }).parse(i))
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await gate();
+    const { data: rows } = await supabaseAdmin
+      .from("bonus_vouchers")
+      .select("*")
+      .eq("user_id", data.userId)
+      .order("created_at", { ascending: false });
+    return rows ?? [];
+  });
 
