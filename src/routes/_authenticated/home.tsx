@@ -10,6 +10,7 @@ import { CheckCircle2, Camera, Lock, Sparkles, Loader2, X, Plus, Crown, Users, H
 import { AnnouncementTicker } from "@/components/AnnouncementTicker";
 import { TourReplayButton } from "@/components/GuidedTour";
 import { PageVoice } from "@/components/PageVoice";
+import { VideoTutorialButton } from "@/components/VideoTutorialButton";
 
 import { toast } from "sonner";
 

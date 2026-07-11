@@ -19,13 +19,6 @@ function AdminUsers() {
 
   if (isLoading) return <div className="py-10 flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-cyan" /></div>;
 
-  const rows = (data ?? []).filter((r: any) => {
-    if (!q.trim()) return true;
-    const s = q.toLowerCase();
-    return (r.profile.display_name ?? "").toLowerCase().includes(s)
-      || (r.profile.phone_number ?? "").toLowerCase().includes(s)
-      || (r.profile.email ?? "").toLowerCase().includes(s);
-  });
 
   const rows = (data ?? []).filter((r: any) => {
     if (!q.trim()) return true;
