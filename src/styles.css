@@ -241,6 +241,55 @@
 
   /* animations */
   .float-anim { animation: float-y 4.5s ease-in-out infinite; }
+
+  .video-tutorial-shine {
+    background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.35) 50%, transparent 70%);
+    transform: translateX(-100%);
+    animation: video-shine 2.6s ease-in-out infinite;
+  }
+  @keyframes video-shine {
+    0% { transform: translateX(-100%); }
+    60%,100% { transform: translateX(120%); }
+  }
+
+  .ref-hero {
+    background: linear-gradient(135deg,#10b981 0%,#06b6d4 45%,#8b5cf6 100%);
+    background-size: 220% 220%;
+    animation: ref-hero-shift 8s ease-in-out infinite;
+  }
+  @keyframes ref-hero-shift {
+    0%,100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+  .ref-sparkle {
+    position: absolute; pointer-events: none;
+    width: 6px; height: 6px; border-radius: 9999px;
+    background: white; opacity: 0.9;
+    animation: ref-sparkle 2.4s ease-in-out infinite;
+  }
+  @keyframes ref-sparkle {
+    0%,100% { transform: scale(0.6); opacity: 0.35; }
+    50% { transform: scale(1.3); opacity: 1; }
+  }
+  .ref-coin {
+    animation: ref-coin 3.2s ease-in-out infinite;
+    display: inline-block;
+  }
+  @keyframes ref-coin {
+    0%,100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-6px) rotate(8deg); }
+  }
+  .ref-chip {
+    background: linear-gradient(120deg,#fef3c7,#fde68a);
+    color: #78350f;
+    border: 1px solid #fbbf24;
+  }
+  .ref-gradient-text {
+    background: linear-gradient(90deg,#059669,#0891b2,#7c3aed);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    background-size: 200% 200%;
+    animation: ref-hero-shift 6s ease-in-out infinite;
+  }
   .pop-in     { animation: pop-in 0.5s cubic-bezier(.2,.9,.3,1.2) both; }
   .pulse-glow { animation: pulse-glow 2.4s ease-in-out infinite; }
   .bounce-soft { animation: bounce-soft 2.2s ease-in-out infinite; }
