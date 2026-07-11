@@ -10,6 +10,7 @@ import {
 import { registerWithPhone, resolveCardUidForLogin } from "@/lib/auth.functions";
 import logo from "@/assets/logo.png";
 import { PageVoice } from "@/components/PageVoice";
+import { VideoTutorialButton } from "@/components/VideoTutorialButton";
 import { QrScanner } from "@/components/QrScanner";
 import { QrCode as QrCodeIcon } from "lucide-react";
 
@@ -255,6 +256,9 @@ export function AuthPage() {
               <span className="text-violet">মাসে ৫০০৳ মাইনিং</span>
             </p>
             <div className="gold-divider mt-3" />
+            <div className="mt-4">
+              <VideoTutorialButton />
+            </div>
           </div>
 
           <div className="flex bg-surface-2 rounded-xl p-1 mb-5 border border-border">

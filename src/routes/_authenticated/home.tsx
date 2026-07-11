@@ -10,6 +10,7 @@ import { CheckCircle2, Camera, Lock, Sparkles, Loader2, X, Plus, Crown, Users, H
 import { AnnouncementTicker } from "@/components/AnnouncementTicker";
 import { TourReplayButton } from "@/components/GuidedTour";
 import { PageVoice } from "@/components/PageVoice";
+import { VideoTutorialButton } from "@/components/VideoTutorialButton";
 
 import { toast } from "sonner";
 
@@ -454,7 +455,8 @@ function HomePage() {
       </div>
 
 
-      <div className="text-center py-2 space-y-2">
+      <div className="text-center py-2 space-y-3">
+        <VideoTutorialButton />
         <p className="text-[11px] text-muted-foreground italic">
           🌸 "হাজার জনের সহযোগিতা, একজনের হাসি" 🌸
         </p>
