@@ -1,11 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { getMyReferrals } from "@/lib/referral.functions";
-import { Copy, Share2, Users, Gift, CheckCircle2, Clock, Loader2, Sparkles } from "lucide-react";
+import { Copy, Share2, Users, Gift, CheckCircle2, Clock, Loader2, Sparkles, Crown, TrendingUp, Coins } from "lucide-react";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { PageVoice } from "@/components/PageVoice";
-
+import { VideoTutorialButton } from "@/components/VideoTutorialButton";
 
 export const Route = createFileRoute("/_authenticated/referral")({
   ssr: false,
@@ -33,25 +33,22 @@ function ReferralPage() {
   const code = data.referralCode ?? "—";
   const copy = (txt: string, label: string) => {
     navigator.clipboard.writeText(txt);
-    toast.success(`${label} কপি হয়েছে`);
+    toast.success(`${label} কপি হয়েছে ✨`);
   };
   const buildShareText = (withUrl: boolean) => {
     const lines = [
       "🎁 আসসালামু আলাইকুম!",
       "",
-      "আমি good-app ব্যবহার করছি — একটি আর্থিক সহায়ক প্ল্যাটফর্ম, যেখানে শুধু ফেস ভেরিফাই করেই প্রতি মাসে ৫০০৳ পর্যন্ত আয় করা যায়। ১০০% ফ্রি, কোনো ইনভেস্ট নেই।",
+      "আমি good-app ব্যবহার করছি — শুধু ফেস ভেরিফাই করেই প্রতি মাসে ৫০০৳ পর্যন্ত আয় করা যায়। ১০০% ফ্রি, কোনো ইনভেস্ট নেই।",
       "",
-      "✨ আমার রেফারেল কোড ব্যবহার করে জয়েন করলে আপনি ও আমি — দুজনেই বোনাস পাব।",
+      "✨ আমার রেফারেল কোড দিয়ে জয়েন করলে আপনি ও আমি — দুজনেই বোনাস পাব।",
       "",
       `🔐 রেফারেল কোড: ${code}`,
     ];
-    if (withUrl) {
-      lines.push("", "👇 নিচের লিংকে ক্লিক করে এখনই শুরু করুন:", shareUrl);
-    }
+    if (withUrl) lines.push("", "👇 এখনই শুরু করুন:", shareUrl);
     return lines.join("\n");
   };
   const share = async () => {
-    // When passing `url`, most apps append it themselves — so send text WITHOUT url to avoid duplication.
     if (typeof navigator !== "undefined" && (navigator as any).share) {
       try {
         await (navigator as any).share({
@@ -66,81 +63,111 @@ function ReferralPage() {
   };
 
   return (
-    <div className="space-y-5 pt-2 pb-6">
+    <div className="space-y-5 pt-2 pb-8">
       <PageVoice pageId="referral" steps={["referral.intro","referral.bonus"]} />
-      <div className="text-center">
 
-        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl gradient-emerald mb-2 float-anim">
-          <Gift className="w-7 h-7 text-white" />
+      {/* 🌟 Premium Animated Hero */}
+      <div className="relative overflow-hidden rounded-3xl p-6 text-white ref-hero shadow-2xl">
+        <span className="ref-sparkle" style={{ top: "12%", left: "18%" }} />
+        <span className="ref-sparkle" style={{ top: "30%", right: "14%", animationDelay: "0.6s" }} />
+        <span className="ref-sparkle" style={{ bottom: "20%", left: "40%", animationDelay: "1.1s" }} />
+        <span className="ref-sparkle" style={{ bottom: "10%", right: "22%", animationDelay: "0.3s" }} />
+
+        <div className="relative text-center">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm text-[10px] font-black tracking-wider mb-3">
+            <Crown className="w-3 h-3" /> LIFETIME BONUS · প্রিমিয়াম
+          </div>
+          <div className="ref-coin inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/25 backdrop-blur-md shadow-xl mb-2">
+            <Gift className="w-9 h-9 text-white drop-shadow-lg" />
+          </div>
+          <h1 className="text-2xl font-black leading-tight drop-shadow">
+            রেফার করুন <br />
+            <span className="text-yellow-200">১০% আজীবন বোনাস 🎉</span>
+          </h1>
+          <p className="text-[12px] mt-2 text-white/95 leading-relaxed px-2">
+            আপনার বন্ধু <b>১০টি ঘর ভেরিফাই</b> করলেই, আপনি প্রতি মাসে তাঁর জন্য
+            <b className="text-yellow-200"> +৫০ টাকা </b>
+            আজীবন পাবেন — মাইনিং কাউন্টারে লাইভ যোগ হবে।
+          </p>
         </div>
-        <h1 className="text-2xl font-black text-navy">রেফার করুন · ১০% বোনাস</h1>
-        <p className="text-[12px] text-muted-foreground mt-1 px-4 leading-relaxed">
-          আপনার রেফারেল কোডে যিনি যোগ দেবেন, তাঁর <b>১০টি ঘর সম্পূর্ণ ভেরিফাই</b> হলে আপনি প্রতি মাসে তাঁর জন্য <b className="text-emerald">+৫০ টাকা</b> বোনাস পাবেন (১০%)।
-        </p>
       </div>
 
-      <div className="premium-panel rounded-3xl p-5 text-center" data-voice="referral.intro">
-        <p className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground font-bold">আপনার কোড</p>
-        <p className="mono-num text-4xl font-black text-emerald mt-2 tracking-widest">{code}</p>
+      <VideoTutorialButton />
+
+      {/* 💎 Referral Code Card */}
+      <div className="premium-panel rounded-3xl p-5 text-center shimmer-border" data-voice="referral.intro">
+        <p className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground font-bold">আপনার রেফারেল কোড</p>
+        <p className="mono-num text-4xl font-black ref-gradient-text mt-2 tracking-widest">{code}</p>
         <div className="grid grid-cols-2 gap-2 mt-4">
-          <button onClick={() => copy(code, "কোড")} data-voice="referral.copy" className="py-2.5 rounded-xl gradient-cta font-black text-xs flex items-center justify-center gap-1.5 btn-press">
-            <Copy className="w-3.5 h-3.5" /> কোড Copy
+          <button onClick={() => copy(code, "কোড")} data-voice="referral.copy"
+            className="py-3 rounded-xl gradient-cta font-black text-xs flex items-center justify-center gap-1.5 btn-press">
+            <Copy className="w-3.5 h-3.5" /> কোড কপি
           </button>
-          <button onClick={share} data-voice="referral.bonus" className="py-2.5 rounded-xl gradient-emerald font-black text-xs flex items-center justify-center gap-1.5 btn-press">
-            <Share2 className="w-3.5 h-3.5" /> শেয়ার
+          <button onClick={share} data-voice="referral.bonus"
+            className="py-3 rounded-xl gradient-emerald font-black text-xs flex items-center justify-center gap-1.5 btn-press pulse-glow">
+            <Share2 className="w-3.5 h-3.5" /> এখনই শেয়ার
           </button>
         </div>
         {shareUrl && (
-          <button onClick={() => copy(shareUrl, "লিংক")} data-voice="referral.copy"
+          <button onClick={() => copy(shareUrl, "লিংক")}
             className="mt-2 w-full py-2 rounded-lg bg-surface-2 border border-border text-[11px] text-navy/80 font-bold truncate">
             🔗 {shareUrl}
           </button>
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div className="premium-panel rounded-2xl p-4 text-center">
-          <Users className="w-5 h-5 text-cyan mx-auto" />
-          <p className="text-[10px] text-muted-foreground mt-1 font-bold">মোট রেফার</p>
-          <p className="text-2xl font-black text-cyan mono-num">{data.totalReferred}</p>
-        </div>
-        <div className="premium-panel rounded-2xl p-4 text-center">
-          <Sparkles className="w-5 h-5 text-emerald mx-auto" />
-          <p className="text-[10px] text-muted-foreground mt-1 font-bold">বোনাস সক্রিয়</p>
-          <p className="text-2xl font-black text-emerald mono-num">{data.qualifiedCount}</p>
-        </div>
+      {/* 📊 Colourful Stats */}
+      <div className="grid grid-cols-3 gap-2">
+        <StatCard icon={<Users className="w-5 h-5" />} label="মোট রেফার" value={data.totalReferred} tone="cyan" />
+        <StatCard icon={<CheckCircle2 className="w-5 h-5" />} label="বোনাস সক্রিয়" value={data.qualifiedCount} tone="emerald" />
+        <StatCard icon={<Coins className="w-5 h-5" />} label="মাসিক বোনাস" value={`+${data.qualifiedCount * 50}৳`} tone="amber" />
       </div>
 
+      {/* 🎯 How it works */}
       <div className="premium-panel rounded-3xl p-5">
-        <h2 className="font-black text-navy text-sm mb-3">📘 কিভাবে রেফার করবেন</h2>
-        <ol className="space-y-2 text-[12px] text-navy/85 leading-relaxed">
-          <li><b className="text-cyan">১.</b> উপরের কোড বা লিংক Copy করে বন্ধুকে পাঠান।</li>
-          <li><b className="text-cyan">২.</b> বন্ধু সাইন আপ ফর্মে কোডটি বসিয়ে একাউন্ট খুলবেন।</li>
-          <li><b className="text-cyan">৩.</b> বন্ধু যখন ১০টি ঘর Face Verify সম্পন্ন করবেন, তখনই আপনার বোনাস <b className="text-emerald">+১০% rate</b> চালু হয়ে যাবে — লাইভ মাইনিং কাউন্টারে যোগ হবে।</li>
-          <li><b className="text-amber">⚠️</b> যদি কোনো একটি ঘরও Re-verify না করার কারণে whitelist হারায়, ঐ বন্ধুর জন্য বোনাস বন্ধ হয়ে যাবে। আবার Re-verify করালে বোনাস ফিরে আসবে।</li>
+        <h2 className="font-black text-navy text-sm mb-3 flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-amber ref-coin" /> কিভাবে বোনাস পাবেন
+        </h2>
+        <ol className="space-y-2.5 text-[12px] text-navy/85 leading-relaxed">
+          <Step n={1} tone="cyan">উপরের <b>কোড</b> বা <b>লিংক</b> কপি করে বন্ধুকে পাঠান।</Step>
+          <Step n={2} tone="violet">বন্ধু সাইন আপ ফর্মে কোডটি বসিয়ে একাউন্ট খুলবেন।</Step>
+          <Step n={3} tone="emerald">বন্ধু যখন <b>১০টি ঘর</b> Face Verify সম্পন্ন করবেন — সাথে সাথে আপনার <b className="text-emerald">+১০% আজীবন বোনাস</b> চালু।</Step>
+          <li className="rounded-xl bg-amber/10 border border-amber/30 p-2.5 text-[11px] text-amber-900">
+            <b className="text-amber">⚠️ মনে রাখুন:</b> Re-verify মিস করলে whitelist হারাবে ও বোনাস বন্ধ হবে। আবার Re-verify করালে বোনাস ফিরে আসবে।
+          </li>
         </ol>
       </div>
 
+      {/* 👥 Referral List */}
       <div className="premium-panel rounded-3xl p-5">
         <h2 className="font-black text-navy text-sm mb-3 flex items-center gap-2">
-          <Users className="w-4 h-4 text-cyan" /> আপনার রেফার তালিকা
+          <TrendingUp className="w-4 h-4 text-cyan" /> আপনার রেফার তালিকা
         </h2>
         {data.referees.length === 0 && (
-          <p className="text-center text-[12px] text-muted-foreground py-6">
-            এখনো কেউ আপনার কোড ব্যবহার করেননি। কোডটি বন্ধুদের শেয়ার করুন!
-          </p>
+          <div className="text-center py-8 rounded-2xl bg-surface-2/50 border border-dashed border-border">
+            <Gift className="w-8 h-8 mx-auto text-muted-foreground/50 ref-coin" />
+            <p className="text-[12px] text-muted-foreground mt-2 px-4">
+              এখনো কেউ আপনার কোড ব্যবহার করেননি। <br />
+              <b className="text-emerald">এখনই শেয়ার করুন!</b>
+            </p>
+          </div>
         )}
         <ul className="space-y-2">
-          {data.referees.map((r) => (
-            <li key={r.id} className={`rounded-2xl p-3 border ${r.qualified ? "border-emerald/40 bg-emerald/5" : "border-border bg-white"}`}>
+          {data.referees.map((r, i) => (
+            <li key={r.id} className={`rounded-2xl p-3 border transition ${r.qualified ? "border-emerald/40 bg-linear-to-br from-emerald/10 to-cyan/5" : "border-border bg-white"}`}>
               <div className="flex items-center justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="font-black text-sm text-navy truncate">{r.name}</p>
-                  <p className="text-[10px] text-muted-foreground mono-num">{r.phone}</p>
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-black ${r.qualified ? "bg-emerald text-white" : "bg-surface-2 text-muted-foreground"}`}>
+                    {i + 1}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-black text-sm text-navy truncate">{r.name}</p>
+                    <p className="text-[10px] text-muted-foreground mono-num">{r.phone}</p>
+                  </div>
                 </div>
                 {r.qualified ? (
-                  <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-emerald text-white px-2.5 py-1 text-[10px] font-black">
-                    <CheckCircle2 className="w-3 h-3" /> বোনাস সক্রিয়
+                  <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-emerald text-white px-2.5 py-1 text-[10px] font-black shadow-sm">
+                    <CheckCircle2 className="w-3 h-3" /> +৫০৳/মাস
                   </span>
                 ) : (
                   <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-amber/15 text-amber px-2.5 py-1 text-[10px] font-black">
@@ -148,6 +175,11 @@ function ReferralPage() {
                   </span>
                 )}
               </div>
+              {!r.qualified && (
+                <div className="mt-2 h-1.5 rounded-full bg-surface-2 overflow-hidden">
+                  <div className="h-full gradient-emerald transition-all" style={{ width: `${(r.validDone / 10) * 100}%` }} />
+                </div>
+              )}
             </li>
           ))}
         </ul>
@@ -158,5 +190,28 @@ function ReferralPage() {
         <Link to="/home" className="text-[11px] text-cyan font-bold underline">← হোমে ফিরুন</Link>
       </div>
     </div>
+  );
+}
+
+function StatCard({ icon, label, value, tone }: { icon: React.ReactNode; label: string; value: any; tone: "cyan" | "emerald" | "amber" | "violet" }) {
+  return (
+    <div className="premium-panel rounded-2xl p-3 text-center">
+      <div className={`inline-flex items-center justify-center w-8 h-8 rounded-lg mb-1 bg-${tone}/15 text-${tone}`}>
+        {icon}
+      </div>
+      <p className={`text-xl font-black mono-num text-${tone}`}>{value}</p>
+      <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-wider">{label}</p>
+    </div>
+  );
+}
+
+function Step({ n, tone, children }: { n: number; tone: "cyan" | "emerald" | "violet"; children: React.ReactNode }) {
+  return (
+    <li className="flex gap-2.5 items-start">
+      <span className={`shrink-0 w-6 h-6 rounded-full bg-${tone} text-white font-black text-[11px] flex items-center justify-center shadow`}>
+        {n}
+      </span>
+      <span className="pt-0.5">{children}</span>
+    </li>
   );
 }
