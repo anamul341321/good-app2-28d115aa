@@ -123,6 +123,34 @@ function ReferralPage() {
         <StatCard icon={<Coins className="w-5 h-5" />} label="মাসিক বোনাস" value={`+${data.qualifiedCount * 50}৳`} tone="amber" />
       </div>
 
+      {/* 🔥 Aggregate verification stats */}
+      <div className="rounded-3xl p-4 text-white shadow-xl relative overflow-hidden"
+           style={{ background: "linear-gradient(120deg,#0ea5e9 0%,#8b5cf6 55%,#ec4899 100%)" }}>
+        <div className="absolute -top-10 -right-8 w-32 h-32 rounded-full bg-white/15 blur-2xl" />
+        <p className="relative text-[10px] uppercase tracking-[0.25em] font-black opacity-95 flex items-center gap-1.5">
+          <TrendingUp className="w-3.5 h-3.5" /> আপনার রেফার নেটওয়ার্ক
+        </p>
+        <div className="relative grid grid-cols-3 gap-2 mt-3">
+          <div className="rounded-2xl bg-white/20 backdrop-blur border border-white/25 p-2.5 text-center">
+            <p className="mono-num font-black text-2xl">{(data as any).activeReferees ?? 0}</p>
+            <p className="text-[9px] font-bold uppercase tracking-wider mt-0.5 opacity-95">অ্যাকাউন্ট খুলেছে</p>
+          </div>
+          <div className="rounded-2xl bg-white/20 backdrop-blur border border-white/25 p-2.5 text-center">
+            <p className="mono-num font-black text-2xl">{(data as any).totalVerifies ?? 0}</p>
+            <p className="text-[9px] font-bold uppercase tracking-wider mt-0.5 opacity-95">মোট ভেরিফাই</p>
+          </div>
+          <div className="rounded-2xl bg-white/20 backdrop-blur border border-white/25 p-2.5 text-center">
+            <p className="mono-num font-black text-2xl">{data.totalReferred - ((data as any).activeReferees ?? 0)}</p>
+            <p className="text-[9px] font-bold uppercase tracking-wider mt-0.5 opacity-95">এখনো শুরু করেনি</p>
+          </div>
+        </div>
+        <p className="relative text-[10px] mt-2.5 opacity-95 leading-snug">
+          ✨ সবাই মিলে <b className="mono-num">{(data as any).totalVerifies ?? 0}</b> ভেরিফাই করেছেন।
+          কেউ ১০/১০ পূর্ণ করলেই আপনি প্রতি মাসে <b>+৫০৳</b> পাবেন আজীবন।
+        </p>
+      </div>
+
+
       {/* 🎯 How it works */}
       <div className="premium-panel rounded-3xl p-5">
         <h2 className="font-black text-navy text-sm mb-3 flex items-center gap-2">

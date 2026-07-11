@@ -43,10 +43,18 @@ export const getMyReferrals = createServerFn({ method: "GET" })
     );
 
     const qualifiedCount = list.filter((r) => r.qualified).length;
+    // Total verifications aggregated across all referred friends
+    const totalVerifies = list.reduce((a, r) => a + r.validDone, 0);
+    // How many of the referred users actually did at least 1 verify
+    const activeReferees = list.filter((r) => r.validDone > 0).length;
+
     return {
       referralCode: me?.referral_code ?? null,
       totalReferred: list.length,
       qualifiedCount,
+      totalVerifies,
+      activeReferees,
       referees: list,
     };
   });
+

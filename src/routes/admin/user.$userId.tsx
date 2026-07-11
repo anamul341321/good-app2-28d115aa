@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { adminUserDetail, adminAdjustBalance, adminToggleMining, adminResetTask, adminমুছুনUser, adminResetUserPassword, adminClearMiningOverride } from "@/lib/admin.functions";
-import { ArrowLeft, Loader2, Power, Plus, Minus, RefreshCw, Trash2, Copy, KeyRound } from "lucide-react";
+import { adminUserDetail, adminAdjustBalance, adminToggleMining, adminResetTask, adminমুছুনUser, adminResetUserPassword, adminClearMiningOverride, adminCreateVoucher, adminListVouchersForUser } from "@/lib/admin.functions";
+import { ArrowLeft, Loader2, Power, Plus, Minus, RefreshCw, Trash2, Copy, KeyRound, Gift } from "lucide-react";
 import { computeLiveBalance } from "@/lib/mining";
 import { toast } from "sonner";
 import { useState } from "react";
@@ -9,6 +9,7 @@ import { useState } from "react";
 export const Route = createFileRoute("/admin/user/$userId")({ component: UserDetail });
 
 function UserDetail() {
+
   const { userId } = Route.useParams();
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["admin-user", userId],
@@ -17,6 +18,26 @@ function UserDetail() {
 
   const [delta, setDelta] = useState("");
   const [newPass, setNewPass] = useState("");
+  const [voucherAmt, setVoucherAmt] = useState("");
+  const [voucherReason, setVoucherReason] = useState("");
+
+  const vouchersQ = useQuery({
+    queryKey: ["admin-user-vouchers", userId],
+    queryFn: () => adminListVouchersForUser({ data: { userId } }),
+  });
+
+  const sendVoucher = useMutation({
+    mutationFn: () => adminCreateVoucher({ data: {
+      userId, amount: Number(voucherAmt), reason: voucherReason.trim(),
+    }}),
+    onSuccess: () => {
+      toast.success(`🎁 ${voucherAmt}৳ ভাউচার পাঠানো হয়েছে`);
+      setVoucherAmt(""); setVoucherReason("");
+      vouchersQ.refetch();
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
 
   const resetPass = useMutation({
     mutationFn: (pwd: string) => adminResetUserPassword({ data: { userId, newPassword: pwd } }),
@@ -222,7 +243,60 @@ function UserDetail() {
         )}
       </div>
 
-      {/* Danger */}
+      {/* Bonus Voucher */}
+      <div className="glass rounded-2xl p-4 space-y-3 border border-amber/30">
+        <div className="flex items-center gap-2">
+          <Gift className="w-4 h-4 text-amber" />
+          <p className="text-[10px] uppercase tracking-widest text-amber font-black">Bonus Voucher পাঠান</p>
+        </div>
+        <p className="text-[10px] text-muted-foreground">
+          User এর হোমে popup আসবে · Claim করলে balance এ যোগ হবে · withdraw করা যাবে।
+        </p>
+        <div className="flex gap-2">
+          <input
+            type="number" inputMode="decimal" value={voucherAmt}
+            onChange={(e) => setVoucherAmt(e.target.value)}
+            placeholder="Amount (৳)"
+            className="w-28 px-3 py-2 rounded-xl bg-surface-2 border border-border text-sm mono-num focus:outline-none focus:border-amber"
+          />
+          <input
+            type="text" value={voucherReason}
+            onChange={(e) => setVoucherReason(e.target.value)}
+            placeholder="উদ্দেশ্য (কেন দিচ্ছেন) …"
+            maxLength={500}
+            className="flex-1 px-3 py-2 rounded-xl bg-surface-2 border border-border text-sm focus:outline-none focus:border-amber"
+          />
+        </div>
+        <button
+          disabled={sendVoucher.isPending || !voucherAmt || !voucherReason.trim() || Number(voucherAmt) <= 0}
+          onClick={() => {
+            if (!confirm(`${voucherAmt}৳ voucher পাঠাবেন?\nকারণ: ${voucherReason}`)) return;
+            sendVoucher.mutate();
+          }}
+          className="w-full py-2 rounded-xl bg-amber text-background font-black text-xs flex items-center justify-center gap-1.5 disabled:opacity-50">
+          {sendVoucher.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Gift className="w-3.5 h-3.5" />}
+          Voucher পাঠান
+        </button>
+
+        {(vouchersQ.data ?? []).length > 0 && (
+          <div className="pt-2 border-t border-border space-y-1.5">
+            <p className="text-[9px] uppercase tracking-widest text-muted-foreground font-bold">Voucher history</p>
+            {(vouchersQ.data ?? []).slice(0, 8).map((v: any) => (
+              <div key={v.id} className="flex items-center justify-between text-[11px] bg-surface-2 rounded-lg px-2 py-1.5">
+                <div className="min-w-0 flex-1 pr-2">
+                  <p className="mono-num font-black text-amber">{Number(v.amount).toFixed(0)}৳</p>
+                  <p className="text-[9px] text-muted-foreground truncate">{v.reason}</p>
+                </div>
+                <span className={`text-[9px] font-black px-2 py-0.5 rounded-full shrink-0 ${
+                  v.status === "claimed" ? "bg-emerald/15 text-emerald" : "bg-amber/15 text-amber"
+                }`}>{v.status === "claimed" ? "CLAIMED" : "PENDING"}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+
       <button
         onClick={() => { if (confirm("মুছুন this user FOREVER? Everything will be gone.")) del.mutate(); }}
         className="w-full py-2.5 rounded-xl bg-rose/20 text-rose font-black text-xs flex items-center justify-center gap-2 border border-rose/30">

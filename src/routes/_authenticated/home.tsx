@@ -3,6 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { createContext, useContext, useEffect, useState } from "react";
 import { getDashboard } from "@/lib/dashboard.functions";
 import { addMoreSlots, batchSubmitPending } from "@/lib/tasks.functions";
+import { claimVoucher } from "@/lib/vouchers.functions";
 import { MiningCounter } from "@/components/MiningCounter";
 import bonusGirl from "@/assets/bonus-girl.png";
 import { QrCode } from "@/components/QrCode";
@@ -13,6 +14,8 @@ import { PageVoice } from "@/components/PageVoice";
 import { VideoTutorialButton } from "@/components/VideoTutorialButton";
 
 import { toast } from "sonner";
+
+
 
 export const Route = createFileRoute("/_authenticated/home")({ component: HomePage });
 
@@ -98,6 +101,10 @@ function HomePage() {
 
       <PageVoice pageId="home" steps={["home.welcome","home.mining","home.claim","home.main","home.witness","home.tap.slot","home.open.photo","reverify.button"]} />
       <AnnouncementTicker />
+
+      <VoucherPopup vouchers={(data as any).vouchers ?? []} onClaimed={() => refetch()} />
+
+
 
 
       <div className="text-center">
@@ -750,6 +757,71 @@ function BonusClaimCard({
           {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "🎁"} Claim করুন
         </button>
       )}
+    </div>
+  );
+}
+
+function VoucherPopup({ vouchers, onClaimed }: { vouchers: any[]; onClaimed: () => void }) {
+  const [dismissed, setDismissed] = useState<string[]>([]);
+  const visible = vouchers.filter((v) => !dismissed.includes(v.id));
+  const [current, setCurrent] = useState<any | null>(null);
+
+  useEffect(() => {
+    if (visible.length > 0 && !current) setCurrent(visible[0]);
+    if (visible.length === 0 && current) setCurrent(null);
+  }, [visible, current]);
+
+  const claim = useMutation({
+    mutationFn: (id: string) => claimVoucher({ data: { voucherId: id } }),
+    onSuccess: (r: any) => {
+      toast.success(`🎉 ${r.amount}৳ যোগ হয়েছে balance-এ!`);
+      if (current) setDismissed((d) => [...d, current.id]);
+      setCurrent(null);
+      onClaimed();
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  if (!current) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="relative w-full max-w-sm rounded-3xl p-6 text-white shadow-[0_30px_80px_-20px_rgba(0,0,0,0.6)] overflow-hidden"
+           style={{ background: "linear-gradient(135deg,#f59e0b 0%,#ef4444 45%,#8b5cf6 100%)" }}>
+        <button
+          onClick={() => { setDismissed((d) => [...d, current.id]); setCurrent(null); }}
+          className="absolute top-3 right-3 w-7 h-7 rounded-full bg-white/25 backdrop-blur flex items-center justify-center">
+          <X className="w-4 h-4" />
+        </button>
+
+        <div className="absolute -top-16 -right-16 w-48 h-48 rounded-full opacity-30 bg-white blur-3xl" />
+        <div className="absolute -bottom-16 -left-16 w-48 h-48 rounded-full opacity-20 bg-yellow-200 blur-3xl" />
+
+        <div className="relative text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/25 backdrop-blur mb-2 animate-bounce">
+            <Gift className="w-9 h-9 text-white drop-shadow" />
+          </div>
+          <p className="text-[10px] uppercase tracking-[0.3em] font-black opacity-90">Special Bonus Voucher</p>
+          <p className="text-5xl font-black mono-num mt-1 drop-shadow-lg">
+            {Number(current.amount).toFixed(0)}<span className="text-2xl">৳</span>
+          </p>
+          <div className="mt-3 rounded-2xl bg-white/20 backdrop-blur border border-white/30 p-3">
+            <p className="text-[10px] uppercase tracking-widest font-black opacity-90">উদ্দেশ্য</p>
+            <p className="text-sm font-bold mt-1 leading-snug">{current.reason}</p>
+          </div>
+          <button
+            disabled={claim.isPending}
+            onClick={() => claim.mutate(current.id)}
+            className="mt-4 w-full py-3 rounded-2xl bg-white text-navy font-black text-sm flex items-center justify-center gap-2 shadow-xl btn-press disabled:opacity-70">
+            {claim.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+            এখনই Claim করুন
+          </button>
+          <p className="text-[10px] opacity-90 mt-2">Claim করলে সরাসরি balance-এ যোগ হবে · withdraw করা যাবে।</p>
+          {visible.length > 1 && (
+            <p className="text-[10px] font-black mt-2 opacity-95">🎁 আরও {visible.length - 1} টি voucher অপেক্ষমাণ</p>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

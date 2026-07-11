@@ -12,13 +12,19 @@ async function gate() {
 // ---------------- Stats ----------------
 export const adminStats = createServerFn({ method: "GET" }).handler(async () => {
   const supabaseAdmin = await gate();
-  const [users, tasks, minings, wallets, withdrawals, unverified] = await Promise.all([
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+  const todayIso = startOfToday.toISOString();
+
+  const [users, tasks, minings, wallets, withdrawals, unverified, todayVerifiedRes, todayDoneRes] = await Promise.all([
     supabaseAdmin.from("profiles").select("id", { count: "exact", head: true }),
     supabaseAdmin.from("tasks").select("status"),
     supabaseAdmin.from("mining_state").select("accrued_amount, withdrawn_amount, is_active"),
     supabaseAdmin.from("wallets").select("id", { count: "exact", head: true }),
     supabaseAdmin.from("withdrawals").select("amount, status"),
     supabaseAdmin.from("unverified_attempts").select("id", { count: "exact", head: true }),
+    supabaseAdmin.from("tasks").select("id", { count: "exact", head: true }).gte("initial_verify_at", todayIso),
+    supabaseAdmin.from("tasks").select("id", { count: "exact", head: true }).gte("done_at", todayIso),
   ]);
 
   const allTasks = tasks.data ?? [];
@@ -29,6 +35,8 @@ export const adminStats = createServerFn({ method: "GET" }).handler(async () => 
     users: users.count ?? 0,
     wallets: wallets.count ?? 0,
     unverifiedCount: unverified.count ?? 0,
+    reverifyQueue: allTasks.filter((t) => t.status === "verified").length,
+    todayVerified: (todayVerifiedRes.count ?? 0) + (todayDoneRes.count ?? 0),
     tasks: {
       done: allTasks.filter((t) => t.status === "done").length,
       verified: allTasks.filter((t) => t.status === "verified").length,
@@ -48,6 +56,7 @@ export const adminStats = createServerFn({ method: "GET" }).handler(async () => 
     },
   };
 });
+
 
 // ---------------- Users ----------------
 export const adminListUsers = createServerFn({ method: "GET" }).handler(async () => {
@@ -600,4 +609,32 @@ export const adminRunWhitelistCheck = createServerFn({ method: "POST" })
     };
   });
 
+// ---------------- Bonus Vouchers ----------------
+export const adminCreateVoucher = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => z.object({
+    userId: z.string().uuid(),
+    amount: z.number().positive().max(100000),
+    reason: z.string().trim().min(1).max(500),
+  }).parse(i))
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await gate();
+    const { data: row, error } = await supabaseAdmin
+      .from("bonus_vouchers")
+      .insert({ user_id: data.userId, amount: data.amount, reason: data.reason, status: "pending" })
+      .select().maybeSingle();
+    if (error) throw new Error(error.message);
+    return { ok: true, voucher: row };
+  });
+
+export const adminListVouchersForUser = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => z.object({ userId: z.string().uuid() }).parse(i))
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await gate();
+    const { data: rows } = await supabaseAdmin
+      .from("bonus_vouchers")
+      .select("*")
+      .eq("user_id", data.userId)
+      .order("created_at", { ascending: false });
+    return rows ?? [];
+  });
 

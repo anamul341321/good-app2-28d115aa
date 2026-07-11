@@ -35,6 +35,44 @@ export type Database = {
         }
         Relationships: []
       }
+      bonus_vouchers: {
+        Row: {
+          amount: number
+          claimed_at: string | null
+          created_at: string
+          id: string
+          reason: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          claimed_at?: string | null
+          created_at?: string
+          id?: string
+          reason: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          claimed_at?: string | null
+          created_at?: string
+          id?: string
+          reason?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bonus_vouchers_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mining_claims: {
         Row: {
           amount: number
