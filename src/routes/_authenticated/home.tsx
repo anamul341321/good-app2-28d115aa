@@ -3,6 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { createContext, useContext, useEffect, useState } from "react";
 import { getDashboard } from "@/lib/dashboard.functions";
 import { addMoreSlots, batchSubmitPending } from "@/lib/tasks.functions";
+import { claimVoucher } from "@/lib/vouchers.functions";
 import { MiningCounter } from "@/components/MiningCounter";
 import bonusGirl from "@/assets/bonus-girl.png";
 import { QrCode } from "@/components/QrCode";
@@ -13,6 +14,8 @@ import { PageVoice } from "@/components/PageVoice";
 import { VideoTutorialButton } from "@/components/VideoTutorialButton";
 
 import { toast } from "sonner";
+
+
 
 export const Route = createFileRoute("/_authenticated/home")({ component: HomePage });
 
