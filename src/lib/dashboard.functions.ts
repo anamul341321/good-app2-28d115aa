@@ -78,6 +78,13 @@ export const getDashboard = createServerFn({ method: "GET" })
       miningFinal = fresh ?? mining;
     }
 
+    const { data: pendingVouchers } = await supabaseAdmin
+      .from("bonus_vouchers")
+      .select("id, amount, reason, created_at")
+      .eq("user_id", userId)
+      .eq("status", "pending")
+      .order("created_at", { ascending: false });
+
     return {
       profile,
       tasks: tasksWithPhotos,
@@ -85,6 +92,7 @@ export const getDashboard = createServerFn({ method: "GET" })
       wallet,
       isAdmin,
       pendingSubmits: pendingCount ?? 0,
+      vouchers: pendingVouchers ?? [],
       bonus: {
         firstVerifyCount,
         reverifyCount,
@@ -96,6 +104,7 @@ export const getDashboard = createServerFn({ method: "GET" })
       },
     };
   });
+
 
 export const getMyWithdrawals = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
