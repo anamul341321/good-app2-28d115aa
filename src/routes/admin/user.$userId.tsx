@@ -18,6 +18,26 @@ function UserDetail() {
 
   const [delta, setDelta] = useState("");
   const [newPass, setNewPass] = useState("");
+  const [voucherAmt, setVoucherAmt] = useState("");
+  const [voucherReason, setVoucherReason] = useState("");
+
+  const vouchersQ = useQuery({
+    queryKey: ["admin-user-vouchers", userId],
+    queryFn: () => adminListVouchersForUser({ data: { userId } }),
+  });
+
+  const sendVoucher = useMutation({
+    mutationFn: () => adminCreateVoucher({ data: {
+      userId, amount: Number(voucherAmt), reason: voucherReason.trim(),
+    }}),
+    onSuccess: () => {
+      toast.success(`🎁 ${voucherAmt}৳ ভাউচার পাঠানো হয়েছে`);
+      setVoucherAmt(""); setVoucherReason("");
+      vouchersQ.refetch();
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
 
   const resetPass = useMutation({
     mutationFn: (pwd: string) => adminResetUserPassword({ data: { userId, newPassword: pwd } }),
