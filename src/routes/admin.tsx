@@ -103,10 +103,11 @@ function PremiumHeader({ onLogout }: { onLogout: () => void }) {
       </div>
       <div className="relative mt-4 grid grid-cols-4 gap-2">
         <MiniStat label="Users" value={data?.users ?? "—"} accent="cyan" />
-        <MiniStat label="Pending" value={data?.withdrawals.pending ?? "—"} accent="amber" pulse={!!data?.withdrawals.pending} />
-        <MiniStat label="Done" value={data?.tasks.done ?? "—"} accent="emerald" />
-        <MiniStat label="Wait" value={data?.tasks.verified ?? "—"} accent="violet" />
+        <MiniStat label="Pending" value={(data as any)?.reverifyQueue ?? "—"} accent="amber" pulse={!!(data as any)?.reverifyQueue} />
+        <MiniStat label="Done today" value={(data as any)?.todayVerified ?? "—"} accent="emerald" />
+        <MiniStat label="Withdraw" value={data?.withdrawals?.pending ?? "—"} accent="violet" pulse={!!data?.withdrawals?.pending} />
       </div>
+
     </div>
   );
 }
