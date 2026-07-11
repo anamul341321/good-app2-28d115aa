@@ -102,6 +102,10 @@ function HomePage() {
       <PageVoice pageId="home" steps={["home.welcome","home.mining","home.claim","home.main","home.witness","home.tap.slot","home.open.photo","reverify.button"]} />
       <AnnouncementTicker />
 
+      <VoucherPopup vouchers={(data as any).vouchers ?? []} onClaimed={() => refetch()} />
+
+
+
 
       <div className="text-center">
         <p className="text-[11px] text-muted-foreground">স্বাগতম,</p>
