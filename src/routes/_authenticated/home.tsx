@@ -454,7 +454,8 @@ function HomePage() {
       </div>
 
 
-      <div className="text-center py-2 space-y-2">
+      <div className="text-center py-2 space-y-3">
+        <VideoTutorialButton />
         <p className="text-[11px] text-muted-foreground italic">
           🌸 "হাজার জনের সহযোগিতা, একজনের হাসি" 🌸
         </p>
