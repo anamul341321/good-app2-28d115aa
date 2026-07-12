@@ -19,34 +19,73 @@ export const getMyReferrals = createServerFn({ method: "GET" })
       .eq("referred_by", userId)
       .order("created_at", { ascending: false });
 
-    const list = await Promise.all(
-      (referees ?? []).map(async (r: any) => {
-        const { data: ts } = await supabaseAdmin
+    const refereeIds = (referees ?? []).map((r: any) => r.id);
+    let tasks: any[] = [];
+    let attempts: any[] = [];
+    if (refereeIds.length > 0) {
+      const [taskRes, attemptRes] = await Promise.all([
+        supabaseAdmin
           .from("tasks")
-          .select("status, whitelist_ok")
-          .eq("user_id", r.id);
-        const validDone = (ts ?? []).filter(
-          (t: any) => t.status === "done" && (t.whitelist_ok ?? true) === true,
-        ).length;
-        const qualified = validDone >= 10;
-        const phone: string = r.phone_number ?? "";
-        const masked = phone.length >= 11 ? `${phone.slice(0, 3)}****${phone.slice(-3)}` : phone;
-        return {
-          id: r.id,
-          name: r.display_name ?? "User",
-          phone: masked,
-          joinedAt: r.created_at,
-          validDone,
-          qualified,
-        };
-      }),
-    );
+          .select("id, user_id, status, whitelist_ok, wallet_address, face_photo_url")
+          .in("user_id", refereeIds),
+        supabaseAdmin
+          .from("unverified_attempts")
+          .select("id, user_id, wallet_address, face_photo_url")
+          .in("user_id", refereeIds),
+      ]);
+      tasks = taskRes.data ?? [];
+      attempts = attemptRes.data ?? [];
+    }
+
+    const faceKeysByUser = new Map<string, Set<string>>();
+    const doneByUser = new Map<string, number>();
+    const slotFacesByUser = new Map<string, number>();
+    const backupFacesByUser = new Map<string, number>();
+    const addFace = (uid: string, key: string) => {
+      const set = faceKeysByUser.get(uid) ?? new Set<string>();
+      set.add(key);
+      faceKeysByUser.set(uid, set);
+    };
+
+    for (const t of tasks) {
+      const hasGoodDollarFace = t.status === "verified" || t.status === "done" || !!t.face_photo_url || !!t.wallet_address;
+      if (!hasGoodDollarFace) continue;
+      addFace(t.user_id, t.wallet_address ? `wallet:${t.wallet_address}` : `task:${t.id}`);
+      slotFacesByUser.set(t.user_id, (slotFacesByUser.get(t.user_id) ?? 0) + 1);
+      if (t.status === "done" && (t.whitelist_ok ?? true) === true) {
+        doneByUser.set(t.user_id, (doneByUser.get(t.user_id) ?? 0) + 1);
+      }
+    }
+    for (const a of attempts) {
+      if (!a.face_photo_url && !a.wallet_address) continue;
+      addFace(a.user_id, a.wallet_address ? `wallet:${a.wallet_address}` : `attempt:${a.id}`);
+      backupFacesByUser.set(a.user_id, (backupFacesByUser.get(a.user_id) ?? 0) + 1);
+    }
+
+    const list = (referees ?? []).map((r: any) => {
+      const validDone = doneByUser.get(r.id) ?? 0;
+      const faceTotal = faceKeysByUser.get(r.id)?.size ?? 0;
+      const qualified = validDone >= 10;
+      const phone: string = r.phone_number ?? "";
+      const masked = phone.length >= 11 ? `${phone.slice(0, 3)}****${phone.slice(-3)}` : phone;
+      return {
+        id: r.id,
+        name: r.display_name ?? "User",
+        phone: masked,
+        joinedAt: r.created_at,
+        validDone,
+        faceTotal,
+        slotFaces: slotFacesByUser.get(r.id) ?? 0,
+        backupFaces: backupFacesByUser.get(r.id) ?? 0,
+        qualified,
+      };
+    }).sort((a, b) => b.faceTotal - a.faceTotal || new Date(b.joinedAt).getTime() - new Date(a.joinedAt).getTime());
 
     const qualifiedCount = list.filter((r) => r.qualified).length;
-    // Total verifications aggregated across all referred friends
-    const totalVerifies = list.reduce((a, r) => a + r.validDone, 0);
-    // How many of the referred users actually did at least 1 verify
-    const activeReferees = list.filter((r) => r.validDone > 0).length;
+    // Total GoodDollar face verification/backup aggregated across all referred friends
+    const totalVerifies = list.reduce((a, r) => a + r.faceTotal, 0);
+    // How many of the referred users actually did at least 1 GoodDollar face
+    const activeReferees = list.filter((r) => r.faceTotal > 0).length;
 
     return {
       referralCode: me?.referral_code ?? null,
