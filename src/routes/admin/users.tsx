@@ -30,10 +30,10 @@ function AdminUsers() {
   });
 
   const verifiedRows = rows
-    .filter((r: any) => (r.done + r.verified) > 0)
-    .sort((a: any, b: any) => (b.done + b.verified) - (a.done + a.verified));
-  const notVerifiedRows = rows.filter((r: any) => (r.done + r.verified) === 0);
-  const completedRows = verifiedRows.filter((r: any) => r.done >= 10);
+    .filter((r: any) => (r.faceTotal ?? 0) > 0)
+    .sort((a: any, b: any) => (b.faceTotal ?? 0) - (a.faceTotal ?? 0));
+  const notVerifiedRows = rows.filter((r: any) => (r.faceTotal ?? 0) === 0);
+  const completedRows = verifiedRows.filter((r: any) => (r.faceTotal ?? 0) >= 10);
 
   const renderCard = (row: any, serial?: number) => {
     const m = row.mining;
@@ -41,7 +41,9 @@ function AdminUsers() {
       accrued: Number(m.accrued_amount), withdrawn: Number(m.withdrawn_amount),
       isActive: m.is_active, lastCreditedAt: m.last_credited_at,
     }) : 0;
-    const total = row.done + row.verified;
+    const total = row.faceTotal ?? (row.done + row.verified);
+    const slotFaces = row.slotFaces ?? (row.done + row.verified);
+    const backupFaces = row.attemptFaces ?? 0;
     return (
       <div key={row.profile.id} className="glass rounded-xl p-3 space-y-2">
         <Link to="/admin/user/$userId" params={{ userId: row.profile.id }} className="flex items-start justify-between gap-2">
@@ -68,9 +70,11 @@ function AdminUsers() {
           <ChevronRight className="w-4 h-4 text-muted-foreground mt-1" />
         </Link>
         <div className="flex flex-wrap gap-1 text-[10px]">
-          {total > 0 && <span className="px-2 py-0.5 rounded-full bg-violet/15 text-violet font-black mono-num">মোট {total} verify</span>}
-          <span className="px-2 py-0.5 rounded-full bg-emerald/15 text-emerald font-bold">{row.done}/10 done</span>
-          {row.verified > 0 && <span className="px-2 py-0.5 rounded-full bg-amber/15 text-amber font-bold">{row.verified} re-verify</span>}
+          {total > 0 && <span className="px-2 py-0.5 rounded-full bg-violet/15 text-violet font-black mono-num">মোট {total} face</span>}
+          <span className="px-2 py-0.5 rounded-full bg-emerald/15 text-emerald font-bold mono-num">slot {slotFaces}</span>
+          {backupFaces > 0 && <span className="px-2 py-0.5 rounded-full bg-rose/15 text-rose font-bold mono-num">backup {backupFaces}</span>}
+          {row.done > 0 && <span className="px-2 py-0.5 rounded-full bg-cyan/15 text-cyan font-bold">{row.done} done</span>}
+          {row.verified > 0 && <span className="px-2 py-0.5 rounded-full bg-amber/15 text-amber font-bold">{row.verified} pending re-verify</span>}
           {m?.is_active && <span className="px-2 py-0.5 rounded-full bg-cyan/15 text-cyan font-bold">MINING</span>}
           {row.wallet && <span className="px-2 py-0.5 rounded-full bg-surface-2 text-muted-foreground mono-num">{row.wallet.provider}:{row.wallet.number}</span>}
         </div>
@@ -87,8 +91,8 @@ function AdminUsers() {
     <div className="space-y-4">
       {/* 🏆 Top Summary bar */}
       <div className="grid grid-cols-3 gap-2">
-        <SummaryTile tone="emerald" icon={<Trophy className="w-4 h-4" />} label="Verified" value={verifiedRows.length} />
-        <SummaryTile tone="amber" icon={<Crown className="w-4 h-4" />} label="Full 10/10" value={completedRows.length} />
+        <SummaryTile tone="emerald" icon={<Trophy className="w-4 h-4" />} label="Face users" value={verifiedRows.length} />
+        <SummaryTile tone="amber" icon={<Crown className="w-4 h-4" />} label="10+ face" value={completedRows.length} />
         <SummaryTile tone="violet" icon={<UsersIcon className="w-4 h-4" />} label="Total" value={rows.length} />
       </div>
 
@@ -112,14 +116,14 @@ function AdminUsers() {
           <div className="rounded-2xl p-3 border-2 border-amber/40 bg-linear-to-br from-amber/10 via-transparent to-emerald/5">
             <div className="flex items-center justify-between mb-2 px-1">
               <p className="text-[11px] uppercase tracking-widest font-black text-amber flex items-center gap-1.5">
-                🏆 Top Verifiers Leaderboard
+                🏆 GoodDollar Face Leaderboard
               </p>
               <span className="mono-num text-[10px] font-black text-amber bg-amber/15 px-2 py-0.5 rounded-full">
                 {verifiedRows.length}
               </span>
             </div>
             <p className="text-[10px] text-muted-foreground px-1 mb-3">
-              জেই user ra sob theke beshi face verify korse — click kore full details, voucher, slot sob dekhun.
+              GoodDollar face verification/backup count অনুযায়ী serial — user এ click করলে slot, face, referral, voucher সব control করা যাবে।
             </p>
             {verifiedRows.length === 0 && (
               <div className="glass rounded-xl p-4 text-center text-[11px] text-muted-foreground">
@@ -142,7 +146,7 @@ function AdminUsers() {
           <div className="space-y-2">
             <div className="flex items-center justify-between px-1">
               <p className="text-[10px] uppercase tracking-widest text-emerald font-black">
-                ✅ Verified users
+                ✅ GoodDollar face আছে
               </p>
               <span className="mono-num text-[10px] font-black text-emerald bg-emerald/10 px-2 py-0.5 rounded-full">
                 {verifiedRows.length}
@@ -154,7 +158,7 @@ function AdminUsers() {
           <div className="space-y-2 pt-2 border-t border-border">
             <div className="flex items-center justify-between px-1">
               <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-black">
-                ⚠️ এখনো verify করেনি
+                ⚠️ GoodDollar face নেই
               </p>
               <span className="mono-num text-[10px] font-black text-muted-foreground bg-surface-2 px-2 py-0.5 rounded-full">
                 {notVerifiedRows.length}
@@ -216,7 +220,7 @@ function ReferrerLeaderboard({ rows, q }: { rows: any[]; q: string }) {
         </span>
       </div>
       <p className="text-[10px] text-muted-foreground px-1 mb-3">
-        কার reffer theke koita account ar koita face verification asteche — sorted by total verifications.
+        কার reffer থেকে মোট কত account এসেছে এবং ওই referred account গুলো মোট কত GoodDollar face verification/backup করেছে।
       </p>
       {filtered.length === 0 && (
         <div className="glass rounded-xl p-4 text-center text-[11px] text-muted-foreground">
@@ -252,7 +256,7 @@ function ReferrerLeaderboard({ rows, q }: { rows: any[]; q: string }) {
                   {r.verifiedReferees} verified
                 </span>
                 <span className="px-2 py-0.5 rounded-full bg-violet/15 text-violet font-black text-[10px] mono-num">
-                  {r.totalVerifies} verify
+                  {r.totalVerifies} face
                 </span>
               </div>
             </div>
