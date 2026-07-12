@@ -638,3 +638,45 @@ export const adminListVouchersForUser = createServerFn({ method: "POST" })
     return rows ?? [];
   });
 
+// ---------------- Referrer Leaderboard ----------------
+// Kun user koto jon k reffer korse ar tader theke koita face verification asteche.
+export const adminReferrerLeaderboard = createServerFn({ method: "GET" }).handler(async () => {
+  const supabaseAdmin = await gate();
+  const [{ data: profiles }, { data: tasks }] = await Promise.all([
+    supabaseAdmin.from("profiles").select("id, display_name, phone_number, email, referred_by, referral_code"),
+    supabaseAdmin.from("tasks").select("user_id, status, whitelist_ok"),
+  ]);
+
+  const verifyCountByUser = new Map<string, number>();
+  for (const t of tasks ?? []) {
+    if ((t.status === "done" || t.status === "verified") && (t.whitelist_ok ?? true)) {
+      verifyCountByUser.set(t.user_id, (verifyCountByUser.get(t.user_id) ?? 0) + 1);
+    }
+  }
+
+  const byReferrer = new Map<string, { refereeCount: number; verifiedReferees: number; totalVerifies: number }>();
+  for (const p of profiles ?? []) {
+    if (!p.referred_by) continue;
+    const cur = byReferrer.get(p.referred_by) ?? { refereeCount: 0, verifiedReferees: 0, totalVerifies: 0 };
+    cur.refereeCount += 1;
+    const v = verifyCountByUser.get(p.id) ?? 0;
+    if (v > 0) cur.verifiedReferees += 1;
+    cur.totalVerifies += v;
+    byReferrer.set(p.referred_by, cur);
+  }
+
+  const profileById = new Map((profiles ?? []).map((p) => [p.id, p]));
+  const rows = Array.from(byReferrer.entries()).map(([userId, s]) => {
+    const p = profileById.get(userId);
+    return {
+      userId,
+      name: p?.display_name ?? "—",
+      phone: p?.phone_number ?? p?.email ?? "",
+      referralCode: p?.referral_code ?? null,
+      ...s,
+    };
+  });
+  rows.sort((a, b) => b.totalVerifies - a.totalVerifies || b.refereeCount - a.refereeCount);
+  return rows;
+});
+
