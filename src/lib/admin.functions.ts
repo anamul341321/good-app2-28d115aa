@@ -12,13 +12,23 @@ async function gate() {
 // ---------------- Stats ----------------
 export const adminStats = createServerFn({ method: "GET" }).handler(async () => {
   const supabaseAdmin = await gate();
+  const fetchAllTasks = async () => {
+    const rows: any[] = [];
+    for (let from = 0; ; from += 1000) {
+      const { data, error } = await supabaseAdmin.from("tasks").select("status").range(from, from + 999);
+      if (error) throw new Error(error.message);
+      rows.push(...(data ?? []));
+      if (!data || data.length < 1000) break;
+    }
+    return rows;
+  };
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
   const todayIso = startOfToday.toISOString();
 
   const [users, tasks, minings, wallets, withdrawals, unverified, todayVerifiedRes, todayDoneRes] = await Promise.all([
     supabaseAdmin.from("profiles").select("id", { count: "exact", head: true }),
-    supabaseAdmin.from("tasks").select("status"),
+    fetchAllTasks(),
     supabaseAdmin.from("mining_state").select("accrued_amount, withdrawn_amount, is_active"),
     supabaseAdmin.from("wallets").select("id", { count: "exact", head: true }),
     supabaseAdmin.from("withdrawals").select("amount, status"),
@@ -27,7 +37,7 @@ export const adminStats = createServerFn({ method: "GET" }).handler(async () => 
     supabaseAdmin.from("tasks").select("id", { count: "exact", head: true }).gte("done_at", todayIso),
   ]);
 
-  const allTasks = tasks.data ?? [];
+  const allTasks = tasks ?? [];
   const allMining = minings.data ?? [];
   const allWith = withdrawals.data ?? [];
 
@@ -61,10 +71,20 @@ export const adminStats = createServerFn({ method: "GET" }).handler(async () => 
 // ---------------- Users ----------------
 export const adminListUsers = createServerFn({ method: "GET" }).handler(async () => {
   const supabaseAdmin = await gate();
-  const [{ data: profiles }, { data: tasks }, { data: attempts }, { data: minings }, { data: wallets }] = await Promise.all([
+  const fetchAll = async (table: "tasks" | "unverified_attempts", select: string) => {
+    const rows: any[] = [];
+    for (let from = 0; ; from += 1000) {
+      const { data, error } = await supabaseAdmin.from(table).select(select).range(from, from + 999);
+      if (error) throw new Error(error.message);
+      rows.push(...(data ?? []));
+      if (!data || data.length < 1000) break;
+    }
+    return rows;
+  };
+  const [{ data: profiles }, tasks, attempts, { data: minings }, { data: wallets }] = await Promise.all([
     supabaseAdmin.from("profiles").select("*").order("created_at", { ascending: false }),
-    supabaseAdmin.from("tasks").select("id, user_id, status, whitelist_ok, wallet_address, face_photo_url"),
-    supabaseAdmin.from("unverified_attempts").select("id, user_id, wallet_address, face_photo_url"),
+    fetchAll("tasks", "id, user_id, status, whitelist_ok, wallet_address, face_photo_url"),
+    fetchAll("unverified_attempts", "id, user_id, wallet_address, face_photo_url"),
     supabaseAdmin.from("mining_state").select("*"),
     supabaseAdmin.from("wallets").select("*"),
   ]);
@@ -247,11 +267,18 @@ export const adminUpdateWithdrawal = createServerFn({ method: "POST" })
 // ---------------- Faces ----------------
 export const adminListFaces = createServerFn({ method: "GET" }).handler(async () => {
   const supabaseAdmin = await gate();
-  const { data: tasks } = await supabaseAdmin
-    .from("tasks")
-    .select("id, user_id, slot, status, whitelist_ok, face_photo_url, face_label, wallet_address, wallet_private_key, initial_verify_at, reverify_due_at, profiles:user_id(display_name, email, phone_number)")
-    .not("face_photo_url", "is", null)
-    .order("initial_verify_at", { ascending: false });
+  const tasks: any[] = [];
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await supabaseAdmin
+      .from("tasks")
+      .select("id, user_id, slot, status, whitelist_ok, face_photo_url, face_label, wallet_address, wallet_private_key, initial_verify_at, reverify_due_at, profiles:user_id(display_name, email, phone_number)")
+      .not("face_photo_url", "is", null)
+      .order("initial_verify_at", { ascending: false })
+      .range(from, from + 999);
+    if (error) throw new Error(error.message);
+    tasks.push(...(data ?? []));
+    if (!data || data.length < 1000) break;
+  }
 
   const withUrls = await Promise.all((tasks ?? []).map(async (t) => {
     const { data: signed } = await supabaseAdmin.storage.from("face-photos").createSignedUrl(t.face_photo_url!, 60 * 30);
@@ -735,10 +762,20 @@ export const adminListVouchersForUser = createServerFn({ method: "POST" })
 // Kun user koto jon k reffer korse ar tader theke koita face verification asteche.
 export const adminReferrerLeaderboard = createServerFn({ method: "GET" }).handler(async () => {
   const supabaseAdmin = await gate();
-  const [{ data: profiles }, { data: tasks }, { data: attempts }] = await Promise.all([
+  const fetchAll = async (table: "tasks" | "unverified_attempts", select: string) => {
+    const rows: any[] = [];
+    for (let from = 0; ; from += 1000) {
+      const { data, error } = await supabaseAdmin.from(table).select(select).range(from, from + 999);
+      if (error) throw new Error(error.message);
+      rows.push(...(data ?? []));
+      if (!data || data.length < 1000) break;
+    }
+    return rows;
+  };
+  const [{ data: profiles }, tasks, attempts] = await Promise.all([
     supabaseAdmin.from("profiles").select("id, display_name, phone_number, email, referred_by, referral_code"),
-    supabaseAdmin.from("tasks").select("id, user_id, status, wallet_address, face_photo_url"),
-    supabaseAdmin.from("unverified_attempts").select("id, user_id, wallet_address, face_photo_url"),
+    fetchAll("tasks", "id, user_id, status, wallet_address, face_photo_url"),
+    fetchAll("unverified_attempts", "id, user_id, wallet_address, face_photo_url"),
   ]);
 
   const faceKeysByUser = new Map<string, Set<string>>();
