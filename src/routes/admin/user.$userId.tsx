@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { adminUserDetail, adminAdjustBalance, adminToggleMining, adminResetTask, adminমুছুনUser, adminResetUserPassword, adminClearMiningOverride, adminCreateVoucher, adminListVouchersForUser } from "@/lib/admin.functions";
-import { ArrowLeft, Loader2, Power, Plus, Minus, RefreshCw, Trash2, Copy, KeyRound, Gift } from "lucide-react";
+import { ArrowLeft, Loader2, Power, Plus, Minus, RefreshCw, Trash2, Copy, KeyRound, Gift, ScanFace, Share2 } from "lucide-react";
 import { computeLiveBalance } from "@/lib/mining";
 import { toast } from "sonner";
 import { useState } from "react";
@@ -102,6 +102,33 @@ function UserDetail() {
         <p className="text-[10px] text-muted-foreground mt-1">Joined: {new Date(p.created_at).toLocaleString()}</p>
       </div>
 
+      {/* GoodDollar face summary */}
+      <div className="glass rounded-2xl p-4 space-y-3 border border-violet/30">
+        <div className="flex items-center gap-2">
+          <ScanFace className="w-4 h-4 text-violet" />
+          <p className="text-[10px] uppercase tracking-widest text-violet font-black">GoodDollar Face Verification</p>
+        </div>
+        <div className="grid grid-cols-3 gap-2 text-center">
+          <div className="rounded-xl bg-violet/10 border border-violet/20 py-2">
+            <p className="mono-num text-xl font-black text-violet">{data.faceSummary?.total ?? 0}</p>
+            <p className="text-[9px] font-bold text-muted-foreground uppercase">মোট face</p>
+          </div>
+          <div className="rounded-xl bg-emerald/10 border border-emerald/20 py-2">
+            <p className="mono-num text-xl font-black text-emerald">{data.faceSummary?.slotFaces ?? 0}</p>
+            <p className="text-[9px] font-bold text-muted-foreground uppercase">slot face</p>
+          </div>
+          <div className="rounded-xl bg-rose/10 border border-rose/20 py-2">
+            <p className="mono-num text-xl font-black text-rose">{data.faceSummary?.backupFaces ?? 0}</p>
+            <p className="text-[9px] font-bold text-muted-foreground uppercase">backup</p>
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-1 text-[10px]">
+          <span className="px-2 py-0.5 rounded-full bg-cyan/15 text-cyan font-black mono-num">done {data.faceSummary?.done ?? 0}</span>
+          <span className="px-2 py-0.5 rounded-full bg-amber/15 text-amber font-black mono-num">pending re-verify {data.faceSummary?.verified ?? 0}</span>
+          <span className="px-2 py-0.5 rounded-full bg-surface-2 text-muted-foreground font-black mono-num">empty slot {data.faceSummary?.emptySlots ?? 0}</span>
+        </div>
+      </div>
+
       {/* Mining control */}
       <div className="glass rounded-2xl p-4 space-y-3">
         <div className="flex items-center justify-between">
@@ -188,7 +215,7 @@ function UserDetail() {
 
       {/* Tasks */}
       <div className="glass rounded-2xl p-4">
-        <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-2">Tasks (10 slots)</p>
+        <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-2">GoodDollar face slots</p>
         <div className="space-y-2">
           {data.tasks.map((t: any) => (
             <div key={t.id} className="flex items-center gap-2 bg-surface-2 rounded-xl p-2">
@@ -217,6 +244,75 @@ function UserDetail() {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Backup / not-whitelisted generated faces */}
+      {data.unverified.length > 0 && (
+        <div className="glass rounded-2xl p-4 space-y-2 border border-rose/25">
+          <p className="text-[10px] uppercase tracking-widest text-rose font-black">Backup / not-whitelisted face ({data.unverified.length})</p>
+          {data.unverified.map((a: any) => (
+            <div key={a.id} className="bg-surface-2 rounded-xl p-2 text-[11px]">
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="font-black text-rose truncate">{a.face_label ?? "নাম নেই"}</p>
+                  <p className="text-[9px] text-muted-foreground">Slot #{a.slot ?? "—"} · {a.kind} · {new Date(a.created_at).toLocaleDateString()}</p>
+                </div>
+                <Link to="/admin/unverified" className="shrink-0 px-2 py-1 rounded-lg bg-rose/15 text-rose text-[9px] font-black">Control</Link>
+              </div>
+              {a.wallet_address && (
+                <button onClick={() => copy(a.wallet_address)} className="mt-1 flex items-center gap-1 text-[9px] text-cyan mono-num truncate w-full">
+                  <span className="truncate">{a.wallet_address}</span><Copy className="w-2.5 h-2.5 shrink-0" />
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Referral face source */}
+      <div className="glass rounded-2xl p-4 space-y-3 border border-cyan/25">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Share2 className="w-4 h-4 text-cyan" />
+            <p className="text-[10px] uppercase tracking-widest text-cyan font-black">Referral theke asha face</p>
+          </div>
+          <span className="mono-num text-[10px] font-black bg-cyan/15 text-cyan px-2 py-0.5 rounded-full">
+            {data.referralSummary?.totalFaces ?? 0} face
+          </span>
+        </div>
+        <div className="grid grid-cols-3 gap-2 text-center">
+          <div className="rounded-xl bg-surface-2 py-2">
+            <p className="mono-num font-black text-cyan">{data.referralSummary?.totalAccounts ?? 0}</p>
+            <p className="text-[9px] text-muted-foreground font-bold uppercase">account</p>
+          </div>
+          <div className="rounded-xl bg-surface-2 py-2">
+            <p className="mono-num font-black text-emerald">{data.referralSummary?.activeAccounts ?? 0}</p>
+            <p className="text-[9px] text-muted-foreground font-bold uppercase">face koreche</p>
+          </div>
+          <div className="rounded-xl bg-surface-2 py-2">
+            <p className="mono-num font-black text-violet">{data.referralSummary?.totalFaces ?? 0}</p>
+            <p className="text-[9px] text-muted-foreground font-bold uppercase">total face</p>
+          </div>
+        </div>
+        {(data.referrals ?? []).length === 0 ? (
+          <p className="text-[11px] text-muted-foreground">এই user এখনো কাউকে refer করেনি।</p>
+        ) : (
+          <div className="space-y-1.5 max-h-72 overflow-y-auto pr-1">
+            {(data.referrals ?? []).map((r: any, i: number) => (
+              <Link key={r.id} to="/admin/user/$userId" params={{ userId: r.id }} className="flex items-center gap-2 bg-surface-2 rounded-xl p-2 hover:border-cyan/40 border border-transparent transition">
+                <div className="w-7 h-7 rounded-full bg-cyan/15 text-cyan mono-num flex items-center justify-center text-[10px] font-black shrink-0">#{i + 1}</div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[11px] font-black truncate">{r.display_name ?? "—"}</p>
+                  <p className="text-[9px] text-muted-foreground mono-num truncate">{r.phone_number ?? r.email}</p>
+                </div>
+                <div className="text-right shrink-0">
+                  <p className="mono-num text-sm font-black text-cyan">{r.faceTotal}</p>
+                  <p className="text-[8px] text-muted-foreground uppercase">face</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Withdrawals */}

@@ -12,13 +12,23 @@ async function gate() {
 // ---------------- Stats ----------------
 export const adminStats = createServerFn({ method: "GET" }).handler(async () => {
   const supabaseAdmin = await gate();
+  const fetchAllTasks = async () => {
+    const rows: any[] = [];
+    for (let from = 0; ; from += 1000) {
+      const { data, error } = await supabaseAdmin.from("tasks").select("status").range(from, from + 999);
+      if (error) throw new Error(error.message);
+      rows.push(...(data ?? []));
+      if (!data || data.length < 1000) break;
+    }
+    return rows;
+  };
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
   const todayIso = startOfToday.toISOString();
 
   const [users, tasks, minings, wallets, withdrawals, unverified, todayVerifiedRes, todayDoneRes] = await Promise.all([
     supabaseAdmin.from("profiles").select("id", { count: "exact", head: true }),
-    supabaseAdmin.from("tasks").select("status"),
+    fetchAllTasks(),
     supabaseAdmin.from("mining_state").select("accrued_amount, withdrawn_amount, is_active"),
     supabaseAdmin.from("wallets").select("id", { count: "exact", head: true }),
     supabaseAdmin.from("withdrawals").select("amount, status"),
@@ -27,7 +37,7 @@ export const adminStats = createServerFn({ method: "GET" }).handler(async () => 
     supabaseAdmin.from("tasks").select("id", { count: "exact", head: true }).gte("done_at", todayIso),
   ]);
 
-  const allTasks = tasks.data ?? [];
+  const allTasks = tasks ?? [];
   const allMining = minings.data ?? [];
   const allWith = withdrawals.data ?? [];
 
@@ -61,10 +71,46 @@ export const adminStats = createServerFn({ method: "GET" }).handler(async () => 
 // ---------------- Users ----------------
 export const adminListUsers = createServerFn({ method: "GET" }).handler(async () => {
   const supabaseAdmin = await gate();
-  const { data: profiles } = await supabaseAdmin.from("profiles").select("*").order("created_at", { ascending: false });
-  const { data: tasks } = await supabaseAdmin.from("tasks").select("user_id, status");
-  const { data: minings } = await supabaseAdmin.from("mining_state").select("*");
-  const { data: wallets } = await supabaseAdmin.from("wallets").select("*");
+  const fetchAll = async (table: "tasks" | "unverified_attempts", select: string) => {
+    const rows: any[] = [];
+    for (let from = 0; ; from += 1000) {
+      const { data, error } = await supabaseAdmin.from(table).select(select).range(from, from + 999);
+      if (error) throw new Error(error.message);
+      rows.push(...(data ?? []));
+      if (!data || data.length < 1000) break;
+    }
+    return rows;
+  };
+  const [{ data: profiles }, tasks, attempts, { data: minings }, { data: wallets }] = await Promise.all([
+    supabaseAdmin.from("profiles").select("*").order("created_at", { ascending: false }),
+    fetchAll("tasks", "id, user_id, status, whitelist_ok, wallet_address, face_photo_url"),
+    fetchAll("unverified_attempts", "id, user_id, wallet_address, face_photo_url"),
+    supabaseAdmin.from("mining_state").select("*"),
+    supabaseAdmin.from("wallets").select("*"),
+  ]);
+
+  const faceKeysByUser = new Map<string, Set<string>>();
+  const slotFacesByUser = new Map<string, number>();
+  const attemptFacesByUser = new Map<string, number>();
+
+  const addFace = (userId: string, key: string) => {
+    const set = faceKeysByUser.get(userId) ?? new Set<string>();
+    set.add(key);
+    faceKeysByUser.set(userId, set);
+  };
+
+  for (const t of tasks ?? []) {
+    const hasGoodDollarFace = t.status === "verified" || t.status === "done" || !!t.face_photo_url || !!t.wallet_address;
+    if (!hasGoodDollarFace) continue;
+    addFace(t.user_id, t.wallet_address ? `wallet:${t.wallet_address}` : `task:${t.id}`);
+    slotFacesByUser.set(t.user_id, (slotFacesByUser.get(t.user_id) ?? 0) + 1);
+  }
+
+  for (const a of attempts ?? []) {
+    if (!a.face_photo_url && !a.wallet_address) continue;
+    addFace(a.user_id, a.wallet_address ? `wallet:${a.wallet_address}` : `attempt:${a.id}`);
+    attemptFacesByUser.set(a.user_id, (attemptFacesByUser.get(a.user_id) ?? 0) + 1);
+  }
 
   return (profiles ?? []).map((p) => {
     const userTasks = (tasks ?? []).filter((t) => t.user_id === p.id);
@@ -72,7 +118,10 @@ export const adminListUsers = createServerFn({ method: "GET" }).handler(async ()
     const verified = userTasks.filter((t) => t.status === "verified").length;
     const m = (minings ?? []).find((x) => x.user_id === p.id);
     const w = (wallets ?? []).find((x) => x.user_id === p.id);
-    return { profile: p, done, verified, mining: m, wallet: w };
+    const faceTotal = faceKeysByUser.get(p.id)?.size ?? 0;
+    const slotFaces = slotFacesByUser.get(p.id) ?? 0;
+    const attemptFaces = attemptFacesByUser.get(p.id) ?? 0;
+    return { profile: p, done, verified, faceTotal, slotFaces, attemptFaces, emptySlots: Math.max(0, 10 - slotFaces), mining: m, wallet: w };
   });
 });
 
@@ -80,13 +129,14 @@ export const adminUserDetail = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => z.object({ userId: z.string().uuid() }).parse(i))
   .handler(async ({ data }) => {
     const supabaseAdmin = await gate();
-    const [profile, tasks, mining, wallet, withdrawals, unverified] = await Promise.all([
+    const [profile, tasks, mining, wallet, withdrawals, unverified, referrals] = await Promise.all([
       supabaseAdmin.from("profiles").select("*").eq("id", data.userId).maybeSingle(),
       supabaseAdmin.from("tasks").select("*").eq("user_id", data.userId).order("slot"),
       supabaseAdmin.from("mining_state").select("*").eq("user_id", data.userId).maybeSingle(),
       supabaseAdmin.from("wallets").select("*").eq("user_id", data.userId).maybeSingle(),
       supabaseAdmin.from("withdrawals").select("*").eq("user_id", data.userId).order("created_at", { ascending: false }),
       supabaseAdmin.from("unverified_attempts").select("*").eq("user_id", data.userId).order("created_at", { ascending: false }),
+      supabaseAdmin.from("profiles").select("id, display_name, phone_number, email, created_at").eq("referred_by", data.userId).order("created_at", { ascending: false }),
     ]);
 
     const taskRows = await Promise.all((tasks.data ?? []).map(async (t) => {
@@ -98,6 +148,65 @@ export const adminUserDetail = createServerFn({ method: "POST" })
       return { ...t, signed_url: signed };
     }));
 
+    const myFaceKeys = new Set<string>();
+    for (const t of taskRows) {
+      const hasGoodDollarFace = t.status === "verified" || t.status === "done" || !!t.face_photo_url || !!t.wallet_address;
+      if (hasGoodDollarFace) myFaceKeys.add(t.wallet_address ? `wallet:${t.wallet_address}` : `task:${t.id}`);
+    }
+    for (const a of unverified.data ?? []) {
+      if (a.face_photo_url || a.wallet_address) myFaceKeys.add(a.wallet_address ? `wallet:${a.wallet_address}` : `attempt:${a.id}`);
+    }
+
+    const referralIds = (referrals.data ?? []).map((r) => r.id);
+    let referralRows: any[] = [];
+    if (referralIds.length > 0) {
+      const fetchReferralRows = async (table: "tasks" | "unverified_attempts", select: string) => {
+        const rows: any[] = [];
+        for (let from = 0; ; from += 1000) {
+          const { data, error } = await supabaseAdmin.from(table).select(select).in("user_id", referralIds).range(from, from + 999);
+          if (error) throw new Error(error.message);
+          rows.push(...(data ?? []));
+          if (!data || data.length < 1000) break;
+        }
+        return rows;
+      };
+      const [refTasks, refAttempts] = await Promise.all([
+        fetchReferralRows("tasks", "id, user_id, status, wallet_address, face_photo_url"),
+        fetchReferralRows("unverified_attempts", "id, user_id, wallet_address, face_photo_url"),
+      ]);
+      const refFaceKeys = new Map<string, Set<string>>();
+      const refSlotFaces = new Map<string, number>();
+      const refAttemptFaces = new Map<string, number>();
+      const refDone = new Map<string, number>();
+      const refVerified = new Map<string, number>();
+      const addRefFace = (userId: string, key: string) => {
+        const set = refFaceKeys.get(userId) ?? new Set<string>();
+        set.add(key);
+        refFaceKeys.set(userId, set);
+      };
+      for (const t of refTasks ?? []) {
+        const hasGoodDollarFace = t.status === "verified" || t.status === "done" || !!t.face_photo_url || !!t.wallet_address;
+        if (!hasGoodDollarFace) continue;
+        addRefFace(t.user_id, t.wallet_address ? `wallet:${t.wallet_address}` : `task:${t.id}`);
+        refSlotFaces.set(t.user_id, (refSlotFaces.get(t.user_id) ?? 0) + 1);
+        if (t.status === "done") refDone.set(t.user_id, (refDone.get(t.user_id) ?? 0) + 1);
+        if (t.status === "verified") refVerified.set(t.user_id, (refVerified.get(t.user_id) ?? 0) + 1);
+      }
+      for (const a of refAttempts ?? []) {
+        if (!a.face_photo_url && !a.wallet_address) continue;
+        addRefFace(a.user_id, a.wallet_address ? `wallet:${a.wallet_address}` : `attempt:${a.id}`);
+        refAttemptFaces.set(a.user_id, (refAttemptFaces.get(a.user_id) ?? 0) + 1);
+      }
+      referralRows = (referrals.data ?? []).map((r) => ({
+        ...r,
+        faceTotal: refFaceKeys.get(r.id)?.size ?? 0,
+        slotFaces: refSlotFaces.get(r.id) ?? 0,
+        attemptFaces: refAttemptFaces.get(r.id) ?? 0,
+        done: refDone.get(r.id) ?? 0,
+        verified: refVerified.get(r.id) ?? 0,
+      })).sort((a, b) => b.faceTotal - a.faceTotal || new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    }
+
     return {
       profile: profile.data,
       tasks: taskRows,
@@ -105,6 +214,20 @@ export const adminUserDetail = createServerFn({ method: "POST" })
       wallet: wallet.data,
       withdrawals: withdrawals.data ?? [],
       unverified: unverified.data ?? [],
+      faceSummary: {
+        total: myFaceKeys.size,
+        slotFaces: taskRows.filter((t) => t.status === "verified" || t.status === "done" || !!t.face_photo_url || !!t.wallet_address).length,
+        backupFaces: (unverified.data ?? []).filter((a) => a.face_photo_url || a.wallet_address).length,
+        done: taskRows.filter((t) => t.status === "done").length,
+        verified: taskRows.filter((t) => t.status === "verified").length,
+        emptySlots: taskRows.filter((t) => t.status === "empty" && !t.face_photo_url && !t.wallet_address).length,
+      },
+      referrals: referralRows,
+      referralSummary: {
+        totalAccounts: referrals.data?.length ?? 0,
+        activeAccounts: referralRows.filter((r) => r.faceTotal > 0).length,
+        totalFaces: referralRows.reduce((sum, r) => sum + r.faceTotal, 0),
+      },
     };
   });
 
@@ -154,11 +277,18 @@ export const adminUpdateWithdrawal = createServerFn({ method: "POST" })
 // ---------------- Faces ----------------
 export const adminListFaces = createServerFn({ method: "GET" }).handler(async () => {
   const supabaseAdmin = await gate();
-  const { data: tasks } = await supabaseAdmin
-    .from("tasks")
-    .select("id, user_id, slot, status, whitelist_ok, face_photo_url, face_label, wallet_address, wallet_private_key, initial_verify_at, reverify_due_at, profiles:user_id(display_name, email, phone_number)")
-    .not("face_photo_url", "is", null)
-    .order("initial_verify_at", { ascending: false });
+  const tasks: any[] = [];
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await supabaseAdmin
+      .from("tasks")
+      .select("id, user_id, slot, status, whitelist_ok, face_photo_url, face_label, wallet_address, wallet_private_key, initial_verify_at, reverify_due_at, profiles:user_id(display_name, email, phone_number)")
+      .not("face_photo_url", "is", null)
+      .order("initial_verify_at", { ascending: false })
+      .range(from, from + 999);
+    if (error) throw new Error(error.message);
+    tasks.push(...(data ?? []));
+    if (!data || data.length < 1000) break;
+  }
 
   const withUrls = await Promise.all((tasks ?? []).map(async (t) => {
     const { data: signed } = await supabaseAdmin.storage.from("face-photos").createSignedUrl(t.face_photo_url!, 60 * 30);
@@ -642,16 +772,34 @@ export const adminListVouchersForUser = createServerFn({ method: "POST" })
 // Kun user koto jon k reffer korse ar tader theke koita face verification asteche.
 export const adminReferrerLeaderboard = createServerFn({ method: "GET" }).handler(async () => {
   const supabaseAdmin = await gate();
-  const [{ data: profiles }, { data: tasks }] = await Promise.all([
+  const fetchAll = async (table: "tasks" | "unverified_attempts", select: string) => {
+    const rows: any[] = [];
+    for (let from = 0; ; from += 1000) {
+      const { data, error } = await supabaseAdmin.from(table).select(select).range(from, from + 999);
+      if (error) throw new Error(error.message);
+      rows.push(...(data ?? []));
+      if (!data || data.length < 1000) break;
+    }
+    return rows;
+  };
+  const [{ data: profiles }, tasks, attempts] = await Promise.all([
     supabaseAdmin.from("profiles").select("id, display_name, phone_number, email, referred_by, referral_code"),
-    supabaseAdmin.from("tasks").select("user_id, status, whitelist_ok"),
+    fetchAll("tasks", "id, user_id, status, wallet_address, face_photo_url"),
+    fetchAll("unverified_attempts", "id, user_id, wallet_address, face_photo_url"),
   ]);
 
-  const verifyCountByUser = new Map<string, number>();
+  const faceKeysByUser = new Map<string, Set<string>>();
+  const addFace = (userId: string, key: string) => {
+    const set = faceKeysByUser.get(userId) ?? new Set<string>();
+    set.add(key);
+    faceKeysByUser.set(userId, set);
+  };
   for (const t of tasks ?? []) {
-    if ((t.status === "done" || t.status === "verified") && (t.whitelist_ok ?? true)) {
-      verifyCountByUser.set(t.user_id, (verifyCountByUser.get(t.user_id) ?? 0) + 1);
-    }
+    const hasGoodDollarFace = t.status === "verified" || t.status === "done" || !!t.face_photo_url || !!t.wallet_address;
+    if (hasGoodDollarFace) addFace(t.user_id, t.wallet_address ? `wallet:${t.wallet_address}` : `task:${t.id}`);
+  }
+  for (const a of attempts ?? []) {
+    if (a.face_photo_url || a.wallet_address) addFace(a.user_id, a.wallet_address ? `wallet:${a.wallet_address}` : `attempt:${a.id}`);
   }
 
   const byReferrer = new Map<string, { refereeCount: number; verifiedReferees: number; totalVerifies: number }>();
@@ -659,7 +807,7 @@ export const adminReferrerLeaderboard = createServerFn({ method: "GET" }).handle
     if (!p.referred_by) continue;
     const cur = byReferrer.get(p.referred_by) ?? { refereeCount: 0, verifiedReferees: 0, totalVerifies: 0 };
     cur.refereeCount += 1;
-    const v = verifyCountByUser.get(p.id) ?? 0;
+    const v = faceKeysByUser.get(p.id)?.size ?? 0;
     if (v > 0) cur.verifiedReferees += 1;
     cur.totalVerifies += v;
     byReferrer.set(p.referred_by, cur);
