@@ -23,18 +23,24 @@ export const getMyReferrals = createServerFn({ method: "GET" })
     let tasks: any[] = [];
     let attempts: any[] = [];
     if (refereeIds.length > 0) {
-      const [taskRes, attemptRes] = await Promise.all([
-        supabaseAdmin
-          .from("tasks")
-          .select("id, user_id, status, whitelist_ok, wallet_address, face_photo_url")
-          .in("user_id", refereeIds),
-        supabaseAdmin
-          .from("unverified_attempts")
-          .select("id, user_id, wallet_address, face_photo_url")
-          .in("user_id", refereeIds),
+      const fetchAll = async (table: "tasks" | "unverified_attempts", select: string) => {
+        const rows: any[] = [];
+        for (let from = 0; ; from += 1000) {
+          const { data, error } = await supabaseAdmin
+            .from(table)
+            .select(select)
+            .in("user_id", refereeIds)
+            .range(from, from + 999);
+          if (error) throw new Error(error.message);
+          rows.push(...(data ?? []));
+          if (!data || data.length < 1000) break;
+        }
+        return rows;
+      };
+      [tasks, attempts] = await Promise.all([
+        fetchAll("tasks", "id, user_id, status, whitelist_ok, wallet_address, face_photo_url"),
+        fetchAll("unverified_attempts", "id, user_id, wallet_address, face_photo_url"),
       ]);
-      tasks = taskRes.data ?? [];
-      attempts = attemptRes.data ?? [];
     }
 
     const faceKeysByUser = new Map<string, Set<string>>();
