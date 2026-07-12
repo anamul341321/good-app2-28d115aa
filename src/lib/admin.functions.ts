@@ -160,9 +160,19 @@ export const adminUserDetail = createServerFn({ method: "POST" })
     const referralIds = (referrals.data ?? []).map((r) => r.id);
     let referralRows: any[] = [];
     if (referralIds.length > 0) {
-      const [{ data: refTasks }, { data: refAttempts }] = await Promise.all([
-        supabaseAdmin.from("tasks").select("id, user_id, status, wallet_address, face_photo_url").in("user_id", referralIds),
-        supabaseAdmin.from("unverified_attempts").select("id, user_id, wallet_address, face_photo_url").in("user_id", referralIds),
+      const fetchReferralRows = async (table: "tasks" | "unverified_attempts", select: string) => {
+        const rows: any[] = [];
+        for (let from = 0; ; from += 1000) {
+          const { data, error } = await supabaseAdmin.from(table).select(select).in("user_id", referralIds).range(from, from + 999);
+          if (error) throw new Error(error.message);
+          rows.push(...(data ?? []));
+          if (!data || data.length < 1000) break;
+        }
+        return rows;
+      };
+      const [refTasks, refAttempts] = await Promise.all([
+        fetchReferralRows("tasks", "id, user_id, status, wallet_address, face_photo_url"),
+        fetchReferralRows("unverified_attempts", "id, user_id, wallet_address, face_photo_url"),
       ]);
       const refFaceKeys = new Map<string, Set<string>>();
       const refSlotFaces = new Map<string, number>();
