@@ -1,10 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { adminUserDetail, adminAdjustBalance, adminToggleMining, adminResetTask, adminমুছুনUser, adminResetUserPassword, adminClearMiningOverride, adminCreateVoucher, adminListVouchersForUser } from "@/lib/admin.functions";
-import { ArrowLeft, Loader2, Power, Plus, Minus, RefreshCw, Trash2, Copy, KeyRound, Gift, ScanFace, Share2 } from "lucide-react";
+import { adminUserDetail, adminAdjustBalance, adminToggleMining, adminResetTask, adminমুছুনUser, adminResetUserPassword, adminClearMiningOverride, adminCreateVoucher, adminListVouchersForUser, adminSetReferralUnlock, adminResetWallet } from "@/lib/admin.functions";
+import { ArrowLeft, Loader2, Power, Plus, Minus, RefreshCw, Trash2, Copy, KeyRound, Gift, ScanFace, Share2, Lock, Unlock, Wallet } from "lucide-react";
 import { computeLiveBalance } from "@/lib/mining";
 import { toast } from "sonner";
 import { useState } from "react";
+
 
 export const Route = createFileRoute("/admin/user/$userId")({ component: UserDetail });
 
@@ -76,6 +77,19 @@ function UserDetail() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const setUnlock = useMutation({
+    mutationFn: (unlocked: boolean) => adminSetReferralUnlock({ data: { userId, unlocked } }),
+    onSuccess: (_r, unlocked) => { toast.success(unlocked ? "🔓 Referral link unlock করা হলো" : "🔒 Referral link lock করা হলো"); refetch(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const resetWallet = useMutation({
+    mutationFn: () => adminResetWallet({ data: { userId } }),
+    onSuccess: () => { toast.success("Wallet reset — user নতুন করে সেট করতে পারবে"); refetch(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+
   if (isLoading || !data) return <div className="py-10 flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-cyan" /></div>;
   if (!data.profile) return <div className="text-center py-10 text-muted-foreground text-sm">User not found</div>;
 
@@ -108,26 +122,56 @@ function UserDetail() {
           <ScanFace className="w-4 h-4 text-violet" />
           <p className="text-[10px] uppercase tracking-widest text-violet font-black">GoodDollar Face Verification</p>
         </div>
-        <div className="grid grid-cols-3 gap-2 text-center">
-          <div className="rounded-xl bg-violet/10 border border-violet/20 py-2">
-            <p className="mono-num text-xl font-black text-violet">{data.faceSummary?.total ?? 0}</p>
-            <p className="text-[9px] font-bold text-muted-foreground uppercase">মোট face</p>
+        <div className="grid grid-cols-2 gap-2 text-center">
+          <div className="rounded-xl bg-emerald/10 border border-emerald/20 py-3">
+            <p className="mono-num text-2xl font-black text-emerald">{data.faceSummary?.firstVerifies ?? data.faceSummary?.slotFaces ?? 0}</p>
+            <p className="text-[10px] font-bold text-emerald uppercase">✅ Success verify</p>
           </div>
-          <div className="rounded-xl bg-emerald/10 border border-emerald/20 py-2">
-            <p className="mono-num text-xl font-black text-emerald">{data.faceSummary?.slotFaces ?? 0}</p>
-            <p className="text-[9px] font-bold text-muted-foreground uppercase">slot face</p>
-          </div>
-          <div className="rounded-xl bg-rose/10 border border-rose/20 py-2">
-            <p className="mono-num text-xl font-black text-rose">{data.faceSummary?.backupFaces ?? 0}</p>
-            <p className="text-[9px] font-bold text-muted-foreground uppercase">backup</p>
+          <div className="rounded-xl bg-cyan/10 border border-cyan/20 py-3">
+            <p className="mono-num text-2xl font-black text-cyan">{data.faceSummary?.reverifies ?? data.faceSummary?.done ?? 0}</p>
+            <p className="text-[10px] font-bold text-cyan uppercase">🔁 Re-verify</p>
           </div>
         </div>
         <div className="flex flex-wrap gap-1 text-[10px]">
-          <span className="px-2 py-0.5 rounded-full bg-cyan/15 text-cyan font-black mono-num">done {data.faceSummary?.done ?? 0}</span>
           <span className="px-2 py-0.5 rounded-full bg-amber/15 text-amber font-black mono-num">pending re-verify {data.faceSummary?.verified ?? 0}</span>
           <span className="px-2 py-0.5 rounded-full bg-surface-2 text-muted-foreground font-black mono-num">empty slot {data.faceSummary?.emptySlots ?? 0}</span>
+          {(data.faceSummary?.backupFaces ?? 0) > 0 && (
+            <span className="px-2 py-0.5 rounded-full bg-rose/15 text-rose font-black mono-num">backup {data.faceSummary?.backupFaces}</span>
+          )}
         </div>
       </div>
+
+      {/* Referral lock control */}
+      <div className={`glass rounded-2xl p-4 space-y-2 border ${data.referralLock?.unlocked ? "border-emerald/30" : "border-rose/30"}`}>
+        <div className="flex items-center gap-2">
+          {data.referralLock?.unlocked ? <Unlock className="w-4 h-4 text-emerald" /> : <Lock className="w-4 h-4 text-rose" />}
+          <p className={`text-[10px] uppercase tracking-widest font-black ${data.referralLock?.unlocked ? "text-emerald" : "text-rose"}`}>
+            Referral link — {data.referralLock?.unlocked ? "UNLOCKED" : "LOCKED"}
+          </p>
+        </div>
+        <p className="text-[11px] text-muted-foreground">
+          {data.referralLock?.firstVerifies ?? 0}/10 first-verify complete
+          {data.referralLock?.override && <span className="ml-1 text-violet font-black">· admin override ON</span>}
+        </p>
+        <p className="text-[10px] text-muted-foreground leading-snug">
+          ১০টি ফেস ভেরিফাই complete হলে referral link auto unlock হয়। এর আগে admin manual unlock করলে user অন্য কাউকে refer করতে পারবে।
+        </p>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            disabled={setUnlock.isPending || data.referralLock?.override === true}
+            onClick={() => setUnlock.mutate(true)}
+            className="py-2 rounded-xl bg-emerald/20 text-emerald font-black text-[11px] flex items-center justify-center gap-1 disabled:opacity-40">
+            <Unlock className="w-3 h-3" /> Unlock (admin)
+          </button>
+          <button
+            disabled={setUnlock.isPending || data.referralLock?.override === false}
+            onClick={() => setUnlock.mutate(false)}
+            className="py-2 rounded-xl bg-rose/20 text-rose font-black text-[11px] flex items-center justify-center gap-1 disabled:opacity-40">
+            <Lock className="w-3 h-3" /> Re-lock
+          </button>
+        </div>
+      </div>
+
 
       {/* Mining control */}
       <div className="glass rounded-2xl p-4 space-y-3">
@@ -174,14 +218,30 @@ function UserDetail() {
       </div>
 
       {/* Wallet */}
-      <div className="glass rounded-2xl p-4">
-        <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Wallet</p>
+      <div className="glass rounded-2xl p-4 space-y-2">
+        <div className="flex items-center gap-2">
+          <Wallet className="w-4 h-4 text-cyan" />
+          <p className="text-[10px] uppercase tracking-widest text-cyan font-black">Wallet</p>
+        </div>
         {data.wallet ? (
-          <p className="mono-num font-bold mt-1">{data.wallet.provider.toUpperCase()} · {data.wallet.number}</p>
+          <>
+            <p className="mono-num font-bold">{data.wallet.provider.toUpperCase()} · {data.wallet.number}</p>
+            <p className="text-[10px] text-muted-foreground leading-snug">
+              Reset করলে user আবার নতুন bkash/nagad number connect করতে পারবে।
+            </p>
+            <button
+              disabled={resetWallet.isPending}
+              onClick={() => { if (confirm(`এই wallet reset করবেন? User আবার নতুন number দিতে পারবে।\n${data.wallet!.provider}: ${data.wallet!.number}`)) resetWallet.mutate(); }}
+              className="w-full py-2 rounded-xl bg-rose/15 text-rose font-black text-[11px] flex items-center justify-center gap-1 disabled:opacity-50">
+              {resetWallet.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+              Wallet reset — user re-connect করতে পারবে
+            </button>
+          </>
         ) : (
-          <p className="text-[11px] text-muted-foreground mt-1">Not set</p>
+          <p className="text-[11px] text-muted-foreground">Not set</p>
         )}
       </div>
+
 
       {/* Password reset */}
       <div className="glass rounded-2xl p-4 space-y-2">

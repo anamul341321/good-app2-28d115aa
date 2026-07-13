@@ -9,9 +9,10 @@ export const getMyReferrals = createServerFn({ method: "GET" })
 
     const { data: me } = await supabase
       .from("profiles")
-      .select("referral_code, referred_by")
+      .select("referral_code, referred_by, referral_unlock_override")
       .eq("id", userId)
       .maybeSingle();
+
 
     const { data: referees } = await supabaseAdmin
       .from("profiles")
@@ -38,15 +39,25 @@ export const getMyReferrals = createServerFn({ method: "GET" })
         return rows;
       };
       [tasks, attempts] = await Promise.all([
-        fetchAll("tasks", "id, user_id, status, whitelist_ok, wallet_address, face_photo_url"),
+        fetchAll("tasks", "id, user_id, status, whitelist_ok, wallet_address, face_photo_url, initial_verify_at"),
         fetchAll("unverified_attempts", "id, user_id, wallet_address, face_photo_url"),
       ]);
     }
+
+    // Also fetch caller's own first-verify count for the lock gauge.
+    const { count: myFirstVerifies } = await supabaseAdmin
+      .from("tasks")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .not("initial_verify_at", "is", null);
+
 
     const faceKeysByUser = new Map<string, Set<string>>();
     const doneByUser = new Map<string, number>();
     const slotFacesByUser = new Map<string, number>();
     const backupFacesByUser = new Map<string, number>();
+    const firstVerifiesByUser = new Map<string, number>();
+    const reverifiesByUser = new Map<string, number>();
     const addFace = (uid: string, key: string) => {
       const set = faceKeysByUser.get(uid) ?? new Set<string>();
       set.add(key);
@@ -58,6 +69,12 @@ export const getMyReferrals = createServerFn({ method: "GET" })
       if (!hasGoodDollarFace) continue;
       addFace(t.user_id, t.wallet_address ? `wallet:${t.wallet_address}` : `task:${t.id}`);
       slotFacesByUser.set(t.user_id, (slotFacesByUser.get(t.user_id) ?? 0) + 1);
+      if (t.initial_verify_at || t.status === "verified" || t.status === "done") {
+        firstVerifiesByUser.set(t.user_id, (firstVerifiesByUser.get(t.user_id) ?? 0) + 1);
+      }
+      if (t.status === "done") {
+        reverifiesByUser.set(t.user_id, (reverifiesByUser.get(t.user_id) ?? 0) + 1);
+      }
       if (t.status === "done" && (t.whitelist_ok ?? true) === true) {
         doneByUser.set(t.user_id, (doneByUser.get(t.user_id) ?? 0) + 1);
       }
@@ -81,6 +98,8 @@ export const getMyReferrals = createServerFn({ method: "GET" })
         joinedAt: r.created_at,
         validDone,
         faceTotal,
+        firstVerifies: firstVerifiesByUser.get(r.id) ?? 0,
+        reverifies: reverifiesByUser.get(r.id) ?? 0,
         slotFaces: slotFacesByUser.get(r.id) ?? 0,
         backupFaces: backupFacesByUser.get(r.id) ?? 0,
         qualified,
@@ -88,18 +107,30 @@ export const getMyReferrals = createServerFn({ method: "GET" })
     }).sort((a, b) => b.faceTotal - a.faceTotal || new Date(b.joinedAt).getTime() - new Date(a.joinedAt).getTime());
 
     const qualifiedCount = list.filter((r) => r.qualified).length;
-    // Total GoodDollar face verification/backup aggregated across all referred friends
     const totalVerifies = list.reduce((a, r) => a + r.faceTotal, 0);
-    // How many of the referred users actually did at least 1 GoodDollar face
+    const totalFirstVerifies = list.reduce((a, r) => a + r.firstVerifies, 0);
+    const totalReverifies = list.reduce((a, r) => a + r.reverifies, 0);
     const activeReferees = list.filter((r) => r.faceTotal > 0).length;
+
+    const myFirstVerifiesCount = myFirstVerifies ?? 0;
+    const referralUnlocked = (me as any)?.referral_unlock_override === true || myFirstVerifiesCount >= 10;
 
     return {
       referralCode: me?.referral_code ?? null,
       totalReferred: list.length,
       qualifiedCount,
       totalVerifies,
+      totalFirstVerifies,
+      totalReverifies,
       activeReferees,
       referees: list,
+      lock: {
+        unlocked: referralUnlocked,
+        override: (me as any)?.referral_unlock_override === true,
+        firstVerifies: myFirstVerifiesCount,
+        needed: 10,
+      },
     };
   });
+
 

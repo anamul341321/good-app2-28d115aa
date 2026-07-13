@@ -167,6 +167,7 @@ export type Database = {
           phone_number: string | null
           post_office: string | null
           referral_code: string
+          referral_unlock_override: boolean
           referred_by: string | null
           thana_upazila: string | null
           village_area: string | null
@@ -193,6 +194,7 @@ export type Database = {
           phone_number?: string | null
           post_office?: string | null
           referral_code: string
+          referral_unlock_override?: boolean
           referred_by?: string | null
           thana_upazila?: string | null
           village_area?: string | null
@@ -219,6 +221,7 @@ export type Database = {
           phone_number?: string | null
           post_office?: string | null
           referral_code?: string
+          referral_unlock_override?: boolean
           referred_by?: string | null
           thana_upazila?: string | null
           village_area?: string | null

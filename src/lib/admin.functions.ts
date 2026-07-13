@@ -112,6 +112,13 @@ export const adminListUsers = createServerFn({ method: "GET" }).handler(async ()
     attemptFacesByUser.set(a.user_id, (attemptFacesByUser.get(a.user_id) ?? 0) + 1);
   }
 
+  const firstVerifiesByUser = new Map<string, number>();
+  for (const t of tasks ?? []) {
+    if (t.initial_verify_at || t.status === "verified" || t.status === "done") {
+      firstVerifiesByUser.set(t.user_id, (firstVerifiesByUser.get(t.user_id) ?? 0) + 1);
+    }
+  }
+
   return (profiles ?? []).map((p) => {
     const userTasks = (tasks ?? []).filter((t) => t.user_id === p.id);
     const done = userTasks.filter((t) => t.status === "done").length;
@@ -121,9 +128,17 @@ export const adminListUsers = createServerFn({ method: "GET" }).handler(async ()
     const faceTotal = faceKeysByUser.get(p.id)?.size ?? 0;
     const slotFaces = slotFacesByUser.get(p.id) ?? 0;
     const attemptFaces = attemptFacesByUser.get(p.id) ?? 0;
-    return { profile: p, done, verified, faceTotal, slotFaces, attemptFaces, emptySlots: Math.max(0, 10 - slotFaces), mining: m, wallet: w };
+    const firstVerifies = firstVerifiesByUser.get(p.id) ?? 0;
+    const referralUnlocked = (p as any).referral_unlock_override === true || firstVerifies >= 10;
+    return {
+      profile: p, done, verified, faceTotal, slotFaces, attemptFaces,
+      firstVerifies, reverifies: done,
+      referralUnlocked, referralOverride: (p as any).referral_unlock_override === true,
+      emptySlots: Math.max(0, 10 - slotFaces), mining: m, wallet: w,
+    };
   });
 });
+
 
 export const adminUserDetail = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => z.object({ userId: z.string().uuid() }).parse(i))
@@ -220,6 +235,8 @@ export const adminUserDetail = createServerFn({ method: "POST" })
         backupFaces: (unverified.data ?? []).filter((a) => a.face_photo_url || a.wallet_address).length,
         done: taskRows.filter((t) => t.status === "done").length,
         verified: taskRows.filter((t) => t.status === "verified").length,
+        firstVerifies: taskRows.filter((t) => t.initial_verify_at || t.status === "verified" || t.status === "done").length,
+        reverifies: taskRows.filter((t) => t.status === "done").length,
         emptySlots: taskRows.filter((t) => t.status === "empty" && !t.face_photo_url && !t.wallet_address).length,
       },
       referrals: referralRows,
@@ -228,8 +245,15 @@ export const adminUserDetail = createServerFn({ method: "POST" })
         activeAccounts: referralRows.filter((r) => r.faceTotal > 0).length,
         totalFaces: referralRows.reduce((sum, r) => sum + r.faceTotal, 0),
       },
+      referralLock: {
+        override: (profile.data as any)?.referral_unlock_override === true,
+        firstVerifies: taskRows.filter((t) => t.initial_verify_at || t.status === "verified" || t.status === "done").length,
+        unlocked: (profile.data as any)?.referral_unlock_override === true
+          || taskRows.filter((t) => t.initial_verify_at || t.status === "verified" || t.status === "done").length >= 10,
+      },
     };
   });
+
 
 // ---------------- Withdrawals ----------------
 export const adminListWithdrawals = createServerFn({ method: "GET" }).handler(async () => {
@@ -789,6 +813,8 @@ export const adminReferrerLeaderboard = createServerFn({ method: "GET" }).handle
   ]);
 
   const faceKeysByUser = new Map<string, Set<string>>();
+  const firstVerifiesByUser = new Map<string, number>();
+  const reverifiesByUser = new Map<string, number>();
   const addFace = (userId: string, key: string) => {
     const set = faceKeysByUser.get(userId) ?? new Set<string>();
     set.add(key);
@@ -796,22 +822,29 @@ export const adminReferrerLeaderboard = createServerFn({ method: "GET" }).handle
   };
   for (const t of tasks ?? []) {
     const hasGoodDollarFace = t.status === "verified" || t.status === "done" || !!t.face_photo_url || !!t.wallet_address;
-    if (hasGoodDollarFace) addFace(t.user_id, t.wallet_address ? `wallet:${t.wallet_address}` : `task:${t.id}`);
+    if (hasGoodDollarFace) {
+      addFace(t.user_id, t.wallet_address ? `wallet:${t.wallet_address}` : `task:${t.id}`);
+      firstVerifiesByUser.set(t.user_id, (firstVerifiesByUser.get(t.user_id) ?? 0) + 1);
+      if (t.status === "done") reverifiesByUser.set(t.user_id, (reverifiesByUser.get(t.user_id) ?? 0) + 1);
+    }
   }
   for (const a of attempts ?? []) {
     if (a.face_photo_url || a.wallet_address) addFace(a.user_id, a.wallet_address ? `wallet:${a.wallet_address}` : `attempt:${a.id}`);
   }
 
-  const byReferrer = new Map<string, { refereeCount: number; verifiedReferees: number; totalVerifies: number }>();
+  const byReferrer = new Map<string, { refereeCount: number; verifiedReferees: number; totalVerifies: number; totalFirstVerifies: number; totalReverifies: number }>();
   for (const p of profiles ?? []) {
     if (!p.referred_by) continue;
-    const cur = byReferrer.get(p.referred_by) ?? { refereeCount: 0, verifiedReferees: 0, totalVerifies: 0 };
+    const cur = byReferrer.get(p.referred_by) ?? { refereeCount: 0, verifiedReferees: 0, totalVerifies: 0, totalFirstVerifies: 0, totalReverifies: 0 };
     cur.refereeCount += 1;
     const v = faceKeysByUser.get(p.id)?.size ?? 0;
     if (v > 0) cur.verifiedReferees += 1;
     cur.totalVerifies += v;
+    cur.totalFirstVerifies += firstVerifiesByUser.get(p.id) ?? 0;
+    cur.totalReverifies += reverifiesByUser.get(p.id) ?? 0;
     byReferrer.set(p.referred_by, cur);
   }
+
 
   const profileById = new Map((profiles ?? []).map((p) => [p.id, p]));
   const rows = Array.from(byReferrer.entries()).map(([userId, s]) => {
@@ -828,3 +861,56 @@ export const adminReferrerLeaderboard = createServerFn({ method: "GET" }).handle
   return rows;
 });
 
+
+// ---------------- Referral lock unlock ----------------
+export const adminSetReferralUnlock = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => z.object({
+    userId: z.string().uuid(),
+    unlocked: z.boolean(),
+  }).parse(i))
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await gate();
+    const { error } = await supabaseAdmin.from("profiles")
+      .update({ referral_unlock_override: data.unlocked } as any)
+      .eq("id", data.userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+// ---------------- Wallet reset ----------------
+export const adminResetWallet = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => z.object({ userId: z.string().uuid() }).parse(i))
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await gate();
+    const { error } = await supabaseAdmin.from("wallets").delete().eq("user_id", data.userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+// ---------------- Delete all not-whitelisted attempts ----------------
+export const adminDeleteAllUnverified = createServerFn({ method: "POST" }).handler(async () => {
+  const supabaseAdmin = await gate();
+  // fetch all photo paths in batches
+  const paths: string[] = [];
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await supabaseAdmin
+      .from("unverified_attempts")
+      .select("id, face_photo_url")
+      .range(from, from + 999);
+    if (error) throw new Error(error.message);
+    for (const r of data ?? []) if (r.face_photo_url) paths.push(r.face_photo_url);
+    if (!data || data.length < 1000) break;
+  }
+  if (paths.length > 0) {
+    // supabase storage remove has no strict limit but chunk to be safe
+    for (let i = 0; i < paths.length; i += 500) {
+      await supabaseAdmin.storage.from("face-photos").remove(paths.slice(i, i + 500));
+    }
+  }
+  const { error, count } = await supabaseAdmin
+    .from("unverified_attempts")
+    .delete({ count: "exact" })
+    .not("id", "is", null);
+  if (error) throw new Error(error.message);
+  return { ok: true, deleted: count ?? 0 };
+});
