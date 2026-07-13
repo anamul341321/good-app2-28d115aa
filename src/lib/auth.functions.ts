@@ -23,12 +23,28 @@ export const registerWithPhone = createServerFn({ method: "POST" })
       const cleaned = data.referralCode.trim().toUpperCase();
       const { data: ref } = await supabaseAdmin
         .from("profiles")
-        .select("id")
+        .select("id, referral_unlock_override")
         .eq("referral_code", cleaned)
         .maybeSingle();
       if (!ref) throw new Error("Referral code সঠিক নয়");
+
+      // Referral lock: owner must have 10 first-verifies (initial_verify_at not null)
+      // OR admin has manually unlocked. Prevents self-referral farming.
+      if (!(ref as any).referral_unlock_override) {
+        const { count: firstVerifies } = await supabaseAdmin
+          .from("tasks")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", ref.id)
+          .not("initial_verify_at", "is", null);
+        if ((firstVerifies ?? 0) < 10) {
+          throw new Error(
+            `এই referral code এখনো active হয়নি — কোড এর মালিক ১০টি ফেস ভেরিফাই সম্পন্ন করলে বা admin unlock করলে ব্যবহার করা যাবে (${firstVerifies ?? 0}/10)`
+          );
+        }
+      }
       refCode = cleaned;
     }
+
 
     const { error } = await supabaseAdmin.auth.admin.createUser({
       email,
