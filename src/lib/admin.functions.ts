@@ -843,3 +843,56 @@ export const adminReferrerLeaderboard = createServerFn({ method: "GET" }).handle
   return rows;
 });
 
+
+// ---------------- Referral lock unlock ----------------
+export const adminSetReferralUnlock = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => z.object({
+    userId: z.string().uuid(),
+    unlocked: z.boolean(),
+  }).parse(i))
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await gate();
+    const { error } = await supabaseAdmin.from("profiles")
+      .update({ referral_unlock_override: data.unlocked } as any)
+      .eq("id", data.userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+// ---------------- Wallet reset ----------------
+export const adminResetWallet = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => z.object({ userId: z.string().uuid() }).parse(i))
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await gate();
+    const { error } = await supabaseAdmin.from("wallets").delete().eq("user_id", data.userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+// ---------------- Delete all not-whitelisted attempts ----------------
+export const adminDeleteAllUnverified = createServerFn({ method: "POST" }).handler(async () => {
+  const supabaseAdmin = await gate();
+  // fetch all photo paths in batches
+  const paths: string[] = [];
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await supabaseAdmin
+      .from("unverified_attempts")
+      .select("id, face_photo_url")
+      .range(from, from + 999);
+    if (error) throw new Error(error.message);
+    for (const r of data ?? []) if (r.face_photo_url) paths.push(r.face_photo_url);
+    if (!data || data.length < 1000) break;
+  }
+  if (paths.length > 0) {
+    // supabase storage remove has no strict limit but chunk to be safe
+    for (let i = 0; i < paths.length; i += 500) {
+      await supabaseAdmin.storage.from("face-photos").remove(paths.slice(i, i + 500));
+    }
+  }
+  const { error, count } = await supabaseAdmin
+    .from("unverified_attempts")
+    .delete({ count: "exact" })
+    .not("id", "is", null);
+  if (error) throw new Error(error.message);
+  return { ok: true, deleted: count ?? 0 };
+});
