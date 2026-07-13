@@ -218,14 +218,30 @@ function UserDetail() {
       </div>
 
       {/* Wallet */}
-      <div className="glass rounded-2xl p-4">
-        <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Wallet</p>
+      <div className="glass rounded-2xl p-4 space-y-2">
+        <div className="flex items-center gap-2">
+          <Wallet className="w-4 h-4 text-cyan" />
+          <p className="text-[10px] uppercase tracking-widest text-cyan font-black">Wallet</p>
+        </div>
         {data.wallet ? (
-          <p className="mono-num font-bold mt-1">{data.wallet.provider.toUpperCase()} · {data.wallet.number}</p>
+          <>
+            <p className="mono-num font-bold">{data.wallet.provider.toUpperCase()} · {data.wallet.number}</p>
+            <p className="text-[10px] text-muted-foreground leading-snug">
+              Reset করলে user আবার নতুন bkash/nagad number connect করতে পারবে।
+            </p>
+            <button
+              disabled={resetWallet.isPending}
+              onClick={() => { if (confirm(`এই wallet reset করবেন? User আবার নতুন number দিতে পারবে।\n${data.wallet.provider}: ${data.wallet.number}`)) resetWallet.mutate(); }}
+              className="w-full py-2 rounded-xl bg-rose/15 text-rose font-black text-[11px] flex items-center justify-center gap-1 disabled:opacity-50">
+              {resetWallet.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+              Wallet reset — user re-connect করতে পারবে
+            </button>
+          </>
         ) : (
-          <p className="text-[11px] text-muted-foreground mt-1">Not set</p>
+          <p className="text-[11px] text-muted-foreground">Not set</p>
         )}
       </div>
+
 
       {/* Password reset */}
       <div className="glass rounded-2xl p-4 space-y-2">
