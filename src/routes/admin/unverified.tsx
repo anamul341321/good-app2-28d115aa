@@ -63,6 +63,12 @@ function UnverifiedPage() {
     onError: (e: any) => { setRprogress(""); toast.error(e.message); },
   });
 
+  const delAll = useMutation({
+    mutationFn: () => adminDeleteAllUnverified(),
+    onSuccess: (r: any) => { toast.success(`🗑️ ${r.deleted} attempt মুছে ফেলা হয়েছে`); refetch(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   if (isLoading) {
     return <div className="py-10 flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-amber" /></div>;
   }
@@ -71,19 +77,36 @@ function UnverifiedPage() {
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between px-1">
+      <div className="flex items-center justify-between px-1 gap-2 flex-wrap">
         <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
           Not whitelisted: {data?.length ?? 0}
         </p>
-        <button
-          disabled={recheckAll.isPending}
-          onClick={() => recheckAll.mutate()}
-          className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald/15 border border-emerald/30 text-emerald text-[10px] font-black disabled:opacity-50"
-        >
-          {recheckAll.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <ShieldCheck className="w-3 h-3" />}
-          {recheckAll.isPending ? (rprogress || "চেক চলছে…") : "সব whitelist check"}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            disabled={recheckAll.isPending}
+            onClick={() => recheckAll.mutate()}
+            className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald/15 border border-emerald/30 text-emerald text-[10px] font-black disabled:opacity-50"
+          >
+            {recheckAll.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <ShieldCheck className="w-3 h-3" />}
+            {recheckAll.isPending ? (rprogress || "চেক চলছে…") : "সব whitelist check"}
+          </button>
+          <button
+            disabled={delAll.isPending || (data?.length ?? 0) === 0}
+            onClick={() => {
+              const n = data?.length ?? 0;
+              if (n === 0) return;
+              if (!confirm(`⚠️ সব ${n}টি not-whitelisted attempt মুছে ফেলবেন?\nএটি undo করা যাবে না।`)) return;
+              if (!confirm(`নিশ্চিত? ${n}টি face + wallet permanent delete হবে।`)) return;
+              delAll.mutate();
+            }}
+            className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-rose text-white text-[10px] font-black disabled:opacity-50"
+          >
+            {delAll.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash className="w-3 h-3" />}
+            সব মুছুন
+          </button>
+        </div>
       </div>
+
       {(data ?? []).map((r: any) => (
         <div key={r.id} className="glass rounded-xl p-3 space-y-2">
           <div className="flex gap-3">
