@@ -231,7 +231,7 @@ function UserDetail() {
             </p>
             <button
               disabled={resetWallet.isPending}
-              onClick={() => { if (confirm(`এই wallet reset করবেন? User আবার নতুন number দিতে পারবে।\n${data.wallet.provider}: ${data.wallet.number}`)) resetWallet.mutate(); }}
+              onClick={() => { if (confirm(`এই wallet reset করবেন? User আবার নতুন number দিতে পারবে।\n${data.wallet!.provider}: ${data.wallet!.number}`)) resetWallet.mutate(); }}
               className="w-full py-2 rounded-xl bg-rose/15 text-rose font-black text-[11px] flex items-center justify-center gap-1 disabled:opacity-50">
               {resetWallet.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
               Wallet reset — user re-connect করতে পারবে
