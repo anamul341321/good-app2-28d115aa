@@ -254,15 +254,16 @@ function ReferrerLeaderboard({ rows, q }: { rows: any[]; q: string }) {
               </p>
               <div className="flex flex-wrap gap-1 mt-1.5">
                 <span className="px-2 py-0.5 rounded-full bg-cyan/15 text-cyan font-black text-[10px] mono-num">
-                  {r.refereeCount} account
+                  👥 {r.refereeCount} account
                 </span>
                 <span className="px-2 py-0.5 rounded-full bg-emerald/15 text-emerald font-black text-[10px] mono-num">
-                  {r.verifiedReferees} verified
+                  ✅ verify {r.totalFirstVerifies ?? r.totalVerifies}
                 </span>
                 <span className="px-2 py-0.5 rounded-full bg-violet/15 text-violet font-black text-[10px] mono-num">
-                  {r.totalVerifies} face
+                  🔁 re-verify {r.totalReverifies ?? 0}
                 </span>
               </div>
+
             </div>
             <ChevronRight className="w-4 h-4 text-muted-foreground" />
           </Link>
