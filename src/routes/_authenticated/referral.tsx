@@ -107,27 +107,67 @@ function ReferralPage() {
 
       <VideoTutorialButton />
 
+      {/* 🔒 Lock banner */}
+      {lock && (
+        <div className={`rounded-3xl p-4 border-2 shadow-lg ${
+          isLocked ? "border-rose/40 bg-linear-to-br from-rose/15 to-amber/10"
+                    : "border-emerald/40 bg-linear-to-br from-emerald/15 to-cyan/10"
+        }`}>
+          <div className="flex items-start gap-3">
+            <div className={`shrink-0 w-11 h-11 rounded-2xl flex items-center justify-center ${isLocked ? "bg-rose text-white" : "bg-emerald text-white"}`}>
+              {isLocked ? <Lock className="w-5 h-5" /> : <Unlock className="w-5 h-5" />}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className={`font-black text-sm ${isLocked ? "text-rose" : "text-emerald"}`}>
+                {isLocked ? "🔒 আপনার রেফার লিংক এখনো Lock" : "🔓 রেফার লিংক Unlock — এখন শেয়ার করুন!"}
+              </p>
+              <p className="text-[11px] text-navy/80 mt-1 leading-snug">
+                {isLocked
+                  ? <>নিজের <b>{lock.needed}টি ফেস ভেরিফাই</b> সম্পন্ন করলে link auto unlock হবে। এর আগে refer করা যাবে না।</>
+                  : lock.override
+                    ? <>Admin আপনার link manual unlock করেছেন।</>
+                    : <>আপনার ১০/১০ complete — link active।</>
+                }
+              </p>
+              <div className="mt-2 flex items-center gap-2">
+                <div className="flex-1 h-2 rounded-full bg-white/60 overflow-hidden">
+                  <div className={`h-full ${isLocked ? "bg-rose" : "bg-emerald"} transition-all`}
+                       style={{ width: `${Math.min(100, (lock.firstVerifies / lock.needed) * 100)}%` }} />
+                </div>
+                <span className="mono-num text-[11px] font-black text-navy">{lock.firstVerifies}/{lock.needed}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 💎 Referral Code Card */}
-      <div className="premium-panel rounded-3xl p-5 text-center shimmer-border" data-voice="referral.intro">
+      <div className={`premium-panel rounded-3xl p-5 text-center shimmer-border relative ${isLocked ? "opacity-70" : ""}`} data-voice="referral.intro">
+        {isLocked && (
+          <div className="absolute top-2 right-2 flex items-center gap-1 px-2 py-1 rounded-full bg-rose text-white text-[9px] font-black">
+            <Lock className="w-2.5 h-2.5" /> LOCKED
+          </div>
+        )}
         <p className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground font-bold">আপনার রেফারেল কোড</p>
         <p className="mono-num text-4xl font-black ref-gradient-text mt-2 tracking-widest">{code}</p>
         <div className="grid grid-cols-2 gap-2 mt-4">
-          <button onClick={() => copy(code, "কোড")} data-voice="referral.copy"
-            className="py-3 rounded-xl gradient-cta font-black text-xs flex items-center justify-center gap-1.5 btn-press">
-            <Copy className="w-3.5 h-3.5" /> কোড কপি
+          <button onClick={() => copy(code, "কোড")} disabled={isLocked} data-voice="referral.copy"
+            className="py-3 rounded-xl gradient-cta font-black text-xs flex items-center justify-center gap-1.5 btn-press disabled:opacity-50 disabled:cursor-not-allowed">
+            {isLocked ? <Lock className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />} কোড কপি
           </button>
-          <button onClick={share} data-voice="referral.bonus"
-            className="py-3 rounded-xl gradient-emerald font-black text-xs flex items-center justify-center gap-1.5 btn-press pulse-glow">
-            <Share2 className="w-3.5 h-3.5" /> এখনই শেয়ার
+          <button onClick={share} disabled={isLocked} data-voice="referral.bonus"
+            className="py-3 rounded-xl gradient-emerald font-black text-xs flex items-center justify-center gap-1.5 btn-press pulse-glow disabled:opacity-50 disabled:cursor-not-allowed">
+            {isLocked ? <Lock className="w-3.5 h-3.5" /> : <Share2 className="w-3.5 h-3.5" />} এখনই শেয়ার
           </button>
         </div>
         {shareUrl && (
-          <button onClick={() => copy(shareUrl, "লিংক")}
-            className="mt-2 w-full py-2 rounded-lg bg-surface-2 border border-border text-[11px] text-navy/80 font-bold truncate">
+          <button onClick={() => copy(shareUrl, "লিংক")} disabled={isLocked}
+            className="mt-2 w-full py-2 rounded-lg bg-surface-2 border border-border text-[11px] text-navy/80 font-bold truncate disabled:opacity-50">
             🔗 {shareUrl}
           </button>
         )}
       </div>
+
 
       {/* 📊 Colourful Stats */}
       <div className="grid grid-cols-3 gap-2">
