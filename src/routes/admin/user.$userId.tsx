@@ -122,26 +122,56 @@ function UserDetail() {
           <ScanFace className="w-4 h-4 text-violet" />
           <p className="text-[10px] uppercase tracking-widest text-violet font-black">GoodDollar Face Verification</p>
         </div>
-        <div className="grid grid-cols-3 gap-2 text-center">
-          <div className="rounded-xl bg-violet/10 border border-violet/20 py-2">
-            <p className="mono-num text-xl font-black text-violet">{data.faceSummary?.total ?? 0}</p>
-            <p className="text-[9px] font-bold text-muted-foreground uppercase">মোট face</p>
+        <div className="grid grid-cols-2 gap-2 text-center">
+          <div className="rounded-xl bg-emerald/10 border border-emerald/20 py-3">
+            <p className="mono-num text-2xl font-black text-emerald">{data.faceSummary?.firstVerifies ?? data.faceSummary?.slotFaces ?? 0}</p>
+            <p className="text-[10px] font-bold text-emerald uppercase">✅ Success verify</p>
           </div>
-          <div className="rounded-xl bg-emerald/10 border border-emerald/20 py-2">
-            <p className="mono-num text-xl font-black text-emerald">{data.faceSummary?.slotFaces ?? 0}</p>
-            <p className="text-[9px] font-bold text-muted-foreground uppercase">slot face</p>
-          </div>
-          <div className="rounded-xl bg-rose/10 border border-rose/20 py-2">
-            <p className="mono-num text-xl font-black text-rose">{data.faceSummary?.backupFaces ?? 0}</p>
-            <p className="text-[9px] font-bold text-muted-foreground uppercase">backup</p>
+          <div className="rounded-xl bg-cyan/10 border border-cyan/20 py-3">
+            <p className="mono-num text-2xl font-black text-cyan">{data.faceSummary?.reverifies ?? data.faceSummary?.done ?? 0}</p>
+            <p className="text-[10px] font-bold text-cyan uppercase">🔁 Re-verify</p>
           </div>
         </div>
         <div className="flex flex-wrap gap-1 text-[10px]">
-          <span className="px-2 py-0.5 rounded-full bg-cyan/15 text-cyan font-black mono-num">done {data.faceSummary?.done ?? 0}</span>
           <span className="px-2 py-0.5 rounded-full bg-amber/15 text-amber font-black mono-num">pending re-verify {data.faceSummary?.verified ?? 0}</span>
           <span className="px-2 py-0.5 rounded-full bg-surface-2 text-muted-foreground font-black mono-num">empty slot {data.faceSummary?.emptySlots ?? 0}</span>
+          {(data.faceSummary?.backupFaces ?? 0) > 0 && (
+            <span className="px-2 py-0.5 rounded-full bg-rose/15 text-rose font-black mono-num">backup {data.faceSummary?.backupFaces}</span>
+          )}
         </div>
       </div>
+
+      {/* Referral lock control */}
+      <div className={`glass rounded-2xl p-4 space-y-2 border ${data.referralLock?.unlocked ? "border-emerald/30" : "border-rose/30"}`}>
+        <div className="flex items-center gap-2">
+          {data.referralLock?.unlocked ? <Unlock className="w-4 h-4 text-emerald" /> : <Lock className="w-4 h-4 text-rose" />}
+          <p className={`text-[10px] uppercase tracking-widest font-black ${data.referralLock?.unlocked ? "text-emerald" : "text-rose"}`}>
+            Referral link — {data.referralLock?.unlocked ? "UNLOCKED" : "LOCKED"}
+          </p>
+        </div>
+        <p className="text-[11px] text-muted-foreground">
+          {data.referralLock?.firstVerifies ?? 0}/10 first-verify complete
+          {data.referralLock?.override && <span className="ml-1 text-violet font-black">· admin override ON</span>}
+        </p>
+        <p className="text-[10px] text-muted-foreground leading-snug">
+          ১০টি ফেস ভেরিফাই complete হলে referral link auto unlock হয়। এর আগে admin manual unlock করলে user অন্য কাউকে refer করতে পারবে।
+        </p>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            disabled={setUnlock.isPending || data.referralLock?.override === true}
+            onClick={() => setUnlock.mutate(true)}
+            className="py-2 rounded-xl bg-emerald/20 text-emerald font-black text-[11px] flex items-center justify-center gap-1 disabled:opacity-40">
+            <Unlock className="w-3 h-3" /> Unlock (admin)
+          </button>
+          <button
+            disabled={setUnlock.isPending || data.referralLock?.override === false}
+            onClick={() => setUnlock.mutate(false)}
+            className="py-2 rounded-xl bg-rose/20 text-rose font-black text-[11px] flex items-center justify-center gap-1 disabled:opacity-40">
+            <Lock className="w-3 h-3" /> Re-lock
+          </button>
+        </div>
+      </div>
+
 
       {/* Mining control */}
       <div className="glass rounded-2xl p-4 space-y-3">
