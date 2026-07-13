@@ -42,9 +42,8 @@ function AdminUsers() {
       accrued: Number(m.accrued_amount), withdrawn: Number(m.withdrawn_amount),
       isActive: m.is_active, lastCreditedAt: m.last_credited_at,
     }) : 0;
-    const total = row.faceTotal ?? (row.done + row.verified);
-    const slotFaces = row.slotFaces ?? (row.done + row.verified);
-    const backupFaces = row.attemptFaces ?? 0;
+    const firstVerifies = row.firstVerifies ?? 0;
+    const reverifies = row.reverifies ?? row.done ?? 0;
     return (
       <div key={row.profile.id} className="glass rounded-xl p-3 space-y-2">
         <Link to="/admin/user/$userId" params={{ userId: row.profile.id }} className="flex items-start justify-between gap-2">
@@ -71,13 +70,17 @@ function AdminUsers() {
           <ChevronRight className="w-4 h-4 text-muted-foreground mt-1" />
         </Link>
         <div className="flex flex-wrap gap-1 text-[10px]">
-          {total > 0 && <span className="px-2 py-0.5 rounded-full bg-violet/15 text-violet font-black mono-num">মোট {total} face</span>}
-          <span className="px-2 py-0.5 rounded-full bg-emerald/15 text-emerald font-bold mono-num">slot {slotFaces}</span>
-          {backupFaces > 0 && <span className="px-2 py-0.5 rounded-full bg-rose/15 text-rose font-bold mono-num">backup {backupFaces}</span>}
-          {row.done > 0 && <span className="px-2 py-0.5 rounded-full bg-cyan/15 text-cyan font-bold">{row.done} done</span>}
-          {row.verified > 0 && <span className="px-2 py-0.5 rounded-full bg-amber/15 text-amber font-bold">{row.verified} pending re-verify</span>}
-          {m?.is_active && <span className="px-2 py-0.5 rounded-full bg-cyan/15 text-cyan font-bold">MINING</span>}
+          <span className="px-2 py-0.5 rounded-full bg-emerald/15 text-emerald font-black mono-num">✅ verify {firstVerifies}</span>
+          <span className="px-2 py-0.5 rounded-full bg-cyan/15 text-cyan font-black mono-num">🔁 re-verify {reverifies}</span>
+          {row.referralUnlocked === false && (
+            <span className="px-2 py-0.5 rounded-full bg-rose/15 text-rose font-black inline-flex items-center gap-0.5"><Lock className="w-2.5 h-2.5" /> ref lock</span>
+          )}
+          {row.referralOverride && (
+            <span className="px-2 py-0.5 rounded-full bg-violet/15 text-violet font-black inline-flex items-center gap-0.5"><Unlock className="w-2.5 h-2.5" /> admin unlock</span>
+          )}
+          {m?.is_active && <span className="px-2 py-0.5 rounded-full bg-cyan/15 text-cyan font-black">MINING</span>}
           {row.wallet && <span className="px-2 py-0.5 rounded-full bg-surface-2 text-muted-foreground mono-num">{row.wallet.provider}:{row.wallet.number}</span>}
+
         </div>
         <button
           onClick={() => { if (confirm("মুছুন this user FOREVER? Wallets, tasks, faces, withdrawals — all gone.")) del.mutate(row.profile.id); }}
