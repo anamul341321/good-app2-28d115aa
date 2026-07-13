@@ -31,7 +31,14 @@ function ReferralPage() {
   }
 
   const code = data.referralCode ?? "—";
+  const lock = (data as any).lock as { unlocked: boolean; override: boolean; firstVerifies: number; needed: number } | undefined;
+  const isLocked = lock ? !lock.unlocked : false;
+
   const copy = (txt: string, label: string) => {
+    if (isLocked) {
+      toast.error("🔒 Referral link এখনো lock — ১০টি ফেস ভেরিফাই complete করুন");
+      return;
+    }
     navigator.clipboard.writeText(txt);
     toast.success(`${label} কপি হয়েছে ✨`);
   };
@@ -49,6 +56,10 @@ function ReferralPage() {
     return lines.join("\n");
   };
   const share = async () => {
+    if (isLocked) {
+      toast.error("🔒 Referral link এখনো lock — ১০টি ফেস ভেরিফাই complete করুন");
+      return;
+    }
     if (typeof navigator !== "undefined" && (navigator as any).share) {
       try {
         await (navigator as any).share({
@@ -59,8 +70,10 @@ function ReferralPage() {
         return;
       } catch {}
     }
-    copy(buildShareText(true), "শেয়ার টেক্সট");
+    navigator.clipboard.writeText(buildShareText(true));
+    toast.success("শেয়ার টেক্সট কপি হয়েছে ✨");
   };
+
 
   return (
     <div className="space-y-5 pt-2 pb-8">
