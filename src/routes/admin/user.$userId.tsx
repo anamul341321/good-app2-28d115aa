@@ -77,6 +77,19 @@ function UserDetail() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const setUnlock = useMutation({
+    mutationFn: (unlocked: boolean) => adminSetReferralUnlock({ data: { userId, unlocked } }),
+    onSuccess: (_r, unlocked) => { toast.success(unlocked ? "🔓 Referral link unlock করা হলো" : "🔒 Referral link lock করা হলো"); refetch(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const resetWallet = useMutation({
+    mutationFn: () => adminResetWallet({ data: { userId } }),
+    onSuccess: () => { toast.success("Wallet reset — user নতুন করে সেট করতে পারবে"); refetch(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+
   if (isLoading || !data) return <div className="py-10 flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-cyan" /></div>;
   if (!data.profile) return <div className="text-center py-10 text-muted-foreground text-sm">User not found</div>;
 
