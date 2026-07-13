@@ -6,9 +6,6 @@ import { computeLiveBalance } from "@/lib/mining";
 import { toast } from "sonner";
 import { useState } from "react";
 
-import { computeLiveBalance } from "@/lib/mining";
-import { toast } from "sonner";
-import { useState } from "react";
 
 export const Route = createFileRoute("/admin/users")({ component: AdminUsers });
 
