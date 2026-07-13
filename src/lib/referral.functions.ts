@@ -39,10 +39,18 @@ export const getMyReferrals = createServerFn({ method: "GET" })
         return rows;
       };
       [tasks, attempts] = await Promise.all([
-        fetchAll("tasks", "id, user_id, status, whitelist_ok, wallet_address, face_photo_url"),
+        fetchAll("tasks", "id, user_id, status, whitelist_ok, wallet_address, face_photo_url, initial_verify_at"),
         fetchAll("unverified_attempts", "id, user_id, wallet_address, face_photo_url"),
       ]);
     }
+
+    // Also fetch caller's own first-verify count for the lock gauge.
+    const { count: myFirstVerifies } = await supabaseAdmin
+      .from("tasks")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .not("initial_verify_at", "is", null);
+
 
     const faceKeysByUser = new Map<string, Set<string>>();
     const doneByUser = new Map<string, number>();
