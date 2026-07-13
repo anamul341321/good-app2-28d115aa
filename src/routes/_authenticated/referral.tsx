@@ -256,6 +256,11 @@ function ReferralPage() {
                   </span>
                 )}
               </div>
+              <div className="flex flex-wrap gap-1 mt-2">
+                <span className="px-2 py-0.5 rounded-full bg-emerald/15 text-emerald font-black text-[10px] mono-num">✅ verify {(r as any).firstVerifies ?? 0}</span>
+                <span className="px-2 py-0.5 rounded-full bg-cyan/15 text-cyan font-black text-[10px] mono-num">🔁 re-verify {(r as any).reverifies ?? 0}</span>
+              </div>
+
               {!r.qualified && (
                 <div className="mt-2 h-1.5 rounded-full bg-surface-2 overflow-hidden">
                   <div className="h-full gradient-emerald transition-all" style={{ width: `${(r.validDone / 10) * 100}%` }} />
