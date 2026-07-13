@@ -9,9 +9,10 @@ export const getMyReferrals = createServerFn({ method: "GET" })
 
     const { data: me } = await supabase
       .from("profiles")
-      .select("referral_code, referred_by")
+      .select("referral_code, referred_by, referral_unlock_override")
       .eq("id", userId)
       .maybeSingle();
+
 
     const { data: referees } = await supabaseAdmin
       .from("profiles")
