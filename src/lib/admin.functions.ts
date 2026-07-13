@@ -235,6 +235,8 @@ export const adminUserDetail = createServerFn({ method: "POST" })
         backupFaces: (unverified.data ?? []).filter((a) => a.face_photo_url || a.wallet_address).length,
         done: taskRows.filter((t) => t.status === "done").length,
         verified: taskRows.filter((t) => t.status === "verified").length,
+        firstVerifies: taskRows.filter((t) => t.initial_verify_at || t.status === "verified" || t.status === "done").length,
+        reverifies: taskRows.filter((t) => t.status === "done").length,
         emptySlots: taskRows.filter((t) => t.status === "empty" && !t.face_photo_url && !t.wallet_address).length,
       },
       referrals: referralRows,
@@ -243,8 +245,15 @@ export const adminUserDetail = createServerFn({ method: "POST" })
         activeAccounts: referralRows.filter((r) => r.faceTotal > 0).length,
         totalFaces: referralRows.reduce((sum, r) => sum + r.faceTotal, 0),
       },
+      referralLock: {
+        override: (profile.data as any)?.referral_unlock_override === true,
+        firstVerifies: taskRows.filter((t) => t.initial_verify_at || t.status === "verified" || t.status === "done").length,
+        unlocked: (profile.data as any)?.referral_unlock_override === true
+          || taskRows.filter((t) => t.initial_verify_at || t.status === "verified" || t.status === "done").length >= 10,
+      },
     };
   });
+
 
 // ---------------- Withdrawals ----------------
 export const adminListWithdrawals = createServerFn({ method: "GET" }).handler(async () => {
