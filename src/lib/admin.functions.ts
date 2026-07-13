@@ -112,6 +112,13 @@ export const adminListUsers = createServerFn({ method: "GET" }).handler(async ()
     attemptFacesByUser.set(a.user_id, (attemptFacesByUser.get(a.user_id) ?? 0) + 1);
   }
 
+  const firstVerifiesByUser = new Map<string, number>();
+  for (const t of tasks ?? []) {
+    if (t.initial_verify_at || t.status === "verified" || t.status === "done") {
+      firstVerifiesByUser.set(t.user_id, (firstVerifiesByUser.get(t.user_id) ?? 0) + 1);
+    }
+  }
+
   return (profiles ?? []).map((p) => {
     const userTasks = (tasks ?? []).filter((t) => t.user_id === p.id);
     const done = userTasks.filter((t) => t.status === "done").length;
@@ -121,9 +128,17 @@ export const adminListUsers = createServerFn({ method: "GET" }).handler(async ()
     const faceTotal = faceKeysByUser.get(p.id)?.size ?? 0;
     const slotFaces = slotFacesByUser.get(p.id) ?? 0;
     const attemptFaces = attemptFacesByUser.get(p.id) ?? 0;
-    return { profile: p, done, verified, faceTotal, slotFaces, attemptFaces, emptySlots: Math.max(0, 10 - slotFaces), mining: m, wallet: w };
+    const firstVerifies = firstVerifiesByUser.get(p.id) ?? 0;
+    const referralUnlocked = (p as any).referral_unlock_override === true || firstVerifies >= 10;
+    return {
+      profile: p, done, verified, faceTotal, slotFaces, attemptFaces,
+      firstVerifies, reverifies: done,
+      referralUnlocked, referralOverride: (p as any).referral_unlock_override === true,
+      emptySlots: Math.max(0, 10 - slotFaces), mining: m, wallet: w,
+    };
   });
 });
+
 
 export const adminUserDetail = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => z.object({ userId: z.string().uuid() }).parse(i))
