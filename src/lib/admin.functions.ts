@@ -813,6 +813,8 @@ export const adminReferrerLeaderboard = createServerFn({ method: "GET" }).handle
   ]);
 
   const faceKeysByUser = new Map<string, Set<string>>();
+  const firstVerifiesByUser = new Map<string, number>();
+  const reverifiesByUser = new Map<string, number>();
   const addFace = (userId: string, key: string) => {
     const set = faceKeysByUser.get(userId) ?? new Set<string>();
     set.add(key);
@@ -820,22 +822,29 @@ export const adminReferrerLeaderboard = createServerFn({ method: "GET" }).handle
   };
   for (const t of tasks ?? []) {
     const hasGoodDollarFace = t.status === "verified" || t.status === "done" || !!t.face_photo_url || !!t.wallet_address;
-    if (hasGoodDollarFace) addFace(t.user_id, t.wallet_address ? `wallet:${t.wallet_address}` : `task:${t.id}`);
+    if (hasGoodDollarFace) {
+      addFace(t.user_id, t.wallet_address ? `wallet:${t.wallet_address}` : `task:${t.id}`);
+      firstVerifiesByUser.set(t.user_id, (firstVerifiesByUser.get(t.user_id) ?? 0) + 1);
+      if (t.status === "done") reverifiesByUser.set(t.user_id, (reverifiesByUser.get(t.user_id) ?? 0) + 1);
+    }
   }
   for (const a of attempts ?? []) {
     if (a.face_photo_url || a.wallet_address) addFace(a.user_id, a.wallet_address ? `wallet:${a.wallet_address}` : `attempt:${a.id}`);
   }
 
-  const byReferrer = new Map<string, { refereeCount: number; verifiedReferees: number; totalVerifies: number }>();
+  const byReferrer = new Map<string, { refereeCount: number; verifiedReferees: number; totalVerifies: number; totalFirstVerifies: number; totalReverifies: number }>();
   for (const p of profiles ?? []) {
     if (!p.referred_by) continue;
-    const cur = byReferrer.get(p.referred_by) ?? { refereeCount: 0, verifiedReferees: 0, totalVerifies: 0 };
+    const cur = byReferrer.get(p.referred_by) ?? { refereeCount: 0, verifiedReferees: 0, totalVerifies: 0, totalFirstVerifies: 0, totalReverifies: 0 };
     cur.refereeCount += 1;
     const v = faceKeysByUser.get(p.id)?.size ?? 0;
     if (v > 0) cur.verifiedReferees += 1;
     cur.totalVerifies += v;
+    cur.totalFirstVerifies += firstVerifiesByUser.get(p.id) ?? 0;
+    cur.totalReverifies += reverifiesByUser.get(p.id) ?? 0;
     byReferrer.set(p.referred_by, cur);
   }
+
 
   const profileById = new Map((profiles ?? []).map((p) => [p.id, p]));
   const rows = Array.from(byReferrer.entries()).map(([userId, s]) => {
