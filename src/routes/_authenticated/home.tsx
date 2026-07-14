@@ -300,7 +300,7 @@ function HomePage() {
             <div className="shrink-0">
               <MainIdentityCell task={mainTask}
                 onStart={() => router.navigate({ to: "/task/$slot", params: { slot: "1" } })}
-                onReverify={() => router.navigate({ to: "/reverify" })}
+                onReverify={() => router.navigate({ to: "/reverify", search: { taskId: mainTask.id } as any })}
                 onOpenPhoto={(url) => setLightbox({ url, label: `প্রধান পরিচয় · ${mainTask.face_label || "আপনি"}` })} />
             </div>
             <div className="min-w-0 flex-1">
@@ -328,7 +328,9 @@ function HomePage() {
               <span className="text-[11px] font-bold text-emerald ml-2">জমা</span>
             </p>
             {verifiedCount > 0 && (
-              <p className="text-[10px] text-violet mt-0.5 font-bold">{verifiedCount} জন রি-ভেরিফাইয়ের অপেক্ষায়</p>
+              <p className="text-[10px] text-violet mt-0.5 font-bold leading-tight">
+                {verifiedCount} জন সাক্ষী ৫ দিন পর আবার Re-verify চাইবে (আনুমানিক)
+              </p>
             )}
           </div>
           <div className="relative w-12 h-12 shrink-0">
@@ -395,7 +397,7 @@ function HomePage() {
                         {items.map((t) => (
                           <TaskCell key={t.slot} task={t}
                             onStart={() => router.navigate({ to: "/task/$slot", params: { slot: String(t.slot) } })}
-                            onReverify={() => router.navigate({ to: "/reverify" })}
+                            onReverify={() => router.navigate({ to: "/reverify", search: { taskId: t.id } as any })}
                             onOpenPhoto={(url) => setLightbox({ url, label: `সাক্ষী #${t.slot} · ${t.face_label || "মুখ"}` })} />
                         ))}
                       </div>
