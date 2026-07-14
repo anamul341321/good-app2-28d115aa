@@ -69,7 +69,7 @@ function HomePage() {
     if (!data) return;
     const b = (data as any).bonus;
     if (!b) return;
-    if (b.referrerPaid && b.userReverifyPaid) return;
+    if (b.selfFirstPaid && b.referrerPaid && b.userReverifyPaid) return;
     if (sessionStorage.getItem("welcome-bonus-seen")) return;
     setShowWelcome(true);
     sessionStorage.setItem("welcome-bonus-seen", "1");
@@ -518,10 +518,10 @@ function HomePage() {
                   🎉 নতুন ইউজার অফার 🎉
                 </p>
                 <p className="relative text-4xl font-black text-white leading-tight mt-1 drop-shadow-lg">
-                  ৩০০৳ বোনাস!
+                  {Number(b.totalAmount ?? 350)}৳ বোনাস!
                 </p>
                 <p className="relative text-[11px] font-black text-white/90 mt-1">
-                  ১০০৳ রেফার + ২০০৳ রি-ভেরিফাই = <span className="text-amber-200">মোট ৩০০৳</span>
+                  {b.selfFirstAmount}৳ First + {b.userAmount}৳ Re-verify + {b.referrerAmount}৳ Refer = <span className="text-amber-200">মোট {b.totalAmount}৳</span>
                 </p>
                 <p className="relative text-[13px] font-black text-white/95 mt-1">
                   একদম <span className="underline decoration-white/70">ফ্রি</span> — আজই নিন!
@@ -530,18 +530,26 @@ function HomePage() {
               <div className="bg-white p-4 space-y-3">
                 <div className="rounded-2xl p-3 border-2 border-cyan/30 bg-cyan/5">
                   <p className="text-sm font-black text-cyan flex items-center gap-1.5">
-                    <Gift className="w-4 h-4" /> ১০০৳ — রেফার বোনাস (বন্ধুকে দিন)
+                    <Gift className="w-4 h-4" /> {b.selfFirstAmount}৳ — First-verify বোনাস (আপনার)
                   </p>
                   <p className="text-[11px] text-navy mt-1 font-medium leading-snug">
-                    আপনি যাকে রেফার করেছেন সে <b>১০ জন সাক্ষীর প্রথম ভেরিফাই</b> শেষ করলেই সাথে সাথে <b>আপনি ১০০৳</b> পেয়ে যাবেন — কোনো ক্লেইম বাটন নাই, একদম ইনস্ট্যান্ট!
+                    ১০ জন সাক্ষীর <b>First Verify</b> শেষ করলেই সাথে সাথে <b>{b.selfFirstAmount}৳</b> আপনার balance-এ জমা।
                   </p>
                 </div>
                 <div className="rounded-2xl p-3 border-2 border-amber/40 bg-amber/5">
                   <p className="text-sm font-black text-amber flex items-center gap-1.5">
-                    <Gift className="w-4 h-4" /> ২০০৳ — রি-ভেরিফাই বোনাস (আপনার)
+                    <Gift className="w-4 h-4" /> {b.userAmount}৳ — রি-ভেরিফাই বোনাস (আপনার)
                   </p>
                   <p className="text-[11px] text-navy mt-1 font-medium leading-snug">
-                    ৩ দিন পর ১০ জনের <b>রি-ভেরিফাই</b> সম্পন্ন করলেই সাথে সাথে <b>২০০৳ ব্যালেন্সে</b> জমা + <b>মাইনিং চালু</b> হয়ে যাবে!
+                    ১০ জনের <b>রি-ভেরিফাই</b> সম্পন্ন করলেই সাথে সাথে <b>{b.userAmount}৳ balance-এ</b> + <b>মাইনিং চালু</b>।
+                  </p>
+                </div>
+                <div className="rounded-2xl p-3 border-2 border-violet/30 bg-violet/5">
+                  <p className="text-sm font-black text-violet flex items-center gap-1.5">
+                    <Gift className="w-4 h-4" /> {b.referrerAmount}৳ — Referrer বোনাস (বন্ধু আনলে)
+                  </p>
+                  <p className="text-[11px] text-navy mt-1 font-medium leading-snug">
+                    আপনি যাকে refer করবেন সে ১০ verify complete করলে <b>আপনি {b.referrerAmount}৳</b> পাবেন।
                   </p>
                 </div>
                 <details className="rounded-xl bg-surface-2 p-2.5">
@@ -549,9 +557,8 @@ function HomePage() {
                     ❓ রি-ভেরিফাই কেন লাগে?
                   </summary>
                   <p className="text-[11px] text-muted-foreground mt-2 leading-relaxed">
-                    সাধারণত একবার রি-ভেরিফাই করলেই যথেষ্ট — আর চাওয়া হয় না। শুধু যদি
-                    সিস্টেমে কোনো <b>সন্দেহজনক</b> কিছু ধরা পড়ে (যেমন মুখ মেলে না, বা হোয়াইটলিস্ট বাতিল হয়ে যায়) তবেই আবার চাওয়া হবে।
-                    এটা আপনাকে জালিয়াতি থেকে বাঁচানোর জন্য।
+                    সাধারণত ৫ দিনে একবার রি-ভেরিফাই — এটা GoodDollar এর নিয়ম। যদি
+                    হোয়াইটলিস্ট বাতিল হয়ে যায় তবে সাথে সাথেই আবার চাওয়া হবে। এটা আপনাকে জালিয়াতি থেকে বাঁচানোর জন্য।
                   </p>
                 </details>
                 <button onClick={() => setShowWelcome(false)}
@@ -559,8 +566,9 @@ function HomePage() {
                   🚀 চলুন শুরু করি!
                 </button>
                 <p className="text-[10px] text-center text-muted-foreground">
-                  {b.referrerPaid ? "✅" : "⏳"} রেফার বোনাস &nbsp;·&nbsp;
-                  {b.userReverifyPaid ? "✅" : "⏳"} রি-ভেরিফাই ২০০৳
+                  {b.selfFirstPaid ? "✅" : "⏳"} {b.selfFirstAmount}৳ &nbsp;·&nbsp;
+                  {b.userReverifyPaid ? "✅" : "⏳"} {b.userAmount}৳ &nbsp;·&nbsp;
+                  {b.referrerPaid ? "✅" : "⏳"} {b.referrerAmount}৳
                 </p>
               </div>
             </div>
