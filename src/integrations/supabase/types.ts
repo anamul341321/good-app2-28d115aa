@@ -35,6 +35,30 @@ export type Database = {
         }
         Relationships: []
       }
+      bonus_settings: {
+        Row: {
+          first_verify_bonus: number
+          id: string
+          referrer_bonus: number
+          reverify_bonus: number
+          updated_at: string
+        }
+        Insert: {
+          first_verify_bonus?: number
+          id?: string
+          referrer_bonus?: number
+          reverify_bonus?: number
+          updated_at?: string
+        }
+        Update: {
+          first_verify_bonus?: number
+          id?: string
+          referrer_bonus?: number
+          reverify_bonus?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       bonus_vouchers: {
         Row: {
           amount: number
@@ -148,6 +172,7 @@ export type Database = {
         Row: {
           avatar_url: string | null
           bonus_first_verify_claimed: boolean
+          bonus_first_verify_self_claimed: boolean
           bonus_reverify_claimed: boolean
           created_at: string
           date_of_birth: string | null
@@ -175,6 +200,7 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           bonus_first_verify_claimed?: boolean
+          bonus_first_verify_self_claimed?: boolean
           bonus_reverify_claimed?: boolean
           created_at?: string
           date_of_birth?: string | null
@@ -202,6 +228,7 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           bonus_first_verify_claimed?: boolean
+          bonus_first_verify_self_claimed?: boolean
           bonus_reverify_claimed?: boolean
           created_at?: string
           date_of_birth?: string | null
