@@ -10,11 +10,15 @@ import { PageVoice } from "@/components/PageVoice";
 import { playVoiceAuto } from "@/lib/voice-guide";
 
 
-export const Route = createFileRoute("/_authenticated/reverify")({ component: ReverifyPage });
+export const Route = createFileRoute("/_authenticated/reverify")({
+  component: ReverifyPage,
+  validateSearch: (s: Record<string, unknown>) => ({ taskId: typeof s.taskId === "string" ? s.taskId : undefined }),
+});
 
 type Step = "list" | "verify" | "photo" | "done";
 
 function ReverifyPage() {
+  const { taskId: initialTaskId } = Route.useSearch();
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<any | null>(null);
   const [verifyUrl, setVerifyUrl] = useState<string | null>(null);
@@ -22,6 +26,7 @@ function ReverifyPage() {
   const [opened, setOpened] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [checking, setChecking] = useState(false);
+  const [autoSelectDone, setAutoSelectDone] = useState(false);
   const returnedRef = useRef(false);
   const leftForGoodDollarRef = useRef(false);
   const goodDollarOpenedAtRef = useRef(0);
@@ -31,6 +36,16 @@ function ReverifyPage() {
     queryKey: ["reverify-candidates", query],
     queryFn: () => listReverifyCandidates({ data: { query } }),
   });
+
+  // Auto-select the task the user tapped on the home page.
+  useEffect(() => {
+    if (autoSelectDone || !initialTaskId || !candidates) return;
+    const match = (candidates as any[]).find((c) => c.id === initialTaskId);
+    if (match) {
+      setAutoSelectDone(true);
+      onSelect(match);
+    }
+  }, [candidates, initialTaskId, autoSelectDone]);
 
   const completeMut = useMutation({
     mutationFn: (input: { taskId: string; newPhotoBase64?: string }) => completeReverify({ data: input }),
@@ -136,7 +151,9 @@ function ReverifyPage() {
         <RefreshCcw className="w-5 h-5 text-amber" />
         <div>
           <h1 className="text-base font-black text-amber">রি-ভেরিফাই</h1>
-          <p className="text-[10px] text-muted-foreground">নাম দিয়ে খুঁজে রি-ভেরিফাই করুন</p>
+          <p className="text-[10px] text-muted-foreground leading-snug">
+            ৫ দিন পর অথবা হোয়াইটলিস্ট বাতিল হলেই সাক্ষী re-verify চাইবে · নাম দিয়ে খুঁজতেও পারবেন
+          </p>
         </div>
       </div>
 
@@ -160,10 +177,12 @@ function ReverifyPage() {
               {candidates.map((c: any) => {
                 const due = c.reverify_due_at ? new Date(c.reverify_due_at).getTime() : 0;
                 const ready = due <= Date.now();
+                const rem = Math.max(0, due - Date.now());
+                const days = Math.ceil(rem / 86400000);
                 return (
                   <button key={c.id} disabled={!ready} onClick={() => onSelect(c)} data-voice={ready ? "reverify.button" : "common.saved"}
                     className={`w-full flex items-center gap-3 p-2 rounded-xl border text-left transition ${
-                      ready ? "border-amber/40 bg-amber/5 hover:bg-amber/10" : "border-border bg-surface-2 opacity-60"
+                      ready ? "border-rose/50 bg-rose/10 hover:bg-rose/15 animate-pulse" : "border-border bg-surface-2 opacity-60"
                     }`}>
                     {c.photo_url
                       ? <img src={c.photo_url} alt="" className="w-12 h-12 rounded-lg object-cover" />
@@ -171,8 +190,10 @@ function ReverifyPage() {
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-bold truncate">{c.face_label || "নামহীন"}</p>
                       <p className="text-[10px] text-muted-foreground mono-num truncate">{c.wallet_address?.slice(0, 16)}…</p>
-                      <p className="text-[10px] font-bold" style={{ color: ready ? "var(--amber)" : undefined }}>
-                        {ready ? "✨ প্রস্তুত" : `স্লট #${c.slot} · ৩ দিন অপেক্ষা`}
+                      <p className="text-[10px] font-bold" style={{ color: ready ? "var(--color-rose)" : undefined }}>
+                        {ready
+                          ? "🔴 এখনই রি-ভেরিফাই করুন"
+                          : `স্লট #${c.slot} · আনুমানিক ${days} দিন পর`}
                       </p>
                     </div>
                   </button>
