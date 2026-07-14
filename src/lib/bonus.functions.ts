@@ -1,21 +1,34 @@
-// New instant bonus system (replaces old claim flow):
+// Instant bonus system (auto-settled on every dashboard load, idempotent):
 //
-// - When a user completes 10 first-verifies → the person who referred them
-//   is instantly credited 100৳ (one-time per referee).
-// - When the same user completes 10 re-verifies → the user themselves is
-//   instantly credited 200৳ (one-time) and mining starts (settle_mining
-//   already gates on re-verify count).
+//  1. Self first-verify:  user completes 10 first-verifies → user gets 50৳ (default).
+//     flag column: profiles.bonus_first_verify_self_claimed
+//  2. Referrer bonus:     user completes 10 first-verifies → referrer gets 100৳ (default).
+//     flag column: profiles.bonus_first_verify_claimed  (kept for backwards compat)
+//  3. Re-verify:          user completes 10 re-verifies  → user gets 200৳ (default)
+//                                                        + mining kicks on.
+//     flag column: profiles.bonus_reverify_claimed
 //
-// Both flags reuse the existing profiles columns:
-//   bonus_first_verify_claimed  → "referrer already paid for THIS user"
-//   bonus_reverify_claimed      → "user already paid 200 re-verify bonus"
-//
-// This function is idempotent and safe to call on every dashboard load.
+// Amounts are read live from public.bonus_settings so the admin panel
+// can tweak them without a code change.
 
-const REFERRER_BONUS = 100;
-const USER_REVERIFY_BONUS = 200;
+const DEFAULTS = { first_verify_bonus: 50, reverify_bonus: 200, referrer_bonus: 100 };
+
+async function readSettings(admin: any) {
+  try {
+    const { data } = await admin.from("bonus_settings").select("*").eq("id", "default").maybeSingle();
+    if (!data) return DEFAULTS;
+    return {
+      first_verify_bonus: Number(data.first_verify_bonus ?? DEFAULTS.first_verify_bonus),
+      reverify_bonus: Number(data.reverify_bonus ?? DEFAULTS.reverify_bonus),
+      referrer_bonus: Number(data.referrer_bonus ?? DEFAULTS.referrer_bonus),
+    };
+  } catch {
+    return DEFAULTS;
+  }
+}
 
 async function creditAccrued(admin: any, userId: string, amount: number) {
+  if (amount <= 0) return;
   await admin
     .from("mining_state")
     .upsert({ user_id: userId }, { onConflict: "user_id", ignoreDuplicates: true });
@@ -31,51 +44,69 @@ export async function settleWelcomeBonuses(
   firstVerifyCount: number,
   reverifyCount: number,
 ): Promise<{
+  selfFirstPaid: boolean;
   referrerPaid: boolean;
   userReverifyPaid: boolean;
+  selfFirstAmount: number;
   referrerAmount: number;
   userAmount: number;
 }> {
+  const amounts = await readSettings(admin);
+
   const { data: profile } = await admin
     .from("profiles")
-    .select("bonus_first_verify_claimed, bonus_reverify_claimed, referred_by")
+    .select("bonus_first_verify_claimed, bonus_first_verify_self_claimed, bonus_reverify_claimed, referred_by")
     .eq("id", userId)
     .maybeSingle();
   if (!profile) {
-    return { referrerPaid: false, userReverifyPaid: false, referrerAmount: REFERRER_BONUS, userAmount: USER_REVERIFY_BONUS };
+    return {
+      selfFirstPaid: false, referrerPaid: false, userReverifyPaid: false,
+      selfFirstAmount: amounts.first_verify_bonus,
+      referrerAmount: amounts.referrer_bonus,
+      userAmount: amounts.reverify_bonus,
+    };
   }
 
+  let selfFirstPaid = !!profile.bonus_first_verify_self_claimed;
   let referrerPaid = !!profile.bonus_first_verify_claimed;
   let userReverifyPaid = !!profile.bonus_reverify_claimed;
 
-  // 1) First-verify → referrer bonus
+  // 1) Self first-verify → 50৳ (default) to the user
+  if (!selfFirstPaid && firstVerifyCount >= 10) {
+    await creditAccrued(admin, userId, amounts.first_verify_bonus);
+    await admin.from("profiles").update({ bonus_first_verify_self_claimed: true }).eq("id", userId);
+    selfFirstPaid = true;
+  }
+
+  // 2) Referrer bonus → 100৳ to the person who referred this user
   if (!referrerPaid && firstVerifyCount >= 10) {
     if (profile.referred_by && profile.referred_by !== userId) {
-      await creditAccrued(admin, profile.referred_by, REFERRER_BONUS);
+      await creditAccrued(admin, profile.referred_by, amounts.referrer_bonus);
     }
-    // Flag even if there is no referrer, so we don't re-check repeatedly.
     await admin.from("profiles").update({ bonus_first_verify_claimed: true }).eq("id", userId);
     referrerPaid = true;
   }
 
-  // 2) Re-verify → user gets 200৳
+  // 3) Re-verify → 200৳ (default) to the user + mining kicks on
   if (!userReverifyPaid && reverifyCount >= 10) {
-    await creditAccrued(admin, userId, USER_REVERIFY_BONUS);
+    await creditAccrued(admin, userId, amounts.reverify_bonus);
     await admin.from("profiles").update({ bonus_reverify_claimed: true }).eq("id", userId);
     userReverifyPaid = true;
-    // Kick mining now that re-verify quorum is reached
     await admin.rpc("settle_mining", { _user_id: userId });
   }
 
   return {
-    referrerPaid,
-    userReverifyPaid,
-    referrerAmount: REFERRER_BONUS,
-    userAmount: USER_REVERIFY_BONUS,
+    selfFirstPaid, referrerPaid, userReverifyPaid,
+    selfFirstAmount: amounts.first_verify_bonus,
+    referrerAmount: amounts.referrer_bonus,
+    userAmount: amounts.reverify_bonus,
   };
 }
 
+// Compat: some callers still import BONUS_AMOUNTS. Return the live defaults;
+// UI reads the fresh values from the settle result now.
 export const BONUS_AMOUNTS = {
-  referrer: REFERRER_BONUS,
-  userReverify: USER_REVERIFY_BONUS,
+  referrer: DEFAULTS.referrer_bonus,
+  userReverify: DEFAULTS.reverify_bonus,
+  selfFirst: DEFAULTS.first_verify_bonus,
 };
