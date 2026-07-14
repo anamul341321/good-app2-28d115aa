@@ -57,6 +57,31 @@ function ReverifyQueue() {
         Total in queue: {rows.length} · Ready now: {ready.length} · Auto চেক প্রতি ৫ মিনিটে
       </p>
 
+      {byUser && byUser.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-[10px] uppercase tracking-widest text-violet font-bold px-1 flex items-center gap-1">
+            <User className="w-3 h-3" /> By user ({byUser.length})
+          </p>
+          {byUser.map((u: any) => (
+            <Link key={u.user_id} to="/admin/user/$userId" params={{ userId: u.user_id }}
+              className="glass rounded-xl p-2.5 flex items-center gap-2 hover:bg-surface-2 transition">
+              <div className={`shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-white font-black text-[11px] ${u.urgent > 0 ? "bg-rose animate-pulse" : u.ready > 0 ? "bg-amber" : "bg-cyan"}`}>
+                {u.total}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-black truncate">{u.display_name || u.phone_number || "—"}</p>
+                <p className="text-[10px] text-muted-foreground truncate">
+                  {u.urgent > 0 && <span className="text-rose font-black">🔴 {u.urgent} urgent · </span>}
+                  {u.ready > 0 && <span className="text-amber font-black">⚡ {u.ready} ready · </span>}
+                  {u.waiting > 0 && <span>⏳ {u.waiting} waiting</span>}
+                </p>
+              </div>
+              <span className="text-muted-foreground text-xs">→</span>
+            </Link>
+          ))}
+        </div>
+      )}
+
       {ready.length > 0 && (
         <div className="space-y-2">
           <p className="text-[10px] uppercase tracking-widest text-emerald font-bold px-1 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Ready to re-verify</p>
