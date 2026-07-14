@@ -1,7 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { adminReverifyQueue, adminRunWhitelistCheck } from "@/lib/admin.functions";
-import { Loader2, Clock, CheckCircle2, RefreshCw } from "lucide-react";
+import { adminReverifyQueue, adminRunWhitelistCheck, adminReverifyByUser } from "@/lib/admin.functions";
+import { Loader2, Clock, CheckCircle2, RefreshCw, AlertTriangle, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -9,6 +9,7 @@ export const Route = createFileRoute("/admin/reverify")({ component: ReverifyQue
 
 function ReverifyQueue() {
   const { data, isLoading, refetch } = useQuery({ queryKey: ["admin-reverify-queue"], queryFn: () => adminReverifyQueue(), refetchInterval: 30_000 });
+  const { data: byUser } = useQuery({ queryKey: ["admin-reverify-by-user"], queryFn: () => adminReverifyByUser(), refetchInterval: 30_000 });
   const [now, setNow] = useState(Date.now());
   useEffect(() => { const id = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(id); }, []);
 
