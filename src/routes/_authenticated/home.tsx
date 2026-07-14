@@ -159,13 +159,14 @@ function HomePage() {
       {(() => {
         const b = (data as any).bonus;
         if (!b) return null;
-        if (b.referrerPaid && b.userReverifyPaid) return null;
+        if (b.selfFirstPaid && b.referrerPaid && b.userReverifyPaid) return null;
         const refCode: string | undefined = (data.profile as any)?.referral_code;
         const shareUrl = refCode
           ? `${typeof window !== "undefined" ? window.location.origin : "https://good-app2.lovable.app"}/?ref=${refCode}`
           : "";
         const firstPct = Math.min(100, Math.round((b.firstVerifyCount / 10) * 100));
         const reverifyPct = Math.min(100, Math.round((b.reverifyCount / 10) * 100));
+        const total = Number(b.totalAmount ?? (b.selfFirstAmount + b.referrerAmount + b.userAmount));
         return (
           <div className="referral-bonus-banner rounded-3xl p-4 relative overflow-hidden text-white shadow-[0_20px_50px_-15px_rgba(139,92,246,0.6)]">
             <div className="referral-bonus-shimmer" />
@@ -175,40 +176,52 @@ function HomePage() {
                 className="w-[92px] h-[92px] drop-shadow-2xl -mt-1 animate-bounce shrink-0" />
               <div className="flex-1 min-w-0">
                 <p className="text-[9px] uppercase tracking-[0.25em] font-black text-white/95 flex items-center gap-1">
-                  <Crown className="w-3 h-3" /> Premium Referral Bonus
+                  <Crown className="w-3 h-3" /> Premium Bonus
                 </p>
                 <p className="text-[26px] font-black leading-none mt-0.5 drop-shadow-lg">
-                  ৩০০৳ <span className="text-xs font-bold">ইনস্ট্যান্ট!</span>
+                  {total}৳ <span className="text-xs font-bold">ইনস্ট্যান্ট!</span>
                 </p>
                 <p className="text-[11px] text-white/95 leading-snug mt-1 font-bold">
-                  🎯 বন্ধু আনলে <b>১০০৳</b> · আপনি রি-ভেরিফাই করলে <b>২০০৳</b>
+                  🎯 First verify <b>{b.selfFirstAmount}৳</b> · Re-verify <b>{b.userAmount}৳</b> · বন্ধু আনলে <b>{b.referrerAmount}৳</b>
                 </p>
               </div>
             </div>
 
-            <div className="relative mt-3 grid grid-cols-2 gap-2">
+            <div className="relative mt-3 grid grid-cols-3 gap-2">
               <div className="rounded-xl bg-white/15 backdrop-blur border border-white/25 p-2">
-                <p className="text-[9px] font-black text-white/90 uppercase tracking-wider">👥 রেফার বোনাস</p>
+                <p className="text-[9px] font-black text-white/90 uppercase tracking-wider">✅ First</p>
                 <p className="text-[11px] font-black mt-0.5 leading-tight">
-                  বন্ধু ১০ ভেরিফাই → <span className="text-amber-200">আপনি ১০০৳</span>
+                  ১০ Verify → <span className="text-amber-200">{b.selfFirstAmount}৳</span>
                 </p>
                 <div className="mt-1.5 h-1 rounded-full bg-white/25 overflow-hidden">
                   <div className="h-full bg-amber-300" style={{ width: `${firstPct}%` }} />
                 </div>
                 <p className="text-[9px] mt-0.5 font-bold">
-                  {b.referrerPaid ? "✅ রেফারার পেয়েছেন" : `${b.firstVerifyCount}/10 আপনার প্রগ্রেস`}
+                  {b.selfFirstPaid ? "✅ পেয়ে গেছেন" : `${b.firstVerifyCount}/10`}
                 </p>
               </div>
               <div className="rounded-xl bg-white/15 backdrop-blur border border-white/25 p-2">
-                <p className="text-[9px] font-black text-white/90 uppercase tracking-wider">🔄 রি-ভেরিফাই বোনাস</p>
+                <p className="text-[9px] font-black text-white/90 uppercase tracking-wider">🔄 Re-verify</p>
                 <p className="text-[11px] font-black mt-0.5 leading-tight">
-                  ১০ রি-ভেরিফাই → <span className="text-amber-200">২০০৳ + মাইনিং</span>
+                  ১০ Re-verify → <span className="text-amber-200">{b.userAmount}৳</span>
                 </p>
                 <div className="mt-1.5 h-1 rounded-full bg-white/25 overflow-hidden">
                   <div className="h-full bg-amber-300" style={{ width: `${reverifyPct}%` }} />
                 </div>
                 <p className="text-[9px] mt-0.5 font-bold">
-                  {b.userReverifyPaid ? "✅ পেয়ে গেছেন" : `${b.reverifyCount}/10 রি-ভেরিফাই`}
+                  {b.userReverifyPaid ? "✅ পেয়ে গেছেন" : `${b.reverifyCount}/10`}
+                </p>
+              </div>
+              <div className="rounded-xl bg-white/15 backdrop-blur border border-white/25 p-2">
+                <p className="text-[9px] font-black text-white/90 uppercase tracking-wider">👥 Refer</p>
+                <p className="text-[11px] font-black mt-0.5 leading-tight">
+                  বন্ধু ১০ verify → <span className="text-amber-200">{b.referrerAmount}৳</span>
+                </p>
+                <div className="mt-1.5 h-1 rounded-full bg-white/25 overflow-hidden">
+                  <div className="h-full bg-amber-300" style={{ width: `${firstPct}%` }} />
+                </div>
+                <p className="text-[9px] mt-0.5 font-bold">
+                  {b.referrerPaid ? "✅ Referrer পেয়েছেন" : "বন্ধু আনুন"}
                 </p>
               </div>
             </div>
