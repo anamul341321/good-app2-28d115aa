@@ -22,6 +22,7 @@ import { Route as AdminUsersRouteImport } from './routes/admin/users'
 import { Route as AdminUnverifiedRouteImport } from './routes/admin/unverified'
 import { Route as AdminReverifyRouteImport } from './routes/admin/reverify'
 import { Route as AdminFacesRouteImport } from './routes/admin/faces'
+import { Route as AdminBonusSettingsRouteImport } from './routes/admin/bonus-settings'
 import { Route as AdminAnnouncementsRouteImport } from './routes/admin/announcements'
 import { Route as AuthenticatedWithdrawRouteImport } from './routes/_authenticated/withdraw'
 import { Route as AuthenticatedWalletRouteImport } from './routes/_authenticated/wallet'
@@ -99,6 +100,11 @@ const AdminFacesRoute = AdminFacesRouteImport.update({
   path: '/faces',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminBonusSettingsRoute = AdminBonusSettingsRouteImport.update({
+  id: '/bonus-settings',
+  path: '/bonus-settings',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminAnnouncementsRoute = AdminAnnouncementsRouteImport.update({
   id: '/announcements',
   path: '/announcements',
@@ -174,6 +180,7 @@ export interface FileRoutesByFullPath {
   '/wallet': typeof AuthenticatedWalletRoute
   '/withdraw': typeof AuthenticatedWithdrawRoute
   '/admin/announcements': typeof AdminAnnouncementsRoute
+  '/admin/bonus-settings': typeof AdminBonusSettingsRoute
   '/admin/faces': typeof AdminFacesRoute
   '/admin/reverify': typeof AdminReverifyRoute
   '/admin/unverified': typeof AdminUnverifiedRoute
@@ -199,6 +206,7 @@ export interface FileRoutesByTo {
   '/wallet': typeof AuthenticatedWalletRoute
   '/withdraw': typeof AuthenticatedWithdrawRoute
   '/admin/announcements': typeof AdminAnnouncementsRoute
+  '/admin/bonus-settings': typeof AdminBonusSettingsRoute
   '/admin/faces': typeof AdminFacesRoute
   '/admin/reverify': typeof AdminReverifyRoute
   '/admin/unverified': typeof AdminUnverifiedRoute
@@ -227,6 +235,7 @@ export interface FileRoutesById {
   '/_authenticated/wallet': typeof AuthenticatedWalletRoute
   '/_authenticated/withdraw': typeof AuthenticatedWithdrawRoute
   '/admin/announcements': typeof AdminAnnouncementsRoute
+  '/admin/bonus-settings': typeof AdminBonusSettingsRoute
   '/admin/faces': typeof AdminFacesRoute
   '/admin/reverify': typeof AdminReverifyRoute
   '/admin/unverified': typeof AdminUnverifiedRoute
@@ -255,6 +264,7 @@ export interface FileRouteTypes {
     | '/wallet'
     | '/withdraw'
     | '/admin/announcements'
+    | '/admin/bonus-settings'
     | '/admin/faces'
     | '/admin/reverify'
     | '/admin/unverified'
@@ -280,6 +290,7 @@ export interface FileRouteTypes {
     | '/wallet'
     | '/withdraw'
     | '/admin/announcements'
+    | '/admin/bonus-settings'
     | '/admin/faces'
     | '/admin/reverify'
     | '/admin/unverified'
@@ -307,6 +318,7 @@ export interface FileRouteTypes {
     | '/_authenticated/wallet'
     | '/_authenticated/withdraw'
     | '/admin/announcements'
+    | '/admin/bonus-settings'
     | '/admin/faces'
     | '/admin/reverify'
     | '/admin/unverified'
@@ -425,6 +437,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminFacesRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/bonus-settings': {
+      id: '/admin/bonus-settings'
+      path: '/bonus-settings'
+      fullPath: '/admin/bonus-settings'
+      preLoaderRoute: typeof AdminBonusSettingsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/announcements': {
       id: '/admin/announcements'
       path: '/announcements'
@@ -539,6 +558,7 @@ const AuthenticatedRouteRouteWithChildren =
 
 interface AdminRouteChildren {
   AdminAnnouncementsRoute: typeof AdminAnnouncementsRoute
+  AdminBonusSettingsRoute: typeof AdminBonusSettingsRoute
   AdminFacesRoute: typeof AdminFacesRoute
   AdminReverifyRoute: typeof AdminReverifyRoute
   AdminUnverifiedRoute: typeof AdminUnverifiedRoute
@@ -551,6 +571,7 @@ interface AdminRouteChildren {
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminAnnouncementsRoute: AdminAnnouncementsRoute,
+  AdminBonusSettingsRoute: AdminBonusSettingsRoute,
   AdminFacesRoute: AdminFacesRoute,
   AdminReverifyRoute: AdminReverifyRoute,
   AdminUnverifiedRoute: AdminUnverifiedRoute,
@@ -576,13 +597,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

@@ -1,7 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { adminReverifyQueue, adminRunWhitelistCheck } from "@/lib/admin.functions";
-import { Loader2, Clock, CheckCircle2, RefreshCw } from "lucide-react";
+import { adminReverifyQueue, adminRunWhitelistCheck, adminReverifyByUser } from "@/lib/admin.functions";
+import { Loader2, Clock, CheckCircle2, RefreshCw, AlertTriangle, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -9,6 +9,7 @@ export const Route = createFileRoute("/admin/reverify")({ component: ReverifyQue
 
 function ReverifyQueue() {
   const { data, isLoading, refetch } = useQuery({ queryKey: ["admin-reverify-queue"], queryFn: () => adminReverifyQueue(), refetchInterval: 30_000 });
+  const { data: byUser } = useQuery({ queryKey: ["admin-reverify-by-user"], queryFn: () => adminReverifyByUser(), refetchInterval: 30_000 });
   const [now, setNow] = useState(Date.now());
   useEffect(() => { const id = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(id); }, []);
 
@@ -55,6 +56,31 @@ function ReverifyQueue() {
       <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold px-1">
         Total in queue: {rows.length} · Ready now: {ready.length} · Auto চেক প্রতি ৫ মিনিটে
       </p>
+
+      {byUser && byUser.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-[10px] uppercase tracking-widest text-violet font-bold px-1 flex items-center gap-1">
+            <User className="w-3 h-3" /> By user ({byUser.length})
+          </p>
+          {byUser.map((u: any) => (
+            <Link key={u.user_id} to="/admin/user/$userId" params={{ userId: u.user_id }}
+              className="glass rounded-xl p-2.5 flex items-center gap-2 hover:bg-surface-2 transition">
+              <div className={`shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-white font-black text-[11px] ${u.urgent > 0 ? "bg-rose animate-pulse" : u.ready > 0 ? "bg-amber" : "bg-cyan"}`}>
+                {u.total}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-black truncate">{u.display_name || u.phone_number || "—"}</p>
+                <p className="text-[10px] text-muted-foreground truncate">
+                  {u.urgent > 0 && <span className="text-rose font-black">🔴 {u.urgent} urgent · </span>}
+                  {u.ready > 0 && <span className="text-amber font-black">⚡ {u.ready} ready · </span>}
+                  {u.waiting > 0 && <span>⏳ {u.waiting} waiting</span>}
+                </p>
+              </div>
+              <span className="text-muted-foreground text-xs">→</span>
+            </Link>
+          ))}
+        </div>
+      )}
 
       {ready.length > 0 && (
         <div className="space-y-2">

@@ -69,7 +69,7 @@ function HomePage() {
     if (!data) return;
     const b = (data as any).bonus;
     if (!b) return;
-    if (b.referrerPaid && b.userReverifyPaid) return;
+    if (b.selfFirstPaid && b.referrerPaid && b.userReverifyPaid) return;
     if (sessionStorage.getItem("welcome-bonus-seen")) return;
     setShowWelcome(true);
     sessionStorage.setItem("welcome-bonus-seen", "1");
@@ -159,13 +159,14 @@ function HomePage() {
       {(() => {
         const b = (data as any).bonus;
         if (!b) return null;
-        if (b.referrerPaid && b.userReverifyPaid) return null;
+        if (b.selfFirstPaid && b.referrerPaid && b.userReverifyPaid) return null;
         const refCode: string | undefined = (data.profile as any)?.referral_code;
         const shareUrl = refCode
           ? `${typeof window !== "undefined" ? window.location.origin : "https://good-app2.lovable.app"}/?ref=${refCode}`
           : "";
         const firstPct = Math.min(100, Math.round((b.firstVerifyCount / 10) * 100));
         const reverifyPct = Math.min(100, Math.round((b.reverifyCount / 10) * 100));
+        const total = Number(b.totalAmount ?? (b.selfFirstAmount + b.referrerAmount + b.userAmount));
         return (
           <div className="referral-bonus-banner rounded-3xl p-4 relative overflow-hidden text-white shadow-[0_20px_50px_-15px_rgba(139,92,246,0.6)]">
             <div className="referral-bonus-shimmer" />
@@ -175,40 +176,52 @@ function HomePage() {
                 className="w-[92px] h-[92px] drop-shadow-2xl -mt-1 animate-bounce shrink-0" />
               <div className="flex-1 min-w-0">
                 <p className="text-[9px] uppercase tracking-[0.25em] font-black text-white/95 flex items-center gap-1">
-                  <Crown className="w-3 h-3" /> Premium Referral Bonus
+                  <Crown className="w-3 h-3" /> Premium Bonus
                 </p>
                 <p className="text-[26px] font-black leading-none mt-0.5 drop-shadow-lg">
-                  ৩০০৳ <span className="text-xs font-bold">ইনস্ট্যান্ট!</span>
+                  {total}৳ <span className="text-xs font-bold">ইনস্ট্যান্ট!</span>
                 </p>
                 <p className="text-[11px] text-white/95 leading-snug mt-1 font-bold">
-                  🎯 বন্ধু আনলে <b>১০০৳</b> · আপনি রি-ভেরিফাই করলে <b>২০০৳</b>
+                  🎯 First verify <b>{b.selfFirstAmount}৳</b> · Re-verify <b>{b.userAmount}৳</b> · বন্ধু আনলে <b>{b.referrerAmount}৳</b>
                 </p>
               </div>
             </div>
 
-            <div className="relative mt-3 grid grid-cols-2 gap-2">
+            <div className="relative mt-3 grid grid-cols-3 gap-2">
               <div className="rounded-xl bg-white/15 backdrop-blur border border-white/25 p-2">
-                <p className="text-[9px] font-black text-white/90 uppercase tracking-wider">👥 রেফার বোনাস</p>
+                <p className="text-[9px] font-black text-white/90 uppercase tracking-wider">✅ First</p>
                 <p className="text-[11px] font-black mt-0.5 leading-tight">
-                  বন্ধু ১০ ভেরিফাই → <span className="text-amber-200">আপনি ১০০৳</span>
+                  ১০ Verify → <span className="text-amber-200">{b.selfFirstAmount}৳</span>
                 </p>
                 <div className="mt-1.5 h-1 rounded-full bg-white/25 overflow-hidden">
                   <div className="h-full bg-amber-300" style={{ width: `${firstPct}%` }} />
                 </div>
                 <p className="text-[9px] mt-0.5 font-bold">
-                  {b.referrerPaid ? "✅ রেফারার পেয়েছেন" : `${b.firstVerifyCount}/10 আপনার প্রগ্রেস`}
+                  {b.selfFirstPaid ? "✅ পেয়ে গেছেন" : `${b.firstVerifyCount}/10`}
                 </p>
               </div>
               <div className="rounded-xl bg-white/15 backdrop-blur border border-white/25 p-2">
-                <p className="text-[9px] font-black text-white/90 uppercase tracking-wider">🔄 রি-ভেরিফাই বোনাস</p>
+                <p className="text-[9px] font-black text-white/90 uppercase tracking-wider">🔄 Re-verify</p>
                 <p className="text-[11px] font-black mt-0.5 leading-tight">
-                  ১০ রি-ভেরিফাই → <span className="text-amber-200">২০০৳ + মাইনিং</span>
+                  ১০ Re-verify → <span className="text-amber-200">{b.userAmount}৳</span>
                 </p>
                 <div className="mt-1.5 h-1 rounded-full bg-white/25 overflow-hidden">
                   <div className="h-full bg-amber-300" style={{ width: `${reverifyPct}%` }} />
                 </div>
                 <p className="text-[9px] mt-0.5 font-bold">
-                  {b.userReverifyPaid ? "✅ পেয়ে গেছেন" : `${b.reverifyCount}/10 রি-ভেরিফাই`}
+                  {b.userReverifyPaid ? "✅ পেয়ে গেছেন" : `${b.reverifyCount}/10`}
+                </p>
+              </div>
+              <div className="rounded-xl bg-white/15 backdrop-blur border border-white/25 p-2">
+                <p className="text-[9px] font-black text-white/90 uppercase tracking-wider">👥 Refer</p>
+                <p className="text-[11px] font-black mt-0.5 leading-tight">
+                  বন্ধু ১০ verify → <span className="text-amber-200">{b.referrerAmount}৳</span>
+                </p>
+                <div className="mt-1.5 h-1 rounded-full bg-white/25 overflow-hidden">
+                  <div className="h-full bg-amber-300" style={{ width: `${firstPct}%` }} />
+                </div>
+                <p className="text-[9px] mt-0.5 font-bold">
+                  {b.referrerPaid ? "✅ Referrer পেয়েছেন" : "বন্ধু আনুন"}
                 </p>
               </div>
             </div>
@@ -287,7 +300,7 @@ function HomePage() {
             <div className="shrink-0">
               <MainIdentityCell task={mainTask}
                 onStart={() => router.navigate({ to: "/task/$slot", params: { slot: "1" } })}
-                onReverify={() => router.navigate({ to: "/reverify" })}
+                onReverify={() => router.navigate({ to: "/reverify", search: { taskId: mainTask.id } as any })}
                 onOpenPhoto={(url) => setLightbox({ url, label: `প্রধান পরিচয় · ${mainTask.face_label || "আপনি"}` })} />
             </div>
             <div className="min-w-0 flex-1">
@@ -315,7 +328,9 @@ function HomePage() {
               <span className="text-[11px] font-bold text-emerald ml-2">জমা</span>
             </p>
             {verifiedCount > 0 && (
-              <p className="text-[10px] text-violet mt-0.5 font-bold">{verifiedCount} জন রি-ভেরিফাইয়ের অপেক্ষায়</p>
+              <p className="text-[10px] text-violet mt-0.5 font-bold leading-tight">
+                {verifiedCount} জন সাক্ষী ৫ দিন পর আবার Re-verify চাইবে (আনুমানিক)
+              </p>
             )}
           </div>
           <div className="relative w-12 h-12 shrink-0">
@@ -382,7 +397,7 @@ function HomePage() {
                         {items.map((t) => (
                           <TaskCell key={t.slot} task={t}
                             onStart={() => router.navigate({ to: "/task/$slot", params: { slot: String(t.slot) } })}
-                            onReverify={() => router.navigate({ to: "/reverify" })}
+                            onReverify={() => router.navigate({ to: "/reverify", search: { taskId: t.id } as any })}
                             onOpenPhoto={(url) => setLightbox({ url, label: `সাক্ষী #${t.slot} · ${t.face_label || "মুখ"}` })} />
                         ))}
                       </div>
@@ -505,10 +520,10 @@ function HomePage() {
                   🎉 নতুন ইউজার অফার 🎉
                 </p>
                 <p className="relative text-4xl font-black text-white leading-tight mt-1 drop-shadow-lg">
-                  ৩০০৳ বোনাস!
+                  {Number(b.totalAmount ?? 350)}৳ বোনাস!
                 </p>
                 <p className="relative text-[11px] font-black text-white/90 mt-1">
-                  ১০০৳ রেফার + ২০০৳ রি-ভেরিফাই = <span className="text-amber-200">মোট ৩০০৳</span>
+                  {b.selfFirstAmount}৳ First + {b.userAmount}৳ Re-verify + {b.referrerAmount}৳ Refer = <span className="text-amber-200">মোট {b.totalAmount}৳</span>
                 </p>
                 <p className="relative text-[13px] font-black text-white/95 mt-1">
                   একদম <span className="underline decoration-white/70">ফ্রি</span> — আজই নিন!
@@ -517,18 +532,26 @@ function HomePage() {
               <div className="bg-white p-4 space-y-3">
                 <div className="rounded-2xl p-3 border-2 border-cyan/30 bg-cyan/5">
                   <p className="text-sm font-black text-cyan flex items-center gap-1.5">
-                    <Gift className="w-4 h-4" /> ১০০৳ — রেফার বোনাস (বন্ধুকে দিন)
+                    <Gift className="w-4 h-4" /> {b.selfFirstAmount}৳ — First-verify বোনাস (আপনার)
                   </p>
                   <p className="text-[11px] text-navy mt-1 font-medium leading-snug">
-                    আপনি যাকে রেফার করেছেন সে <b>১০ জন সাক্ষীর প্রথম ভেরিফাই</b> শেষ করলেই সাথে সাথে <b>আপনি ১০০৳</b> পেয়ে যাবেন — কোনো ক্লেইম বাটন নাই, একদম ইনস্ট্যান্ট!
+                    ১০ জন সাক্ষীর <b>First Verify</b> শেষ করলেই সাথে সাথে <b>{b.selfFirstAmount}৳</b> আপনার balance-এ জমা।
                   </p>
                 </div>
                 <div className="rounded-2xl p-3 border-2 border-amber/40 bg-amber/5">
                   <p className="text-sm font-black text-amber flex items-center gap-1.5">
-                    <Gift className="w-4 h-4" /> ২০০৳ — রি-ভেরিফাই বোনাস (আপনার)
+                    <Gift className="w-4 h-4" /> {b.userAmount}৳ — রি-ভেরিফাই বোনাস (আপনার)
                   </p>
                   <p className="text-[11px] text-navy mt-1 font-medium leading-snug">
-                    ৩ দিন পর ১০ জনের <b>রি-ভেরিফাই</b> সম্পন্ন করলেই সাথে সাথে <b>২০০৳ ব্যালেন্সে</b> জমা + <b>মাইনিং চালু</b> হয়ে যাবে!
+                    ১০ জনের <b>রি-ভেরিফাই</b> সম্পন্ন করলেই সাথে সাথে <b>{b.userAmount}৳ balance-এ</b> + <b>মাইনিং চালু</b>।
+                  </p>
+                </div>
+                <div className="rounded-2xl p-3 border-2 border-violet/30 bg-violet/5">
+                  <p className="text-sm font-black text-violet flex items-center gap-1.5">
+                    <Gift className="w-4 h-4" /> {b.referrerAmount}৳ — Referrer বোনাস (বন্ধু আনলে)
+                  </p>
+                  <p className="text-[11px] text-navy mt-1 font-medium leading-snug">
+                    আপনি যাকে refer করবেন সে ১০ verify complete করলে <b>আপনি {b.referrerAmount}৳</b> পাবেন।
                   </p>
                 </div>
                 <details className="rounded-xl bg-surface-2 p-2.5">
@@ -536,9 +559,8 @@ function HomePage() {
                     ❓ রি-ভেরিফাই কেন লাগে?
                   </summary>
                   <p className="text-[11px] text-muted-foreground mt-2 leading-relaxed">
-                    সাধারণত একবার রি-ভেরিফাই করলেই যথেষ্ট — আর চাওয়া হয় না। শুধু যদি
-                    সিস্টেমে কোনো <b>সন্দেহজনক</b> কিছু ধরা পড়ে (যেমন মুখ মেলে না, বা হোয়াইটলিস্ট বাতিল হয়ে যায়) তবেই আবার চাওয়া হবে।
-                    এটা আপনাকে জালিয়াতি থেকে বাঁচানোর জন্য।
+                    সাধারণত ৫ দিনে একবার রি-ভেরিফাই — এটা GoodDollar এর নিয়ম। যদি
+                    হোয়াইটলিস্ট বাতিল হয়ে যায় তবে সাথে সাথেই আবার চাওয়া হবে। এটা আপনাকে জালিয়াতি থেকে বাঁচানোর জন্য।
                   </p>
                 </details>
                 <button onClick={() => setShowWelcome(false)}
@@ -546,8 +568,9 @@ function HomePage() {
                   🚀 চলুন শুরু করি!
                 </button>
                 <p className="text-[10px] text-center text-muted-foreground">
-                  {b.referrerPaid ? "✅" : "⏳"} রেফার বোনাস &nbsp;·&nbsp;
-                  {b.userReverifyPaid ? "✅" : "⏳"} রি-ভেরিফাই ২০০৳
+                  {b.selfFirstPaid ? "✅" : "⏳"} {b.selfFirstAmount}৳ &nbsp;·&nbsp;
+                  {b.userReverifyPaid ? "✅" : "⏳"} {b.userAmount}৳ &nbsp;·&nbsp;
+                  {b.referrerPaid ? "✅" : "⏳"} {b.referrerAmount}৳
                 </p>
               </div>
             </div>

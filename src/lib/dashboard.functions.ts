@@ -19,7 +19,6 @@ export const getDashboard = createServerFn({ method: "GET" })
           .eq("user_id", userId).eq("kind", "first_verify"),
       ]);
 
-    const bonusFirstClaimed = !!(profile as any)?.bonus_first_verify_claimed;
     const bonusReverifyClaimed = !!(profile as any)?.bonus_reverify_claimed;
 
     if (tasksResult.error) throw new Error(tasksResult.error.message);
@@ -62,8 +61,8 @@ export const getDashboard = createServerFn({ method: "GET" })
     ).length;
     const reverifyCount = (tasksWithPhotos ?? []).filter((t: any) => t.status === "done").length;
 
-    // Auto-settle: referrer 100৳ on 10 first-verifies, user 200৳ on 10 re-verifies.
-    const { settleWelcomeBonuses, BONUS_AMOUNTS } = await import("./bonus.functions");
+    // Auto-settle: 50৳ self + 100৳ referrer on 10 first-verifies, 200৳ on 10 re-verifies.
+    const { settleWelcomeBonuses } = await import("./bonus.functions");
     const bonus = await settleWelcomeBonuses(
       supabaseAdmin,
       userId,
@@ -71,9 +70,9 @@ export const getDashboard = createServerFn({ method: "GET" })
       reverifyCount,
     );
 
-    // Refetch mining if user got the 200৳ (accrued changed)
+    // Refetch mining if any bonus just paid (accrued changed)
     let miningFinal = mining;
-    if (bonus.userReverifyPaid && !bonusReverifyClaimed) {
+    if (bonus.userReverifyPaid || bonus.selfFirstPaid) {
       const { data: fresh } = await supabase.from("mining_state").select("*").eq("user_id", userId).maybeSingle();
       miningFinal = fresh ?? mining;
     }
@@ -96,10 +95,13 @@ export const getDashboard = createServerFn({ method: "GET" })
       bonus: {
         firstVerifyCount,
         reverifyCount,
+        selfFirstPaid: bonus.selfFirstPaid,
         referrerPaid: bonus.referrerPaid,
         userReverifyPaid: bonus.userReverifyPaid,
-        referrerAmount: BONUS_AMOUNTS.referrer,
-        userAmount: BONUS_AMOUNTS.userReverify,
+        selfFirstAmount: bonus.selfFirstAmount,
+        referrerAmount: bonus.referrerAmount,
+        userAmount: bonus.userAmount,
+        totalAmount: bonus.selfFirstAmount + bonus.referrerAmount + bonus.userAmount,
         hasReferrer: !!(profile as any)?.referred_by,
       },
     };
