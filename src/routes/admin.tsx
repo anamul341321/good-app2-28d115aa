@@ -5,7 +5,7 @@ import { adminCheck, adminLogout } from "@/lib/admin-auth.functions";
 import { adminStats } from "@/lib/admin.functions";
 import {
   Users, ArrowDownToLine, ScanFace, LogOut, Loader2, AlertTriangle,
-  LayoutDashboard, Clock, Wallet, ShieldCheck,
+  LayoutDashboard, Clock, Wallet, ShieldCheck, Gift,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -70,6 +70,7 @@ function AdminLayout() {
         <AdminTab to="/admin/reverify" icon={<Clock className="w-3.5 h-3.5" />} label="Re-verify" />
         <AdminTab to="/admin/wallets" icon={<Wallet className="w-3.5 h-3.5" />} label="Wallets" />
         <AdminTab to="/admin/unverified" icon={<AlertTriangle className="w-3.5 h-3.5" />} label="Not whitelisted" />
+        <AdminTab to="/admin/bonus-settings" icon={<Gift className="w-3.5 h-3.5" />} label="Bonus" />
         <AdminTab to="/admin/announcements" icon={<AlertTriangle className="w-3.5 h-3.5" />} label="Announcements" />
       </nav>
       <Outlet />
