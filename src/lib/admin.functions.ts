@@ -914,3 +914,70 @@ export const adminDeleteAllUnverified = createServerFn({ method: "POST" }).handl
   if (error) throw new Error(error.message);
   return { ok: true, deleted: count ?? 0 };
 });
+
+
+// ---------------- Bonus settings ----------------
+export const adminGetBonusSettings = createServerFn({ method: "GET" }).handler(async () => {
+  const supabaseAdmin = await gate();
+  const { data } = await supabaseAdmin.from("bonus_settings").select("*").eq("id", "default").maybeSingle();
+  return data ?? { id: "default", first_verify_bonus: 50, reverify_bonus: 200, referrer_bonus: 100 };
+});
+
+export const adminUpdateBonusSettings = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => z.object({
+    first_verify_bonus: z.number().int().min(0).max(100000),
+    reverify_bonus: z.number().int().min(0).max(100000),
+    referrer_bonus: z.number().int().min(0).max(100000),
+  }).parse(i))
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await gate();
+    const { error } = await supabaseAdmin.from("bonus_settings").upsert({
+      id: "default",
+      first_verify_bonus: data.first_verify_bonus,
+      reverify_bonus: data.reverify_bonus,
+      referrer_bonus: data.referrer_bonus,
+      updated_at: new Date().toISOString(),
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+// ---------------- Re-verify grouped by user ----------------
+// One card per user: shows how many faces need re-verify (whitelist off = urgent,
+// timer expired = ready, still waiting = normal). Click through to user detail.
+export const adminReverifyByUser = createServerFn({ method: "GET" }).handler(async () => {
+  const supabaseAdmin = await gate();
+  const rows: any[] = [];
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await supabaseAdmin
+      .from("tasks")
+      .select("id, user_id, slot, face_label, reverify_due_at, whitelist_ok, status, profiles:user_id(display_name, phone_number)")
+      .eq("status", "verified")
+      .range(from, from + 999);
+    if (error) throw new Error(error.message);
+    rows.push(...(data ?? []));
+    if (!data || data.length < 1000) break;
+  }
+  const now = Date.now();
+  const byUser = new Map<string, any>();
+  for (const t of rows) {
+    const dueMs = t.reverify_due_at ? new Date(t.reverify_due_at).getTime() : 0;
+    const notWl = t.whitelist_ok === false;
+    const ready = notWl || dueMs <= now;
+    const entry = byUser.get(t.user_id) ?? {
+      user_id: t.user_id,
+      display_name: t.profiles?.display_name ?? "—",
+      phone_number: t.profiles?.phone_number ?? "",
+      total: 0, ready: 0, urgent: 0, waiting: 0,
+      soonestDue: null as number | null,
+    };
+    entry.total += 1;
+    if (notWl) entry.urgent += 1;
+    if (ready) entry.ready += 1; else entry.waiting += 1;
+    if (dueMs > 0 && (entry.soonestDue === null || dueMs < entry.soonestDue)) {
+      entry.soonestDue = dueMs;
+    }
+    byUser.set(t.user_id, entry);
+  }
+  return Array.from(byUser.values()).sort((a, b) => b.urgent - a.urgent || b.ready - a.ready || b.total - a.total);
+});
