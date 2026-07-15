@@ -220,7 +220,7 @@ function ReverifyPage() {
             </div>
           ) : (
             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-surface-2 text-muted-foreground border border-border">
-              <Clock className="w-3 h-3" /> আনুমানিক {formatRemaining(c._rem)} বাকি
+              <Clock className="w-3 h-3" /> ভেরিফাইড ✓ · আনুমানিক ৪–৫ দিনের মধ্যে লাগতে পারে
             </div>
           )}
         </div>
