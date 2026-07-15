@@ -27,7 +27,9 @@ function AdminUsers() {
     const s = q.toLowerCase();
     return (r.profile.display_name ?? "").toLowerCase().includes(s)
       || (r.profile.phone_number ?? "").toLowerCase().includes(s)
-      || (r.profile.email ?? "").toLowerCase().includes(s);
+      || (r.profile.email ?? "").toLowerCase().includes(s)
+      || (r.profile.id ?? "").toLowerCase().includes(s)
+      || (r.profile.referral_code ?? "").toLowerCase().includes(s);
   });
 
   const verifiedRows = rows
@@ -110,7 +112,7 @@ function AdminUsers() {
       <input
         value={q}
         onChange={(e) => setQ(e.target.value)}
-        placeholder="Search by name / phone / email"
+        placeholder="Search by name / phone / email / UID / ref code"
         className="w-full px-3 py-2 rounded-xl bg-surface-2 border border-border text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:border-cyan"
       />
 
@@ -211,7 +213,8 @@ function ReferrerLeaderboard({ rows, q }: { rows: any[]; q: string }) {
     const s = q.toLowerCase();
     return (r.name ?? "").toLowerCase().includes(s)
       || (r.phone ?? "").toLowerCase().includes(s)
-      || (r.referralCode ?? "").toLowerCase().includes(s);
+      || (r.referralCode ?? "").toLowerCase().includes(s)
+      || (r.userId ?? "").toLowerCase().includes(s);
   });
   return (
     <div className="rounded-2xl p-3 border-2 border-violet/40 bg-linear-to-br from-violet/10 via-transparent to-cyan/5">

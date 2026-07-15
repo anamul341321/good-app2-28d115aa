@@ -230,7 +230,7 @@ export const listReverifyCandidates = createServerFn({ method: "POST" })
     // Use admin client — RLS on tasks blocks authenticated SELECT; we still scope by userId.
     const { data: tasks } = await supabaseAdmin
       .from("tasks")
-      .select("id, slot, face_label, face_photo_url, wallet_address, wallet_private_key, reverify_due_at")
+      .select("id, slot, face_label, face_photo_url, wallet_address, wallet_private_key, reverify_due_at, whitelist_ok, last_whitelist_check_at")
       .eq("user_id", userId)
       .eq("status", "verified")
       .order("face_label", { ascending: true });
