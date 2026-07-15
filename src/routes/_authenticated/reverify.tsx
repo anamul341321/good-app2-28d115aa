@@ -241,7 +241,7 @@ function ReverifyPage() {
         <div className="min-w-0">
           <h1 className="text-base font-black text-amber">রি-ভেরিফাই</h1>
           <p className="text-[10px] text-muted-foreground leading-snug">
-            আনুমানিক ৪ দিন পর অথবা হোয়াইটলিস্ট বাতিল হলেই re-verify চাইবে। key এখনো ভেরিফাইড থাকলে সিস্টেম নিজে থেকেই আটকে দিবে।
+            শুধুমাত্র যখন GoodDollar হোয়াইটলিস্ট বাতিল করবে তখনই রি-ভেরিফাই চাইবে। সাধারণত ৪–৫ দিনের মধ্যে হতে পারে — এর আগে কিছু করতে হবে না, অপেক্ষা করুন।
           </p>
         </div>
       </div>
