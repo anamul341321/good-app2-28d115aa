@@ -3,8 +3,8 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { listReverifyCandidates, completeReverify } from "@/lib/tasks.functions";
 import { buildVerifyUrl, isWhitelisted } from "@/lib/gooddollar";
 import { FaceCapture } from "@/components/FaceCapture";
-import { ArrowLeft, ExternalLink, Loader2, RefreshCcw, Search, ShieldCheck } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { ArrowLeft, ExternalLink, Loader2, RefreshCcw, Search, ShieldCheck, Clock, AlertTriangle } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { PageVoice } from "@/components/PageVoice";
 import { playVoiceAuto } from "@/lib/voice-guide";
@@ -17,6 +17,16 @@ export const Route = createFileRoute("/_authenticated/reverify")({
 
 type Step = "list" | "verify" | "photo" | "done";
 
+function formatRemaining(ms: number) {
+  if (ms <= 0) return "0 দিন";
+  const days = Math.floor(ms / 86400000);
+  const hours = Math.floor((ms % 86400000) / 3600000);
+  const mins = Math.floor((ms % 3600000) / 60000);
+  if (days > 0) return `${days} দিন ${hours} ঘন্টা`;
+  if (hours > 0) return `${hours} ঘন্টা ${mins} মিনিট`;
+  return `${mins} মিনিট`;
+}
+
 function ReverifyPage() {
   const { taskId: initialTaskId } = Route.useSearch();
   const [query, setQuery] = useState("");
@@ -26,7 +36,9 @@ function ReverifyPage() {
   const [opened, setOpened] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [checking, setChecking] = useState(false);
+  const [preChecking, setPreChecking] = useState<string | null>(null);
   const [autoSelectDone, setAutoSelectDone] = useState(false);
+  const [tick, setTick] = useState(0);
   const returnedRef = useRef(false);
   const leftForGoodDollarRef = useRef(false);
   const goodDollarOpenedAtRef = useRef(0);
@@ -37,6 +49,27 @@ function ReverifyPage() {
     queryFn: () => listReverifyCandidates({ data: { query } }),
   });
 
+  // Live tick every 30s so countdown labels stay fresh.
+  useEffect(() => {
+    const t = setInterval(() => setTick((v) => v + 1), 30000);
+    return () => clearInterval(t);
+  }, []);
+
+  const { readyList, waitingList } = useMemo(() => {
+    const now = Date.now();
+    const ready: any[] = [];
+    const waiting: any[] = [];
+    for (const c of (candidates ?? []) as any[]) {
+      const due = c.reverify_due_at ? new Date(c.reverify_due_at).getTime() : 0;
+      const whitelistLost = c.whitelist_ok === false;
+      const timeReady = due <= now;
+      if (whitelistLost || timeReady) ready.push({ ...c, _whitelistLost: whitelistLost, _rem: 0 });
+      else waiting.push({ ...c, _rem: due - now });
+    }
+    return { readyList: ready, waitingList: waiting };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [candidates, tick]);
+
   // Auto-select the task the user tapped on the home page.
   useEffect(() => {
     if (autoSelectDone || !initialTaskId || !candidates) return;
@@ -45,6 +78,7 @@ function ReverifyPage() {
       setAutoSelectDone(true);
       onSelect(match);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [candidates, initialTaskId, autoSelectDone]);
 
   const completeMut = useMutation({
@@ -101,8 +135,18 @@ function ReverifyPage() {
   }, [step]);
 
   const onSelect = async (cand: any) => {
-    setSelected(cand);
+    // Pre-check: if the key is still whitelisted on GoodDollar, block —
+    // re-verify won't do anything. This prevents users burning the same
+    // face verify twice in a row.
+    setPreChecking(cand.id);
     try {
+      const stillWhitelisted = await isWhitelisted(cand.wallet_address);
+      if (stillWhitelisted) {
+        toast.error("এখনো এই key ভেরিফাইড আছে — এখন রি-ভেরিফাই লাগবে না। দয়া করে পরে আবার চেষ্টা করুন।", { duration: 5000 });
+        refetch();
+        return;
+      }
+      setSelected(cand);
       const { url } = await buildVerifyUrl(cand.wallet_private_key, cand.face_label || "User");
       setVerifyUrl(url);
       setStep("verify");
@@ -112,7 +156,9 @@ function ReverifyPage() {
       goodDollarOpenedAtRef.current = 0;
       setCountdown(null);
     } catch (e: any) {
-      toast.error("URL banano gelo na: " + e.message);
+      toast.error(e.message ?? "কিছু ভুল হয়েছে");
+    } finally {
+      setPreChecking(null);
     }
   };
 
@@ -138,77 +184,123 @@ function ReverifyPage() {
     completeMut.mutate({ taskId: selected.id, newPhotoBase64: b64 });
   };
 
+  const renderCard = (c: any, ready: boolean) => {
+    const isPre = preChecking === c.id;
+    const lost = c._whitelistLost;
+    return (
+      <button
+        key={c.id}
+        disabled={!ready || isPre}
+        onClick={() => onSelect(c)}
+        data-voice={ready ? "reverify.button" : "common.saved"}
+        className={`w-full flex items-center gap-3 p-3 rounded-2xl border-2 text-left transition ${
+          ready
+            ? lost
+              ? "border-rose bg-rose/10 hover:bg-rose/15 shadow-lg shadow-rose/10"
+              : "border-amber bg-amber/10 hover:bg-amber/15 shadow-lg shadow-amber/10"
+            : "border-border bg-surface-2 opacity-70"
+        }`}
+      >
+        {c.photo_url
+          ? <img src={c.photo_url} alt={c.face_label ?? ""} className={`w-20 h-20 rounded-xl object-cover border-2 ${ready ? "border-amber/60" : "border-border"}`} />
+          : <div className="w-20 h-20 rounded-xl bg-surface-2 flex items-center justify-center text-2xl">👤</div>}
+        <div className="flex-1 min-w-0 space-y-1">
+          <p className="text-base font-black truncate">{c.face_label || "নামহীন"}</p>
+          <p className="text-[10px] text-muted-foreground mono-num truncate">
+            স্লট #{c.slot} · {c.wallet_address?.slice(0, 10)}…{c.wallet_address?.slice(-4)}
+          </p>
+          {ready ? (
+            <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-black ${
+              lost ? "bg-rose text-white" : "bg-amber text-background"
+            }`}>
+              {isPre ? <><Loader2 className="w-3 h-3 animate-spin" /> চেক হচ্ছে…</>
+                : lost ? <><AlertTriangle className="w-3 h-3" /> এখনই রি-ভেরিফাই করুন</>
+                : <><RefreshCcw className="w-3 h-3" /> রি-ভেরিফাই প্রস্তুত</>}
+            </div>
+          ) : (
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-surface-2 text-muted-foreground border border-border">
+              <Clock className="w-3 h-3" /> আনুমানিক {formatRemaining(c._rem)} বাকি
+            </div>
+          )}
+        </div>
+      </button>
+    );
+  };
+
   return (
     <div className="space-y-4 pt-2">
       <PageVoice pageId="reverify" steps={["reverify.intro","reverify.search","reverify.button","task.gd.after","reverify.submit.ready","reverify.submit.clicked","reverify.photo"]} />
       <Link to="/home" data-voice="common.back"
-
         className="inline-flex items-center gap-2 px-4 py-2 rounded-full gradient-cta text-white text-sm font-black shadow-lg btn-press">
         <ArrowLeft className="w-4 h-4" /> পিছনে যান
       </Link>
 
       <div className="glass rounded-2xl p-4 flex items-center gap-3">
-        <RefreshCcw className="w-5 h-5 text-amber" />
-        <div>
+        <RefreshCcw className="w-5 h-5 text-amber shrink-0" />
+        <div className="min-w-0">
           <h1 className="text-base font-black text-amber">রি-ভেরিফাই</h1>
           <p className="text-[10px] text-muted-foreground leading-snug">
-            ৫ দিন পর অথবা হোয়াইটলিস্ট বাতিল হলেই সাক্ষী re-verify চাইবে · নাম দিয়ে খুঁজতেও পারবেন
+            আনুমানিক ৪ দিন পর অথবা হোয়াইটলিস্ট বাতিল হলেই re-verify চাইবে। key এখনো ভেরিফাইড থাকলে সিস্টেম নিজে থেকেই আটকে দিবে।
           </p>
         </div>
       </div>
 
       {step === "list" && (
-        <div className="glass rounded-2xl p-4 space-y-3">
-          <div className="relative" data-voice="reverify.search">
-            <Search className="w-4 h-4 absolute top-3 left-3 text-muted-foreground" />
-            <input value={query} onChange={(e) => setQuery(e.target.value)}
-              placeholder="নাম লিখে খুঁজুন..."
-              className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-surface-2 border border-border text-sm outline-none focus:border-amber" />
-          </div>
-
-          {isFetching ? (
-            <div className="py-6 flex justify-center"><Loader2 className="w-4 h-4 animate-spin text-amber" /></div>
-          ) : !candidates || candidates.length === 0 ? (
-            <p className="text-center text-xs text-muted-foreground py-6">
-              {query ? "এই নামে কিছু পাওয়া যায়নি" : "রি-ভেরিফাই এর জন্য এখনও কিছু নেই"}
-            </p>
-          ) : (
-            <div className="space-y-2">
-              {candidates.map((c: any) => {
-                const due = c.reverify_due_at ? new Date(c.reverify_due_at).getTime() : 0;
-                const ready = due <= Date.now();
-                const rem = Math.max(0, due - Date.now());
-                const days = Math.ceil(rem / 86400000);
-                return (
-                  <button key={c.id} disabled={!ready} onClick={() => onSelect(c)} data-voice={ready ? "reverify.button" : "common.saved"}
-                    className={`w-full flex items-center gap-3 p-2 rounded-xl border text-left transition ${
-                      ready ? "border-rose/50 bg-rose/10 hover:bg-rose/15 animate-pulse" : "border-border bg-surface-2 opacity-60"
-                    }`}>
-                    {c.photo_url
-                      ? <img src={c.photo_url} alt="" className="w-12 h-12 rounded-lg object-cover" />
-                      : <div className="w-12 h-12 rounded-lg bg-surface-2" />}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold truncate">{c.face_label || "নামহীন"}</p>
-                      <p className="text-[10px] text-muted-foreground mono-num truncate">{c.wallet_address?.slice(0, 16)}…</p>
-                      <p className="text-[10px] font-bold" style={{ color: ready ? "var(--color-rose)" : undefined }}>
-                        {ready
-                          ? "🔴 এখনই রি-ভেরিফাই করুন"
-                          : `স্লট #${c.slot} · আনুমানিক ${days} দিন পর`}
-                      </p>
-                    </div>
-                  </button>
-                );
-              })}
+        <>
+          {/* 🔴 Ready-to-reverify block — always on top, prominent */}
+          {readyList.length > 0 && (
+            <div className="rounded-2xl p-3 border-2 border-amber/60 bg-linear-to-br from-amber/15 via-rose/5 to-transparent space-y-2">
+              <div className="flex items-center justify-between px-1">
+                <p className="text-[11px] uppercase tracking-widest font-black text-amber flex items-center gap-1.5">
+                  🔔 এখনই রি-ভেরিফাই করুন
+                </p>
+                <span className="mono-num text-[11px] font-black text-amber bg-amber/20 px-2.5 py-0.5 rounded-full">
+                  {readyList.length}
+                </span>
+              </div>
+              <p className="text-[10px] text-muted-foreground px-1">
+                নিচের face গুলোর হোয়াইটলিস্ট বাতিল হয়েছে অথবা ৪ দিন পার হয়েছে। যেকোনটাতে ট্যাপ করলে সরাসরি রি-ভেরিফাই খুলবে।
+              </p>
+              <div className="space-y-2">
+                {readyList.map((c) => renderCard(c, true))}
+              </div>
             </div>
           )}
-        </div>
+
+          <div className="glass rounded-2xl p-4 space-y-3">
+            <div className="relative" data-voice="reverify.search">
+              <Search className="w-4 h-4 absolute top-3 left-3 text-muted-foreground" />
+              <input value={query} onChange={(e) => setQuery(e.target.value)}
+                placeholder="নাম দিয়ে খুঁজুন..."
+                className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-surface-2 border border-border text-sm outline-none focus:border-amber" />
+            </div>
+
+            {isFetching ? (
+              <div className="py-6 flex justify-center"><Loader2 className="w-4 h-4 animate-spin text-amber" /></div>
+            ) : (readyList.length === 0 && waitingList.length === 0) ? (
+              <p className="text-center text-xs text-muted-foreground py-6">
+                {query ? "এই নামে কিছু পাওয়া যায়নি" : "রি-ভেরিফাই এর জন্য এখনও কিছু নেই"}
+              </p>
+            ) : waitingList.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-black px-1">
+                  ⏳ অপেক্ষমাণ ({waitingList.length})
+                </p>
+                {waitingList.map((c) => renderCard(c, false))}
+              </div>
+            )}
+          </div>
+        </>
       )}
 
       {step === "verify" && selected && verifyUrl && (
         <div className="glass rounded-2xl p-4 space-y-3">
-          <div className="rounded-xl bg-amber/10 border border-amber/30 p-3">
-            <p className="text-xs font-bold text-amber">🔄 {selected.face_label}</p>
-            <p className="text-[10px] text-muted-foreground mt-1 break-all">{selected.wallet_address}</p>
+          <div className="rounded-xl bg-amber/10 border border-amber/30 p-3 flex items-center gap-3">
+            {selected.photo_url && <img src={selected.photo_url} alt="" className="w-14 h-14 rounded-lg object-cover" />}
+            <div className="min-w-0">
+              <p className="text-sm font-black text-amber truncate">🔄 {selected.face_label}</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5 break-all">{selected.wallet_address}</p>
+            </div>
           </div>
           <a href={verifyUrl} target="_blank" rel="noopener noreferrer" data-voice="reverify.button"
             onClick={() => { setOpened(true); returnedRef.current = false; leftForGoodDollarRef.current = false; goodDollarOpenedAtRef.current = Date.now(); }}
