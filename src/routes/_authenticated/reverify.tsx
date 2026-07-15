@@ -260,7 +260,7 @@ function ReverifyPage() {
                 </span>
               </div>
               <p className="text-[10px] text-muted-foreground px-1">
-                নিচের face গুলোর হোয়াইটলিস্ট বাতিল হয়েছে অথবা ৪ দিন পার হয়েছে। যেকোনটাতে ট্যাপ করলে সরাসরি রি-ভেরিফাই খুলবে।
+                নিচের face গুলোর হোয়াইটলিস্ট বাতিল হয়েছে। ট্যাপ করলে সরাসরি রি-ভেরিফাই খুলবে।
               </p>
               <div className="space-y-2">
                 {readyList.map((c) => renderCard(c, true))}
