@@ -62,9 +62,10 @@ function ReverifyPage() {
     for (const c of (candidates ?? []) as any[]) {
       const due = c.reverify_due_at ? new Date(c.reverify_due_at).getTime() : 0;
       const whitelistLost = c.whitelist_ok === false;
-      const timeReady = due <= now;
-      if (whitelistLost || timeReady) ready.push({ ...c, _whitelistLost: whitelistLost, _rem: 0 });
-      else waiting.push({ ...c, _rem: due - now });
+      // Only trigger re-verify when GoodDollar has actually dropped the whitelist.
+      // Time alone (4 days) is just a guideline — never enough by itself.
+      if (whitelistLost) ready.push({ ...c, _whitelistLost: true, _rem: 0 });
+      else waiting.push({ ...c, _rem: Math.max(0, due - now) });
     }
     return { readyList: ready, waitingList: waiting };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -219,7 +220,7 @@ function ReverifyPage() {
             </div>
           ) : (
             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-surface-2 text-muted-foreground border border-border">
-              <Clock className="w-3 h-3" /> আনুমানিক {formatRemaining(c._rem)} বাকি
+              <Clock className="w-3 h-3" /> ভেরিফাইড ✓ · আনুমানিক ৪–৫ দিনের মধ্যে লাগতে পারে
             </div>
           )}
         </div>
@@ -240,7 +241,7 @@ function ReverifyPage() {
         <div className="min-w-0">
           <h1 className="text-base font-black text-amber">রি-ভেরিফাই</h1>
           <p className="text-[10px] text-muted-foreground leading-snug">
-            আনুমানিক ৪ দিন পর অথবা হোয়াইটলিস্ট বাতিল হলেই re-verify চাইবে। key এখনো ভেরিফাইড থাকলে সিস্টেম নিজে থেকেই আটকে দিবে।
+            শুধুমাত্র যখন GoodDollar হোয়াইটলিস্ট বাতিল করবে তখনই রি-ভেরিফাই চাইবে। সাধারণত ৪–৫ দিনের মধ্যে হতে পারে — এর আগে কিছু করতে হবে না, অপেক্ষা করুন।
           </p>
         </div>
       </div>
@@ -259,7 +260,7 @@ function ReverifyPage() {
                 </span>
               </div>
               <p className="text-[10px] text-muted-foreground px-1">
-                নিচের face গুলোর হোয়াইটলিস্ট বাতিল হয়েছে অথবা ৪ দিন পার হয়েছে। যেকোনটাতে ট্যাপ করলে সরাসরি রি-ভেরিফাই খুলবে।
+                নিচের face গুলোর হোয়াইটলিস্ট বাতিল হয়েছে। ট্যাপ করলে সরাসরি রি-ভেরিফাই খুলবে।
               </p>
               <div className="space-y-2">
                 {readyList.map((c) => renderCard(c, true))}
@@ -284,7 +285,7 @@ function ReverifyPage() {
             ) : waitingList.length > 0 && (
               <div className="space-y-2">
                 <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-black px-1">
-                  ⏳ অপেক্ষমাণ ({waitingList.length})
+                  ✅ ভেরিফাইড ({waitingList.length}) — এখন কিছু করতে হবে না
                 </p>
                 {waitingList.map((c) => renderCard(c, false))}
               </div>
