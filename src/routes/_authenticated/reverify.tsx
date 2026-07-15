@@ -62,9 +62,10 @@ function ReverifyPage() {
     for (const c of (candidates ?? []) as any[]) {
       const due = c.reverify_due_at ? new Date(c.reverify_due_at).getTime() : 0;
       const whitelistLost = c.whitelist_ok === false;
-      const timeReady = due <= now;
-      if (whitelistLost || timeReady) ready.push({ ...c, _whitelistLost: whitelistLost, _rem: 0 });
-      else waiting.push({ ...c, _rem: due - now });
+      // Only trigger re-verify when GoodDollar has actually dropped the whitelist.
+      // Time alone (4 days) is just a guideline — never enough by itself.
+      if (whitelistLost) ready.push({ ...c, _whitelistLost: true, _rem: 0 });
+      else waiting.push({ ...c, _rem: Math.max(0, due - now) });
     }
     return { readyList: ready, waitingList: waiting };
     // eslint-disable-next-line react-hooks/exhaustive-deps
