@@ -285,7 +285,7 @@ function ReverifyPage() {
             ) : waitingList.length > 0 && (
               <div className="space-y-2">
                 <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-black px-1">
-                  ⏳ অপেক্ষমাণ ({waitingList.length})
+                  ✅ ভেরিফাইড ({waitingList.length}) — এখন কিছু করতে হবে না
                 </p>
                 {waitingList.map((c) => renderCard(c, false))}
               </div>
