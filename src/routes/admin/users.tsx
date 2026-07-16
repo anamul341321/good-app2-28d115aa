@@ -24,12 +24,14 @@ function AdminUsers() {
 
   const rows = (data ?? []).filter((r: any) => {
     if (!q.trim()) return true;
-    const s = q.toLowerCase();
+    const s = q.toLowerCase().trim();
     return (r.profile.display_name ?? "").toLowerCase().includes(s)
       || (r.profile.phone_number ?? "").toLowerCase().includes(s)
       || (r.profile.email ?? "").toLowerCase().includes(s)
       || (r.profile.id ?? "").toLowerCase().includes(s)
-      || (r.profile.referral_code ?? "").toLowerCase().includes(s);
+      || (r.profile.referral_code ?? "").toLowerCase().includes(s)
+      || String(r.serial ?? "") === s
+      || String(r.serial ?? "").includes(s);
   });
 
   const verifiedRows = rows
