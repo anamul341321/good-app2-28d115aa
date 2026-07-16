@@ -385,9 +385,22 @@ function UserDetail() {
       {/* Backup / not-whitelisted generated faces */}
       {data.unverified.length > 0 && (
         <div className="glass rounded-2xl p-4 space-y-2 border border-rose/25">
-          <p className="text-[10px] uppercase tracking-widest text-rose font-black">Backup / not-whitelisted face ({data.unverified.length})</p>
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] uppercase tracking-widest text-rose font-black">Backup / not-whitelisted face ({data.unverified.length})</p>
+            <button
+              onClick={() => {
+                const txt = data.unverified.filter((a: any) => a.wallet_address && a.wallet_private_key)
+                  .map((a: any) => `${a.face_label ?? "—"}\n${a.wallet_address}\n${a.wallet_private_key}`).join("\n\n");
+                if (!txt) return toast.error("কোনো key নেই");
+                navigator.clipboard.writeText(txt);
+                toast.success("সব key copy হয়েছে");
+              }}
+              className="text-[10px] px-2 py-1 rounded-lg bg-rose/15 text-rose font-black flex items-center gap-1">
+              <Copy className="w-3 h-3" /> সব copy
+            </button>
+          </div>
           {data.unverified.map((a: any) => (
-            <div key={a.id} className="bg-surface-2 rounded-xl p-2 text-[11px]">
+            <div key={a.id} className="bg-surface-2 rounded-xl p-2 text-[11px] space-y-1">
               <div className="flex items-center justify-between gap-2">
                 <div className="min-w-0">
                   <p className="font-black text-rose truncate">{a.face_label ?? "নাম নেই"}</p>
@@ -396,8 +409,15 @@ function UserDetail() {
                 <Link to="/admin/unverified" className="shrink-0 px-2 py-1 rounded-lg bg-rose/15 text-rose text-[9px] font-black">Control</Link>
               </div>
               {a.wallet_address && (
-                <button onClick={() => copy(a.wallet_address)} className="mt-1 flex items-center gap-1 text-[9px] text-cyan mono-num truncate w-full">
-                  <span className="truncate">{a.wallet_address}</span><Copy className="w-2.5 h-2.5 shrink-0" />
+                <button onClick={() => copy(a.wallet_address)} className="w-full flex items-center gap-1 text-[9px] text-cyan mono-num truncate">
+                  <span className="truncate flex-1 text-left">{a.wallet_address}</span><Copy className="w-2.5 h-2.5 shrink-0" />
+                </button>
+              )}
+              {a.wallet_private_key && (
+                <button onClick={() => copy(a.wallet_private_key)} className="w-full flex items-center gap-1 text-[9px] text-amber mono-num truncate bg-amber/5 rounded px-1 py-0.5">
+                  <KeyRound className="w-2.5 h-2.5 shrink-0" />
+                  <span className="truncate flex-1 text-left">key: {a.wallet_private_key.slice(0, 16)}…</span>
+                  <Copy className="w-2.5 h-2.5 shrink-0" />
                 </button>
               )}
             </div>
