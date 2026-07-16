@@ -119,6 +119,13 @@ export const adminListUsers = createServerFn({ method: "GET" }).handler(async ()
     }
   }
 
+  // Assign short numeric UIDs (1, 2, 3…) based on registration order (oldest = 1).
+  const serialById = new Map<string, number>();
+  const ascending = [...(profiles ?? [])].sort(
+    (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+  );
+  ascending.forEach((p, i) => serialById.set(p.id, i + 1));
+
   return (profiles ?? []).map((p) => {
     const userTasks = (tasks ?? []).filter((t) => t.user_id === p.id);
     const done = userTasks.filter((t) => t.status === "done").length;
@@ -133,6 +140,7 @@ export const adminListUsers = createServerFn({ method: "GET" }).handler(async ()
     return {
       profile: p, done, verified, faceTotal, slotFaces, attemptFaces,
       firstVerifies, reverifies: done,
+      serial: serialById.get(p.id) ?? 0,
       referralUnlocked, referralOverride: (p as any).referral_unlock_override === true,
       emptySlots: Math.max(0, 10 - slotFaces), mining: m, wallet: w,
     };
