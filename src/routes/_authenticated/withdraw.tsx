@@ -93,7 +93,12 @@ function WithdrawPage() {
           </div>
           <div className="bg-surface-2 rounded-xl p-3 text-[11px] space-y-1">
             <p><span className="text-muted-foreground">পাঠানো হবে:</span> <span className="font-bold">{wallet.provider === "bkash" ? "বিকাশ" : "নগদ"}</span></p>
-            <p className="mono-num"><span className="text-muted-foreground">নম্বর:</span> <span className="font-bold">{wallet.number}</span></p>
+            <button type="button"
+              onClick={() => { navigator.clipboard.writeText(wallet.number); toast.success("নম্বর কপি হয়েছে"); }}
+              className="w-full flex items-center justify-between gap-2 mono-num bg-background/60 rounded-lg px-2 py-1.5 hover:bg-background border border-transparent hover:border-cyan/40 transition">
+              <span><span className="text-muted-foreground">নম্বর:</span> <span className="font-bold">{wallet.number}</span></span>
+              <Copy className="w-3 h-3 text-muted-foreground" />
+            </button>
           </div>
           <button disabled={mut.isPending || Math.floor(Number(amount) || 0) < MIN_WITHDRAW_BDT || Math.floor(Number(amount) || 0) > claimable}
             data-voice="withdraw.submit"
