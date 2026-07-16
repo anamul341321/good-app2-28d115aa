@@ -117,7 +117,7 @@ function AdminUsers() {
       <input
         value={q}
         onChange={(e) => setQ(e.target.value)}
-        placeholder="Search by name / phone / email / UID / ref code"
+        placeholder="Search: UID (1,2,3…) / name / phone / email / ref code"
         className="w-full px-3 py-2 rounded-xl bg-surface-2 border border-border text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:border-cyan"
       />
 
