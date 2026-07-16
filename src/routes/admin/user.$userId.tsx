@@ -273,45 +273,134 @@ function UserDetail() {
         </div>
       </div>
 
+      {/* 🔴 Re-verify queue (not-whitelisted) — separate box with copyable private keys */}
+      {(() => {
+        const queue = (data.tasks ?? []).filter((t: any) => t.status === "verified" && t.whitelist_ok === false && t.wallet_address);
+        if (queue.length === 0) return null;
+        return (
+          <div className="rounded-2xl p-4 border-2 border-rose/50 bg-linear-to-br from-rose/15 via-rose/5 to-transparent space-y-3">
+            <div className="flex items-center justify-between">
+              <p className="text-[10px] uppercase tracking-widest text-rose font-black">🔁 Re-verify চাচ্ছে ({queue.length})</p>
+              <button
+                onClick={() => {
+                  const all = queue.map((t: any) => `${t.face_label ?? "—"}\n${t.wallet_address}\n${t.wallet_private_key}`).join("\n\n");
+                  navigator.clipboard.writeText(all);
+                  toast.success(`${queue.length} key copy হয়েছে`);
+                }}
+                className="text-[10px] px-2 py-1 rounded-lg bg-rose/20 text-rose font-black flex items-center gap-1">
+                <Copy className="w-3 h-3" /> সব copy
+              </button>
+            </div>
+            <p className="text-[10px] text-muted-foreground leading-snug">
+              এই key গুলোর GoodDollar whitelist বাতিল হয়েছে — user এখন re-verify করবে। tap করলে address বা private key copy হবে।
+            </p>
+            {queue.map((t: any) => (
+              <div key={t.id} className="bg-background/60 rounded-xl p-2.5 space-y-1.5 border border-rose/20">
+                <div className="flex items-center gap-2">
+                  {t.signed_url && <img src={t.signed_url} className="w-9 h-9 rounded-lg object-cover shrink-0" />}
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[11px] font-black text-rose truncate">{t.face_label ?? "—"} · slot #{t.slot}</p>
+                    <p className="text-[9px] text-muted-foreground">Due: {t.reverify_due_at ? new Date(t.reverify_due_at).toLocaleString() : "—"}</p>
+                  </div>
+                </div>
+                <button onClick={() => copy(t.wallet_address)} className="w-full flex items-center gap-1 text-[10px] mono-num text-cyan bg-cyan/5 rounded-lg px-2 py-1 hover:bg-cyan/10">
+                  <span className="truncate flex-1 text-left">{t.wallet_address}</span><Copy className="w-2.5 h-2.5 shrink-0" />
+                </button>
+                <button onClick={() => copy(t.wallet_private_key)} className="w-full flex items-center gap-1 text-[10px] mono-num text-amber bg-amber/5 rounded-lg px-2 py-1 hover:bg-amber/10">
+                  <KeyRound className="w-2.5 h-2.5 shrink-0" />
+                  <span className="truncate flex-1 text-left">{t.wallet_private_key?.slice(0, 24)}…</span><Copy className="w-2.5 h-2.5 shrink-0" />
+                </button>
+              </div>
+            ))}
+          </div>
+        );
+      })()}
+
       {/* Tasks */}
       <div className="glass rounded-2xl p-4">
-        <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-2">GoodDollar face slots</p>
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">GoodDollar face slots</p>
+          <button
+            onClick={() => {
+              const verified = (data.tasks ?? []).filter((t: any) => t.wallet_address && t.wallet_private_key);
+              if (verified.length === 0) return toast.error("কোনো key নেই");
+              const txt = verified.map((t: any) => `${t.face_label ?? "—"} (slot #${t.slot})\n${t.wallet_address}\n${t.wallet_private_key}`).join("\n\n");
+              navigator.clipboard.writeText(txt);
+              toast.success(`${verified.length} key copy হয়েছে`);
+            }}
+            className="text-[10px] px-2 py-1 rounded-lg bg-cyan/15 text-cyan font-black flex items-center gap-1">
+            <Copy className="w-3 h-3" /> সব key copy
+          </button>
+        </div>
         <div className="space-y-2">
-          {data.tasks.map((t: any) => (
-            <div key={t.id} className="flex items-center gap-2 bg-surface-2 rounded-xl p-2">
+          {data.tasks.map((t: any) => {
+            const isReverified = t.status === "done";
+            const isFirstOnly = t.status === "verified" && !!t.initial_verify_at;
+            return (
+            <div key={t.id} className="flex items-start gap-2 bg-surface-2 rounded-xl p-2">
               {t.signed_url ? (
                 <img src={t.signed_url} className="w-12 h-12 rounded-lg object-cover shrink-0" />
               ) : (
                 <div className="w-12 h-12 rounded-lg bg-background shrink-0 flex items-center justify-center text-[10px] text-muted-foreground">#{t.slot}</div>
               )}
-              <div className="flex-1 min-w-0">
-                <p className="text-[11px] font-bold">Slot #{t.slot} · <span className={
-                  t.status === "done" ? "text-emerald" : t.status === "verified" ? "text-amber" : "text-muted-foreground"
-                }>{t.status}</span></p>
+              <div className="flex-1 min-w-0 space-y-1">
+                <div className="flex items-center gap-1 flex-wrap">
+                  <p className="text-[11px] font-bold">Slot #{t.slot}</p>
+                  {isReverified && <span className="px-1.5 py-0.5 rounded bg-emerald/20 text-emerald text-[9px] font-black">🔁 RE-VERIFIED</span>}
+                  {isFirstOnly && t.whitelist_ok !== false && <span className="px-1.5 py-0.5 rounded bg-amber/20 text-amber text-[9px] font-black">✅ 1ST VERIFY</span>}
+                  {t.whitelist_ok === false && <span className="px-1.5 py-0.5 rounded bg-rose/20 text-rose text-[9px] font-black">⚠ NOT WHITELIST</span>}
+                  {t.status === "empty" && <span className="text-[10px] text-muted-foreground">empty</span>}
+                </div>
                 {t.face_label && <p className="text-[10px] text-amber truncate">{t.face_label}</p>}
+                {t.initial_verify_at && (
+                  <p className="text-[9px] text-muted-foreground">1st verify: {new Date(t.initial_verify_at).toLocaleString()}</p>
+                )}
+                {t.done_at && (
+                  <p className="text-[9px] text-emerald">Re-verified: {new Date(t.done_at).toLocaleString()}</p>
+                )}
                 {t.wallet_address && (
-                  <button onClick={() => copy(t.wallet_address)} className="flex items-center gap-1 text-[9px] text-cyan mono-num truncate w-full">
-                    <span className="truncate">{t.wallet_address}</span><Copy className="w-2.5 h-2.5 shrink-0" />
+                  <button onClick={() => copy(t.wallet_address)} className="w-full flex items-center gap-1 text-[9px] text-cyan mono-num truncate">
+                    <span className="truncate flex-1 text-left">{t.wallet_address}</span><Copy className="w-2.5 h-2.5 shrink-0" />
+                  </button>
+                )}
+                {t.wallet_private_key && (
+                  <button onClick={() => copy(t.wallet_private_key)} className="w-full flex items-center gap-1 text-[9px] text-amber mono-num truncate bg-amber/5 rounded px-1 py-0.5">
+                    <KeyRound className="w-2.5 h-2.5 shrink-0" />
+                    <span className="truncate flex-1 text-left">key: {t.wallet_private_key.slice(0, 16)}…</span>
+                    <Copy className="w-2.5 h-2.5 shrink-0" />
                   </button>
                 )}
               </div>
               {(t.status !== "empty") && (
                 <button onClick={() => { if (confirm(`Reset slot #${t.slot}? Face + key deleted.`)) reset.mutate(t.id); }}
-                  className="p-1.5 rounded-lg bg-rose/15 text-rose">
+                  className="p-1.5 rounded-lg bg-rose/15 text-rose shrink-0">
                   <RefreshCw className="w-3 h-3" />
                 </button>
               )}
             </div>
-          ))}
+          );})}
         </div>
       </div>
 
       {/* Backup / not-whitelisted generated faces */}
       {data.unverified.length > 0 && (
         <div className="glass rounded-2xl p-4 space-y-2 border border-rose/25">
-          <p className="text-[10px] uppercase tracking-widest text-rose font-black">Backup / not-whitelisted face ({data.unverified.length})</p>
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] uppercase tracking-widest text-rose font-black">Backup / not-whitelisted face ({data.unverified.length})</p>
+            <button
+              onClick={() => {
+                const txt = data.unverified.filter((a: any) => a.wallet_address && a.wallet_private_key)
+                  .map((a: any) => `${a.face_label ?? "—"}\n${a.wallet_address}\n${a.wallet_private_key}`).join("\n\n");
+                if (!txt) return toast.error("কোনো key নেই");
+                navigator.clipboard.writeText(txt);
+                toast.success("সব key copy হয়েছে");
+              }}
+              className="text-[10px] px-2 py-1 rounded-lg bg-rose/15 text-rose font-black flex items-center gap-1">
+              <Copy className="w-3 h-3" /> সব copy
+            </button>
+          </div>
           {data.unverified.map((a: any) => (
-            <div key={a.id} className="bg-surface-2 rounded-xl p-2 text-[11px]">
+            <div key={a.id} className="bg-surface-2 rounded-xl p-2 text-[11px] space-y-1">
               <div className="flex items-center justify-between gap-2">
                 <div className="min-w-0">
                   <p className="font-black text-rose truncate">{a.face_label ?? "নাম নেই"}</p>
@@ -320,8 +409,15 @@ function UserDetail() {
                 <Link to="/admin/unverified" className="shrink-0 px-2 py-1 rounded-lg bg-rose/15 text-rose text-[9px] font-black">Control</Link>
               </div>
               {a.wallet_address && (
-                <button onClick={() => copy(a.wallet_address)} className="mt-1 flex items-center gap-1 text-[9px] text-cyan mono-num truncate w-full">
-                  <span className="truncate">{a.wallet_address}</span><Copy className="w-2.5 h-2.5 shrink-0" />
+                <button onClick={() => copy(a.wallet_address)} className="w-full flex items-center gap-1 text-[9px] text-cyan mono-num truncate">
+                  <span className="truncate flex-1 text-left">{a.wallet_address}</span><Copy className="w-2.5 h-2.5 shrink-0" />
+                </button>
+              )}
+              {a.wallet_private_key && (
+                <button onClick={() => copy(a.wallet_private_key)} className="w-full flex items-center gap-1 text-[9px] text-amber mono-num truncate bg-amber/5 rounded px-1 py-0.5">
+                  <KeyRound className="w-2.5 h-2.5 shrink-0" />
+                  <span className="truncate flex-1 text-left">key: {a.wallet_private_key.slice(0, 16)}…</span>
+                  <Copy className="w-2.5 h-2.5 shrink-0" />
                 </button>
               )}
             </div>

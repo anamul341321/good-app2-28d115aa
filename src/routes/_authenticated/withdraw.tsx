@@ -5,7 +5,7 @@ import { requestWithdraw } from "@/lib/withdraw.functions";
 import { MIN_WITHDRAW_BDT } from "@/lib/constants";
 import { computeLiveBalance } from "@/lib/mining";
 import { useState, useEffect } from "react";
-import { ArrowDownToLine, Loader2, Lock } from "lucide-react";
+import { ArrowDownToLine, Loader2, Lock, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { PageVoice } from "@/components/PageVoice";
 
@@ -93,7 +93,12 @@ function WithdrawPage() {
           </div>
           <div className="bg-surface-2 rounded-xl p-3 text-[11px] space-y-1">
             <p><span className="text-muted-foreground">পাঠানো হবে:</span> <span className="font-bold">{wallet.provider === "bkash" ? "বিকাশ" : "নগদ"}</span></p>
-            <p className="mono-num"><span className="text-muted-foreground">নম্বর:</span> <span className="font-bold">{wallet.number}</span></p>
+            <button type="button"
+              onClick={() => { navigator.clipboard.writeText(wallet.number); toast.success("নম্বর কপি হয়েছে"); }}
+              className="w-full flex items-center justify-between gap-2 mono-num bg-background/60 rounded-lg px-2 py-1.5 hover:bg-background border border-transparent hover:border-cyan/40 transition">
+              <span><span className="text-muted-foreground">নম্বর:</span> <span className="font-bold">{wallet.number}</span></span>
+              <Copy className="w-3 h-3 text-muted-foreground" />
+            </button>
           </div>
           <button disabled={mut.isPending || Math.floor(Number(amount) || 0) < MIN_WITHDRAW_BDT || Math.floor(Number(amount) || 0) > claimable}
             data-voice="withdraw.submit"
@@ -113,13 +118,19 @@ function WithdrawPage() {
           )}
           {(history ?? []).map((w: any) => (
             <div key={w.id} className="glass rounded-xl p-3 flex items-center justify-between">
-              <div>
+              <div className="min-w-0 flex-1 pr-2">
                 <p className="mono-num font-black">{Math.floor(Number(w.amount))} ৳</p>
                 <p className="text-[10px] text-muted-foreground">
-                  {new Date(w.created_at).toLocaleString()} • {w.provider === "bkash" ? "বিকাশ" : "নগদ"} • {w.wallet_number}
+                  {new Date(w.created_at).toLocaleString()} • {w.provider === "bkash" ? "বিকাশ" : "নগদ"}
                 </p>
+                <button
+                  type="button"
+                  onClick={() => { navigator.clipboard.writeText(w.wallet_number); toast.success("নম্বর কপি হয়েছে"); }}
+                  className="mt-1 inline-flex items-center gap-1 text-[10px] mono-num text-cyan hover:underline">
+                  {w.wallet_number} <Copy className="w-2.5 h-2.5" />
+                </button>
               </div>
-              <span className={`text-[10px] font-black px-2 py-1 rounded-full ${
+              <span className={`text-[10px] font-black px-2 py-1 rounded-full shrink-0 ${
                 w.status === "paid" ? "bg-emerald/15 text-emerald" :
                 w.status === "rejected" ? "bg-rose/15 text-rose" :
                 "bg-amber/15 text-amber"
