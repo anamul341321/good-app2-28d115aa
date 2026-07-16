@@ -62,7 +62,10 @@ function AdminUsers() {
             </div>
           )}
           <div className="min-w-0 flex-1">
-            <p className="font-bold text-sm truncate">{row.profile.display_name ?? "—"}</p>
+            <div className="flex items-center gap-1.5">
+              <span className="px-1.5 py-0.5 rounded bg-violet/15 text-violet mono-num text-[10px] font-black shrink-0">UID {row.serial ?? "—"}</span>
+              <p className="font-bold text-sm truncate">{row.profile.display_name ?? "—"}</p>
+            </div>
             <p className="text-[10px] text-muted-foreground truncate mono-num">
               {row.profile.phone_number ?? row.profile.email}
             </p>
