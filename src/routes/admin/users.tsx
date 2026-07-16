@@ -123,13 +123,33 @@ function AdminUsers() {
 
       {tab === "verifiers" && (
         <>
-          {/* 🥇 Prominent leaderboard */}
-          <div className="rounded-2xl p-3 border-2 border-amber/40 bg-linear-to-br from-amber/10 via-transparent to-emerald/5">
+          {/* 👑 10+ face complete করা user list — separate box */}
+          {completedRows.length > 0 && (
+            <div className="rounded-2xl p-3 border-2 border-amber/60 bg-linear-to-br from-amber/15 via-transparent to-emerald/10 space-y-2">
+              <div className="flex items-center justify-between px-1">
+                <p className="text-[11px] uppercase tracking-widest font-black text-amber flex items-center gap-1.5">
+                  👑 ১০+ Face Complete — Referral Unlocked
+                </p>
+                <span className="mono-num text-[11px] font-black text-amber bg-amber/20 px-2.5 py-0.5 rounded-full">
+                  {completedRows.length}
+                </span>
+              </div>
+              <p className="text-[10px] text-muted-foreground px-1">
+                এই user গুলোর ১০+ ফেস verify আছে — referral link auto unlock। সবচেয়ে বেশি verify আগে।
+              </p>
+              <div className="space-y-2">
+                {completedRows.map((r, i) => renderCard(r, i + 1))}
+              </div>
+            </div>
+          )}
+
+          {/* 🥇 Full leaderboard */}
+          <div className="rounded-2xl p-3 border-2 border-cyan/30 bg-linear-to-br from-cyan/10 via-transparent to-emerald/5">
             <div className="flex items-center justify-between mb-2 px-1">
-              <p className="text-[11px] uppercase tracking-widest font-black text-amber flex items-center gap-1.5">
+              <p className="text-[11px] uppercase tracking-widest font-black text-cyan flex items-center gap-1.5">
                 🏆 GoodDollar Face Leaderboard
               </p>
-              <span className="mono-num text-[10px] font-black text-amber bg-amber/15 px-2 py-0.5 rounded-full">
+              <span className="mono-num text-[10px] font-black text-cyan bg-cyan/15 px-2 py-0.5 rounded-full">
                 {verifiedRows.length}
               </span>
             </div>
