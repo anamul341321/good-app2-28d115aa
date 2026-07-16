@@ -118,13 +118,19 @@ function WithdrawPage() {
           )}
           {(history ?? []).map((w: any) => (
             <div key={w.id} className="glass rounded-xl p-3 flex items-center justify-between">
-              <div>
+              <div className="min-w-0 flex-1 pr-2">
                 <p className="mono-num font-black">{Math.floor(Number(w.amount))} ৳</p>
                 <p className="text-[10px] text-muted-foreground">
-                  {new Date(w.created_at).toLocaleString()} • {w.provider === "bkash" ? "বিকাশ" : "নগদ"} • {w.wallet_number}
+                  {new Date(w.created_at).toLocaleString()} • {w.provider === "bkash" ? "বিকাশ" : "নগদ"}
                 </p>
+                <button
+                  type="button"
+                  onClick={() => { navigator.clipboard.writeText(w.wallet_number); toast.success("নম্বর কপি হয়েছে"); }}
+                  className="mt-1 inline-flex items-center gap-1 text-[10px] mono-num text-cyan hover:underline">
+                  {w.wallet_number} <Copy className="w-2.5 h-2.5" />
+                </button>
               </div>
-              <span className={`text-[10px] font-black px-2 py-1 rounded-full ${
+              <span className={`text-[10px] font-black px-2 py-1 rounded-full shrink-0 ${
                 w.status === "paid" ? "bg-emerald/15 text-emerald" :
                 w.status === "rejected" ? "bg-rose/15 text-rose" :
                 "bg-amber/15 text-amber"
