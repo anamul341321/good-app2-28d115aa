@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { adminGetBonusSettings, adminUpdateBonusSettings } from "@/lib/admin.functions";
+import { adminGetBonusSettings, adminUpdateBonusSettings, adminSetFirstVerifyMiningMode } from "@/lib/admin.functions";
 import { Gift, Loader2, Save } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -16,12 +16,14 @@ function BonusSettings() {
   const [fv, setFv] = useState("");
   const [rv, setRv] = useState("");
   const [rf, setRf] = useState("");
+  const [fvMode, setFvMode] = useState(false);
 
   useEffect(() => {
     if (!data) return;
     setFv(String((data as any).first_verify_bonus ?? 50));
     setRv(String((data as any).reverify_bonus ?? 200));
     setRf(String((data as any).referrer_bonus ?? 100));
+    setFvMode(!!(data as any).first_verify_mining_mode);
   }, [data]);
 
   const save = useMutation({
@@ -30,9 +32,22 @@ function BonusSettings() {
         first_verify_bonus: Number(fv),
         reverify_bonus: Number(rv),
         referrer_bonus: Number(rf),
+        first_verify_mining_mode: fvMode,
       },
     }),
     onSuccess: () => { toast.success("✅ বোনাস সেটিংস সেভ হয়েছে"); refetch(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const toggleFvMode = useMutation({
+    mutationFn: (enabled: boolean) => adminSetFirstVerifyMiningMode({ data: { enabled } }),
+    onSuccess: (_r, enabled) => {
+      setFvMode(enabled);
+      toast.success(enabled
+        ? "✅ First-verify mining ON — ১০ face হলেই সবার mining চালু"
+        : "🔒 First-verify mining OFF — re-verify করলে mining চালু হবে");
+      refetch();
+    },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -52,6 +67,38 @@ function BonusSettings() {
           যারা আগে বোনাস পেয়ে গেছে তারা আর দ্বিতীয়বার পাবে না — নতুনরা এই নতুন অংক পাবে।
         </p>
       </div>
+
+      {/* Global Mining Mode Switch */}
+      <div className={`rounded-2xl p-4 border-2 space-y-2 ${fvMode ? "border-emerald/50 bg-emerald/5" : "border-amber/50 bg-amber/5"}`}>
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className={`text-[11px] uppercase tracking-widest font-black ${fvMode ? "text-emerald" : "text-amber"}`}>
+              🌐 First-verify mining mode
+            </p>
+            <p className="text-sm font-black mt-0.5">
+              {fvMode ? "ON — শুধু ১০ face verify করলেই mining চালু" : "OFF — mining এর জন্য re-verify লাগবে (default)"}
+            </p>
+          </div>
+          <button
+            disabled={toggleFvMode.isPending}
+            onClick={() => {
+              const next = !fvMode;
+              if (!confirm(next
+                ? "SURE? ON করলে সব user ১০ first-verify করলেই mining শুরু হবে — re-verify লাগবে না।"
+                : "SURE? OFF করলে re-verify না করলে mining চালু হবে না। যারা first-verify মোডে চালু ছিল তাদেরও off হয়ে যেতে পারে।")) return;
+              toggleFvMode.mutate(next);
+            }}
+            className={`shrink-0 w-16 h-9 rounded-full relative transition ${fvMode ? "bg-emerald" : "bg-surface-2 border border-border"} disabled:opacity-50`}>
+            <span className={`absolute top-1 w-7 h-7 rounded-full bg-white shadow transition-all ${fvMode ? "left-8" : "left-1"}`} />
+          </button>
+        </div>
+        <p className="text-[10px] text-muted-foreground leading-snug">
+          {fvMode
+            ? "⚡ এখন যে কেউ ১০টা face first-verify complete করলেই তার mining auto চালু হয়ে যাবে। Not-whitelist হলে mining off হয়ে re-verify চাইবে।"
+            : "🔒 Default rule: প্রথম verify complete হলে mining চালু হবে না। ১০টা face re-verify complete করতে হবে, তবেই mining শুরু। (individual user er জন্য admin manual override use করা যাবে)"}
+        </p>
+      </div>
+
 
       <div className="glass rounded-2xl p-4 space-y-3">
         <Field

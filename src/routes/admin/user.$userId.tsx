@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { adminUserDetail, adminAdjustBalance, adminToggleMining, adminResetTask, adminমুছুনUser, adminResetUserPassword, adminClearMiningOverride, adminCreateVoucher, adminListVouchersForUser, adminSetReferralUnlock, adminResetWallet } from "@/lib/admin.functions";
-import { ArrowLeft, Loader2, Power, Plus, Minus, RefreshCw, Trash2, Copy, KeyRound, Gift, ScanFace, Share2, Lock, Unlock, Wallet } from "lucide-react";
+import { adminUserDetail, adminAdjustBalance, adminToggleMining, adminResetTask, adminমুছুনUser, adminResetUserPassword, adminClearMiningOverride, adminCreateVoucher, adminListVouchersForUser, adminSetReferralUnlock, adminResetWallet, adminMarkAsReverified } from "@/lib/admin.functions";
+import { ArrowLeft, Loader2, Power, Plus, Minus, RefreshCw, Trash2, Copy, KeyRound, Gift, ScanFace, Share2, Lock, Unlock, Wallet, CheckCircle2 } from "lucide-react";
 import { computeLiveBalance } from "@/lib/mining";
 import { toast } from "sonner";
 import { useState } from "react";
@@ -86,6 +86,12 @@ function UserDetail() {
   const resetWallet = useMutation({
     mutationFn: () => adminResetWallet({ data: { userId } }),
     onSuccess: () => { toast.success("Wallet reset — user নতুন করে সেট করতে পারবে"); refetch(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const markReverified = useMutation({
+    mutationFn: (taskId: string) => adminMarkAsReverified({ data: { taskId } }),
+    onSuccess: () => { toast.success("✅ Re-verify হিসেবে mark হয়েছে — mining recompute হয়েছে"); refetch(); },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -322,20 +328,31 @@ function UserDetail() {
           <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">GoodDollar face slots</p>
           <button
             onClick={() => {
-              const verified = (data.tasks ?? []).filter((t: any) => t.wallet_address && t.wallet_private_key);
-              if (verified.length === 0) return toast.error("কোনো key নেই");
-              const txt = verified.map((t: any) => `${t.face_label ?? "—"} (slot #${t.slot})\n${t.wallet_address}\n${t.wallet_private_key}`).join("\n\n");
-              navigator.clipboard.writeText(txt);
-              toast.success(`${verified.length} key copy হয়েছে`);
+              const parts: string[] = [];
+              for (const t of (data.tasks ?? [])) {
+                if (!t.wallet_address || !t.wallet_private_key) continue;
+                const tag = t.status === "done" ? "🔁 RE-VERIFIED"
+                  : t.whitelist_ok === false ? "⚠ NOT WHITELIST"
+                  : "✅ 1ST VERIFY";
+                parts.push(`${t.face_label ?? "—"} (slot #${t.slot}) ${tag}\n${t.wallet_address}\n${t.wallet_private_key}`);
+              }
+              for (const a of (data.unverified ?? [])) {
+                if (!a.wallet_address || !a.wallet_private_key) continue;
+                parts.push(`${a.face_label ?? "—"} (backup) ⚠ NOT WHITELIST\n${a.wallet_address}\n${a.wallet_private_key}`);
+              }
+              if (parts.length === 0) return toast.error("কোনো key নেই");
+              navigator.clipboard.writeText(parts.join("\n\n"));
+              toast.success(`${parts.length} key copy হয়েছে (সব ধরনের)`);
             }}
             className="text-[10px] px-2 py-1 rounded-lg bg-cyan/15 text-cyan font-black flex items-center gap-1">
-            <Copy className="w-3 h-3" /> সব key copy
+            <Copy className="w-3 h-3" /> সব key copy (verify + not-whitelist + backup)
           </button>
         </div>
         <div className="space-y-2">
           {data.tasks.map((t: any) => {
             const isReverified = t.status === "done";
             const isFirstOnly = t.status === "verified" && !!t.initial_verify_at;
+            const canConvert = t.status === "verified" && !!t.wallet_address;
             return (
             <div key={t.id} className="flex items-start gap-2 bg-surface-2 rounded-xl p-2">
               {t.signed_url ? (
@@ -368,6 +385,14 @@ function UserDetail() {
                     <KeyRound className="w-2.5 h-2.5 shrink-0" />
                     <span className="truncate flex-1 text-left">key: {t.wallet_private_key.slice(0, 16)}…</span>
                     <Copy className="w-2.5 h-2.5 shrink-0" />
+                  </button>
+                )}
+                {canConvert && (
+                  <button
+                    disabled={markReverified.isPending}
+                    onClick={() => { if (confirm(`Slot #${t.slot} কে re-verify হিসেবে mark করবেন? (mining এ যোগ হবে)`)) markReverified.mutate(t.id); }}
+                    className="w-full flex items-center justify-center gap-1 text-[9px] text-emerald bg-emerald/10 hover:bg-emerald/15 rounded-lg px-2 py-1 mt-1 font-black disabled:opacity-50">
+                    <CheckCircle2 className="w-3 h-3" /> Re-verify হিসেবে mark করুন (mining শুরু)
                   </button>
                 )}
               </div>
