@@ -38,6 +38,7 @@ export type Database = {
       bonus_settings: {
         Row: {
           first_verify_bonus: number
+          first_verify_mining_mode: boolean
           id: string
           referrer_bonus: number
           reverify_bonus: number
@@ -45,6 +46,7 @@ export type Database = {
         }
         Insert: {
           first_verify_bonus?: number
+          first_verify_mining_mode?: boolean
           id?: string
           referrer_bonus?: number
           reverify_bonus?: number
@@ -52,6 +54,7 @@ export type Database = {
         }
         Update: {
           first_verify_bonus?: number
+          first_verify_mining_mode?: boolean
           id?: string
           referrer_bonus?: number
           reverify_bonus?: number
