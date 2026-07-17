@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { adminGetBonusSettings, adminUpdateBonusSettings } from "@/lib/admin.functions";
+import { adminGetBonusSettings, adminUpdateBonusSettings, adminSetFirstVerifyMiningMode } from "@/lib/admin.functions";
 import { Gift, Loader2, Save } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
