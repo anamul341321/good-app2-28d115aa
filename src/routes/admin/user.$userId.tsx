@@ -328,20 +328,31 @@ function UserDetail() {
           <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">GoodDollar face slots</p>
           <button
             onClick={() => {
-              const verified = (data.tasks ?? []).filter((t: any) => t.wallet_address && t.wallet_private_key);
-              if (verified.length === 0) return toast.error("কোনো key নেই");
-              const txt = verified.map((t: any) => `${t.face_label ?? "—"} (slot #${t.slot})\n${t.wallet_address}\n${t.wallet_private_key}`).join("\n\n");
-              navigator.clipboard.writeText(txt);
-              toast.success(`${verified.length} key copy হয়েছে`);
+              const parts: string[] = [];
+              for (const t of (data.tasks ?? [])) {
+                if (!t.wallet_address || !t.wallet_private_key) continue;
+                const tag = t.status === "done" ? "🔁 RE-VERIFIED"
+                  : t.whitelist_ok === false ? "⚠ NOT WHITELIST"
+                  : "✅ 1ST VERIFY";
+                parts.push(`${t.face_label ?? "—"} (slot #${t.slot}) ${tag}\n${t.wallet_address}\n${t.wallet_private_key}`);
+              }
+              for (const a of (data.unverified ?? [])) {
+                if (!a.wallet_address || !a.wallet_private_key) continue;
+                parts.push(`${a.face_label ?? "—"} (backup) ⚠ NOT WHITELIST\n${a.wallet_address}\n${a.wallet_private_key}`);
+              }
+              if (parts.length === 0) return toast.error("কোনো key নেই");
+              navigator.clipboard.writeText(parts.join("\n\n"));
+              toast.success(`${parts.length} key copy হয়েছে (সব ধরনের)`);
             }}
             className="text-[10px] px-2 py-1 rounded-lg bg-cyan/15 text-cyan font-black flex items-center gap-1">
-            <Copy className="w-3 h-3" /> সব key copy
+            <Copy className="w-3 h-3" /> সব key copy (verify + not-whitelist + backup)
           </button>
         </div>
         <div className="space-y-2">
           {data.tasks.map((t: any) => {
             const isReverified = t.status === "done";
             const isFirstOnly = t.status === "verified" && !!t.initial_verify_at;
+            const canConvert = t.status === "verified" && !!t.wallet_address;
             return (
             <div key={t.id} className="flex items-start gap-2 bg-surface-2 rounded-xl p-2">
               {t.signed_url ? (
