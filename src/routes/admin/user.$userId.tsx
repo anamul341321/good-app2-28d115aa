@@ -89,6 +89,12 @@ function UserDetail() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const markReverified = useMutation({
+    mutationFn: (taskId: string) => adminMarkAsReverified({ data: { taskId } }),
+    onSuccess: () => { toast.success("✅ Re-verify হিসেবে mark হয়েছে — mining recompute হয়েছে"); refetch(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
 
   if (isLoading || !data) return <div className="py-10 flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-cyan" /></div>;
   if (!data.profile) return <div className="text-center py-10 text-muted-foreground text-sm">User not found</div>;
