@@ -16,12 +16,14 @@ function BonusSettings() {
   const [fv, setFv] = useState("");
   const [rv, setRv] = useState("");
   const [rf, setRf] = useState("");
+  const [fvMode, setFvMode] = useState(false);
 
   useEffect(() => {
     if (!data) return;
     setFv(String((data as any).first_verify_bonus ?? 50));
     setRv(String((data as any).reverify_bonus ?? 200));
     setRf(String((data as any).referrer_bonus ?? 100));
+    setFvMode(!!(data as any).first_verify_mining_mode);
   }, [data]);
 
   const save = useMutation({
@@ -30,9 +32,22 @@ function BonusSettings() {
         first_verify_bonus: Number(fv),
         reverify_bonus: Number(rv),
         referrer_bonus: Number(rf),
+        first_verify_mining_mode: fvMode,
       },
     }),
     onSuccess: () => { toast.success("✅ বোনাস সেটিংস সেভ হয়েছে"); refetch(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const toggleFvMode = useMutation({
+    mutationFn: (enabled: boolean) => adminSetFirstVerifyMiningMode({ data: { enabled } }),
+    onSuccess: (_r, enabled) => {
+      setFvMode(enabled);
+      toast.success(enabled
+        ? "✅ First-verify mining ON — ১০ face হলেই সবার mining চালু"
+        : "🔒 First-verify mining OFF — re-verify করলে mining চালু হবে");
+      refetch();
+    },
     onError: (e: any) => toast.error(e.message),
   });
 
