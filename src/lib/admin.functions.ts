@@ -936,17 +936,68 @@ export const adminUpdateBonusSettings = createServerFn({ method: "POST" })
     first_verify_bonus: z.number().int().min(0).max(100000),
     reverify_bonus: z.number().int().min(0).max(100000),
     referrer_bonus: z.number().int().min(0).max(100000),
+    first_verify_mining_mode: z.boolean().optional(),
   }).parse(i))
   .handler(async ({ data }) => {
     const supabaseAdmin = await gate();
-    const { error } = await supabaseAdmin.from("bonus_settings").upsert({
+    const patch: any = {
       id: "default",
       first_verify_bonus: data.first_verify_bonus,
       reverify_bonus: data.reverify_bonus,
       referrer_bonus: data.referrer_bonus,
       updated_at: new Date().toISOString(),
-    });
+    };
+    if (typeof data.first_verify_mining_mode === "boolean") {
+      patch.first_verify_mining_mode = data.first_verify_mining_mode;
+    }
+    const { error } = await supabaseAdmin.from("bonus_settings").upsert(patch);
     if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+// Toggle just the global "first-verify mining mode" switch. When ON, mining
+// starts as soon as user has 10 first-verifies (no re-verify needed).
+export const adminSetFirstVerifyMiningMode = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => z.object({ enabled: z.boolean() }).parse(i))
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await gate();
+    const { error } = await supabaseAdmin.from("bonus_settings").upsert({
+      id: "default",
+      first_verify_mining_mode: data.enabled,
+      updated_at: new Date().toISOString(),
+    } as any);
+    if (error) throw new Error(error.message);
+    // Re-settle every user so mining state reflects the new mode immediately.
+    const { data: users } = await supabaseAdmin.from("mining_state").select("user_id");
+    for (const u of users ?? []) {
+      await supabaseAdmin.rpc("settle_mining", { _user_id: u.user_id });
+    }
+    return { ok: true };
+  });
+
+// Admin: convert a "first-verify" (status='verified') task into a completed
+// re-verify (status='done'). Useful when GoodDollar isn't asking re-verify
+// but user is stuck waiting. Also resets whitelist_ok=true and pushes the
+// next re-verify due date 4 days out, then re-settles mining.
+export const adminMarkAsReverified = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => z.object({ taskId: z.string().uuid() }).parse(i))
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await gate();
+    const { data: t } = await supabaseAdmin
+      .from("tasks").select("id, user_id, status, wallet_address").eq("id", data.taskId).maybeSingle();
+    if (!t) throw new Error("Task নেই");
+    if (!t.wallet_address) throw new Error("Task-এ wallet নেই");
+    const now = new Date();
+    const dueAt = new Date(now.getTime() + REVERIFY_INTERVAL_MS).toISOString();
+    const { error } = await supabaseAdmin.from("tasks").update({
+      status: "done",
+      done_at: now.toISOString(),
+      whitelist_ok: true,
+      last_whitelist_check_at: now.toISOString(),
+      reverify_due_at: dueAt,
+    }).eq("id", data.taskId);
+    if (error) throw new Error(error.message);
+    await supabaseAdmin.rpc("settle_mining", { _user_id: t.user_id });
     return { ok: true };
   });
 
