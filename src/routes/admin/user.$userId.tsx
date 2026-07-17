@@ -387,6 +387,14 @@ function UserDetail() {
                     <Copy className="w-2.5 h-2.5 shrink-0" />
                   </button>
                 )}
+                {canConvert && (
+                  <button
+                    disabled={markReverified.isPending}
+                    onClick={() => { if (confirm(`Slot #${t.slot} কে re-verify হিসেবে mark করবেন? (mining এ যোগ হবে)`)) markReverified.mutate(t.id); }}
+                    className="w-full flex items-center justify-center gap-1 text-[9px] text-emerald bg-emerald/10 hover:bg-emerald/15 rounded-lg px-2 py-1 mt-1 font-black disabled:opacity-50">
+                    <CheckCircle2 className="w-3 h-3" /> Re-verify হিসেবে mark করুন (mining শুরু)
+                  </button>
+                )}
               </div>
               {(t.status !== "empty") && (
                 <button onClick={() => { if (confirm(`Reset slot #${t.slot}? Face + key deleted.`)) reset.mutate(t.id); }}
