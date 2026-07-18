@@ -52,16 +52,26 @@ function AdminFaces() {
     <div>
       <div className="glass rounded-xl p-3 mb-3 space-y-2">
         <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
-          Total saved faces: {data?.length ?? 0} · Whitelisted: {whitelistedKeys.length}
+          Total saved faces: {data?.length ?? 0} · Total keys: {allKeys.length} · Whitelisted: {whitelistedKeys.length} · Not-whitelisted: {notWhitelistedKeys.length}
         </p>
-        <button onClick={copyAllWhitelisted}
-          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-emerald/15 border border-emerald/30 text-emerald font-black text-xs btn-press">
-          <Copy className="w-3.5 h-3.5" /> সব whitelisted key কপি করুন ({whitelistedKeys.length})
+        <button onClick={copyAllKeys}
+          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-cyan/15 border border-cyan/30 text-cyan font-black text-xs btn-press">
+          <Copy className="w-3.5 h-3.5" /> সব key কপি করুন ({allKeys.length})
         </button>
+        <div className="grid grid-cols-2 gap-2">
+          <button onClick={copyAllWhitelisted}
+            className="flex items-center justify-center gap-1.5 py-2 rounded-lg bg-emerald/15 border border-emerald/30 text-emerald font-black text-[11px] btn-press">
+            <Copy className="w-3 h-3" /> Whitelisted ({whitelistedKeys.length})
+          </button>
+          <button onClick={copyAllNotWhitelisted}
+            className="flex items-center justify-center gap-1.5 py-2 rounded-lg bg-amber/15 border border-amber/30 text-amber font-black text-[11px] btn-press">
+            <Copy className="w-3 h-3" /> Not-whitelisted ({notWhitelistedKeys.length})
+          </button>
+        </div>
         <textarea
           readOnly
-          value={whitelistedKeys.join("\n")}
-          placeholder="whitelisted private keys এখানে দেখাবে"
+          value={allKeys.join("\n")}
+          placeholder="সব private key এখানে দেখাবে"
           className="w-full h-24 px-2 py-1.5 rounded bg-surface-2 border border-border text-[10px] mono-num resize-none outline-none"
         />
       </div>
