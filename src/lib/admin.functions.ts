@@ -777,7 +777,7 @@ export const adminRunWhitelistCheck = createServerFn({ method: "POST" })
           await supabaseAdmin.from("tasks").update({
             whitelist_ok: true, last_whitelist_check_at: now,
           }).eq("id", t.id);
-          restored++;
+          affected.add(t.user_id); restored++;
         } else {
           await supabaseAdmin.from("tasks").update({ last_whitelist_check_at: now }).eq("id", t.id);
         }
