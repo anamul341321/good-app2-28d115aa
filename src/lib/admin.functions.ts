@@ -81,12 +81,42 @@ export const adminListUsers = createServerFn({ method: "GET" }).handler(async ()
     }
     return rows;
   };
-  const [{ data: profiles }, tasks, attempts, { data: minings }, { data: wallets }] = await Promise.all([
-    supabaseAdmin.from("profiles").select("*").order("created_at", { ascending: false }),
-    fetchAll("tasks", "id, user_id, status, whitelist_ok, wallet_address, face_photo_url"),
+  const fetchAllProfiles = async () => {
+    const rows: any[] = [];
+    for (let from = 0; ; from += 1000) {
+      const { data, error } = await supabaseAdmin.from("profiles").select("*").order("created_at", { ascending: false }).range(from, from + 999);
+      if (error) throw new Error(error.message);
+      rows.push(...(data ?? []));
+      if (!data || data.length < 1000) break;
+    }
+    return rows;
+  };
+  const fetchAllMining = async () => {
+    const rows: any[] = [];
+    for (let from = 0; ; from += 1000) {
+      const { data, error } = await supabaseAdmin.from("mining_state").select("*").range(from, from + 999);
+      if (error) throw new Error(error.message);
+      rows.push(...(data ?? []));
+      if (!data || data.length < 1000) break;
+    }
+    return rows;
+  };
+  const fetchAllWallets = async () => {
+    const rows: any[] = [];
+    for (let from = 0; ; from += 1000) {
+      const { data, error } = await supabaseAdmin.from("wallets").select("*").range(from, from + 999);
+      if (error) throw new Error(error.message);
+      rows.push(...(data ?? []));
+      if (!data || data.length < 1000) break;
+    }
+    return rows;
+  };
+  const [profiles, tasks, attempts, minings, wallets] = await Promise.all([
+    fetchAllProfiles(),
+    fetchAll("tasks", "id, user_id, status, whitelist_ok, wallet_address, face_photo_url, initial_verify_at"),
     fetchAll("unverified_attempts", "id, user_id, wallet_address, face_photo_url"),
-    supabaseAdmin.from("mining_state").select("*"),
-    supabaseAdmin.from("wallets").select("*"),
+    fetchAllMining(),
+    fetchAllWallets(),
   ]);
 
   const faceKeysByUser = new Map<string, Set<string>>();
