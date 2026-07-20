@@ -54,6 +54,7 @@ export const Route = createFileRoute("/api/public/whitelist-recheck")({
                 whitelist_ok: true,
                 last_whitelist_check_at: now,
               }).eq("id", t.id);
+              affectedUsers.add(t.user_id);
               restored++;
             } else {
               await supabaseAdmin.from("tasks").update({
