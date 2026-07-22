@@ -967,6 +967,19 @@ export const adminUpdateBonusSettings = createServerFn({ method: "POST" })
     reverify_bonus: z.number().int().min(0).max(100000),
     referrer_bonus: z.number().int().min(0).max(100000),
     first_verify_mining_mode: z.boolean().optional(),
+    // 2X promo window
+    promo_active: z.boolean().optional(),
+    promo_title: z.string().max(200).optional().nullable(),
+    promo_start_at: z.string().optional().nullable(),
+    promo_end_at: z.string().optional().nullable(),
+    promo_first_verify_bonus: z.number().int().min(0).max(100000).optional().nullable(),
+    promo_reverify_bonus: z.number().int().min(0).max(100000).optional().nullable(),
+    promo_referrer_bonus: z.number().int().min(0).max(100000).optional().nullable(),
+    // Payout method toggles
+    bkash_enabled: z.boolean().optional(),
+    nagad_enabled: z.boolean().optional(),
+    bkash_off_message: z.string().max(300).optional().nullable(),
+    nagad_off_message: z.string().max(300).optional().nullable(),
   }).parse(i))
   .handler(async ({ data }) => {
     const supabaseAdmin = await gate();
@@ -977,8 +990,13 @@ export const adminUpdateBonusSettings = createServerFn({ method: "POST" })
       referrer_bonus: data.referrer_bonus,
       updated_at: new Date().toISOString(),
     };
-    if (typeof data.first_verify_mining_mode === "boolean") {
-      patch.first_verify_mining_mode = data.first_verify_mining_mode;
+    if (typeof data.first_verify_mining_mode === "boolean") patch.first_verify_mining_mode = data.first_verify_mining_mode;
+    for (const k of [
+      "promo_active","promo_title","promo_start_at","promo_end_at",
+      "promo_first_verify_bonus","promo_reverify_bonus","promo_referrer_bonus",
+      "bkash_enabled","nagad_enabled","bkash_off_message","nagad_off_message",
+    ] as const) {
+      if ((data as any)[k] !== undefined) patch[k] = (data as any)[k];
     }
     const { error } = await supabaseAdmin.from("bonus_settings").upsert(patch);
     if (error) throw new Error(error.message);

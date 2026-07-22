@@ -17,13 +17,38 @@ function BonusSettings() {
   const [rv, setRv] = useState("");
   const [rf, setRf] = useState("");
   const [fvMode, setFvMode] = useState(false);
+  // Promo
+  const [promoActive, setPromoActive] = useState(false);
+  const [promoTitle, setPromoTitle] = useState("");
+  const [promoStart, setPromoStart] = useState("");
+  const [promoEnd, setPromoEnd] = useState("");
+  const [pFv, setPFv] = useState("");
+  const [pRv, setPRv] = useState("");
+  const [pRf, setPRf] = useState("");
+  // Payout methods
+  const [bkashOn, setBkashOn] = useState(true);
+  const [nagadOn, setNagadOn] = useState(true);
+  const [bkashMsg, setBkashMsg] = useState("");
+  const [nagadMsg, setNagadMsg] = useState("");
 
   useEffect(() => {
     if (!data) return;
-    setFv(String((data as any).first_verify_bonus ?? 50));
-    setRv(String((data as any).reverify_bonus ?? 200));
-    setRf(String((data as any).referrer_bonus ?? 100));
-    setFvMode(!!(data as any).first_verify_mining_mode);
+    const d: any = data;
+    setFv(String(d.first_verify_bonus ?? 50));
+    setRv(String(d.reverify_bonus ?? 200));
+    setRf(String(d.referrer_bonus ?? 100));
+    setFvMode(!!d.first_verify_mining_mode);
+    setPromoActive(!!d.promo_active);
+    setPromoTitle(d.promo_title ?? "");
+    setPromoStart(d.promo_start_at ? d.promo_start_at.slice(0, 16) : "");
+    setPromoEnd(d.promo_end_at ? d.promo_end_at.slice(0, 16) : "");
+    setPFv(String(d.promo_first_verify_bonus ?? 100));
+    setPRv(String(d.promo_reverify_bonus ?? 400));
+    setPRf(String(d.promo_referrer_bonus ?? 150));
+    setBkashOn(d.bkash_enabled !== false);
+    setNagadOn(d.nagad_enabled !== false);
+    setBkashMsg(d.bkash_off_message ?? "");
+    setNagadMsg(d.nagad_off_message ?? "");
   }, [data]);
 
   const save = useMutation({
@@ -33,7 +58,18 @@ function BonusSettings() {
         reverify_bonus: Number(rv),
         referrer_bonus: Number(rf),
         first_verify_mining_mode: fvMode,
-      },
+        promo_active: promoActive,
+        promo_title: promoTitle || null,
+        promo_start_at: promoStart ? new Date(promoStart).toISOString() : null,
+        promo_end_at:   promoEnd   ? new Date(promoEnd).toISOString()   : null,
+        promo_first_verify_bonus: Number(pFv) || 0,
+        promo_reverify_bonus:     Number(pRv) || 0,
+        promo_referrer_bonus:     Number(pRf) || 0,
+        bkash_enabled: bkashOn,
+        nagad_enabled: nagadOn,
+        bkash_off_message: bkashMsg || null,
+        nagad_off_message: nagadMsg || null,
+      } as any,
     }),
     onSuccess: () => { toast.success("✅ বোনাস সেটিংস সেভ হয়েছে"); refetch(); },
     onError: (e: any) => toast.error(e.message),
