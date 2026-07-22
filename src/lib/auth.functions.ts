@@ -31,14 +31,15 @@ export const registerWithPhone = createServerFn({ method: "POST" })
       // Referral lock: owner must have 10 first-verifies (initial_verify_at not null)
       // OR admin has manually unlocked. Prevents self-referral farming.
       if (!(ref as any).referral_unlock_override) {
+        const { REFERRAL_UNLOCK_THRESHOLD } = await import("./constants");
         const { count: firstVerifies } = await supabaseAdmin
           .from("tasks")
           .select("id", { count: "exact", head: true })
           .eq("user_id", ref.id)
           .not("initial_verify_at", "is", null);
-        if ((firstVerifies ?? 0) < 10) {
+        if ((firstVerifies ?? 0) < REFERRAL_UNLOCK_THRESHOLD) {
           throw new Error(
-            `এই referral code এখনো active হয়নি — কোড এর মালিক ১০টি ফেস ভেরিফাই সম্পন্ন করলে বা admin unlock করলে ব্যবহার করা যাবে (${firstVerifies ?? 0}/10)`
+            `এই referral code এখনো active হয়নি — কোড এর মালিক ${REFERRAL_UNLOCK_THRESHOLD}টি ফেস ভেরিফাই সম্পন্ন করলে বা admin unlock করলে ব্যবহার করা যাবে (${firstVerifies ?? 0}/${REFERRAL_UNLOCK_THRESHOLD})`
           );
         }
       }

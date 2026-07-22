@@ -13,6 +13,10 @@ export const REVERIFY_INTERVAL_MS = 4 * 24 * 60 * 60 * 1000;
 
 export const TOTAL_TASKS = 10;
 
+// Owner of a referral code must complete at least this many first-verifies
+// before their referral link unlocks. Lowered from 10 → 5 per admin request.
+export const REFERRAL_UNLOCK_THRESHOLD = 5;
+
 export const MIN_WITHDRAW_BDT = 50;
 
 export type WalletProvider = "bkash" | "nagad";
