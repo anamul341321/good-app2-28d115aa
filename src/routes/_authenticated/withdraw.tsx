@@ -18,6 +18,20 @@ function WithdrawPage() {
     queryKey: ["withdrawals"], queryFn: () => getMyWithdrawals(),
   });
 
+  const walletBkash = (data as any)?.walletBkash ?? null;
+  const walletNagad = (data as any)?.walletNagad ?? null;
+  const payout = (data as any)?.payoutSettings ?? { bkashEnabled: true, nagadEnabled: true };
+
+  // Pick the first usable provider by default
+  const initial: "bkash" | "nagad" | null =
+    (payout.bkashEnabled && walletBkash) ? "bkash" :
+    (payout.nagadEnabled && walletNagad) ? "nagad" :
+    walletBkash ? "bkash" :
+    walletNagad ? "nagad" : null;
+
+  const [provider, setProvider] = useState<"bkash" | "nagad" | null>(initial);
+  useEffect(() => { if (!provider && initial) setProvider(initial); }, [initial, provider]);
+
   const [amount, setAmount] = useState<string>("");
   const [now, setNow] = useState(Date.now());
   useEffect(() => {
@@ -26,7 +40,7 @@ function WithdrawPage() {
   }, []);
 
   const mut = useMutation({
-    mutationFn: () => requestWithdraw({ data: { amount: Math.floor(Number(amount) || 0) } }),
+    mutationFn: () => requestWithdraw({ data: { amount: Math.floor(Number(amount) || 0), provider: provider ?? undefined } }),
     onSuccess: () => {
       toast.success("উইথড্র রিকোয়েস্ট পাঠানো হয়েছে! অ্যাডমিন শীঘ্রই প্রসেস করবেন।");
       setAmount("");
@@ -37,7 +51,6 @@ function WithdrawPage() {
 
   if (isLoading) return <div className="py-20 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-cyan" /></div>;
 
-  const wallet = data?.wallet;
   const mining = data?.mining;
   const balance = mining ? computeLiveBalance({
     accrued: Number(mining.accrued_amount), withdrawn: Number(mining.withdrawn_amount),
@@ -47,13 +60,15 @@ function WithdrawPage() {
     now,
   }) : 0;
   const claimable = Math.floor(balance);
-  // KYC is optional — no gating on withdraw.
+
+  const chosenWallet = provider === "bkash" ? walletBkash : provider === "nagad" ? walletNagad : null;
+  const chosenEnabled = provider === "bkash" ? payout.bkashEnabled : provider === "nagad" ? payout.nagadEnabled : false;
+  const chosenOffMsg  = provider === "bkash" ? payout.bkashOffMessage : payout.nagadOffMessage;
 
   return (
     <div className="space-y-4 pt-2">
       <PageVoice pageId="withdraw" steps={["withdraw.intro","withdraw.amount","withdraw.submit"]} />
       <div className="text-center">
-
         <ArrowDownToLine className="w-8 h-8 text-rose mx-auto" />
         <h1 className="text-2xl font-black mt-1">উইথড্র</h1>
       </div>
@@ -70,18 +85,54 @@ function WithdrawPage() {
         )}
       </div>
 
-
-      {!wallet ? (
+      {/* Provider chooser */}
+      {(!walletBkash && !walletNagad) ? (
         <Link to="/wallet" className="block rounded-2xl border border-amber/40 bg-amber/10 p-4 text-center">
-          <p className="text-sm font-bold text-amber">প্রথমে ওয়ালেট সেট করুন</p>
+          <p className="text-sm font-bold text-amber">প্রথমে ওয়ালেট নম্বর সেট করুন</p>
         </Link>
-      ) : claimable < MIN_WITHDRAW_BDT ? (
+      ) : (
+        <div className="grid grid-cols-2 gap-2">
+          <ProviderPill
+            selected={provider === "bkash"}
+            available={!!walletBkash}
+            enabled={payout.bkashEnabled}
+            label="📱 বিকাশ"
+            tone="rose"
+            wallet={walletBkash}
+            onClick={() => setProvider("bkash")}
+          />
+          <ProviderPill
+            selected={provider === "nagad"}
+            available={!!walletNagad}
+            enabled={payout.nagadEnabled}
+            label="💳 নগদ"
+            tone="amber"
+            wallet={walletNagad}
+            onClick={() => setProvider("nagad")}
+          />
+        </div>
+      )}
+
+      {provider && !chosenWallet && (
+        <Link to="/wallet" className="block rounded-2xl border border-amber/40 bg-amber/10 p-3 text-center text-sm font-bold text-amber">
+          {provider === "bkash" ? "বিকাশ" : "নগদ"} নম্বর সেট করুন
+        </Link>
+      )}
+
+      {provider && chosenWallet && !chosenEnabled && (
+        <div className="rounded-2xl border-2 border-rose/40 bg-rose/10 p-3 text-center">
+          <p className="text-sm font-bold text-rose">⚠️ {provider === "bkash" ? "বিকাশ" : "নগদ"} withdraw বর্তমানে বন্ধ</p>
+          <p className="text-[11px] text-navy/80 mt-1">{chosenOffMsg || `অনুগ্রহ করে ${provider === "bkash" ? "নগদ" : "বিকাশ"}-এ withdraw দিন`}</p>
+        </div>
+      )}
+
+      {provider && chosenWallet && chosenEnabled && claimable < MIN_WITHDRAW_BDT ? (
         <div className="rounded-2xl border border-rose/30 bg-rose/10 p-4 text-center">
           <Lock className="w-6 h-6 text-rose mx-auto mb-1" />
           <p className="text-sm font-bold text-rose">পর্যাপ্ত ব্যালেন্স নেই</p>
           <p className="text-[11px] text-muted-foreground mt-1">সর্বনিম্ন {MIN_WITHDRAW_BDT}৳ ক্লেইমযোগ্য হলে উইথড্র করা যাবে</p>
         </div>
-      ) : (
+      ) : provider && chosenWallet && chosenEnabled ? (
         <form onSubmit={(e) => { e.preventDefault(); mut.mutate(); }} className="glass rounded-2xl p-5 space-y-4" data-voice="withdraw.intro">
           <div data-voice="withdraw.amount">
             <label className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">পরিমাণ (৳ পূর্ণ টাকা)</label>
@@ -92,11 +143,11 @@ function WithdrawPage() {
             <p className="text-[10px] text-muted-foreground mt-1">সর্বনিম্ন: {MIN_WITHDRAW_BDT}৳ · সর্বোচ্চ: {claimable}৳ (শুধু পূর্ণ টাকা)</p>
           </div>
           <div className="bg-surface-2 rounded-xl p-3 text-[11px] space-y-1">
-            <p><span className="text-muted-foreground">পাঠানো হবে:</span> <span className="font-bold">{wallet.provider === "bkash" ? "বিকাশ" : "নগদ"}</span></p>
+            <p><span className="text-muted-foreground">পাঠানো হবে:</span> <span className="font-bold">{provider === "bkash" ? "বিকাশ" : "নগদ"}</span></p>
             <button type="button"
-              onClick={() => { navigator.clipboard.writeText(wallet.number); toast.success("নম্বর কপি হয়েছে"); }}
+              onClick={() => { navigator.clipboard.writeText(chosenWallet.number); toast.success("নম্বর কপি হয়েছে"); }}
               className="w-full flex items-center justify-between gap-2 mono-num bg-background/60 rounded-lg px-2 py-1.5 hover:bg-background border border-transparent hover:border-cyan/40 transition">
-              <span><span className="text-muted-foreground">নম্বর:</span> <span className="font-bold">{wallet.number}</span></span>
+              <span><span className="text-muted-foreground">নম্বর:</span> <span className="font-bold">{chosenWallet.number}</span></span>
               <Copy className="w-3 h-3 text-muted-foreground" />
             </button>
           </div>
@@ -106,9 +157,8 @@ function WithdrawPage() {
             {mut.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
             উইথড্র রিকোয়েস্ট করুন
           </button>
-
         </form>
-      )}
+      ) : null}
 
       <div>
         <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold px-1 mb-2">ইতিহাস</p>
@@ -117,7 +167,7 @@ function WithdrawPage() {
             <p className="text-center text-xs text-muted-foreground py-6">কোনো উইথড্র রিকোয়েস্ট নেই</p>
           )}
           {(history ?? []).map((w: any) => (
-            <div key={w.id} className="glass rounded-xl p-3 flex items-center justify-between">
+            <div key={w.id} className="glass rounded-xl p-3 flex items-start justify-between gap-2">
               <div className="min-w-0 flex-1 pr-2">
                 <p className="mono-num font-black">{Math.floor(Number(w.amount))} ৳</p>
                 <p className="text-[10px] text-muted-foreground">
@@ -129,6 +179,12 @@ function WithdrawPage() {
                   className="mt-1 inline-flex items-center gap-1 text-[10px] mono-num text-cyan hover:underline">
                   {w.wallet_number} <Copy className="w-2.5 h-2.5" />
                 </button>
+                {w.status === "rejected" && w.admin_note && (
+                  <div className="mt-2 rounded-lg bg-rose/10 border border-rose/30 p-2 text-[11px] text-rose leading-snug">
+                    <p className="font-black text-[9px] uppercase tracking-widest">Admin এর কারণ</p>
+                    <p className="mt-0.5">{w.admin_note}</p>
+                  </div>
+                )}
               </div>
               <span className={`text-[10px] font-black px-2 py-1 rounded-full shrink-0 ${
                 w.status === "paid" ? "bg-emerald/15 text-emerald" :
@@ -143,5 +199,34 @@ function WithdrawPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+function ProviderPill({ selected, available, enabled, label, tone, wallet, onClick }: {
+  selected: boolean; available: boolean; enabled: boolean;
+  label: string; tone: "rose" | "amber"; wallet: any; onClick: () => void;
+}) {
+  const disabled = !available;
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={`rounded-2xl p-3 border-2 text-left transition ${
+        selected
+          ? `border-${tone} bg-${tone}/10`
+          : "border-border bg-surface-2"
+      } ${disabled ? "opacity-50" : ""}`}
+    >
+      <p className={`text-sm font-black text-${tone} flex items-center justify-between`}>
+        <span>{label}</span>
+        {!enabled && <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-rose/20 text-rose">বন্ধ</span>}
+      </p>
+      {wallet ? (
+        <p className="mono-num text-[11px] text-navy/80 mt-0.5 truncate">{wallet.number}</p>
+      ) : (
+        <p className="text-[10px] text-muted-foreground mt-0.5">সেট করা নেই</p>
+      )}
+    </button>
   );
 }

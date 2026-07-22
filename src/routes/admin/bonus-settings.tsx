@@ -17,13 +17,38 @@ function BonusSettings() {
   const [rv, setRv] = useState("");
   const [rf, setRf] = useState("");
   const [fvMode, setFvMode] = useState(false);
+  // Promo
+  const [promoActive, setPromoActive] = useState(false);
+  const [promoTitle, setPromoTitle] = useState("");
+  const [promoStart, setPromoStart] = useState("");
+  const [promoEnd, setPromoEnd] = useState("");
+  const [pFv, setPFv] = useState("");
+  const [pRv, setPRv] = useState("");
+  const [pRf, setPRf] = useState("");
+  // Payout methods
+  const [bkashOn, setBkashOn] = useState(true);
+  const [nagadOn, setNagadOn] = useState(true);
+  const [bkashMsg, setBkashMsg] = useState("");
+  const [nagadMsg, setNagadMsg] = useState("");
 
   useEffect(() => {
     if (!data) return;
-    setFv(String((data as any).first_verify_bonus ?? 50));
-    setRv(String((data as any).reverify_bonus ?? 200));
-    setRf(String((data as any).referrer_bonus ?? 100));
-    setFvMode(!!(data as any).first_verify_mining_mode);
+    const d: any = data;
+    setFv(String(d.first_verify_bonus ?? 50));
+    setRv(String(d.reverify_bonus ?? 200));
+    setRf(String(d.referrer_bonus ?? 100));
+    setFvMode(!!d.first_verify_mining_mode);
+    setPromoActive(!!d.promo_active);
+    setPromoTitle(d.promo_title ?? "");
+    setPromoStart(d.promo_start_at ? d.promo_start_at.slice(0, 16) : "");
+    setPromoEnd(d.promo_end_at ? d.promo_end_at.slice(0, 16) : "");
+    setPFv(String(d.promo_first_verify_bonus ?? 100));
+    setPRv(String(d.promo_reverify_bonus ?? 400));
+    setPRf(String(d.promo_referrer_bonus ?? 150));
+    setBkashOn(d.bkash_enabled !== false);
+    setNagadOn(d.nagad_enabled !== false);
+    setBkashMsg(d.bkash_off_message ?? "");
+    setNagadMsg(d.nagad_off_message ?? "");
   }, [data]);
 
   const save = useMutation({
@@ -33,7 +58,18 @@ function BonusSettings() {
         reverify_bonus: Number(rv),
         referrer_bonus: Number(rf),
         first_verify_mining_mode: fvMode,
-      },
+        promo_active: promoActive,
+        promo_title: promoTitle || null,
+        promo_start_at: promoStart ? new Date(promoStart).toISOString() : null,
+        promo_end_at:   promoEnd   ? new Date(promoEnd).toISOString()   : null,
+        promo_first_verify_bonus: Number(pFv) || 0,
+        promo_reverify_bonus:     Number(pRv) || 0,
+        promo_referrer_bonus:     Number(pRf) || 0,
+        bkash_enabled: bkashOn,
+        nagad_enabled: nagadOn,
+        bkash_off_message: bkashMsg || null,
+        nagad_off_message: nagadMsg || null,
+      } as any,
     }),
     onSuccess: () => { toast.success("✅ বোনাস সেটিংস সেভ হয়েছে"); refetch(); },
     onError: (e: any) => toast.error(e.message),
@@ -120,6 +156,52 @@ function BonusSettings() {
           <p className="text-[10px] text-muted-foreground mt-1">Home banner এ এই টাকা দেখাবে</p>
         </div>
 
+        {/* 2X Promo window */}
+        <div className={`rounded-xl border-2 p-3 space-y-2 ${promoActive ? "border-rose bg-rose/5" : "border-border bg-surface-2"}`}>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-[11px] font-black text-rose">🔥 2X Bonus Promo</p>
+            <button
+              type="button"
+              onClick={() => setPromoActive(!promoActive)}
+              className={`w-14 h-7 rounded-full relative transition ${promoActive ? "bg-rose" : "bg-surface-2 border border-border"}`}>
+              <span className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow transition-all ${promoActive ? "left-8" : "left-1"}`} />
+            </button>
+          </div>
+          <input value={promoTitle} onChange={(e) => setPromoTitle(e.target.value)}
+            placeholder="Banner title (e.g. 🎊 2X বোনাস অফার!)"
+            className="w-full px-3 py-2 rounded-lg bg-background border border-border text-xs outline-none focus:border-rose" />
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-[9px] text-muted-foreground font-bold">Start</label>
+              <input type="datetime-local" value={promoStart} onChange={(e) => setPromoStart(e.target.value)}
+                className="w-full px-2 py-1.5 rounded-lg bg-background border border-border text-xs outline-none" />
+            </div>
+            <div>
+              <label className="text-[9px] text-muted-foreground font-bold">End</label>
+              <input type="datetime-local" value={promoEnd} onChange={(e) => setPromoEnd(e.target.value)}
+                className="w-full px-2 py-1.5 rounded-lg bg-background border border-border text-xs outline-none" />
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            <PromoNum label="First" value={pFv} onChange={setPFv} />
+            <PromoNum label="Re-vf"  value={pRv} onChange={setPRv} />
+            <PromoNum label="Refer" value={pRf} onChange={setPRf} />
+          </div>
+          <p className="text-[9px] text-muted-foreground leading-snug">
+            Active থাকলে Start–End সময়ের মধ্যে এই টাকা কাজ করবে, বাকি সময়ে base rate চালু।
+          </p>
+        </div>
+
+        {/* Payout methods */}
+        <div className="rounded-xl border-2 border-emerald/40 bg-emerald/5 p-3 space-y-2">
+          <p className="text-[11px] font-black text-emerald">💳 Payout methods</p>
+          <PayoutRow name="বিকাশ" on={bkashOn} setOn={setBkashOn} msg={bkashMsg} setMsg={setBkashMsg} />
+          <PayoutRow name="নগদ"  on={nagadOn} setOn={setNagadOn} msg={nagadMsg} setMsg={setNagadMsg} />
+          <p className="text-[9px] text-muted-foreground">
+            কোনো method OFF করলে user সেখান দিয়ে withdraw দিতে পারবে না, message টা তাকে দেখানো হবে।
+          </p>
+        </div>
+
         <button
           onClick={() => save.mutate()}
           disabled={save.isPending}
@@ -151,3 +233,35 @@ function Field({ label, hint, value, onChange, color }: {
     </div>
   );
 }
+
+function PromoNum({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  return (
+    <div className="rounded-lg bg-background border border-border p-2">
+      <p className="text-[9px] uppercase text-rose font-black">{label}</p>
+      <input type="number" value={value} onChange={(e) => onChange(e.target.value)}
+        className="w-full mt-0.5 bg-transparent text-base font-black mono-num outline-none" />
+    </div>
+  );
+}
+
+function PayoutRow({ name, on, setOn, msg, setMsg }: {
+  name: string; on: boolean; setOn: (v: boolean) => void; msg: string; setMsg: (v: string) => void;
+}) {
+  return (
+    <div className="rounded-lg bg-background p-2 space-y-1 border border-border">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-black">{name}</span>
+        <button type="button" onClick={() => setOn(!on)}
+          className={`w-12 h-6 rounded-full relative transition ${on ? "bg-emerald" : "bg-rose/60"}`}>
+          <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all ${on ? "left-6" : "left-1"}`} />
+        </button>
+      </div>
+      {!on && (
+        <input value={msg} onChange={(e) => setMsg(e.target.value)}
+          placeholder={`${name} বন্ধ থাকলে user কে যে message দেখাবে`}
+          className="w-full px-2 py-1.5 rounded-lg bg-surface-2 border border-border text-[11px] outline-none focus:border-rose" />
+      )}
+    </div>
+  );
+}
+

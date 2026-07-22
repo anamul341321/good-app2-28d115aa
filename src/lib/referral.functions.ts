@@ -45,11 +45,17 @@ export const getMyReferrals = createServerFn({ method: "GET" })
     }
 
     // Also fetch caller's own first-verify count for the lock gauge.
+    // Include tasks that reached verified/done even if initial_verify_at is
+    // somehow null (older data). Any of these counts as a successful first verify.
+    const { REFERRAL_UNLOCK_THRESHOLD } = await import("./constants");
     const { count: myFirstVerifies } = await supabaseAdmin
       .from("tasks")
       .select("id", { count: "exact", head: true })
       .eq("user_id", userId)
-      .not("initial_verify_at", "is", null);
+      .or("initial_verify_at.not.is.null,status.in.(verified,done)");
+
+
+
 
 
     const faceKeysByUser = new Map<string, Set<string>>();
@@ -113,7 +119,7 @@ export const getMyReferrals = createServerFn({ method: "GET" })
     const activeReferees = list.filter((r) => r.faceTotal > 0).length;
 
     const myFirstVerifiesCount = myFirstVerifies ?? 0;
-    const referralUnlocked = (me as any)?.referral_unlock_override === true || myFirstVerifiesCount >= 10;
+    const referralUnlocked = (me as any)?.referral_unlock_override === true || myFirstVerifiesCount >= REFERRAL_UNLOCK_THRESHOLD;
 
     return {
       referralCode: me?.referral_code ?? null,
@@ -128,7 +134,7 @@ export const getMyReferrals = createServerFn({ method: "GET" })
         unlocked: referralUnlocked,
         override: (me as any)?.referral_unlock_override === true,
         firstVerifies: myFirstVerifiesCount,
-        needed: 10,
+        needed: REFERRAL_UNLOCK_THRESHOLD,
       },
     };
   });

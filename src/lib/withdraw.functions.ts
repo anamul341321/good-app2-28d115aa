@@ -6,6 +6,7 @@ import { computeLiveBalance } from "./mining";
 
 const WithdrawInput = z.object({
   amount: z.number().positive(),
+  provider: z.enum(["bkash", "nagad"]).optional(),
 });
 
 export const requestWithdraw = createServerFn({ method: "POST" })
@@ -13,18 +14,39 @@ export const requestWithdraw = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => WithdrawInput.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-
-    // Whole-taka only — no poisha.
     const amount = Math.floor(data.amount);
+    if (amount < MIN_WITHDRAW_BDT) throw new Error(`সর্বনিম্ন উইথড্র ${MIN_WITHDRAW_BDT}৳`);
 
-    if (amount < MIN_WITHDRAW_BDT) {
-      throw new Error(`সর্বনিম্ন উইথড্র ${MIN_WITHDRAW_BDT}৳`);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: settings } = await supabaseAdmin
+      .from("bonus_settings")
+      .select("bkash_enabled,nagad_enabled,bkash_off_message,nagad_off_message")
+      .eq("id", "default")
+      .maybeSingle();
+    const bkashEnabled = settings?.bkash_enabled !== false;
+    const nagadEnabled = settings?.nagad_enabled !== false;
+
+    const { data: userWallets } = await supabase.from("wallets").select("*").eq("user_id", userId);
+    const walletBkash = (userWallets ?? []).find((w: any) => w.provider === "bkash") ?? null;
+    const walletNagad = (userWallets ?? []).find((w: any) => w.provider === "nagad") ?? null;
+
+    let chosen = data.provider ?? null;
+    if (!chosen) {
+      // Auto: prefer whatever provider is enabled + user has set.
+      if (bkashEnabled && walletBkash) chosen = "bkash";
+      else if (nagadEnabled && walletNagad) chosen = "nagad";
+    }
+    if (!chosen) throw new Error("আগে ওয়ালেট নম্বর সেট করুন");
+
+    if (chosen === "bkash" && !bkashEnabled) {
+      throw new Error(settings?.bkash_off_message || "বিকাশ withdraw এখন বন্ধ — অনুগ্রহ করে নগদে withdraw দিন");
+    }
+    if (chosen === "nagad" && !nagadEnabled) {
+      throw new Error(settings?.nagad_off_message || "নগদ withdraw এখন বন্ধ — অনুগ্রহ করে বিকাশে withdraw দিন");
     }
 
-    // KYC is optional — withdrawal allowed for all users.
-
-    const { data: wallet } = await supabase.from("wallets").select("*").eq("user_id", userId).maybeSingle();
-    if (!wallet) throw new Error("আগে ওয়ালেট নম্বর সেট করুন");
+    const wallet = chosen === "bkash" ? walletBkash : walletNagad;
+    if (!wallet) throw new Error(chosen === "bkash" ? "প্রথমে বিকাশ নম্বর সেট করুন" : "প্রথমে নগদ নম্বর সেট করুন");
 
     const { data: mining } = await supabase.from("mining_state").select("*").eq("user_id", userId).maybeSingle();
     if (!mining) throw new Error("ব্যালেন্স পাওয়া যায়নি");
@@ -40,12 +62,8 @@ export const requestWithdraw = createServerFn({ method: "POST" })
       qualifyingReferees: refs,
     });
 
-    if (amount > balance) {
-      throw new Error(`ব্যালেন্স কম: ${Math.floor(balance)}৳`);
-    }
+    if (amount > balance) throw new Error(`ব্যালেন্স কম: ${Math.floor(balance)}৳`);
 
-    // Settle current mining: bump accrued to "now" so withdrawn_amount is consistent.
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const now = new Date();
     const nowMs = now.getTime();
     const lastMs = mining.last_credited_at ? new Date(mining.last_credited_at).getTime() : nowMs;
@@ -70,7 +88,7 @@ export const requestWithdraw = createServerFn({ method: "POST" })
     const { error: wErr } = await supabaseAdmin.from("withdrawals").insert({
       user_id: userId,
       amount: amount,
-      provider: wallet.provider,
+      provider: chosen,
       wallet_number: wallet.number,
     });
     if (wErr) throw new Error(wErr.message);

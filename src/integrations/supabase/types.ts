@@ -37,25 +37,58 @@ export type Database = {
       }
       bonus_settings: {
         Row: {
+          bkash_enabled: boolean
+          bkash_off_message: string | null
           first_verify_bonus: number
           first_verify_mining_mode: boolean
           id: string
+          nagad_enabled: boolean
+          nagad_off_message: string | null
+          promo_active: boolean
+          promo_end_at: string | null
+          promo_first_verify_bonus: number | null
+          promo_referrer_bonus: number | null
+          promo_reverify_bonus: number | null
+          promo_start_at: string | null
+          promo_title: string | null
           referrer_bonus: number
           reverify_bonus: number
           updated_at: string
         }
         Insert: {
+          bkash_enabled?: boolean
+          bkash_off_message?: string | null
           first_verify_bonus?: number
           first_verify_mining_mode?: boolean
           id?: string
+          nagad_enabled?: boolean
+          nagad_off_message?: string | null
+          promo_active?: boolean
+          promo_end_at?: string | null
+          promo_first_verify_bonus?: number | null
+          promo_referrer_bonus?: number | null
+          promo_reverify_bonus?: number | null
+          promo_start_at?: string | null
+          promo_title?: string | null
           referrer_bonus?: number
           reverify_bonus?: number
           updated_at?: string
         }
         Update: {
+          bkash_enabled?: boolean
+          bkash_off_message?: string | null
           first_verify_bonus?: number
           first_verify_mining_mode?: boolean
           id?: string
+          nagad_enabled?: boolean
+          nagad_off_message?: string | null
+          promo_active?: boolean
+          promo_end_at?: string | null
+          promo_first_verify_bonus?: number | null
+          promo_referrer_bonus?: number | null
+          promo_reverify_bonus?: number | null
+          promo_start_at?: string | null
+          promo_title?: string | null
           referrer_bonus?: number
           reverify_bonus?: number
           updated_at?: string
@@ -198,6 +231,7 @@ export type Database = {
           referral_unlock_override: boolean
           referred_by: string | null
           thana_upazila: string | null
+          uid_seq: number | null
           village_area: string | null
         }
         Insert: {
@@ -226,6 +260,7 @@ export type Database = {
           referral_unlock_override?: boolean
           referred_by?: string | null
           thana_upazila?: string | null
+          uid_seq?: number | null
           village_area?: string | null
         }
         Update: {
@@ -254,6 +289,7 @@ export type Database = {
           referral_unlock_override?: boolean
           referred_by?: string | null
           thana_upazila?: string | null
+          uid_seq?: number | null
           village_area?: string | null
         }
         Relationships: [
@@ -419,7 +455,7 @@ export type Database = {
           {
             foreignKeyName: "wallets_user_id_profiles_fkey"
             columns: ["user_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
