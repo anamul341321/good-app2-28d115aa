@@ -1,68 +1,67 @@
-# Welcome Bonus + Camera/Gallery UX
+# 2X Bonus Promo + Fixes
 
-## 1. Bonus system (new users only, max 200৳)
+## 1. 2X Bonus Promo (22/07/2026 → 11/08/2026)
 
-- **Bonus 1 — First Verify (100৳):** user er 10 ta slot e first face verify complete hole claim button ujjol hobe. Claim korle 100৳ bonus balance a jog hobe.
-- **Bonus 2 — Re-verify (100৳):** oi 10 ta slot re-verify complete hole 2nd claim ujjol hobe. Claim = 100৳ + mining shuru (jodi na age hoye thake).
-- **Mining rule change:** First verify shudhu bonus dey, mining shuru hoy NA. Mining shuru hobe re-verify complete holei (existing `settle_mining` logic already re-verify (done) count kore — kintu ekhon requirement holo re-verify hote hobe, first verify holei nai). Actually current logic verified+done duitai count kore. Amar `settle_mining` update korte hobe jate shudhu `done` (re-verified) slot mining count e jai — noile "first verify korlei mining" hoye jabe.
-- **Withdraw rule:** Registration er sathe sathe 100৳ signup bonus dewa hobe NA — user ke first 10 verify complete korte hobe tar por bonus claim. (User er kotha: "registration korlei 100tk bonus … withdraw korte gele 10 ta slot complete korte hobe first verification korlei hobe" — mane bonus withdraw korar age 10 first-verify lagbe. Sohoj implementation: bonus grant hoy ONLY after 10 first verifies, tai withdraw rule automatic.)
+- **bonus_settings** e notun columns:
+  - `promo_active boolean default false`
+  - `promo_start_at timestamptz`
+  - `promo_end_at timestamptz`
+  - `promo_first_verify_bonus`, `promo_reverify_bonus`, `promo_referrer_bonus` (2X rates)
+- Migration e values set kori: promo_active=true, start=2026-07-22, end=2026-08-11, 100/400/150.
+- `bonus.functions.ts` — jokhon `now()` between promo window ebong `promo_active=true`, tokhon promo rates use kore credit. Otherwise regular rates (50/200/100).
+- Admin Bonus Settings page e promo toggle + date + 2X amount input.
 
-### Schema
-`profiles` table e notun columns:
-- `bonus_first_verify_claimed boolean default false`
-- `bonus_reverify_claimed boolean default false`
-- `bonus_balance numeric default 0` (withdrawable, mining balance er sathe add hobe)
+## 2. Home Banner (premium, red/gold, countdown)
 
-Or alternative: `mining_state.accrued_amount` e direct add kora — cleaner, existing withdraw flow (which reads accrued − withdrawn) automatically supported. **Chose this approach** — just add 2 boolean flags on profiles, credit accrued_amount on claim.
+- Notun component `PromoBanner.tsx` — dashboard load hole promo active thakle top e dekhabe.
+- Design: red gradient + gold shimmer, "🎊 ৫০,০০০+ User পূর্তি 2X বোনাস অফার" title.
+- Live countdown timer (days:hours:min:sec) until `promo_end_at`.
+- 3 ta row: প্রথম ১০ Slot / Re-verify / প্রতি Referral — pratita te `~~আগে: X৳~~ → এখন: Y৳` strike-through style.
+- Promo shesh hole banner auto hide, regular 350৳ banner firbe.
 
-### Server functions (`src/lib/bonus.functions.ts`)
-- `getBonusStatus()` → returns `{ firstVerifyCount, reverifyCount, firstClaimable, reverifyClaimable, firstClaimed, reverifyClaimed }`.
-- `claimFirstVerifyBonus()` → gate: 10 first-verifies done AND !claimed → add 100 to accrued, set flag.
-- `claimReverifyBonus()` → gate: 10 re-verifies done AND !claimed → add 100 to accrued, set flag.
+## 3. Referral unlock: 10 → 5
 
-`dashboard.functions.ts` e bonus status include korbo jate home page instantly dekhate pare.
+- `src/lib/constants.ts` e `REFERRAL_UNLOCK_THRESHOLD = 5`.
+- `auth.functions.ts`, `referral.functions.ts`, `referral.tsx` — 10 → constant.
+- Bengali text update: "৫টা প্রথম verify complete korun".
 
-### Mining rule fix
-`settle_mining` SQL function e `status IN ('verified','done')` → `status = 'done'` change korte hobe (3 jaigay). Migration lagbe.
+## 4. Referral count fix
 
-## 2. UI — Welcome banner + claim cards
+- Currently `firstVerifies` count kore `initial_verify_at || status=verified/done` — attempt na, successful first-verify hisebe theek ache. Kintu user report korche 7-এর জায়gay 5. Investigate: `initial_verify_at` shob task e set hocche kina check kore, `slotFaces` er bodole `firstVerifies` show kori referral card e — "কতটা face verify করেছে" = successful first verifies only.
+- Referral page + admin leaderboard duitai `firstVerifies` value dekhabe, `slotFaces`/`backupFaces`/`faceTotal` remove (attempt count).
 
-**Home page (`src/routes/_authenticated/home.tsx`):**
-- Jodi kono ekta bonus unclaimed → top e boro premium animated banner: "🎁 ২০০৳ Welcome Bonus" gradient + shimmer, ki korle koto pabe bujhiye.
-- Niche 2 ta claim card side-by-side:
-  1. "First Verify Bonus" — progress `X/10`, disabled/gray jotokkhon X<10, ujjol pulsing gradient jokhon 10/10, claim button.
-  2. "Re-verify Bonus" — same shape.
-- Claim hole card "✅ পাওয়া গেছে" state e chole jabe.
-- Sob kichu claim hole banner hide.
+## 5. UID sequential fix (1, 2, 3…)
 
-CSS: `welcome-banner` shimmer + pulse animations `src/styles.css` e add.
+- Problem: current `uid` derive hocche by ordering profiles by created_at + rank. Kintu client side/search e mismatch. Fix:
+  - Migration: `profiles.uid_seq bigint unique` column, backfill by created_at ASC.
+  - Trigger on new profile insert: `uid_seq = coalesce(max, 0)+1`.
+- Admin search e `uid_seq` diye numeric match.
+- User dashboard/profile e UID dekhabe.
 
-## 3. FaceCapture — camera/gallery choice up-front
+## 6. Admin: "10 ta slot complete" alada box
 
-Currently gallery button camera error time e ba video er niche dekhay — user er onek somoy camera permission jhamela hoy.
+- `users.tsx` e ekta notun tab / accordion "🏆 ১০ Slot Complete (N)" — list users with ≥10 done+whitelisted tasks. Click → user detail.
 
-Fix: `FaceCapture.tsx` re-organize:
-- Component mount hole ekta **choice screen** dekhabe first: 2 ta boro button
-  - 📸 "ক্যামেরা দিয়ে তুলুন"
-  - 🖼️ "গ্যালারি থেকে আপলোড করুন"
-- Camera choose korle tokhonei `getUserMedia` call hobe (immediate camera prompt jate browser ke chorche allow chai).
-- Gallery choose korle file picker khulbe.
-- Camera fail korle inline error + "গ্যালারি ব্যবহার করুন" fallback button.
-- Retry button same choice screen e firiye anbe.
+## 7. Wallet: Bkash + Nagad both
 
-Ei change reverify + task both flow e apply hobe (same component).
+- `wallets` table e already `bkash_number`, `nagad_number` type flag ache? Check. If not, notun columns `bkash_number text`, `nagad_number text` add kori.
+- Wallet page e 2 ta input (Bkash + Nagad) — user duitai set korte pare.
+- Withdraw page e user choose korbe kon method e.
+- Admin er `bonus_settings` e `bkash_enabled boolean`, `nagad_enabled boolean` toggle. Ekta off thakle withdraw page e oi option disabled + Bengali message "বর্তমানে বিকাশ বন্ধ, নগদে withdraw দিন"।
 
-## Files to touch
-- **New:** `src/lib/bonus.functions.ts`
-- **Migration:** add 2 columns to `profiles`, update `settle_mining` (verified→done for mining count)
-- **Edit:** `src/components/FaceCapture.tsx` (choice-first UX)
-- **Edit:** `src/routes/_authenticated/home.tsx` (banner + claim cards)
-- **Edit:** `src/lib/dashboard.functions.ts` (include bonus status)
-- **Edit:** `src/styles.css` (banner/claim animations)
+## 8. Withdraw rejection message
 
-## Notes for user (plain Bangla)
-- Registration er sathe sathe 100৳ dile spam account ashbe; ei design e 10 first-verify complete korlei bonus unlock — safer. Withdraw automatic block kaj korbe karon balance thakbei na.
-- Mining shudhu re-verify korle shuru hobe — first verify shudhu bonus er jonno.
-- Camera permission fail hole gallery upload option agei dekhabe.
+- `withdrawals` table e `admin_note text` column (jodi na thake).
+- Admin reject korar somoy ekta textarea diye reason likhbe.
+- User er withdraw history / dashboard e rejected withdraw e notice box e Bengali reason dekhabe.
 
-Confirm korle implement kori.
+## Files
+
+- Migration: bonus_settings promo columns + values, profiles.uid_seq + trigger + backfill, wallets bkash/nagad columns, withdrawals.admin_note, bonus_settings.bkash_enabled/nagad_enabled
+- Edit: `src/lib/bonus.functions.ts`, `src/lib/constants.ts`, `src/lib/auth.functions.ts`, `src/lib/referral.functions.ts`, `src/lib/admin.functions.ts`, `src/lib/wallet.functions.ts`, `src/lib/withdraw.functions.ts`
+- Edit: `src/routes/_authenticated/home.tsx` (add PromoBanner), `referral.tsx`, `wallet.tsx`, `withdraw.tsx`, `profile.tsx`
+- Edit: `src/routes/admin/bonus-settings.tsx` (promo + method toggles), `admin/users.tsx` (10+ box + uid search), `admin/withdrawals.tsx` (reject with note), `admin/user.$userId.tsx`
+- New: `src/components/PromoBanner.tsx`
+- Edit: `src/styles.css` (promo animations)
+
+Confirm korle sob ekshathe implement kori.
