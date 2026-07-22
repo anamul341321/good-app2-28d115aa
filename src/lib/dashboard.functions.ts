@@ -8,18 +8,17 @@ export const getDashboard = createServerFn({ method: "GET" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const TASK_COLS = "id,slot,status,face_label,face_photo_url,wallet_address,initial_verify_at,reverify_due_at,done_at,whitelist_ok,last_whitelist_check_at,created_at,user_id";
-    const [{ data: profile }, tasksResult, { data: mining }, { data: wallet }, { data: roles }, { count: pendingCount }] =
+    const [{ data: profile }, tasksResult, { data: mining }, { data: walletList }, { data: roles }, { count: pendingCount }, { data: bonusSettings }] =
       await Promise.all([
         supabase.from("profiles").select("*").eq("id", userId).maybeSingle(),
         supabaseAdmin.from("tasks").select(TASK_COLS).eq("user_id", userId).order("slot"),
         supabase.from("mining_state").select("*").eq("user_id", userId).maybeSingle(),
-        supabase.from("wallets").select("*").eq("user_id", userId).maybeSingle(),
+        supabase.from("wallets").select("*").eq("user_id", userId),
         supabase.from("user_roles").select("role").eq("user_id", userId),
         supabaseAdmin.from("unverified_attempts").select("id", { count: "exact", head: true })
           .eq("user_id", userId).eq("kind", "first_verify"),
+        supabaseAdmin.from("bonus_settings").select("bkash_enabled,nagad_enabled,bkash_off_message,nagad_off_message").eq("id", "default").maybeSingle(),
       ]);
-
-    const bonusReverifyClaimed = !!(profile as any)?.bonus_reverify_claimed;
 
     if (tasksResult.error) throw new Error(tasksResult.error.message);
 
@@ -61,7 +60,6 @@ export const getDashboard = createServerFn({ method: "GET" })
     ).length;
     const reverifyCount = (tasksWithPhotos ?? []).filter((t: any) => t.status === "done").length;
 
-    // Auto-settle: 50৳ self + 100৳ referrer on 10 first-verifies, 200৳ on 10 re-verifies.
     const { settleWelcomeBonuses } = await import("./bonus.functions");
     const bonus = await settleWelcomeBonuses(
       supabaseAdmin,
@@ -70,7 +68,6 @@ export const getDashboard = createServerFn({ method: "GET" })
       reverifyCount,
     );
 
-    // Refetch mining if any bonus just paid (accrued changed)
     let miningFinal = mining;
     if (bonus.userReverifyPaid || bonus.selfFirstPaid) {
       const { data: fresh } = await supabase.from("mining_state").select("*").eq("user_id", userId).maybeSingle();
@@ -84,11 +81,25 @@ export const getDashboard = createServerFn({ method: "GET" })
       .eq("status", "pending")
       .order("created_at", { ascending: false });
 
+    const wallets = walletList ?? [];
+    const walletBkash = wallets.find((w: any) => w.provider === "bkash") ?? null;
+    const walletNagad = wallets.find((w: any) => w.provider === "nagad") ?? null;
+    const primaryWallet = walletBkash ?? walletNagad ?? null;
+
     return {
       profile,
       tasks: tasksWithPhotos,
       mining: miningFinal,
-      wallet,
+      wallet: primaryWallet,
+      wallets,
+      walletBkash,
+      walletNagad,
+      payoutSettings: {
+        bkashEnabled: bonusSettings?.bkash_enabled !== false,
+        nagadEnabled: bonusSettings?.nagad_enabled !== false,
+        bkashOffMessage: bonusSettings?.bkash_off_message ?? null,
+        nagadOffMessage: bonusSettings?.nagad_off_message ?? null,
+      },
       isAdmin,
       pendingSubmits: pendingCount ?? 0,
       vouchers: pendingVouchers ?? [],
@@ -103,6 +114,7 @@ export const getDashboard = createServerFn({ method: "GET" })
         userAmount: bonus.userAmount,
         totalAmount: bonus.selfFirstAmount + bonus.referrerAmount + bonus.userAmount,
         hasReferrer: !!(profile as any)?.referred_by,
+        rates: bonus.rates,
       },
     };
   });
