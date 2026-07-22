@@ -12,6 +12,7 @@ import { AnnouncementTicker } from "@/components/AnnouncementTicker";
 import { TourReplayButton } from "@/components/GuidedTour";
 import { PageVoice } from "@/components/PageVoice";
 import { VideoTutorialButton } from "@/components/VideoTutorialButton";
+import { PromoBanner } from "@/components/PromoBanner";
 
 import { toast } from "sonner";
 
@@ -154,6 +155,9 @@ function HomePage() {
         displayTaskCount={submittedCount}
       />
       </div>
+
+      {/* 2X Bonus promo banner — auto-hidden when promo window is closed */}
+      <PromoBanner rates={(data as any)?.bonus?.rates ?? null} />
 
       {/* Premium referral-bonus banner (new users + referrers). Auto-instant payout. */}
       {(() => {
