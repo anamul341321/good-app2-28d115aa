@@ -155,7 +155,10 @@ export const adminListUsers = createServerFn({ method: "GET" }).handler(async ()
     const verified = userTasks.filter((t) => t.status === "verified").length;
     const m = (minings ?? []).find((x) => x.user_id === p.id);
     const w = (wallets ?? []).find((x) => x.user_id === p.id);
-    const faceTotal = faceKeysByUser.get(p.id)?.size ?? 0;
+    // Leaderboards count only successful GoodDollar first-verifications.
+    // Generated/failed backup attempts are kept for recovery, but must not
+    // inflate a user's successful face count.
+    const faceTotal = firstVerifiesByUser.get(p.id) ?? 0;
     const slotFaces = slotFacesByUser.get(p.id) ?? 0;
     const attemptFaces = attemptFacesByUser.get(p.id) ?? 0;
     const firstVerifies = firstVerifiesByUser.get(p.id) ?? 0;
@@ -216,10 +219,7 @@ export const adminUserDetail = createServerFn({ method: "POST" })
         }
         return rows;
       };
-      const [refTasks, refAttempts] = await Promise.all([
-        fetchReferralRows("tasks", "id, user_id, status, wallet_address, face_photo_url"),
-        fetchReferralRows("unverified_attempts", "id, user_id, wallet_address, face_photo_url"),
-      ]);
+      const refTasks = await fetchReferralRows("tasks", "id, user_id, status, wallet_address, face_photo_url");
       const refFaceKeys = new Map<string, Set<string>>();
       const refSlotFaces = new Map<string, number>();
       const refAttemptFaces = new Map<string, number>();
@@ -238,14 +238,9 @@ export const adminUserDetail = createServerFn({ method: "POST" })
         if (t.status === "done") refDone.set(t.user_id, (refDone.get(t.user_id) ?? 0) + 1);
         if (t.status === "verified") refVerified.set(t.user_id, (refVerified.get(t.user_id) ?? 0) + 1);
       }
-      for (const a of refAttempts ?? []) {
-        if (!a.face_photo_url && !a.wallet_address) continue;
-        addRefFace(a.user_id, a.wallet_address ? `wallet:${a.wallet_address}` : `attempt:${a.id}`);
-        refAttemptFaces.set(a.user_id, (refAttemptFaces.get(a.user_id) ?? 0) + 1);
-      }
       referralRows = (referrals.data ?? []).map((r) => ({
         ...r,
-        faceTotal: refFaceKeys.get(r.id)?.size ?? 0,
+        faceTotal: (refDone.get(r.id) ?? 0) + (refVerified.get(r.id) ?? 0),
         slotFaces: refSlotFaces.get(r.id) ?? 0,
         attemptFaces: refAttemptFaces.get(r.id) ?? 0,
         done: refDone.get(r.id) ?? 0,
@@ -280,7 +275,7 @@ export const adminUserDetail = createServerFn({ method: "POST" })
         override: (profile.data as any)?.referral_unlock_override === true,
         firstVerifies: taskRows.filter((t) => t.initial_verify_at || t.status === "verified" || t.status === "done").length,
         unlocked: (profile.data as any)?.referral_unlock_override === true
-          || taskRows.filter((t) => t.initial_verify_at || t.status === "verified" || t.status === "done").length >= 10,
+          || taskRows.filter((t) => t.initial_verify_at || t.status === "verified" || t.status === "done").length >= 5,
       },
     };
   });
