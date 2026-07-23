@@ -23,7 +23,7 @@ function PublicCardPage() {
   );
 
   const p = data.profile;
-  const uidCompact = String(p.id).replace(/-/g, "").slice(0, 12).toUpperCase();
+  const uidCompact = String((p as any).uid_seq ?? p.id);
   const cardUrl = typeof window !== "undefined" ? window.location.href : "";
 
   return (
@@ -65,7 +65,7 @@ function PublicCardPage() {
               <p><span className="text-slate-500">জেলা:</span> {p.district ?? "-"}</p>
               <p><span className="text-slate-500">যোগদান:</span> {new Date(p.created_at).toLocaleDateString("bn-BD")}</p>
               <p className="mono-num tracking-widest text-[11px] pt-1 text-rose-700">
-                UID {uidCompact.match(/.{1,4}/g)?.join(" ")}
+                 UID {uidCompact}
               </p>
               {(p as any).kyc_verified && (
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-100 text-sky-700 text-[10px] font-black">

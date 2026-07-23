@@ -101,9 +101,8 @@ function ProfilePage() {
   }
 
   const p: any = data.profile!;
-  const uidFull = String(p.id);
-  const uid = uidFull.replace(/-/g, "").slice(0, 12).toUpperCase();
-  const cardUrl = typeof window !== "undefined" ? `${window.location.origin}/card/${uidFull}` : `/card/${uidFull}`;
+  const uid = String(p.uid_seq ?? p.id);
+  const cardUrl = typeof window !== "undefined" ? `${window.location.origin}/card/${uid}` : `/card/${uid}`;
   const mining = data.mining;
   const balance = mining ? computeLiveBalance({
     accrued: Number(mining.accrued_amount), withdrawn: Number(mining.withdrawn_amount),

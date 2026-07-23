@@ -21,7 +21,7 @@ export const Route = createFileRoute("/api/public/whitelist-recheck")({
         if (got !== secret) return new Response("forbidden", { status: 401 });
         const { data: tasks, error } = await supabaseAdmin
           .from("tasks")
-          .select("id, user_id, wallet_address, status, whitelist_ok, reverify_due_at")
+          .select("id, user_id, wallet_address, status, whitelist_ok, initial_verify_at")
           .in("status", ["verified", "done"])
           .not("wallet_address", "is", null);
         if (error) return Response.json({ error: error.message }, { status: 500 });
@@ -31,9 +31,10 @@ export const Route = createFileRoute("/api/public/whitelist-recheck")({
         let checked = 0, flipped = 0, restored = 0, autoReverified = 0;
         const now = new Date();
         const nowIso = now.toISOString();
-        // reverify_due_at = first_verify + 4 days, so 6 days elapsed since
-        // first-verify = due + 2 days.
-        const AUTO_MS = 2 * 24 * 60 * 60 * 1000;
+        // Always measure from the original first verification. reverify_due_at
+        // is changed when whitelist is lost, so it cannot be used for the
+        // six-day auto re-verify rule.
+        const AUTO_REVERIFY_MS = 6 * 24 * 60 * 60 * 1000;
         const CONCURRENCY = 15;
 
         for (let i = 0; i < list.length; i += CONCURRENCY) {
@@ -50,8 +51,8 @@ export const Route = createFileRoute("/api/public/whitelist-recheck")({
             const eligibleAuto =
               ok === true &&
               t.status === "verified" &&
-              t.reverify_due_at &&
-              now.getTime() - new Date(t.reverify_due_at).getTime() >= AUTO_MS;
+              t.initial_verify_at &&
+              now.getTime() - new Date(t.initial_verify_at).getTime() >= AUTO_REVERIFY_MS;
 
             if (eligibleAuto) {
               await supabaseAdmin.from("tasks").update({
@@ -65,7 +66,9 @@ export const Route = createFileRoute("/api/public/whitelist-recheck")({
               continue;
             }
 
-            if (!ok && (t.whitelist_ok ?? true)) {
+            // A completed re-verify is not permanent: if GoodDollar drops the
+            // wallet again, move it back to the re-verify queue immediately.
+            if (!ok && (t.status !== "verified" || t.whitelist_ok !== false)) {
               await supabaseAdmin.from("tasks").update({
                 whitelist_ok: false,
                 last_whitelist_check_at: nowIso,
