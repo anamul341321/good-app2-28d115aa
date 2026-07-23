@@ -30,6 +30,7 @@ function AdminUsers() {
       || (r.profile.email ?? "").toLowerCase().includes(s)
       || (r.profile.id ?? "").toLowerCase().includes(s)
       || (r.profile.referral_code ?? "").toLowerCase().includes(s)
+      || String(r.profile.uid_seq ?? "") === s
       || String(r.serial ?? "") === s
       || String(r.serial ?? "").includes(s);
   });
@@ -154,7 +155,7 @@ function AdminUsers() {
               </span>
             </div>
             <p className="text-[10px] text-muted-foreground px-1 mb-3">
-              GoodDollar face verification/backup count অনুযায়ী serial — user এ click করলে slot, face, referral, voucher সব control করা যাবে।
+                শুধুমাত্র সফল GoodDollar face verification অনুযায়ী serial — failed/backup key এই হিসাবে ধরা হয় না।
             </p>
             {verifiedRows.length === 0 && (
               <div className="glass rounded-xl p-4 text-center text-[11px] text-muted-foreground">
@@ -239,6 +240,7 @@ function ReferrerLeaderboard({ rows, q }: { rows: any[]; q: string }) {
     return (r.name ?? "").toLowerCase().includes(s)
       || (r.phone ?? "").toLowerCase().includes(s)
       || (r.referralCode ?? "").toLowerCase().includes(s)
+      || String(r.uid ?? "") === s
       || (r.userId ?? "").toLowerCase().includes(s);
   });
   return (
@@ -252,7 +254,7 @@ function ReferrerLeaderboard({ rows, q }: { rows: any[]; q: string }) {
         </span>
       </div>
       <p className="text-[10px] text-muted-foreground px-1 mb-3">
-        কার reffer থেকে মোট কত account এসেছে এবং ওই referred account গুলো মোট কত GoodDollar face verification/backup করেছে।
+        কার referral থেকে কতজন রেজিস্টার করেছে এবং তারা মোট কতটি সফল GoodDollar face verification করেছে।
       </p>
       {filtered.length === 0 && (
         <div className="glass rounded-xl p-4 text-center text-[11px] text-muted-foreground">
@@ -278,14 +280,14 @@ function ReferrerLeaderboard({ rows, q }: { rows: any[]; q: string }) {
             <div className="min-w-0 flex-1">
               <p className="font-bold text-sm truncate">{r.name}</p>
               <p className="text-[10px] text-muted-foreground truncate mono-num">
-                {r.phone} {r.referralCode && <span className="ml-1 text-violet">· {r.referralCode}</span>}
+                UID {r.uid || "—"} · {r.phone} {r.referralCode && <span className="ml-1 text-violet">· {r.referralCode}</span>}
               </p>
               <div className="flex flex-wrap gap-1 mt-1.5">
                 <span className="px-2 py-0.5 rounded-full bg-cyan/15 text-cyan font-black text-[10px] mono-num">
-                  👥 {r.refereeCount} account
+                  👥 {r.refereeCount} জন রেজিস্টার
                 </span>
                 <span className="px-2 py-0.5 rounded-full bg-emerald/15 text-emerald font-black text-[10px] mono-num">
-                  ✅ verify {r.totalFirstVerifies ?? r.totalVerifies}
+                  ✅ সফল face {r.totalFirstVerifies ?? r.totalVerifies}
                 </span>
                 <span className="px-2 py-0.5 rounded-full bg-violet/15 text-violet font-black text-[10px] mono-num">
                   🔁 re-verify {r.totalReverifies ?? 0}

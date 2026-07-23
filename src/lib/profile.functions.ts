@@ -111,10 +111,18 @@ export const getPublicCardDetails = createServerFn({ method: "GET" })
     if (!raw) throw new Error("UID লাগবে");
 
     let profileRow: any = null;
-    if (/^[0-9a-f-]{32,}$/i.test(raw)) {
+    const cardColumns = "id,uid_seq,display_name,referral_code,avatar_url,created_at,nid_number,date_of_birth,father_name,mother_name,village_area,post_office,thana_upazila,district,full_address,kyc_verified,kyc_verified_at";
+    if (/^\d+$/.test(raw)) {
       const { data: p } = await supabaseAdmin
         .from("profiles")
-        .select("id,display_name,referral_code,avatar_url,created_at,nid_number,date_of_birth,father_name,mother_name,village_area,post_office,thana_upazila,district,full_address,kyc_verified,kyc_verified_at")
+        .select(cardColumns)
+        .eq("uid_seq", Number(raw))
+        .maybeSingle();
+      profileRow = p;
+    } else if (/^[0-9a-f-]{32,}$/i.test(raw)) {
+      const { data: p } = await supabaseAdmin
+        .from("profiles")
+        .select(cardColumns)
         .eq("id", raw)
         .maybeSingle();
       profileRow = p;
@@ -122,7 +130,7 @@ export const getPublicCardDetails = createServerFn({ method: "GET" })
       const compact = raw.replace(/[^0-9a-f]/gi, "").toLowerCase();
       const { data: rows } = await supabaseAdmin
         .from("profiles")
-        .select("id,display_name,referral_code,avatar_url,created_at,nid_number,date_of_birth,father_name,mother_name,village_area,post_office,thana_upazila,district,full_address,kyc_verified,kyc_verified_at")
+        .select(cardColumns)
         .limit(500);
       profileRow = (rows ?? []).find((r: any) =>
         String(r.id).replace(/-/g, "").toLowerCase().startsWith(compact),
@@ -135,7 +143,7 @@ export const getPublicCardDetails = createServerFn({ method: "GET" })
         supabaseAdmin.from("mining_state").select("accrued_amount,withdrawn_amount,is_active").eq("user_id", profileRow.id).maybeSingle(),
         supabaseAdmin.from("tasks").select("status,whitelist_ok").eq("user_id", profileRow.id),
         supabaseAdmin.from("withdrawals").select("amount,status").eq("user_id", profileRow.id).eq("status", "paid"),
-        supabaseAdmin.from("profiles").select("id", { count: "exact", head: true }).eq("referred_by", profileRow.referral_code),
+        supabaseAdmin.from("profiles").select("id", { count: "exact", head: true }).eq("referred_by", profileRow.id),
       ]);
 
     let avatar_signed: string | null = null;
@@ -151,6 +159,7 @@ export const getPublicCardDetails = createServerFn({ method: "GET" })
     return {
       profile: {
         id: profileRow.id,
+        uid_seq: profileRow.uid_seq,
         display_name: profileRow.display_name,
         referral_code: profileRow.referral_code,
         created_at: profileRow.created_at,

@@ -113,18 +113,18 @@ function HomePage() {
         <h1 className="text-xl font-black mt-0.5">
           {data.profile?.display_name ?? "ইউজার"} 👋
         </h1>
-        {data.profile?.id && (
+        {(data.profile as any)?.uid_seq && (
           <button
             data-voice="home.uid"
             onClick={() => {
-              navigator.clipboard.writeText(String(data.profile!.id));
+              navigator.clipboard.writeText(String((data.profile as any).uid_seq));
               toast.success("UID কপি হয়েছে");
             }}
             className="mt-1.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black tracking-widest text-white shadow-md btn-press"
             style={{ background: "linear-gradient(120deg,#8b5cf6,#06b6d4,#10b981)" }}
           >
             <span className="opacity-80">UID</span>
-            <span className="mono-num">{String(data.profile.id).replace(/-/g,"").slice(0,12).toUpperCase().match(/.{1,4}/g)?.join(" ")}</span>
+            <span className="mono-num">{String((data.profile as any).uid_seq)}</span>
             <span>📋</span>
           </button>
         )}
@@ -600,7 +600,7 @@ function MainIdentityCell({ task, onStart, onReverify, onOpenPhoto }: { task: an
   const isVerified = task.status === "verified";
   const dueMs = task.reverify_due_at ? new Date(task.reverify_due_at).getTime() : 0;
   const whitelistLost = task.whitelist_ok === false;
-  const readyToReverify = isVerified && (whitelistLost || dueMs <= now);
+  const readyToReverify = isVerified && whitelistLost;
   const remainingMs = Math.max(0, dueMs - now);
   const faceUrl: string | undefined = task.signed_face_url;
 
@@ -667,7 +667,7 @@ function TaskCell({ task, onStart, onReverify, onOpenPhoto }: { task: any; onSta
   const isVerified = task.status === "verified";
   const dueMs = task.reverify_due_at ? new Date(task.reverify_due_at).getTime() : 0;
   const whitelistLost = task.whitelist_ok === false;
-  const readyToReverify = isVerified && (whitelistLost || dueMs <= now);
+  const readyToReverify = isVerified && whitelistLost;
   const remainingMs = Math.max(0, dueMs - now);
   const faceUrl: string | undefined = task.signed_face_url;
 

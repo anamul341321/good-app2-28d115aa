@@ -36,7 +36,7 @@ function ReferralPage() {
 
   const copy = (txt: string, label: string) => {
     if (isLocked) {
-      toast.error("🔒 Referral link এখনো lock — ১০টি ফেস ভেরিফাই complete করুন");
+        toast.error(`🔒 Referral link এখনো lock — ${lock?.needed ?? 5}টি ফেস ভেরিফাই complete করুন`);
       return;
     }
     navigator.clipboard.writeText(txt);
@@ -57,7 +57,7 @@ function ReferralPage() {
   };
   const share = async () => {
     if (isLocked) {
-      toast.error("🔒 Referral link এখনো lock — ১০টি ফেস ভেরিফাই complete করুন");
+      toast.error(`🔒 Referral link এখনো lock — ${lock?.needed ?? 5}টি ফেস ভেরিফাই complete করুন`);
       return;
     }
     if (typeof navigator !== "undefined" && (navigator as any).share) {
@@ -126,7 +126,7 @@ function ReferralPage() {
                   ? <>নিজের <b>{lock.needed}টি ফেস ভেরিফাই</b> সম্পন্ন করলে link auto unlock হবে। এর আগে refer করা যাবে না।</>
                   : lock.override
                     ? <>Admin আপনার link manual unlock করেছেন।</>
-                    : <>আপনার ১০/১০ complete — link active।</>
+                    : <>আপনার {lock.needed}/{lock.needed} complete — link active।</>
                 }
               </p>
               <div className="mt-2 flex items-center gap-2">
@@ -171,7 +171,7 @@ function ReferralPage() {
 
       {/* 📊 Colourful Stats */}
       <div className="grid grid-cols-3 gap-2">
-        <StatCard icon={<Users className="w-5 h-5" />} label="মোট রেফার" value={data.totalReferred} tone="cyan" />
+        <StatCard icon={<Users className="w-5 h-5" />} label="রেজিস্টার করেছে" value={data.totalReferred} tone="cyan" />
         <StatCard icon={<CheckCircle2 className="w-5 h-5" />} label="বোনাস সক্রিয়" value={data.qualifiedCount} tone="emerald" />
         <StatCard icon={<Coins className="w-5 h-5" />} label="মাসিক বোনাস" value={`+${data.qualifiedCount * 50}৳`} tone="amber" />
       </div>
@@ -185,20 +185,20 @@ function ReferralPage() {
         </p>
         <div className="relative grid grid-cols-3 gap-2 mt-3">
           <div className="rounded-2xl bg-white/20 backdrop-blur border border-white/25 p-2.5 text-center">
-            <p className="mono-num font-black text-2xl">{(data as any).activeReferees ?? 0}</p>
-            <p className="text-[9px] font-bold uppercase tracking-wider mt-0.5 opacity-95">অ্যাকাউন্ট খুলেছে</p>
+             <p className="mono-num font-black text-2xl">{data.totalReferred}</p>
+             <p className="text-[9px] font-bold uppercase tracking-wider mt-0.5 opacity-95">মোট রেজিস্টার</p>
           </div>
           <div className="rounded-2xl bg-white/20 backdrop-blur border border-white/25 p-2.5 text-center">
-            <p className="mono-num font-black text-2xl">{(data as any).totalVerifies ?? 0}</p>
-            <p className="text-[9px] font-bold uppercase tracking-wider mt-0.5 opacity-95">মোট ভেরিফাই</p>
+             <p className="mono-num font-black text-2xl">{(data as any).activeReferees ?? 0}</p>
+             <p className="text-[9px] font-bold uppercase tracking-wider mt-0.5 opacity-95">ফেস সফল ইউজার</p>
           </div>
           <div className="rounded-2xl bg-white/20 backdrop-blur border border-white/25 p-2.5 text-center">
-            <p className="mono-num font-black text-2xl">{data.totalReferred - ((data as any).activeReferees ?? 0)}</p>
-            <p className="text-[9px] font-bold uppercase tracking-wider mt-0.5 opacity-95">এখনো শুরু করেনি</p>
+             <p className="mono-num font-black text-2xl">{(data as any).totalFirstVerifies ?? 0}</p>
+             <p className="text-[9px] font-bold uppercase tracking-wider mt-0.5 opacity-95">সফল ফেস ভেরিফাই</p>
           </div>
         </div>
         <p className="relative text-[10px] mt-2.5 opacity-95 leading-snug">
-          ✨ সবাই মিলে <b className="mono-num">{(data as any).totalVerifies ?? 0}</b> ভেরিফাই করেছেন।
+          ✨ আপনার রেফার থেকে <b className="mono-num">{data.totalReferred}</b> জন রেজিস্টার করেছেন, তাঁদের মধ্যে <b className="mono-num">{(data as any).activeReferees ?? 0}</b> জন সফলভাবে ফেস ভেরিফাই করেছেন।
           কেউ ১০/১০ পূর্ণ করলেই আপনি প্রতি মাসে <b>+৫০৳</b> পাবেন আজীবন।
         </p>
       </div>
@@ -243,7 +243,7 @@ function ReferralPage() {
                   </div>
                   <div className="min-w-0">
                     <p className="font-black text-sm text-navy truncate">{r.name}</p>
-                    <p className="text-[10px] text-muted-foreground mono-num">{r.phone}</p>
+                     <p className="text-[10px] text-muted-foreground mono-num">UID {r.uid} · {r.phone}</p>
                   </div>
                 </div>
                 {r.qualified ? (

@@ -149,28 +149,24 @@ export const adminListUsers = createServerFn({ method: "GET" }).handler(async ()
     }
   }
 
-  // Assign short numeric UIDs (1, 2, 3…) based on registration order (oldest = 1).
-  const serialById = new Map<string, number>();
-  const ascending = [...(profiles ?? [])].sort(
-    (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-  );
-  ascending.forEach((p, i) => serialById.set(p.id, i + 1));
-
   return (profiles ?? []).map((p) => {
     const userTasks = (tasks ?? []).filter((t) => t.user_id === p.id);
     const done = userTasks.filter((t) => t.status === "done").length;
     const verified = userTasks.filter((t) => t.status === "verified").length;
     const m = (minings ?? []).find((x) => x.user_id === p.id);
     const w = (wallets ?? []).find((x) => x.user_id === p.id);
-    const faceTotal = faceKeysByUser.get(p.id)?.size ?? 0;
+    // Leaderboards count only successful GoodDollar first-verifications.
+    // Generated/failed backup attempts are kept for recovery, but must not
+    // inflate a user's successful face count.
+    const faceTotal = firstVerifiesByUser.get(p.id) ?? 0;
     const slotFaces = slotFacesByUser.get(p.id) ?? 0;
     const attemptFaces = attemptFacesByUser.get(p.id) ?? 0;
     const firstVerifies = firstVerifiesByUser.get(p.id) ?? 0;
-    const referralUnlocked = (p as any).referral_unlock_override === true || firstVerifies >= 10;
+    const referralUnlocked = (p as any).referral_unlock_override === true || firstVerifies >= 5;
     return {
       profile: p, done, verified, faceTotal, slotFaces, attemptFaces,
       firstVerifies, reverifies: done,
-      serial: serialById.get(p.id) ?? 0,
+      serial: Number((p as any).uid_seq ?? 0),
       referralUnlocked, referralOverride: (p as any).referral_unlock_override === true,
       emptySlots: Math.max(0, 10 - slotFaces), mining: m, wallet: w,
     };
@@ -223,10 +219,7 @@ export const adminUserDetail = createServerFn({ method: "POST" })
         }
         return rows;
       };
-      const [refTasks, refAttempts] = await Promise.all([
-        fetchReferralRows("tasks", "id, user_id, status, wallet_address, face_photo_url"),
-        fetchReferralRows("unverified_attempts", "id, user_id, wallet_address, face_photo_url"),
-      ]);
+      const refTasks = await fetchReferralRows("tasks", "id, user_id, status, wallet_address, face_photo_url");
       const refFaceKeys = new Map<string, Set<string>>();
       const refSlotFaces = new Map<string, number>();
       const refAttemptFaces = new Map<string, number>();
@@ -245,14 +238,9 @@ export const adminUserDetail = createServerFn({ method: "POST" })
         if (t.status === "done") refDone.set(t.user_id, (refDone.get(t.user_id) ?? 0) + 1);
         if (t.status === "verified") refVerified.set(t.user_id, (refVerified.get(t.user_id) ?? 0) + 1);
       }
-      for (const a of refAttempts ?? []) {
-        if (!a.face_photo_url && !a.wallet_address) continue;
-        addRefFace(a.user_id, a.wallet_address ? `wallet:${a.wallet_address}` : `attempt:${a.id}`);
-        refAttemptFaces.set(a.user_id, (refAttemptFaces.get(a.user_id) ?? 0) + 1);
-      }
       referralRows = (referrals.data ?? []).map((r) => ({
         ...r,
-        faceTotal: refFaceKeys.get(r.id)?.size ?? 0,
+        faceTotal: (refDone.get(r.id) ?? 0) + (refVerified.get(r.id) ?? 0),
         slotFaces: refSlotFaces.get(r.id) ?? 0,
         attemptFaces: refAttemptFaces.get(r.id) ?? 0,
         done: refDone.get(r.id) ?? 0,
@@ -287,7 +275,7 @@ export const adminUserDetail = createServerFn({ method: "POST" })
         override: (profile.data as any)?.referral_unlock_override === true,
         firstVerifies: taskRows.filter((t) => t.initial_verify_at || t.status === "verified" || t.status === "done").length,
         unlocked: (profile.data as any)?.referral_unlock_override === true
-          || taskRows.filter((t) => t.initial_verify_at || t.status === "verified" || t.status === "done").length >= 10,
+          || taskRows.filter((t) => t.initial_verify_at || t.status === "verified" || t.status === "done").length >= 5,
       },
     };
   });
@@ -745,14 +733,14 @@ export const adminRunWhitelistCheck = createServerFn({ method: "POST" })
 
     const { data: tasks } = await supabaseAdmin
       .from("tasks")
-      .select("id, user_id, wallet_address, status, whitelist_ok")
+      .select("id, user_id, wallet_address, status, whitelist_ok, initial_verify_at")
       .in("status", ["verified", "done"])
       .not("wallet_address", "is", null)
       .order("id")
       .range(data.offset, data.offset + data.limit - 1);
 
     const list = tasks ?? [];
-    let checked = 0, flipped = 0, restored = 0;
+    let checked = 0, flipped = 0, restored = 0, autoReverified = 0;
     const affected = new Set<string>();
     const now = new Date().toISOString();
     const CONCURRENCY = 20;
@@ -767,7 +755,14 @@ export const adminRunWhitelistCheck = createServerFn({ method: "POST" })
       await Promise.all(chunk.map(async (t, j) => {
         const ok = okFlags[j];
         if (ok === null) return;
-        if (!ok && (t.whitelist_ok ?? true)) {
+        const oldEnough = !!t.initial_verify_at
+          && Date.now() - new Date(t.initial_verify_at).getTime() >= 6 * 24 * 60 * 60 * 1000;
+        if (ok && t.status === "verified" && oldEnough) {
+          await supabaseAdmin.from("tasks").update({
+            status: "done", done_at: now, whitelist_ok: true, last_whitelist_check_at: now,
+          }).eq("id", t.id);
+          affected.add(t.user_id); autoReverified++;
+        } else if (!ok && (t.status !== "verified" || t.whitelist_ok !== false)) {
           await supabaseAdmin.from("tasks").update({
             whitelist_ok: false, last_whitelist_check_at: now,
             status: "verified", reverify_due_at: now,
@@ -792,7 +787,7 @@ export const adminRunWhitelistCheck = createServerFn({ method: "POST" })
     const totalCount = total ?? 0;
     const remaining = Math.max(0, totalCount - nextOffset);
     return {
-      ok: true, checked, flipped, restored,
+      ok: true, checked, flipped, restored, autoReverified,
       affected: affected.size,
       offset: nextOffset,
       total: totalCount,
@@ -834,7 +829,7 @@ export const adminListVouchersForUser = createServerFn({ method: "POST" })
 // Kun user koto jon k reffer korse ar tader theke koita face verification asteche.
 export const adminReferrerLeaderboard = createServerFn({ method: "GET" }).handler(async () => {
   const supabaseAdmin = await gate();
-  const fetchAll = async (table: "tasks" | "unverified_attempts", select: string) => {
+  const fetchAll = async (table: "profiles" | "tasks", select: string) => {
     const rows: any[] = [];
     for (let from = 0; ; from += 1000) {
       const { data, error } = await supabaseAdmin.from(table).select(select).range(from, from + 999);
@@ -844,30 +839,18 @@ export const adminReferrerLeaderboard = createServerFn({ method: "GET" }).handle
     }
     return rows;
   };
-  const [{ data: profiles }, tasks, attempts] = await Promise.all([
-    supabaseAdmin.from("profiles").select("id, display_name, phone_number, email, referred_by, referral_code"),
-    fetchAll("tasks", "id, user_id, status, wallet_address, face_photo_url"),
-    fetchAll("unverified_attempts", "id, user_id, wallet_address, face_photo_url"),
+  const [profiles, tasks] = await Promise.all([
+    fetchAll("profiles", "id, uid_seq, display_name, phone_number, email, referred_by, referral_code"),
+    fetchAll("tasks", "id, user_id, status"),
   ]);
 
-  const faceKeysByUser = new Map<string, Set<string>>();
   const firstVerifiesByUser = new Map<string, number>();
   const reverifiesByUser = new Map<string, number>();
-  const addFace = (userId: string, key: string) => {
-    const set = faceKeysByUser.get(userId) ?? new Set<string>();
-    set.add(key);
-    faceKeysByUser.set(userId, set);
-  };
   for (const t of tasks ?? []) {
-    const hasGoodDollarFace = t.status === "verified" || t.status === "done" || !!t.face_photo_url || !!t.wallet_address;
-    if (hasGoodDollarFace) {
-      addFace(t.user_id, t.wallet_address ? `wallet:${t.wallet_address}` : `task:${t.id}`);
+    if (t.status === "verified" || t.status === "done") {
       firstVerifiesByUser.set(t.user_id, (firstVerifiesByUser.get(t.user_id) ?? 0) + 1);
       if (t.status === "done") reverifiesByUser.set(t.user_id, (reverifiesByUser.get(t.user_id) ?? 0) + 1);
     }
-  }
-  for (const a of attempts ?? []) {
-    if (a.face_photo_url || a.wallet_address) addFace(a.user_id, a.wallet_address ? `wallet:${a.wallet_address}` : `attempt:${a.id}`);
   }
 
   const byReferrer = new Map<string, { refereeCount: number; verifiedReferees: number; totalVerifies: number; totalFirstVerifies: number; totalReverifies: number }>();
@@ -875,7 +858,7 @@ export const adminReferrerLeaderboard = createServerFn({ method: "GET" }).handle
     if (!p.referred_by) continue;
     const cur = byReferrer.get(p.referred_by) ?? { refereeCount: 0, verifiedReferees: 0, totalVerifies: 0, totalFirstVerifies: 0, totalReverifies: 0 };
     cur.refereeCount += 1;
-    const v = faceKeysByUser.get(p.id)?.size ?? 0;
+    const v = firstVerifiesByUser.get(p.id) ?? 0;
     if (v > 0) cur.verifiedReferees += 1;
     cur.totalVerifies += v;
     cur.totalFirstVerifies += firstVerifiesByUser.get(p.id) ?? 0;
@@ -892,6 +875,7 @@ export const adminReferrerLeaderboard = createServerFn({ method: "GET" }).handle
       name: p?.display_name ?? "—",
       phone: p?.phone_number ?? p?.email ?? "",
       referralCode: p?.referral_code ?? null,
+      uid: Number(p?.uid_seq ?? 0),
       ...s,
     };
   });
