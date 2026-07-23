@@ -240,6 +240,7 @@ function ReferrerLeaderboard({ rows, q }: { rows: any[]; q: string }) {
     return (r.name ?? "").toLowerCase().includes(s)
       || (r.phone ?? "").toLowerCase().includes(s)
       || (r.referralCode ?? "").toLowerCase().includes(s)
+      || String(r.uid ?? "") === s
       || (r.userId ?? "").toLowerCase().includes(s);
   });
   return (
@@ -279,7 +280,7 @@ function ReferrerLeaderboard({ rows, q }: { rows: any[]; q: string }) {
             <div className="min-w-0 flex-1">
               <p className="font-bold text-sm truncate">{r.name}</p>
               <p className="text-[10px] text-muted-foreground truncate mono-num">
-                {r.phone} {r.referralCode && <span className="ml-1 text-violet">· {r.referralCode}</span>}
+                UID {r.uid || "—"} · {r.phone} {r.referralCode && <span className="ml-1 text-violet">· {r.referralCode}</span>}
               </p>
               <div className="flex flex-wrap gap-1 mt-1.5">
                 <span className="px-2 py-0.5 rounded-full bg-cyan/15 text-cyan font-black text-[10px] mono-num">

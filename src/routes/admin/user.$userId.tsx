@@ -156,11 +156,11 @@ function UserDetail() {
           </p>
         </div>
         <p className="text-[11px] text-muted-foreground">
-          {data.referralLock?.firstVerifies ?? 0}/10 first-verify complete
+          {data.referralLock?.firstVerifies ?? 0}/5 first-verify complete
           {data.referralLock?.override && <span className="ml-1 text-violet font-black">· admin override ON</span>}
         </p>
         <p className="text-[10px] text-muted-foreground leading-snug">
-          ১০টি ফেস ভেরিফাই complete হলে referral link auto unlock হয়। এর আগে admin manual unlock করলে user অন্য কাউকে refer করতে পারবে।
+          ৫টি ফেস ভেরিফাই complete হলে referral link auto unlock হয়। এর আগে admin manual unlock করলে user অন্য কাউকে refer করতে পারবে।
         </p>
         <div className="grid grid-cols-2 gap-2">
           <button
