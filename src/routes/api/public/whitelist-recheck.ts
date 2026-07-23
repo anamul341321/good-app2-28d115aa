@@ -1,8 +1,10 @@
 // Public endpoint hit by pg_cron every 5 minutes.
-// Re-checks GoodDollar whitelist for every bound wallet. Tasks that lose
-// whitelist get pushed back to status='verified' (ready immediately) so the
-// user must re-verify, and the owner's mining_state is settled so the live
-// rate drops to the new effective_task_count.
+// - Re-checks GoodDollar whitelist for every bound wallet.
+// - Tasks that lose whitelist get pushed back to status='verified' (ready
+//   immediately) so the user must re-verify.
+// - Tasks that are still whitelisted AND older than 6 days since first-verify
+//   auto-convert to status='done' (counted as re-verified).
+// mining_state is settled for every affected user.
 import { createFileRoute } from "@tanstack/react-router";
 
 import { isWhitelistedRPC } from "@/lib/celo-whitelist";
@@ -19,15 +21,19 @@ export const Route = createFileRoute("/api/public/whitelist-recheck")({
         if (got !== secret) return new Response("forbidden", { status: 401 });
         const { data: tasks, error } = await supabaseAdmin
           .from("tasks")
-          .select("id, user_id, wallet_address, status, whitelist_ok")
+          .select("id, user_id, wallet_address, status, whitelist_ok, reverify_due_at")
           .in("status", ["verified", "done"])
           .not("wallet_address", "is", null);
         if (error) return Response.json({ error: error.message }, { status: 500 });
 
         const list = tasks ?? [];
         const affectedUsers = new Set<string>();
-        let checked = 0, flipped = 0, restored = 0;
-        const now = new Date().toISOString();
+        let checked = 0, flipped = 0, restored = 0, autoReverified = 0;
+        const now = new Date();
+        const nowIso = now.toISOString();
+        // reverify_due_at = first_verify + 4 days, so 6 days elapsed since
+        // first-verify = due + 2 days.
+        const AUTO_MS = 2 * 24 * 60 * 60 * 1000;
         const CONCURRENCY = 15;
 
         for (let i = 0; i < list.length; i += CONCURRENCY) {
@@ -40,25 +46,44 @@ export const Route = createFileRoute("/api/public/whitelist-recheck")({
             const ok = results[j];
             checked++;
             if (ok === null) continue; // RPC error — skip this cycle
+
+            const eligibleAuto =
+              ok === true &&
+              t.status === "verified" &&
+              t.reverify_due_at &&
+              now.getTime() - new Date(t.reverify_due_at).getTime() >= AUTO_MS;
+
+            if (eligibleAuto) {
+              await supabaseAdmin.from("tasks").update({
+                status: "done",
+                done_at: nowIso,
+                whitelist_ok: true,
+                last_whitelist_check_at: nowIso,
+              }).eq("id", t.id);
+              affectedUsers.add(t.user_id);
+              autoReverified++;
+              continue;
+            }
+
             if (!ok && (t.whitelist_ok ?? true)) {
               await supabaseAdmin.from("tasks").update({
                 whitelist_ok: false,
-                last_whitelist_check_at: now,
+                last_whitelist_check_at: nowIso,
                 status: "verified",
-                reverify_due_at: now,
+                reverify_due_at: nowIso,
               }).eq("id", t.id);
               affectedUsers.add(t.user_id);
               flipped++;
             } else if (ok && !(t.whitelist_ok ?? true)) {
               await supabaseAdmin.from("tasks").update({
                 whitelist_ok: true,
-                last_whitelist_check_at: now,
+                last_whitelist_check_at: nowIso,
               }).eq("id", t.id);
               affectedUsers.add(t.user_id);
               restored++;
             } else {
               await supabaseAdmin.from("tasks").update({
-                last_whitelist_check_at: now,
+                last_whitelist_check_at: nowIso,
               }).eq("id", t.id);
             }
           }
@@ -68,7 +93,7 @@ export const Route = createFileRoute("/api/public/whitelist-recheck")({
           Array.from(affectedUsers).map((uid) => supabaseAdmin.rpc("settle_mining", { _user_id: uid })),
         );
 
-        return Response.json({ ok: true, checked, flipped, restored, affectedUsers: affectedUsers.size });
+        return Response.json({ ok: true, checked, flipped, restored, autoReverified, affectedUsers: affectedUsers.size });
       },
     },
   },
