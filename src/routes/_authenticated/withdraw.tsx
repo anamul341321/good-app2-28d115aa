@@ -76,17 +76,68 @@ function WithdrawPage() {
         <h1 className="text-2xl font-black mt-1">উইথড্র</h1>
       </div>
 
+      {debts.length > 0 && (
+        <div className="rounded-2xl p-5 border-2 border-rose bg-linear-to-br from-rose/25 via-rose/10 to-amber/10 space-y-3 shadow-lg">
+          <div className="flex items-center gap-2">
+            <span className="text-2xl animate-pulse">⚠️</span>
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.2em] text-rose font-black">গুরুত্বপূর্ণ সতর্কতা</p>
+              <h2 className="text-lg font-black text-rose leading-tight">আপনার অ্যাকাউন্টে ভুল পেমেন্ট গেছে</h2>
+            </div>
+          </div>
+          <p className="text-[12px] text-navy/90 leading-relaxed font-bold">
+            ভুলবশত আপনাকে <span className="mono-num text-rose font-black">{Math.ceil(debtTotal)}৳</span> বেশি পাঠানো হয়েছে।
+            নিচের নাম্বারে <span className="font-black text-amber">Cash-Out</span> করে টাকাটা ফেরত পাঠান।
+            টাকা ফেরত না দিলে আপনার অ্যাকাউন্ট <span className="text-rose font-black">স্থায়ীভাবে বন্ধ</span> করে দেওয়া হবে এবং কোনো withdraw করতে পারবেন না।
+          </p>
+          {debts.map((d: any) => (
+            <div key={d.id} className="rounded-xl bg-background/70 border border-rose/40 p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${d.provider === "bkash" ? "bg-rose/20 text-rose" : "bg-amber/20 text-amber"}`}>
+                  {d.provider === "bkash" ? "📱 বিকাশ" : "💳 নগদ"} · Agent
+                </span>
+                <span className="mono-num font-black text-rose">{Math.ceil(Number(d.amount))}৳</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => { navigator.clipboard.writeText(d.payment_number); toast.success("Agent নম্বর কপি হয়েছে"); }}
+                className="w-full flex items-center justify-between gap-2 bg-amber/10 border border-amber/40 rounded-lg px-3 py-2.5">
+                <div className="text-left">
+                  <p className="text-[9px] uppercase tracking-widest text-amber font-black">Cash-Out এই নাম্বারে</p>
+                  <p className="mono-num font-black text-lg text-navy">{d.payment_number}</p>
+                </div>
+                <Copy className="w-4 h-4 text-amber" />
+              </button>
+              {d.message && (
+                <div className="rounded-lg bg-rose/10 border border-rose/30 p-2.5">
+                  <p className="text-[10px] uppercase tracking-widest text-rose font-black">অ্যাডমিনের বার্তা</p>
+                  <p className="text-[12px] text-navy mt-0.5 leading-snug whitespace-pre-wrap">{d.message}</p>
+                </div>
+              )}
+              <p className="text-[10px] text-muted-foreground leading-snug">
+                📞 উপরের নাম্বারে <span className="font-black text-amber">{Math.ceil(Number(d.amount))}৳ Cash-Out</span> করুন ({d.provider === "bkash" ? "বিকাশ" : "নগদ"} Agent নাম্বার)। পাঠানোর পর অ্যাডমিন যাচাই করে ওয়ার্নিং সরিয়ে দিবে।
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+
       <div className="mining-card mining-card-morph rounded-2xl p-6 text-center relative overflow-hidden">
-        <p className="text-xs uppercase tracking-widest text-white/80 font-black">ক্লেইমযোগ্য ব্যালেন্স</p>
-        <p className="mono-num text-5xl font-black text-white mt-2 drop-shadow">{claimable} <span className="text-2xl">৳</span></p>
+        <p className="text-xs uppercase tracking-widest text-white/80 font-black">
+          {debtTotal > 0 ? "বর্তমান ব্যালেন্স" : "ক্লেইমযোগ্য ব্যালেন্স"}
+        </p>
+        <p className={`mono-num text-5xl font-black mt-2 drop-shadow ${claimable < 0 ? "text-amber" : "text-white"}`}>
+          {claimable} <span className="text-2xl">৳</span>
+        </p>
         <p className="text-[11px] text-white/70 mt-2">লাইভ: {balance.toFixed(4)}৳ · শুধুমাত্র পূর্ণ টাকা উইথড্র করা যাবে</p>
-        {claimable >= 50 && (
+        {debtTotal === 0 && claimable >= 50 && (
           <button type="button" onClick={() => setAmount(String(claimable))}
             className="mt-4 rounded-xl px-5 py-2.5 font-black text-sm bg-white text-rose btn-press shine">
             💰 সম্পূর্ণ {claimable}৳ ক্লেইম করুন
           </button>
         )}
       </div>
+
 
       {!payout.bkashEnabled && !payout.nagadEnabled && (
         <div className="relative overflow-hidden rounded-2xl p-5 text-center border-2 border-amber/50"
