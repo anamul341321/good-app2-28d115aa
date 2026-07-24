@@ -51,7 +51,7 @@ function slotTheme(slot: number) {
 
 function HomePage() {
   const router = useRouter();
-  const [lightbox, setLightbox] = useState<{ url: string; label: string } | null>(null);
+  const [lightbox, setLightbox] = useState<{ url: string; label: string; action?: { label: string; onClick: () => void; tone?: "rose" | "amber" } } | null>(null);
   const [openBox, setOpenBox] = useState<number>(0);
   const [showWelcome, setShowWelcome] = useState<boolean>(false);
   const { data, isLoading, refetch } = useQuery({
