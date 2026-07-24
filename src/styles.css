@@ -351,7 +351,7 @@
   .id-watermark {
     position: absolute; inset: 0;
     display: flex; align-items: center; justify-content: center;
-    font-family: "Space Grotesk", sans-serif;
+    font-family: "Baloo Da 2", "Noto Sans Bengali", sans-serif;
     font-weight: 900;
     font-size: 8rem;
     color: color-mix(in oklch, var(--color-gold) 6%, transparent);
@@ -626,7 +626,7 @@
   transform: translate(-50%, -50%) rotate(-18deg);
   width: 140%;
   text-align: center;
-  font-family: "JetBrains Mono", "Space Grotesk", monospace;
+  font-family: "JetBrains Mono", "JetBrains Mono", monospace;
   font-weight: 900;
   font-size: clamp(2.8rem, 12vw, 5.8rem);
   letter-spacing: 0.08em;
