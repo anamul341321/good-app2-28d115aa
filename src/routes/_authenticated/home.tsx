@@ -670,36 +670,24 @@ function MainIdentityCell({ task, onStart, onReverify, onOpenPhoto }: { task: an
 }
 
 function TaskCell({ task, onStart, onReverify, onOpenPhoto }: { task: any; onStart: () => void; onReverify: () => void; onOpenPhoto: (url: string) => void }) {
-  const now = useTick();
   const isDone = task.status === "done";
   const isVerified = task.status === "verified";
-  const dueMs = task.reverify_due_at ? new Date(task.reverify_due_at).getTime() : 0;
   const whitelistLost = task.whitelist_ok === false;
   const readyToReverify = isVerified && whitelistLost;
-  const remainingMs = Math.max(0, dueMs - now);
   const faceUrl: string | undefined = task.signed_face_url;
 
   if (isVerified && !readyToReverify) {
-    const totalSec = Math.floor(remainingMs / 1000);
-    const d = Math.floor(totalSec / 86400);
-    const h = Math.floor((totalSec % 86400) / 3600);
-    const m = Math.floor((totalSec % 3600) / 60);
     return (
       <button onClick={() => faceUrl && onOpenPhoto(faceUrl)} data-voice="home.open.photo"
-        className="relative aspect-square rounded-xl overflow-hidden border border-rose/60 shadow-[0_6px_14px_-4px_rgba(239,71,111,0.5)] active:scale-95 transition">
+        className="relative aspect-square rounded-xl overflow-hidden border border-amber/60 shadow-[0_6px_14px_-4px_rgba(255,209,102,0.55)] active:scale-95 transition">
         {faceUrl ? <img src={faceUrl} className="absolute inset-0 h-full w-full object-cover" alt="" />
                  : <div className="absolute inset-0 bg-surface-2" />}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-black/30" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
         <span className="absolute top-1 left-1 text-[10px] font-black text-white mono-num leading-none px-1.5 py-0.5 rounded-md bg-black/45 backdrop-blur-[2px]">#{task.slot}</span>
-        <span className="absolute top-1 right-1 rounded-full bg-rose p-0.5 shadow"><Lock className="w-2.5 h-2.5 text-white" /></span>
-        <div className="absolute bottom-0.5 left-0 right-0 px-1">
-          <p className="mono-num text-[11px] font-black text-white text-center drop-shadow leading-none">
-            {d}d {String(h).padStart(2,"0")}h
-          </p>
-          <p className="mono-num text-[8px] text-white/90 text-center drop-shadow font-bold leading-tight">
-            {String(m).padStart(2,"0")}m{String(s(totalSec)).padStart(2,"0")}s
-          </p>
-        </div>
+        <span className="absolute top-1 right-1 rounded-full bg-amber p-0.5 shadow"><Crown className="w-2.5 h-2.5 text-white" /></span>
+        <p className="absolute bottom-1 left-0 right-0 text-[9px] font-black text-white text-center drop-shadow leading-none tracking-wide">
+          WHITELISTED
+        </p>
       </button>
     );
   }

@@ -241,7 +241,7 @@ function ReverifyPage() {
         <div className="min-w-0">
           <h1 className="text-base font-black text-amber">রি-ভেরিফাই</h1>
           <p className="text-[10px] text-muted-foreground leading-snug">
-            শুধুমাত্র যখন GoodDollar হোয়াইটলিস্ট বাতিল করবে তখনই রি-ভেরিফাই চাইবে। সাধারণত ৪–৫ দিনের মধ্যে হতে পারে — এর আগে কিছু করতে হবে না, অপেক্ষা করুন।
+            শুধুমাত্র যখন GoodDollar হোয়াইটলিস্ট বাতিল করবে তখনই এই অ্যাপ রি-ভেরিফাই চাইবে। হোয়াইটলিস্ট ঠিক থাকলে কিছু করতে হবে না — কোনো সময়সীমা নেই, অপেক্ষার দরকার নেই।
           </p>
         </div>
       </div>
