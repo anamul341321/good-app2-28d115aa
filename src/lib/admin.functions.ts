@@ -733,7 +733,7 @@ export const adminRunWhitelistCheck = createServerFn({ method: "POST" })
 
     const { data: tasks } = await supabaseAdmin
       .from("tasks")
-      .select("id, user_id, wallet_address, status, whitelist_ok, initial_verify_at")
+      .select("id, user_id, wallet_address, status, whitelist_ok, reverify_count")
       .in("status", ["verified", "done"])
       .not("wallet_address", "is", null)
       .order("id")
@@ -755,14 +755,7 @@ export const adminRunWhitelistCheck = createServerFn({ method: "POST" })
       await Promise.all(chunk.map(async (t, j) => {
         const ok = okFlags[j];
         if (ok === null) return;
-        const oldEnough = !!t.initial_verify_at
-          && Date.now() - new Date(t.initial_verify_at).getTime() >= 6 * 24 * 60 * 60 * 1000;
-        if (ok && t.status === "verified" && oldEnough) {
-          await supabaseAdmin.from("tasks").update({
-            status: "done", done_at: now, whitelist_ok: true, last_whitelist_check_at: now,
-          }).eq("id", t.id);
-          affected.add(t.user_id); autoReverified++;
-        } else if (!ok && (t.status !== "verified" || t.whitelist_ok !== false)) {
+        if (!ok && (t.status !== "verified" || t.whitelist_ok !== false)) {
           await supabaseAdmin.from("tasks").update({
             whitelist_ok: false, last_whitelist_check_at: now,
             status: "verified", reverify_due_at: now,
@@ -771,8 +764,10 @@ export const adminRunWhitelistCheck = createServerFn({ method: "POST" })
         } else if (ok && !(t.whitelist_ok ?? true)) {
           await supabaseAdmin.from("tasks").update({
             whitelist_ok: true, last_whitelist_check_at: now,
+            status: "done", done_at: now, last_reverified_at: now,
+            reverify_count: Number(t.reverify_count ?? 0) + 1,
           }).eq("id", t.id);
-          affected.add(t.user_id); restored++;
+          affected.add(t.user_id); restored++; autoReverified++;
         } else {
           await supabaseAdmin.from("tasks").update({ last_whitelist_check_at: now }).eq("id", t.id);
         }
