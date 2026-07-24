@@ -525,6 +525,10 @@ export type Database = {
         Returns: boolean
       }
       settle_mining: { Args: { _user_id: string }; Returns: undefined }
+      transition_task_whitelist: {
+        Args: { _is_whitelisted: boolean; _task_id: string }
+        Returns: string
+      }
     }
     Enums: {
       app_role: "admin" | "user"
