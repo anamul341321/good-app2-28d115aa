@@ -431,7 +431,18 @@ function HomePage() {
                         {items.map((t) => (
                           <TaskCell key={t.slot} task={t}
                             onStart={() => router.navigate({ to: "/task/$slot", params: { slot: String(t.slot) } })}
-                            onReverify={() => router.navigate({ to: "/reverify", search: { taskId: t.id } as any })}
+                            onReverify={() => {
+                              const url = t.signed_face_url;
+                              if (url) {
+                                setLightbox({
+                                  url,
+                                  label: `সাক্ষী #${t.slot} · ${t.face_label || "মুখ"} — রি-ভেরিফাই প্রয়োজন`,
+                                  action: { label: "রি-ভেরিফাই করুন", tone: "rose", onClick: () => router.navigate({ to: "/reverify", search: { taskId: t.id } as any }) },
+                                });
+                              } else {
+                                router.navigate({ to: "/reverify", search: { taskId: t.id } as any });
+                              }
+                            }}
                             onOpenPhoto={(url) => setLightbox({ url, label: `সাক্ষী #${t.slot} · ${t.face_label || "মুখ"}` })} />
                         ))}
                       </div>
