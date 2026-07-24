@@ -164,8 +164,10 @@ function HomePage() {
         const b = (data as any).bonus;
         if (!b) return null;
         if (b.selfFirstPaid && b.referrerPaid && b.userReverifyPaid) return null;
+        const referralLock = (data as any).referralLock as { unlocked: boolean; firstVerifies: number; needed: number } | undefined;
+        const referralUnlocked = referralLock?.unlocked === true;
         const refCode: string | undefined = (data.profile as any)?.referral_code;
-        const shareUrl = refCode
+        const shareUrl = refCode && referralUnlocked
           ? `${typeof window !== "undefined" ? window.location.origin : "https://good-app2.lovable.app"}/?ref=${refCode}`
           : "";
         const firstPct = Math.min(100, Math.round((b.firstVerifyCount / 10) * 100));
@@ -230,7 +232,7 @@ function HomePage() {
               </div>
             </div>
 
-            {refCode && (
+            {refCode && referralUnlocked ? (
               <div className="relative mt-3 rounded-2xl bg-white p-3 flex items-center gap-3 shadow-lg">
                 <div className="shrink-0 rounded-lg overflow-hidden bg-white p-1 border border-navy/10">
                   <QrCode value={shareUrl} size={64} />
@@ -251,6 +253,18 @@ function HomePage() {
                       <Share2 className="w-3 h-3" /> শেয়ার
                     </button>
                   </div>
+                </div>
+              </div>
+            ) : (
+              <div className="relative mt-3 rounded-2xl bg-white/95 p-3 flex items-center gap-3 shadow-lg text-navy">
+                <div className="shrink-0 w-12 h-12 rounded-xl bg-rose/15 text-rose flex items-center justify-center">
+                  <Lock className="w-5 h-5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-black">রেফার কোড ও লিংক লক আছে</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                    {referralLock?.firstVerifies ?? 0}/{referralLock?.needed ?? 5} সফল First Verify · ৫টি পূর্ণ হলেই auto unlock হবে।
+                  </p>
                 </div>
               </div>
             )}
@@ -333,7 +347,7 @@ function HomePage() {
             </p>
             {verifiedCount > 0 && (
               <p className="text-[10px] text-violet mt-0.5 font-bold leading-tight">
-                {verifiedCount} জন সাক্ষী ৫ দিন পর আবার Re-verify চাইবে (আনুমানিক)
+                {verifiedCount} জনের ক্ষেত্রে আনুমানিক ৪–৫ দিনের মধ্যে Re-verify লাগতে পারে
               </p>
             )}
           </div>
@@ -359,7 +373,7 @@ function HomePage() {
             const doneInBox = items.filter((t) => t.status !== "empty").length;
             const readyInBox = items.filter((t) => {
               const dueMs = t.reverify_due_at ? new Date(t.reverify_due_at).getTime() : 0;
-              return t.status === "verified" && (t.whitelist_ok === false || dueMs <= Date.now());
+              return t.status === "verified" && t.whitelist_ok === false;
             }).length;
             return { i, start, items, doneInBox, readyInBox };
           });
@@ -563,8 +577,8 @@ function HomePage() {
                     ❓ রি-ভেরিফাই কেন লাগে?
                   </summary>
                   <p className="text-[11px] text-muted-foreground mt-2 leading-relaxed">
-                    সাধারণত ৫ দিনে একবার রি-ভেরিফাই — এটা GoodDollar এর নিয়ম। যদি
-                    হোয়াইটলিস্ট বাতিল হয়ে যায় তবে সাথে সাথেই আবার চাওয়া হবে। এটা আপনাকে জালিয়াতি থেকে বাঁচানোর জন্য।
+                     আপনার Face key অন্য কেউ ব্যবহার করছে কি না বা account-এর নিরাপত্তা নষ্ট হয়েছে কি না নিশ্চিত করতেই Re-verify চাওয়া হয়।
+                     GoodDollar whitelist বাতিল না করা পর্যন্ত কিছু করতে হবে না; বাতিল হলেই app জানাবে, আর সফল Re-verify-এর পর key আবার whitelist হলে সেটি Re-verify হিসেবে গণনা হবে।
                   </p>
                 </details>
                 <button onClick={() => setShowWelcome(false)}
@@ -596,18 +610,12 @@ function useTick() {
 
 
 function MainIdentityCell({ task, onStart, onReverify, onOpenPhoto }: { task: any; onStart: () => void; onReverify: () => void; onOpenPhoto: (url: string) => void }) {
-  const now = useTick();
   const isVerified = task.status === "verified";
-  const dueMs = task.reverify_due_at ? new Date(task.reverify_due_at).getTime() : 0;
   const whitelistLost = task.whitelist_ok === false;
   const readyToReverify = isVerified && whitelistLost;
-  const remainingMs = Math.max(0, dueMs - now);
   const faceUrl: string | undefined = task.signed_face_url;
 
   if (isVerified && !readyToReverify) {
-    const totalSec = Math.floor(remainingMs / 1000);
-    const d = Math.floor(totalSec / 86400);
-    const h = Math.floor((totalSec % 86400) / 3600);
     return (
       <button onClick={() => faceUrl && onOpenPhoto(faceUrl)} data-voice="home.open.photo"
         className="relative w-24 h-24 rounded-2xl overflow-hidden border-2 shadow-[0_10px_24px_-6px_rgba(255,209,102,0.7)] active:scale-95 transition"
@@ -619,7 +627,7 @@ function MainIdentityCell({ task, onStart, onReverify, onOpenPhoto }: { task: an
           <Crown className="w-3 h-3 text-white" />
         </span>
         <p className="absolute bottom-1 left-0 right-0 text-[10px] font-black text-white text-center mono-num drop-shadow">
-          {d}d {String(h).padStart(2,"0")}h
+          WHITELISTED
         </p>
       </button>
     );

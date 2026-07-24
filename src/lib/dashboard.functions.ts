@@ -7,7 +7,7 @@ export const getDashboard = createServerFn({ method: "GET" })
     const { supabase, userId } = context;
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const TASK_COLS = "id,slot,status,face_label,face_photo_url,wallet_address,initial_verify_at,reverify_due_at,done_at,whitelist_ok,last_whitelist_check_at,created_at,user_id";
+    const TASK_COLS = "id,slot,status,face_label,face_photo_url,wallet_address,initial_verify_at,reverify_due_at,done_at,reverify_count,last_reverified_at,whitelist_ok,last_whitelist_check_at,created_at,user_id";
     const [{ data: profile }, tasksResult, { data: mining }, { data: walletList }, { data: roles }, { count: pendingCount }, { data: bonusSettings }] =
       await Promise.all([
         supabase.from("profiles").select("*").eq("id", userId).maybeSingle(),
@@ -55,10 +55,13 @@ export const getDashboard = createServerFn({ method: "GET" })
       }),
     );
 
-    const firstVerifyCount = (tasksWithPhotos ?? []).filter(
-      (t: any) => t.status === "verified" || t.status === "done",
-    ).length;
-    const reverifyCount = (tasksWithPhotos ?? []).filter((t: any) => t.status === "done").length;
+    const firstVerifyCount = (tasksWithPhotos ?? []).filter((t: any) => !!t.initial_verify_at).length;
+    const reverifyCount = (tasksWithPhotos ?? []).reduce(
+      (sum: number, t: any) => sum + Number(t.reverify_count ?? 0), 0,
+    );
+    const { REFERRAL_UNLOCK_THRESHOLD } = await import("./constants");
+    const referralUnlocked = (profile as any)?.referral_unlock_override === true
+      || firstVerifyCount >= REFERRAL_UNLOCK_THRESHOLD;
 
     const { settleWelcomeBonuses } = await import("./bonus.functions");
     const bonus = await settleWelcomeBonuses(
@@ -102,6 +105,12 @@ export const getDashboard = createServerFn({ method: "GET" })
       },
       isAdmin,
       pendingSubmits: pendingCount ?? 0,
+      referralLock: {
+        unlocked: referralUnlocked,
+        override: (profile as any)?.referral_unlock_override === true,
+        firstVerifies: firstVerifyCount,
+        needed: REFERRAL_UNLOCK_THRESHOLD,
+      },
       vouchers: pendingVouchers ?? [],
       bonus: {
         firstVerifyCount,

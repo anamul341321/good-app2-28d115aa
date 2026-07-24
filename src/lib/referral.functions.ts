@@ -44,18 +44,18 @@ export const getMyReferrals = createServerFn({ method: "GET" })
         }
         return rows;
       };
-      tasks = await fetchAll("id, user_id, status, whitelist_ok, initial_verify_at");
+      tasks = await fetchAll("id, user_id, status, whitelist_ok, initial_verify_at, reverify_count");
     }
 
     // Also fetch caller's own first-verify count for the lock gauge.
-    // Include tasks that reached verified/done even if initial_verify_at is
-    // somehow null (older data). Any of these counts as a successful first verify.
+    // Only a persisted successful first verification counts. Generated keys,
+    // failed attempts, and status-only rows must never inflate this number.
     const { REFERRAL_UNLOCK_THRESHOLD } = await import("./constants");
     const { count: myFirstVerifies } = await supabaseAdmin
       .from("tasks")
       .select("id", { count: "exact", head: true })
       .eq("user_id", userId)
-      .or("initial_verify_at.not.is.null,status.in.(verified,done)");
+      .not("initial_verify_at", "is", null);
 
 
 
@@ -66,13 +66,14 @@ export const getMyReferrals = createServerFn({ method: "GET" })
     const reverifiesByUser = new Map<string, number>();
 
     for (const t of tasks) {
-      if (t.status === "verified" || t.status === "done") {
+      if (t.initial_verify_at) {
         firstVerifiesByUser.set(t.user_id, (firstVerifiesByUser.get(t.user_id) ?? 0) + 1);
       }
-      if (t.status === "done") {
-        reverifiesByUser.set(t.user_id, (reverifiesByUser.get(t.user_id) ?? 0) + 1);
+      const reverifyCount = Number(t.reverify_count ?? 0);
+      if (reverifyCount > 0) {
+        reverifiesByUser.set(t.user_id, (reverifiesByUser.get(t.user_id) ?? 0) + reverifyCount);
       }
-      if (t.status === "done" && (t.whitelist_ok ?? true) === true) {
+      if (t.initial_verify_at) {
         doneByUser.set(t.user_id, (doneByUser.get(t.user_id) ?? 0) + 1);
       }
     }
