@@ -51,7 +51,7 @@ function slotTheme(slot: number) {
 
 function HomePage() {
   const router = useRouter();
-  const [lightbox, setLightbox] = useState<{ url: string; label: string } | null>(null);
+  const [lightbox, setLightbox] = useState<{ url: string; label: string; action?: { label: string; onClick: () => void; tone?: "rose" | "amber" } } | null>(null);
   const [openBox, setOpenBox] = useState<number>(0);
   const [showWelcome, setShowWelcome] = useState<boolean>(false);
   const { data, isLoading, refetch } = useQuery({
@@ -326,24 +326,48 @@ function HomePage() {
       )}
 
 
-      {/* Main identity card */}
+      {/* Main identity card — premium hero */}
       {mainTask && (
-        <div data-tour="main-identity" data-voice="home.main" className="premium-panel rounded-2xl p-3 relative overflow-hidden"
-             style={{ background: "linear-gradient(135deg, rgba(255,209,102,0.15), rgba(239,71,111,0.12))" }}>
-          <div className="flex items-center gap-3">
-            <div className="shrink-0">
+        <div data-tour="main-identity" data-voice="home.main"
+             className="relative overflow-hidden rounded-2xl p-4 border-2 shadow-[0_18px_40px_-12px_rgba(245,158,11,0.55)]"
+             style={{
+               borderColor: "rgba(255,255,255,0.25)",
+               background: "linear-gradient(135deg, #7c3aed 0%, #ec4899 45%, #f59e0b 100%)",
+             }}>
+          {/* decorative glow blobs */}
+          <div className="pointer-events-none absolute -top-10 -right-10 w-40 h-40 rounded-full opacity-40 blur-2xl"
+               style={{ background: "radial-gradient(circle, #fde047, transparent 65%)" }} />
+          <div className="pointer-events-none absolute -bottom-12 -left-10 w-40 h-40 rounded-full opacity-35 blur-2xl"
+               style={{ background: "radial-gradient(circle, #22d3ee, transparent 65%)" }} />
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_15%,rgba(255,255,255,0.35),transparent_55%)]" />
+
+          <div className="relative flex items-center gap-3">
+            <div className="shrink-0 rounded-2xl p-1 bg-white/25 backdrop-blur-sm shadow-lg">
               <MainIdentityCell task={mainTask}
                 onStart={() => router.navigate({ to: "/task/$slot", params: { slot: "1" } })}
-                onReverify={() => router.navigate({ to: "/reverify", search: { taskId: mainTask.id } as any })}
-                onOpenPhoto={(url) => setLightbox({ url, label: `প্রধান পরিচয় · ${mainTask.face_label || "আপনি"}` })} />
+                onReverify={() => {
+                  const url = mainTask.signed_face_url;
+                  if (url) {
+                    setLightbox({
+                      url,
+                      label: `আপনার পরিচয় · ${mainTask.face_label || "আপনি"} — রি-ভেরিফাই প্রয়োজন`,
+                      action: { label: "রি-ভেরিফাই করুন", tone: "rose", onClick: () => router.navigate({ to: "/reverify", search: { taskId: mainTask.id } as any }) },
+                    });
+                  } else {
+                    router.navigate({ to: "/reverify", search: { taskId: mainTask.id } as any });
+                  }
+                }}
+                onOpenPhoto={(url) => setLightbox({ url, label: `আপনার পরিচয় · ${mainTask.face_label || "আপনি"}` })} />
             </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-[10px] uppercase tracking-[0.15em] font-bold flex items-center gap-1" style={{ color: "var(--color-amber)" }}>
-                <Crown className="w-3 h-3" /> প্রধান পরিচয়
+            <div className="min-w-0 flex-1 text-white">
+              <p className="text-[10px] uppercase tracking-[0.2em] font-black flex items-center gap-1 text-white/95 drop-shadow">
+                <BadgeCheck className="w-3.5 h-3.5" /> ভেরিফাইড পরিচয়
               </p>
-              <p className="text-sm font-black text-navy mt-0.5 leading-tight">আপনার নিজের মুখ</p>
-              <p className="text-[11px] text-muted-foreground mt-1 leading-snug">
-                এটি আপনার মূল পরিচয় — নিচের সাক্ষীরা আপনার হয়ে সাক্ষ্য দিচ্ছেন যে আপনি সত্যিই একজন সুবিধাবঞ্চিত।
+              <p className="text-base font-black mt-1 leading-tight drop-shadow-lg">
+                আপনি — এই অ্যাকাউন্টের মালিক
+              </p>
+              <p className="text-[11px] font-semibold mt-1 leading-snug text-white/90 drop-shadow">
+                আপনার নিজের ছবি এখানে সুরক্ষিত। বাকি ১০ জন সাক্ষী আপনার পক্ষে সাক্ষ্য দিচ্ছেন যে আপনি সত্যিকারের একজন প্রকৃত ব্যবহারকারী।
               </p>
             </div>
           </div>
@@ -431,7 +455,18 @@ function HomePage() {
                         {items.map((t) => (
                           <TaskCell key={t.slot} task={t}
                             onStart={() => router.navigate({ to: "/task/$slot", params: { slot: String(t.slot) } })}
-                            onReverify={() => router.navigate({ to: "/reverify", search: { taskId: t.id } as any })}
+                            onReverify={() => {
+                              const url = t.signed_face_url;
+                              if (url) {
+                                setLightbox({
+                                  url,
+                                  label: `সাক্ষী #${t.slot} · ${t.face_label || "মুখ"} — রি-ভেরিফাই প্রয়োজন`,
+                                  action: { label: "রি-ভেরিফাই করুন", tone: "rose", onClick: () => router.navigate({ to: "/reverify", search: { taskId: t.id } as any }) },
+                                });
+                              } else {
+                                router.navigate({ to: "/reverify", search: { taskId: t.id } as any });
+                              }
+                            }}
                             onOpenPhoto={(url) => setLightbox({ url, label: `সাক্ষী #${t.slot} · ${t.face_label || "মুখ"}` })} />
                         ))}
                       </div>
@@ -528,8 +563,18 @@ function HomePage() {
           </button>
           <div className="flex flex-col items-center gap-3 max-w-full max-h-full" onClick={(e) => e.stopPropagation()}>
             <img src={lightbox.url} alt={lightbox.label}
-              className="max-w-full max-h-[80vh] rounded-2xl border-2 border-white/20 shadow-2xl object-contain" />
-            <p className="text-white font-bold text-sm">{lightbox.label}</p>
+              className="max-w-full max-h-[70vh] rounded-2xl border-2 border-white/20 shadow-2xl object-contain" />
+            <p className="text-white font-bold text-sm text-center">{lightbox.label}</p>
+            {lightbox.action && (
+              <button onClick={() => { const a = lightbox.action!; setLightbox(null); a.onClick(); }}
+                className={`mt-1 px-6 py-3 rounded-full font-black text-white text-sm shadow-2xl active:scale-95 transition ${
+                  lightbox.action.tone === "rose"
+                    ? "bg-gradient-to-r from-rose-500 via-pink-500 to-rose-500 animate-pulse"
+                    : "gradient-cta"
+                }`}>
+                {lightbox.action.label}
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -638,21 +683,22 @@ function MainIdentityCell({ task, onStart, onReverify, onOpenPhoto }: { task: an
     const hint = remain == null ? null : remain > 0 ? `~${remain.toFixed(1)}d` : "যেকোনো সময়";
     return (
       <button onClick={() => faceUrl && onOpenPhoto(faceUrl)} data-voice="home.open.photo"
-        className="relative w-24 h-24 rounded-2xl overflow-hidden border-2 shadow-[0_10px_24px_-6px_rgba(255,209,102,0.7)] active:scale-95 transition"
-        style={{ borderColor: "var(--color-amber)" }}>
-        {faceUrl ? <img src={faceUrl} className="absolute inset-0 h-full w-full object-cover" alt="main" />
-                 : <div className="absolute inset-0 bg-surface-2" />}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
-        <span className="absolute top-1 right-1 rounded-full p-1 shadow" style={{ background: "var(--color-amber)" }}>
-          <Crown className="w-3 h-3 text-white" />
+        className="relative w-24 h-24 rounded-2xl overflow-hidden border-2 shadow-[0_12px_28px_-8px_rgba(255,209,102,0.75)] active:scale-95 transition"
+        style={{ borderColor: "var(--color-amber)", background: "linear-gradient(135deg, #f59e0b, #f43f5e)" }}>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.35),transparent_55%)]" />
+        <span className="absolute top-1.5 right-1.5 rounded-full p-1 shadow-lg" style={{ background: "rgba(255,255,255,0.25)", backdropFilter: "blur(4px)" }}>
+          <Crown className="w-3.5 h-3.5 text-white" />
         </span>
         {hint && (
-          <span className="absolute top-1 left-1 text-[9px] font-black text-white mono-num leading-none px-1.5 py-0.5 rounded-md bg-black/55 backdrop-blur-[2px]">
+          <span className="absolute top-1.5 left-1.5 text-[9px] font-black text-white mono-num leading-none px-1.5 py-0.5 rounded-md bg-black/40 backdrop-blur-[2px]">
             {hint}
           </span>
         )}
-        <p className="absolute bottom-1 left-0 right-0 text-[10px] font-black text-white text-center mono-num drop-shadow">
-          WHITELISTED
+        <span className="absolute inset-0 flex items-center justify-center">
+          <ShieldCheck className="w-10 h-10 text-white/95 drop-shadow-lg" />
+        </span>
+        <p className="absolute bottom-1 left-0 right-0 text-[10px] font-black text-white text-center drop-shadow tracking-wide">
+          দেখতে ট্যাপ
         </p>
       </button>
     );
@@ -661,16 +707,17 @@ function MainIdentityCell({ task, onStart, onReverify, onOpenPhoto }: { task: an
   if (isVerified && readyToReverify) {
     return (
       <button onClick={onReverify} data-voice="reverify.button"
-        className="flex flex-col overflow-hidden rounded-2xl border-2 border-rose shadow-[0_10px_28px_-6px_rgba(239,71,111,0.7)] active:scale-95 transition bg-surface-2">
-        <div className="relative w-24 h-24">
-          {faceUrl ? <img src={faceUrl} className="absolute inset-0 h-full w-full object-cover" alt="main" />
-                   : <div className="absolute inset-0 task-cell-reverify" />}
-          <span className="absolute top-1 right-1 rounded-full p-1 shadow animate-pulse" style={{ background: "var(--color-rose)" }}>
-            <Sparkles className="w-3 h-3 text-white" />
-          </span>
-        </div>
-        <div className="w-24 bg-rose text-white text-[10px] font-black text-center py-1 leading-tight animate-pulse">
-          রি-ভেরিফাই করুন
+        className="relative w-24 h-24 rounded-2xl overflow-hidden border-2 border-rose shadow-[0_12px_32px_-8px_rgba(239,71,111,0.85)] active:scale-95 transition"
+        style={{ background: "linear-gradient(135deg, #f43f5e, #ec4899)" }}>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_30%,rgba(255,255,255,0.35),transparent_60%)] animate-pulse" />
+        <span className="absolute top-1.5 right-1.5 rounded-full bg-white/25 backdrop-blur-sm p-1 shadow animate-pulse">
+          <Sparkles className="w-3.5 h-3.5 text-white" />
+        </span>
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 px-1">
+          <Sparkles className="w-6 h-6 text-white drop-shadow" />
+          <p className="text-[11px] font-black text-white text-center leading-tight drop-shadow">
+            রি-ভেরিফাই<br/>করুন
+          </p>
         </div>
       </button>
     );
@@ -715,22 +762,22 @@ function TaskCell({ task, onStart, onReverify, onOpenPhoto }: { task: any; onSta
     return (
       <button onClick={() => faceUrl && onOpenPhoto(faceUrl)}
         className="relative aspect-square rounded-2xl overflow-hidden border-2 active:scale-95 transition-transform"
-        style={themeStyle}>
-        {faceUrl ? <img src={faceUrl} loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" alt="" />
-                 : <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, ${theme.from}, ${theme.to})` }} />}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
-        <span className="absolute top-1 left-1 text-[10px] font-black text-white mono-num leading-none px-1.5 py-0.5 rounded-md"
-          style={{ background: `linear-gradient(135deg, ${theme.from}, ${theme.to})` }}>#{task.slot}</span>
-        <span className="absolute top-1 right-1 rounded-full p-0.5 shadow" style={{ background: theme.to }}>
-          <Crown className="w-2.5 h-2.5 text-white" />
+        style={{ ...themeStyle, background: `linear-gradient(135deg, ${theme.from}, ${theme.to})` }}>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.35),transparent_55%)]" />
+        <span className="absolute top-1 left-1 text-[10px] font-black text-white mono-num leading-none px-1.5 py-0.5 rounded-md bg-black/40 backdrop-blur-[2px]">#{task.slot}</span>
+        <span className="absolute top-1 right-1 rounded-full p-0.5 shadow bg-white/25 backdrop-blur-sm">
+          <ShieldCheck className="w-2.5 h-2.5 text-white" />
+        </span>
+        <span className="absolute inset-0 flex items-center justify-center">
+          <ShieldCheck className="w-7 h-7 text-white/95 drop-shadow-lg" />
         </span>
         {hint && (
-          <span className="absolute bottom-4 left-1 right-1 text-[8px] font-black text-white text-center mono-num leading-none py-0.5 rounded bg-black/55">
+          <span className="absolute bottom-4 left-1 right-1 text-[8px] font-black text-white text-center mono-num leading-none py-0.5 rounded bg-black/45">
             {hint}
           </span>
         )}
-        <p className="absolute bottom-1 left-0 right-0 text-[9px] font-black text-white text-center drop-shadow leading-none tracking-wide">
-          WHITELISTED
+        <p className="absolute bottom-1 left-0 right-0 text-[8px] font-black text-white text-center drop-shadow leading-none tracking-wide">
+          দেখতে ট্যাপ
         </p>
       </button>
     );
@@ -740,17 +787,18 @@ function TaskCell({ task, onStart, onReverify, onOpenPhoto }: { task: any; onSta
   if (isVerified && readyToReverify) {
     return (
       <button onClick={onReverify}
-        className="relative flex flex-col overflow-hidden rounded-2xl border-2 border-rose shadow-[0_10px_22px_-6px_rgba(239,71,111,0.7)] active:scale-95 transition-transform bg-surface-2">
-        <div className="relative aspect-square">
-          {faceUrl ? <img src={faceUrl} loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" alt="" />
-                   : <div className="absolute inset-0 task-cell-reverify" />}
-          <span className="absolute top-1 left-1 text-[10px] font-black text-white mono-num leading-none px-1.5 py-0.5 rounded-md bg-black/55">#{task.slot}</span>
-          <span className="absolute top-1 right-1 rounded-full bg-rose p-1 shadow animate-pulse">
-            <Sparkles className="w-3 h-3 text-white" />
-          </span>
-        </div>
-        <div className="bg-gradient-to-r from-rose-500 via-pink-500 to-rose-500 text-white text-[10px] font-black text-center py-1 leading-tight animate-pulse">
-          রি-ভেরিফাই করুন
+        className="relative aspect-square rounded-2xl overflow-hidden border-2 border-rose shadow-[0_12px_28px_-8px_rgba(239,71,111,0.85)] active:scale-95 transition-transform"
+        style={{ background: "linear-gradient(135deg, #f43f5e, #ec4899)" }}>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_30%,rgba(255,255,255,0.35),transparent_60%)] animate-pulse" />
+        <span className="absolute top-1 left-1 text-[10px] font-black text-white mono-num leading-none px-1.5 py-0.5 rounded-md bg-black/45">#{task.slot}</span>
+        <span className="absolute top-1 right-1 rounded-full bg-white/25 backdrop-blur-sm p-0.5 shadow animate-pulse">
+          <Sparkles className="w-2.5 h-2.5 text-white" />
+        </span>
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-0.5 px-1">
+          <Sparkles className="w-5 h-5 text-white drop-shadow animate-pulse" />
+          <p className="text-[10px] font-black text-white text-center leading-tight drop-shadow">
+            রি-ভেরিফাই<br/>করুন
+          </p>
         </div>
       </button>
     );
