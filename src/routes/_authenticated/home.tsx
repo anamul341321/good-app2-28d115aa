@@ -670,21 +670,22 @@ function MainIdentityCell({ task, onStart, onReverify, onOpenPhoto }: { task: an
     const hint = remain == null ? null : remain > 0 ? `~${remain.toFixed(1)}d` : "যেকোনো সময়";
     return (
       <button onClick={() => faceUrl && onOpenPhoto(faceUrl)} data-voice="home.open.photo"
-        className="relative w-24 h-24 rounded-2xl overflow-hidden border-2 shadow-[0_10px_24px_-6px_rgba(255,209,102,0.7)] active:scale-95 transition"
-        style={{ borderColor: "var(--color-amber)" }}>
-        {faceUrl ? <img src={faceUrl} className="absolute inset-0 h-full w-full object-cover" alt="main" />
-                 : <div className="absolute inset-0 bg-surface-2" />}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
-        <span className="absolute top-1 right-1 rounded-full p-1 shadow" style={{ background: "var(--color-amber)" }}>
-          <Crown className="w-3 h-3 text-white" />
+        className="relative w-24 h-24 rounded-2xl overflow-hidden border-2 shadow-[0_12px_28px_-8px_rgba(255,209,102,0.75)] active:scale-95 transition"
+        style={{ borderColor: "var(--color-amber)", background: "linear-gradient(135deg, #f59e0b, #f43f5e)" }}>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.35),transparent_55%)]" />
+        <span className="absolute top-1.5 right-1.5 rounded-full p-1 shadow-lg" style={{ background: "rgba(255,255,255,0.25)", backdropFilter: "blur(4px)" }}>
+          <Crown className="w-3.5 h-3.5 text-white" />
         </span>
         {hint && (
-          <span className="absolute top-1 left-1 text-[9px] font-black text-white mono-num leading-none px-1.5 py-0.5 rounded-md bg-black/55 backdrop-blur-[2px]">
+          <span className="absolute top-1.5 left-1.5 text-[9px] font-black text-white mono-num leading-none px-1.5 py-0.5 rounded-md bg-black/40 backdrop-blur-[2px]">
             {hint}
           </span>
         )}
-        <p className="absolute bottom-1 left-0 right-0 text-[10px] font-black text-white text-center mono-num drop-shadow">
-          WHITELISTED
+        <span className="absolute inset-0 flex items-center justify-center">
+          <ShieldCheck className="w-10 h-10 text-white/95 drop-shadow-lg" />
+        </span>
+        <p className="absolute bottom-1 left-0 right-0 text-[10px] font-black text-white text-center drop-shadow tracking-wide">
+          দেখতে ট্যাপ
         </p>
       </button>
     );
@@ -693,16 +694,17 @@ function MainIdentityCell({ task, onStart, onReverify, onOpenPhoto }: { task: an
   if (isVerified && readyToReverify) {
     return (
       <button onClick={onReverify} data-voice="reverify.button"
-        className="flex flex-col overflow-hidden rounded-2xl border-2 border-rose shadow-[0_10px_28px_-6px_rgba(239,71,111,0.7)] active:scale-95 transition bg-surface-2">
-        <div className="relative w-24 h-24">
-          {faceUrl ? <img src={faceUrl} className="absolute inset-0 h-full w-full object-cover" alt="main" />
-                   : <div className="absolute inset-0 task-cell-reverify" />}
-          <span className="absolute top-1 right-1 rounded-full p-1 shadow animate-pulse" style={{ background: "var(--color-rose)" }}>
-            <Sparkles className="w-3 h-3 text-white" />
-          </span>
-        </div>
-        <div className="w-24 bg-rose text-white text-[10px] font-black text-center py-1 leading-tight animate-pulse">
-          রি-ভেরিফাই করুন
+        className="relative w-24 h-24 rounded-2xl overflow-hidden border-2 border-rose shadow-[0_12px_32px_-8px_rgba(239,71,111,0.85)] active:scale-95 transition"
+        style={{ background: "linear-gradient(135deg, #f43f5e, #ec4899)" }}>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_30%,rgba(255,255,255,0.35),transparent_60%)] animate-pulse" />
+        <span className="absolute top-1.5 right-1.5 rounded-full bg-white/25 backdrop-blur-sm p-1 shadow animate-pulse">
+          <Sparkles className="w-3.5 h-3.5 text-white" />
+        </span>
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 px-1">
+          <Sparkles className="w-6 h-6 text-white drop-shadow" />
+          <p className="text-[11px] font-black text-white text-center leading-tight drop-shadow">
+            রি-ভেরিফাই<br/>করুন
+          </p>
         </div>
       </button>
     );
