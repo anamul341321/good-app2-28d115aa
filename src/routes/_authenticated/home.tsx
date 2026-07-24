@@ -612,16 +612,11 @@ function useTick() {
 function MainIdentityCell({ task, onStart, onReverify, onOpenPhoto }: { task: any; onStart: () => void; onReverify: () => void; onOpenPhoto: (url: string) => void }) {
   const now = useTick();
   const isVerified = task.status === "verified";
-  const dueMs = task.reverify_due_at ? new Date(task.reverify_due_at).getTime() : 0;
   const whitelistLost = task.whitelist_ok === false;
   const readyToReverify = isVerified && whitelistLost;
-  const remainingMs = Math.max(0, dueMs - now);
   const faceUrl: string | undefined = task.signed_face_url;
 
   if (isVerified && !readyToReverify) {
-    const totalSec = Math.floor(remainingMs / 1000);
-    const d = Math.floor(totalSec / 86400);
-    const h = Math.floor((totalSec % 86400) / 3600);
     return (
       <button onClick={() => faceUrl && onOpenPhoto(faceUrl)} data-voice="home.open.photo"
         className="relative w-24 h-24 rounded-2xl overflow-hidden border-2 shadow-[0_10px_24px_-6px_rgba(255,209,102,0.7)] active:scale-95 transition"
@@ -633,7 +628,7 @@ function MainIdentityCell({ task, onStart, onReverify, onOpenPhoto }: { task: an
           <Crown className="w-3 h-3 text-white" />
         </span>
         <p className="absolute bottom-1 left-0 right-0 text-[10px] font-black text-white text-center mono-num drop-shadow">
-          {d}d {String(h).padStart(2,"0")}h
+          WHITELISTED
         </p>
       </button>
     );

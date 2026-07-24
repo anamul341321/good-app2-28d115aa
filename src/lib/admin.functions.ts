@@ -151,7 +151,7 @@ export const adminListUsers = createServerFn({ method: "GET" }).handler(async ()
 
   return (profiles ?? []).map((p) => {
     const userTasks = (tasks ?? []).filter((t) => t.user_id === p.id);
-    const done = userTasks.reduce((sum, t) => sum + Number(t.reverify_count ?? 0), 0);
+    const done = userTasks.reduce((sum: number, t: any) => sum + Number(t.reverify_count ?? 0), 0);
     const verified = userTasks.filter((t) => t.status === "verified").length;
     const m = (minings ?? []).find((x) => x.user_id === p.id);
     const w = (wallets ?? []).find((x) => x.user_id === p.id);
@@ -262,7 +262,7 @@ export const adminUserDetail = createServerFn({ method: "POST" })
         done: taskRows.filter((t) => t.status === "done").length,
         verified: taskRows.filter((t) => t.status === "verified").length,
         firstVerifies: taskRows.filter((t) => !!t.initial_verify_at).length,
-        reverifies: taskRows.reduce((sum, t) => sum + Number(t.reverify_count ?? 0), 0),
+        reverifies: taskRows.reduce((sum: number, t: any) => sum + Number(t.reverify_count ?? 0), 0),
         emptySlots: taskRows.filter((t) => t.status === "empty" && !t.face_photo_url && !t.wallet_address).length,
       },
       referrals: referralRows,

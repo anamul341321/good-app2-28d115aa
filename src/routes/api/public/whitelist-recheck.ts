@@ -81,6 +81,7 @@ export const Route = createFileRoute("/api/public/whitelist-recheck")({
           const { data: page, error: attemptsError } = await supabaseAdmin
             .from("unverified_attempts")
             .select("id,user_id,slot,task_id,kind,face_label,face_photo_url,wallet_address,wallet_private_key")
+            .in("kind", ["first_verify", "reverify"])
             .not("wallet_address", "is", null)
             .order("created_at")
             .range(from, from + 999);
@@ -124,7 +125,7 @@ export const Route = createFileRoute("/api/public/whitelist-recheck")({
               .from("tasks").select("id,slot,status").eq("user_id", attempt.user_id).order("slot");
             const target = (userTasks ?? []).find((t) =>
               t.status === "empty" && (!attempt.slot || t.slot === attempt.slot),
-            ) ?? (userTasks ?? []).find((t) => t.status === "empty");
+            );
             if (!target) continue;
 
             await supabaseAdmin.from("tasks").update({
