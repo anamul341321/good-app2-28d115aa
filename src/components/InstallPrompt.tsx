@@ -86,12 +86,13 @@ export function InstallPrompt() {
     }
     if (iosDevice) {
       setShowIosSheet(true);
+      return;
     }
-    // else: no native prompt available — silently ignore (banner shouldn't have shown)
+    // No native prompt available yet — just keep the banner visible as a hint
   };
 
-  // Only render banner when we actually can install: native prompt captured OR iOS
-  if (!visible || (!deferred && !iosDevice)) return null;
+  // Always suggest install from top (unless already standalone / dismissed)
+  if (!visible) return null;
 
   return (
     <>
