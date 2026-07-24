@@ -302,6 +302,59 @@ export type Database = {
           },
         ]
       }
+      recharges: {
+        Row: {
+          amount: number
+          connection_type: string
+          created_at: string
+          error_message: string | null
+          id: string
+          mobile: string
+          operator: string
+          provider_ref: string | null
+          provider_response: Json | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          connection_type?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          mobile: string
+          operator: string
+          provider_ref?: string | null
+          provider_response?: Json | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          connection_type?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          mobile?: string
+          operator?: string
+          provider_ref?: string | null
+          provider_response?: Json | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recharges_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tasks: {
         Row: {
           created_at: string
@@ -361,6 +414,48 @@ export type Database = {
           {
             foreignKeyName: "tasks_user_id_profiles_fkey"
             columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transfers: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          note: string | null
+          receiver_id: string
+          sender_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          note?: string | null
+          receiver_id: string
+          sender_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          note?: string | null
+          receiver_id?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transfers_receiver_id_fkey"
+            columns: ["receiver_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transfers_sender_id_fkey"
+            columns: ["sender_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -552,6 +647,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_recharge_request: {
+        Args: {
+          _amount: number
+          _connection_type: string
+          _mobile: string
+          _operator: string
+          _user: string
+        }
+        Returns: Json
+      }
       get_whitelist_cron_secret: { Args: never; Returns: string }
       has_role: {
         Args: {
@@ -559,6 +664,25 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      mark_recharge_result: {
+        Args: {
+          _error: string
+          _provider_ref: string
+          _provider_response: Json
+          _recharge_id: string
+          _status: string
+        }
+        Returns: undefined
+      }
+      send_balance_transfer: {
+        Args: {
+          _amount: number
+          _note: string
+          _sender: string
+          _target: string
+        }
+        Returns: Json
       }
       settle_mining: { Args: { _user_id: string }; Returns: undefined }
       transition_task_whitelist: {

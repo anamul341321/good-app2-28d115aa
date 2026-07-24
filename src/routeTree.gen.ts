@@ -21,13 +21,17 @@ import { Route as AdminWalletsRouteImport } from './routes/admin/wallets'
 import { Route as AdminUsersRouteImport } from './routes/admin/users'
 import { Route as AdminUnverifiedRouteImport } from './routes/admin/unverified'
 import { Route as AdminReverifyRouteImport } from './routes/admin/reverify'
+import { Route as AdminRechargesRouteImport } from './routes/admin/recharges'
+import { Route as AdminKycRouteImport } from './routes/admin/kyc'
 import { Route as AdminFacesRouteImport } from './routes/admin/faces'
 import { Route as AdminBonusSettingsRouteImport } from './routes/admin/bonus-settings'
 import { Route as AdminAnnouncementsRouteImport } from './routes/admin/announcements'
 import { Route as AuthenticatedWithdrawRouteImport } from './routes/_authenticated/withdraw'
 import { Route as AuthenticatedWalletRouteImport } from './routes/_authenticated/wallet'
+import { Route as AuthenticatedSendRouteImport } from './routes/_authenticated/send'
 import { Route as AuthenticatedReverifyRouteImport } from './routes/_authenticated/reverify'
 import { Route as AuthenticatedReferralRouteImport } from './routes/_authenticated/referral'
+import { Route as AuthenticatedRechargeRouteImport } from './routes/_authenticated/recharge'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedKycRouteImport } from './routes/_authenticated/kyc'
 import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
@@ -95,6 +99,16 @@ const AdminReverifyRoute = AdminReverifyRouteImport.update({
   path: '/reverify',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminRechargesRoute = AdminRechargesRouteImport.update({
+  id: '/recharges',
+  path: '/recharges',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminKycRoute = AdminKycRouteImport.update({
+  id: '/kyc',
+  path: '/kyc',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminFacesRoute = AdminFacesRouteImport.update({
   id: '/faces',
   path: '/faces',
@@ -120,6 +134,11 @@ const AuthenticatedWalletRoute = AuthenticatedWalletRouteImport.update({
   path: '/wallet',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedSendRoute = AuthenticatedSendRouteImport.update({
+  id: '/send',
+  path: '/send',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedReverifyRoute = AuthenticatedReverifyRouteImport.update({
   id: '/reverify',
   path: '/reverify',
@@ -128,6 +147,11 @@ const AuthenticatedReverifyRoute = AuthenticatedReverifyRouteImport.update({
 const AuthenticatedReferralRoute = AuthenticatedReferralRouteImport.update({
   id: '/referral',
   path: '/referral',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedRechargeRoute = AuthenticatedRechargeRouteImport.update({
+  id: '/recharge',
+  path: '/recharge',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
@@ -175,13 +199,17 @@ export interface FileRoutesByFullPath {
   '/home': typeof AuthenticatedHomeRoute
   '/kyc': typeof AuthenticatedKycRoute
   '/profile': typeof AuthenticatedProfileRoute
+  '/recharge': typeof AuthenticatedRechargeRoute
   '/referral': typeof AuthenticatedReferralRoute
   '/reverify': typeof AuthenticatedReverifyRoute
+  '/send': typeof AuthenticatedSendRoute
   '/wallet': typeof AuthenticatedWalletRoute
   '/withdraw': typeof AuthenticatedWithdrawRoute
   '/admin/announcements': typeof AdminAnnouncementsRoute
   '/admin/bonus-settings': typeof AdminBonusSettingsRoute
   '/admin/faces': typeof AdminFacesRoute
+  '/admin/kyc': typeof AdminKycRoute
+  '/admin/recharges': typeof AdminRechargesRoute
   '/admin/reverify': typeof AdminReverifyRoute
   '/admin/unverified': typeof AdminUnverifiedRoute
   '/admin/users': typeof AdminUsersRoute
@@ -201,13 +229,17 @@ export interface FileRoutesByTo {
   '/home': typeof AuthenticatedHomeRoute
   '/kyc': typeof AuthenticatedKycRoute
   '/profile': typeof AuthenticatedProfileRoute
+  '/recharge': typeof AuthenticatedRechargeRoute
   '/referral': typeof AuthenticatedReferralRoute
   '/reverify': typeof AuthenticatedReverifyRoute
+  '/send': typeof AuthenticatedSendRoute
   '/wallet': typeof AuthenticatedWalletRoute
   '/withdraw': typeof AuthenticatedWithdrawRoute
   '/admin/announcements': typeof AdminAnnouncementsRoute
   '/admin/bonus-settings': typeof AdminBonusSettingsRoute
   '/admin/faces': typeof AdminFacesRoute
+  '/admin/kyc': typeof AdminKycRoute
+  '/admin/recharges': typeof AdminRechargesRoute
   '/admin/reverify': typeof AdminReverifyRoute
   '/admin/unverified': typeof AdminUnverifiedRoute
   '/admin/users': typeof AdminUsersRoute
@@ -230,13 +262,17 @@ export interface FileRoutesById {
   '/_authenticated/home': typeof AuthenticatedHomeRoute
   '/_authenticated/kyc': typeof AuthenticatedKycRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
+  '/_authenticated/recharge': typeof AuthenticatedRechargeRoute
   '/_authenticated/referral': typeof AuthenticatedReferralRoute
   '/_authenticated/reverify': typeof AuthenticatedReverifyRoute
+  '/_authenticated/send': typeof AuthenticatedSendRoute
   '/_authenticated/wallet': typeof AuthenticatedWalletRoute
   '/_authenticated/withdraw': typeof AuthenticatedWithdrawRoute
   '/admin/announcements': typeof AdminAnnouncementsRoute
   '/admin/bonus-settings': typeof AdminBonusSettingsRoute
   '/admin/faces': typeof AdminFacesRoute
+  '/admin/kyc': typeof AdminKycRoute
+  '/admin/recharges': typeof AdminRechargesRoute
   '/admin/reverify': typeof AdminReverifyRoute
   '/admin/unverified': typeof AdminUnverifiedRoute
   '/admin/users': typeof AdminUsersRoute
@@ -259,13 +295,17 @@ export interface FileRouteTypes {
     | '/home'
     | '/kyc'
     | '/profile'
+    | '/recharge'
     | '/referral'
     | '/reverify'
+    | '/send'
     | '/wallet'
     | '/withdraw'
     | '/admin/announcements'
     | '/admin/bonus-settings'
     | '/admin/faces'
+    | '/admin/kyc'
+    | '/admin/recharges'
     | '/admin/reverify'
     | '/admin/unverified'
     | '/admin/users'
@@ -285,13 +325,17 @@ export interface FileRouteTypes {
     | '/home'
     | '/kyc'
     | '/profile'
+    | '/recharge'
     | '/referral'
     | '/reverify'
+    | '/send'
     | '/wallet'
     | '/withdraw'
     | '/admin/announcements'
     | '/admin/bonus-settings'
     | '/admin/faces'
+    | '/admin/kyc'
+    | '/admin/recharges'
     | '/admin/reverify'
     | '/admin/unverified'
     | '/admin/users'
@@ -313,13 +357,17 @@ export interface FileRouteTypes {
     | '/_authenticated/home'
     | '/_authenticated/kyc'
     | '/_authenticated/profile'
+    | '/_authenticated/recharge'
     | '/_authenticated/referral'
     | '/_authenticated/reverify'
+    | '/_authenticated/send'
     | '/_authenticated/wallet'
     | '/_authenticated/withdraw'
     | '/admin/announcements'
     | '/admin/bonus-settings'
     | '/admin/faces'
+    | '/admin/kyc'
+    | '/admin/recharges'
     | '/admin/reverify'
     | '/admin/unverified'
     | '/admin/users'
@@ -430,6 +478,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminReverifyRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/recharges': {
+      id: '/admin/recharges'
+      path: '/recharges'
+      fullPath: '/admin/recharges'
+      preLoaderRoute: typeof AdminRechargesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/kyc': {
+      id: '/admin/kyc'
+      path: '/kyc'
+      fullPath: '/admin/kyc'
+      preLoaderRoute: typeof AdminKycRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/faces': {
       id: '/admin/faces'
       path: '/faces'
@@ -465,6 +527,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWalletRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/send': {
+      id: '/_authenticated/send'
+      path: '/send'
+      fullPath: '/send'
+      preLoaderRoute: typeof AuthenticatedSendRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/reverify': {
       id: '/_authenticated/reverify'
       path: '/reverify'
@@ -477,6 +546,13 @@ declare module '@tanstack/react-router' {
       path: '/referral'
       fullPath: '/referral'
       preLoaderRoute: typeof AuthenticatedReferralRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/recharge': {
+      id: '/_authenticated/recharge'
+      path: '/recharge'
+      fullPath: '/recharge'
+      preLoaderRoute: typeof AuthenticatedRechargeRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/profile': {
@@ -535,8 +611,10 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
   AuthenticatedKycRoute: typeof AuthenticatedKycRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
+  AuthenticatedRechargeRoute: typeof AuthenticatedRechargeRoute
   AuthenticatedReferralRoute: typeof AuthenticatedReferralRoute
   AuthenticatedReverifyRoute: typeof AuthenticatedReverifyRoute
+  AuthenticatedSendRoute: typeof AuthenticatedSendRoute
   AuthenticatedWalletRoute: typeof AuthenticatedWalletRoute
   AuthenticatedWithdrawRoute: typeof AuthenticatedWithdrawRoute
   AuthenticatedTaskSlotRoute: typeof AuthenticatedTaskSlotRoute
@@ -546,8 +624,10 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedHomeRoute: AuthenticatedHomeRoute,
   AuthenticatedKycRoute: AuthenticatedKycRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
+  AuthenticatedRechargeRoute: AuthenticatedRechargeRoute,
   AuthenticatedReferralRoute: AuthenticatedReferralRoute,
   AuthenticatedReverifyRoute: AuthenticatedReverifyRoute,
+  AuthenticatedSendRoute: AuthenticatedSendRoute,
   AuthenticatedWalletRoute: AuthenticatedWalletRoute,
   AuthenticatedWithdrawRoute: AuthenticatedWithdrawRoute,
   AuthenticatedTaskSlotRoute: AuthenticatedTaskSlotRoute,
@@ -560,6 +640,8 @@ interface AdminRouteChildren {
   AdminAnnouncementsRoute: typeof AdminAnnouncementsRoute
   AdminBonusSettingsRoute: typeof AdminBonusSettingsRoute
   AdminFacesRoute: typeof AdminFacesRoute
+  AdminKycRoute: typeof AdminKycRoute
+  AdminRechargesRoute: typeof AdminRechargesRoute
   AdminReverifyRoute: typeof AdminReverifyRoute
   AdminUnverifiedRoute: typeof AdminUnverifiedRoute
   AdminUsersRoute: typeof AdminUsersRoute
@@ -573,6 +655,8 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminAnnouncementsRoute: AdminAnnouncementsRoute,
   AdminBonusSettingsRoute: AdminBonusSettingsRoute,
   AdminFacesRoute: AdminFacesRoute,
+  AdminKycRoute: AdminKycRoute,
+  AdminRechargesRoute: AdminRechargesRoute,
   AdminReverifyRoute: AdminReverifyRoute,
   AdminUnverifiedRoute: AdminUnverifiedRoute,
   AdminUsersRoute: AdminUsersRoute,
@@ -597,13 +681,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
