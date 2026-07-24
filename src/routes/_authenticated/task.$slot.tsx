@@ -157,6 +157,7 @@ function TaskPage() {
 
   const isDone = task.status === "done";
   const isVerified = task.status === "verified";
+  const whitelistLost = task.whitelist_ok === false;
 
   const onPhoto = async (b64: string) => {
     setPhotoB64(b64);
