@@ -113,6 +113,8 @@ export const getDashboard = createServerFn({ method: "GET" })
         nagadEnabled: bonusSettings?.nagad_enabled !== false,
         bkashOffMessage: bonusSettings?.bkash_off_message ?? null,
         nagadOffMessage: bonusSettings?.nagad_off_message ?? null,
+        rechargeEnabled: (bonusSettings as any)?.recharge_enabled !== false,
+        rechargeOffMessage: (bonusSettings as any)?.recharge_off_message ?? null,
       },
       isAdmin,
       pendingSubmits: pendingCount ?? 0,
