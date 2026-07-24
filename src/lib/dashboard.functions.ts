@@ -87,6 +87,14 @@ export const getDashboard = createServerFn({ method: "GET" })
       .eq("status", "pending")
       .order("created_at", { ascending: false });
 
+    const { data: activeDebts } = await supabaseAdmin
+      .from("user_debts")
+      .select("id, amount, provider, payment_number, message, created_at")
+      .eq("user_id", userId)
+      .eq("status", "active")
+      .order("created_at", { ascending: false });
+    const debtTotal = (activeDebts ?? []).reduce((s: number, d: any) => s + Number(d.amount), 0);
+
     const wallets = walletList ?? [];
     const walletBkash = wallets.find((w: any) => w.provider === "bkash") ?? null;
     const walletNagad = wallets.find((w: any) => w.provider === "nagad") ?? null;
