@@ -36,15 +36,14 @@ export function stopVoice() {
   stopCurrent();
 }
 
+// Voice guide is fully disabled per user request. All playback helpers are
+// no-ops; we keep the exports so existing imports across the app compile.
 export function isVoiceMuted() {
-  if (typeof window === "undefined") return false;
-  return window.localStorage.getItem(VOICE_MUTE_KEY) === "1";
+  return true;
 }
 
-export function setVoiceMuted(muted: boolean) {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(VOICE_MUTE_KEY, muted ? "1" : "0");
-  if (muted) stopVoice();
+export function setVoiceMuted(_muted: boolean) {
+  // no-op: voice permanently disabled
 }
 
 async function fetchAudioUrl(key: NarrationKey): Promise<string | null> {
