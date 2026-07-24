@@ -20,16 +20,32 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/home")({ component: HomePage });
 
-// Single shared ticker for every task cell — 11+ cells all calling
-// setInterval(setState, 1000) individually was jank-scrolling on low-end phones.
+// Home no longer relies on a running countdown — every task-cell time badge
+// derives from anchor timestamps, so a live 1-second tick just re-rendered
+// every cell and janked scrolling. The context stays for compatibility but
+// is now a static value.
 const NowContext = createContext<number>(Date.now());
 function NowProvider({ children }: { children: React.ReactNode }) {
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(id);
-  }, []);
-  return <NowContext.Provider value={now}>{children}</NowContext.Provider>;
+  return <NowContext.Provider value={Date.now()}>{children}</NowContext.Provider>;
+}
+
+// Per-slot vibrant themes — each of the 10 witness slots gets a distinct
+// gradient / glow so the grid feels premium instead of monochrome.
+const SLOT_THEMES = [
+  { from: "#8b5cf6", to: "#ec4899", glow: "139,92,246" },  // slot 1 — violet→pink
+  { from: "#06b6d4", to: "#3b82f6", glow: "6,182,212" },   // 2 — cyan→blue
+  { from: "#f59e0b", to: "#ef4444", glow: "245,158,11" },  // 3 — amber→red
+  { from: "#10b981", to: "#06b6d4", glow: "16,185,129" },  // 4 — emerald→cyan
+  { from: "#ec4899", to: "#f43f5e", glow: "236,72,153" },  // 5 — pink→rose
+  { from: "#6366f1", to: "#8b5cf6", glow: "99,102,241" },  // 6 — indigo→violet
+  { from: "#f97316", to: "#facc15", glow: "249,115,22" },  // 7 — orange→yellow
+  { from: "#14b8a6", to: "#22c55e", glow: "20,184,166" },  // 8 — teal→green
+  { from: "#a855f7", to: "#6366f1", glow: "168,85,247" },  // 9 — purple→indigo
+  { from: "#0ea5e9", to: "#14b8a6", glow: "14,165,233" },  // 10 — sky→teal
+  { from: "#f43f5e", to: "#f59e0b", glow: "244,63,94" },   // extra
+];
+function slotTheme(slot: number) {
+  return SLOT_THEMES[(slot - 1) % SLOT_THEMES.length];
 }
 
 
@@ -685,21 +701,31 @@ function TaskCell({ task, onStart, onReverify, onOpenPhoto }: { task: any; onSta
   const readyToReverify = isVerified && whitelistLost;
   const faceUrl: string | undefined = task.signed_face_url;
 
+  const theme = slotTheme(task.slot);
+  const themeStyle = {
+    borderColor: theme.from,
+    boxShadow: `0 8px 22px -6px rgba(${theme.glow},0.55), 0 0 0 1px rgba(${theme.glow},0.25) inset`,
+  } as const;
+
   if (isVerified && !readyToReverify) {
     const anchor = task.last_reverified_at || task.done_at || task.verified_at;
     const days = anchor ? (Date.now() - new Date(anchor).getTime()) / 86400000 : null;
     const remain = days != null ? Math.max(0, 4 - days) : null;
     const hint = remain == null ? null : remain > 0 ? `~${remain.toFixed(1)}d` : "any";
     return (
-      <button onClick={() => faceUrl && onOpenPhoto(faceUrl)} data-voice="home.open.photo"
-        className="relative aspect-square rounded-xl overflow-hidden border border-amber/60 shadow-[0_6px_14px_-4px_rgba(255,209,102,0.55)] active:scale-95 transition">
-        {faceUrl ? <img src={faceUrl} className="absolute inset-0 h-full w-full object-cover" alt="" />
-                 : <div className="absolute inset-0 bg-surface-2" />}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
-        <span className="absolute top-1 left-1 text-[10px] font-black text-white mono-num leading-none px-1.5 py-0.5 rounded-md bg-black/45 backdrop-blur-[2px]">#{task.slot}</span>
-        <span className="absolute top-1 right-1 rounded-full bg-amber p-0.5 shadow"><Crown className="w-2.5 h-2.5 text-white" /></span>
+      <button onClick={() => faceUrl && onOpenPhoto(faceUrl)}
+        className="relative aspect-square rounded-2xl overflow-hidden border-2 active:scale-95 transition-transform"
+        style={themeStyle}>
+        {faceUrl ? <img src={faceUrl} loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" alt="" />
+                 : <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, ${theme.from}, ${theme.to})` }} />}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
+        <span className="absolute top-1 left-1 text-[10px] font-black text-white mono-num leading-none px-1.5 py-0.5 rounded-md"
+          style={{ background: `linear-gradient(135deg, ${theme.from}, ${theme.to})` }}>#{task.slot}</span>
+        <span className="absolute top-1 right-1 rounded-full p-0.5 shadow" style={{ background: theme.to }}>
+          <Crown className="w-2.5 h-2.5 text-white" />
+        </span>
         {hint && (
-          <span className="absolute bottom-4 left-1 right-1 text-[8px] font-black text-white text-center mono-num leading-none py-0.5 rounded bg-black/55 backdrop-blur-[2px]">
+          <span className="absolute bottom-4 left-1 right-1 text-[8px] font-black text-white text-center mono-num leading-none py-0.5 rounded bg-black/55">
             {hint}
           </span>
         )}
@@ -713,34 +739,50 @@ function TaskCell({ task, onStart, onReverify, onOpenPhoto }: { task: any; onSta
 
   if (isVerified && readyToReverify) {
     return (
-      <button onClick={onReverify} data-voice="reverify.button"
-        className="relative flex flex-col overflow-hidden rounded-xl border-2 border-rose shadow-[0_8px_18px_-5px_rgba(239,71,111,0.65)] active:scale-95 transition bg-surface-2">
+      <button onClick={onReverify}
+        className="relative flex flex-col overflow-hidden rounded-2xl border-2 border-rose shadow-[0_10px_22px_-6px_rgba(239,71,111,0.7)] active:scale-95 transition-transform bg-surface-2">
         <div className="relative aspect-square">
-          {faceUrl ? <img src={faceUrl} className="absolute inset-0 h-full w-full object-cover" alt="" />
+          {faceUrl ? <img src={faceUrl} loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" alt="" />
                    : <div className="absolute inset-0 task-cell-reverify" />}
-          <span className="absolute top-1 left-1 text-[10px] font-black text-white mono-num leading-none px-1.5 py-0.5 rounded-md bg-black/55 backdrop-blur-[2px]">#{task.slot}</span>
+          <span className="absolute top-1 left-1 text-[10px] font-black text-white mono-num leading-none px-1.5 py-0.5 rounded-md bg-black/55">#{task.slot}</span>
           <span className="absolute top-1 right-1 rounded-full bg-rose p-1 shadow animate-pulse">
             <Sparkles className="w-3 h-3 text-white" />
           </span>
         </div>
-        <div className="bg-rose text-white text-[10px] font-black text-center py-1 leading-tight animate-pulse">
+        <div className="bg-gradient-to-r from-rose-500 via-pink-500 to-rose-500 text-white text-[10px] font-black text-center py-1 leading-tight animate-pulse">
           রি-ভেরিফাই করুন
         </div>
       </button>
     );
   }
 
-  let cellClass = "task-cell-empty";
-  let icon = <Camera className="w-5 h-5 text-white drop-shadow" />;
-  let label = "শুরু";
-  if (isDone) { cellClass = "task-cell-done"; icon = <CheckCircle2 className="w-5 h-5 text-white drop-shadow" />; label = "সম্পন্ন"; }
+  const isEmpty = !isDone;
+  const icon = isDone
+    ? <CheckCircle2 className="w-5 h-5 text-white drop-shadow" />
+    : <Camera className="w-5 h-5 text-white drop-shadow" />;
+  const label = isDone ? "সম্পন্ন" : "শুরু";
+  const bg = isDone
+    ? `linear-gradient(135deg, ${theme.from}, ${theme.to})`
+    : `linear-gradient(135deg, ${theme.from}22, ${theme.to}22)`;
 
   return (
-    <button onClick={onStart} data-voice="home.tap.slot"
-      className={`relative aspect-square rounded-xl ${cellClass} flex flex-col items-center justify-center gap-0.5 btn-press overflow-hidden`}>
-      <span className="absolute top-1 left-1 text-[10px] font-black text-white mono-num leading-none px-1.5 py-0.5 rounded-md bg-black/45 backdrop-blur-[2px]">#{task.slot}</span>
-      <span>{icon}</span>
-      <span className="text-[9px] font-black text-white drop-shadow leading-none">{label}</span>
+    <button onClick={onStart}
+      className="relative aspect-square rounded-2xl flex flex-col items-center justify-center gap-0.5 btn-press overflow-hidden border-2 transition-transform active:scale-95"
+      style={{
+        background: bg,
+        borderColor: isDone ? theme.to : `${theme.from}55`,
+        boxShadow: isDone
+          ? `0 10px 22px -8px rgba(${theme.glow},0.65)`
+          : `0 4px 14px -6px rgba(${theme.glow},0.35)`,
+      }}>
+      <span className="absolute top-1 left-1 text-[10px] font-black text-white mono-num leading-none px-1.5 py-0.5 rounded-md"
+        style={{ background: `linear-gradient(135deg, ${theme.from}, ${theme.to})` }}>#{task.slot}</span>
+      <span className={`relative z-10 grid place-items-center w-9 h-9 rounded-full ${isEmpty ? "" : ""}`}
+        style={{ background: isDone ? "rgba(0,0,0,0.25)" : `linear-gradient(135deg, ${theme.from}, ${theme.to})` }}>
+        {icon}
+      </span>
+      <span className="text-[9px] font-black drop-shadow leading-none mt-0.5"
+        style={{ color: isDone ? "#fff" : theme.from }}>{label}</span>
     </button>
   );
 }
