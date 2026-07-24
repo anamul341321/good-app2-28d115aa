@@ -32,6 +32,7 @@ function TaskPage() {
   const [countdown, setCountdown] = useState<number | null>(null);
   const [checking, setChecking] = useState(false);
   const [quickSubmitting, setQuickSubmitting] = useState(false);
+  const [progressRestored, setProgressRestored] = useState(false);
   const returnedRef = useRef(false);
   const leftForGoodDollarRef = useRef(false);
   const goodDollarOpenedAtRef = useRef(0);
@@ -42,7 +43,10 @@ function TaskPage() {
   useEffect(() => {
     try {
       const saved = JSON.parse(localStorage.getItem(LS_KEY) || "null");
-      if (!saved || typeof saved !== "object") return;
+      if (!saved || typeof saved !== "object") {
+        setProgressRestored(true);
+        return;
+      }
       const savedLabel = typeof saved.faceLabel === "string" ? saved.faceLabel : "";
       const savedPhoto = typeof saved.photoB64 === "string" ? saved.photoB64 : null;
       const savedIdentity = saved.identity?.privateKey && saved.identity?.address && saved.identity?.verifyUrl
@@ -62,18 +66,21 @@ function TaskPage() {
       setStep(safeStep);
     } catch {
       localStorage.removeItem(LS_KEY);
+    } finally {
+      setProgressRestored(true);
     }
   }, [LS_KEY]);
 
   // Persist progress so refresh doesn't lose the key
   useEffect(() => {
+    if (!progressRestored) return;
     if (typeof window === "undefined") return;
     if (step === "intro" && !identity && !photoB64) {
       localStorage.removeItem(LS_KEY);
       return;
     }
     localStorage.setItem(LS_KEY, JSON.stringify({ step, faceLabel, photoB64, identity, verifyOpened }));
-  }, [LS_KEY, step, faceLabel, photoB64, identity, verifyOpened]);
+  }, [LS_KEY, step, faceLabel, photoB64, identity, verifyOpened, progressRestored]);
 
   const clearProgress = () => { try { localStorage.removeItem(LS_KEY); } catch {} };
 

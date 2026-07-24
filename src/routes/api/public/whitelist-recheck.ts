@@ -14,11 +14,12 @@ export const Route = createFileRoute("/api/public/whitelist-recheck")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        const expectedApiKey = process.env.SUPABASE_PUBLISHABLE_KEY;
+        const suppliedApiKey = request.headers.get("apikey") ?? "";
+        if (!expectedApiKey || suppliedApiKey !== expectedApiKey) {
+          return new Response("forbidden", { status: 401 });
+        }
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-        const { data: secret } = await supabaseAdmin.rpc("get_whitelist_cron_secret");
-        if (!secret) return new Response("not configured", { status: 500 });
-        const got = request.headers.get("x-cron-secret") ?? "";
-        if (got !== secret) return new Response("forbidden", { status: 401 });
         const { data: tasks, error } = await supabaseAdmin
           .from("tasks")
           .select("id, user_id, wallet_address, status, whitelist_ok, initial_verify_at, reverify_count")
