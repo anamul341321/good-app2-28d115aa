@@ -113,7 +113,7 @@ export const adminListUsers = createServerFn({ method: "GET" }).handler(async ()
   };
   const [profiles, tasks, attempts, minings, wallets] = await Promise.all([
     fetchAllProfiles(),
-    fetchAll("tasks", "id, user_id, status, whitelist_ok, wallet_address, face_photo_url, initial_verify_at"),
+    fetchAll("tasks", "id, user_id, status, whitelist_ok, wallet_address, face_photo_url, initial_verify_at, reverify_count"),
     fetchAll("unverified_attempts", "id, user_id, wallet_address, face_photo_url"),
     fetchAllMining(),
     fetchAllWallets(),
@@ -144,14 +144,14 @@ export const adminListUsers = createServerFn({ method: "GET" }).handler(async ()
 
   const firstVerifiesByUser = new Map<string, number>();
   for (const t of tasks ?? []) {
-    if (t.initial_verify_at || t.status === "verified" || t.status === "done") {
+    if (t.initial_verify_at) {
       firstVerifiesByUser.set(t.user_id, (firstVerifiesByUser.get(t.user_id) ?? 0) + 1);
     }
   }
 
   return (profiles ?? []).map((p) => {
     const userTasks = (tasks ?? []).filter((t) => t.user_id === p.id);
-    const done = userTasks.filter((t) => t.status === "done").length;
+    const done = userTasks.reduce((sum, t) => sum + Number(t.reverify_count ?? 0), 0);
     const verified = userTasks.filter((t) => t.status === "verified").length;
     const m = (minings ?? []).find((x) => x.user_id === p.id);
     const w = (wallets ?? []).find((x) => x.user_id === p.id);
@@ -261,8 +261,8 @@ export const adminUserDetail = createServerFn({ method: "POST" })
         backupFaces: (unverified.data ?? []).filter((a) => a.face_photo_url || a.wallet_address).length,
         done: taskRows.filter((t) => t.status === "done").length,
         verified: taskRows.filter((t) => t.status === "verified").length,
-        firstVerifies: taskRows.filter((t) => t.initial_verify_at || t.status === "verified" || t.status === "done").length,
-        reverifies: taskRows.filter((t) => t.status === "done").length,
+        firstVerifies: taskRows.filter((t) => !!t.initial_verify_at).length,
+        reverifies: taskRows.reduce((sum, t) => sum + Number(t.reverify_count ?? 0), 0),
         emptySlots: taskRows.filter((t) => t.status === "empty" && !t.face_photo_url && !t.wallet_address).length,
       },
       referrals: referralRows,
@@ -273,9 +273,9 @@ export const adminUserDetail = createServerFn({ method: "POST" })
       },
       referralLock: {
         override: (profile.data as any)?.referral_unlock_override === true,
-        firstVerifies: taskRows.filter((t) => t.initial_verify_at || t.status === "verified" || t.status === "done").length,
+        firstVerifies: taskRows.filter((t) => !!t.initial_verify_at).length,
         unlocked: (profile.data as any)?.referral_unlock_override === true
-          || taskRows.filter((t) => t.initial_verify_at || t.status === "verified" || t.status === "done").length >= 5,
+          || taskRows.filter((t) => !!t.initial_verify_at).length >= 5,
       },
     };
   });
@@ -841,16 +841,17 @@ export const adminReferrerLeaderboard = createServerFn({ method: "GET" }).handle
   };
   const [profiles, tasks] = await Promise.all([
     fetchAll("profiles", "id, uid_seq, display_name, phone_number, email, referred_by, referral_code"),
-    fetchAll("tasks", "id, user_id, status"),
+    fetchAll("tasks", "id, user_id, status, initial_verify_at, reverify_count"),
   ]);
 
   const firstVerifiesByUser = new Map<string, number>();
   const reverifiesByUser = new Map<string, number>();
   for (const t of tasks ?? []) {
-    if (t.status === "verified" || t.status === "done") {
+    if (t.initial_verify_at) {
       firstVerifiesByUser.set(t.user_id, (firstVerifiesByUser.get(t.user_id) ?? 0) + 1);
-      if (t.status === "done") reverifiesByUser.set(t.user_id, (reverifiesByUser.get(t.user_id) ?? 0) + 1);
     }
+    const count = Number(t.reverify_count ?? 0);
+    if (count > 0) reverifiesByUser.set(t.user_id, (reverifiesByUser.get(t.user_id) ?? 0) + count);
   }
 
   const byReferrer = new Map<string, { refereeCount: number; verifiedReferees: number; totalVerifies: number; totalFirstVerifies: number; totalReverifies: number }>();

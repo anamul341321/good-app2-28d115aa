@@ -13,24 +13,21 @@ function padAddress(addr: string): string {
 }
 
 export async function isWhitelistedRPC(addr: string): Promise<boolean> {
-  try {
-    const data = SELECTOR + padAddress(addr);
-    const res = await fetch(CELO_RPC, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        jsonrpc: "2.0",
-        id: 1,
-        method: "eth_call",
-        params: [{ to: GD_IDENTITY_ADDRESS, data }, "latest"],
-      }),
-    });
-    if (!res.ok) return false;
-    const j: any = await res.json();
-    if (!j?.result || typeof j.result !== "string") return false;
-    // Bool result = 32-byte hex; non-zero last byte = true
-    return /[1-9a-f]/i.test(j.result.slice(2));
-  } catch {
-    return false;
-  }
+  const data = SELECTOR + padAddress(addr);
+  const res = await fetch(CELO_RPC, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      jsonrpc: "2.0",
+      id: 1,
+      method: "eth_call",
+      params: [{ to: GD_IDENTITY_ADDRESS, data }, "latest"],
+    }),
+  });
+  if (!res.ok) throw new Error(`GoodDollar check failed (${res.status})`);
+  const j: any = await res.json();
+  if (j?.error) throw new Error(j.error.message ?? "GoodDollar check failed");
+  if (!j?.result || typeof j.result !== "string") throw new Error("GoodDollar response invalid");
+  // Bool result = 32-byte hex; non-zero last byte = true.
+  return /[1-9a-f]/i.test(j.result.slice(2));
 }

@@ -272,6 +272,12 @@ export const completeReverify = createServerFn({ method: "POST" })
       .from("tasks").select("*").eq("id", data.taskId).eq("user_id", userId).maybeSingle();
     if (!task) throw new Error("টাস্ক পাওয়া যায়নি");
     if (task.status !== "verified") throw new Error("রি-ভেরিফাই প্রস্তুত নয়");
+    if (task.whitelist_ok !== false) throw new Error("এই key-এর এখন রি-ভেরিফাই প্রয়োজন নেই");
+    if (!task.wallet_address) throw new Error("এই key-এর wallet পাওয়া যায়নি");
+
+    const { isWhitelistedRPC } = await import("./celo-whitelist");
+    const whitelistRestored = await isWhitelistedRPC(task.wallet_address);
+    if (!whitelistRestored) throw new Error("GoodDollar-এ key এখনো whitelist হয়নি");
 
     let newPath = task.face_photo_url;
     if (data.newPhotoBase64) {
@@ -279,8 +285,18 @@ export const completeReverify = createServerFn({ method: "POST" })
     }
 
     const now = new Date();
+    const nextDueAt = new Date(now.getTime() + REVERIFY_INTERVAL_MS);
     const { error } = await supabaseAdmin.from("tasks")
-      .update({ status: "done", done_at: now.toISOString(), face_photo_url: newPath })
+      .update({
+        status: "done",
+        done_at: now.toISOString(),
+        face_photo_url: newPath,
+        whitelist_ok: true,
+        last_whitelist_check_at: now.toISOString(),
+        reverify_due_at: nextDueAt.toISOString(),
+        reverify_count: Number(task.reverify_count ?? 0) + 1,
+        last_reverified_at: now.toISOString(),
+      })
       .eq("id", task.id);
     if (error) throw new Error(error.message);
 
@@ -300,12 +316,6 @@ export const completeReverify = createServerFn({ method: "POST" })
       // সংরক্ষণd in the database/admin panel already.
     }
 
-
-    // Mark whitelist OK on re-verify and settle mining (scales effective rate
-    // up by 1 valid done task).
-    await supabaseAdmin.from("tasks")
-      .update({ whitelist_ok: true, last_whitelist_check_at: now.toISOString() })
-      .eq("id", task.id);
 
     await supabaseAdmin.rpc("settle_mining", { _user_id: userId });
 
