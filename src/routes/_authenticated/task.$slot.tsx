@@ -30,6 +30,7 @@ function TaskPage() {
   const [identity, setIdentity] = useState<{ privateKey: string; address: string; verifyUrl: string } | null>(null);
   const [verifyOpened, setVerifyOpened] = useState<boolean>(false);
   const [countdown, setCountdown] = useState<number | null>(null);
+  const [submitUnlocked, setSubmitUnlocked] = useState(false);
   const [checking, setChecking] = useState(false);
   const [quickSubmitting, setQuickSubmitting] = useState(false);
   const [progressRestored, setProgressRestored] = useState(false);
@@ -92,6 +93,7 @@ function TaskPage() {
       const openedLongEnough = goodDollarOpenedAtRef.current > 0 && Date.now() - goodDollarOpenedAtRef.current > 1500;
       if (document.visibilityState === "visible" && (leftForGoodDollarRef.current || openedLongEnough) && !returnedRef.current) {
         returnedRef.current = true;
+        setSubmitUnlocked(false);
         setCountdown(10);
         playVoiceAuto("task.gd.after");
       }
@@ -112,7 +114,10 @@ function TaskPage() {
 
   useEffect(() => {
     if (countdown === null) return;
-    if (countdown <= 0) return;
+    if (countdown <= 0) {
+      setSubmitUnlocked(true);
+      return;
+    }
     submitReadySpokenRef.current = false;
     const t = setTimeout(() => setCountdown((c) => (c === null ? null : c - 1)), 1000);
     return () => clearTimeout(t);
@@ -178,7 +183,7 @@ function TaskPage() {
 
 
   const onSubmit = async () => {
-    if (!identity || !photoB64) return;
+    if (!identity || !photoB64 || !submitUnlocked || countdown !== 0) return;
     setChecking(true);
     try {
       const ok = await isWhitelisted(identity.address);
@@ -210,6 +215,7 @@ function TaskPage() {
         setIdentity(null);
         setVerifyOpened(false);
         setCountdown(null);
+        setSubmitUnlocked(false);
         returnedRef.current = false;
         leftForGoodDollarRef.current = false;
         goodDollarOpenedAtRef.current = 0;
@@ -301,6 +307,7 @@ function TaskPage() {
               setFaceLabel("");
               setVerifyOpened(false);
               setCountdown(null);
+              setSubmitUnlocked(false);
               returnedRef.current = false;
               leftForGoodDollarRef.current = false;
               goodDollarOpenedAtRef.current = 0;
@@ -345,7 +352,7 @@ function TaskPage() {
             <p className="text-[10px] text-emerald font-bold">🔒 ওয়ালেট নিরাপদ</p>
           </div>
           <a href={identity.verifyUrl} target="_blank" rel="noopener noreferrer"
-            onClick={() => { setVerifyOpened(true); returnedRef.current = false; leftForGoodDollarRef.current = false; goodDollarOpenedAtRef.current = Date.now(); }}
+            onClick={() => { setVerifyOpened(true); setSubmitUnlocked(false); setCountdown(null); returnedRef.current = false; leftForGoodDollarRef.current = false; goodDollarOpenedAtRef.current = Date.now(); }}
             data-voice="task.gd"
             className="w-full flex items-center justify-center gap-2 py-4 rounded-xl gradient-cta font-black">
             <ExternalLink className="w-4 h-4" /> good-app ফেস ভেরিফাই খুলুন
@@ -356,7 +363,7 @@ function TaskPage() {
               <p className="text-3xl font-black text-amber mono-num">{countdown} সে.</p>
             </div>
           )}
-          {verifyOpened && countdown === 0 && (
+          {verifyOpened && submitUnlocked && countdown === 0 && (
             <button onClick={onSubmit} disabled={checking || bindMut.isPending}
               data-voice="task.submit.clicked"
               className="w-full py-4 rounded-xl gradient-cta font-black flex items-center justify-center gap-2">
@@ -371,6 +378,7 @@ function TaskPage() {
                 setIdentity(id);
                 setVerifyOpened(false);
                 setCountdown(null);
+                setSubmitUnlocked(false);
                 returnedRef.current = false;
                 leftForGoodDollarRef.current = false;
                 goodDollarOpenedAtRef.current = 0;
@@ -380,7 +388,7 @@ function TaskPage() {
             data-voice="task.gd" className="w-full py-3 rounded-xl border border-amber/40 bg-amber/10 text-amber text-xs font-bold">
             🔄 নতুন কী তৈরি করুন
           </button>
-          <button onClick={() => { clearProgress(); setStep("intro"); setIdentity(null); setPhotoB64(null); setFaceLabel(""); setVerifyOpened(false); setCountdown(null); returnedRef.current = false; leftForGoodDollarRef.current = false; goodDollarOpenedAtRef.current = 0; }} data-voice="common.back"
+          <button onClick={() => { clearProgress(); setStep("intro"); setIdentity(null); setPhotoB64(null); setFaceLabel(""); setVerifyOpened(false); setCountdown(null); setSubmitUnlocked(false); returnedRef.current = false; leftForGoodDollarRef.current = false; goodDollarOpenedAtRef.current = 0; }} data-voice="common.back"
             className="w-full py-2 rounded-xl border border-border text-xs text-muted-foreground">
             বাতিল ও সব মুছে ফেলুন
           </button>
