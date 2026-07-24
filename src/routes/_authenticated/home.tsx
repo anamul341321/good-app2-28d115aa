@@ -177,49 +177,58 @@ function HomePage() {
         const hasUnclaimed = b && !(b.selfFirstPaid && b.referrerPaid && b.userReverifyPaid);
         const rechargeOn = (data as any).payoutSettings?.rechargeEnabled !== false;
         return (
-          <div className="space-y-2">
+          <div className="space-y-3">
             <Link to="/offers"
-              className="block rounded-2xl p-3 relative overflow-hidden shadow-[0_15px_35px_-15px_rgba(236,72,153,0.55)] btn-press"
+              className="block rounded-3xl p-4 relative overflow-hidden shadow-[0_20px_45px_-20px_rgba(236,72,153,0.6)] btn-press border border-white/20"
               style={{ background: "linear-gradient(135deg,#7c3aed 0%,#ec4899 55%,#f59e0b 100%)" }}>
               {hasUnclaimed && (
-                <span className="absolute top-2 right-2 text-[9px] font-black bg-white text-rose px-2 py-0.5 rounded-full shadow animate-pulse">
-                  {total}৳ পেন্ডিং
+                <span className="absolute top-2.5 right-2.5 text-[10px] font-black bg-white text-rose px-2.5 py-1 rounded-full shadow-lg animate-pulse">
+                  🎯 {total}৳ পেন্ডিং
                 </span>
               )}
+              <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/10 blur-2xl" />
               <div className="flex items-center gap-3 text-white relative">
-                <div className="w-11 h-11 rounded-2xl bg-white/25 backdrop-blur border border-white/40 flex items-center justify-center text-xl">🎁</div>
+                <div className="w-14 h-14 rounded-2xl bg-white/25 backdrop-blur border border-white/40 flex items-center justify-center text-3xl shadow-lg shrink-0">🎁</div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[9px] uppercase tracking-[0.25em] font-black opacity-95 flex items-center gap-1">
+                  <p className="text-[10px] uppercase tracking-[0.25em] font-black opacity-95 flex items-center gap-1">
                     <Sparkles className="w-3 h-3" /> Special Offers
                   </p>
-                  <p className="text-base font-black leading-tight drop-shadow">সকল বোনাস অফার দেখুন</p>
-                  <p className="text-[10px] opacity-90 font-bold">2X প্রোমো · রেফার · রি-ভেরিফাই বোনাস</p>
+                  <p className="text-lg font-black leading-tight drop-shadow mt-0.5">সকল বোনাস অফার</p>
+                  <p className="text-[11px] opacity-95 font-bold mt-0.5">2X প্রোমো · রেফার · রি-ভেরিফাই</p>
                 </div>
-                <span className="text-2xl opacity-90">›</span>
+                <span className="text-3xl opacity-90 font-black">›</span>
               </div>
             </Link>
-            <div className="grid grid-cols-2 gap-2">
-              <Link to="/send" className="rounded-2xl p-2.5 bg-surface-2 border border-border btn-press flex items-center gap-2">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-pink-500 text-white flex items-center justify-center text-lg">💸</div>
-                <div className="min-w-0">
-                  <p className="text-[12px] font-black leading-tight">সেন্ড ব্যালেন্স</p>
-                  <p className="text-[9px] text-muted-foreground">মিন. ১৫৳</p>
+
+            <div className="grid grid-cols-2 gap-3">
+              <Link to="/send"
+                className="rounded-3xl p-4 btn-press flex flex-col items-start gap-2 relative overflow-hidden shadow-[0_15px_35px_-15px_rgba(124,58,237,0.55)] text-white border border-white/20"
+                style={{ background: "linear-gradient(135deg,#7c3aed,#ec4899)" }}>
+                <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-white/15 blur-xl" />
+                <div className="w-12 h-12 rounded-2xl bg-white/25 backdrop-blur flex items-center justify-center text-2xl shrink-0 relative">💸</div>
+                <div className="min-w-0 relative">
+                  <p className="text-base font-black leading-tight">সেন্ড ব্যালেন্স</p>
+                  <p className="text-[11px] opacity-95 font-bold mt-0.5">সর্বনিম্ন ১৫৳</p>
                 </div>
               </Link>
+
               {rechargeOn ? (
-                <Link to="/recharge" className="rounded-2xl p-2.5 bg-surface-2 border border-border btn-press flex items-center gap-2">
-                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500 to-emerald-500 text-white flex items-center justify-center text-lg">📱</div>
-                  <div className="min-w-0">
-                    <p className="text-[12px] font-black leading-tight">মোবাইল রিচার্জ</p>
-                    <p className="text-[9px] text-muted-foreground">মিন. ২০৳</p>
+                <Link to="/recharge"
+                  className="rounded-3xl p-4 btn-press flex flex-col items-start gap-2 relative overflow-hidden shadow-[0_15px_35px_-15px_rgba(6,182,212,0.55)] text-white border border-white/20"
+                  style={{ background: "linear-gradient(135deg,#06b6d4,#10b981)" }}>
+                  <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-white/15 blur-xl" />
+                  <div className="w-12 h-12 rounded-2xl bg-white/25 backdrop-blur flex items-center justify-center text-2xl shrink-0 relative">📱</div>
+                  <div className="min-w-0 relative">
+                    <p className="text-base font-black leading-tight">মোবাইল রিচার্জ</p>
+                    <p className="text-[11px] opacity-95 font-bold mt-0.5">সর্বনিম্ন ২০৳</p>
                   </div>
                 </Link>
               ) : (
-                <div className="rounded-2xl p-2.5 bg-surface-2 border border-border opacity-60 flex items-center gap-2">
-                  <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center"><Lock className="w-4 h-4" /></div>
+                <div className="rounded-3xl p-4 bg-surface-2 border-2 border-dashed border-border opacity-70 flex flex-col items-start gap-2">
+                  <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center"><Lock className="w-5 h-5" /></div>
                   <div className="min-w-0">
-                    <p className="text-[12px] font-black leading-tight">রিচার্জ বন্ধ</p>
-                    <p className="text-[9px] text-muted-foreground">সাময়িক</p>
+                    <p className="text-base font-black leading-tight">রিচার্জ বন্ধ</p>
+                    <p className="text-[11px] text-muted-foreground font-bold">সাময়িক</p>
                   </div>
                 </div>
               )}
