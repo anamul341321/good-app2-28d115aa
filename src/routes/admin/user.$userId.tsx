@@ -156,7 +156,14 @@ function UserDetail() {
           </div>
           <div className="text-right shrink-0">
             <p className="text-[10px] uppercase tracking-widest text-amber font-black">UID</p>
-            <p className="text-xl font-black text-amber mono-num">{(p as any).uid_seq ?? "—"}</p>
+            <button
+              onClick={() => copy(String((p as any).uid_seq ?? ""))}
+              className="group flex items-center gap-1 text-xl font-black text-amber mono-num hover:text-cyan transition"
+              title="UID copy করুন"
+            >
+              {(p as any).uid_seq ?? "—"}
+              <Copy className="w-3.5 h-3.5 opacity-50 group-hover:opacity-100" />
+            </button>
           </div>
         </div>
         <p className="text-[10px] text-muted-foreground mt-2">Joined: {new Date(p.created_at).toLocaleString()}</p>
