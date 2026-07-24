@@ -749,22 +749,22 @@ function TaskCell({ task, onStart, onReverify, onOpenPhoto }: { task: any; onSta
     return (
       <button onClick={() => faceUrl && onOpenPhoto(faceUrl)}
         className="relative aspect-square rounded-2xl overflow-hidden border-2 active:scale-95 transition-transform"
-        style={themeStyle}>
-        {faceUrl ? <img src={faceUrl} loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" alt="" />
-                 : <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, ${theme.from}, ${theme.to})` }} />}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
-        <span className="absolute top-1 left-1 text-[10px] font-black text-white mono-num leading-none px-1.5 py-0.5 rounded-md"
-          style={{ background: `linear-gradient(135deg, ${theme.from}, ${theme.to})` }}>#{task.slot}</span>
-        <span className="absolute top-1 right-1 rounded-full p-0.5 shadow" style={{ background: theme.to }}>
-          <Crown className="w-2.5 h-2.5 text-white" />
+        style={{ ...themeStyle, background: `linear-gradient(135deg, ${theme.from}, ${theme.to})` }}>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.35),transparent_55%)]" />
+        <span className="absolute top-1 left-1 text-[10px] font-black text-white mono-num leading-none px-1.5 py-0.5 rounded-md bg-black/40 backdrop-blur-[2px]">#{task.slot}</span>
+        <span className="absolute top-1 right-1 rounded-full p-0.5 shadow bg-white/25 backdrop-blur-sm">
+          <ShieldCheck className="w-2.5 h-2.5 text-white" />
+        </span>
+        <span className="absolute inset-0 flex items-center justify-center">
+          <ShieldCheck className="w-7 h-7 text-white/95 drop-shadow-lg" />
         </span>
         {hint && (
-          <span className="absolute bottom-4 left-1 right-1 text-[8px] font-black text-white text-center mono-num leading-none py-0.5 rounded bg-black/55">
+          <span className="absolute bottom-4 left-1 right-1 text-[8px] font-black text-white text-center mono-num leading-none py-0.5 rounded bg-black/45">
             {hint}
           </span>
         )}
-        <p className="absolute bottom-1 left-0 right-0 text-[9px] font-black text-white text-center drop-shadow leading-none tracking-wide">
-          WHITELISTED
+        <p className="absolute bottom-1 left-0 right-0 text-[8px] font-black text-white text-center drop-shadow leading-none tracking-wide">
+          দেখতে ট্যাপ
         </p>
       </button>
     );
@@ -774,17 +774,18 @@ function TaskCell({ task, onStart, onReverify, onOpenPhoto }: { task: any; onSta
   if (isVerified && readyToReverify) {
     return (
       <button onClick={onReverify}
-        className="relative flex flex-col overflow-hidden rounded-2xl border-2 border-rose shadow-[0_10px_22px_-6px_rgba(239,71,111,0.7)] active:scale-95 transition-transform bg-surface-2">
-        <div className="relative aspect-square">
-          {faceUrl ? <img src={faceUrl} loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" alt="" />
-                   : <div className="absolute inset-0 task-cell-reverify" />}
-          <span className="absolute top-1 left-1 text-[10px] font-black text-white mono-num leading-none px-1.5 py-0.5 rounded-md bg-black/55">#{task.slot}</span>
-          <span className="absolute top-1 right-1 rounded-full bg-rose p-1 shadow animate-pulse">
-            <Sparkles className="w-3 h-3 text-white" />
-          </span>
-        </div>
-        <div className="bg-gradient-to-r from-rose-500 via-pink-500 to-rose-500 text-white text-[10px] font-black text-center py-1 leading-tight animate-pulse">
-          রি-ভেরিফাই করুন
+        className="relative aspect-square rounded-2xl overflow-hidden border-2 border-rose shadow-[0_12px_28px_-8px_rgba(239,71,111,0.85)] active:scale-95 transition-transform"
+        style={{ background: "linear-gradient(135deg, #f43f5e, #ec4899)" }}>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_30%,rgba(255,255,255,0.35),transparent_60%)] animate-pulse" />
+        <span className="absolute top-1 left-1 text-[10px] font-black text-white mono-num leading-none px-1.5 py-0.5 rounded-md bg-black/45">#{task.slot}</span>
+        <span className="absolute top-1 right-1 rounded-full bg-white/25 backdrop-blur-sm p-0.5 shadow animate-pulse">
+          <Sparkles className="w-2.5 h-2.5 text-white" />
+        </span>
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-0.5 px-1">
+          <Sparkles className="w-5 h-5 text-white drop-shadow animate-pulse" />
+          <p className="text-[10px] font-black text-white text-center leading-tight drop-shadow">
+            রি-ভেরিফাই<br/>করুন
+          </p>
         </div>
       </button>
     );
