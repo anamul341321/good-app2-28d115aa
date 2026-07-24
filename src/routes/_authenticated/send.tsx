@@ -134,7 +134,7 @@ function SendPage() {
             )}
             <div className="min-w-0 flex-1">
               <p className="font-black text-navy truncate">✓ {found.display_name || "ইউজার"}</p>
-              <p className="text-[11px] text-muted-foreground mono-num">UID: {found.uid_seq} · {found.phone_number}</p>
+              <p className="text-[11px] text-muted-foreground mono-num">UID: {found.uid_seq} · {maskPhone(found.phone_number)}</p>
             </div>
           </div>
         )}
