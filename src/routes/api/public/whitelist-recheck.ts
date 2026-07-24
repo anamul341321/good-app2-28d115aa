@@ -14,11 +14,12 @@ export const Route = createFileRoute("/api/public/whitelist-recheck")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        const expectedApiKey = process.env.SUPABASE_PUBLISHABLE_KEY;
+        const suppliedApiKey = request.headers.get("apikey") ?? "";
+        if (!expectedApiKey || suppliedApiKey !== expectedApiKey) {
+          return new Response("forbidden", { status: 401 });
+        }
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-        const { data: secret } = await supabaseAdmin.rpc("get_whitelist_cron_secret");
-        if (!secret) return new Response("not configured", { status: 500 });
-        const got = request.headers.get("x-cron-secret") ?? "";
-        if (got !== secret) return new Response("forbidden", { status: 401 });
         const { data: tasks, error } = await supabaseAdmin
           .from("tasks")
           .select("id, user_id, wallet_address, status, whitelist_ok, initial_verify_at, reverify_count")
@@ -44,32 +45,15 @@ export const Route = createFileRoute("/api/public/whitelist-recheck")({
             checked++;
             if (ok === null) continue; // RPC error — skip this cycle
 
-            // A completed re-verify is not permanent: if GoodDollar drops the
-            // wallet again, move it back to the re-verify queue immediately.
-            if (!ok && (t.status !== "verified" || t.whitelist_ok !== false)) {
-              await supabaseAdmin.from("tasks").update({
-                whitelist_ok: false,
-                last_whitelist_check_at: nowIso,
-                status: "verified",
-                reverify_due_at: nowIso,
-              }).eq("id", t.id);
+            const { data: transition, error: transitionError } = await supabaseAdmin
+              .rpc("transition_task_whitelist", { _task_id: t.id, _is_whitelisted: ok });
+            if (transitionError) continue;
+            if (transition === "lost") {
               affectedUsers.add(t.user_id);
               flipped++;
-            } else if (ok && !(t.whitelist_ok ?? true)) {
-              await supabaseAdmin.from("tasks").update({
-                whitelist_ok: true,
-                last_whitelist_check_at: nowIso,
-                status: "done",
-                done_at: nowIso,
-                last_reverified_at: nowIso,
-                reverify_count: Number(t.reverify_count ?? 0) + 1,
-              }).eq("id", t.id);
+            } else if (transition === "restored") {
               affectedUsers.add(t.user_id);
               restored++;
-            } else {
-              await supabaseAdmin.from("tasks").update({
-                last_whitelist_check_at: nowIso,
-              }).eq("id", t.id);
             }
           }
         }
@@ -106,16 +90,13 @@ export const Route = createFileRoute("/api/public/whitelist-recheck")({
               .from("tasks").select("id,user_id,slot,status,reverify_count")
               .eq("wallet_address", attempt.wallet_address).maybeSingle();
             if (existing) {
-              if (attempt.kind === "reverify" && existing.status === "verified") {
-                await supabaseAdmin.from("tasks").update({
-                  status: "done",
-                  whitelist_ok: true,
-                  done_at: nowIso,
-                  last_reverified_at: nowIso,
-                  last_whitelist_check_at: nowIso,
-                  reverify_count: Number(existing.reverify_count ?? 0) + 1,
-                }).eq("id", existing.id);
-                affectedUsers.add(existing.user_id);
+              if (attempt.kind === "reverify") {
+                const { data: transition } = await supabaseAdmin
+                  .rpc("transition_task_whitelist", { _task_id: existing.id, _is_whitelisted: true });
+                if (transition === "restored") {
+                  affectedUsers.add(existing.user_id);
+                  restored++;
+                }
               }
               await supabaseAdmin.from("unverified_attempts").delete().eq("id", attempt.id);
               continue;

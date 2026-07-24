@@ -23,10 +23,13 @@ export const getDashboard = createServerFn({ method: "GET" })
     if (tasksResult.error) throw new Error(tasksResult.error.message);
 
     let tasks = tasksResult.data ?? [];
-    if (tasks.length === 0) {
-      const rows = Array.from({ length: 10 }, (_, index) => ({
+    const existingSlots = new Set(tasks.map((task) => task.slot));
+    const missingSlots = Array.from({ length: 10 }, (_, index) => index + 1)
+      .filter((slot) => !existingSlots.has(slot));
+    if (missingSlots.length > 0) {
+      const rows = missingSlots.map((slot) => ({
         user_id: userId,
-        slot: index + 1,
+        slot,
         status: "empty" as const,
       }));
 

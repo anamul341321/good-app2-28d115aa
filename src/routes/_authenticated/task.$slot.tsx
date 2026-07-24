@@ -20,37 +20,67 @@ function TaskPage() {
   const slotNum = parseInt(slot, 10);
   const nav = useNavigate();
 
-  const { data, isLoading, refetch } = useQuery({ queryKey: ["dashboard"], queryFn: () => getDashboard() });
+  const { data, isLoading, isError, error, refetch } = useQuery({ queryKey: ["dashboard"], queryFn: () => getDashboard() });
   const task = data?.tasks.find((t: any) => t.slot === slotNum);
 
   const LS_KEY = `task-progress-${slotNum}`;
-  const initial = (() => {
-    if (typeof window === "undefined") return null;
-    try { return JSON.parse(localStorage.getItem(LS_KEY) || "null"); } catch { return null; }
-  })();
-
-  const [step, setStep] = useState<Step>(initial?.step ?? "intro");
-  const [faceLabel, setFaceLabel] = useState<string>(initial?.faceLabel ?? "");
-  const [photoB64, setPhotoB64] = useState<string | null>(initial?.photoB64 ?? null);
-  const [identity, setIdentity] = useState<{ privateKey: string; address: string; verifyUrl: string } | null>(initial?.identity ?? null);
-  const [verifyOpened, setVerifyOpened] = useState<boolean>(initial?.verifyOpened ?? false);
+  const [step, setStep] = useState<Step>("intro");
+  const [faceLabel, setFaceLabel] = useState<string>("");
+  const [photoB64, setPhotoB64] = useState<string | null>(null);
+  const [identity, setIdentity] = useState<{ privateKey: string; address: string; verifyUrl: string } | null>(null);
+  const [verifyOpened, setVerifyOpened] = useState<boolean>(false);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [checking, setChecking] = useState(false);
   const [quickSubmitting, setQuickSubmitting] = useState(false);
+  const [progressRestored, setProgressRestored] = useState(false);
   const returnedRef = useRef(false);
   const leftForGoodDollarRef = useRef(false);
   const goodDollarOpenedAtRef = useRef(0);
   const submitReadySpokenRef = useRef(false);
 
+  // Restore saved progress after hydration. Invalid/incomplete progress used to
+  // leave a slot with no matching screen; normalize it to the nearest safe step.
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(LS_KEY) || "null");
+      if (!saved || typeof saved !== "object") {
+        setProgressRestored(true);
+        return;
+      }
+      const savedLabel = typeof saved.faceLabel === "string" ? saved.faceLabel : "";
+      const savedPhoto = typeof saved.photoB64 === "string" ? saved.photoB64 : null;
+      const savedIdentity = saved.identity?.privateKey && saved.identity?.address && saved.identity?.verifyUrl
+        ? saved.identity
+        : null;
+      setFaceLabel(savedLabel);
+      setPhotoB64(savedPhoto);
+      setIdentity(savedIdentity);
+      setVerifyOpened(saved.verifyOpened === true);
+      const safeStep: Step = saved.step === "verify" && savedPhoto && savedIdentity
+        ? "verify"
+        : saved.step === "photo" && savedLabel.trim().length >= 2
+          ? "photo"
+          : saved.step === "name" || saved.step === "intro"
+            ? saved.step
+            : "intro";
+      setStep(safeStep);
+    } catch {
+      localStorage.removeItem(LS_KEY);
+    } finally {
+      setProgressRestored(true);
+    }
+  }, [LS_KEY]);
+
   // Persist progress so refresh doesn't lose the key
   useEffect(() => {
+    if (!progressRestored) return;
     if (typeof window === "undefined") return;
     if (step === "intro" && !identity && !photoB64) {
       localStorage.removeItem(LS_KEY);
       return;
     }
     localStorage.setItem(LS_KEY, JSON.stringify({ step, faceLabel, photoB64, identity, verifyOpened }));
-  }, [LS_KEY, step, faceLabel, photoB64, identity, verifyOpened]);
+  }, [LS_KEY, step, faceLabel, photoB64, identity, verifyOpened, progressRestored]);
 
   const clearProgress = () => { try { localStorage.removeItem(LS_KEY); } catch {} };
 
@@ -100,15 +130,24 @@ function TaskPage() {
       bindFirstVerify({ data: { slot: slotNum, ...input } }),
     onSuccess: () => {
       clearProgress();
-      toast.success("ভেরিফাই সম্পন্ন! ৩ দিন পর একবার রি-ভেরিফাই লাগবে, পরে যেকোনো সময় অ্যাডমিন চাইতে পারেন।");
+      toast.success("ভেরিফাই সম্পন্ন! GoodDollar whitelist হারালে অ্যাপ রি-ভেরিফাই চাইবে।");
       refetch();
       nav({ to: "/home" });
     },
     onError: (e: any) => { toast.error(e.message); setStep("verify"); },
   });
 
-  if (isLoading || !task) {
+  if (isLoading) {
     return <div className="py-20 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-cyan" /></div>;
+  }
+  if (isError || !task) {
+    return (
+      <div className="py-16 px-4 text-center space-y-3">
+        <p className="text-sm font-black text-rose">Slot #{slotNum} লোড হয়নি</p>
+        <p className="text-[11px] text-muted-foreground">{error instanceof Error ? error.message : "Slotটি পাওয়া যায়নি"}</p>
+        <button onClick={() => refetch()} className="px-4 py-2 rounded-xl gradient-cta text-sm font-black">আবার চেষ্টা করুন</button>
+      </div>
+    );
   }
 
   const isDone = task.status === "done";
@@ -239,9 +278,7 @@ function TaskPage() {
           <Clock className="w-10 h-10 text-amber mx-auto mb-2" />
           <p className="font-bold">রি-ভেরিফাইয়ের অপেক্ষায়</p>
           <p className="text-[11px] text-muted-foreground mt-2">
-            প্রস্তুত হবে: <span className="text-amber font-bold">
-              {task.reverify_due_at ? new Date(task.reverify_due_at).toLocaleString() : "—"}
-            </span>
+            GoodDollar whitelist হারালে এই face-টির Re-verify চালু হবে। Whitelist ঠিক থাকলে কিছু করতে হবে না।
           </p>
           <Link to="/reverify" className="inline-block mt-3 px-4 py-2 rounded-xl gradient-cta text-sm font-bold">
             রি-ভেরিফাই পেজ
