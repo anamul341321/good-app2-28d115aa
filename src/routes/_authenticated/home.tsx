@@ -528,8 +528,18 @@ function HomePage() {
           </button>
           <div className="flex flex-col items-center gap-3 max-w-full max-h-full" onClick={(e) => e.stopPropagation()}>
             <img src={lightbox.url} alt={lightbox.label}
-              className="max-w-full max-h-[80vh] rounded-2xl border-2 border-white/20 shadow-2xl object-contain" />
-            <p className="text-white font-bold text-sm">{lightbox.label}</p>
+              className="max-w-full max-h-[70vh] rounded-2xl border-2 border-white/20 shadow-2xl object-contain" />
+            <p className="text-white font-bold text-sm text-center">{lightbox.label}</p>
+            {lightbox.action && (
+              <button onClick={() => { const a = lightbox.action!; setLightbox(null); a.onClick(); }}
+                className={`mt-1 px-6 py-3 rounded-full font-black text-white text-sm shadow-2xl active:scale-95 transition ${
+                  lightbox.action.tone === "rose"
+                    ? "bg-gradient-to-r from-rose-500 via-pink-500 to-rose-500 animate-pulse"
+                    : "gradient-cta"
+                }`}>
+                {lightbox.action.label}
+              </button>
+            )}
           </div>
         </div>
       )}
