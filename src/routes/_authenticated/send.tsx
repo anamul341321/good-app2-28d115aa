@@ -1,13 +1,28 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { sendBalance, getMyTransfers, lookupTransferTarget } from "@/lib/transfer.functions";
 import { getDashboard } from "@/lib/dashboard.functions";
 import { computeLiveBalance } from "@/lib/mining";
-import { Loader2, Send, Search, ShieldCheck, ArrowUpRight, ArrowDownLeft, User } from "lucide-react";
+import { Loader2, Send, Search, ArrowUpRight, ArrowDownLeft, User, ArrowLeft, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/send")({ component: SendPage });
+
+function BackBar() {
+  const router = useRouter();
+  return (
+    <div className="flex items-center justify-between -mt-1 mb-1">
+      <button
+        onClick={() => (window.history.length > 1 ? router.history.back() : router.navigate({ to: "/home" }))}
+        className="btn-press inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-2 border border-border text-xs font-black text-navy"
+      >
+        <ArrowLeft className="w-3.5 h-3.5" /> পিছনে
+      </button>
+      <Link to="/home" className="text-[11px] font-black text-violet-600">🏠 হোম</Link>
+    </div>
+  );
+}
 
 const MIN_SEND = 15;
 
