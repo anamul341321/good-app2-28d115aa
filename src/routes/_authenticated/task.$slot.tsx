@@ -312,7 +312,8 @@ function TaskPage() {
           </p>
           <Link to="/home" className="inline-block mt-3 px-4 py-2 rounded-xl gradient-cta text-sm font-bold">হোম</Link>
         </div>
-      )}
+        );
+      })()}
 
       {isVerified && whitelistLost && (
         <div className="rounded-2xl bg-rose/10 border border-rose/40 p-5 text-center">
