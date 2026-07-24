@@ -6,6 +6,7 @@ import { getProfileHistory } from "@/lib/profile.functions";
 import { useEffect, useState } from "react";
 import logo from "@/assets/logo.png";
 import { GuidedTour } from "@/components/GuidedTour";
+import { InstallPrompt } from "@/components/InstallPrompt";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -101,6 +102,7 @@ function AuthedLayout() {
       </nav>
 
       <GuidedTour />
+      <InstallPrompt />
     </div>
   );
 }
