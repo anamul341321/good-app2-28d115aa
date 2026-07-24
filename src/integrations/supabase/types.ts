@@ -310,7 +310,9 @@ export type Database = {
           face_photo_url: string | null
           id: string
           initial_verify_at: string | null
+          last_reverified_at: string | null
           last_whitelist_check_at: string | null
+          reverify_count: number
           reverify_due_at: string | null
           slot: number
           status: Database["public"]["Enums"]["task_status"]
@@ -326,7 +328,9 @@ export type Database = {
           face_photo_url?: string | null
           id?: string
           initial_verify_at?: string | null
+          last_reverified_at?: string | null
           last_whitelist_check_at?: string | null
+          reverify_count?: number
           reverify_due_at?: string | null
           slot: number
           status?: Database["public"]["Enums"]["task_status"]
@@ -342,7 +346,9 @@ export type Database = {
           face_photo_url?: string | null
           id?: string
           initial_verify_at?: string | null
+          last_reverified_at?: string | null
           last_whitelist_check_at?: string | null
+          reverify_count?: number
           reverify_due_at?: string | null
           slot?: number
           status?: Database["public"]["Enums"]["task_status"]
