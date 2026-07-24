@@ -280,16 +280,40 @@ function TaskPage() {
         </div>
       )}
 
-      {isVerified && !whitelistLost && (
+      {isVerified && !whitelistLost && (() => {
+        const anchor = task.last_reverified_at || task.done_at || task.verified_at;
+        const anchorMs = anchor ? new Date(anchor).getTime() : null;
+        const elapsedDays = anchorMs ? (Date.now() - anchorMs) / 86400000 : null;
+        const remainMin = elapsedDays != null ? Math.max(0, 4 - elapsedDays) : null;
+        const remainMax = elapsedDays != null ? Math.max(0, 5 - elapsedDays) : null;
+        const pct = elapsedDays != null ? Math.min(100, (elapsedDays / 5) * 100) : 0;
+        return (
         <div className="rounded-2xl bg-emerald/10 border border-emerald/40 p-5 text-center">
           <CheckCircle2 className="w-10 h-10 text-emerald mx-auto mb-2" />
           <p className="font-bold">এই ঘর হোয়াইটলিস্টেড ✅</p>
-          <p className="text-[11px] text-muted-foreground mt-2">
-            GoodDollar হোয়াইটলিস্ট বাতিল না হওয়া পর্যন্ত রি-ভেরিফাইয়ের দরকার নেই। কোনো সময়সীমা নেই — অপেক্ষা করতে হবে না।
+          {elapsedDays != null && (
+            <div className="mt-3 rounded-xl bg-surface-2/60 border border-emerald/30 p-3">
+              <p className="text-[11px] font-black text-emerald">
+                ⏳ আনুমানিক রি-ভেরিফাই সময়সূচি
+              </p>
+              <div className="mt-2 h-2 w-full rounded-full bg-black/20 overflow-hidden">
+                <div className="h-full bg-gradient-to-r from-emerald via-amber to-rose transition-all"
+                  style={{ width: `${pct}%` }} />
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-2 leading-relaxed">
+                {remainMin! > 0
+                  ? <>আপনি ফেস ভেরিফাই করেছেন <b className="text-foreground mono-num">{elapsedDays.toFixed(1)}</b> দিন আগে। সাধারণত <b className="text-foreground">৪–৫ দিন</b> পর GoodDollar রি-ভেরিফাই চাইতে পারে — প্রায় <b className="text-amber mono-num">{remainMin!.toFixed(1)}–{remainMax!.toFixed(1)}</b> দিনের মধ্যে প্রস্তুত থাকুন।</>
+                  : <>ইতিমধ্যে <b className="text-foreground mono-num">{elapsedDays.toFixed(1)}</b> দিন হয়েছে — যেকোনো সময় GoodDollar রি-ভেরিফাই চাইতে পারে। হোয়াইটলিস্ট বাতিল হলে সাথে সাথে এখানে জানানো হবে।</>}
+              </p>
+            </div>
+          )}
+          <p className="text-[11px] text-muted-foreground mt-3">
+            GoodDollar হোয়াইটলিস্ট বাতিল না হওয়া পর্যন্ত কিছু করতে হবে না — বাতিল হলে অ্যাপ নিজেই জানাবে।
           </p>
           <Link to="/home" className="inline-block mt-3 px-4 py-2 rounded-xl gradient-cta text-sm font-bold">হোম</Link>
         </div>
-      )}
+        );
+      })()}
 
       {isVerified && whitelistLost && (
         <div className="rounded-2xl bg-rose/10 border border-rose/40 p-5 text-center">
