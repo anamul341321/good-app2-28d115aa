@@ -51,6 +51,8 @@ export type Database = {
           promo_reverify_bonus: number | null
           promo_start_at: string | null
           promo_title: string | null
+          recharge_enabled: boolean
+          recharge_off_message: string | null
           referrer_bonus: number
           reverify_bonus: number
           updated_at: string
@@ -70,6 +72,8 @@ export type Database = {
           promo_reverify_bonus?: number | null
           promo_start_at?: string | null
           promo_title?: string | null
+          recharge_enabled?: boolean
+          recharge_off_message?: string | null
           referrer_bonus?: number
           reverify_bonus?: number
           updated_at?: string
@@ -89,6 +93,8 @@ export type Database = {
           promo_reverify_bonus?: number | null
           promo_start_at?: string | null
           promo_title?: string | null
+          recharge_enabled?: boolean
+          recharge_off_message?: string | null
           referrer_bonus?: number
           reverify_bonus?: number
           updated_at?: string

@@ -54,6 +54,23 @@ function RechargePage() {
     onError: (e: any) => toast.error(e.message ?? "রিচার্জ ব্যর্থ"),
   });
 
+  const rechargeOn = (dash as any)?.payoutSettings?.rechargeEnabled !== false;
+  const rechargeOffMsg = (dash as any)?.payoutSettings?.rechargeOffMessage ?? null;
+
+  if (!rechargeOn) {
+    return (
+      <div className="pt-6 text-center space-y-3">
+        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-rose/15 text-rose">
+          <XCircle className="w-6 h-6" />
+        </div>
+        <h1 className="text-xl font-black">মোবাইল রিচার্জ সাময়িক বন্ধ</h1>
+        <p className="text-sm text-muted-foreground max-w-xs mx-auto leading-snug">
+          {rechargeOffMsg ?? "এই মুহূর্তে recharge সেবা বন্ধ রাখা হয়েছে। কিছুক্ষণ পর আবার চেষ্টা করুন।"}
+        </p>
+      </div>
+    );
+  }
+
   if (!kycOk) {
     return (
       <div className="pt-6 text-center space-y-3">

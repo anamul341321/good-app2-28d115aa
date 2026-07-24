@@ -6,13 +6,11 @@ import { addMoreSlots, batchSubmitPending } from "@/lib/tasks.functions";
 import { claimVoucher } from "@/lib/vouchers.functions";
 import { MiningCounter } from "@/components/MiningCounter";
 import bonusGirl from "@/assets/bonus-girl.png";
-import { QrCode } from "@/components/QrCode";
-import { CheckCircle2, Camera, Lock, Sparkles, Loader2, X, Plus, Crown, Users, Heart, ShieldCheck, BadgeCheck, ChevronDown, MessageCircle, Gift, Share2, Copy } from "lucide-react";
+import { CheckCircle2, Camera, Lock, Sparkles, Loader2, X, Plus, Crown, Users, Heart, ShieldCheck, BadgeCheck, ChevronDown, MessageCircle, Gift } from "lucide-react";
 import { AnnouncementTicker } from "@/components/AnnouncementTicker";
 import { TourReplayButton } from "@/components/GuidedTour";
 import { PageVoice } from "@/components/PageVoice";
 import { VideoTutorialButton } from "@/components/VideoTutorialButton";
-import { PromoBanner } from "@/components/PromoBanner";
 
 import { toast } from "sonner";
 
@@ -172,158 +170,64 @@ function HomePage() {
       />
       </div>
 
-      {/* NEW FEATURES banner — Send balance + Mobile recharge */}
-      <div className="rounded-3xl p-4 relative overflow-hidden shadow-[0_20px_50px_-15px_rgba(236,72,153,0.5)] text-white"
-           style={{ background: "linear-gradient(135deg,#7c3aed 0%,#ec4899 45%,#f59e0b 100%)" }}>
-        <div className="pointer-events-none absolute -top-10 -right-10 w-40 h-40 rounded-full opacity-40 blur-2xl"
-             style={{ background: "radial-gradient(circle,#fde047,transparent 65%)" }} />
-        <div className="pointer-events-none absolute -bottom-12 -left-10 w-40 h-40 rounded-full opacity-35 blur-2xl"
-             style={{ background: "radial-gradient(circle,#22d3ee,transparent 65%)" }} />
-        <div className="relative flex items-start gap-3">
-          <img src={bonusGirl} alt="New features" width={88} height={88}
-               className="w-[88px] h-[88px] drop-shadow-2xl shrink-0 animate-bounce" style={{ animationDuration: "2.5s" }} />
-          <div className="min-w-0 flex-1">
-            <p className="text-[9px] uppercase tracking-[0.25em] font-black opacity-95">🎉 নতুন ফিচার এসেছে!</p>
-            <p className="text-lg font-black leading-tight mt-0.5 drop-shadow">সেন্ড ব্যালেন্স ও মোবাইল রিচার্জ</p>
-            <p className="text-[11px] mt-1 opacity-95 leading-snug">
-              এখন বন্ধুকে ব্যালেন্স পাঠান বা যেকোনো নম্বরে রিচার্জ করুন — <span className="font-black">সরাসরি আপনার ব্যালেন্স থেকে</span>।
-            </p>
-          </div>
-        </div>
-        <div className="relative grid grid-cols-2 gap-2 mt-3">
-          <Link to="/send" className="rounded-2xl p-3 bg-white/95 text-navy shadow-lg btn-press flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-pink-500 text-white flex items-center justify-center text-lg">💸</div>
-            <div className="min-w-0">
-              <p className="text-[13px] font-black leading-tight">সেন্ড ব্যালেন্স</p>
-              <p className="text-[9px] text-muted-foreground">মিন. ১৫৳</p>
-            </div>
-          </Link>
-          <Link to="/recharge" className="rounded-2xl p-3 bg-white/95 text-navy shadow-lg btn-press flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500 to-emerald-500 text-white flex items-center justify-center text-lg">📱</div>
-            <div className="min-w-0">
-              <p className="text-[13px] font-black leading-tight">মোবাইল রিচার্জ</p>
-              <p className="text-[9px] text-muted-foreground">মিন. ২০৳</p>
-            </div>
-          </Link>
-        </div>
-      </div>
-
-
-      {/* 2X Bonus promo banner — auto-hidden when promo window is closed */}
-      <PromoBanner rates={(data as any)?.bonus?.rates ?? null} />
-
-      {/* Premium referral-bonus banner (new users + referrers). Auto-instant payout. */}
+      {/* Compact quick-actions row: Special Offers + Send + Recharge */}
       {(() => {
         const b = (data as any).bonus;
-        if (!b) return null;
-        if (b.selfFirstPaid && b.referrerPaid && b.userReverifyPaid) return null;
-        const referralLock = (data as any).referralLock as { unlocked: boolean; firstVerifies: number; needed: number } | undefined;
-        const referralUnlocked = referralLock?.unlocked === true;
-        const refCode: string | undefined = (data.profile as any)?.referral_code;
-        const shareUrl = refCode && referralUnlocked
-          ? `${typeof window !== "undefined" ? window.location.origin : "https://good-app2.lovable.app"}/?ref=${refCode}`
-          : "";
-        const firstPct = Math.min(100, Math.round((b.firstVerifyCount / 10) * 100));
-        const reverifyPct = Math.min(100, Math.round((b.reverifyCount / 10) * 100));
-        const total = Number(b.totalAmount ?? (b.selfFirstAmount + b.referrerAmount + b.userAmount));
+        const total = b ? Number(b.totalAmount ?? (b.selfFirstAmount + b.referrerAmount + b.userAmount)) : 0;
+        const hasUnclaimed = b && !(b.selfFirstPaid && b.referrerPaid && b.userReverifyPaid);
+        const rechargeOn = (data as any).payoutSettings?.rechargeEnabled !== false;
         return (
-          <div className="referral-bonus-banner rounded-3xl p-4 relative overflow-hidden text-white shadow-[0_20px_50px_-15px_rgba(139,92,246,0.6)]">
-            <div className="referral-bonus-shimmer" />
-            <div className="referral-bonus-sparkle" />
-            <div className="relative flex items-start gap-3">
-              <img src={bonusGirl} alt="Bonus" width={92} height={92}
-                className="w-[92px] h-[92px] drop-shadow-2xl -mt-1 animate-bounce shrink-0" />
-              <div className="flex-1 min-w-0">
-                <p className="text-[9px] uppercase tracking-[0.25em] font-black text-white/95 flex items-center gap-1">
-                  <Crown className="w-3 h-3" /> Premium Bonus
-                </p>
-                <p className="text-[26px] font-black leading-none mt-0.5 drop-shadow-lg">
-                  {total}৳ <span className="text-xs font-bold">ইনস্ট্যান্ট!</span>
-                </p>
-                <p className="text-[11px] text-white/95 leading-snug mt-1 font-bold">
-                  🎯 First verify <b>{b.selfFirstAmount}৳</b> · Re-verify <b>{b.userAmount}৳</b> · বন্ধু আনলে <b>{b.referrerAmount}৳</b>
-                </p>
-              </div>
-            </div>
-
-            <div className="relative mt-3 grid grid-cols-3 gap-2">
-              <div className="rounded-xl bg-white/15 backdrop-blur border border-white/25 p-2">
-                <p className="text-[9px] font-black text-white/90 uppercase tracking-wider">✅ First</p>
-                <p className="text-[11px] font-black mt-0.5 leading-tight">
-                  ১০ Verify → <span className="text-amber-200">{b.selfFirstAmount}৳</span>
-                </p>
-                <div className="mt-1.5 h-1 rounded-full bg-white/25 overflow-hidden">
-                  <div className="h-full bg-amber-300" style={{ width: `${firstPct}%` }} />
-                </div>
-                <p className="text-[9px] mt-0.5 font-bold">
-                  {b.selfFirstPaid ? "✅ পেয়ে গেছেন" : `${b.firstVerifyCount}/10`}
-                </p>
-              </div>
-              <div className="rounded-xl bg-white/15 backdrop-blur border border-white/25 p-2">
-                <p className="text-[9px] font-black text-white/90 uppercase tracking-wider">🔄 Re-verify</p>
-                <p className="text-[11px] font-black mt-0.5 leading-tight">
-                  ১০ Re-verify → <span className="text-amber-200">{b.userAmount}৳</span>
-                </p>
-                <div className="mt-1.5 h-1 rounded-full bg-white/25 overflow-hidden">
-                  <div className="h-full bg-amber-300" style={{ width: `${reverifyPct}%` }} />
-                </div>
-                <p className="text-[9px] mt-0.5 font-bold">
-                  {b.userReverifyPaid ? "✅ পেয়ে গেছেন" : `${b.reverifyCount}/10`}
-                </p>
-              </div>
-              <div className="rounded-xl bg-white/15 backdrop-blur border border-white/25 p-2">
-                <p className="text-[9px] font-black text-white/90 uppercase tracking-wider">👥 Refer</p>
-                <p className="text-[11px] font-black mt-0.5 leading-tight">
-                  বন্ধু ১০ verify → <span className="text-amber-200">{b.referrerAmount}৳</span>
-                </p>
-                <div className="mt-1.5 h-1 rounded-full bg-white/25 overflow-hidden">
-                  <div className="h-full bg-amber-300" style={{ width: `${firstPct}%` }} />
-                </div>
-                <p className="text-[9px] mt-0.5 font-bold">
-                  {b.referrerPaid ? "✅ Referrer পেয়েছেন" : "বন্ধু আনুন"}
-                </p>
-              </div>
-            </div>
-
-            {refCode && referralUnlocked ? (
-              <div className="relative mt-3 rounded-2xl bg-white p-3 flex items-center gap-3 shadow-lg">
-                <div className="shrink-0 rounded-lg overflow-hidden bg-white p-1 border border-navy/10">
-                  <QrCode value={shareUrl} size={64} />
-                </div>
+          <div className="space-y-2">
+            <Link to="/offers"
+              className="block rounded-2xl p-3 relative overflow-hidden shadow-[0_15px_35px_-15px_rgba(236,72,153,0.55)] btn-press"
+              style={{ background: "linear-gradient(135deg,#7c3aed 0%,#ec4899 55%,#f59e0b 100%)" }}>
+              {hasUnclaimed && (
+                <span className="absolute top-2 right-2 text-[9px] font-black bg-white text-rose px-2 py-0.5 rounded-full shadow animate-pulse">
+                  {total}৳ পেন্ডিং
+                </span>
+              )}
+              <div className="flex items-center gap-3 text-white relative">
+                <div className="w-11 h-11 rounded-2xl bg-white/25 backdrop-blur border border-white/40 flex items-center justify-center text-xl">🎁</div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[9px] uppercase tracking-wider font-black text-muted-foreground">আপনার রেফার কোড</p>
-                  <p className="text-lg font-black text-navy mono-num tracking-widest leading-none mt-0.5">{refCode}</p>
-                  <div className="flex gap-1.5 mt-1.5">
-                    <button onClick={() => { navigator.clipboard.writeText(shareUrl); toast.success("লিংক কপি হয়েছে"); }}
-                      className="flex-1 text-[10px] font-black bg-navy text-white rounded-lg py-1.5 flex items-center justify-center gap-1 btn-press">
-                      <Copy className="w-3 h-3" /> কপি
-                    </button>
-                    <button onClick={() => {
-                        if (navigator.share) navigator.share({ title: "Good App", url: shareUrl }).catch(() => {});
-                        else { navigator.clipboard.writeText(shareUrl); toast.success("লিংক কপি হয়েছে"); }
-                      }}
-                      className="flex-1 text-[10px] font-black bg-emerald text-white rounded-lg py-1.5 flex items-center justify-center gap-1 btn-press">
-                      <Share2 className="w-3 h-3" /> শেয়ার
-                    </button>
+                  <p className="text-[9px] uppercase tracking-[0.25em] font-black opacity-95 flex items-center gap-1">
+                    <Sparkles className="w-3 h-3" /> Special Offers
+                  </p>
+                  <p className="text-base font-black leading-tight drop-shadow">সকল বোনাস অফার দেখুন</p>
+                  <p className="text-[10px] opacity-90 font-bold">2X প্রোমো · রেফার · রি-ভেরিফাই বোনাস</p>
+                </div>
+                <span className="text-2xl opacity-90">›</span>
+              </div>
+            </Link>
+            <div className="grid grid-cols-2 gap-2">
+              <Link to="/send" className="rounded-2xl p-2.5 bg-surface-2 border border-border btn-press flex items-center gap-2">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-pink-500 text-white flex items-center justify-center text-lg">💸</div>
+                <div className="min-w-0">
+                  <p className="text-[12px] font-black leading-tight">সেন্ড ব্যালেন্স</p>
+                  <p className="text-[9px] text-muted-foreground">মিন. ১৫৳</p>
+                </div>
+              </Link>
+              {rechargeOn ? (
+                <Link to="/recharge" className="rounded-2xl p-2.5 bg-surface-2 border border-border btn-press flex items-center gap-2">
+                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500 to-emerald-500 text-white flex items-center justify-center text-lg">📱</div>
+                  <div className="min-w-0">
+                    <p className="text-[12px] font-black leading-tight">মোবাইল রিচার্জ</p>
+                    <p className="text-[9px] text-muted-foreground">মিন. ২০৳</p>
+                  </div>
+                </Link>
+              ) : (
+                <div className="rounded-2xl p-2.5 bg-surface-2 border border-border opacity-60 flex items-center gap-2">
+                  <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center"><Lock className="w-4 h-4" /></div>
+                  <div className="min-w-0">
+                    <p className="text-[12px] font-black leading-tight">রিচার্জ বন্ধ</p>
+                    <p className="text-[9px] text-muted-foreground">সাময়িক</p>
                   </div>
                 </div>
-              </div>
-            ) : (
-              <div className="relative mt-3 rounded-2xl bg-white/95 p-3 flex items-center gap-3 shadow-lg text-navy">
-                <div className="shrink-0 w-12 h-12 rounded-xl bg-rose/15 text-rose flex items-center justify-center">
-                  <Lock className="w-5 h-5" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-black">রেফার কোড ও লিংক লক আছে</p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">
-                    {referralLock?.firstVerifies ?? 0}/{referralLock?.needed ?? 5} সফল First Verify · ৫টি পূর্ণ হলেই auto unlock হবে।
-                  </p>
-                </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         );
       })()}
+
 
 
       {/* Premium hero submit button — batch-submits all pending keys, or opens next empty slot. */}

@@ -33,6 +33,7 @@ import { Route as AuthenticatedReverifyRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedReferralRouteImport } from './routes/_authenticated/referral'
 import { Route as AuthenticatedRechargeRouteImport } from './routes/_authenticated/recharge'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
+import { Route as AuthenticatedOffersRouteImport } from './routes/_authenticated/offers'
 import { Route as AuthenticatedKycRouteImport } from './routes/_authenticated/kyc'
 import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
 import { Route as ApiPublicWhitelistRecheckRouteImport } from './routes/api/public/whitelist-recheck'
@@ -159,6 +160,11 @@ const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedOffersRoute = AuthenticatedOffersRouteImport.update({
+  id: '/offers',
+  path: '/offers',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedKycRoute = AuthenticatedKycRouteImport.update({
   id: '/kyc',
   path: '/kyc',
@@ -198,6 +204,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/home': typeof AuthenticatedHomeRoute
   '/kyc': typeof AuthenticatedKycRoute
+  '/offers': typeof AuthenticatedOffersRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/recharge': typeof AuthenticatedRechargeRoute
   '/referral': typeof AuthenticatedReferralRoute
@@ -228,6 +235,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/home': typeof AuthenticatedHomeRoute
   '/kyc': typeof AuthenticatedKycRoute
+  '/offers': typeof AuthenticatedOffersRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/recharge': typeof AuthenticatedRechargeRoute
   '/referral': typeof AuthenticatedReferralRoute
@@ -261,6 +269,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/home': typeof AuthenticatedHomeRoute
   '/_authenticated/kyc': typeof AuthenticatedKycRoute
+  '/_authenticated/offers': typeof AuthenticatedOffersRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/recharge': typeof AuthenticatedRechargeRoute
   '/_authenticated/referral': typeof AuthenticatedReferralRoute
@@ -294,6 +303,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/home'
     | '/kyc'
+    | '/offers'
     | '/profile'
     | '/recharge'
     | '/referral'
@@ -324,6 +334,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/home'
     | '/kyc'
+    | '/offers'
     | '/profile'
     | '/recharge'
     | '/referral'
@@ -356,6 +367,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/home'
     | '/_authenticated/kyc'
+    | '/_authenticated/offers'
     | '/_authenticated/profile'
     | '/_authenticated/recharge'
     | '/_authenticated/referral'
@@ -562,6 +574,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProfileRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/offers': {
+      id: '/_authenticated/offers'
+      path: '/offers'
+      fullPath: '/offers'
+      preLoaderRoute: typeof AuthenticatedOffersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/kyc': {
       id: '/_authenticated/kyc'
       path: '/kyc'
@@ -610,6 +629,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
   AuthenticatedKycRoute: typeof AuthenticatedKycRoute
+  AuthenticatedOffersRoute: typeof AuthenticatedOffersRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedRechargeRoute: typeof AuthenticatedRechargeRoute
   AuthenticatedReferralRoute: typeof AuthenticatedReferralRoute
@@ -623,6 +643,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedHomeRoute: AuthenticatedHomeRoute,
   AuthenticatedKycRoute: AuthenticatedKycRoute,
+  AuthenticatedOffersRoute: AuthenticatedOffersRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedRechargeRoute: AuthenticatedRechargeRoute,
   AuthenticatedReferralRoute: AuthenticatedReferralRoute,
