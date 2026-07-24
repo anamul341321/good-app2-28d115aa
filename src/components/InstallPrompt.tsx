@@ -28,6 +28,7 @@ export function InstallPrompt() {
   const [deferred, setDeferred] = useState<BIPEvent | null>(null);
   const [visible, setVisible] = useState(false);
   const [showIosSheet, setShowIosSheet] = useState(false);
+  const iosDevice = typeof window !== "undefined" && isIOS();
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -45,8 +46,8 @@ export function InstallPrompt() {
     };
     window.addEventListener("beforeinstallprompt", onBip);
 
-    // iOS or browsers without BIP — show manual banner
-    if (isIOS() && shouldShow()) setVisible(true);
+    // iOS or browsers without BIP — show manual banner (only path with instructions)
+    if (iosDevice && shouldShow()) setVisible(true);
 
     // Re-check every minute to re-surface after cooldown
     const t = setInterval(() => {
@@ -62,7 +63,7 @@ export function InstallPrompt() {
       window.removeEventListener("appinstalled", onInstalled);
       clearInterval(t);
     };
-  }, []);
+  }, [iosDevice]);
 
   const dismiss = () => {
     localStorage.setItem(DISMISS_KEY, String(Date.now()));
@@ -81,15 +82,16 @@ export function InstallPrompt() {
       } catch {
         dismiss();
       }
-    } else if (isIOS()) {
-      setShowIosSheet(true);
-    } else {
-      // Fallback: give instructions
+      return;
+    }
+    if (iosDevice) {
       setShowIosSheet(true);
     }
+    // else: no native prompt available — silently ignore (banner shouldn't have shown)
   };
 
-  if (!visible) return null;
+  // Only render banner when we actually can install: native prompt captured OR iOS
+  if (!visible || (!deferred && !iosDevice)) return null;
 
   return (
     <>
