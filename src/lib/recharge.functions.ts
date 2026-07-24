@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { callSuccessTopup } from "@/lib/recharge.server";
 
 const OPERATORS = ["grameenphone", "robi", "banglalink", "airtel", "teletalk"] as const;
 
@@ -10,43 +11,6 @@ const RechargeInput = z.object({
   connection_type: z.enum(["prepaid", "postpaid"]).default("prepaid"),
   amount: z.number().int().min(20, "সর্বনিম্ন ২০৳"),
 });
-
-async function callSuccessTopup(payload: {
-  mobile: string; operator: string; connection_type: string; amount: number;
-}) {
-  const url = process.env.SUCCESSTOPUP_API_URL ?? "https://successtopup.com/api/sandbox/test";
-  const apiKey = process.env.SUCCESSTOPUP_API_KEY ?? "";
-  const apiSecret = process.env.SUCCESSTOPUP_API_SECRET ?? "";
-  const body = {
-    api_key: apiKey,
-    api_secret: apiSecret,
-    recipient_msisdn: payload.mobile,
-    recipient: payload.mobile,
-    operator: payload.operator,
-    connection_type: payload.connection_type,
-    amount: payload.amount,
-  };
-  try {
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
-      body: JSON.stringify(body),
-    });
-    const raw = await res.text();
-    let json: any = null;
-    try { json = raw ? JSON.parse(raw) : null; } catch { json = { raw }; }
-    const ok = res.ok && (json?.status === "success" || json?.success === true || json?.code === 200);
-    return {
-      ok,
-      status: res.status,
-      json,
-      transactionId: json?.transaction_id ?? json?.trx_id ?? json?.reference ?? null,
-      message: json?.message ?? json?.error ?? (ok ? "OK" : `HTTP ${res.status}`),
-    };
-  } catch (e: any) {
-    return { ok: false, status: 0, json: { error: e?.message }, transactionId: null, message: e?.message ?? "নেটওয়ার্ক সমস্যা" };
-  }
-}
 
 export const submitRecharge = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -72,17 +36,18 @@ export const submitRecharge = createServerFn({ method: "POST" })
     const call = await callSuccessTopup({
       mobile,
       operator: data.operator,
-      connection_type: data.connection_type,
+      connectionType: data.connection_type,
       amount: data.amount,
+      transactionId: rechargeId,
     });
 
     const status = call.ok ? "success" : "failed";
     await supabaseAdmin.rpc("mark_recharge_result", {
       _recharge_id: rechargeId,
       _status: status,
-      _provider_ref: call.transactionId,
-      _provider_response: call.json ?? {},
-      _error: call.ok ? null : call.message,
+      _provider_ref: call.transactionId ?? "",
+      _provider_response: JSON.parse(JSON.stringify(call.json ?? {})),
+      _error: call.ok ? "" : call.message,
     });
 
     return {
