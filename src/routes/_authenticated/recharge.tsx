@@ -42,7 +42,7 @@ function RechargePage() {
   const [connType, setConnType] = useState<"prepaid" | "postpaid">("prepaid");
   const [amount, setAmount] = useState("");
 
-  const kycOk = !!(dash?.profile as any)?.kyc_verified;
+  // KYC no longer required for recharge — anyone with balance can recharge
   const mining = dash?.mining;
   const debtTotal = Number((dash as any)?.debtTotal ?? 0);
   const balance = mining ? Math.floor(computeLiveBalance({
@@ -89,19 +89,7 @@ function RechargePage() {
     );
   }
 
-  if (!kycOk) {
-    return (
-      <div className="pt-2 space-y-3">
-        <BackBar />
-        <div className="text-center pt-4 space-y-3">
-          <ShieldCheck className="w-10 h-10 text-amber mx-auto" />
-          <h1 className="text-xl font-black">KYC লাগবে</h1>
-          <p className="text-sm text-muted-foreground">রিচার্জের জন্য KYC ভেরিফাই করুন।</p>
-          <a href="/kyc" className="inline-block rounded-2xl px-5 py-3 gradient-cta font-black btn-press">KYC করুন</a>
-        </div>
-      </div>
-    );
-  }
+  // (KYC gate removed — all users can recharge)
 
   const amt = Math.floor(Number(amount) || 0);
   const mob = mobile.replace(/\D/g, "");
