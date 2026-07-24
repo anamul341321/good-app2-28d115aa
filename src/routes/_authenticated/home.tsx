@@ -326,12 +326,23 @@ function HomePage() {
       )}
 
 
-      {/* Main identity card */}
+      {/* Main identity card — premium hero */}
       {mainTask && (
-        <div data-tour="main-identity" data-voice="home.main" className="premium-panel rounded-2xl p-3 relative overflow-hidden"
-             style={{ background: "linear-gradient(135deg, rgba(255,209,102,0.15), rgba(239,71,111,0.12))" }}>
-          <div className="flex items-center gap-3">
-            <div className="shrink-0">
+        <div data-tour="main-identity" data-voice="home.main"
+             className="relative overflow-hidden rounded-2xl p-4 border-2 shadow-[0_18px_40px_-12px_rgba(245,158,11,0.55)]"
+             style={{
+               borderColor: "rgba(255,255,255,0.25)",
+               background: "linear-gradient(135deg, #7c3aed 0%, #ec4899 45%, #f59e0b 100%)",
+             }}>
+          {/* decorative glow blobs */}
+          <div className="pointer-events-none absolute -top-10 -right-10 w-40 h-40 rounded-full opacity-40 blur-2xl"
+               style={{ background: "radial-gradient(circle, #fde047, transparent 65%)" }} />
+          <div className="pointer-events-none absolute -bottom-12 -left-10 w-40 h-40 rounded-full opacity-35 blur-2xl"
+               style={{ background: "radial-gradient(circle, #22d3ee, transparent 65%)" }} />
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_15%,rgba(255,255,255,0.35),transparent_55%)]" />
+
+          <div className="relative flex items-center gap-3">
+            <div className="shrink-0 rounded-2xl p-1 bg-white/25 backdrop-blur-sm shadow-lg">
               <MainIdentityCell task={mainTask}
                 onStart={() => router.navigate({ to: "/task/$slot", params: { slot: "1" } })}
                 onReverify={() => {
@@ -339,22 +350,24 @@ function HomePage() {
                   if (url) {
                     setLightbox({
                       url,
-                      label: `প্রধান পরিচয় · ${mainTask.face_label || "আপনি"} — রি-ভেরিফাই প্রয়োজন`,
+                      label: `আপনার পরিচয় · ${mainTask.face_label || "আপনি"} — রি-ভেরিফাই প্রয়োজন`,
                       action: { label: "রি-ভেরিফাই করুন", tone: "rose", onClick: () => router.navigate({ to: "/reverify", search: { taskId: mainTask.id } as any }) },
                     });
                   } else {
                     router.navigate({ to: "/reverify", search: { taskId: mainTask.id } as any });
                   }
                 }}
-                onOpenPhoto={(url) => setLightbox({ url, label: `প্রধান পরিচয় · ${mainTask.face_label || "আপনি"}` })} />
+                onOpenPhoto={(url) => setLightbox({ url, label: `আপনার পরিচয় · ${mainTask.face_label || "আপনি"}` })} />
             </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-[10px] uppercase tracking-[0.15em] font-bold flex items-center gap-1" style={{ color: "var(--color-amber)" }}>
-                <Crown className="w-3 h-3" /> প্রধান পরিচয়
+            <div className="min-w-0 flex-1 text-white">
+              <p className="text-[10px] uppercase tracking-[0.2em] font-black flex items-center gap-1 text-white/95 drop-shadow">
+                <BadgeCheck className="w-3.5 h-3.5" /> ভেরিফাইড পরিচয়
               </p>
-              <p className="text-sm font-black text-navy mt-0.5 leading-tight">আপনার নিজের মুখ</p>
-              <p className="text-[11px] text-muted-foreground mt-1 leading-snug">
-                এটি আপনার মূল পরিচয় — নিচের সাক্ষীরা আপনার হয়ে সাক্ষ্য দিচ্ছেন যে আপনি সত্যিই একজন সুবিধাবঞ্চিত।
+              <p className="text-base font-black mt-1 leading-tight drop-shadow-lg">
+                আপনি — এই অ্যাকাউন্টের মালিক
+              </p>
+              <p className="text-[11px] font-semibold mt-1 leading-snug text-white/90 drop-shadow">
+                আপনার নিজের ছবি এখানে সুরক্ষিত। বাকি ১০ জন সাক্ষী আপনার পক্ষে সাক্ষ্য দিচ্ছেন যে আপনি সত্যিকারের একজন প্রকৃত ব্যবহারকারী।
               </p>
             </div>
           </div>
