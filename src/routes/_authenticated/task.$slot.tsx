@@ -365,15 +365,6 @@ function TaskPage() {
                 : <><ShieldCheck className="w-4 h-4" /> জমা দিন</>}
             </button>
           )}
-          {verifyOpened && countdown !== 0 && (
-            <button onClick={onQuickSubmit} disabled={checking || bindMut.isPending || quickSubmitting}
-              data-voice="task.submit.clicked"
-              className="w-full py-4 rounded-xl gradient-cta font-black flex items-center justify-center gap-2">
-              {checking || bindMut.isPending || quickSubmitting
-                ? <><Loader2 className="w-4 h-4 animate-spin" /> হোয়াইটলিস্ট যাচাই হচ্ছে…</>
-                : <><ShieldCheck className="w-4 h-4" /> জমা দিন</>}
-            </button>
-          )}
           <button onClick={async () => {
               try {
                 const id = await generateNewIdentity(data?.profile?.display_name ?? faceLabel ?? "User");
