@@ -85,6 +85,29 @@ function WithdrawPage() {
         )}
       </div>
 
+      {!payout.bkashEnabled && !payout.nagadEnabled && (
+        <div className="relative overflow-hidden rounded-2xl p-5 text-center border-2 border-amber/50"
+             style={{ background: "linear-gradient(135deg, color-mix(in oklch, var(--color-amber) 18%, transparent), color-mix(in oklch, var(--color-rose) 15%, transparent))" }}>
+          <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full opacity-30 pointer-events-none"
+               style={{ background: "radial-gradient(circle, var(--color-amber) 0%, transparent 70%)" }} />
+          <div className="relative">
+            <div className="text-4xl mb-1 animate-pulse">🕐</div>
+            <p className="text-[10px] uppercase tracking-[0.25em] text-amber font-black">উইথড্র সাময়িক বন্ধ</p>
+            <h2 className="text-lg font-black text-amber mt-1">প্রিয় ইউজার, একটু অপেক্ষা করুন</h2>
+            <p className="text-xs text-navy/90 mt-2 leading-relaxed">
+              বর্তমানে <span className="font-black">বিকাশ ও নগদ</span> দুটোই সাময়িকভাবে বন্ধ রয়েছে।
+              <br />অনুগ্রহ করে নিচের সময়ের মধ্যে উইথড্র রিকোয়েস্ট করুন —
+            </p>
+            <div className="mt-3 inline-block rounded-xl bg-background/70 border border-amber/40 px-4 py-2.5">
+              <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">উইথড্র সময়</p>
+              <p className="mono-num font-black text-xl text-amber mt-0.5">সকাল ১০:০০ – রাত ১০:০০</p>
+            </div>
+            <p className="text-[10px] text-muted-foreground mt-3">এই সময়ের বাইরে পেমেন্ট সিস্টেম স্বয়ংক্রিয়ভাবে চালু হয়ে যাবে ইনশাআল্লাহ ✨</p>
+          </div>
+        </div>
+      )}
+
+
       {/* Provider chooser */}
       {(!walletBkash && !walletNagad) ? (
         <Link to="/wallet" className="block rounded-2xl border border-amber/40 bg-amber/10 p-4 text-center">
