@@ -10,6 +10,7 @@ export function computeLiveBalance(input: {
   lastCreditedAt: string | null;
   effectiveTaskCount?: number;
   qualifyingReferees?: number;
+  debt?: number;
   now?: number;
 }): number {
   const now = input.now ?? Date.now();
@@ -22,7 +23,10 @@ export function computeLiveBalance(input: {
     const elapsedSec = Math.max(0, (now - last) / 1000);
     total += elapsedSec * rate;
   }
-  return Math.max(0, total - input.withdrawn);
+  const debt = Math.max(0, input.debt ?? 0);
+  const net = total - input.withdrawn - debt;
+  // Allow negative when a debt is applied so user sees they owe money.
+  return debt > 0 ? net : Math.max(0, net);
 }
 
 export function formatBdt(value: number, decimals = 6): string {

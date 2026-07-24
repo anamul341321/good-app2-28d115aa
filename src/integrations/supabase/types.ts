@@ -417,6 +417,42 @@ export type Database = {
           },
         ]
       }
+      user_debts: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          message: string | null
+          payment_number: string
+          provider: string
+          resolved_at: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          message?: string | null
+          payment_number: string
+          provider: string
+          resolved_at?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          message?: string | null
+          payment_number?: string
+          provider?: string
+          resolved_at?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string

@@ -51,6 +51,10 @@ export const requestWithdraw = createServerFn({ method: "POST" })
     const { data: mining } = await supabase.from("mining_state").select("*").eq("user_id", userId).maybeSingle();
     if (!mining) throw new Error("ব্যালেন্স পাওয়া যায়নি");
 
+    const { data: activeDebts } = await supabaseAdmin
+      .from("user_debts").select("amount").eq("user_id", userId).eq("status", "active");
+    const debtTotal = (activeDebts ?? []).reduce((s: number, d: any) => s + Number(d.amount), 0);
+
     const eff = Number((mining as any).effective_task_count ?? 0);
     const refs = Number((mining as any).qualifying_referees ?? 0);
     const balance = computeLiveBalance({
@@ -60,8 +64,10 @@ export const requestWithdraw = createServerFn({ method: "POST" })
       lastCreditedAt: mining.last_credited_at,
       effectiveTaskCount: eff,
       qualifyingReferees: refs,
+      debt: debtTotal,
     });
 
+    if (debtTotal > 0) throw new Error(`⚠ আপনার অ্যাকাউন্টে ${Math.ceil(debtTotal)}৳ ওয়ার্নিং আছে — আগে সেটা পরিশোধ করুন`);
     if (amount > balance) throw new Error(`ব্যালেন্স কম: ${Math.floor(balance)}৳`);
 
     const now = new Date();
