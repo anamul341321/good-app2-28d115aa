@@ -154,6 +154,94 @@ function UserDetail() {
         <p className="text-[10px] text-muted-foreground mt-1">Joined: {new Date(p.created_at).toLocaleString()}</p>
       </div>
 
+      {/* ⚠ Warning / Debt (overpayment recovery) */}
+      <div className="rounded-2xl p-4 border-2 border-rose/50 bg-linear-to-br from-rose/15 via-amber/5 to-transparent space-y-3">
+        <div className="flex items-center gap-2">
+          <AlertTriangle className="w-4 h-4 text-rose" />
+          <p className="text-[10px] uppercase tracking-widest text-rose font-black">Warning / ভুল পেমেন্ট ফেরত</p>
+        </div>
+        <p className="text-[10px] text-muted-foreground leading-snug">
+          ভুলে বেশি টাকা পাঠিয়ে দিলে এখান থেকে ইউজার-এর অ্যাকাউন্টে ঋণ (−) বসাতে পারবেন। ওই টাকা তার ব্যালেন্স থেকে বাদ যাবে এবং withdraw পেজে আপনার agent নাম্বার + মেসেজ সহ big warning দেখাবে। টাকা ফেরত পেলে "Resolve" চাপুন।
+        </p>
+
+        {((data as any).debts ?? []).filter((d: any) => d.status === "active").length > 0 && (
+          <div className="space-y-2">
+            {((data as any).debts ?? []).filter((d: any) => d.status === "active").map((d: any) => (
+              <div key={d.id} className="rounded-xl bg-background/60 border border-rose/40 p-2.5 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${d.provider === "bkash" ? "bg-rose/20 text-rose" : "bg-amber/20 text-amber"}`}>
+                    {d.provider === "bkash" ? "বিকাশ" : "নগদ"}
+                  </span>
+                  <span className="mono-num font-black text-rose text-lg">−{Math.ceil(Number(d.amount))}৳</span>
+                </div>
+                <p className="mono-num text-[11px] text-navy"><span className="text-muted-foreground">Agent:</span> <span className="font-black">{d.payment_number}</span></p>
+                {d.message && <p className="text-[10px] text-muted-foreground leading-snug whitespace-pre-wrap">{d.message}</p>}
+                <p className="text-[9px] text-muted-foreground">{new Date(d.created_at).toLocaleString()}</p>
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  <button
+                    disabled={resolveDebt.isPending}
+                    onClick={() => { if (confirm("টাকা ফেরত পেয়েছেন? Warning সরিয়ে দেবো?")) resolveDebt.mutate(d.id); }}
+                    className="py-1.5 rounded-lg bg-emerald/20 text-emerald font-black text-[10px] flex items-center justify-center gap-1 disabled:opacity-50">
+                    <CheckCheck className="w-3 h-3" /> Resolve
+                  </button>
+                  <button
+                    disabled={removeDebt.isPending}
+                    onClick={() => { if (confirm("এই warning permanently মুছে ফেলবেন?")) removeDebt.mutate(d.id); }}
+                    className="py-1.5 rounded-lg bg-rose/20 text-rose font-black text-[10px] flex items-center justify-center gap-1 disabled:opacity-50">
+                    <Trash2 className="w-3 h-3" /> Delete
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {((data as any).debts ?? []).filter((d: any) => d.status === "resolved").length > 0 && (
+          <details className="text-[10px]">
+            <summary className="text-muted-foreground cursor-pointer">Resolved history ({((data as any).debts ?? []).filter((d: any) => d.status === "resolved").length})</summary>
+            <div className="mt-2 space-y-1">
+              {((data as any).debts ?? []).filter((d: any) => d.status === "resolved").map((d: any) => (
+                <div key={d.id} className="flex items-center justify-between rounded-lg bg-surface-2 px-2 py-1">
+                  <span className="mono-num text-emerald font-black">−{Math.ceil(Number(d.amount))}৳ ✓</span>
+                  <span className="text-muted-foreground">{new Date(d.resolved_at ?? d.created_at).toLocaleDateString()}</span>
+                </div>
+              ))}
+            </div>
+          </details>
+        )}
+
+        <div className="space-y-2 pt-2 border-t border-rose/20">
+          <p className="text-[10px] uppercase tracking-widest text-rose font-black">নতুন Warning পাঠান</p>
+          <div className="flex gap-2">
+            <input type="number" inputMode="decimal" value={debtAmt} onChange={(e) => setDebtAmt(e.target.value)}
+              placeholder="ভুলে পাঠানো টাকা (৳)"
+              className="flex-1 px-3 py-2 rounded-xl bg-surface-2 border border-border text-sm mono-num focus:outline-none focus:border-rose" />
+            <select value={debtProvider} onChange={(e) => setDebtProvider(e.target.value as any)}
+              className="px-2 py-2 rounded-xl bg-surface-2 border border-border text-xs font-black">
+              <option value="bkash">বিকাশ</option>
+              <option value="nagad">নগদ</option>
+            </select>
+          </div>
+          <input type="tel" inputMode="numeric" value={debtNumber} onChange={(e) => setDebtNumber(e.target.value)}
+            placeholder="Agent নম্বর (Cash-Out যেখানে পাঠাবে)"
+            className="w-full px-3 py-2 rounded-xl bg-surface-2 border border-border text-sm mono-num focus:outline-none focus:border-rose" />
+          <textarea value={debtMsg} onChange={(e) => setDebtMsg(e.target.value)}
+            rows={3}
+            placeholder={"যেমন: ভাই, ভুল করে ২০০৳ বেশি চলে গেছে। উপরের Agent নম্বরে Cash-Out করে ফেরত দিন, না দিলে অ্যাকাউন্ট বন্ধ করে দেওয়া হবে।"}
+            className="w-full px-3 py-2 rounded-xl bg-surface-2 border border-border text-[12px] focus:outline-none focus:border-rose" />
+          <button
+            disabled={addDebt.isPending || !debtAmt || Number(debtAmt) <= 0 || debtNumber.trim().length < 4}
+            onClick={() => {
+              if (!confirm(`${debtAmt}৳ warning পাঠাবেন? User-এর ব্যালেন্স থেকে ${debtAmt}৳ বাদ যাবে।`)) return;
+              addDebt.mutate();
+            }}
+            className="w-full py-2.5 rounded-xl bg-rose text-white font-black text-[12px] flex items-center justify-center gap-1 disabled:opacity-50">
+            {addDebt.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <AlertTriangle className="w-3 h-3" />}
+            Warning পাঠান (−{debtAmt || "০"}৳)
+          </button>
+        </div>
+      </div>
+
       {/* GoodDollar face summary */}
       <div className="glass rounded-2xl p-4 space-y-3 border border-violet/30">
         <div className="flex items-center gap-2">
