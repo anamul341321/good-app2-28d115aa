@@ -52,14 +52,17 @@ function WithdrawPage() {
   if (isLoading) return <div className="py-20 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-cyan" /></div>;
 
   const mining = data?.mining;
+  const debts = (data as any)?.debts ?? [];
+  const debtTotal = Number((data as any)?.debtTotal ?? 0);
   const balance = mining ? computeLiveBalance({
     accrued: Number(mining.accrued_amount), withdrawn: Number(mining.withdrawn_amount),
     isActive: mining.is_active, lastCreditedAt: mining.last_credited_at,
     effectiveTaskCount: Number((mining as any).effective_task_count ?? 0),
     qualifyingReferees: Number((mining as any).qualifying_referees ?? 0),
+    debt: debtTotal,
     now,
   }) : 0;
-  const claimable = Math.floor(balance);
+  const claimable = debtTotal > 0 ? Math.floor(balance) : Math.floor(balance);
 
   const chosenWallet = provider === "bkash" ? walletBkash : provider === "nagad" ? walletNagad : null;
   const chosenEnabled = provider === "bkash" ? payout.bkashEnabled : provider === "nagad" ? payout.nagadEnabled : false;
