@@ -282,12 +282,20 @@ export const adminUserDetail = createServerFn({ method: "POST" })
 // ---------------- Withdrawals ----------------
 export const adminListWithdrawals = createServerFn({ method: "GET" }).handler(async () => {
   const supabaseAdmin = await gate();
-  const { data } = await supabaseAdmin
-    .from("withdrawals")
-    .select("*, profiles:user_id(display_name, email, phone_number)")
-    .order("created_at", { ascending: false });
-  return data ?? [];
+  const rows: any[] = [];
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await supabaseAdmin
+      .from("withdrawals")
+      .select("*, profiles:user_id(display_name, email, phone_number)")
+      .order("created_at", { ascending: false })
+      .range(from, from + 999);
+    if (error) throw new Error(error.message);
+    rows.push(...(data ?? []));
+    if (!data || data.length < 1000) break;
+  }
+  return rows;
 });
+
 
 const ActionInput = z.object({
   id: z.string().uuid(),
