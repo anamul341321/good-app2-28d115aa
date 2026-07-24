@@ -26,6 +26,13 @@ function BackBar() {
 
 const MIN_SEND = 15;
 
+function maskPhone(phone: string | null | undefined) {
+  if (!phone) return "";
+  const s = phone.replace(/\D/g, "");
+  if (s.length < 7) return phone;
+  return `${s.slice(0, 3)}${"*".repeat(s.length - 7)}${s.slice(-4)}`;
+}
+
 function SendPage() {
   const { data: dash } = useQuery({ queryKey: ["dashboard"], queryFn: () => getDashboard() });
   const { data: history, refetch: refetchHist } = useQuery({ queryKey: ["my-transfers"], queryFn: () => getMyTransfers() });
