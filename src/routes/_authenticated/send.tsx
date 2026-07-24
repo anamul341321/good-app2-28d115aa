@@ -36,7 +36,7 @@ function SendPage() {
     onSuccess: (r: any) => {
       if (r.self) { toast.error("নিজেকে পাঠানো যাবে না"); setFound(null); return; }
       if (!r.found) { toast.error("এই UID/ফোন-এ কোনো ইউজার নেই"); setFound(null); return; }
-      if (!r.user.kyc_verified) { toast.error("রিসিভার KYC ভেরিফাইড নয়"); setFound(null); return; }
+      // Receiver KYC no longer required
       setFound(r.user);
     },
     onError: (e: any) => toast.error(e.message),
