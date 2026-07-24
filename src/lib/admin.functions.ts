@@ -184,7 +184,7 @@ export const adminUserDetail = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => z.object({ userId: z.string().uuid() }).parse(i))
   .handler(async ({ data }) => {
     const supabaseAdmin = await gate();
-    const [profile, tasks, mining, wallets, withdrawals, unverified, referrals] = await Promise.all([
+    const [profile, tasks, mining, wallets, withdrawals, unverified, referrals, debts] = await Promise.all([
       supabaseAdmin.from("profiles").select("*").eq("id", data.userId).maybeSingle(),
       supabaseAdmin.from("tasks").select("*").eq("user_id", data.userId).order("slot"),
       supabaseAdmin.from("mining_state").select("*").eq("user_id", data.userId).maybeSingle(),
@@ -192,6 +192,7 @@ export const adminUserDetail = createServerFn({ method: "POST" })
       supabaseAdmin.from("withdrawals").select("*").eq("user_id", data.userId).order("created_at", { ascending: false }),
       supabaseAdmin.from("unverified_attempts").select("*").eq("user_id", data.userId).order("created_at", { ascending: false }),
       supabaseAdmin.from("profiles").select("id, display_name, phone_number, email, created_at").eq("referred_by", data.userId).order("created_at", { ascending: false }),
+      supabaseAdmin.from("user_debts").select("*").eq("user_id", data.userId).order("created_at", { ascending: false }),
     ]);
 
     const taskRows = await Promise.all((tasks.data ?? []).map(async (t) => {
@@ -275,7 +276,51 @@ export const adminUserDetail = createServerFn({ method: "POST" })
         unlocked: (profile.data as any)?.referral_unlock_override === true
           || taskRows.filter((t) => !!t.initial_verify_at).length >= REFERRAL_UNLOCK_THRESHOLD,
       },
+      debts: debts.data ?? [],
+      debtTotal: (debts.data ?? []).filter((d: any) => d.status === "active").reduce((s: number, d: any) => s + Number(d.amount), 0),
     };
+  });
+
+
+export const adminAddDebt = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => z.object({
+    userId: z.string().uuid(),
+    amount: z.number().positive(),
+    provider: z.enum(["bkash", "nagad"]),
+    paymentNumber: z.string().min(4),
+    message: z.string().max(2000).optional(),
+  }).parse(i))
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await gate();
+    const { error } = await supabaseAdmin.from("user_debts").insert({
+      user_id: data.userId,
+      amount: data.amount,
+      provider: data.provider,
+      payment_number: data.paymentNumber,
+      message: data.message ?? null,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const adminResolveDebt = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => z.object({ debtId: z.string().uuid() }).parse(i))
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await gate();
+    const { error } = await supabaseAdmin.from("user_debts")
+      .update({ status: "resolved", resolved_at: new Date().toISOString() })
+      .eq("id", data.debtId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const adminDeleteDebt = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => z.object({ debtId: z.string().uuid() }).parse(i))
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await gate();
+    const { error } = await supabaseAdmin.from("user_debts").delete().eq("id", data.debtId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
   });
 
 

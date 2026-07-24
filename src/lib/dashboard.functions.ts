@@ -123,6 +123,8 @@ export const getDashboard = createServerFn({ method: "GET" })
         needed: REFERRAL_UNLOCK_THRESHOLD,
       },
       vouchers: pendingVouchers ?? [],
+      debts: activeDebts ?? [],
+      debtTotal,
       bonus: {
         firstVerifyCount,
         reverifyCount,
