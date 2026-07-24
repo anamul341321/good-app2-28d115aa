@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { adminStats, adminListWithdrawals } from "@/lib/admin.functions";
-import { Loader2, Users, ArrowDownToLine, ScanFace, Clock, AlertTriangle, TrendingUp, Wallet, CheckCircle2 } from "lucide-react";
+import { Loader2, Users, ArrowDownToLine, ScanFace, Clock, AlertTriangle, TrendingUp, Wallet, CheckCircle2, ShieldCheck, Smartphone } from "lucide-react";
 
 export const Route = createFileRoute("/admin/")({ component: AdminDashboard });
 

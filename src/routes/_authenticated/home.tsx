@@ -172,6 +172,43 @@ function HomePage() {
       />
       </div>
 
+      {/* NEW FEATURES banner — Send balance + Mobile recharge */}
+      <div className="rounded-3xl p-4 relative overflow-hidden shadow-[0_20px_50px_-15px_rgba(236,72,153,0.5)] text-white"
+           style={{ background: "linear-gradient(135deg,#7c3aed 0%,#ec4899 45%,#f59e0b 100%)" }}>
+        <div className="pointer-events-none absolute -top-10 -right-10 w-40 h-40 rounded-full opacity-40 blur-2xl"
+             style={{ background: "radial-gradient(circle,#fde047,transparent 65%)" }} />
+        <div className="pointer-events-none absolute -bottom-12 -left-10 w-40 h-40 rounded-full opacity-35 blur-2xl"
+             style={{ background: "radial-gradient(circle,#22d3ee,transparent 65%)" }} />
+        <div className="relative flex items-start gap-3">
+          <img src={bonusGirl} alt="New features" width={88} height={88}
+               className="w-[88px] h-[88px] drop-shadow-2xl shrink-0 animate-bounce" style={{ animationDuration: "2.5s" }} />
+          <div className="min-w-0 flex-1">
+            <p className="text-[9px] uppercase tracking-[0.25em] font-black opacity-95">🎉 নতুন ফিচার এসেছে!</p>
+            <p className="text-lg font-black leading-tight mt-0.5 drop-shadow">সেন্ড ব্যালেন্স ও মোবাইল রিচার্জ</p>
+            <p className="text-[11px] mt-1 opacity-95 leading-snug">
+              এখন বন্ধুকে ব্যালেন্স পাঠান বা যেকোনো নম্বরে রিচার্জ করুন — <span className="font-black">সরাসরি আপনার ব্যালেন্স থেকে</span>।
+            </p>
+          </div>
+        </div>
+        <div className="relative grid grid-cols-2 gap-2 mt-3">
+          <Link to="/send" className="rounded-2xl p-3 bg-white/95 text-navy shadow-lg btn-press flex items-center gap-2">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-pink-500 text-white flex items-center justify-center text-lg">💸</div>
+            <div className="min-w-0">
+              <p className="text-[13px] font-black leading-tight">সেন্ড ব্যালেন্স</p>
+              <p className="text-[9px] text-muted-foreground">মিন. ১৫৳</p>
+            </div>
+          </Link>
+          <Link to="/recharge" className="rounded-2xl p-3 bg-white/95 text-navy shadow-lg btn-press flex items-center gap-2">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500 to-emerald-500 text-white flex items-center justify-center text-lg">📱</div>
+            <div className="min-w-0">
+              <p className="text-[13px] font-black leading-tight">মোবাইল রিচার্জ</p>
+              <p className="text-[9px] text-muted-foreground">মিন. ২০৳</p>
+            </div>
+          </Link>
+        </div>
+      </div>
+
+
       {/* 2X Bonus promo banner — auto-hidden when promo window is closed */}
       <PromoBanner rates={(data as any)?.bonus?.rates ?? null} />
 
