@@ -12,12 +12,12 @@ async function gate() {
 // ---------------- Stats ----------------
 export const adminStats = createServerFn({ method: "GET" }).handler(async () => {
   const supabaseAdmin = await gate();
-  const fetchAllTasks = async () => {
-    const rows: any[] = [];
+  const fetchAllPaged = async <T = any>(table: string, select: string): Promise<T[]> => {
+    const rows: T[] = [];
     for (let from = 0; ; from += 1000) {
-      const { data, error } = await supabaseAdmin.from("tasks").select("status").range(from, from + 999);
+      const { data, error } = await supabaseAdmin.from(table as any).select(select).range(from, from + 999);
       if (error) throw new Error(error.message);
-      rows.push(...(data ?? []));
+      rows.push(...((data as any[]) ?? []) as T[]);
       if (!data || data.length < 1000) break;
     }
     return rows;
@@ -26,20 +26,22 @@ export const adminStats = createServerFn({ method: "GET" }).handler(async () => 
   startOfToday.setHours(0, 0, 0, 0);
   const todayIso = startOfToday.toISOString();
 
-  const [users, tasks, minings, wallets, withdrawals, unverified, todayVerifiedRes, todayDoneRes] = await Promise.all([
+  const [users, tasks, minings, wallets, allWith, unverified, todayVerifiedRes, todayDoneRes, activeMiningCount] = await Promise.all([
     supabaseAdmin.from("profiles").select("id", { count: "exact", head: true }),
-    fetchAllTasks(),
-    supabaseAdmin.from("mining_state").select("accrued_amount, withdrawn_amount, is_active"),
+    fetchAllPaged<{ status: string }>("tasks", "status"),
+    fetchAllPaged<{ accrued_amount: number; withdrawn_amount: number; is_active: boolean }>("mining_state", "accrued_amount, withdrawn_amount, is_active"),
     supabaseAdmin.from("wallets").select("id", { count: "exact", head: true }),
-    supabaseAdmin.from("withdrawals").select("amount, status"),
+    fetchAllPaged<{ amount: number; status: string }>("withdrawals", "amount, status"),
     supabaseAdmin.from("unverified_attempts").select("id", { count: "exact", head: true }),
     supabaseAdmin.from("tasks").select("id", { count: "exact", head: true }).gte("initial_verify_at", todayIso),
     supabaseAdmin.from("tasks").select("id", { count: "exact", head: true }).gte("done_at", todayIso),
+    supabaseAdmin.from("mining_state").select("user_id", { count: "exact", head: true }).eq("is_active", true),
   ]);
 
   const allTasks = tasks ?? [];
-  const allMining = minings.data ?? [];
-  const allWith = withdrawals.data ?? [];
+  const allMining = minings ?? [];
+
+  const paidAmount = allWith.filter((w) => w.status === "paid").reduce((a, w) => a + Number(w.amount), 0);
 
   return {
     users: users.count ?? 0,
@@ -53,19 +55,21 @@ export const adminStats = createServerFn({ method: "GET" }).handler(async () => 
       empty: allTasks.filter((t) => t.status === "empty").length,
     },
     mining: {
-      activeUsers: allMining.filter((m) => m.is_active).length,
+      activeUsers: activeMiningCount.count ?? 0,
       totalAccrued: allMining.reduce((a, m) => a + Number(m.accrued_amount ?? 0), 0),
-      totalWithdrawn: allMining.reduce((a, m) => a + Number(m.withdrawn_amount ?? 0), 0),
+      // Real paid-out figure = sum of withdrawals actually marked paid (permanent history).
+      totalWithdrawn: paidAmount,
     },
     withdrawals: {
       pending: allWith.filter((w) => w.status === "pending").length,
       paid: allWith.filter((w) => w.status === "paid").length,
       rejected: allWith.filter((w) => w.status === "rejected").length,
       pendingAmount: allWith.filter((w) => w.status === "pending").reduce((a, w) => a + Number(w.amount), 0),
-      paidAmount: allWith.filter((w) => w.status === "paid").reduce((a, w) => a + Number(w.amount), 0),
+      paidAmount,
     },
   };
 });
+
 
 
 // ---------------- Users ----------------
