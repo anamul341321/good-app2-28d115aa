@@ -616,6 +616,10 @@ function MainIdentityCell({ task, onStart, onReverify, onOpenPhoto }: { task: an
   const faceUrl: string | undefined = task.signed_face_url;
 
   if (isVerified && !readyToReverify) {
+    const anchor = task.last_reverified_at || task.done_at || task.verified_at;
+    const days = anchor ? (Date.now() - new Date(anchor).getTime()) / 86400000 : null;
+    const remain = days != null ? Math.max(0, 4 - days) : null;
+    const hint = remain == null ? null : remain > 0 ? `~${remain.toFixed(1)}d` : "যেকোনো সময়";
     return (
       <button onClick={() => faceUrl && onOpenPhoto(faceUrl)} data-voice="home.open.photo"
         className="relative w-24 h-24 rounded-2xl overflow-hidden border-2 shadow-[0_10px_24px_-6px_rgba(255,209,102,0.7)] active:scale-95 transition"
@@ -626,6 +630,11 @@ function MainIdentityCell({ task, onStart, onReverify, onOpenPhoto }: { task: an
         <span className="absolute top-1 right-1 rounded-full p-1 shadow" style={{ background: "var(--color-amber)" }}>
           <Crown className="w-3 h-3 text-white" />
         </span>
+        {hint && (
+          <span className="absolute top-1 left-1 text-[9px] font-black text-white mono-num leading-none px-1.5 py-0.5 rounded-md bg-black/55 backdrop-blur-[2px]">
+            {hint}
+          </span>
+        )}
         <p className="absolute bottom-1 left-0 right-0 text-[10px] font-black text-white text-center mono-num drop-shadow">
           WHITELISTED
         </p>
