@@ -701,21 +701,31 @@ function TaskCell({ task, onStart, onReverify, onOpenPhoto }: { task: any; onSta
   const readyToReverify = isVerified && whitelistLost;
   const faceUrl: string | undefined = task.signed_face_url;
 
+  const theme = slotTheme(task.slot);
+  const themeStyle = {
+    borderColor: theme.from,
+    boxShadow: `0 8px 22px -6px rgba(${theme.glow},0.55), 0 0 0 1px rgba(${theme.glow},0.25) inset`,
+  } as const;
+
   if (isVerified && !readyToReverify) {
     const anchor = task.last_reverified_at || task.done_at || task.verified_at;
     const days = anchor ? (Date.now() - new Date(anchor).getTime()) / 86400000 : null;
     const remain = days != null ? Math.max(0, 4 - days) : null;
     const hint = remain == null ? null : remain > 0 ? `~${remain.toFixed(1)}d` : "any";
     return (
-      <button onClick={() => faceUrl && onOpenPhoto(faceUrl)} data-voice="home.open.photo"
-        className="relative aspect-square rounded-xl overflow-hidden border border-amber/60 shadow-[0_6px_14px_-4px_rgba(255,209,102,0.55)] active:scale-95 transition">
-        {faceUrl ? <img src={faceUrl} className="absolute inset-0 h-full w-full object-cover" alt="" />
-                 : <div className="absolute inset-0 bg-surface-2" />}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
-        <span className="absolute top-1 left-1 text-[10px] font-black text-white mono-num leading-none px-1.5 py-0.5 rounded-md bg-black/45 backdrop-blur-[2px]">#{task.slot}</span>
-        <span className="absolute top-1 right-1 rounded-full bg-amber p-0.5 shadow"><Crown className="w-2.5 h-2.5 text-white" /></span>
+      <button onClick={() => faceUrl && onOpenPhoto(faceUrl)}
+        className="relative aspect-square rounded-2xl overflow-hidden border-2 active:scale-95 transition-transform"
+        style={themeStyle}>
+        {faceUrl ? <img src={faceUrl} loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" alt="" />
+                 : <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, ${theme.from}, ${theme.to})` }} />}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
+        <span className="absolute top-1 left-1 text-[10px] font-black text-white mono-num leading-none px-1.5 py-0.5 rounded-md"
+          style={{ background: `linear-gradient(135deg, ${theme.from}, ${theme.to})` }}>#{task.slot}</span>
+        <span className="absolute top-1 right-1 rounded-full p-0.5 shadow" style={{ background: theme.to }}>
+          <Crown className="w-2.5 h-2.5 text-white" />
+        </span>
         {hint && (
-          <span className="absolute bottom-4 left-1 right-1 text-[8px] font-black text-white text-center mono-num leading-none py-0.5 rounded bg-black/55 backdrop-blur-[2px]">
+          <span className="absolute bottom-4 left-1 right-1 text-[8px] font-black text-white text-center mono-num leading-none py-0.5 rounded bg-black/55">
             {hint}
           </span>
         )}
@@ -729,17 +739,17 @@ function TaskCell({ task, onStart, onReverify, onOpenPhoto }: { task: any; onSta
 
   if (isVerified && readyToReverify) {
     return (
-      <button onClick={onReverify} data-voice="reverify.button"
-        className="relative flex flex-col overflow-hidden rounded-xl border-2 border-rose shadow-[0_8px_18px_-5px_rgba(239,71,111,0.65)] active:scale-95 transition bg-surface-2">
+      <button onClick={onReverify}
+        className="relative flex flex-col overflow-hidden rounded-2xl border-2 border-rose shadow-[0_10px_22px_-6px_rgba(239,71,111,0.7)] active:scale-95 transition-transform bg-surface-2">
         <div className="relative aspect-square">
-          {faceUrl ? <img src={faceUrl} className="absolute inset-0 h-full w-full object-cover" alt="" />
+          {faceUrl ? <img src={faceUrl} loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" alt="" />
                    : <div className="absolute inset-0 task-cell-reverify" />}
-          <span className="absolute top-1 left-1 text-[10px] font-black text-white mono-num leading-none px-1.5 py-0.5 rounded-md bg-black/55 backdrop-blur-[2px]">#{task.slot}</span>
+          <span className="absolute top-1 left-1 text-[10px] font-black text-white mono-num leading-none px-1.5 py-0.5 rounded-md bg-black/55">#{task.slot}</span>
           <span className="absolute top-1 right-1 rounded-full bg-rose p-1 shadow animate-pulse">
             <Sparkles className="w-3 h-3 text-white" />
           </span>
         </div>
-        <div className="bg-rose text-white text-[10px] font-black text-center py-1 leading-tight animate-pulse">
+        <div className="bg-gradient-to-r from-rose-500 via-pink-500 to-rose-500 text-white text-[10px] font-black text-center py-1 leading-tight animate-pulse">
           রি-ভেরিফাই করুন
         </div>
       </button>
