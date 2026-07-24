@@ -232,36 +232,5 @@ function preloadVisibleVoiceKeys() {
 }
 
 export function attachVoiceClickListener() {
-  if (typeof document === "undefined" || clickListenerAttached) return;
-  clickListenerAttached = true;
-  const onSpeak = (event: Event) => {
-    const target = event.target as HTMLElement | null;
-    const holder = target?.closest<HTMLElement>("[data-voice]");
-    if (!holder) return;
-    const key = holder.getAttribute("data-voice") ?? "";
-    if (!isNarrationKey(key)) {
-      console.warn("[voice] unknown key", key);
-      return;
-    }
-    playVoiceFromGesture(key);
-  };
-
-  // pointerdown fires before click on mobile, so the hint starts immediately
-  // instead of waiting for the button action / navigation to finish.
-  document.addEventListener("pointerdown", onSpeak, { capture: true });
-  document.addEventListener("keydown", (event) => {
-    const key = (event as KeyboardEvent).key;
-    if (key === "Enter" || key === " ") onSpeak(event);
-  }, { capture: true });
-  document.addEventListener("pointerover", (event) => warmElementVoice(event.target), { capture: true, passive: true });
-  document.addEventListener("focusin", (event) => warmElementVoice(event.target), { capture: true });
-
-  preloadVisibleVoiceKeys();
-  const observer = new MutationObserver(() => preloadVisibleVoiceKeys());
-  observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["data-voice"] });
-
-  (window as any).__voice = (key: string) => {
-    if (isNarrationKey(key)) playVoiceFromGesture(key);
-    else console.warn("[voice] unknown key", key);
-  };
+  // no-op: voice guide permanently disabled
 }
