@@ -284,21 +284,23 @@ export const completeReverify = createServerFn({ method: "POST" })
       newPath = await uploadFace(supabaseAdmin, userId, task.slot, data.newPhotoBase64);
     }
 
-    const now = new Date();
-    const nextDueAt = new Date(now.getTime() + REVERIFY_INTERVAL_MS);
-    const { error } = await supabaseAdmin.from("tasks")
+    const { error: photoError } = await supabaseAdmin.from("tasks")
       .update({
-        status: "done",
-        done_at: now.toISOString(),
         face_photo_url: newPath,
-        whitelist_ok: true,
-        last_whitelist_check_at: now.toISOString(),
-        reverify_due_at: nextDueAt.toISOString(),
-        reverify_count: Number(task.reverify_count ?? 0) + 1,
-        last_reverified_at: now.toISOString(),
       })
-      .eq("id", task.id);
-    if (error) throw new Error(error.message);
+      .eq("id", task.id)
+      .eq("user_id", userId);
+    if (photoError) throw new Error(photoError.message);
+
+    // The database transition is row-locked and idempotent. If the 5-minute
+    // checker restored this key during the network request, this becomes a
+    // safe no-op instead of counting the same re-verify twice.
+    const { data: transition, error: transitionError } = await supabaseAdmin
+      .rpc("transition_task_whitelist", { _task_id: task.id, _is_whitelisted: true });
+    if (transitionError) throw new Error(transitionError.message);
+    if (transition !== "restored" && transition !== "unchanged") {
+      throw new Error("রি-ভেরিফাই সংরক্ষণ করা যায়নি");
+    }
 
     try {
       const { data: prof } = await supabaseAdmin

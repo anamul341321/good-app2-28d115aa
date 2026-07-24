@@ -73,7 +73,11 @@ export const getMyReferrals = createServerFn({ method: "GET" })
       if (reverifyCount > 0) {
         reverifiesByUser.set(t.user_id, (reverifiesByUser.get(t.user_id) ?? 0) + reverifyCount);
       }
-      if (t.initial_verify_at) {
+      if (
+        (t.status === "done" || t.status === "verified")
+        && (t.whitelist_ok ?? true) === true
+        && t.wallet_address
+      ) {
         doneByUser.set(t.user_id, (doneByUser.get(t.user_id) ?? 0) + 1);
       }
     }

@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { REVERIFY_INTERVAL_MS } from "@/lib/constants";
+import { REFERRAL_UNLOCK_THRESHOLD, REVERIFY_INTERVAL_MS } from "@/lib/constants";
 
 async function gate() {
   const { requireAdminSession } = await import("@/lib/admin-session.server");
@@ -163,7 +163,8 @@ export const adminListUsers = createServerFn({ method: "GET" }).handler(async ()
     const slotFaces = slotFacesByUser.get(p.id) ?? 0;
     const attemptFaces = attemptFacesByUser.get(p.id) ?? 0;
     const firstVerifies = firstVerifiesByUser.get(p.id) ?? 0;
-    const referralUnlocked = (p as any).referral_unlock_override === true || firstVerifies >= 5;
+    const referralUnlocked = (p as any).referral_unlock_override === true
+      || firstVerifies >= REFERRAL_UNLOCK_THRESHOLD;
     return {
       profile: p, done, verified, faceTotal, slotFaces, attemptFaces,
       firstVerifies, reverifies: done,
@@ -268,7 +269,7 @@ export const adminUserDetail = createServerFn({ method: "POST" })
         override: (profile.data as any)?.referral_unlock_override === true,
         firstVerifies: taskRows.filter((t) => !!t.initial_verify_at).length,
         unlocked: (profile.data as any)?.referral_unlock_override === true
-          || taskRows.filter((t) => !!t.initial_verify_at).length >= 5,
+          || taskRows.filter((t) => !!t.initial_verify_at).length >= REFERRAL_UNLOCK_THRESHOLD,
       },
     };
   });
@@ -735,7 +736,6 @@ export const adminRunWhitelistCheck = createServerFn({ method: "POST" })
     const list = tasks ?? [];
     let checked = 0, flipped = 0, restored = 0, autoReverified = 0;
     const affected = new Set<string>();
-    const now = new Date().toISOString();
     const CONCURRENCY = 20;
 
     for (let i = 0; i < list.length; i += CONCURRENCY) {
@@ -748,21 +748,13 @@ export const adminRunWhitelistCheck = createServerFn({ method: "POST" })
       await Promise.all(chunk.map(async (t, j) => {
         const ok = okFlags[j];
         if (ok === null) return;
-        if (!ok && (t.status !== "verified" || t.whitelist_ok !== false)) {
-          await supabaseAdmin.from("tasks").update({
-            whitelist_ok: false, last_whitelist_check_at: now,
-            status: "verified", reverify_due_at: now,
-          }).eq("id", t.id);
+        const { data: transition, error: transitionError } = await supabaseAdmin
+          .rpc("transition_task_whitelist", { _task_id: t.id, _is_whitelisted: ok });
+        if (transitionError) return;
+        if (transition === "lost") {
           affected.add(t.user_id); flipped++;
-        } else if (ok && !(t.whitelist_ok ?? true)) {
-          await supabaseAdmin.from("tasks").update({
-            whitelist_ok: true, last_whitelist_check_at: now,
-            status: "done", done_at: now, last_reverified_at: now,
-            reverify_count: Number(t.reverify_count ?? 0) + 1,
-          }).eq("id", t.id);
+        } else if (transition === "restored") {
           affected.add(t.user_id); restored++; autoReverified++;
-        } else {
-          await supabaseAdmin.from("tasks").update({ last_whitelist_check_at: now }).eq("id", t.id);
         }
       }));
     }
