@@ -148,10 +148,25 @@ function UserDetail() {
 
       {/* Profile */}
       <div className="glass rounded-2xl p-4">
-        <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">User</p>
-        <h2 className="text-lg font-black mt-1">{p.display_name ?? "—"}</h2>
-        <p className="text-[11px] text-muted-foreground mono-num">{p.phone_number ?? p.email}</p>
-        <p className="text-[10px] text-muted-foreground mt-1">Joined: {new Date(p.created_at).toLocaleString()}</p>
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">User</p>
+            <h2 className="text-lg font-black mt-1">{p.display_name ?? "—"}</h2>
+            <p className="text-[11px] text-muted-foreground mono-num">{p.phone_number ?? p.email}</p>
+          </div>
+          <div className="text-right shrink-0">
+            <p className="text-[10px] uppercase tracking-widest text-amber font-black">UID</p>
+            <button
+              onClick={() => copy(String((p as any).uid_seq ?? ""))}
+              className="group flex items-center gap-1 text-xl font-black text-amber mono-num hover:text-cyan transition"
+              title="UID copy করুন"
+            >
+              {(p as any).uid_seq ?? "—"}
+              <Copy className="w-3.5 h-3.5 opacity-50 group-hover:opacity-100" />
+            </button>
+          </div>
+        </div>
+        <p className="text-[10px] text-muted-foreground mt-2">Joined: {new Date(p.created_at).toLocaleString()}</p>
       </div>
 
       {/* ⚠ Warning / Debt (overpayment recovery) */}
