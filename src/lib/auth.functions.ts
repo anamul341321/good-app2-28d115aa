@@ -28,7 +28,7 @@ export const registerWithPhone = createServerFn({ method: "POST" })
         .maybeSingle();
       if (!ref) throw new Error("Referral code সঠিক নয়");
 
-      // Referral lock: owner must have 10 first-verifies (initial_verify_at not null)
+      // Referral lock: owner must meet the shared successful first-verify threshold
       // OR admin has manually unlocked. Prevents self-referral farming.
       if (!(ref as any).referral_unlock_override) {
         const { REFERRAL_UNLOCK_THRESHOLD } = await import("./constants");

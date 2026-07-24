@@ -229,18 +229,33 @@ function UserDetail() {
           <Wallet className="w-4 h-4 text-cyan" />
           <p className="text-[10px] uppercase tracking-widest text-cyan font-black">Wallet</p>
         </div>
-        {data.wallet ? (
+        {(data.wallets ?? []).length > 0 ? (
           <>
-            <p className="mono-num font-bold">{data.wallet.provider.toUpperCase()} · {data.wallet.number}</p>
+            <div className="space-y-1.5">
+              {(data.wallets ?? []).map((wallet: any) => (
+                <button
+                  key={wallet.provider}
+                  onClick={() => copy(wallet.number)}
+                  className="w-full flex items-center justify-between rounded-xl bg-surface-2 px-3 py-2 text-left"
+                >
+                  <span className="text-[10px] font-black uppercase text-cyan">{wallet.provider}</span>
+                  <span className="mono-num font-bold">{wallet.number}</span>
+                  <Copy className="w-3 h-3 text-muted-foreground" />
+                </button>
+              ))}
+            </div>
             <p className="text-[10px] text-muted-foreground leading-snug">
-              Reset করলে user আবার নতুন bkash/nagad number connect করতে পারবে।
+              Reset করলে user-এর সব bKash/Nagad নম্বর মুছে যাবে এবং নতুন করে সেট করতে পারবে।
             </p>
             <button
               disabled={resetWallet.isPending}
-              onClick={() => { if (confirm(`এই wallet reset করবেন? User আবার নতুন number দিতে পারবে।\n${data.wallet!.provider}: ${data.wallet!.number}`)) resetWallet.mutate(); }}
+              onClick={() => {
+                const summary = (data.wallets ?? []).map((wallet: any) => `${wallet.provider}: ${wallet.number}`).join("\n");
+                if (confirm(`এই user-এর সব wallet reset করবেন?\n${summary}`)) resetWallet.mutate();
+              }}
               className="w-full py-2 rounded-xl bg-rose/15 text-rose font-black text-[11px] flex items-center justify-center gap-1 disabled:opacity-50">
               {resetWallet.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
-              Wallet reset — user re-connect করতে পারবে
+              সব Wallet reset করুন
             </button>
           </>
         ) : (
@@ -487,8 +502,9 @@ function UserDetail() {
                   <p className="text-[9px] text-muted-foreground mono-num truncate">{r.phone_number ?? r.email}</p>
                 </div>
                 <div className="text-right shrink-0">
-                  <p className="mono-num text-sm font-black text-cyan">{r.faceTotal}</p>
-                  <p className="text-[8px] text-muted-foreground uppercase">face</p>
+                  <p className="mono-num text-sm font-black text-cyan">{r.firstVerifies ?? r.faceTotal}</p>
+                  <p className="text-[8px] text-muted-foreground uppercase">সফল verify</p>
+                  <p className="mono-num text-[9px] font-black text-violet">🔁 {r.reverifies ?? 0}</p>
                 </div>
               </Link>
             ))}

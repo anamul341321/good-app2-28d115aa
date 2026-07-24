@@ -15,7 +15,20 @@ import { QrScanner } from "@/components/QrScanner";
 import { QrCode as QrCodeIcon } from "lucide-react";
 
 
-export const Route = createFileRoute("/auth")({ ssr: false, component: AuthPage });
+export const Route = createFileRoute("/auth")({
+  ssr: false,
+  head: () => ({
+    meta: [
+      { title: "Login ও Registration | Good-App" },
+      { name: "description", content: "Good-App account-এ login করুন অথবা নতুন account খুলে face verification শুরু করুন।" },
+      { property: "og:title", content: "Login ও Registration | Good-App" },
+      { property: "og:description", content: "Good-App account-এ login করুন অথবা নতুন account খুলুন।" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
+  component: AuthPage,
+});
 
 function phoneToEmail(phone: string) {
   return `u${phone}@facemine.app`;

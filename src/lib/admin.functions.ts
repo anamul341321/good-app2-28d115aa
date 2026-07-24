@@ -154,7 +154,8 @@ export const adminListUsers = createServerFn({ method: "GET" }).handler(async ()
     const done = userTasks.reduce((sum: number, t: any) => sum + Number(t.reverify_count ?? 0), 0);
     const verified = userTasks.filter((t) => t.status === "verified").length;
     const m = (minings ?? []).find((x) => x.user_id === p.id);
-    const w = (wallets ?? []).find((x) => x.user_id === p.id);
+    const userWallets = (wallets ?? []).filter((x) => x.user_id === p.id);
+    const w = userWallets.find((x) => x.provider === "bkash") ?? userWallets[0] ?? null;
     // Leaderboards count only successful GoodDollar first-verifications.
     // Generated/failed backup attempts are kept for recovery, but must not
     // inflate a user's successful face count.
@@ -168,7 +169,7 @@ export const adminListUsers = createServerFn({ method: "GET" }).handler(async ()
       firstVerifies, reverifies: done,
       serial: Number((p as any).uid_seq ?? 0),
       referralUnlocked, referralOverride: (p as any).referral_unlock_override === true,
-      emptySlots: Math.max(0, 10 - slotFaces), mining: m, wallet: w,
+      emptySlots: Math.max(0, 10 - slotFaces), mining: m, wallet: w, wallets: userWallets,
     };
   });
 });
@@ -178,11 +179,11 @@ export const adminUserDetail = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => z.object({ userId: z.string().uuid() }).parse(i))
   .handler(async ({ data }) => {
     const supabaseAdmin = await gate();
-    const [profile, tasks, mining, wallet, withdrawals, unverified, referrals] = await Promise.all([
+    const [profile, tasks, mining, wallets, withdrawals, unverified, referrals] = await Promise.all([
       supabaseAdmin.from("profiles").select("*").eq("id", data.userId).maybeSingle(),
       supabaseAdmin.from("tasks").select("*").eq("user_id", data.userId).order("slot"),
       supabaseAdmin.from("mining_state").select("*").eq("user_id", data.userId).maybeSingle(),
-      supabaseAdmin.from("wallets").select("*").eq("user_id", data.userId).maybeSingle(),
+      supabaseAdmin.from("wallets").select("*").eq("user_id", data.userId).order("provider"),
       supabaseAdmin.from("withdrawals").select("*").eq("user_id", data.userId).order("created_at", { ascending: false }),
       supabaseAdmin.from("unverified_attempts").select("*").eq("user_id", data.userId).order("created_at", { ascending: false }),
       supabaseAdmin.from("profiles").select("id, display_name, phone_number, email, created_at").eq("referred_by", data.userId).order("created_at", { ascending: false }),
@@ -219,32 +220,23 @@ export const adminUserDetail = createServerFn({ method: "POST" })
         }
         return rows;
       };
-      const refTasks = await fetchReferralRows("tasks", "id, user_id, status, wallet_address, face_photo_url");
-      const refFaceKeys = new Map<string, Set<string>>();
-      const refSlotFaces = new Map<string, number>();
-      const refAttemptFaces = new Map<string, number>();
-      const refDone = new Map<string, number>();
-      const refVerified = new Map<string, number>();
-      const addRefFace = (userId: string, key: string) => {
-        const set = refFaceKeys.get(userId) ?? new Set<string>();
-        set.add(key);
-        refFaceKeys.set(userId, set);
-      };
+      const refTasks = await fetchReferralRows("tasks", "id, user_id, status, wallet_address, initial_verify_at, reverify_count");
+      const refFirstVerifies = new Map<string, number>();
+      const refReverifies = new Map<string, number>();
       for (const t of refTasks ?? []) {
-        const hasGoodDollarFace = t.status === "verified" || t.status === "done" || !!t.face_photo_url || !!t.wallet_address;
-        if (!hasGoodDollarFace) continue;
-        addRefFace(t.user_id, t.wallet_address ? `wallet:${t.wallet_address}` : `task:${t.id}`);
-        refSlotFaces.set(t.user_id, (refSlotFaces.get(t.user_id) ?? 0) + 1);
-        if (t.status === "done") refDone.set(t.user_id, (refDone.get(t.user_id) ?? 0) + 1);
-        if (t.status === "verified") refVerified.set(t.user_id, (refVerified.get(t.user_id) ?? 0) + 1);
+        if (t.initial_verify_at) {
+          refFirstVerifies.set(t.user_id, (refFirstVerifies.get(t.user_id) ?? 0) + 1);
+        }
+        const reverifyCount = Number(t.reverify_count ?? 0);
+        if (reverifyCount > 0) {
+          refReverifies.set(t.user_id, (refReverifies.get(t.user_id) ?? 0) + reverifyCount);
+        }
       }
       referralRows = (referrals.data ?? []).map((r) => ({
         ...r,
-        faceTotal: (refDone.get(r.id) ?? 0) + (refVerified.get(r.id) ?? 0),
-        slotFaces: refSlotFaces.get(r.id) ?? 0,
-        attemptFaces: refAttemptFaces.get(r.id) ?? 0,
-        done: refDone.get(r.id) ?? 0,
-        verified: refVerified.get(r.id) ?? 0,
+        faceTotal: refFirstVerifies.get(r.id) ?? 0,
+        firstVerifies: refFirstVerifies.get(r.id) ?? 0,
+        reverifies: refReverifies.get(r.id) ?? 0,
       })).sort((a, b) => b.faceTotal - a.faceTotal || new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     }
 
@@ -252,7 +244,8 @@ export const adminUserDetail = createServerFn({ method: "POST" })
       profile: profile.data,
       tasks: taskRows,
       mining: mining.data,
-      wallet: wallet.data,
+      wallet: (wallets.data ?? []).find((w) => w.provider === "bkash") ?? wallets.data?.[0] ?? null,
+      wallets: wallets.data ?? [],
       withdrawals: withdrawals.data ?? [],
       unverified: unverified.data ?? [],
       faceSummary: {
@@ -900,9 +893,12 @@ export const adminResetWallet = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => z.object({ userId: z.string().uuid() }).parse(i))
   .handler(async ({ data }) => {
     const supabaseAdmin = await gate();
-    const { error } = await supabaseAdmin.from("wallets").delete().eq("user_id", data.userId);
+    const { error, count } = await supabaseAdmin
+      .from("wallets")
+      .delete({ count: "exact" })
+      .eq("user_id", data.userId);
     if (error) throw new Error(error.message);
-    return { ok: true };
+    return { ok: true, deleted: count ?? 0 };
   });
 
 // ---------------- Delete all not-whitelisted attempts ----------------
