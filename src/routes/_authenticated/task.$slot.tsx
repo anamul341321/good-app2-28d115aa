@@ -279,12 +279,23 @@ function TaskPage() {
         </div>
       )}
 
-      {isVerified && (
-        <div className="rounded-2xl bg-amber/10 border border-amber/40 p-5 text-center">
-          <Clock className="w-10 h-10 text-amber mx-auto mb-2" />
-          <p className="font-bold">রি-ভেরিফাইয়ের অপেক্ষায়</p>
+      {isVerified && !whitelistLost && (
+        <div className="rounded-2xl bg-emerald/10 border border-emerald/40 p-5 text-center">
+          <CheckCircle2 className="w-10 h-10 text-emerald mx-auto mb-2" />
+          <p className="font-bold">এই ঘর হোয়াইটলিস্টেড ✅</p>
           <p className="text-[11px] text-muted-foreground mt-2">
-            GoodDollar whitelist হারালে এই face-টির Re-verify চালু হবে। Whitelist ঠিক থাকলে কিছু করতে হবে না।
+            GoodDollar হোয়াইটলিস্ট বাতিল না হওয়া পর্যন্ত রি-ভেরিফাইয়ের দরকার নেই। কোনো সময়সীমা নেই — অপেক্ষা করতে হবে না।
+          </p>
+          <Link to="/home" className="inline-block mt-3 px-4 py-2 rounded-xl gradient-cta text-sm font-bold">হোম</Link>
+        </div>
+      )}
+
+      {isVerified && whitelistLost && (
+        <div className="rounded-2xl bg-rose/10 border border-rose/40 p-5 text-center">
+          <Clock className="w-10 h-10 text-rose mx-auto mb-2" />
+          <p className="font-bold">রি-ভেরিফাই প্রয়োজন</p>
+          <p className="text-[11px] text-muted-foreground mt-2">
+            GoodDollar হোয়াইটলিস্ট বাতিল হয়েছে। এখনই রি-ভেরিফাই পেজ থেকে ঠিক করুন।
           </p>
           <Link to="/reverify" className="inline-block mt-3 px-4 py-2 rounded-xl gradient-cta text-sm font-bold">
             রি-ভেরিফাই পেজ
