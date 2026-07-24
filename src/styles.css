@@ -46,8 +46,8 @@
   --color-surface-2: var(--surface-2);
   --color-success: var(--emerald);
   --color-warning: var(--amber);
-  --font-display: "Space Grotesk", system-ui, sans-serif;
-  --font-sans: "DM Sans", system-ui, sans-serif;
+  --font-display: "Baloo Da 2", "Noto Sans Bengali", "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-sans: "Noto Sans Bengali", "Plus Jakarta Sans", system-ui, sans-serif;
 }
 
 :root {
@@ -96,13 +96,22 @@
       #ffffff;
     background-attachment: fixed;
     color: var(--color-foreground);
-    font-family: "Hind Siliguri", "DM Sans", "Noto Sans Bengali", system-ui, sans-serif;
+    font-family: "Noto Sans Bengali", "Plus Jakarta Sans", system-ui, sans-serif;
+    font-size: 15.5px;
+    font-weight: 500;
+    line-height: 1.55;
     -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
   h1, h2, h3, h4 {
-    font-family: "Hind Siliguri", "Space Grotesk", system-ui, sans-serif;
-    letter-spacing: -0.01em;
+    font-family: "Baloo Da 2", "Noto Sans Bengali", "Plus Jakarta Sans", system-ui, sans-serif;
+    font-weight: 800;
+    letter-spacing: -0.005em;
+    line-height: 1.25;
     color: var(--color-navy);
+  }
+  button, input, textarea, select {
+    font-family: inherit;
   }
 }
 
@@ -342,7 +351,7 @@
   .id-watermark {
     position: absolute; inset: 0;
     display: flex; align-items: center; justify-content: center;
-    font-family: "Space Grotesk", sans-serif;
+    font-family: "Baloo Da 2", "Noto Sans Bengali", sans-serif;
     font-weight: 900;
     font-size: 8rem;
     color: color-mix(in oklch, var(--color-gold) 6%, transparent);
@@ -617,7 +626,7 @@
   transform: translate(-50%, -50%) rotate(-18deg);
   width: 140%;
   text-align: center;
-  font-family: "JetBrains Mono", "Space Grotesk", monospace;
+  font-family: "JetBrains Mono", "JetBrains Mono", monospace;
   font-weight: 900;
   font-size: clamp(2.8rem, 12vw, 5.8rem);
   letter-spacing: 0.08em;
