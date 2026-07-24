@@ -96,13 +96,22 @@
       #ffffff;
     background-attachment: fixed;
     color: var(--color-foreground);
-    font-family: "Hind Siliguri", "DM Sans", "Noto Sans Bengali", system-ui, sans-serif;
+    font-family: "Noto Sans Bengali", "Plus Jakarta Sans", system-ui, sans-serif;
+    font-size: 15.5px;
+    font-weight: 500;
+    line-height: 1.55;
     -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
   h1, h2, h3, h4 {
-    font-family: "Hind Siliguri", "Space Grotesk", system-ui, sans-serif;
-    letter-spacing: -0.01em;
+    font-family: "Baloo Da 2", "Noto Sans Bengali", "Plus Jakarta Sans", system-ui, sans-serif;
+    font-weight: 800;
+    letter-spacing: -0.005em;
+    line-height: 1.25;
     color: var(--color-navy);
+  }
+  button, input, textarea, select {
+    font-family: inherit;
   }
 }
 
