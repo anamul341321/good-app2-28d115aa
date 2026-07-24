@@ -45,9 +45,9 @@ export const submitRecharge = createServerFn({ method: "POST" })
     await supabaseAdmin.rpc("mark_recharge_result", {
       _recharge_id: rechargeId,
       _status: status,
-      _provider_ref: call.transactionId,
-      _provider_response: call.json ?? {},
-      _error: call.ok ? null : call.message,
+      _provider_ref: call.transactionId ?? "",
+      _provider_response: JSON.parse(JSON.stringify(call.json ?? {})),
+      _error: call.ok ? "" : call.message,
     });
 
     return {
