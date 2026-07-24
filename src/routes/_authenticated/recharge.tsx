@@ -1,10 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { submitRecharge, getMyRecharges } from "@/lib/recharge.functions";
 import { getDashboard } from "@/lib/dashboard.functions";
 import { computeLiveBalance } from "@/lib/mining";
-import { Loader2, Smartphone, ShieldCheck, CheckCircle2, XCircle } from "lucide-react";
+import { Loader2, Smartphone, ShieldCheck, CheckCircle2, XCircle, ArrowLeft, Sparkles, Zap } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/recharge")({ component: RechargePage });
