@@ -756,17 +756,33 @@ function TaskCell({ task, onStart, onReverify, onOpenPhoto }: { task: any; onSta
     );
   }
 
-  let cellClass = "task-cell-empty";
-  let icon = <Camera className="w-5 h-5 text-white drop-shadow" />;
-  let label = "শুরু";
-  if (isDone) { cellClass = "task-cell-done"; icon = <CheckCircle2 className="w-5 h-5 text-white drop-shadow" />; label = "সম্পন্ন"; }
+  const isEmpty = !isDone;
+  const icon = isDone
+    ? <CheckCircle2 className="w-5 h-5 text-white drop-shadow" />
+    : <Camera className="w-5 h-5 text-white drop-shadow" />;
+  const label = isDone ? "সম্পন্ন" : "শুরু";
+  const bg = isDone
+    ? `linear-gradient(135deg, ${theme.from}, ${theme.to})`
+    : `linear-gradient(135deg, ${theme.from}22, ${theme.to}22)`;
 
   return (
-    <button onClick={onStart} data-voice="home.tap.slot"
-      className={`relative aspect-square rounded-xl ${cellClass} flex flex-col items-center justify-center gap-0.5 btn-press overflow-hidden`}>
-      <span className="absolute top-1 left-1 text-[10px] font-black text-white mono-num leading-none px-1.5 py-0.5 rounded-md bg-black/45 backdrop-blur-[2px]">#{task.slot}</span>
-      <span>{icon}</span>
-      <span className="text-[9px] font-black text-white drop-shadow leading-none">{label}</span>
+    <button onClick={onStart}
+      className="relative aspect-square rounded-2xl flex flex-col items-center justify-center gap-0.5 btn-press overflow-hidden border-2 transition-transform active:scale-95"
+      style={{
+        background: bg,
+        borderColor: isDone ? theme.to : `${theme.from}55`,
+        boxShadow: isDone
+          ? `0 10px 22px -8px rgba(${theme.glow},0.65)`
+          : `0 4px 14px -6px rgba(${theme.glow},0.35)`,
+      }}>
+      <span className="absolute top-1 left-1 text-[10px] font-black text-white mono-num leading-none px-1.5 py-0.5 rounded-md"
+        style={{ background: `linear-gradient(135deg, ${theme.from}, ${theme.to})` }}>#{task.slot}</span>
+      <span className={`relative z-10 grid place-items-center w-9 h-9 rounded-full ${isEmpty ? "" : ""}`}
+        style={{ background: isDone ? "rgba(0,0,0,0.25)" : `linear-gradient(135deg, ${theme.from}, ${theme.to})` }}>
+        {icon}
+      </span>
+      <span className="text-[9px] font-black drop-shadow leading-none mt-0.5"
+        style={{ color: isDone ? "#fff" : theme.from }}>{label}</span>
     </button>
   );
 }
