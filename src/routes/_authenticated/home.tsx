@@ -20,16 +20,32 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/home")({ component: HomePage });
 
-// Single shared ticker for every task cell — 11+ cells all calling
-// setInterval(setState, 1000) individually was jank-scrolling on low-end phones.
+// Home no longer relies on a running countdown — every task-cell time badge
+// derives from anchor timestamps, so a live 1-second tick just re-rendered
+// every cell and janked scrolling. The context stays for compatibility but
+// is now a static value.
 const NowContext = createContext<number>(Date.now());
 function NowProvider({ children }: { children: React.ReactNode }) {
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(id);
-  }, []);
-  return <NowContext.Provider value={now}>{children}</NowContext.Provider>;
+  return <NowContext.Provider value={Date.now()}>{children}</NowContext.Provider>;
+}
+
+// Per-slot vibrant themes — each of the 10 witness slots gets a distinct
+// gradient / glow so the grid feels premium instead of monochrome.
+const SLOT_THEMES = [
+  { from: "#8b5cf6", to: "#ec4899", glow: "139,92,246" },  // slot 1 — violet→pink
+  { from: "#06b6d4", to: "#3b82f6", glow: "6,182,212" },   // 2 — cyan→blue
+  { from: "#f59e0b", to: "#ef4444", glow: "245,158,11" },  // 3 — amber→red
+  { from: "#10b981", to: "#06b6d4", glow: "16,185,129" },  // 4 — emerald→cyan
+  { from: "#ec4899", to: "#f43f5e", glow: "236,72,153" },  // 5 — pink→rose
+  { from: "#6366f1", to: "#8b5cf6", glow: "99,102,241" },  // 6 — indigo→violet
+  { from: "#f97316", to: "#facc15", glow: "249,115,22" },  // 7 — orange→yellow
+  { from: "#14b8a6", to: "#22c55e", glow: "20,184,166" },  // 8 — teal→green
+  { from: "#a855f7", to: "#6366f1", glow: "168,85,247" },  // 9 — purple→indigo
+  { from: "#0ea5e9", to: "#14b8a6", glow: "14,165,233" },  // 10 — sky→teal
+  { from: "#f43f5e", to: "#f59e0b", glow: "244,63,94" },   // extra
+];
+function slotTheme(slot: number) {
+  return SLOT_THEMES[(slot - 1) % SLOT_THEMES.length];
 }
 
 
