@@ -52,16 +52,7 @@ function SendPage() {
     onError: (e: any) => toast.error(e.message ?? "পাঠানো যায়নি"),
   });
 
-  if (!kycOk) {
-    return (
-      <div className="pt-6 text-center space-y-3">
-        <ShieldCheck className="w-10 h-10 text-amber mx-auto" />
-        <h1 className="text-xl font-black">KYC লাগবে</h1>
-        <p className="text-sm text-muted-foreground">ব্যালেন্স পাঠাতে হলে আগে KYC ভেরিফাই করুন।</p>
-        <a href="/kyc" className="inline-block rounded-2xl px-5 py-3 gradient-cta font-black btn-press">KYC করুন</a>
-      </div>
-    );
-  }
+  // (KYC gate removed — all users can send balance)
 
   const amt = Math.floor(Number(amount) || 0);
   const canSubmit = found && amt >= MIN_SEND && amt <= balance && !send.isPending;
