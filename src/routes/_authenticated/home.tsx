@@ -610,7 +610,6 @@ function useTick() {
 
 
 function MainIdentityCell({ task, onStart, onReverify, onOpenPhoto }: { task: any; onStart: () => void; onReverify: () => void; onOpenPhoto: (url: string) => void }) {
-  const now = useTick();
   const isVerified = task.status === "verified";
   const whitelistLost = task.whitelist_ok === false;
   const readyToReverify = isVerified && whitelistLost;
