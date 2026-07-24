@@ -266,7 +266,7 @@ function TaskPage() {
         </h1>
         <p className="text-[12px] text-muted-foreground mt-2 font-bold">
           {isDone && <span className="text-emerald">✅ এই ঘর সম্পূর্ণ</span>}
-          {isVerified && <span className="text-amber">⏳ রি-ভেরিফাই প্রস্তুত হলে রি-ভেরিফাই পেজ থেকে করবেন</span>}
+          {isVerified && <span className="text-emerald">✅ WHITELISTED — GoodDollar হোয়াইটলিস্ট বাতিল হলেই কেবল রি-ভেরিফাই লাগবে</span>}
           {task.status === "empty" && <span className="text-cyan inline-block">🔵 good-app ফেস ভেরিফাই দিয়ে শুরু করুন</span>}
         </p>
       </div>
