@@ -670,13 +670,10 @@ function MainIdentityCell({ task, onStart, onReverify, onOpenPhoto }: { task: an
 }
 
 function TaskCell({ task, onStart, onReverify, onOpenPhoto }: { task: any; onStart: () => void; onReverify: () => void; onOpenPhoto: (url: string) => void }) {
-  const now = useTick();
   const isDone = task.status === "done";
   const isVerified = task.status === "verified";
-  const dueMs = task.reverify_due_at ? new Date(task.reverify_due_at).getTime() : 0;
   const whitelistLost = task.whitelist_ok === false;
   const readyToReverify = isVerified && whitelistLost;
-  const remainingMs = Math.max(0, dueMs - now);
   const faceUrl: string | undefined = task.signed_face_url;
 
   if (isVerified && !readyToReverify) {
