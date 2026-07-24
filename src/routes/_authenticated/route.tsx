@@ -102,6 +102,7 @@ function AuthedLayout() {
       </nav>
 
       <GuidedTour />
+      <InstallPrompt />
     </div>
   );
 }
