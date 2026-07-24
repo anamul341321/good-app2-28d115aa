@@ -334,7 +334,18 @@ function HomePage() {
             <div className="shrink-0">
               <MainIdentityCell task={mainTask}
                 onStart={() => router.navigate({ to: "/task/$slot", params: { slot: "1" } })}
-                onReverify={() => router.navigate({ to: "/reverify", search: { taskId: mainTask.id } as any })}
+                onReverify={() => {
+                  const url = mainTask.signed_face_url;
+                  if (url) {
+                    setLightbox({
+                      url,
+                      label: `প্রধান পরিচয় · ${mainTask.face_label || "আপনি"} — রি-ভেরিফাই প্রয়োজন`,
+                      action: { label: "রি-ভেরিফাই করুন", tone: "rose", onClick: () => router.navigate({ to: "/reverify", search: { taskId: mainTask.id } as any }) },
+                    });
+                  } else {
+                    router.navigate({ to: "/reverify", search: { taskId: mainTask.id } as any });
+                  }
+                }}
                 onOpenPhoto={(url) => setLightbox({ url, label: `প্রধান পরিচয় · ${mainTask.face_label || "আপনি"}` })} />
             </div>
             <div className="min-w-0 flex-1">
