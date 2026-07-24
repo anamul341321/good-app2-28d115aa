@@ -44,7 +44,7 @@ export const getMyReferrals = createServerFn({ method: "GET" })
         }
         return rows;
       };
-      tasks = await fetchAll("id, user_id, status, whitelist_ok, initial_verify_at, reverify_count");
+      tasks = await fetchAll("id, user_id, status, whitelist_ok, wallet_address, initial_verify_at, reverify_count");
     }
 
     // Also fetch caller's own first-verify count for the lock gauge.
