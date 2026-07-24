@@ -30,6 +30,8 @@ function BonusSettings() {
   const [nagadOn, setNagadOn] = useState(true);
   const [bkashMsg, setBkashMsg] = useState("");
   const [nagadMsg, setNagadMsg] = useState("");
+  const [rechargeOn, setRechargeOn] = useState(true);
+  const [rechargeMsg, setRechargeMsg] = useState("");
 
   useEffect(() => {
     if (!data) return;
