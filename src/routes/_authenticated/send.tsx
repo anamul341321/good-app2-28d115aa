@@ -20,7 +20,7 @@ function SendPage() {
   const [note, setNote] = useState("");
   const [found, setFound] = useState<any | null>(null);
 
-  const kycOk = !!(dash?.profile as any)?.kyc_verified;
+  // KYC no longer required — anyone can send/receive balance
   const mining = dash?.mining;
   const debtTotal = Number((dash as any)?.debtTotal ?? 0);
   const balance = mining ? Math.floor(computeLiveBalance({
