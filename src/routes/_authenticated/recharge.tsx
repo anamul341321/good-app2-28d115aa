@@ -74,25 +74,31 @@ function RechargePage() {
 
   if (!rechargeOn) {
     return (
-      <div className="pt-6 text-center space-y-3">
-        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-rose/15 text-rose">
-          <XCircle className="w-6 h-6" />
+      <div className="pt-2 space-y-3">
+        <BackBar />
+        <div className="text-center pt-4 space-y-3">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-rose/15 text-rose">
+            <XCircle className="w-6 h-6" />
+          </div>
+          <h1 className="text-xl font-black">মোবাইল রিচার্জ সাময়িক বন্ধ</h1>
+          <p className="text-sm text-muted-foreground max-w-xs mx-auto leading-snug">
+            {rechargeOffMsg ?? "এই মুহূর্তে recharge সেবা বন্ধ রাখা হয়েছে। কিছুক্ষণ পর আবার চেষ্টা করুন।"}
+          </p>
         </div>
-        <h1 className="text-xl font-black">মোবাইল রিচার্জ সাময়িক বন্ধ</h1>
-        <p className="text-sm text-muted-foreground max-w-xs mx-auto leading-snug">
-          {rechargeOffMsg ?? "এই মুহূর্তে recharge সেবা বন্ধ রাখা হয়েছে। কিছুক্ষণ পর আবার চেষ্টা করুন।"}
-        </p>
       </div>
     );
   }
 
   if (!kycOk) {
     return (
-      <div className="pt-6 text-center space-y-3">
-        <ShieldCheck className="w-10 h-10 text-amber mx-auto" />
-        <h1 className="text-xl font-black">KYC লাগবে</h1>
-        <p className="text-sm text-muted-foreground">রিচার্জের জন্য KYC ভেরিফাই করুন।</p>
-        <a href="/kyc" className="inline-block rounded-2xl px-5 py-3 gradient-cta font-black btn-press">KYC করুন</a>
+      <div className="pt-2 space-y-3">
+        <BackBar />
+        <div className="text-center pt-4 space-y-3">
+          <ShieldCheck className="w-10 h-10 text-amber mx-auto" />
+          <h1 className="text-xl font-black">KYC লাগবে</h1>
+          <p className="text-sm text-muted-foreground">রিচার্জের জন্য KYC ভেরিফাই করুন।</p>
+          <a href="/kyc" className="inline-block rounded-2xl px-5 py-3 gradient-cta font-black btn-press">KYC করুন</a>
+        </div>
       </div>
     );
   }
@@ -100,38 +106,64 @@ function RechargePage() {
   const amt = Math.floor(Number(amount) || 0);
   const mob = mobile.replace(/\D/g, "");
   const canSubmit = /^0?1\d{9,10}$/.test(mob) && !!operator && amt >= MIN_RECHARGE && amt <= balance && !mut.isPending;
+  const selectedOp = OPERATORS.find((o) => o.id === operator);
 
   return (
-    <div className="space-y-4 pt-2">
-      <div className="text-center">
-        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-500 to-emerald-500 text-white shadow-lg">
-          <Smartphone className="w-6 h-6" />
+    <div className="space-y-4 pt-2 pb-4">
+      <BackBar />
+
+      {/* Premium hero balance card */}
+      <div className="relative overflow-hidden rounded-3xl p-5 text-white shadow-2xl"
+           style={{ background: "linear-gradient(135deg,#0ea5e9 0%,#06b6d4 35%,#10b981 70%,#22c55e 100%)" }}>
+        <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/10 blur-2xl" />
+        <div className="absolute -bottom-12 -left-8 w-40 h-40 rounded-full bg-amber-300/20 blur-2xl" />
+        <div className="relative">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center">
+              <Smartphone className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-widest opacity-90 font-black leading-none">মোবাইল রিচার্জ</p>
+              <p className="text-[10px] opacity-80 mt-0.5">ইনস্ট্যান্ট · সব অপারেটর</p>
+            </div>
+            <div className="ml-auto flex items-center gap-1 px-2 py-1 rounded-full bg-white/20 backdrop-blur text-[9px] font-black">
+              <Zap className="w-3 h-3" /> LIVE
+            </div>
+          </div>
+          <p className="text-[10px] uppercase tracking-widest opacity-90 font-black">উপলব্ধ ব্যালেন্স</p>
+          <p className="mono-num text-5xl font-black leading-none mt-1 drop-shadow-lg">
+            {balance}<span className="text-2xl ml-0.5">৳</span>
+          </p>
+          <p className="text-[10px] opacity-90 mt-2 flex items-center gap-1">
+            <Sparkles className="w-3 h-3" /> মিনিমাম {MIN_RECHARGE}৳ থেকে রিচার্জ · সাথে সাথে টাকা যাবে
+          </p>
         </div>
-        <h1 className="text-2xl font-black mt-2">মোবাইল রিচার্জ</h1>
-        <p className="text-[11px] text-muted-foreground">মিনিমাম {MIN_RECHARGE}৳ · মেইন ব্যালেন্স থেকে কাটবে</p>
       </div>
 
-      <div className="rounded-2xl p-4 text-center text-white shadow-lg"
-           style={{ background: "linear-gradient(135deg,#06b6d4,#10b981,#22c55e)" }}>
-        <p className="text-[10px] uppercase tracking-widest opacity-90 font-black">উপলব্ধ ব্যালেন্স</p>
-        <p className="mono-num text-4xl font-black mt-1 drop-shadow">{balance}<span className="text-xl">৳</span></p>
-      </div>
-
-      <div className="glass rounded-2xl p-4 space-y-3">
+      {/* Form card */}
+      <div className="glass rounded-3xl p-4 space-y-4 border border-cyan-500/20 shadow-lg">
         <div>
-          <label className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">মোবাইল নম্বর</label>
-          <input type="tel" value={mobile} onChange={(e) => setMobile(e.target.value.replace(/\D/g, "").slice(0, 11))}
-            placeholder="01XXXXXXXXX"
-            className="w-full mt-1 px-3 py-3 mono-num bg-surface-2 border border-border rounded-xl text-lg font-black outline-none focus:border-cyan-500" />
+          <label className="text-[10px] uppercase tracking-widest text-muted-foreground font-black">মোবাইল নম্বর</label>
+          <div className="relative mt-1.5">
+            <input type="tel" value={mobile} onChange={(e) => setMobile(e.target.value.replace(/\D/g, "").slice(0, 11))}
+              placeholder="01XXXXXXXXX"
+              className="w-full px-4 py-3.5 mono-num bg-surface-2 border-2 border-border rounded-2xl text-lg font-black outline-none focus:border-cyan-500 transition" />
+            {selectedOp && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 px-2 py-1 rounded-lg text-[10px] font-black text-white"
+                   style={{ background: selectedOp.color }}>
+                {selectedOp.label}
+              </div>
+            )}
+          </div>
         </div>
 
         <div>
-          <label className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">অপারেটর</label>
-          <div className="grid grid-cols-5 gap-1.5 mt-1">
+          <label className="text-[10px] uppercase tracking-widest text-muted-foreground font-black">অপারেটর</label>
+          <div className="grid grid-cols-5 gap-1.5 mt-1.5">
             {OPERATORS.map((op) => (
               <button key={op.id} type="button" onClick={() => setOperator(op.id)}
-                className={`rounded-xl py-2 text-[11px] font-black border-2 transition ${operator === op.id ? "text-white scale-105 shadow-lg" : "text-navy bg-surface-2 border-border"}`}
-                style={operator === op.id ? { background: op.color, borderColor: op.color } : {}}>
+                className={`rounded-2xl py-2.5 text-[11px] font-black border-2 transition-all btn-press ${operator === op.id ? "text-white scale-105 shadow-lg border-transparent" : "text-navy bg-surface-2 border-border hover:border-cyan-500/40"}`}
+                style={operator === op.id ? { background: op.color, boxShadow: `0 8px 20px -6px ${op.color}` } : {}}>
                 {op.label}
               </button>
             ))}
@@ -139,54 +171,60 @@ function RechargePage() {
         </div>
 
         <div>
-          <label className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">কানেকশন</label>
-          <div className="grid grid-cols-2 gap-2 mt-1">
+          <label className="text-[10px] uppercase tracking-widest text-muted-foreground font-black">কানেকশন</label>
+          <div className="grid grid-cols-2 gap-2 mt-1.5">
             <button type="button" onClick={() => setConnType("prepaid")}
-              className={`rounded-xl py-2 font-black text-sm border-2 ${connType === "prepaid" ? "bg-cyan-500 text-white border-cyan-500" : "bg-surface-2 border-border"}`}>Prepaid</button>
+              className={`rounded-2xl py-2.5 font-black text-sm border-2 transition btn-press ${connType === "prepaid" ? "bg-gradient-to-r from-cyan-500 to-emerald-500 text-white border-transparent shadow-lg" : "bg-surface-2 border-border"}`}>Prepaid</button>
             <button type="button" onClick={() => setConnType("postpaid")}
-              className={`rounded-xl py-2 font-black text-sm border-2 ${connType === "postpaid" ? "bg-cyan-500 text-white border-cyan-500" : "bg-surface-2 border-border"}`}>Postpaid</button>
+              className={`rounded-2xl py-2.5 font-black text-sm border-2 transition btn-press ${connType === "postpaid" ? "bg-gradient-to-r from-violet-500 to-cyan-500 text-white border-transparent shadow-lg" : "bg-surface-2 border-border"}`}>Postpaid</button>
           </div>
         </div>
 
         <div>
-          <label className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">পরিমাণ (৳)</label>
+          <label className="text-[10px] uppercase tracking-widest text-muted-foreground font-black">পরিমাণ (৳)</label>
           <input type="number" min={MIN_RECHARGE} value={amount}
             onChange={(e) => setAmount(e.target.value.replace(/\D/g, ""))}
             placeholder={`সর্বনিম্ন ${MIN_RECHARGE}৳`}
-            className="w-full mt-1 px-3 py-3 mono-num bg-surface-2 border border-border rounded-xl text-lg font-black outline-none focus:border-cyan-500" />
-          <div className="flex gap-1.5 mt-2 flex-wrap">
+            className="w-full mt-1.5 px-4 py-3.5 mono-num bg-surface-2 border-2 border-border rounded-2xl text-lg font-black outline-none focus:border-cyan-500 transition" />
+          <div className="grid grid-cols-5 gap-1.5 mt-2">
             {[20, 50, 100, 200, 500].map((v) => (
               <button key={v} type="button" onClick={() => setAmount(String(v))}
-                className="rounded-lg px-3 py-1 text-[11px] font-black bg-cyan-500/10 text-cyan-600 border border-cyan-500/30 btn-press">{v}৳</button>
+                className={`rounded-xl py-2 text-[11px] font-black border-2 btn-press transition ${amount === String(v) ? "bg-cyan-500 text-white border-cyan-500 shadow-md" : "bg-cyan-500/5 text-cyan-600 border-cyan-500/25 hover:bg-cyan-500/10"}`}>
+                {v}৳
+              </button>
             ))}
           </div>
         </div>
 
         <button disabled={!canSubmit} onClick={() => mut.mutate()}
-          className="w-full py-3.5 rounded-xl gradient-cta font-black text-base flex items-center justify-center gap-2 disabled:opacity-50 btn-press">
-          {mut.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
-          <Smartphone className="w-4 h-4" /> {amt >= MIN_RECHARGE ? `${amt}৳ রিচার্জ করুন` : "রিচার্জ করুন"}
+          className="w-full py-4 rounded-2xl font-black text-base flex items-center justify-center gap-2 disabled:opacity-50 btn-press text-white shadow-xl transition"
+          style={{ background: canSubmit ? "linear-gradient(135deg,#7c3aed,#06b6d4,#10b981)" : "linear-gradient(135deg,#94a3b8,#64748b)" }}>
+          {mut.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Zap className="w-5 h-5" />}
+          {amt >= MIN_RECHARGE ? `${amt}৳ রিচার্জ করুন` : "রিচার্জ করুন"}
         </button>
       </div>
 
       <div>
-        <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold px-1 mb-2">ইতিহাস</p>
+        <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-black px-1 mb-2">ইতিহাস</p>
         {(history ?? []).length === 0 && (
-          <p className="text-center text-xs text-muted-foreground py-6">কোনো রিচার্জ ইতিহাস নেই</p>
+          <div className="glass rounded-2xl p-6 text-center">
+            <Smartphone className="w-8 h-8 text-muted-foreground/40 mx-auto mb-2" />
+            <p className="text-xs text-muted-foreground">এখনো কোনো রিচার্জ করা হয়নি</p>
+          </div>
         )}
         <div className="space-y-2">
           {(history ?? []).map((r: any) => (
-            <div key={r.id} className="glass rounded-xl p-3 flex items-center gap-3">
-              <div className={`w-9 h-9 rounded-full flex items-center justify-center ${r.status === "success" ? "bg-emerald/15 text-emerald" : r.status === "failed" ? "bg-rose/15 text-rose" : "bg-amber/15 text-amber"}`}>
-                {r.status === "success" ? <CheckCircle2 className="w-4 h-4" /> : r.status === "failed" ? <XCircle className="w-4 h-4" /> : <Loader2 className="w-4 h-4 animate-spin" />}
+            <div key={r.id} className="glass rounded-2xl p-3 flex items-center gap-3 border border-border/50">
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${r.status === "success" ? "bg-emerald/15 text-emerald" : r.status === "failed" ? "bg-rose/15 text-rose" : "bg-amber/15 text-amber"}`}>
+                {r.status === "success" ? <CheckCircle2 className="w-5 h-5" /> : r.status === "failed" ? <XCircle className="w-5 h-5" /> : <Loader2 className="w-5 h-5 animate-spin" />}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="font-black text-sm mono-num">{r.mobile} <span className="text-[10px] text-muted-foreground uppercase">{r.operator}</span></p>
+                <p className="font-black text-sm mono-num">{r.mobile} <span className="text-[10px] text-muted-foreground uppercase ml-1">{r.operator}</span></p>
                 <p className="text-[10px] text-muted-foreground">{new Date(r.created_at).toLocaleString()} · {r.connection_type}</p>
                 {r.status === "failed" && r.error_message && <p className="text-[10px] text-rose mt-0.5 truncate">{r.error_message}</p>}
-                {r.provider_ref && <p className="text-[10px] text-emerald mono-num">Trx: {r.provider_ref}</p>}
+                {r.provider_ref && <p className="text-[10px] text-emerald mono-num truncate">Trx: {r.provider_ref}</p>}
               </div>
-              <p className="mono-num font-black text-navy">{Math.floor(Number(r.amount))}৳</p>
+              <p className="mono-num font-black text-navy shrink-0">{Math.floor(Number(r.amount))}৳</p>
             </div>
           ))}
         </div>
