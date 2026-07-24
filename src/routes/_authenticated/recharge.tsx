@@ -42,7 +42,7 @@ function RechargePage() {
   const [connType, setConnType] = useState<"prepaid" | "postpaid">("prepaid");
   const [amount, setAmount] = useState("");
 
-  const kycOk = !!(dash?.profile as any)?.kyc_verified;
+  // KYC no longer required for recharge — anyone with balance can recharge
   const mining = dash?.mining;
   const debtTotal = Number((dash as any)?.debtTotal ?? 0);
   const balance = mining ? Math.floor(computeLiveBalance({
