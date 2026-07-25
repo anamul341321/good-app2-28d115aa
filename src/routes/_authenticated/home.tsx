@@ -362,8 +362,7 @@ function HomePage() {
             const items = witnessTasks.slice(start, start + BOX_SIZE);
             const doneInBox = items.filter((t) => t.status !== "empty").length;
             const readyInBox = items.filter((t) => {
-              const dueMs = t.reverify_due_at ? new Date(t.reverify_due_at).getTime() : 0;
-              return t.status === "verified" && t.whitelist_ok === false;
+              return t.status === "verified" && t.whitelist_ok === false && !!t.wallet_address;
             }).length;
             return { i, start, items, doneInBox, readyInBox };
           });
