@@ -127,10 +127,17 @@ export async function settleWelcomeBonuses(
   }
 
   if (!userReverifyPaid && reverifyCount >= 10) {
-    await creditAccrued(admin, userId, rates.reverify_bonus);
-    await admin.from("profiles").update({ bonus_reverify_claimed: true }).eq("id", userId);
-    userReverifyPaid = true;
-    await admin.rpc("settle_mining", { _user_id: userId });
+    // The database recounts 10 distinct re-verified slots while holding the
+    // profile row lock, so stale client counts or concurrent dashboard loads
+    // cannot award this bonus early or more than once.
+    const { data: awarded, error: claimError } = await admin.rpc("claim_reverify_bonus", {
+      _user_id: userId,
+    });
+    if (claimError) throw new Error(claimError.message);
+    userReverifyPaid = Number(awarded ?? 0) > 0;
+    if (userReverifyPaid) {
+      await admin.rpc("settle_mining", { _user_id: userId });
+    }
   }
 
   return {

@@ -686,6 +686,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      claim_reverify_bonus: { Args: { _user_id: string }; Returns: number }
       create_recharge_request: {
         Args: {
           _amount: number
