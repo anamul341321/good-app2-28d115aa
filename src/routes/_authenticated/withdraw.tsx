@@ -284,9 +284,9 @@ function WithdrawPage() {
   );
 }
 
-function ProviderPill({ selected, available, enabled, label, tone, wallet, onClick }: {
+function ProviderPill({ selected, available, enabled, logo, label, tone, wallet, onClick }: {
   selected: boolean; available: boolean; enabled: boolean;
-  label: string; tone: "rose" | "amber"; wallet: any; onClick: () => void;
+  logo: string; label: string; tone: "rose" | "amber"; wallet: any; onClick: () => void;
 }) {
   const disabled = !available;
   return (
@@ -300,14 +300,17 @@ function ProviderPill({ selected, available, enabled, label, tone, wallet, onCli
           : "border-border bg-surface-2"
       } ${disabled ? "opacity-50" : ""}`}
     >
-      <p className={`text-sm font-black text-${tone} flex items-center justify-between`}>
-        <span>{label}</span>
-        {!enabled && <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-rose/20 text-rose">বন্ধ</span>}
-      </p>
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <img src={logo} alt={label} className="h-6 w-auto object-contain shrink-0" loading="lazy" />
+          <span className={`text-sm font-black text-${tone} truncate`} translate="no">{label}</span>
+        </div>
+        {!enabled && <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-rose/20 text-rose shrink-0" translate="no">বন্ধ</span>}
+      </div>
       {wallet ? (
-        <p className="mono-num text-[11px] text-navy/80 mt-0.5 truncate">{wallet.number}</p>
+        <p className="mono-num text-[11px] text-navy/80 mt-1 truncate" translate="no">{wallet.number}</p>
       ) : (
-        <p className="text-[10px] text-muted-foreground mt-0.5">সেট করা নেই</p>
+        <p className="text-[10px] text-muted-foreground mt-1" translate="no">সেট করা নেই</p>
       )}
     </button>
   );
