@@ -52,7 +52,7 @@ export const requestWithdraw = createServerFn({ method: "POST" })
     if (!mining) throw new Error("ব্যালেন্স পাওয়া যায়নি");
 
     const { data: activeDebts } = await supabaseAdmin
-      .from("user_debts").select("amount").eq("user_id", userId).eq("status", "active");
+      .from("user_debts").select("amount").eq("user_id", userId).in("status", ["active", "claimed"]);
     const debtTotal = (activeDebts ?? []).reduce((s: number, d: any) => s + Number(d.amount), 0);
 
     const eff = Number((mining as any).effective_task_count ?? 0);
