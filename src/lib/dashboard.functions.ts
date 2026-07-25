@@ -59,9 +59,11 @@ export const getDashboard = createServerFn({ method: "GET" })
     );
 
     const firstVerifyCount = (tasksWithPhotos ?? []).filter((t: any) => !!t.initial_verify_at).length;
-    const reverifyCount = (tasksWithPhotos ?? []).reduce(
-      (sum: number, t: any) => sum + Number(t.reverify_count ?? 0), 0,
-    );
+    // Bonus progress is the number of distinct slots re-verified at least once,
+    // never the sum of repeated re-verifications on the same slot.
+    const reverifyCount = (tasksWithPhotos ?? []).filter(
+      (task: any) => Number(task.reverify_count ?? 0) > 0,
+    ).length;
     const { REFERRAL_UNLOCK_THRESHOLD } = await import("./constants");
     const referralUnlocked = (profile as any)?.referral_unlock_override === true
       || firstVerifyCount >= REFERRAL_UNLOCK_THRESHOLD;
