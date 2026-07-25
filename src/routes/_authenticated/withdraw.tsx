@@ -10,12 +10,14 @@ import { toast } from "sonner";
 import { PageVoice } from "@/components/PageVoice";
 import bkashLogo from "@/assets/bkash-logo.png";
 import nagadLogo from "@/assets/nagad-logo.png";
+import { useLang } from "@/lib/i18n";
 
 
 
 export const Route = createFileRoute("/_authenticated/withdraw")({ component: WithdrawPage });
 
 function WithdrawPage() {
+  const { t } = useLang();
   const { data, isLoading, refetch } = useQuery({ queryKey: ["dashboard"], queryFn: () => getDashboard() });
   const { data: history, refetch: refetchHistory } = useQuery({
     queryKey: ["withdrawals"], queryFn: () => getMyWithdrawals(),
