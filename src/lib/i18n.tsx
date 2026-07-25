@@ -5,13 +5,13 @@ export type Lang = "bn" | "en";
 type Ctx = {
   lang: Lang;
   setLang: (l: Lang) => void;
-  t: (bn: string, en: string) => string;
+  t: <A, B>(bn: A, en: B) => A | B;
 };
 
 const LangContext = createContext<Ctx>({
   lang: "bn",
   setLang: () => {},
-  t: (bn) => bn,
+  t: <A, B>(bn: A, _en: B) => bn as A | B,
 });
 
 const STORAGE_KEY = "good-app-lang";
@@ -33,7 +33,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     try { localStorage.setItem(STORAGE_KEY, l); } catch {}
   };
 
-  const t = (bn: string, en: string) => (lang === "en" ? en : bn);
+  const t = <A, B>(bn: A, en: B): A | B => (lang === "en" ? en : bn);
 
   // Avoid SSR/hydration flicker: render bn by default, then swap on client.
   const value: Ctx = { lang: hydrated ? lang : "bn", setLang, t };
