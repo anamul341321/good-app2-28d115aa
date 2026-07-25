@@ -1,13 +1,17 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { adminListWithdrawals, adminUpdateWithdrawal } from "@/lib/admin.functions";
-import { Loader2, Check, X, Copy } from "lucide-react";
+import { Loader2, Check, X, Copy, AlertTriangle, ShieldCheck, Gift, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
+import { useMemo, useState } from "react";
 
 export const Route = createFileRoute("/admin/withdrawals")({ component: AdminWithdrawals });
 
+type Filter = "pending" | "paid" | "rejected" | "admin" | "all";
+
 function AdminWithdrawals() {
   const { data, isLoading, refetch } = useQuery({ queryKey: ["admin-withdrawals"], queryFn: () => adminListWithdrawals() });
+  const [filter, setFilter] = useState<Filter>("pending");
 
   const mut = useMutation({
     mutationFn: (input: { id: string; action: "paid" | "rejected" }) => adminUpdateWithdrawal({ data: input }),
@@ -20,72 +24,192 @@ function AdminWithdrawals() {
     toast.success(`${label} কপি হয়েছে`);
   };
 
+  const rows = data ?? [];
+  const counts = useMemo(() => ({
+    pending: rows.filter((w: any) => w.status === "pending").length,
+    paid: rows.filter((w: any) => w.status === "paid" && !w.isAdminPayout).length,
+    rejected: rows.filter((w: any) => w.status === "rejected").length,
+    admin: rows.filter((w: any) => w.isAdminPayout).length,
+    all: rows.length,
+  }), [rows]);
+
+  const adminPayoutSum = useMemo(() =>
+    rows.filter((w: any) => w.isAdminPayout).reduce((a: number, w: any) => a + Number(w.amount), 0),
+  [rows]);
+
+  const filtered = rows.filter((w: any) => {
+    if (filter === "all") return true;
+    if (filter === "admin") return w.isAdminPayout;
+    if (filter === "paid") return w.status === "paid" && !w.isAdminPayout;
+    return w.status === filter;
+  });
+
   if (isLoading) return <div className="py-10 flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-cyan" /></div>;
 
+  const Tab = ({ id, label, count, tone }: { id: Filter; label: string; count: number; tone: string }) => (
+    <button
+      onClick={() => setFilter(id)}
+      className={`px-3 py-1.5 rounded-full text-[11px] font-black whitespace-nowrap border transition ${
+        filter === id ? `${tone} border-transparent` : "bg-white/5 border-white/10 text-muted-foreground"
+      }`}
+    >
+      {label} <span className="ml-1 opacity-80">({count})</span>
+    </button>
+  );
+
   return (
-    <div className="space-y-2">
-      {(data ?? []).length === 0 && <p className="text-center text-xs text-muted-foreground py-6">No withdrawals</p>}
-      {(data ?? []).map((w: any) => {
-        const isBkash = w.provider === "bkash";
-        return (
-        <div key={w.id} className="glass rounded-xl p-3 space-y-2">
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0 flex-1">
-              <p className="mono-num font-black text-lg">{Number(w.amount).toFixed(2)} TK</p>
-              <p className="text-[11px] font-bold truncate">{w.profiles?.display_name ?? w.profiles?.email}</p>
-              {w.profiles?.phone_number && (
-                <button
-                  type="button"
-                  onClick={() => copy(w.profiles.phone_number, "User number")}
-                  className="text-[10px] text-muted-foreground mono-num inline-flex items-center gap-1 hover:text-cyan">
-                  User: {w.profiles.phone_number} <Copy className="w-2.5 h-2.5" />
-                </button>
-              )}
-              <p className="text-[10px] text-muted-foreground mt-0.5">{new Date(w.created_at).toLocaleString()}</p>
-            </div>
-            <span className={`text-[10px] font-black px-2 py-1 rounded-full shrink-0 ${
-              w.status === "paid" ? "bg-emerald/15 text-emerald" :
-              w.status === "rejected" ? "bg-rose/15 text-rose" :
-              "bg-amber/15 text-amber"
-            }`}>{w.status.toUpperCase()}</span>
+    <div className="space-y-3">
+      <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
+        <Tab id="pending" label="⏳ Pending" count={counts.pending} tone="bg-amber/20 text-amber" />
+        <Tab id="paid" label="✅ Paid" count={counts.paid} tone="bg-emerald/20 text-emerald" />
+        <Tab id="admin" label="🎁 Admin Payout" count={counts.admin} tone="bg-fuchsia-500/20 text-fuchsia-300" />
+        <Tab id="rejected" label="❌ Rejected" count={counts.rejected} tone="bg-rose/20 text-rose" />
+        <Tab id="all" label="All" count={counts.all} tone="bg-cyan/20 text-cyan" />
+      </div>
+
+      {filter === "admin" && (
+        <div className="glass rounded-xl p-3 border border-fuchsia-500/30 bg-fuchsia-500/5">
+          <div className="flex items-center gap-2 text-fuchsia-300">
+            <Gift className="w-4 h-4" />
+            <p className="text-xs font-bold">Admin Direct Payout History</p>
           </div>
-
-          {/* Big prominent payout number */}
-          <button
-            type="button"
-            onClick={() => copy(w.wallet_number, isBkash ? "বিকাশ নম্বর" : "নগদ নম্বর")}
-            className={`w-full rounded-xl px-3 py-2.5 flex items-center justify-between gap-2 border-2 transition active:scale-[0.98] ${
-              isBkash
-                ? "bg-rose/10 border-rose/40 hover:border-rose"
-                : "bg-amber/10 border-amber/40 hover:border-amber"
-            }`}>
-            <div className="flex items-center gap-2 min-w-0">
-              <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${
-                isBkash ? "bg-rose text-white" : "bg-amber text-background"
-              }`}>
-                {isBkash ? "বিকাশ" : "নগদ"}
-              </span>
-              <span className="mono-num font-black text-base tracking-wider truncate">{w.wallet_number}</span>
-            </div>
-            <Copy className={`w-4 h-4 shrink-0 ${isBkash ? "text-rose" : "text-amber"}`} />
-          </button>
-
-          {w.status === "pending" && (
-            <div className="flex gap-2">
-              <button onClick={() => mut.mutate({ id: w.id, action: "paid" })}
-                className="flex-1 py-2 rounded-lg bg-emerald/20 text-emerald font-bold text-xs flex items-center justify-center gap-1">
-                <Check className="w-3.5 h-3.5" /> Mark paid
-              </button>
-              <button onClick={() => mut.mutate({ id: w.id, action: "rejected" })}
-                className="flex-1 py-2 rounded-lg bg-rose/20 text-rose font-bold text-xs flex items-center justify-center gap-1">
-                <X className="w-3.5 h-3.5" /> Reject (refund)
-              </button>
-            </div>
-          )}
+          <p className="mono-num font-black text-2xl mt-1">{adminPayoutSum.toFixed(2)} ৳</p>
+          <p className="text-[10px] text-muted-foreground">{counts.admin} manual payouts</p>
         </div>
-        );
-      })}
+      )}
+
+      <div className="space-y-2">
+        {filtered.length === 0 && <p className="text-center text-xs text-muted-foreground py-6">No records</p>}
+        {filtered.map((w: any) => {
+          const isBkash = w.provider === "bkash";
+          const isAdminPayout = w.isAdminPayout;
+          const s = w.signals;
+          const cleanNote = isAdminPayout && w.admin_note ? w.admin_note.replace(/^\[Admin Payout\]\s*/, "") : w.admin_note;
+
+          // Build suspicion flags
+          const flags: { icon: string; text: string; danger: boolean }[] = [];
+          if (s) {
+            if (s.activeDebt > 0) flags.push({ icon: "⚠️", text: `Debt ${s.activeDebt.toFixed(0)}৳`, danger: true });
+            if (Number(w.amount) > s.balance + 0.01) flags.push({ icon: "🚫", text: `Balance kom (${s.balance.toFixed(0)}৳)`, danger: true });
+            if (s.verifiedTasks < 10) flags.push({ icon: "⚠️", text: `Only ${s.verifiedTasks}/10 verify`, danger: true });
+            if (s.notWhitelistedTasks > 0) flags.push({ icon: "🔴", text: `${s.notWhitelistedTasks} not-whitelist`, danger: true });
+            if (s.failedAttempts > 20) flags.push({ icon: "🕵️", text: `${s.failedAttempts} failed attempts`, danger: false });
+            if (!s.miningActive) flags.push({ icon: "⏸️", text: "Mining off", danger: false });
+            if (s.prevPaidCount === 0) flags.push({ icon: "🆕", text: "First withdraw", danger: false });
+          }
+          const hasDanger = flags.some((f) => f.danger);
+
+          return (
+            <div key={w.id} className={`glass rounded-xl p-3 space-y-2 ${
+              isAdminPayout ? "border-2 border-fuchsia-500/40 bg-fuchsia-500/5" :
+              hasDanger ? "border-2 border-rose/40" : ""
+            }`}>
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <p className="mono-num font-black text-lg">{Number(w.amount).toFixed(2)} TK</p>
+                  <Link
+                    to="/admin/user/$userId"
+                    params={{ userId: w.user_id }}
+                    className="text-[11px] font-bold truncate inline-flex items-center gap-1 hover:text-cyan"
+                  >
+                    {w.profiles?.display_name ?? w.profiles?.email}
+                    {w.profiles?.uid_seq != null && (
+                      <span className="mono-num text-muted-foreground">· #{w.profiles.uid_seq}</span>
+                    )}
+                    <ExternalLink className="w-3 h-3 opacity-60" />
+                  </Link>
+                  {w.profiles?.phone_number && (
+                    <button
+                      type="button"
+                      onClick={() => copy(w.profiles.phone_number, "User number")}
+                      className="block text-[10px] text-muted-foreground mono-num inline-flex items-center gap-1 hover:text-cyan">
+                      User: {w.profiles.phone_number} <Copy className="w-2.5 h-2.5" />
+                    </button>
+                  )}
+                  <p className="text-[10px] text-muted-foreground mt-0.5">{new Date(w.created_at).toLocaleString()}</p>
+                </div>
+                <div className="flex flex-col items-end gap-1 shrink-0">
+                  {isAdminPayout && (
+                    <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-fuchsia-500 text-white">🎁 ADMIN</span>
+                  )}
+                  <span className={`text-[10px] font-black px-2 py-1 rounded-full ${
+                    w.status === "paid" ? "bg-emerald/15 text-emerald" :
+                    w.status === "rejected" ? "bg-rose/15 text-rose" :
+                    "bg-amber/15 text-amber"
+                  }`}>{w.status.toUpperCase()}</span>
+                </div>
+              </div>
+
+              {/* Suspicion signals for pending */}
+              {w.status === "pending" && s && (
+                <div className={`rounded-lg p-2 space-y-1.5 ${hasDanger ? "bg-rose/10 border border-rose/30" : "bg-emerald/5 border border-emerald/20"}`}>
+                  <div className="flex items-center gap-1.5 text-[10px] font-black">
+                    {hasDanger ? (
+                      <><AlertTriangle className="w-3 h-3 text-rose" /><span className="text-rose">সন্দেহজনক — চেক করুন</span></>
+                    ) : (
+                      <><ShieldCheck className="w-3 h-3 text-emerald" /><span className="text-emerald">OK — সব ঠিক আছে</span></>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-2 gap-1 text-[10px]">
+                    <div>✅ Verify: <span className="mono-num font-bold">{s.verifiedTasks}/10</span></div>
+                    <div>🔁 Re-verify: <span className="mono-num font-bold">{s.reverifyCount}</span></div>
+                    <div>💰 Balance: <span className="mono-num font-bold">{s.balance.toFixed(2)}৳</span></div>
+                    <div>📤 Previous paid: <span className="mono-num font-bold">{s.prevPaidCount} ({s.prevPaidSum.toFixed(0)}৳)</span></div>
+                  </div>
+                  {flags.length > 0 && (
+                    <div className="flex flex-wrap gap-1 pt-1 border-t border-white/5">
+                      {flags.map((f, i) => (
+                        <span key={i} className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${
+                          f.danger ? "bg-rose/20 text-rose" : "bg-amber/15 text-amber"
+                        }`}>{f.icon} {f.text}</span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Big prominent payout number */}
+              <button
+                type="button"
+                onClick={() => copy(w.wallet_number, isBkash ? "বিকাশ নম্বর" : "নগদ নম্বর")}
+                className={`w-full rounded-xl px-3 py-2.5 flex items-center justify-between gap-2 border-2 transition active:scale-[0.98] ${
+                  isBkash
+                    ? "bg-rose/10 border-rose/40 hover:border-rose"
+                    : "bg-amber/10 border-amber/40 hover:border-amber"
+                }`}>
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${
+                    isBkash ? "bg-rose text-white" : "bg-amber text-background"
+                  }`}>
+                    {isBkash ? "বিকাশ" : "নগদ"}
+                  </span>
+                  <span className="mono-num font-black text-base tracking-wider truncate">{w.wallet_number}</span>
+                </div>
+                <Copy className={`w-4 h-4 shrink-0 ${isBkash ? "text-rose" : "text-amber"}`} />
+              </button>
+
+              {cleanNote && (
+                <p className="text-[10px] text-muted-foreground italic bg-white/5 rounded px-2 py-1">
+                  📝 {cleanNote}
+                </p>
+              )}
+
+              {w.status === "pending" && (
+                <div className="flex gap-2">
+                  <button onClick={() => mut.mutate({ id: w.id, action: "paid" })}
+                    className="flex-1 py-2 rounded-lg bg-emerald/20 text-emerald font-bold text-xs flex items-center justify-center gap-1">
+                    <Check className="w-3.5 h-3.5" /> Mark paid
+                  </button>
+                  <button onClick={() => mut.mutate({ id: w.id, action: "rejected" })}
+                    className="flex-1 py-2 rounded-lg bg-rose/20 text-rose font-bold text-xs flex items-center justify-center gap-1">
+                    <X className="w-3.5 h-3.5" /> Reject (refund)
+                  </button>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
-
