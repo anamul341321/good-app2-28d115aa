@@ -623,7 +623,7 @@ function useTick() {
 function MainIdentityCell({ task, onStart, onReverify, onOpenPhoto }: { task: any; onStart: () => void; onReverify: () => void; onOpenPhoto: (url: string) => void }) {
   const isVerified = task.status === "verified";
   const whitelistLost = task.whitelist_ok === false;
-  const readyToReverify = isVerified && whitelistLost;
+  const readyToReverify = isVerified && whitelistLost && !!task.wallet_address;
   const faceUrl: string | undefined = task.signed_face_url;
 
   if (isVerified && !readyToReverify) {
