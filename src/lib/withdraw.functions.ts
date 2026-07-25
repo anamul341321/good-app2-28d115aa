@@ -17,6 +17,21 @@ export const requestWithdraw = createServerFn({ method: "POST" })
     const amount = Math.floor(data.amount);
     if (amount < MIN_WITHDRAW_BDT) throw new Error(`সর্বনিম্ন উইথড্র ${MIN_WITHDRAW_BDT}৳`);
 
+    // Daily limit: max 3 withdraw requests per 24h
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const { count: dailyCount } = await supabase
+      .from("withdrawals")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .gte("created_at", since);
+    if ((dailyCount ?? 0) >= 3) {
+      throw new Error("দৈনিক সর্বোচ্চ ৩টি withdraw রিকোয়েস্ট করা যাবে — ২৪ ঘণ্টা পর আবার চেষ্টা করুন");
+    }
+
+    // 10% platform fee: user pays `amount` from balance, receives 90%
+    const fee = Math.floor(amount * 0.1);
+    const payout = amount - fee;
+
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: settings } = await supabaseAdmin
       .from("bonus_settings")
