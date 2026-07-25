@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { adminListWithdrawals, adminUpdateWithdrawal } from "@/lib/admin.functions";
-import { Loader2, Check, X, Copy, AlertTriangle, ShieldCheck, Gift, ExternalLink } from "lucide-react";
+import { adminListWithdrawals, adminUpdateWithdrawal, adminListCredits } from "@/lib/admin.functions";
+import { Loader2, Check, X, Copy, AlertTriangle, ShieldCheck, Gift, ExternalLink, Plus, Minus } from "lucide-react";
 import { toast } from "sonner";
 import { useMemo, useState } from "react";
 
@@ -11,6 +11,7 @@ type Filter = "pending" | "paid" | "rejected" | "admin" | "all";
 
 function AdminWithdrawals() {
   const { data, isLoading, refetch } = useQuery({ queryKey: ["admin-withdrawals"], queryFn: () => adminListWithdrawals() });
+  const creditsQ = useQuery({ queryKey: ["admin-credits"], queryFn: () => adminListCredits() });
   const [filter, setFilter] = useState<Filter>("pending");
 
   const mut = useMutation({
@@ -25,22 +26,22 @@ function AdminWithdrawals() {
   };
 
   const rows = data ?? [];
+  const credits = creditsQ.data ?? [];
   const counts = useMemo(() => ({
     pending: rows.filter((w: any) => w.status === "pending").length,
     paid: rows.filter((w: any) => w.status === "paid").length,
     rejected: rows.filter((w: any) => w.status === "rejected").length,
-    admin: rows.filter((w: any) => w.status === "paid" && w.isAdminPayout).length,
+    admin: credits.length,
     all: rows.length,
-  }), [rows]);
+  }), [rows, credits]);
 
-  const adminPayoutSum = useMemo(() =>
-    rows.filter((w: any) => w.status === "paid" && w.isAdminPayout).reduce((a: number, w: any) => a + Number(w.amount), 0),
-  [rows]);
+  const adminCreditSum = useMemo(() =>
+    credits.reduce((a: number, c: any) => a + Number(c.amount), 0),
+  [credits]);
 
   const filtered = rows.filter((w: any) => {
     if (filter === "all") return true;
-    if (filter === "admin") return w.status === "paid" && w.isAdminPayout;
-    if (filter === "paid") return w.status === "paid";
+    if (filter === "admin") return false; // credits rendered separately
     return w.status === filter;
   });
 
@@ -68,16 +69,62 @@ function AdminWithdrawals() {
       </div>
 
       {filter === "admin" && (
-        <div className="glass rounded-xl p-3 border border-fuchsia-500/30 bg-fuchsia-500/5">
-          <div className="flex items-center gap-2 text-fuchsia-300">
-            <Gift className="w-4 h-4" />
-            <p className="text-xs font-bold">Admin Direct Payout History</p>
+        <>
+          <div className="glass rounded-xl p-3 border border-fuchsia-500/30 bg-fuchsia-500/5">
+            <div className="flex items-center gap-2 text-fuchsia-300">
+              <Gift className="w-4 h-4" />
+              <p className="text-xs font-bold">Admin থেকে user-কে দেওয়া balance</p>
+            </div>
+            <p className="mono-num font-black text-2xl mt-1">{adminCreditSum.toFixed(2)} ৳</p>
+            <p className="text-[10px] text-muted-foreground">{counts.admin} ক্রেডিট এন্ট্রি (Adjust Balance থেকে)</p>
           </div>
-          <p className="mono-num font-black text-2xl mt-1">{adminPayoutSum.toFixed(2)} ৳</p>
-          <p className="text-[10px] text-muted-foreground">{counts.admin} manual payouts</p>
-        </div>
+
+          <div className="space-y-2">
+            {credits.length === 0 && (
+              <p className="text-center text-xs text-muted-foreground py-6">
+                এখনো কোনো admin credit নেই। User details → Adjust Balance দিয়ে balance দিলে এখানে দেখাবে।
+              </p>
+            )}
+            {credits.map((c: any) => {
+              const isCredit = Number(c.amount) >= 0;
+              return (
+                <div key={c.id} className={`glass rounded-xl p-3 space-y-1.5 border-2 ${isCredit ? "border-emerald/40 bg-emerald/5" : "border-rose/40 bg-rose/5"}`}>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <p className={`mono-num font-black text-lg ${isCredit ? "text-emerald" : "text-rose"}`}>
+                        {isCredit ? "+" : ""}{Number(c.amount).toFixed(2)} TK
+                      </p>
+                      <Link
+                        to="/admin/user/$userId"
+                        params={{ userId: c.user_id }}
+                        className="text-[11px] font-bold truncate inline-flex items-center gap-1 hover:text-cyan"
+                      >
+                        {c.profiles?.display_name ?? "User"}
+                        {c.profiles?.uid_seq != null && (
+                          <span className="mono-num text-muted-foreground">· #{c.profiles.uid_seq}</span>
+                        )}
+                        <ExternalLink className="w-3 h-3 opacity-60" />
+                      </Link>
+                      {c.profiles?.phone_number && (
+                        <p className="text-[10px] text-muted-foreground mono-num">{c.profiles.phone_number}</p>
+                      )}
+                      <p className="text-[10px] text-muted-foreground mt-0.5">{new Date(c.created_at).toLocaleString()}</p>
+                    </div>
+                    <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${isCredit ? "bg-emerald text-background" : "bg-rose text-white"}`}>
+                      {isCredit ? <><Plus className="w-2.5 h-2.5 inline" /> CREDIT</> : <><Minus className="w-2.5 h-2.5 inline" /> DEBIT</>}
+                    </span>
+                  </div>
+                  {c.note && (
+                    <p className="text-[10px] text-muted-foreground italic bg-white/5 rounded px-2 py-1">📝 {c.note}</p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </>
       )}
 
+      {filter !== "admin" && (
       <div className="space-y-2">
         {filtered.length === 0 && <p className="text-center text-xs text-muted-foreground py-6">No records</p>}
         {filtered.map((w: any) => {
@@ -210,6 +257,7 @@ function AdminWithdrawals() {
           );
         })}
       </div>
+      )}
     </div>
   );
 }

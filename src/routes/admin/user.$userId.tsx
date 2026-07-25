@@ -18,6 +18,7 @@ function UserDetail() {
   });
 
   const [delta, setDelta] = useState("");
+  const [deltaNote, setDeltaNote] = useState("");
   const [newPass, setNewPass] = useState("");
   const [voucherAmt, setVoucherAmt] = useState("");
   const [voucherReason, setVoucherReason] = useState("");
@@ -69,8 +70,8 @@ function UserDetail() {
   });
 
   const adjust = useMutation({
-    mutationFn: (d: number) => adminAdjustBalance({ data: { userId, delta: d } }),
-    onSuccess: (r) => { toast.success(`New balance: ${r.new_balance.toFixed(2)} TK`); setDelta(""); refetch(); },
+    mutationFn: (d: number) => adminAdjustBalance({ data: { userId, delta: d, note: deltaNote.trim() || undefined } }),
+    onSuccess: (r) => { toast.success(`New balance: ${r.new_balance.toFixed(2)} TK`); setDelta(""); setDeltaNote(""); refetch(); },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -363,20 +364,28 @@ function UserDetail() {
           </div>
         )}
 
-        <div className="flex gap-2">
+        <div className="space-y-2">
+          <div className="flex gap-2">
+            <input
+              type="number" inputMode="decimal" value={delta} onChange={(e) => setDelta(e.target.value)}
+              placeholder="Amount (TK)"
+              className="flex-1 px-3 py-2 rounded-xl bg-surface-2 border border-border text-sm focus:outline-none focus:border-cyan"
+            />
+            <button onClick={() => adjust.mutate(Number(delta))} disabled={!delta}
+              className="px-3 py-2 rounded-xl bg-emerald/20 text-emerald font-bold text-xs flex items-center gap-1 disabled:opacity-50">
+              <Plus className="w-3 h-3" /> Add
+            </button>
+            <button onClick={() => adjust.mutate(-Number(delta))} disabled={!delta}
+              className="px-3 py-2 rounded-xl bg-rose/20 text-rose font-bold text-xs flex items-center gap-1 disabled:opacity-50">
+              <Minus className="w-3 h-3" /> Sub
+            </button>
+          </div>
           <input
-            type="number" inputMode="decimal" value={delta} onChange={(e) => setDelta(e.target.value)}
-            placeholder="Amount (TK)"
-            className="flex-1 px-3 py-2 rounded-xl bg-surface-2 border border-border text-sm focus:outline-none focus:border-cyan"
+            type="text" value={deltaNote} onChange={(e) => setDeltaNote(e.target.value)}
+            placeholder="Reason / note (optional)"
+            className="w-full px-3 py-2 rounded-xl bg-surface-2 border border-border text-xs focus:outline-none focus:border-cyan"
           />
-          <button onClick={() => adjust.mutate(Number(delta))} disabled={!delta}
-            className="px-3 py-2 rounded-xl bg-emerald/20 text-emerald font-bold text-xs flex items-center gap-1 disabled:opacity-50">
-            <Plus className="w-3 h-3" /> Add
-          </button>
-          <button onClick={() => adjust.mutate(-Number(delta))} disabled={!delta}
-            className="px-3 py-2 rounded-xl bg-rose/20 text-rose font-bold text-xs flex items-center gap-1 disabled:opacity-50">
-            <Minus className="w-3 h-3" /> Sub
-          </button>
+          <p className="text-[10px] text-muted-foreground">💡 Add = balance ক্রেডিট (Admin Payout history-তে দেখাবে)</p>
         </div>
       </div>
 
