@@ -251,24 +251,32 @@ function WithdrawPage() {
           {(history ?? []).map((w: any) => (
             <div key={w.id} className="glass rounded-xl p-3 flex items-start justify-between gap-2">
               <div className="min-w-0 flex-1 pr-2">
-                <p className="mono-num font-black">{Math.floor(Number(w.amount))} ৳</p>
-                <p className="text-[10px] text-muted-foreground">
-                  {new Date(w.created_at).toLocaleString()} • {w.provider === "bkash" ? "বিকাশ" : "নগদ"}
+                <p className="mono-num font-black" translate="no">{Math.floor(Number(w.amount))} ৳</p>
+                <p className="text-[10px] text-muted-foreground flex items-center gap-1" translate="no">
+                  <span>{new Date(w.created_at).toLocaleString()}</span>
+                  <span>•</span>
+                  <img
+                    src={w.provider === "bkash" ? bkashLogo : nagadLogo}
+                    alt={w.provider === "bkash" ? "bKash" : "Nagad"}
+                    className="h-3 w-auto object-contain inline-block"
+                    loading="lazy"
+                  />
                 </p>
                 <button
                   type="button"
                   onClick={() => { navigator.clipboard.writeText(w.wallet_number); toast.success("নম্বর কপি হয়েছে"); }}
-                  className="mt-1 inline-flex items-center gap-1 text-[10px] mono-num text-cyan hover:underline">
+                  className="mt-1 inline-flex items-center gap-1 text-[10px] mono-num text-cyan hover:underline"
+                  translate="no">
                   {w.wallet_number} <Copy className="w-2.5 h-2.5" />
                 </button>
                 {w.status === "rejected" && w.admin_note && (
                   <div className="mt-2 rounded-lg bg-rose/10 border border-rose/30 p-2 text-[11px] text-rose leading-snug">
-                    <p className="font-black text-[9px] uppercase tracking-widest">Admin এর কারণ</p>
-                    <p className="mt-0.5">{w.admin_note}</p>
+                    <p className="font-black text-[9px] uppercase tracking-widest" translate="no">Admin এর কারণ</p>
+                    <p className="mt-0.5" translate="no">{w.admin_note}</p>
                   </div>
                 )}
               </div>
-              <span className={`text-[10px] font-black px-2 py-1 rounded-full shrink-0 ${
+              <span translate="no" className={`text-[10px] font-black px-2 py-1 rounded-full shrink-0 ${
                 w.status === "paid" ? "bg-emerald/15 text-emerald" :
                 w.status === "rejected" ? "bg-rose/15 text-rose" :
                 "bg-amber/15 text-amber"
