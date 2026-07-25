@@ -224,8 +224,16 @@ function WithdrawPage() {
               className="w-full mt-2 px-4 py-3 mono-num bg-surface-2 border border-border rounded-xl text-lg font-black outline-none focus:border-rose" />
             <p className="text-[10px] text-muted-foreground mt-1">সর্বনিম্ন: {MIN_WITHDRAW_BDT}৳ · সর্বোচ্চ: {claimable}৳ (শুধু পূর্ণ টাকা)</p>
           </div>
-          <div className="bg-surface-2 rounded-xl p-3 text-[11px] space-y-1">
-            <p><span className="text-muted-foreground">পাঠানো হবে:</span> <span className="font-bold">{provider === "bkash" ? "বিকাশ" : "নগদ"}</span></p>
+          <div className="bg-surface-2 rounded-xl p-3 text-[11px] space-y-1" translate="no">
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground">পাঠানো হবে:</span>
+              <img
+                src={provider === "bkash" ? bkashLogo : nagadLogo}
+                alt={provider === "bkash" ? "bKash" : "Nagad"}
+                className="h-4 w-auto object-contain"
+                loading="lazy"
+              />
+            </div>
             <button type="button"
               onClick={() => { navigator.clipboard.writeText(chosenWallet.number); toast.success("নম্বর কপি হয়েছে"); }}
               className="w-full flex items-center justify-between gap-2 mono-num bg-background/60 rounded-lg px-2 py-1.5 hover:bg-background border border-transparent hover:border-cyan/40 transition">
