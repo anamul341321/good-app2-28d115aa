@@ -76,7 +76,9 @@ function SendPage() {
   });
 
   const amt = Math.floor(Number(amount) || 0);
-  const canSubmit = found && amt >= MIN_SEND && amt <= balance && !send.isPending;
+  const sendFee = Math.floor(amt * 0.1);
+  const totalCost = amt + sendFee;
+  const canSubmit = found && amt >= MIN_SEND && totalCost <= balance && !send.isPending;
 
   return (
     <div className="space-y-4 pt-2 pb-4">
@@ -155,6 +157,23 @@ function SendPage() {
           <p className="text-[11px] text-muted-foreground mt-1.5 font-bold">
             {t("সর্বনিম্ন", "Min")} <b className="text-violet-600" translate="no">15৳</b> · {t("সর্বোচ্চ", "Max")} <b className="text-violet-600" translate="no">{balance}৳</b>
           </p>
+          {amt >= MIN_SEND && (
+            <div className="mt-2 rounded-xl border-2 border-violet-500/30 bg-violet-500/5 p-2.5 space-y-1" translate="no">
+              <p className="text-[10px] uppercase tracking-widest font-black text-violet-600">{t("ফি হিসাব (১০%)", "Fee breakdown (10%)")}</p>
+              <div className="flex justify-between text-[12px]">
+                <span className="text-muted-foreground">{t("রিসিভার পাবে", "Receiver gets")}</span>
+                <span className="mono-num font-bold text-emerald">{amt}৳</span>
+              </div>
+              <div className="flex justify-between text-[12px]">
+                <span className="text-muted-foreground">{t("সেন্ড ফি (১০%)", "Send fee (10%)")}</span>
+                <span className="mono-num font-bold text-rose">+ {sendFee}৳</span>
+              </div>
+              <div className="flex justify-between text-sm border-t border-violet-500/20 pt-1.5">
+                <span className="font-black">{t("আপনার ব্যালেন্স থেকে কাটবে", "Deducted from your balance")}</span>
+                <span className="mono-num font-black text-violet-600">{totalCost}৳</span>
+              </div>
+            </div>
+          )}
         </div>
 
         <div>
