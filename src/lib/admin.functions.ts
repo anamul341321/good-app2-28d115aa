@@ -251,7 +251,7 @@ export const adminUserDetail = createServerFn({ method: "POST" })
         ...r,
          faceTotal: refFirstVerifySlots.get(r.id)?.size ?? 0,
          firstVerifies: refFirstVerifySlots.get(r.id)?.size ?? 0,
-        reverifies: refReverifies.get(r.id) ?? 0,
+        reverifies: refReverifySlots.get(r.id)?.size ?? 0,
       })).sort((a, b) => b.faceTotal - a.faceTotal || new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     }
 
