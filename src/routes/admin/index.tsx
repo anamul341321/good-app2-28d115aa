@@ -1,19 +1,29 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { adminStats, adminListWithdrawals } from "@/lib/admin.functions";
-import { Loader2, Users, ArrowDownToLine, ScanFace, Clock, AlertTriangle, TrendingUp, Wallet, CheckCircle2, ShieldCheck, Smartphone } from "lucide-react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { adminStats, adminListWithdrawals, adminListDebtClaims, adminResolveDebt } from "@/lib/admin.functions";
+import { Loader2, Users, ArrowDownToLine, ScanFace, Clock, AlertTriangle, TrendingUp, Wallet, CheckCircle2, ShieldCheck, Smartphone, HandCoins, Copy, CheckCheck } from "lucide-react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/")({ component: AdminDashboard });
 
 function AdminDashboard() {
   const { data: stats, isLoading } = useQuery({ queryKey: ["admin-stats"], queryFn: () => adminStats(), refetchInterval: 15_000 });
   const { data: withdrawals } = useQuery({ queryKey: ["admin-withdrawals"], queryFn: () => adminListWithdrawals() });
+  const claimsQ = useQuery({ queryKey: ["admin-debt-claims"], queryFn: () => adminListDebtClaims(), refetchInterval: 20_000 });
+
+  const resolveClaim = useMutation({
+    mutationFn: (debtId: string) => adminResolveDebt({ data: { debtId } }),
+    onSuccess: () => { toast.success("Warning সরানো হয়েছে"); claimsQ.refetch(); },
+    onError: (e: any) => toast.error(e.message),
+  });
 
   if (isLoading || !stats) {
     return <div className="py-10 flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-cyan" /></div>;
   }
 
   const pending = (withdrawals ?? []).filter((w: any) => w.status === "pending").slice(0, 3);
+  const claims = claimsQ.data ?? [];
+
 
   return (
     <div className="space-y-4">
