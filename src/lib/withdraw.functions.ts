@@ -112,7 +112,7 @@ export const requestWithdraw = createServerFn({ method: "POST" })
       amount: payout,
       provider: chosen,
       wallet_number: wallet.number,
-      admin_note: `[Fee 10%] Gross ${amount}৳ − Fee ${fee}৳ = Payout ${payout}৳`,
+      admin_note: `[Fee ${Math.round(feeRate * 100)}%] Gross ${amount}৳ − Fee ${fee}৳ = Payout ${payout}৳`,
     });
     if (wErr) throw new Error(wErr.message);
 
