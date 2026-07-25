@@ -13,6 +13,7 @@ export const sendBalance = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => SendInput.parse(input))
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const fee = Math.floor(data.amount * 0.1);
     const { data: res, error } = await supabaseAdmin.rpc("send_balance_transfer", {
       _sender: context.userId,
       _target: data.target,
@@ -22,8 +23,19 @@ export const sendBalance = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     const r = res as any;
     if (!r?.ok) throw new Error(r?.error ?? "পাঠানো যায়নি");
-    return r;
+
+    // Apply 10% platform fee on sender (extra debit beyond the transferred amount)
+    if (fee > 0) {
+      const { data: ms } = await supabaseAdmin
+        .from("mining_state").select("withdrawn_amount").eq("user_id", context.userId).maybeSingle();
+      const cur = Number((ms as any)?.withdrawn_amount ?? 0);
+      await supabaseAdmin.from("mining_state")
+        .update({ withdrawn_amount: cur + fee })
+        .eq("user_id", context.userId);
+    }
+    return { ...r, fee };
   });
+
 
 export const getMyTransfers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
