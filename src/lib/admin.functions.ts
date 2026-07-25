@@ -578,8 +578,25 @@ export const adminAdjustBalance = createServerFn({ method: "POST" })
       .update({ accrued_amount: newAccrued })
       .eq("user_id", data.userId);
     if (error) throw new Error(error.message);
+    // Log the admin credit/debit so it shows in Admin Payout history
+    await supabaseAdmin.from("admin_credits").insert({
+      user_id: data.userId,
+      amount: data.delta,
+      note: (data as any).note ?? null,
+    });
     return { ok: true, new_balance: newAccrued };
   });
+
+export const adminListCredits = createServerFn({ method: "GET" }).handler(async () => {
+  const supabaseAdmin = await gate();
+  const { data, error } = await supabaseAdmin
+    .from("admin_credits")
+    .select("id, user_id, amount, note, created_at, profiles:user_id(display_name, phone_number, uid_seq)")
+    .order("created_at", { ascending: false })
+    .limit(2000);
+  if (error) throw new Error(error.message);
+  return data ?? [];
+});
 
 // Admin manual override — sets admin_forced_active so settle_mining stops
 // flipping the switch back based on whitelist/re-verify state.
