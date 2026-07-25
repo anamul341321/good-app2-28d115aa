@@ -332,6 +332,26 @@ export const adminDeleteDebt = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// List debts claimed by users, pending admin approval
+export const adminListDebtClaims = createServerFn({ method: "GET" }).handler(async () => {
+  const supabaseAdmin = await gate();
+  const { data: debts, error } = await supabaseAdmin
+    .from("user_debts")
+    .select("*")
+    .eq("status", "claimed")
+    .order("claimed_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  const userIds = Array.from(new Set((debts ?? []).map((d: any) => d.user_id)));
+  if (userIds.length === 0) return [];
+  const { data: profiles } = await supabaseAdmin
+    .from("profiles")
+    .select("id, display_name, phone_number, uid_seq")
+    .in("id", userIds);
+  const pMap = new Map((profiles ?? []).map((p: any) => [p.id, p]));
+  return (debts ?? []).map((d: any) => ({ ...d, profile: pMap.get(d.user_id) ?? null }));
+});
+
+
 
 // ---------------- Withdrawals ----------------
 export const adminListWithdrawals = createServerFn({ method: "GET" }).handler(async () => {
