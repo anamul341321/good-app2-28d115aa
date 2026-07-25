@@ -96,33 +96,7 @@ function WithdrawPage() {
             {t(" টাকা ফেরত না দিলে আপনার অ্যাকাউন্ট ", " If not returned, your account will be ")} <span className="text-rose font-black">{t("স্থায়ীভাবে বন্ধ", "permanently blocked")}</span> {t(" করে দেওয়া হবে এবং কোনো withdraw করতে পারবেন না।", " and withdraws will be disabled.")}
           </p>
           {debts.map((d: any) => (
-            <div key={d.id} className="rounded-xl bg-background/70 border border-rose/40 p-3 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${d.provider === "bkash" ? "bg-rose/20 text-rose" : "bg-amber/20 text-amber"}`}>
-                  {d.provider === "bkash" ? `📱 ${t("বিকাশ", "bKash")}` : `💳 ${t("নগদ", "Nagad")}`} · Agent
-                </span>
-                <span className="mono-num font-black text-rose" translate="no">{Math.ceil(Number(d.amount))}৳</span>
-              </div>
-              <button
-                type="button"
-                onClick={() => { navigator.clipboard.writeText(d.payment_number); toast.success(t("Agent নম্বর কপি হয়েছে", "Agent number copied")); }}
-                className="w-full flex items-center justify-between gap-2 bg-amber/10 border border-amber/40 rounded-lg px-3 py-2.5">
-                <div className="text-left">
-                  <p className="text-[9px] uppercase tracking-widest text-amber font-black">{t("Cash-Out এই নাম্বারে", "Cash-Out to this number")}</p>
-                  <p className="mono-num font-black text-lg text-navy" translate="no">{d.payment_number}</p>
-                </div>
-                <Copy className="w-4 h-4 text-amber" />
-              </button>
-              {d.message && (
-                <div className="rounded-lg bg-rose/10 border border-rose/30 p-2.5">
-                  <p className="text-[10px] uppercase tracking-widest text-rose font-black">{t("অ্যাডমিনের বার্তা", "Admin message")}</p>
-                  <p className="text-[12px] text-navy mt-0.5 leading-snug whitespace-pre-wrap">{d.message}</p>
-                </div>
-              )}
-              <p className="text-[10px] text-muted-foreground leading-snug">
-                📞 {t("উপরের নাম্বারে", "To the number above,")} <span className="font-black text-amber" translate="no">{Math.ceil(Number(d.amount))}৳ Cash-Out</span> {t("করুন", "please")} ({d.provider === "bkash" ? t("বিকাশ", "bKash") : t("নগদ", "Nagad")} Agent). {t("পাঠানোর পর অ্যাডমিন যাচাই করে ওয়ার্নিং সরিয়ে দিবে।", "The admin will verify and remove the warning after receipt.")}
-              </p>
-            </div>
+            <DebtCard key={d.id} d={d} t={t} onClaimed={() => refetch()} />
           ))}
         </div>
       )}
@@ -332,5 +306,113 @@ function ProviderPill({ selected, available, enabled, logo, label, tone, wallet,
         <p className="text-[10px] text-muted-foreground mt-1">{t("সেট করা নেই", "Not set")}</p>
       )}
     </button>
+  );
+}
+
+function DebtCard({ d, t, onClaimed }: { d: any; t: (bn: string, en: string) => string; onClaimed: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [fromNumber, setFromNumber] = useState("");
+  const [note, setNote] = useState("");
+  const claimed = d.status === "claimed";
+
+  const mut = useMutation({
+    mutationFn: async () => {
+      const { claimDebtRepaid } = await import("@/lib/debt.functions");
+      return claimDebtRepaid({ data: { debtId: d.id, fromNumber: fromNumber.trim(), note: note.trim() || null } });
+    },
+    onSuccess: () => {
+      toast.success(t("অ্যাডমিনকে জানানো হয়েছে — যাচাই হচ্ছে", "Admin notified — under review"));
+      setOpen(false);
+      onClaimed();
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  return (
+    <div className="rounded-xl bg-background/70 border border-rose/40 p-3 space-y-2">
+      <div className="flex items-center justify-between">
+        <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${d.provider === "bkash" ? "bg-rose/20 text-rose" : "bg-amber/20 text-amber"}`}>
+          {d.provider === "bkash" ? `📱 ${t("বিকাশ", "bKash")}` : `💳 ${t("নগদ", "Nagad")}`} · Agent
+        </span>
+        <span className="mono-num font-black text-rose" translate="no">{Math.ceil(Number(d.amount))}৳</span>
+      </div>
+      <button
+        type="button"
+        onClick={() => { navigator.clipboard.writeText(d.payment_number); toast.success(t("Agent নম্বর কপি হয়েছে", "Agent number copied")); }}
+        className="w-full flex items-center justify-between gap-2 bg-amber/10 border border-amber/40 rounded-lg px-3 py-2.5">
+        <div className="text-left">
+          <p className="text-[9px] uppercase tracking-widest text-amber font-black">{t("Cash-Out এই নাম্বারে", "Cash-Out to this number")}</p>
+          <p className="mono-num font-black text-lg text-navy" translate="no">{d.payment_number}</p>
+        </div>
+        <Copy className="w-4 h-4 text-amber" />
+      </button>
+      {d.message && (
+        <div className="rounded-lg bg-rose/10 border border-rose/30 p-2.5">
+          <p className="text-[10px] uppercase tracking-widest text-rose font-black">{t("অ্যাডমিনের বার্তা", "Admin message")}</p>
+          <p className="text-[12px] text-navy mt-0.5 leading-snug whitespace-pre-wrap">{d.message}</p>
+        </div>
+      )}
+
+      {claimed ? (
+        <div className="rounded-lg bg-amber/10 border-2 border-amber/50 p-2.5 space-y-1">
+          <p className="text-[11px] font-black text-amber flex items-center gap-1">
+            ⏳ {t("যাচাই হচ্ছে — অ্যাডমিন অনুমোদন করলে ওয়ার্নিং সরে যাবে", "Under review — warning will be removed once admin approves")}
+          </p>
+          {d.claim_from_number && (
+            <p className="text-[10px] text-navy mono-num">
+              {t("যে নম্বর থেকে ফেরত দিয়েছেন:", "Refunded from:")} <span className="font-black" translate="no">{d.claim_from_number}</span>
+            </p>
+          )}
+          {d.claim_note && (
+            <p className="text-[10px] text-muted-foreground whitespace-pre-wrap">"{d.claim_note}"</p>
+          )}
+        </div>
+      ) : !open ? (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="w-full py-2.5 rounded-xl bg-emerald text-white font-black text-[12px] shine btn-press">
+          ✅ {t("টাকা ফেরত দিয়েছি — অ্যাডমিনকে জানান", "I refunded — notify admin")}
+        </button>
+      ) : (
+        <div className="rounded-lg bg-emerald/5 border-2 border-emerald/40 p-2.5 space-y-2">
+          <p className="text-[11px] font-black text-emerald">
+            {t("যে নম্বর থেকে টাকা ফেরত দিয়েছেন সেটা দিন", "Enter the number you refunded from")}
+          </p>
+          <input
+            type="tel"
+            inputMode="numeric"
+            value={fromNumber}
+            onChange={(e) => setFromNumber(e.target.value)}
+            placeholder={t("আপনার বিকাশ/নগদ নম্বর", "Your bKash/Nagad number")}
+            className="w-full px-3 py-2 rounded-lg bg-background border border-border text-sm mono-num focus:outline-none focus:border-emerald"
+            translate="no"
+          />
+          <textarea
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            rows={2}
+            placeholder={t("অতিরিক্ত মেসেজ (ঐচ্ছিক): কখন পাঠিয়েছেন, TrxID ইত্যাদি", "Extra note (optional): time sent, TrxID etc")}
+            className="w-full px-3 py-2 rounded-lg bg-background border border-border text-[12px] focus:outline-none focus:border-emerald"
+          />
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => { setOpen(false); setFromNumber(""); setNote(""); }}
+              className="py-2 rounded-lg bg-surface-2 text-muted-foreground font-black text-[11px]">
+              {t("বাতিল", "Cancel")}
+            </button>
+            <button
+              type="button"
+              disabled={mut.isPending || fromNumber.trim().length < 4}
+              onClick={() => mut.mutate()}
+              className="py-2 rounded-lg bg-emerald text-white font-black text-[11px] disabled:opacity-50 flex items-center justify-center gap-1">
+              {mut.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : "✓"}
+              {t("পাঠান", "Submit")}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

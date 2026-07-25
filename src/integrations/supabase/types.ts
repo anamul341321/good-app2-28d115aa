@@ -545,6 +545,9 @@ export type Database = {
       user_debts: {
         Row: {
           amount: number
+          claim_from_number: string | null
+          claim_note: string | null
+          claimed_at: string | null
           created_at: string
           id: string
           message: string | null
@@ -556,6 +559,9 @@ export type Database = {
         }
         Insert: {
           amount: number
+          claim_from_number?: string | null
+          claim_note?: string | null
+          claimed_at?: string | null
           created_at?: string
           id?: string
           message?: string | null
@@ -567,6 +573,9 @@ export type Database = {
         }
         Update: {
           amount?: number
+          claim_from_number?: string | null
+          claim_note?: string | null
+          claimed_at?: string | null
           created_at?: string
           id?: string
           message?: string | null
