@@ -195,7 +195,7 @@ export const adminUserDetail = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => z.object({ userId: z.string().uuid() }).parse(i))
   .handler(async ({ data }) => {
     const supabaseAdmin = await gate();
-    const [profile, tasks, mining, wallets, withdrawals, unverified, referrals, debts] = await Promise.all([
+    const [profile, tasks, mining, wallets, withdrawals, unverified, referrals, debts, vouchersAll, creditsAll, rechargesAll, transfersIn, transfersOut] = await Promise.all([
       supabaseAdmin.from("profiles").select("*").eq("id", data.userId).maybeSingle(),
       supabaseAdmin.from("tasks").select("*").eq("user_id", data.userId).order("slot"),
       supabaseAdmin.from("mining_state").select("*").eq("user_id", data.userId).maybeSingle(),
@@ -204,6 +204,11 @@ export const adminUserDetail = createServerFn({ method: "POST" })
       supabaseAdmin.from("unverified_attempts").select("*").eq("user_id", data.userId).order("created_at", { ascending: false }),
       supabaseAdmin.from("profiles").select("id, display_name, phone_number, email, created_at").eq("referred_by", data.userId).order("created_at", { ascending: false }),
       supabaseAdmin.from("user_debts").select("*").eq("user_id", data.userId).order("created_at", { ascending: false }),
+      supabaseAdmin.from("bonus_vouchers").select("id, amount, reason, status, created_at, claimed_at").eq("user_id", data.userId).order("created_at", { ascending: false }),
+      supabaseAdmin.from("admin_credits").select("id, amount, note, created_at").eq("user_id", data.userId).order("created_at", { ascending: false }),
+      supabaseAdmin.from("recharges").select("id, amount, mobile, operator, status, created_at").eq("user_id", data.userId).order("created_at", { ascending: false }),
+      supabaseAdmin.from("transfers").select("id, amount, note, sender_id, created_at").eq("receiver_id", data.userId).order("created_at", { ascending: false }),
+      supabaseAdmin.from("transfers").select("id, amount, note, receiver_id, created_at").eq("sender_id", data.userId).order("created_at", { ascending: false }),
     ]);
 
     const taskRows = await Promise.all((tasks.data ?? []).map(async (t) => {
@@ -292,6 +297,22 @@ export const adminUserDetail = createServerFn({ method: "POST" })
       },
       debts: debts.data ?? [],
       debtTotal: (debts.data ?? []).filter((d: any) => d.status === "active").reduce((s: number, d: any) => s + Number(d.amount), 0),
+      income: {
+        vouchers: vouchersAll.data ?? [],
+        adminCredits: creditsAll.data ?? [],
+        recharges: rechargesAll.data ?? [],
+        transfersIn: transfersIn.data ?? [],
+        transfersOut: transfersOut.data ?? [],
+        totals: {
+          vouchersClaimed: (vouchersAll.data ?? []).filter((v: any) => v.status === "claimed").reduce((s: number, v: any) => s + Number(v.amount), 0),
+          adminCreditsPositive: (creditsAll.data ?? []).filter((c: any) => Number(c.amount) > 0).reduce((s: number, c: any) => s + Number(c.amount), 0),
+          adminCreditsNegative: (creditsAll.data ?? []).filter((c: any) => Number(c.amount) < 0).reduce((s: number, c: any) => s + Number(c.amount), 0),
+          rechargesSuccess: (rechargesAll.data ?? []).filter((r: any) => r.status === "success").reduce((s: number, r: any) => s + Number(r.amount), 0),
+          transfersInTotal: (transfersIn.data ?? []).reduce((s: number, t: any) => s + Number(t.amount), 0),
+          transfersOutTotal: (transfersOut.data ?? []).reduce((s: number, t: any) => s + Number(t.amount), 0),
+          withdrawalsPaid: (withdrawals.data ?? []).filter((w: any) => w.status === "paid").reduce((s: number, w: any) => s + Number(w.amount), 0),
+        },
+      },
     };
   });
 

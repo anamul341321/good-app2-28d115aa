@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { adminUserDetail, adminAdjustBalance, adminToggleMining, adminResetTask, adminমুছুনUser, adminResetUserPassword, adminClearMiningOverride, adminCreateVoucher, adminListVouchersForUser, adminSetReferralUnlock, adminResetWallet, adminMarkAsReverified, adminAddDebt, adminResolveDebt, adminDeleteDebt, adminDirectPayout } from "@/lib/admin.functions";
-import { ArrowLeft, Loader2, Power, Plus, Minus, RefreshCw, Trash2, Copy, KeyRound, Gift, ScanFace, Share2, Lock, Unlock, Wallet, CheckCircle2, AlertTriangle, CheckCheck, Send } from "lucide-react";
+import { ArrowLeft, Loader2, Power, Plus, Minus, RefreshCw, Trash2, Copy, KeyRound, Gift, ScanFace, Share2, Lock, Unlock, Wallet, CheckCircle2, AlertTriangle, CheckCheck, Send, TrendingUp } from "lucide-react";
 import { computeLiveBalance } from "@/lib/mining";
 import { toast } from "sonner";
 import { useState } from "react";
@@ -795,6 +795,60 @@ function UserDetail() {
         )}
       </div>
 
+      {/* Full income / balance sources */}
+      {data.income && (
+        <div className="glass rounded-2xl p-4 space-y-3 border border-cyan/30">
+          <div className="flex items-center gap-2">
+            <TrendingUp className="w-4 h-4 text-cyan" />
+            <p className="text-[10px] uppercase tracking-widest text-cyan font-black">আয়ের উৎস (Income sources)</p>
+          </div>
+          <p className="text-[10px] text-muted-foreground">
+            এই user এর ব্যালেন্স কোথা থেকে এসেছে তার সম্পূর্ণ হিসাব ↓
+          </p>
+
+          {/* Totals grid */}
+          <div className="grid grid-cols-2 gap-2 text-[10px]">
+            <SumRow label="⛏ Mining accrued" value={Number(data.mining?.accrued_amount ?? 0)} color="cyan" />
+            <SumRow label="🎁 Voucher claimed" value={data.income.totals.vouchersClaimed} color="amber" />
+            <SumRow label="➕ Admin credit" value={data.income.totals.adminCreditsPositive} color="emerald" />
+            {data.income.totals.adminCreditsNegative < 0 && (
+              <SumRow label="➖ Admin কাটা" value={data.income.totals.adminCreditsNegative} color="rose" />
+            )}
+            <SumRow label="📥 Received transfer" value={data.income.totals.transfersInTotal} color="violet" />
+            <SumRow label="📤 Sent transfer" value={-data.income.totals.transfersOutTotal} color="rose" />
+            <SumRow label="📱 Recharge (paid)" value={-data.income.totals.rechargesSuccess} color="rose" />
+            <SumRow label="💸 Withdrawn (paid)" value={-data.income.totals.withdrawalsPaid} color="rose" />
+          </div>
+
+          {/* Ledger */}
+          <div className="pt-2 border-t border-border space-y-1.5 max-h-96 overflow-y-auto">
+            {(() => {
+              const rows: any[] = [];
+              for (const v of data.income.vouchers) rows.push({ t: "voucher", ...v, amt: Number(v.amount), label: `🎁 Voucher · ${v.status}`, note: v.reason });
+              for (const c of data.income.adminCredits) rows.push({ t: "credit", ...c, amt: Number(c.amount), label: Number(c.amount) >= 0 ? "➕ Admin balance দিয়েছে" : "➖ Admin balance কেটেছে", note: c.note });
+              for (const r of data.income.recharges) rows.push({ t: "recharge", ...r, amt: -Number(r.amount), label: `📱 Recharge · ${r.operator ?? ""} · ${r.status}`, note: r.mobile });
+              for (const tr of data.income.transfersIn) rows.push({ t: "in", ...tr, amt: Number(tr.amount), label: "📥 Transfer এসেছে", note: tr.note });
+              for (const tr of data.income.transfersOut) rows.push({ t: "out", ...tr, amt: -Number(tr.amount), label: "📤 Transfer পাঠিয়েছে", note: tr.note });
+              rows.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+              if (rows.length === 0) return <p className="text-[11px] text-muted-foreground">এই user এর এখনো voucher / admin credit / recharge / transfer history নেই — সব ব্যালেন্স mining থেকে এসেছে।</p>;
+              return rows.map((r) => (
+                <div key={`${r.t}-${r.id}`} className="flex items-start justify-between gap-2 bg-surface-2 rounded-lg px-2 py-1.5">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[11px] font-bold">{r.label}</p>
+                    {r.note && <p className="text-[9px] text-muted-foreground truncate">{r.note}</p>}
+                    <p className="text-[9px] text-muted-foreground">{new Date(r.created_at).toLocaleString()}</p>
+                  </div>
+                  <p className={`mono-num font-black text-[12px] shrink-0 ${r.amt >= 0 ? "text-emerald" : "text-rose"}`}>
+                    {r.amt >= 0 ? "+" : ""}{r.amt.toFixed(2)}৳
+                  </p>
+                </div>
+              ));
+            })()}
+          </div>
+        </div>
+      )}
+
+
 
       {/* Bonus Voucher */}
       <div className="glass rounded-2xl p-4 space-y-3 border border-amber/30">
@@ -855,6 +909,15 @@ function UserDetail() {
         className="w-full py-2.5 rounded-xl bg-rose/20 text-rose font-black text-xs flex items-center justify-center gap-2 border border-rose/30">
         <Trash2 className="w-3.5 h-3.5" /> মুছুন user permanently
       </button>
+    </div>
+  );
+}
+
+function SumRow({ label, value, color }: { label: string; value: number; color: string }) {
+  return (
+    <div className="bg-surface-2 rounded-lg px-2 py-1.5">
+      <p className="text-[9px] text-muted-foreground">{label}</p>
+      <p className={`mono-num font-black text-[13px] text-${color}`}>{value >= 0 ? "+" : ""}{value.toFixed(2)}৳</p>
     </div>
   );
 }

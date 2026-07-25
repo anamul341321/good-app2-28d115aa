@@ -29,9 +29,12 @@ function AdminDashboard() {
     <div className="space-y-4">
       {/* Money panel */}
       <div className="grid grid-cols-2 gap-3">
-        <BigStat label="Total Accrued" value={stats.mining.totalAccrued.toFixed(2)} unit="TK" accent="cyan" icon={<TrendingUp className="w-4 h-4" />} />
-        <BigStat label="Total Paid Out" value={stats.mining.totalWithdrawn.toFixed(2)} unit="TK" accent="emerald" icon={<CheckCircle2 className="w-4 h-4" />} />
+        <BigStat label="মোট মাইনিং জমা" value={stats.mining.totalAccrued.toFixed(2)} unit="TK" accent="cyan" icon={<TrendingUp className="w-4 h-4" />} />
+        <BigStat label="মোট Paid Out" value={stats.mining.totalWithdrawn.toFixed(2)} unit="TK" accent="emerald" icon={<CheckCircle2 className="w-4 h-4" />} />
       </div>
+      <p className="text-[10px] text-muted-foreground -mt-2 px-1">
+        💡 <b>মোট মাইনিং জমা</b> = সব user-এর mining accrued_amount-এর যোগফল (bonus + mining earning মিলিয়ে যা তাদের ব্যালেন্সে জমা হয়েছে, withdraw করার আগে)।
+      </p>
 
       {/* Paid report link */}
       <Link to="/admin/paid-report" className="block glass rounded-2xl p-4 border border-emerald/40 hover:border-emerald transition">
