@@ -284,15 +284,18 @@ function ReferrerLeaderboard({ rows, q }: { rows: any[]; q: string }) {
               </p>
               <div className="flex flex-wrap gap-1 mt-1.5">
                 <span className="px-2 py-0.5 rounded-full bg-cyan/15 text-cyan font-black text-[10px] mono-num">
-                  👥 {r.refereeCount} জন রেজিস্টার
+                  👥 {r.refereeCount} রেফার
                 </span>
                 <span className="px-2 py-0.5 rounded-full bg-emerald/15 text-emerald font-black text-[10px] mono-num">
-                  ✅ original face {r.totalFirstVerifies}
+                  ✅ রেফারিদের ১ম ফেস {r.totalFirstVerifies}
                 </span>
                 <span className="px-2 py-0.5 rounded-full bg-violet/15 text-violet font-black text-[10px] mono-num">
-                  🔁 re-verify {r.totalReverifies ?? 0}
+                  🔁 রেফারিদের রি-ভেরিফাই {r.totalReverifies ?? 0}
                 </span>
               </div>
+              <p className="text-[9px] text-muted-foreground mt-1 leading-tight">
+                * এগুলো এই রেফারারের অধীনে থাকা সব ইউজারের মোট গণনা (aggregate) — ইউজার নিজে করেনি।
+              </p>
 
             </div>
             <ChevronRight className="w-4 h-4 text-muted-foreground" />
