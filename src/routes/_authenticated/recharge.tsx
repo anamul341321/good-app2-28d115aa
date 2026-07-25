@@ -4,8 +4,9 @@ import { useState } from "react";
 import { submitRecharge, getMyRecharges } from "@/lib/recharge.functions";
 import { getDashboard } from "@/lib/dashboard.functions";
 import { computeLiveBalance } from "@/lib/mining";
-import { Loader2, Smartphone, ShieldCheck, CheckCircle2, XCircle, ArrowLeft, Sparkles, Zap } from "lucide-react";
+import { Loader2, Smartphone, CheckCircle2, XCircle, ArrowLeft, Sparkles, Zap } from "lucide-react";
 import { toast } from "sonner";
+import { useLang } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated/recharge")({ component: RechargePage });
 
@@ -20,20 +21,22 @@ const OPERATORS: Array<{ id: string; label: string; color: string }> = [
 
 function BackBar() {
   const router = useRouter();
+  const { t } = useLang();
   return (
     <div className="flex items-center justify-between -mt-1 mb-1">
       <button
         onClick={() => (window.history.length > 1 ? router.history.back() : router.navigate({ to: "/home" }))}
         className="btn-press inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-2 border border-border text-xs font-black text-navy"
       >
-        <ArrowLeft className="w-3.5 h-3.5" /> পিছনে
+        <ArrowLeft className="w-3.5 h-3.5" /> {t("পিছনে", "Back")}
       </button>
-      <Link to="/home" className="text-[11px] font-black text-cyan-600">🏠 হোম</Link>
+      <Link to="/home" className="text-[11px] font-black text-cyan-600">🏠 {t("হোম", "Home")}</Link>
     </div>
   );
 }
 
 function RechargePage() {
+  const { t } = useLang();
   const { data: dash, refetch } = useQuery({ queryKey: ["dashboard"], queryFn: () => getDashboard() });
   const { data: history, refetch: refetchHist } = useQuery({ queryKey: ["my-recharges"], queryFn: () => getMyRecharges() });
 
@@ -42,7 +45,6 @@ function RechargePage() {
   const [connType, setConnType] = useState<"prepaid" | "postpaid">("prepaid");
   const [amount, setAmount] = useState("");
 
-  // KYC no longer required for recharge — anyone with balance can recharge
   const mining = dash?.mining;
   const debtTotal = Number((dash as any)?.debtTotal ?? 0);
   const balance = mining ? Math.floor(computeLiveBalance({
@@ -61,12 +63,12 @@ function RechargePage() {
       amount: Math.floor(Number(amount) || 0),
     } }),
     onSuccess: (r: any) => {
-      if (r.ok) toast.success(`✅ রিচার্জ সফল! Trx: ${r.transaction_id ?? "—"}`);
-      else toast.error(`❌ রিচার্জ ব্যর্থ: ${r.message}`);
+      if (r.ok) toast.success(t(`✅ রিচার্জ সফল! Trx: ${r.transaction_id ?? "—"}`, `✅ Recharge successful! Trx: ${r.transaction_id ?? "—"}`));
+      else toast.error(t(`❌ রিচার্জ ব্যর্থ: ${r.message}`, `❌ Recharge failed: ${r.message}`));
       setMobile(""); setAmount(""); setOperator("");
       refetch(); refetchHist();
     },
-    onError: (e: any) => toast.error(e.message ?? "রিচার্জ ব্যর্থ"),
+    onError: (e: any) => toast.error(e.message ?? t("রিচার্জ ব্যর্থ", "Recharge failed")),
   });
 
   const rechargeOn = (dash as any)?.payoutSettings?.rechargeEnabled !== false;
@@ -80,16 +82,14 @@ function RechargePage() {
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-rose/15 text-rose">
             <XCircle className="w-6 h-6" />
           </div>
-          <h1 className="text-xl font-black">মোবাইল রিচার্জ সাময়িক বন্ধ</h1>
+          <h1 className="text-xl font-black">{t("মোবাইল রিচার্জ সাময়িক বন্ধ", "Mobile recharge is temporarily off")}</h1>
           <p className="text-sm text-muted-foreground max-w-xs mx-auto leading-snug">
-            {rechargeOffMsg ?? "এই মুহূর্তে recharge সেবা বন্ধ রাখা হয়েছে। কিছুক্ষণ পর আবার চেষ্টা করুন।"}
+            {rechargeOffMsg ?? t("এই মুহূর্তে recharge সেবা বন্ধ রাখা হয়েছে। কিছুক্ষণ পর আবার চেষ্টা করুন।", "Recharge is disabled right now. Please try again in a bit.")}
           </p>
         </div>
       </div>
     );
   }
-
-  // (KYC gate removed — all users can recharge)
 
   const amt = Math.floor(Number(amount) || 0);
   const mob = mobile.replace(/\D/g, "");
@@ -100,7 +100,6 @@ function RechargePage() {
     <div className="space-y-4 pt-2 pb-4">
       <BackBar />
 
-      {/* Premium hero balance card */}
       <div className="relative overflow-hidden rounded-3xl p-5 text-white shadow-2xl"
            style={{ background: "linear-gradient(135deg,#0ea5e9 0%,#06b6d4 35%,#10b981 70%,#22c55e 100%)" }}>
         <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/10 blur-2xl" />
@@ -111,27 +110,26 @@ function RechargePage() {
               <Smartphone className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-[10px] uppercase tracking-widest opacity-90 font-black leading-none">মোবাইল রিচার্জ</p>
-              <p className="text-[10px] opacity-80 mt-0.5">ইনস্ট্যান্ট · সব অপারেটর</p>
+              <p className="text-[10px] uppercase tracking-widest opacity-90 font-black leading-none">{t("মোবাইল রিচার্জ", "Mobile Recharge")}</p>
+              <p className="text-[10px] opacity-80 mt-0.5">{t("ইনস্ট্যান্ট · সব অপারেটর", "Instant · All operators")}</p>
             </div>
             <div className="ml-auto flex items-center gap-1 px-2 py-1 rounded-full bg-white/20 backdrop-blur text-[9px] font-black">
               <Zap className="w-3 h-3" /> LIVE
             </div>
           </div>
-          <p className="text-[10px] uppercase tracking-widest opacity-90 font-black">উপলব্ধ ব্যালেন্স</p>
-          <p className="mono-num text-5xl font-black leading-none mt-1 drop-shadow-lg">
+          <p className="text-[10px] uppercase tracking-widest opacity-90 font-black">{t("উপলব্ধ ব্যালেন্স", "Available Balance")}</p>
+          <p className="mono-num text-5xl font-black leading-none mt-1 drop-shadow-lg" translate="no">
             {balance}<span className="text-2xl ml-0.5">৳</span>
           </p>
           <p className="text-[10px] opacity-90 mt-2 flex items-center gap-1">
-            <Sparkles className="w-3 h-3" /> মিনিমাম {MIN_RECHARGE}৳ থেকে রিচার্জ · সাথে সাথে টাকা যাবে
+            <Sparkles className="w-3 h-3" /> {t(`মিনিমাম ${MIN_RECHARGE}৳ থেকে রিচার্জ · সাথে সাথে টাকা যাবে`, `Recharge from ${MIN_RECHARGE}৳ · instant delivery`)}
           </p>
         </div>
       </div>
 
-      {/* Form card */}
       <div className="glass rounded-3xl p-4 space-y-4 border border-cyan-500/20 shadow-lg">
         <div>
-          <label className="text-[10px] uppercase tracking-widest text-muted-foreground font-black">মোবাইল নম্বর</label>
+          <label className="text-[10px] uppercase tracking-widest text-muted-foreground font-black">{t("মোবাইল নম্বর", "Mobile number")}</label>
           <div className="relative mt-1.5">
             <input type="tel" value={mobile} onChange={(e) => setMobile(e.target.value.replace(/\D/g, "").slice(0, 11))}
               placeholder="01XXXXXXXXX"
@@ -146,7 +144,7 @@ function RechargePage() {
         </div>
 
         <div>
-          <label className="text-[10px] uppercase tracking-widest text-muted-foreground font-black">অপারেটর</label>
+          <label className="text-[10px] uppercase tracking-widest text-muted-foreground font-black">{t("অপারেটর", "Operator")}</label>
           <div className="grid grid-cols-5 gap-1.5 mt-1.5">
             {OPERATORS.map((op) => (
               <button key={op.id} type="button" onClick={() => setOperator(op.id)}
@@ -159,7 +157,7 @@ function RechargePage() {
         </div>
 
         <div>
-          <label className="text-[10px] uppercase tracking-widest text-muted-foreground font-black">কানেকশন</label>
+          <label className="text-[10px] uppercase tracking-widest text-muted-foreground font-black">{t("কানেকশন", "Connection")}</label>
           <div className="grid grid-cols-2 gap-2 mt-1.5">
             <button type="button" onClick={() => setConnType("prepaid")}
               className={`rounded-2xl py-2.5 font-black text-sm border-2 transition btn-press ${connType === "prepaid" ? "bg-gradient-to-r from-cyan-500 to-emerald-500 text-white border-transparent shadow-lg" : "bg-surface-2 border-border"}`}>Prepaid</button>
@@ -169,15 +167,16 @@ function RechargePage() {
         </div>
 
         <div>
-          <label className="text-[10px] uppercase tracking-widest text-muted-foreground font-black">পরিমাণ (৳)</label>
+          <label className="text-[10px] uppercase tracking-widest text-muted-foreground font-black">{t("পরিমাণ (৳)", "Amount (৳)")}</label>
           <input type="number" min={MIN_RECHARGE} value={amount}
             onChange={(e) => setAmount(e.target.value.replace(/\D/g, ""))}
-            placeholder={`সর্বনিম্ন ${MIN_RECHARGE}৳`}
+            placeholder={t(`সর্বনিম্ন ${MIN_RECHARGE}৳`, `Minimum ${MIN_RECHARGE}৳`)}
             className="w-full mt-1.5 px-4 py-3.5 mono-num bg-surface-2 border-2 border-border rounded-2xl text-lg font-black outline-none focus:border-cyan-500 transition" />
           <div className="grid grid-cols-5 gap-1.5 mt-2">
             {[20, 50, 100, 200, 500].map((v) => (
               <button key={v} type="button" onClick={() => setAmount(String(v))}
-                className={`rounded-xl py-2 text-[11px] font-black border-2 btn-press transition ${amount === String(v) ? "bg-cyan-500 text-white border-cyan-500 shadow-md" : "bg-cyan-500/5 text-cyan-600 border-cyan-500/25 hover:bg-cyan-500/10"}`}>
+                className={`rounded-xl py-2 text-[11px] font-black border-2 btn-press transition ${amount === String(v) ? "bg-cyan-500 text-white border-cyan-500 shadow-md" : "bg-cyan-500/5 text-cyan-600 border-cyan-500/25 hover:bg-cyan-500/10"}`}
+                translate="no">
                 {v}৳
               </button>
             ))}
@@ -188,16 +187,16 @@ function RechargePage() {
           className="w-full py-4 rounded-2xl font-black text-base flex items-center justify-center gap-2 disabled:opacity-50 btn-press text-white shadow-xl transition"
           style={{ background: canSubmit ? "linear-gradient(135deg,#7c3aed,#06b6d4,#10b981)" : "linear-gradient(135deg,#94a3b8,#64748b)" }}>
           {mut.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Zap className="w-5 h-5" />}
-          {amt >= MIN_RECHARGE ? `${amt}৳ রিচার্জ করুন` : "রিচার্জ করুন"}
+          {amt >= MIN_RECHARGE ? t(`${amt}৳ রিচার্জ করুন`, `Recharge ${amt}৳`) : t("রিচার্জ করুন", "Recharge")}
         </button>
       </div>
 
       <div>
-        <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-black px-1 mb-2">ইতিহাস</p>
+        <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-black px-1 mb-2">{t("ইতিহাস", "History")}</p>
         {(history ?? []).length === 0 && (
           <div className="glass rounded-2xl p-6 text-center">
             <Smartphone className="w-8 h-8 text-muted-foreground/40 mx-auto mb-2" />
-            <p className="text-xs text-muted-foreground">এখনো কোনো রিচার্জ করা হয়নি</p>
+            <p className="text-xs text-muted-foreground">{t("এখনো কোনো রিচার্জ করা হয়নি", "No recharges yet")}</p>
           </div>
         )}
         <div className="space-y-2">
@@ -207,12 +206,12 @@ function RechargePage() {
                 {r.status === "success" ? <CheckCircle2 className="w-5 h-5" /> : r.status === "failed" ? <XCircle className="w-5 h-5" /> : <Loader2 className="w-5 h-5 animate-spin" />}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="font-black text-sm mono-num">{r.mobile} <span className="text-[10px] text-muted-foreground uppercase ml-1">{r.operator}</span></p>
-                <p className="text-[10px] text-muted-foreground">{new Date(r.created_at).toLocaleString()} · {r.connection_type}</p>
+                <p className="font-black text-sm mono-num" translate="no">{r.mobile} <span className="text-[10px] text-muted-foreground uppercase ml-1">{r.operator}</span></p>
+                <p className="text-[10px] text-muted-foreground" translate="no">{new Date(r.created_at).toLocaleString()} · {r.connection_type}</p>
                 {r.status === "failed" && r.error_message && <p className="text-[10px] text-rose mt-0.5 truncate">{r.error_message}</p>}
-                {r.provider_ref && <p className="text-[10px] text-emerald mono-num truncate">Trx: {r.provider_ref}</p>}
+                {r.provider_ref && <p className="text-[10px] text-emerald mono-num truncate" translate="no">Trx: {r.provider_ref}</p>}
               </div>
-              <p className="mono-num font-black text-navy shrink-0">{Math.floor(Number(r.amount))}৳</p>
+              <p className="mono-num font-black text-navy shrink-0" translate="no">{Math.floor(Number(r.amount))}৳</p>
             </div>
           ))}
         </div>
