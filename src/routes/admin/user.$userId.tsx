@@ -13,8 +13,10 @@ function UserDetail() {
 
   const { userId } = Route.useParams();
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ["admin-user", userId],
+    queryKey: ["admin-user", "original-first-verifies-v2", userId],
     queryFn: () => adminUserDetail({ data: { userId } }),
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 
   const [delta, setDelta] = useState("");
@@ -668,8 +670,8 @@ function UserDetail() {
                   <p className="text-[9px] text-muted-foreground mono-num truncate">{r.phone_number ?? r.email}</p>
                 </div>
                 <div className="text-right shrink-0">
-                  <p className="mono-num text-sm font-black text-cyan">{r.firstVerifies ?? r.faceTotal}</p>
-                  <p className="text-[8px] text-muted-foreground uppercase">সফল verify</p>
+                  <p className="mono-num text-sm font-black text-cyan">{r.firstVerifies}</p>
+                  <p className="text-[8px] text-muted-foreground uppercase">original first verify</p>
                   <p className="mono-num text-[9px] font-black text-violet">🔁 {r.reverifies ?? 0}</p>
                 </div>
               </Link>

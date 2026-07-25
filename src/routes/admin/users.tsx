@@ -10,8 +10,8 @@ import { useState } from "react";
 export const Route = createFileRoute("/admin/users")({ component: AdminUsers });
 
 function AdminUsers() {
-  const { data, isLoading, refetch } = useQuery({ queryKey: ["admin-users"], queryFn: () => adminListUsers() });
-  const { data: refLeaders } = useQuery({ queryKey: ["admin-ref-leaderboard"], queryFn: () => adminReferrerLeaderboard() });
+  const { data, isLoading, refetch } = useQuery({ queryKey: ["admin-users", "original-first-verifies-v2"], queryFn: () => adminListUsers(), staleTime: 0, refetchOnMount: "always" });
+  const { data: refLeaders } = useQuery({ queryKey: ["admin-ref-leaderboard", "original-first-verifies-v2"], queryFn: () => adminReferrerLeaderboard(), staleTime: 0, refetchOnMount: "always" });
   const [q, setQ] = useState("");
   const [tab, setTab] = useState<"verifiers" | "referrers" | "all">("verifiers");
   const del = useMutation({
@@ -287,7 +287,7 @@ function ReferrerLeaderboard({ rows, q }: { rows: any[]; q: string }) {
                   👥 {r.refereeCount} জন রেজিস্টার
                 </span>
                 <span className="px-2 py-0.5 rounded-full bg-emerald/15 text-emerald font-black text-[10px] mono-num">
-                  ✅ সফল face {r.totalFirstVerifies ?? r.totalVerifies}
+                  ✅ original face {r.totalFirstVerifies}
                 </span>
                 <span className="px-2 py-0.5 rounded-full bg-violet/15 text-violet font-black text-[10px] mono-num">
                   🔁 re-verify {r.totalReverifies ?? 0}

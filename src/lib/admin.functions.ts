@@ -150,10 +150,12 @@ export const adminListUsers = createServerFn({ method: "GET" }).handler(async ()
     attemptFacesByUser.set(a.user_id, (attemptFacesByUser.get(a.user_id) ?? 0) + 1);
   }
 
-  const firstVerifiesByUser = new Map<string, number>();
+  const firstVerifySlotsByUser = new Map<string, Set<number>>();
   for (const t of tasks ?? []) {
     if (t.initial_verify_at) {
-      firstVerifiesByUser.set(t.user_id, (firstVerifiesByUser.get(t.user_id) ?? 0) + 1);
+      const slots = firstVerifySlotsByUser.get(t.user_id) ?? new Set<number>();
+      slots.add(Number(t.slot));
+      firstVerifySlotsByUser.set(t.user_id, slots);
     }
   }
 
@@ -167,10 +169,10 @@ export const adminListUsers = createServerFn({ method: "GET" }).handler(async ()
     // Leaderboards count only successful GoodDollar first-verifications.
     // Generated/failed backup attempts are kept for recovery, but must not
     // inflate a user's successful face count.
-    const faceTotal = firstVerifiesByUser.get(p.id) ?? 0;
+    const faceTotal = firstVerifySlotsByUser.get(p.id)?.size ?? 0;
     const slotFaces = slotFacesByUser.get(p.id) ?? 0;
     const attemptFaces = attemptFacesByUser.get(p.id) ?? 0;
-    const firstVerifies = firstVerifiesByUser.get(p.id) ?? 0;
+    const firstVerifies = faceTotal;
     const referralUnlocked = (p as any).referral_unlock_override === true
       || firstVerifies >= REFERRAL_UNLOCK_THRESHOLD;
     return {
@@ -230,12 +232,14 @@ export const adminUserDetail = createServerFn({ method: "POST" })
         }
         return rows;
       };
-      const refTasks = await fetchReferralRows("tasks", "id, user_id, status, wallet_address, initial_verify_at, reverify_count");
-      const refFirstVerifies = new Map<string, number>();
+       const refTasks = await fetchReferralRows("tasks", "id, user_id, slot, status, wallet_address, initial_verify_at, reverify_count");
+       const refFirstVerifySlots = new Map<string, Set<number>>();
       const refReverifies = new Map<string, number>();
       for (const t of refTasks ?? []) {
-        if (t.initial_verify_at) {
-          refFirstVerifies.set(t.user_id, (refFirstVerifies.get(t.user_id) ?? 0) + 1);
+         if (t.initial_verify_at) {
+           const slots = refFirstVerifySlots.get(t.user_id) ?? new Set<number>();
+           slots.add(Number(t.slot));
+           refFirstVerifySlots.set(t.user_id, slots);
         }
         const reverifyCount = Number(t.reverify_count ?? 0);
         if (reverifyCount > 0) {
@@ -244,8 +248,8 @@ export const adminUserDetail = createServerFn({ method: "POST" })
       }
       referralRows = (referrals.data ?? []).map((r) => ({
         ...r,
-        faceTotal: refFirstVerifies.get(r.id) ?? 0,
-        firstVerifies: refFirstVerifies.get(r.id) ?? 0,
+         faceTotal: refFirstVerifySlots.get(r.id)?.size ?? 0,
+         firstVerifies: refFirstVerifySlots.get(r.id)?.size ?? 0,
         reverifies: refReverifies.get(r.id) ?? 0,
       })).sort((a, b) => b.faceTotal - a.faceTotal || new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     }
@@ -264,7 +268,7 @@ export const adminUserDetail = createServerFn({ method: "POST" })
         backupFaces: (unverified.data ?? []).filter((a) => a.face_photo_url || a.wallet_address).length,
         done: taskRows.filter((t) => t.status === "done").length,
         verified: taskRows.filter((t) => t.status === "verified").length,
-        firstVerifies: taskRows.filter((t) => !!t.initial_verify_at).length,
+        firstVerifies: new Set(taskRows.filter((t) => !!t.initial_verify_at).map((t) => Number(t.slot))).size,
         reverifies: taskRows.reduce((sum: number, t: any) => sum + Number(t.reverify_count ?? 0), 0),
         emptySlots: taskRows.filter((t) => t.status === "empty" && !t.face_photo_url && !t.wallet_address).length,
       },
@@ -276,9 +280,9 @@ export const adminUserDetail = createServerFn({ method: "POST" })
       },
       referralLock: {
         override: (profile.data as any)?.referral_unlock_override === true,
-        firstVerifies: taskRows.filter((t) => !!t.initial_verify_at).length,
+        firstVerifies: new Set(taskRows.filter((t) => !!t.initial_verify_at).map((t) => Number(t.slot))).size,
         unlocked: (profile.data as any)?.referral_unlock_override === true
-          || taskRows.filter((t) => !!t.initial_verify_at).length >= REFERRAL_UNLOCK_THRESHOLD,
+          || new Set(taskRows.filter((t) => !!t.initial_verify_at).map((t) => Number(t.slot))).size >= REFERRAL_UNLOCK_THRESHOLD,
       },
       debts: debts.data ?? [],
       debtTotal: (debts.data ?? []).filter((d: any) => d.status === "active").reduce((s: number, d: any) => s + Number(d.amount), 0),
@@ -950,14 +954,16 @@ export const adminReferrerLeaderboard = createServerFn({ method: "GET" }).handle
   };
   const [profiles, tasks] = await Promise.all([
     fetchAll("profiles", "id, uid_seq, display_name, phone_number, email, referred_by, referral_code"),
-    fetchAll("tasks", "id, user_id, status, initial_verify_at, reverify_count"),
+    fetchAll("tasks", "id, user_id, slot, status, initial_verify_at, reverify_count"),
   ]);
 
-  const firstVerifiesByUser = new Map<string, number>();
+  const firstVerifySlotsByUser = new Map<string, Set<number>>();
   const reverifiesByUser = new Map<string, number>();
   for (const t of tasks ?? []) {
     if (t.initial_verify_at) {
-      firstVerifiesByUser.set(t.user_id, (firstVerifiesByUser.get(t.user_id) ?? 0) + 1);
+      const slots = firstVerifySlotsByUser.get(t.user_id) ?? new Set<number>();
+      slots.add(Number(t.slot));
+      firstVerifySlotsByUser.set(t.user_id, slots);
     }
     const count = Number(t.reverify_count ?? 0);
     if (count > 0) reverifiesByUser.set(t.user_id, (reverifiesByUser.get(t.user_id) ?? 0) + count);
@@ -968,10 +974,10 @@ export const adminReferrerLeaderboard = createServerFn({ method: "GET" }).handle
     if (!p.referred_by) continue;
     const cur = byReferrer.get(p.referred_by) ?? { refereeCount: 0, verifiedReferees: 0, totalVerifies: 0, totalFirstVerifies: 0, totalReverifies: 0 };
     cur.refereeCount += 1;
-    const v = firstVerifiesByUser.get(p.id) ?? 0;
+    const v = firstVerifySlotsByUser.get(p.id)?.size ?? 0;
     if (v > 0) cur.verifiedReferees += 1;
     cur.totalVerifies += v;
-    cur.totalFirstVerifies += firstVerifiesByUser.get(p.id) ?? 0;
+    cur.totalFirstVerifies += v;
     cur.totalReverifies += reverifiesByUser.get(p.id) ?? 0;
     byReferrer.set(p.referred_by, cur);
   }
