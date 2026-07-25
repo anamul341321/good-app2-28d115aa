@@ -437,17 +437,18 @@ function HomePage() {
           <button onClick={() => addSlots.mutate()} disabled={addSlots.isPending}
             className="mt-2.5 w-full gradient-cta rounded-xl py-2 font-black text-xs flex items-center justify-center gap-2 disabled:opacity-60 active:scale-[0.98] transition">
             {addSlots.isPending
-              ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> যোগ হচ্ছে…</>
-              : <><Plus className="w-3.5 h-3.5" /> আরও ১০ জন সাক্ষী যোগ করুন</>}
+              ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> {t("যোগ হচ্ছে…", "Adding…")}</>
+              : <><Plus className="w-3.5 h-3.5" /> {t("আরও ১০ জন সাক্ষী যোগ করুন", "Add 10 more witnesses")}</>}
           </button>
         )}
       </div>
 
       {!data.wallet && (
         <Link to="/wallet" className="block premium-panel rounded-2xl p-3 border-l-4" style={{ borderLeftColor: "var(--color-amber)" }}>
-          <p className="text-sm font-black text-amber">⚠️ ওয়ালেট সেট করুন</p>
+          <p className="text-sm font-black text-amber">⚠️ {t("ওয়ালেট সেট করুন", "Set up wallet")}</p>
           <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">
-            টাকা তোলার আগে bKash / Nagad নম্বর সেট করতে হবে — একবার সেট করলে আর পরিবর্তন হবে না।
+            {t("টাকা তোলার আগে bKash / Nagad নম্বর সেট করতে হবে — একবার সেট করলে আর পরিবর্তন হবে না।",
+               "Set a bKash / Nagad number before withdrawing — once set, it cannot be changed.")}
           </p>
         </Link>
       )}
@@ -457,26 +458,25 @@ function HomePage() {
         <div className="premium-panel rounded-2xl p-3 text-center"
              style={{ background: "linear-gradient(135deg, rgba(6,182,212,0.10), rgba(139,92,246,0.08))" }}>
           <Heart className="w-5 h-5 mx-auto text-rose" />
-          <p className="text-[11px] font-black text-navy mt-1 leading-tight">যত বেশি সাক্ষী,<br/>তত বেশি আয়</p>
+          <p className="text-[11px] font-black text-navy mt-1 leading-tight">{t(<>যত বেশি সাক্ষী,<br/>তত বেশি আয়</>, <>More witnesses,<br/>more earnings</>)}</p>
         </div>
         <div className="premium-panel rounded-2xl p-3 text-center"
              style={{ background: "linear-gradient(135deg, rgba(16,185,129,0.10), rgba(255,209,102,0.10))" }}>
           <ShieldCheck className="w-5 h-5 mx-auto text-emerald" />
-          <p className="text-[11px] font-black text-navy mt-1 leading-tight">সাক্ষী = আপনার<br/>সততার প্রমাণ</p>
+          <p className="text-[11px] font-black text-navy mt-1 leading-tight">{t(<>সাক্ষী = আপনার<br/>সততার প্রমাণ</>, <>Witnesses = proof<br/>of your honesty</>)}</p>
         </div>
       </div>
 
       <div className="premium-panel rounded-2xl p-4 relative overflow-hidden"
            style={{ background: "linear-gradient(135deg, rgba(139,92,246,0.10), rgba(6,182,212,0.08))" }}>
-        <p className="text-[10px] uppercase tracking-[0.15em] font-bold text-violet">💡 কেন সাক্ষী?</p>
+        <p className="text-[10px] uppercase tracking-[0.15em] font-bold text-violet">💡 {t("কেন সাক্ষী?", "Why witnesses?")}</p>
         <p className="text-[12px] text-navy mt-2 leading-relaxed font-medium">
-          স্কুলে উপবৃত্তি পেতে যেমন বাবা-মায়ের NID, প্রমাণপত্র লাগে —
-          আমাদের এই আর্থিক সহায়ক প্ল্যাটফর্মেও তেমনই <span className="font-black text-violet">১০ জন সাক্ষীর মুখ</span> লাগে।
-          প্রত্যেক সাক্ষী প্রমাণ করছেন যে আপনি সত্যিই সাহায্যের যোগ্য।
+          {t(<>স্কুলে উপবৃত্তি পেতে যেমন বাবা-মায়ের NID, প্রমাণপত্র লাগে — আমাদের এই আর্থিক সহায়ক প্ল্যাটফর্মেও তেমনই <span className="font-black text-violet">১০ জন সাক্ষীর মুখ</span> লাগে। প্রত্যেক সাক্ষী প্রমাণ করছেন যে আপনি সত্যিই সাহায্যের যোগ্য।</>,
+             <>Just as a school stipend needs parents' NID and proof, our financial support platform needs <span className="font-black text-violet">10 witness faces</span>. Each witness proves you truly deserve support.</>)}
         </p>
         <p className="text-[12px] text-navy mt-2 leading-relaxed font-medium">
-          <span className="font-black text-rose">যত বেশি সাক্ষী যোগ করবেন, তত বেশি মাসিক আয় হবে।</span>
-          ১০ জন সম্পন্ন হলে আরও ১০ জন যোগ করার সুযোগ পাবেন।
+          {t(<><span className="font-black text-rose">যত বেশি সাক্ষী যোগ করবেন, তত বেশি মাসিক আয় হবে।</span> ১০ জন সম্পন্ন হলে আরও ১০ জন যোগ করার সুযোগ পাবেন।</>,
+             <><span className="font-black text-rose">The more witnesses you add, the higher your monthly income.</span> After 10 you can add 10 more.</>)}
         </p>
       </div>
 
@@ -485,9 +485,9 @@ function HomePage() {
            className="block rounded-2xl p-3 text-center shadow-md btn-press"
            style={{ background: "linear-gradient(120deg,#0088cc,#06b6d4)" }}>
           <p className="text-xs font-black text-white flex items-center justify-center gap-1.5">
-            <MessageCircle className="w-3.5 h-3.5" /> টেলিগ্রাম
+            <MessageCircle className="w-3.5 h-3.5" /> {t("টেলিগ্রাম", "Telegram")}
           </p>
-          <p className="text-[10px] text-white/90 mt-0.5">গ্রুপে মেসেজ দিন</p>
+          <p className="text-[10px] text-white/90 mt-0.5">{t("গ্রুপে মেসেজ দিন", "Message the group")}</p>
         </a>
         <a href="https://wa.me/8801892564963" target="_blank" rel="noopener noreferrer"
            className="block rounded-2xl p-3 text-center shadow-md btn-press"
@@ -495,7 +495,7 @@ function HomePage() {
           <p className="text-xs font-black text-white flex items-center justify-center gap-1.5">
             <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
           </p>
-          <p className="text-[10px] text-white/90 mt-0.5 mono-num">01892564963</p>
+          <p className="text-[10px] text-white/90 mt-0.5 mono-num" translate="no">01892564963</p>
         </a>
       </div>
 
