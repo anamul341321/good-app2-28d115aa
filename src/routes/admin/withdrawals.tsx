@@ -29,17 +29,17 @@ function AdminWithdrawals() {
     pending: rows.filter((w: any) => w.status === "pending").length,
     paid: rows.filter((w: any) => w.status === "paid").length,
     rejected: rows.filter((w: any) => w.status === "rejected").length,
-    admin: rows.filter((w: any) => w.status === "paid").length,
+    admin: rows.filter((w: any) => w.status === "paid" && w.isAdminPayout).length,
     all: rows.length,
   }), [rows]);
 
   const adminPayoutSum = useMemo(() =>
-    rows.filter((w: any) => w.status === "paid").reduce((a: number, w: any) => a + Number(w.amount), 0),
+    rows.filter((w: any) => w.status === "paid" && w.isAdminPayout).reduce((a: number, w: any) => a + Number(w.amount), 0),
   [rows]);
 
   const filtered = rows.filter((w: any) => {
     if (filter === "all") return true;
-    if (filter === "admin") return w.status === "paid";
+    if (filter === "admin") return w.status === "paid" && w.isAdminPayout;
     if (filter === "paid") return w.status === "paid";
     return w.status === filter;
   });
