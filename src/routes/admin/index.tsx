@@ -57,8 +57,8 @@ function AdminDashboard() {
         <QuickCard to="/admin/reverify" icon={<Clock className="w-5 h-5" />} value={stats.tasks.verified} label="Re-verify queue" accent="amber" />
         <QuickCard to="/admin/unverified" icon={<AlertTriangle className="w-5 h-5" />} value={stats.unverifiedCount} label="Not whitelisted" accent="rose" />
         <QuickCard to="/admin/wallets" icon={<Wallet className="w-5 h-5" />} value={stats.wallets} label="Wallets bound" accent="emerald" />
-        <QuickCard to="/admin/kyc" icon={<ShieldCheck className="w-5 h-5" />} value={0} label="KYC verified" accent="violet" />
-        <QuickCard to="/admin/recharges" icon={<Smartphone className="w-5 h-5" />} value={0} label="Recharge history" accent="cyan" />
+        <QuickCard to="/admin/kyc" icon={<ShieldCheck className="w-5 h-5" />} value={(stats as any).kycVerified ?? 0} label="KYC verified" accent="violet" />
+        <QuickCard to="/admin/recharges" icon={<Smartphone className="w-5 h-5" />} value={(stats as any).recharges ?? 0} label="Recharge history" accent="cyan" />
         <div className="glass rounded-2xl p-3">
           <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Mining now</p>
           <p className="mono-num font-black text-2xl text-cyan mt-1">{stats.mining.activeUsers}</p>
