@@ -331,14 +331,55 @@ export const adminListWithdrawals = createServerFn({ method: "GET" }).handler(as
   for (let from = 0; ; from += 1000) {
     const { data, error } = await supabaseAdmin
       .from("withdrawals")
-      .select("*, profiles:user_id(display_name, email, phone_number)")
+      .select("*, profiles:user_id(display_name, email, phone_number, uid_seq, created_at)")
       .order("created_at", { ascending: false })
       .range(from, from + 999);
     if (error) throw new Error(error.message);
     rows.push(...(data ?? []));
     if (!data || data.length < 1000) break;
   }
-  return rows;
+
+  // Suspicion signals for pending rows only
+  const pendingUserIds = Array.from(new Set(rows.filter((r) => r.status === "pending").map((r) => r.user_id)));
+  const signalsMap = new Map<string, any>();
+  if (pendingUserIds.length > 0) {
+    const [tasksRes, miningRes, debtsRes, prevPaidRes, unverifiedRes] = await Promise.all([
+      supabaseAdmin.from("tasks").select("user_id, status, whitelist_ok, wallet_address, reverify_count").in("user_id", pendingUserIds),
+      supabaseAdmin.from("mining_state").select("user_id, accrued_amount, withdrawn_amount, is_active").in("user_id", pendingUserIds),
+      supabaseAdmin.from("user_debts").select("user_id, amount, status").in("user_id", pendingUserIds).eq("status", "active"),
+      supabaseAdmin.from("withdrawals").select("user_id, amount, status").in("user_id", pendingUserIds).eq("status", "paid"),
+      supabaseAdmin.from("unverified_attempts").select("user_id").in("user_id", pendingUserIds),
+    ]);
+    for (const uid of pendingUserIds) {
+      const uTasks = (tasksRes.data ?? []).filter((t: any) => t.user_id === uid);
+      const verified = uTasks.filter((t: any) => (t.status === "done" || t.status === "verified") && t.whitelist_ok && t.wallet_address).length;
+      const notWhitelisted = uTasks.filter((t: any) => t.wallet_address && !t.whitelist_ok).length;
+      const totalReverify = uTasks.reduce((a: number, t: any) => a + (t.reverify_count ?? 0), 0);
+      const m = (miningRes.data ?? []).find((x: any) => x.user_id === uid);
+      const bal = m ? Number(m.accrued_amount ?? 0) - Number(m.withdrawn_amount ?? 0) : 0;
+      const debt = (debtsRes.data ?? []).filter((d: any) => d.user_id === uid).reduce((a: number, d: any) => a + Number(d.amount), 0);
+      const prevPaidCount = (prevPaidRes.data ?? []).filter((w: any) => w.user_id === uid).length;
+      const prevPaidSum = (prevPaidRes.data ?? []).filter((w: any) => w.user_id === uid).reduce((a: number, w: any) => a + Number(w.amount), 0);
+      const failedAttempts = (unverifiedRes.data ?? []).filter((u: any) => u.user_id === uid).length;
+      signalsMap.set(uid, {
+        verifiedTasks: verified,
+        notWhitelistedTasks: notWhitelisted,
+        reverifyCount: totalReverify,
+        balance: bal,
+        activeDebt: debt,
+        miningActive: !!m?.is_active,
+        prevPaidCount,
+        prevPaidSum,
+        failedAttempts,
+      });
+    }
+  }
+
+  return rows.map((r) => ({
+    ...r,
+    isAdminPayout: typeof r.admin_note === "string" && r.admin_note.startsWith("[Admin Payout]"),
+    signals: r.status === "pending" ? signalsMap.get(r.user_id) ?? null : null,
+  }));
 });
 
 
