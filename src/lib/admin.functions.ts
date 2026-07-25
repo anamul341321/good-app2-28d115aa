@@ -48,6 +48,8 @@ export const adminStats = createServerFn({ method: "GET" }).handler(async () => 
   return {
     users: users.count ?? 0,
     wallets: wallets.count ?? 0,
+    kycVerified: kycVerified.count ?? 0,
+    recharges: rechargesCount.count ?? 0,
     unverifiedCount: unverified.count ?? 0,
     reverifyQueue: allTasks.filter((t) => t.status === "verified").length,
     todayVerified: (todayVerifiedRes.count ?? 0) + (todayDoneRes.count ?? 0),
