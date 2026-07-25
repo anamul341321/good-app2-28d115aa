@@ -269,7 +269,7 @@ export const adminUserDetail = createServerFn({ method: "POST" })
         done: taskRows.filter((t) => t.status === "done").length,
         verified: taskRows.filter((t) => t.status === "verified").length,
         firstVerifies: new Set(taskRows.filter((t) => !!t.initial_verify_at).map((t) => Number(t.slot))).size,
-        reverifies: taskRows.reduce((sum: number, t: any) => sum + Number(t.reverify_count ?? 0), 0),
+        reverifies: taskRows.filter((t: any) => Number(t.reverify_count ?? 0) > 0).length,
         emptySlots: taskRows.filter((t) => t.status === "empty" && !t.face_photo_url && !t.wallet_address).length,
       },
       referrals: referralRows,
