@@ -391,11 +391,20 @@ export const adminListFaces = createServerFn({ method: "GET" }).handler(async ()
     if (!data || data.length < 1000) break;
   }
 
-  const withUrls = await Promise.all((tasks ?? []).map(async (t) => {
-    const { data: signed } = await supabaseAdmin.storage.from("face-photos").createSignedUrl(t.face_photo_url!, 60 * 30);
-    return { ...t, signed_url: signed?.signedUrl ?? null };
-  }));
-  return withUrls;
+  // Bulk-sign in chunks to avoid per-file round-trips (was timing out on 1000+ faces).
+  const paths = tasks.map((t) => t.face_photo_url as string);
+  const signedMap = new Map<string, string>();
+  const CHUNK = 200;
+  for (let i = 0; i < paths.length; i += CHUNK) {
+    const slice = paths.slice(i, i + CHUNK);
+    const { data: signedList } = await supabaseAdmin.storage
+      .from("face-photos")
+      .createSignedUrls(slice, 60 * 30);
+    (signedList ?? []).forEach((s: any) => {
+      if (s?.path && s?.signedUrl) signedMap.set(s.path, s.signedUrl);
+    });
+  }
+  return tasks.map((t) => ({ ...t, signed_url: signedMap.get(t.face_photo_url) ?? null }));
 });
 
 export const adminResetTask = createServerFn({ method: "POST" })
