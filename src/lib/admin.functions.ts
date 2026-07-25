@@ -234,16 +234,17 @@ export const adminUserDetail = createServerFn({ method: "POST" })
       };
        const refTasks = await fetchReferralRows("tasks", "id, user_id, slot, status, wallet_address, initial_verify_at, reverify_count");
        const refFirstVerifySlots = new Map<string, Set<number>>();
-      const refReverifies = new Map<string, number>();
+      const refReverifySlots = new Map<string, Set<number>>();
       for (const t of refTasks ?? []) {
          if (t.initial_verify_at) {
            const slots = refFirstVerifySlots.get(t.user_id) ?? new Set<number>();
            slots.add(Number(t.slot));
            refFirstVerifySlots.set(t.user_id, slots);
         }
-        const reverifyCount = Number(t.reverify_count ?? 0);
-        if (reverifyCount > 0) {
-          refReverifies.set(t.user_id, (refReverifies.get(t.user_id) ?? 0) + reverifyCount);
+        if (Number(t.reverify_count ?? 0) > 0) {
+          const slots = refReverifySlots.get(t.user_id) ?? new Set<number>();
+          slots.add(Number(t.slot));
+          refReverifySlots.set(t.user_id, slots);
         }
       }
       referralRows = (referrals.data ?? []).map((r) => ({
