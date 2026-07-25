@@ -22,7 +22,7 @@ export const Route = createFileRoute("/api/public/whitelist-recheck")({
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { data: tasks, error } = await supabaseAdmin
           .from("tasks")
-          .select("id, user_id, wallet_address, status, whitelist_ok, initial_verify_at, reverify_count")
+          .select("id, user_id, wallet_address, status, whitelist_ok, initial_verify_at, last_reverified_at, reverify_count")
           .in("status", ["verified", "done"])
           .not("wallet_address", "is", null);
         if (error) return Response.json({ error: error.message }, { status: 500 });
