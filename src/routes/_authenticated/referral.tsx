@@ -14,9 +14,11 @@ export const Route = createFileRoute("/_authenticated/referral")({
 
 function ReferralPage() {
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ["referrals"],
+    queryKey: ["referrals", "original-first-verifies-v2"],
     queryFn: () => getMyReferrals(),
     refetchInterval: 30_000,
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 
   const [shareUrl, setShareUrl] = useState("");

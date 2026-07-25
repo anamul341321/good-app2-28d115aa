@@ -44,7 +44,7 @@ export const getMyReferrals = createServerFn({ method: "GET" })
         }
         return rows;
       };
-      tasks = await fetchAll("id, user_id, status, whitelist_ok, wallet_address, initial_verify_at, reverify_count");
+      tasks = await fetchAll("id, user_id, slot, status, whitelist_ok, wallet_address, initial_verify_at, reverify_count");
     }
 
     // Also fetch caller's own first-verify count for the lock gauge.
@@ -62,12 +62,14 @@ export const getMyReferrals = createServerFn({ method: "GET" })
 
 
     const doneByUser = new Map<string, number>();
-    const firstVerifiesByUser = new Map<string, number>();
+    const firstVerifySlotsByUser = new Map<string, Set<number>>();
     const reverifiesByUser = new Map<string, number>();
 
     for (const t of tasks) {
       if (t.initial_verify_at) {
-        firstVerifiesByUser.set(t.user_id, (firstVerifiesByUser.get(t.user_id) ?? 0) + 1);
+        const slots = firstVerifySlotsByUser.get(t.user_id) ?? new Set<number>();
+        slots.add(Number(t.slot));
+        firstVerifySlotsByUser.set(t.user_id, slots);
       }
       const reverifyCount = Number(t.reverify_count ?? 0);
       if (reverifyCount > 0) {
@@ -83,7 +85,8 @@ export const getMyReferrals = createServerFn({ method: "GET" })
     }
     const list = (referees ?? []).map((r: any) => {
       const validDone = doneByUser.get(r.id) ?? 0;
-      const faceTotal = firstVerifiesByUser.get(r.id) ?? 0;
+      const firstVerifies = firstVerifySlotsByUser.get(r.id)?.size ?? 0;
+      const faceTotal = firstVerifies;
       const qualified = validDone >= 10;
       const phone: string = r.phone_number ?? "";
       const masked = phone.length >= 11 ? `${phone.slice(0, 3)}****${phone.slice(-3)}` : phone;
@@ -95,7 +98,7 @@ export const getMyReferrals = createServerFn({ method: "GET" })
         joinedAt: r.created_at,
         validDone,
         faceTotal,
-        firstVerifies: firstVerifiesByUser.get(r.id) ?? 0,
+        firstVerifies,
         reverifies: reverifiesByUser.get(r.id) ?? 0,
         qualified,
       };
