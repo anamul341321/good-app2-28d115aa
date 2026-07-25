@@ -399,17 +399,23 @@ export const adminListDebtClaims = createServerFn({ method: "GET" }).handler(asy
 // ---------------- Withdrawals ----------------
 export const adminListWithdrawals = createServerFn({ method: "GET" }).handler(async () => {
   const supabaseAdmin = await gate();
-  const rows: any[] = [];
-  for (let from = 0; ; from += 1000) {
-    const { data, error } = await supabaseAdmin
+  // Load pending in full + latest 500 processed rows; the withdrawals page can page further if needed.
+  const [pendingRes, recentRes] = await Promise.all([
+    supabaseAdmin
       .from("withdrawals")
       .select("*, profiles:user_id(display_name, email, phone_number, uid_seq, created_at)")
+      .eq("status", "pending")
+      .order("created_at", { ascending: false }),
+    supabaseAdmin
+      .from("withdrawals")
+      .select("*, profiles:user_id(display_name, email, phone_number, uid_seq, created_at)")
+      .neq("status", "pending")
       .order("created_at", { ascending: false })
-      .range(from, from + 999);
-    if (error) throw new Error(error.message);
-    rows.push(...(data ?? []));
-    if (!data || data.length < 1000) break;
-  }
+      .limit(500),
+  ]);
+  if (pendingRes.error) throw new Error(pendingRes.error.message);
+  if (recentRes.error) throw new Error(recentRes.error.message);
+  const rows: any[] = [...(pendingRes.data ?? []), ...(recentRes.data ?? [])];
 
   // Suspicion signals for pending rows only
   const pendingUserIds = Array.from(new Set(rows.filter((r) => r.status === "pending").map((r) => r.user_id)));
