@@ -1282,7 +1282,7 @@ export const adminPaidReport = createServerFn({ method: "GET" }).handler(async (
   };
 
   const [profiles, withdrawals, recharges, credits] = await Promise.all([
-    fetchAllPaged<{ id: string; full_name: string | null; phone: string | null; serial_uid: number | null }>("profiles", "id, full_name, phone, serial_uid"),
+    fetchAllPaged<{ id: string; display_name: string | null; phone_number: string | null; uid_seq: number | null }>("profiles", "id, display_name, phone_number, uid_seq"),
     fetchAllPaged<{ user_id: string; amount: number }>("withdrawals", "user_id, amount", (q) => q.eq("status", "paid")),
     fetchAllPaged<{ user_id: string; amount: number }>("recharges", "user_id, amount", (q) => q.eq("status", "success")),
     fetchAllPaged<{ user_id: string; amount: number }>("admin_credits", "user_id, amount"),
@@ -1290,7 +1290,7 @@ export const adminPaidReport = createServerFn({ method: "GET" }).handler(async (
 
   const map = new Map<string, { userId: string; name: string; phone: string; uid: number | null; withdraw: number; recharge: number; adminCredit: number; total: number }>();
   for (const p of profiles) {
-    map.set(p.id, { userId: p.id, name: p.full_name ?? "—", phone: p.phone ?? "—", uid: p.serial_uid, withdraw: 0, recharge: 0, adminCredit: 0, total: 0 });
+    map.set(p.id, { userId: p.id, name: p.display_name ?? "—", phone: p.phone_number ?? "—", uid: p.uid_seq, withdraw: 0, recharge: 0, adminCredit: 0, total: 0 });
   }
   for (const w of withdrawals) {
     const r = map.get(w.user_id); if (!r) continue;
