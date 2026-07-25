@@ -121,7 +121,7 @@ export const adminListUsers = createServerFn({ method: "GET" }).handler(async ()
   };
   const [profiles, tasks, attempts, minings, wallets] = await Promise.all([
     fetchAllProfiles(),
-    fetchAll("tasks", "id, user_id, status, whitelist_ok, wallet_address, face_photo_url, initial_verify_at, reverify_count"),
+    fetchAll("tasks", "id, user_id, slot, status, whitelist_ok, wallet_address, face_photo_url, initial_verify_at, reverify_count"),
     fetchAll("unverified_attempts", "id, user_id, wallet_address, face_photo_url"),
     fetchAllMining(),
     fetchAllWallets(),
