@@ -133,18 +133,27 @@ function AdminWithdrawals() {
           const s = w.signals;
           const cleanNote = isAdminPayout && w.admin_note ? w.admin_note.replace(/^\[Admin Payout\]\s*/, "") : w.admin_note;
 
-          // Build suspicion flags
-          const flags: { icon: string; text: string; danger: boolean }[] = [];
+          // Real fraud signals only — normal states (balance=0 after withdraw, mining paused, first withdraw) are NOT suspicious
+          const dangerFlags: { icon: string; text: string; reason: string }[] = [];
+          const infoFlags: { icon: string; text: string }[] = [];
           if (s) {
-            if (s.activeDebt > 0) flags.push({ icon: "⚠️", text: `Debt ${s.activeDebt.toFixed(0)}৳`, danger: true });
-            if (Number(w.amount) > s.balance + 0.01) flags.push({ icon: "🚫", text: `Balance kom (${s.balance.toFixed(0)}৳)`, danger: true });
-            if (s.verifiedTasks < 10) flags.push({ icon: "⚠️", text: `Only ${s.verifiedTasks}/10 verify`, danger: true });
-            if (s.notWhitelistedTasks > 0) flags.push({ icon: "🔴", text: `${s.notWhitelistedTasks} not-whitelist`, danger: true });
-            if (s.failedAttempts > 20) flags.push({ icon: "🕵️", text: `${s.failedAttempts} failed attempts`, danger: false });
-            if (!s.miningActive) flags.push({ icon: "⏸️", text: "Mining off", danger: false });
-            if (s.prevPaidCount === 0) flags.push({ icon: "🆕", text: "First withdraw", danger: false });
+            // Total lifetime withdraw request (paid + this pending)
+            const totalRequested = s.prevPaidSum + Number(w.amount);
+            const earningGap = totalRequested - s.accrued;
+
+            if (s.activeDebt > 0) dangerFlags.push({ icon: "⚠️", text: `Debt ${s.activeDebt.toFixed(0)}৳`, reason: "আগের ওয়ার্নিং পরিশোধ করেনি" });
+            if (s.notWhitelistedTasks > 0) dangerFlags.push({ icon: "🔴", text: `${s.notWhitelistedTasks} not-whitelist wallet`, reason: "কিছু wallet whitelist নাই — fake identity সন্দেহ" });
+            if (s.verifiedTasks < 10) dangerFlags.push({ icon: "⚠️", text: `${s.verifiedTasks}/10 verify only`, reason: "১০টা slot এখনো complete করেনি" });
+            if (earningGap > 50) dangerFlags.push({ icon: "🚨", text: `Overdraw ${earningGap.toFixed(0)}৳`, reason: `Earn করেছে ${s.accrued.toFixed(0)}৳ কিন্তু withdraw চাইছে ${totalRequested.toFixed(0)}৳` });
+            if (s.failedAttempts > 50) dangerFlags.push({ icon: "🕵️", text: `${s.failedAttempts} failed attempts`, reason: "অনেক failed face attempt — bot-like আচরণ" });
+
+            // Info only (not fraud, just context)
+            if (!s.miningActive) infoFlags.push({ icon: "⏸️", text: "Mining off" });
+            if (s.prevPaidCount === 0) infoFlags.push({ icon: "🆕", text: "First withdraw" });
+            if (s.reverifyCount > 0) infoFlags.push({ icon: "🔁", text: `${s.reverifyCount} re-verify` });
           }
-          const hasDanger = flags.some((f) => f.danger);
+          const isLegit = dangerFlags.length === 0;
+          const hasDanger = !isLegit;
 
           return (
             <div key={w.id} className={`glass rounded-xl p-3 space-y-2 ${
@@ -187,28 +196,44 @@ function AdminWithdrawals() {
                 </div>
               </div>
 
-              {/* Suspicion signals for pending */}
+              {/* Verdict for pending */}
               {w.status === "pending" && s && (
-                <div className={`rounded-lg p-2 space-y-1.5 ${hasDanger ? "bg-rose/10 border border-rose/30" : "bg-emerald/5 border border-emerald/20"}`}>
-                  <div className="flex items-center gap-1.5 text-[10px] font-black">
+                <div className={`rounded-lg p-2 space-y-1.5 ${hasDanger ? "bg-rose/10 border border-rose/30" : "bg-emerald/10 border border-emerald/30"}`}>
+                  <div className="flex items-center gap-1.5 text-[11px] font-black">
                     {hasDanger ? (
-                      <><AlertTriangle className="w-3 h-3 text-rose" /><span className="text-rose">সন্দেহজনক — চেক করুন</span></>
+                      <><AlertTriangle className="w-3.5 h-3.5 text-rose" /><span className="text-rose">⚠️ সন্দেহজনক — চেক করুন</span></>
                     ) : (
-                      <><ShieldCheck className="w-3 h-3 text-emerald" /><span className="text-emerald">OK — সব ঠিক আছে</span></>
+                      <><ShieldCheck className="w-3.5 h-3.5 text-emerald" /><span className="text-emerald">✅ LEGIT — নিরাপদে paid করতে পারেন</span></>
                     )}
                   </div>
-                  <div className="grid grid-cols-2 gap-1 text-[10px]">
+
+                  {hasDanger && (
+                    <ul className="space-y-1 text-[10px] pt-1 border-t border-rose/20">
+                      {dangerFlags.map((f, i) => (
+                        <li key={i} className="flex gap-1.5">
+                          <span>{f.icon}</span>
+                          <div>
+                            <span className="font-black text-rose">{f.text}</span>
+                            <span className="text-muted-foreground"> — {f.reason}</span>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-[10px] pt-1 border-t border-white/5">
                     <div>✅ Verify: <span className="mono-num font-bold">{s.verifiedTasks}/10</span></div>
-                    <div>🔁 Re-verify: <span className="mono-num font-bold">{s.reverifyCount}</span></div>
-                    <div>💰 Balance: <span className="mono-num font-bold">{s.balance.toFixed(2)}৳</span></div>
-                    <div>📤 Previous paid: <span className="mono-num font-bold">{s.prevPaidCount} ({s.prevPaidSum.toFixed(0)}৳)</span></div>
+                    <div>💰 Earned: <span className="mono-num font-bold">{s.accrued.toFixed(0)}৳</span></div>
+                    <div>📤 Prev paid: <span className="mono-num font-bold">{s.prevPaidCount} ({s.prevPaidSum.toFixed(0)}৳)</span></div>
+                    <div>🏦 Balance: <span className="mono-num font-bold">{s.balance.toFixed(0)}৳</span></div>
                   </div>
-                  {flags.length > 0 && (
+
+                  {infoFlags.length > 0 && (
                     <div className="flex flex-wrap gap-1 pt-1 border-t border-white/5">
-                      {flags.map((f, i) => (
-                        <span key={i} className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${
-                          f.danger ? "bg-rose/20 text-rose" : "bg-amber/15 text-amber"
-                        }`}>{f.icon} {f.text}</span>
+                      {infoFlags.map((f, i) => (
+                        <span key={i} className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-white/5 text-muted-foreground">
+                          {f.icon} {f.text}
+                        </span>
                       ))}
                     </div>
                   )}
