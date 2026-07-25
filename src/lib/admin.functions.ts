@@ -26,7 +26,7 @@ export const adminStats = createServerFn({ method: "GET" }).handler(async () => 
   startOfToday.setHours(0, 0, 0, 0);
   const todayIso = startOfToday.toISOString();
 
-  const [users, tasks, minings, wallets, allWith, unverified, todayVerifiedRes, todayDoneRes, activeMiningCount, kycVerified, rechargesCount] = await Promise.all([
+  const [users, tasks, minings, wallets, allWith, unverified, todayVerifiedRes, todayDoneRes, activeMiningCount, kycVerified, rechargesCount, successRecharges, adminCreditsRows] = await Promise.all([
     supabaseAdmin.from("profiles").select("id", { count: "exact", head: true }),
     fetchAllPaged<{ status: string }>("tasks", "status"),
     fetchAllPaged<{ accrued_amount: number; withdrawn_amount: number; is_active: boolean }>("mining_state", "accrued_amount, withdrawn_amount, is_active"),
@@ -38,12 +38,17 @@ export const adminStats = createServerFn({ method: "GET" }).handler(async () => 
     supabaseAdmin.from("mining_state").select("user_id", { count: "exact", head: true }).eq("is_active", true),
     supabaseAdmin.from("profiles").select("id", { count: "exact", head: true }).eq("kyc_verified", true),
     supabaseAdmin.from("recharges").select("id", { count: "exact", head: true }),
+    fetchAllPaged<{ amount: number; status: string }>("recharges", "amount, status"),
+    fetchAllPaged<{ amount: number }>("admin_credits", "amount"),
   ]);
 
   const allTasks = tasks ?? [];
   const allMining = minings ?? [];
 
-  const paidAmount = allWith.filter((w) => w.status === "paid").reduce((a, w) => a + Number(w.amount), 0);
+  const withdrawPaid = allWith.filter((w) => w.status === "paid").reduce((a, w) => a + Number(w.amount), 0);
+  const rechargePaid = (successRecharges ?? []).filter((r) => r.status === "success").reduce((a, r) => a + Number(r.amount), 0);
+  const adminCreditPaid = (adminCreditsRows ?? []).reduce((a, r) => a + Math.max(0, Number(r.amount)), 0);
+  const paidAmount = withdrawPaid + rechargePaid + adminCreditPaid;
 
   return {
     users: users.count ?? 0,
