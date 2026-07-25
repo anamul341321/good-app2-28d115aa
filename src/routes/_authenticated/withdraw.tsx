@@ -171,12 +171,13 @@ function WithdrawPage() {
           <p className="text-sm font-bold text-amber">প্রথমে ওয়ালেট নম্বর সেট করুন</p>
         </Link>
       ) : (
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-2" translate="no">
           <ProviderPill
             selected={provider === "bkash"}
             available={!!walletBkash}
             enabled={payout.bkashEnabled}
-            label="📱 বিকাশ"
+            logo={bkashLogo}
+            label="bKash"
             tone="rose"
             wallet={walletBkash}
             onClick={() => setProvider("bkash")}
@@ -185,7 +186,8 @@ function WithdrawPage() {
             selected={provider === "nagad"}
             available={!!walletNagad}
             enabled={payout.nagadEnabled}
-            label="💳 নগদ"
+            logo={nagadLogo}
+            label="Nagad"
             tone="amber"
             wallet={walletNagad}
             onClick={() => setProvider("nagad")}
