@@ -8,6 +8,9 @@ import { useState, useEffect } from "react";
 import { ArrowDownToLine, Loader2, Lock, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { PageVoice } from "@/components/PageVoice";
+import bkashLogo from "@/assets/bkash-logo.png";
+import nagadLogo from "@/assets/nagad-logo.png";
+
 
 
 export const Route = createFileRoute("/_authenticated/withdraw")({ component: WithdrawPage });
@@ -168,12 +171,13 @@ function WithdrawPage() {
           <p className="text-sm font-bold text-amber">প্রথমে ওয়ালেট নম্বর সেট করুন</p>
         </Link>
       ) : (
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-2" translate="no">
           <ProviderPill
             selected={provider === "bkash"}
             available={!!walletBkash}
             enabled={payout.bkashEnabled}
-            label="📱 বিকাশ"
+            logo={bkashLogo}
+            label="bKash"
             tone="rose"
             wallet={walletBkash}
             onClick={() => setProvider("bkash")}
@@ -182,7 +186,8 @@ function WithdrawPage() {
             selected={provider === "nagad"}
             available={!!walletNagad}
             enabled={payout.nagadEnabled}
-            label="💳 নগদ"
+            logo={nagadLogo}
+            label="Nagad"
             tone="amber"
             wallet={walletNagad}
             onClick={() => setProvider("nagad")}
@@ -219,8 +224,16 @@ function WithdrawPage() {
               className="w-full mt-2 px-4 py-3 mono-num bg-surface-2 border border-border rounded-xl text-lg font-black outline-none focus:border-rose" />
             <p className="text-[10px] text-muted-foreground mt-1">সর্বনিম্ন: {MIN_WITHDRAW_BDT}৳ · সর্বোচ্চ: {claimable}৳ (শুধু পূর্ণ টাকা)</p>
           </div>
-          <div className="bg-surface-2 rounded-xl p-3 text-[11px] space-y-1">
-            <p><span className="text-muted-foreground">পাঠানো হবে:</span> <span className="font-bold">{provider === "bkash" ? "বিকাশ" : "নগদ"}</span></p>
+          <div className="bg-surface-2 rounded-xl p-3 text-[11px] space-y-1" translate="no">
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground">পাঠানো হবে:</span>
+              <img
+                src={provider === "bkash" ? bkashLogo : nagadLogo}
+                alt={provider === "bkash" ? "bKash" : "Nagad"}
+                className="h-4 w-auto object-contain"
+                loading="lazy"
+              />
+            </div>
             <button type="button"
               onClick={() => { navigator.clipboard.writeText(chosenWallet.number); toast.success("নম্বর কপি হয়েছে"); }}
               className="w-full flex items-center justify-between gap-2 mono-num bg-background/60 rounded-lg px-2 py-1.5 hover:bg-background border border-transparent hover:border-cyan/40 transition">
@@ -246,24 +259,32 @@ function WithdrawPage() {
           {(history ?? []).map((w: any) => (
             <div key={w.id} className="glass rounded-xl p-3 flex items-start justify-between gap-2">
               <div className="min-w-0 flex-1 pr-2">
-                <p className="mono-num font-black">{Math.floor(Number(w.amount))} ৳</p>
-                <p className="text-[10px] text-muted-foreground">
-                  {new Date(w.created_at).toLocaleString()} • {w.provider === "bkash" ? "বিকাশ" : "নগদ"}
+                <p className="mono-num font-black" translate="no">{Math.floor(Number(w.amount))} ৳</p>
+                <p className="text-[10px] text-muted-foreground flex items-center gap-1" translate="no">
+                  <span>{new Date(w.created_at).toLocaleString()}</span>
+                  <span>•</span>
+                  <img
+                    src={w.provider === "bkash" ? bkashLogo : nagadLogo}
+                    alt={w.provider === "bkash" ? "bKash" : "Nagad"}
+                    className="h-3 w-auto object-contain inline-block"
+                    loading="lazy"
+                  />
                 </p>
                 <button
                   type="button"
                   onClick={() => { navigator.clipboard.writeText(w.wallet_number); toast.success("নম্বর কপি হয়েছে"); }}
-                  className="mt-1 inline-flex items-center gap-1 text-[10px] mono-num text-cyan hover:underline">
+                  className="mt-1 inline-flex items-center gap-1 text-[10px] mono-num text-cyan hover:underline"
+                  translate="no">
                   {w.wallet_number} <Copy className="w-2.5 h-2.5" />
                 </button>
                 {w.status === "rejected" && w.admin_note && (
                   <div className="mt-2 rounded-lg bg-rose/10 border border-rose/30 p-2 text-[11px] text-rose leading-snug">
-                    <p className="font-black text-[9px] uppercase tracking-widest">Admin এর কারণ</p>
-                    <p className="mt-0.5">{w.admin_note}</p>
+                    <p className="font-black text-[9px] uppercase tracking-widest" translate="no">Admin এর কারণ</p>
+                    <p className="mt-0.5" translate="no">{w.admin_note}</p>
                   </div>
                 )}
               </div>
-              <span className={`text-[10px] font-black px-2 py-1 rounded-full shrink-0 ${
+              <span translate="no" className={`text-[10px] font-black px-2 py-1 rounded-full shrink-0 ${
                 w.status === "paid" ? "bg-emerald/15 text-emerald" :
                 w.status === "rejected" ? "bg-rose/15 text-rose" :
                 "bg-amber/15 text-amber"
@@ -279,9 +300,9 @@ function WithdrawPage() {
   );
 }
 
-function ProviderPill({ selected, available, enabled, label, tone, wallet, onClick }: {
+function ProviderPill({ selected, available, enabled, logo, label, tone, wallet, onClick }: {
   selected: boolean; available: boolean; enabled: boolean;
-  label: string; tone: "rose" | "amber"; wallet: any; onClick: () => void;
+  logo: string; label: string; tone: "rose" | "amber"; wallet: any; onClick: () => void;
 }) {
   const disabled = !available;
   return (
@@ -295,14 +316,17 @@ function ProviderPill({ selected, available, enabled, label, tone, wallet, onCli
           : "border-border bg-surface-2"
       } ${disabled ? "opacity-50" : ""}`}
     >
-      <p className={`text-sm font-black text-${tone} flex items-center justify-between`}>
-        <span>{label}</span>
-        {!enabled && <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-rose/20 text-rose">বন্ধ</span>}
-      </p>
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <img src={logo} alt={label} className="h-6 w-auto object-contain shrink-0" loading="lazy" />
+          <span className={`text-sm font-black text-${tone} truncate`} translate="no">{label}</span>
+        </div>
+        {!enabled && <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-rose/20 text-rose shrink-0" translate="no">বন্ধ</span>}
+      </div>
       {wallet ? (
-        <p className="mono-num text-[11px] text-navy/80 mt-0.5 truncate">{wallet.number}</p>
+        <p className="mono-num text-[11px] text-navy/80 mt-1 truncate" translate="no">{wallet.number}</p>
       ) : (
-        <p className="text-[10px] text-muted-foreground mt-0.5">সেট করা নেই</p>
+        <p className="text-[10px] text-muted-foreground mt-1" translate="no">সেট করা নেই</p>
       )}
     </button>
   );

@@ -64,6 +64,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "good-app" },
       { name: "description", content: "good-app — Face verify kore mining korun" },
       { name: "theme-color", content: "#0ea5a4" },
+      { name: "google", content: "notranslate" },
+      { httpEquiv: "Content-Language", content: "bn" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-title", content: "good-app" },
       { name: "apple-mobile-web-app-status-bar-style", content: "default" },
@@ -93,7 +95,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="bn">
+    <html lang="bn" translate="no" className="notranslate">
       <head>
         <HeadContent />
       </head>
