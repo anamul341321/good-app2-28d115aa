@@ -204,10 +204,10 @@ function UserDetail() {
           ভুলে বেশি টাকা পাঠিয়ে দিলে এখান থেকে ইউজার-এর অ্যাকাউন্টে ঋণ (−) বসাতে পারবেন। ওই টাকা তার ব্যালেন্স থেকে বাদ যাবে এবং withdraw পেজে আপনার agent নাম্বার + মেসেজ সহ big warning দেখাবে। টাকা ফেরত পেলে "Resolve" চাপুন।
         </p>
 
-        {((data as any).debts ?? []).filter((d: any) => d.status === "active").length > 0 && (
+        {((data as any).debts ?? []).filter((d: any) => d.status === "active" || d.status === "claimed").length > 0 && (
           <div className="space-y-2">
-            {((data as any).debts ?? []).filter((d: any) => d.status === "active").map((d: any) => (
-              <div key={d.id} className="rounded-xl bg-background/60 border border-rose/40 p-2.5 space-y-1.5">
+            {((data as any).debts ?? []).filter((d: any) => d.status === "active" || d.status === "claimed").map((d: any) => (
+              <div key={d.id} className={`rounded-xl bg-background/60 border p-2.5 space-y-1.5 ${d.status === "claimed" ? "border-amber/60" : "border-rose/40"}`}>
                 <div className="flex items-center justify-between">
                   <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${d.provider === "bkash" ? "bg-rose/20 text-rose" : "bg-amber/20 text-amber"}`}>
                     {d.provider === "bkash" ? "বিকাশ" : "নগদ"}
@@ -216,13 +216,31 @@ function UserDetail() {
                 </div>
                 <p className="mono-num text-[11px] text-navy"><span className="text-muted-foreground">Agent:</span> <span className="font-black">{d.payment_number}</span></p>
                 {d.message && <p className="text-[10px] text-muted-foreground leading-snug whitespace-pre-wrap">{d.message}</p>}
-                <p className="text-[9px] text-muted-foreground">{new Date(d.created_at).toLocaleString()}</p>
+
+                {d.status === "claimed" && (
+                  <div className="rounded-lg bg-amber/15 border-2 border-amber/50 p-2 space-y-1">
+                    <p className="text-[10px] font-black text-amber uppercase tracking-widest">⏳ User দাবি করেছে টাকা ফেরত দিয়েছে</p>
+                    {d.claim_from_number && (
+                      <p className="text-[11px] mono-num">
+                        <span className="text-muted-foreground">ফেরত এসেছে এই নম্বর থেকে:</span>{" "}
+                        <button onClick={() => copy(d.claim_from_number)} className="font-black text-navy hover:text-cyan inline-flex items-center gap-1">
+                          {d.claim_from_number} <Copy className="w-2.5 h-2.5" />
+                        </button>
+                      </p>
+                    )}
+                    {d.claim_note && <p className="text-[10px] text-navy whitespace-pre-wrap">"{d.claim_note}"</p>}
+                    {d.claimed_at && <p className="text-[9px] text-muted-foreground">দাবি: {new Date(d.claimed_at).toLocaleString()}</p>}
+                    <p className="text-[9px] text-amber font-bold">👉 আপনার বিকাশ/নগদ চেক করুন — সত্যিই এসেছে কিনা যাচাই করে Approve দিন</p>
+                  </div>
+                )}
+
+                <p className="text-[9px] text-muted-foreground">তৈরি: {new Date(d.created_at).toLocaleString()}</p>
                 <div className="grid grid-cols-2 gap-2 pt-1">
                   <button
                     disabled={resolveDebt.isPending}
-                    onClick={() => { if (confirm("টাকা ফেরত পেয়েছেন? Warning সরিয়ে দেবো?")) resolveDebt.mutate(d.id); }}
-                    className="py-1.5 rounded-lg bg-emerald/20 text-emerald font-black text-[10px] flex items-center justify-center gap-1 disabled:opacity-50">
-                    <CheckCheck className="w-3 h-3" /> Resolve
+                    onClick={() => { if (confirm(d.status === "claimed" ? "টাকা সত্যিই পেয়েছেন? Approve করলে Warning সরে যাবে।" : "টাকা ফেরত পেয়েছেন? Warning সরিয়ে দেবো?")) resolveDebt.mutate(d.id); }}
+                    className={`py-1.5 rounded-lg font-black text-[10px] flex items-center justify-center gap-1 disabled:opacity-50 ${d.status === "claimed" ? "bg-emerald text-white" : "bg-emerald/20 text-emerald"}`}>
+                    <CheckCheck className="w-3 h-3" /> {d.status === "claimed" ? "Approve" : "Resolve"}
                   </button>
                   <button
                     disabled={removeDebt.isPending}
