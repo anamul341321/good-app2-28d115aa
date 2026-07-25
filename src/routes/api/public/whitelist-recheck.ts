@@ -58,28 +58,6 @@ export const Route = createFileRoute("/api/public/whitelist-recheck")({
           }
         }
 
-        // Auto re-verify: any task that's been whitelisted for 5+ days since
-        // its last verify counts as a re-verify (GoodDollar's cycle passed).
-        let autoReverified = 0;
-        const FIVE_DAYS_MS = 5 * 24 * 60 * 60 * 1000;
-        for (const t of list) {
-          if (t.status !== "done" || t.whitelist_ok !== true) continue;
-          const base = t.last_reverified_at ?? t.initial_verify_at;
-          if (!base) continue;
-          const elapsed = now.getTime() - new Date(base).getTime();
-          if (elapsed < FIVE_DAYS_MS) continue;
-          const { error: upErr } = await supabaseAdmin.from("tasks").update({
-            reverify_count: (t.reverify_count ?? 0) + 1,
-            last_reverified_at: nowIso,
-            reverify_due_at: new Date(now.getTime() + 4 * 24 * 60 * 60 * 1000).toISOString(),
-            last_whitelist_check_at: nowIso,
-          }).eq("id", t.id);
-          if (!upErr) {
-            autoReverified++;
-            affectedUsers.add(t.user_id);
-          }
-        }
-
         // Also check generated/not-submitted keys. This replaces the need for
         // an admin to press "সব whitelist check" every few minutes.
         const attempts: any[] = [];
