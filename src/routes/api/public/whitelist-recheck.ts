@@ -130,7 +130,7 @@ export const Route = createFileRoute("/api/public/whitelist-recheck")({
           Array.from(affectedUsers).map((uid) => supabaseAdmin.rpc("settle_mining", { _user_id: uid })),
         );
 
-        return Response.json({ ok: true, checked, flipped, restored, autoReverified, pendingChecked, pendingPromoted, affectedUsers: affectedUsers.size });
+        return Response.json({ ok: true, checked, flipped, restored, pendingChecked, pendingPromoted, affectedUsers: affectedUsers.size });
       },
     },
   },
