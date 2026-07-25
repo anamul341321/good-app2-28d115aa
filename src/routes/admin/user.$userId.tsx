@@ -44,6 +44,23 @@ function UserDetail() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const payout = useMutation({
+    mutationFn: () => adminDirectPayout({ data: {
+      userId,
+      amount: Number(payAmt),
+      provider: payProvider,
+      walletNumber: payNumber.trim(),
+      note: payNote.trim() || undefined,
+      deductBalance: payDeduct,
+    }}),
+    onSuccess: () => {
+      toast.success(`✅ ${payAmt}৳ ${payProvider === "bkash" ? "বিকাশ" : "নগদ"} · ${payNumber} — history-তে যোগ হয়েছে`);
+      setPayAmt(""); setPayNumber(""); setPayNote("");
+      refetch();
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
 
   const resetPass = useMutation({
     mutationFn: (pwd: string) => adminResetUserPassword({ data: { userId, newPassword: pwd } }),
