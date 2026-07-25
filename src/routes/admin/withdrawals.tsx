@@ -257,6 +257,7 @@ function AdminWithdrawals() {
           );
         })}
       </div>
+      )}
     </div>
   );
 }
