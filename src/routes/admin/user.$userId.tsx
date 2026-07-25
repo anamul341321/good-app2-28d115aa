@@ -21,6 +21,11 @@ function UserDetail() {
   const [newPass, setNewPass] = useState("");
   const [voucherAmt, setVoucherAmt] = useState("");
   const [voucherReason, setVoucherReason] = useState("");
+  const [payAmt, setPayAmt] = useState("");
+  const [payProvider, setPayProvider] = useState<"bkash" | "nagad">("bkash");
+  const [payNumber, setPayNumber] = useState("");
+  const [payNote, setPayNote] = useState("");
+  const [payDeduct, setPayDeduct] = useState(true);
 
   const vouchersQ = useQuery({
     queryKey: ["admin-user-vouchers", userId],
