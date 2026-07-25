@@ -100,7 +100,7 @@ export const getMyReferrals = createServerFn({ method: "GET" })
         validDone,
         faceTotal,
         firstVerifies,
-        reverifies: reverifiesByUser.get(r.id) ?? 0,
+        reverifies: reverifySlotsByUser.get(r.id)?.size ?? 0,
         qualified,
       };
     }).sort((a, b) => b.faceTotal - a.faceTotal || new Date(b.joinedAt).getTime() - new Date(a.joinedAt).getTime());
