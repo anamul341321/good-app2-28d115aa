@@ -28,8 +28,9 @@ export const requestWithdraw = createServerFn({ method: "POST" })
       throw new Error("দৈনিক সর্বোচ্চ ৩টি withdraw রিকোয়েস্ট করা যাবে — ২৪ ঘণ্টা পর আবার চেষ্টা করুন");
     }
 
-    // 10% platform fee: user pays `amount` from balance, receives 90%
-    const fee = Math.floor(amount * 0.1);
+    // Tiered platform fee: <100৳ → 20%, ≥100৳ → 10%
+    const feeRate = amount < 100 ? 0.2 : 0.1;
+    const fee = Math.floor(amount * feeRate);
     const payout = amount - fee;
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
