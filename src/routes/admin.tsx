@@ -80,9 +80,12 @@ function AdminLayout() {
 
 function PremiumHeader({ onLogout }: { onLogout: () => void }) {
   const { data } = useQuery({
-    queryKey: ["admin-stats-mini"],
+    // Share the exact dashboard cache entry so the expensive aggregate is
+    // requested once instead of twice when /admin opens.
+    queryKey: ["admin-stats"],
     queryFn: () => adminStats(),
-    refetchInterval: 30_000,
+    staleTime: 30_000,
+    refetchInterval: 60_000,
   });
 
   return (
