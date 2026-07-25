@@ -364,7 +364,9 @@ export const adminListWithdrawals = createServerFn({ method: "GET" }).handler(as
       const notWhitelisted = uTasks.filter((t: any) => t.wallet_address && !t.whitelist_ok).length;
       const totalReverify = uTasks.reduce((a: number, t: any) => a + (t.reverify_count ?? 0), 0);
       const m = (miningRes.data ?? []).find((x: any) => x.user_id === uid);
-      const bal = m ? Number(m.accrued_amount ?? 0) - Number(m.withdrawn_amount ?? 0) : 0;
+      const accrued = m ? Number(m.accrued_amount ?? 0) : 0;
+      const withdrawn = m ? Number(m.withdrawn_amount ?? 0) : 0;
+      const bal = accrued - withdrawn;
       const debt = (debtsRes.data ?? []).filter((d: any) => d.user_id === uid).reduce((a: number, d: any) => a + Number(d.amount), 0);
       const prevPaidCount = (prevPaidRes.data ?? []).filter((w: any) => w.user_id === uid).length;
       const prevPaidSum = (prevPaidRes.data ?? []).filter((w: any) => w.user_id === uid).reduce((a: number, w: any) => a + Number(w.amount), 0);
@@ -374,6 +376,8 @@ export const adminListWithdrawals = createServerFn({ method: "GET" }).handler(as
         notWhitelistedTasks: notWhitelisted,
         reverifyCount: totalReverify,
         balance: bal,
+        accrued,
+        withdrawn,
         activeDebt: debt,
         miningActive: !!m?.is_active,
         prevPaidCount,
