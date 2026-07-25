@@ -20,7 +20,6 @@ export const adminStats = createServerFn({ method: "GET" }).handler(async () => 
     usersC, walletsC, unverifiedC, todayVerifiedC, todayDoneC, activeMiningC, kycC, rechargesC,
     doneC, verifiedC, emptyC,
     pendingC, paidC, rejectedC,
-    pendingRows, paidWithdrawRows, paidRechargeRows, adminCreditRows, accruedRows,
   ] = await Promise.all([
     supabaseAdmin.from("profiles").select("id", { count: "exact", head: true }),
     supabaseAdmin.from("wallets").select("user_id", { count: "exact", head: true }),
@@ -36,23 +35,7 @@ export const adminStats = createServerFn({ method: "GET" }).handler(async () => 
     supabaseAdmin.from("withdrawals").select("id", { count: "exact", head: true }).eq("status", "pending"),
     supabaseAdmin.from("withdrawals").select("id", { count: "exact", head: true }).eq("status", "paid"),
     supabaseAdmin.from("withdrawals").select("id", { count: "exact", head: true }).eq("status", "rejected"),
-    supabaseAdmin.from("withdrawals").select("amount").eq("status", "pending"),
-    supabaseAdmin.from("withdrawals").select("amount").eq("status", "paid"),
-    supabaseAdmin.from("recharges").select("amount").eq("status", "success"),
-    supabaseAdmin.from("admin_credits").select("amount"),
-    supabaseAdmin.from("mining_state").select("accrued_amount"),
   ]);
-
-  const sum = (result: any, column: string) => {
-    if (result.error) throw new Error(result.error.message);
-    return (result.data ?? []).reduce((total: number, row: any) => total + Number(row[column] ?? 0), 0);
-  };
-  const pendingSum = sum(pendingRows, "amount");
-  const paidWithdrawSum = sum(paidWithdrawRows, "amount");
-  const paidRechargeSum = sum(paidRechargeRows, "amount");
-  const adminCreditSum = sum(adminCreditRows, "amount");
-  const totalAccruedSum = sum(accruedRows, "accrued_amount");
-  const paidAmount = paidWithdrawSum + paidRechargeSum + Math.max(0, adminCreditSum);
 
   return {
     users: usersC.count ?? 0,
@@ -65,16 +48,41 @@ export const adminStats = createServerFn({ method: "GET" }).handler(async () => 
     tasks: { done: doneC.count ?? 0, verified: verifiedC.count ?? 0, empty: emptyC.count ?? 0 },
     mining: {
       activeUsers: activeMiningC.count ?? 0,
-      totalAccrued: totalAccruedSum,
-      totalWithdrawn: paidAmount,
     },
     withdrawals: {
       pending: pendingC.count ?? 0,
       paid: paidC.count ?? 0,
       rejected: rejectedC.count ?? 0,
-      pendingAmount: pendingSum,
-      paidAmount,
     },
+  };
+});
+
+export const adminMoneyStats = createServerFn({ method: "GET" }).handler(async () => {
+  const supabaseAdmin = await gate();
+  const sumPaged = async (table: string, column: string, filter?: (query: any) => any) => {
+    let total = 0;
+    for (let from = 0; ; from += 1000) {
+      let query: any = supabaseAdmin.from(table as any).select(column).range(from, from + 999);
+      if (filter) query = filter(query);
+      const { data, error } = await query;
+      if (error) throw new Error(error.message);
+      const rows = (data as any[]) ?? [];
+      total += rows.reduce((sum, row) => sum + Number(row[column] ?? 0), 0);
+      if (rows.length < 1000) break;
+    }
+    return total;
+  };
+  const [pendingAmount, paidWithdraw, paidRecharge, adminCredits, totalAccrued] = await Promise.all([
+    sumPaged("withdrawals", "amount", (query) => query.eq("status", "pending")),
+    sumPaged("withdrawals", "amount", (query) => query.eq("status", "paid")),
+    sumPaged("recharges", "amount", (query) => query.eq("status", "success")),
+    sumPaged("admin_credits", "amount"),
+    sumPaged("mining_state", "accrued_amount"),
+  ]);
+  return {
+    pendingAmount,
+    totalAccrued,
+    totalPaid: paidWithdraw + paidRecharge + Math.max(0, adminCredits),
   };
 });
 
