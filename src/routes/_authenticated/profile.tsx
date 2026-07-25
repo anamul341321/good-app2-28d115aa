@@ -244,7 +244,13 @@ function ProfilePage() {
         </div>
       )}
 
-      {tab === "withdraw" && <HistoryList empty="এখনো কোনো উইথড্র হয়নি" items={(data.withdrawals ?? []).map((w: any) => ({ id: w.id, amount: Number(w.amount), date: w.created_at, status: w.status, meta: `${w.provider} · ${w.wallet_number}` }))} />}
+      {tab === "withdraw" && <HistoryList empty="এখনো কোনো উইথড্র হয়নি" items={(data.withdrawals ?? []).map((w: any) => {
+        const isAdmin = typeof w.admin_note === "string" && w.admin_note.startsWith("[Admin Payout]");
+        const noteClean = isAdmin ? w.admin_note.replace(/^\[Admin Payout\]\s*/, "") : "";
+        const badge = isAdmin ? " · 🎁 Admin থেকে" : "";
+        const noteBit = noteClean ? ` · ${noteClean}` : "";
+        return { id: w.id, amount: Number(w.amount), date: w.created_at, status: w.status, meta: `${w.provider} · ${w.wallet_number}${badge}${noteBit}` };
+      })} />}
       {tab === "claim" && <HistoryList empty="এখনো কোনো মাইনিং ক্লেইম নেই" items={(data.claims ?? []).map((c: any) => ({ id: c.id, amount: Number(c.amount), date: c.created_at, status: "claim", meta: c.note ?? "Snapshot" }))} />}
     </div>
   );

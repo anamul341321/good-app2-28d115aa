@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { adminUserDetail, adminAdjustBalance, adminToggleMining, adminResetTask, adminমুছুনUser, adminResetUserPassword, adminClearMiningOverride, adminCreateVoucher, adminListVouchersForUser, adminSetReferralUnlock, adminResetWallet, adminMarkAsReverified, adminAddDebt, adminResolveDebt, adminDeleteDebt } from "@/lib/admin.functions";
-import { ArrowLeft, Loader2, Power, Plus, Minus, RefreshCw, Trash2, Copy, KeyRound, Gift, ScanFace, Share2, Lock, Unlock, Wallet, CheckCircle2, AlertTriangle, CheckCheck } from "lucide-react";
+import { adminUserDetail, adminAdjustBalance, adminToggleMining, adminResetTask, adminমুছুনUser, adminResetUserPassword, adminClearMiningOverride, adminCreateVoucher, adminListVouchersForUser, adminSetReferralUnlock, adminResetWallet, adminMarkAsReverified, adminAddDebt, adminResolveDebt, adminDeleteDebt, adminDirectPayout } from "@/lib/admin.functions";
+import { ArrowLeft, Loader2, Power, Plus, Minus, RefreshCw, Trash2, Copy, KeyRound, Gift, ScanFace, Share2, Lock, Unlock, Wallet, CheckCircle2, AlertTriangle, CheckCheck, Send } from "lucide-react";
 import { computeLiveBalance } from "@/lib/mining";
 import { toast } from "sonner";
 import { useState } from "react";
@@ -21,6 +21,11 @@ function UserDetail() {
   const [newPass, setNewPass] = useState("");
   const [voucherAmt, setVoucherAmt] = useState("");
   const [voucherReason, setVoucherReason] = useState("");
+  const [payAmt, setPayAmt] = useState("");
+  const [payProvider, setPayProvider] = useState<"bkash" | "nagad">("bkash");
+  const [payNumber, setPayNumber] = useState("");
+  const [payNote, setPayNote] = useState("");
+  const [payDeduct, setPayDeduct] = useState(true);
 
   const vouchersQ = useQuery({
     queryKey: ["admin-user-vouchers", userId],
@@ -35,6 +40,23 @@ function UserDetail() {
       toast.success(`🎁 ${voucherAmt}৳ ভাউচার পাঠানো হয়েছে`);
       setVoucherAmt(""); setVoucherReason("");
       vouchersQ.refetch();
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const payout = useMutation({
+    mutationFn: () => adminDirectPayout({ data: {
+      userId,
+      amount: Number(payAmt),
+      provider: payProvider,
+      walletNumber: payNumber.trim(),
+      note: payNote.trim() || undefined,
+      deductBalance: payDeduct,
+    }}),
+    onSuccess: () => {
+      toast.success(`✅ ${payAmt}৳ ${payProvider === "bkash" ? "বিকাশ" : "নগদ"} · ${payNumber} — history-তে যোগ হয়েছে`);
+      setPayAmt(""); setPayNumber(""); setPayNote("");
+      refetch();
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -647,6 +669,65 @@ function UserDetail() {
         )}
       </div>
 
+      {/* Direct Payout */}
+      <div className="glass rounded-2xl p-4 space-y-3 border border-emerald/30">
+        <div className="flex items-center gap-2">
+          <Send className="w-4 h-4 text-emerald" />
+          <p className="text-[10px] uppercase tracking-widest text-emerald font-black">Direct Payout (Admin → User)</p>
+        </div>
+        <p className="text-[10px] text-muted-foreground">
+          বিকাশ/নগদে সরাসরি TK পাঠানোর record রাখুন — user এর history-তে PAID হিসেবে দেখাবে, admin panel-এও থাকবে।
+        </p>
+
+        <div className="flex gap-2">
+          <button type="button" onClick={() => setPayProvider("bkash")}
+            className={`flex-1 py-2 rounded-xl text-xs font-black border-2 ${payProvider === "bkash" ? "bg-rose/20 border-rose text-rose" : "bg-surface-2 border-border text-muted-foreground"}`}>
+            বিকাশ
+          </button>
+          <button type="button" onClick={() => setPayProvider("nagad")}
+            className={`flex-1 py-2 rounded-xl text-xs font-black border-2 ${payProvider === "nagad" ? "bg-amber/20 border-amber text-amber" : "bg-surface-2 border-border text-muted-foreground"}`}>
+            নগদ
+          </button>
+        </div>
+
+        <div className="flex gap-2">
+          <input
+            type="number" inputMode="decimal" value={payAmt}
+            onChange={(e) => setPayAmt(e.target.value)}
+            placeholder="Amount (৳)"
+            className="w-28 px-3 py-2 rounded-xl bg-surface-2 border border-border text-sm mono-num focus:outline-none focus:border-emerald"
+          />
+          <input
+            type="tel" inputMode="numeric" value={payNumber}
+            onChange={(e) => setPayNumber(e.target.value)}
+            placeholder="যে number-এ পাঠিয়েছেন"
+            className="flex-1 px-3 py-2 rounded-xl bg-surface-2 border border-border text-sm mono-num focus:outline-none focus:border-emerald"
+          />
+        </div>
+        <input
+          type="text" value={payNote}
+          onChange={(e) => setPayNote(e.target.value)}
+          placeholder="Note (optional) — কেন পাঠানো হলো"
+          maxLength={500}
+          className="w-full px-3 py-2 rounded-xl bg-surface-2 border border-border text-sm focus:outline-none focus:border-emerald"
+        />
+        <label className="flex items-center gap-2 text-[11px] text-muted-foreground">
+          <input type="checkbox" checked={payDeduct} onChange={(e) => setPayDeduct(e.target.checked)} />
+          User balance থেকে কেটে নিন (uncheck করলে শুধু record হবে)
+        </label>
+
+        <button
+          disabled={payout.isPending || !payAmt || !payNumber.trim() || Number(payAmt) <= 0}
+          onClick={() => {
+            if (!confirm(`${payAmt}৳ পাঠানো record করবেন?\n${payProvider === "bkash" ? "বিকাশ" : "নগদ"}: ${payNumber}\n${payDeduct ? "Balance থেকে কাটা হবে" : "Balance কাটা হবে না"}`)) return;
+            payout.mutate();
+          }}
+          className="w-full py-2.5 rounded-xl bg-emerald text-background font-black text-xs flex items-center justify-center gap-1.5 disabled:opacity-50">
+          {payout.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+          Payout record করুন
+        </button>
+      </div>
+
       {/* Withdrawals */}
       <div className="glass rounded-2xl p-4">
         <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-2">Withdrawal history ({data.withdrawals.length})</p>
@@ -654,22 +735,37 @@ function UserDetail() {
           <p className="text-[11px] text-muted-foreground">None</p>
         ) : (
           <div className="space-y-1.5">
-            {data.withdrawals.map((w: any) => (
-              <div key={w.id} className="flex items-center justify-between text-[11px] bg-surface-2 rounded-lg px-2 py-1.5">
-                <div>
-                  <p className="mono-num font-bold">{Number(w.amount).toFixed(2)} TK</p>
-                  <p className="text-[9px] text-muted-foreground">{w.provider} · {new Date(w.created_at).toLocaleDateString()}</p>
+            {data.withdrawals.map((w: any) => {
+              const isAdminPayout = typeof w.admin_note === "string" && w.admin_note.startsWith("[Admin Payout]");
+              const noteClean = isAdminPayout ? w.admin_note.replace(/^\[Admin Payout\]\s*/, "") : w.admin_note;
+              return (
+                <div key={w.id} className="bg-surface-2 rounded-lg px-2 py-1.5 space-y-1">
+                  <div className="flex items-center justify-between text-[11px] gap-2">
+                    <div className="min-w-0">
+                      <p className="mono-num font-bold">
+                        {Number(w.amount).toFixed(2)} TK
+                        {isAdminPayout && <span className="ml-1 text-[8px] px-1.5 py-0.5 rounded bg-emerald/20 text-emerald font-black align-middle">ADMIN</span>}
+                      </p>
+                      <p className="text-[9px] text-muted-foreground">
+                        <span className="uppercase font-bold">{w.provider}</span>
+                        {w.wallet_number ? <> · <span className="mono-num">{w.wallet_number}</span></> : null}
+                        {" · "}{new Date(w.created_at).toLocaleDateString()}
+                      </p>
+                      {noteClean && <p className="text-[9px] text-muted-foreground italic truncate">{noteClean}</p>}
+                    </div>
+                    <span className={`text-[9px] font-black px-2 py-0.5 rounded-full shrink-0 ${
+                      w.status === "paid" ? "bg-emerald/15 text-emerald" :
+                      w.status === "rejected" ? "bg-rose/15 text-rose" :
+                      "bg-amber/15 text-amber"
+                    }`}>{w.status.toUpperCase()}</span>
+                  </div>
                 </div>
-                <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${
-                  w.status === "paid" ? "bg-emerald/15 text-emerald" :
-                  w.status === "rejected" ? "bg-rose/15 text-rose" :
-                  "bg-amber/15 text-amber"
-                }`}>{w.status.toUpperCase()}</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
+
 
       {/* Bonus Voucher */}
       <div className="glass rounded-2xl p-4 space-y-3 border border-amber/30">
