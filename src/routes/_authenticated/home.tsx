@@ -406,22 +406,22 @@ function HomePage() {
                     </button>
                     {isOpen && (
                       <div className="p-3 pt-0 grid gap-2 grid-cols-3 sm:grid-cols-4 animate-in fade-in slide-in-from-top-1">
-                        {items.map((t) => (
-                          <TaskCell key={t.slot} task={t}
-                            onStart={() => router.navigate({ to: "/task/$slot", params: { slot: String(t.slot) } })}
+                        {items.map((task) => (
+                          <TaskCell key={task.slot} task={task}
+                            onStart={() => router.navigate({ to: "/task/$slot", params: { slot: String(task.slot) } })}
                             onReverify={() => {
-                              const url = t.signed_face_url;
+                              const url = task.signed_face_url;
                               if (url) {
                                 setLightbox({
                                   url,
-                                  label: t(`সাক্ষী #${t.slot} · ${(t as any).face_label || "মুখ"} — রি-ভেরিফাই প্রয়োজন`, `Witness #${t.slot} · ${(t as any).face_label || "Face"} — needs re-verify`),
-                                  action: { label: t("রি-ভেরিফাই করুন", "Re-verify"), tone: "rose", onClick: () => router.navigate({ to: "/reverify", search: { taskId: t.id } as any }) },
+                                  label: t(`সাক্ষী #${task.slot} · ${(task as any).face_label || "মুখ"} — রি-ভেরিফাই প্রয়োজন`, `Witness #${task.slot} · ${(task as any).face_label || "Face"} — needs re-verify`),
+                                  action: { label: t("রি-ভেরিফাই করুন", "Re-verify"), tone: "rose", onClick: () => router.navigate({ to: "/reverify", search: { taskId: task.id } as any }) },
                                 });
                               } else {
-                                router.navigate({ to: "/reverify", search: { taskId: t.id } as any });
+                                router.navigate({ to: "/reverify", search: { taskId: task.id } as any });
                               }
                             }}
-                            onOpenPhoto={(url) => setLightbox({ url, label: t(`সাক্ষী #${t.slot} · ${(t as any).face_label || "মুখ"}`, `Witness #${t.slot} · ${(t as any).face_label || "Face"}`) })} />
+                            onOpenPhoto={(url) => setLightbox({ url, label: t(`সাক্ষী #${task.slot} · ${(task as any).face_label || "মুখ"}`, `Witness #${task.slot} · ${(task as any).face_label || "Face"}`) })} />
                         ))}
                       </div>
                     )}
