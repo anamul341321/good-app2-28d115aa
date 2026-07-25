@@ -108,11 +108,12 @@ export const requestWithdraw = createServerFn({ method: "POST" })
 
     const { error: wErr } = await supabaseAdmin.from("withdrawals").insert({
       user_id: userId,
-      amount: amount,
+      amount: payout,
       provider: chosen,
       wallet_number: wallet.number,
+      admin_note: `[Fee 10%] Gross ${amount}৳ − Fee ${fee}৳ = Payout ${payout}৳`,
     });
     if (wErr) throw new Error(wErr.message);
 
-    return { ok: true };
+    return { ok: true, gross: amount, fee, payout };
   });
