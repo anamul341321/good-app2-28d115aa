@@ -89,9 +89,9 @@ export const getDashboard = createServerFn({ method: "GET" })
 
     const { data: activeDebts } = await supabaseAdmin
       .from("user_debts")
-      .select("id, amount, provider, payment_number, message, created_at")
+      .select("id, amount, provider, payment_number, message, status, claim_from_number, claim_note, claimed_at, created_at")
       .eq("user_id", userId)
-      .eq("status", "active")
+      .in("status", ["active", "claimed"])
       .order("created_at", { ascending: false });
     const debtTotal = (activeDebts ?? []).reduce((s: number, d: any) => s + Number(d.amount), 0);
 
