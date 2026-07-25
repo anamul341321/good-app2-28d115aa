@@ -695,7 +695,7 @@ function TaskCell({ task, onStart, onReverify, onOpenPhoto }: { task: any; onSta
   const isDone = task.status === "done";
   const isVerified = task.status === "verified";
   const whitelistLost = task.whitelist_ok === false;
-  const readyToReverify = isVerified && whitelistLost;
+  const readyToReverify = isVerified && whitelistLost && !!task.wallet_address;
   const faceUrl: string | undefined = task.signed_face_url;
 
   const theme = slotTheme(task.slot);
