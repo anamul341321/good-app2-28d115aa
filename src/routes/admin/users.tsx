@@ -24,15 +24,18 @@ function AdminUsers() {
 
   const rows = (data ?? []).filter((r: any) => {
     if (!q.trim()) return true;
-    const s = q.toLowerCase().trim();
+    const raw = q.trim();
+    const s = raw.toLowerCase();
+    // Pure-numeric query → exact UID / serial match only (no phone/UUID substring noise)
+    if (/^\d+$/.test(raw)) {
+      return String(r.profile.uid_seq ?? "") === raw
+        || String(r.serial ?? "") === raw
+        || (r.profile.phone_number ?? "") === raw;
+    }
     return (r.profile.display_name ?? "").toLowerCase().includes(s)
       || (r.profile.phone_number ?? "").toLowerCase().includes(s)
       || (r.profile.email ?? "").toLowerCase().includes(s)
-      || (r.profile.id ?? "").toLowerCase().includes(s)
-      || (r.profile.referral_code ?? "").toLowerCase().includes(s)
-      || String(r.profile.uid_seq ?? "") === s
-      || String(r.serial ?? "") === s
-      || String(r.serial ?? "").includes(s);
+      || (r.profile.referral_code ?? "").toLowerCase() === s;
   });
 
   const verifiedRows = rows
