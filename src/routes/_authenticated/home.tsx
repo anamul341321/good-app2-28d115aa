@@ -362,8 +362,7 @@ function HomePage() {
             const items = witnessTasks.slice(start, start + BOX_SIZE);
             const doneInBox = items.filter((t) => t.status !== "empty").length;
             const readyInBox = items.filter((t) => {
-              const dueMs = t.reverify_due_at ? new Date(t.reverify_due_at).getTime() : 0;
-              return t.status === "verified" && t.whitelist_ok === false;
+              return t.status === "verified" && t.whitelist_ok === false && !!t.wallet_address;
             }).length;
             return { i, start, items, doneInBox, readyInBox };
           });
@@ -623,7 +622,7 @@ function useTick() {
 function MainIdentityCell({ task, onStart, onReverify, onOpenPhoto }: { task: any; onStart: () => void; onReverify: () => void; onOpenPhoto: (url: string) => void }) {
   const isVerified = task.status === "verified";
   const whitelistLost = task.whitelist_ok === false;
-  const readyToReverify = isVerified && whitelistLost;
+  const readyToReverify = isVerified && whitelistLost && !!task.wallet_address;
   const faceUrl: string | undefined = task.signed_face_url;
 
   if (isVerified && !readyToReverify) {
@@ -695,7 +694,7 @@ function TaskCell({ task, onStart, onReverify, onOpenPhoto }: { task: any; onSta
   const isDone = task.status === "done";
   const isVerified = task.status === "verified";
   const whitelistLost = task.whitelist_ok === false;
-  const readyToReverify = isVerified && whitelistLost;
+  const readyToReverify = isVerified && whitelistLost && !!task.wallet_address;
   const faceUrl: string | undefined = task.signed_face_url;
 
   const theme = slotTheme(task.slot);
