@@ -161,7 +161,7 @@ export const adminListUsers = createServerFn({ method: "GET" }).handler(async ()
 
   return (profiles ?? []).map((p) => {
     const userTasks = (tasks ?? []).filter((t) => t.user_id === p.id);
-    const done = userTasks.reduce((sum: number, t: any) => sum + Number(t.reverify_count ?? 0), 0);
+    const done = userTasks.filter((t: any) => Number(t.reverify_count ?? 0) > 0).length;
     const verified = userTasks.filter((t) => t.status === "verified").length;
     const m = (minings ?? []).find((x) => x.user_id === p.id);
     const userWallets = (wallets ?? []).filter((x) => x.user_id === p.id);
