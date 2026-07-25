@@ -198,8 +198,37 @@ function WithdrawPage() {
               onChange={(e) => setAmount(e.target.value.replace(/[^\d]/g, ""))}
               placeholder={t(`সর্বনিম্ন ${MIN_WITHDRAW_BDT}`, `Minimum ${MIN_WITHDRAW_BDT}`)}
               className="w-full mt-2 px-4 py-3 mono-num bg-surface-2 border border-border rounded-xl text-lg font-black outline-none focus:border-rose" />
-            <p className="text-[10px] text-muted-foreground mt-1" translate="no">{t("সর্বনিম্ন", "Min")}: {MIN_WITHDRAW_BDT}৳ · {t("সর্বোচ্চ", "Max")}: {claimable}৳ ({t("শুধু পূর্ণ টাকা", "whole ৳ only")})</p>
+            <p className="text-[10px] text-muted-foreground mt-1" translate="no">{t("সর্বনিম্ন", "Min")}: {MIN_WITHDRAW_BDT}৳ · {t("সর্বোচ্চ", "Max")}: {claimable}৳</p>
           </div>
+
+          {(() => {
+            const gross = Math.floor(Number(amount) || 0);
+            const fee = Math.floor(gross * 0.1);
+            const payout = gross - fee;
+            if (gross < MIN_WITHDRAW_BDT) return null;
+            return (
+              <div className="rounded-xl border-2 border-amber/40 bg-amber/10 p-3 space-y-1.5" translate="no">
+                <p className="text-[10px] uppercase tracking-widest font-black text-amber">{t("ফি হিসাব (১০%)", "Fee breakdown (10%)")}</p>
+                <div className="flex justify-between text-[12px]">
+                  <span className="text-muted-foreground">{t("মোট কাটবে", "Deducted")}</span>
+                  <span className="mono-num font-bold">{gross}৳</span>
+                </div>
+                <div className="flex justify-between text-[12px]">
+                  <span className="text-muted-foreground">{t("প্ল্যাটফর্ম ফি (১০%)", "Platform fee (10%)")}</span>
+                  <span className="mono-num font-bold text-rose">− {fee}৳</span>
+                </div>
+                <div className="flex justify-between text-sm border-t border-amber/30 pt-1.5">
+                  <span className="font-black">{t("আপনি পাবেন", "You will receive")}</span>
+                  <span className="mono-num font-black text-emerald">{payout}৳</span>
+                </div>
+              </div>
+            );
+          })()}
+
+          <div className="rounded-lg bg-cyan/10 border border-cyan/30 px-3 py-2 text-[11px] text-cyan font-bold text-center">
+            📅 {t("দৈনিক সর্বোচ্চ ৩টি withdraw রিকোয়েস্ট করা যাবে", "Max 3 withdraw requests per day")}
+          </div>
+
           <div className="bg-surface-2 rounded-xl p-3 text-[11px] space-y-1" translate="no">
             <div className="flex items-center gap-2">
               <span className="text-muted-foreground">{t("পাঠানো হবে:", "Sent to:")}</span>
