@@ -1264,3 +1264,51 @@ export const adminDirectPayout = createServerFn({ method: "POST" })
     }
     return { ok: true, withdrawal: row };
   });
+
+// ---------------- Paid Report (per-user totals) ----------------
+export const adminPaidReport = createServerFn({ method: "GET" }).handler(async () => {
+  const supabaseAdmin = await gate();
+  const fetchAllPaged = async <T = any>(table: string, select: string, filter?: (q: any) => any): Promise<T[]> => {
+    const rows: T[] = [];
+    for (let from = 0; ; from += 1000) {
+      let q: any = supabaseAdmin.from(table as any).select(select).range(from, from + 999);
+      if (filter) q = filter(q);
+      const { data, error } = await q;
+      if (error) throw new Error(error.message);
+      rows.push(...((data as any[]) ?? []) as T[]);
+      if (!data || data.length < 1000) break;
+    }
+    return rows;
+  };
+
+  const [profiles, withdrawals, recharges, credits] = await Promise.all([
+    fetchAllPaged<{ id: string; full_name: string | null; phone: string | null; serial_uid: number | null }>("profiles", "id, full_name, phone, serial_uid"),
+    fetchAllPaged<{ user_id: string; amount: number }>("withdrawals", "user_id, amount", (q) => q.eq("status", "paid")),
+    fetchAllPaged<{ user_id: string; amount: number }>("recharges", "user_id, amount", (q) => q.eq("status", "success")),
+    fetchAllPaged<{ user_id: string; amount: number }>("admin_credits", "user_id, amount"),
+  ]);
+
+  const map = new Map<string, { userId: string; name: string; phone: string; uid: number | null; withdraw: number; recharge: number; adminCredit: number; total: number }>();
+  for (const p of profiles) {
+    map.set(p.id, { userId: p.id, name: p.full_name ?? "—", phone: p.phone ?? "—", uid: p.serial_uid, withdraw: 0, recharge: 0, adminCredit: 0, total: 0 });
+  }
+  for (const w of withdrawals) {
+    const r = map.get(w.user_id); if (!r) continue;
+    r.withdraw += Number(w.amount) || 0;
+  }
+  for (const r0 of recharges) {
+    const r = map.get(r0.user_id); if (!r) continue;
+    r.recharge += Number(r0.amount) || 0;
+  }
+  for (const c of credits) {
+    const r = map.get(c.user_id); if (!r) continue;
+    r.adminCredit += Math.max(0, Number(c.amount) || 0);
+  }
+  const rows = Array.from(map.values())
+    .map((r) => ({ ...r, total: r.withdraw + r.recharge + r.adminCredit }))
+    .filter((r) => r.total > 0)
+    .sort((a, b) => b.total - a.total);
+
+  const grandTotal = rows.reduce((a, r) => a + r.total, 0);
+  return { rows, grandTotal, generatedAt: new Date().toISOString() };
+});

@@ -22,6 +22,7 @@ import { Route as AdminUsersRouteImport } from './routes/admin/users'
 import { Route as AdminUnverifiedRouteImport } from './routes/admin/unverified'
 import { Route as AdminReverifyRouteImport } from './routes/admin/reverify'
 import { Route as AdminRechargesRouteImport } from './routes/admin/recharges'
+import { Route as AdminPaidReportRouteImport } from './routes/admin/paid-report'
 import { Route as AdminKycRouteImport } from './routes/admin/kyc'
 import { Route as AdminFacesRouteImport } from './routes/admin/faces'
 import { Route as AdminBonusSettingsRouteImport } from './routes/admin/bonus-settings'
@@ -103,6 +104,11 @@ const AdminReverifyRoute = AdminReverifyRouteImport.update({
 const AdminRechargesRoute = AdminRechargesRouteImport.update({
   id: '/recharges',
   path: '/recharges',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPaidReportRoute = AdminPaidReportRouteImport.update({
+  id: '/paid-report',
+  path: '/paid-report',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminKycRoute = AdminKycRouteImport.update({
@@ -216,6 +222,7 @@ export interface FileRoutesByFullPath {
   '/admin/bonus-settings': typeof AdminBonusSettingsRoute
   '/admin/faces': typeof AdminFacesRoute
   '/admin/kyc': typeof AdminKycRoute
+  '/admin/paid-report': typeof AdminPaidReportRoute
   '/admin/recharges': typeof AdminRechargesRoute
   '/admin/reverify': typeof AdminReverifyRoute
   '/admin/unverified': typeof AdminUnverifiedRoute
@@ -247,6 +254,7 @@ export interface FileRoutesByTo {
   '/admin/bonus-settings': typeof AdminBonusSettingsRoute
   '/admin/faces': typeof AdminFacesRoute
   '/admin/kyc': typeof AdminKycRoute
+  '/admin/paid-report': typeof AdminPaidReportRoute
   '/admin/recharges': typeof AdminRechargesRoute
   '/admin/reverify': typeof AdminReverifyRoute
   '/admin/unverified': typeof AdminUnverifiedRoute
@@ -281,6 +289,7 @@ export interface FileRoutesById {
   '/admin/bonus-settings': typeof AdminBonusSettingsRoute
   '/admin/faces': typeof AdminFacesRoute
   '/admin/kyc': typeof AdminKycRoute
+  '/admin/paid-report': typeof AdminPaidReportRoute
   '/admin/recharges': typeof AdminRechargesRoute
   '/admin/reverify': typeof AdminReverifyRoute
   '/admin/unverified': typeof AdminUnverifiedRoute
@@ -315,6 +324,7 @@ export interface FileRouteTypes {
     | '/admin/bonus-settings'
     | '/admin/faces'
     | '/admin/kyc'
+    | '/admin/paid-report'
     | '/admin/recharges'
     | '/admin/reverify'
     | '/admin/unverified'
@@ -346,6 +356,7 @@ export interface FileRouteTypes {
     | '/admin/bonus-settings'
     | '/admin/faces'
     | '/admin/kyc'
+    | '/admin/paid-report'
     | '/admin/recharges'
     | '/admin/reverify'
     | '/admin/unverified'
@@ -379,6 +390,7 @@ export interface FileRouteTypes {
     | '/admin/bonus-settings'
     | '/admin/faces'
     | '/admin/kyc'
+    | '/admin/paid-report'
     | '/admin/recharges'
     | '/admin/reverify'
     | '/admin/unverified'
@@ -495,6 +507,13 @@ declare module '@tanstack/react-router' {
       path: '/recharges'
       fullPath: '/admin/recharges'
       preLoaderRoute: typeof AdminRechargesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/paid-report': {
+      id: '/admin/paid-report'
+      path: '/paid-report'
+      fullPath: '/admin/paid-report'
+      preLoaderRoute: typeof AdminPaidReportRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/kyc': {
@@ -662,6 +681,7 @@ interface AdminRouteChildren {
   AdminBonusSettingsRoute: typeof AdminBonusSettingsRoute
   AdminFacesRoute: typeof AdminFacesRoute
   AdminKycRoute: typeof AdminKycRoute
+  AdminPaidReportRoute: typeof AdminPaidReportRoute
   AdminRechargesRoute: typeof AdminRechargesRoute
   AdminReverifyRoute: typeof AdminReverifyRoute
   AdminUnverifiedRoute: typeof AdminUnverifiedRoute
@@ -677,6 +697,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminBonusSettingsRoute: AdminBonusSettingsRoute,
   AdminFacesRoute: AdminFacesRoute,
   AdminKycRoute: AdminKycRoute,
+  AdminPaidReportRoute: AdminPaidReportRoute,
   AdminRechargesRoute: AdminRechargesRoute,
   AdminReverifyRoute: AdminReverifyRoute,
   AdminUnverifiedRoute: AdminUnverifiedRoute,

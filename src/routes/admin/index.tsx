@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { adminStats, adminListWithdrawals, adminListDebtClaims, adminResolveDebt } from "@/lib/admin.functions";
-import { Loader2, Users, ArrowDownToLine, ScanFace, Clock, AlertTriangle, TrendingUp, Wallet, CheckCircle2, ShieldCheck, Smartphone, HandCoins, Copy, CheckCheck } from "lucide-react";
+import { Loader2, Users, ArrowDownToLine, ScanFace, Clock, AlertTriangle, TrendingUp, Wallet, CheckCircle2, ShieldCheck, Smartphone, HandCoins, Copy, CheckCheck, FileText } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/")({ component: AdminDashboard });
@@ -32,6 +32,17 @@ function AdminDashboard() {
         <BigStat label="Total Accrued" value={stats.mining.totalAccrued.toFixed(2)} unit="TK" accent="cyan" icon={<TrendingUp className="w-4 h-4" />} />
         <BigStat label="Total Paid Out" value={stats.mining.totalWithdrawn.toFixed(2)} unit="TK" accent="emerald" icon={<CheckCircle2 className="w-4 h-4" />} />
       </div>
+
+      {/* Paid report link */}
+      <Link to="/admin/paid-report" className="block glass rounded-2xl p-4 border border-emerald/40 hover:border-emerald transition">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-[10px] uppercase tracking-widest text-emerald font-bold flex items-center gap-1"><FileText className="w-3 h-3"/> মোট পেমেন্ট রিপোর্ট</p>
+            <p className="text-xs text-muted-foreground mt-1">কোন user কে কত টাকা দেওয়া হয়েছে — Print / Download</p>
+          </div>
+          <FileText className="w-8 h-8 text-emerald/50" />
+        </div>
+      </Link>
 
       {/* Pending row */}
       <Link to="/admin/withdrawals" className="block glass rounded-2xl p-4 border border-amber/40 hover:border-amber transition">
