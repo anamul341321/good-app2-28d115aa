@@ -203,18 +203,21 @@ function WithdrawPage() {
 
           {(() => {
             const gross = Math.floor(Number(amount) || 0);
-            const fee = Math.floor(gross * 0.1);
+            const feeRate = gross < 100 ? 0.2 : 0.1;
+            const feePct = Math.round(feeRate * 100);
+            const fee = Math.floor(gross * feeRate);
             const payout = gross - fee;
             if (gross < MIN_WITHDRAW_BDT) return null;
             return (
               <div className="rounded-xl border-2 border-amber/40 bg-amber/10 p-3 space-y-1.5" translate="no">
-                <p className="text-[10px] uppercase tracking-widest font-black text-amber">{t("ফি হিসাব (১০%)", "Fee breakdown (10%)")}</p>
+                <p className="text-[10px] uppercase tracking-widest font-black text-amber">{t(`ফি হিসাব (${feePct}%)`, `Fee breakdown (${feePct}%)`)}</p>
+                <p className="text-[10px] text-muted-foreground">{t("১০০৳-এর নিচে ২০%, ১০০৳ ও তার উপরে ১০%", "Under 100৳: 20%, 100৳ or more: 10%")}</p>
                 <div className="flex justify-between text-[12px]">
                   <span className="text-muted-foreground">{t("মোট কাটবে", "Deducted")}</span>
                   <span className="mono-num font-bold">{gross}৳</span>
                 </div>
                 <div className="flex justify-between text-[12px]">
-                  <span className="text-muted-foreground">{t("প্ল্যাটফর্ম ফি (১০%)", "Platform fee (10%)")}</span>
+                  <span className="text-muted-foreground">{t(`প্ল্যাটফর্ম ফি (${feePct}%)`, `Platform fee (${feePct}%)`)}</span>
                   <span className="mono-num font-bold text-rose">− {fee}৳</span>
                 </div>
                 <div className="flex justify-between text-sm border-t border-amber/30 pt-1.5">
