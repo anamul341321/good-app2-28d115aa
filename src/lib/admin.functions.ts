@@ -12,72 +12,76 @@ async function gate() {
 // ---------------- Stats ----------------
 export const adminStats = createServerFn({ method: "GET" }).handler(async () => {
   const supabaseAdmin = await gate();
-  const fetchAllPaged = async <T = any>(table: string, select: string): Promise<T[]> => {
-    const rows: T[] = [];
+  const sumPaged = async (table: string, column: string, filter?: (q: any) => any): Promise<number> => {
+    let total = 0;
     for (let from = 0; ; from += 1000) {
-      const { data, error } = await supabaseAdmin.from(table as any).select(select).range(from, from + 999);
+      let q: any = supabaseAdmin.from(table as any).select(column).range(from, from + 999);
+      if (filter) q = filter(q);
+      const { data, error } = await q;
       if (error) throw new Error(error.message);
-      rows.push(...((data as any[]) ?? []) as T[]);
-      if (!data || data.length < 1000) break;
+      const rows = (data as any[]) ?? [];
+      for (const r of rows) total += Number(r[column] ?? 0);
+      if (rows.length < 1000) break;
     }
-    return rows;
+    return total;
   };
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
   const todayIso = startOfToday.toISOString();
 
-  const [users, tasks, minings, wallets, allWith, unverified, todayVerifiedRes, todayDoneRes, activeMiningCount, kycVerified, rechargesCount, successRecharges, adminCreditsRows] = await Promise.all([
+  const [
+    usersC, walletsC, unverifiedC, todayVerifiedC, todayDoneC, activeMiningC, kycC, rechargesC,
+    doneC, verifiedC, emptyC,
+    pendingC, paidC, rejectedC,
+    pendingSum, paidWithdrawSum, paidRechargeSum, adminCreditSum, totalAccruedSum,
+  ] = await Promise.all([
     supabaseAdmin.from("profiles").select("id", { count: "exact", head: true }),
-    fetchAllPaged<{ status: string }>("tasks", "status"),
-    fetchAllPaged<{ accrued_amount: number; withdrawn_amount: number; is_active: boolean }>("mining_state", "accrued_amount, withdrawn_amount, is_active"),
     supabaseAdmin.from("wallets").select("user_id", { count: "exact", head: true }),
-    fetchAllPaged<{ amount: number; status: string }>("withdrawals", "amount, status"),
     supabaseAdmin.from("unverified_attempts").select("id", { count: "exact", head: true }),
     supabaseAdmin.from("tasks").select("id", { count: "exact", head: true }).gte("initial_verify_at", todayIso),
     supabaseAdmin.from("tasks").select("id", { count: "exact", head: true }).gte("done_at", todayIso),
     supabaseAdmin.from("mining_state").select("user_id", { count: "exact", head: true }).eq("is_active", true),
     supabaseAdmin.from("profiles").select("id", { count: "exact", head: true }).eq("kyc_verified", true),
     supabaseAdmin.from("recharges").select("id", { count: "exact", head: true }),
-    fetchAllPaged<{ amount: number; status: string }>("recharges", "amount, status"),
-    fetchAllPaged<{ amount: number }>("admin_credits", "amount"),
+    supabaseAdmin.from("tasks").select("id", { count: "exact", head: true }).eq("status", "done"),
+    supabaseAdmin.from("tasks").select("id", { count: "exact", head: true }).eq("status", "verified"),
+    supabaseAdmin.from("tasks").select("id", { count: "exact", head: true }).eq("status", "empty"),
+    supabaseAdmin.from("withdrawals").select("id", { count: "exact", head: true }).eq("status", "pending"),
+    supabaseAdmin.from("withdrawals").select("id", { count: "exact", head: true }).eq("status", "paid"),
+    supabaseAdmin.from("withdrawals").select("id", { count: "exact", head: true }).eq("status", "rejected"),
+    sumPaged("withdrawals", "amount", (q) => q.eq("status", "pending")),
+    sumPaged("withdrawals", "amount", (q) => q.eq("status", "paid")),
+    sumPaged("recharges", "amount", (q) => q.eq("status", "success")),
+    sumPaged("admin_credits", "amount"),
+    sumPaged("mining_state", "accrued_amount"),
   ]);
 
-  const allTasks = tasks ?? [];
-  const allMining = minings ?? [];
-
-  const withdrawPaid = allWith.filter((w) => w.status === "paid").reduce((a, w) => a + Number(w.amount), 0);
-  const rechargePaid = (successRecharges ?? []).filter((r) => r.status === "success").reduce((a, r) => a + Number(r.amount), 0);
-  const adminCreditPaid = (adminCreditsRows ?? []).reduce((a, r) => a + Math.max(0, Number(r.amount)), 0);
-  const paidAmount = withdrawPaid + rechargePaid + adminCreditPaid;
+  const paidAmount = paidWithdrawSum + paidRechargeSum + Math.max(0, adminCreditSum);
 
   return {
-    users: users.count ?? 0,
-    wallets: wallets.count ?? 0,
-    kycVerified: kycVerified.count ?? 0,
-    recharges: rechargesCount.count ?? 0,
-    unverifiedCount: unverified.count ?? 0,
-    reverifyQueue: allTasks.filter((t) => t.status === "verified").length,
-    todayVerified: (todayVerifiedRes.count ?? 0) + (todayDoneRes.count ?? 0),
-    tasks: {
-      done: allTasks.filter((t) => t.status === "done").length,
-      verified: allTasks.filter((t) => t.status === "verified").length,
-      empty: allTasks.filter((t) => t.status === "empty").length,
-    },
+    users: usersC.count ?? 0,
+    wallets: walletsC.count ?? 0,
+    kycVerified: kycC.count ?? 0,
+    recharges: rechargesC.count ?? 0,
+    unverifiedCount: unverifiedC.count ?? 0,
+    reverifyQueue: verifiedC.count ?? 0,
+    todayVerified: (todayVerifiedC.count ?? 0) + (todayDoneC.count ?? 0),
+    tasks: { done: doneC.count ?? 0, verified: verifiedC.count ?? 0, empty: emptyC.count ?? 0 },
     mining: {
-      activeUsers: activeMiningCount.count ?? 0,
-      totalAccrued: allMining.reduce((a, m) => a + Number(m.accrued_amount ?? 0), 0),
-      // Real paid-out figure = sum of withdrawals actually marked paid (permanent history).
+      activeUsers: activeMiningC.count ?? 0,
+      totalAccrued: totalAccruedSum,
       totalWithdrawn: paidAmount,
     },
     withdrawals: {
-      pending: allWith.filter((w) => w.status === "pending").length,
-      paid: allWith.filter((w) => w.status === "paid").length,
-      rejected: allWith.filter((w) => w.status === "rejected").length,
-      pendingAmount: allWith.filter((w) => w.status === "pending").reduce((a, w) => a + Number(w.amount), 0),
+      pending: pendingC.count ?? 0,
+      paid: paidC.count ?? 0,
+      rejected: rejectedC.count ?? 0,
+      pendingAmount: pendingSum,
       paidAmount,
     },
   };
 });
+
 
 
 
