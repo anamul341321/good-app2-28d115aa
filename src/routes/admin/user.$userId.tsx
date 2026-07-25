@@ -18,6 +18,7 @@ function UserDetail() {
   });
 
   const [delta, setDelta] = useState("");
+  const [deltaNote, setDeltaNote] = useState("");
   const [newPass, setNewPass] = useState("");
   const [voucherAmt, setVoucherAmt] = useState("");
   const [voucherReason, setVoucherReason] = useState("");
