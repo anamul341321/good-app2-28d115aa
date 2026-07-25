@@ -7,9 +7,9 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/admin/")({ component: AdminDashboard });
 
 function AdminDashboard() {
-  const { data: stats, isLoading } = useQuery({ queryKey: ["admin-stats"], queryFn: () => adminStats(), refetchInterval: 15_000 });
-  const { data: withdrawals } = useQuery({ queryKey: ["admin-withdrawals"], queryFn: () => adminListWithdrawals() });
-  const claimsQ = useQuery({ queryKey: ["admin-debt-claims"], queryFn: () => adminListDebtClaims(), refetchInterval: 20_000 });
+  const { data: stats, isLoading } = useQuery({ queryKey: ["admin-stats"], queryFn: () => adminStats(), refetchInterval: 60_000, staleTime: 30_000 });
+  const { data: withdrawals } = useQuery({ queryKey: ["admin-withdrawals"], queryFn: () => adminListWithdrawals(), staleTime: 30_000, refetchInterval: 60_000 });
+  const claimsQ = useQuery({ queryKey: ["admin-debt-claims"], queryFn: () => adminListDebtClaims(), refetchInterval: 60_000, staleTime: 30_000 });
 
   const resolveClaim = useMutation({
     mutationFn: (debtId: string) => adminResolveDebt({ data: { debtId } }),
