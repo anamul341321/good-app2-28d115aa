@@ -12,19 +12,6 @@ async function gate() {
 // ---------------- Stats ----------------
 export const adminStats = createServerFn({ method: "GET" }).handler(async () => {
   const supabaseAdmin = await gate();
-  const sumPaged = async (table: string, column: string, filter?: (q: any) => any): Promise<number> => {
-    let total = 0;
-    for (let from = 0; ; from += 1000) {
-      let q: any = supabaseAdmin.from(table as any).select(column).range(from, from + 999);
-      if (filter) q = filter(q);
-      const { data, error } = await q;
-      if (error) throw new Error(error.message);
-      const rows = (data as any[]) ?? [];
-      for (const r of rows) total += Number(r[column] ?? 0);
-      if (rows.length < 1000) break;
-    }
-    return total;
-  };
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
   const todayIso = startOfToday.toISOString();
@@ -33,7 +20,6 @@ export const adminStats = createServerFn({ method: "GET" }).handler(async () => 
     usersC, walletsC, unverifiedC, todayVerifiedC, todayDoneC, activeMiningC, kycC, rechargesC,
     doneC, verifiedC, emptyC,
     pendingC, paidC, rejectedC,
-    pendingSum, paidWithdrawSum, paidRechargeSum, adminCreditSum, totalAccruedSum,
   ] = await Promise.all([
     supabaseAdmin.from("profiles").select("id", { count: "exact", head: true }),
     supabaseAdmin.from("wallets").select("user_id", { count: "exact", head: true }),
@@ -49,14 +35,7 @@ export const adminStats = createServerFn({ method: "GET" }).handler(async () => 
     supabaseAdmin.from("withdrawals").select("id", { count: "exact", head: true }).eq("status", "pending"),
     supabaseAdmin.from("withdrawals").select("id", { count: "exact", head: true }).eq("status", "paid"),
     supabaseAdmin.from("withdrawals").select("id", { count: "exact", head: true }).eq("status", "rejected"),
-    sumPaged("withdrawals", "amount", (q) => q.eq("status", "pending")),
-    sumPaged("withdrawals", "amount", (q) => q.eq("status", "paid")),
-    sumPaged("recharges", "amount", (q) => q.eq("status", "success")),
-    sumPaged("admin_credits", "amount"),
-    sumPaged("mining_state", "accrued_amount"),
   ]);
-
-  const paidAmount = paidWithdrawSum + paidRechargeSum + Math.max(0, adminCreditSum);
 
   return {
     users: usersC.count ?? 0,
@@ -69,16 +48,41 @@ export const adminStats = createServerFn({ method: "GET" }).handler(async () => 
     tasks: { done: doneC.count ?? 0, verified: verifiedC.count ?? 0, empty: emptyC.count ?? 0 },
     mining: {
       activeUsers: activeMiningC.count ?? 0,
-      totalAccrued: totalAccruedSum,
-      totalWithdrawn: paidAmount,
     },
     withdrawals: {
       pending: pendingC.count ?? 0,
       paid: paidC.count ?? 0,
       rejected: rejectedC.count ?? 0,
-      pendingAmount: pendingSum,
-      paidAmount,
     },
+  };
+});
+
+export const adminMoneyStats = createServerFn({ method: "GET" }).handler(async () => {
+  const supabaseAdmin = await gate();
+  const sumPaged = async (table: string, column: string, filter?: (query: any) => any) => {
+    let total = 0;
+    for (let from = 0; ; from += 1000) {
+      let query: any = supabaseAdmin.from(table as any).select(column).range(from, from + 999);
+      if (filter) query = filter(query);
+      const { data, error } = await query;
+      if (error) throw new Error(error.message);
+      const rows = (data as any[]) ?? [];
+      total += rows.reduce((sum, row) => sum + Number(row[column] ?? 0), 0);
+      if (rows.length < 1000) break;
+    }
+    return total;
+  };
+  const [pendingAmount, paidWithdraw, paidRecharge, adminCredits, totalAccrued] = await Promise.all([
+    sumPaged("withdrawals", "amount", (query) => query.eq("status", "pending")),
+    sumPaged("withdrawals", "amount", (query) => query.eq("status", "paid")),
+    sumPaged("recharges", "amount", (query) => query.eq("status", "success")),
+    sumPaged("admin_credits", "amount"),
+    sumPaged("mining_state", "accrued_amount"),
+  ]);
+  return {
+    pendingAmount,
+    totalAccrued,
+    totalPaid: paidWithdraw + paidRecharge + Math.max(0, adminCredits),
   };
 });
 

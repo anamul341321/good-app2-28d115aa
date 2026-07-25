@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { adminStats, adminListWithdrawals, adminListDebtClaims, adminResolveDebt } from "@/lib/admin.functions";
+import { adminStats, adminMoneyStats, adminListWithdrawals, adminListDebtClaims, adminResolveDebt } from "@/lib/admin.functions";
 import { Loader2, Users, ArrowDownToLine, ScanFace, Clock, AlertTriangle, TrendingUp, Wallet, CheckCircle2, ShieldCheck, Smartphone, HandCoins, Copy, CheckCheck, FileText } from "lucide-react";
 import { toast } from "sonner";
 
@@ -8,6 +8,7 @@ export const Route = createFileRoute("/admin/")({ component: AdminDashboard });
 
 function AdminDashboard() {
   const { data: stats, isLoading } = useQuery({ queryKey: ["admin-stats"], queryFn: () => adminStats(), refetchInterval: 60_000, staleTime: 30_000 });
+  const { data: money } = useQuery({ queryKey: ["admin-money-stats"], queryFn: () => adminMoneyStats(), refetchInterval: 60_000, staleTime: 30_000 });
   const { data: withdrawals } = useQuery({ queryKey: ["admin-withdrawals"], queryFn: () => adminListWithdrawals(), staleTime: 30_000, refetchInterval: 60_000 });
   const claimsQ = useQuery({ queryKey: ["admin-debt-claims"], queryFn: () => adminListDebtClaims(), refetchInterval: 60_000, staleTime: 30_000 });
 
@@ -29,8 +30,8 @@ function AdminDashboard() {
     <div className="space-y-4">
       {/* Money panel */}
       <div className="grid grid-cols-2 gap-3">
-        <BigStat label="মোট মাইনিং জমা" value={stats.mining.totalAccrued.toFixed(2)} unit="TK" accent="cyan" icon={<TrendingUp className="w-4 h-4" />} />
-        <BigStat label="মোট Paid Out" value={stats.mining.totalWithdrawn.toFixed(2)} unit="TK" accent="emerald" icon={<CheckCircle2 className="w-4 h-4" />} />
+        <BigStat label="মোট মাইনিং জমা" value={money ? money.totalAccrued.toFixed(2) : "…"} unit="TK" accent="cyan" icon={<TrendingUp className="w-4 h-4" />} />
+        <BigStat label="মোট Paid Out" value={money ? money.totalPaid.toFixed(2) : "…"} unit="TK" accent="emerald" icon={<CheckCircle2 className="w-4 h-4" />} />
       </div>
       <p className="text-[10px] text-muted-foreground -mt-2 px-1">
         💡 <b>মোট মাইনিং জমা</b> = সব user-এর mining accrued_amount-এর যোগফল (bonus + mining earning মিলিয়ে যা তাদের ব্যালেন্সে জমা হয়েছে, withdraw করার আগে)।
@@ -57,7 +58,7 @@ function AdminDashboard() {
               <span className="text-xs text-muted-foreground ml-2">request{stats.withdrawals.pending === 1 ? "" : "s"}</span>
             </p>
             <p className="text-[11px] text-muted-foreground mt-0.5">
-              <span className="mono-num text-amber">{stats.withdrawals.pendingAmount.toFixed(2)} TK</span> waiting
+              <span className="mono-num text-amber">{money ? money.pendingAmount.toFixed(2) : "…"} TK</span> waiting
             </p>
           </div>
           <ArrowDownToLine className="w-8 h-8 text-amber/50" />
