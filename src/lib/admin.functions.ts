@@ -164,16 +164,28 @@ export const adminListUsers = createServerFn({ method: "GET" }).handler(async ()
     }
   }
 
+  const tasksByUser = new Map<string, any[]>();
+  for (const t of tasks ?? []) {
+    const arr = tasksByUser.get(t.user_id) ?? [];
+    arr.push(t);
+    tasksByUser.set(t.user_id, arr);
+  }
+  const miningByUser = new Map<string, any>();
+  for (const m of minings ?? []) miningByUser.set(m.user_id, m);
+  const walletsByUser = new Map<string, any[]>();
+  for (const w of wallets ?? []) {
+    const arr = walletsByUser.get(w.user_id) ?? [];
+    arr.push(w);
+    walletsByUser.set(w.user_id, arr);
+  }
+
   return (profiles ?? []).map((p) => {
-    const userTasks = (tasks ?? []).filter((t) => t.user_id === p.id);
+    const userTasks = tasksByUser.get(p.id) ?? [];
     const done = userTasks.filter((t: any) => Number(t.reverify_count ?? 0) > 0).length;
     const verified = userTasks.filter((t) => t.status === "verified").length;
-    const m = (minings ?? []).find((x) => x.user_id === p.id);
-    const userWallets = (wallets ?? []).filter((x) => x.user_id === p.id);
+    const m = miningByUser.get(p.id);
+    const userWallets = walletsByUser.get(p.id) ?? [];
     const w = userWallets.find((x) => x.provider === "bkash") ?? userWallets[0] ?? null;
-    // Leaderboards count only successful GoodDollar first-verifications.
-    // Generated/failed backup attempts are kept for recovery, but must not
-    // inflate a user's successful face count.
     const faceTotal = firstVerifySlotsByUser.get(p.id)?.size ?? 0;
     const slotFaces = slotFacesByUser.get(p.id) ?? 0;
     const attemptFaces = attemptFacesByUser.get(p.id) ?? 0;
@@ -188,6 +200,7 @@ export const adminListUsers = createServerFn({ method: "GET" }).handler(async ()
       emptySlots: Math.max(0, 10 - slotFaces), mining: m, wallet: w, wallets: userWallets,
     };
   });
+
 });
 
 
