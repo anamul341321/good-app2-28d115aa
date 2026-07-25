@@ -11,6 +11,7 @@ import { AnnouncementTicker } from "@/components/AnnouncementTicker";
 import { TourReplayButton } from "@/components/GuidedTour";
 import { PageVoice } from "@/components/PageVoice";
 import { VideoTutorialButton } from "@/components/VideoTutorialButton";
+import { useLang } from "@/lib/i18n";
 
 import { toast } from "sonner";
 
@@ -49,6 +50,7 @@ function slotTheme(slot: number) {
 
 function HomePage() {
   const router = useRouter();
+  const { t } = useLang();
   const [lightbox, setLightbox] = useState<{ url: string; label: string; action?: { label: string; onClick: () => void; tone?: "rose" | "amber" } } | null>(null);
   const [openBox, setOpenBox] = useState<number>(0);
   const [showWelcome, setShowWelcome] = useState<boolean>(false);
@@ -60,7 +62,7 @@ function HomePage() {
 
   const addSlots = useMutation({
     mutationFn: () => addMoreSlots(),
-    onSuccess: (r: any) => { toast.success(`✨ আরও ${r.added} জন সাক্ষী যোগ হয়েছে`); refetch(); },
+    onSuccess: (r: any) => { toast.success(t(`✨ আরও ${r.added} জন সাক্ষী যোগ হয়েছে`, `✨ Added ${r.added} more witnesses`)); refetch(); },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -68,11 +70,13 @@ function HomePage() {
     mutationFn: () => batchSubmitPending(),
     onSuccess: (r: any) => {
       if (r.submitted > 0) {
-        toast.success(`✅ ${r.submitted} জন সাক্ষী জমা হয়েছে${r.notWhitelisted ? ` · ${r.notWhitelisted} জন হোয়াইটলিস্টে নেই` : ""}`);
+        toast.success(t(`✅ ${r.submitted} জন সাক্ষী জমা হয়েছে${r.notWhitelisted ? ` · ${r.notWhitelisted} জন হোয়াইটলিস্টে নেই` : ""}`,
+                        `✅ Submitted ${r.submitted} witnesses${r.notWhitelisted ? ` · ${r.notWhitelisted} not whitelisted` : ""}`));
       } else if (r.notWhitelisted > 0) {
-        toast.warning(`⚠️ ${r.notWhitelisted} জন এখনো হোয়াইটলিস্টে নেই — পরে আবার চেষ্টা করুন`);
+        toast.warning(t(`⚠️ ${r.notWhitelisted} জন এখনো হোয়াইটলিস্টে নেই — পরে আবার চেষ্টা করুন`,
+                        `⚠️ ${r.notWhitelisted} not yet whitelisted — try again later`));
       } else {
-        toast.info("জমা দেওয়ার মতো কিছু নেই");
+        toast.info(t("জমা দেওয়ার মতো কিছু নেই", "Nothing to submit"));
       }
       refetch();
     },
@@ -123,22 +127,22 @@ function HomePage() {
 
 
       <div className="text-center">
-        <p className="text-[11px] text-muted-foreground">স্বাগতম,</p>
+        <p className="text-[11px] text-muted-foreground">{t("স্বাগতম,", "Welcome,")}</p>
         <h1 className="text-xl font-black mt-0.5">
-          {data.profile?.display_name ?? "ইউজার"} 👋
+          {data.profile?.display_name ?? t("ইউজার", "User")} 👋
         </h1>
         {(data.profile as any)?.uid_seq && (
           <button
             data-voice="home.uid"
             onClick={() => {
               navigator.clipboard.writeText(String((data.profile as any).uid_seq));
-              toast.success("UID কপি হয়েছে");
+              toast.success(t("UID কপি হয়েছে", "UID copied"));
             }}
             className="mt-1.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black tracking-widest text-white shadow-md btn-press"
             style={{ background: "linear-gradient(120deg,#8b5cf6,#06b6d4,#10b981)" }}
           >
             <span className="opacity-80">UID</span>
-            <span className="mono-num">{String((data.profile as any).uid_seq)}</span>
+            <span className="mono-num" translate="no">{String((data.profile as any).uid_seq)}</span>
             <span>📋</span>
           </button>
         )}
@@ -146,15 +150,15 @@ function HomePage() {
 
       {(data.profile as any)?.kyc_verified ? (
         <div className="mx-auto inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald/15 border border-emerald/40 text-emerald text-[11px] font-black">
-          <BadgeCheck className="w-3.5 h-3.5" /> KYC ভেরিফাইড
+          <BadgeCheck className="w-3.5 h-3.5" /> {t("KYC ভেরিফাইড", "KYC Verified")}
         </div>
       ) : (
         <Link to="/kyc" className="block rounded-2xl p-3 text-center shadow-md btn-press"
               style={{ background: "linear-gradient(120deg,#8b5cf6,#06b6d4)" }}>
           <p className="text-sm font-black text-white flex items-center justify-center gap-1.5">
-            <ShieldCheck className="w-4 h-4" /> KYC (ঐচ্ছিক) — নীল ✔ ব্যাজ চাইলে করুন
+            <ShieldCheck className="w-4 h-4" /> {t("KYC (ঐচ্ছিক) — নীল ✔ ব্যাজ চাইলে করুন", "KYC (optional) — get the blue ✔ badge")}
           </p>
-          <p className="text-[11px] text-white/90 mt-0.5">KYC ছাড়াও সব কাজ চলবে · উইথড্রও করা যাবে</p>
+          <p className="text-[11px] text-white/90 mt-0.5">{t("KYC ছাড়াও সব কাজ চলবে · উইথড্রও করা যাবে", "Everything works without KYC · withdraws too")}</p>
         </Link>
       )}
 
@@ -182,8 +186,8 @@ function HomePage() {
               className="block rounded-3xl p-4 relative overflow-hidden shadow-[0_20px_45px_-20px_rgba(236,72,153,0.6)] btn-press border border-white/20"
               style={{ background: "linear-gradient(135deg,#7c3aed 0%,#ec4899 55%,#f59e0b 100%)" }}>
               {hasUnclaimed && (
-                <span className="absolute top-2.5 right-2.5 text-[10px] font-black bg-white text-rose px-2.5 py-1 rounded-full shadow-lg animate-pulse">
-                  🎯 {total}৳ পেন্ডিং
+                <span className="absolute top-2.5 right-2.5 text-[10px] font-black bg-white text-rose px-2.5 py-1 rounded-full shadow-lg animate-pulse" translate="no">
+                  🎯 {total}৳ {t("পেন্ডিং", "pending")}
                 </span>
               )}
               <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/10 blur-2xl" />
@@ -193,8 +197,8 @@ function HomePage() {
                   <p className="text-[10px] uppercase tracking-[0.25em] font-black opacity-95 flex items-center gap-1">
                     <Sparkles className="w-3 h-3" /> Special Offers
                   </p>
-                  <p className="text-lg font-black leading-tight drop-shadow mt-0.5">সকল বোনাস অফার</p>
-                  <p className="text-[11px] opacity-95 font-bold mt-0.5">2X প্রোমো · রেফার · রি-ভেরিফাই</p>
+                  <p className="text-lg font-black leading-tight drop-shadow mt-0.5">{t("সকল বোনাস অফার", "All Bonus Offers")}</p>
+                  <p className="text-[11px] opacity-95 font-bold mt-0.5">{t("2X প্রোমো · রেফার · রি-ভেরিফাই", "2X Promo · Refer · Re-verify")}</p>
                 </div>
                 <span className="text-3xl opacity-90 font-black">›</span>
               </div>
@@ -207,8 +211,8 @@ function HomePage() {
                 <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-white/15 blur-xl" />
                 <div className="w-12 h-12 rounded-2xl bg-white/25 backdrop-blur flex items-center justify-center text-2xl shrink-0 relative">💸</div>
                 <div className="min-w-0 relative">
-                  <p className="text-base font-black leading-tight">সেন্ড ব্যালেন্স</p>
-                  <p className="text-[11px] opacity-95 font-bold mt-0.5">সর্বনিম্ন ১৫৳</p>
+                  <p className="text-base font-black leading-tight">{t("সেন্ড ব্যালেন্স", "Send Balance")}</p>
+                  <p className="text-[11px] opacity-95 font-bold mt-0.5" translate="no">{t("সর্বনিম্ন ১৫৳", "Min 15৳")}</p>
                 </div>
               </Link>
 
@@ -219,16 +223,16 @@ function HomePage() {
                   <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-white/15 blur-xl" />
                   <div className="w-12 h-12 rounded-2xl bg-white/25 backdrop-blur flex items-center justify-center text-2xl shrink-0 relative">📱</div>
                   <div className="min-w-0 relative">
-                    <p className="text-base font-black leading-tight">মোবাইল রিচার্জ</p>
-                    <p className="text-[11px] opacity-95 font-bold mt-0.5">সর্বনিম্ন ২০৳</p>
+                    <p className="text-base font-black leading-tight">{t("মোবাইল রিচার্জ", "Mobile Recharge")}</p>
+                    <p className="text-[11px] opacity-95 font-bold mt-0.5" translate="no">{t("সর্বনিম্ন ২০৳", "Min 20৳")}</p>
                   </div>
                 </Link>
               ) : (
                 <div className="rounded-3xl p-4 bg-surface-2 border-2 border-dashed border-border opacity-70 flex flex-col items-start gap-2">
                   <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center"><Lock className="w-5 h-5" /></div>
                   <div className="min-w-0">
-                    <p className="text-base font-black leading-tight">রিচার্জ বন্ধ</p>
-                    <p className="text-[11px] text-muted-foreground font-bold">সাময়িক</p>
+                    <p className="text-base font-black leading-tight">{t("রিচার্জ বন্ধ", "Recharge off")}</p>
+                    <p className="text-[11px] text-muted-foreground font-bold">{t("সাময়িক", "Temporary")}</p>
                   </div>
                 </div>
               )}
@@ -260,15 +264,15 @@ function HomePage() {
           </span>
           <span className="flex-1 text-left leading-tight">
             <span className="block text-[10px] uppercase tracking-[0.2em] text-white/85 font-bold">
-              {pendingSubmits > 0 ? "ব্যাচ জমা · হোয়াইটলিস্ট চেক" : (firstEmpty ? "এক ট্যাপে সাক্ষী যোগ" : "নতুন ব্যাচ আনলক")}
+              {pendingSubmits > 0 ? t("ব্যাচ জমা · হোয়াইটলিস্ট চেক", "Batch submit · whitelist check") : (firstEmpty ? t("এক ট্যাপে সাক্ষী যোগ", "Add witness in one tap") : t("নতুন ব্যাচ আনলক", "Unlock a new batch"))}
             </span>
             <span className="block text-2xl font-black drop-shadow-sm mt-0.5">
-              {pendingSubmits > 0 ? `সব জমা দিন (${pendingSubmits})` : (firstEmpty ? "জমা দিন" : "আরও ১০ Slot")}
+              {pendingSubmits > 0 ? t(`সব জমা দিন (${pendingSubmits})`, `Submit all (${pendingSubmits})`) : (firstEmpty ? t("জমা দিন", "Submit") : t("আরও ১০ Slot", "10 More Slots"))}
             </span>
             <span className="block text-[11px] text-white/90 font-bold mt-0.5">
               {pendingSubmits > 0
-                ? `${pendingSubmits} টি কী প্রস্তুত · হোয়াইটলিস্ট পেলে অটো জমা`
-                : (firstEmpty ? `Slot #${firstEmpty.slot} · এখনই ছবি তুলুন` : "১০ জন সম্পন্ন — আরও যোগ করুন")}
+                ? t(`${pendingSubmits} টি কী প্রস্তুত · হোয়াইটলিস্ট পেলে অটো জমা`, `${pendingSubmits} keys ready · auto-submits on whitelist`)
+                : (firstEmpty ? t(`Slot #${firstEmpty.slot} · এখনই ছবি তুলুন`, `Slot #${firstEmpty.slot} · take a photo now`) : t("১০ জন সম্পন্ন — আরও যোগ করুন", "10 done — add more"))}
             </span>
           </span>
           <span className="shrink-0 text-2xl">→</span>
@@ -311,13 +315,14 @@ function HomePage() {
             </div>
             <div className="min-w-0 flex-1 text-white">
               <p className="text-[10px] uppercase tracking-[0.2em] font-black flex items-center gap-1 text-white/95 drop-shadow">
-                <BadgeCheck className="w-3.5 h-3.5" /> ভেরিফাইড পরিচয়
+                <BadgeCheck className="w-3.5 h-3.5" /> {t("ভেরিফাইড পরিচয়", "Verified Identity")}
               </p>
               <p className="text-base font-black mt-1 leading-tight drop-shadow-lg">
-                আপনি — এই অ্যাকাউন্টের মালিক
+                {t("আপনি — এই অ্যাকাউন্টের মালিক", "You — owner of this account")}
               </p>
               <p className="text-[11px] font-semibold mt-1 leading-snug text-white/90 drop-shadow">
-                আপনার নিজের ছবি এখানে সুরক্ষিত। বাকি ১০ জন সাক্ষী আপনার পক্ষে সাক্ষ্য দিচ্ছেন যে আপনি সত্যিকারের একজন প্রকৃত ব্যবহারকারী।
+                {t("আপনার নিজের ছবি এখানে সুরক্ষিত। বাকি ১০ জন সাক্ষী আপনার পক্ষে সাক্ষ্য দিচ্ছেন যে আপনি সত্যিকারের একজন প্রকৃত ব্যবহারকারী।",
+                   "Your own photo is protected here. The other 10 witnesses are testifying that you are a genuine real user.")}
               </p>
             </div>
           </div>
@@ -329,15 +334,15 @@ function HomePage() {
         <div className="flex items-center justify-between mb-2.5">
           <div className="min-w-0">
             <p className="text-[10px] uppercase text-muted-foreground tracking-[0.15em] font-bold flex items-center gap-1">
-              <Users className="w-3 h-3" /> সাক্ষী প্রগ্রেস
+              <Users className="w-3 h-3" /> {t("সাক্ষী প্রগ্রেস", "Witness Progress")}
             </p>
             <p className="text-lg font-black mt-0.5 text-navy leading-none">
-              {submittedCount}<span className="text-muted-foreground text-sm">/{total}</span>
-              <span className="text-[11px] font-bold text-emerald ml-2">জমা</span>
+              <span translate="no">{submittedCount}<span className="text-muted-foreground text-sm">/{total}</span></span>
+              <span className="text-[11px] font-bold text-emerald ml-2">{t("জমা", "Done")}</span>
             </p>
             {verifiedCount > 0 && (
               <p className="text-[10px] text-violet mt-0.5 font-bold leading-tight">
-                {verifiedCount} জনের ক্ষেত্রে আনুমানিক ৪–৫ দিনের মধ্যে Re-verify লাগতে পারে
+                {t(`${verifiedCount} জনের ক্ষেত্রে আনুমানিক ৪–৫ দিনের মধ্যে Re-verify লাগতে পারে`, `${verifiedCount} may need Re-verify in ~4–5 days`)}
               </p>
             )}
           </div>
@@ -391,9 +396,9 @@ function HomePage() {
                           Box #{i + 1} · Slot {start + 1}–{rangeEnd}
                         </p>
                         <p className="text-[10px] font-bold mt-0.5 flex items-center gap-2 flex-wrap">
-                          <span className="text-emerald">✅ {doneInBox}/{items.length}</span>
+                          <span className="text-emerald" translate="no">✅ {doneInBox}/{items.length}</span>
                           {readyInBox > 0 && (
-                            <span className="text-rose">🔄 {readyInBox} রি-ভেরিফাই প্রস্তুত</span>
+                            <span className="text-rose" translate="no">🔄 {readyInBox} {t("রি-ভেরিফাই প্রস্তুত", "re-verify ready")}</span>
                           )}
                         </p>
                       </div>
@@ -401,22 +406,22 @@ function HomePage() {
                     </button>
                     {isOpen && (
                       <div className="p-3 pt-0 grid gap-2 grid-cols-3 sm:grid-cols-4 animate-in fade-in slide-in-from-top-1">
-                        {items.map((t) => (
-                          <TaskCell key={t.slot} task={t}
-                            onStart={() => router.navigate({ to: "/task/$slot", params: { slot: String(t.slot) } })}
+                        {items.map((task) => (
+                          <TaskCell key={task.slot} task={task}
+                            onStart={() => router.navigate({ to: "/task/$slot", params: { slot: String(task.slot) } })}
                             onReverify={() => {
-                              const url = t.signed_face_url;
+                              const url = task.signed_face_url;
                               if (url) {
                                 setLightbox({
                                   url,
-                                  label: `সাক্ষী #${t.slot} · ${t.face_label || "মুখ"} — রি-ভেরিফাই প্রয়োজন`,
-                                  action: { label: "রি-ভেরিফাই করুন", tone: "rose", onClick: () => router.navigate({ to: "/reverify", search: { taskId: t.id } as any }) },
+                                  label: t(`সাক্ষী #${task.slot} · ${(task as any).face_label || "মুখ"} — রি-ভেরিফাই প্রয়োজন`, `Witness #${task.slot} · ${(task as any).face_label || "Face"} — needs re-verify`),
+                                  action: { label: t("রি-ভেরিফাই করুন", "Re-verify"), tone: "rose", onClick: () => router.navigate({ to: "/reverify", search: { taskId: task.id } as any }) },
                                 });
                               } else {
-                                router.navigate({ to: "/reverify", search: { taskId: t.id } as any });
+                                router.navigate({ to: "/reverify", search: { taskId: task.id } as any });
                               }
                             }}
-                            onOpenPhoto={(url) => setLightbox({ url, label: `সাক্ষী #${t.slot} · ${t.face_label || "মুখ"}` })} />
+                            onOpenPhoto={(url) => setLightbox({ url, label: t(`সাক্ষী #${task.slot} · ${(task as any).face_label || "মুখ"}`, `Witness #${task.slot} · ${(task as any).face_label || "Face"}`) })} />
                         ))}
                       </div>
                     )}
@@ -432,17 +437,18 @@ function HomePage() {
           <button onClick={() => addSlots.mutate()} disabled={addSlots.isPending}
             className="mt-2.5 w-full gradient-cta rounded-xl py-2 font-black text-xs flex items-center justify-center gap-2 disabled:opacity-60 active:scale-[0.98] transition">
             {addSlots.isPending
-              ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> যোগ হচ্ছে…</>
-              : <><Plus className="w-3.5 h-3.5" /> আরও ১০ জন সাক্ষী যোগ করুন</>}
+              ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> {t("যোগ হচ্ছে…", "Adding…")}</>
+              : <><Plus className="w-3.5 h-3.5" /> {t("আরও ১০ জন সাক্ষী যোগ করুন", "Add 10 more witnesses")}</>}
           </button>
         )}
       </div>
 
       {!data.wallet && (
         <Link to="/wallet" className="block premium-panel rounded-2xl p-3 border-l-4" style={{ borderLeftColor: "var(--color-amber)" }}>
-          <p className="text-sm font-black text-amber">⚠️ ওয়ালেট সেট করুন</p>
+          <p className="text-sm font-black text-amber">⚠️ {t("ওয়ালেট সেট করুন", "Set up wallet")}</p>
           <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">
-            টাকা তোলার আগে bKash / Nagad নম্বর সেট করতে হবে — একবার সেট করলে আর পরিবর্তন হবে না।
+            {t("টাকা তোলার আগে bKash / Nagad নম্বর সেট করতে হবে — একবার সেট করলে আর পরিবর্তন হবে না।",
+               "Set a bKash / Nagad number before withdrawing — once set, it cannot be changed.")}
           </p>
         </Link>
       )}
@@ -452,26 +458,25 @@ function HomePage() {
         <div className="premium-panel rounded-2xl p-3 text-center"
              style={{ background: "linear-gradient(135deg, rgba(6,182,212,0.10), rgba(139,92,246,0.08))" }}>
           <Heart className="w-5 h-5 mx-auto text-rose" />
-          <p className="text-[11px] font-black text-navy mt-1 leading-tight">যত বেশি সাক্ষী,<br/>তত বেশি আয়</p>
+          <p className="text-[11px] font-black text-navy mt-1 leading-tight">{t(<>যত বেশি সাক্ষী,<br/>তত বেশি আয়</>, <>More witnesses,<br/>more earnings</>)}</p>
         </div>
         <div className="premium-panel rounded-2xl p-3 text-center"
              style={{ background: "linear-gradient(135deg, rgba(16,185,129,0.10), rgba(255,209,102,0.10))" }}>
           <ShieldCheck className="w-5 h-5 mx-auto text-emerald" />
-          <p className="text-[11px] font-black text-navy mt-1 leading-tight">সাক্ষী = আপনার<br/>সততার প্রমাণ</p>
+          <p className="text-[11px] font-black text-navy mt-1 leading-tight">{t(<>সাক্ষী = আপনার<br/>সততার প্রমাণ</>, <>Witnesses = proof<br/>of your honesty</>)}</p>
         </div>
       </div>
 
       <div className="premium-panel rounded-2xl p-4 relative overflow-hidden"
            style={{ background: "linear-gradient(135deg, rgba(139,92,246,0.10), rgba(6,182,212,0.08))" }}>
-        <p className="text-[10px] uppercase tracking-[0.15em] font-bold text-violet">💡 কেন সাক্ষী?</p>
+        <p className="text-[10px] uppercase tracking-[0.15em] font-bold text-violet">💡 {t("কেন সাক্ষী?", "Why witnesses?")}</p>
         <p className="text-[12px] text-navy mt-2 leading-relaxed font-medium">
-          স্কুলে উপবৃত্তি পেতে যেমন বাবা-মায়ের NID, প্রমাণপত্র লাগে —
-          আমাদের এই আর্থিক সহায়ক প্ল্যাটফর্মেও তেমনই <span className="font-black text-violet">১০ জন সাক্ষীর মুখ</span> লাগে।
-          প্রত্যেক সাক্ষী প্রমাণ করছেন যে আপনি সত্যিই সাহায্যের যোগ্য।
+          {t(<>স্কুলে উপবৃত্তি পেতে যেমন বাবা-মায়ের NID, প্রমাণপত্র লাগে — আমাদের এই আর্থিক সহায়ক প্ল্যাটফর্মেও তেমনই <span className="font-black text-violet">১০ জন সাক্ষীর মুখ</span> লাগে। প্রত্যেক সাক্ষী প্রমাণ করছেন যে আপনি সত্যিই সাহায্যের যোগ্য।</>,
+             <>Just as a school stipend needs parents' NID and proof, our financial support platform needs <span className="font-black text-violet">10 witness faces</span>. Each witness proves you truly deserve support.</>)}
         </p>
         <p className="text-[12px] text-navy mt-2 leading-relaxed font-medium">
-          <span className="font-black text-rose">যত বেশি সাক্ষী যোগ করবেন, তত বেশি মাসিক আয় হবে।</span>
-          ১০ জন সম্পন্ন হলে আরও ১০ জন যোগ করার সুযোগ পাবেন।
+          {t(<><span className="font-black text-rose">যত বেশি সাক্ষী যোগ করবেন, তত বেশি মাসিক আয় হবে।</span> ১০ জন সম্পন্ন হলে আরও ১০ জন যোগ করার সুযোগ পাবেন।</>,
+             <><span className="font-black text-rose">The more witnesses you add, the higher your monthly income.</span> After 10 you can add 10 more.</>)}
         </p>
       </div>
 
@@ -480,9 +485,9 @@ function HomePage() {
            className="block rounded-2xl p-3 text-center shadow-md btn-press"
            style={{ background: "linear-gradient(120deg,#0088cc,#06b6d4)" }}>
           <p className="text-xs font-black text-white flex items-center justify-center gap-1.5">
-            <MessageCircle className="w-3.5 h-3.5" /> টেলিগ্রাম
+            <MessageCircle className="w-3.5 h-3.5" /> {t("টেলিগ্রাম", "Telegram")}
           </p>
-          <p className="text-[10px] text-white/90 mt-0.5">গ্রুপে মেসেজ দিন</p>
+          <p className="text-[10px] text-white/90 mt-0.5">{t("গ্রুপে মেসেজ দিন", "Message the group")}</p>
         </a>
         <a href="https://wa.me/8801892564963" target="_blank" rel="noopener noreferrer"
            className="block rounded-2xl p-3 text-center shadow-md btn-press"
@@ -490,7 +495,7 @@ function HomePage() {
           <p className="text-xs font-black text-white flex items-center justify-center gap-1.5">
             <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
           </p>
-          <p className="text-[10px] text-white/90 mt-0.5 mono-num">01892564963</p>
+          <p className="text-[10px] text-white/90 mt-0.5 mono-num" translate="no">01892564963</p>
         </a>
       </div>
 
