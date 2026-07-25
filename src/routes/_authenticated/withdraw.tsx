@@ -96,33 +96,7 @@ function WithdrawPage() {
             {t(" টাকা ফেরত না দিলে আপনার অ্যাকাউন্ট ", " If not returned, your account will be ")} <span className="text-rose font-black">{t("স্থায়ীভাবে বন্ধ", "permanently blocked")}</span> {t(" করে দেওয়া হবে এবং কোনো withdraw করতে পারবেন না।", " and withdraws will be disabled.")}
           </p>
           {debts.map((d: any) => (
-            <div key={d.id} className="rounded-xl bg-background/70 border border-rose/40 p-3 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${d.provider === "bkash" ? "bg-rose/20 text-rose" : "bg-amber/20 text-amber"}`}>
-                  {d.provider === "bkash" ? `📱 ${t("বিকাশ", "bKash")}` : `💳 ${t("নগদ", "Nagad")}`} · Agent
-                </span>
-                <span className="mono-num font-black text-rose" translate="no">{Math.ceil(Number(d.amount))}৳</span>
-              </div>
-              <button
-                type="button"
-                onClick={() => { navigator.clipboard.writeText(d.payment_number); toast.success(t("Agent নম্বর কপি হয়েছে", "Agent number copied")); }}
-                className="w-full flex items-center justify-between gap-2 bg-amber/10 border border-amber/40 rounded-lg px-3 py-2.5">
-                <div className="text-left">
-                  <p className="text-[9px] uppercase tracking-widest text-amber font-black">{t("Cash-Out এই নাম্বারে", "Cash-Out to this number")}</p>
-                  <p className="mono-num font-black text-lg text-navy" translate="no">{d.payment_number}</p>
-                </div>
-                <Copy className="w-4 h-4 text-amber" />
-              </button>
-              {d.message && (
-                <div className="rounded-lg bg-rose/10 border border-rose/30 p-2.5">
-                  <p className="text-[10px] uppercase tracking-widest text-rose font-black">{t("অ্যাডমিনের বার্তা", "Admin message")}</p>
-                  <p className="text-[12px] text-navy mt-0.5 leading-snug whitespace-pre-wrap">{d.message}</p>
-                </div>
-              )}
-              <p className="text-[10px] text-muted-foreground leading-snug">
-                📞 {t("উপরের নাম্বারে", "To the number above,")} <span className="font-black text-amber" translate="no">{Math.ceil(Number(d.amount))}৳ Cash-Out</span> {t("করুন", "please")} ({d.provider === "bkash" ? t("বিকাশ", "bKash") : t("নগদ", "Nagad")} Agent). {t("পাঠানোর পর অ্যাডমিন যাচাই করে ওয়ার্নিং সরিয়ে দিবে।", "The admin will verify and remove the warning after receipt.")}
-              </p>
-            </div>
+            <DebtCard key={d.id} d={d} t={t} onClaimed={() => refetch()} />
           ))}
         </div>
       )}
