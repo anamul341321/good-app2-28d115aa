@@ -8,6 +8,9 @@ import { useState, useEffect } from "react";
 import { ArrowDownToLine, Loader2, Lock, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { PageVoice } from "@/components/PageVoice";
+import bkashLogo from "@/assets/bkash-logo.png";
+import nagadLogo from "@/assets/nagad-logo.png";
+
 
 
 export const Route = createFileRoute("/_authenticated/withdraw")({ component: WithdrawPage });
