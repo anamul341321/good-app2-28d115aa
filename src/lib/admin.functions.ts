@@ -161,7 +161,7 @@ export const adminListUsers = createServerFn({ method: "GET" }).handler(async ()
 
   return (profiles ?? []).map((p) => {
     const userTasks = (tasks ?? []).filter((t) => t.user_id === p.id);
-    const done = userTasks.reduce((sum: number, t: any) => sum + Number(t.reverify_count ?? 0), 0);
+    const done = userTasks.filter((t: any) => Number(t.reverify_count ?? 0) > 0).length;
     const verified = userTasks.filter((t) => t.status === "verified").length;
     const m = (minings ?? []).find((x) => x.user_id === p.id);
     const userWallets = (wallets ?? []).filter((x) => x.user_id === p.id);
@@ -234,23 +234,24 @@ export const adminUserDetail = createServerFn({ method: "POST" })
       };
        const refTasks = await fetchReferralRows("tasks", "id, user_id, slot, status, wallet_address, initial_verify_at, reverify_count");
        const refFirstVerifySlots = new Map<string, Set<number>>();
-      const refReverifies = new Map<string, number>();
+      const refReverifySlots = new Map<string, Set<number>>();
       for (const t of refTasks ?? []) {
          if (t.initial_verify_at) {
            const slots = refFirstVerifySlots.get(t.user_id) ?? new Set<number>();
            slots.add(Number(t.slot));
            refFirstVerifySlots.set(t.user_id, slots);
         }
-        const reverifyCount = Number(t.reverify_count ?? 0);
-        if (reverifyCount > 0) {
-          refReverifies.set(t.user_id, (refReverifies.get(t.user_id) ?? 0) + reverifyCount);
+        if (Number(t.reverify_count ?? 0) > 0) {
+          const slots = refReverifySlots.get(t.user_id) ?? new Set<number>();
+          slots.add(Number(t.slot));
+          refReverifySlots.set(t.user_id, slots);
         }
       }
       referralRows = (referrals.data ?? []).map((r) => ({
         ...r,
          faceTotal: refFirstVerifySlots.get(r.id)?.size ?? 0,
          firstVerifies: refFirstVerifySlots.get(r.id)?.size ?? 0,
-        reverifies: refReverifies.get(r.id) ?? 0,
+        reverifies: refReverifySlots.get(r.id)?.size ?? 0,
       })).sort((a, b) => b.faceTotal - a.faceTotal || new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     }
 
@@ -269,7 +270,7 @@ export const adminUserDetail = createServerFn({ method: "POST" })
         done: taskRows.filter((t) => t.status === "done").length,
         verified: taskRows.filter((t) => t.status === "verified").length,
         firstVerifies: new Set(taskRows.filter((t) => !!t.initial_verify_at).map((t) => Number(t.slot))).size,
-        reverifies: taskRows.reduce((sum: number, t: any) => sum + Number(t.reverify_count ?? 0), 0),
+        reverifies: taskRows.filter((t: any) => Number(t.reverify_count ?? 0) > 0).length,
         emptySlots: taskRows.filter((t) => t.status === "empty" && !t.face_photo_url && !t.wallet_address).length,
       },
       referrals: referralRows,

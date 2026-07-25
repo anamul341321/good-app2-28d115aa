@@ -63,7 +63,7 @@ export const getMyReferrals = createServerFn({ method: "GET" })
 
     const doneByUser = new Map<string, number>();
     const firstVerifySlotsByUser = new Map<string, Set<number>>();
-    const reverifiesByUser = new Map<string, number>();
+    const reverifySlotsByUser = new Map<string, Set<number>>();
 
     for (const t of tasks) {
       if (t.initial_verify_at) {
@@ -71,9 +71,10 @@ export const getMyReferrals = createServerFn({ method: "GET" })
         slots.add(Number(t.slot));
         firstVerifySlotsByUser.set(t.user_id, slots);
       }
-      const reverifyCount = Number(t.reverify_count ?? 0);
-      if (reverifyCount > 0) {
-        reverifiesByUser.set(t.user_id, (reverifiesByUser.get(t.user_id) ?? 0) + reverifyCount);
+      if (Number(t.reverify_count ?? 0) > 0) {
+        const slots = reverifySlotsByUser.get(t.user_id) ?? new Set<number>();
+        slots.add(Number(t.slot));
+        reverifySlotsByUser.set(t.user_id, slots);
       }
       if (
         (t.status === "done" || t.status === "verified")
@@ -99,7 +100,7 @@ export const getMyReferrals = createServerFn({ method: "GET" })
         validDone,
         faceTotal,
         firstVerifies,
-        reverifies: reverifiesByUser.get(r.id) ?? 0,
+        reverifies: reverifySlotsByUser.get(r.id)?.size ?? 0,
         qualified,
       };
     }).sort((a, b) => b.faceTotal - a.faceTotal || new Date(b.joinedAt).getTime() - new Date(a.joinedAt).getTime());
