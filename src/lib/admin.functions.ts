@@ -297,6 +297,22 @@ export const adminUserDetail = createServerFn({ method: "POST" })
       },
       debts: debts.data ?? [],
       debtTotal: (debts.data ?? []).filter((d: any) => d.status === "active").reduce((s: number, d: any) => s + Number(d.amount), 0),
+      income: {
+        vouchers: vouchersAll.data ?? [],
+        adminCredits: creditsAll.data ?? [],
+        recharges: rechargesAll.data ?? [],
+        transfersIn: transfersIn.data ?? [],
+        transfersOut: transfersOut.data ?? [],
+        totals: {
+          vouchersClaimed: (vouchersAll.data ?? []).filter((v: any) => v.status === "claimed").reduce((s: number, v: any) => s + Number(v.amount), 0),
+          adminCreditsPositive: (creditsAll.data ?? []).filter((c: any) => Number(c.amount) > 0).reduce((s: number, c: any) => s + Number(c.amount), 0),
+          adminCreditsNegative: (creditsAll.data ?? []).filter((c: any) => Number(c.amount) < 0).reduce((s: number, c: any) => s + Number(c.amount), 0),
+          rechargesSuccess: (rechargesAll.data ?? []).filter((r: any) => r.status === "success").reduce((s: number, r: any) => s + Number(r.amount), 0),
+          transfersInTotal: (transfersIn.data ?? []).reduce((s: number, t: any) => s + Number(t.amount), 0),
+          transfersOutTotal: (transfersOut.data ?? []).reduce((s: number, t: any) => s + Number(t.amount), 0),
+          withdrawalsPaid: (withdrawals.data ?? []).filter((w: any) => w.status === "paid").reduce((s: number, w: any) => s + Number(w.amount), 0),
+        },
+      },
     };
   });
 
