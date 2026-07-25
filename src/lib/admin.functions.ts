@@ -26,16 +26,18 @@ export const adminStats = createServerFn({ method: "GET" }).handler(async () => 
   startOfToday.setHours(0, 0, 0, 0);
   const todayIso = startOfToday.toISOString();
 
-  const [users, tasks, minings, wallets, allWith, unverified, todayVerifiedRes, todayDoneRes, activeMiningCount] = await Promise.all([
+  const [users, tasks, minings, wallets, allWith, unverified, todayVerifiedRes, todayDoneRes, activeMiningCount, kycVerified, rechargesCount] = await Promise.all([
     supabaseAdmin.from("profiles").select("id", { count: "exact", head: true }),
     fetchAllPaged<{ status: string }>("tasks", "status"),
     fetchAllPaged<{ accrued_amount: number; withdrawn_amount: number; is_active: boolean }>("mining_state", "accrued_amount, withdrawn_amount, is_active"),
-    supabaseAdmin.from("wallets").select("id", { count: "exact", head: true }),
+    supabaseAdmin.from("wallets").select("user_id", { count: "exact", head: true }),
     fetchAllPaged<{ amount: number; status: string }>("withdrawals", "amount, status"),
     supabaseAdmin.from("unverified_attempts").select("id", { count: "exact", head: true }),
     supabaseAdmin.from("tasks").select("id", { count: "exact", head: true }).gte("initial_verify_at", todayIso),
     supabaseAdmin.from("tasks").select("id", { count: "exact", head: true }).gte("done_at", todayIso),
     supabaseAdmin.from("mining_state").select("user_id", { count: "exact", head: true }).eq("is_active", true),
+    supabaseAdmin.from("profiles").select("id", { count: "exact", head: true }).eq("kyc_verified", true),
+    supabaseAdmin.from("recharges").select("id", { count: "exact", head: true }),
   ]);
 
   const allTasks = tasks ?? [];
@@ -46,6 +48,8 @@ export const adminStats = createServerFn({ method: "GET" }).handler(async () => 
   return {
     users: users.count ?? 0,
     wallets: wallets.count ?? 0,
+    kycVerified: kycVerified.count ?? 0,
+    recharges: rechargesCount.count ?? 0,
     unverifiedCount: unverified.count ?? 0,
     reverifyQueue: allTasks.filter((t) => t.status === "verified").length,
     todayVerified: (todayVerifiedRes.count ?? 0) + (todayDoneRes.count ?? 0),
