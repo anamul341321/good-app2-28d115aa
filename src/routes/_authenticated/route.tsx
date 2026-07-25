@@ -7,6 +7,9 @@ import { useEffect, useState } from "react";
 import logo from "@/assets/logo.png";
 import { GuidedTour } from "@/components/GuidedTour";
 import { InstallPrompt } from "@/components/InstallPrompt";
+import { LanguageToggle } from "@/components/LanguageToggle";
+import { LanguagePicker } from "@/components/LanguagePicker";
+import { useLang } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -42,12 +45,14 @@ function AuthedLayout() {
     router.navigate({ to: "/auth" });
   };
 
+  const { t } = useLang();
+
   if (authState === "checking") {
     return (
       <div className="min-h-screen flex items-center justify-center px-4 py-10">
         <div className="glass w-full max-w-sm rounded-2xl p-6 text-center">
           <Loader2 className="mx-auto mb-3 h-6 w-6 animate-spin text-cyan" />
-          <p className="text-sm font-bold">একাউন্ট যাচাই করা হচ্ছে…</p>
+          <p className="text-sm font-bold">{t("একাউন্ট যাচাই করা হচ্ছে…", "Checking your account…")}</p>
         </div>
       </div>
     );
@@ -57,10 +62,10 @@ function AuthedLayout() {
     return (
       <div className="min-h-screen flex items-center justify-center px-4 py-10">
         <div className="glass w-full max-w-sm rounded-2xl p-6 text-center">
-          <h1 className="text-lg font-black text-cyan">লগইন করতে হবে</h1>
-          <p className="mt-2 text-xs text-muted-foreground">টাস্ক করতে হলে আগে মোবাইল নম্বর দিয়ে লগইন করুন।</p>
+          <h1 className="text-lg font-black text-cyan">{t("লগইন করতে হবে", "Login required")}</h1>
+          <p className="mt-2 text-xs text-muted-foreground">{t("টাস্ক করতে হলে আগে মোবাইল নম্বর দিয়ে লগইন করুন।", "Please sign in with your mobile number to continue.")}</p>
           <Link to="/auth" className="gradient-cta mt-4 inline-flex rounded-xl px-4 py-2 text-xs font-black">
-            লগইন পেজ
+            {t("লগইন পেজ", "Go to login")}
           </Link>
         </div>
       </div>
@@ -80,10 +85,13 @@ function AuthedLayout() {
             </span>
           </Link>
           </div>
-          <button onClick={logout} data-voice="common.logout"
-            className="btn-press p-2 rounded-lg bg-surface-2 border border-border text-muted-foreground hover:text-rose">
-            <LogOut className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-1.5">
+            <LanguageToggle />
+            <button onClick={logout} data-voice="common.logout"
+              className="btn-press p-2 rounded-lg bg-surface-2 border border-border text-muted-foreground hover:text-rose">
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </header>
 
@@ -93,16 +101,17 @@ function AuthedLayout() {
 
       <nav className="fixed bottom-0 inset-x-0 z-30 glass border-t border-violet/20">
         <div className="max-w-md mx-auto px-2 py-2 grid grid-cols-5 gap-1">
-          <NavItem to="/home" icon={<Home className="w-5 h-5" />} label="হোম" tint="cyan" voice="home.welcome" />
-          <div data-tour="nav-reverify"><NavItem to="/reverify" icon={<RefreshCcw className="w-5 h-5" />} label="রি-ভেরিফাই" tint="violet" voice="reverify.intro" /></div>
-          <div data-tour="nav-referral"><NavItem to="/referral" icon={<Gift className="w-5 h-5" />} label="রেফার" tint="emerald" voice="referral.intro" /></div>
-          <div data-tour="nav-wallet"><NavItem to="/wallet" icon={<Wallet className="w-5 h-5" />} label="ওয়ালেট" tint="amber" voice="wallet.intro" /></div>
-          <div data-tour="nav-withdraw"><NavItem to="/withdraw" icon={<ArrowDownToLine className="w-5 h-5" />} label="উইথড্র" tint="rose" voice="withdraw.intro" /></div>
+          <NavItem to="/home" icon={<Home className="w-5 h-5" />} label={t("হোম", "Home")} tint="cyan" voice="home.welcome" />
+          <div data-tour="nav-reverify"><NavItem to="/reverify" icon={<RefreshCcw className="w-5 h-5" />} label={t("রি-ভেরিফাই", "Re-verify")} tint="violet" voice="reverify.intro" /></div>
+          <div data-tour="nav-referral"><NavItem to="/referral" icon={<Gift className="w-5 h-5" />} label={t("রেফার", "Refer")} tint="emerald" voice="referral.intro" /></div>
+          <div data-tour="nav-wallet"><NavItem to="/wallet" icon={<Wallet className="w-5 h-5" />} label={t("ওয়ালেট", "Wallet")} tint="amber" voice="wallet.intro" /></div>
+          <div data-tour="nav-withdraw"><NavItem to="/withdraw" icon={<ArrowDownToLine className="w-5 h-5" />} label={t("উইথড্র", "Withdraw")} tint="rose" voice="withdraw.intro" /></div>
         </div>
       </nav>
 
       <GuidedTour />
       <InstallPrompt />
+      <LanguagePicker />
     </div>
   );
 }
