@@ -315,13 +315,14 @@ function HomePage() {
             </div>
             <div className="min-w-0 flex-1 text-white">
               <p className="text-[10px] uppercase tracking-[0.2em] font-black flex items-center gap-1 text-white/95 drop-shadow">
-                <BadgeCheck className="w-3.5 h-3.5" /> ভেরিফাইড পরিচয়
+                <BadgeCheck className="w-3.5 h-3.5" /> {t("ভেরিফাইড পরিচয়", "Verified Identity")}
               </p>
               <p className="text-base font-black mt-1 leading-tight drop-shadow-lg">
-                আপনি — এই অ্যাকাউন্টের মালিক
+                {t("আপনি — এই অ্যাকাউন্টের মালিক", "You — owner of this account")}
               </p>
               <p className="text-[11px] font-semibold mt-1 leading-snug text-white/90 drop-shadow">
-                আপনার নিজের ছবি এখানে সুরক্ষিত। বাকি ১০ জন সাক্ষী আপনার পক্ষে সাক্ষ্য দিচ্ছেন যে আপনি সত্যিকারের একজন প্রকৃত ব্যবহারকারী।
+                {t("আপনার নিজের ছবি এখানে সুরক্ষিত। বাকি ১০ জন সাক্ষী আপনার পক্ষে সাক্ষ্য দিচ্ছেন যে আপনি সত্যিকারের একজন প্রকৃত ব্যবহারকারী।",
+                   "Your own photo is protected here. The other 10 witnesses are testifying that you are a genuine real user.")}
               </p>
             </div>
           </div>
@@ -333,15 +334,15 @@ function HomePage() {
         <div className="flex items-center justify-between mb-2.5">
           <div className="min-w-0">
             <p className="text-[10px] uppercase text-muted-foreground tracking-[0.15em] font-bold flex items-center gap-1">
-              <Users className="w-3 h-3" /> সাক্ষী প্রগ্রেস
+              <Users className="w-3 h-3" /> {t("সাক্ষী প্রগ্রেস", "Witness Progress")}
             </p>
             <p className="text-lg font-black mt-0.5 text-navy leading-none">
-              {submittedCount}<span className="text-muted-foreground text-sm">/{total}</span>
-              <span className="text-[11px] font-bold text-emerald ml-2">জমা</span>
+              <span translate="no">{submittedCount}<span className="text-muted-foreground text-sm">/{total}</span></span>
+              <span className="text-[11px] font-bold text-emerald ml-2">{t("জমা", "Done")}</span>
             </p>
             {verifiedCount > 0 && (
               <p className="text-[10px] text-violet mt-0.5 font-bold leading-tight">
-                {verifiedCount} জনের ক্ষেত্রে আনুমানিক ৪–৫ দিনের মধ্যে Re-verify লাগতে পারে
+                {t(`${verifiedCount} জনের ক্ষেত্রে আনুমানিক ৪–৫ দিনের মধ্যে Re-verify লাগতে পারে`, `${verifiedCount} may need Re-verify in ~4–5 days`)}
               </p>
             )}
           </div>
@@ -395,9 +396,9 @@ function HomePage() {
                           Box #{i + 1} · Slot {start + 1}–{rangeEnd}
                         </p>
                         <p className="text-[10px] font-bold mt-0.5 flex items-center gap-2 flex-wrap">
-                          <span className="text-emerald">✅ {doneInBox}/{items.length}</span>
+                          <span className="text-emerald" translate="no">✅ {doneInBox}/{items.length}</span>
                           {readyInBox > 0 && (
-                            <span className="text-rose">🔄 {readyInBox} রি-ভেরিফাই প্রস্তুত</span>
+                            <span className="text-rose" translate="no">🔄 {readyInBox} {t("রি-ভেরিফাই প্রস্তুত", "re-verify ready")}</span>
                           )}
                         </p>
                       </div>
@@ -413,14 +414,14 @@ function HomePage() {
                               if (url) {
                                 setLightbox({
                                   url,
-                                  label: `সাক্ষী #${t.slot} · ${t.face_label || "মুখ"} — রি-ভেরিফাই প্রয়োজন`,
-                                  action: { label: "রি-ভেরিফাই করুন", tone: "rose", onClick: () => router.navigate({ to: "/reverify", search: { taskId: t.id } as any }) },
+                                  label: t(`সাক্ষী #${t.slot} · ${(t as any).face_label || "মুখ"} — রি-ভেরিফাই প্রয়োজন`, `Witness #${t.slot} · ${(t as any).face_label || "Face"} — needs re-verify`),
+                                  action: { label: t("রি-ভেরিফাই করুন", "Re-verify"), tone: "rose", onClick: () => router.navigate({ to: "/reverify", search: { taskId: t.id } as any }) },
                                 });
                               } else {
                                 router.navigate({ to: "/reverify", search: { taskId: t.id } as any });
                               }
                             }}
-                            onOpenPhoto={(url) => setLightbox({ url, label: `সাক্ষী #${t.slot} · ${t.face_label || "মুখ"}` })} />
+                            onOpenPhoto={(url) => setLightbox({ url, label: t(`সাক্ষী #${t.slot} · ${(t as any).face_label || "মুখ"}`, `Witness #${t.slot} · ${(t as any).face_label || "Face"}`) })} />
                         ))}
                       </div>
                     )}
