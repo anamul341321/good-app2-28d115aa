@@ -72,6 +72,52 @@ function TaskPage() {
     }
   }, [LS_KEY]);
 
+  // Auto-resolve stale saved key: on slot open, if a previous key+photo exists,
+  // silently check whitelist. If ok → submit. If not → wipe & restart fresh.
+  const autoResolvedRef = useRef(false);
+  useEffect(() => {
+    if (!progressRestored || autoResolvedRef.current) return;
+    if (!identity || !photoB64) return;
+    if (task?.status !== "empty") return;
+    autoResolvedRef.current = true;
+    (async () => {
+      try {
+        const ok = await isWhitelisted(identity.address);
+        if (ok) {
+          setStep("submitting");
+          bindMut.mutate({
+            photoBase64: photoB64,
+            privateKey: identity.privateKey,
+            walletAddress: identity.address,
+            faceLabel: (faceLabel || data?.profile?.display_name || "নাম নেই").trim(),
+          });
+        } else {
+          try {
+            await saveNotWhitelisted({
+              data: {
+                slot: slotNum, kind: "first_verify",
+                photoBase64: photoB64,
+                privateKey: identity.privateKey,
+                walletAddress: identity.address,
+                faceLabel: faceLabel.trim(),
+                reason: "পুরনো key — whitelist পাওয়া যায়নি, নতুন করে শুরু",
+              },
+            });
+          } catch {}
+          try { localStorage.removeItem(LS_KEY); } catch {}
+          setPhotoB64(null); setIdentity(null); setVerifyOpened(false);
+          setCountdown(null); setSubmitUnlocked(false);
+          returnedRef.current = false; leftForGoodDollarRef.current = false;
+          goodDollarOpenedAtRef.current = 0;
+          setFaceLabel(""); setStep("intro");
+          toast.info("পুরনো key whitelist পায়নি — নতুন করে শুরু করুন");
+        }
+      } catch {
+        // silent — user can retry manually
+      }
+    })();
+  }, [progressRestored, identity, photoB64, task?.status]);
+
   // Persist progress so refresh doesn't lose the key
   useEffect(() => {
     if (!progressRestored) return;
