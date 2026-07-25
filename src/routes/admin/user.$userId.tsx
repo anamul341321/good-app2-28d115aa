@@ -70,8 +70,8 @@ function UserDetail() {
   });
 
   const adjust = useMutation({
-    mutationFn: (d: number) => adminAdjustBalance({ data: { userId, delta: d } }),
-    onSuccess: (r) => { toast.success(`New balance: ${r.new_balance.toFixed(2)} TK`); setDelta(""); refetch(); },
+    mutationFn: (d: number) => adminAdjustBalance({ data: { userId, delta: d, note: deltaNote.trim() || undefined } }),
+    onSuccess: (r) => { toast.success(`New balance: ${r.new_balance.toFixed(2)} TK`); setDelta(""); setDeltaNote(""); refetch(); },
     onError: (e: any) => toast.error(e.message),
   });
 
