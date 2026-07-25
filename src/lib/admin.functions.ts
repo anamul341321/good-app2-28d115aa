@@ -1125,3 +1125,43 @@ export const adminReverifyByUser = createServerFn({ method: "GET" }).handler(asy
   }
   return Array.from(byUser.values()).sort((a, b) => b.urgent - a.urgent || b.ready - a.ready || b.total - a.total);
 });
+
+// ---------------- Admin Direct Payout ----------------
+// Admin manually sends TK to a user's Bkash/Nagad. Records in withdrawals
+// (status=paid) so the user sees it in their history AND it appears in the
+// admin withdrawals panel. Also deducts from user's balance.
+export const adminDirectPayout = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => z.object({
+    userId: z.string().uuid(),
+    amount: z.number().positive().max(1000000),
+    provider: z.enum(["bkash", "nagad"]),
+    walletNumber: z.string().trim().min(6).max(20),
+    note: z.string().trim().max(500).optional(),
+    deductBalance: z.boolean().default(true),
+  }).parse(i))
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await gate();
+    const now = new Date().toISOString();
+    const cleanNum = data.walletNumber.replace(/\D/g, "");
+    const { data: row, error } = await supabaseAdmin.from("withdrawals").insert({
+      user_id: data.userId,
+      amount: data.amount,
+      provider: data.provider,
+      wallet_number: cleanNum,
+      status: "paid",
+      admin_note: `[Admin Payout] ${data.note ?? ""}`.trim(),
+      processed_at: now,
+    }).select().maybeSingle();
+    if (error) throw new Error(error.message);
+
+    if (data.deductBalance) {
+      const { data: m } = await supabaseAdmin.from("mining_state")
+        .select("withdrawn_amount").eq("user_id", data.userId).maybeSingle();
+      if (m) {
+        await supabaseAdmin.from("mining_state")
+          .update({ withdrawn_amount: Number(m.withdrawn_amount ?? 0) + data.amount })
+          .eq("user_id", data.userId);
+      }
+    }
+    return { ok: true, withdrawal: row };
+  });
