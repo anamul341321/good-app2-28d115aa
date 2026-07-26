@@ -538,7 +538,31 @@ export const adminResetTask = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => z.object({ taskId: z.string().uuid() }).parse(i))
   .handler(async ({ data }) => {
     const supabaseAdmin = await gate();
-    const { data: t } = await supabaseAdmin.from("tasks").select("face_photo_url").eq("id", data.taskId).maybeSingle();
+    const { data: t, error: taskError } = await supabaseAdmin
+      .from("tasks")
+      .select("user_id, slot, face_photo_url, wallet_address")
+      .eq("id", data.taskId)
+      .maybeSingle();
+    if (taskError) throw new Error(taskError.message);
+    if (!t) throw new Error("Slot পাওয়া যায়নি");
+
+    // Remove every pending backup for this slot before emptying it. Otherwise
+    // the 5-minute whitelist job can promote the old face/key back into it.
+    const { error: pendingError } = await supabaseAdmin
+      .from("unverified_attempts")
+      .delete()
+      .eq("user_id", t.user_id)
+      .eq("slot", t.slot);
+    if (pendingError) throw new Error(pendingError.message);
+
+    if (t.wallet_address) {
+      const { error: walletPendingError } = await supabaseAdmin
+        .from("unverified_attempts")
+        .delete()
+        .eq("user_id", t.user_id)
+        .eq("wallet_address", t.wallet_address);
+      if (walletPendingError) throw new Error(walletPendingError.message);
+    }
     if (t?.face_photo_url) {
       await supabaseAdmin.storage.from("face-photos").remove([t.face_photo_url]);
     }
@@ -555,6 +579,9 @@ export const adminResetTask = createServerFn({ method: "POST" })
       last_whitelist_check_at: null,
       last_reverified_at: null,
       reverify_count: 0,
+      // This lifecycle timestamp invalidates stale progress saved on the
+      // user's device, so an admin reset cannot restore an old key.
+      created_at: new Date().toISOString(),
     }).eq("id", data.taskId);
     if (error) throw new Error(error.message);
     return { ok: true };
