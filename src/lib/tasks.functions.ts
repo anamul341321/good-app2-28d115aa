@@ -242,6 +242,31 @@ export const listReverifyCandidates = createServerFn({ method: "POST" })
     let list = (tasks ?? []).filter((t) => t.wallet_address && t.wallet_private_key);
     if (q) list = list.filter((t) => (t.face_label || "").toLowerCase().includes(q));
 
+    // Live whitelist re-check for any task the cron marked as `whitelist_ok=false`.
+    // If GoodDollar says it's actually still whitelisted, restore the row and
+    // hide it from the "urgent re-verify" bucket so the app never asks a user
+    // to re-verify a key that's still valid.
+    const { isWhitelistedRPC } = await import("./celo-whitelist");
+    const suspects = list.filter((t) => t.whitelist_ok === false && !!t.wallet_address);
+    if (suspects.length) {
+      await Promise.all(
+        suspects.map(async (t) => {
+          try {
+            const stillOk = await isWhitelistedRPC(t.wallet_address!);
+            if (stillOk) {
+              await supabaseAdmin.rpc("transition_task_whitelist", {
+                _task_id: t.id,
+                _is_whitelisted: true,
+              });
+              t.whitelist_ok = true;
+            }
+          } catch {
+            // network error → leave as-is; onSelect() will re-check before opening.
+          }
+        }),
+      );
+    }
+
     const withUrls = await Promise.all(
       list.map(async (t) => {
         if (!t.face_photo_url) return { ...t, photo_url: null };

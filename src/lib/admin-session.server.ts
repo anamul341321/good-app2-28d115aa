@@ -19,10 +19,21 @@ export function getAdminSessionConfig() {
   };
 }
 
+export function hashPassword(input: string): string {
+  return createHash("sha256").update(input, "utf8").digest("hex");
+}
+
 export function passwordMatches(input: string, expected: string): boolean {
   const a = createHash("sha256").update(input, "utf8").digest();
   const b = createHash("sha256").update(expected, "utf8").digest();
-  return timingSafeEqual(a, b);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
+
+export function hashMatches(input: string, expectedHex: string): boolean {
+  const a = createHash("sha256").update(input, "utf8").digest();
+  let b: Buffer;
+  try { b = Buffer.from(expectedHex, "hex"); } catch { return false; }
+  return a.length === b.length && timingSafeEqual(a, b);
 }
 
 export async function requireAdminSession() {

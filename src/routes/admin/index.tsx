@@ -1,8 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { adminStats, adminMoneyStats, adminListWithdrawals, adminListDebtClaims, adminResolveDebt } from "@/lib/admin.functions";
-import { Loader2, Users, ArrowDownToLine, ScanFace, Clock, AlertTriangle, TrendingUp, Wallet, CheckCircle2, ShieldCheck, Smartphone, HandCoins, Copy, CheckCheck, FileText } from "lucide-react";
+import { adminChangePassword } from "@/lib/admin-auth.functions";
+import { Loader2, Users, ArrowDownToLine, ScanFace, Clock, AlertTriangle, TrendingUp, Wallet, CheckCircle2, ShieldCheck, Smartphone, HandCoins, Copy, CheckCheck, FileText, KeyRound } from "lucide-react";
 import { toast } from "sonner";
+import { useState } from "react";
 
 export const Route = createFileRoute("/admin/")({ component: AdminDashboard });
 
@@ -146,6 +148,61 @@ function AdminDashboard() {
           <Slice color="cyan" label="Empty" v={stats.tasks.empty} />
         </div>
       </div>
+
+      <PasswordChangeCard />
+    </div>
+  );
+}
+
+function PasswordChangeCard() {
+  const [cur, setCur] = useState("");
+  const [nx, setNx] = useState("");
+  const [nx2, setNx2] = useState("");
+  const [open, setOpen] = useState(false);
+  const mut = useMutation({
+    mutationFn: (input: { current: string; next: string }) => adminChangePassword({ data: input }),
+    onSuccess: (r: any) => {
+      if (r.ok) {
+        toast.success("Admin password change হয়েছে");
+        setCur(""); setNx(""); setNx2(""); setOpen(false);
+      } else {
+        toast.error(r.error || "Current password bhul");
+      }
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+  const submit = () => {
+    if (!cur || !nx) return toast.error("Sob field puron korun");
+    if (nx !== nx2) return toast.error("Notun password mile na");
+    mut.mutate({ current: cur, next: nx });
+  };
+  return (
+    <div className="glass rounded-2xl p-4">
+      <button onClick={() => setOpen((v) => !v)} className="flex items-center gap-2 w-full text-left">
+        <div className="w-8 h-8 rounded-lg bg-amber/15 flex items-center justify-center">
+          <KeyRound className="w-4 h-4 text-amber" />
+        </div>
+        <div className="flex-1">
+          <p className="text-xs font-black">Admin password change</p>
+          <p className="text-[10px] text-muted-foreground">Jekono password dewa jabe — kono restriction nei</p>
+        </div>
+        <span className="text-muted-foreground text-xs">{open ? "▲" : "▼"}</span>
+      </button>
+      {open && (
+        <div className="mt-3 space-y-2">
+          <input type="password" value={cur} onChange={(e) => setCur(e.target.value)} placeholder="Current password"
+            className="w-full px-3 py-2 rounded-lg bg-surface-2 border border-border text-xs outline-none focus:border-amber" />
+          <input type="password" value={nx} onChange={(e) => setNx(e.target.value)} placeholder="Notun password"
+            className="w-full px-3 py-2 rounded-lg bg-surface-2 border border-border text-xs outline-none focus:border-amber" />
+          <input type="password" value={nx2} onChange={(e) => setNx2(e.target.value)} placeholder="Notun password abar din"
+            className="w-full px-3 py-2 rounded-lg bg-surface-2 border border-border text-xs outline-none focus:border-amber" />
+          <button onClick={submit} disabled={mut.isPending}
+            className="w-full gradient-cta rounded-lg py-2 text-xs font-black flex items-center justify-center gap-2 disabled:opacity-60">
+            {mut.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <KeyRound className="w-3.5 h-3.5" />}
+            Password change korun
+          </button>
+        </div>
+      )}
     </div>
   );
 }

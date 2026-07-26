@@ -110,6 +110,30 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  useEffect(() => {
+    // After a redeploy, old chunk hashes 404. Auto-reload once so users never
+    // see the raw "Failed to fetch dynamically imported module" toast.
+    const RELOAD_KEY = "__chunk_reload_at";
+    const isChunkError = (msg: string) =>
+      /Failed to fetch dynamically imported module|Importing a module script failed|ChunkLoadError|Loading chunk .* failed/i.test(msg);
+    const maybeReload = () => {
+      const last = Number(sessionStorage.getItem(RELOAD_KEY) || "0");
+      if (Date.now() - last < 10_000) return; // avoid loops
+      sessionStorage.setItem(RELOAD_KEY, String(Date.now()));
+      window.location.reload();
+    };
+    const onErr = (e: ErrorEvent) => { if (isChunkError(e.message || "")) maybeReload(); };
+    const onRej = (e: PromiseRejectionEvent) => {
+      const msg = (e.reason && (e.reason.message || String(e.reason))) || "";
+      if (isChunkError(msg)) maybeReload();
+    };
+    window.addEventListener("error", onErr);
+    window.addEventListener("unhandledrejection", onRej);
+    return () => {
+      window.removeEventListener("error", onErr);
+      window.removeEventListener("unhandledrejection", onRej);
+    };
+  }, []);
   return (
     <QueryClientProvider client={queryClient}>
       <LanguageProvider>
