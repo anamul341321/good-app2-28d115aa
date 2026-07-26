@@ -716,22 +716,22 @@ function TaskCell({ task, onStart, onReverify, onOpenPhoto }: { task: any; onSta
     return (
       <button onClick={() => faceUrl && onOpenPhoto(faceUrl)}
         className="relative aspect-square rounded-2xl overflow-hidden border-2 active:scale-95 transition-transform"
-        style={{ ...themeStyle, background: `linear-gradient(135deg, ${theme.from}, ${theme.to})` }}>
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.35),transparent_55%)]" />
-        <span className="absolute top-1 left-1 text-[10px] font-black text-white mono-num leading-none px-1.5 py-0.5 rounded-md bg-black/40 backdrop-blur-[2px]">#{task.slot}</span>
-        <span className="absolute top-1 right-1 rounded-full p-0.5 shadow bg-white/25 backdrop-blur-sm">
-          <ShieldCheck className="w-2.5 h-2.5 text-white" />
+        style={{ borderColor: "#10b981", background: "linear-gradient(135deg, #10b981, #059669)", boxShadow: "0 8px 22px -6px rgba(16,185,129,0.55)" }}>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.4),transparent_55%)]" />
+        <span className="absolute top-1 left-1 text-[9px] font-black text-white mono-num leading-none px-1 py-0.5 rounded bg-black/45">#{task.slot}</span>
+        <span className="absolute top-1 right-1 flex items-center gap-0.5 rounded-md px-1 py-0.5 bg-white text-emerald-700 text-[8px] font-black shadow">
+          <ShieldCheck className="w-2.5 h-2.5" /> ✓
         </span>
         <span className="absolute inset-0 flex items-center justify-center">
-          <ShieldCheck className="w-7 h-7 text-white/95 drop-shadow-lg" />
+          <ShieldCheck className="w-8 h-8 text-white/95 drop-shadow-lg" />
         </span>
         {hint && (
           <span className="absolute bottom-4 left-1 right-1 text-[8px] font-black text-white text-center mono-num leading-none py-0.5 rounded bg-black/45">
             {hint}
           </span>
         )}
-        <p className="absolute bottom-1 left-0 right-0 text-[8px] font-black text-white text-center drop-shadow leading-none tracking-wide">
-          দেখতে ট্যাপ
+        <p className="absolute bottom-1 left-0 right-0 text-[9px] font-black text-white text-center drop-shadow leading-none tracking-wide">
+          ভেরিফাইড ✓
         </p>
       </button>
     );
