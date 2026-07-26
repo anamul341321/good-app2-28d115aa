@@ -233,6 +233,31 @@ function AdminWithdrawals() {
                     <div>🏦 Balance: <span className="mono-num font-bold">{s.balance.toFixed(0)}৳</span></div>
                   </div>
 
+                  {Array.isArray(s.referralBonuses) && s.referralBonuses.length > 0 && (
+                    <div className="pt-1.5 border-t border-white/5 space-y-1">
+                      <p className="text-[10px] font-black text-cyan">
+                        🎁 রেফার থেকে আয়: {s.referralPaidCount}/{s.referralBonuses.length} qualified · {Number(s.referralBonusTotal ?? 0).toFixed(0)}৳
+                      </p>
+                      <ul className="space-y-0.5 text-[10px] max-h-40 overflow-y-auto">
+                        {s.referralBonuses.map((r: any) => (
+                          <li key={r.id} className="flex items-center justify-between gap-2 rounded px-1.5 py-0.5 bg-white/5">
+                            <div className="min-w-0 flex-1 truncate">
+                              <span className={r.bonusPaid ? "font-bold text-emerald" : "text-muted-foreground"}>
+                                {r.bonusPaid ? "✅" : "⏳"} {r.name}
+                              </span>
+                              {r.uid != null && <span className="mono-num text-muted-foreground"> · #{r.uid}</span>}
+                              <span className="mono-num text-muted-foreground"> · {r.phone}</span>
+                            </div>
+                            <div className="shrink-0 flex items-center gap-1.5">
+                              <span className={`mono-num text-[9px] ${r.qualified ? "text-emerald" : "text-amber"}`}>{r.firstVerifies}/10</span>
+                              {r.bonusPaid && <span className="mono-num font-black text-cyan">+{r.bonusAmount}৳</span>}
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
                   {infoFlags.length > 0 && (
                     <div className="flex flex-wrap gap-1 pt-1 border-t border-white/5">
                       {infoFlags.map((f, i) => (
