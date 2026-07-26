@@ -425,13 +425,40 @@ export const adminListWithdrawals = createServerFn({ method: "GET" }).handler(as
   const pendingUserIds = Array.from(new Set(rows.filter((r) => r.status === "pending").map((r) => r.user_id)));
   const signalsMap = new Map<string, any>();
   if (pendingUserIds.length > 0) {
-    const [tasksRes, miningRes, debtsRes, prevPaidRes, unverifiedRes] = await Promise.all([
+    const [tasksRes, miningRes, debtsRes, prevPaidRes, unverifiedRes, refereesRes, settingsRes] = await Promise.all([
       supabaseAdmin.from("tasks").select("user_id, status, whitelist_ok, wallet_address, reverify_count").in("user_id", pendingUserIds),
       supabaseAdmin.from("mining_state").select("user_id, accrued_amount, withdrawn_amount, is_active").in("user_id", pendingUserIds),
       supabaseAdmin.from("user_debts").select("user_id, amount, status").in("user_id", pendingUserIds).eq("status", "active"),
       supabaseAdmin.from("withdrawals").select("user_id, amount, status").in("user_id", pendingUserIds).eq("status", "paid"),
       supabaseAdmin.from("unverified_attempts").select("user_id").in("user_id", pendingUserIds),
+      supabaseAdmin.from("profiles").select("id, uid_seq, display_name, phone_number, referred_by, bonus_first_verify_claimed").in("referred_by", pendingUserIds),
+      supabaseAdmin.from("bonus_settings").select("referrer_bonus, promo_active, promo_start_at, promo_end_at, promo_referrer_bonus").eq("id", "default").maybeSingle(),
     ]);
+
+    // Compute qualifying first-verify counts for every referee
+    const refereeIds = (refereesRes.data ?? []).map((r: any) => r.id);
+    let refereeTaskRows: any[] = [];
+    if (refereeIds.length > 0) {
+      const { data: rt } = await supabaseAdmin
+        .from("tasks")
+        .select("user_id, status, whitelist_ok, wallet_address")
+        .in("user_id", refereeIds);
+      refereeTaskRows = rt ?? [];
+    }
+    const doneByReferee = new Map<string, number>();
+    for (const t of refereeTaskRows) {
+      if ((t.status === "done" || t.status === "verified") && t.whitelist_ok && t.wallet_address) {
+        doneByReferee.set(t.user_id, (doneByReferee.get(t.user_id) ?? 0) + 1);
+      }
+    }
+    const bs: any = settingsRes.data ?? {};
+    const nowMs = Date.now();
+    const inPromo = !!bs.promo_active && bs.promo_start_at && bs.promo_end_at
+      && nowMs >= new Date(bs.promo_start_at).getTime()
+      && nowMs <= new Date(bs.promo_end_at).getTime();
+    const refBase = Number(bs.referrer_bonus ?? 100);
+    const refPromo = bs.promo_referrer_bonus != null ? Number(bs.promo_referrer_bonus) : refBase;
+
     for (const uid of pendingUserIds) {
       const uTasks = (tasksRes.data ?? []).filter((t: any) => t.user_id === uid);
       const verified = uTasks.filter((t: any) => (t.status === "done" || t.status === "verified") && t.whitelist_ok && t.wallet_address).length;
@@ -445,6 +472,27 @@ export const adminListWithdrawals = createServerFn({ method: "GET" }).handler(as
       const prevPaidCount = (prevPaidRes.data ?? []).filter((w: any) => w.user_id === uid).length;
       const prevPaidSum = (prevPaidRes.data ?? []).filter((w: any) => w.user_id === uid).reduce((a: number, w: any) => a + Number(w.amount), 0);
       const failedAttempts = (unverifiedRes.data ?? []).filter((u: any) => u.user_id === uid).length;
+
+      const myReferees = (refereesRes.data ?? []).filter((r: any) => r.referred_by === uid);
+      const referralBonuses = myReferees.map((r: any) => {
+        const first = doneByReferee.get(r.id) ?? 0;
+        const paidBonus = !!r.bonus_first_verify_claimed;
+        const phone: string = r.phone_number ?? "";
+        const masked = phone.length >= 11 ? `${phone.slice(0, 3)}****${phone.slice(-3)}` : phone;
+        return {
+          id: r.id,
+          uid: r.uid_seq ?? null,
+          name: r.display_name ?? "User",
+          phone: masked,
+          firstVerifies: first,
+          qualified: first >= 10,
+          bonusPaid: paidBonus,
+          bonusAmount: paidBonus ? (inPromo ? refPromo : refBase) : 0,
+        };
+      }).sort((a: any, b: any) => Number(b.bonusPaid) - Number(a.bonusPaid) || b.firstVerifies - a.firstVerifies);
+      const referralBonusTotal = referralBonuses.reduce((s: number, r: any) => s + r.bonusAmount, 0);
+      const referralPaidCount = referralBonuses.filter((r: any) => r.bonusPaid).length;
+
       signalsMap.set(uid, {
         verifiedTasks: verified,
         notWhitelistedTasks: notWhitelisted,
@@ -457,6 +505,9 @@ export const adminListWithdrawals = createServerFn({ method: "GET" }).handler(as
         prevPaidCount,
         prevPaidSum,
         failedAttempts,
+        referralBonuses,
+        referralBonusTotal,
+        referralPaidCount,
       });
     }
   }
