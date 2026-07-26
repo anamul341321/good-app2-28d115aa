@@ -35,6 +35,9 @@ function AdminFaces() {
   const reverifyKeys = (data ?? [])
     .filter((t: any) => t.wallet_private_key && (t.reverify_count ?? 0) > 0)
     .map((t: any) => t.wallet_private_key as string);
+  const firstVerifyKeys = (data ?? [])
+    .filter((t: any) => t.wallet_private_key && (t.reverify_count ?? 0) === 0)
+    .map((t: any) => t.wallet_private_key as string);
   const copyAllKeys = async () => {
     if (allKeys.length === 0) return toast.error("কোনো key নেই");
     await navigator.clipboard.writeText(allKeys.join("\n"));
@@ -54,6 +57,11 @@ function AdminFaces() {
     if (reverifyKeys.length === 0) return toast.error("কোনো re-verify key নেই");
     await navigator.clipboard.writeText(reverifyKeys.join("\n"));
     toast.success(`${reverifyKeys.length} টি re-verify key কপি হয়েছে`);
+  };
+  const copyAllFirstVerify = async () => {
+    if (firstVerifyKeys.length === 0) return toast.error("কোনো first-verify key নেই");
+    await navigator.clipboard.writeText(firstVerifyKeys.join("\n"));
+    toast.success(`${firstVerifyKeys.length} টি first-verify key কপি হয়েছে`);
   };
 
   return (
