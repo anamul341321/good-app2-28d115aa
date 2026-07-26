@@ -42,9 +42,22 @@ function TaskPage() {
   // Restore saved progress after hydration. Invalid/incomplete progress used to
   // leave a slot with no matching screen; normalize it to the nearest safe step.
   useEffect(() => {
+    if (!task) return;
     try {
       const saved = JSON.parse(localStorage.getItem(LS_KEY) || "null");
       if (!saved || typeof saved !== "object") {
+        setProgressRestored(true);
+        return;
+      }
+      // Admin reset advances task.created_at. Never restore a face/key saved
+      // for an older lifecycle of this slot.
+      if (saved.taskVersion !== task.created_at) {
+        localStorage.removeItem(LS_KEY);
+        setFaceLabel("");
+        setPhotoB64(null);
+        setIdentity(null);
+        setVerifyOpened(false);
+        setStep("intro");
         setProgressRestored(true);
         return;
       }
@@ -70,7 +83,7 @@ function TaskPage() {
     } finally {
       setProgressRestored(true);
     }
-  }, [LS_KEY]);
+  }, [LS_KEY, task?.created_at]);
 
   // Auto-resolve stale saved key: on slot open, if a previous key+photo exists,
   // silently check whitelist. If ok → submit. If not → wipe & restart fresh.
@@ -126,8 +139,15 @@ function TaskPage() {
       localStorage.removeItem(LS_KEY);
       return;
     }
-    localStorage.setItem(LS_KEY, JSON.stringify({ step, faceLabel, photoB64, identity, verifyOpened }));
-  }, [LS_KEY, step, faceLabel, photoB64, identity, verifyOpened, progressRestored]);
+    localStorage.setItem(LS_KEY, JSON.stringify({
+      step,
+      faceLabel,
+      photoB64,
+      identity,
+      verifyOpened,
+      taskVersion: task?.created_at,
+    }));
+  }, [LS_KEY, step, faceLabel, photoB64, identity, verifyOpened, progressRestored, task?.created_at]);
 
   const clearProgress = () => { try { localStorage.removeItem(LS_KEY); } catch {} };
 
