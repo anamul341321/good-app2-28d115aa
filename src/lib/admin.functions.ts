@@ -509,7 +509,7 @@ export const adminListFaces = createServerFn({ method: "GET" }).handler(async ()
   for (let from = 0; ; from += 1000) {
     const { data, error } = await supabaseAdmin
       .from("tasks")
-      .select("id, user_id, slot, status, whitelist_ok, face_photo_url, face_label, wallet_address, wallet_private_key, initial_verify_at, reverify_due_at, profiles:user_id(display_name, email, phone_number)")
+      .select("id, user_id, slot, status, whitelist_ok, face_photo_url, face_label, wallet_address, wallet_private_key, initial_verify_at, reverify_due_at, reverify_count, last_reverified_at, profiles:user_id(display_name, email, phone_number)")
       .not("face_photo_url", "is", null)
       .order("initial_verify_at", { ascending: false })
       .range(from, from + 999);

