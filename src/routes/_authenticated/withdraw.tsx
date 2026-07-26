@@ -5,7 +5,7 @@ import { requestWithdraw } from "@/lib/withdraw.functions";
 import { MIN_WITHDRAW_BDT } from "@/lib/constants";
 import { computeLiveBalance } from "@/lib/mining";
 import { useState, useEffect } from "react";
-import { ArrowDownToLine, Loader2, Lock, Copy } from "lucide-react";
+import { ArrowDownToLine, Loader2, Lock, Copy, Globe } from "lucide-react";
 import { toast } from "sonner";
 import { PageVoice } from "@/components/PageVoice";
 import bkashLogo from "@/assets/bkash-logo.png";
@@ -170,6 +170,27 @@ function WithdrawPage() {
           />
         </div>
       )}
+
+      {/* USDT coming soon */}
+      <div className="relative overflow-hidden rounded-2xl border border-emerald/30 bg-emerald/5 p-4">
+        <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-emerald/10 blur-2xl" />
+        <div className="relative flex items-center gap-3">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-emerald/15 text-emerald">
+            <Globe className="h-6 w-6" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-black text-emerald" translate="no">USDT Withdraw</p>
+              <span className="rounded-full bg-amber/15 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-amber">
+                {t("আসছে শীঘ্রই", "Coming Soon")}
+              </span>
+            </div>
+            <p className="text-[11px] leading-snug text-muted-foreground mt-0.5">
+              {t("ভারত বা বাংলাদেশের বাইরে কাজ করছেন? শীঘ্রই USDT-তে উইথড্র নিতে পারবেন — খুব তাড়াতাড়ি আসছে!", "Working outside Bangladesh/India? USDT withdraw is launching very soon — stay tuned!")}
+            </p>
+          </div>
+        </div>
+      </div>
 
       {provider && !chosenWallet && (
         <Link to="/wallet" className="block rounded-2xl border border-amber/40 bg-amber/10 p-3 text-center text-sm font-bold text-amber">
