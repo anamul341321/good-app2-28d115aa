@@ -551,7 +551,10 @@ export const adminResetTask = createServerFn({ method: "POST" })
       initial_verify_at: null,
       reverify_due_at: null,
       done_at: null,
-      whitelist_ok: false,
+      whitelist_ok: true,
+      last_whitelist_check_at: null,
+      last_reverified_at: null,
+      reverify_count: 0,
     }).eq("id", data.taskId);
     if (error) throw new Error(error.message);
     return { ok: true };
