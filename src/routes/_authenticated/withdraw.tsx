@@ -5,7 +5,7 @@ import { requestWithdraw } from "@/lib/withdraw.functions";
 import { MIN_WITHDRAW_BDT } from "@/lib/constants";
 import { computeLiveBalance } from "@/lib/mining";
 import { useState, useEffect } from "react";
-import { ArrowDownToLine, Loader2, Lock, Copy } from "lucide-react";
+import { ArrowDownToLine, Loader2, Lock, Copy, Globe } from "lucide-react";
 import { toast } from "sonner";
 import { PageVoice } from "@/components/PageVoice";
 import bkashLogo from "@/assets/bkash-logo.png";
