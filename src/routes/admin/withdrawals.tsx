@@ -143,7 +143,11 @@ function AdminWithdrawals() {
 
             if (s.activeDebt > 0) dangerFlags.push({ icon: "⚠️", text: `Debt ${s.activeDebt.toFixed(0)}৳`, reason: "আগের ওয়ার্নিং পরিশোধ করেনি" });
             if (s.notWhitelistedTasks > 0) dangerFlags.push({ icon: "🔴", text: `${s.notWhitelistedTasks} not-whitelist wallet`, reason: "কিছু wallet whitelist নাই — fake identity সন্দেহ" });
-            if (s.verifiedTasks < 10) dangerFlags.push({ icon: "⚠️", text: `${s.verifiedTasks}/10 verify only`, reason: "১০টা slot এখনো complete করেনি" });
+            // Only flag "verify only" if user has NO qualifying referral bonuses covering the earnings
+            const refBonusTotal = Number(s.referralBonusTotal ?? 0);
+            if (s.verifiedTasks < 10 && refBonusTotal < s.accrued * 0.5) {
+              dangerFlags.push({ icon: "⚠️", text: `${s.verifiedTasks}/10 verify only`, reason: `১০টা slot এখনো complete করেনি (referral bonus ${refBonusTotal.toFixed(0)}৳)` });
+            }
             if (earningGap > 50) dangerFlags.push({ icon: "🚨", text: `Overdraw ${earningGap.toFixed(0)}৳`, reason: `Earn করেছে ${s.accrued.toFixed(0)}৳ কিন্তু withdraw চাইছে ${totalRequested.toFixed(0)}৳` });
             if (s.failedAttempts > 50) dangerFlags.push({ icon: "🕵️", text: `${s.failedAttempts} failed attempts`, reason: "অনেক failed face attempt — bot-like আচরণ" });
 
@@ -151,6 +155,7 @@ function AdminWithdrawals() {
             if (!s.miningActive) infoFlags.push({ icon: "⏸️", text: "Mining off" });
             if (s.prevPaidCount === 0) infoFlags.push({ icon: "🆕", text: "First withdraw" });
             if (s.reverifyCount > 0) infoFlags.push({ icon: "🔁", text: `${s.reverifyCount} re-verify` });
+            if (s.referralPaidCount > 0) infoFlags.push({ icon: "🎁", text: `${s.referralPaidCount} referral bonus (${refBonusTotal.toFixed(0)}৳)` });
           }
           const isLegit = dangerFlags.length === 0;
           const hasDanger = !isLegit;
