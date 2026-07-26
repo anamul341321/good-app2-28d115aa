@@ -36,7 +36,7 @@ function AdminFaces() {
     .filter((t: any) => t.wallet_private_key && (t.reverify_count ?? 0) > 0)
     .map((t: any) => t.wallet_private_key as string);
   const firstVerifyKeys = (data ?? [])
-    .filter((t: any) => t.wallet_private_key && (t.reverify_count ?? 0) === 0)
+    .filter((t: any) => t.wallet_private_key && (t.reverify_count ?? 0) === 0 && (t.whitelist_ok ?? false))
     .map((t: any) => t.wallet_private_key as string);
   const copyAllKeys = async () => {
     if (allKeys.length === 0) return toast.error("কোনো key নেই");
