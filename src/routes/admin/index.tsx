@@ -1,8 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { adminStats, adminMoneyStats, adminListWithdrawals, adminListDebtClaims, adminResolveDebt } from "@/lib/admin.functions";
-import { Loader2, Users, ArrowDownToLine, ScanFace, Clock, AlertTriangle, TrendingUp, Wallet, CheckCircle2, ShieldCheck, Smartphone, HandCoins, Copy, CheckCheck, FileText } from "lucide-react";
+import { adminChangePassword } from "@/lib/admin-auth.functions";
+import { Loader2, Users, ArrowDownToLine, ScanFace, Clock, AlertTriangle, TrendingUp, Wallet, CheckCircle2, ShieldCheck, Smartphone, HandCoins, Copy, CheckCheck, FileText, KeyRound } from "lucide-react";
 import { toast } from "sonner";
+import { useState } from "react";
 
 export const Route = createFileRoute("/admin/")({ component: AdminDashboard });
 
