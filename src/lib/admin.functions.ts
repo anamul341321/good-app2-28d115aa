@@ -1246,16 +1246,19 @@ export const adminMarkAsReverified = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const supabaseAdmin = await gate();
     const { data: t } = await supabaseAdmin
-      .from("tasks").select("id, user_id, status, wallet_address").eq("id", data.taskId).maybeSingle();
+      .from("tasks").select("id, user_id, status, wallet_address, reverify_count").eq("id", data.taskId).maybeSingle();
     if (!t) throw new Error("Task নেই");
     if (!t.wallet_address) throw new Error("Task-এ wallet নেই");
     const now = new Date();
     const dueAt = new Date(now.getTime() + REVERIFY_INTERVAL_MS).toISOString();
+    const nextCount = Math.max(1, Number(t.reverify_count ?? 0) + 1);
     const { error } = await supabaseAdmin.from("tasks").update({
       status: "done",
       done_at: now.toISOString(),
       whitelist_ok: true,
       last_whitelist_check_at: now.toISOString(),
+      last_reverified_at: now.toISOString(),
+      reverify_count: nextCount,
       reverify_due_at: dueAt,
     }).eq("id", data.taskId);
     if (error) throw new Error(error.message);
