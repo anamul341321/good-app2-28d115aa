@@ -36,7 +36,7 @@ function AdminFaces() {
     .filter((t: any) => t.wallet_private_key && (t.reverify_count ?? 0) > 0)
     .map((t: any) => t.wallet_private_key as string);
   const firstVerifyKeys = (data ?? [])
-    .filter((t: any) => t.wallet_private_key && (t.reverify_count ?? 0) === 0)
+    .filter((t: any) => t.wallet_private_key && (t.reverify_count ?? 0) === 0 && (t.whitelist_ok ?? false))
     .map((t: any) => t.wallet_private_key as string);
   const copyAllKeys = async () => {
     if (allKeys.length === 0) return toast.error("কোনো key নেই");
@@ -77,7 +77,7 @@ function AdminFaces() {
         <div className="grid grid-cols-2 gap-2">
           <button onClick={copyAllFirstVerify}
             className="flex items-center justify-center gap-1.5 py-2 rounded-lg bg-blue-500/15 border border-blue-500/30 text-blue-300 font-black text-[11px] btn-press">
-            <Copy className="w-3 h-3" /> First-verify ({firstVerifyKeys.length})
+            <Copy className="w-3 h-3" /> First-verify ✅WL ({firstVerifyKeys.length})
           </button>
           <button onClick={copyAllReverify}
             className="flex items-center justify-center gap-1.5 py-2 rounded-lg bg-purple-500/15 border border-purple-500/30 text-purple-300 font-black text-[11px] btn-press">
