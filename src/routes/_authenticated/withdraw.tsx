@@ -186,7 +186,7 @@ function WithdrawPage() {
               </span>
             </div>
             <p className="text-[11px] leading-snug text-muted-foreground mt-0.5">
-              {t("ভারত বা বাংলাদেশের বাইরে কাজ করছেন? শীঘ্রই USDT-তে উইথড্র নিতে পারবেন — খুব তাড়াতাড়ি আসছে!", "Working outside Bangladesh/India? USDT withdraw is launching very soon — stay tuned!")}
+              {t("শীঘ্রই USDT-তে উইথড্র নেওয়ার সুবিধা চালু হবে — আপডেটের জন্য সাথেই থাকুন!", "USDT withdraw option is coming very soon — stay tuned for updates!")}
             </p>
           </div>
         </div>
