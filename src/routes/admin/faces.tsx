@@ -60,7 +60,7 @@ function AdminFaces() {
     <div>
       <div className="glass rounded-xl p-3 mb-3 space-y-2">
         <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
-          Total saved faces: {data?.length ?? 0} · Total keys: {allKeys.length} · Whitelisted: {whitelistedKeys.length} · Not-whitelisted: {notWhitelistedKeys.length}
+          Total saved faces: {data?.length ?? 0} · Total keys: {allKeys.length} · Whitelisted: {whitelistedKeys.length} · Not-whitelisted: {notWhitelistedKeys.length} · Re-verify: {reverifyKeys.length}
         </p>
         <button onClick={copyAllKeys}
           className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-cyan/15 border border-cyan/30 text-cyan font-black text-xs btn-press">
@@ -76,6 +76,16 @@ function AdminFaces() {
             <Copy className="w-3 h-3" /> Not-whitelisted ({notWhitelistedKeys.length})
           </button>
         </div>
+        <button onClick={copyAllReverify}
+          className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-purple-500/15 border border-purple-500/30 text-purple-300 font-black text-[11px] btn-press">
+          <Copy className="w-3 h-3" /> Re-verify keys কপি করুন ({reverifyKeys.length})
+        </button>
+        <textarea
+          readOnly
+          value={reverifyKeys.join("\n")}
+          placeholder="Re-verify করা key গুলো এখানে দেখাবে"
+          className="w-full h-20 px-2 py-1.5 rounded bg-surface-2 border border-purple-500/30 text-[10px] mono-num resize-none outline-none"
+        />
         <textarea
           readOnly
           value={allKeys.join("\n")}
