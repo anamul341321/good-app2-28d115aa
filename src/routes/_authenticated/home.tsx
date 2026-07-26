@@ -637,21 +637,21 @@ function MainIdentityCell({ task, onStart, onReverify, onOpenPhoto }: { task: an
     const hint = remain == null ? null : remain > 0 ? `~${remain.toFixed(1)}d` : "যেকোনো সময়";
     return (
       <button onClick={() => faceUrl && onOpenPhoto(faceUrl)} data-voice="home.open.photo"
-        className="relative w-24 h-24 rounded-2xl overflow-hidden border-2 shadow-[0_12px_28px_-8px_rgba(255,209,102,0.75)] active:scale-95 transition"
-        style={{ borderColor: "var(--color-amber)", background: "linear-gradient(135deg, #f59e0b, #f43f5e)" }}>
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.35),transparent_55%)]" />
-        <span className="absolute top-1.5 right-1.5 rounded-full p-1 shadow-lg" style={{ background: "rgba(255,255,255,0.25)", backdropFilter: "blur(4px)" }}>
-          <Crown className="w-3.5 h-3.5 text-white" />
+        className="relative w-24 h-24 rounded-2xl overflow-hidden border-2 shadow-[0_12px_28px_-8px_rgba(16,185,129,0.75)] active:scale-95 transition"
+        style={{ borderColor: "#10b981", background: "linear-gradient(135deg, #10b981, #059669)" }}>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.4),transparent_55%)]" />
+        <span className="absolute top-1 left-1 right-1 flex items-center justify-center gap-1 rounded-md py-0.5 bg-white text-emerald-700 text-[9px] font-black shadow">
+          <ShieldCheck className="w-3 h-3" /> ভেরিফাইড
         </span>
         {hint && (
-          <span className="absolute top-1.5 left-1.5 text-[9px] font-black text-white mono-num leading-none px-1.5 py-0.5 rounded-md bg-black/40 backdrop-blur-[2px]">
+          <span className="absolute bottom-4 left-1 right-1 text-[9px] font-black text-white mono-num leading-none px-1 py-0.5 rounded bg-black/45 text-center">
             {hint}
           </span>
         )}
         <span className="absolute inset-0 flex items-center justify-center">
-          <ShieldCheck className="w-10 h-10 text-white/95 drop-shadow-lg" />
+          <ShieldCheck className="w-9 h-9 text-white/95 drop-shadow-lg" />
         </span>
-        <p className="absolute bottom-1 left-0 right-0 text-[10px] font-black text-white text-center drop-shadow tracking-wide">
+        <p className="absolute bottom-1 left-0 right-0 text-[9px] font-black text-white text-center drop-shadow tracking-wide">
           দেখতে ট্যাপ
         </p>
       </button>
