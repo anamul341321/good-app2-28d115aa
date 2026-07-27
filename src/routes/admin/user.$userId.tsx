@@ -102,6 +102,12 @@ function UserDetail() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const setBlocked = useMutation({
+    mutationFn: (blocked: boolean) => adminSetUserBlocked({ data: { userId, blocked } }),
+    onSuccess: (_r, blocked) => { toast.success(blocked ? "🚫 User block করা হলো" : "✅ User unblock করা হলো"); refetch(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const setUnlock = useMutation({
     mutationFn: (unlocked: boolean) => adminSetReferralUnlock({ data: { userId, unlocked } }),
     onSuccess: (_r, unlocked) => { toast.success(unlocked ? "🔓 Referral link unlock করা হলো" : "🔒 Referral link lock করা হলো"); refetch(); },
