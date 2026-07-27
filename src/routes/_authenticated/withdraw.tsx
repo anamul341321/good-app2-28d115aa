@@ -40,6 +40,7 @@ function WithdrawPage() {
 
   const [mode, setMode] = useState<"bdt" | "usdt">("bdt");
   const [usdtAddress, setUsdtAddress] = useState<string>("");
+  const [historyTab, setHistoryTab] = useState<"bdt" | "usdt">("bdt");
   const usdtRate = Number((data as any)?.payoutSettings?.usdtRateBdt ?? 125);
   const usdtEnabled = (data as any)?.payoutSettings?.usdtEnabled !== false;
   const usdtOffMsg = (data as any)?.payoutSettings?.usdtOffMessage;
