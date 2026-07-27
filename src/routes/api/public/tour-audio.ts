@@ -13,10 +13,10 @@ const VOICE = "ash";
 const FALLBACK_VOICE = "onyx";
 const MODEL = "openai/gpt-4o-mini-tts";
 const SPEED = 1.15;
-const CACHE_VERSION = "v11-context-aware-smiling-bhaiya";
+const CACHE_VERSION = "v12-good-app-rename";
 const SIGN_TTL = 60 * 60 * 24 * 365;
 const TTS_INSTRUCTIONS =
-  "Speak ONLY in natural Dhakai/Bangladeshi Bangla (bn-BD). Persona: a real, warm, smiling, joyful young Bangladeshi bhaiya guiding a close friend — like a helpful older brother, not a news anchor, not a robot. Always smile audibly, keep pitch lively with natural rise-and-fall, sound excited and encouraging. Voice must be clearly loud and confident, never soft, ghostly, sleepy, flat, or monotone. When the text names a specific button/label, say that exact wording — never replace with generic 'এই বাটন' / 'ওই বাটন'. Keep it short, conversational, human. Pronounce: স্বাগতম = shago-tom, সাক্ষী = shakkhi, গুড-অ্যাপ = good-dollar, ভেরিফাই = ve-ri-fai, জমা দিন = joma din, UID = ইউ-আই-ডি.";
+  "Speak ONLY in natural Dhakai/Bangladeshi Bangla (bn-BD). Persona: a real, warm, smiling, joyful young Bangladeshi bhaiya guiding a close friend — like a helpful older brother, not a news anchor, not a robot. Always smile audibly, keep pitch lively with natural rise-and-fall, sound excited and encouraging. Voice must be clearly loud and confident, never soft, ghostly, sleepy, flat, or monotone. When the text names a specific button/label, say that exact wording — never replace with generic 'এই বাটন' / 'ওই বাটন'. Keep it short, conversational, human. Pronounce: স্বাগতম = shago-tom, সাক্ষী = shakkhi, গুড-অ্যাপ = good-app, ভেরিফাই = ve-ri-fai, জমা দিন = joma din, UID = ইউ-আই-ডি.";
 
 export const Route = createFileRoute("/api/public/tour-audio")({
   server: {
