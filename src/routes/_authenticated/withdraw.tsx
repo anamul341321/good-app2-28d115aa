@@ -131,7 +131,11 @@ function WithdrawPage() {
         <p className={`mono-num text-5xl font-black mt-2 drop-shadow ${claimable < 0 ? "text-amber" : "text-white"}`} translate="no">
           {claimable} <span className="text-2xl">৳</span>
         </p>
-        <p className="text-[11px] text-white/70 mt-2" translate="no">{t("লাইভ", "Live")}: {balance.toFixed(4)}৳ · {t("শুধুমাত্র পূর্ণ টাকা উইথড্র করা যাবে", "Only whole ৳ can be withdrawn")}</p>
+        <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 backdrop-blur-sm" translate="no">
+          <img src={usdtLogo} alt="USDT" width={16} height={16} className="h-4 w-4 object-contain" loading="lazy" />
+          <span className="mono-num text-sm font-black text-white">≈ {(claimable / usdtRate).toFixed(2)} USDT</span>
+        </div>
+        <p className="text-[11px] text-white/70 mt-2" translate="no">{t("লাইভ", "Live")}: {balance.toFixed(4)}৳ · {t("BDT ও USDT — একই ব্যালেন্স", "BDT & USDT — same balance")}</p>
         {debtTotal === 0 && claimable >= 50 && (
           <button type="button" onClick={() => setAmount(String(claimable))}
             className="mt-4 rounded-xl px-5 py-2.5 font-black text-sm bg-white text-rose btn-press shine">
