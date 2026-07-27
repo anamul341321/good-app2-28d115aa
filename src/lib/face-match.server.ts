@@ -1,5 +1,5 @@
 // Server-only: call Lovable AI Gateway (Gemini) to compare a captured selfie
-// against one or more reference photos. Ported from the GoodDollar reference
+// against one or more reference photos. Ported from the Good-App reference
 // face-match edge function — same prompts, same thresholds.
 
 const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";

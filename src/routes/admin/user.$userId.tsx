@@ -300,11 +300,11 @@ function UserDetail() {
         </div>
       </div>
 
-      {/* GoodDollar face summary */}
+      {/* Good-App face summary */}
       <div className="glass rounded-2xl p-4 space-y-3 border border-violet/30">
         <div className="flex items-center gap-2">
           <ScanFace className="w-4 h-4 text-violet" />
-          <p className="text-[10px] uppercase tracking-widest text-violet font-black">GoodDollar Face Verification</p>
+          <p className="text-[10px] uppercase tracking-widest text-violet font-black">Good-App Face Verification</p>
         </div>
         <div className="grid grid-cols-2 gap-2 text-center">
           <div className="rounded-xl bg-emerald/10 border border-emerald/20 py-3">
@@ -499,7 +499,7 @@ function UserDetail() {
               </button>
             </div>
             <p className="text-[10px] text-muted-foreground leading-snug">
-              এই key গুলোর GoodDollar whitelist বাতিল হয়েছে — user এখন re-verify করবে। tap করলে address বা private key copy হবে।
+              এই key গুলোর Good-App whitelist বাতিল হয়েছে — user এখন re-verify করবে। tap করলে address বা private key copy হবে।
             </p>
             {queue.map((t: any) => (
               <div key={t.id} className="bg-background/60 rounded-xl p-2.5 space-y-1.5 border border-rose/20">
@@ -526,7 +526,7 @@ function UserDetail() {
       {/* Tasks */}
       <div className="glass rounded-2xl p-4">
         <div className="flex items-center justify-between mb-2">
-          <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">GoodDollar face slots</p>
+          <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Good-App face slots</p>
           <button
             onClick={() => {
               const parts: string[] = [];

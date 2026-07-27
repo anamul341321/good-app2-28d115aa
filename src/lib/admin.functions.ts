@@ -1290,7 +1290,7 @@ export const adminSetFirstVerifyMiningMode = createServerFn({ method: "POST" })
   });
 
 // Admin: convert a "first-verify" (status='verified') task into a completed
-// re-verify (status='done'). Useful when GoodDollar isn't asking re-verify
+// re-verify (status='done'). Useful when Good-App isn't asking re-verify
 // but user is stuck waiting. Also resets whitelist_ok=true and pushes the
 // next re-verify due date 4 days out, then re-settles mining.
 export const adminMarkAsReverified = createServerFn({ method: "POST" })
