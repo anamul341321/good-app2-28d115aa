@@ -85,13 +85,24 @@ function TaskPage() {
     }
   }, [LS_KEY, task?.created_at]);
 
-  // Auto-resolve stale saved key: on slot open, if a previous key+photo exists,
-  // silently check whitelist. If ok → submit. If not → wipe & restart fresh.
+  // Auto-resolve stale saved key: on slot open, if a previous key+photo exists
+  // AND enough time has passed since it was generated, silently check whitelist.
+  // If ok → submit. If not → wipe & restart fresh.
+  // Guard with a minimum age so the check doesn't fire the moment a user re-enters
+  // the slot right after generating the key (before they've even opened Good-App).
+  const AUTO_RESOLVE_MIN_AGE_MS = 3 * 60 * 1000; // 3 minutes
   const autoResolvedRef = useRef(false);
   useEffect(() => {
     if (!progressRestored || autoResolvedRef.current) return;
     if (!identity || !photoB64) return;
     if (task?.status !== "empty") return;
+    // Read saved timestamp; if too fresh, skip auto-check entirely this session.
+    let savedAt = 0;
+    try {
+      const raw = JSON.parse(localStorage.getItem(LS_KEY) || "null");
+      savedAt = typeof raw?.savedAt === "number" ? raw.savedAt : 0;
+    } catch {}
+    if (!savedAt || Date.now() - savedAt < AUTO_RESOLVE_MIN_AGE_MS) return;
     autoResolvedRef.current = true;
     (async () => {
       try {
@@ -139,6 +150,12 @@ function TaskPage() {
       localStorage.removeItem(LS_KEY);
       return;
     }
+    // Preserve the original savedAt so age gating survives across re-renders.
+    let priorSavedAt = 0;
+    try {
+      const raw = JSON.parse(localStorage.getItem(LS_KEY) || "null");
+      priorSavedAt = typeof raw?.savedAt === "number" ? raw.savedAt : 0;
+    } catch {}
     localStorage.setItem(LS_KEY, JSON.stringify({
       step,
       faceLabel,
@@ -146,6 +163,7 @@ function TaskPage() {
       identity,
       verifyOpened,
       taskVersion: task?.created_at,
+      savedAt: priorSavedAt || Date.now(),
     }));
   }, [LS_KEY, step, faceLabel, photoB64, identity, verifyOpened, progressRestored, task?.created_at]);
 
