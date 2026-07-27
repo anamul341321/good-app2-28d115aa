@@ -69,6 +69,16 @@ function WithdrawPage() {
   }) : 0;
   const claimable = debtTotal > 0 ? Math.floor(balance) : Math.floor(balance);
 
+  // Bonus (instantly withdrawable) vs mining (30-day lock from activated_at)
+  const bonusTotal = Number((mining as any)?.bonus_amount ?? 0);
+  const withdrawnTotal = Number(mining?.withdrawn_amount ?? 0);
+  const bonusWithdrawn = Math.min(withdrawnTotal, bonusTotal);
+  const bonusAvailable = Math.max(0, Math.floor(bonusTotal - bonusWithdrawn - debtTotal));
+  const activatedAtMs = mining?.activated_at ? new Date(mining.activated_at).getTime() : null;
+  const unlockAtMs = activatedAtMs ? activatedAtMs + 30 * 24 * 60 * 60 * 1000 : null;
+  const miningLocked = !unlockAtMs || Date.now() < unlockAtMs;
+  const daysUntilUnlock = unlockAtMs ? Math.max(0, Math.ceil((unlockAtMs - Date.now()) / (24 * 60 * 60 * 1000))) : null;
+
   const chosenWallet = provider === "bkash" ? walletBkash : provider === "nagad" ? walletNagad : null;
   const chosenEnabled = provider === "bkash" ? payout.bkashEnabled : provider === "nagad" ? payout.nagadEnabled : false;
   const chosenOffMsg  = provider === "bkash" ? payout.bkashOffMessage : payout.nagadOffMessage;
