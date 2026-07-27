@@ -125,22 +125,24 @@ function WithdrawPage() {
         </div>
       )}
 
-      <div className="mining-card mining-card-morph rounded-2xl p-6 text-center relative overflow-hidden">
+      <div className={`mining-card mining-card-morph rounded-2xl p-6 text-center relative overflow-hidden ${mode === "usdt" ? "ring-2 ring-emerald/40" : "ring-2 ring-rose/30"}`}>
         <p className="text-xs uppercase tracking-widest text-white/80 font-black">
-          {debtTotal > 0 ? t("বর্তমান ব্যালেন্স", "Current Balance") : t("ক্লেইমযোগ্য ব্যালেন্স", "Claimable Balance")}
+          {mode === "usdt"
+            ? t("USDT ক্লেইমযোগ্য ব্যালেন্স", "USDT claimable balance")
+            : debtTotal > 0 ? t("বর্তমান BDT ব্যালেন্স", "Current BDT balance") : t("BDT ক্লেইমযোগ্য ব্যালেন্স", "BDT claimable balance")}
         </p>
         <p className={`mono-num text-5xl font-black mt-2 drop-shadow ${claimable < 0 ? "text-amber" : "text-white"}`} translate="no">
-          {claimable} <span className="text-2xl">৳</span>
+          {mode === "usdt" ? (claimable / usdtRate).toFixed(2) : claimable} <span className="text-2xl">{mode === "usdt" ? "USDT" : "৳"}</span>
         </p>
-        <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 backdrop-blur-sm" translate="no">
-          <img src={usdtLogo} alt="USDT" width={16} height={16} className="h-4 w-4 object-contain" loading="lazy" />
-          <span className="mono-num text-sm font-black text-white">≈ {(claimable / usdtRate).toFixed(2)} USDT</span>
-        </div>
-        <p className="text-[11px] text-white/70 mt-2" translate="no">{t("লাইভ", "Live")}: {balance.toFixed(4)}৳ · {t("BDT ও USDT — একই ব্যালেন্স", "BDT & USDT — same balance")}</p>
+        <p className="text-[11px] text-white/70 mt-2" translate="no">
+          {t("লাইভ ব্যালেন্স", "Live balance")}: {mode === "usdt" ? `${(balance / usdtRate).toFixed(4)} USDT` : `${balance.toFixed(4)}৳`}
+        </p>
         {debtTotal === 0 && claimable >= 50 && (
           <button type="button" onClick={() => setAmount(String(claimable))}
             className="mt-4 rounded-xl px-5 py-2.5 font-black text-sm bg-white text-rose btn-press shine">
-            💰 {t(`সম্পূর্ণ ${claimable}৳ ক্লেইম করুন`, `Claim full ${claimable}৳`)}
+            💰 {mode === "usdt"
+              ? t(`সম্পূর্ণ ${(claimable / usdtRate).toFixed(2)} USDT নিন`, `Withdraw all ${(claimable / usdtRate).toFixed(2)} USDT`)
+              : t(`সম্পূর্ণ ${claimable}৳ ক্লেইম করুন`, `Claim full ${claimable}৳`)}
           </button>
         )}
       </div>
@@ -227,7 +229,7 @@ function WithdrawPage() {
             <img src={usdtLogo} alt="USDT" width={32} height={32} className="h-8 w-8 rounded-full object-contain bg-white shadow" loading="lazy" />
             <div>
               <p className={`text-sm font-black ${mode === "usdt" ? "text-emerald" : "text-muted-foreground"}`} translate="no">USDT</p>
-              <p className="text-[9px] text-muted-foreground" translate="no">Celo Network</p>
+              <p className={`text-[9px] font-bold ${usdtEnabled ? "text-muted-foreground" : "text-rose"}`} translate="no">{usdtEnabled ? "Celo Network" : t("সাময়িক বন্ধ", "Temporarily off")}</p>
             </div>
           </div>
         </button>
@@ -596,7 +598,9 @@ function UsdtWithdrawCard(props: {
   const feeRate = gross < 100 ? 0.2 : 0.1;
   const fee = Math.floor(gross * feeRate);
   const payoutBdt = gross - fee;
-  const payoutUsd = (payoutBdt / usdtRate).toFixed(2);
+  const grossUsd = gross / usdtRate;
+  const feeUsd = fee / usdtRate;
+  const payoutUsd = payoutBdt / usdtRate;
 
   if (!usdtEnabled) {
     return (
@@ -714,15 +718,15 @@ function UsdtWithdrawCard(props: {
           <p className="text-[10px] uppercase tracking-widest font-black text-emerald">{t("সারাংশ", "Summary")}</p>
           <div className="flex justify-between text-[12px]">
             <span className="text-muted-foreground">{t("ব্যালেন্স কাটবে", "Balance deducted")}</span>
-            <span className="mono-num font-bold">{gross}৳</span>
+            <span className="mono-num font-bold">{grossUsd.toFixed(2)} USDT</span>
           </div>
           <div className="flex justify-between text-[12px]">
-            <span className="text-muted-foreground">{t(`নেটওয়ার্ক ফি (${Math.round(feeRate * 100)}%)`, `Network fee (${Math.round(feeRate * 100)}%)`)}</span>
-            <span className="mono-num font-bold text-rose">− {fee}৳</span>
+            <span className="text-muted-foreground">{t(`উইথড্র ফি (${Math.round(feeRate * 100)}%)`, `Withdraw fee (${Math.round(feeRate * 100)}%)`)}</span>
+            <span className="mono-num font-bold text-rose">− {feeUsd.toFixed(2)} USDT</span>
           </div>
           <div className="flex justify-between text-base border-t border-emerald/30 pt-1.5">
             <span className="font-black">{t("আপনি পাবেন", "You receive")}</span>
-            <span className="mono-num font-black text-emerald" translate="no">{payoutUsd} USDT</span>
+            <span className="mono-num font-black text-emerald" translate="no">{payoutUsd.toFixed(2)} USDT</span>
           </div>
         </div>
       )}
