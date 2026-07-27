@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { adminUserDetail, adminAdjustBalance, adminToggleMining, adminResetTask, adminমুছুনUser, adminResetUserPassword, adminClearMiningOverride, adminCreateVoucher, adminListVouchersForUser, adminSetReferralUnlock, adminResetWallet, adminMarkAsReverified, adminAddDebt, adminResolveDebt, adminDeleteDebt, adminDirectPayout } from "@/lib/admin.functions";
-import { ArrowLeft, Loader2, Power, Plus, Minus, RefreshCw, Trash2, Copy, KeyRound, Gift, ScanFace, Share2, Lock, Unlock, Wallet, CheckCircle2, AlertTriangle, CheckCheck, Send, TrendingUp } from "lucide-react";
+import { adminUserDetail, adminAdjustBalance, adminToggleMining, adminResetTask, adminমুছুনUser, adminResetUserPassword, adminClearMiningOverride, adminCreateVoucher, adminListVouchersForUser, adminSetReferralUnlock, adminResetWallet, adminMarkAsReverified, adminAddDebt, adminResolveDebt, adminDeleteDebt, adminDirectPayout, adminSetUserBlocked } from "@/lib/admin.functions";
+import { ArrowLeft, Loader2, Power, Plus, Minus, RefreshCw, Trash2, Copy, KeyRound, Gift, ScanFace, Share2, Lock, Unlock, Wallet, CheckCircle2, AlertTriangle, CheckCheck, Send, TrendingUp, Ban, ShieldOff } from "lucide-react";
 import { computeLiveBalance } from "@/lib/mining";
 import { toast } from "sonner";
 import { useState } from "react";
@@ -99,6 +99,12 @@ function UserDetail() {
   const del = useMutation({
     mutationFn: () => adminমুছুনUser({ data: { userId } }),
     onSuccess: () => { toast.success("মুছুনd"); window.location.href = "/admin/users"; },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const setBlocked = useMutation({
+    mutationFn: (blocked: boolean) => adminSetUserBlocked({ data: { userId, blocked } }),
+    onSuccess: (_r, blocked) => { toast.success(blocked ? "🚫 User block করা হলো" : "✅ User unblock করা হলো"); refetch(); },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -449,6 +455,39 @@ function UserDetail() {
         )}
       </div>
 
+
+      {/* Block / Unblock */}
+      {(() => {
+        const blocked = (data as any)?.blocked === true;
+        return (
+          <div className={`glass rounded-2xl p-4 space-y-2 border ${blocked ? "border-rose/50 bg-rose/5" : "border-border"}`}>
+            <div className="flex items-center gap-2">
+              {blocked ? <Ban className="w-4 h-4 text-rose" /> : <ShieldOff className="w-4 h-4 text-amber" />}
+              <p className={`text-[10px] uppercase tracking-widest font-bold ${blocked ? "text-rose" : "text-amber"}`}>
+                {blocked ? "User Blocked" : "User Block/Unblock"}
+              </p>
+            </div>
+            <p className="text-[10px] text-muted-foreground">
+              {blocked
+                ? "এই user block করা — login করতে পারবে না। Unblock করলে আবার login করতে পারবে।"
+                : "Block করলে user আর login করতে পারবে না। Withdrawal, mining সব বন্ধ হয়ে যাবে। যেকোনো সময় Unblock করা যাবে।"}
+            </p>
+            <button
+              disabled={setBlocked.isPending}
+              onClick={() => {
+                const next = !blocked;
+                if (!confirm(next ? "এই user block করবেন? Login বন্ধ হয়ে যাবে।" : "এই user unblock করবেন? Login আবার চালু হবে।")) return;
+                setBlocked.mutate(next);
+              }}
+              className={`w-full py-2 rounded-xl font-black text-[11px] flex items-center justify-center gap-1 disabled:opacity-50 ${
+                blocked ? "bg-emerald/20 text-emerald" : "bg-rose/20 text-rose"
+              }`}>
+              {setBlocked.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : blocked ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Ban className="w-3.5 h-3.5" />}
+              {blocked ? "Unblock করুন" : "Block করুন"}
+            </button>
+          </div>
+        );
+      })()}
 
       {/* Password reset */}
       <div className="glass rounded-2xl p-4 space-y-2">

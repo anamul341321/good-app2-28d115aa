@@ -288,6 +288,14 @@ export const adminUserDetail = createServerFn({ method: "POST" })
 
     return {
       profile: profile.data,
+      blocked: await (async () => {
+        try {
+          const { data: au } = await supabaseAdmin.auth.admin.getUserById(data.userId);
+          const bu = (au?.user as any)?.banned_until as string | null | undefined;
+          if (!bu) return false;
+          return new Date(bu).getTime() > Date.now();
+        } catch { return false; }
+      })(),
       tasks: taskRows,
       mining: mining.data,
       wallet: (wallets.data ?? []).find((w) => w.provider === "bkash") ?? wallets.data?.[0] ?? null,
@@ -1445,3 +1453,18 @@ export const adminPaidReport = createServerFn({ method: "GET" }).handler(async (
   const grandTotal = rows.reduce((a, r) => a + r.total, 0);
   return { rows, grandTotal, generatedAt: new Date().toISOString() };
 });
+
+// ---------------- Block / Unblock user ----------------
+export const adminSetUserBlocked = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => z.object({
+    userId: z.string().uuid(),
+    blocked: z.boolean(),
+  }).parse(i))
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await gate();
+    const { error } = await supabaseAdmin.auth.admin.updateUserById(data.userId, {
+      ban_duration: data.blocked ? "876000h" : "none",
+    } as any);
+    if (error) throw new Error(error.message);
+    return { ok: true, blocked: data.blocked };
+  });
