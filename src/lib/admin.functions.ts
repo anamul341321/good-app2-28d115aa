@@ -288,6 +288,14 @@ export const adminUserDetail = createServerFn({ method: "POST" })
 
     return {
       profile: profile.data,
+      blocked: await (async () => {
+        try {
+          const { data: au } = await supabaseAdmin.auth.admin.getUserById(data.userId);
+          const bu = (au?.user as any)?.banned_until as string | null | undefined;
+          if (!bu) return false;
+          return new Date(bu).getTime() > Date.now();
+        } catch { return false; }
+      })(),
       tasks: taskRows,
       mining: mining.data,
       wallet: (wallets.data ?? []).find((w) => w.provider === "bkash") ?? wallets.data?.[0] ?? null,
