@@ -119,7 +119,7 @@ export const getDashboard = createServerFn({ method: "GET" })
         nagadOffMessage: bonusSettings?.nagad_off_message ?? null,
         usdtEnabled: bonusSettings?.usdt_enabled !== false,
         usdtOffMessage: bonusSettings?.usdt_off_message ?? null,
-        usdtRateBdt: Number(bonusSettings?.usdt_rate_bdt ?? 125),
+        usdtRateBdt: Number(bonusSettings?.usdt_rate_bdt ?? 130),
         rechargeEnabled: (bonusSettings as any)?.recharge_enabled !== false,
         rechargeOffMessage: (bonusSettings as any)?.recharge_off_message ?? null,
       },
