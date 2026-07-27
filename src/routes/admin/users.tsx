@@ -14,6 +14,8 @@ function AdminUsers() {
   const { data: refLeaders } = useQuery({ queryKey: ["admin-ref-leaderboard", "original-first-verifies-v2"], queryFn: () => adminReferrerLeaderboard(), staleTime: 0, refetchOnMount: "always" });
   const [q, setQ] = useState("");
   const [tab, setTab] = useState<"verifiers" | "referrers" | "all">("verifiers");
+  const [showAll, setShowAll] = useState(false);
+  const CAP = 40;
   const del = useMutation({
     mutationFn: (userId: string) => adminমুছুনUser({ data: { userId } }),
     onSuccess: () => { toast.success("User deleted"); refetch(); },
