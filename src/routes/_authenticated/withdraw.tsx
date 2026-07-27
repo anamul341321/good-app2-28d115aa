@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { PageVoice } from "@/components/PageVoice";
 import bkashLogo from "@/assets/bkash-logo.png";
 import nagadLogo from "@/assets/nagad-logo.png";
+import usdtLogo from "@/assets/usdt-logo.png";
 import { useLang } from "@/lib/i18n";
 
 
@@ -39,6 +40,7 @@ function WithdrawPage() {
 
   const [mode, setMode] = useState<"bdt" | "usdt">("bdt");
   const [usdtAddress, setUsdtAddress] = useState<string>("");
+  const [historyTab, setHistoryTab] = useState<"bdt" | "usdt">("bdt");
   const usdtRate = Number((data as any)?.payoutSettings?.usdtRateBdt ?? 125);
   const usdtEnabled = (data as any)?.payoutSettings?.usdtEnabled !== false;
   const usdtOffMsg = (data as any)?.payoutSettings?.usdtOffMessage;
@@ -130,7 +132,11 @@ function WithdrawPage() {
         <p className={`mono-num text-5xl font-black mt-2 drop-shadow ${claimable < 0 ? "text-amber" : "text-white"}`} translate="no">
           {claimable} <span className="text-2xl">৳</span>
         </p>
-        <p className="text-[11px] text-white/70 mt-2" translate="no">{t("লাইভ", "Live")}: {balance.toFixed(4)}৳ · {t("শুধুমাত্র পূর্ণ টাকা উইথড্র করা যাবে", "Only whole ৳ can be withdrawn")}</p>
+        <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 backdrop-blur-sm" translate="no">
+          <img src={usdtLogo} alt="USDT" width={16} height={16} className="h-4 w-4 object-contain" loading="lazy" />
+          <span className="mono-num text-sm font-black text-white">≈ {(claimable / usdtRate).toFixed(2)} USDT</span>
+        </div>
+        <p className="text-[11px] text-white/70 mt-2" translate="no">{t("লাইভ", "Live")}: {balance.toFixed(4)}৳ · {t("BDT ও USDT — একই ব্যালেন্স", "BDT & USDT — same balance")}</p>
         {debtTotal === 0 && claimable >= 50 && (
           <button type="button" onClick={() => setAmount(String(claimable))}
             className="mt-4 rounded-xl px-5 py-2.5 font-black text-sm bg-white text-rose btn-press shine">
@@ -218,9 +224,7 @@ function WithdrawPage() {
               : "border-border bg-surface-2 opacity-80"
           }`}>
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-linear-to-br from-emerald to-cyan text-white text-[11px] font-black shadow" translate="no">
-              ₮
-            </div>
+            <img src={usdtLogo} alt="USDT" width={32} height={32} className="h-8 w-8 rounded-full object-contain bg-white shadow" loading="lazy" />
             <div>
               <p className={`text-sm font-black ${mode === "usdt" ? "text-emerald" : "text-muted-foreground"}`} translate="no">USDT</p>
               <p className="text-[9px] text-muted-foreground" translate="no">Celo Network</p>
@@ -326,49 +330,78 @@ function WithdrawPage() {
 
 
       <div>
-        <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold px-1 mb-2">{t("ইতিহাস", "History")}</p>
+        <div className="flex items-center justify-between px-1 mb-2">
+          <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">{t("ইতিহাস", "History")}</p>
+          <div className="flex gap-1 rounded-full bg-surface-2 p-0.5" translate="no">
+            <button type="button" onClick={() => setHistoryTab("bdt")}
+              className={`px-3 py-1 rounded-full text-[10px] font-black transition ${historyTab === "bdt" ? "bg-rose text-white shadow" : "text-muted-foreground"}`}>
+              BDT
+            </button>
+            <button type="button" onClick={() => setHistoryTab("usdt")}
+              className={`px-3 py-1 rounded-full text-[10px] font-black transition ${historyTab === "usdt" ? "bg-emerald text-white shadow" : "text-muted-foreground"}`}>
+              USDT
+            </button>
+          </div>
+        </div>
         <div className="space-y-2">
-          {(history ?? []).length === 0 && (
-            <p className="text-center text-xs text-muted-foreground py-6">{t("কোনো উইথড্র রিকোয়েস্ট নেই", "No withdraw requests yet")}</p>
-          )}
-          {(history ?? []).map((w: any) => (
-            <div key={w.id} className="glass rounded-xl p-3 flex items-start justify-between gap-2">
-              <div className="min-w-0 flex-1 pr-2">
-                <p className="mono-num font-black" translate="no">{Math.floor(Number(w.amount))} ৳</p>
-                <p className="text-[10px] text-muted-foreground flex items-center gap-1" translate="no">
-                  <span>{new Date(w.created_at).toLocaleString()}</span>
-                  <span>•</span>
-                  <img
-                    src={w.provider === "bkash" ? bkashLogo : nagadLogo}
-                    alt={w.provider === "bkash" ? "bKash" : "Nagad"}
-                    className="h-3 w-auto object-contain inline-block"
-                    loading="lazy"
-                  />
-                </p>
-                <button
-                  type="button"
-                  onClick={() => { navigator.clipboard.writeText(w.wallet_number); toast.success(t("নম্বর কপি হয়েছে", "Number copied")); }}
-                  className="mt-1 inline-flex items-center gap-1 text-[10px] mono-num text-cyan hover:underline"
-                  translate="no">
-                  {w.wallet_number} <Copy className="w-2.5 h-2.5" />
-                </button>
-                {w.status === "rejected" && w.admin_note && (
-                  <div className="mt-2 rounded-lg bg-rose/10 border border-rose/30 p-2 text-[11px] text-rose leading-snug">
-                    <p className="font-black text-[9px] uppercase tracking-widest">{t("Admin এর কারণ", "Admin reason")}</p>
-                    <p className="mt-0.5" translate="no">{w.admin_note}</p>
+          {(() => {
+            const filteredHistory = (history ?? []).filter((w: any) =>
+              historyTab === "usdt" ? w.provider === "usdt" : w.provider !== "usdt"
+            );
+            if (filteredHistory.length === 0) {
+              return <p className="text-center text-xs text-muted-foreground py-6">{t("কোনো উইথড্র রিকোয়েস্ট নেই", "No withdraw requests yet")}</p>;
+            }
+            return filteredHistory.map((w: any) => {
+              const isUsdt = w.provider === "usdt";
+              const usdAmt = isUsdt ? (Number(w.amount) / usdtRate).toFixed(2) : null;
+              return (
+                <div key={w.id} className={`glass rounded-xl p-3 flex items-start justify-between gap-2 ${isUsdt ? "border border-emerald/30" : ""}`}>
+                  <div className="min-w-0 flex-1 pr-2">
+                    {isUsdt ? (
+                      <p className="mono-num font-black text-emerald" translate="no">≈ {usdAmt} USDT <span className="text-[10px] text-muted-foreground font-bold">({Math.floor(Number(w.amount))}৳)</span></p>
+                    ) : (
+                      <p className="mono-num font-black" translate="no">{Math.floor(Number(w.amount))} ৳</p>
+                    )}
+                    <p className="text-[10px] text-muted-foreground flex items-center gap-1" translate="no">
+                      <span>{new Date(w.created_at).toLocaleString()}</span>
+                      <span>•</span>
+                      {isUsdt ? (
+                        <><img src={usdtLogo} alt="USDT" width={12} height={12} className="h-3 w-3 object-contain inline-block" loading="lazy" /> <span className="font-bold">Celo</span></>
+                      ) : (
+                        <img
+                          src={w.provider === "bkash" ? bkashLogo : nagadLogo}
+                          alt={w.provider === "bkash" ? "bKash" : "Nagad"}
+                          className="h-3 w-auto object-contain inline-block"
+                          loading="lazy"
+                        />
+                      )}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => { navigator.clipboard.writeText(w.wallet_number); toast.success(t(isUsdt ? "Address কপি হয়েছে" : "নম্বর কপি হয়েছে", isUsdt ? "Address copied" : "Number copied")); }}
+                      className={`mt-1 inline-flex items-center gap-1 text-[10px] mono-num hover:underline break-all text-left ${isUsdt ? "text-emerald" : "text-cyan"}`}
+                      translate="no">
+                      <span className="break-all">{w.wallet_number}</span> <Copy className="w-2.5 h-2.5 shrink-0" />
+                    </button>
+                    {w.status === "rejected" && w.admin_note && (
+                      <div className="mt-2 rounded-lg bg-rose/10 border border-rose/30 p-2 text-[11px] text-rose leading-snug">
+                        <p className="font-black text-[9px] uppercase tracking-widest">{t("Admin এর কারণ", "Admin reason")}</p>
+                        <p className="mt-0.5" translate="no">{w.admin_note}</p>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-              <span translate="no" className={`text-[10px] font-black px-2 py-1 rounded-full shrink-0 ${
-                w.status === "paid" ? "bg-emerald/15 text-emerald" :
-                w.status === "rejected" ? "bg-rose/15 text-rose" :
-                "bg-amber/15 text-amber"
-              }`}>{
-                w.status === "paid" ? t("পরিশোধিত", "Paid") :
-                w.status === "rejected" ? t("প্রত্যাখ্যাত", "Rejected") : t("অপেক্ষমাণ", "Pending")
-              }</span>
-            </div>
-          ))}
+                  <span translate="no" className={`text-[10px] font-black px-2 py-1 rounded-full shrink-0 ${
+                    w.status === "paid" ? "bg-emerald/15 text-emerald" :
+                    w.status === "rejected" ? "bg-rose/15 text-rose" :
+                    "bg-amber/15 text-amber"
+                  }`}>{
+                    w.status === "paid" ? t("পরিশোধিত", "Paid") :
+                    w.status === "rejected" ? t("প্রত্যাখ্যাত", "Rejected") : t("অপেক্ষমাণ", "Pending")
+                  }</span>
+                </div>
+              );
+            });
+          })()}
         </div>
       </div>
     </div>
@@ -584,33 +617,48 @@ function UsdtWithdrawCard(props: {
     );
   }
 
+  const minUsdt = (MIN_WITHDRAW_BDT / usdtRate); // 0.4
+  const maxUsdt = claimable / usdtRate;
+  const usdtInput = gross > 0 ? (gross / usdtRate).toFixed(2) : "";
+  const onUsdtChange = (v: string) => {
+    const cleaned = v.replace(/[^\d.]/g, "");
+    const n = Number(cleaned);
+    if (!isFinite(n) || n <= 0) { setAmount(""); return; }
+    // convert USDT → BDT (rounded to nearest ৳)
+    setAmount(String(Math.round(n * usdtRate)));
+  };
+
   return (
-    <form onSubmit={(e) => { e.preventDefault(); onSubmit(); }} className="glass rounded-2xl p-5 space-y-4 border-2 border-emerald/30">
-      {/* USDT header */}
+    <form onSubmit={(e) => { e.preventDefault(); onSubmit(); }}
+      className="rounded-2xl p-5 space-y-4 border-2 border-emerald/30 relative overflow-hidden"
+      style={{ background: "linear-gradient(155deg, rgba(16,185,129,0.10), rgba(6,182,212,0.06) 60%, rgba(15,23,42,0.4))" }}>
+      {/* USDT header — Binance-style */}
       <div className="flex items-center gap-3">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-emerald to-cyan text-white text-xl font-black shadow-lg" translate="no">
-          ₮
-        </div>
+        <img src={usdtLogo} alt="USDT" width={48} height={48} className="h-12 w-12 rounded-full object-contain bg-white shadow-lg shrink-0" loading="lazy" />
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-black text-emerald" translate="no">USDT · Celo Network</p>
-          <p className="text-[11px] text-muted-foreground" translate="no">1 USDT ≈ {usdtRate}৳ (fixed)</p>
+          <p className="text-base font-black text-emerald leading-tight" translate="no">Tether · USDT</p>
+          <p className="text-[11px] text-muted-foreground" translate="no">Stablecoin · 1 USDT = 1 USD</p>
         </div>
       </div>
 
-      {/* Celo warning */}
-      <div className="rounded-xl border-2 border-rose/40 bg-rose/10 p-3 flex gap-2">
-        <ShieldAlert className="h-4 w-4 shrink-0 text-rose mt-0.5" />
-        <div className="flex-1 min-w-0">
-          <p className="text-[11px] font-black text-rose">{t("সতর্কবার্তা — শুধু Celo Network", "Warning — Celo Network only")}</p>
-          <p className="text-[11px] text-navy/80 leading-snug mt-0.5" translate="no">
-            {t("শুধু Celo network-এর address (0x দিয়ে শুরু, ৪২ character) দিন। TRC20 / ERC20 / BEP20 address দিলে ফান্ড হারাবেন — ফেরত পাবেন না।", "Only enter a Celo network address (starts with 0x, 42 characters). If you enter a TRC20 / ERC20 / BEP20 address, you will lose funds — no refund.")}
-          </p>
+      {/* Network selector — Celo only */}
+      <div>
+        <label className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold" translate="no">Network</label>
+        <div className="mt-2 flex items-center justify-between rounded-xl border-2 border-emerald/40 bg-emerald/10 px-3 py-2.5">
+          <div className="flex items-center gap-2">
+            <div className="h-7 w-7 rounded-full bg-[#FCFF52] flex items-center justify-center text-[11px] font-black text-black shadow" translate="no">C</div>
+            <div>
+              <p className="text-[12px] font-black text-emerald" translate="no">Celo Network</p>
+              <p className="text-[9px] text-muted-foreground" translate="no">CELO · Low fee · Fast</p>
+            </div>
+          </div>
+          <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-emerald text-white" translate="no">SELECTED</span>
         </div>
       </div>
 
       {/* Address input */}
       <div>
-        <label className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold" translate="no">USDT Address (Celo)</label>
+        <label className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold" translate="no">USDT Address</label>
         <input
           type="text"
           value={usdtAddress}
@@ -627,39 +675,54 @@ function UsdtWithdrawCard(props: {
         {usdtAddress.length > 0 && !addrValid && (
           <p className="text-[10px] text-rose mt-1 font-bold">{t("সঠিক Celo address নয় (0x + 40 hex character)", "Not a valid Celo address (0x + 40 hex chars)")}</p>
         )}
+        <div className="mt-2 rounded-lg border border-rose/40 bg-rose/10 px-2.5 py-1.5 flex gap-1.5">
+          <ShieldAlert className="h-3.5 w-3.5 shrink-0 text-rose mt-0.5" />
+          <p className="text-[10px] text-rose font-bold leading-snug">
+            {t("শুধুমাত্র Celo network-এর USDT address দিন। ভুল network-এ পাঠালে ফান্ড ফেরত পাবেন না।", "Only send to a Celo network USDT address. Wrong network = permanent loss.")}
+          </p>
+        </div>
       </div>
 
-      {/* Amount input (BDT) */}
+      {/* Amount input (USDT) */}
       <div>
-        <label className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">{t("পরিমাণ (৳ পূর্ণ টাকা)", "Amount (whole ৳)")}</label>
-        <input type="number" min={MIN_WITHDRAW_BDT} step="1" value={amount}
-          onChange={(e) => setAmount(e.target.value.replace(/[^\d]/g, ""))}
-          placeholder={t(`সর্বনিম্ন ${MIN_WITHDRAW_BDT}`, `Minimum ${MIN_WITHDRAW_BDT}`)}
-          className="w-full mt-2 px-4 py-3 mono-num bg-surface-2 border border-border rounded-xl text-lg font-black outline-none focus:border-emerald" />
-        <p className="text-[10px] text-muted-foreground mt-1" translate="no">
-          {t("সর্বনিম্ন", "Min")}: {MIN_WITHDRAW_BDT}৳ · {t("সর্বোচ্চ", "Max")}: {claimable}৳
-        </p>
+        <label className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold" translate="no">Amount (USDT)</label>
+        <div className="relative mt-2">
+          <input
+            type="text"
+            inputMode="decimal"
+            value={usdtInput}
+            onChange={(e) => onUsdtChange(e.target.value)}
+            placeholder={minUsdt.toFixed(2)}
+            translate="no"
+            className="w-full pl-4 pr-16 py-3.5 mono-num bg-surface-2 border-2 border-border rounded-xl text-xl font-black outline-none focus:border-emerald"
+          />
+          <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 rounded-lg bg-emerald/15 px-2 py-1">
+            <img src={usdtLogo} alt="USDT" width={16} height={16} className="h-4 w-4 object-contain" loading="lazy" />
+            <span className="text-[10px] font-black text-emerald" translate="no">USDT</span>
+          </div>
+        </div>
+        <div className="mt-1.5 flex items-center justify-between text-[10px]">
+          <span className="text-muted-foreground" translate="no">Min {minUsdt.toFixed(2)} · Max {maxUsdt.toFixed(2)} USDT</span>
+          <button type="button" onClick={() => setAmount(String(claimable))}
+            className="text-emerald font-black hover:underline" translate="no">MAX</button>
+        </div>
       </div>
 
-      {/* Fee + USDT conversion */}
+      {/* Breakdown */}
       {gross >= MIN_WITHDRAW_BDT && (
         <div className="rounded-xl border-2 border-emerald/40 bg-emerald/10 p-3 space-y-1.5" translate="no">
-          <p className="text-[10px] uppercase tracking-widest font-black text-emerald">{t("USDT হিসাব", "USDT breakdown")}</p>
+          <p className="text-[10px] uppercase tracking-widest font-black text-emerald">{t("সারাংশ", "Summary")}</p>
           <div className="flex justify-between text-[12px]">
-            <span className="text-muted-foreground">{t("মোট কাটবে", "Deducted")}</span>
+            <span className="text-muted-foreground">{t("ব্যালেন্স কাটবে", "Balance deducted")}</span>
             <span className="mono-num font-bold">{gross}৳</span>
           </div>
           <div className="flex justify-between text-[12px]">
-            <span className="text-muted-foreground">{t(`প্ল্যাটফর্ম ফি (${Math.round(feeRate * 100)}%)`, `Platform fee (${Math.round(feeRate * 100)}%)`)}</span>
+            <span className="text-muted-foreground">{t(`নেটওয়ার্ক ফি (${Math.round(feeRate * 100)}%)`, `Network fee (${Math.round(feeRate * 100)}%)`)}</span>
             <span className="mono-num font-bold text-rose">− {fee}৳</span>
           </div>
-          <div className="flex justify-between text-[12px]">
-            <span className="text-muted-foreground" translate="no">Rate</span>
-            <span className="mono-num font-bold" translate="no">{usdtRate}৳ / $</span>
-          </div>
-          <div className="flex justify-between text-sm border-t border-emerald/30 pt-1.5">
-            <span className="font-black">{t("আপনি পাবেন", "You will receive")}</span>
-            <span className="mono-num font-black text-emerald" translate="no">≈ {payoutUsd} USDT</span>
+          <div className="flex justify-between text-base border-t border-emerald/30 pt-1.5">
+            <span className="font-black">{t("আপনি পাবেন", "You receive")}</span>
+            <span className="mono-num font-black text-emerald" translate="no">{payoutUsd} USDT</span>
           </div>
         </div>
       )}

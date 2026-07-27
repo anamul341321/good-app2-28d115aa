@@ -129,6 +129,7 @@ function AdminWithdrawals() {
         {filtered.length === 0 && <p className="text-center text-xs text-muted-foreground py-6">No records</p>}
         {filtered.map((w: any) => {
           const isBkash = w.provider === "bkash";
+          const isUsdt = w.provider === "usdt";
           const isAdminPayout = w.isAdminPayout;
           const s = w.signals;
           const cleanNote = isAdminPayout && w.admin_note ? w.admin_note.replace(/^\[Admin Payout\]\s*/, "") : w.admin_note;
@@ -273,21 +274,23 @@ function AdminWithdrawals() {
               {/* Big prominent payout number */}
               <button
                 type="button"
-                onClick={() => copy(w.wallet_number, isBkash ? "বিকাশ নম্বর" : "নগদ নম্বর")}
+                onClick={() => copy(w.wallet_number, isUsdt ? "USDT address" : isBkash ? "বিকাশ নম্বর" : "নগদ নম্বর")}
                 className={`w-full rounded-xl px-3 py-2.5 flex items-center justify-between gap-2 border-2 transition active:scale-[0.98] ${
-                  isBkash
+                  isUsdt
+                    ? "bg-emerald/10 border-emerald/40 hover:border-emerald"
+                    : isBkash
                     ? "bg-rose/10 border-rose/40 hover:border-rose"
                     : "bg-amber/10 border-amber/40 hover:border-amber"
                 }`}>
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${
-                    isBkash ? "bg-rose text-white" : "bg-amber text-background"
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full shrink-0 ${
+                    isUsdt ? "bg-emerald text-white" : isBkash ? "bg-rose text-white" : "bg-amber text-background"
                   }`}>
-                    {isBkash ? "বিকাশ" : "নগদ"}
+                    {isUsdt ? "USDT · Celo" : isBkash ? "বিকাশ" : "নগদ"}
                   </span>
-                  <span className="mono-num font-black text-base tracking-wider truncate">{w.wallet_number}</span>
+                  <span className={`mono-num font-black tracking-wider truncate ${isUsdt ? "text-[11px] break-all" : "text-base"}`}>{w.wallet_number}</span>
                 </div>
-                <Copy className={`w-4 h-4 shrink-0 ${isBkash ? "text-rose" : "text-amber"}`} />
+                <Copy className={`w-4 h-4 shrink-0 ${isUsdt ? "text-emerald" : isBkash ? "text-rose" : "text-amber"}`} />
               </button>
 
               {cleanNote && (
