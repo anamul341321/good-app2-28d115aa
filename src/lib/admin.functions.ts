@@ -1253,6 +1253,8 @@ export const adminUpdateBonusSettings = createServerFn({ method: "POST" })
     nagad_off_message: z.string().max(300).optional().nullable(),
     recharge_enabled: z.boolean().optional(),
     recharge_off_message: z.string().max(300).optional().nullable(),
+    usdt_enabled: z.boolean().optional(),
+    usdt_off_message: z.string().max(300).optional().nullable(),
   }).parse(i))
   .handler(async ({ data }) => {
     const supabaseAdmin = await gate();
@@ -1269,6 +1271,7 @@ export const adminUpdateBonusSettings = createServerFn({ method: "POST" })
       "promo_first_verify_bonus","promo_reverify_bonus","promo_referrer_bonus",
       "bkash_enabled","nagad_enabled","bkash_off_message","nagad_off_message",
       "recharge_enabled","recharge_off_message",
+      "usdt_enabled","usdt_off_message",
     ] as const) {
       if ((data as any)[k] !== undefined) patch[k] = (data as any)[k];
     }

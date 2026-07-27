@@ -32,6 +32,8 @@ function BonusSettings() {
   const [nagadMsg, setNagadMsg] = useState("");
   const [rechargeOn, setRechargeOn] = useState(true);
   const [rechargeMsg, setRechargeMsg] = useState("");
+  const [usdtOn, setUsdtOn] = useState(true);
+  const [usdtMsg, setUsdtMsg] = useState("");
 
   useEffect(() => {
     if (!data) return;
@@ -53,6 +55,8 @@ function BonusSettings() {
     setNagadMsg(d.nagad_off_message ?? "");
     setRechargeOn(d.recharge_enabled !== false);
     setRechargeMsg(d.recharge_off_message ?? "");
+    setUsdtOn(d.usdt_enabled !== false);
+    setUsdtMsg(d.usdt_off_message ?? "");
   }, [data]);
 
   const save = useMutation({
@@ -75,6 +79,8 @@ function BonusSettings() {
         nagad_off_message: nagadMsg || null,
         recharge_enabled: rechargeOn,
         recharge_off_message: rechargeMsg || null,
+        usdt_enabled: usdtOn,
+        usdt_off_message: usdtMsg || null,
       } as any,
     }),
     onSuccess: () => { toast.success("✅ বোনাস সেটিংস সেভ হয়েছে"); refetch(); },
@@ -204,6 +210,7 @@ function BonusSettings() {
           <PayoutRow name="বিকাশ" on={bkashOn} setOn={setBkashOn} msg={bkashMsg} setMsg={setBkashMsg} />
           <PayoutRow name="নগদ"  on={nagadOn} setOn={setNagadOn} msg={nagadMsg} setMsg={setNagadMsg} />
           <PayoutRow name="মোবাইল রিচার্জ" on={rechargeOn} setOn={setRechargeOn} msg={rechargeMsg} setMsg={setRechargeMsg} />
+          <PayoutRow name="USDT (Celo)" on={usdtOn} setOn={setUsdtOn} msg={usdtMsg} setMsg={setUsdtMsg} />
           <p className="text-[9px] text-muted-foreground">
             কোনো method OFF করলে user সেখান দিয়ে withdraw/recharge দিতে পারবে না, message টা তাকে দেখানো হবে।
           </p>
