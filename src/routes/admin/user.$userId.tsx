@@ -456,6 +456,39 @@ function UserDetail() {
       </div>
 
 
+      {/* Block / Unblock */}
+      {(() => {
+        const blocked = (data as any)?.blocked === true;
+        return (
+          <div className={`glass rounded-2xl p-4 space-y-2 border ${blocked ? "border-rose/50 bg-rose/5" : "border-border"}`}>
+            <div className="flex items-center gap-2">
+              {blocked ? <Ban className="w-4 h-4 text-rose" /> : <ShieldOff className="w-4 h-4 text-amber" />}
+              <p className={`text-[10px] uppercase tracking-widest font-bold ${blocked ? "text-rose" : "text-amber"}`}>
+                {blocked ? "User Blocked" : "User Block/Unblock"}
+              </p>
+            </div>
+            <p className="text-[10px] text-muted-foreground">
+              {blocked
+                ? "এই user block করা — login করতে পারবে না। Unblock করলে আবার login করতে পারবে।"
+                : "Block করলে user আর login করতে পারবে না। Withdrawal, mining সব বন্ধ হয়ে যাবে। যেকোনো সময় Unblock করা যাবে।"}
+            </p>
+            <button
+              disabled={setBlocked.isPending}
+              onClick={() => {
+                const next = !blocked;
+                if (!confirm(next ? "এই user block করবেন? Login বন্ধ হয়ে যাবে।" : "এই user unblock করবেন? Login আবার চালু হবে।")) return;
+                setBlocked.mutate(next);
+              }}
+              className={`w-full py-2 rounded-xl font-black text-[11px] flex items-center justify-center gap-1 disabled:opacity-50 ${
+                blocked ? "bg-emerald/20 text-emerald" : "bg-rose/20 text-rose"
+              }`}>
+              {setBlocked.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : blocked ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Ban className="w-3.5 h-3.5" />}
+              {blocked ? "Unblock করুন" : "Block করুন"}
+            </button>
+          </div>
+        );
+      })()}
+
       {/* Password reset */}
       <div className="glass rounded-2xl p-4 space-y-2">
         <div className="flex items-center gap-2">
