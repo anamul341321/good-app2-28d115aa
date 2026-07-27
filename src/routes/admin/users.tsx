@@ -14,6 +14,8 @@ function AdminUsers() {
   const { data: refLeaders } = useQuery({ queryKey: ["admin-ref-leaderboard", "original-first-verifies-v2"], queryFn: () => adminReferrerLeaderboard(), staleTime: 0, refetchOnMount: "always" });
   const [q, setQ] = useState("");
   const [tab, setTab] = useState<"verifiers" | "referrers" | "all">("verifiers");
+  const [showAll, setShowAll] = useState(false);
+  const CAP = 40;
   const del = useMutation({
     mutationFn: (userId: string) => adminমুছুনUser({ data: { userId } }),
     onSuccess: () => { toast.success("User deleted"); refetch(); },
@@ -166,8 +168,13 @@ function AdminUsers() {
               </div>
             )}
             <div className="space-y-2">
-              {verifiedRows.map((r, i) => renderCard(r, i + 1))}
+              {(q.trim() || showAll ? verifiedRows : verifiedRows.slice(0, CAP)).map((r, i) => renderCard(r, i + 1))}
             </div>
+            {!q.trim() && !showAll && verifiedRows.length > CAP && (
+              <button onClick={() => setShowAll(true)} className="mt-3 w-full py-2 rounded-xl bg-cyan/15 text-cyan text-xs font-black border border-cyan/30">
+                আরও {verifiedRows.length - CAP} জন দেখান
+              </button>
+            )}
           </div>
         </>
       )}
@@ -187,7 +194,7 @@ function AdminUsers() {
                 {verifiedRows.length}
               </span>
             </div>
-            {verifiedRows.map((r, i) => renderCard(r, i + 1))}
+            {(q.trim() || showAll ? verifiedRows : verifiedRows.slice(0, CAP)).map((r, i) => renderCard(r, i + 1))}
           </div>
 
           <div className="space-y-2 pt-2 border-t border-border">
@@ -199,8 +206,14 @@ function AdminUsers() {
                 {notVerifiedRows.length}
               </span>
             </div>
-            {notVerifiedRows.map((r) => renderCard(r))}
+            {(q.trim() || showAll ? notVerifiedRows : notVerifiedRows.slice(0, CAP)).map((r) => renderCard(r))}
           </div>
+
+          {!q.trim() && !showAll && (verifiedRows.length > CAP || notVerifiedRows.length > CAP) && (
+            <button onClick={() => setShowAll(true)} className="w-full py-2 rounded-xl bg-violet/15 text-violet text-xs font-black border border-violet/30">
+              সব দেখান ({verifiedRows.length + notVerifiedRows.length} জন)
+            </button>
+          )}
         </>
       )}
 
