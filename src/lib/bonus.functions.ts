@@ -72,9 +72,12 @@ async function creditAccrued(admin: any, userId: string, amount: number) {
     .from("mining_state")
     .upsert({ user_id: userId }, { onConflict: "user_id", ignoreDuplicates: true });
   const { data: ms } = await admin
-    .from("mining_state").select("accrued_amount").eq("user_id", userId).maybeSingle();
-  const next = Number(ms?.accrued_amount ?? 0) + amount;
-  await admin.from("mining_state").update({ accrued_amount: next }).eq("user_id", userId);
+    .from("mining_state").select("accrued_amount,bonus_amount").eq("user_id", userId).maybeSingle();
+  const nextAccrued = Number(ms?.accrued_amount ?? 0) + amount;
+  const nextBonus = Number((ms as any)?.bonus_amount ?? 0) + amount;
+  await admin.from("mining_state")
+    .update({ accrued_amount: nextAccrued, bonus_amount: nextBonus })
+    .eq("user_id", userId);
 }
 
 export async function settleWelcomeBonuses(

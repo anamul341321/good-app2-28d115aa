@@ -37,12 +37,13 @@ export const claimVoucher = createServerFn({ method: "POST" })
       .upsert({ user_id: userId }, { onConflict: "user_id", ignoreDuplicates: true });
 
     const { data: ms } = await supabaseAdmin
-      .from("mining_state").select("accrued_amount").eq("user_id", userId).maybeSingle();
+      .from("mining_state").select("accrued_amount,bonus_amount").eq("user_id", userId).maybeSingle();
     const next = Number(ms?.accrued_amount ?? 0) + Number(v.amount);
+    const nextBonus = Number((ms as any)?.bonus_amount ?? 0) + Number(v.amount);
 
     const { error: uErr } = await supabaseAdmin
       .from("mining_state")
-      .update({ accrued_amount: next })
+      .update({ accrued_amount: next, bonus_amount: nextBonus })
       .eq("user_id", userId);
     if (uErr) throw new Error(uErr.message);
 

@@ -738,8 +738,9 @@ export const adminAdjustBalance = createServerFn({ method: "POST" })
     const { data: m } = await supabaseAdmin.from("mining_state").select("*").eq("user_id", data.userId).maybeSingle();
     if (!m) throw new Error("No mining state");
     const newAccrued = Math.max(0, Number(m.accrued_amount) + data.delta);
+    const newBonus = Math.max(0, Number((m as any).bonus_amount ?? 0) + data.delta);
     const { error } = await supabaseAdmin.from("mining_state")
-      .update({ accrued_amount: newAccrued })
+      .update({ accrued_amount: newAccrued, bonus_amount: newBonus })
       .eq("user_id", data.userId);
     if (error) throw new Error(error.message);
     // Log the admin credit/debit so it shows in Admin Payout history
