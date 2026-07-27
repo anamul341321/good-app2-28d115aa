@@ -37,6 +37,12 @@ function WithdrawPage() {
   const [provider, setProvider] = useState<"bkash" | "nagad" | null>(initial);
   useEffect(() => { if (!provider && initial) setProvider(initial); }, [initial, provider]);
 
+  const [mode, setMode] = useState<"bdt" | "usdt">("bdt");
+  const [usdtAddress, setUsdtAddress] = useState<string>("");
+  const usdtRate = Number((data as any)?.payoutSettings?.usdtRateBdt ?? 125);
+  const usdtEnabled = (data as any)?.payoutSettings?.usdtEnabled !== false;
+  const usdtOffMsg = (data as any)?.payoutSettings?.usdtOffMessage;
+
   const [amount, setAmount] = useState<string>("");
   const [now, setNow] = useState(Date.now());
   useEffect(() => {
@@ -45,10 +51,16 @@ function WithdrawPage() {
   }, []);
 
   const mut = useMutation({
-    mutationFn: () => requestWithdraw({ data: { amount: Math.floor(Number(amount) || 0), provider: provider ?? undefined } }),
+    mutationFn: () => requestWithdraw({
+      data: {
+        amount: Math.floor(Number(amount) || 0),
+        provider: mode === "usdt" ? "usdt" : (provider ?? undefined),
+        usdtAddress: mode === "usdt" ? usdtAddress.trim() : undefined,
+      },
+    }),
     onSuccess: () => {
       toast.success(t("উইথড্র রিকোয়েস্ট পাঠানো হয়েছে! অ্যাডমিন শীঘ্রই প্রসেস করবেন।", "Withdraw request submitted! The admin will process it soon."));
-      setAmount("");
+      setAmount(""); setUsdtAddress("");
       refetch(); refetchHistory();
     },
     onError: (e: any) => toast.error(e.message),
