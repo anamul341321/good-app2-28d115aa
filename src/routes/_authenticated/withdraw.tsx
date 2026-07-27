@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { PageVoice } from "@/components/PageVoice";
 import bkashLogo from "@/assets/bkash-logo.png";
 import nagadLogo from "@/assets/nagad-logo.png";
+import usdtLogo from "@/assets/usdt-logo.png";
 import { useLang } from "@/lib/i18n";
 
 
