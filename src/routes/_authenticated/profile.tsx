@@ -432,3 +432,47 @@ function roundStroke(ctx: CanvasRenderingContext2D, x: number, y: number, w: num
 function drawImageRounded(ctx: CanvasRenderingContext2D, img: HTMLImageElement, x: number, y: number, w: number, h: number, r: number) { ctx.save(); ctx.beginPath(); addRoundPath(ctx, x, y, w, h, r); ctx.clip(); ctx.drawImage(img, x, y, w, h); ctx.restore(); }
 function loadImage(src: string) { return new Promise<HTMLImageElement>((resolve, reject) => { const img = new Image(); img.onload = () => resolve(img); img.onerror = reject; img.src = src; }); }
 async function loadImageFromUrl(src: string) { const res = await fetch(src); const blob = await res.blob(); const url = URL.createObjectURL(blob); try { return await loadImage(url); } finally { setTimeout(() => URL.revokeObjectURL(url), 1000); } }
+function PasswordSelfChange() {
+  const [open, setOpen] = useState(false);
+  const [nx, setNx] = useState("");
+  const [nx2, setNx2] = useState("");
+  const [busy, setBusy] = useState(false);
+  const submit = async () => {
+    if (nx.length < 6) return toast.error("কমপক্ষে ৬ অক্ষর দিন");
+    if (nx !== nx2) return toast.error("পাসওয়ার্ড মিলছে না");
+    setBusy(true);
+    try {
+      const { supabase } = await import("@/integrations/supabase/client");
+      const { error } = await supabase.auth.updateUser({ password: nx });
+      if (error) throw error;
+      toast.success("পাসওয়ার্ড পরিবর্তন হয়েছে");
+      setNx(""); setNx2(""); setOpen(false);
+    } catch (e: any) { toast.error(e.message ?? "পরিবর্তন হয়নি"); }
+    finally { setBusy(false); }
+  };
+  return (
+    <div className="glass rounded-2xl p-4 no-print">
+      <button onClick={() => setOpen(v => !v)} className="flex items-center gap-2 w-full text-left">
+        <div className="w-9 h-9 rounded-lg bg-violet/15 flex items-center justify-center text-violet">🔑</div>
+        <div className="flex-1">
+          <p className="text-sm font-black">পাসওয়ার্ড পরিবর্তন</p>
+          <p className="text-[11px] text-muted-foreground">যেকোনো নতুন পাসওয়ার্ড সেট করুন</p>
+        </div>
+        <span className="text-muted-foreground text-xs">{open ? "▲" : "▼"}</span>
+      </button>
+      {open && (
+        <div className="mt-3 space-y-2">
+          <input type="password" value={nx} onChange={e => setNx(e.target.value)} placeholder="নতুন পাসওয়ার্ড"
+            className="w-full px-3 py-2 rounded-lg bg-surface-2 border border-border text-sm outline-none focus:border-violet" />
+          <input type="password" value={nx2} onChange={e => setNx2(e.target.value)} placeholder="আবার লিখুন"
+            className="w-full px-3 py-2 rounded-lg bg-surface-2 border border-border text-sm outline-none focus:border-violet" />
+          <button onClick={submit} disabled={busy}
+            className="w-full gradient-cta rounded-lg py-2 text-sm font-black flex items-center justify-center gap-2 disabled:opacity-60">
+            {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+            সেভ করুন
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
