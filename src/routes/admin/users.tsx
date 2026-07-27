@@ -168,8 +168,13 @@ function AdminUsers() {
               </div>
             )}
             <div className="space-y-2">
-              {verifiedRows.map((r, i) => renderCard(r, i + 1))}
+              {(q.trim() || showAll ? verifiedRows : verifiedRows.slice(0, CAP)).map((r, i) => renderCard(r, i + 1))}
             </div>
+            {!q.trim() && !showAll && verifiedRows.length > CAP && (
+              <button onClick={() => setShowAll(true)} className="mt-3 w-full py-2 rounded-xl bg-cyan/15 text-cyan text-xs font-black border border-cyan/30">
+                আরও {verifiedRows.length - CAP} জন দেখান
+              </button>
+            )}
           </div>
         </>
       )}
