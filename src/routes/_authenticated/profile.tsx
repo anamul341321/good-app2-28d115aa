@@ -184,6 +184,10 @@ function ProfilePage() {
         </div>
       </div>
 
+      <PasswordSelfChange />
+
+
+
       <div className="grid grid-cols-3 gap-2 no-print">
         <TabBtn active={tab === "card"} onClick={() => setTab("card")} icon={<IdCard className="w-4 h-4" />} label="কার্ড" voice="profile.card" />
         <TabBtn active={tab === "withdraw"} onClick={() => setTab("withdraw")} icon={<History className="w-4 h-4" />} label="উইথড্র" voice="profile.history" />
