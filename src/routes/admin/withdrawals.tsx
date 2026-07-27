@@ -129,6 +129,7 @@ function AdminWithdrawals() {
         {filtered.length === 0 && <p className="text-center text-xs text-muted-foreground py-6">No records</p>}
         {filtered.map((w: any) => {
           const isBkash = w.provider === "bkash";
+          const isUsdt = w.provider === "usdt";
           const isAdminPayout = w.isAdminPayout;
           const s = w.signals;
           const cleanNote = isAdminPayout && w.admin_note ? w.admin_note.replace(/^\[Admin Payout\]\s*/, "") : w.admin_note;
