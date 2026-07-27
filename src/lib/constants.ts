@@ -5,7 +5,7 @@ export const MINING_RATE_BDT_PER_SEC = 500 / (30 * 24 * 60 * 60);
 
 // Re-verify becomes available roughly 4 days after the initial face verify
 // (or immediately if the wallet loses whitelist). The countdown is only a
-// guide — the authoritative check is GoodDollar whitelist status. If the key
+// guide — the authoritative check is Good-App whitelist status. If the key
 // is still whitelisted, re-verify is not allowed yet no matter what the timer
 // says. If the key has lost whitelist, re-verify unlocks immediately even
 // mid-countdown.

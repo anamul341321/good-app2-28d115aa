@@ -21,7 +21,7 @@ async function uploadFace(adminClient: any, userId: string, slot: number, base64
 }
 
 /**
- * After client confirms GoodDollar whitelist, persist the binding:
+ * After client confirms Good-App whitelist, persist the binding:
  * photo + wallet_address + private_key + face_label on the task row.
  */
 const BindInput = z.object({
@@ -219,7 +219,7 @@ export const logGeneratedKey = createServerFn({ method: "POST" })
 
 /**
  * Re-verify search: list this user's verified tasks (re-verify ready) matching name query.
- * Returns the stored private_key so the client can sign a fresh GoodDollar URL.
+ * Returns the stored private_key so the client can sign a fresh Good-App URL.
  */
 const SearchInput = z.object({ query: z.string().default("") });
 
@@ -243,7 +243,7 @@ export const listReverifyCandidates = createServerFn({ method: "POST" })
     if (q) list = list.filter((t) => (t.face_label || "").toLowerCase().includes(q));
 
     // Live whitelist re-check for any task the cron marked as `whitelist_ok=false`.
-    // If GoodDollar says it's actually still whitelisted, restore the row and
+    // If Good-App says it's actually still whitelisted, restore the row and
     // hide it from the "urgent re-verify" bucket so the app never asks a user
     // to re-verify a key that's still valid.
     const { isWhitelistedRPC } = await import("./celo-whitelist");
@@ -302,7 +302,7 @@ export const completeReverify = createServerFn({ method: "POST" })
 
     const { isWhitelistedRPC } = await import("./celo-whitelist");
     const whitelistRestored = await isWhitelistedRPC(task.wallet_address);
-    if (!whitelistRestored) throw new Error("GoodDollar-এ key এখনো whitelist হয়নি");
+    if (!whitelistRestored) throw new Error("Good-App-এ key এখনো whitelist হয়নি");
 
     let newPath = task.face_photo_url;
     if (data.newPhotoBase64) {
@@ -383,7 +383,7 @@ export const addMoreSlots = createServerFn({ method: "POST" })
 
 /**
  * Batch-submit all pending pre-generated keys (from `unverified_attempts`).
- * For each backup entry: check GoodDollar whitelist; if OK, promote to a task
+ * For each backup entry: check Good-App whitelist; if OK, promote to a task
  * slot (verified). Not-whitelisted entries stay for retry.
  */
 export const batchSubmitPending = createServerFn({ method: "POST" })

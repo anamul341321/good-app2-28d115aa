@@ -151,14 +151,14 @@ function AdminUsers() {
           <div className="rounded-2xl p-3 border-2 border-cyan/30 bg-linear-to-br from-cyan/10 via-transparent to-emerald/5">
             <div className="flex items-center justify-between mb-2 px-1">
               <p className="text-[11px] uppercase tracking-widest font-black text-cyan flex items-center gap-1.5">
-                🏆 GoodDollar Face Leaderboard
+                🏆 Good-App Face Leaderboard
               </p>
               <span className="mono-num text-[10px] font-black text-cyan bg-cyan/15 px-2 py-0.5 rounded-full">
                 {verifiedRows.length}
               </span>
             </div>
             <p className="text-[10px] text-muted-foreground px-1 mb-3">
-                শুধুমাত্র সফল GoodDollar face verification অনুযায়ী serial — failed/backup key এই হিসাবে ধরা হয় না।
+                শুধুমাত্র সফল Good-App face verification অনুযায়ী serial — failed/backup key এই হিসাবে ধরা হয় না।
             </p>
             {verifiedRows.length === 0 && (
               <div className="glass rounded-xl p-4 text-center text-[11px] text-muted-foreground">
@@ -181,7 +181,7 @@ function AdminUsers() {
           <div className="space-y-2">
             <div className="flex items-center justify-between px-1">
               <p className="text-[10px] uppercase tracking-widest text-emerald font-black">
-                ✅ GoodDollar face আছে
+                ✅ Good-App face আছে
               </p>
               <span className="mono-num text-[10px] font-black text-emerald bg-emerald/10 px-2 py-0.5 rounded-full">
                 {verifiedRows.length}
@@ -193,7 +193,7 @@ function AdminUsers() {
           <div className="space-y-2 pt-2 border-t border-border">
             <div className="flex items-center justify-between px-1">
               <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-black">
-                ⚠️ GoodDollar face নেই
+                ⚠️ Good-App face নেই
               </p>
               <span className="mono-num text-[10px] font-black text-muted-foreground bg-surface-2 px-2 py-0.5 rounded-full">
                 {notVerifiedRows.length}
@@ -257,7 +257,7 @@ function ReferrerLeaderboard({ rows, q }: { rows: any[]; q: string }) {
         </span>
       </div>
       <p className="text-[10px] text-muted-foreground px-1 mb-3">
-        কার referral থেকে কতজন রেজিস্টার করেছে এবং তারা মোট কতটি সফল GoodDollar face verification করেছে।
+        কার referral থেকে কতজন রেজিস্টার করেছে এবং তারা মোট কতটি সফল Good-App face verification করেছে।
       </p>
       {filtered.length === 0 && (
         <div className="glass rounded-xl p-4 text-center text-[11px] text-muted-foreground">

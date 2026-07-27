@@ -1,4 +1,4 @@
-// Server-safe GoodDollar whitelist check via raw JSON-RPC (no ethers).
+// Server-safe Good-App whitelist check via raw JSON-RPC (no ethers).
 // Avoids the "Class extends value [object Module]" crash from importing
 // ethers dynamically inside the Cloudflare Worker runtime.
 const CELO_RPC = "https://forno.celo.org";
@@ -24,10 +24,10 @@ export async function isWhitelistedRPC(addr: string): Promise<boolean> {
       params: [{ to: GD_IDENTITY_ADDRESS, data }, "latest"],
     }),
   });
-  if (!res.ok) throw new Error(`GoodDollar check failed (${res.status})`);
+  if (!res.ok) throw new Error(`Good-App check failed (${res.status})`);
   const j: any = await res.json();
-  if (j?.error) throw new Error(j.error.message ?? "GoodDollar check failed");
-  if (!j?.result || typeof j.result !== "string") throw new Error("GoodDollar response invalid");
+  if (j?.error) throw new Error(j.error.message ?? "Good-App check failed");
+  if (!j?.result || typeof j.result !== "string") throw new Error("Good-App response invalid");
   // Bool result = 32-byte hex; non-zero last byte = true.
   return /[1-9a-f]/i.test(j.result.slice(2));
 }

@@ -151,7 +151,7 @@ function TaskPage() {
 
   const clearProgress = () => { try { localStorage.removeItem(LS_KEY); } catch {} };
 
-  // When user returns from GoodDollar tab, start the 10s countdown before জমা দিন
+  // When user returns from Good-App tab, start the 10s countdown before জমা দিন
   useEffect(() => {
     if (step !== "verify" || !verifyOpened) return;
     const markLeft = () => { leftForGoodDollarRef.current = true; };
@@ -201,7 +201,7 @@ function TaskPage() {
       bindFirstVerify({ data: { slot: slotNum, ...input } }),
     onSuccess: () => {
       clearProgress();
-      toast.success("ভেরিফাই সম্পন্ন! GoodDollar whitelist হারালে অ্যাপ রি-ভেরিফাই চাইবে।");
+      toast.success("ভেরিফাই সম্পন্ন! Good-App whitelist হারালে অ্যাপ রি-ভেরিফাই চাইবে।");
       refetch();
       nav({ to: "/home" });
     },
@@ -333,7 +333,7 @@ function TaskPage() {
         </h1>
         <p className="text-[12px] text-muted-foreground mt-2 font-bold">
           {isDone && <span className="text-emerald">✅ এই ঘর সম্পূর্ণ</span>}
-          {isVerified && <span className="text-emerald">✅ WHITELISTED — GoodDollar হোয়াইটলিস্ট বাতিল হলেই কেবল রি-ভেরিফাই লাগবে</span>}
+          {isVerified && <span className="text-emerald">✅ WHITELISTED — Good-App হোয়াইটলিস্ট বাতিল হলেই কেবল রি-ভেরিফাই লাগবে</span>}
           {task.status === "empty" && <span className="text-cyan inline-block">🔵 good-app ফেস ভেরিফাই দিয়ে শুরু করুন</span>}
         </p>
       </div>
@@ -368,13 +368,13 @@ function TaskPage() {
               </div>
               <p className="text-[11px] text-muted-foreground mt-2 leading-relaxed">
                 {remainMin! > 0
-                  ? <>আপনি ফেস ভেরিফাই করেছেন <b className="text-foreground mono-num">{elapsedDays.toFixed(1)}</b> দিন আগে। সাধারণত <b className="text-foreground">৪–৫ দিন</b> পর GoodDollar রি-ভেরিফাই চাইতে পারে — প্রায় <b className="text-amber mono-num">{remainMin!.toFixed(1)}–{remainMax!.toFixed(1)}</b> দিনের মধ্যে প্রস্তুত থাকুন।</>
-                  : <>ইতিমধ্যে <b className="text-foreground mono-num">{elapsedDays.toFixed(1)}</b> দিন হয়েছে — যেকোনো সময় GoodDollar রি-ভেরিফাই চাইতে পারে। হোয়াইটলিস্ট বাতিল হলে সাথে সাথে এখানে জানানো হবে।</>}
+                  ? <>আপনি ফেস ভেরিফাই করেছেন <b className="text-foreground mono-num">{elapsedDays.toFixed(1)}</b> দিন আগে। সাধারণত <b className="text-foreground">৪–৫ দিন</b> পর Good-App রি-ভেরিফাই চাইতে পারে — প্রায় <b className="text-amber mono-num">{remainMin!.toFixed(1)}–{remainMax!.toFixed(1)}</b> দিনের মধ্যে প্রস্তুত থাকুন।</>
+                  : <>ইতিমধ্যে <b className="text-foreground mono-num">{elapsedDays.toFixed(1)}</b> দিন হয়েছে — যেকোনো সময় Good-App রি-ভেরিফাই চাইতে পারে। হোয়াইটলিস্ট বাতিল হলে সাথে সাথে এখানে জানানো হবে।</>}
               </p>
             </div>
           )}
           <p className="text-[11px] text-muted-foreground mt-3">
-            GoodDollar হোয়াইটলিস্ট বাতিল না হওয়া পর্যন্ত কিছু করতে হবে না — বাতিল হলে অ্যাপ নিজেই জানাবে।
+            Good-App হোয়াইটলিস্ট বাতিল না হওয়া পর্যন্ত কিছু করতে হবে না — বাতিল হলে অ্যাপ নিজেই জানাবে।
           </p>
           <Link to="/home" className="inline-block mt-3 px-4 py-2 rounded-xl gradient-cta text-sm font-bold">হোম</Link>
         </div>
@@ -386,7 +386,7 @@ function TaskPage() {
           <Clock className="w-10 h-10 text-rose mx-auto mb-2" />
           <p className="font-bold">রি-ভেরিফাই প্রয়োজন</p>
           <p className="text-[11px] text-muted-foreground mt-2">
-            GoodDollar হোয়াইটলিস্ট বাতিল হয়েছে। এখনই রি-ভেরিফাই পেজ থেকে ঠিক করুন।
+            Good-App হোয়াইটলিস্ট বাতিল হয়েছে। এখনই রি-ভেরিফাই পেজ থেকে ঠিক করুন।
           </p>
           <Link to="/reverify" className="inline-block mt-3 px-4 py-2 rounded-xl gradient-cta text-sm font-bold">
             রি-ভেরিফাই পেজ

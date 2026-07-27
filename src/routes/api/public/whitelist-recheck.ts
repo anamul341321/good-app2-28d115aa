@@ -1,5 +1,5 @@
 // Public endpoint hit by pg_cron every 5 minutes.
-// - Re-checks GoodDollar whitelist for every bound wallet.
+// - Re-checks Good-App whitelist for every bound wallet.
 // - Tasks that lose whitelist get pushed back to status='verified' (ready
 //   immediately) so the user must re-verify.
 // - Pending generated keys are re-checked and auto-submitted to an empty slot.

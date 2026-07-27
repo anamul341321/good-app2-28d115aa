@@ -593,7 +593,7 @@ function HomePage() {
                   </summary>
                   <p className="text-[11px] text-muted-foreground mt-2 leading-relaxed">
                      আপনার Face key অন্য কেউ ব্যবহার করছে কি না বা account-এর নিরাপত্তা নষ্ট হয়েছে কি না নিশ্চিত করতেই Re-verify চাওয়া হয়।
-                     GoodDollar whitelist বাতিল না করা পর্যন্ত কিছু করতে হবে না; বাতিল হলেই app জানাবে, আর সফল Re-verify-এর পর key আবার whitelist হলে সেটি Re-verify হিসেবে গণনা হবে।
+                     Good-App whitelist বাতিল না করা পর্যন্ত কিছু করতে হবে না; বাতিল হলেই app জানাবে, আর সফল Re-verify-এর পর key আবার whitelist হলে সেটি Re-verify হিসেবে গণনা হবে।
                   </p>
                 </details>
                 <button onClick={() => setShowWelcome(false)}

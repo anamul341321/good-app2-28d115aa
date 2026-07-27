@@ -62,7 +62,7 @@ function ReverifyPage() {
     for (const c of (candidates ?? []) as any[]) {
       const due = c.reverify_due_at ? new Date(c.reverify_due_at).getTime() : 0;
       const whitelistLost = c.whitelist_ok === false;
-      // Only trigger re-verify when GoodDollar has actually dropped the whitelist.
+      // Only trigger re-verify when Good-App has actually dropped the whitelist.
       // Time alone (4 days) is just a guideline — never enough by itself.
       if (whitelistLost) ready.push({ ...c, _whitelistLost: true, _rem: 0 });
       else waiting.push({ ...c, _rem: Math.max(0, due - now) });
@@ -136,7 +136,7 @@ function ReverifyPage() {
   }, [step]);
 
   const onSelect = async (cand: any) => {
-    // Pre-check: if the key is still whitelisted on GoodDollar, block —
+    // Pre-check: if the key is still whitelisted on Good-App, block —
     // re-verify won't do anything. This prevents users burning the same
     // face verify twice in a row.
     setPreChecking(cand.id);
@@ -241,7 +241,7 @@ function ReverifyPage() {
         <div className="min-w-0">
           <h1 className="text-base font-black text-amber">রি-ভেরিফাই</h1>
           <p className="text-[10px] text-muted-foreground leading-snug">
-            শুধুমাত্র যখন GoodDollar হোয়াইটলিস্ট বাতিল করবে তখনই এই অ্যাপ রি-ভেরিফাই চাইবে। হোয়াইটলিস্ট ঠিক থাকলে কিছু করতে হবে না — কোনো সময়সীমা নেই, অপেক্ষার দরকার নেই।
+            শুধুমাত্র যখন Good-App হোয়াইটলিস্ট বাতিল করবে তখনই এই অ্যাপ রি-ভেরিফাই চাইবে। হোয়াইটলিস্ট ঠিক থাকলে কিছু করতে হবে না — কোনো সময়সীমা নেই, অপেক্ষার দরকার নেই।
           </p>
         </div>
       </div>
@@ -306,7 +306,7 @@ function ReverifyPage() {
           <a href={verifyUrl} target="_blank" rel="noopener noreferrer" data-voice="reverify.button"
             onClick={() => { setOpened(true); returnedRef.current = false; leftForGoodDollarRef.current = false; goodDollarOpenedAtRef.current = Date.now(); }}
             className="w-full flex items-center justify-center gap-2 py-4 rounded-xl gradient-cta font-black">
-            <ExternalLink className="w-4 h-4" /> GoodDollar রি-ভেরিফাই খুলুন
+            <ExternalLink className="w-4 h-4" /> Good-App রি-ভেরিফাই খুলুন
           </a>
           {opened && countdown !== null && countdown > 0 && (
             <div className="text-center py-3 rounded-xl bg-amber/10 border border-amber/30">
