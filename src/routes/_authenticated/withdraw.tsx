@@ -188,143 +188,142 @@ function WithdrawPage() {
       )}
 
 
-      {/* Provider chooser */}
-      {(!walletBkash && !walletNagad) ? (
-        <Link to="/wallet" className="block rounded-2xl border border-amber/40 bg-amber/10 p-4 text-center">
-          <p className="text-sm font-bold text-amber">{t("প্রথমে ওয়ালেট নম্বর সেট করুন", "Set your wallet number first")}</p>
-        </Link>
-      ) : (
-        <div className="grid grid-cols-2 gap-2" translate="no">
-          <ProviderPill
-            selected={provider === "bkash"}
-            available={!!walletBkash}
-            enabled={payout.bkashEnabled}
-            logo={bkashLogo}
-            label="bKash"
-            tone="rose"
-            wallet={walletBkash}
-            onClick={() => setProvider("bkash")}
-          />
-          <ProviderPill
-            selected={provider === "nagad"}
-            available={!!walletNagad}
-            enabled={payout.nagadEnabled}
-            logo={nagadLogo}
-            label="Nagad"
-            tone="amber"
-            wallet={walletNagad}
-            onClick={() => setProvider("nagad")}
-          />
-        </div>
-      )}
-
-      {/* USDT coming soon */}
-      <div className="relative overflow-hidden rounded-2xl border border-emerald/30 bg-emerald/5 p-4">
-        <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-emerald/10 blur-2xl" />
-        <div className="relative flex items-center gap-3">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-emerald/15 text-emerald">
-            <Globe className="h-6 w-6" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <p className="text-sm font-black text-emerald" translate="no">USDT Withdraw</p>
-              <span className="rounded-full bg-amber/15 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-amber">
-                {t("আসছে শীঘ্রই", "Coming Soon")}
-              </span>
+      {/* Mode toggle: BDT vs USDT */}
+      <div className="grid grid-cols-2 gap-2" translate="no">
+        <button
+          type="button"
+          onClick={() => setMode("bdt")}
+          className={`relative overflow-hidden rounded-2xl p-3.5 border-2 text-left transition ${
+            mode === "bdt"
+              ? "border-rose bg-linear-to-br from-rose/15 via-amber/10 to-transparent shadow-lg"
+              : "border-border bg-surface-2 opacity-80"
+          }`}>
+          <div className="flex items-center gap-2">
+            <div className="flex -space-x-1.5">
+              <img src={bkashLogo} alt="bKash" className="h-7 w-7 rounded-full object-contain bg-white border border-white shadow" loading="lazy" />
+              <img src={nagadLogo} alt="Nagad" className="h-7 w-7 rounded-full object-contain bg-white border border-white shadow" loading="lazy" />
             </div>
-            <p className="text-[11px] leading-snug text-muted-foreground mt-0.5">
-              {t("শীঘ্রই USDT-তে উইথড্র নেওয়ার সুবিধা চালু হবে — আপডেটের জন্য সাথেই থাকুন!", "USDT withdraw option is coming very soon — stay tuned for updates!")}
-            </p>
+            <div>
+              <p className={`text-sm font-black ${mode === "bdt" ? "text-rose" : "text-muted-foreground"}`}>BDT</p>
+              <p className="text-[9px] text-muted-foreground">{t("বিকাশ / নগদ", "bKash / Nagad")}</p>
+            </div>
           </div>
-        </div>
+        </button>
+        <button
+          type="button"
+          onClick={() => setMode("usdt")}
+          className={`relative overflow-hidden rounded-2xl p-3.5 border-2 text-left transition ${
+            mode === "usdt"
+              ? "border-emerald bg-linear-to-br from-emerald/15 via-cyan/10 to-transparent shadow-lg"
+              : "border-border bg-surface-2 opacity-80"
+          }`}>
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-linear-to-br from-emerald to-cyan text-white text-[11px] font-black shadow" translate="no">
+              ₮
+            </div>
+            <div>
+              <p className={`text-sm font-black ${mode === "usdt" ? "text-emerald" : "text-muted-foreground"}`} translate="no">USDT</p>
+              <p className="text-[9px] text-muted-foreground" translate="no">Celo Network</p>
+            </div>
+          </div>
+        </button>
       </div>
 
-      {provider && !chosenWallet && (
-        <Link to="/wallet" className="block rounded-2xl border border-amber/40 bg-amber/10 p-3 text-center text-sm font-bold text-amber">
-          {t(`${provider === "bkash" ? "বিকাশ" : "নগদ"} নম্বর সেট করুন`, `Set your ${provider === "bkash" ? "bKash" : "Nagad"} number`)}
-        </Link>
-      )}
-
-      {provider && chosenWallet && !chosenEnabled && (
-        <div className="rounded-2xl border-2 border-rose/40 bg-rose/10 p-3 text-center">
-          <p className="text-sm font-bold text-rose">⚠️ {t(`${provider === "bkash" ? "বিকাশ" : "নগদ"} withdraw বর্তমানে বন্ধ`, `${provider === "bkash" ? "bKash" : "Nagad"} withdraw is currently off`)}</p>
-          <p className="text-[11px] text-navy/80 mt-1">{chosenOffMsg || t(`অনুগ্রহ করে ${provider === "bkash" ? "নগদ" : "বিকাশ"}-এ withdraw দিন`, `Please withdraw via ${provider === "bkash" ? "Nagad" : "bKash"}`)}</p>
-        </div>
-      )}
-
-      {provider && chosenWallet && chosenEnabled && claimable < MIN_WITHDRAW_BDT ? (
-        <div className="rounded-2xl border border-rose/30 bg-rose/10 p-4 text-center">
-          <Lock className="w-6 h-6 text-rose mx-auto mb-1" />
-          <p className="text-sm font-bold text-rose">{t("পর্যাপ্ত ব্যালেন্স নেই", "Not enough balance")}</p>
-          <p className="text-[11px] text-muted-foreground mt-1" translate="no">{t(`সর্বনিম্ন ${MIN_WITHDRAW_BDT}৳ ক্লেইমযোগ্য হলে উইথড্র করা যাবে`, `Withdraw needs at least ${MIN_WITHDRAW_BDT}৳ claimable`)}</p>
-        </div>
-      ) : provider && chosenWallet && chosenEnabled ? (
-        <form onSubmit={(e) => { e.preventDefault(); mut.mutate(); }} className="glass rounded-2xl p-5 space-y-4" data-voice="withdraw.intro">
-          <div data-voice="withdraw.amount">
-            <label className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">{t("পরিমাণ (৳ পূর্ণ টাকা)", "Amount (whole ৳)")}</label>
-            <input type="number" min={MIN_WITHDRAW_BDT} step="1" value={amount}
-              onChange={(e) => setAmount(e.target.value.replace(/[^\d]/g, ""))}
-              placeholder={t(`সর্বনিম্ন ${MIN_WITHDRAW_BDT}`, `Minimum ${MIN_WITHDRAW_BDT}`)}
-              className="w-full mt-2 px-4 py-3 mono-num bg-surface-2 border border-border rounded-xl text-lg font-black outline-none focus:border-rose" />
-            <p className="text-[10px] text-muted-foreground mt-1" translate="no">{t("সর্বনিম্ন", "Min")}: {MIN_WITHDRAW_BDT}৳ · {t("সর্বোচ্চ", "Max")}: {claimable}৳</p>
-          </div>
-
-          {(() => {
-            const gross = Math.floor(Number(amount) || 0);
-            const feeRate = gross < 100 ? 0.2 : 0.1;
-            const feePct = Math.round(feeRate * 100);
-            const fee = Math.floor(gross * feeRate);
-            const payout = gross - fee;
-            if (gross < MIN_WITHDRAW_BDT) return null;
-            return (
-              <div className="rounded-xl border-2 border-amber/40 bg-amber/10 p-3 space-y-1.5" translate="no">
-                <p className="text-[10px] uppercase tracking-widest font-black text-amber">{t(`ফি হিসাব (${feePct}%)`, `Fee breakdown (${feePct}%)`)}</p>
-                <p className="text-[10px] text-muted-foreground">{t("১০০৳-এর নিচে ২০%, ১০০৳ ও তার উপরে ১০%", "Under 100৳: 20%, 100৳ or more: 10%")}</p>
-                <div className="flex justify-between text-[12px]">
-                  <span className="text-muted-foreground">{t("মোট কাটবে", "Deducted")}</span>
-                  <span className="mono-num font-bold">{gross}৳</span>
-                </div>
-                <div className="flex justify-between text-[12px]">
-                  <span className="text-muted-foreground">{t(`প্ল্যাটফর্ম ফি (${feePct}%)`, `Platform fee (${feePct}%)`)}</span>
-                  <span className="mono-num font-bold text-rose">− {fee}৳</span>
-                </div>
-                <div className="flex justify-between text-sm border-t border-amber/30 pt-1.5">
-                  <span className="font-black">{t("আপনি পাবেন", "You will receive")}</span>
-                  <span className="mono-num font-black text-emerald">{payout}৳</span>
-                </div>
-              </div>
-            );
-          })()}
-
-          <div className="rounded-lg bg-cyan/10 border border-cyan/30 px-3 py-2 text-[11px] text-cyan font-bold text-center">
-            📅 {t("দৈনিক সর্বোচ্চ ৩টি withdraw রিকোয়েস্ট করা যাবে", "Max 3 withdraw requests per day")}
-          </div>
-
-          <div className="bg-surface-2 rounded-xl p-3 text-[11px] space-y-1" translate="no">
-            <div className="flex items-center gap-2">
-              <span className="text-muted-foreground">{t("পাঠানো হবে:", "Sent to:")}</span>
-              <img
-                src={provider === "bkash" ? bkashLogo : nagadLogo}
-                alt={provider === "bkash" ? "bKash" : "Nagad"}
-                className="h-4 w-auto object-contain"
-                loading="lazy"
+      {mode === "bdt" ? (
+        <>
+          {/* Provider chooser */}
+          {(!walletBkash && !walletNagad) ? (
+            <Link to="/wallet" className="block rounded-2xl border border-amber/40 bg-amber/10 p-4 text-center">
+              <p className="text-sm font-bold text-amber">{t("প্রথমে ওয়ালেট নম্বর সেট করুন", "Set your wallet number first")}</p>
+            </Link>
+          ) : (
+            <div className="grid grid-cols-2 gap-2" translate="no">
+              <ProviderPill
+                selected={provider === "bkash"} available={!!walletBkash} enabled={payout.bkashEnabled}
+                logo={bkashLogo} label="bKash" tone="rose" wallet={walletBkash}
+                onClick={() => setProvider("bkash")}
+              />
+              <ProviderPill
+                selected={provider === "nagad"} available={!!walletNagad} enabled={payout.nagadEnabled}
+                logo={nagadLogo} label="Nagad" tone="amber" wallet={walletNagad}
+                onClick={() => setProvider("nagad")}
               />
             </div>
-            <button type="button"
-              onClick={() => { navigator.clipboard.writeText(chosenWallet.number); toast.success(t("নম্বর কপি হয়েছে", "Number copied")); }}
-              className="w-full flex items-center justify-between gap-2 mono-num bg-background/60 rounded-lg px-2 py-1.5 hover:bg-background border border-transparent hover:border-cyan/40 transition">
-              <span><span className="text-muted-foreground">{t("নম্বর:", "Number:")}</span> <span className="font-bold" translate="no">{chosenWallet.number}</span></span>
-              <Copy className="w-3 h-3 text-muted-foreground" />
-            </button>
-          </div>
-          <button disabled={mut.isPending || Math.floor(Number(amount) || 0) < MIN_WITHDRAW_BDT || Math.floor(Number(amount) || 0) > claimable}
-            data-voice="withdraw.submit"
-            className="w-full py-4 rounded-xl gradient-cta font-black text-base flex items-center justify-center gap-2 disabled:opacity-50">
-            {mut.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
-            {t("উইথড্র রিকোয়েস্ট করুন", "Submit withdraw request")}
-          </button>
-        </form>
-      ) : null}
+          )}
+
+          {provider && !chosenWallet && (
+            <Link to="/wallet" className="block rounded-2xl border border-amber/40 bg-amber/10 p-3 text-center text-sm font-bold text-amber">
+              {t(`${provider === "bkash" ? "বিকাশ" : "নগদ"} নম্বর সেট করুন`, `Set your ${provider === "bkash" ? "bKash" : "Nagad"} number`)}
+            </Link>
+          )}
+
+          {provider && chosenWallet && !chosenEnabled && (
+            <div className="rounded-2xl border-2 border-rose/40 bg-rose/10 p-3 text-center">
+              <p className="text-sm font-bold text-rose">⚠️ {t(`${provider === "bkash" ? "বিকাশ" : "নগদ"} withdraw বর্তমানে বন্ধ`, `${provider === "bkash" ? "bKash" : "Nagad"} withdraw is currently off`)}</p>
+              <p className="text-[11px] text-navy/80 mt-1">{chosenOffMsg || t(`অনুগ্রহ করে ${provider === "bkash" ? "নগদ" : "বিকাশ"}-এ withdraw দিন`, `Please withdraw via ${provider === "bkash" ? "Nagad" : "bKash"}`)}</p>
+            </div>
+          )}
+
+          {provider && chosenWallet && chosenEnabled && claimable < MIN_WITHDRAW_BDT ? (
+            <div className="rounded-2xl border border-rose/30 bg-rose/10 p-4 text-center">
+              <Lock className="w-6 h-6 text-rose mx-auto mb-1" />
+              <p className="text-sm font-bold text-rose">{t("পর্যাপ্ত ব্যালেন্স নেই", "Not enough balance")}</p>
+              <p className="text-[11px] text-muted-foreground mt-1" translate="no">{t(`সর্বনিম্ন ${MIN_WITHDRAW_BDT}৳ ক্লেইমযোগ্য হলে উইথড্র করা যাবে`, `Withdraw needs at least ${MIN_WITHDRAW_BDT}৳ claimable`)}</p>
+            </div>
+          ) : provider && chosenWallet && chosenEnabled ? (
+            <form onSubmit={(e) => { e.preventDefault(); mut.mutate(); }} className="glass rounded-2xl p-5 space-y-4" data-voice="withdraw.intro">
+              <div data-voice="withdraw.amount">
+                <label className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">{t("পরিমাণ (৳ পূর্ণ টাকা)", "Amount (whole ৳)")}</label>
+                <input type="number" min={MIN_WITHDRAW_BDT} step="1" value={amount}
+                  onChange={(e) => setAmount(e.target.value.replace(/[^\d]/g, ""))}
+                  placeholder={t(`সর্বনিম্ন ${MIN_WITHDRAW_BDT}`, `Minimum ${MIN_WITHDRAW_BDT}`)}
+                  className="w-full mt-2 px-4 py-3 mono-num bg-surface-2 border border-border rounded-xl text-lg font-black outline-none focus:border-rose" />
+                <p className="text-[10px] text-muted-foreground mt-1" translate="no">{t("সর্বনিম্ন", "Min")}: {MIN_WITHDRAW_BDT}৳ · {t("সর্বোচ্চ", "Max")}: {claimable}৳</p>
+              </div>
+
+              <FeeBreakdown amount={amount} t={t} />
+
+              <div className="rounded-lg bg-cyan/10 border border-cyan/30 px-3 py-2 text-[11px] text-cyan font-bold text-center">
+                📅 {t("দৈনিক সর্বোচ্চ ৩টি withdraw রিকোয়েস্ট করা যাবে", "Max 3 withdraw requests per day")}
+              </div>
+
+              <div className="bg-surface-2 rounded-xl p-3 text-[11px] space-y-1" translate="no">
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground">{t("পাঠানো হবে:", "Sent to:")}</span>
+                  <img src={provider === "bkash" ? bkashLogo : nagadLogo}
+                    alt={provider === "bkash" ? "bKash" : "Nagad"}
+                    className="h-4 w-auto object-contain" loading="lazy" />
+                </div>
+                <button type="button"
+                  onClick={() => { navigator.clipboard.writeText(chosenWallet.number); toast.success(t("নম্বর কপি হয়েছে", "Number copied")); }}
+                  className="w-full flex items-center justify-between gap-2 mono-num bg-background/60 rounded-lg px-2 py-1.5 hover:bg-background border border-transparent hover:border-cyan/40 transition">
+                  <span><span className="text-muted-foreground">{t("নম্বর:", "Number:")}</span> <span className="font-bold" translate="no">{chosenWallet.number}</span></span>
+                  <Copy className="w-3 h-3 text-muted-foreground" />
+                </button>
+              </div>
+              <button disabled={mut.isPending || Math.floor(Number(amount) || 0) < MIN_WITHDRAW_BDT || Math.floor(Number(amount) || 0) > claimable}
+                data-voice="withdraw.submit"
+                className="w-full py-4 rounded-xl gradient-cta font-black text-base flex items-center justify-center gap-2 disabled:opacity-50">
+                {mut.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
+                {t("উইথড্র রিকোয়েস্ট করুন", "Submit withdraw request")}
+              </button>
+            </form>
+          ) : null}
+        </>
+      ) : (
+        <UsdtWithdrawCard
+          claimable={claimable}
+          amount={amount} setAmount={setAmount}
+          usdtAddress={usdtAddress} setUsdtAddress={setUsdtAddress}
+          usdtRate={usdtRate}
+          usdtEnabled={usdtEnabled}
+          usdtOffMsg={usdtOffMsg}
+          onSubmit={() => mut.mutate()}
+          submitting={mut.isPending}
+          t={t}
+        />
+      )}
+
 
       <div>
         <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold px-1 mb-2">{t("ইতিহাস", "History")}</p>
