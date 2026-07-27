@@ -45,7 +45,7 @@ export const requestWithdraw = createServerFn({ method: "POST" })
     const bkashEnabled = settings?.bkash_enabled !== false;
     const nagadEnabled = settings?.nagad_enabled !== false;
     const usdtEnabled = (settings as any)?.usdt_enabled !== false;
-    const usdtRate = Number((settings as any)?.usdt_rate_bdt ?? 125);
+    const usdtRate = Number((settings as any)?.usdt_rate_bdt ?? 130);
 
     const { data: userWallets } = await supabase.from("wallets").select("*").eq("user_id", userId);
     const walletBkash = (userWallets ?? []).find((w: any) => w.provider === "bkash") ?? null;
