@@ -127,6 +127,31 @@ function WithdrawPage() {
         )}
       </div>
 
+      {mining && (
+        <div className="rounded-2xl p-4 border border-border bg-white/70 space-y-2">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-[10px] uppercase tracking-widest text-emerald font-black">🎁 বোনাস (এখনই উইথড্র)</p>
+              <p className="mono-num text-2xl font-black text-emerald mt-0.5" translate="no">{bonusAvailable}৳</p>
+            </div>
+            <div className="text-right">
+              <p className="text-[10px] uppercase tracking-widest text-cyan font-black">⛏️ মাইনিং</p>
+              <p className="mono-num text-2xl font-black text-cyan mt-0.5" translate="no">{Math.max(0, Math.floor(balance - bonusAvailable))}৳</p>
+              {miningLocked ? (
+                <p className="text-[10px] text-rose font-bold mt-0.5">🔒 {daysUntilUnlock ? `${daysUntilUnlock} দিন পর` : "শুরু হলে"} unlock</p>
+              ) : (
+                <p className="text-[10px] text-emerald font-bold mt-0.5">✓ unlocked</p>
+              )}
+            </div>
+          </div>
+          <p className="text-[10px] text-muted-foreground leading-snug">
+            বোনাসের টাকা যেকোনো সময় withdraw করা যাবে। মাইনিং চালু হওয়ার ৩০ দিন পর মাইনিং ব্যালেন্স unlock হবে।
+          </p>
+        </div>
+      )}
+
+
+
 
       {!payout.bkashEnabled && !payout.nagadEnabled && (
         <div className="relative overflow-hidden rounded-2xl p-5 text-center border-2 border-amber/50"
