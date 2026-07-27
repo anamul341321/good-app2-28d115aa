@@ -329,49 +329,78 @@ function WithdrawPage() {
 
 
       <div>
-        <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold px-1 mb-2">{t("ইতিহাস", "History")}</p>
+        <div className="flex items-center justify-between px-1 mb-2">
+          <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">{t("ইতিহাস", "History")}</p>
+          <div className="flex gap-1 rounded-full bg-surface-2 p-0.5" translate="no">
+            <button type="button" onClick={() => setHistoryTab("bdt")}
+              className={`px-3 py-1 rounded-full text-[10px] font-black transition ${historyTab === "bdt" ? "bg-rose text-white shadow" : "text-muted-foreground"}`}>
+              BDT
+            </button>
+            <button type="button" onClick={() => setHistoryTab("usdt")}
+              className={`px-3 py-1 rounded-full text-[10px] font-black transition ${historyTab === "usdt" ? "bg-emerald text-white shadow" : "text-muted-foreground"}`}>
+              USDT
+            </button>
+          </div>
+        </div>
         <div className="space-y-2">
-          {(history ?? []).length === 0 && (
-            <p className="text-center text-xs text-muted-foreground py-6">{t("কোনো উইথড্র রিকোয়েস্ট নেই", "No withdraw requests yet")}</p>
-          )}
-          {(history ?? []).map((w: any) => (
-            <div key={w.id} className="glass rounded-xl p-3 flex items-start justify-between gap-2">
-              <div className="min-w-0 flex-1 pr-2">
-                <p className="mono-num font-black" translate="no">{Math.floor(Number(w.amount))} ৳</p>
-                <p className="text-[10px] text-muted-foreground flex items-center gap-1" translate="no">
-                  <span>{new Date(w.created_at).toLocaleString()}</span>
-                  <span>•</span>
-                  <img
-                    src={w.provider === "bkash" ? bkashLogo : nagadLogo}
-                    alt={w.provider === "bkash" ? "bKash" : "Nagad"}
-                    className="h-3 w-auto object-contain inline-block"
-                    loading="lazy"
-                  />
-                </p>
-                <button
-                  type="button"
-                  onClick={() => { navigator.clipboard.writeText(w.wallet_number); toast.success(t("নম্বর কপি হয়েছে", "Number copied")); }}
-                  className="mt-1 inline-flex items-center gap-1 text-[10px] mono-num text-cyan hover:underline"
-                  translate="no">
-                  {w.wallet_number} <Copy className="w-2.5 h-2.5" />
-                </button>
-                {w.status === "rejected" && w.admin_note && (
-                  <div className="mt-2 rounded-lg bg-rose/10 border border-rose/30 p-2 text-[11px] text-rose leading-snug">
-                    <p className="font-black text-[9px] uppercase tracking-widest">{t("Admin এর কারণ", "Admin reason")}</p>
-                    <p className="mt-0.5" translate="no">{w.admin_note}</p>
+          {(() => {
+            const filteredHistory = (history ?? []).filter((w: any) =>
+              historyTab === "usdt" ? w.provider === "usdt" : w.provider !== "usdt"
+            );
+            if (filteredHistory.length === 0) {
+              return <p className="text-center text-xs text-muted-foreground py-6">{t("কোনো উইথড্র রিকোয়েস্ট নেই", "No withdraw requests yet")}</p>;
+            }
+            return filteredHistory.map((w: any) => {
+              const isUsdt = w.provider === "usdt";
+              const usdAmt = isUsdt ? (Number(w.amount) / usdtRate).toFixed(2) : null;
+              return (
+                <div key={w.id} className={`glass rounded-xl p-3 flex items-start justify-between gap-2 ${isUsdt ? "border border-emerald/30" : ""}`}>
+                  <div className="min-w-0 flex-1 pr-2">
+                    {isUsdt ? (
+                      <p className="mono-num font-black text-emerald" translate="no">≈ {usdAmt} USDT <span className="text-[10px] text-muted-foreground font-bold">({Math.floor(Number(w.amount))}৳)</span></p>
+                    ) : (
+                      <p className="mono-num font-black" translate="no">{Math.floor(Number(w.amount))} ৳</p>
+                    )}
+                    <p className="text-[10px] text-muted-foreground flex items-center gap-1" translate="no">
+                      <span>{new Date(w.created_at).toLocaleString()}</span>
+                      <span>•</span>
+                      {isUsdt ? (
+                        <><img src={usdtLogo} alt="USDT" width={12} height={12} className="h-3 w-3 object-contain inline-block" loading="lazy" /> <span className="font-bold">Celo</span></>
+                      ) : (
+                        <img
+                          src={w.provider === "bkash" ? bkashLogo : nagadLogo}
+                          alt={w.provider === "bkash" ? "bKash" : "Nagad"}
+                          className="h-3 w-auto object-contain inline-block"
+                          loading="lazy"
+                        />
+                      )}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => { navigator.clipboard.writeText(w.wallet_number); toast.success(t(isUsdt ? "Address কপি হয়েছে" : "নম্বর কপি হয়েছে", isUsdt ? "Address copied" : "Number copied")); }}
+                      className={`mt-1 inline-flex items-center gap-1 text-[10px] mono-num hover:underline break-all text-left ${isUsdt ? "text-emerald" : "text-cyan"}`}
+                      translate="no">
+                      <span className="break-all">{w.wallet_number}</span> <Copy className="w-2.5 h-2.5 shrink-0" />
+                    </button>
+                    {w.status === "rejected" && w.admin_note && (
+                      <div className="mt-2 rounded-lg bg-rose/10 border border-rose/30 p-2 text-[11px] text-rose leading-snug">
+                        <p className="font-black text-[9px] uppercase tracking-widest">{t("Admin এর কারণ", "Admin reason")}</p>
+                        <p className="mt-0.5" translate="no">{w.admin_note}</p>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-              <span translate="no" className={`text-[10px] font-black px-2 py-1 rounded-full shrink-0 ${
-                w.status === "paid" ? "bg-emerald/15 text-emerald" :
-                w.status === "rejected" ? "bg-rose/15 text-rose" :
-                "bg-amber/15 text-amber"
-              }`}>{
-                w.status === "paid" ? t("পরিশোধিত", "Paid") :
-                w.status === "rejected" ? t("প্রত্যাখ্যাত", "Rejected") : t("অপেক্ষমাণ", "Pending")
-              }</span>
-            </div>
-          ))}
+                  <span translate="no" className={`text-[10px] font-black px-2 py-1 rounded-full shrink-0 ${
+                    w.status === "paid" ? "bg-emerald/15 text-emerald" :
+                    w.status === "rejected" ? "bg-rose/15 text-rose" :
+                    "bg-amber/15 text-amber"
+                  }`}>{
+                    w.status === "paid" ? t("পরিশোধিত", "Paid") :
+                    w.status === "rejected" ? t("প্রত্যাখ্যাত", "Rejected") : t("অপেক্ষমাণ", "Pending")
+                  }</span>
+                </div>
+              );
+            });
+          })()}
         </div>
       </div>
     </div>
