@@ -1453,3 +1453,18 @@ export const adminPaidReport = createServerFn({ method: "GET" }).handler(async (
   const grandTotal = rows.reduce((a, r) => a + r.total, 0);
   return { rows, grandTotal, generatedAt: new Date().toISOString() };
 });
+
+// ---------------- Block / Unblock user ----------------
+export const adminSetUserBlocked = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => z.object({
+    userId: z.string().uuid(),
+    blocked: z.boolean(),
+  }).parse(i))
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await gate();
+    const { error } = await supabaseAdmin.auth.admin.updateUserById(data.userId, {
+      ban_duration: data.blocked ? "876000h" : "none",
+    } as any);
+    if (error) throw new Error(error.message);
+    return { ok: true, blocked: data.blocked };
+  });
