@@ -85,7 +85,7 @@ function UserDetail() {
 
   const clearOverride = useMutation({
     mutationFn: () => adminClearMiningOverride({ data: { userId } }),
-    onSuccess: () => { toast.success("Auto rule চালু হয়েছে (10/10 + whitelist)"); refetch(); },
+    onSuccess: () => { toast.success("Admin force বন্ধ—এখন স্বয়ংক্রিয় mining নিয়ম চলবে"); refetch(); },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -373,13 +373,13 @@ function UserDetail() {
         </div>
         {(m as any)?.admin_forced_active && (
           <div className="flex items-center justify-between rounded-lg bg-amber/10 border border-amber/30 px-3 py-2">
-            <p className="text-[10px] text-amber font-bold">⚠ Admin force ON — auto rule bypass হচ্ছে</p>
+            <p className="text-[10px] text-amber font-bold">⚠ Admin নিজে Mining ON করেছেন</p>
             <button
               disabled={clearOverride.isPending}
               onClick={() => clearOverride.mutate()}
               className="text-[10px] px-2 py-1 rounded bg-amber/20 text-amber font-black disabled:opacity-50"
             >
-              Clear override
+              অটো নিয়মে ফেরান
             </button>
           </div>
         )}
