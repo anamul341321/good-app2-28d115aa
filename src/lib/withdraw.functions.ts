@@ -4,9 +4,12 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { MIN_WITHDRAW_BDT } from "./constants";
 import { computeLiveBalance } from "./mining";
 
+const CELO_ADDR_RE = /^0x[a-fA-F0-9]{40}$/;
+
 const WithdrawInput = z.object({
   amount: z.number().positive(),
-  provider: z.enum(["bkash", "nagad"]).optional(),
+  provider: z.enum(["bkash", "nagad", "usdt"]).optional(),
+  usdtAddress: z.string().trim().optional(),
 });
 
 export const requestWithdraw = createServerFn({ method: "POST" })
@@ -36,11 +39,13 @@ export const requestWithdraw = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: settings } = await supabaseAdmin
       .from("bonus_settings")
-      .select("bkash_enabled,nagad_enabled,bkash_off_message,nagad_off_message")
+      .select("*")
       .eq("id", "default")
       .maybeSingle();
     const bkashEnabled = settings?.bkash_enabled !== false;
     const nagadEnabled = settings?.nagad_enabled !== false;
+    const usdtEnabled = (settings as any)?.usdt_enabled !== false;
+    const usdtRate = Number((settings as any)?.usdt_rate_bdt ?? 125);
 
     const { data: userWallets } = await supabase.from("wallets").select("*").eq("user_id", userId);
     const walletBkash = (userWallets ?? []).find((w: any) => w.provider === "bkash") ?? null;
@@ -48,7 +53,6 @@ export const requestWithdraw = createServerFn({ method: "POST" })
 
     let chosen = data.provider ?? null;
     if (!chosen) {
-      // Auto: prefer whatever provider is enabled + user has set.
       if (bkashEnabled && walletBkash) chosen = "bkash";
       else if (nagadEnabled && walletNagad) chosen = "nagad";
     }
@@ -60,9 +64,26 @@ export const requestWithdraw = createServerFn({ method: "POST" })
     if (chosen === "nagad" && !nagadEnabled) {
       throw new Error(settings?.nagad_off_message || "নগদ withdraw এখন বন্ধ — অনুগ্রহ করে বিকাশে withdraw দিন");
     }
+    if (chosen === "usdt" && !usdtEnabled) {
+      throw new Error((settings as any)?.usdt_off_message || "USDT withdraw এখন বন্ধ");
+    }
 
-    const wallet = chosen === "bkash" ? walletBkash : walletNagad;
-    if (!wallet) throw new Error(chosen === "bkash" ? "প্রথমে বিকাশ নম্বর সেট করুন" : "প্রথমে নগদ নম্বর সেট করুন");
+    let walletNumber: string;
+    let providerNote = "";
+    if (chosen === "usdt") {
+      const addr = (data.usdtAddress ?? "").trim();
+      if (!CELO_ADDR_RE.test(addr)) {
+        throw new Error("সঠিক Celo network address দিন (0x দিয়ে শুরু, 42 character) — TRC20/ERC20 address দিলে টাকা হারাবেন");
+      }
+      walletNumber = addr;
+      const usdAmount = (payout / usdtRate).toFixed(2);
+      providerNote = `[USDT · Celo · Rate ${usdtRate}৳/$] Gross ${amount}৳ − Fee ${fee}৳ = ${payout}৳ ≈ ${usdAmount}$`;
+    } else {
+      const wallet = chosen === "bkash" ? walletBkash : walletNagad;
+      if (!wallet) throw new Error(chosen === "bkash" ? "প্রথমে বিকাশ নম্বর সেট করুন" : "প্রথমে নগদ নম্বর সেট করুন");
+      walletNumber = wallet.number;
+      providerNote = `[Fee ${Math.round(feeRate * 100)}%] Gross ${amount}৳ − Fee ${fee}৳ = Payout ${payout}৳`;
+    }
 
     const { data: mining } = await supabase.from("mining_state").select("*").eq("user_id", userId).maybeSingle();
     if (!mining) throw new Error("ব্যালেন্স পাওয়া যায়নি");
@@ -127,11 +148,11 @@ export const requestWithdraw = createServerFn({ method: "POST" })
     const { error: wErr } = await supabaseAdmin.from("withdrawals").insert({
       user_id: userId,
       amount: payout,
-      provider: chosen,
-      wallet_number: wallet.number,
-      admin_note: `[Fee ${Math.round(feeRate * 100)}%] Gross ${amount}৳ − Fee ${fee}৳ = Payout ${payout}৳`,
+      provider: chosen as any,
+      wallet_number: walletNumber,
+      admin_note: providerNote,
     });
     if (wErr) throw new Error(wErr.message);
 
-    return { ok: true, gross: amount, fee, payout };
+    return { ok: true, gross: amount, fee, payout, provider: chosen };
   });
