@@ -100,6 +100,7 @@ export const getDashboard = createServerFn({ method: "GET" })
     const wallets = walletList ?? [];
     const walletBkash = wallets.find((w: any) => w.provider === "bkash") ?? null;
     const walletNagad = wallets.find((w: any) => w.provider === "nagad") ?? null;
+    const walletUsdt = wallets.find((w: any) => w.provider === "usdt") ?? null;
     const primaryWallet = walletBkash ?? walletNagad ?? null;
 
     return {
@@ -110,11 +111,15 @@ export const getDashboard = createServerFn({ method: "GET" })
       wallets,
       walletBkash,
       walletNagad,
+      walletUsdt,
       payoutSettings: {
         bkashEnabled: bonusSettings?.bkash_enabled !== false,
         nagadEnabled: bonusSettings?.nagad_enabled !== false,
         bkashOffMessage: bonusSettings?.bkash_off_message ?? null,
         nagadOffMessage: bonusSettings?.nagad_off_message ?? null,
+        usdtEnabled: (bonusSettings as any)?.usdt_enabled !== false,
+        usdtOffMessage: (bonusSettings as any)?.usdt_off_message ?? null,
+        usdtRateBdt: Number((bonusSettings as any)?.usdt_rate_bdt ?? 125),
         rechargeEnabled: (bonusSettings as any)?.recharge_enabled !== false,
         rechargeOffMessage: (bonusSettings as any)?.recharge_off_message ?? null,
       },
