@@ -213,6 +213,7 @@ export type Database = {
           accrued_amount: number
           activated_at: string | null
           admin_forced_active: boolean
+          bonus_amount: number
           effective_task_count: number
           is_active: boolean
           last_credited_at: string | null
@@ -224,6 +225,7 @@ export type Database = {
           accrued_amount?: number
           activated_at?: string | null
           admin_forced_active?: boolean
+          bonus_amount?: number
           effective_task_count?: number
           is_active?: boolean
           last_credited_at?: string | null
@@ -235,6 +237,7 @@ export type Database = {
           accrued_amount?: number
           activated_at?: string | null
           admin_forced_active?: boolean
+          bonus_amount?: number
           effective_task_count?: number
           is_active?: boolean
           last_credited_at?: string | null
