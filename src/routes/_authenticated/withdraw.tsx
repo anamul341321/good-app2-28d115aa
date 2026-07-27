@@ -515,3 +515,166 @@ function DebtCard({ d, t, onClaimed }: { d: any; t: (bn: string, en: string) => 
     </div>
   );
 }
+
+function FeeBreakdown({ amount, t }: { amount: string; t: (bn: string, en: string) => string }) {
+  const gross = Math.floor(Number(amount) || 0);
+  if (gross < MIN_WITHDRAW_BDT) return null;
+  const feeRate = gross < 100 ? 0.2 : 0.1;
+  const feePct = Math.round(feeRate * 100);
+  const fee = Math.floor(gross * feeRate);
+  const payout = gross - fee;
+  return (
+    <div className="rounded-xl border-2 border-amber/40 bg-amber/10 p-3 space-y-1.5" translate="no">
+      <p className="text-[10px] uppercase tracking-widest font-black text-amber">{t(`ফি হিসাব (${feePct}%)`, `Fee breakdown (${feePct}%)`)}</p>
+      <p className="text-[10px] text-muted-foreground">{t("১০০৳-এর নিচে ২০%, ১০০৳ ও তার উপরে ১০%", "Under 100৳: 20%, 100৳ or more: 10%")}</p>
+      <div className="flex justify-between text-[12px]">
+        <span className="text-muted-foreground">{t("মোট কাটবে", "Deducted")}</span>
+        <span className="mono-num font-bold">{gross}৳</span>
+      </div>
+      <div className="flex justify-between text-[12px]">
+        <span className="text-muted-foreground">{t(`প্ল্যাটফর্ম ফি (${feePct}%)`, `Platform fee (${feePct}%)`)}</span>
+        <span className="mono-num font-bold text-rose">− {fee}৳</span>
+      </div>
+      <div className="flex justify-between text-sm border-t border-amber/30 pt-1.5">
+        <span className="font-black">{t("আপনি পাবেন", "You will receive")}</span>
+        <span className="mono-num font-black text-emerald">{payout}৳</span>
+      </div>
+    </div>
+  );
+}
+
+function UsdtWithdrawCard(props: {
+  claimable: number;
+  amount: string;
+  setAmount: (v: string) => void;
+  usdtAddress: string;
+  setUsdtAddress: (v: string) => void;
+  usdtRate: number;
+  usdtEnabled: boolean;
+  usdtOffMsg: string | null;
+  onSubmit: () => void;
+  submitting: boolean;
+  t: (bn: string, en: string) => string;
+}) {
+  const { claimable, amount, setAmount, usdtAddress, setUsdtAddress, usdtRate, usdtEnabled, usdtOffMsg, onSubmit, submitting, t } = props;
+  const CELO_RE = /^0x[a-fA-F0-9]{40}$/;
+  const addrValid = CELO_RE.test(usdtAddress.trim());
+  const gross = Math.floor(Number(amount) || 0);
+  const feeRate = gross < 100 ? 0.2 : 0.1;
+  const fee = Math.floor(gross * feeRate);
+  const payoutBdt = gross - fee;
+  const payoutUsd = (payoutBdt / usdtRate).toFixed(2);
+
+  if (!usdtEnabled) {
+    return (
+      <div className="rounded-2xl border-2 border-rose/40 bg-rose/10 p-4 text-center">
+        <p className="text-sm font-bold text-rose">⚠️ {t("USDT withdraw বর্তমানে বন্ধ", "USDT withdraw is currently off")}</p>
+        {usdtOffMsg && <p className="text-[11px] text-navy/80 mt-1">{usdtOffMsg}</p>}
+      </div>
+    );
+  }
+
+  if (claimable < MIN_WITHDRAW_BDT) {
+    return (
+      <div className="rounded-2xl border border-rose/30 bg-rose/10 p-4 text-center">
+        <Lock className="w-6 h-6 text-rose mx-auto mb-1" />
+        <p className="text-sm font-bold text-rose">{t("পর্যাপ্ত ব্যালেন্স নেই", "Not enough balance")}</p>
+        <p className="text-[11px] text-muted-foreground mt-1" translate="no">{t(`সর্বনিম্ন ${MIN_WITHDRAW_BDT}৳ ক্লেইমযোগ্য হলে উইথড্র করা যাবে`, `Withdraw needs at least ${MIN_WITHDRAW_BDT}৳ claimable`)}</p>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={(e) => { e.preventDefault(); onSubmit(); }} className="glass rounded-2xl p-5 space-y-4 border-2 border-emerald/30">
+      {/* USDT header */}
+      <div className="flex items-center gap-3">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-emerald to-cyan text-white text-xl font-black shadow-lg" translate="no">
+          ₮
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-black text-emerald" translate="no">USDT · Celo Network</p>
+          <p className="text-[11px] text-muted-foreground" translate="no">1 USDT ≈ {usdtRate}৳ (fixed)</p>
+        </div>
+      </div>
+
+      {/* Celo warning */}
+      <div className="rounded-xl border-2 border-rose/40 bg-rose/10 p-3 flex gap-2">
+        <ShieldAlert className="h-4 w-4 shrink-0 text-rose mt-0.5" />
+        <div className="flex-1 min-w-0">
+          <p className="text-[11px] font-black text-rose">{t("সতর্কবার্তা — শুধু Celo Network", "Warning — Celo Network only")}</p>
+          <p className="text-[11px] text-navy/80 leading-snug mt-0.5" translate="no">
+            {t("শুধু Celo network-এর address (0x দিয়ে শুরু, ৪২ character) দিন। TRC20 / ERC20 / BEP20 address দিলে ফান্ড হারাবেন — ফেরত পাবেন না।", "Only enter a Celo network address (starts with 0x, 42 characters). If you enter a TRC20 / ERC20 / BEP20 address, you will lose funds — no refund.")}
+          </p>
+        </div>
+      </div>
+
+      {/* Address input */}
+      <div>
+        <label className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold" translate="no">USDT Address (Celo)</label>
+        <input
+          type="text"
+          value={usdtAddress}
+          onChange={(e) => setUsdtAddress(e.target.value.trim())}
+          placeholder="0x..."
+          spellCheck={false}
+          autoCorrect="off"
+          autoCapitalize="off"
+          translate="no"
+          className={`w-full mt-2 px-3 py-3 mono-num bg-surface-2 border-2 rounded-xl text-[12px] font-bold outline-none break-all ${
+            usdtAddress.length === 0 ? "border-border" : addrValid ? "border-emerald focus:border-emerald" : "border-rose focus:border-rose"
+          }`}
+        />
+        {usdtAddress.length > 0 && !addrValid && (
+          <p className="text-[10px] text-rose mt-1 font-bold">{t("সঠিক Celo address নয় (0x + 40 hex character)", "Not a valid Celo address (0x + 40 hex chars)")}</p>
+        )}
+      </div>
+
+      {/* Amount input (BDT) */}
+      <div>
+        <label className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">{t("পরিমাণ (৳ পূর্ণ টাকা)", "Amount (whole ৳)")}</label>
+        <input type="number" min={MIN_WITHDRAW_BDT} step="1" value={amount}
+          onChange={(e) => setAmount(e.target.value.replace(/[^\d]/g, ""))}
+          placeholder={t(`সর্বনিম্ন ${MIN_WITHDRAW_BDT}`, `Minimum ${MIN_WITHDRAW_BDT}`)}
+          className="w-full mt-2 px-4 py-3 mono-num bg-surface-2 border border-border rounded-xl text-lg font-black outline-none focus:border-emerald" />
+        <p className="text-[10px] text-muted-foreground mt-1" translate="no">
+          {t("সর্বনিম্ন", "Min")}: {MIN_WITHDRAW_BDT}৳ · {t("সর্বোচ্চ", "Max")}: {claimable}৳
+        </p>
+      </div>
+
+      {/* Fee + USDT conversion */}
+      {gross >= MIN_WITHDRAW_BDT && (
+        <div className="rounded-xl border-2 border-emerald/40 bg-emerald/10 p-3 space-y-1.5" translate="no">
+          <p className="text-[10px] uppercase tracking-widest font-black text-emerald">{t("USDT হিসাব", "USDT breakdown")}</p>
+          <div className="flex justify-between text-[12px]">
+            <span className="text-muted-foreground">{t("মোট কাটবে", "Deducted")}</span>
+            <span className="mono-num font-bold">{gross}৳</span>
+          </div>
+          <div className="flex justify-between text-[12px]">
+            <span className="text-muted-foreground">{t(`প্ল্যাটফর্ম ফি (${Math.round(feeRate * 100)}%)`, `Platform fee (${Math.round(feeRate * 100)}%)`)}</span>
+            <span className="mono-num font-bold text-rose">− {fee}৳</span>
+          </div>
+          <div className="flex justify-between text-[12px]">
+            <span className="text-muted-foreground" translate="no">Rate</span>
+            <span className="mono-num font-bold" translate="no">{usdtRate}৳ / $</span>
+          </div>
+          <div className="flex justify-between text-sm border-t border-emerald/30 pt-1.5">
+            <span className="font-black">{t("আপনি পাবেন", "You will receive")}</span>
+            <span className="mono-num font-black text-emerald" translate="no">≈ {payoutUsd} USDT</span>
+          </div>
+        </div>
+      )}
+
+      <div className="rounded-lg bg-cyan/10 border border-cyan/30 px-3 py-2 text-[11px] text-cyan font-bold text-center">
+        📅 {t("দৈনিক সর্বোচ্চ ৩টি withdraw রিকোয়েস্ট করা যাবে", "Max 3 withdraw requests per day")}
+      </div>
+
+      <button
+        disabled={submitting || gross < MIN_WITHDRAW_BDT || gross > claimable || !addrValid}
+        className="w-full py-4 rounded-xl font-black text-base flex items-center justify-center gap-2 disabled:opacity-50 text-white shadow-lg"
+        style={{ background: "linear-gradient(120deg,#10b981,#06b6d4)" }}>
+        {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
+        {t("USDT উইথড্র রিকোয়েস্ট", "Submit USDT withdraw")}
+      </button>
+    </form>
+  );
+}
