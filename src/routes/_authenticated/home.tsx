@@ -480,22 +480,14 @@ function HomePage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 gap-2">
         <a href="https://t.me/goodappbuy" target="_blank" rel="noopener noreferrer"
-           className="block rounded-2xl p-3 text-center shadow-md btn-press"
+           className="block rounded-2xl p-3.5 text-center shadow-md btn-press"
            style={{ background: "linear-gradient(120deg,#0088cc,#06b6d4)" }}>
-          <p className="text-xs font-black text-white flex items-center justify-center gap-1.5">
-            <MessageCircle className="w-3.5 h-3.5" /> {t("টেলিগ্রাম", "Telegram")}
+          <p className="text-sm font-black text-white flex items-center justify-center gap-1.5">
+            <MessageCircle className="w-4 h-4" /> {t("টেলিগ্রাম সাপোর্ট", "Telegram Support")}
           </p>
-          <p className="text-[10px] text-white/90 mt-0.5">{t("গ্রুপে মেসেজ দিন", "Message the group")}</p>
-        </a>
-        <a href="https://wa.me/8801892564963" target="_blank" rel="noopener noreferrer"
-           className="block rounded-2xl p-3 text-center shadow-md btn-press"
-           style={{ background: "linear-gradient(120deg,#25D366,#128C7E)" }}>
-          <p className="text-xs font-black text-white flex items-center justify-center gap-1.5">
-            <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
-          </p>
-          <p className="text-[10px] text-white/90 mt-0.5 mono-num" translate="no">01892564963</p>
+          <p className="text-[11px] text-white/90 mt-0.5">{t("গ্রুপে মেসেজ দিন — দ্রুত সাহায্য পাবেন", "Message the group — quick help")}</p>
         </a>
       </div>
 

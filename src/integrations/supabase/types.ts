@@ -98,6 +98,9 @@ export type Database = {
           referrer_bonus: number
           reverify_bonus: number
           updated_at: string
+          usdt_enabled: boolean
+          usdt_off_message: string | null
+          usdt_rate_bdt: number
         }
         Insert: {
           bkash_enabled?: boolean
@@ -119,6 +122,9 @@ export type Database = {
           referrer_bonus?: number
           reverify_bonus?: number
           updated_at?: string
+          usdt_enabled?: boolean
+          usdt_off_message?: string | null
+          usdt_rate_bdt?: number
         }
         Update: {
           bkash_enabled?: boolean
@@ -140,6 +146,9 @@ export type Database = {
           referrer_bonus?: number
           reverify_bonus?: number
           updated_at?: string
+          usdt_enabled?: boolean
+          usdt_off_message?: string | null
+          usdt_rate_bdt?: number
         }
         Relationships: []
       }
@@ -754,7 +763,7 @@ export type Database = {
     Enums: {
       app_role: "admin" | "user"
       task_status: "empty" | "verified" | "done"
-      wallet_provider: "bkash" | "nagad"
+      wallet_provider: "bkash" | "nagad" | "usdt"
       withdrawal_status: "pending" | "paid" | "rejected"
     }
     CompositeTypes: {
@@ -885,7 +894,7 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "user"],
       task_status: ["empty", "verified", "done"],
-      wallet_provider: ["bkash", "nagad"],
+      wallet_provider: ["bkash", "nagad", "usdt"],
       withdrawal_status: ["pending", "paid", "rejected"],
     },
   },
