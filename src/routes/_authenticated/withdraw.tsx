@@ -223,9 +223,7 @@ function WithdrawPage() {
               : "border-border bg-surface-2 opacity-80"
           }`}>
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-linear-to-br from-emerald to-cyan text-white text-[11px] font-black shadow" translate="no">
-              ₮
-            </div>
+            <img src={usdtLogo} alt="USDT" width={32} height={32} className="h-8 w-8 rounded-full object-contain bg-white shadow" loading="lazy" />
             <div>
               <p className={`text-sm font-black ${mode === "usdt" ? "text-emerald" : "text-muted-foreground"}`} translate="no">USDT</p>
               <p className="text-[9px] text-muted-foreground" translate="no">Celo Network</p>
