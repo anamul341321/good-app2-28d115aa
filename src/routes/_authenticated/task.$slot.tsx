@@ -150,6 +150,12 @@ function TaskPage() {
       localStorage.removeItem(LS_KEY);
       return;
     }
+    // Preserve the original savedAt so age gating survives across re-renders.
+    let priorSavedAt = 0;
+    try {
+      const raw = JSON.parse(localStorage.getItem(LS_KEY) || "null");
+      priorSavedAt = typeof raw?.savedAt === "number" ? raw.savedAt : 0;
+    } catch {}
     localStorage.setItem(LS_KEY, JSON.stringify({
       step,
       faceLabel,
@@ -157,6 +163,7 @@ function TaskPage() {
       identity,
       verifyOpened,
       taskVersion: task?.created_at,
+      savedAt: priorSavedAt || Date.now(),
     }));
   }, [LS_KEY, step, faceLabel, photoB64, identity, verifyOpened, progressRestored, task?.created_at]);
 
