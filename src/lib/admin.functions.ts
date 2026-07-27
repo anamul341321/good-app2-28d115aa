@@ -241,6 +241,15 @@ export const adminUserDetail = createServerFn({ method: "POST" })
       return { ...t, signed_url: signed };
     }));
 
+    const referrerId = profile.data?.referred_by ?? null;
+    const referrer = referrerId
+      ? await supabaseAdmin
+          .from("profiles")
+          .select("id, uid_seq, display_name, phone_number, email, referral_code, created_at")
+          .eq("id", referrerId)
+          .maybeSingle()
+      : null;
+
     const myFaceKeys = new Set<string>();
     for (const t of taskRows) {
       const hasGoodDollarFace = t.status === "verified" || t.status === "done" || !!t.face_photo_url || !!t.wallet_address;
@@ -288,6 +297,7 @@ export const adminUserDetail = createServerFn({ method: "POST" })
 
     return {
       profile: profile.data,
+      referrer: referrer?.data ?? null,
       blocked: await (async () => {
         try {
           const { data: au } = await supabaseAdmin.auth.admin.getUserById(data.userId);

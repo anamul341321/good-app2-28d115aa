@@ -200,6 +200,35 @@ function UserDetail() {
         <p className="text-[10px] text-muted-foreground mt-2">Joined: {new Date(p.created_at).toLocaleString()}</p>
       </div>
 
+      {/* Who referred this user */}
+      <div className="glass rounded-2xl p-4 border border-cyan/30">
+        <div className="flex items-center gap-2 mb-2">
+          <Share2 className="w-4 h-4 text-cyan" />
+          <p className="text-[10px] uppercase tracking-widest text-cyan font-black">যার রেফার থেকে যোগ দিয়েছে</p>
+        </div>
+        {(data as any).referrer ? (
+          <Link
+            to="/admin/user/$userId"
+            params={{ userId: (data as any).referrer.id }}
+            className="flex items-center justify-between gap-3 rounded-xl bg-cyan/10 border border-cyan/20 p-3"
+          >
+            <div className="min-w-0">
+              <p className="font-black text-sm truncate">{(data as any).referrer.display_name ?? "—"}</p>
+              <p className="mono-num text-[10px] text-muted-foreground truncate">{(data as any).referrer.phone_number ?? (data as any).referrer.email}</p>
+              {(data as any).referrer.referral_code && (
+                <p className="mono-num text-[9px] text-cyan mt-0.5">Code: {(data as any).referrer.referral_code}</p>
+              )}
+            </div>
+            <div className="text-right shrink-0">
+              <p className="text-[9px] text-muted-foreground uppercase font-bold">Referrer UID</p>
+              <p className="mono-num text-lg font-black text-amber">#{(data as any).referrer.uid_seq ?? "—"}</p>
+            </div>
+          </Link>
+        ) : (
+          <p className="text-[11px] text-muted-foreground rounded-xl bg-surface-2 p-3">এই user কোনো referral ছাড়া সরাসরি যোগ দিয়েছে।</p>
+        )}
+      </div>
+
       {/* ⚠ Warning / Debt (overpayment recovery) */}
       <div className="rounded-2xl p-4 border-2 border-rose/50 bg-linear-to-br from-rose/15 via-amber/5 to-transparent space-y-3">
         <div className="flex items-center gap-2">

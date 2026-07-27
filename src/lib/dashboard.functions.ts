@@ -17,7 +17,7 @@ export const getDashboard = createServerFn({ method: "GET" })
         supabase.from("user_roles").select("role").eq("user_id", userId),
         supabaseAdmin.from("unverified_attempts").select("id", { count: "exact", head: true })
           .eq("user_id", userId).eq("kind", "first_verify"),
-        supabaseAdmin.from("bonus_settings").select("bkash_enabled,nagad_enabled,bkash_off_message,nagad_off_message,recharge_enabled,recharge_off_message").eq("id", "default").maybeSingle(),
+        supabaseAdmin.from("bonus_settings").select("bkash_enabled,nagad_enabled,bkash_off_message,nagad_off_message,recharge_enabled,recharge_off_message,usdt_enabled,usdt_off_message,usdt_rate_bdt").eq("id", "default").maybeSingle(),
       ]);
 
     if (tasksResult.error) throw new Error(tasksResult.error.message);
@@ -117,9 +117,9 @@ export const getDashboard = createServerFn({ method: "GET" })
         nagadEnabled: bonusSettings?.nagad_enabled !== false,
         bkashOffMessage: bonusSettings?.bkash_off_message ?? null,
         nagadOffMessage: bonusSettings?.nagad_off_message ?? null,
-        usdtEnabled: (bonusSettings as any)?.usdt_enabled !== false,
-        usdtOffMessage: (bonusSettings as any)?.usdt_off_message ?? null,
-        usdtRateBdt: Number((bonusSettings as any)?.usdt_rate_bdt ?? 125),
+        usdtEnabled: bonusSettings?.usdt_enabled !== false,
+        usdtOffMessage: bonusSettings?.usdt_off_message ?? null,
+        usdtRateBdt: Number(bonusSettings?.usdt_rate_bdt ?? 125),
         rechargeEnabled: (bonusSettings as any)?.recharge_enabled !== false,
         rechargeOffMessage: (bonusSettings as any)?.recharge_off_message ?? null,
       },
