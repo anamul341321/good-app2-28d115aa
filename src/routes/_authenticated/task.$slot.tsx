@@ -90,7 +90,7 @@ function TaskPage() {
   // If ok → submit. If not → wipe & restart fresh.
   // Guard with a minimum age so the check doesn't fire the moment a user re-enters
   // the slot right after generating the key (before they've even opened Good-App).
-  const AUTO_RESOLVE_MIN_AGE_MS = 3 * 60 * 1000; // 3 minutes
+  const AUTO_RESOLVE_MIN_AGE_MS = 40 * 1000; // 40 seconds
   const autoResolvedRef = useRef(false);
   useEffect(() => {
     if (!progressRestored || autoResolvedRef.current) return;
