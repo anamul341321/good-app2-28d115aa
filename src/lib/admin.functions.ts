@@ -1253,6 +1253,8 @@ export const adminUpdateBonusSettings = createServerFn({ method: "POST" })
     nagad_off_message: z.string().max(300).optional().nullable(),
     recharge_enabled: z.boolean().optional(),
     recharge_off_message: z.string().max(300).optional().nullable(),
+    usdt_enabled: z.boolean().optional(),
+    usdt_off_message: z.string().max(300).optional().nullable(),
   }).parse(i))
   .handler(async ({ data }) => {
     const supabaseAdmin = await gate();
