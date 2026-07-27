@@ -1271,6 +1271,7 @@ export const adminUpdateBonusSettings = createServerFn({ method: "POST" })
       "promo_first_verify_bonus","promo_reverify_bonus","promo_referrer_bonus",
       "bkash_enabled","nagad_enabled","bkash_off_message","nagad_off_message",
       "recharge_enabled","recharge_off_message",
+      "usdt_enabled","usdt_off_message",
     ] as const) {
       if ((data as any)[k] !== undefined) patch[k] = (data as any)[k];
     }
