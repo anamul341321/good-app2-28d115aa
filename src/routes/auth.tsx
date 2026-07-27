@@ -165,7 +165,13 @@ export function AuthPage() {
       const { error } = await supabase.auth.signInWithPassword({
         email: phoneToEmail(cleanPhone), password,
       });
-      if (error) throw error;
+      if (error) {
+        const msg = (error.message || "").toLowerCase();
+        if (msg.includes("invalid") || msg.includes("credentials")) {
+          throw new Error("ভুল নম্বর বা পাসওয়ার্ড — এই নম্বরে account না থাকলে Sign Up করুন");
+        }
+        throw error;
+      }
       toast.success("স্বাগতম!");
       nav({ to: "/home" });
     } catch (e: any) {

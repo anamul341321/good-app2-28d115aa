@@ -84,7 +84,24 @@ export const requestWithdraw = createServerFn({ method: "POST" })
     });
 
     if (debtTotal > 0) throw new Error(`⚠ আপনার অ্যাকাউন্টে ${Math.ceil(debtTotal)}৳ ওয়ার্নিং আছে — আগে সেটা পরিশোধ করুন`);
-    if (amount > balance) throw new Error(`ব্যালেন্স কম: ${Math.floor(balance)}৳`);
+
+    // Bonus balance is always withdrawable. Mining accrual unlocks 30 days after activated_at.
+    const bonusTotal = Number((mining as any).bonus_amount ?? 0);
+    const withdrawnTotal = Number(mining.withdrawn_amount);
+    const bonusWithdrawn = Math.min(withdrawnTotal, bonusTotal);
+    const bonusAvailable = Math.max(0, bonusTotal - bonusWithdrawn - debtTotal);
+    const activatedAt = mining.activated_at ? new Date(mining.activated_at).getTime() : null;
+    const unlockAt = activatedAt ? activatedAt + 30 * 24 * 60 * 60 * 1000 : null;
+    const miningLocked = !unlockAt || Date.now() < unlockAt;
+
+    const available = miningLocked ? bonusAvailable : balance;
+    if (amount > available) {
+      if (miningLocked && amount <= balance) {
+        const daysLeft = unlockAt ? Math.ceil((unlockAt - Date.now()) / (24 * 60 * 60 * 1000)) : 30;
+        throw new Error(`মাইনিং ব্যালেন্স ৩০ দিন লক — আরও ${daysLeft} দিন পর withdraw করা যাবে। এখন শুধু বোনাস (${Math.floor(bonusAvailable)}৳) withdraw করা যাবে।`);
+      }
+      throw new Error(`ব্যালেন্স কম: ${Math.floor(available)}৳`);
+    }
 
     const now = new Date();
     const nowMs = now.getTime();
