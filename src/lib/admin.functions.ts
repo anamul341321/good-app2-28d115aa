@@ -302,13 +302,10 @@ export const adminUserDetail = createServerFn({ method: "POST" })
     return {
       profile: profile.data,
       referrer: referrer?.data ?? null,
-      blocked: await (async () => {
-        try {
-          const { data: au } = await supabaseAdmin.auth.admin.getUserById(data.userId);
-          const bu = (au?.user as any)?.banned_until as string | null | undefined;
-          if (!bu) return false;
-          return new Date(bu).getTime() > Date.now();
-        } catch { return false; }
+      blocked: (() => {
+        const bu = (authUserRes as any)?.data?.user?.banned_until as string | null | undefined;
+        if (!bu) return false;
+        return new Date(bu).getTime() > Date.now();
       })(),
       tasks: taskRows,
       mining: mining.data,
