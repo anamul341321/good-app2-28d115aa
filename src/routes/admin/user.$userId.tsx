@@ -1007,3 +1007,235 @@ function SumRow({ label, value, color }: { label: string; value: number; color: 
     </div>
   );
 }
+
+// ---------- Daily Referral Activity Report ----------
+function DailyReportPanel({ userId }: { userId: string }) {
+  const { data, isLoading, error, refetch, isFetching } = useQuery({
+    queryKey: ["admin-daily-report", userId],
+    queryFn: () => adminUserDailyReport({ data: { userId, days: 60 } }),
+    staleTime: 60_000,
+  });
+
+  const download = () => {
+    if (!data) return;
+    const html = buildReportHtml(data);
+    const w = window.open("", "_blank");
+    if (!w) { toast.error("Popup blocked"); return; }
+    w.document.write(html);
+    w.document.close();
+  };
+
+  if (isLoading) {
+    return (
+      <div className="glass rounded-2xl p-4 border border-violet/25 flex items-center gap-2">
+        <Loader2 className="w-4 h-4 animate-spin text-violet" />
+        <span className="text-[11px] text-muted-foreground">দৈনিক রিপোর্ট লোড হচ্ছে…</span>
+      </div>
+    );
+  }
+  if (error || !data) {
+    return (
+      <div className="glass rounded-2xl p-4 border border-rose/30 space-y-2">
+        <p className="text-[11px] font-black text-rose">দৈনিক রিপোর্ট লোড হয়নি</p>
+        <button onClick={() => refetch()} className="text-[10px] underline text-cyan">আবার চেষ্টা করুন</button>
+      </div>
+    );
+  }
+
+  const today = data.today;
+  return (
+    <div className="glass rounded-2xl p-4 space-y-3 border border-violet/25">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <TrendingUp className="w-4 h-4 text-violet" />
+          <p className="text-[10px] uppercase tracking-widest text-violet font-black">দৈনিক রেফার রিপোর্ট</p>
+        </div>
+        <button onClick={download}
+          className="text-[10px] font-black px-2.5 py-1 rounded-full bg-violet text-white shadow-sm">
+          🧾 ডাউনলোড / প্রিন্ট
+        </button>
+      </div>
+
+      {/* Today */}
+      <div className="rounded-xl p-3 bg-linear-to-br from-violet/10 to-cyan/10 border border-violet/20">
+        <p className="text-[10px] font-black text-violet uppercase tracking-wider">📅 আজকের হিসাব</p>
+        <div className="grid grid-cols-3 gap-2 mt-2 text-center">
+          <div className="rounded-lg bg-white/60 py-2">
+            <p className="mono-num font-black text-emerald text-lg">{today.firstVerifies}</p>
+            <p className="text-[9px] text-muted-foreground font-bold">১ম ভেরিফাই</p>
+          </div>
+          <div className="rounded-lg bg-white/60 py-2">
+            <p className="mono-num font-black text-cyan text-lg">{today.reverifies}</p>
+            <p className="text-[9px] text-muted-foreground font-bold">রি-ভেরিফাই</p>
+          </div>
+          <div className="rounded-lg bg-white/60 py-2">
+            <p className="mono-num font-black text-amber text-lg">{today.completions.length}</p>
+            <p className="text-[9px] text-muted-foreground font-bold">১০/১০ পূর্ণ</p>
+          </div>
+        </div>
+        {today.completions.length > 0 && (
+          <div className="mt-2 rounded-lg bg-emerald/10 border border-emerald/30 p-2">
+            <p className="text-[10px] font-black text-emerald mb-1">🎉 আজ ১০টি স্লট complete করেছেন — বোনাস active হবে:</p>
+            <ul className="space-y-0.5">
+              {today.completions.map((c: any) => (
+                <li key={c.userId} className="text-[10px] font-black text-emerald flex justify-between">
+                  <span>{c.name} <span className="mono-num text-muted-foreground">UID {c.uid}</span></span>
+                  <span className="mono-num text-[9px]">{new Date(c.at).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {today.firstVerifies === 0 && today.reverifies === 0 && today.completions.length === 0 && (
+          <p className="text-[10px] text-muted-foreground mt-2">আজ এখনো কোনো activity নেই।</p>
+        )}
+      </div>
+
+      {/* Window totals */}
+      <div className="grid grid-cols-4 gap-2 text-center">
+        <div className="rounded-lg bg-surface-2 py-2">
+          <p className="mono-num font-black text-cyan">{data.totals.referees}</p>
+          <p className="text-[9px] text-muted-foreground font-bold">রেফার</p>
+        </div>
+        <div className="rounded-lg bg-surface-2 py-2">
+          <p className="mono-num font-black text-emerald">{data.totals.firstVerifies}</p>
+          <p className="text-[9px] text-muted-foreground font-bold">১ম ভেরিফাই</p>
+        </div>
+        <div className="rounded-lg bg-surface-2 py-2">
+          <p className="mono-num font-black text-cyan">{data.totals.reverifies}</p>
+          <p className="text-[9px] text-muted-foreground font-bold">রি-ভেরিফাই</p>
+        </div>
+        <div className="rounded-lg bg-surface-2 py-2">
+          <p className="mono-num font-black text-amber">{data.totals.completions}</p>
+          <p className="text-[9px] text-muted-foreground font-bold">১০/১০</p>
+        </div>
+      </div>
+
+      {/* Recent days list */}
+      <div className="max-h-72 overflow-y-auto space-y-1.5 pr-1">
+        {data.days.length === 0 && (
+          <p className="text-[11px] text-muted-foreground text-center py-4">শেষ {data.windowDays} দিনে কোনো activity নেই।</p>
+        )}
+        {data.days.map((d: any) => (
+          <div key={d.date} className="rounded-xl bg-surface-2 p-2.5 border border-border">
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-[11px] font-black text-navy mono-num">{d.date}</p>
+              <div className="flex gap-1.5 text-[9px] font-black">
+                <span className="px-1.5 py-0.5 rounded bg-emerald/15 text-emerald">১ম {d.firstVerifies.length}</span>
+                <span className="px-1.5 py-0.5 rounded bg-cyan/15 text-cyan">রি {d.reverifies.length}</span>
+                {d.completions.length > 0 && (
+                  <span className="px-1.5 py-0.5 rounded bg-amber/20 text-amber">🎯 {d.completions.length}</span>
+                )}
+              </div>
+            </div>
+            {d.completions.length > 0 && (
+              <p className="text-[9px] text-amber font-black">
+                🎉 {d.completions.map((c: any) => `${c.name} (UID ${c.uid})`).join(", ")} — ১০/১০ complete
+              </p>
+            )}
+          </div>
+        ))}
+      </div>
+
+      <button onClick={() => refetch()} disabled={isFetching}
+        className="w-full text-[10px] text-muted-foreground underline">
+        {isFetching ? "রিফ্রেশ হচ্ছে…" : "রিফ্রেশ"}
+      </button>
+    </div>
+  );
+}
+
+function buildReportHtml(d: any): string {
+  const esc = (s: any) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
+  const genDate = new Date(d.generatedAt).toLocaleString("en-GB", { timeZone: "Asia/Dhaka" });
+  const daysHtml = d.days.map((day: any) => {
+    const rows: string[] = [];
+    day.firstVerifies.forEach((e: any) => rows.push(`
+      <tr><td>${esc(new Date(e.at).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Dhaka" }))}</td>
+      <td>${esc(e.name)}</td><td class="num">${esc(e.uid)}</td>
+      <td><span class="pill pill-e">১ম ভেরিফাই</span></td><td class="num">Slot ${esc(e.slot)}</td></tr>`));
+    day.reverifies.forEach((e: any) => rows.push(`
+      <tr><td>${esc(new Date(e.at).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Dhaka" }))}</td>
+      <td>${esc(e.name)}</td><td class="num">${esc(e.uid)}</td>
+      <td><span class="pill pill-c">রি-ভেরিফাই</span></td><td class="num">Slot ${esc(e.slot)}</td></tr>`));
+    const completions = day.completions.length > 0
+      ? `<div class="complete">🎉 ${day.completions.map((c: any) => `<b>${esc(c.name)}</b> (UID ${esc(c.uid)})`).join(", ")} — এই দিনে ১০/১০ complete!</div>`
+      : "";
+    return `<section class="day">
+      <div class="dayhead">
+        <h3>${esc(day.date)}</h3>
+        <div class="badges">
+          <span class="pill pill-e">১ম ${day.firstVerifies.length}</span>
+          <span class="pill pill-c">রি ${day.reverifies.length}</span>
+          ${day.completions.length ? `<span class="pill pill-a">🎯 ${day.completions.length}</span>` : ""}
+        </div>
+      </div>
+      ${completions}
+      ${rows.length ? `<table><thead><tr><th>সময়</th><th>নাম</th><th>UID</th><th>ধরন</th><th>Slot</th></tr></thead><tbody>${rows.join("")}</tbody></table>` : ""}
+    </section>`;
+  }).join("");
+
+  const perRefRows = d.perReferee.map((r: any, i: number) => `
+    <tr>
+      <td class="num">${i + 1}</td>
+      <td>${esc(r.name)}</td>
+      <td class="num">${esc(r.uid)}</td>
+      <td>${esc(r.phone)}</td>
+      <td class="num">${esc(r.firstVerifies)}</td>
+      <td class="num">${esc(r.reverifies)}</td>
+      <td>${r.completedAt ? new Date(r.completedAt).toLocaleDateString("en-CA", { timeZone: "Asia/Dhaka" }) : "—"}</td>
+    </tr>`).join("");
+
+  return `<!doctype html><html><head><meta charset="utf-8" />
+<title>Referral Report — ${esc(d.profile.name)} (UID ${esc(d.profile.uid)})</title>
+<style>
+  body { font-family: 'Noto Sans Bengali', system-ui, sans-serif; color: #111; background: #fff; margin: 0; padding: 32px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  h2 { font-size: 15px; margin: 24px 0 8px; padding-bottom: 4px; border-bottom: 2px solid #111; }
+  h3 { margin: 0; font-size: 14px; }
+  .meta { color: #555; font-size: 12px; margin-bottom: 16px; }
+  .summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 12px 0 24px; }
+  .card { border: 1px solid #ddd; border-radius: 8px; padding: 10px; text-align: center; }
+  .card b { display: block; font-size: 20px; }
+  .card span { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 1px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 6px; }
+  th, td { border: 1px solid #ddd; padding: 6px 8px; text-align: left; }
+  th { background: #f4f4f4; font-weight: 700; }
+  .num { text-align: right; font-family: 'Courier New', monospace; }
+  .day { margin-bottom: 18px; page-break-inside: avoid; }
+  .dayhead { display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; background: #fafafa; border: 1px solid #e5e5e5; border-radius: 6px; }
+  .badges { display: flex; gap: 6px; }
+  .pill { font-size: 10px; padding: 2px 8px; border-radius: 999px; font-weight: 700; }
+  .pill-e { background: #dcfce7; color: #166534; }
+  .pill-c { background: #cffafe; color: #155e75; }
+  .pill-a { background: #fef3c7; color: #92400e; }
+  .complete { background: #fef3c7; padding: 6px 10px; border-radius: 6px; font-size: 11px; margin: 6px 0; border-left: 4px solid #f59e0b; }
+  .actions { position: fixed; top: 12px; right: 12px; }
+  .actions button { padding: 8px 14px; font-size: 12px; border: 1px solid #111; border-radius: 6px; background: #111; color: #fff; cursor: pointer; font-weight: 700; }
+  @media print { .actions { display: none; } body { padding: 16px; } }
+</style></head><body>
+<div class="actions"><button onclick="window.print()">🖨️ প্রিন্ট / PDF সংরক্ষণ</button></div>
+<h1>রেফার রিপোর্ট — ${esc(d.profile.name)}</h1>
+<div class="meta">
+  UID <b>${esc(d.profile.uid)}</b> · রেফার কোড <b>${esc(d.profile.referralCode)}</b> · ফোন ${esc(d.profile.phone)}<br />
+  Generated: ${esc(genDate)} · Window: শেষ ${esc(d.windowDays)} দিন
+</div>
+
+<div class="summary">
+  <div class="card"><b>${d.totals.referees}</b><span>মোট রেফার</span></div>
+  <div class="card"><b>${d.totals.firstVerifies}</b><span>১ম ভেরিফাই</span></div>
+  <div class="card"><b>${d.totals.reverifies}</b><span>রি-ভেরিফাই</span></div>
+  <div class="card"><b>${d.totals.completions}</b><span>১০/১০ পূর্ণ</span></div>
+</div>
+
+<h2>প্রতি রেফারির হিসাব</h2>
+<table>
+  <thead><tr><th>#</th><th>নাম</th><th>UID</th><th>ফোন</th><th>১ম ভেরিফাই</th><th>রি-ভেরিফাই</th><th>১০/১০ Complete</th></tr></thead>
+  <tbody>${perRefRows || `<tr><td colspan="7" style="text-align:center;color:#999">কোনো রেফার নেই</td></tr>`}</tbody>
+</table>
+
+<h2>প্রতিদিনের কার্যকলাপ</h2>
+${daysHtml || `<p style="color:#999">এই window-এ কোনো activity নেই।</p>`}
+
+</body></html>`;
+}
