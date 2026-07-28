@@ -83,15 +83,18 @@ function WithdrawPage() {
   }) : 0;
   const claimable = debtTotal > 0 ? Math.floor(balance) : Math.floor(balance);
 
-  // Bonus (instantly withdrawable) vs mining (30-day lock from activated_at)
+  // Bonus (instantly withdrawable) vs mining (1st–3rd of each month window)
   const bonusTotal = Number((mining as any)?.bonus_amount ?? 0);
   const withdrawnTotal = Number(mining?.withdrawn_amount ?? 0);
   const bonusWithdrawn = Math.min(withdrawnTotal, bonusTotal);
   const bonusAvailable = Math.max(0, Math.floor(bonusTotal - bonusWithdrawn - debtTotal));
-  const activatedAtMs = mining?.activated_at ? new Date(mining.activated_at).getTime() : null;
-  const unlockAtMs = activatedAtMs ? activatedAtMs + 30 * 24 * 60 * 60 * 1000 : null;
-  const miningLocked = !unlockAtMs || Date.now() < unlockAtMs;
-  const daysUntilUnlock = unlockAtMs ? Math.max(0, Math.ceil((unlockAtMs - Date.now()) / (24 * 60 * 60 * 1000))) : null;
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { miningWindowInfo, nextOpenLabelBn } = require("@/lib/mining-window") as typeof import("@/lib/mining-window");
+  const win = miningWindowInfo(now);
+  const miningLocked = !win.isOpen;
+  const daysUntilUnlock = win.daysUntilOpen;
+  const hoursUntilClose = Math.ceil(win.msUntilClose / (60 * 60 * 1000));
+  const nextOpenLabel = nextOpenLabelBn(now);
 
   const chosenWallet = provider === "bkash" ? walletBkash : provider === "nagad" ? walletNagad : null;
   const chosenEnabled = provider === "bkash" ? payout.bkashEnabled : provider === "nagad" ? payout.nagadEnabled : false;
