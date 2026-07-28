@@ -12,6 +12,7 @@ import bkashLogo from "@/assets/bkash-logo.png";
 import nagadLogo from "@/assets/nagad-logo.png";
 import usdtLogo from "@/assets/usdt-logo.png";
 import { useLang } from "@/lib/i18n";
+import { miningWindowInfo, nextOpenLabelBn } from "@/lib/mining-window";
 
 
 
@@ -88,8 +89,6 @@ function WithdrawPage() {
   const withdrawnTotal = Number(mining?.withdrawn_amount ?? 0);
   const bonusWithdrawn = Math.min(withdrawnTotal, bonusTotal);
   const bonusAvailable = Math.max(0, Math.floor(bonusTotal - bonusWithdrawn - debtTotal));
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { miningWindowInfo, nextOpenLabelBn } = require("@/lib/mining-window") as typeof import("@/lib/mining-window");
   const win = miningWindowInfo(now);
   const miningLocked = !win.isOpen;
   const daysUntilUnlock = win.daysUntilOpen;
