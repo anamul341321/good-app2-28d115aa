@@ -267,18 +267,22 @@ export const adminUserDetail = createServerFn({ method: "POST" })
     let referralRows: any[] = [];
     if (referralIds.length > 0) {
       const CHUNK = 150;
+      const chunks: string[][] = [];
+      for (let i = 0; i < referralIds.length; i += CHUNK) chunks.push(referralIds.slice(i, i + CHUNK));
       const fetchReferralRows = async (table: "tasks" | "unverified_attempts", select: string) => {
-        const rows: any[] = [];
-        for (let i = 0; i < referralIds.length; i += CHUNK) {
-          const chunk = referralIds.slice(i, i + CHUNK);
+        const fetchChunk = async (chunk: string[]) => {
+          const rows: any[] = [];
           for (let from = 0; ; from += 1000) {
             const { data, error } = await supabaseAdmin.from(table).select(select).in("user_id", chunk).range(from, from + 999);
             if (error) throw new Error(error.message);
             rows.push(...(data ?? []));
             if (!data || data.length < 1000) break;
           }
-        }
-        return rows;
+          return rows;
+        };
+        // Parallelize chunk fetches — sequential loops were timing out for heavy referrers.
+        const results = await Promise.all(chunks.map(fetchChunk));
+        return results.flat();
       };
        const refTasks = await fetchReferralRows("tasks", "id, user_id, slot, status, wallet_address, initial_verify_at, reverify_count");
 
