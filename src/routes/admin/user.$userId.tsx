@@ -1099,7 +1099,7 @@ function DailyReportPanel({ userId }: { userId: string }) {
           const groupBy = (arr: any[]) => {
             const m = new Map<string, { name: string; uid: number; slots: { slot: number; at: string }[] }>();
             for (const e of arr) {
-              const g = m.get(e.userId) ?? { name: e.name, uid: e.uid, slots: [] };
+              const g = m.get(e.userId) ?? { name: e.name, uid: e.uid, slots: [] as { slot: number; at: string }[] };
               g.slots.push({ slot: e.slot, at: e.at });
               m.set(e.userId, g);
             }
