@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { adminUserDetail, adminAdjustBalance, adminToggleMining, adminResetTask, adminমুছুনUser, adminResetUserPassword, adminClearMiningOverride, adminCreateVoucher, adminListVouchersForUser, adminSetReferralUnlock, adminResetWallet, adminMarkAsReverified, adminAddDebt, adminResolveDebt, adminDeleteDebt, adminDirectPayout, adminSetUserBlocked } from "@/lib/admin.functions";
+import { adminUserDetail, adminAdjustBalance, adminToggleMining, adminResetTask, adminমুছুনUser, adminResetUserPassword, adminClearMiningOverride, adminCreateVoucher, adminListVouchersForUser, adminSetReferralUnlock, adminResetWallet, adminMarkAsReverified, adminAddDebt, adminResolveDebt, adminDeleteDebt, adminDirectPayout, adminSetUserBlocked, adminUserDailyReport } from "@/lib/admin.functions";
 import { ArrowLeft, Loader2, Power, Plus, Minus, RefreshCw, Trash2, Copy, KeyRound, Gift, ScanFace, Share2, Lock, Unlock, Wallet, CheckCircle2, AlertTriangle, CheckCheck, Send, TrendingUp, Ban, ShieldOff } from "lucide-react";
 import { computeLiveBalance } from "@/lib/mining";
 import { toast } from "sonner";
