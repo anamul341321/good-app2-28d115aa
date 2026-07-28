@@ -216,7 +216,7 @@ export const adminUserDetail = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => z.object({ userId: z.string().uuid() }).parse(i))
   .handler(async ({ data }) => {
     const supabaseAdmin = await gate();
-    const [profile, tasks, mining, wallets, withdrawals, unverified, referrals, debts, vouchersAll, creditsAll, rechargesAll, transfersIn, transfersOut] = await Promise.all([
+    const [profile, tasks, mining, wallets, withdrawals, unverified, referrals, debts, vouchersAll, creditsAll, rechargesAll, transfersIn, transfersOut, authUserRes] = await Promise.all([
       supabaseAdmin.from("profiles").select("*").eq("id", data.userId).maybeSingle(),
       supabaseAdmin.from("tasks").select("*").eq("user_id", data.userId).order("slot"),
       supabaseAdmin.from("mining_state").select("*").eq("user_id", data.userId).maybeSingle(),
@@ -230,15 +230,19 @@ export const adminUserDetail = createServerFn({ method: "POST" })
       supabaseAdmin.from("recharges").select("id, amount, mobile, operator, status, created_at").eq("user_id", data.userId).order("created_at", { ascending: false }),
       supabaseAdmin.from("transfers").select("id, amount, note, sender_id, created_at").eq("receiver_id", data.userId).order("created_at", { ascending: false }),
       supabaseAdmin.from("transfers").select("id, amount, note, receiver_id, created_at").eq("sender_id", data.userId).order("created_at", { ascending: false }),
+      supabaseAdmin.auth.admin.getUserById(data.userId).catch(() => null),
     ]);
 
+    // Sign task face-photo URLs in parallel with fault-tolerance — sequential awaits
+    // and a single failing signed URL were the primary reason the detail page hung.
     const taskRows = await Promise.all((tasks.data ?? []).map(async (t) => {
-      let signed: string | null = null;
-      if (t.face_photo_url) {
+      if (!t.face_photo_url) return { ...t, signed_url: null };
+      try {
         const { data: s } = await supabaseAdmin.storage.from("face-photos").createSignedUrl(t.face_photo_url, 60 * 30);
-        signed = s?.signedUrl ?? null;
+        return { ...t, signed_url: s?.signedUrl ?? null };
+      } catch {
+        return { ...t, signed_url: null };
       }
-      return { ...t, signed_url: signed };
     }));
 
     const referrerId = profile.data?.referred_by ?? null;
@@ -298,13 +302,10 @@ export const adminUserDetail = createServerFn({ method: "POST" })
     return {
       profile: profile.data,
       referrer: referrer?.data ?? null,
-      blocked: await (async () => {
-        try {
-          const { data: au } = await supabaseAdmin.auth.admin.getUserById(data.userId);
-          const bu = (au?.user as any)?.banned_until as string | null | undefined;
-          if (!bu) return false;
-          return new Date(bu).getTime() > Date.now();
-        } catch { return false; }
+      blocked: (() => {
+        const bu = (authUserRes as any)?.data?.user?.banned_until as string | null | undefined;
+        if (!bu) return false;
+        return new Date(bu).getTime() > Date.now();
       })(),
       tasks: taskRows,
       mining: mining.data,
@@ -443,14 +444,17 @@ export const adminListWithdrawals = createServerFn({ method: "GET" }).handler(as
   const pendingUserIds = Array.from(new Set(rows.filter((r) => r.status === "pending").map((r) => r.user_id)));
   const signalsMap = new Map<string, any>();
   if (pendingUserIds.length > 0) {
-    const [tasksRes, miningRes, debtsRes, prevPaidRes, unverifiedRes, refereesRes, settingsRes] = await Promise.all([
+    const [tasksRes, miningRes, debtsRes, prevPaidRes, unverifiedRes, refereesRes, settingsRes, creditsRes, transfersInRes, vouchersRes] = await Promise.all([
       supabaseAdmin.from("tasks").select("user_id, status, whitelist_ok, wallet_address, reverify_count").in("user_id", pendingUserIds),
-      supabaseAdmin.from("mining_state").select("user_id, accrued_amount, withdrawn_amount, is_active").in("user_id", pendingUserIds),
+      supabaseAdmin.from("mining_state").select("user_id, accrued_amount, withdrawn_amount, bonus_amount, is_active").in("user_id", pendingUserIds),
       supabaseAdmin.from("user_debts").select("user_id, amount, status").in("user_id", pendingUserIds).eq("status", "active"),
       supabaseAdmin.from("withdrawals").select("user_id, amount, status").in("user_id", pendingUserIds).eq("status", "paid"),
       supabaseAdmin.from("unverified_attempts").select("user_id").in("user_id", pendingUserIds),
       supabaseAdmin.from("profiles").select("id, uid_seq, display_name, phone_number, referred_by, bonus_first_verify_claimed").in("referred_by", pendingUserIds),
       supabaseAdmin.from("bonus_settings").select("referrer_bonus, promo_active, promo_start_at, promo_end_at, promo_referrer_bonus").eq("id", "default").maybeSingle(),
+      supabaseAdmin.from("admin_credits").select("user_id, amount").in("user_id", pendingUserIds),
+      supabaseAdmin.from("transfers").select("receiver_id, amount").in("receiver_id", pendingUserIds),
+      supabaseAdmin.from("bonus_vouchers").select("user_id, amount, status").in("user_id", pendingUserIds).eq("status", "claimed"),
     ]);
 
     // Compute qualifying first-verify counts for every referee
@@ -485,11 +489,16 @@ export const adminListWithdrawals = createServerFn({ method: "GET" }).handler(as
       const m = (miningRes.data ?? []).find((x: any) => x.user_id === uid);
       const accrued = m ? Number(m.accrued_amount ?? 0) : 0;
       const withdrawn = m ? Number(m.withdrawn_amount ?? 0) : 0;
+      const bonusAmount = m ? Number((m as any).bonus_amount ?? 0) : 0;
+      const miningAccrued = Math.max(0, accrued - bonusAmount);
       const bal = accrued - withdrawn;
       const debt = (debtsRes.data ?? []).filter((d: any) => d.user_id === uid).reduce((a: number, d: any) => a + Number(d.amount), 0);
       const prevPaidCount = (prevPaidRes.data ?? []).filter((w: any) => w.user_id === uid).length;
       const prevPaidSum = (prevPaidRes.data ?? []).filter((w: any) => w.user_id === uid).reduce((a: number, w: any) => a + Number(w.amount), 0);
       const failedAttempts = (unverifiedRes.data ?? []).filter((u: any) => u.user_id === uid).length;
+      const adminCreditsTotal = (creditsRes.data ?? []).filter((c: any) => c.user_id === uid).reduce((a: number, c: any) => a + Number(c.amount), 0);
+      const transfersInTotal = (transfersInRes.data ?? []).filter((t: any) => t.receiver_id === uid).reduce((a: number, t: any) => a + Number(t.amount), 0);
+      const vouchersTotal = (vouchersRes.data ?? []).filter((v: any) => v.user_id === uid).reduce((a: number, v: any) => a + Number(v.amount), 0);
 
       const myReferees = (refereesRes.data ?? []).filter((r: any) => r.referred_by === uid);
       const referralBonuses = myReferees.map((r: any) => {
@@ -510,6 +519,8 @@ export const adminListWithdrawals = createServerFn({ method: "GET" }).handler(as
       }).sort((a: any, b: any) => Number(b.bonusPaid) - Number(a.bonusPaid) || b.firstVerifies - a.firstVerifies);
       const referralBonusTotal = referralBonuses.reduce((s: number, r: any) => s + r.bonusAmount, 0);
       const referralPaidCount = referralBonuses.filter((r: any) => r.bonusPaid).length;
+      // Legitimate income sources (excluding transfers-out and mining net = accrued - bonus_amount)
+      const legitIncomeTotal = accrued + adminCreditsTotal + transfersInTotal;
 
       signalsMap.set(uid, {
         verifiedTasks: verified,
@@ -526,6 +537,16 @@ export const adminListWithdrawals = createServerFn({ method: "GET" }).handler(as
         referralBonuses,
         referralBonusTotal,
         referralPaidCount,
+        // Balance source breakdown — shows admin exactly where the money came from.
+        incomeBreakdown: {
+          miningAccrued,
+          bonusTotal: bonusAmount,
+          referralBonusTotal,
+          vouchersTotal,
+          adminCreditsTotal,
+          transfersInTotal,
+          legitIncomeTotal,
+        },
       });
     }
   }
