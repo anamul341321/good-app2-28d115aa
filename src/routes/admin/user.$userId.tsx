@@ -1048,156 +1048,97 @@ function DailyReportPanel({ userId }: { userId: string }) {
   }
 
   const today = data.today;
+
+  // Merge today's first-verifies + re-verifies into a per-referee summary
+  const todayObj = data.days.find((x: any) => x.date === new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Dhaka" }));
+  const firstList: any[] = todayObj?.firstVerifies ?? [];
+  const reList: any[] = todayObj?.reverifies ?? [];
+  const completedIds = new Set<string>((today.completions ?? []).map((c: any) => c.userId));
+
+  type Row = { userId: string; name: string; uid: number; first: number; re: number; completedToday: boolean };
+  const map = new Map<string, Row>();
+  for (const e of firstList) {
+    const r = map.get(e.userId) ?? { userId: e.userId, name: e.name, uid: e.uid, first: 0, re: 0, completedToday: completedIds.has(e.userId) };
+    r.first += 1; map.set(e.userId, r);
+  }
+  for (const e of reList) {
+    const r = map.get(e.userId) ?? { userId: e.userId, name: e.name, uid: e.uid, first: 0, re: 0, completedToday: completedIds.has(e.userId) };
+    r.re += 1; map.set(e.userId, r);
+  }
+  const rows = Array.from(map.values()).sort((a, b) => (Number(b.completedToday) - Number(a.completedToday)) || (b.first + b.re) - (a.first + a.re));
+
+  const todayDateBn = new Date().toLocaleDateString("bn-BD", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Dhaka" });
+
   return (
     <div className="glass rounded-2xl p-4 space-y-3 border border-violet/25">
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <TrendingUp className="w-4 h-4 text-violet" />
-          <p className="text-[10px] uppercase tracking-widest text-violet font-black">দৈনিক রেফার রিপোর্ট</p>
+        <div>
+          <div className="flex items-center gap-2">
+            <TrendingUp className="w-4 h-4 text-violet" />
+            <p className="text-[11px] uppercase tracking-widest text-violet font-black">দৈনিক রিপোর্ট</p>
+          </div>
+          <p className="text-[10px] text-muted-foreground mt-0.5">{todayDateBn}</p>
         </div>
         <button onClick={download}
           className="text-[10px] font-black px-2.5 py-1 rounded-full bg-violet text-white shadow-sm">
-          🧾 ডাউনলোড / প্রিন্ট
+          🧾 ডাউনলোড
         </button>
       </div>
 
-      {/* Today */}
-      <div className="rounded-xl p-3 bg-linear-to-br from-violet/10 to-cyan/10 border border-violet/20">
-        <p className="text-[10px] font-black text-violet uppercase tracking-wider">📅 আজকের হিসাব</p>
-        <div className="grid grid-cols-3 gap-2 mt-2 text-center">
-          <div className="rounded-lg bg-white/60 py-2">
-            <p className="mono-num font-black text-emerald text-lg">{today.firstVerifies}</p>
-            <p className="text-[9px] text-muted-foreground font-bold">১ম ভেরিফাই</p>
-          </div>
-          <div className="rounded-lg bg-white/60 py-2">
-            <p className="mono-num font-black text-cyan text-lg">{today.reverifies}</p>
-            <p className="text-[9px] text-muted-foreground font-bold">রি-ভেরিফাই</p>
-          </div>
-          <div className="rounded-lg bg-white/60 py-2">
-            <p className="mono-num font-black text-amber text-lg">{today.completions.length}</p>
-            <p className="text-[9px] text-muted-foreground font-bold">১০/১০ পূর্ণ</p>
-          </div>
+      {/* Simple today summary */}
+      <div className="grid grid-cols-3 gap-2 text-center">
+        <div className="rounded-xl bg-emerald/10 border border-emerald/25 py-2">
+          <p className="mono-num font-black text-emerald text-xl leading-none">{today.firstVerifies}</p>
+          <p className="text-[10px] text-emerald font-bold mt-1">১ম ভেরিফাই</p>
         </div>
-        {today.completions.length > 0 && (
-          <div className="mt-2 rounded-lg bg-emerald/10 border border-emerald/30 p-2">
-            <p className="text-[10px] font-black text-emerald mb-1">🎉 আজ ১০টি স্লট complete করেছেন — বোনাস active হবে:</p>
-            <ul className="space-y-0.5">
-              {today.completions.map((c: any) => (
-                <li key={c.userId} className="text-[10px] font-black text-emerald flex justify-between">
-                  <span>{c.name} <span className="mono-num text-muted-foreground">UID {c.uid}</span></span>
-                  <span className="mono-num text-[9px]">{new Date(c.at).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Dhaka" })}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-        {(() => {
-          const todayObj = data.days.find((x: any) => x.date === new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Dhaka" }));
-          const firstList = todayObj?.firstVerifies ?? [];
-          const reList = todayObj?.reverifies ?? [];
-          // Group by referee for readability
-          const groupBy = (arr: any[]) => {
-            const m = new Map<string, { name: string; uid: number; slots: { slot: number; at: string }[] }>();
-            for (const e of arr) {
-              const g = m.get(e.userId) ?? { name: e.name, uid: e.uid, slots: [] as { slot: number; at: string }[] };
-              g.slots.push({ slot: e.slot, at: e.at });
-              m.set(e.userId, g);
-            }
-            return Array.from(m.values()).sort((a, b) => b.slots.length - a.slots.length);
-          };
-          const firstGrouped = groupBy(firstList);
-          const reGrouped = groupBy(reList);
-          const fmt = (iso: string) => new Date(iso).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Dhaka" });
-          return (
-            <>
-              {firstGrouped.length > 0 && (
-                <div className="mt-2 rounded-lg bg-emerald/5 border border-emerald/25 p-2">
-                  <p className="text-[10px] font-black text-emerald mb-1">✅ আজ ১ম ভেরিফাই ({firstList.length}) — কারা করেছেন:</p>
-                  <ul className="space-y-1">
-                    {firstGrouped.map((g) => (
-                      <li key={"f-" + g.uid} className="text-[10px]">
-                        <div className="flex items-center justify-between">
-                          <span className="font-black text-navy">{g.name} <span className="mono-num text-muted-foreground">UID {g.uid}</span></span>
-                          <span className="mono-num font-black text-emerald">{g.slots.length}টি</span>
-                        </div>
-                        <p className="text-[9px] text-muted-foreground mono-num">
-                          {g.slots.sort((a, b) => a.slot - b.slot).map((s) => `#${s.slot} (${fmt(s.at)})`).join(", ")}
-                        </p>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              {reGrouped.length > 0 && (
-                <div className="mt-2 rounded-lg bg-cyan/5 border border-cyan/25 p-2">
-                  <p className="text-[10px] font-black text-cyan mb-1">🔄 আজ রি-ভেরিফাই ({reList.length}) — কারা করেছেন:</p>
-                  <ul className="space-y-1">
-                    {reGrouped.map((g) => (
-                      <li key={"r-" + g.uid} className="text-[10px]">
-                        <div className="flex items-center justify-between">
-                          <span className="font-black text-navy">{g.name} <span className="mono-num text-muted-foreground">UID {g.uid}</span></span>
-                          <span className="mono-num font-black text-cyan">{g.slots.length}টি</span>
-                        </div>
-                        <p className="text-[9px] text-muted-foreground mono-num">
-                          {g.slots.sort((a, b) => a.slot - b.slot).map((s) => `#${s.slot} (${fmt(s.at)})`).join(", ")}
-                        </p>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </>
-          );
-        })()}
-        {today.firstVerifies === 0 && today.reverifies === 0 && today.completions.length === 0 && (
-          <p className="text-[10px] text-muted-foreground mt-2">আজ এখনো কোনো activity নেই।</p>
-        )}
-      </div>
-
-      {/* Window totals */}
-      <div className="grid grid-cols-4 gap-2 text-center">
-        <div className="rounded-lg bg-surface-2 py-2">
-          <p className="mono-num font-black text-cyan">{data.totals.referees}</p>
-          <p className="text-[9px] text-muted-foreground font-bold">রেফার</p>
+        <div className="rounded-xl bg-cyan/10 border border-cyan/25 py-2">
+          <p className="mono-num font-black text-cyan text-xl leading-none">{today.reverifies}</p>
+          <p className="text-[10px] text-cyan font-bold mt-1">রি-ভেরিফাই</p>
         </div>
-        <div className="rounded-lg bg-surface-2 py-2">
-          <p className="mono-num font-black text-emerald">{data.totals.firstVerifies}</p>
-          <p className="text-[9px] text-muted-foreground font-bold">১ম ভেরিফাই</p>
-        </div>
-        <div className="rounded-lg bg-surface-2 py-2">
-          <p className="mono-num font-black text-cyan">{data.totals.reverifies}</p>
-          <p className="text-[9px] text-muted-foreground font-bold">রি-ভেরিফাই</p>
-        </div>
-        <div className="rounded-lg bg-surface-2 py-2">
-          <p className="mono-num font-black text-amber">{data.totals.completions}</p>
-          <p className="text-[9px] text-muted-foreground font-bold">১০/১০</p>
+        <div className="rounded-xl bg-amber/10 border border-amber/30 py-2">
+          <p className="mono-num font-black text-amber text-xl leading-none">{today.completions.length}</p>
+          <p className="text-[10px] text-amber font-bold mt-1">১০/১০ পূর্ণ</p>
         </div>
       </div>
 
-      {/* Recent days list */}
-      <div className="max-h-72 overflow-y-auto space-y-1.5 pr-1">
-        {data.days.length === 0 && (
-          <p className="text-[11px] text-muted-foreground text-center py-4">শেষ {data.windowDays} দিনে কোনো activity নেই।</p>
-        )}
-        {data.days.map((d: any) => (
-          <div key={d.date} className="rounded-xl bg-surface-2 p-2.5 border border-border">
-            <div className="flex items-center justify-between mb-1">
-              <p className="text-[11px] font-black text-navy mono-num">{d.date}</p>
-              <div className="flex gap-1.5 text-[9px] font-black">
-                <span className="px-1.5 py-0.5 rounded bg-emerald/15 text-emerald">১ম {d.firstVerifies.length}</span>
-                <span className="px-1.5 py-0.5 rounded bg-cyan/15 text-cyan">রি {d.reverifies.length}</span>
-                {d.completions.length > 0 && (
-                  <span className="px-1.5 py-0.5 rounded bg-amber/20 text-amber">🎯 {d.completions.length}</span>
-                )}
-              </div>
-            </div>
-            {d.completions.length > 0 && (
-              <p className="text-[9px] text-amber font-black">
-                🎉 {d.completions.map((c: any) => `${c.name} (UID ${c.uid})`).join(", ")} — ১০/১০ complete
-              </p>
-            )}
+      {/* Per-referee list — one row per user, easy to read */}
+      {rows.length > 0 ? (
+        <div className="rounded-xl border border-border overflow-hidden">
+          <div className="grid grid-cols-[1fr_auto_auto_auto] gap-2 px-3 py-2 bg-surface-2 text-[10px] font-black text-muted-foreground uppercase tracking-wider">
+            <span>রেফারি</span>
+            <span className="text-emerald">১ম</span>
+            <span className="text-cyan">রি</span>
+            <span>স্ট্যাটাস</span>
           </div>
-        ))}
+          <ul className="divide-y divide-border">
+            {rows.map((r) => (
+              <li key={r.userId} className="grid grid-cols-[1fr_auto_auto_auto] gap-2 px-3 py-2 items-center">
+                <div className="min-w-0">
+                  <p className="text-[12px] font-black text-navy truncate">{r.name}</p>
+                  <p className="text-[10px] text-muted-foreground mono-num">UID {r.uid}</p>
+                </div>
+                <span className="mono-num font-black text-emerald text-sm text-right w-8">{r.first || "–"}</span>
+                <span className="mono-num font-black text-cyan text-sm text-right w-8">{r.re || "–"}</span>
+                <span className={`text-[10px] font-black px-2 py-0.5 rounded-full whitespace-nowrap ${r.completedToday ? "bg-amber/20 text-amber" : "bg-surface-2 text-muted-foreground"}`}>
+                  {r.completedToday ? "🎯 ১০/১০" : "চলছে"}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : (
+        <p className="text-[11px] text-muted-foreground text-center py-3">আজ এখনো কোনো রেফারি ভেরিফাই করেননি।</p>
+      )}
+
+      {/* Window totals — compact */}
+      <div className="rounded-xl bg-surface-2 border border-border p-2.5">
+        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-wider mb-1.5">শেষ {data.windowDays} দিনের মোট</p>
+        <div className="grid grid-cols-4 gap-2 text-center">
+          <div><p className="mono-num font-black text-navy">{data.totals.referees}</p><p className="text-[9px] text-muted-foreground">রেফার</p></div>
+          <div><p className="mono-num font-black text-emerald">{data.totals.firstVerifies}</p><p className="text-[9px] text-muted-foreground">১ম</p></div>
+          <div><p className="mono-num font-black text-cyan">{data.totals.reverifies}</p><p className="text-[9px] text-muted-foreground">রি</p></div>
+          <div><p className="mono-num font-black text-amber">{data.totals.completions}</p><p className="text-[9px] text-muted-foreground">১০/১০</p></div>
+        </div>
       </div>
 
       <button onClick={() => refetch()} disabled={isFetching}
