@@ -266,17 +266,22 @@ export const adminUserDetail = createServerFn({ method: "POST" })
     const referralIds = (referrals.data ?? []).map((r) => r.id);
     let referralRows: any[] = [];
     if (referralIds.length > 0) {
+      const CHUNK = 150;
       const fetchReferralRows = async (table: "tasks" | "unverified_attempts", select: string) => {
         const rows: any[] = [];
-        for (let from = 0; ; from += 1000) {
-          const { data, error } = await supabaseAdmin.from(table).select(select).in("user_id", referralIds).range(from, from + 999);
-          if (error) throw new Error(error.message);
-          rows.push(...(data ?? []));
-          if (!data || data.length < 1000) break;
+        for (let i = 0; i < referralIds.length; i += CHUNK) {
+          const chunk = referralIds.slice(i, i + CHUNK);
+          for (let from = 0; ; from += 1000) {
+            const { data, error } = await supabaseAdmin.from(table).select(select).in("user_id", chunk).range(from, from + 999);
+            if (error) throw new Error(error.message);
+            rows.push(...(data ?? []));
+            if (!data || data.length < 1000) break;
+          }
         }
         return rows;
       };
        const refTasks = await fetchReferralRows("tasks", "id, user_id, slot, status, wallet_address, initial_verify_at, reverify_count");
+
        const refFirstVerifySlots = new Map<string, Set<number>>();
       const refReverifySlots = new Map<string, Set<number>>();
       for (const t of refTasks ?? []) {
