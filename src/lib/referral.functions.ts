@@ -30,22 +30,27 @@ export const getMyReferrals = createServerFn({ method: "GET" })
     const refereeIds = (referees ?? []).map((r: any) => r.id);
     let tasks: any[] = [];
     if (refereeIds.length > 0) {
+      const CHUNK = 150;
       const fetchAll = async (select: string) => {
         const rows: any[] = [];
-        for (let from = 0; ; from += 1000) {
-          const { data, error } = await supabaseAdmin
-            .from("tasks")
-            .select(select)
-            .in("user_id", refereeIds)
-            .range(from, from + 999);
-          if (error) throw new Error(error.message);
-          rows.push(...(data ?? []));
-          if (!data || data.length < 1000) break;
+        for (let i = 0; i < refereeIds.length; i += CHUNK) {
+          const chunk = refereeIds.slice(i, i + CHUNK);
+          for (let from = 0; ; from += 1000) {
+            const { data, error } = await supabaseAdmin
+              .from("tasks")
+              .select(select)
+              .in("user_id", chunk)
+              .range(from, from + 999);
+            if (error) throw new Error(error.message);
+            rows.push(...(data ?? []));
+            if (!data || data.length < 1000) break;
+          }
         }
         return rows;
       };
       tasks = await fetchAll("id, user_id, slot, status, whitelist_ok, wallet_address, initial_verify_at, reverify_count");
     }
+
 
     // Also fetch caller's own first-verify count for the lock gauge.
     // Only a persisted successful first verification counts. Generated keys,
