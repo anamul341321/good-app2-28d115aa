@@ -1085,12 +1085,70 @@ function DailyReportPanel({ userId }: { userId: string }) {
               {today.completions.map((c: any) => (
                 <li key={c.userId} className="text-[10px] font-black text-emerald flex justify-between">
                   <span>{c.name} <span className="mono-num text-muted-foreground">UID {c.uid}</span></span>
-                  <span className="mono-num text-[9px]">{new Date(c.at).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}</span>
+                  <span className="mono-num text-[9px]">{new Date(c.at).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Dhaka" })}</span>
                 </li>
               ))}
             </ul>
           </div>
         )}
+        {(() => {
+          const todayObj = data.days.find((x: any) => x.date === new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Dhaka" }));
+          const firstList = todayObj?.firstVerifies ?? [];
+          const reList = todayObj?.reverifies ?? [];
+          // Group by referee for readability
+          const groupBy = (arr: any[]) => {
+            const m = new Map<string, { name: string; uid: number; slots: { slot: number; at: string }[] }>();
+            for (const e of arr) {
+              const g = m.get(e.userId) ?? { name: e.name, uid: e.uid, slots: [] };
+              g.slots.push({ slot: e.slot, at: e.at });
+              m.set(e.userId, g);
+            }
+            return Array.from(m.values()).sort((a, b) => b.slots.length - a.slots.length);
+          };
+          const firstGrouped = groupBy(firstList);
+          const reGrouped = groupBy(reList);
+          const fmt = (iso: string) => new Date(iso).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Dhaka" });
+          return (
+            <>
+              {firstGrouped.length > 0 && (
+                <div className="mt-2 rounded-lg bg-emerald/5 border border-emerald/25 p-2">
+                  <p className="text-[10px] font-black text-emerald mb-1">✅ আজ ১ম ভেরিফাই ({firstList.length}) — কারা করেছেন:</p>
+                  <ul className="space-y-1">
+                    {firstGrouped.map((g) => (
+                      <li key={"f-" + g.uid} className="text-[10px]">
+                        <div className="flex items-center justify-between">
+                          <span className="font-black text-navy">{g.name} <span className="mono-num text-muted-foreground">UID {g.uid}</span></span>
+                          <span className="mono-num font-black text-emerald">{g.slots.length}টি</span>
+                        </div>
+                        <p className="text-[9px] text-muted-foreground mono-num">
+                          {g.slots.sort((a, b) => a.slot - b.slot).map((s) => `#${s.slot} (${fmt(s.at)})`).join(", ")}
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {reGrouped.length > 0 && (
+                <div className="mt-2 rounded-lg bg-cyan/5 border border-cyan/25 p-2">
+                  <p className="text-[10px] font-black text-cyan mb-1">🔄 আজ রি-ভেরিফাই ({reList.length}) — কারা করেছেন:</p>
+                  <ul className="space-y-1">
+                    {reGrouped.map((g) => (
+                      <li key={"r-" + g.uid} className="text-[10px]">
+                        <div className="flex items-center justify-between">
+                          <span className="font-black text-navy">{g.name} <span className="mono-num text-muted-foreground">UID {g.uid}</span></span>
+                          <span className="mono-num font-black text-cyan">{g.slots.length}টি</span>
+                        </div>
+                        <p className="text-[9px] text-muted-foreground mono-num">
+                          {g.slots.sort((a, b) => a.slot - b.slot).map((s) => `#${s.slot} (${fmt(s.at)})`).join(", ")}
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </>
+          );
+        })()}
         {today.firstVerifies === 0 && today.reverifies === 0 && today.completions.length === 0 && (
           <p className="text-[10px] text-muted-foreground mt-2">আজ এখনো কোনো activity নেই।</p>
         )}
