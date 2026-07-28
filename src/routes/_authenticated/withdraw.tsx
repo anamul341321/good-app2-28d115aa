@@ -12,6 +12,7 @@ import bkashLogo from "@/assets/bkash-logo.png";
 import nagadLogo from "@/assets/nagad-logo.png";
 import usdtLogo from "@/assets/usdt-logo.png";
 import { useLang } from "@/lib/i18n";
+import { miningWindowInfo, nextOpenLabelBn } from "@/lib/mining-window";
 
 
 
@@ -83,15 +84,16 @@ function WithdrawPage() {
   }) : 0;
   const claimable = debtTotal > 0 ? Math.floor(balance) : Math.floor(balance);
 
-  // Bonus (instantly withdrawable) vs mining (30-day lock from activated_at)
+  // Bonus (instantly withdrawable) vs mining (1st–3rd of each month window)
   const bonusTotal = Number((mining as any)?.bonus_amount ?? 0);
   const withdrawnTotal = Number(mining?.withdrawn_amount ?? 0);
   const bonusWithdrawn = Math.min(withdrawnTotal, bonusTotal);
   const bonusAvailable = Math.max(0, Math.floor(bonusTotal - bonusWithdrawn - debtTotal));
-  const activatedAtMs = mining?.activated_at ? new Date(mining.activated_at).getTime() : null;
-  const unlockAtMs = activatedAtMs ? activatedAtMs + 30 * 24 * 60 * 60 * 1000 : null;
-  const miningLocked = !unlockAtMs || Date.now() < unlockAtMs;
-  const daysUntilUnlock = unlockAtMs ? Math.max(0, Math.ceil((unlockAtMs - Date.now()) / (24 * 60 * 60 * 1000))) : null;
+  const win = miningWindowInfo(now);
+  const miningLocked = !win.isOpen;
+  const daysUntilUnlock = win.daysUntilOpen;
+  const hoursUntilClose = Math.ceil(win.msUntilClose / (60 * 60 * 1000));
+  const nextOpenLabel = nextOpenLabelBn(now);
 
   const chosenWallet = provider === "bkash" ? walletBkash : provider === "nagad" ? walletNagad : null;
   const chosenEnabled = provider === "bkash" ? payout.bkashEnabled : provider === "nagad" ? payout.nagadEnabled : false;
@@ -158,17 +160,50 @@ function WithdrawPage() {
               <p className="text-[10px] uppercase tracking-widest text-cyan font-black">⛏️ মাইনিং</p>
               <p className="mono-num text-2xl font-black text-cyan mt-0.5" translate="no">{Math.max(0, Math.floor(balance - bonusAvailable))}৳</p>
               {miningLocked ? (
-                <p className="text-[10px] text-rose font-bold mt-0.5">🔒 {daysUntilUnlock ? `${daysUntilUnlock} দিন পর` : "শুরু হলে"} unlock</p>
+                <p className="text-[10px] text-rose font-bold mt-0.5">🔒 {nextOpenLabel} · আর {daysUntilUnlock} দিন</p>
               ) : (
-                <p className="text-[10px] text-emerald font-bold mt-0.5">✓ unlocked</p>
+                <p className="text-[10px] text-emerald font-bold mt-0.5">✓ আজ withdraw করুন · আর {hoursUntilClose} ঘণ্টা</p>
               )}
             </div>
           </div>
           <p className="text-[10px] text-muted-foreground leading-snug">
-            বোনাসের টাকা যেকোনো সময় withdraw করা যাবে। মাইনিং চালু হওয়ার ৩০ দিন পর মাইনিং ব্যালেন্স unlock হবে।
+            বোনাসের টাকা যেকোনো সময় withdraw করা যাবে। মাইনিং ব্যালেন্স শুধু প্রতি মাসের ১, ২, ৩ তারিখে withdraw করা যায়।
           </p>
         </div>
       )}
+
+      {/* 📅 Mining withdraw window rules */}
+      {mining && (
+        <div className={`relative overflow-hidden rounded-3xl p-5 border-2 shadow-xl ${miningLocked ? "border-rose/40" : "border-emerald/50"}`}
+             style={{
+               background: miningLocked
+                 ? "linear-gradient(135deg, color-mix(in oklch, var(--color-rose) 14%, white) 0%, color-mix(in oklch, var(--color-amber) 10%, white) 100%)"
+                 : "linear-gradient(135deg, color-mix(in oklch, var(--color-emerald) 15%, white) 0%, color-mix(in oklch, var(--color-cyan) 10%, white) 100%)"
+             }}>
+          <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full opacity-30 blur-3xl pointer-events-none"
+               style={{ background: miningLocked ? "var(--color-rose)" : "var(--color-emerald)" }} />
+          <div className="relative">
+            <div className="flex items-center gap-2 mb-3">
+              <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-xl ${miningLocked ? "bg-rose text-white" : "bg-emerald text-white"} shadow-lg`}>
+                {miningLocked ? "🔒" : "🔓"}
+              </div>
+              <div>
+                <p className={`text-[10px] uppercase tracking-[0.25em] font-black ${miningLocked ? "text-rose" : "text-emerald"}`}>মাইনিং উইথড্র নিয়ম</p>
+                <h3 className={`text-base font-black ${miningLocked ? "text-rose" : "text-emerald"}`}>
+                  {miningLocked ? `উইন্ডো বন্ধ — ${nextOpenLabel}` : `উইন্ডো খোলা — আর ${hoursUntilClose} ঘণ্টা`}
+                </h3>
+              </div>
+            </div>
+            <ul className="space-y-2 text-[12px] text-navy/90 leading-relaxed font-bold">
+              <li className="flex gap-2"><span className="text-amber shrink-0">📅</span><span>প্রতি মাসের <b className="text-rose">১, ২ ও ৩ তারিখ</b> — এই ৩ দিনই মাইনিং ব্যালেন্স withdraw করা যাবে।</span></li>
+              <li className="flex gap-2"><span className="text-emerald shrink-0">✅</span><span>১ তারিখ withdraw করে ফেললে আবার <b>আগামী মাসের ১ তারিখ</b> পর্যন্ত lock হয়ে যাবে।</span></li>
+              <li className="flex gap-2"><span className="text-cyan shrink-0">⏰</span><span>১ তারিখ মিস করলে ২ বা ৩ তারিখে দিতে পারবেন। <b>৩ দিনও মিস করলে</b> আবার পরের মাসের ১ তারিখ পর্যন্ত lock।</span></li>
+              <li className="flex gap-2"><span className="text-violet shrink-0">🎁</span><span><b>বোনাস ব্যালেন্স</b> এই নিয়মের বাইরে — যেকোনো সময় withdraw করা যাবে।</span></li>
+            </ul>
+          </div>
+        </div>
+      )}
+
 
 
 

@@ -13,12 +13,12 @@ export const Route = createFileRoute("/_authenticated/referral")({
 });
 
 function ReferralPage() {
-  const { data, isLoading, refetch } = useQuery({
+  const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
     queryKey: ["referrals", "original-first-verifies-v2"],
     queryFn: () => getMyReferrals(),
-    refetchInterval: 30_000,
-    staleTime: 0,
-    refetchOnMount: "always",
+    refetchInterval: 60_000,
+    staleTime: 15_000,
+    retry: 2,
   });
 
   const [shareUrl, setShareUrl] = useState("");
@@ -29,6 +29,23 @@ function ReferralPage() {
       setShareUrl("");
     }
   }, [data?.referralCode, data?.lock?.unlocked]);
+
+  if (isError && !data) {
+    return (
+      <div className="py-16 text-center space-y-4 px-6">
+        <div className="w-16 h-16 rounded-full bg-rose/15 text-rose flex items-center justify-center mx-auto text-3xl">😕</div>
+        <div>
+          <p className="text-lg font-black text-navy">রেফার পেজ লোড হয়নি</p>
+          <p className="text-sm text-muted-foreground mt-1">ইন্টারনেট চেক করে আবার চেষ্টা করুন। বার বার হলে অ্যাপ রিফ্রেশ দিন।</p>
+          <p className="text-[10px] text-muted-foreground mt-1 break-all">{(error as any)?.message ?? ""}</p>
+        </div>
+        <button onClick={() => refetch()} disabled={isFetching}
+          className="mx-auto px-6 py-3 rounded-2xl gradient-cta font-black text-white shadow-lg btn-press disabled:opacity-60">
+          {isFetching ? "লোড হচ্ছে…" : "🔄 আবার চেষ্টা করুন"}
+        </button>
+      </div>
+    );
+  }
 
   if (isLoading || !data) {
     return <div className="py-20 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-cyan" /></div>;
