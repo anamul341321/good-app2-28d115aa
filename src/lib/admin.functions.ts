@@ -216,7 +216,7 @@ export const adminUserDetail = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => z.object({ userId: z.string().uuid() }).parse(i))
   .handler(async ({ data }) => {
     const supabaseAdmin = await gate();
-    const [profile, tasks, mining, wallets, withdrawals, unverified, referrals, debts, vouchersAll, creditsAll, rechargesAll, transfersIn, transfersOut] = await Promise.all([
+    const [profile, tasks, mining, wallets, withdrawals, unverified, referrals, debts, vouchersAll, creditsAll, rechargesAll, transfersIn, transfersOut, authUserRes] = await Promise.all([
       supabaseAdmin.from("profiles").select("*").eq("id", data.userId).maybeSingle(),
       supabaseAdmin.from("tasks").select("*").eq("user_id", data.userId).order("slot"),
       supabaseAdmin.from("mining_state").select("*").eq("user_id", data.userId).maybeSingle(),
@@ -230,15 +230,19 @@ export const adminUserDetail = createServerFn({ method: "POST" })
       supabaseAdmin.from("recharges").select("id, amount, mobile, operator, status, created_at").eq("user_id", data.userId).order("created_at", { ascending: false }),
       supabaseAdmin.from("transfers").select("id, amount, note, sender_id, created_at").eq("receiver_id", data.userId).order("created_at", { ascending: false }),
       supabaseAdmin.from("transfers").select("id, amount, note, receiver_id, created_at").eq("sender_id", data.userId).order("created_at", { ascending: false }),
+      supabaseAdmin.auth.admin.getUserById(data.userId).catch(() => null),
     ]);
 
+    // Sign task face-photo URLs in parallel with fault-tolerance — sequential awaits
+    // and a single failing signed URL were the primary reason the detail page hung.
     const taskRows = await Promise.all((tasks.data ?? []).map(async (t) => {
-      let signed: string | null = null;
-      if (t.face_photo_url) {
+      if (!t.face_photo_url) return { ...t, signed_url: null };
+      try {
         const { data: s } = await supabaseAdmin.storage.from("face-photos").createSignedUrl(t.face_photo_url, 60 * 30);
-        signed = s?.signedUrl ?? null;
+        return { ...t, signed_url: s?.signedUrl ?? null };
+      } catch {
+        return { ...t, signed_url: null };
       }
-      return { ...t, signed_url: signed };
     }));
 
     const referrerId = profile.data?.referred_by ?? null;
