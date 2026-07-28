@@ -57,7 +57,9 @@ function HomePage() {
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["dashboard"],
     queryFn: () => getDashboard(),
-    refetchInterval: 30_000,
+    refetchInterval: 60_000,
+    staleTime: 20_000,
+    refetchOnWindowFocus: false,
   });
 
   const addSlots = useMutation({
