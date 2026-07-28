@@ -1152,94 +1152,122 @@ function DailyReportPanel({ userId }: { userId: string }) {
 function buildReportHtml(d: any): string {
   const esc = (s: any) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
   const genDate = new Date(d.generatedAt).toLocaleString("en-GB", { timeZone: "Asia/Dhaka" });
-  const daysHtml = d.days.map((day: any) => {
-    const rows: string[] = [];
-    day.firstVerifies.forEach((e: any) => rows.push(`
-      <tr><td>${esc(new Date(e.at).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Dhaka" }))}</td>
-      <td>${esc(e.name)}</td><td class="num">${esc(e.uid)}</td>
-      <td><span class="pill pill-e">১ম ভেরিফাই</span></td><td class="num">Slot ${esc(e.slot)}</td></tr>`));
-    day.reverifies.forEach((e: any) => rows.push(`
-      <tr><td>${esc(new Date(e.at).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Dhaka" }))}</td>
-      <td>${esc(e.name)}</td><td class="num">${esc(e.uid)}</td>
-      <td><span class="pill pill-c">রি-ভেরিফাই</span></td><td class="num">Slot ${esc(e.slot)}</td></tr>`));
-    const completions = day.completions.length > 0
-      ? `<div class="complete">🎉 ${day.completions.map((c: any) => `<b>${esc(c.name)}</b> (UID ${esc(c.uid)})`).join(", ")} — এই দিনে ১০/১০ complete!</div>`
-      : "";
-    return `<section class="day">
-      <div class="dayhead">
-        <h3>${esc(day.date)}</h3>
-        <div class="badges">
-          <span class="pill pill-e">১ম ${day.firstVerifies.length}</span>
-          <span class="pill pill-c">রি ${day.reverifies.length}</span>
-          ${day.completions.length ? `<span class="pill pill-a">🎯 ${day.completions.length}</span>` : ""}
-        </div>
-      </div>
-      ${completions}
-      ${rows.length ? `<table><thead><tr><th>সময়</th><th>নাম</th><th>UID</th><th>ধরন</th><th>Slot</th></tr></thead><tbody>${rows.join("")}</tbody></table>` : ""}
-    </section>`;
-  }).join("");
+  const todayStr = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Dhaka" });
+  const todayBn = new Date().toLocaleDateString("bn-BD", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Dhaka" });
+  const todayObj = d.days.find((x: any) => x.date === todayStr) ?? { firstVerifies: [], reverifies: [], completions: [] };
 
-  const perRefRows = d.perReferee.map((r: any, i: number) => `
-    <tr>
-      <td class="num">${i + 1}</td>
-      <td>${esc(r.name)}</td>
-      <td class="num">${esc(r.uid)}</td>
-      <td>${esc(r.phone)}</td>
-      <td class="num">${esc(r.firstVerifies)}</td>
-      <td class="num">${esc(r.reverifies)}</td>
-      <td>${r.completedAt ? new Date(r.completedAt).toLocaleDateString("en-CA", { timeZone: "Asia/Dhaka" }) : "—"}</td>
-    </tr>`).join("");
+  type Row = { userId: string; name: string; uid: number; phone: string; firstTotal: number; reTotal: number; firstToday: number; reToday: number; completedToday: boolean; completedAt: string | null };
+  const rowMap = new Map<string, Row>();
+  for (const r of d.perReferee ?? []) {
+    rowMap.set(r.userId ?? `${r.uid}`, {
+      userId: r.userId ?? `${r.uid}`, name: r.name, uid: r.uid, phone: r.phone,
+      firstTotal: r.firstVerifies ?? 0, reTotal: r.reverifies ?? 0,
+      firstToday: 0, reToday: 0, completedToday: false, completedAt: r.completedAt ?? null,
+    });
+  }
+  for (const e of todayObj.firstVerifies ?? []) {
+    const key = e.userId ?? `${e.uid}`;
+    const row = rowMap.get(key); if (row) row.firstToday += 1;
+  }
+  for (const e of todayObj.reverifies ?? []) {
+    const key = e.userId ?? `${e.uid}`;
+    const row = rowMap.get(key); if (row) row.reToday += 1;
+  }
+  for (const c of todayObj.completions ?? []) {
+    const key = c.userId ?? `${c.uid}`;
+    const row = rowMap.get(key); if (row) row.completedToday = true;
+  }
+
+  const allRows = Array.from(rowMap.values());
+  const todayRows = allRows
+    .filter((r) => r.firstToday > 0 || r.reToday > 0 || r.completedToday)
+    .sort((a, b) => (Number(b.completedToday) - Number(a.completedToday)) || ((b.firstToday + b.reToday) - (a.firstToday + a.reToday)));
+  const totalRows = allRows.sort((a, b) => (b.firstTotal + b.reTotal) - (a.firstTotal + a.reTotal));
+
+  const todayTable = todayRows.length
+    ? `<table>
+        <thead><tr><th>#</th><th>নাম</th><th>UID</th><th>ফোন</th><th>১ম ভেরিফাই</th><th>রি-ভেরিফাই</th><th>স্ট্যাটাস</th></tr></thead>
+        <tbody>${todayRows.map((r, i) => `
+          <tr>
+            <td class="num">${i + 1}</td>
+            <td><b>${esc(r.name)}</b></td>
+            <td class="num">${esc(r.uid)}</td>
+            <td>${esc(r.phone)}</td>
+            <td class="num">${r.firstToday || "—"}</td>
+            <td class="num">${r.reToday || "—"}</td>
+            <td>${r.completedToday ? `<span class="pill pill-a">🎯 ১০/১০ পূর্ণ</span>` : `<span class="pill pill-c">চলছে</span>`}</td>
+          </tr>`).join("")}</tbody>
+      </table>`
+    : `<p class="empty">আজ এখনো কোনো রেফারি ভেরিফাই করেননি।</p>`;
+
+  const totalTable = totalRows.length
+    ? `<table>
+        <thead><tr><th>#</th><th>নাম</th><th>UID</th><th>ফোন</th><th>মোট ১ম</th><th>মোট রি</th><th>১০/১০ Complete</th></tr></thead>
+        <tbody>${totalRows.map((r, i) => `
+          <tr>
+            <td class="num">${i + 1}</td>
+            <td><b>${esc(r.name)}</b></td>
+            <td class="num">${esc(r.uid)}</td>
+            <td>${esc(r.phone)}</td>
+            <td class="num">${r.firstTotal}</td>
+            <td class="num">${r.reTotal}</td>
+            <td>${r.completedAt ? esc(new Date(r.completedAt).toLocaleDateString("en-CA", { timeZone: "Asia/Dhaka" })) : "—"}</td>
+          </tr>`).join("")}</tbody>
+      </table>`
+    : `<p class="empty">কোনো রেফার নেই।</p>`;
 
   return `<!doctype html><html><head><meta charset="utf-8" />
 <title>Referral Report — ${esc(d.profile.name)} (UID ${esc(d.profile.uid)})</title>
 <style>
-  body { font-family: 'Noto Sans Bengali', system-ui, sans-serif; color: #111; background: #fff; margin: 0; padding: 32px; }
+  body { font-family: 'Noto Sans Bengali', system-ui, sans-serif; color: #111; background: #fff; margin: 0; padding: 28px; }
   h1 { font-size: 22px; margin: 0 0 4px; }
-  h2 { font-size: 15px; margin: 24px 0 8px; padding-bottom: 4px; border-bottom: 2px solid #111; }
-  h3 { margin: 0; font-size: 14px; }
-  .meta { color: #555; font-size: 12px; margin-bottom: 16px; }
-  .summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 12px 0 24px; }
+  h2 { font-size: 15px; margin: 22px 0 10px; padding: 8px 12px; background: #111; color: #fff; border-radius: 6px; }
+  .sub { font-size: 11px; color: #666; margin: -4px 0 8px; }
+  .meta { color: #555; font-size: 12px; margin-bottom: 14px; }
+  .summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 10px 0 14px; }
   .card { border: 1px solid #ddd; border-radius: 8px; padding: 10px; text-align: center; }
   .card b { display: block; font-size: 20px; }
   .card span { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 1px; }
-  table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 6px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
   th, td { border: 1px solid #ddd; padding: 6px 8px; text-align: left; }
   th { background: #f4f4f4; font-weight: 700; }
+  tbody tr:nth-child(even) { background: #fafafa; }
   .num { text-align: right; font-family: 'Courier New', monospace; }
-  .day { margin-bottom: 18px; page-break-inside: avoid; }
-  .dayhead { display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; background: #fafafa; border: 1px solid #e5e5e5; border-radius: 6px; }
-  .badges { display: flex; gap: 6px; }
-  .pill { font-size: 10px; padding: 2px 8px; border-radius: 999px; font-weight: 700; }
-  .pill-e { background: #dcfce7; color: #166534; }
+  .pill { font-size: 10px; padding: 2px 8px; border-radius: 999px; font-weight: 700; display: inline-block; }
   .pill-c { background: #cffafe; color: #155e75; }
   .pill-a { background: #fef3c7; color: #92400e; }
-  .complete { background: #fef3c7; padding: 6px 10px; border-radius: 6px; font-size: 11px; margin: 6px 0; border-left: 4px solid #f59e0b; }
+  .empty { color: #888; text-align: center; padding: 14px; border: 1px dashed #ddd; border-radius: 6px; font-size: 12px; }
   .actions { position: fixed; top: 12px; right: 12px; }
   .actions button { padding: 8px 14px; font-size: 12px; border: 1px solid #111; border-radius: 6px; background: #111; color: #fff; cursor: pointer; font-weight: 700; }
-  @media print { .actions { display: none; } body { padding: 16px; } }
+  @media print { .actions { display: none; } body { padding: 14px; } h2 { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
 </style></head><body>
 <div class="actions"><button onclick="window.print()">🖨️ প্রিন্ট / PDF সংরক্ষণ</button></div>
+
 <h1>রেফার রিপোর্ট — ${esc(d.profile.name)}</h1>
 <div class="meta">
   UID <b>${esc(d.profile.uid)}</b> · রেফার কোড <b>${esc(d.profile.referralCode)}</b> · ফোন ${esc(d.profile.phone)}<br />
-  Generated: ${esc(genDate)} · Window: শেষ ${esc(d.windowDays)} দিন
+  তৈরি: ${esc(genDate)} (Asia/Dhaka)
 </div>
 
+<h2>📅 আজকের হিসাব — ${esc(todayBn)}</h2>
+<div class="sub">আজ যে রেফারিরা ভেরিফাই করেছেন শুধু তাদের তালিকা।</div>
+<div class="summary">
+  <div class="card"><b>${todayObj.firstVerifies.length}</b><span>১ম ভেরিফাই</span></div>
+  <div class="card"><b>${todayObj.reverifies.length}</b><span>রি-ভেরিফাই</span></div>
+  <div class="card"><b>${todayObj.completions.length}</b><span>১০/১০ পূর্ণ</span></div>
+  <div class="card"><b>${todayRows.length}</b><span>সক্রিয় রেফারি</span></div>
+</div>
+${todayTable}
+
+<h2>📊 মোট হিসাব — শেষ ${esc(d.windowDays)} দিন</h2>
+<div class="sub">প্রতিটি রেফারির সর্বমোট performance।</div>
 <div class="summary">
   <div class="card"><b>${d.totals.referees}</b><span>মোট রেফার</span></div>
-  <div class="card"><b>${d.totals.firstVerifies}</b><span>১ম ভেরিফাই</span></div>
-  <div class="card"><b>${d.totals.reverifies}</b><span>রি-ভেরিফাই</span></div>
+  <div class="card"><b>${d.totals.firstVerifies}</b><span>মোট ১ম ভেরিফাই</span></div>
+  <div class="card"><b>${d.totals.reverifies}</b><span>মোট রি-ভেরিফাই</span></div>
   <div class="card"><b>${d.totals.completions}</b><span>১০/১০ পূর্ণ</span></div>
 </div>
-
-<h2>প্রতি রেফারির হিসাব</h2>
-<table>
-  <thead><tr><th>#</th><th>নাম</th><th>UID</th><th>ফোন</th><th>১ম ভেরিফাই</th><th>রি-ভেরিফাই</th><th>১০/১০ Complete</th></tr></thead>
-  <tbody>${perRefRows || `<tr><td colspan="7" style="text-align:center;color:#999">কোনো রেফার নেই</td></tr>`}</tbody>
-</table>
-
-<h2>প্রতিদিনের কার্যকলাপ</h2>
-${daysHtml || `<p style="color:#999">এই window-এ কোনো activity নেই।</p>`}
+${totalTable}
 
 </body></html>`;
 }
