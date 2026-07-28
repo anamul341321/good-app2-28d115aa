@@ -12,12 +12,14 @@ export const Route = createFileRoute("/admin/user/$userId")({ component: UserDet
 function UserDetail() {
 
   const { userId } = Route.useParams();
-  const { data, isLoading, refetch } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["admin-user", "original-first-verifies-v2", userId],
     queryFn: () => adminUserDetail({ data: { userId } }),
     staleTime: 0,
     refetchOnMount: "always",
+    retry: 1,
   });
+
 
   const [delta, setDelta] = useState("");
   const [deltaNote, setDeltaNote] = useState("");
@@ -159,8 +161,19 @@ function UserDetail() {
   });
 
 
-  if (isLoading || !data) return <div className="py-10 flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-cyan" /></div>;
+  if (isLoading) return <div className="py-10 flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-cyan" /></div>;
+  if (error) return (
+    <div className="glass rounded-2xl p-5 text-center space-y-3">
+      <AlertTriangle className="w-8 h-8 text-rose mx-auto" />
+      <p className="text-sm font-black text-rose">User details load করতে সমস্যা হয়েছে</p>
+      <p className="text-[11px] text-muted-foreground break-all">{(error as any)?.message ?? String(error)}</p>
+      <button onClick={() => refetch()} className="gradient-cta px-4 py-2 rounded-xl text-xs font-black">আবার চেষ্টা করুন</button>
+      <Link to="/admin/users" className="block text-[11px] text-cyan">← All users</Link>
+    </div>
+  );
+  if (!data) return <div className="py-10 flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-cyan" /></div>;
   if (!data.profile) return <div className="text-center py-10 text-muted-foreground text-sm">User not found</div>;
+
 
   const p = data.profile;
   const m = data.mining;
