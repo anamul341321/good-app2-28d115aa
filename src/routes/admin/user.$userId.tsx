@@ -12,12 +12,14 @@ export const Route = createFileRoute("/admin/user/$userId")({ component: UserDet
 function UserDetail() {
 
   const { userId } = Route.useParams();
-  const { data, isLoading, refetch } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["admin-user", "original-first-verifies-v2", userId],
     queryFn: () => adminUserDetail({ data: { userId } }),
     staleTime: 0,
     refetchOnMount: "always",
+    retry: 1,
   });
+
 
   const [delta, setDelta] = useState("");
   const [deltaNote, setDeltaNote] = useState("");
