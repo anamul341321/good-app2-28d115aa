@@ -242,6 +242,11 @@ function UserDetail() {
         )}
       </div>
 
+      {/* 📅 Daily Referral Activity Report — moved up for visibility */}
+      <DailyReportPanel userId={userId} />
+
+
+
       {/* ⚠ Warning / Debt (overpayment recovery) */}
       <div className="rounded-2xl p-4 border-2 border-rose/50 bg-linear-to-br from-rose/15 via-amber/5 to-transparent space-y-3">
         <div className="flex items-center gap-2">
@@ -779,8 +784,8 @@ function UserDetail() {
         )}
       </div>
 
-      {/* 📅 Daily Referral Activity Report */}
-      <DailyReportPanel userId={userId} />
+
+
 
 
 
