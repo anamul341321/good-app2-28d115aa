@@ -489,11 +489,16 @@ export const adminListWithdrawals = createServerFn({ method: "GET" }).handler(as
       const m = (miningRes.data ?? []).find((x: any) => x.user_id === uid);
       const accrued = m ? Number(m.accrued_amount ?? 0) : 0;
       const withdrawn = m ? Number(m.withdrawn_amount ?? 0) : 0;
+      const bonusAmount = m ? Number((m as any).bonus_amount ?? 0) : 0;
+      const miningAccrued = Math.max(0, accrued - bonusAmount);
       const bal = accrued - withdrawn;
       const debt = (debtsRes.data ?? []).filter((d: any) => d.user_id === uid).reduce((a: number, d: any) => a + Number(d.amount), 0);
       const prevPaidCount = (prevPaidRes.data ?? []).filter((w: any) => w.user_id === uid).length;
       const prevPaidSum = (prevPaidRes.data ?? []).filter((w: any) => w.user_id === uid).reduce((a: number, w: any) => a + Number(w.amount), 0);
       const failedAttempts = (unverifiedRes.data ?? []).filter((u: any) => u.user_id === uid).length;
+      const adminCreditsTotal = (creditsRes.data ?? []).filter((c: any) => c.user_id === uid).reduce((a: number, c: any) => a + Number(c.amount), 0);
+      const transfersInTotal = (transfersInRes.data ?? []).filter((t: any) => t.receiver_id === uid).reduce((a: number, t: any) => a + Number(t.amount), 0);
+      const vouchersTotal = (vouchersRes.data ?? []).filter((v: any) => v.user_id === uid).reduce((a: number, v: any) => a + Number(v.amount), 0);
 
       const myReferees = (refereesRes.data ?? []).filter((r: any) => r.referred_by === uid);
       const referralBonuses = myReferees.map((r: any) => {
@@ -514,6 +519,8 @@ export const adminListWithdrawals = createServerFn({ method: "GET" }).handler(as
       }).sort((a: any, b: any) => Number(b.bonusPaid) - Number(a.bonusPaid) || b.firstVerifies - a.firstVerifies);
       const referralBonusTotal = referralBonuses.reduce((s: number, r: any) => s + r.bonusAmount, 0);
       const referralPaidCount = referralBonuses.filter((r: any) => r.bonusPaid).length;
+      // Legitimate income sources (excluding transfers-out and mining net = accrued - bonus_amount)
+      const legitIncomeTotal = accrued + adminCreditsTotal + transfersInTotal;
 
       signalsMap.set(uid, {
         verifiedTasks: verified,
@@ -530,6 +537,16 @@ export const adminListWithdrawals = createServerFn({ method: "GET" }).handler(as
         referralBonuses,
         referralBonusTotal,
         referralPaidCount,
+        // Balance source breakdown — shows admin exactly where the money came from.
+        incomeBreakdown: {
+          miningAccrued,
+          bonusTotal: bonusAmount,
+          referralBonusTotal,
+          vouchersTotal,
+          adminCreditsTotal,
+          transfersInTotal,
+          legitIncomeTotal,
+        },
       });
     }
   }
