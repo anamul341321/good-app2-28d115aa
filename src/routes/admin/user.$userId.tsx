@@ -779,6 +779,11 @@ function UserDetail() {
         )}
       </div>
 
+      {/* 📅 Daily Referral Activity Report */}
+      <DailyReportPanel userId={userId} />
+
+
+
       {/* Direct Payout */}
       <div className="glass rounded-2xl p-4 space-y-3 border border-emerald/30">
         <div className="flex items-center gap-2">
