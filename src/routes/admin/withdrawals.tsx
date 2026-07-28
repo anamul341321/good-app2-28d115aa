@@ -235,6 +235,34 @@ function AdminWithdrawals() {
                     <div>🏦 Balance: <span className="mono-num font-bold">{s.balance.toFixed(0)}৳</span></div>
                   </div>
 
+                  {/* 💵 Balance source breakdown — কোন কোন উৎস থেকে টাকা এসেছে */}
+                  {s.incomeBreakdown && (
+                    <div className="pt-1.5 border-t border-white/5 space-y-0.5">
+                      <p className="text-[10px] font-black text-amber">💵 ব্যালেন্স যেভাবে এসেছে</p>
+                      <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-[10px]">
+                        {Number(s.incomeBreakdown.miningAccrued) > 0 && (
+                          <div>⛏️ Mining: <span className="mono-num font-bold">{Number(s.incomeBreakdown.miningAccrued).toFixed(0)}৳</span></div>
+                        )}
+                        {Number(s.incomeBreakdown.bonusTotal) > 0 && (
+                          <div>🎁 Bonus (verify+refer): <span className="mono-num font-bold">{Number(s.incomeBreakdown.bonusTotal).toFixed(0)}৳</span></div>
+                        )}
+                        {Number(s.incomeBreakdown.vouchersTotal) > 0 && (
+                          <div>🎫 Voucher: <span className="mono-num font-bold">{Number(s.incomeBreakdown.vouchersTotal).toFixed(0)}৳</span></div>
+                        )}
+                        {Number(s.incomeBreakdown.adminCreditsTotal) !== 0 && (
+                          <div>🛠 Admin credit: <span className="mono-num font-bold">{Number(s.incomeBreakdown.adminCreditsTotal).toFixed(0)}৳</span></div>
+                        )}
+                        {Number(s.incomeBreakdown.transfersInTotal) > 0 && (
+                          <div>📥 Transfer in: <span className="mono-num font-bold">{Number(s.incomeBreakdown.transfersInTotal).toFixed(0)}৳</span></div>
+                        )}
+                      </div>
+                      <p className="text-[10px] text-emerald font-black pt-0.5">
+                        মোট legit আয়: <span className="mono-num">{Number(s.incomeBreakdown.legitIncomeTotal).toFixed(0)}৳</span>
+                      </p>
+                    </div>
+                  )}
+
+
                   {Array.isArray(s.referralBonuses) && s.referralBonuses.length > 0 && (
                     <div className="pt-1.5 border-t border-white/5 space-y-1">
                       <p className="text-[10px] font-black text-cyan">
