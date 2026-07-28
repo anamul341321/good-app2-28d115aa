@@ -784,8 +784,8 @@ function UserDetail() {
         )}
       </div>
 
-      {/* 📅 Daily Referral Activity Report */}
-      <DailyReportPanel userId={userId} />
+
+
 
 
 
