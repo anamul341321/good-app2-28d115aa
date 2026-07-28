@@ -444,14 +444,17 @@ export const adminListWithdrawals = createServerFn({ method: "GET" }).handler(as
   const pendingUserIds = Array.from(new Set(rows.filter((r) => r.status === "pending").map((r) => r.user_id)));
   const signalsMap = new Map<string, any>();
   if (pendingUserIds.length > 0) {
-    const [tasksRes, miningRes, debtsRes, prevPaidRes, unverifiedRes, refereesRes, settingsRes] = await Promise.all([
+    const [tasksRes, miningRes, debtsRes, prevPaidRes, unverifiedRes, refereesRes, settingsRes, creditsRes, transfersInRes, vouchersRes] = await Promise.all([
       supabaseAdmin.from("tasks").select("user_id, status, whitelist_ok, wallet_address, reverify_count").in("user_id", pendingUserIds),
-      supabaseAdmin.from("mining_state").select("user_id, accrued_amount, withdrawn_amount, is_active").in("user_id", pendingUserIds),
+      supabaseAdmin.from("mining_state").select("user_id, accrued_amount, withdrawn_amount, bonus_amount, is_active").in("user_id", pendingUserIds),
       supabaseAdmin.from("user_debts").select("user_id, amount, status").in("user_id", pendingUserIds).eq("status", "active"),
       supabaseAdmin.from("withdrawals").select("user_id, amount, status").in("user_id", pendingUserIds).eq("status", "paid"),
       supabaseAdmin.from("unverified_attempts").select("user_id").in("user_id", pendingUserIds),
       supabaseAdmin.from("profiles").select("id, uid_seq, display_name, phone_number, referred_by, bonus_first_verify_claimed").in("referred_by", pendingUserIds),
       supabaseAdmin.from("bonus_settings").select("referrer_bonus, promo_active, promo_start_at, promo_end_at, promo_referrer_bonus").eq("id", "default").maybeSingle(),
+      supabaseAdmin.from("admin_credits").select("user_id, amount").in("user_id", pendingUserIds),
+      supabaseAdmin.from("transfers").select("receiver_id, amount").in("receiver_id", pendingUserIds),
+      supabaseAdmin.from("bonus_vouchers").select("user_id, amount, status").in("user_id", pendingUserIds).eq("status", "claimed"),
     ]);
 
     // Compute qualifying first-verify counts for every referee
