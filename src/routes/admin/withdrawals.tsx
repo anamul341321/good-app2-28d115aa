@@ -140,23 +140,24 @@ function AdminWithdrawals() {
           if (s) {
             // Total lifetime withdraw request (paid + this pending)
             const totalRequested = s.prevPaidSum + Number(w.amount);
-            const earningGap = totalRequested - s.accrued;
+            const legitIncome = Number(s.incomeBreakdown?.legitIncomeTotal ?? s.accrued);
+            const earningGap = totalRequested - legitIncome;
 
             if (s.activeDebt > 0) dangerFlags.push({ icon: "⚠️", text: `Debt ${s.activeDebt.toFixed(0)}৳`, reason: "আগের ওয়ার্নিং পরিশোধ করেনি" });
             if (s.notWhitelistedTasks > 0) dangerFlags.push({ icon: "🔴", text: `${s.notWhitelistedTasks} not-whitelist wallet`, reason: "কিছু wallet whitelist নাই — fake identity সন্দেহ" });
-            // Only flag "verify only" if user has NO qualifying referral bonuses covering the earnings
-            const refBonusTotal = Number(s.referralBonusTotal ?? 0);
-            if (s.verifiedTasks < 10 && refBonusTotal < s.accrued * 0.5) {
-              dangerFlags.push({ icon: "⚠️", text: `${s.verifiedTasks}/10 verify only`, reason: `১০টা slot এখনো complete করেনি (referral bonus ${refBonusTotal.toFixed(0)}৳)` });
+            // Only flag "verify only" if requested amount is NOT covered by real income sources
+            // (mining accrued + referral bonuses + admin credits + transfers in + vouchers).
+            if (s.verifiedTasks < 10 && legitIncome < totalRequested * 0.9) {
+              dangerFlags.push({ icon: "⚠️", text: `${s.verifiedTasks}/10 verify only`, reason: `১০টা slot এখনো complete করেনি এবং আয়ের উৎসও যথেষ্ট না (income ${legitIncome.toFixed(0)}৳ vs চাওয়া ${totalRequested.toFixed(0)}৳)` });
             }
-            if (earningGap > 50) dangerFlags.push({ icon: "🚨", text: `Overdraw ${earningGap.toFixed(0)}৳`, reason: `Earn করেছে ${s.accrued.toFixed(0)}৳ কিন্তু withdraw চাইছে ${totalRequested.toFixed(0)}৳` });
+            if (earningGap > 50) dangerFlags.push({ icon: "🚨", text: `Overdraw ${earningGap.toFixed(0)}৳`, reason: `মোট legit আয় ${legitIncome.toFixed(0)}৳ কিন্তু withdraw চাইছে ${totalRequested.toFixed(0)}৳` });
             if (s.failedAttempts > 50) dangerFlags.push({ icon: "🕵️", text: `${s.failedAttempts} failed attempts`, reason: "অনেক failed face attempt — bot-like আচরণ" });
 
             // Info only (not fraud, just context)
             if (!s.miningActive) infoFlags.push({ icon: "⏸️", text: "Mining off" });
             if (s.prevPaidCount === 0) infoFlags.push({ icon: "🆕", text: "First withdraw" });
             if (s.reverifyCount > 0) infoFlags.push({ icon: "🔁", text: `${s.reverifyCount} re-verify` });
-            if (s.referralPaidCount > 0) infoFlags.push({ icon: "🎁", text: `${s.referralPaidCount} referral bonus (${refBonusTotal.toFixed(0)}৳)` });
+            if (s.referralPaidCount > 0) infoFlags.push({ icon: "🎁", text: `${s.referralPaidCount} referral bonus (${Number(s.referralBonusTotal ?? 0).toFixed(0)}৳)` });
           }
           const isLegit = dangerFlags.length === 0;
           const hasDanger = !isLegit;
