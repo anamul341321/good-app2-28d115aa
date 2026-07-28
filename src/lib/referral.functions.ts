@@ -31,24 +31,25 @@ export const getMyReferrals = createServerFn({ method: "GET" })
     let tasks: any[] = [];
     if (refereeIds.length > 0) {
       const CHUNK = 150;
-      const fetchAll = async (select: string) => {
+      const chunks: string[][] = [];
+      for (let i = 0; i < refereeIds.length; i += CHUNK) chunks.push(refereeIds.slice(i, i + CHUNK));
+      const fetchChunk = async (chunk: string[]) => {
         const rows: any[] = [];
-        for (let i = 0; i < refereeIds.length; i += CHUNK) {
-          const chunk = refereeIds.slice(i, i + CHUNK);
-          for (let from = 0; ; from += 1000) {
-            const { data, error } = await supabaseAdmin
-              .from("tasks")
-              .select(select)
-              .in("user_id", chunk)
-              .range(from, from + 999);
-            if (error) throw new Error(error.message);
-            rows.push(...(data ?? []));
-            if (!data || data.length < 1000) break;
-          }
+        for (let from = 0; ; from += 1000) {
+          const { data, error } = await supabaseAdmin
+            .from("tasks")
+            .select("id, user_id, slot, status, whitelist_ok, wallet_address, initial_verify_at, reverify_count")
+            .in("user_id", chunk)
+            .range(from, from + 999);
+          if (error) throw new Error(error.message);
+          rows.push(...(data ?? []));
+          if (!data || data.length < 1000) break;
         }
         return rows;
       };
-      tasks = await fetchAll("id, user_id, slot, status, whitelist_ok, wallet_address, initial_verify_at, reverify_count");
+      // Parallelize chunk fetches so heavy referrers don't wait on sequential round-trips.
+      const chunkResults = await Promise.all(chunks.map(fetchChunk));
+      tasks = chunkResults.flat();
     }
 
 
