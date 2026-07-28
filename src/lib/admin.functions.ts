@@ -1511,3 +1511,168 @@ export const adminSetUserBlocked = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true, blocked: data.blocked };
   });
+
+// ---------------- Daily Referral Activity Report ----------------
+// For a given referrer, returns a per-day breakdown of their referees'
+// first-verifies & re-verifies, plus which referees hit 10 unique slots
+// completed on which date. Powers the printable "sada kagojer moto" report.
+export const adminUserDailyReport = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => z.object({ userId: z.string().uuid(), days: z.number().int().min(1).max(120).default(60).optional() }).parse(i))
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await gate();
+    const daysBack = data.days ?? 60;
+
+    const { data: profile } = await supabaseAdmin
+      .from("profiles")
+      .select("id, display_name, phone_number, referral_code, uid_seq")
+      .eq("id", data.userId)
+      .maybeSingle();
+
+    // Get referees (paginated)
+    const referees: any[] = [];
+    for (let from = 0; ; from += 1000) {
+      const { data: rs, error } = await supabaseAdmin
+        .from("profiles")
+        .select("id, uid_seq, display_name, phone_number, created_at")
+        .eq("referred_by", data.userId)
+        .order("created_at", { ascending: false })
+        .range(from, from + 999);
+      if (error) throw new Error(error.message);
+      referees.push(...(rs ?? []));
+      if (!rs || rs.length < 1000) break;
+    }
+    const refereeById = new Map(referees.map((r) => [r.id, r]));
+    const refereeIds = referees.map((r) => r.id);
+
+    let taskRows: any[] = [];
+    if (refereeIds.length > 0) {
+      const CHUNK = 150;
+      const chunks: string[][] = [];
+      for (let i = 0; i < refereeIds.length; i += CHUNK) chunks.push(refereeIds.slice(i, i + CHUNK));
+      const fetchChunk = async (chunk: string[]) => {
+        const rows: any[] = [];
+        for (let from = 0; ; from += 1000) {
+          const { data, error } = await supabaseAdmin
+            .from("tasks")
+            .select("id, user_id, slot, initial_verify_at, last_reverified_at, reverify_count")
+            .in("user_id", chunk)
+            .range(from, from + 999);
+          if (error) throw new Error(error.message);
+          rows.push(...(data ?? []));
+          if (!data || data.length < 1000) break;
+        }
+        return rows;
+      };
+      const results = await Promise.all(chunks.map(fetchChunk));
+      taskRows = results.flat();
+    }
+
+    // Bucket events by date (Asia/Dhaka).
+    const tzFmt = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Dhaka", year: "numeric", month: "2-digit", day: "2-digit" });
+    const dayKey = (iso?: string | null) => (iso ? tzFmt.format(new Date(iso)) : null);
+    const todayKey = tzFmt.format(new Date());
+
+    type Event = { date: string; userId: string; slot: number; kind: "first" | "reverify"; at: string };
+    const events: Event[] = [];
+    // Also track cumulative unique first-verify slots per user (in chronological order) to detect "10-slot complete" day.
+    const firstEventsByUser = new Map<string, { date: string; slot: number; at: string }[]>();
+
+    for (const t of taskRows) {
+      if (t.initial_verify_at) {
+        const d = dayKey(t.initial_verify_at)!;
+        events.push({ date: d, userId: t.user_id, slot: Number(t.slot), kind: "first", at: t.initial_verify_at });
+        const arr = firstEventsByUser.get(t.user_id) ?? [];
+        arr.push({ date: d, slot: Number(t.slot), at: t.initial_verify_at });
+        firstEventsByUser.set(t.user_id, arr);
+      }
+      if (Number(t.reverify_count ?? 0) > 0 && t.last_reverified_at) {
+        const d = dayKey(t.last_reverified_at)!;
+        events.push({ date: d, userId: t.user_id, slot: Number(t.slot), kind: "reverify", at: t.last_reverified_at });
+      }
+    }
+
+    // Detect the day each referee completed 10 unique slot first-verifies.
+    const completionByUser = new Map<string, { date: string; at: string }>();
+    for (const [uid, arr] of firstEventsByUser) {
+      arr.sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
+      const seen = new Set<number>();
+      for (const e of arr) {
+        seen.add(e.slot);
+        if (seen.size === 10) { completionByUser.set(uid, { date: e.date, at: e.at }); break; }
+      }
+    }
+
+    // Group events by day.
+    const cutoffMs = Date.now() - daysBack * 24 * 60 * 60 * 1000;
+    const dayMap = new Map<string, {
+      date: string;
+      firstVerifies: { userId: string; name: string; uid: number; slot: number; at: string }[];
+      reverifies: { userId: string; name: string; uid: number; slot: number; at: string }[];
+      completions: { userId: string; name: string; uid: number; at: string }[];
+    }>();
+    const bucket = (d: string) => {
+      let b = dayMap.get(d);
+      if (!b) { b = { date: d, firstVerifies: [], reverifies: [], completions: [] }; dayMap.set(d, b); }
+      return b;
+    };
+    for (const e of events) {
+      if (new Date(e.at).getTime() < cutoffMs) continue;
+      const ref = refereeById.get(e.userId);
+      const info = { userId: e.userId, name: ref?.display_name ?? "User", uid: Number(ref?.uid_seq ?? 0), slot: e.slot, at: e.at };
+      if (e.kind === "first") bucket(e.date).firstVerifies.push(info);
+      else bucket(e.date).reverifies.push(info);
+    }
+    for (const [uid, c] of completionByUser) {
+      if (new Date(c.at).getTime() < cutoffMs) continue;
+      const ref = refereeById.get(uid);
+      bucket(c.date).completions.push({ userId: uid, name: ref?.display_name ?? "User", uid: Number(ref?.uid_seq ?? 0), at: c.at });
+    }
+
+    const days = Array.from(dayMap.values()).sort((a, b) => b.date.localeCompare(a.date));
+    const today = dayMap.get(todayKey) ?? { date: todayKey, firstVerifies: [], reverifies: [], completions: [] };
+
+    // Per-referee totals across the window.
+    const perRefTotals = referees.map((r) => {
+      const arr = firstEventsByUser.get(r.id) ?? [];
+      const firstSlots = new Set(arr.map((e) => e.slot));
+      const revTasks = taskRows.filter((t) => t.user_id === r.id && Number(t.reverify_count ?? 0) > 0);
+      const revSlots = new Set(revTasks.map((t) => Number(t.slot)));
+      const completedAt = completionByUser.get(r.id)?.at ?? null;
+      return {
+        userId: r.id,
+        uid: Number(r.uid_seq ?? 0),
+        name: r.display_name ?? "User",
+        phone: r.phone_number ?? "",
+        joinedAt: r.created_at,
+        firstVerifies: firstSlots.size,
+        reverifies: revSlots.size,
+        completedAt,
+      };
+    }).sort((a, b) => (b.firstVerifies + b.reverifies) - (a.firstVerifies + a.reverifies));
+
+    return {
+      profile: {
+        id: profile?.id,
+        name: profile?.display_name ?? "User",
+        uid: Number((profile as any)?.uid_seq ?? 0),
+        phone: profile?.phone_number ?? "",
+        referralCode: profile?.referral_code ?? "",
+      },
+      today: {
+        firstVerifies: today.firstVerifies.length,
+        reverifies: today.reverifies.length,
+        completions: today.completions,
+        rows: today.firstVerifies.concat(today.reverifies.map((r) => ({ ...r }))), // for quick display
+      },
+      totals: {
+        referees: referees.length,
+        firstVerifies: events.filter((e) => e.kind === "first").length,
+        reverifies: events.filter((e) => e.kind === "reverify").length,
+        completions: completionByUser.size,
+      },
+      days,
+      perReferee: perRefTotals,
+      generatedAt: new Date().toISOString(),
+      windowDays: daysBack,
+    };
+  });
