@@ -38,10 +38,29 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return Response.json({ ok: true, ignored: "other-chat" });
         }
 
+        // ---- new members joined → warm welcome -------------------------------
+        const joined = (msg.new_chat_members ?? []) as any[];
+        if (joined.length) {
+          if ((settings as any).welcome_enabled !== false) {
+            const { welcomeReply } = await import("@/lib/telegram-bot.server");
+            for (const m of joined) {
+              if (m?.is_bot) continue;
+              const nm = [m.first_name, m.last_name].filter(Boolean).join(" ") || m.username || "বন্ধু";
+              await sendMessage(
+                chatId,
+                welcomeReply(nm, (settings as any).welcome_message ?? null, (settings as any).default_video_url ?? null),
+              );
+            }
+          }
+          return Response.json({ ok: true, flow: "welcome" });
+        }
+        if (msg.left_chat_member) return Response.json({ ok: true, ignored: "left" });
+
         const text: string = msg.text ?? msg.caption ?? "";
         const photos = msg.photo as { file_id: string }[] | undefined;
         const senderName = [msg.from?.first_name, msg.from?.last_name].filter(Boolean).join(" ")
           || msg.from?.username || "User";
+
 
         // Idempotency: skip if this update was already stored.
         const { data: seen } = await supabaseAdmin
@@ -530,6 +549,29 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return Response.json({ ok: true, flow: "verify_help", actions });
         }
 
+        // ---- "ভিডিও দিন / কিভাবে কাজ করবো" → tutorial video link -------------
+        const howToWork = /(kivabe|kivbe|kibhabe|কিভাবে|কীভাবে)[^\n]{0,25}(kaj|কাজ|use|চালাব|করব|করবো|start|শুরু)/i.test(norm)
+          || /(video|ভিডিও|টিউটোরিয়াল|tutorial)/i.test(norm);
+        if ((decision.intent === "video_request" || howToWork) && !decision.should_delete
+            && settings.auto_reply_enabled) {
+          const list = (videoRows ?? []) as any[];
+          const topic = (decision as any).media_topic as string | null;
+          const hay = norm.toLowerCase();
+          const match =
+            (topic && list.find((v) => String(v.topic).trim().toLowerCase() === topic.trim().toLowerCase())) ||
+            list.find((v: any) => (v.keywords ?? []).some((k: string) => k && hay.includes(String(k).toLowerCase()))) ||
+            null;
+          const { videoReply, DEFAULT_TUTORIAL_VIDEO } = await import("@/lib/telegram-bot.server");
+          const url = match?.url || (settings as any).default_video_url || DEFAULT_TUTORIAL_VIDEO;
+          const reply = videoReply(senderName, url, match?.topic ?? null, match?.note ?? null);
+          await sendMessage(chatId, reply);
+          actions.push("video");
+          await logMessage(decision.verdict, actions.join(","), reply, matchedUid);
+          return Response.json({ ok: true, flow: "video", actions });
+        }
+
+
+
         // ---- pick a saved voice note for this topic, if the admin recorded one -
         const voiceMatch = (() => {
           const list = (voiceRows ?? []) as any[];
@@ -644,8 +686,18 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         // ---- UID lookup: instant account card in the group --------------------
         if ((settings as any).uid_lookup_enabled !== false && !decision.should_delete) {
 
+          // Only look an account up when the user really meant a UID —
+          // never because a general question happened to contain a number
+          // (e.g. "10 ta verify korar por kotodin por re verify?").
+          const explicitUid = /\b(uid|আইডি|আই ডি|id\s*no|আইডি নাম্বার)\b/i.test(norm);
+          const onlyNumber = /^[#\s]*([A-Za-z0-9]{2,9})[\s.]*$/.test(norm.trim());
+          const accountTopic = /(রেফার|refer|ব্যালেন্স|balance|হিসাব|একাউন্ট|account|উইথড্র|withdraw|মাইনিং|mining|বোনাস|bonus)/i.test(norm);
+          const askedAccount = explicitUid || onlyNumber || (accountTopic && !!decision.uid);
           const inline = text.match(/\b(\d{2,9})\b/);
-          const candidate = decision.uid || (decision.needs_uid ? null : inline?.[1] ?? null);
+          const candidate = askedAccount
+            ? decision.uid || (decision.needs_uid ? null : inline?.[1] ?? null)
+            : null;
+
 
           if (candidate) {
             const { buildUserCard } = await import("@/lib/telegram-lookup.server");

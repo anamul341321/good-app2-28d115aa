@@ -113,6 +113,10 @@ function SettingsPanel() {
         photo_privacy_enabled: form.photo_privacy_enabled !== false,
         escalate_enabled: form.escalate_enabled !== false,
         reply_variety: form.reply_variety !== false,
+        welcome_enabled: form.welcome_enabled !== false,
+        welcome_message: form.welcome_message?.trim() || null,
+        default_video_url: form.default_video_url?.trim() || null,
+
 
 
 
@@ -192,6 +196,9 @@ function SettingsPanel() {
           value={form.escalate_enabled !== false} onChange={(v) => set("escalate_enabled", v)} />
         <Toggle label="অটো ব্লক 🚫" hint="বারবার নিয়ম ভাঙলে বট নিজেই গ্রুপ থেকে ব্লক করে দেবে"
           value={form.auto_block_enabled !== false} onChange={(v) => set("auto_block_enabled", v)} />
+        <Toggle label="নতুন মেম্বারকে স্বাগতম 🎉" hint="কেউ গ্রুপে জয়েন করলে বট সুন্দর করে ওয়েলকাম জানাবে"
+          value={form.welcome_enabled !== false} onChange={(v) => set("welcome_enabled", v)} />
+
 
       </div>
 
@@ -210,11 +217,18 @@ function SettingsPanel() {
         <Field label="কত সতর্কতার পর অটো ব্লক" type="number" hint="যেমন ৫ — ৫ বার নিয়ম ভাঙলে গ্রুপ থেকে ব্লক"
           value={String(form.block_threshold ?? 5)} onChange={(v) => set("block_threshold", v)} />
 
+        <Field label="ডিফল্ট ভিডিও লিংক 📺" hint="কেউ 'কিভাবে কাজ করবো / ভিডিও দিন' বললে এই লিংকটি যাবে"
+          value={form.default_video_url ?? ""} onChange={(v) => set("default_video_url", v)} />
+
         <Area label="UID চাওয়ার মেসেজ" rows={2}
           value={form.ask_uid_message ?? ""} onChange={(v) => set("ask_uid_message", v)} />
         <Area label="স্লট নম্বর চাওয়ার মেসেজ" rows={2}
           value={form.ask_slot_message ?? ""} onChange={(v) => set("ask_slot_message", v)} />
+        <Area label="ওয়েলকাম মেসেজ 🎉 ({name} = নাম, {video} = ভিডিও লিংক)" rows={5}
+          value={form.welcome_message ?? ""} onChange={(v) => set("welcome_message", v)} />
         <Area label="Bot এর পরিচয় / আচরণ" rows={4} value={form.persona ?? ""} onChange={(v) => set("persona", v)} />
+
+
 
         <Area label="গ্রুপের নিয়ম (bot এগুলো মানবে ও শেখাবে)" rows={6} value={form.rules ?? ""} onChange={(v) => set("rules", v)} />
 

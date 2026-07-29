@@ -32,15 +32,20 @@ async function api<T = any>(method: string, body: Record<string, unknown>): Prom
   }
 }
 
-export function sendMessage(chatId: string | number, text: string, replyTo?: number) {
+/**
+ * Send a plain message. We intentionally do NOT quote the user's own message
+ * (no reply_to) — repeating the user's text back looks robotic in the group.
+ * The `replyTo` argument is kept for call-site compatibility and ignored.
+ */
+export function sendMessage(chatId: string | number, text: string, _replyTo?: number) {
   return api("sendMessage", {
     chat_id: chatId,
     text,
     parse_mode: "HTML",
     disable_web_page_preview: true,
-    ...(replyTo ? { reply_to_message_id: replyTo, allow_sending_without_reply: true } : {}),
   });
 }
+
 
 /** Send a stored voice note (opus/mp3/ogg bytes) into a chat. */
 export async function sendVoice(
@@ -256,6 +261,10 @@ ${opts.warnCount ? `এই ইউজার ইতিমধ্যে ${opts.warnC
 - "কিভাবে টাকা পাবো / ইনকাম কিভাবে / বোনাস কত" জাতীয় প্রশ্নে উপরের আয়ের ধাপ ও রেটগুলো সুন্দর করে সাজিয়ে বুঝিয়ে দেবে (১০ স্লট ১ম ভেরিফাই → ৩/৪ দিন পর রি-ভেরিফাই → বোনাস ও মাইনিং)।
 - ইউজার যা-ই জানতে চাক (রেফার সংখ্যা, ব্যালেন্স, ভেরিফাই, উইথড্র, মাইনিং, নিয়ম) — জানার চেষ্টা করবে, এড়িয়ে যাবে না। একাউন্টভিত্তিক হলে UID চাইবে।
 - স্লট নিয়ে কথা বললে কখনো "১ থেকে ১০" বলবে না — ইউজারের ২৩/২৫ নম্বর স্লটও থাকতে পারে।
+- ❌ ইউজারের মেসেজটা হুবহু আবার লিখবে না বা কোট করবে না — সরাসরি সুন্দর করে গুছিয়ে উত্তর দেবে।
+- ❌ মেসেজে কোনো সংখ্যা থাকলেই সেটাকে UID ভাববে না। "১০টি স্লট", "৩-৪ দিন", "২০০৳" — এগুলো UID নয়। uid শুধু তখনই দেবে যখন ইউজার স্পষ্টভাবে নিজের UID/আইডি নম্বর জানাচ্ছে বা নিজের একাউন্টের হিসাব চাইছে।
+- "কিভাবে কাজ করব / ভিডিও দিন / দেখিয়ে দিন" ধরনের প্রশ্নে intent = "video_request" দেবে।
+
 
 তোমার কাজ: গ্রুপের একটি মেসেজ (এবং থাকলে ছবি/স্ক্রিনশট) বিশ্লেষণ করে সিদ্ধান্ত দাও।
 - verdict: "ok" (স্বাভাবিক), "question" (সাপোর্ট প্রশ্ন), "spam", "abuse" (গালি/আক্রমণ/অ্যাডমিনকে হুমকি), "scam" (প্রতারণা/ভুয়া অফার/লিংক)
@@ -425,3 +434,44 @@ export async function faqImageBase64(path: string): Promise<string | null> {
   }
 }
 
+
+// ---------------------------------------------------------------------------
+// Group welcome + tutorial video helpers
+// ---------------------------------------------------------------------------
+
+export const DEFAULT_TUTORIAL_VIDEO = "https://youtu.be/gbUn9GdDvK8?si=Uu-6IXQSHpsGhiJG";
+
+/** Warm Bengali welcome for a member who just joined the group. */
+export function welcomeReply(name: string, template: string | null, videoUrl: string | null): string {
+  const video = videoUrl || DEFAULT_TUTORIAL_VIDEO;
+  if (template && template.trim()) {
+    return template.replaceAll("{name}", `<b>${name}</b>`).replaceAll("{video}", video);
+  }
+  const openers = [
+    `🎉 স্বাগতম <b>${name}</b>! Good-App পরিবারে আপনাকে সাদরে আমন্ত্রণ 💙`,
+    `👋 <b>${name}</b>, গ্রুপে স্বাগতম! আপনাকে পেয়ে আমরা খুশি 🤝`,
+    `🌸 <b>${name}</b> — Good-App কমিউনিটিতে স্বাগতম! 💙`,
+  ];
+  const pick = (a: string[]) => a[Math.floor(Math.random() * a.length)];
+  return (
+    `${pick(openers)}\n\n` +
+    `✅ এখানে ফেস ভেরিফিকেশন করে <b>বোনাস</b> ও <b>মাইনিং ইনকাম</b> করতে পারবেন।\n` +
+    `📺 কিভাবে কাজ করতে হয় দেখে নিন: ${video}\n\n` +
+    `যেকোনো সমস্যা হলে এখানেই লিখুন — আমি সাথে সাথে সাহায্য করব 🙂`
+  );
+}
+
+/** Nicely formatted "watch this video" message. */
+export function videoReply(name: string, url: string, topic?: string | null, note?: string | null): string {
+  const openers = [
+    `${name}, পুরো বিষয়টা ভিডিওতে দেখলে সবচেয়ে সহজে বুঝবেন 👇`,
+    `আচ্ছা ${name} 🙂 নিচের ভিডিওটা এক নজরে দেখে নিন, সব পরিষ্কার হয়ে যাবে 👇`,
+    `${name} ভাই, এই ভিডিওটাতে ধাপে ধাপে দেখানো আছে 👇`,
+  ];
+  const pick = (a: string[]) => a[Math.floor(Math.random() * a.length)];
+  return (
+    `${pick(openers)}\n\n` +
+    `📺 <b>${topic || "কিভাবে কাজ করবেন"}</b>${note ? ` — ${note}` : ""}\n${url}\n\n` +
+    `দেখে বুঝতে সমস্যা হলে বলুন, আমি লিখেও বুঝিয়ে দেব 💙`
+  );
+}
