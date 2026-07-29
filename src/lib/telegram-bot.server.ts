@@ -32,15 +32,20 @@ async function api<T = any>(method: string, body: Record<string, unknown>): Prom
   }
 }
 
-export function sendMessage(chatId: string | number, text: string, replyTo?: number) {
+/**
+ * Send a plain message. We intentionally do NOT quote the user's own message
+ * (no reply_to) — repeating the user's text back looks robotic in the group.
+ * The `replyTo` argument is kept for call-site compatibility and ignored.
+ */
+export function sendMessage(chatId: string | number, text: string, _replyTo?: number) {
   return api("sendMessage", {
     chat_id: chatId,
     text,
     parse_mode: "HTML",
     disable_web_page_preview: true,
-    ...(replyTo ? { reply_to_message_id: replyTo, allow_sending_without_reply: true } : {}),
   });
 }
+
 
 /** Send a stored voice note (opus/mp3/ogg bytes) into a chat. */
 export async function sendVoice(
