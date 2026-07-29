@@ -1208,7 +1208,7 @@ function buildReportHtml(d: any): string {
             <td class="num">${i + 1}</td>
             <td><b>${esc(r.name)}</b></td>
             <td class="num">${esc(r.uid)}</td>
-            <td>${esc(r.phone)}</td>
+            <td>${esc(maskPhone(r.phone))}</td>
             <td class="num">${r.firstToday || "—"}</td>
             <td class="num">${r.reToday || "—"}</td>
             <td>${r.completedToday ? `<span class="pill pill-a">🎯 ১০/১০ পূর্ণ</span>` : `<span class="pill pill-c">চলছে</span>`}</td>
@@ -1224,7 +1224,7 @@ function buildReportHtml(d: any): string {
             <td class="num">${i + 1}</td>
             <td><b>${esc(r.name)}</b></td>
             <td class="num">${esc(r.uid)}</td>
-            <td>${esc(r.phone)}</td>
+            <td>${esc(maskPhone(r.phone))}</td>
             <td class="num">${r.firstTotal}</td>
             <td class="num">${r.reTotal}</td>
             <td>${r.completedAt ? esc(new Date(r.completedAt).toLocaleDateString("en-CA", { timeZone: "Asia/Dhaka" })) : "—"}</td>
@@ -1261,7 +1261,7 @@ function buildReportHtml(d: any): string {
 
 <h1>রেফার রিপোর্ট — ${esc(d.profile.name)}</h1>
 <div class="meta">
-  UID <b>${esc(d.profile.uid)}</b> · রেফার কোড <b>${esc(d.profile.referralCode)}</b> · ফোন ${esc(d.profile.phone)}<br />
+  UID <b>${esc(d.profile.uid)}</b> · রেফার কোড <b>${esc(d.profile.referralCode)}</b> · ফোন ${esc(maskPhone(d.profile.phone))}<br />
   তৈরি: ${esc(genDate)} (Asia/Dhaka)
 </div>
 
