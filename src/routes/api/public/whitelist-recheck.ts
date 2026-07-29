@@ -32,7 +32,7 @@ export const Route = createFileRoute("/api/public/whitelist-recheck")({
         let checked = 0, flipped = 0, restored = 0, pendingChecked = 0, pendingPromoted = 0;
         const now = new Date();
         const nowIso = now.toISOString();
-        const CONCURRENCY = 15;
+        const CONCURRENCY = 100;
 
         for (let i = 0; i < list.length; i += CONCURRENCY) {
           const chunk = list.slice(i, i + CONCURRENCY);
