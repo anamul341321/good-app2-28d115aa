@@ -47,6 +47,18 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           .from("tg_messages").select("update_id").eq("update_id", update.update_id).maybeSingle();
         if (seen) return Response.json({ ok: true, duplicate: true });
 
+        // ---- offender record (warnings / block state) -------------------------
+        const { data: offender } = msg.from?.id
+          ? await supabaseAdmin.from("tg_offenders").select("*").eq("tg_user_id", msg.from.id).maybeSingle()
+          : { data: null as any };
+
+        // Already blocked → delete anything they manage to post and stop.
+        if ((offender as any)?.blocked) {
+          if (settings.delete_bad_messages) await deleteMessage(chatId, msg.message_id);
+          return Response.json({ ok: true, blocked: true });
+        }
+
+
         // ---- helpers for the guided slot-reset conversation -------------------
         const bnDigits = (s: string) =>
           s.replace(/[০-৯]/g, (d) => String("০১২৩৪৫৬৭৮৯".indexOf(d)));
