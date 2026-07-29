@@ -686,8 +686,18 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         // ---- UID lookup: instant account card in the group --------------------
         if ((settings as any).uid_lookup_enabled !== false && !decision.should_delete) {
 
+          // Only look an account up when the user really meant a UID —
+          // never because a general question happened to contain a number
+          // (e.g. "10 ta verify korar por kotodin por re verify?").
+          const explicitUid = /\b(uid|আইডি|আই ডি|id\s*no|আইডি নাম্বার)\b/i.test(norm);
+          const onlyNumber = /^[#\s]*([A-Za-z0-9]{2,9})[\s.]*$/.test(norm.trim());
+          const accountTopic = /(রেফার|refer|ব্যালেন্স|balance|হিসাব|একাউন্ট|account|উইথড্র|withdraw|মাইনিং|mining|বোনাস|bonus)/i.test(norm);
+          const askedAccount = explicitUid || onlyNumber || (accountTopic && !!decision.uid);
           const inline = text.match(/\b(\d{2,9})\b/);
-          const candidate = decision.uid || (decision.needs_uid ? null : inline?.[1] ?? null);
+          const candidate = askedAccount
+            ? decision.uid || (decision.needs_uid ? null : inline?.[1] ?? null)
+            : null;
+
 
           if (candidate) {
             const { buildUserCard } = await import("@/lib/telegram-lookup.server");
