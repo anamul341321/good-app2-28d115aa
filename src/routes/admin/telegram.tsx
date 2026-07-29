@@ -321,15 +321,24 @@ function FaqPanel() {
 
   return (
     <div className="space-y-3">
+      <div className="glass rounded-2xl p-4 border border-cyan/30">
+        <h3 className="font-black text-sm flex items-center gap-2">
+          <HelpCircle className="w-4 h-4 text-cyan" /> কোন ঘরে কী লিখবেন (সহজ ব্যাখ্যা)
+        </h3>
+        <ul className="mt-2 space-y-1.5 text-[11px] text-muted-foreground leading-relaxed">
+          <li>📌 <b className="text-foreground">উত্তর</b> — সবচেয়ে জরুরি ঘর। ইউজার এই সমস্যার কথা বললে বট ঠিক এই কথাটাই বলবে। শুধু এই ঘরটা পূরণ করলেই চলবে।</li>
+          <li>🖼️ <b className="text-foreground">রেফারেন্স স্ক্রিনশট</b> — ঐচ্ছিক। ছবি দিলে ইউজার একই রকম ছবি পাঠালেই বট এই উত্তরটা দেবে।</li>
+          <li>🏷️ <b className="text-foreground">বিষয়</b> — শুধু আপনার চেনার জন্য নাম (যেমন "উইথড্র দেরি")। খালি রাখলে আমরা নিজেরাই নাম বসিয়ে দেব।</li>
+          <li>🔑 <b className="text-foreground">কীওয়ার্ড</b> — ঐচ্ছিক। ইউজার কোন শব্দ লিখলে এই উত্তর দেবে (যেমন: withdraw, টাকা, দেরি)। খালি রাখলেও বট নিজে বুঝে নেবে।</li>
+        </ul>
+      </div>
+
       <div className="glass rounded-2xl p-4 space-y-2">
         <h3 className="font-black text-sm flex items-center gap-2"><Plus className="w-4 h-4 text-emerald" /> নতুন উত্তর যোগ করুন</h3>
         <p className="text-[10px] text-muted-foreground">
-          এখানে যা লিখবেন, bot ঠিক সেটাই ব্যবহার করে উত্তর দেবে — বাইরের তথ্য বানাবে না।
-          ছবি যোগ করলে ইউজার একই রকম স্ক্রিনশট পাঠালে bot এই উত্তরটিই দেবে।
+          শুধু <b>উত্তর</b> লিখুন (চাইলে ছবি দিন) — বাকিটা ঐচ্ছিক।
         </p>
-        <Field label="বিষয়" value={draft.topic} onChange={(v) => setDraft({ ...draft, topic: v })} />
-        <Field label="কীওয়ার্ড (কমা দিয়ে)" value={draft.keywords} onChange={(v) => setDraft({ ...draft, keywords: v })} />
-        <Area label="উত্তর" rows={5} value={draft.answer} onChange={(v) => setDraft({ ...draft, answer: v })} />
+        <Area label="উত্তর (এটাই বট বলবে)" rows={5} value={draft.answer} onChange={(v) => setDraft({ ...draft, answer: v })} />
 
         <div>
           <label className="block text-[11px] font-black mb-1">রেফারেন্স স্ক্রিনশট (ঐচ্ছিক)</label>
@@ -349,18 +358,26 @@ function FaqPanel() {
           {img && <img src={img.preview} alt="preview" className="mt-2 h-28 rounded-xl border border-border object-cover" />}
         </div>
 
+        <Field label="বিষয় (ঐচ্ছিক — নিজের চেনার জন্য)" value={draft.topic} onChange={(v) => setDraft({ ...draft, topic: v })} />
+        <Field label="কীওয়ার্ড (ঐচ্ছিক, কমা দিয়ে)" value={draft.keywords} onChange={(v) => setDraft({ ...draft, keywords: v })} />
+
         <button
-          onClick={() => draft.topic.trim() && draft.answer.trim() && upsert.mutate({
-            topic: draft.topic.trim(),
-            keywords: draft.keywords.split(",").map((s) => s.trim()).filter(Boolean),
-            answer: draft.answer.trim(), priority: 0, is_active: true,
-            image_base64: img?.b64 ?? null,
-          })}
+          onClick={() => {
+            if (!draft.answer.trim()) { toast.error("উত্তর লিখুন"); return; }
+            const auto = draft.answer.trim().split(/\s+/).slice(0, 5).join(" ");
+            upsert.mutate({
+              topic: draft.topic.trim() || (img ? `ছবি: ${auto}` : auto).slice(0, 110),
+              keywords: draft.keywords.split(",").map((s) => s.trim()).filter(Boolean),
+              answer: draft.answer.trim(), priority: 0, is_active: true,
+              image_base64: img?.b64 ?? null,
+            });
+          }}
           disabled={upsert.isPending}
           className="w-full py-2.5 rounded-xl gradient-cta font-black text-sm disabled:opacity-50">
           {upsert.isPending ? "সেভ হচ্ছে…" : "যোগ করুন"}
         </button>
       </div>
+
 
       {isLoading ? (
         <div className="py-8 flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-cyan" /></div>
