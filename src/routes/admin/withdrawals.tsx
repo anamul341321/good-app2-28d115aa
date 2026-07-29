@@ -90,10 +90,11 @@ function AdminWithdrawals() {
         <div className="min-w-0 flex-1">
           <p className="text-[10px] font-black text-cyan">আপনার নাম (Mark paid এর সময় ব্যবহার হবে)</p>
           <input
+            id="admin-paid-by-input"
             value={adminName}
             onChange={(e) => setAdminName(e.target.value)}
-            placeholder="যেমন: Anamul"
-            className="w-full mt-0.5 px-2 py-1 rounded bg-background/60 border border-white/10 text-xs outline-none focus:border-cyan"
+            placeholder="যেমন: Rafi / Anamul"
+            className={`w-full mt-0.5 px-2 py-1 rounded bg-background/60 border text-xs outline-none focus:border-cyan ${adminName.trim() ? "border-white/10" : "border-rose animate-pulse"}`}
           />
         </div>
       </div>
