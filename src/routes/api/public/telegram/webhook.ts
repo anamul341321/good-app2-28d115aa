@@ -323,13 +323,62 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           }
         }
 
-        if (settings.auto_reply_enabled && decision.reply && !decision.should_delete) {
+        if (settings.auto_reply_enabled && decision.reply && !decision.should_delete
+            && decision.intent !== "slot_reset") {
           await sendMessage(chatId, decision.reply, msg.message_id);
           actions.push("replied");
         }
 
+        // ---- guided slot reset: ask UID → ask slot → reset --------------------
+        if (decision.intent === "slot_reset" && (settings as any).slot_reset_enabled !== false
+            && !decision.should_delete && msg.from?.id) {
+          const uid = decision.uid || pickUid(norm);
+          if (uid) {
+            const { findProfileByUid } = await import("@/lib/telegram-slot.server");
+            const prof = await findProfileByUid(uid);
+            if (!prof) {
+              await saveSession({ step: "await_uid", uid: null, app_user_id: null });
+              await sendMessage(
+                chatId,
+                `❌ UID <code>${uid}</code> দিয়ে কোনো একাউন্ট পাওয়া যায়নি। সঠিক UID টি লিখুন।`,
+                msg.message_id,
+              );
+              actions.push("slot-reset:uid-notfound");
+            } else {
+              const slot = decision.slot ?? pickSlot(norm.replace(uid, " "));
+              await saveSession({ step: "await_slot", uid, app_user_id: prof.id });
+              if (slot) {
+                await doReset(uid, slot);
+                actions.push("slot-reset:done");
+              } else {
+                await sendMessage(
+                  chatId,
+                  `✅ একাউন্ট পাওয়া গেছে: <b>${prof.display_name || "ইউজার"}</b> (UID <code>${uid}</code>)\n\n` +
+                    `🔢 ${settings.ask_slot_message || "কোন নম্বর স্লটটি রিসেট করতে চান? (১ থেকে ১০)"}`,
+                  msg.message_id,
+                );
+                actions.push("slot-reset:asked-slot");
+              }
+              matchedUid = uid;
+            }
+          } else {
+            await saveSession({ step: "await_uid", uid: null, app_user_id: null });
+            await sendMessage(
+              chatId,
+              `🔄 <b>স্লট রিসেট</b>\n\nঠিক আছে, আমি স্লটটি রিসেট করে দিচ্ছি।\n` +
+                `🆔 প্রথমে আপনার <b>UID</b> নম্বরটি লিখুন (অ্যাপের প্রোফাইল পেজে পাবেন)।`,
+              msg.message_id,
+            );
+            actions.push("slot-reset:asked-uid");
+          }
+
+          await logMessage(decision.verdict, actions.join(",") || "none", decision.reply, matchedUid);
+          return Response.json({ ok: true, flow: "slot_reset", actions });
+        }
+
         // ---- UID lookup: instant account card in the group --------------------
         if ((settings as any).uid_lookup_enabled !== false && !decision.should_delete) {
+
           const inline = text.match(/\b(\d{2,9})\b/);
           const candidate = decision.uid || (decision.needs_uid ? null : inline?.[1] ?? null);
 
