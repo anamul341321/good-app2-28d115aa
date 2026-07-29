@@ -8,7 +8,11 @@
 
 `capacitor.config.ts` ফাইলে `appId: 'com.goodapp.mobile'` দেওয়া আছে। Play Store-এ publish করার আগে এটা পরিবর্তন করুন (উদাহরণ: `com.yourcompany.goodapp`)। একবার publish করলে আর পরিবর্তন করা যায় না।
 
-## উপায় ১: GitHub Actions দিয়ে Cloud Build (সবচেয়ে সহজ)
+## কিভাবে কাজ করছে?
+
+আপনার app-এ অনেক server function আছে (TanStack Start)। সেগুলো শুধু live website-এ চলে। তাই Capacitor এমনভাবে সেটআপ করা আছে যে Android app খুললে সরাসরি আপনার live website (`https://good-app2.lovable.app`) লোড হয়। ফলে সব feature ঠিকমতো কাজ করে।
+
+## উপায় ১: GitHub Actions দিয়ে Cloud Build (সবচেয়ে সহজ, PC লাগে না)
 
 ### Step 1: GitHub-এ project push করুন
 
@@ -28,14 +32,16 @@ Play Store-এ AAB লাগবে, APK নয়। Release build করতে 
 
 #### Signing Key তৈরি (একবারই করতে হবে)
 
-Cloud-এ key তৈরি করতে GitHub Actions-এর `workflow_dispatch` ব্যবহার করুন অথবা নিচের কমান্ড GitHub Codespaces-এ চালান:
+GitHub Actions-এ key তৈরি করতে workflow-টির মধ্যেই `workflow_dispatch` আছে। সহজ উপায়:
+
+1. GitHub Codespaces-এ বা যেকোনো cloud terminal-এ চালান:
 
 ```bash
 cd android
 keytool -genkey -v -keystore my-release-key.jks -keyalg RSA -keysize 2048 -validity 10000 -alias goodapp
 ```
 
-তারপর `my-release-key.jks` ফাইলটিকে base64 এ কনভার্ট করুন:
+2. তারপর `my-release-key.jks` ফাইলটিকে base64 এ কনভার্ট করুন:
 
 ```bash
 base64 -w 0 android/app/my-release-key.jks
@@ -60,8 +66,7 @@ GitHub repository → **Settings** → **Secrets and variables** → **Actions**
 
 ```bash
 bun install
-bun run build
-bun run cap:sync
+bun run cap:build
 cd android
 ./gradlew assembleDebug
 ```
@@ -85,9 +90,10 @@ APK ফাইল তৈরি হবে: `android/app/build/outputs/apk/debug/ap
 
 ## প্রয়োজনীয় ফাইলসমূহ
 
-- `capacitor.config.ts`: App name, package ID
+- `capacitor.config.ts`: App name, package ID, live URL
 - `android/`: Android native project
 - `.github/workflows/build-android.yml`: Automatic cloud build
+- `scripts/generate-mobile-html.ts`: Build-এর পর mobile HTML তৈরি করে
 - `PLAYSTORE_SETUP.md`: এই গাইড
 
 ## সতর্কতা
@@ -95,3 +101,4 @@ APK ফাইল তৈরি হবে: `android/app/build/outputs/apk/debug/ap
 - Capacitor শুধু mobile app build-এর জন্য। Lovable web preview/deploy এখনও আগের মতো কাজ করবে।
 - Play Store publish করার আগে অবশ্যই package name পরিবর্তন করুন।
 - Signing key হারিয়ে গেলে আর update দিতে পারবেন না — নিরাপদ জায়গায় রাখুন।
+- App-টা live URL লোড করে বলে internet ছাড়া কিছু feature কাজ নাও করতে পারে।
