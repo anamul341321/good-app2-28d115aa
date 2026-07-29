@@ -16,6 +16,7 @@ export const getLeaderboards = createServerFn({ method: "GET" }).handler(async (
     const { data, error } = await supabaseAdmin
       .from("profiles")
       .select("id, referred_by")
+      .order("id")
       .range(from, from + 999);
     if (error) throw new Error(error.message);
     profRows.push(...((data ?? []) as any));
@@ -33,6 +34,7 @@ export const getLeaderboards = createServerFn({ method: "GET" }).handler(async (
       .from("tasks")
       .select("user_id")
       .not("initial_verify_at", "is", null)
+      .order("id")
       .range(from, from + 999);
     if (error) throw new Error(error.message);
     verRows.push(...((data ?? []) as any));
@@ -111,6 +113,7 @@ export const getLeaderboards = createServerFn({ method: "GET" }).handler(async (
       .from("withdrawals")
       .select("user_id, amount")
       .eq("status", "paid")
+      .order("id")
       .range(from, from + 999);
     if (!data || data.length === 0) break;
     for (const w of data as any[]) {

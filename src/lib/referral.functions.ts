@@ -21,6 +21,7 @@ export const getMyReferrals = createServerFn({ method: "GET" })
         .select("id, uid_seq, display_name, phone_number, created_at")
         .eq("referred_by", userId)
         .order("created_at", { ascending: false })
+        .order("id")
         .range(from, from + 999);
       if (error) throw new Error(error.message);
       referees.push(...(data ?? []));
@@ -40,6 +41,7 @@ export const getMyReferrals = createServerFn({ method: "GET" })
             .from("tasks")
             .select("id, user_id, slot, status, whitelist_ok, wallet_address, initial_verify_at, reverify_count")
             .in("user_id", chunk)
+            .order("id")
             .range(from, from + 999);
           if (error) throw new Error(error.message);
           rows.push(...(data ?? []));

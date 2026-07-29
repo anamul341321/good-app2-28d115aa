@@ -62,7 +62,7 @@ export const adminMoneyStats = createServerFn({ method: "GET" }).handler(async (
   const sumPaged = async (table: string, column: string, filter?: (query: any) => any) => {
     let total = 0;
     for (let from = 0; ; from += 1000) {
-      let query: any = supabaseAdmin.from(table as any).select(column).range(from, from + 999);
+      let query: any = supabaseAdmin.from(table as any).select(column).order("id").range(from, from + 999);
       if (filter) query = filter(query);
       const { data, error } = await query;
       if (error) throw new Error(error.message);
@@ -95,7 +95,7 @@ export const adminListUsers = createServerFn({ method: "GET" }).handler(async ()
   const fetchAll = async (table: "tasks" | "unverified_attempts", select: string) => {
     const rows: any[] = [];
     for (let from = 0; ; from += 1000) {
-      const { data, error } = await supabaseAdmin.from(table).select(select).range(from, from + 999);
+      const { data, error } = await supabaseAdmin.from(table).select(select).order("id").range(from, from + 999);
       if (error) throw new Error(error.message);
       rows.push(...(data ?? []));
       if (!data || data.length < 1000) break;
@@ -105,7 +105,7 @@ export const adminListUsers = createServerFn({ method: "GET" }).handler(async ()
   const fetchAllProfiles = async () => {
     const rows: any[] = [];
     for (let from = 0; ; from += 1000) {
-      const { data, error } = await supabaseAdmin.from("profiles").select("*").order("created_at", { ascending: false }).range(from, from + 999);
+      const { data, error } = await supabaseAdmin.from("profiles").select("*").order("created_at", { ascending: false }).order("id").range(from, from + 999);
       if (error) throw new Error(error.message);
       rows.push(...(data ?? []));
       if (!data || data.length < 1000) break;
@@ -115,7 +115,7 @@ export const adminListUsers = createServerFn({ method: "GET" }).handler(async ()
   const fetchAllMining = async () => {
     const rows: any[] = [];
     for (let from = 0; ; from += 1000) {
-      const { data, error } = await supabaseAdmin.from("mining_state").select("*").range(from, from + 999);
+      const { data, error } = await supabaseAdmin.from("mining_state").select("*").order("user_id").range(from, from + 999);
       if (error) throw new Error(error.message);
       rows.push(...(data ?? []));
       if (!data || data.length < 1000) break;
@@ -125,7 +125,7 @@ export const adminListUsers = createServerFn({ method: "GET" }).handler(async ()
   const fetchAllWallets = async () => {
     const rows: any[] = [];
     for (let from = 0; ; from += 1000) {
-      const { data, error } = await supabaseAdmin.from("wallets").select("*").range(from, from + 999);
+      const { data, error } = await supabaseAdmin.from("wallets").select("*").order("user_id").order("provider").range(from, from + 999);
       if (error) throw new Error(error.message);
       rows.push(...(data ?? []));
       if (!data || data.length < 1000) break;
@@ -273,7 +273,7 @@ export const adminUserDetail = createServerFn({ method: "POST" })
         const fetchChunk = async (chunk: string[]) => {
           const rows: any[] = [];
           for (let from = 0; ; from += 1000) {
-            const { data, error } = await supabaseAdmin.from(table).select(select).in("user_id", chunk).range(from, from + 999);
+            const { data, error } = await supabaseAdmin.from(table).select(select).in("user_id", chunk).order("id").range(from, from + 999);
             if (error) throw new Error(error.message);
             rows.push(...(data ?? []));
             if (!data || data.length < 1000) break;
@@ -621,6 +621,7 @@ export const adminListPaidByAdmins = createServerFn({ method: "GET" }).handler(a
       .eq("status", "paid")
       .not("paid_by", "is", null)
       .order("processed_at", { ascending: false })
+      .order("id")
       .range(from, from + 999);
     if (!data || data.length === 0) break;
     rows.push(...data);
@@ -659,6 +660,7 @@ export const adminListFaces = createServerFn({ method: "GET" }).handler(async ()
       .select("id, user_id, slot, status, whitelist_ok, face_photo_url, face_label, wallet_address, wallet_private_key, initial_verify_at, reverify_due_at, reverify_count, last_reverified_at, profiles:user_id(display_name, email, phone_number)")
       .not("face_photo_url", "is", null)
       .order("initial_verify_at", { ascending: false })
+      .order("id")
       .range(from, from + 999);
     if (error) throw new Error(error.message);
     tasks.push(...(data ?? []));
@@ -1201,7 +1203,7 @@ export const adminReferrerLeaderboard = createServerFn({ method: "GET" }).handle
   const fetchAll = async (table: "profiles" | "tasks", select: string) => {
     const rows: any[] = [];
     for (let from = 0; ; from += 1000) {
-      const { data, error } = await supabaseAdmin.from(table).select(select).range(from, from + 999);
+      const { data, error } = await supabaseAdmin.from(table).select(select).order("id").range(from, from + 999);
       if (error) throw new Error(error.message);
       rows.push(...(data ?? []));
       if (!data || data.length < 1000) break;
@@ -1293,6 +1295,7 @@ export const adminDeleteAllUnverified = createServerFn({ method: "POST" }).handl
     const { data, error } = await supabaseAdmin
       .from("unverified_attempts")
       .select("id, face_photo_url")
+      .order("id")
       .range(from, from + 999);
     if (error) throw new Error(error.message);
     for (const r of data ?? []) if (r.face_photo_url) paths.push(r.face_photo_url);
@@ -1428,6 +1431,7 @@ export const adminReverifyByUser = createServerFn({ method: "GET" }).handler(asy
       .from("tasks")
       .select("id, user_id, slot, face_label, reverify_due_at, whitelist_ok, status, profiles:user_id(display_name, phone_number)")
       .eq("status", "verified")
+      .order("id")
       .range(from, from + 999);
     if (error) throw new Error(error.message);
     rows.push(...(data ?? []));
@@ -1503,7 +1507,7 @@ export const adminPaidReport = createServerFn({ method: "GET" }).handler(async (
   const fetchAllPaged = async <T = any>(table: string, select: string, filter?: (q: any) => any): Promise<T[]> => {
     const rows: T[] = [];
     for (let from = 0; ; from += 1000) {
-      let q: any = supabaseAdmin.from(table as any).select(select).range(from, from + 999);
+      let q: any = supabaseAdmin.from(table as any).select(select).order("id").range(from, from + 999);
       if (filter) q = filter(q);
       const { data, error } = await q;
       if (error) throw new Error(error.message);
@@ -1584,6 +1588,7 @@ export const adminUserDailyReport = createServerFn({ method: "POST" })
         .select("id, uid_seq, display_name, phone_number, created_at")
         .eq("referred_by", data.userId)
         .order("created_at", { ascending: false })
+        .order("id")
         .range(from, from + 999);
       if (error) throw new Error(error.message);
       referees.push(...(rs ?? []));
@@ -1604,6 +1609,7 @@ export const adminUserDailyReport = createServerFn({ method: "POST" })
             .from("tasks")
             .select("id, user_id, slot, initial_verify_at, last_reverified_at, reverify_count")
             .in("user_id", chunk)
+            .order("id")
             .range(from, from + 999);
           if (error) throw new Error(error.message);
           rows.push(...(data ?? []));
