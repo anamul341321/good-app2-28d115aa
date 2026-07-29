@@ -672,3 +672,97 @@ function BlockedPanel() {
     </div>
   );
 }
+
+function VideoPanel() {
+  const qc = useQueryClient();
+  const { data, isLoading } = useQuery({ queryKey: ["tg-videos"], queryFn: () => tgListVideos() });
+  const [draft, setDraft] = useState({ topic: "", keywords: "", url: "", note: "", priority: 0 });
+
+  const upsert = useMutation({
+    mutationFn: (v: any) => tgUpsertVideo({ data: v }),
+    onSuccess: () => {
+      toast.success("সেভ হয়েছে");
+      setDraft({ topic: "", keywords: "", url: "", note: "", priority: 0 });
+      qc.invalidateQueries({ queryKey: ["tg-videos"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+  const del = useMutation({
+    mutationFn: (id: string) => tgDeleteVideo({ data: { id } }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["tg-videos"] }),
+  });
+
+  return (
+    <div className="space-y-3">
+      <div className="glass rounded-2xl p-4 border border-cyan/30">
+        <h3 className="font-black text-sm flex items-center gap-2">
+          <HelpCircle className="w-4 h-4 text-cyan" /> ভিডিও লিংক লাইব্রেরি
+        </h3>
+        <p className="mt-2 text-[11px] text-muted-foreground leading-relaxed">
+          কোন সমস্যার জন্য কোন ভিডিও — সেটা এখানে লিখে রাখুন। ইউজার গ্রুপে ভিডিও চাইলে বট
+          নিজে থেকেই মিলিয়ে সঠিক লিংকটা দিয়ে দেবে।
+        </p>
+      </div>
+
+      <div className="glass rounded-2xl p-4 space-y-2">
+        <h3 className="font-black text-sm flex items-center gap-2">
+          <Plus className="w-4 h-4 text-emerald" /> নতুন ভিডিও যোগ করুন
+        </h3>
+        <Field label="বিষয় (যেমন: ফেস ভেরিফিকেশন কীভাবে করবেন)"
+          value={draft.topic} onChange={(v) => setDraft({ ...draft, topic: v })} />
+        <Field label="ভিডিও লিংক" hint="YouTube বা যেকোনো লিংক"
+          value={draft.url} onChange={(v) => setDraft({ ...draft, url: v })} />
+        <Field label="কীওয়ার্ড (ঐচ্ছিক, কমা দিয়ে)" hint="যেমন: ভিডিও, ফেস, verify"
+          value={draft.keywords} onChange={(v) => setDraft({ ...draft, keywords: v })} />
+        <Area label="ছোট নোট (ঐচ্ছিক)" rows={2}
+          value={draft.note} onChange={(v) => setDraft({ ...draft, note: v })} />
+        <button
+          onClick={() => {
+            if (!draft.url.trim()) { toast.error("ভিডিও লিংক দিন"); return; }
+            upsert.mutate({
+              topic: draft.topic.trim() || "ভিডিও টিউটোরিয়াল",
+              url: draft.url.trim(),
+              note: draft.note.trim() || null,
+              keywords: draft.keywords.split(",").map((s) => s.trim()).filter(Boolean).slice(0, 50),
+              priority: Number(draft.priority) || 0,
+              is_active: true,
+            });
+          }}
+          disabled={upsert.isPending}
+          className="w-full py-2.5 rounded-xl gradient-cta font-black text-xs disabled:opacity-50">
+          {upsert.isPending ? "সেভ হচ্ছে…" : "সেভ করুন"}
+        </button>
+      </div>
+
+      {isLoading ? (
+        <div className="py-10 flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-cyan" /></div>
+      ) : (data ?? []).length === 0 ? (
+        <div className="glass rounded-2xl p-6 text-center text-[11px] text-muted-foreground">
+          এখনো কোনো ভিডিও লিংক যোগ করা হয়নি।
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {(data ?? []).map((v: any) => (
+            <div key={v.id} className="glass rounded-2xl p-3">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-xs font-black truncate">{v.topic}</p>
+                  <a href={v.url} target="_blank" rel="noreferrer"
+                    className="text-[11px] text-cyan break-all underline">{v.url}</a>
+                  {v.note && <p className="text-[10px] text-muted-foreground mt-1">{v.note}</p>}
+                  {!!(v.keywords ?? []).length && (
+                    <p className="text-[10px] text-muted-foreground mt-1">🔑 {(v.keywords ?? []).join(", ")}</p>
+                  )}
+                </div>
+                <button onClick={() => del.mutate(v.id)}
+                  className="shrink-0 rounded-lg border border-rose-500/40 bg-rose-500/10 p-2">
+                  <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
