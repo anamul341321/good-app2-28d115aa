@@ -182,17 +182,17 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
                 );
                 return Response.json({ ok: true, flow: "uid-notfound" });
               }
-              const slotNow = pickSlot(norm.replace(uid, " "));
-              if (slotNow) {
+              const slotsNow = pickSlots(norm.replace(uid, " "));
+              if (slotsNow.length || wantsAll) {
                 await saveSession({ step: "await_slot", uid, app_user_id: prof.id });
-                await doReset(uid, slotNow);
+                await doReset(uid, wantsAll ? [] : slotsNow);
                 return Response.json({ ok: true, flow: "reset" });
               }
               await saveSession({ step: "await_slot", uid, app_user_id: prof.id });
               await sendMessage(
                 chatId,
                 `✅ একাউন্ট পাওয়া গেছে: <b>${prof.display_name || "ইউজার"}</b> (UID <code>${uid}</code>)\n\n` +
-                  `🔢 ${settings.ask_slot_message || "কোন নম্বর স্লটটি রিসেট করতে চান? (১ থেকে ১০)"}`,
+                  `🔢 ${settings.ask_slot_message || "কোন কোন স্লট রিসেট করতে চান? এক বা একাধিক নম্বর লিখুন (যেমন: 3 অথবা 2,5,7 অথবা 2-6, সবগুলোর জন্য লিখুন \"সব\")"}`,
                 msg.message_id,
               );
               await logMessage("question", "asked-slot", null, uid);
@@ -200,17 +200,19 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             }
 
             if (sess.step === "await_slot" && sess.uid) {
-              const slot = pickSlot(norm);
-              if (!slot) {
+              const slots = pickSlots(norm);
+              if (!slots.length && !wantsAll) {
                 await sendMessage(
                   chatId,
-                  "🔢 অনুগ্রহ করে <b>১ থেকে ১০</b> এর মধ্যে স্লট নম্বরটি লিখুন (যেমন: 3)।",
+                  "🔢 স্লট নম্বর লিখুন — একটি (যেমন: 3), একাধিক (2,5,7), রেঞ্জ (2-6) অথবা সবগুলোর জন্য <b>সব</b>।",
                   msg.message_id,
                 );
                 return Response.json({ ok: true, flow: "await_slot" });
               }
-              await doReset(sess.uid, slot);
+              await doReset(sess.uid, wantsAll ? [] : slots);
               return Response.json({ ok: true, flow: "reset" });
+            }
+
             }
           }
         }
