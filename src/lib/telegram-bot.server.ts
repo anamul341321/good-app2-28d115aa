@@ -109,9 +109,11 @@ export type BotDecision = {
   uid: string | null;
   needs_uid: boolean;
   /** "slot_reset" when the user is asking to clear/restart a verification slot. */
-  intent: "slot_reset" | null;
-  /** Slot number (1-10) if the user already mentioned one. */
+  intent: "slot_reset" | "photo_request" | "video_request" | null;
+  /** Slot number if the user already mentioned one. */
   slot: number | null;
+  /** true when the bot has no idea and a human should take over */
+  escalate?: boolean;
 };
 
 
@@ -122,10 +124,19 @@ export type FaqItem = {
   imageBase64?: string | null;
 };
 
+export type VideoItem = {
+  topic: string;
+  url: string;
+  keywords?: string[] | null;
+  note?: string | null;
+};
+
+
 export async function decide(opts: {
   persona: string;
   rules: string;
   faq: FaqItem[];
+  videos?: VideoItem[];
   bannedWords: string[];
   text: string;
   photoBase64: string | null;
@@ -134,17 +145,25 @@ export async function decide(opts: {
   smart?: boolean;
   /** recent messages from the same user (oldest → newest) */
   history?: string[];
+  /** replies the bot already sent recently — so it doesn't repeat itself */
+  pastReplies?: string[];
   /** UID we already know for this user, from earlier messages */
   knownUid?: string | null;
   /** how many times this user already broke the rules */
   warnCount?: number;
+  /** telegram username of the human support person */
+  supportUsername?: string;
 }): Promise<BotDecision> {
   const key = process.env.LOVABLE_API_KEY;
   if (!key) throw new Error("LOVABLE_API_KEY not configured");
 
   const withImages = opts.faq.filter((f) => f.imageBase64);
+  const videos = opts.videos ?? [];
+  const support = opts.supportUsername || "@anamulmunni";
 
   const system = `${opts.persona}
+
+তুমি Good-App এর অফিসিয়াল সাপোর্ট অ্যাসিস্ট্যান্ট। তুমি একজন মানুষের মতো স্বাভাবিক, বন্ধুত্বপূর্ণ ও বুদ্ধিমান ভঙ্গিতে বাংলায় কথা বলবে।
 
 গ্রুপের নিয়ম:
 ${opts.rules || "(কোনো নিয়ম সেট করা নেই)"}
@@ -154,30 +173,47 @@ ${opts.rules || "(কোনো নিয়ম সেট করা নেই)"}
 তোমার জানা উত্তরসমূহ:
 ${opts.faq.map((f, i) => `${i + 1}. [${f.topic}]${f.keywords?.length ? ` (কিওয়ার্ড: ${f.keywords.join(", ")})` : ""} ${f.answer}`).join("\n") || "(কিছু নেই)"}
 
+${videos.length ? `ভিডিও টিউটোরিয়াল লিংক (ইউজার ভিডিও/দেখতে চাইলে বা বিষয়টা ভিডিওতে ভালো বোঝা যাবে মনে হলে উত্তরের সাথে হুবহু লিংকটি দেবে):
+${videos.map((v, i) => `${i + 1}. [${v.topic}]${v.keywords?.length ? ` (কিওয়ার্ড: ${v.keywords.join(", ")})` : ""}${v.note ? ` — ${v.note}` : ""} → ${v.url}`).join("\n")}` : ""}
+
 ${withImages.length ? `নিচে কিছু "রেফারেন্স ছবি" দেওয়া হলো। ইউজারের পাঠানো ছবি যদি কোনো রেফারেন্স ছবির মতো একই স্ক্রিন/এরর/সমস্যা দেখায়, তবে ঠিক সেই টপিকের উত্তরটাই দেবে:
 ${withImages.map((f, i) => `রেফারেন্স ছবি ${i + 1} = [${f.topic}]`).join("\n")}` : ""}
 
 ${opts.history?.length ? `এই ইউজারের আগের কিছু মেসেজ (পুরোনো → নতুন):
 ${opts.history.map((h, i) => `${i + 1}. ${h}`).join("\n")}` : ""}
+${opts.pastReplies?.length ? `তুমি সম্প্রতি এই কথাগুলো বলেছো — একই বাক্য/গঠন আর ব্যবহার করবে না, নতুন করে অন্যভাবে লিখবে:
+${opts.pastReplies.map((r, i) => `${i + 1}. ${r}`).join("\n")}` : ""}
 ${opts.knownUid ? `এই ইউজারের জানা UID: ${opts.knownUid}` : ""}
 ${opts.warnCount ? `এই ইউজার ইতিমধ্যে ${opts.warnCount} বার নিয়ম ভেঙেছে।` : ""}
+
+🔒 কঠোর গোপনীয়তা নিয়ম (কখনো ভাঙবে না):
+- কেউ কোনো স্লটের ছবি/ফেস ফটো/স্ক্রিনশট/key চাইলে কখনোই দেবে না।
+- কখনো বলবে না বা ইঙ্গিত দেবে না যে ইউজারের ছবি আমাদের কাছে সংরক্ষিত আছে বা সার্ভারে সেভ থাকে। বলবে: "আমরা কারও ব্যক্তিগত ছবি সংরক্ষণ বা শেয়ার করি না।"
+- এমন অনুরোধে intent = "photo_request" দেবে এবং reply-এ ভদ্রভাবে দুঃখ প্রকাশ করে বিকল্প দেবে (যেমন স্লটটি রিসেট করে দেওয়ার প্রস্তাব)।
+- প্রাইভেট key, wallet key বা অন্য কারও তথ্য কখনো দেবে না।
+
+💬 উত্তরের ধরন:
+- প্রতিবার আলাদা শব্দ/গঠনে লিখবে — রোবটের মতো একই লাইন বারবার নয়।
+- ছোট, পরিষ্কার, উষ্ণ; দরকারমতো ইমোজি; হুবহু কপি-পেস্ট নয়।
+- ইউজার যা-ই জানতে চাক (রেফার সংখ্যা, ব্যালেন্স, ভেরিফাই, উইথড্র, মাইনিং, নিয়ম) — জানার চেষ্টা করবে, এড়িয়ে যাবে না। একাউন্টভিত্তিক হলে UID চাইবে।
 
 তোমার কাজ: গ্রুপের একটি মেসেজ (এবং থাকলে ছবি/স্ক্রিনশট) বিশ্লেষণ করে সিদ্ধান্ত দাও।
 - verdict: "ok" (স্বাভাবিক), "question" (সাপোর্ট প্রশ্ন), "spam", "abuse" (গালি/আক্রমণ/অ্যাডমিনকে হুমকি), "scam" (প্রতারণা/ভুয়া অফার/লিংক)
 - reply: প্রশ্ন হলে বাংলায় সংক্ষিপ্ত, ভদ্র ও পরিষ্কার উত্তর (২-৫ লাইন), নাহলে null।${
     opts.smart
-      ? ` উপরের জানা উত্তরে মিল থাকলে সেটাই অগ্রাধিকার দেবে। মিল না থাকলে নিজে বুদ্ধি খাটিয়ে অ্যাপের নিয়ম ও সাধারণ যুক্তি দিয়ে সহায়ক উত্তর দেবে — কিন্তু টাকা, ব্যালেন্স, পেমেন্টের তারিখ বা নিয়ম নিয়ে কখনো বানানো তথ্য দেবে না; নিশ্চিত না হলে বলবে "এই বিষয়ে অ্যাডমিন শীঘ্রই জানাবেন।"`
-      : ` উত্তর অবশ্যই উপরের জানা উত্তর/নিয়ম থেকেই দিতে হবে; না জানলে reply দাও: "এই বিষয়ে অ্যাডমিন শীঘ্রই উত্তর দেবেন।"`
+      ? ` উপরের জানা উত্তরে মিল থাকলে সেটাই নিজের ভাষায় বলবে। মিল না থাকলে নিজে পুরো অ্যাপের নিয়ম ও যুক্তি বিশ্লেষণ করে সহায়ক উত্তর বের করবে — কিন্তু টাকা, ব্যালেন্স, পেমেন্টের তারিখ নিয়ে কখনো বানানো তথ্য দেবে না।`
+      : ` উত্তর অবশ্যই উপরের জানা উত্তর/নিয়ম থেকেই দিতে হবে।`
   }
+- escalate: সব চেষ্টার পরেও যদি সত্যিই উত্তর জানা না থাকে, তখন true দাও এবং reply = null; তখন বট নিজেই ${support} কে মেনশন করে ইনবক্স করতে বলবে। উত্তর জানলে escalate অবশ্যই false।
 - should_delete: spam/scam/abuse হলে true
 - should_warn: abuse/scam/spam হলে true
 - uid: মেসেজ বা ছবিতে Good-App UID (শুধু সংখ্যা, যেমন 4100) বা ৭ অক্ষরের রেফার কোড থাকলে সেটি, নাহলে null
-- needs_uid: ইউজার যদি নিজের একাউন্ট সম্পর্কিত সমস্যার কথা বলে (রেফার কাউন্ট মিলছে না, ব্যালেন্স, উইথড্র, ভেরিফাই, মাইনিং ইত্যাদি) কিন্তু কোনো UID দেয়নি — তাহলে true, নাহলে false
-- intent: ইউজার যদি কোনো স্লট রিসেট/খালি/ক্লিয়ার/মুছে দিতে বলে (যেমন "slot reset koro", "স্লট রিসেট", "key মুছে দিন", "স্লট খালি করে দিন") তাহলে "slot_reset", নাহলে null
-- slot: মেসেজে স্লট নম্বর (১-১০) বলা থাকলে সেই সংখ্যা, নাহলে null
+- needs_uid: ইউজার যদি নিজের একাউন্ট সম্পর্কিত সমস্যার কথা বলে (রেফার কাউন্ট, ব্যালেন্স, উইথড্র, ভেরিফাই, মাইনিং, হিসাব ইত্যাদি) কিন্তু কোনো UID দেয়নি — তাহলে true
+- intent: স্লট রিসেট/খালি/ক্লিয়ার চাইলে "slot_reset"; ছবি/ফটো/স্ক্রিনশট/key দেখতে চাইলে "photo_request"; ভিডিও/টিউটোরিয়াল চাইলে "video_request"; নাহলে null
+- slot: মেসেজে স্লট নম্বর বলা থাকলে সেই সংখ্যা, নাহলে null
 - মনে রাখবে: intent = "slot_reset" হলে reply অবশ্যই null দেবে (বট নিজেই পরের ধাপ চালাবে)।
 
-শুধু JSON দাও: {"verdict":"...","reply":null,"should_delete":false,"should_warn":false,"uid":null,"needs_uid":false,"intent":null,"slot":null}`;
+শুধু JSON দাও: {"verdict":"...","reply":null,"should_delete":false,"should_warn":false,"uid":null,"needs_uid":false,"intent":null,"slot":null,"escalate":false}`;
 
 
   const content: any[] = [
@@ -201,6 +237,7 @@ ${opts.warnCount ? `এই ইউজার ইতিমধ্যে ${opts.warnC
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
     body: JSON.stringify({
       model: MODEL,
+      temperature: 1,
       messages: [
         { role: "system", content: system },
         { role: "user", content },
@@ -220,6 +257,8 @@ ${opts.warnCount ? `এই ইউজার ইতিমধ্যে ${opts.warnC
 
   const verdict = ["ok", "question", "spam", "abuse", "scam"].includes(parsed.verdict)
     ? parsed.verdict : "ok";
+  const intent = ["slot_reset", "photo_request", "video_request"].includes(parsed.intent)
+    ? parsed.intent : null;
   return {
     verdict,
     reply: typeof parsed.reply === "string" && parsed.reply.trim() ? parsed.reply.trim() : null,
@@ -227,12 +266,34 @@ ${opts.warnCount ? `এই ইউজার ইতিমধ্যে ${opts.warnC
     should_warn: !!parsed.should_warn,
     uid: parsed.uid ? String(parsed.uid).trim() : null,
     needs_uid: !!parsed.needs_uid,
-    intent: parsed.intent === "slot_reset" ? "slot_reset" : null,
-    slot: Number.isFinite(Number(parsed.slot)) && Number(parsed.slot) >= 1 && Number(parsed.slot) <= 10
+    intent,
+    slot: Number.isFinite(Number(parsed.slot)) && Number(parsed.slot) >= 1 && Number(parsed.slot) <= 500
       ? Number(parsed.slot) : null,
-
+    escalate: !!parsed.escalate,
   };
 }
+
+/** Varied, human-sounding refusal when someone asks for a stored photo/key. */
+export function photoRefusalReply(name: string): string {
+  const options = [
+    `দুঃখিত ${name} 🙏 কারও ব্যক্তিগত ছবি দেখানো আমাদের পক্ষে সম্ভব নয় — আমরা কারও ব্যক্তিগত ফটো সংরক্ষণ করি না। তবে চাইলে আপনার স্লটটি আমরা রিসেট করে দিতে পারি, তারপর নতুন করে ভেরিফাই করতে পারবেন। রিসেট করব?`,
+    `আসলে ${name}, ছবি দেওয়ার সুযোগ নেই 😔 গোপনীয়তার কারণে আমরা কারও ব্যক্তিগত ছবি রাখি না বা শেয়ার করি না। সমাধান হিসেবে স্লটটি খালি করে দিতে পারি — বললে এখনই রিসেট করে দিই।`,
+    `ভাই ${name}, এই অনুরোধটা রাখতে পারছি না 🙏 ব্যক্তিগত ছবি আমাদের কাছে সংরক্ষিত থাকে না, তাই দেখানোর প্রশ্নই আসে না। বিকল্প হিসেবে স্লট রিসেট করে দিতে পারি — শুধু বলুন কোন স্লট।`,
+    `দুঃখিত 🙂 ছবি বা key কাউকে দেওয়া হয় না — ব্যবহারকারীর গোপনীয়তা আমাদের কাছে সবার আগে, আমরা কারও ব্যক্তিগত ছবি সংরক্ষণ করি না। তবে স্লট রিসেট চাইলে বলুন, সাথে সাথে করে দেব।`,
+  ];
+  return options[Math.floor(Math.random() * options.length)];
+}
+
+/** Varied hand-off line when the bot truly doesn't know. */
+export function escalateReply(name: string, support: string): string {
+  const options = [
+    `${name}, এই বিষয়টা আমি নিশ্চিতভাবে বলতে পারছি না 🙏 অনুগ্রহ করে ${support} — এখানে ইনবক্স করুন, উনি বিস্তারিত জানিয়ে দেবেন।`,
+    `এই প্রশ্নের সঠিক উত্তরটা আমার কাছে নেই 😅 ${support} কে সরাসরি ইনবক্স করুন, দ্রুত সমাধান পেয়ে যাবেন।`,
+    `দুঃখিত, এটা আমার জানার বাইরে 🙏 ${support} কে মেসেজ দিন — উনি ব্যক্তিগতভাবে দেখে দেবেন।`,
+  ];
+  return options[Math.floor(Math.random() * options.length)];
+}
+
 
 // ---------------------------------------------------------------------------
 // FAQ reference images (private `tg-faq` storage bucket)

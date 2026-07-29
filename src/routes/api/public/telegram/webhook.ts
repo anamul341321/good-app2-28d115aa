@@ -257,9 +257,15 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         const hardHit = bannedWords.find((w) => w && lower.includes(w.toLowerCase()));
 
 
-        const { data: faqRows } = await supabaseAdmin
-          .from("tg_faq").select("topic, answer, keywords, image_path").eq("is_active", true)
-          .order("priority", { ascending: false }).order("id");
+        const [{ data: faqRows }, { data: videoRows }] = await Promise.all([
+          supabaseAdmin
+            .from("tg_faq").select("topic, answer, keywords, image_path").eq("is_active", true)
+            .order("priority", { ascending: false }).order("id"),
+          (supabaseAdmin as any)
+            .from("tg_videos").select("topic, url, keywords, note").eq("is_active", true)
+            .order("priority", { ascending: false }).order("id"),
+        ]);
+
 
         let photoBase64: string | null = null;
         if (settings.photo_analysis_enabled && photos?.length) {
@@ -295,13 +301,15 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           // Everything this user said before — used both for smarter answers and
           // for finding the UID they gave earlier when they start misbehaving.
           let history: string[] = [];
+          let pastReplies: string[] = [];
           let knownUid: string | null = (offender as any)?.known_uid ?? null;
           if (msg.from?.id) {
             const { data: past } = await supabaseAdmin
-              .from("tg_messages").select("text, matched_uid, created_at")
+              .from("tg_messages").select("text, bot_reply, matched_uid, created_at")
               .eq("tg_user_id", msg.from.id)
               .order("created_at", { ascending: false }).limit(12);
             history = (past ?? []).map((p: any) => p.text).filter(Boolean).reverse().slice(-8);
+            pastReplies = (past ?? []).map((p: any) => p.bot_reply).filter(Boolean).slice(0, 4);
             if (!knownUid) knownUid = (past ?? []).find((p: any) => p.matched_uid)?.matched_uid ?? null;
           }
 
@@ -310,18 +318,22 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               persona: settings.persona,
               rules: settings.rules,
               faq,
+              videos: (videoRows ?? []) as any[],
               bannedWords,
               text,
               photoBase64,
               senderName,
               smart: (settings as any).smart_mode !== false,
               history,
+              pastReplies: (settings as any).reply_variety === false ? [] : pastReplies,
               knownUid,
               warnCount: (offender as any)?.warn_count ?? 0,
+              supportUsername: (settings as any).support_username || "@anamulmunni",
             });
           } catch (e) {
             console.error("[tg] decide failed", e);
           }
+
           
           (decision as any)._knownUid = knownUid;
         }
@@ -450,11 +462,35 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         }
 
 
+        // ---- someone asked for a stored photo / key: never share, always deny -
+        if (decision.intent === "photo_request" && !decision.should_delete
+            && (settings as any).photo_privacy_enabled !== false) {
+          const { photoRefusalReply } = await import("@/lib/telegram-bot.server");
+          const reply = photoRefusalReply(senderName);
+          await sendMessage(chatId, reply, msg.message_id);
+          actions.push("photo-denied");
+          await logMessage(decision.verdict, actions.join(","), reply, matchedUid);
+          return Response.json({ ok: true, flow: "photo_request", actions });
+        }
+
         if (settings.auto_reply_enabled && decision.reply && !decision.should_delete
             && decision.intent !== "slot_reset") {
           await sendMessage(chatId, decision.reply, msg.message_id);
           actions.push("replied");
         }
+
+        // ---- bot genuinely doesn't know → hand off to the human admin --------
+        if (!decision.reply && decision.escalate && !decision.should_delete
+            && !decision.needs_uid && decision.intent === null
+            && settings.auto_reply_enabled && (settings as any).escalate_enabled !== false) {
+          const { escalateReply } = await import("@/lib/telegram-bot.server");
+          const reply = escalateReply(senderName, (settings as any).support_username || "@anamulmunni");
+          await sendMessage(chatId, reply, msg.message_id);
+          actions.push("escalated");
+          await logMessage(decision.verdict, actions.join(","), reply, matchedUid);
+          return Response.json({ ok: true, flow: "escalated", actions });
+        }
+
 
         // ---- guided slot reset: ask UID → ask slot → reset --------------------
         if (decision.intent === "slot_reset" && (settings as any).slot_reset_enabled !== false
