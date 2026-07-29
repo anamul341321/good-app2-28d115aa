@@ -451,7 +451,6 @@ function HomePage() {
       </div>
 
       <Leaderboards />
-      <WithdrawFeed />
 
       {!data.wallet && (
         <Link to="/wallet" className="block premium-panel rounded-2xl p-3 border-l-4" style={{ borderLeftColor: "var(--color-amber)" }}>
