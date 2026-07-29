@@ -109,9 +109,11 @@ export type BotDecision = {
   uid: string | null;
   needs_uid: boolean;
   /** "slot_reset" when the user is asking to clear/restart a verification slot. */
-  intent: "slot_reset" | null;
-  /** Slot number (1-10) if the user already mentioned one. */
+  intent: "slot_reset" | "photo_request" | "video_request" | null;
+  /** Slot number if the user already mentioned one. */
   slot: number | null;
+  /** true when the bot has no idea and a human should take over */
+  escalate?: boolean;
 };
 
 
@@ -121,6 +123,14 @@ export type FaqItem = {
   keywords?: string[] | null;
   imageBase64?: string | null;
 };
+
+export type VideoItem = {
+  topic: string;
+  url: string;
+  keywords?: string[] | null;
+  note?: string | null;
+};
+
 
 export async function decide(opts: {
   persona: string;
