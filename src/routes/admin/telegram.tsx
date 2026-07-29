@@ -316,6 +316,62 @@ function FaqPanel() {
   );
 }
 
+function LookupPanel() {
+  const [uid, setUid] = useState("");
+  const [card, setCard] = useState<string | null>(null);
+
+  const look = useMutation({
+    mutationFn: () => tgLookupUid({ data: { uid: uid.trim() } }),
+    onSuccess: (r: any) => {
+      if (r.ok) setCard(r.card);
+      else { setCard(null); toast.error("এই UID তে কোনো একাউন্ট নেই"); }
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const send = useMutation({
+    mutationFn: () => tgSendToGroup({ data: { text: card! } }),
+    onSuccess: (r: any) => r.ok ? toast.success("গ্রুপে পাঠানো হয়েছে ✅") : toast.error(r.error),
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  return (
+    <div className="space-y-3">
+      <div className="glass rounded-2xl p-4 space-y-2">
+        <h3 className="font-black text-sm flex items-center gap-2">
+          <Search className="w-4 h-4 text-cyan" /> UID দিয়ে একাউন্ট দেখুন
+        </h3>
+        <p className="text-[10px] text-muted-foreground">
+          bot গ্রুপে ঠিক এই তথ্যটাই পাঠায়। এখান থেকে যাচাই করে চাইলে নিজেও গ্রুপে পাঠাতে পারেন।
+        </p>
+        <div className="flex gap-2">
+          <input value={uid} onChange={(e) => setUid(e.target.value)}
+            placeholder="UID বা রেফার কোড"
+            className="flex-1 px-3 py-2 rounded-xl bg-surface-2 border border-border text-sm outline-none focus:border-amber" />
+          <button onClick={() => uid.trim() && look.mutate()} disabled={look.isPending}
+            className="px-4 rounded-xl gradient-cta font-black text-xs disabled:opacity-50">
+            {look.isPending ? "…" : "খুঁজুন"}
+          </button>
+        </div>
+      </div>
+
+      {card && (
+        <div className="glass rounded-2xl p-4 space-y-3">
+          <pre className="text-[11px] whitespace-pre-wrap leading-relaxed font-[inherit]">
+            {card.replace(/<\/?[^>]+>/g, "")}
+          </pre>
+          <button onClick={() => send.mutate()} disabled={send.isPending}
+            className="w-full py-2.5 rounded-xl bg-surface-2 border border-border font-black text-xs flex items-center justify-center gap-2">
+            <Send className="w-3.5 h-3.5 text-cyan" /> {send.isPending ? "পাঠানো হচ্ছে…" : "গ্রুপে পাঠান"}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+
 function BansPanel() {
   const qc = useQueryClient();
   const { data, isLoading } = useQuery({ queryKey: ["tg-bans"], queryFn: () => tgListBanRequests() });
