@@ -1,24 +1,42 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { adminListWithdrawals, adminUpdateWithdrawal, adminListCredits } from "@/lib/admin.functions";
-import { Loader2, Check, X, Copy, AlertTriangle, ShieldCheck, Gift, ExternalLink, Plus, Minus } from "lucide-react";
+import { adminListWithdrawals, adminUpdateWithdrawal, adminListCredits, adminListPaidByAdmins } from "@/lib/admin.functions";
+import { Loader2, Check, X, Copy, AlertTriangle, ShieldCheck, Gift, ExternalLink, Plus, Minus, UserCheck, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 
 export const Route = createFileRoute("/admin/withdrawals")({ component: AdminWithdrawals });
 
-type Filter = "pending" | "paid" | "rejected" | "admin" | "all";
+type Filter = "pending" | "paid" | "rejected" | "admin" | "paid-by" | "all";
 
 function AdminWithdrawals() {
   const { data, isLoading, refetch } = useQuery({ queryKey: ["admin-withdrawals"], queryFn: () => adminListWithdrawals() });
   const creditsQ = useQuery({ queryKey: ["admin-credits"], queryFn: () => adminListCredits() });
+  const paidByQ = useQuery({ queryKey: ["admin-paid-by"], queryFn: () => adminListPaidByAdmins() });
   const [filter, setFilter] = useState<Filter>("pending");
+  const [adminName, setAdminName] = useState<string>(() => {
+    if (typeof window === "undefined") return "";
+    return localStorage.getItem("admin-paid-by-name") ?? "";
+  });
+  useEffect(() => { if (adminName) localStorage.setItem("admin-paid-by-name", adminName); }, [adminName]);
 
   const mut = useMutation({
-    mutationFn: (input: { id: string; action: "paid" | "rejected" }) => adminUpdateWithdrawal({ data: input }),
-    onSuccess: () => { toast.success("Updated"); refetch(); },
+    mutationFn: (input: { id: string; action: "paid" | "rejected"; paidBy?: string }) => adminUpdateWithdrawal({ data: input }),
+    onSuccess: () => { toast.success("Updated"); refetch(); paidByQ.refetch(); },
     onError: (e: any) => toast.error(e.message),
   });
+
+  const markPaid = (id: string) => {
+    let name = adminName.trim();
+    if (!name) {
+      const input = window.prompt("আপনার নাম লিখুন (কে paid করছে):", "");
+      if (!input || !input.trim()) { toast.error("Admin name দিতে হবে"); return; }
+      name = input.trim();
+      setAdminName(name);
+    }
+    mut.mutate({ id, action: "paid", paidBy: name });
+  };
+
 
   const copy = (val: string, label: string) => {
     navigator.clipboard.writeText(val);
@@ -60,13 +78,29 @@ function AdminWithdrawals() {
 
   return (
     <div className="space-y-3">
+      <div className="glass rounded-xl p-2.5 border border-cyan/25 bg-cyan/5 flex items-center gap-2">
+        <UserCheck className="w-4 h-4 text-cyan shrink-0" />
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] font-black text-cyan">আপনার নাম (Mark paid এর সময় ব্যবহার হবে)</p>
+          <input
+            value={adminName}
+            onChange={(e) => setAdminName(e.target.value)}
+            placeholder="যেমন: Anamul"
+            className="w-full mt-0.5 px-2 py-1 rounded bg-background/60 border border-white/10 text-xs outline-none focus:border-cyan"
+          />
+        </div>
+      </div>
       <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
         <Tab id="pending" label="⏳ Pending" count={counts.pending} tone="bg-amber/20 text-amber" />
         <Tab id="paid" label="✅ Paid" count={counts.paid} tone="bg-emerald/20 text-emerald" />
+        <Tab id="paid-by" label="👤 Paid-by admin" count={(paidByQ.data ?? []).length} tone="bg-cyan/20 text-cyan" />
         <Tab id="admin" label="🎁 Admin Payout" count={counts.admin} tone="bg-fuchsia-500/20 text-fuchsia-300" />
         <Tab id="rejected" label="❌ Rejected" count={counts.rejected} tone="bg-rose/20 text-rose" />
         <Tab id="all" label="All" count={counts.all} tone="bg-cyan/20 text-cyan" />
       </div>
+
+      {filter === "paid-by" && <PaidByPanel data={paidByQ.data ?? []} loading={paidByQ.isLoading} />}
+
 
       {filter === "admin" && (
         <>
@@ -124,7 +158,7 @@ function AdminWithdrawals() {
         </>
       )}
 
-      {filter !== "admin" && (
+      {filter !== "admin" && filter !== "paid-by" && (
       <div className="space-y-2">
         {filtered.length === 0 && <p className="text-center text-xs text-muted-foreground py-6">No records</p>}
         {filtered.map((w: any) => {
@@ -330,7 +364,7 @@ function AdminWithdrawals() {
 
               {w.status === "pending" && (
                 <div className="flex gap-2">
-                  <button onClick={() => mut.mutate({ id: w.id, action: "paid" })}
+                  <button onClick={() => markPaid(w.id)}
                     className="flex-1 py-2 rounded-lg bg-emerald/20 text-emerald font-bold text-xs flex items-center justify-center gap-1">
                     <Check className="w-3.5 h-3.5" /> Mark paid
                   </button>
@@ -345,6 +379,68 @@ function AdminWithdrawals() {
         })}
       </div>
       )}
+    </div>
+  );
+}
+
+function PaidByPanel({ data, loading }: { data: any[]; loading: boolean }) {
+  const [open, setOpen] = useState<string | null>(null);
+  const [q, setQ] = useState("");
+  const total = useMemo(() => data.reduce((s, a) => s + Number(a.total), 0), [data]);
+  if (loading) return <div className="py-6 flex justify-center"><Loader2 className="w-4 h-4 animate-spin text-cyan" /></div>;
+  const filtered = data.filter((a) => !q.trim() || a.name.toLowerCase().includes(q.trim().toLowerCase()));
+
+  return (
+    <div className="space-y-2">
+      <div className="glass rounded-xl p-3 border border-cyan/30 bg-cyan/5">
+        <p className="text-[10px] font-black text-cyan uppercase tracking-widest">Paid-By Admin Summary</p>
+        <p className="mono-num font-black text-2xl mt-1">{total.toFixed(2)} ৳</p>
+        <p className="text-[10px] text-muted-foreground">{data.length} জন admin · সব paid withdrawal মিলিয়ে</p>
+      </div>
+      <input
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        placeholder="Admin name দিয়ে খুঁজুন…"
+        className="w-full px-3 py-2 rounded-xl bg-background/60 border border-white/10 text-xs outline-none focus:border-cyan"
+      />
+      {filtered.length === 0 && <p className="text-center text-xs text-muted-foreground py-6">কোনো record নেই</p>}
+      {filtered.map((a) => (
+        <div key={a.name} className="rounded-xl border border-cyan/30 bg-gradient-to-br from-cyan/10 to-blue-500/5">
+          <button
+            onClick={() => setOpen(open === a.name ? null : a.name)}
+            className="w-full flex items-center gap-3 p-3 text-left">
+            <div className="w-10 h-10 rounded-xl bg-cyan/20 border border-cyan/40 flex items-center justify-center shrink-0">
+              <UserCheck className="w-5 h-5 text-cyan" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="font-black truncate">{a.name}</p>
+              <p className="text-[10px] text-muted-foreground">{a.count} পেমেন্ট · click to see breakdown</p>
+            </div>
+            <div className="text-right shrink-0">
+              <p className="mono-num font-black text-emerald">{Number(a.total).toFixed(0)}৳</p>
+              <ChevronDown className={`w-4 h-4 inline transition-transform ${open === a.name ? "rotate-180" : ""}`} />
+            </div>
+          </button>
+          {open === a.name && (
+            <div className="px-3 pb-3 space-y-1.5">
+              {a.entries.map((e: any) => (
+                <div key={e.id} className="rounded-lg bg-white/5 border border-white/10 px-2.5 py-1.5 flex items-center justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-bold truncate">
+                      {e.user_name} <span className="text-[10px] text-muted-foreground mono-num">#{e.uid ?? "-"}</span>
+                    </p>
+                    <p className="text-[10px] text-muted-foreground mono-num truncate">
+                      {String(e.provider).toUpperCase()} · {e.wallet_number}
+                    </p>
+                    <p className="text-[9px] text-muted-foreground">{new Date(e.processed_at).toLocaleString()}</p>
+                  </div>
+                  <p className="mono-num font-black text-emerald text-sm shrink-0">{Number(e.amount).toFixed(0)}৳</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
     </div>
   );
 }

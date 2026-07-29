@@ -673,6 +673,7 @@ export type Database = {
           amount: number
           created_at: string
           id: string
+          paid_by: string | null
           processed_at: string | null
           provider: Database["public"]["Enums"]["wallet_provider"]
           status: Database["public"]["Enums"]["withdrawal_status"]
@@ -684,6 +685,7 @@ export type Database = {
           amount: number
           created_at?: string
           id?: string
+          paid_by?: string | null
           processed_at?: string | null
           provider: Database["public"]["Enums"]["wallet_provider"]
           status?: Database["public"]["Enums"]["withdrawal_status"]
@@ -695,6 +697,7 @@ export type Database = {
           amount?: number
           created_at?: string
           id?: string
+          paid_by?: string | null
           processed_at?: string | null
           provider?: Database["public"]["Enums"]["wallet_provider"]
           status?: Database["public"]["Enums"]["withdrawal_status"]
