@@ -200,6 +200,8 @@ export async function decide(opts: {
   warnCount?: number;
   /** telegram username of the human support person */
   supportUsername?: string;
+  /** live app rules/rates knowledge block */
+  knowledge?: string;
 }): Promise<BotDecision> {
   const key = process.env.LOVABLE_API_KEY;
   if (!key) throw new Error("LOVABLE_API_KEY not configured");
@@ -212,6 +214,9 @@ export async function decide(opts: {
   const system = `${opts.persona}
 
 তুমি Good-App এর অফিসিয়াল সাপোর্ট অ্যাসিস্ট্যান্ট। তুমি একজন মানুষের মতো স্বাভাবিক, বন্ধুত্বপূর্ণ ও বুদ্ধিমান ভঙ্গিতে বাংলায় কথা বলবে।
+
+${opts.knowledge ?? ""}
+
 
 গ্রুপের নিয়ম:
 ${opts.rules || "(কোনো নিয়ম সেট করা নেই)"}
