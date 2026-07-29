@@ -39,6 +39,10 @@ export async function resetSlotForUid(uid: string, slot: number): Promise<SlotRe
     .eq("user_id", profile.id).eq("slot", slot).maybeSingle();
   if (!task) return { ok: false, error: `স্লট ${slot} পাওয়া যায়নি।` };
 
+  // Keep a restorable snapshot (key + photo + timestamps) before clearing.
+  const { backupTask } = await import("@/lib/slot-backup.server");
+  await backupTask(task.id, `telegram:${uid}`);
+
   // Clear any pending backup first, otherwise the whitelist job can re-promote
   // the old face/key back into the slot after the reset.
   await supabaseAdmin.from("unverified_attempts")
@@ -47,9 +51,9 @@ export async function resetSlotForUid(uid: string, slot: number): Promise<SlotRe
     await supabaseAdmin.from("unverified_attempts")
       .delete().eq("user_id", profile.id).eq("wallet_address", task.wallet_address);
   }
-  if (task.face_photo_url) {
-    await supabaseAdmin.storage.from("face-photos").remove([task.face_photo_url]);
-  }
+  // The face photo file is intentionally kept in storage so the slot can be
+  // fully restored if the reset was a mistake.
+
 
   const { error } = await supabaseAdmin.from("tasks").update({
     status: "empty",

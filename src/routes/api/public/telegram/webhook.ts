@@ -144,71 +144,23 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return res.done.length > 0;
         };
 
-        // ---- admin login inside Telegram: /admin <password> -------------------
-        const isAdminUser = async () => {
-          if (!msg.from?.id) return false;
-          const { data } = await supabaseAdmin
-            .from("tg_sessions").select("expires_at")
-            .eq("tg_user_id", msg.from.id).eq("intent", "admin")
-            .gt("expires_at", new Date().toISOString()).limit(1);
-          return !!data?.length;
-        };
-
-        const adminCmd = norm.match(/^\/admin(?:@\w+)?\s+(.+)$/i);
-        if (adminCmd && msg.from?.id) {
-          const pass = adminCmd[1].trim();
-          const { passwordMatches, hashMatches } = await import("@/lib/admin-session.server");
-          const { data: row } = await supabaseAdmin
-            .from("admin_settings").select("password_hash").eq("id", "default").maybeSingle();
-          const ok = row?.password_hash
-            ? hashMatches(pass, row.password_hash)
-            : !!process.env.ADMIN_PASSWORD && passwordMatches(pass, process.env.ADMIN_PASSWORD);
-
-          // Never leave the password visible in the chat.
-          await deleteMessage(chatId, msg.message_id).catch(() => {});
-
-          if (ok) {
-            await supabaseAdmin.from("tg_sessions").upsert({
-              tg_user_id: msg.from.id,
-              chat_id: msg.chat.id,
-              intent: "admin",
-              step: "authed",
-              uid: null,
-              app_user_id: null,
-              expires_at: new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString(),
-              updated_at: new Date().toISOString(),
-            } as any, { onConflict: "tg_user_id,chat_id" });
-            await sendMessage(
-              chatId,
-              `🔐 <b>অ্যাডমিন লগইন সফল</b> — ১২ ঘণ্টার জন্য চালু।\n\n` +
-                `কমান্ড:\n` +
-                `<code>/reset UID স্লট</code> — যেমন <code>/reset 4100 2,5,7</code> বা <code>/reset 4100 সব</code>\n` +
-                `<code>/logout</code> — লগআউট`,
-            );
-            await logMessage("ok", "admin-login", null, null);
-          } else {
-            await sendMessage(chatId, "❌ পাসওয়ার্ড ভুল।");
-            await logMessage("ok", "admin-login-failed", null, null);
-          }
-          return Response.json({ ok: true, flow: "admin-login" });
-        }
-
-        if (/^\/logout\b/i.test(norm) && msg.from?.id) {
-          await supabaseAdmin.from("tg_sessions").delete()
-            .eq("tg_user_id", msg.from.id).eq("intent", "admin");
-          await sendMessage(chatId, "🔓 অ্যাডমিন লগআউট হয়েছে।", msg.message_id);
-          await logMessage("ok", "admin-logout", null, null);
-          return Response.json({ ok: true, flow: "admin-logout" });
+        // ---- open commands: no password needed ------------------------------
+        if (/^\/(start|help|admin)\b/i.test(norm)) {
+          await sendMessage(
+            chatId,
+            `🤖 <b>কমান্ড</b>\n` +
+              `<code>/reset UID স্লট</code> — যেমন <code>/reset 4100 2,5,7</code>, <code>/reset 4100 2-6</code> বা <code>/reset 4100 সব</code>\n` +
+              `শুধু "স্লট রিসেট" লিখলেই বট ধাপে ধাপে UID ও স্লট নম্বর জিজ্ঞেস করবে।`,
+            msg.message_id,
+          );
+          return Response.json({ ok: true, flow: "help" });
         }
 
         const resetCmd = norm.match(/^\/reset(?:@\w+)?\s+(\S+)\s*(.*)$/i);
         if (resetCmd) {
-          if (!(await isAdminUser())) {
-            await sendMessage(chatId, "🔐 এই কমান্ডটি শুধু অ্যাডমিনের জন্য। আগে <code>/admin আপনার-পাসওয়ার্ড</code> দিয়ে লগইন করুন (বটের প্রাইভেট চ্যাটে দিলে নিরাপদ)।", msg.message_id);
-            return Response.json({ ok: true, flow: "admin-required" });
-          }
           const uidArg = resetCmd[1].replace(/\D/g, "") || resetCmd[1].toUpperCase();
           const rest = resetCmd[2] ?? "";
+
           await doReset(uidArg, /(সব|all)/i.test(rest) ? [] : pickSlots(rest));
           return Response.json({ ok: true, flow: "admin-reset" });
         }

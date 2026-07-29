@@ -427,6 +427,42 @@ export type Database = {
           },
         ]
       }
+      task_reset_backups: {
+        Row: {
+          attempts: Json
+          created_at: string
+          id: string
+          reset_by: string | null
+          restored_at: string | null
+          slot: number
+          snapshot: Json
+          task_id: string
+          user_id: string
+        }
+        Insert: {
+          attempts?: Json
+          created_at?: string
+          id?: string
+          reset_by?: string | null
+          restored_at?: string | null
+          slot: number
+          snapshot: Json
+          task_id: string
+          user_id: string
+        }
+        Update: {
+          attempts?: Json
+          created_at?: string
+          id?: string
+          reset_by?: string | null
+          restored_at?: string | null
+          slot?: number
+          snapshot?: Json
+          task_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       tasks: {
         Row: {
           created_at: string
