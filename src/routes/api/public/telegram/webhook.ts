@@ -7,7 +7,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
       POST: async ({ request }) => {
         const {
           getBotToken, webhookSecretFor, sendMessage, deleteMessage,
-          restrictUser, getPhotoBase64, decide,
+          restrictUser, getPhotoBase64, decide, faqImageBase64,
         } = await import("@/lib/telegram-bot.server");
 
         let expected: string;
