@@ -92,11 +92,23 @@ function UserDetail() {
   });
 
 
-  const reset = useMutation({
-    mutationFn: (taskId: string) => adminResetTask({ data: { taskId } }),
-    onSuccess: () => { toast.success("Slot reset"); refetch(); },
+  const backups = useQuery({
+    queryKey: ["admin-task-backups", userId],
+    queryFn: () => adminListTaskBackups({ data: { userId } }),
+  });
+
+  const restore = useMutation({
+    mutationFn: (backupId: string) => adminRestoreTask({ data: { backupId } }),
+    onSuccess: () => { toast.success("স্লট আগের অবস্থায় ফিরে এসেছে"); backups.refetch(); refetch(); },
     onError: (e: any) => toast.error(e.message),
   });
+
+  const reset = useMutation({
+    mutationFn: (taskId: string) => adminResetTask({ data: { taskId } }),
+    onSuccess: () => { toast.success("Slot reset"); backups.refetch(); refetch(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
 
   const del = useMutation({
     mutationFn: () => adminমুছুনUser({ data: { userId } }),
