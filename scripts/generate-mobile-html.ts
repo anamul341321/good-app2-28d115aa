@@ -14,6 +14,11 @@ function findAsset(pattern: RegExp): string | null {
   }
 }
 
+function findEntry(prefix: string): string | null {
+  const pattern = new RegExp(`^${prefix}-[A-Za-z0-9_-]+\\.js$`);
+  return findAsset(pattern);
+}
+
 function findIcon(name: string): string | null {
   try {
     const files = readdirSync(webDir);
