@@ -250,31 +250,37 @@ export const getLeaderboards = createServerFn({ method: "GET" }).handler(async (
   const nowMs = Date.now();
   const bucket = Math.floor(nowMs / (10 * 60 * 1000));
   const rnd2 = seedRand(dayKey * 9301 + 49297 + bucket);
-  const fakeWithdraws = Array.from({ length: 60 }, (_, i) => {
+  // Common real-looking amounts so users believe the feed.
+  const COMMON_AMOUNTS = [360, 90, 135, 360, 90, 135, 180, 225, 270, 450];
+  const fakeWithdraws: any[] = [];
+  for (let i = 0; i < 60; i++) {
     const prov = pick(providers);
+    // Keep pending rows fresh: only the newest ~6 rows may be pending,
+    // and rotate them every 2 minutes so the same name doesn't stick.
+    const pendingWindowMs = 2 * 60 * 1000;
     const createdOffset = i < 6
-      ? Math.floor(rnd2() * 10 * 60 * 1000)
-      : 10 * 60 * 1000 + Math.floor(rnd() * (24 * 3600 * 1000 - 10 * 60 * 1000));
-    const withinPendingWindow = createdOffset < 10 * 60 * 1000;
-    const status = withinPendingWindow && rnd2() < 0.5 ? "pending" : "paid";
+      ? Math.floor(rnd2() * pendingWindowMs)
+      : pendingWindowMs + Math.floor(rnd() * (24 * 3600 * 1000 - pendingWindowMs));
+    const withinPendingWindow = createdOffset < pendingWindowMs;
+    const status = withinPendingWindow && rnd2() < 0.6 ? "pending" : "paid";
     const created = new Date(nowMs - createdOffset).toISOString();
     const processedMs = 30 + Math.floor(rnd() * 900);
     const processed = status === "paid"
       ? new Date(nowMs - createdOffset + processedMs * 1000).toISOString()
       : null;
-    return {
+    fakeWithdraws.push({
       id: fakeId(),
       user_id: fakeId(),
       name: uniqueName(),
       uid: fakeUid(),
-      amount: 80 + Math.floor(rnd() * 900),
+      amount: pick(COMMON_AMOUNTS),
       provider: prov,
       wallet_masked: maskFakeNumber(prov),
       status,
       created_at: created,
       processed_at: processed,
-    };
-  });
+    });
+  }
 
   const realTopRef = build(topRefPairs);
   const realTopVer = build(topVerPairs);
