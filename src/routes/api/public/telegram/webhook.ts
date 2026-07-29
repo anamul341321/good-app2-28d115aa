@@ -322,7 +322,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           } catch (e) {
             console.error("[tg] decide failed", e);
           }
-          if (!decision.uid && knownUid) decision.uid = decision.uid ?? null;
+          
           (decision as any)._knownUid = knownUid;
         }
 

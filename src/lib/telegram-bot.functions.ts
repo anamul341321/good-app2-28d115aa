@@ -33,6 +33,9 @@ const settingsSchema = z.object({
   ask_uid_message: z.string().max(600),
   slot_reset_enabled: z.boolean(),
   ask_slot_message: z.string().max(600),
+  smart_mode: z.boolean(),
+  auto_block_enabled: z.boolean(),
+  block_threshold: z.number().int().min(1).max(50),
 
   group_chat_id: z.string().max(64).nullable(),
   admin_chat_id: z.string().max(64).nullable(),
@@ -42,6 +45,7 @@ const settingsSchema = z.object({
   banned_words: z.array(z.string().max(60)).max(300),
   warn_threshold: z.number().int().min(1).max(20),
 });
+
 
 
 export const tgSaveSettings = createServerFn({ method: "POST" })
