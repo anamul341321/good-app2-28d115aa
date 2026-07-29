@@ -52,24 +52,37 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         const hardHit = bannedWords.find((w) => w && lower.includes(w.toLowerCase()));
 
         const { data: faqRows } = await supabaseAdmin
-          .from("tg_faq").select("topic, answer, keywords").eq("is_active", true)
+          .from("tg_faq").select("topic, answer, keywords, image_path").eq("is_active", true)
           .order("priority", { ascending: false }).order("id");
-        const faq = (faqRows ?? []).map((f: any) => ({ topic: f.topic, answer: f.answer }));
 
         let photoBase64: string | null = null;
         if (settings.photo_analysis_enabled && photos?.length) {
           photoBase64 = await getPhotoBase64(photos[photos.length - 1].file_id);
         }
 
+        // Reference screenshots are only loaded when the user actually sent a photo.
+        const faq: any[] = [];
+        let imgBudget = 6;
+        for (const f of faqRows ?? []) {
+          let imageBase64: string | null = null;
+          if (photoBase64 && (f as any).image_path && imgBudget > 0) {
+            imageBase64 = await faqImageBase64((f as any).image_path);
+            if (imageBase64) imgBudget--;
+          }
+          faq.push({ topic: f.topic, answer: f.answer, keywords: (f as any).keywords, imageBase64 });
+        }
+
         let decision = {
           verdict: "ok" as const, reply: null as string | null,
           should_delete: false, should_warn: false, uid: null as string | null,
+          needs_uid: false,
         } as Awaited<ReturnType<typeof decide>>;
 
         if (hardHit) {
           decision = {
             verdict: "abuse", reply: null,
             should_delete: !!settings.delete_bad_messages, should_warn: true, uid: null,
+            needs_uid: false,
           };
         } else if (text.trim() || photoBase64) {
           try {
@@ -86,6 +99,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             console.error("[tg] decide failed", e);
           }
         }
+
 
         const actions: string[] = [];
 
