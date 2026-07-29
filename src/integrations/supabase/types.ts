@@ -579,8 +579,10 @@ export type Database = {
           admin_mention: string | null
           ask_slot_message: string
           ask_uid_message: string
+          auto_block_enabled: boolean
           auto_reply_enabled: boolean
           banned_words: string[]
+          block_threshold: number
           created_at: string
           delete_bad_messages: boolean
           enabled: boolean
@@ -591,6 +593,7 @@ export type Database = {
           photo_analysis_enabled: boolean
           rules: string
           slot_reset_enabled: boolean
+          smart_mode: boolean
           uid_lookup_enabled: boolean
           updated_at: string
           warn_threshold: number
@@ -600,8 +603,10 @@ export type Database = {
           admin_mention?: string | null
           ask_slot_message?: string
           ask_uid_message?: string
+          auto_block_enabled?: boolean
           auto_reply_enabled?: boolean
           banned_words?: string[]
+          block_threshold?: number
           created_at?: string
           delete_bad_messages?: boolean
           enabled?: boolean
@@ -612,6 +617,7 @@ export type Database = {
           photo_analysis_enabled?: boolean
           rules?: string
           slot_reset_enabled?: boolean
+          smart_mode?: boolean
           uid_lookup_enabled?: boolean
           updated_at?: string
           warn_threshold?: number
@@ -621,8 +627,10 @@ export type Database = {
           admin_mention?: string | null
           ask_slot_message?: string
           ask_uid_message?: string
+          auto_block_enabled?: boolean
           auto_reply_enabled?: boolean
           banned_words?: string[]
+          block_threshold?: number
           created_at?: string
           delete_bad_messages?: boolean
           enabled?: boolean
@@ -633,6 +641,7 @@ export type Database = {
           photo_analysis_enabled?: boolean
           rules?: string
           slot_reset_enabled?: boolean
+          smart_mode?: boolean
           uid_lookup_enabled?: boolean
           updated_at?: string
           warn_threshold?: number
@@ -725,29 +734,53 @@ export type Database = {
       }
       tg_offenders: {
         Row: {
+          app_user_id: string | null
+          blocked: boolean
+          blocked_at: string | null
+          blocked_reason: string | null
+          chat_id: number | null
           created_at: string
           full_name: string | null
+          known_uid: string | null
           last_offense_at: string
           last_reason: string | null
+          note: string | null
           tg_user_id: number
+          unblocked_at: string | null
           username: string | null
           warn_count: number
         }
         Insert: {
+          app_user_id?: string | null
+          blocked?: boolean
+          blocked_at?: string | null
+          blocked_reason?: string | null
+          chat_id?: number | null
           created_at?: string
           full_name?: string | null
+          known_uid?: string | null
           last_offense_at?: string
           last_reason?: string | null
+          note?: string | null
           tg_user_id: number
+          unblocked_at?: string | null
           username?: string | null
           warn_count?: number
         }
         Update: {
+          app_user_id?: string | null
+          blocked?: boolean
+          blocked_at?: string | null
+          blocked_reason?: string | null
+          chat_id?: number | null
           created_at?: string
           full_name?: string | null
+          known_uid?: string | null
           last_offense_at?: string
           last_reason?: string | null
+          note?: string | null
           tg_user_id?: number
+          unblocked_at?: string | null
           username?: string | null
           warn_count?: number
         }
