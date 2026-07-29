@@ -103,6 +103,11 @@ function SettingsPanel() {
         ask_uid_message: form.ask_uid_message ?? "",
         slot_reset_enabled: form.slot_reset_enabled !== false,
         ask_slot_message: form.ask_slot_message ?? "",
+        smart_mode: form.smart_mode !== false,
+        auto_block_enabled: form.auto_block_enabled !== false,
+        block_threshold: Number(form.block_threshold) || 5,
+
+
 
         group_chat_id: form.group_chat_id?.trim() || null,
         admin_chat_id: form.admin_chat_id?.trim() || null,
