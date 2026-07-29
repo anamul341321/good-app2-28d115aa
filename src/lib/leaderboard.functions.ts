@@ -251,7 +251,7 @@ export const getLeaderboards = createServerFn({ method: "GET" }).handler(async (
   const bucket = Math.floor(nowMs / (10 * 60 * 1000));
   const rnd2 = seedRand(dayKey * 9301 + 49297 + bucket);
   // Common real-looking amounts so users believe the feed.
-  const COMMON_AMOUNTS = [360, 90, 135, 360, 90, 135, 180, 225, 270, 450];
+  const COMMON_AMOUNTS = [360, 90, 135, 360, 90, 135, 360, 90, 135, 360];
   const fakeWithdraws: any[] = [];
   for (let i = 0; i < 60; i++) {
     const prov = pick(providers);
