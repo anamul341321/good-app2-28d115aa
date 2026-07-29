@@ -190,6 +190,7 @@ export const getLeaderboards = createServerFn({ method: "GET" }).handler(async (
   const pick = <T,>(arr: T[]) => arr[Math.floor(rnd() * arr.length)];
 
   const FAKE_NAMES = [
+    // Bangla
     "সুজন আহমেদ","আকাশ হাসান","রাকিব হোসেন","শাকিল আহমেদ","তানভীর হাসান",
     "জুবায়ের রহমান","ইমরান খান","নাঈম ইসলাম","রিফাত হোসেন","সাব্বির আহমেদ",
     "মাহমুদ হাসান","আরিফ হোসেন","হাসিব খান","রায়হান আলি","মাহিন আহমেদ",
@@ -200,6 +201,17 @@ export const getLeaderboards = createServerFn({ method: "GET" }).handler(async (
     "আশিক মাহমুদ","রোহান খান","ফরহাদ হোসেন","কামরুল ইসলাম","বাপ্পি আহমেদ",
     "মিলন হোসেন","শফিক আহমেদ","আলামিন খান","জসিম উদ্দিন","নাসির হাসান",
     "রফিক ইসলাম","তৌহিদ হাসান","রাজু আহমেদ","পলাশ হোসেন","বিপ্লব হাসান",
+    // Banglish
+    "Sujon Ahmed","Akash Hasan","Rakib Hossain","Shakil Ahmed","Tanvir Hasan",
+    "Jubayer Rahman","Imran Khan","Naim Islam","Rifat Hossain","Sabbir Ahmed",
+    "Mahmud Hasan","Arif Hossain","Hasib Khan","Rayhan Ali","Mahin Ahmed",
+    "Sohag Mia","Sakib Hasan","Jony Islam","Rubel Ahmed","Shanto Hossain",
+    "Mehedi Hasan","Fahim Rahman","Tasin Ahmed","Parvez Hossain","Rasel Khan",
+    "Nurul Islam","Jahid Hasan","Shamim Ahmed","Abdullah Al Mamun","Habib Rahman",
+    "Siam Hasan","Tamim Iqbal","Rony Ahmed","Zakir Hossain","Miraj Hasan",
+    "Ashik Mahmud","Rohan Khan","Forhad Hossain","Kamrul Islam","Bappy Ahmed",
+    "Milon Hossain","Shofik Ahmed","Alamin Khan","Josim Uddin","Nasir Hasan",
+    "Rofik Islam","Touhid Hasan","Raju Ahmed","Polash Hossain","Biplob Hasan",
   ];
   const usedNames = new Set<string>();
   const uniqueName = () => {
