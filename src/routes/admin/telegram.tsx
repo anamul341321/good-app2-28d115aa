@@ -217,11 +217,18 @@ function SettingsPanel() {
         <Field label="কত সতর্কতার পর অটো ব্লক" type="number" hint="যেমন ৫ — ৫ বার নিয়ম ভাঙলে গ্রুপ থেকে ব্লক"
           value={String(form.block_threshold ?? 5)} onChange={(v) => set("block_threshold", v)} />
 
+        <Field label="ডিফল্ট ভিডিও লিংক 📺" hint="কেউ 'কিভাবে কাজ করবো / ভিডিও দিন' বললে এই লিংকটি যাবে"
+          value={form.default_video_url ?? ""} onChange={(v) => set("default_video_url", v)} />
+
         <Area label="UID চাওয়ার মেসেজ" rows={2}
           value={form.ask_uid_message ?? ""} onChange={(v) => set("ask_uid_message", v)} />
         <Area label="স্লট নম্বর চাওয়ার মেসেজ" rows={2}
           value={form.ask_slot_message ?? ""} onChange={(v) => set("ask_slot_message", v)} />
+        <Area label="ওয়েলকাম মেসেজ 🎉 ({name} = নাম, {video} = ভিডিও লিংক)" rows={5}
+          value={form.welcome_message ?? ""} onChange={(v) => set("welcome_message", v)} />
         <Area label="Bot এর পরিচয় / আচরণ" rows={4} value={form.persona ?? ""} onChange={(v) => set("persona", v)} />
+
+
 
         <Area label="গ্রুপের নিয়ম (bot এগুলো মানবে ও শেখাবে)" rows={6} value={form.rules ?? ""} onChange={(v) => set("rules", v)} />
 
