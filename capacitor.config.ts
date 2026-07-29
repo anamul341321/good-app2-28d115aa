@@ -3,7 +3,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 const config: CapacitorConfig = {
   appId: 'com.goodapp.mobile',
   appName: 'Good-App',
-  webDir: 'dist',
+  webDir: 'dist/client',
   server: {
     androidScheme: 'https',
     cleartext: false,
