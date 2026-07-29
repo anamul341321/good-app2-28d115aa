@@ -109,7 +109,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         const pickSlot = (s: string): number | null => pickSlots(s)[0] ?? null;
         const isCancel = /(বাতিল|cancel|থাক|লাগবে না)/i.test(norm);
         const verificationDateKind = (s: string): "first" | "reverify" | "all" | null => {
-          const asksDate = /(তারিখ|কবে|কতদিন|kotodin|koto\s*tarikh|tarikh|date|when)/i.test(s);
+          const asksDate = /(তারিখ|কবে|কতদিন|kotodin|kobe|kokhon|koto\s*(?:tarikh|ratikh|date|din)|tarikh|ratikh|date|when|hoise|hoyche|hoyeche|korche|kora\s*hoyche)/i.test(s);
           const asksVerify = /(verify|verification|ভেরিফাই|ভেরিফিকেশন|face|ফেস)/i.test(s);
           if (!asksDate || !asksVerify) return null;
           if (/(re\s*-?\s*verify|reverify|রি\s*-?\s*ভেরিফাই|রি-ভেরিফাই)/i.test(s)) return "reverify";
