@@ -130,6 +130,14 @@ export async function decide(opts: {
   text: string;
   photoBase64: string | null;
   senderName: string;
+  /** true = bot may reason on its own when no FAQ matches */
+  smart?: boolean;
+  /** recent messages from the same user (oldest → newest) */
+  history?: string[];
+  /** UID we already know for this user, from earlier messages */
+  knownUid?: string | null;
+  /** how many times this user already broke the rules */
+  warnCount?: number;
 }): Promise<BotDecision> {
   const key = process.env.LOVABLE_API_KEY;
   if (!key) throw new Error("LOVABLE_API_KEY not configured");
@@ -143,15 +151,24 @@ ${opts.rules || "(কোনো নিয়ম সেট করা নেই)"}
 
 নিষিদ্ধ শব্দ/বিষয়: ${opts.bannedWords.join(", ") || "(নেই)"}
 
-তোমার জানা উত্তরসমূহ (এগুলোর বাইরে নতুন তথ্য বানাবে না):
+তোমার জানা উত্তরসমূহ:
 ${opts.faq.map((f, i) => `${i + 1}. [${f.topic}]${f.keywords?.length ? ` (কিওয়ার্ড: ${f.keywords.join(", ")})` : ""} ${f.answer}`).join("\n") || "(কিছু নেই)"}
 
 ${withImages.length ? `নিচে কিছু "রেফারেন্স ছবি" দেওয়া হলো। ইউজারের পাঠানো ছবি যদি কোনো রেফারেন্স ছবির মতো একই স্ক্রিন/এরর/সমস্যা দেখায়, তবে ঠিক সেই টপিকের উত্তরটাই দেবে:
 ${withImages.map((f, i) => `রেফারেন্স ছবি ${i + 1} = [${f.topic}]`).join("\n")}` : ""}
 
+${opts.history?.length ? `এই ইউজারের আগের কিছু মেসেজ (পুরোনো → নতুন):
+${opts.history.map((h, i) => `${i + 1}. ${h}`).join("\n")}` : ""}
+${opts.knownUid ? `এই ইউজারের জানা UID: ${opts.knownUid}` : ""}
+${opts.warnCount ? `এই ইউজার ইতিমধ্যে ${opts.warnCount} বার নিয়ম ভেঙেছে।` : ""}
+
 তোমার কাজ: গ্রুপের একটি মেসেজ (এবং থাকলে ছবি/স্ক্রিনশট) বিশ্লেষণ করে সিদ্ধান্ত দাও।
-- verdict: "ok" (স্বাভাবিক), "question" (সাপোর্ট প্রশ্ন), "spam", "abuse" (গালি/আক্রমণ), "scam" (প্রতারণা/ভুয়া অফার/লিংক)
-- reply: শুধুমাত্র question হলে বাংলায় সংক্ষিপ্ত উত্তর (২-৫ লাইন), নাহলে null। উত্তর অবশ্যই উপরের জানা উত্তর/নিয়ম থেকেই দিতে হবে; না জানলে reply দাও: "এই বিষয়ে অ্যাডমিন শীঘ্রই উত্তর দেবেন।"
+- verdict: "ok" (স্বাভাবিক), "question" (সাপোর্ট প্রশ্ন), "spam", "abuse" (গালি/আক্রমণ/অ্যাডমিনকে হুমকি), "scam" (প্রতারণা/ভুয়া অফার/লিংক)
+- reply: প্রশ্ন হলে বাংলায় সংক্ষিপ্ত, ভদ্র ও পরিষ্কার উত্তর (২-৫ লাইন), নাহলে null।${
+    opts.smart
+      ? ` উপরের জানা উত্তরে মিল থাকলে সেটাই অগ্রাধিকার দেবে। মিল না থাকলে নিজে বুদ্ধি খাটিয়ে অ্যাপের নিয়ম ও সাধারণ যুক্তি দিয়ে সহায়ক উত্তর দেবে — কিন্তু টাকা, ব্যালেন্স, পেমেন্টের তারিখ বা নিয়ম নিয়ে কখনো বানানো তথ্য দেবে না; নিশ্চিত না হলে বলবে "এই বিষয়ে অ্যাডমিন শীঘ্রই জানাবেন।"`
+      : ` উত্তর অবশ্যই উপরের জানা উত্তর/নিয়ম থেকেই দিতে হবে; না জানলে reply দাও: "এই বিষয়ে অ্যাডমিন শীঘ্রই উত্তর দেবেন।"`
+  }
 - should_delete: spam/scam/abuse হলে true
 - should_warn: abuse/scam/spam হলে true
 - uid: মেসেজ বা ছবিতে Good-App UID (শুধু সংখ্যা, যেমন 4100) বা ৭ অক্ষরের রেফার কোড থাকলে সেটি, নাহলে null
@@ -166,6 +183,7 @@ ${withImages.map((f, i) => `রেফারেন্স ছবি ${i + 1} = [${
   const content: any[] = [
     { type: "text", text: `প্রেরক: ${opts.senderName}\nমেসেজ: ${opts.text || "(শুধু ছবি)"}` },
   ];
+
   if (opts.photoBase64) {
     content.push({ type: "text", text: "ইউজারের পাঠানো ছবি:" });
     content.push({ type: "image_url", image_url: { url: `data:image/jpeg;base64,${opts.photoBase64}` } });
