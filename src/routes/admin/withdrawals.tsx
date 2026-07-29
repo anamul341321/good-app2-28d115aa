@@ -78,13 +78,29 @@ function AdminWithdrawals() {
 
   return (
     <div className="space-y-3">
+      <div className="glass rounded-xl p-2.5 border border-cyan/25 bg-cyan/5 flex items-center gap-2">
+        <UserCheck className="w-4 h-4 text-cyan shrink-0" />
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] font-black text-cyan">আপনার নাম (Mark paid এর সময় ব্যবহার হবে)</p>
+          <input
+            value={adminName}
+            onChange={(e) => setAdminName(e.target.value)}
+            placeholder="যেমন: Anamul"
+            className="w-full mt-0.5 px-2 py-1 rounded bg-background/60 border border-white/10 text-xs outline-none focus:border-cyan"
+          />
+        </div>
+      </div>
       <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
         <Tab id="pending" label="⏳ Pending" count={counts.pending} tone="bg-amber/20 text-amber" />
         <Tab id="paid" label="✅ Paid" count={counts.paid} tone="bg-emerald/20 text-emerald" />
+        <Tab id="paid-by" label="👤 Paid-by admin" count={(paidByQ.data ?? []).length} tone="bg-cyan/20 text-cyan" />
         <Tab id="admin" label="🎁 Admin Payout" count={counts.admin} tone="bg-fuchsia-500/20 text-fuchsia-300" />
         <Tab id="rejected" label="❌ Rejected" count={counts.rejected} tone="bg-rose/20 text-rose" />
         <Tab id="all" label="All" count={counts.all} tone="bg-cyan/20 text-cyan" />
       </div>
+
+      {filter === "paid-by" && <PaidByPanel data={paidByQ.data ?? []} loading={paidByQ.isLoading} />}
+
 
       {filter === "admin" && (
         <>
