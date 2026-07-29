@@ -33,7 +33,7 @@ function TelegramAdmin() {
 
       <div className="flex gap-2 overflow-x-auto -mx-4 px-4 pb-1 scrollbar-none">
         {([
-          ["settings", "সেটিংস"], ["faq", "উত্তর/নিয়ম"],
+          ["settings", "সেটিংস"], ["faq", "উত্তর/নিয়ম"], ["lookup", "UID লুকআপ"],
           ["bans", "Ban requests"], ["log", "Activity"],
         ] as [Tab, string][]).map(([k, label]) => (
           <button key={k} onClick={() => setTab(k)}
@@ -47,8 +47,10 @@ function TelegramAdmin() {
 
       {tab === "settings" && <SettingsPanel />}
       {tab === "faq" && <FaqPanel />}
+      {tab === "lookup" && <LookupPanel />}
       {tab === "bans" && <BansPanel />}
       {tab === "log" && <LogPanel />}
+
     </div>
   );
 }
