@@ -1024,10 +1024,20 @@ function DailyReportPanel({ userId }: { userId: string }) {
   const download = () => {
     if (!data) return;
     const html = buildReportHtml(data);
-    const w = window.open("", "_blank");
-    if (!w) { toast.error("Popup blocked"); return; }
-    w.document.write(html);
-    w.document.close();
+    const filename = `refer-report-${data.profile?.uid ?? "user"}-${new Date().toISOString().slice(0, 10)}.html`;
+    try {
+      const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      toast.success("রিপোর্ট ডাউনলোড হয়েছে — শেয়ার করুন");
+    } catch {
+      const w = window.open("", "_blank");
+      if (!w) { toast.error("Popup blocked"); return; }
+      w.document.write(html); w.document.close();
+    }
   };
 
   if (isLoading) {
@@ -1151,6 +1161,12 @@ function DailyReportPanel({ userId }: { userId: string }) {
 
 function buildReportHtml(d: any): string {
   const esc = (s: any) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
+  const maskPhone = (raw: any) => {
+    const s = String(raw ?? "").trim();
+    if (!s) return "—";
+    if (s.length <= 5) return "•".repeat(s.length);
+    return s.slice(0, 3) + "•".repeat(Math.max(4, s.length - 5)) + s.slice(-2);
+  };
   const genDate = new Date(d.generatedAt).toLocaleString("en-GB", { timeZone: "Asia/Dhaka" });
   const todayStr = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Dhaka" });
   const todayBn = new Date().toLocaleDateString("bn-BD", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Dhaka" });
@@ -1192,7 +1208,7 @@ function buildReportHtml(d: any): string {
             <td class="num">${i + 1}</td>
             <td><b>${esc(r.name)}</b></td>
             <td class="num">${esc(r.uid)}</td>
-            <td>${esc(r.phone)}</td>
+            <td>${esc(maskPhone(r.phone))}</td>
             <td class="num">${r.firstToday || "—"}</td>
             <td class="num">${r.reToday || "—"}</td>
             <td>${r.completedToday ? `<span class="pill pill-a">🎯 ১০/১০ পূর্ণ</span>` : `<span class="pill pill-c">চলছে</span>`}</td>
@@ -1208,7 +1224,7 @@ function buildReportHtml(d: any): string {
             <td class="num">${i + 1}</td>
             <td><b>${esc(r.name)}</b></td>
             <td class="num">${esc(r.uid)}</td>
-            <td>${esc(r.phone)}</td>
+            <td>${esc(maskPhone(r.phone))}</td>
             <td class="num">${r.firstTotal}</td>
             <td class="num">${r.reTotal}</td>
             <td>${r.completedAt ? esc(new Date(r.completedAt).toLocaleDateString("en-CA", { timeZone: "Asia/Dhaka" })) : "—"}</td>
@@ -1245,7 +1261,7 @@ function buildReportHtml(d: any): string {
 
 <h1>রেফার রিপোর্ট — ${esc(d.profile.name)}</h1>
 <div class="meta">
-  UID <b>${esc(d.profile.uid)}</b> · রেফার কোড <b>${esc(d.profile.referralCode)}</b> · ফোন ${esc(d.profile.phone)}<br />
+  UID <b>${esc(d.profile.uid)}</b> · রেফার কোড <b>${esc(d.profile.referralCode)}</b> · ফোন ${esc(maskPhone(d.profile.phone))}<br />
   তৈরি: ${esc(genDate)} (Asia/Dhaka)
 </div>
 
