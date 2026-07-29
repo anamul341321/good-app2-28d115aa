@@ -11,10 +11,11 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "cap:sync": "cap sync",
-    "cap:build": "vite build && cap sync",
-    "mobile:open": "vite build && cap sync && cap open android",
-    "android:debug": "vite build && cap sync && cd android && ./gradlew assembleDebug",
-    "android:release": "vite build && cap sync && cd android && ./gradlew bundleRelease"
+    "mobile:html": "bun run scripts/generate-mobile-html.ts",
+    "cap:build": "vite build && bun run mobile:html && cap sync",
+    "mobile:open": "vite build && bun run mobile:html && cap sync && cap open android",
+    "android:debug": "vite build && bun run mobile:html && cap sync && cd android && ./gradlew assembleDebug",
+    "android:release": "vite build && bun run mobile:html && cap sync && cd android && ./gradlew bundleRelease"
   },
   "dependencies": {
     "@capacitor/android": "^8.4.2",
