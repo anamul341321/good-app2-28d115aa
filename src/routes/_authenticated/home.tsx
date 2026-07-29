@@ -910,3 +910,68 @@ function VoucherPopup({ vouchers, onClaimed }: { vouchers: any[]; onClaimed: () 
   );
 }
 
+function Leaderboards() {
+  const { data } = useQuery({
+    queryKey: ["leaderboards", "v1"],
+    queryFn: () => getLeaderboards(),
+    staleTime: 5 * 60_000,
+    refetchInterval: 5 * 60_000,
+    retry: 1,
+  });
+
+  if (!data) return null;
+  const { topReferrers = [], topVerified = [] } = data as any;
+  if (topReferrers.length === 0 && topVerified.length === 0) return null;
+
+  const medal = (i: number) => (i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `#${i + 1}`);
+
+  return (
+    <div className="grid grid-cols-1 gap-3">
+      <div className="rounded-3xl p-4 shadow-xl relative overflow-hidden text-white"
+           style={{ background: "linear-gradient(135deg,#f59e0b 0%,#ef4444 55%,#8b5cf6 100%)" }}>
+        <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/15 blur-2xl" />
+        <div className="relative flex items-center gap-2 mb-2">
+          <Crown className="w-4 h-4 text-yellow-100" />
+          <p className="text-[11px] uppercase tracking-[0.25em] font-black">টপ ১০ রেফারার</p>
+        </div>
+        <ol className="relative space-y-1.5">
+          {topReferrers.slice(0, 10).map((r: any, i: number) => (
+            <li key={r.id} className="flex items-center justify-between rounded-xl bg-white/15 backdrop-blur border border-white/20 px-2.5 py-1.5">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-sm font-black w-7 shrink-0">{medal(i)}</span>
+                <span className="text-sm font-black truncate">{r.name}</span>
+                <span className="text-[10px] opacity-80 mono-num shrink-0">UID {r.uid}</span>
+              </div>
+              <span className="mono-num text-sm font-black shrink-0">{r.count}</span>
+            </li>
+          ))}
+        </ol>
+        <p className="relative text-[10px] mt-2 opacity-90">সবচেয়ে বেশি রেফার করা ইউজারদের তালিকা</p>
+      </div>
+
+      <div className="rounded-3xl p-4 shadow-xl relative overflow-hidden text-white"
+           style={{ background: "linear-gradient(135deg,#0ea5e9 0%,#22d3ee 50%,#10b981 100%)" }}>
+        <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/15 blur-2xl" />
+        <div className="relative flex items-center gap-2 mb-2">
+          <BadgeCheck className="w-4 h-4 text-white" />
+          <p className="text-[11px] uppercase tracking-[0.25em] font-black">টপ ১০ ভেরিফায়ার</p>
+        </div>
+        <ol className="relative space-y-1.5">
+          {topVerified.slice(0, 10).map((r: any, i: number) => (
+            <li key={r.id} className="flex items-center justify-between rounded-xl bg-white/15 backdrop-blur border border-white/20 px-2.5 py-1.5">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-sm font-black w-7 shrink-0">{medal(i)}</span>
+                <span className="text-sm font-black truncate">{r.name}</span>
+                <span className="text-[10px] opacity-90 mono-num shrink-0">UID {r.uid}</span>
+              </div>
+              <span className="mono-num text-sm font-black shrink-0">{r.count}</span>
+            </li>
+          ))}
+        </ol>
+        <p className="relative text-[10px] mt-2 opacity-90">সবচেয়ে বেশি ফেস ভেরিফাই করা ইউজারদের তালিকা</p>
+      </div>
+    </div>
+  );
+}
+
+
