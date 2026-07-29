@@ -739,6 +739,26 @@ export const adminResetTask = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// Reset history for one user — lets an admin undo a mistaken slot reset.
+export const adminListTaskBackups = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => z.object({ userId: z.string().uuid() }).parse(i))
+  .handler(async ({ data }) => {
+    await gate();
+    const { listTaskBackups } = await import("@/lib/slot-backup.server");
+    return await listTaskBackups(data.userId);
+  });
+
+export const adminRestoreTask = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => z.object({ backupId: z.string().uuid() }).parse(i))
+  .handler(async ({ data }) => {
+    await gate();
+    const { restoreTaskBackup } = await import("@/lib/slot-backup.server");
+    const res = await restoreTaskBackup(data.backupId);
+    if (!res.ok) throw new Error(res.error);
+    return res;
+  });
+
+
 // ---------------- Unverified ----------------
 export const adminListUnverified = createServerFn({ method: "GET" }).handler(async () => {
   const supabaseAdmin = await gate();
