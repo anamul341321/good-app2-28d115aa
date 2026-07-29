@@ -5,7 +5,7 @@ import { adminCheck, adminLogout } from "@/lib/admin-auth.functions";
 import { adminStats } from "@/lib/admin.functions";
 import {
   Users, ArrowDownToLine, ScanFace, LogOut, Loader2, AlertTriangle,
-  LayoutDashboard, Clock, Wallet, ShieldCheck, Gift,
+  LayoutDashboard, Clock, Wallet, ShieldCheck, Gift, Bot,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 
