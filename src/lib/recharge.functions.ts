@@ -108,6 +108,7 @@ export const adminListKycProfiles = createServerFn({ method: "GET" }).handler(as
       .select("id, display_name, uid_seq, phone_number, email, nid_number, date_of_birth, father_name, mother_name, full_address, village_area, post_office, thana_upazila, district, avatar_url, kyc_photo_url, kyc_nid_front_url, kyc_nid_back_url, kyc_verified_at, created_at")
       .eq("kyc_verified", true)
       .order("kyc_verified_at", { ascending: false })
+      .order("id")
       .range(from, from + 999);
     if (error) throw new Error(error.message);
     rows.push(...(data ?? []));

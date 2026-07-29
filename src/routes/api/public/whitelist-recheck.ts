@@ -68,6 +68,7 @@ export const Route = createFileRoute("/api/public/whitelist-recheck")({
             .in("kind", ["first_verify", "reverify"])
             .not("wallet_address", "is", null)
             .order("created_at")
+            .order("id")
             .range(from, from + 999);
           if (attemptsError) return Response.json({ error: attemptsError.message }, { status: 500 });
           attempts.push(...(page ?? []));
