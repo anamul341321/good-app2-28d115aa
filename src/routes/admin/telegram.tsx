@@ -151,6 +151,11 @@ function SettingsPanel() {
         </button>
       </div>
 
+      <ChatIdPicker
+        onPick={(id, which) => { set(which === "group" ? "group_chat_id" : "admin_chat_id", id); toast.success("বসানো হয়েছে — নিচে সেভ করুন"); }}
+      />
+
+
       <div className="glass rounded-2xl p-4 space-y-2">
         <Toggle label="Bot চালু" hint="বন্ধ করলে বট কিছুই করবে না" value={!!form.enabled} onChange={(v) => set("enabled", v)} />
         <Toggle label="AI অটো-রিপ্লাই" hint="ইউজারের প্রশ্নের উত্তর নিজে দেবে" value={!!form.auto_reply_enabled} onChange={(v) => set("auto_reply_enabled", v)} />
