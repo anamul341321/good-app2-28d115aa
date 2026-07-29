@@ -584,3 +584,78 @@ function LogPanel() {
     </div>
   );
 }
+
+function BlockedPanel() {
+  const qc = useQueryClient();
+  const { data, isLoading } = useQuery({
+    queryKey: ["tg-blocked"], queryFn: () => tgListBlocked(), refetchInterval: 20000,
+  });
+  const [onlyBlocked, setOnlyBlocked] = useState(true);
+
+  const setBlocked = useMutation({
+    mutationFn: (v: { tg_user_id: number; blocked: boolean }) =>
+      tgSetBlocked({ data: { ...v, reset_warnings: !v.blocked } }),
+    onSuccess: (r: any) => {
+      if (r.ok) { toast.success("সম্পন্ন ✅"); qc.invalidateQueries({ queryKey: ["tg-blocked"] }); }
+      else toast.error(r.error);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const rows = ((data as any[]) ?? []).filter((r) => (onlyBlocked ? r.blocked : true));
+
+  return (
+    <div className="space-y-3">
+      <div className="glass rounded-2xl p-4">
+        <h3 className="font-black text-sm flex items-center gap-2">
+          <Ban className="w-4 h-4 text-rose-400" /> ব্লক করা ইউজার
+        </h3>
+        <p className="text-[11px] text-muted-foreground mt-1">
+          বারবার নিয়ম ভাঙলে বট নিজেই গ্রুপ থেকে ব্লক করে দেয়। এখান থেকে যেকোনো সময় আনব্লক করতে পারবেন —
+          আনব্লক করলে সতর্কতাও শূন্য হয়ে যাবে।
+        </p>
+        <div className="mt-2">
+          <Toggle label="শুধু ব্লক করা ইউজার দেখাও" value={onlyBlocked} onChange={setOnlyBlocked} />
+        </div>
+      </div>
+
+      {isLoading ? (
+        <div className="py-8 flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-cyan" /></div>
+      ) : rows.length === 0 ? (
+        <p className="text-center text-xs text-muted-foreground py-6">
+          {onlyBlocked ? "কেউ ব্লক করা নেই 🎉" : "কোনো রেকর্ড নেই"}
+        </p>
+      ) : (
+        rows.map((r: any) => (
+          <div key={r.tg_user_id}
+            className={`glass rounded-xl p-3 border ${r.blocked ? "border-rose-500/50" : "border-border"}`}>
+            <div className="flex items-center gap-2">
+              {r.blocked ? <Ban className="w-4 h-4 text-rose-400 shrink-0" />
+                : <ShieldCheck className="w-4 h-4 text-emerald shrink-0" />}
+              <p className="text-xs font-black truncate">
+                {r.full_name || "ইউজার"}{r.username ? ` (@${r.username})` : ""}
+              </p>
+            </div>
+            <p className="text-[10px] text-muted-foreground mt-1">
+              TG ID: {r.tg_user_id} · UID: {r.known_uid || "—"} · সতর্কতা: {r.warn_count}
+            </p>
+            {r.blocked_reason && <p className="text-[10px] text-rose-300 mt-1">কারণ: {r.blocked_reason}</p>}
+            <p className="text-[10px] text-muted-foreground mt-1">
+              শেষ নিয়মভঙ্গ: {new Date(r.last_offense_at).toLocaleString("bn-BD")}
+            </p>
+            <button
+              onClick={() => setBlocked.mutate({ tg_user_id: r.tg_user_id, blocked: !r.blocked })}
+              disabled={setBlocked.isPending}
+              className={`mt-2 w-full py-2 rounded-xl text-xs font-black border disabled:opacity-50 ${
+                r.blocked
+                  ? "bg-emerald/15 border-emerald/50 text-emerald"
+                  : "bg-rose-500/15 border-rose-500/50 text-rose-300"
+              }`}>
+              {r.blocked ? "আনব্লক করুন" : "ব্লক করুন"}
+            </button>
+          </div>
+        ))
+      )}
+    </div>
+  );
+}
