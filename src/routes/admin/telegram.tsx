@@ -10,13 +10,13 @@ import {
   tgGetSettings, tgSaveSettings, tgRegisterWebhook,
   tgListFaq, tgUpsertFaq, tgDeleteFaq, tgLookupUid, tgSendToGroup,
   tgListBanRequests, tgResolveBanRequest, tgUnban, tgRecentMessages,
-  tgListBlocked, tgSetBlocked,
+  tgListBlocked, tgSetBlocked, tgListVideos, tgUpsertVideo, tgDeleteVideo,
 } from "@/lib/telegram-bot.functions";
 
 
 export const Route = createFileRoute("/admin/telegram")({ component: TelegramAdmin });
 
-type Tab = "settings" | "faq" | "lookup" | "blocked" | "bans" | "log";
+type Tab = "settings" | "faq" | "videos" | "lookup" | "blocked" | "bans" | "log";
 
 
 function TelegramAdmin() {
@@ -35,7 +35,7 @@ function TelegramAdmin() {
 
       <div className="flex gap-2 overflow-x-auto -mx-4 px-4 pb-1 scrollbar-none">
         {([
-          ["settings", "সেটিংস"], ["faq", "উত্তর/নিয়ম"], ["lookup", "UID লুকআপ"],
+          ["settings", "সেটিংস"], ["faq", "উত্তর/নিয়ম"], ["videos", "ভিডিও লিংক"], ["lookup", "UID লুকআপ"],
           ["blocked", "ব্লক লিস্ট"], ["bans", "Ban requests"], ["log", "Activity"],
         ] as [Tab, string][]).map(([k, label]) => (
           <button key={k} onClick={() => setTab(k)}
@@ -49,6 +49,7 @@ function TelegramAdmin() {
 
       {tab === "settings" && <SettingsPanel />}
       {tab === "faq" && <FaqPanel />}
+      {tab === "videos" && <VideoPanel />}
       {tab === "lookup" && <LookupPanel />}
       {tab === "blocked" && <BlockedPanel />}
       {tab === "bans" && <BansPanel />}
@@ -106,6 +107,10 @@ function SettingsPanel() {
         smart_mode: form.smart_mode !== false,
         auto_block_enabled: form.auto_block_enabled !== false,
         block_threshold: Number(form.block_threshold) || 5,
+        support_username: (form.support_username?.trim() || "@anamulmunni"),
+        photo_privacy_enabled: form.photo_privacy_enabled !== false,
+        escalate_enabled: form.escalate_enabled !== false,
+        reply_variety: form.reply_variety !== false,
 
 
 
@@ -177,6 +182,12 @@ function SettingsPanel() {
           value={form.slot_reset_enabled !== false} onChange={(v) => set("slot_reset_enabled", v)} />
         <Toggle label="স্মার্ট মোড 🧠" hint="আপনার লেখা উত্তরে মিল না পেলে বট নিজে বুঝে ভদ্রভাবে উত্তর দেবে"
           value={form.smart_mode !== false} onChange={(v) => set("smart_mode", v)} />
+        <Toggle label="ছবি গোপনীয়তা 🔒" hint="কেউ স্লটের ছবি/key চাইলে বট ভদ্রভাবে না বলবে — ছবি সংরক্ষণের কথা কখনো বলবে না"
+          value={form.photo_privacy_enabled !== false} onChange={(v) => set("photo_privacy_enabled", v)} />
+        <Toggle label="মানুষের মতো ভিন্ন ভিন্ন উত্তর ✨" hint="একই প্রশ্নেও প্রতিবার নতুন ভাষায় উত্তর দেবে"
+          value={form.reply_variety !== false} onChange={(v) => set("reply_variety", v)} />
+        <Toggle label="না জানলে অ্যাডমিনে পাঠাবে 🙋" hint="উত্তর না জানলে আপনার ইউজারনেম মেনশন করে ইনবক্স করতে বলবে"
+          value={form.escalate_enabled !== false} onChange={(v) => set("escalate_enabled", v)} />
         <Toggle label="অটো ব্লক 🚫" hint="বারবার নিয়ম ভাঙলে বট নিজেই গ্রুপ থেকে ব্লক করে দেবে"
           value={form.auto_block_enabled !== false} onChange={(v) => set("auto_block_enabled", v)} />
 
@@ -188,6 +199,8 @@ function SettingsPanel() {
           value={form.group_chat_id ?? ""} onChange={(v) => set("group_chat_id", v)} />
         <Field label="Admin chat ID" hint="ban alert এখানে যাবে"
           value={form.admin_chat_id ?? ""} onChange={(v) => set("admin_chat_id", v)} />
+        <Field label="সাপোর্ট ইউজারনেম" hint="বট উত্তর না জানলে এখানে ইনবক্স করতে বলবে — যেমন @anamulmunni"
+          value={form.support_username ?? "@anamulmunni"} onChange={(v) => set("support_username", v)} />
         <Field label="Admin mention" hint="যেমন @yourname"
           value={form.admin_mention ?? ""} onChange={(v) => set("admin_mention", v)} />
         <Field label="কত সতর্কতার পর ban request" type="number"
