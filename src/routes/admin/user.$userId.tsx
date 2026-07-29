@@ -1024,10 +1024,20 @@ function DailyReportPanel({ userId }: { userId: string }) {
   const download = () => {
     if (!data) return;
     const html = buildReportHtml(data);
-    const w = window.open("", "_blank");
-    if (!w) { toast.error("Popup blocked"); return; }
-    w.document.write(html);
-    w.document.close();
+    const filename = `refer-report-${data.profile?.uid ?? "user"}-${new Date().toISOString().slice(0, 10)}.html`;
+    try {
+      const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      toast.success("রিপোর্ট ডাউনলোড হয়েছে — শেয়ার করুন");
+    } catch {
+      const w = window.open("", "_blank");
+      if (!w) { toast.error("Popup blocked"); return; }
+      w.document.write(html); w.document.close();
+    }
   };
 
   if (isLoading) {
