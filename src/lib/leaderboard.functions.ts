@@ -78,12 +78,15 @@ export const getLeaderboards = createServerFn({ method: "GET" }).handler(async (
     .in("uid_seq", [1]);
   const excludeIds = new Set((excludeProfiles ?? []).map((p: any) => p.id));
 
-  const { data: wRowsRaw } = await supabaseAdmin
+  // Recent paid withdrawals (most recent first) so the Paid tab shows fresh history,
+  // not old high-amount ones.
+  const { data: paidRaw } = await supabaseAdmin
     .from("withdrawals")
     .select("id, user_id, amount, provider, wallet_number, status, created_at, processed_at")
-    .order("amount", { ascending: false })
-    .limit(400);
-  // Also pull ALL recent pending withdrawals so real users' pending requests
+    .eq("status", "paid")
+    .order("processed_at", { ascending: false, nullsFirst: false })
+    .limit(200);
+  // Pull ALL recent pending withdrawals so real users' pending requests
   // are always visible in the feed until admin marks them paid.
   const { data: pendingRaw } = await supabaseAdmin
     .from("withdrawals")
@@ -93,7 +96,7 @@ export const getLeaderboards = createServerFn({ method: "GET" }).handler(async (
     .limit(200);
   const seen = new Set<string>();
   const wRows: any[] = [];
-  for (const w of [...(pendingRaw ?? []), ...(wRowsRaw ?? [])]) {
+  for (const w of [...(pendingRaw ?? []), ...(paidRaw ?? [])]) {
     if (excludeIds.has((w as any).user_id)) continue;
     if (seen.has((w as any).id)) continue;
     seen.add((w as any).id);
@@ -247,26 +250,28 @@ export const getLeaderboards = createServerFn({ method: "GET" }).handler(async (
   }));
 
   // Fake withdraw feed rows — highest amount stays under 1000৳.
+  // Pending rows auto-flip to Paid after 5–8 minutes; rotate every minute
+  // so fresh pending names keep appearing continuously.
   const nowMs = Date.now();
-  const bucket = Math.floor(nowMs / (10 * 60 * 1000));
-  const rnd2 = seedRand(dayKey * 9301 + 49297 + bucket);
+  const minuteBucket = Math.floor(nowMs / (60 * 1000));
+  const rnd2 = seedRand(dayKey * 9301 + 49297 + minuteBucket);
   // Common real-looking amounts so users believe the feed.
   const COMMON_AMOUNTS = [360, 90, 135, 360, 90, 135, 360, 90, 135, 360];
   const fakeWithdraws: any[] = [];
-  for (let i = 0; i < 60; i++) {
+  for (let i = 0; i < 80; i++) {
     const prov = pick(providers);
-    // Keep pending rows fresh: only the newest ~6 rows may be pending,
-    // and rotate them every 2 minutes so the same name doesn't stick.
-    const pendingWindowMs = 2 * 60 * 1000;
-    const createdOffset = i < 6
-      ? Math.floor(rnd2() * pendingWindowMs)
-      : pendingWindowMs + Math.floor(rnd() * (24 * 3600 * 1000 - pendingWindowMs));
-    const withinPendingWindow = createdOffset < pendingWindowMs;
-    const status = withinPendingWindow && rnd2() < 0.6 ? "pending" : "paid";
+    // Pending lifespan per row: 5–8 minutes, then auto-paid.
+    const pendingLifespanMs = (5 + Math.floor(rnd2() * 4)) * 60 * 1000;
+    // Spread creation times: newest few rows within pending lifespan, rest older.
+    const createdOffset = i < 8
+      ? Math.floor(rnd2() * pendingLifespanMs)
+      : Math.floor(rnd() * (24 * 3600 * 1000));
     const created = new Date(nowMs - createdOffset).toISOString();
-    const processedMs = 30 + Math.floor(rnd() * 900);
+    const isPending = createdOffset < pendingLifespanMs;
+    const status = isPending ? "pending" : "paid";
+    // Once lifespan passes, mark as paid at created + lifespan (auto-flip).
     const processed = status === "paid"
-      ? new Date(nowMs - createdOffset + processedMs * 1000).toISOString()
+      ? new Date(nowMs - createdOffset + pendingLifespanMs).toISOString()
       : null;
     fakeWithdraws.push({
       id: fakeId(),
@@ -288,11 +293,17 @@ export const getLeaderboards = createServerFn({ method: "GET" }).handler(async (
   const mergedVers = [...realTopVer, ...fakeVerified].sort((a, b) => b.count - a.count).slice(0, 10);
   const mergedPayees = [...topPayees, ...fakePayees].sort((a, b) => b.total - a.total).slice(0, 20);
   const realPending = withdraws.filter((w) => w.status === "pending");
-  const rest = [...withdraws.filter((w) => w.status !== "pending"), ...fakeWithdraws]
-    .sort((a, b) => b.amount - a.amount);
+  const fakePending = fakeWithdraws.filter((w) => w.status === "pending");
+  const allPaid = [...withdraws.filter((w) => w.status !== "pending"), ...fakeWithdraws.filter((w) => w.status !== "pending")]
+    .sort((a, b) => {
+      const at = new Date(a.processed_at ?? a.created_at).getTime();
+      const bt = new Date(b.processed_at ?? b.created_at).getTime();
+      return bt - at;
+    });
   const mergedWithdraws = [
     ...realPending.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
-    ...rest,
+    ...fakePending.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
+    ...allPaid,
   ].slice(0, 200);
 
   return {
