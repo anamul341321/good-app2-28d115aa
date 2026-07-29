@@ -86,7 +86,7 @@ export async function restoreTaskBackup(backupId: string): Promise<RestoreResult
   const patch: Record<string, any> = {};
   for (const f of TASK_FIELDS) if (f in snap) patch[f] = snap[f];
 
-  const { error } = await supabaseAdmin.from("tasks").update(patch).eq("id", backup.task_id);
+  const { error } = await supabaseAdmin.from("tasks").update(patch as any).eq("id", backup.task_id);
   if (error) return { ok: false, error: error.message };
 
   const attempts = Array.isArray(backup.attempts) ? (backup.attempts as any[]) : [];
