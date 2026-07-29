@@ -549,6 +549,29 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return Response.json({ ok: true, flow: "verify_help", actions });
         }
 
+        // ---- "ভিডিও দিন / কিভাবে কাজ করবো" → tutorial video link -------------
+        const howToWork = /(kivabe|kivbe|kibhabe|কিভাবে|কীভাবে)[^\n]{0,25}(kaj|কাজ|use|চালাব|করব|করবো|start|শুরু)/i.test(norm)
+          || /(video|ভিডিও|টিউটোরিয়াল|tutorial)/i.test(norm);
+        if ((decision.intent === "video_request" || howToWork) && !decision.should_delete
+            && settings.auto_reply_enabled) {
+          const list = (videoRows ?? []) as any[];
+          const topic = (decision as any).media_topic as string | null;
+          const hay = norm.toLowerCase();
+          const match =
+            (topic && list.find((v) => String(v.topic).trim().toLowerCase() === topic.trim().toLowerCase())) ||
+            list.find((v: any) => (v.keywords ?? []).some((k: string) => k && hay.includes(String(k).toLowerCase()))) ||
+            null;
+          const { videoReply, DEFAULT_TUTORIAL_VIDEO } = await import("@/lib/telegram-bot.server");
+          const url = match?.url || (settings as any).default_video_url || DEFAULT_TUTORIAL_VIDEO;
+          const reply = videoReply(senderName, url, match?.topic ?? null, match?.note ?? null);
+          await sendMessage(chatId, reply);
+          actions.push("video");
+          await logMessage(decision.verdict, actions.join(","), reply, matchedUid);
+          return Response.json({ ok: true, flow: "video", actions });
+        }
+
+
+
         // ---- pick a saved voice note for this topic, if the admin recorded one -
         const voiceMatch = (() => {
           const list = (voiceRows ?? []) as any[];
