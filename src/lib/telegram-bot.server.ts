@@ -169,6 +169,11 @@ export type FaqItem = {
   imageBase64?: string | null;
 };
 
+export type FaqImageMatch = {
+  topic: string;
+  confidence: number;
+};
+
 export type VoiceItem = {
   topic: string;
   keywords?: string[] | null;
@@ -181,6 +186,69 @@ export type VideoItem = {
   keywords?: string[] | null;
   note?: string | null;
 };
+
+export async function matchFaqImage(opts: {
+  photoBase64: string;
+  faq: FaqItem[];
+}): Promise<FaqImageMatch | null> {
+  const key = process.env.LOVABLE_API_KEY;
+  if (!key) throw new Error("LOVABLE_API_KEY not configured");
+
+  const refs = opts.faq.filter((f) => f.imageBase64 && f.answer.trim()).slice(0, 8);
+  if (!refs.length) return null;
+
+  const prompt = `You are matching a Telegram support screenshot to admin-saved FAQ reference screenshots.
+
+Task: Compare the USER_SCREENSHOT with each REFERENCE screenshot. Pick the FAQ only when it shows the same app screen/error/problem, even if the crop, phone UI, Telegram bubble, or scale is different.
+
+Important examples:
+- If both show the GoodDollar "You must be 18 years or older to get verified" / under 18 face verification screen, match that reference.
+- If both show the same "Something went wrong" verification screen, match that reference.
+
+Return ONLY JSON:
+{"matched": true, "topic": "exact topic", "confidence": 0.0 to 1.0}
+or {"matched": false, "topic": null, "confidence": 0}
+
+Reference topics:
+${refs.map((f, i) => `${i + 1}. ${f.topic}`).join("\n")}`;
+
+  const content: any[] = [
+    { type: "text", text: prompt },
+    { type: "text", text: "USER_SCREENSHOT:" },
+    { type: "image_url", image_url: { url: `data:image/jpeg;base64,${opts.photoBase64}` } },
+  ];
+  for (let i = 0; i < refs.length; i++) {
+    content.push({ type: "text", text: `REFERENCE ${i + 1} — ${refs[i].topic}:` });
+    content.push({ type: "image_url", image_url: { url: `data:image/jpeg;base64,${refs[i].imageBase64}` } });
+  }
+
+  const res = await fetch(AI_URL, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: MODEL,
+      temperature: 0,
+      max_tokens: 120,
+      messages: [{ role: "user", content }],
+    }),
+  });
+
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`AI gateway ${res.status}: ${body.slice(0, 200)}`);
+  }
+  const data: any = await res.json();
+  const raw: string = data.choices?.[0]?.message?.content ?? "";
+  const m = raw.match(/\{[\s\S]*\}/);
+  let parsed: any = {};
+  try { parsed = m ? JSON.parse(m[0]) : {}; } catch { parsed = {}; }
+
+  const topic = typeof parsed.topic === "string" ? parsed.topic.trim() : "";
+  const confidence = Number(parsed.confidence) || 0;
+  const found = refs.find((f) => f.topic.trim().toLowerCase() === topic.toLowerCase());
+  if (!parsed.matched || !found || confidence < 0.72) return null;
+  return { topic: found.topic, confidence };
+}
 
 
 export async function decide(opts: {
