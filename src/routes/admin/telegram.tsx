@@ -156,6 +156,9 @@ function SettingsPanel() {
         <Toggle label="খারাপ মেসেজ ডিলিট" value={!!form.delete_bad_messages} onChange={(v) => set("delete_bad_messages", v)} />
         <Toggle label="UID লুকআপ" hint="UID পেলে সাথে সাথে একাউন্টের সব তথ্য গ্রুপে দেবে"
           value={form.uid_lookup_enabled !== false} onChange={(v) => set("uid_lookup_enabled", v)} />
+        <Toggle label="স্লট রিসেট" hint="কেউ স্লট রিসেট চাইলে বট UID ও স্লট নম্বর জিজ্ঞেস করে নিজেই রিসেট করবে"
+          value={form.slot_reset_enabled !== false} onChange={(v) => set("slot_reset_enabled", v)} />
+
       </div>
 
 
