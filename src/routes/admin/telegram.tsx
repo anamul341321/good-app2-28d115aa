@@ -196,6 +196,9 @@ function SettingsPanel() {
           value={form.escalate_enabled !== false} onChange={(v) => set("escalate_enabled", v)} />
         <Toggle label="অটো ব্লক 🚫" hint="বারবার নিয়ম ভাঙলে বট নিজেই গ্রুপ থেকে ব্লক করে দেবে"
           value={form.auto_block_enabled !== false} onChange={(v) => set("auto_block_enabled", v)} />
+        <Toggle label="নতুন মেম্বারকে স্বাগতম 🎉" hint="কেউ গ্রুপে জয়েন করলে বট সুন্দর করে ওয়েলকাম জানাবে"
+          value={form.welcome_enabled !== false} onChange={(v) => set("welcome_enabled", v)} />
+
 
       </div>
 
