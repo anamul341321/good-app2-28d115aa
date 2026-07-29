@@ -695,6 +695,10 @@ export const adminResetTask = createServerFn({ method: "POST" })
     if (taskError) throw new Error(taskError.message);
     if (!t) throw new Error("Slot পাওয়া যায়নি");
 
+    // Snapshot the slot first so a mistaken reset can be undone.
+    const { backupTask } = await import("@/lib/slot-backup.server");
+    await backupTask(data.taskId, "admin");
+
     // Remove every pending backup for this slot before emptying it. Otherwise
     // the 5-minute whitelist job can promote the old face/key back into it.
     const { error: pendingError } = await supabaseAdmin
@@ -712,9 +716,8 @@ export const adminResetTask = createServerFn({ method: "POST" })
         .eq("wallet_address", t.wallet_address);
       if (walletPendingError) throw new Error(walletPendingError.message);
     }
-    if (t?.face_photo_url) {
-      await supabaseAdmin.storage.from("face-photos").remove([t.face_photo_url]);
-    }
+    // Face photo file stays in storage so a restore brings back the exact image.
+
     const { error } = await supabaseAdmin.from("tasks").update({
       status: "empty",
       face_photo_url: null,
