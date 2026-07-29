@@ -55,6 +55,17 @@ export function restrictUser(chatId: string | number, userId: number, seconds: n
   });
 }
 
+/** Kick + block a member from the group permanently. */
+export function banChatMember(chatId: string | number, userId: number) {
+  return api("banChatMember", { chat_id: chatId, user_id: userId, revoke_messages: false });
+}
+
+/** Remove the block so the user can join again. */
+export function unbanChatMember(chatId: string | number, userId: number) {
+  return api("unbanChatMember", { chat_id: chatId, user_id: userId, only_if_banned: true });
+}
+
+
 export async function getPhotoBase64(fileId: string): Promise<string | null> {
   const token = getBotToken();
   const file = await api<{ file_path: string }>("getFile", { file_id: fileId });
