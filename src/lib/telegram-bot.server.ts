@@ -97,7 +97,12 @@ export type BotDecision = {
   should_warn: boolean;
   uid: string | null;
   needs_uid: boolean;
+  /** "slot_reset" when the user is asking to clear/restart a verification slot. */
+  intent: "slot_reset" | null;
+  /** Slot number (1-10) if the user already mentioned one. */
+  slot: number | null;
 };
+
 
 export type FaqItem = {
   topic: string;
