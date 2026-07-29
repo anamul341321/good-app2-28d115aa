@@ -317,9 +317,12 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           }
 
           try {
+            const { loadRates, knowledgeText } = await import("@/lib/telegram-knowledge.server");
+            const rates = await loadRates();
             decision = await decide({
               persona: settings.persona,
               rules: settings.rules,
+              knowledge: knowledgeText(rates),
               faq,
               videos: (videoRows ?? []) as any[],
               voices: ((voiceRows ?? []) as any[]).map((v: any) => ({
