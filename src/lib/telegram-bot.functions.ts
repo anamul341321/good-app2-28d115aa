@@ -29,6 +29,8 @@ const settingsSchema = z.object({
   moderation_enabled: z.boolean(),
   photo_analysis_enabled: z.boolean(),
   delete_bad_messages: z.boolean(),
+  uid_lookup_enabled: z.boolean(),
+  ask_uid_message: z.string().max(600),
   group_chat_id: z.string().max(64).nullable(),
   admin_chat_id: z.string().max(64).nullable(),
   admin_mention: z.string().max(64).nullable(),
@@ -37,6 +39,7 @@ const settingsSchema = z.object({
   banned_words: z.array(z.string().max(60)).max(300),
   warn_threshold: z.number().int().min(1).max(20),
 });
+
 
 export const tgSaveSettings = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => settingsSchema.parse(i))
