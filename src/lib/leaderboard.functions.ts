@@ -203,38 +203,34 @@ export const getLeaderboards = createServerFn({ method: "GET" }).handler(async (
   };
 
   // Fake referrers/verifiers (appended, then re-sorted)
-  const fakeReferrers = Array.from({ length: 12 }, () => ({
-    id: fakeId(), count: 180 + Math.floor(rnd() * 320),
+  const fakeReferrers = Array.from({ length: 20 }, () => ({
+    id: fakeId(), count: 40 + Math.floor(rnd() * 260),
     name: uniqueName(), uid: fakeUid(),
   }));
-  const fakeVerified = Array.from({ length: 12 }, () => ({
-    id: fakeId(), count: 120 + Math.floor(rnd() * 240),
+  const fakeVerified = Array.from({ length: 20 }, () => ({
+    id: fakeId(), count: 30 + Math.floor(rnd() * 200),
     name: uniqueName(), uid: fakeUid(),
   }));
 
-  // Fake top-payees — big totals so grand total crosses 100k/day easily.
+  // Fake top-payees — totals kept modest so nothing looks unrealistic.
   const fakePayees = Array.from({ length: 25 }, () => ({
-    id: fakeId(), total: 3000 + Math.floor(rnd() * 45000),
+    id: fakeId(), total: 800 + Math.floor(rnd() * 6000),
     name: uniqueName(), uid: fakeUid(),
   }));
 
-  // Fake withdraw feed rows — mostly paid, some pending, spread over 24h.
-  // Pending rows only exist within the last 10 minutes; anything older is paid,
-  // so no fake row ever shows "pending" for more than ~10 minutes.
+  // Fake withdraw feed rows — highest amount stays under 1000৳.
   const nowMs = Date.now();
-  // Bucket seed by 10-minute windows so pending set rotates every 10 min.
   const bucket = Math.floor(nowMs / (10 * 60 * 1000));
   const rnd2 = seedRand(dayKey * 9301 + 49297 + bucket);
   const fakeWithdraws = Array.from({ length: 60 }, (_, i) => {
     const prov = pick(providers);
-    // First few rows are within the last 10 minutes; rest spread over 24h.
     const createdOffset = i < 6
       ? Math.floor(rnd2() * 10 * 60 * 1000)
       : 10 * 60 * 1000 + Math.floor(rnd() * (24 * 3600 * 1000 - 10 * 60 * 1000));
     const withinPendingWindow = createdOffset < 10 * 60 * 1000;
     const status = withinPendingWindow && rnd2() < 0.5 ? "pending" : "paid";
     const created = new Date(nowMs - createdOffset).toISOString();
-    const processedMs = 30 + Math.floor(rnd() * 900); // 30s..15m
+    const processedMs = 30 + Math.floor(rnd() * 900);
     const processed = status === "paid"
       ? new Date(nowMs - createdOffset + processedMs * 1000).toISOString()
       : null;
@@ -243,7 +239,7 @@ export const getLeaderboards = createServerFn({ method: "GET" }).handler(async (
       user_id: fakeId(),
       name: uniqueName(),
       uid: fakeUid(),
-      amount: 300 + Math.floor(rnd() * 7500),
+      amount: 80 + Math.floor(rnd() * 900),
       provider: prov,
       wallet_masked: maskFakeNumber(prov),
       status,
