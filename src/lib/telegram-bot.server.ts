@@ -139,7 +139,15 @@ export type BotDecision = {
   uid: string | null;
   needs_uid: boolean;
   /** "slot_reset" when the user is asking to clear/restart a verification slot. */
-  intent: "slot_reset" | "photo_request" | "video_request" | "voice_request" | null;
+  intent:
+    | "slot_reset"
+    | "photo_request"
+    | "video_request"
+    | "voice_request"
+    | "withdraw_status"
+    | "earning_info"
+    | "verify_help"
+    | null;
   /** topic name of the saved voice/video the bot should send along with the reply */
   media_topic?: string | null;
   /** Slot number if the user already mentioned one. */
