@@ -62,7 +62,7 @@ export const adminMoneyStats = createServerFn({ method: "GET" }).handler(async (
   const sumPaged = async (table: string, column: string, filter?: (query: any) => any) => {
     let total = 0;
     for (let from = 0; ; from += 1000) {
-      let query: any = supabaseAdmin.from(table as any).select(column).range(from, from + 999);
+      let query: any = supabaseAdmin.from(table as any).select(column).order("id").range(from, from + 999);
       if (filter) query = filter(query);
       const { data, error } = await query;
       if (error) throw new Error(error.message);
@@ -95,7 +95,7 @@ export const adminListUsers = createServerFn({ method: "GET" }).handler(async ()
   const fetchAll = async (table: "tasks" | "unverified_attempts", select: string) => {
     const rows: any[] = [];
     for (let from = 0; ; from += 1000) {
-      const { data, error } = await supabaseAdmin.from(table).select(select).range(from, from + 999);
+      const { data, error } = await supabaseAdmin.from(table).select(select).order("id").range(from, from + 999);
       if (error) throw new Error(error.message);
       rows.push(...(data ?? []));
       if (!data || data.length < 1000) break;
@@ -105,7 +105,7 @@ export const adminListUsers = createServerFn({ method: "GET" }).handler(async ()
   const fetchAllProfiles = async () => {
     const rows: any[] = [];
     for (let from = 0; ; from += 1000) {
-      const { data, error } = await supabaseAdmin.from("profiles").select("*").order("created_at", { ascending: false }).range(from, from + 999);
+      const { data, error } = await supabaseAdmin.from("profiles").select("*").order("created_at", { ascending: false }).order("id").range(from, from + 999);
       if (error) throw new Error(error.message);
       rows.push(...(data ?? []));
       if (!data || data.length < 1000) break;
@@ -115,7 +115,7 @@ export const adminListUsers = createServerFn({ method: "GET" }).handler(async ()
   const fetchAllMining = async () => {
     const rows: any[] = [];
     for (let from = 0; ; from += 1000) {
-      const { data, error } = await supabaseAdmin.from("mining_state").select("*").range(from, from + 999);
+      const { data, error } = await supabaseAdmin.from("mining_state").select("*").order("user_id").range(from, from + 999);
       if (error) throw new Error(error.message);
       rows.push(...(data ?? []));
       if (!data || data.length < 1000) break;
@@ -125,7 +125,7 @@ export const adminListUsers = createServerFn({ method: "GET" }).handler(async ()
   const fetchAllWallets = async () => {
     const rows: any[] = [];
     for (let from = 0; ; from += 1000) {
-      const { data, error } = await supabaseAdmin.from("wallets").select("*").range(from, from + 999);
+      const { data, error } = await supabaseAdmin.from("wallets").select("*").order("user_id").order("provider").range(from, from + 999);
       if (error) throw new Error(error.message);
       rows.push(...(data ?? []));
       if (!data || data.length < 1000) break;
@@ -1201,7 +1201,7 @@ export const adminReferrerLeaderboard = createServerFn({ method: "GET" }).handle
   const fetchAll = async (table: "profiles" | "tasks", select: string) => {
     const rows: any[] = [];
     for (let from = 0; ; from += 1000) {
-      const { data, error } = await supabaseAdmin.from(table).select(select).range(from, from + 999);
+      const { data, error } = await supabaseAdmin.from(table).select(select).order("id").range(from, from + 999);
       if (error) throw new Error(error.message);
       rows.push(...(data ?? []));
       if (!data || data.length < 1000) break;
