@@ -1,24 +1,42 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { adminListWithdrawals, adminUpdateWithdrawal, adminListCredits } from "@/lib/admin.functions";
-import { Loader2, Check, X, Copy, AlertTriangle, ShieldCheck, Gift, ExternalLink, Plus, Minus } from "lucide-react";
+import { adminListWithdrawals, adminUpdateWithdrawal, adminListCredits, adminListPaidByAdmins } from "@/lib/admin.functions";
+import { Loader2, Check, X, Copy, AlertTriangle, ShieldCheck, Gift, ExternalLink, Plus, Minus, UserCheck, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 
 export const Route = createFileRoute("/admin/withdrawals")({ component: AdminWithdrawals });
 
-type Filter = "pending" | "paid" | "rejected" | "admin" | "all";
+type Filter = "pending" | "paid" | "rejected" | "admin" | "paid-by" | "all";
 
 function AdminWithdrawals() {
   const { data, isLoading, refetch } = useQuery({ queryKey: ["admin-withdrawals"], queryFn: () => adminListWithdrawals() });
   const creditsQ = useQuery({ queryKey: ["admin-credits"], queryFn: () => adminListCredits() });
+  const paidByQ = useQuery({ queryKey: ["admin-paid-by"], queryFn: () => adminListPaidByAdmins() });
   const [filter, setFilter] = useState<Filter>("pending");
+  const [adminName, setAdminName] = useState<string>(() => {
+    if (typeof window === "undefined") return "";
+    return localStorage.getItem("admin-paid-by-name") ?? "";
+  });
+  useEffect(() => { if (adminName) localStorage.setItem("admin-paid-by-name", adminName); }, [adminName]);
 
   const mut = useMutation({
-    mutationFn: (input: { id: string; action: "paid" | "rejected" }) => adminUpdateWithdrawal({ data: input }),
-    onSuccess: () => { toast.success("Updated"); refetch(); },
+    mutationFn: (input: { id: string; action: "paid" | "rejected"; paidBy?: string }) => adminUpdateWithdrawal({ data: input }),
+    onSuccess: () => { toast.success("Updated"); refetch(); paidByQ.refetch(); },
     onError: (e: any) => toast.error(e.message),
   });
+
+  const markPaid = (id: string) => {
+    let name = adminName.trim();
+    if (!name) {
+      const input = window.prompt("আপনার নাম লিখুন (কে paid করছে):", "");
+      if (!input || !input.trim()) { toast.error("Admin name দিতে হবে"); return; }
+      name = input.trim();
+      setAdminName(name);
+    }
+    mut.mutate({ id, action: "paid", paidBy: name });
+  };
+
 
   const copy = (val: string, label: string) => {
     navigator.clipboard.writeText(val);
