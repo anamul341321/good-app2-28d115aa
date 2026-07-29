@@ -257,12 +257,15 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         const hardHit = bannedWords.find((w) => w && lower.includes(w.toLowerCase()));
 
 
-        const [{ data: faqRows }, { data: videoRows }] = await Promise.all([
+        const [{ data: faqRows }, { data: videoRows }, { data: voiceRows }] = await Promise.all([
           supabaseAdmin
             .from("tg_faq").select("topic, answer, keywords, image_path").eq("is_active", true)
             .order("priority", { ascending: false }).order("id"),
           (supabaseAdmin as any)
             .from("tg_videos").select("topic, url, keywords, note").eq("is_active", true)
+            .order("priority", { ascending: false }).order("id"),
+          (supabaseAdmin as any)
+            .from("tg_voices").select("topic, keywords, note, audio_path").eq("is_active", true)
             .order("priority", { ascending: false }).order("id"),
         ]);
 
@@ -319,6 +322,9 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               rules: settings.rules,
               faq,
               videos: (videoRows ?? []) as any[],
+              voices: ((voiceRows ?? []) as any[]).map((v: any) => ({
+                topic: v.topic, keywords: v.keywords, note: v.note,
+              })),
               bannedWords,
               text,
               photoBase64,
@@ -473,10 +479,53 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return Response.json({ ok: true, flow: "photo_request", actions });
         }
 
+        // ---- pick a saved voice note for this topic, if the admin recorded one -
+        const voiceMatch = (() => {
+          const list = (voiceRows ?? []) as any[];
+          if (!list.length || decision.should_delete || decision.intent === "slot_reset") return null;
+          const topic = (decision as any).media_topic as string | null;
+          if (topic) {
+            const byTopic = list.find(
+              (v) => String(v.topic).trim().toLowerCase() === topic.trim().toLowerCase(),
+            );
+            if (byTopic) return byTopic;
+          }
+          const hay = norm;
+          return list.find((v: any) =>
+            (v.keywords ?? []).some((k: string) => k && hay.includes(String(k).toLowerCase())),
+          ) ?? null;
+        })();
+
         if (settings.auto_reply_enabled && decision.reply && !decision.should_delete
             && decision.intent !== "slot_reset") {
           await sendMessage(chatId, decision.reply, msg.message_id);
           actions.push("replied");
+        }
+
+        if (settings.auto_reply_enabled && voiceMatch) {
+          const { voiceBytes, sendVoice } = await import("@/lib/telegram-bot.server");
+          const bytes = await voiceBytes(voiceMatch.audio_path);
+          if (bytes) {
+            await sendVoice(
+              chatId, bytes, voiceMatch.audio_path.split("/").pop() || "voice.ogg",
+              `🎧 <b>${voiceMatch.topic}</b>${voiceMatch.note ? ` — ${voiceMatch.note}` : ""}`,
+              msg.message_id,
+            );
+            actions.push("voice");
+          }
+        }
+
+        // ---- nothing matched → friendly, well-formatted troubleshooting help ---
+        if (settings.auto_reply_enabled && !decision.reply && !voiceMatch
+            && !decision.should_delete && !decision.needs_uid && !matchedUid
+            && decision.intent === null && !decision.escalate
+            && decision.verdict === "question") {
+          const { genericHelpReply } = await import("@/lib/telegram-bot.server");
+          const reply = genericHelpReply(senderName);
+          await sendMessage(chatId, reply, msg.message_id);
+          actions.push("generic-help");
+          await logMessage(decision.verdict, actions.join(","), reply, matchedUid);
+          return Response.json({ ok: true, flow: "generic-help", actions });
         }
 
         // ---- bot genuinely doesn't know → hand off to the human admin --------
