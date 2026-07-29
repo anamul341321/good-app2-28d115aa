@@ -175,6 +175,10 @@ function SettingsPanel() {
           value={form.uid_lookup_enabled !== false} onChange={(v) => set("uid_lookup_enabled", v)} />
         <Toggle label="স্লট রিসেট" hint="কেউ স্লট রিসেট চাইলে বট UID ও স্লট নম্বর জিজ্ঞেস করে নিজেই রিসেট করবে"
           value={form.slot_reset_enabled !== false} onChange={(v) => set("slot_reset_enabled", v)} />
+        <Toggle label="স্মার্ট মোড 🧠" hint="আপনার লেখা উত্তরে মিল না পেলে বট নিজে বুঝে ভদ্রভাবে উত্তর দেবে"
+          value={form.smart_mode !== false} onChange={(v) => set("smart_mode", v)} />
+        <Toggle label="অটো ব্লক 🚫" hint="বারবার নিয়ম ভাঙলে বট নিজেই গ্রুপ থেকে ব্লক করে দেবে"
+          value={form.auto_block_enabled !== false} onChange={(v) => set("auto_block_enabled", v)} />
 
       </div>
 
@@ -188,6 +192,9 @@ function SettingsPanel() {
           value={form.admin_mention ?? ""} onChange={(v) => set("admin_mention", v)} />
         <Field label="কত সতর্কতার পর ban request" type="number"
           value={String(form.warn_threshold ?? 3)} onChange={(v) => set("warn_threshold", v)} />
+        <Field label="কত সতর্কতার পর অটো ব্লক" type="number" hint="যেমন ৫ — ৫ বার নিয়ম ভাঙলে গ্রুপ থেকে ব্লক"
+          value={String(form.block_threshold ?? 5)} onChange={(v) => set("block_threshold", v)} />
+
         <Area label="UID চাওয়ার মেসেজ" rows={2}
           value={form.ask_uid_message ?? ""} onChange={(v) => set("ask_uid_message", v)} />
         <Area label="স্লট নম্বর চাওয়ার মেসেজ" rows={2}
