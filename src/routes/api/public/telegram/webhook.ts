@@ -218,15 +218,16 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         let decision = {
           verdict: "ok" as const, reply: null as string | null,
           should_delete: false, should_warn: false, uid: null as string | null,
-          needs_uid: false,
+          needs_uid: false, intent: null, slot: null,
         } as Awaited<ReturnType<typeof decide>>;
 
         if (hardHit) {
           decision = {
             verdict: "abuse", reply: null,
             should_delete: !!settings.delete_bad_messages, should_warn: true, uid: null,
-            needs_uid: false,
+            needs_uid: false, intent: null, slot: null,
           };
+
         } else if (text.trim() || photoBase64) {
           try {
             decision = await decide({
