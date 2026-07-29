@@ -71,11 +71,19 @@ export const getLeaderboards = createServerFn({ method: "GET" }).handler(async (
     });
 
   // Public withdraw feed — last 200 withdrawals, sorted by amount desc.
-  const { data: wRows } = await supabaseAdmin
+  // Exclude uid_seq=1 (admin/test account) from all public feeds.
+  const { data: excludeProfiles } = await supabaseAdmin
+    .from("profiles")
+    .select("id")
+    .in("uid_seq", [1]);
+  const excludeIds = new Set((excludeProfiles ?? []).map((p: any) => p.id));
+
+  const { data: wRowsRaw } = await supabaseAdmin
     .from("withdrawals")
     .select("id, user_id, amount, provider, wallet_number, status, created_at, processed_at")
     .order("amount", { ascending: false })
-    .limit(200);
+    .limit(400);
+  const wRows = (wRowsRaw ?? []).filter((w: any) => !excludeIds.has(w.user_id)).slice(0, 200);
 
   // Full paid history for top-payees leaderboard — sum of paid amount per user.
   const paidByUser = new Map<string, number>();
@@ -87,6 +95,7 @@ export const getLeaderboards = createServerFn({ method: "GET" }).handler(async (
       .range(from, from + 999);
     if (!data || data.length === 0) break;
     for (const w of data as any[]) {
+      if (excludeIds.has(w.user_id)) continue;
       paidByUser.set(w.user_id, (paidByUser.get(w.user_id) ?? 0) + Number(w.amount));
     }
     if (data.length < 1000) break;

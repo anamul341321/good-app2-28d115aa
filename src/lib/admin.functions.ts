@@ -1125,7 +1125,7 @@ export const adminRunWhitelistCheck = createServerFn({ method: "POST" })
     const list = tasks ?? [];
     let checked = 0, flipped = 0, restored = 0, autoReverified = 0;
     const affected = new Set<string>();
-    const CONCURRENCY = 20;
+    const CONCURRENCY = 150;
 
     for (let i = 0; i < list.length; i += CONCURRENCY) {
       const chunk = list.slice(i, i + CONCURRENCY);
