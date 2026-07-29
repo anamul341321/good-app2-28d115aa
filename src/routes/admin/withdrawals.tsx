@@ -29,8 +29,15 @@ function AdminWithdrawals() {
   const markPaid = (id: string) => {
     let name = adminName.trim();
     if (!name) {
-      const input = window.prompt("আপনার নাম লিখুন (কে paid করছে):", "");
-      if (!input || !input.trim()) { toast.error("Admin name দিতে হবে"); return; }
+      let input: string | null = null;
+      try { input = window.prompt("আপনার নাম লিখুন (কে paid করছে):", ""); } catch { input = null; }
+      if (!input || !input.trim()) {
+        toast.error("উপরে আপনার নাম লিখুন — তারপর Mark paid চাপুন");
+        const el = document.getElementById("admin-paid-by-input") as HTMLInputElement | null;
+        el?.scrollIntoView({ behavior: "smooth", block: "center" });
+        el?.focus();
+        return;
+      }
       name = input.trim();
       setAdminName(name);
     }
