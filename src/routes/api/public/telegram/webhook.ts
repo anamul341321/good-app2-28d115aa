@@ -329,8 +329,8 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
         const [{ data: faqRows }, { data: videoRows }, { data: voiceRows }] = await Promise.all([
           supabaseAdmin
-            .from("tg_faq").select("topic, answer, keywords, image_path").eq("is_active", true)
-            .order("priority", { ascending: false }).order("id"),
+            .from("tg_faq").select("topic, answer, keywords, image_path, updated_at").eq("is_active", true)
+            .order("priority", { ascending: false }).order("updated_at", { ascending: false }).order("id"),
           (supabaseAdmin as any)
             .from("tg_videos").select("topic, url, keywords, note").eq("is_active", true)
             .order("priority", { ascending: false }).order("id"),
@@ -347,7 +347,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
         // Reference screenshots are only loaded when the user actually sent a photo.
         const faq: any[] = [];
-        let imgBudget = 6;
+        let imgBudget = 10;
         for (const f of faqRows ?? []) {
           let imageBase64: string | null = null;
           if (photoBase64 && (f as any).image_path && imgBudget > 0) {
@@ -355,6 +355,26 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             if (imageBase64) imgBudget--;
           }
           faq.push({ topic: f.topic, answer: f.answer, keywords: (f as any).keywords, imageBase64 });
+        }
+
+        if (photoBase64 && settings.auto_reply_enabled) {
+          try {
+            const { matchFaqImage } = await import("@/lib/telegram-bot.server");
+            const imageMatch = await matchFaqImage({ photoBase64, faq });
+            if (imageMatch) {
+              const matchedFaq = faq.find(
+                (f) => String(f.topic).trim().toLowerCase() === imageMatch.topic.trim().toLowerCase(),
+              );
+              if (matchedFaq?.answer) {
+                const reply = String(matchedFaq.answer).trim();
+                await sendMessage(chatId, reply, msg.message_id);
+                await logMessage("question", `faq-image:${imageMatch.topic}:${imageMatch.confidence.toFixed(2)}`, reply, null);
+                return Response.json({ ok: true, flow: "faq-image-match", topic: imageMatch.topic });
+              }
+            }
+          } catch (e) {
+            console.error("[tg] faq image match failed", e);
+          }
         }
 
         let decision = {
