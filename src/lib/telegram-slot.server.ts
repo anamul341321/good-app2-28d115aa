@@ -75,3 +75,43 @@ export async function resetSlotForUid(uid: string, slot: number): Promise<SlotRe
     hadWallet: !!task.wallet_address,
   };
 }
+
+export type BatchResetResult = {
+  found: boolean;
+  name: string;
+  done: number[];
+  failed: { slot: number; error: string }[];
+};
+
+/** Reset any number of slots at once for one account. */
+export async function resetSlotsForUid(uid: string, slots: number[]): Promise<BatchResetResult> {
+  const profile = await findProfileByUid(uid);
+  if (!profile) return { found: false, name: "", done: [], failed: [] };
+
+  const unique = Array.from(new Set(slots)).sort((a, b) => a - b);
+  const done: number[] = [];
+  const failed: { slot: number; error: string }[] = [];
+
+  for (const slot of unique) {
+    const res = await resetSlotForUid(uid, slot);
+    if (res.ok) done.push(slot);
+    else failed.push({ slot, error: res.error });
+  }
+
+  return {
+    found: true,
+    name: profile.display_name || `UID ${profile.uid_seq}`,
+    done,
+    failed,
+  };
+}
+
+/** Slot numbers that actually exist for an account (used for "সব স্লট" requests). */
+export async function listSlotNumbers(uid: string): Promise<number[]> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const profile = await findProfileByUid(uid);
+  if (!profile) return [];
+  const { data } = await supabaseAdmin
+    .from("tasks").select("slot").eq("user_id", profile.id).order("slot");
+  return (data ?? []).map((r) => r.slot as number);
+}
