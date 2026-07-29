@@ -176,6 +176,68 @@ export const tgDeleteFaq = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
+// ---- Voice reply library --------------------------------------------------
+
+export const tgListVoices = createServerFn({ method: "GET" }).handler(async () => {
+  const db = await guard();
+  const { data } = await (db as any).from("tg_voices").select("*")
+    .order("priority", { ascending: false }).order("id");
+  const rows = (data ?? []) as any[];
+  await Promise.all(rows.map(async (r) => {
+    const { data: s } = await db.storage.from("tg-voice").createSignedUrl(r.audio_path, 3600);
+    r.audio_url = s?.signedUrl ?? null;
+  }));
+  return rows;
+});
+
+export const tgUpsertVoice = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => z.object({
+    id: z.string().uuid().optional(),
+    topic: z.string().trim().min(1).max(120),
+    keywords: z.array(z.string().max(60)).max(50),
+    note: z.string().trim().max(300).nullable().optional(),
+    priority: z.number().int().min(0).max(100),
+    is_active: z.boolean(),
+    audio_base64: z.string().max(20_000_000).nullable().optional(),
+    audio_ext: z.string().max(8).nullable().optional(),
+  }).parse(i))
+  .handler(async ({ data }) => {
+    const db = await guard();
+    const { audio_base64, audio_ext, ...rest } = data;
+    const row: Record<string, unknown> = { ...rest, updated_at: new Date().toISOString() };
+
+    if (audio_base64) {
+      const ext = (audio_ext || "ogg").replace(/[^a-z0-9]/gi, "").toLowerCase() || "ogg";
+      const path = `voice/${crypto.randomUUID()}.${ext}`;
+      const bytes = Buffer.from(audio_base64, "base64");
+      const { error: upErr } = await db.storage.from("tg-voice").upload(path, bytes, {
+        contentType: ext === "ogg" || ext === "opus" ? "audio/ogg" : "audio/mpeg",
+        upsert: false,
+      });
+      if (upErr) throw new Error(upErr.message);
+      row.audio_path = path;
+    } else if (!data.id) {
+      throw new Error("ভয়েস ফাইল দিন");
+    }
+
+    const { error } = data.id
+      ? await (db as any).from("tg_voices").update(row).eq("id", data.id)
+      : await (db as any).from("tg_voices").insert(row);
+    if (error) throw new Error(error.message);
+    return { ok: true as const };
+  });
+
+export const tgDeleteVoice = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => z.object({ id: z.string().uuid() }).parse(i))
+  .handler(async ({ data }) => {
+    const db = await guard();
+    const { data: row } = await (db as any).from("tg_voices")
+      .select("audio_path").eq("id", data.id).maybeSingle();
+    if (row?.audio_path) await db.storage.from("tg-voice").remove([row.audio_path]);
+    await (db as any).from("tg_voices").delete().eq("id", data.id);
+    return { ok: true as const };
+  });
+
 // ---- Manual UID lookup from the admin panel -------------------------------
 
 export const tgLookupUid = createServerFn({ method: "POST" })
