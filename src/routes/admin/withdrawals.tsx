@@ -364,7 +364,7 @@ function AdminWithdrawals() {
 
               {w.status === "pending" && (
                 <div className="flex gap-2">
-                  <button onClick={() => mut.mutate({ id: w.id, action: "paid" })}
+                  <button onClick={() => markPaid(w.id)}
                     className="flex-1 py-2 rounded-lg bg-emerald/20 text-emerald font-bold text-xs flex items-center justify-center gap-1">
                     <Check className="w-3.5 h-3.5" /> Mark paid
                   </button>
