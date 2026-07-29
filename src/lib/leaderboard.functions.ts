@@ -77,7 +77,26 @@ export const getLeaderboards = createServerFn({ method: "GET" }).handler(async (
     .order("amount", { ascending: false })
     .limit(200);
 
-  const wUserIds = Array.from(new Set((wRows ?? []).map((w: any) => w.user_id)));
+  // Full paid history for top-payees leaderboard — sum of paid amount per user.
+  const paidByUser = new Map<string, number>();
+  for (let from = 0; ; from += 1000) {
+    const { data } = await supabaseAdmin
+      .from("withdrawals")
+      .select("user_id, amount")
+      .eq("status", "paid")
+      .range(from, from + 999);
+    if (!data || data.length === 0) break;
+    for (const w of data as any[]) {
+      paidByUser.set(w.user_id, (paidByUser.get(w.user_id) ?? 0) + Number(w.amount));
+    }
+    if (data.length < 1000) break;
+  }
+  const topPayeePairs = [...paidByUser.entries()].sort((a, b) => b[1] - a[1]).slice(0, 20);
+
+  const wUserIds = Array.from(new Set([
+    ...(wRows ?? []).map((w: any) => w.user_id),
+    ...topPayeePairs.map((p) => p[0]),
+  ]));
   let wpmap = new Map<string, { display_name: string | null; uid_seq: number | null }>();
   if (wUserIds.length > 0) {
     const { data: wp } = await supabaseAdmin
@@ -117,9 +136,20 @@ export const getLeaderboards = createServerFn({ method: "GET" }).handler(async (
   });
   const avgWaitSeconds = waitN > 0 ? Math.round(waitSum / waitN / 1000) : 0;
 
+  const topPayees = topPayeePairs.map(([id, total]) => {
+    const p = wpmap.get(id);
+    return {
+      id,
+      total: Number(total),
+      name: (p?.display_name ?? "User").trim() || "User",
+      uid: Number(p?.uid_seq ?? 0),
+    };
+  });
+
   return {
     topReferrers: build(topRefPairs),
     topVerified: build(topVerPairs),
+    topPayees,
     withdraws,
     avgWaitSeconds,
   };
