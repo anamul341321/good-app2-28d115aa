@@ -694,6 +694,44 @@ function UserDetail() {
         </div>
       </div>
 
+      {/* Reset history — undo a mistaken slot reset */}
+      {(backups.data?.length ?? 0) > 0 && (
+        <div className="glass rounded-2xl p-4 space-y-2 border border-amber-500/25">
+          <p className="text-[10px] uppercase tracking-widest text-amber-500 font-bold">
+            রিসেট হিস্ট্রি · চাইলে স্লট আগের অবস্থায় ফিরিয়ে আনুন
+          </p>
+          {backups.data!.map((b) => (
+            <div key={b.id} className="flex items-center gap-2 bg-surface-2 rounded-xl p-2">
+              <div className="min-w-0 flex-1">
+                <p className="text-[11px] font-black">
+                  Slot #{b.slot} · {b.face_label ?? "—"}
+                </p>
+                <p className="text-[9px] text-muted-foreground truncate">
+                  {new Date(b.created_at).toLocaleString("bn-BD")} · {b.reset_by ?? "admin"}
+                  {b.wallet_address ? ` · ${b.wallet_address.slice(0, 10)}…` : ""}
+                </p>
+              </div>
+              {b.restored_at ? (
+                <span className="text-[9px] font-black text-emerald shrink-0">✅ ফেরত আনা হয়েছে</span>
+              ) : (
+                <button
+                  onClick={() => {
+                    if (confirm(`Slot #${b.slot} আগের অবস্থায় ফিরিয়ে আনবেন? (key + face + ভেরিফিকেশন সব ফিরে আসবে)`))
+                      restore.mutate(b.id);
+                  }}
+                  disabled={restore.isPending}
+                  className="text-[9px] font-black px-2 py-1.5 rounded-lg bg-amber-500/15 text-amber-500 shrink-0 disabled:opacity-50"
+                >
+                  ↩️ ফিরিয়ে আনুন
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+
+
       {/* Backup / not-whitelisted generated faces */}
       {data.unverified.length > 0 && (
         <div className="glass rounded-2xl p-4 space-y-2 border border-rose/25">
