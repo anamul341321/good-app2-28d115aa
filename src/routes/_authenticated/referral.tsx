@@ -198,10 +198,14 @@ function ReferralPage() {
 
 
       {/* 📊 Colourful Stats */}
+      {(() => {
+        const bonusActiveCount = (data.referees ?? []).filter((r: any) => ((r.reverifies ?? 0) >= 10)).length;
+        return (
+        <>
       <div className="grid grid-cols-3 gap-2">
         <StatCard icon={<Users className="w-5 h-5" />} label="রেজিস্টার করেছে" value={data.totalReferred} tone="cyan" />
-        <StatCard icon={<CheckCircle2 className="w-5 h-5" />} label="বোনাস সক্রিয়" value={data.qualifiedCount} tone="emerald" />
-        <StatCard icon={<Coins className="w-5 h-5" />} label="মাসিক বোনাস" value={`+${data.qualifiedCount * 50}৳`} tone="amber" />
+        <StatCard icon={<CheckCircle2 className="w-5 h-5" />} label="বোনাস সক্রিয়" value={bonusActiveCount} tone="emerald" />
+        <StatCard icon={<Coins className="w-5 h-5" />} label="মাসিক বোনাস" value={`+${bonusActiveCount * 50}৳`} tone="amber" />
       </div>
 
       {/* 🔥 Aggregate verification stats */}
@@ -226,10 +230,13 @@ function ReferralPage() {
           </div>
         </div>
         <p className="relative text-[10px] mt-2.5 opacity-95 leading-snug">
-          ✨ আপনার রেফার থেকে <b className="mono-num">{data.totalReferred}</b> জন রেজিস্টার করেছেন, তাঁদের মধ্যে <b className="mono-num">{(data as any).activeReferees ?? 0}</b> জন সফলভাবে ফেস ভেরিফাই করেছেন।
-          কেউ ১০/১০ পূর্ণ করলেই আপনি প্রতি মাসে <b>+৫০৳</b> পাবেন আজীবন।
+          ✨ আপনার রেফার থেকে <b className="mono-num">{data.totalReferred}</b> জন রেজিস্টার করেছেন, তাঁদের মধ্যে <b className="mono-num">{bonusActiveCount}</b> জন ১০/১০ <b>রি-ভেরিফাই</b> সম্পন্ন করেছেন।
+          কেউ ১০/১০ রি-ভেরিফাই পূর্ণ করলেই আপনি প্রতি মাসে <b>+৫০৳</b> পাবেন আজীবন।
         </p>
       </div>
+        </>
+        );
+      })()}
 
 
       {/* 🎯 How it works */}
@@ -262,11 +269,14 @@ function ReferralPage() {
           </div>
         )}
         <ul className="space-y-2">
-          {data.referees.map((r, i) => (
-            <li key={r.id} className={`rounded-2xl p-3 border transition ${r.qualified ? "border-emerald/40 bg-linear-to-br from-emerald/10 to-cyan/5" : "border-border bg-white"}`}>
+          {data.referees.map((r, i) => {
+            const reverifies = (r as any).reverifies ?? 0;
+            const bonusActive = reverifies >= 10;
+            return (
+            <li key={r.id} className={`rounded-2xl p-3 border transition ${bonusActive ? "border-emerald/40 bg-linear-to-br from-emerald/10 to-cyan/5" : "border-border bg-white"}`}>
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2 min-w-0">
-                  <div className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-black ${r.qualified ? "bg-emerald text-white" : "bg-surface-2 text-muted-foreground"}`}>
+                  <div className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-black ${bonusActive ? "bg-emerald text-white" : "bg-surface-2 text-muted-foreground"}`}>
                     {i + 1}
                   </div>
                   <div className="min-w-0">
@@ -274,28 +284,29 @@ function ReferralPage() {
                      <p className="text-[10px] text-muted-foreground mono-num">UID {r.uid} · {r.phone}</p>
                   </div>
                 </div>
-                {r.qualified ? (
+                {bonusActive ? (
                   <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-emerald text-white px-2.5 py-1 text-[10px] font-black shadow-sm">
                     <CheckCircle2 className="w-3 h-3" /> +৫০৳/মাস
                   </span>
                 ) : (
                   <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-amber/15 text-amber px-2.5 py-1 text-[10px] font-black">
-                    <Clock className="w-3 h-3" /> {r.validDone}/10
+                    <Clock className="w-3 h-3" /> রি-ভেরিফাই {reverifies}/10
                   </span>
                 )}
               </div>
               <div className="flex flex-wrap gap-1 mt-2">
                 <span className="px-2 py-0.5 rounded-full bg-emerald/15 text-emerald font-black text-[10px] mono-num">✅ verify {(r as any).firstVerifies ?? 0}</span>
-                <span className="px-2 py-0.5 rounded-full bg-cyan/15 text-cyan font-black text-[10px] mono-num">🔁 re-verify {(r as any).reverifies ?? 0}</span>
+                <span className="px-2 py-0.5 rounded-full bg-cyan/15 text-cyan font-black text-[10px] mono-num">🔁 re-verify {reverifies}</span>
               </div>
 
-              {!r.qualified && (
+              {!bonusActive && (
                 <div className="mt-2 h-1.5 rounded-full bg-surface-2 overflow-hidden">
-                  <div className="h-full gradient-emerald transition-all" style={{ width: `${(r.validDone / 10) * 100}%` }} />
+                  <div className="h-full gradient-emerald transition-all" style={{ width: `${Math.min(100, (reverifies / 10) * 100)}%` }} />
                 </div>
               )}
             </li>
-          ))}
+            );
+          })}
         </ul>
         <button onClick={() => refetch()} className="mt-3 w-full text-[11px] text-muted-foreground underline">রিফ্রেশ</button>
       </div>

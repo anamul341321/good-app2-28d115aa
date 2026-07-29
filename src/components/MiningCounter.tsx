@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { computeLiveBalance } from "@/lib/mining";
 import { miningWindowInfo, nextOpenLabelBn } from "@/lib/mining-window";
-import { Wallet, Sparkles, Gem } from "lucide-react";
+import { Wallet, Sparkles } from "lucide-react";
 
 type Props = {
   accrued: number;
@@ -12,11 +12,22 @@ type Props = {
   effectiveTaskCount?: number;
   qualifyingReferees?: number;
   displayTaskCount?: number;
+  leagueCount?: number;
 };
+
+// League tiers based on total submitted slots.
+function leagueFor(n: number): { name: string; emoji: string; from: string; to: string } | null {
+  if (n >= 100) return { name: "লিজেন্ড", emoji: "👑", from: "#facc15", to: "#f59e0b" };
+  if (n >= 50)  return { name: "ডায়মন্ড", emoji: "💎", from: "#22d3ee", to: "#8b5cf6" };
+  if (n >= 30)  return { name: "গোল্ড",   emoji: "🥇", from: "#fbbf24", to: "#f97316" };
+  if (n >= 20)  return { name: "সিলভার", emoji: "🥈", from: "#e5e7eb", to: "#94a3b8" };
+  if (n >= 10)  return { name: "ব্রোঞ্জ", emoji: "🥉", from: "#f97316", to: "#b45309" };
+  return null;
+}
 
 export function MiningCounter({
   accrued, withdrawn, isActive, lastCreditedAt,
-  effectiveTaskCount = 0, qualifyingReferees = 0, displayTaskCount,
+  effectiveTaskCount = 0, qualifyingReferees = 0, displayTaskCount, leagueCount,
 }: Props) {
   const [now, setNow] = useState(Date.now());
   const navigate = useNavigate();
@@ -36,6 +47,7 @@ export function MiningCounter({
   const ratePerMonth = 500 * (shownSlots / 10 + 0.10 * qualifyingReferees);
   const bonusMonth = 500 * 0.10 * qualifyingReferees;
   const claimable = Math.floor(balance);
+  const league = leagueFor(leagueCount ?? shownSlots);
 
   const win = miningWindowInfo(now);
   const withdrawOpen = win.isOpen;
@@ -105,10 +117,17 @@ export function MiningCounter({
               </>
             )}
           </div>
-          <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-white/12 border border-white/20 backdrop-blur-md">
-            <Gem className="w-3 h-3 text-yellow-200" />
-            <span className="text-[9px] font-black tracking-widest text-yellow-100">PREMIUM</span>
-          </div>
+          {league ? (
+            <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full backdrop-blur-md border border-white/25 shadow"
+                 style={{ background: `linear-gradient(135deg, ${league.from}, ${league.to})` }}>
+              <span className="text-[11px]">{league.emoji}</span>
+              <span className="text-[9px] font-black tracking-widest text-white drop-shadow">{league.name} লিগ</span>
+            </div>
+          ) : (
+            <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-white/10 border border-white/15 backdrop-blur-md">
+              <span className="text-[9px] font-black tracking-widest text-white/70">লিগ · লক</span>
+            </div>
+          )}
         </div>
 
         {/* Balance */}
@@ -133,13 +152,17 @@ export function MiningCounter({
           </div>
           <div className="mc-stat rounded-xl p-2.5">
             <p className="text-[9px] uppercase tracking-widest text-white/60 font-black">মাসিক রেট</p>
-            <p className="mono-num text-lg font-black text-yellow-100 mt-0.5">{ratePerMonth.toFixed(0)}<span className="text-xs text-white/60">৳</span></p>
+            {live ? (
+              <p className="mono-num text-lg font-black text-yellow-100 mt-0.5">{ratePerMonth.toFixed(0)}<span className="text-xs text-white/60">৳</span></p>
+            ) : (
+              <p className="text-[10px] font-black text-white/70 mt-1 leading-tight">🔒 রি-ভেরিফাই <br/>সম্পন্ন হলে দেখাবে</p>
+            )}
           </div>
         </div>
 
         {!live && (
           <p className="text-[11px] text-white/70 text-center mt-3 font-bold">
-            ১০টি ঘর সম্পন্ন করলে মাইনিং শুরু হবে
+            ১০টি ঘর রি-ভেরিফাই সম্পন্ন করলে মাইনিং ও মাসিক রেট চালু হবে
           </p>
         )}
 
