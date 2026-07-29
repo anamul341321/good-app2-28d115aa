@@ -269,7 +269,13 @@ export const getLeaderboards = createServerFn({ method: "GET" }).handler(async (
   const mergedRefs = [...realTopRef, ...fakeReferrers].sort((a, b) => b.count - a.count).slice(0, 10);
   const mergedVers = [...realTopVer, ...fakeVerified].sort((a, b) => b.count - a.count).slice(0, 10);
   const mergedPayees = [...topPayees, ...fakePayees].sort((a, b) => b.total - a.total).slice(0, 20);
-  const mergedWithdraws = [...withdraws, ...fakeWithdraws].sort((a, b) => b.amount - a.amount).slice(0, 200);
+  const realPending = withdraws.filter((w) => w.status === "pending");
+  const rest = [...withdraws.filter((w) => w.status !== "pending"), ...fakeWithdraws]
+    .sort((a, b) => b.amount - a.amount);
+  const mergedWithdraws = [
+    ...realPending.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
+    ...rest,
+  ].slice(0, 200);
 
   return {
     topReferrers: mergedRefs,
