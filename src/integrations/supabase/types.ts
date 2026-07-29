@@ -876,6 +876,42 @@ export type Database = {
         }
         Relationships: []
       }
+      tg_voices: {
+        Row: {
+          audio_path: string
+          created_at: string
+          id: string
+          is_active: boolean
+          keywords: string[]
+          note: string | null
+          priority: number
+          topic: string
+          updated_at: string
+        }
+        Insert: {
+          audio_path: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          keywords?: string[]
+          note?: string | null
+          priority?: number
+          topic: string
+          updated_at?: string
+        }
+        Update: {
+          audio_path?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          keywords?: string[]
+          note?: string | null
+          priority?: number
+          topic?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       transfers: {
         Row: {
           amount: number
