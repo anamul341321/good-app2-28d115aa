@@ -462,11 +462,35 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         }
 
 
+        // ---- someone asked for a stored photo / key: never share, always deny -
+        if (decision.intent === "photo_request" && !decision.should_delete
+            && (settings as any).photo_privacy_enabled !== false) {
+          const { photoRefusalReply } = await import("@/lib/telegram-bot.server");
+          const reply = photoRefusalReply(senderName);
+          await sendMessage(chatId, reply, msg.message_id);
+          actions.push("photo-denied");
+          await logMessage(decision.verdict, actions.join(","), reply, matchedUid);
+          return Response.json({ ok: true, flow: "photo_request", actions });
+        }
+
         if (settings.auto_reply_enabled && decision.reply && !decision.should_delete
             && decision.intent !== "slot_reset") {
           await sendMessage(chatId, decision.reply, msg.message_id);
           actions.push("replied");
         }
+
+        // ---- bot genuinely doesn't know → hand off to the human admin --------
+        if (!decision.reply && decision.escalate && !decision.should_delete
+            && !decision.needs_uid && decision.intent === null
+            && settings.auto_reply_enabled && (settings as any).escalate_enabled !== false) {
+          const { escalateReply } = await import("@/lib/telegram-bot.server");
+          const reply = escalateReply(senderName, (settings as any).support_username || "@anamulmunni");
+          await sendMessage(chatId, reply, msg.message_id);
+          actions.push("escalated");
+          await logMessage(decision.verdict, actions.join(","), reply, matchedUid);
+          return Response.json({ ok: true, flow: "escalated", actions });
+        }
+
 
         // ---- guided slot reset: ask UID → ask slot → reset --------------------
         if (decision.intent === "slot_reset" && (settings as any).slot_reset_enabled !== false
