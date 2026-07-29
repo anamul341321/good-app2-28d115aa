@@ -406,7 +406,7 @@ function TaskPage() {
           <p className="text-[11px] text-muted-foreground mt-2">
             Good-App হোয়াইটলিস্ট বাতিল হয়েছে। এখনই রি-ভেরিফাই পেজ থেকে ঠিক করুন।
           </p>
-          <Link to="/reverify" className="inline-block mt-3 px-4 py-2 rounded-xl gradient-cta text-sm font-bold">
+          <Link to="/reverify" search={{ taskId: undefined }} className="inline-block mt-3 px-4 py-2 rounded-xl gradient-cta text-sm font-bold">
             রি-ভেরিফাই পেজ
           </Link>
         </div>
