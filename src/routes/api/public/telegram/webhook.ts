@@ -373,20 +373,21 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               );
               actions.push("slot-reset:uid-notfound");
             } else {
-              const slot = decision.slot ?? pickSlot(norm.replace(uid, " "));
+              const slots = pickSlots(norm.replace(uid, " "));
               await saveSession({ step: "await_slot", uid, app_user_id: prof.id });
-              if (slot) {
-                await doReset(uid, slot);
+              if (slots.length || wantsAll) {
+                await doReset(uid, wantsAll ? [] : slots);
                 actions.push("slot-reset:done");
               } else {
                 await sendMessage(
                   chatId,
                   `✅ একাউন্ট পাওয়া গেছে: <b>${prof.display_name || "ইউজার"}</b> (UID <code>${uid}</code>)\n\n` +
-                    `🔢 ${settings.ask_slot_message || "কোন নম্বর স্লটটি রিসেট করতে চান? (১ থেকে ১০)"}`,
+                    `🔢 ${settings.ask_slot_message || "কোন কোন স্লট রিসেট করতে চান? এক বা একাধিক নম্বর লিখুন (যেমন: 3 অথবা 2,5,7 অথবা 2-6, সবগুলোর জন্য লিখুন \"সব\")"}`,
                   msg.message_id,
                 );
                 actions.push("slot-reset:asked-slot");
               }
+
               matchedUid = uid;
             }
           } else {
