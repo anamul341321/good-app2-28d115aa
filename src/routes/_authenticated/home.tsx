@@ -178,7 +178,7 @@ function HomePage() {
       />
       </div>
 
-      <Leaderboards />
+      
 
 
       {/* Compact quick-actions row: Special Offers + Send + Recharge */}
