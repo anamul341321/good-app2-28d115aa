@@ -184,6 +184,41 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           actions.push("replied");
         }
 
+        // ---- UID lookup: instant account card in the group --------------------
+        if ((settings as any).uid_lookup_enabled !== false && !decision.should_delete) {
+          const inline = text.match(/\b(\d{2,9})\b/);
+          const candidate = decision.uid || (decision.needs_uid ? null : inline?.[1] ?? null);
+
+          if (candidate) {
+            const { buildUserCard } = await import("@/lib/telegram-lookup.server");
+            try {
+              const res = await buildUserCard(candidate);
+              if (res.found) {
+                await sendMessage(chatId, res.card, msg.message_id);
+                actions.push("uid-card");
+                matchedUid = candidate;
+              } else if (decision.verdict === "question") {
+                await sendMessage(
+                  chatId,
+                  `❌ UID <code>${candidate}</code> দিয়ে কোনো একাউন্ট পাওয়া যায়নি। অ্যাপের প্রোফাইল পেজ থেকে সঠিক UID টি দেখে আবার লিখুন।`,
+                  msg.message_id,
+                );
+                actions.push("uid-notfound");
+              }
+            } catch (e) {
+              console.error("[tg] uid lookup failed", e);
+            }
+          } else if (decision.needs_uid && settings.auto_reply_enabled) {
+            await sendMessage(
+              chatId,
+              `🔎 ${(settings as any).ask_uid_message || "আপনার Good-App UID টি লিখুন।"}`,
+              msg.message_id,
+            );
+            actions.push("asked-uid");
+          }
+        }
+
+
         await supabaseAdmin.from("tg_messages").insert({
           update_id: update.update_id,
           chat_id: msg.chat.id,
