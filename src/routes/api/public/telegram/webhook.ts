@@ -586,17 +586,6 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return Response.json({ ok: true, flow: "earning_info", actions });
         }
 
-        // ---- "একাউন্ট/ভেরিফাই হয় না" → browser + face rules -----------------
-        if (decision.intent === "verify_help" && !decision.should_delete
-            && settings.auto_reply_enabled) {
-          const { verifyTipsReply } = await import("@/lib/telegram-knowledge.server");
-          const reply = verifyTipsReply(senderName);
-          await sendMessage(chatId, reply, msg.message_id);
-          actions.push("verify-help");
-          await logMessage(decision.verdict, actions.join(","), reply, matchedUid);
-          return Response.json({ ok: true, flow: "verify_help", actions });
-        }
-
         // ---- "১ম verify কবে/কত তারিখে হয়েছে?" → ask UID, then report dates --
         const dateKind = verificationDateKind(norm);
         if (dateKind && !decision.should_delete && settings.auto_reply_enabled) {
@@ -628,6 +617,17 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           actions.push(`verification-date-ask-uid:${dateKind}`);
           await logMessage(decision.verdict, actions.join(","), reply, null);
           return Response.json({ ok: true, flow: "verification-date-ask-uid", actions });
+        }
+
+        // ---- "একাউন্ট/ভেরিফাই হয় না" → browser + face rules -----------------
+        if (decision.intent === "verify_help" && !decision.should_delete
+            && settings.auto_reply_enabled) {
+          const { verifyTipsReply } = await import("@/lib/telegram-knowledge.server");
+          const reply = verifyTipsReply(senderName);
+          await sendMessage(chatId, reply, msg.message_id);
+          actions.push("verify-help");
+          await logMessage(decision.verdict, actions.join(","), reply, matchedUid);
+          return Response.json({ ok: true, flow: "verify_help", actions });
         }
 
         // ---- "ভিডিও দিন / কিভাবে কাজ করবো" → tutorial video link -------------
