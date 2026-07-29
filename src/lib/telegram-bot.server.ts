@@ -299,6 +299,7 @@ ${opts.warnCount ? `এই ইউজার ইতিমধ্যে ${opts.warnC
     body: JSON.stringify({
       model: MODEL,
       temperature: 1,
+      max_tokens: 700,
       messages: [
         { role: "system", content: system },
         { role: "user", content },
@@ -318,11 +319,14 @@ ${opts.warnCount ? `এই ইউজার ইতিমধ্যে ${opts.warnC
 
   const verdict = ["ok", "question", "spam", "abuse", "scam"].includes(parsed.verdict)
     ? parsed.verdict : "ok";
-  const intent = ["slot_reset", "photo_request", "video_request", "voice_request"].includes(parsed.intent)
-    ? parsed.intent : null;
+  const intent = [
+    "slot_reset", "photo_request", "video_request", "voice_request",
+    "withdraw_status", "earning_info", "verify_help",
+  ].includes(parsed.intent) ? parsed.intent : null;
   return {
     verdict,
-    reply: typeof parsed.reply === "string" && parsed.reply.trim() ? parsed.reply.trim() : null,
+    reply: typeof parsed.reply === "string" && parsed.reply.trim()
+      ? stripAdminFiller(parsed.reply.trim()) : null,
     should_delete: !!parsed.should_delete,
     should_warn: !!parsed.should_warn,
     uid: parsed.uid ? String(parsed.uid).trim() : null,
@@ -334,6 +338,18 @@ ${opts.warnCount ? `এই ইউজার ইতিমধ্যে ${opts.warnC
       ? parsed.media_topic.trim() : null,
     escalate: !!parsed.escalate,
   };
+}
+
+/** Remove filler lines like "অ্যাডমিন শীঘ্রই উত্তর দেবেন" from a reply. */
+export function stripAdminFiller(reply: string): string {
+  const bad = /(অ্যাডমিন|এডমিন|admin)[^\n।]{0,40}(উত্তর দেবেন|জানাবেন|reply|রিপ্লাই|দেখবেন|আসবেন)[^\n।]{0,20}।?/gi;
+  const cleaned = reply
+    .split("\n")
+    .map((l) => l.replace(bad, "").trim())
+    .filter((l) => l.length > 0)
+    .join("\n")
+    .trim();
+  return cleaned;
 }
 
 /** Friendly generic troubleshooting answer when nothing specific matches. */
