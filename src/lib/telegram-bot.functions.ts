@@ -36,7 +36,7 @@ const settingsSchema = z.object({
   smart_mode: z.boolean(),
   auto_block_enabled: z.boolean(),
   block_threshold: z.number().int().min(1).max(50),
-  support_username: z.string().max(64).nullable().optional(),
+  support_username: z.string().max(64).optional(),
   photo_privacy_enabled: z.boolean().optional(),
   escalate_enabled: z.boolean().optional(),
   reply_variety: z.boolean().optional(),
