@@ -382,3 +382,65 @@ function AdminWithdrawals() {
     </div>
   );
 }
+
+function PaidByPanel({ data, loading }: { data: any[]; loading: boolean }) {
+  const [open, setOpen] = useState<string | null>(null);
+  const [q, setQ] = useState("");
+  const total = useMemo(() => data.reduce((s, a) => s + Number(a.total), 0), [data]);
+  if (loading) return <div className="py-6 flex justify-center"><Loader2 className="w-4 h-4 animate-spin text-cyan" /></div>;
+  const filtered = data.filter((a) => !q.trim() || a.name.toLowerCase().includes(q.trim().toLowerCase()));
+
+  return (
+    <div className="space-y-2">
+      <div className="glass rounded-xl p-3 border border-cyan/30 bg-cyan/5">
+        <p className="text-[10px] font-black text-cyan uppercase tracking-widest">Paid-By Admin Summary</p>
+        <p className="mono-num font-black text-2xl mt-1">{total.toFixed(2)} ৳</p>
+        <p className="text-[10px] text-muted-foreground">{data.length} জন admin · সব paid withdrawal মিলিয়ে</p>
+      </div>
+      <input
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        placeholder="Admin name দিয়ে খুঁজুন…"
+        className="w-full px-3 py-2 rounded-xl bg-background/60 border border-white/10 text-xs outline-none focus:border-cyan"
+      />
+      {filtered.length === 0 && <p className="text-center text-xs text-muted-foreground py-6">কোনো record নেই</p>}
+      {filtered.map((a) => (
+        <div key={a.name} className="rounded-xl border border-cyan/30 bg-gradient-to-br from-cyan/10 to-blue-500/5">
+          <button
+            onClick={() => setOpen(open === a.name ? null : a.name)}
+            className="w-full flex items-center gap-3 p-3 text-left">
+            <div className="w-10 h-10 rounded-xl bg-cyan/20 border border-cyan/40 flex items-center justify-center shrink-0">
+              <UserCheck className="w-5 h-5 text-cyan" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="font-black truncate">{a.name}</p>
+              <p className="text-[10px] text-muted-foreground">{a.count} পেমেন্ট · click to see breakdown</p>
+            </div>
+            <div className="text-right shrink-0">
+              <p className="mono-num font-black text-emerald">{Number(a.total).toFixed(0)}৳</p>
+              <ChevronDown className={`w-4 h-4 inline transition-transform ${open === a.name ? "rotate-180" : ""}`} />
+            </div>
+          </button>
+          {open === a.name && (
+            <div className="px-3 pb-3 space-y-1.5">
+              {a.entries.map((e: any) => (
+                <div key={e.id} className="rounded-lg bg-white/5 border border-white/10 px-2.5 py-1.5 flex items-center justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-bold truncate">
+                      {e.user_name} <span className="text-[10px] text-muted-foreground mono-num">#{e.uid ?? "-"}</span>
+                    </p>
+                    <p className="text-[10px] text-muted-foreground mono-num truncate">
+                      {String(e.provider).toUpperCase()} · {e.wallet_number}
+                    </p>
+                    <p className="text-[9px] text-muted-foreground">{new Date(e.processed_at).toLocaleString()}</p>
+                  </div>
+                  <p className="mono-num font-black text-emerald text-sm shrink-0">{Number(e.amount).toFixed(0)}৳</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
