@@ -145,8 +145,12 @@ ${withImages.map((f, i) => `রেফারেন্স ছবি ${i + 1} = [${
 - should_warn: abuse/scam/spam হলে true
 - uid: মেসেজ বা ছবিতে Good-App UID (শুধু সংখ্যা, যেমন 4100) বা ৭ অক্ষরের রেফার কোড থাকলে সেটি, নাহলে null
 - needs_uid: ইউজার যদি নিজের একাউন্ট সম্পর্কিত সমস্যার কথা বলে (রেফার কাউন্ট মিলছে না, ব্যালেন্স, উইথড্র, ভেরিফাই, মাইনিং ইত্যাদি) কিন্তু কোনো UID দেয়নি — তাহলে true, নাহলে false
+- intent: ইউজার যদি কোনো স্লট রিসেট/খালি/ক্লিয়ার/মুছে দিতে বলে (যেমন "slot reset koro", "স্লট রিসেট", "key মুছে দিন", "স্লট খালি করে দিন") তাহলে "slot_reset", নাহলে null
+- slot: মেসেজে স্লট নম্বর (১-১০) বলা থাকলে সেই সংখ্যা, নাহলে null
+- মনে রাখবে: intent = "slot_reset" হলে reply অবশ্যই null দেবে (বট নিজেই পরের ধাপ চালাবে)।
 
-শুধু JSON দাও: {"verdict":"...","reply":null,"should_delete":false,"should_warn":false,"uid":null,"needs_uid":false}`;
+শুধু JSON দাও: {"verdict":"...","reply":null,"should_delete":false,"should_warn":false,"uid":null,"needs_uid":false,"intent":null,"slot":null}`;
+
 
   const content: any[] = [
     { type: "text", text: `প্রেরক: ${opts.senderName}\nমেসেজ: ${opts.text || "(শুধু ছবি)"}` },
