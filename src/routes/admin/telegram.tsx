@@ -151,6 +151,11 @@ function SettingsPanel() {
         </button>
       </div>
 
+      <ChatIdPicker
+        onPick={(id, which) => { set(which === "group" ? "group_chat_id" : "admin_chat_id", id); toast.success("বসানো হয়েছে — নিচে সেভ করুন"); }}
+      />
+
+
       <div className="glass rounded-2xl p-4 space-y-2">
         <Toggle label="Bot চালু" hint="বন্ধ করলে বট কিছুই করবে না" value={!!form.enabled} onChange={(v) => set("enabled", v)} />
         <Toggle label="AI অটো-রিপ্লাই" hint="ইউজারের প্রশ্নের উত্তর নিজে দেবে" value={!!form.auto_reply_enabled} onChange={(v) => set("auto_reply_enabled", v)} />
@@ -192,6 +197,55 @@ function SettingsPanel() {
     </div>
   );
 }
+
+function ChatIdPicker({ onPick }: { onPick: (id: string, which: "group" | "admin") => void }) {
+  const { data, isFetching, refetch } = useQuery({
+    queryKey: ["tg-chatids"],
+    queryFn: () => tgRecentMessages(),
+    refetchInterval: 5000,
+  });
+
+  const chats = Object.values(
+    ((data as any[]) ?? []).reduce((acc: Record<string, any>, m: any) => {
+      const key = String(m.chat_id);
+      if (!acc[key]) acc[key] = { id: key, name: m.full_name || m.username || "চ্যাট", last: m.text || "", when: m.created_at };
+      return acc;
+    }, {}),
+  ) as any[];
+
+  return (
+    <div className="glass rounded-2xl p-4">
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <h3 className="font-black text-sm">চ্যাট আইডি অটো-ডিটেক্ট</h3>
+        <button onClick={() => refetch()} className="text-[11px] font-black text-cyan">রিফ্রেশ</button>
+      </div>
+      <p className="text-[11px] text-muted-foreground">
+        ১) বটকে আপনার গ্রুপে অ্যাড করুন (admin বানান)। ২) গ্রুপে যেকোনো একটা মেসেজ লিখুন। ৩) নিচে চ্যাট আইডি নিজে থেকেই চলে আসবে — বাটনে চাপ দিয়ে বসিয়ে সেভ করুন।
+      </p>
+      <div className="mt-3 space-y-2">
+        {chats.length === 0 && (
+          <p className="text-[11px] text-muted-foreground">
+            {isFetching ? "খোঁজা হচ্ছে…" : "এখনো কোনো মেসেজ আসেনি। গ্রুপে একটা মেসেজ লিখুন।"}
+          </p>
+        )}
+        {chats.map((c) => (
+          <div key={c.id} className="rounded-xl border border-border bg-surface-2 p-2.5">
+            <p className="text-xs font-black">{c.name}</p>
+            <p className="text-[10px] text-muted-foreground break-all">ID: {c.id}</p>
+            {c.last && <p className="text-[10px] text-muted-foreground truncate">“{c.last}”</p>}
+            <div className="mt-2 flex gap-2">
+              <button onClick={() => onPick(c.id, "group")}
+                className="flex-1 rounded-lg gradient-cta py-1.5 text-[11px] font-black">Group ID করুন</button>
+              <button onClick={() => onPick(c.id, "admin")}
+                className="flex-1 rounded-lg border border-border py-1.5 text-[11px] font-black">Admin ID করুন</button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 
 function Field({ label, hint, value, onChange, type = "text" }: {
   label: string; hint?: string; value: string; onChange: (v: string) => void; type?: string;
