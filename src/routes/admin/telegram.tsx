@@ -209,10 +209,26 @@ function FaqPanel() {
   const qc = useQueryClient();
   const { data, isLoading } = useQuery({ queryKey: ["tg-faq"], queryFn: () => tgListFaq() });
   const [draft, setDraft] = useState({ topic: "", keywords: "", answer: "", priority: 0 });
+  const [img, setImg] = useState<{ b64: string; preview: string } | null>(null);
+
+  const pickImage = async (file: File | undefined) => {
+    if (!file) return;
+    if (file.size > 6_000_000) { toast.error("ছবি ৬MB এর কম দিন"); return; }
+    const buf = await file.arrayBuffer();
+    let bin = "";
+    const bytes = new Uint8Array(buf);
+    for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+    setImg({ b64: btoa(bin), preview: URL.createObjectURL(file) });
+  };
 
   const upsert = useMutation({
     mutationFn: (v: any) => tgUpsertFaq({ data: v }),
-    onSuccess: () => { toast.success("সেভ হয়েছে"); setDraft({ topic: "", keywords: "", answer: "", priority: 0 }); qc.invalidateQueries({ queryKey: ["tg-faq"] }); },
+    onSuccess: () => {
+      toast.success("সেভ হয়েছে");
+      setDraft({ topic: "", keywords: "", answer: "", priority: 0 });
+      setImg(null);
+      qc.invalidateQueries({ queryKey: ["tg-faq"] });
+    },
     onError: (e: any) => toast.error(e.message),
   });
   const del = useMutation({
@@ -226,19 +242,40 @@ function FaqPanel() {
         <h3 className="font-black text-sm flex items-center gap-2"><Plus className="w-4 h-4 text-emerald" /> নতুন উত্তর যোগ করুন</h3>
         <p className="text-[10px] text-muted-foreground">
           এখানে যা লিখবেন, bot ঠিক সেটাই ব্যবহার করে উত্তর দেবে — বাইরের তথ্য বানাবে না।
+          ছবি যোগ করলে ইউজার একই রকম স্ক্রিনশট পাঠালে bot এই উত্তরটিই দেবে।
         </p>
         <Field label="বিষয়" value={draft.topic} onChange={(v) => setDraft({ ...draft, topic: v })} />
         <Field label="কীওয়ার্ড (কমা দিয়ে)" value={draft.keywords} onChange={(v) => setDraft({ ...draft, keywords: v })} />
         <Area label="উত্তর" rows={5} value={draft.answer} onChange={(v) => setDraft({ ...draft, answer: v })} />
+
+        <div>
+          <label className="block text-[11px] font-black mb-1">রেফারেন্স স্ক্রিনশট (ঐচ্ছিক)</label>
+          <div className="flex items-center gap-2">
+            <label className="flex-1 cursor-pointer rounded-xl border border-dashed border-border bg-surface-2 px-3 py-2.5 text-[11px] font-black text-center">
+              <ImageIcon className="w-3.5 h-3.5 inline mr-1 text-cyan" />
+              {img ? "ছবি বদলান" : "ছবি নির্বাচন করুন"}
+              <input type="file" accept="image/*" className="hidden"
+                onChange={(e) => pickImage(e.target.files?.[0])} />
+            </label>
+            {img && (
+              <button onClick={() => setImg(null)} className="p-2 rounded-lg bg-surface-2 border border-border">
+                <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+              </button>
+            )}
+          </div>
+          {img && <img src={img.preview} alt="preview" className="mt-2 h-28 rounded-xl border border-border object-cover" />}
+        </div>
+
         <button
           onClick={() => draft.topic.trim() && draft.answer.trim() && upsert.mutate({
             topic: draft.topic.trim(),
             keywords: draft.keywords.split(",").map((s) => s.trim()).filter(Boolean),
             answer: draft.answer.trim(), priority: 0, is_active: true,
+            image_base64: img?.b64 ?? null,
           })}
           disabled={upsert.isPending}
           className="w-full py-2.5 rounded-xl gradient-cta font-black text-sm disabled:opacity-50">
-          যোগ করুন
+          {upsert.isPending ? "সেভ হচ্ছে…" : "যোগ করুন"}
         </button>
       </div>
 
@@ -257,12 +294,17 @@ function FaqPanel() {
                   {f.keywords?.length > 0 && (
                     <p className="text-[10px] text-cyan mt-1">🔑 {f.keywords.join(", ")}</p>
                   )}
+                  {f.image_url && (
+                    <img src={f.image_url} alt={f.topic}
+                      className="mt-2 h-24 rounded-lg border border-border object-cover" />
+                  )}
                 </div>
                 <button onClick={() => del.mutate(f.id)} className="shrink-0 p-2 rounded-lg bg-surface-2">
                   <Trash2 className="w-3.5 h-3.5 text-rose-400" />
                 </button>
               </div>
             </div>
+
           ))}
         </div>
       )}
