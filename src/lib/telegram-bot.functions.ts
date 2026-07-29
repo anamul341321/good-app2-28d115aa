@@ -235,3 +235,46 @@ export const tgRecentMessages = createServerFn({ method: "GET" }).handler(async 
     .order("created_at", { ascending: false }).limit(60);
   return data ?? [];
 });
+
+// ---- Blocked Telegram users ----------------------------------------------
+
+export const tgListBlocked = createServerFn({ method: "GET" }).handler(async () => {
+  const db = await guard();
+  const { data } = await db.from("tg_offenders").select("*")
+    .order("last_offense_at", { ascending: false }).limit(200);
+  return (data ?? []) as any[];
+});
+
+export const tgSetBlocked = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => z.object({
+    tg_user_id: z.number(),
+    blocked: z.boolean(),
+    reset_warnings: z.boolean().optional(),
+  }).parse(i))
+  .handler(async ({ data }) => {
+    const db = await guard();
+    const { data: row } = await db.from("tg_offenders").select("*")
+      .eq("tg_user_id", data.tg_user_id).maybeSingle();
+    if (!row) return { ok: false as const, error: "ইউজার পাওয়া যায়নি" };
+
+    const { data: s } = await db.from("tg_bot_settings")
+      .select("group_chat_id").eq("id", "default").maybeSingle();
+    const chat = (row as any).chat_id ?? (s as any)?.group_chat_id ?? null;
+
+    if (chat) {
+      const { banChatMember, unbanChatMember } = await import("@/lib/telegram-bot.server");
+      try {
+        if (data.blocked) await banChatMember(chat, data.tg_user_id);
+        else await unbanChatMember(chat, data.tg_user_id);
+      } catch { /* telegram side is best-effort */ }
+    }
+
+    await db.from("tg_offenders").update({
+      blocked: data.blocked,
+      blocked_at: data.blocked ? new Date().toISOString() : (row as any).blocked_at,
+      unblocked_at: data.blocked ? null : new Date().toISOString(),
+      ...(data.reset_warnings ? { warn_count: 0 } : {}),
+    } as any).eq("tg_user_id", data.tg_user_id);
+
+    return { ok: true as const };
+  });
