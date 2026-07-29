@@ -267,6 +267,9 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          banned: boolean
+          banned_at: string | null
+          banned_reason: string | null
           bonus_first_verify_claimed: boolean
           bonus_first_verify_self_claimed: boolean
           bonus_reverify_claimed: boolean
@@ -290,12 +293,16 @@ export type Database = {
           referral_code: string
           referral_unlock_override: boolean
           referred_by: string | null
+          telegram_user_id: number | null
           thana_upazila: string | null
           uid_seq: number | null
           village_area: string | null
         }
         Insert: {
           avatar_url?: string | null
+          banned?: boolean
+          banned_at?: string | null
+          banned_reason?: string | null
           bonus_first_verify_claimed?: boolean
           bonus_first_verify_self_claimed?: boolean
           bonus_reverify_claimed?: boolean
@@ -319,12 +326,16 @@ export type Database = {
           referral_code: string
           referral_unlock_override?: boolean
           referred_by?: string | null
+          telegram_user_id?: number | null
           thana_upazila?: string | null
           uid_seq?: number | null
           village_area?: string | null
         }
         Update: {
           avatar_url?: string | null
+          banned?: boolean
+          banned_at?: string | null
+          banned_reason?: string | null
           bonus_first_verify_claimed?: boolean
           bonus_first_verify_self_claimed?: boolean
           bonus_reverify_claimed?: boolean
@@ -348,6 +359,7 @@ export type Database = {
           referral_code?: string
           referral_unlock_override?: boolean
           referred_by?: string | null
+          telegram_user_id?: number | null
           thana_upazila?: string | null
           uid_seq?: number | null
           village_area?: string | null
@@ -479,6 +491,216 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      tg_ban_requests: {
+        Row: {
+          app_user_id: string | null
+          created_at: string
+          evidence: string | null
+          full_name: string | null
+          id: string
+          matched_uid: string | null
+          reason: string
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+          tg_user_id: number | null
+          username: string | null
+        }
+        Insert: {
+          app_user_id?: string | null
+          created_at?: string
+          evidence?: string | null
+          full_name?: string | null
+          id?: string
+          matched_uid?: string | null
+          reason: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          tg_user_id?: number | null
+          username?: string | null
+        }
+        Update: {
+          app_user_id?: string | null
+          created_at?: string
+          evidence?: string | null
+          full_name?: string | null
+          id?: string
+          matched_uid?: string | null
+          reason?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          tg_user_id?: number | null
+          username?: string | null
+        }
+        Relationships: []
+      }
+      tg_bot_settings: {
+        Row: {
+          admin_chat_id: string | null
+          admin_mention: string | null
+          auto_reply_enabled: boolean
+          banned_words: string[]
+          created_at: string
+          delete_bad_messages: boolean
+          enabled: boolean
+          group_chat_id: string | null
+          id: string
+          moderation_enabled: boolean
+          persona: string
+          photo_analysis_enabled: boolean
+          rules: string
+          updated_at: string
+          warn_threshold: number
+        }
+        Insert: {
+          admin_chat_id?: string | null
+          admin_mention?: string | null
+          auto_reply_enabled?: boolean
+          banned_words?: string[]
+          created_at?: string
+          delete_bad_messages?: boolean
+          enabled?: boolean
+          group_chat_id?: string | null
+          id?: string
+          moderation_enabled?: boolean
+          persona?: string
+          photo_analysis_enabled?: boolean
+          rules?: string
+          updated_at?: string
+          warn_threshold?: number
+        }
+        Update: {
+          admin_chat_id?: string | null
+          admin_mention?: string | null
+          auto_reply_enabled?: boolean
+          banned_words?: string[]
+          created_at?: string
+          delete_bad_messages?: boolean
+          enabled?: boolean
+          group_chat_id?: string | null
+          id?: string
+          moderation_enabled?: boolean
+          persona?: string
+          photo_analysis_enabled?: boolean
+          rules?: string
+          updated_at?: string
+          warn_threshold?: number
+        }
+        Relationships: []
+      }
+      tg_faq: {
+        Row: {
+          answer: string
+          created_at: string
+          id: string
+          is_active: boolean
+          keywords: string[]
+          priority: number
+          topic: string
+          updated_at: string
+        }
+        Insert: {
+          answer: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          keywords?: string[]
+          priority?: number
+          topic: string
+          updated_at?: string
+        }
+        Update: {
+          answer?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          keywords?: string[]
+          priority?: number
+          topic?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      tg_messages: {
+        Row: {
+          action: string | null
+          bot_reply: string | null
+          chat_id: number
+          created_at: string
+          full_name: string | null
+          has_photo: boolean
+          matched_uid: string | null
+          message_id: number | null
+          text: string | null
+          tg_user_id: number | null
+          update_id: number
+          username: string | null
+          verdict: string | null
+        }
+        Insert: {
+          action?: string | null
+          bot_reply?: string | null
+          chat_id: number
+          created_at?: string
+          full_name?: string | null
+          has_photo?: boolean
+          matched_uid?: string | null
+          message_id?: number | null
+          text?: string | null
+          tg_user_id?: number | null
+          update_id: number
+          username?: string | null
+          verdict?: string | null
+        }
+        Update: {
+          action?: string | null
+          bot_reply?: string | null
+          chat_id?: number
+          created_at?: string
+          full_name?: string | null
+          has_photo?: boolean
+          matched_uid?: string | null
+          message_id?: number | null
+          text?: string | null
+          tg_user_id?: number | null
+          update_id?: number
+          username?: string | null
+          verdict?: string | null
+        }
+        Relationships: []
+      }
+      tg_offenders: {
+        Row: {
+          created_at: string
+          full_name: string | null
+          last_offense_at: string
+          last_reason: string | null
+          tg_user_id: number
+          username: string | null
+          warn_count: number
+        }
+        Insert: {
+          created_at?: string
+          full_name?: string | null
+          last_offense_at?: string
+          last_reason?: string | null
+          tg_user_id: number
+          username?: string | null
+          warn_count?: number
+        }
+        Update: {
+          created_at?: string
+          full_name?: string | null
+          last_offense_at?: string
+          last_reason?: string | null
+          tg_user_id?: number
+          username?: string | null
+          warn_count?: number
+        }
+        Relationships: []
       }
       transfers: {
         Row: {

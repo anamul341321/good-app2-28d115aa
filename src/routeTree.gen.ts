@@ -20,6 +20,7 @@ import { Route as AdminWithdrawalsRouteImport } from './routes/admin/withdrawals
 import { Route as AdminWalletsRouteImport } from './routes/admin/wallets'
 import { Route as AdminUsersRouteImport } from './routes/admin/users'
 import { Route as AdminUnverifiedRouteImport } from './routes/admin/unverified'
+import { Route as AdminTelegramRouteImport } from './routes/admin/telegram'
 import { Route as AdminReverifyRouteImport } from './routes/admin/reverify'
 import { Route as AdminRechargesRouteImport } from './routes/admin/recharges'
 import { Route as AdminPaidReportRouteImport } from './routes/admin/paid-report'
@@ -41,6 +42,7 @@ import { Route as ApiPublicWhitelistRecheckRouteImport } from './routes/api/publ
 import { Route as ApiPublicTourAudioRouteImport } from './routes/api/public/tour-audio'
 import { Route as AdminUserUserIdRouteImport } from './routes/admin/user.$userId'
 import { Route as AuthenticatedTaskSlotRouteImport } from './routes/_authenticated/task.$slot'
+import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -94,6 +96,11 @@ const AdminUsersRoute = AdminUsersRouteImport.update({
 const AdminUnverifiedRoute = AdminUnverifiedRouteImport.update({
   id: '/unverified',
   path: '/unverified',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminTelegramRoute = AdminTelegramRouteImport.update({
+  id: '/telegram',
+  path: '/telegram',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminReverifyRoute = AdminReverifyRouteImport.update({
@@ -202,6 +209,12 @@ const AuthenticatedTaskSlotRoute = AuthenticatedTaskSlotRouteImport.update({
   path: '/task/$slot',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiPublicTelegramWebhookRoute =
+  ApiPublicTelegramWebhookRouteImport.update({
+    id: '/api/public/telegram/webhook',
+    path: '/api/public/telegram/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -225,6 +238,7 @@ export interface FileRoutesByFullPath {
   '/admin/paid-report': typeof AdminPaidReportRoute
   '/admin/recharges': typeof AdminRechargesRoute
   '/admin/reverify': typeof AdminReverifyRoute
+  '/admin/telegram': typeof AdminTelegramRoute
   '/admin/unverified': typeof AdminUnverifiedRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/wallets': typeof AdminWalletsRoute
@@ -235,6 +249,7 @@ export interface FileRoutesByFullPath {
   '/admin/user/$userId': typeof AdminUserUserIdRoute
   '/api/public/tour-audio': typeof ApiPublicTourAudioRoute
   '/api/public/whitelist-recheck': typeof ApiPublicWhitelistRecheckRoute
+  '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -257,6 +272,7 @@ export interface FileRoutesByTo {
   '/admin/paid-report': typeof AdminPaidReportRoute
   '/admin/recharges': typeof AdminRechargesRoute
   '/admin/reverify': typeof AdminReverifyRoute
+  '/admin/telegram': typeof AdminTelegramRoute
   '/admin/unverified': typeof AdminUnverifiedRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/wallets': typeof AdminWalletsRoute
@@ -267,6 +283,7 @@ export interface FileRoutesByTo {
   '/admin/user/$userId': typeof AdminUserUserIdRoute
   '/api/public/tour-audio': typeof ApiPublicTourAudioRoute
   '/api/public/whitelist-recheck': typeof ApiPublicWhitelistRecheckRoute
+  '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -292,6 +309,7 @@ export interface FileRoutesById {
   '/admin/paid-report': typeof AdminPaidReportRoute
   '/admin/recharges': typeof AdminRechargesRoute
   '/admin/reverify': typeof AdminReverifyRoute
+  '/admin/telegram': typeof AdminTelegramRoute
   '/admin/unverified': typeof AdminUnverifiedRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/wallets': typeof AdminWalletsRoute
@@ -302,6 +320,7 @@ export interface FileRoutesById {
   '/admin/user/$userId': typeof AdminUserUserIdRoute
   '/api/public/tour-audio': typeof ApiPublicTourAudioRoute
   '/api/public/whitelist-recheck': typeof ApiPublicWhitelistRecheckRoute
+  '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -327,6 +346,7 @@ export interface FileRouteTypes {
     | '/admin/paid-report'
     | '/admin/recharges'
     | '/admin/reverify'
+    | '/admin/telegram'
     | '/admin/unverified'
     | '/admin/users'
     | '/admin/wallets'
@@ -337,6 +357,7 @@ export interface FileRouteTypes {
     | '/admin/user/$userId'
     | '/api/public/tour-audio'
     | '/api/public/whitelist-recheck'
+    | '/api/public/telegram/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -359,6 +380,7 @@ export interface FileRouteTypes {
     | '/admin/paid-report'
     | '/admin/recharges'
     | '/admin/reverify'
+    | '/admin/telegram'
     | '/admin/unverified'
     | '/admin/users'
     | '/admin/wallets'
@@ -369,6 +391,7 @@ export interface FileRouteTypes {
     | '/admin/user/$userId'
     | '/api/public/tour-audio'
     | '/api/public/whitelist-recheck'
+    | '/api/public/telegram/webhook'
   id:
     | '__root__'
     | '/'
@@ -393,6 +416,7 @@ export interface FileRouteTypes {
     | '/admin/paid-report'
     | '/admin/recharges'
     | '/admin/reverify'
+    | '/admin/telegram'
     | '/admin/unverified'
     | '/admin/users'
     | '/admin/wallets'
@@ -403,6 +427,7 @@ export interface FileRouteTypes {
     | '/admin/user/$userId'
     | '/api/public/tour-audio'
     | '/api/public/whitelist-recheck'
+    | '/api/public/telegram/webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -414,6 +439,7 @@ export interface RootRouteChildren {
   CardUidRoute: typeof CardUidRoute
   ApiPublicTourAudioRoute: typeof ApiPublicTourAudioRoute
   ApiPublicWhitelistRecheckRoute: typeof ApiPublicWhitelistRecheckRoute
+  ApiPublicTelegramWebhookRoute: typeof ApiPublicTelegramWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -493,6 +519,13 @@ declare module '@tanstack/react-router' {
       path: '/unverified'
       fullPath: '/admin/unverified'
       preLoaderRoute: typeof AdminUnverifiedRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/telegram': {
+      id: '/admin/telegram'
+      path: '/telegram'
+      fullPath: '/admin/telegram'
+      preLoaderRoute: typeof AdminTelegramRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/reverify': {
@@ -642,6 +675,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTaskSlotRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/telegram/webhook': {
+      id: '/api/public/telegram/webhook'
+      path: '/api/public/telegram/webhook'
+      fullPath: '/api/public/telegram/webhook'
+      preLoaderRoute: typeof ApiPublicTelegramWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -684,6 +724,7 @@ interface AdminRouteChildren {
   AdminPaidReportRoute: typeof AdminPaidReportRoute
   AdminRechargesRoute: typeof AdminRechargesRoute
   AdminReverifyRoute: typeof AdminReverifyRoute
+  AdminTelegramRoute: typeof AdminTelegramRoute
   AdminUnverifiedRoute: typeof AdminUnverifiedRoute
   AdminUsersRoute: typeof AdminUsersRoute
   AdminWalletsRoute: typeof AdminWalletsRoute
@@ -700,6 +741,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminPaidReportRoute: AdminPaidReportRoute,
   AdminRechargesRoute: AdminRechargesRoute,
   AdminReverifyRoute: AdminReverifyRoute,
+  AdminTelegramRoute: AdminTelegramRoute,
   AdminUnverifiedRoute: AdminUnverifiedRoute,
   AdminUsersRoute: AdminUsersRoute,
   AdminWalletsRoute: AdminWalletsRoute,
@@ -719,6 +761,7 @@ const rootRouteChildren: RootRouteChildren = {
   CardUidRoute: CardUidRoute,
   ApiPublicTourAudioRoute: ApiPublicTourAudioRoute,
   ApiPublicWhitelistRecheckRoute: ApiPublicWhitelistRecheckRoute,
+  ApiPublicTelegramWebhookRoute: ApiPublicTelegramWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

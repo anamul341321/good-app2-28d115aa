@@ -20,6 +20,12 @@ export const getDashboard = createServerFn({ method: "GET" })
         supabaseAdmin.from("bonus_settings").select("bkash_enabled,nagad_enabled,bkash_off_message,nagad_off_message,recharge_enabled,recharge_off_message,usdt_enabled,usdt_off_message,usdt_rate_bdt").eq("id", "default").maybeSingle(),
       ]);
 
+    if ((profile as any)?.banned) {
+      throw new Error(
+        `আপনার একাউন্টটি বন্ধ করা হয়েছে${(profile as any)?.banned_reason ? ` — ${(profile as any).banned_reason}` : ""}। অ্যাডমিনের সাথে যোগাযোগ করুন।`,
+      );
+    }
+
     if (tasksResult.error) throw new Error(tasksResult.error.message);
 
     let tasks = tasksResult.data ?? [];

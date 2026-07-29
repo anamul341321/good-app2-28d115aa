@@ -1,0 +1,170 @@
+// Server-only helpers for the Good-App Telegram moderation/support bot.
+// Uses TG_MOD_BOT_TOKEN when present, otherwise falls back to TELEGRAM_BOT_TOKEN.
+import { createHash } from "node:crypto";
+
+export function getBotToken(): string {
+  const token = process.env.TG_MOD_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN;
+  if (!token) throw new Error("Bot token not configured");
+  return token;
+}
+
+export function webhookSecretFor(token: string): string {
+  return createHash("sha256").update(`good-app-tg:${token}`).digest("base64url");
+}
+
+async function api<T = any>(method: string, body: Record<string, unknown>): Promise<T | null> {
+  const token = getBotToken();
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const json: any = await res.json();
+    if (!json?.ok) {
+      console.error(`[tg] ${method} failed`, json?.description);
+      return null;
+    }
+    return json.result as T;
+  } catch (e) {
+    console.error(`[tg] ${method} error`, e);
+    return null;
+  }
+}
+
+export function sendMessage(chatId: string | number, text: string, replyTo?: number) {
+  return api("sendMessage", {
+    chat_id: chatId,
+    text,
+    parse_mode: "HTML",
+    disable_web_page_preview: true,
+    ...(replyTo ? { reply_to_message_id: replyTo, allow_sending_without_reply: true } : {}),
+  });
+}
+
+export function deleteMessage(chatId: string | number, messageId: number) {
+  return api("deleteMessage", { chat_id: chatId, message_id: messageId });
+}
+
+export function restrictUser(chatId: string | number, userId: number, seconds: number) {
+  return api("restrictChatMember", {
+    chat_id: chatId,
+    user_id: userId,
+    until_date: Math.floor(Date.now() / 1000) + seconds,
+    permissions: { can_send_messages: false },
+  });
+}
+
+export async function getPhotoBase64(fileId: string): Promise<string | null> {
+  const token = getBotToken();
+  const file = await api<{ file_path: string }>("getFile", { file_id: fileId });
+  if (!file?.file_path) return null;
+  try {
+    const res = await fetch(`https://api.telegram.org/file/bot${token}/${file.file_path}`);
+    if (!res.ok) return null;
+    const buf = Buffer.from(await res.arrayBuffer());
+    return buf.toString("base64");
+  } catch {
+    return null;
+  }
+}
+
+export async function setWebhook(url: string) {
+  const token = getBotToken();
+  return api("setWebhook", {
+    url,
+    secret_token: webhookSecretFor(token),
+    allowed_updates: ["message", "edited_message"],
+    drop_pending_updates: true,
+  });
+}
+
+export function getWebhookInfo() {
+  return api("getWebhookInfo", {});
+}
+
+// ---------------------------------------------------------------------------
+// AI decision layer
+// ---------------------------------------------------------------------------
+
+const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
+const MODEL = "google/gemini-3.6-flash";
+
+export type BotDecision = {
+  verdict: "ok" | "question" | "spam" | "abuse" | "scam";
+  reply: string | null;
+  should_delete: boolean;
+  should_warn: boolean;
+  uid: string | null;
+};
+
+export async function decide(opts: {
+  persona: string;
+  rules: string;
+  faq: { topic: string; answer: string }[];
+  bannedWords: string[];
+  text: string;
+  photoBase64: string | null;
+  senderName: string;
+}): Promise<BotDecision> {
+  const key = process.env.LOVABLE_API_KEY;
+  if (!key) throw new Error("LOVABLE_API_KEY not configured");
+
+  const system = `${opts.persona}
+
+গ্রুপের নিয়ম:
+${opts.rules || "(কোনো নিয়ম সেট করা নেই)"}
+
+নিষিদ্ধ শব্দ/বিষয়: ${opts.bannedWords.join(", ") || "(নেই)"}
+
+তোমার জানা উত্তরসমূহ (এগুলোর বাইরে নতুন তথ্য বানাবে না):
+${opts.faq.map((f, i) => `${i + 1}. [${f.topic}] ${f.answer}`).join("\n") || "(কিছু নেই)"}
+
+তোমার কাজ: গ্রুপের একটি মেসেজ (এবং থাকলে ছবি/স্ক্রিনশট) বিশ্লেষণ করে সিদ্ধান্ত দাও।
+- verdict: "ok" (স্বাভাবিক), "question" (সাপোর্ট প্রশ্ন), "spam", "abuse" (গালি/আক্রমণ), "scam" (প্রতারণা/ভুয়া অফার/লিংক)
+- reply: শুধুমাত্র question হলে বাংলায় সংক্ষিপ্ত উত্তর (২-৫ লাইন), নাহলে null। উত্তর অবশ্যই উপরের জানা উত্তর/নিয়ম থেকেই দিতে হবে; না জানলে reply দাও: "এই বিষয়ে অ্যাডমিন শীঘ্রই উত্তর দেবেন।"
+- should_delete: spam/scam/abuse হলে true
+- should_warn: abuse/scam/spam হলে true
+- uid: মেসেজ বা ছবিতে কোনো Good-App UID (সংখ্যা) বা রেফার কোড থাকলে সেটি, নাহলে null
+
+শুধু JSON দাও: {"verdict":"...","reply":null,"should_delete":false,"should_warn":false,"uid":null}`;
+
+  const content: any[] = [
+    { type: "text", text: `প্রেরক: ${opts.senderName}\nমেসেজ: ${opts.text || "(শুধু ছবি)"}` },
+  ];
+  if (opts.photoBase64) {
+    content.push({ type: "image_url", image_url: { url: `data:image/jpeg;base64,${opts.photoBase64}` } });
+  }
+
+  const res = await fetch(AI_URL, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: MODEL,
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content },
+      ],
+    }),
+  });
+
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`AI gateway ${res.status}: ${body.slice(0, 200)}`);
+  }
+  const data: any = await res.json();
+  const raw: string = data.choices?.[0]?.message?.content ?? "";
+  const m = raw.match(/\{[\s\S]*\}/);
+  let parsed: any = {};
+  try { parsed = m ? JSON.parse(m[0]) : {}; } catch { parsed = {}; }
+
+  const verdict = ["ok", "question", "spam", "abuse", "scam"].includes(parsed.verdict)
+    ? parsed.verdict : "ok";
+  return {
+    verdict,
+    reply: typeof parsed.reply === "string" && parsed.reply.trim() ? parsed.reply.trim() : null,
+    should_delete: !!parsed.should_delete,
+    should_warn: !!parsed.should_warn,
+    uid: parsed.uid ? String(parsed.uid).trim() : null,
+  };
+}
