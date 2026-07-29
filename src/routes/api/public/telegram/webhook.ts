@@ -57,10 +57,24 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           const code = s.match(/\b([A-Za-z0-9]{7})\b/);
           return code ? code[1].toUpperCase() : null;
         };
-        const pickSlot = (s: string): number | null => {
-          const m2 = s.match(/\b([1-9]|10)\b/);
-          return m2 ? Number(m2[1]) : null;
+        // Accepts: "3", "5 ta", "2,3,4", "২-৫", "3 4 7", "সব"/"all"
+        const wantsAll = /(সব|সবগুলো|সবগুলা|all|full)/i.test(norm);
+        const pickSlots = (s: string): number[] => {
+          const out: number[] = [];
+          const range = s.matchAll(/\b(\d{1,3})\s*(?:-|–|to|থেকে)\s*(\d{1,3})\b/g);
+          let rest = s;
+          for (const r of range) {
+            const a = Number(r[1]), b = Number(r[2]);
+            if (a >= 1 && b >= a && b - a < 100) for (let i = a; i <= b; i++) out.push(i);
+            rest = rest.replace(r[0], " ");
+          }
+          for (const m2 of rest.matchAll(/\b(\d{1,3})\b/g)) {
+            const n = Number(m2[1]);
+            if (n >= 1 && n <= 500) out.push(n);
+          }
+          return Array.from(new Set(out));
         };
+        const pickSlot = (s: string): number | null => pickSlots(s)[0] ?? null;
         const isCancel = /(বাতিল|cancel|থাক|লাগবে না)/i.test(norm);
 
         const logMessage = async (verdict: string, action: string, reply: string | null, uid: string | null) => {
@@ -96,28 +110,40 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           } as any, { onConflict: "tg_user_id,chat_id" });
         };
 
-        const doReset = async (uid: string, slot: number) => {
-          const { resetSlotForUid } = await import("@/lib/telegram-slot.server");
-          const res = await resetSlotForUid(uid, slot);
-          if (res.ok) {
-            await clearSession();
-            await sendMessage(
-              chatId,
-              `✅ <b>স্লট ${res.slot} রিসেট সম্পন্ন হয়েছে</b>\n\n` +
-                `👤 একাউন্ট: <b>${res.name}</b>\n` +
-                `🆔 UID: <code>${uid}</code>\n\n` +
-                `স্লটটি এখন সম্পূর্ণ খালি — পুরোনো ফেস ও key মুছে ফেলা হয়েছে।\n` +
-                `👉 এখন অ্যাপে গিয়ে স্লট ${res.slot} এ নতুন করে ফেস ভেরিফিকেশন করুন।\n` +
-                `অ্যাপটি একবার রিফ্রেশ/বন্ধ করে খুললে নতুন অবস্থা দেখতে পাবেন।`,
-              msg.message_id,
-            );
-            await logMessage("question", `slot-reset:${slot}`, "slot reset done", uid);
-            return true;
+        const doReset = async (uid: string, slots: number[]) => {
+          const { resetSlotsForUid, listSlotNumbers } = await import("@/lib/telegram-slot.server");
+          const list = slots.length ? slots : await listSlotNumbers(uid);
+          const res = await resetSlotsForUid(uid, list);
+
+          if (!res.found) {
+            await sendMessage(chatId, `❌ UID <code>${uid}</code> দিয়ে কোনো একাউন্ট পাওয়া যায়নি।`, msg.message_id);
+            await logMessage("question", "slot-reset-failed", "uid not found", uid);
+            return false;
           }
-          await sendMessage(chatId, `❌ ${res.error}`, msg.message_id);
-          await logMessage("question", "slot-reset-failed", res.error, uid);
-          return false;
+
+          await clearSession();
+          const okLine = res.done.length
+            ? `✅ রিসেট হয়েছে: <b>${res.done.map((s) => `স্লট ${s}`).join(", ")}</b>`
+            : "⚠️ কোনো স্লট রিসেট করা যায়নি।";
+          const failLine = res.failed.length
+            ? `\n❌ পারা যায়নি: ${res.failed.map((f) => `স্লট ${f.slot} (${f.error})`).join(", ")}`
+            : "";
+
+          await sendMessage(
+            chatId,
+            `🔄 <b>স্লট রিসেট রিপোর্ট</b>\n\n` +
+              `👤 একাউন্ট: <b>${res.name}</b>\n🆔 UID: <code>${uid}</code>\n\n` +
+              okLine + failLine +
+              (res.done.length
+                ? `\n\nএই স্লটগুলো এখন সম্পূর্ণ খালি — পুরোনো ফেস ও key মুছে ফেলা হয়েছে।\n` +
+                  `👉 অ্যাপে গিয়ে নতুন করে ফেস ভেরিফিকেশন করুন (একবার রিফ্রেশ দিন)।`
+                : ""),
+            msg.message_id,
+          );
+          await logMessage("question", `slot-reset:${res.done.join("|") || "none"}`, "slot reset", uid);
+          return res.done.length > 0;
         };
+
 
         // ---- continue an in-progress slot-reset conversation -------------------
         if (msg.from?.id) {
