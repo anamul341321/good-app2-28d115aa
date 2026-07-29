@@ -586,14 +586,18 @@ export type Database = {
           created_at: string
           delete_bad_messages: boolean
           enabled: boolean
+          escalate_enabled: boolean
           group_chat_id: string | null
           id: string
           moderation_enabled: boolean
           persona: string
           photo_analysis_enabled: boolean
+          photo_privacy_enabled: boolean
+          reply_variety: boolean
           rules: string
           slot_reset_enabled: boolean
           smart_mode: boolean
+          support_username: string
           uid_lookup_enabled: boolean
           updated_at: string
           warn_threshold: number
@@ -610,14 +614,18 @@ export type Database = {
           created_at?: string
           delete_bad_messages?: boolean
           enabled?: boolean
+          escalate_enabled?: boolean
           group_chat_id?: string | null
           id?: string
           moderation_enabled?: boolean
           persona?: string
           photo_analysis_enabled?: boolean
+          photo_privacy_enabled?: boolean
+          reply_variety?: boolean
           rules?: string
           slot_reset_enabled?: boolean
           smart_mode?: boolean
+          support_username?: string
           uid_lookup_enabled?: boolean
           updated_at?: string
           warn_threshold?: number
@@ -634,14 +642,18 @@ export type Database = {
           created_at?: string
           delete_bad_messages?: boolean
           enabled?: boolean
+          escalate_enabled?: boolean
           group_chat_id?: string | null
           id?: string
           moderation_enabled?: boolean
           persona?: string
           photo_analysis_enabled?: boolean
+          photo_privacy_enabled?: boolean
+          reply_variety?: boolean
           rules?: string
           slot_reset_enabled?: boolean
           smart_mode?: boolean
+          support_username?: string
           uid_lookup_enabled?: boolean
           updated_at?: string
           warn_threshold?: number
@@ -825,6 +837,42 @@ export type Database = {
           tg_user_id?: number
           uid?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      tg_videos: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          keywords: string[]
+          note: string | null
+          priority: number
+          topic: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          keywords?: string[]
+          note?: string | null
+          priority?: number
+          topic: string
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          keywords?: string[]
+          note?: string | null
+          priority?: number
+          topic?: string
+          updated_at?: string
+          url?: string
         }
         Relationships: []
       }
