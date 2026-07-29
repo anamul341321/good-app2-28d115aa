@@ -25,9 +25,10 @@ export async function findProfileByUid(uid: string) {
 export async function resetSlotForUid(uid: string, slot: number): Promise<SlotResetResult> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-  if (!Number.isInteger(slot) || slot < 1 || slot > 10) {
-    return { ok: false, error: "স্লট নম্বর ১ থেকে ১০ এর মধ্যে হতে হবে।" };
+  if (!Number.isInteger(slot) || slot < 1 || slot > 500) {
+    return { ok: false, error: "স্লট নম্বরটি সঠিক নয়।" };
   }
+
 
   const profile = await findProfileByUid(uid);
   if (!profile) return { ok: false, error: "এই UID দিয়ে কোনো একাউন্ট পাওয়া যায়নি।" };
