@@ -113,6 +113,10 @@ function SettingsPanel() {
         photo_privacy_enabled: form.photo_privacy_enabled !== false,
         escalate_enabled: form.escalate_enabled !== false,
         reply_variety: form.reply_variety !== false,
+        welcome_enabled: form.welcome_enabled !== false,
+        welcome_message: form.welcome_message?.trim() || null,
+        default_video_url: form.default_video_url?.trim() || null,
+
 
 
 
