@@ -38,10 +38,29 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return Response.json({ ok: true, ignored: "other-chat" });
         }
 
+        // ---- new members joined → warm welcome -------------------------------
+        const joined = (msg.new_chat_members ?? []) as any[];
+        if (joined.length) {
+          if ((settings as any).welcome_enabled !== false) {
+            const { welcomeReply } = await import("@/lib/telegram-bot.server");
+            for (const m of joined) {
+              if (m?.is_bot) continue;
+              const nm = [m.first_name, m.last_name].filter(Boolean).join(" ") || m.username || "বন্ধু";
+              await sendMessage(
+                chatId,
+                welcomeReply(nm, (settings as any).welcome_message ?? null, (settings as any).default_video_url ?? null),
+              );
+            }
+          }
+          return Response.json({ ok: true, flow: "welcome" });
+        }
+        if (msg.left_chat_member) return Response.json({ ok: true, ignored: "left" });
+
         const text: string = msg.text ?? msg.caption ?? "";
         const photos = msg.photo as { file_id: string }[] | undefined;
         const senderName = [msg.from?.first_name, msg.from?.last_name].filter(Boolean).join(" ")
           || msg.from?.username || "User";
+
 
         // Idempotency: skip if this update was already stored.
         const { data: seen } = await supabaseAdmin
