@@ -40,6 +40,10 @@ const settingsSchema = z.object({
   photo_privacy_enabled: z.boolean().optional(),
   escalate_enabled: z.boolean().optional(),
   reply_variety: z.boolean().optional(),
+  welcome_enabled: z.boolean().optional(),
+  welcome_message: z.string().max(2000).nullable().optional(),
+  default_video_url: z.string().max(500).nullable().optional(),
+
 
   group_chat_id: z.string().max(64).nullable(),
   admin_chat_id: z.string().max(64).nullable(),
