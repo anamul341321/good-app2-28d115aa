@@ -11,12 +11,13 @@ import {
   tgListFaq, tgUpsertFaq, tgDeleteFaq, tgLookupUid, tgSendToGroup,
   tgListBanRequests, tgResolveBanRequest, tgUnban, tgRecentMessages,
   tgListBlocked, tgSetBlocked, tgListVideos, tgUpsertVideo, tgDeleteVideo,
+  tgListVoices, tgUpsertVoice, tgDeleteVoice,
 } from "@/lib/telegram-bot.functions";
 
 
 export const Route = createFileRoute("/admin/telegram")({ component: TelegramAdmin });
 
-type Tab = "settings" | "faq" | "videos" | "lookup" | "blocked" | "bans" | "log";
+type Tab = "settings" | "faq" | "voices" | "videos" | "lookup" | "blocked" | "bans" | "log";
 
 
 function TelegramAdmin() {
@@ -35,7 +36,7 @@ function TelegramAdmin() {
 
       <div className="flex gap-2 overflow-x-auto -mx-4 px-4 pb-1 scrollbar-none">
         {([
-          ["settings", "সেটিংস"], ["faq", "উত্তর/নিয়ম"], ["videos", "ভিডিও লিংক"], ["lookup", "UID লুকআপ"],
+          ["settings", "সেটিংস"], ["faq", "উত্তর/নিয়ম"], ["voices", "ভয়েস"], ["videos", "ভিডিও লিংক"], ["lookup", "UID লুকআপ"],
           ["blocked", "ব্লক লিস্ট"], ["bans", "Ban requests"], ["log", "Activity"],
         ] as [Tab, string][]).map(([k, label]) => (
           <button key={k} onClick={() => setTab(k)}
@@ -49,6 +50,7 @@ function TelegramAdmin() {
 
       {tab === "settings" && <SettingsPanel />}
       {tab === "faq" && <FaqPanel />}
+      {tab === "voices" && <VoicePanel />}
       {tab === "videos" && <VideoPanel />}
       {tab === "lookup" && <LookupPanel />}
       {tab === "blocked" && <BlockedPanel />}
@@ -753,6 +755,122 @@ function VideoPanel() {
                   {!!(v.keywords ?? []).length && (
                     <p className="text-[10px] text-muted-foreground mt-1">🔑 {(v.keywords ?? []).join(", ")}</p>
                   )}
+                </div>
+                <button onClick={() => del.mutate(v.id)}
+                  className="shrink-0 rounded-lg border border-rose-500/40 bg-rose-500/10 p-2">
+                  <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+function VoicePanel() {
+  const qc = useQueryClient();
+  const { data, isLoading } = useQuery({ queryKey: ["tg-voices"], queryFn: () => tgListVoices() });
+  const [draft, setDraft] = useState({ topic: "", keywords: "", note: "" });
+  const [audio, setAudio] = useState<{ b64: string; ext: string; name: string; preview: string } | null>(null);
+
+  const pickAudio = async (file: File | undefined) => {
+    if (!file) return;
+    if (file.size > 12_000_000) { toast.error("ভয়েস ফাইল ১২MB এর কম দিন"); return; }
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    let bin = "";
+    for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+    const ext = (file.name.split(".").pop() || "ogg").toLowerCase();
+    setAudio({ b64: btoa(bin), ext, name: file.name, preview: URL.createObjectURL(file) });
+  };
+
+  const upsert = useMutation({
+    mutationFn: (v: any) => tgUpsertVoice({ data: v }),
+    onSuccess: () => {
+      toast.success("ভয়েস সেভ হয়েছে");
+      setDraft({ topic: "", keywords: "", note: "" });
+      setAudio(null);
+      qc.invalidateQueries({ queryKey: ["tg-voices"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+  const del = useMutation({
+    mutationFn: (id: string) => tgDeleteVoice({ data: { id } }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["tg-voices"] }),
+  });
+
+  return (
+    <div className="space-y-3">
+      <div className="glass rounded-2xl p-4 border border-cyan/30">
+        <h3 className="font-black text-sm flex items-center gap-2">
+          <HelpCircle className="w-4 h-4 text-cyan" /> ভয়েস লাইব্রেরি — কীভাবে কাজ করে
+        </h3>
+        <ul className="mt-2 space-y-1.5 text-[11px] text-muted-foreground leading-relaxed">
+          <li>🎙️ <b className="text-foreground">বিষয়</b> লিখুন (যেমন "রি-ভেরিফাই হচ্ছে না") আর ঐ বিষয়ের একটা ভয়েস রেকর্ড করে আপলোড করুন।</li>
+          <li>🤖 কেউ গ্রুপে ঐ সমস্যার কথা বললে বট লেখা উত্তরের সাথে <b className="text-foreground">এই ভয়েসটাই</b> পাঠিয়ে দেবে।</li>
+          <li>🎬 একই বিষয়ে ভিডিও লিংক থাকলে সেটাও দেবে। কিছুই না থাকলে বট নিজে সুন্দর করে বাংলায় সমাধান বুঝিয়ে দেবে।</li>
+          <li>💡 সবচেয়ে ভালো হয় WhatsApp/Telegram-এ রেকর্ড করা <b className="text-foreground">.ogg</b> ভয়েস দিলে — mp3 দিলেও চলবে।</li>
+        </ul>
+      </div>
+
+      <div className="glass rounded-2xl p-4 space-y-2">
+        <h3 className="font-black text-sm flex items-center gap-2">
+          <Plus className="w-4 h-4 text-emerald" /> নতুন ভয়েস যোগ করুন
+        </h3>
+        <Field label="বিষয় (কোন সমস্যার ভয়েস)"
+          value={draft.topic} onChange={(v) => setDraft({ ...draft, topic: v })} />
+        <div>
+          <label className="block text-[11px] font-black mb-1">ভয়েস ফাইল</label>
+          <label className="block cursor-pointer rounded-xl border border-dashed border-border bg-surface-2 px-3 py-2.5 text-[11px] font-black text-center">
+            🎙️ {audio ? audio.name : "ভয়েস ফাইল বাছুন"}
+            <input type="file" accept="audio/*" className="hidden"
+              onChange={(e) => pickAudio(e.target.files?.[0])} />
+          </label>
+          {audio && <audio controls src={audio.preview} className="mt-2 w-full" />}
+        </div>
+        <Field label="কীওয়ার্ড (ঐচ্ছিক, কমা দিয়ে)" hint="যেমন: রি-ভেরিফাই, reverify, হচ্ছে না"
+          value={draft.keywords} onChange={(v) => setDraft({ ...draft, keywords: v })} />
+        <Area label="ছোট নোট (ঐচ্ছিক)" rows={2}
+          value={draft.note} onChange={(v) => setDraft({ ...draft, note: v })} />
+        <button
+          onClick={() => {
+            if (!audio) { toast.error("ভয়েস ফাইল দিন"); return; }
+            upsert.mutate({
+              topic: draft.topic.trim() || "ভয়েস সহায়তা",
+              keywords: draft.keywords.split(",").map((s) => s.trim()).filter(Boolean).slice(0, 50),
+              note: draft.note.trim() || null,
+              priority: 0,
+              is_active: true,
+              audio_base64: audio.b64,
+              audio_ext: audio.ext,
+            });
+          }}
+          disabled={upsert.isPending}
+          className="w-full py-2.5 rounded-xl gradient-cta font-black text-xs disabled:opacity-50">
+          {upsert.isPending ? "আপলোড হচ্ছে…" : "সেভ করুন"}
+        </button>
+      </div>
+
+      {isLoading ? (
+        <div className="py-10 flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-cyan" /></div>
+      ) : (data ?? []).length === 0 ? (
+        <div className="glass rounded-2xl p-6 text-center text-[11px] text-muted-foreground">
+          এখনো কোনো ভয়েস যোগ করা হয়নি।
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {(data ?? []).map((v: any) => (
+            <div key={v.id} className="glass rounded-2xl p-3">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-black truncate">🎧 {v.topic}</p>
+                  {v.note && <p className="text-[10px] text-muted-foreground mt-0.5">{v.note}</p>}
+                  {!!(v.keywords ?? []).length && (
+                    <p className="text-[10px] text-muted-foreground mt-0.5">🔑 {(v.keywords ?? []).join(", ")}</p>
+                  )}
+                  {v.audio_url && <audio controls src={v.audio_url} className="mt-2 w-full" />}
                 </div>
                 <button onClick={() => del.mutate(v.id)}
                   className="shrink-0 rounded-lg border border-rose-500/40 bg-rose-500/10 p-2">
