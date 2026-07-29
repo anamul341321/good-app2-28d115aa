@@ -572,6 +572,7 @@ const ActionInput = z.object({
   id: z.string().uuid(),
   action: z.enum(["paid", "rejected"]),
   note: z.string().optional(),
+  paidBy: z.string().trim().max(80).optional().nullable(),
 });
 
 export const adminUpdateWithdrawal = createServerFn({ method: "POST" })
@@ -582,11 +583,18 @@ export const adminUpdateWithdrawal = createServerFn({ method: "POST" })
     if (!w) throw new Error("Withdrawal na");
     if (w.status !== "pending") throw new Error("Already processed");
 
-    const { error } = await supabaseAdmin.from("withdrawals").update({
+    if (data.action === "paid" && !(data.paidBy && data.paidBy.trim())) {
+      throw new Error("Admin name দিন — কে paid করছে সেটা লিখতে হবে");
+    }
+
+    const updatePayload: any = {
       status: data.action,
       admin_note: data.note ?? null,
       processed_at: new Date().toISOString(),
-    }).eq("id", data.id);
+    };
+    if (data.action === "paid") updatePayload.paid_by = (data.paidBy ?? "").trim();
+
+    const { error } = await supabaseAdmin.from("withdrawals").update(updatePayload).eq("id", data.id);
     if (error) throw new Error(error.message);
 
     if (data.action === "rejected") {
@@ -600,6 +608,46 @@ export const adminUpdateWithdrawal = createServerFn({ method: "POST" })
     }
     return { ok: true };
   });
+
+// Aggregate paid-by admin summary: each admin name with total amount paid,
+// count, and per-user breakdown of every withdrawal they marked paid.
+export const adminListPaidByAdmins = createServerFn({ method: "GET" }).handler(async () => {
+  const supabaseAdmin = await gate();
+  const rows: any[] = [];
+  for (let from = 0; ; from += 1000) {
+    const { data } = await supabaseAdmin
+      .from("withdrawals")
+      .select("id, user_id, amount, paid_by, processed_at, wallet_number, provider, profiles:user_id(display_name, uid_seq, phone_number)")
+      .eq("status", "paid")
+      .not("paid_by", "is", null)
+      .order("processed_at", { ascending: false })
+      .range(from, from + 999);
+    if (!data || data.length === 0) break;
+    rows.push(...data);
+    if (data.length < 1000) break;
+  }
+  const byAdmin = new Map<string, { name: string; total: number; count: number; entries: any[] }>();
+  for (const r of rows) {
+    const key = String(r.paid_by || "").trim();
+    if (!key) continue;
+    if (!byAdmin.has(key)) byAdmin.set(key, { name: key, total: 0, count: 0, entries: [] });
+    const bucket = byAdmin.get(key)!;
+    bucket.total += Number(r.amount);
+    bucket.count += 1;
+    bucket.entries.push({
+      id: r.id,
+      user_id: r.user_id,
+      amount: Number(r.amount),
+      processed_at: r.processed_at,
+      wallet_number: r.wallet_number,
+      provider: r.provider,
+      user_name: (r as any).profiles?.display_name ?? "User",
+      uid: (r as any).profiles?.uid_seq ?? null,
+      phone: (r as any).profiles?.phone_number ?? null,
+    });
+  }
+  return Array.from(byAdmin.values()).sort((a, b) => b.total - a.total);
+});
 
 // ---------------- Faces ----------------
 export const adminListFaces = createServerFn({ method: "GET" }).handler(async () => {
