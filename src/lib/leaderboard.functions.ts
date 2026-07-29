@@ -155,11 +155,106 @@ export const getLeaderboards = createServerFn({ method: "GET" }).handler(async (
     };
   });
 
+  // ============================================================
+  // UI-ONLY fake population to make the app look busy on the public
+  // dashboard. Admin panels do NOT call getLeaderboards; they read the
+  // real tables directly, so accounting stays correct there.
+  // Deterministic per-day so numbers feel stable within a session but
+  // shift daily.
+  // ============================================================
+  const dayKey = Math.floor(Date.now() / (24 * 3600 * 1000));
+  const seedRand = (seed: number) => {
+    let s = seed | 0;
+    return () => {
+      s = (s * 1664525 + 1013904223) | 0;
+      return ((s >>> 0) % 100000) / 100000;
+    };
+  };
+  const rnd = seedRand(dayKey * 9301 + 49297);
+  const pick = <T,>(arr: T[]) => arr[Math.floor(rnd() * arr.length)];
+
+  const FAKE_NAMES = [
+    "সুজন আহমেদ","আকাশ হাসান","রাকিব হোসেন","শাকিল আহমেদ","তানভীর হাসান",
+    "জুবায়ের রহমান","ইমরান খান","নাঈম ইসলাম","রিফাত হোসেন","সাব্বির আহমেদ",
+    "মাহমুদ হাসান","আরিফ হোসেন","হাসিব খান","রায়হান আলি","মাহিন আহমেদ",
+    "সোহাগ মিয়া","সাকিব হাসান","জনি ইসলাম","রুবেল আহমেদ","শান্ত হোসেন",
+    "মেহেদী হাসান","ফাহিম রহমান","তাসিন আহমেদ","পারভেজ হোসেন","রাসেল খান",
+    "নুরুল ইসলাম","জাহিদ হাসান","শামীম আহমেদ","আব্দুল্লাহ আল মামুন","হাবিব রহমান",
+    "সিয়াম হাসান","তামিম ইকবাল","রনি আহমেদ","জাকির হোসেন","মিরাজ হাসান",
+    "আশিক মাহমুদ","রোহান খান","ফরহাদ হোসেন","কামরুল ইসলাম","বাপ্পি আহমেদ",
+    "মিলন হোসেন","শফিক আহমেদ","আলামিন খান","জসিম উদ্দিন","নাসির হাসান",
+    "রফিক ইসলাম","তৌহিদ হাসান","রাজু আহমেদ","পলাশ হোসেন","বিপ্লব হাসান",
+  ];
+  const usedNames = new Set<string>();
+  const uniqueName = () => {
+    for (let i = 0; i < 20; i++) {
+      const n = pick(FAKE_NAMES);
+      if (!usedNames.has(n)) { usedNames.add(n); return n; }
+    }
+    return pick(FAKE_NAMES);
+  };
+  const fakeId = () => `fake-${Math.floor(rnd() * 1e12).toString(36)}`;
+  const fakeUid = () => 10000 + Math.floor(rnd() * 89999);
+  const providers: Array<"bkash" | "nagad" | "usdt"> = ["bkash", "nagad", "bkash", "nagad", "usdt"];
+  const maskFakeNumber = (prov: string) => {
+    if (prov === "usdt") return "0x" + Math.floor(rnd() * 1e8).toString(16).padStart(8, "0").slice(0, 4) + "•••••" + Math.floor(rnd() * 1e4).toString(16).padStart(4, "0");
+    const p = pick(["017", "018", "019", "016", "015", "013", "014"]);
+    return p + "•••••" + Math.floor(rnd() * 90 + 10);
+  };
+
+  // Fake referrers/verifiers (appended, then re-sorted)
+  const fakeReferrers = Array.from({ length: 12 }, () => ({
+    id: fakeId(), count: 180 + Math.floor(rnd() * 320),
+    name: uniqueName(), uid: fakeUid(),
+  }));
+  const fakeVerified = Array.from({ length: 12 }, () => ({
+    id: fakeId(), count: 120 + Math.floor(rnd() * 240),
+    name: uniqueName(), uid: fakeUid(),
+  }));
+
+  // Fake top-payees — big totals so grand total crosses 100k/day easily.
+  const fakePayees = Array.from({ length: 25 }, () => ({
+    id: fakeId(), total: 3000 + Math.floor(rnd() * 45000),
+    name: uniqueName(), uid: fakeUid(),
+  }));
+
+  // Fake withdraw feed rows — mostly paid, some pending, spread over 24h.
+  const nowMs = Date.now();
+  const fakeWithdraws = Array.from({ length: 60 }, () => {
+    const prov = pick(providers);
+    const status = rnd() < 0.85 ? "paid" : "pending";
+    const createdOffset = Math.floor(rnd() * 24 * 3600 * 1000);
+    const created = new Date(nowMs - createdOffset).toISOString();
+    const processedMs = 30 + Math.floor(rnd() * 900); // 30s..15m
+    const processed = status === "paid"
+      ? new Date(nowMs - createdOffset + processedMs * 1000).toISOString()
+      : null;
+    return {
+      id: fakeId(),
+      user_id: fakeId(),
+      name: uniqueName(),
+      uid: fakeUid(),
+      amount: 300 + Math.floor(rnd() * 7500),
+      provider: prov,
+      wallet_masked: maskFakeNumber(prov),
+      status,
+      created_at: created,
+      processed_at: processed,
+    };
+  });
+
+  const realTopRef = build(topRefPairs);
+  const realTopVer = build(topVerPairs);
+  const mergedRefs = [...realTopRef, ...fakeReferrers].sort((a, b) => b.count - a.count).slice(0, 10);
+  const mergedVers = [...realTopVer, ...fakeVerified].sort((a, b) => b.count - a.count).slice(0, 10);
+  const mergedPayees = [...topPayees, ...fakePayees].sort((a, b) => b.total - a.total).slice(0, 20);
+  const mergedWithdraws = [...withdraws, ...fakeWithdraws].sort((a, b) => b.amount - a.amount).slice(0, 200);
+
   return {
-    topReferrers: build(topRefPairs),
-    topVerified: build(topVerPairs),
-    topPayees,
-    withdraws,
-    avgWaitSeconds,
+    topReferrers: mergedRefs,
+    topVerified: mergedVers,
+    topPayees: mergedPayees,
+    withdraws: mergedWithdraws,
+    avgWaitSeconds: avgWaitSeconds || 240,
   };
 });
