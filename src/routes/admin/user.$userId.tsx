@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { adminUserDetail, adminAdjustBalance, adminToggleMining, adminResetTask, adminমুছুনUser, adminResetUserPassword, adminClearMiningOverride, adminCreateVoucher, adminListVouchersForUser, adminSetReferralUnlock, adminResetWallet, adminMarkAsReverified, adminAddDebt, adminResolveDebt, adminDeleteDebt, adminDirectPayout, adminSetUserBlocked, adminUserDailyReport } from "@/lib/admin.functions";
+import { adminUserDetail, adminAdjustBalance, adminToggleMining, adminResetTask, adminমুছুনUser, adminResetUserPassword, adminClearMiningOverride, adminCreateVoucher, adminListVouchersForUser, adminSetReferralUnlock, adminResetWallet, adminMarkAsReverified, adminAddDebt, adminResolveDebt, adminDeleteDebt, adminDirectPayout, adminSetUserBlocked, adminUserDailyReport, adminListTaskBackups, adminRestoreTask } from "@/lib/admin.functions";
 import { ArrowLeft, Loader2, Power, Plus, Minus, RefreshCw, Trash2, Copy, KeyRound, Gift, ScanFace, Share2, Lock, Unlock, Wallet, CheckCircle2, AlertTriangle, CheckCheck, Send, TrendingUp, Ban, ShieldOff } from "lucide-react";
 import { computeLiveBalance } from "@/lib/mining";
 import { toast } from "sonner";
@@ -712,7 +712,7 @@ function UserDetail() {
           <p className="text-[10px] uppercase tracking-widest text-amber-500 font-bold">
             রিসেট হিস্ট্রি · চাইলে স্লট আগের অবস্থায় ফিরিয়ে আনুন
           </p>
-          {backups.data!.map((b) => (
+          {backups.data!.map((b: any) => (
             <div key={b.id} className="flex items-center gap-2 bg-surface-2 rounded-xl p-2">
               <div className="min-w-0 flex-1">
                 <p className="text-[11px] font-black">
