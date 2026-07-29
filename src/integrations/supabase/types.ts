@@ -584,6 +584,7 @@ export type Database = {
           banned_words: string[]
           block_threshold: number
           created_at: string
+          default_video_url: string | null
           delete_bad_messages: boolean
           enabled: boolean
           escalate_enabled: boolean
@@ -593,6 +594,7 @@ export type Database = {
           persona: string
           photo_analysis_enabled: boolean
           photo_privacy_enabled: boolean
+          quote_reply: boolean
           reply_variety: boolean
           rules: string
           slot_reset_enabled: boolean
@@ -601,6 +603,8 @@ export type Database = {
           uid_lookup_enabled: boolean
           updated_at: string
           warn_threshold: number
+          welcome_enabled: boolean
+          welcome_message: string | null
         }
         Insert: {
           admin_chat_id?: string | null
@@ -612,6 +616,7 @@ export type Database = {
           banned_words?: string[]
           block_threshold?: number
           created_at?: string
+          default_video_url?: string | null
           delete_bad_messages?: boolean
           enabled?: boolean
           escalate_enabled?: boolean
@@ -621,6 +626,7 @@ export type Database = {
           persona?: string
           photo_analysis_enabled?: boolean
           photo_privacy_enabled?: boolean
+          quote_reply?: boolean
           reply_variety?: boolean
           rules?: string
           slot_reset_enabled?: boolean
@@ -629,6 +635,8 @@ export type Database = {
           uid_lookup_enabled?: boolean
           updated_at?: string
           warn_threshold?: number
+          welcome_enabled?: boolean
+          welcome_message?: string | null
         }
         Update: {
           admin_chat_id?: string | null
@@ -640,6 +648,7 @@ export type Database = {
           banned_words?: string[]
           block_threshold?: number
           created_at?: string
+          default_video_url?: string | null
           delete_bad_messages?: boolean
           enabled?: boolean
           escalate_enabled?: boolean
@@ -649,6 +658,7 @@ export type Database = {
           persona?: string
           photo_analysis_enabled?: boolean
           photo_privacy_enabled?: boolean
+          quote_reply?: boolean
           reply_variety?: boolean
           rules?: string
           slot_reset_enabled?: boolean
@@ -657,6 +667,8 @@ export type Database = {
           uid_lookup_enabled?: boolean
           updated_at?: string
           warn_threshold?: number
+          welcome_enabled?: boolean
+          welcome_message?: string | null
         }
         Relationships: []
       }
