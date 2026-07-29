@@ -78,12 +78,15 @@ export const getLeaderboards = createServerFn({ method: "GET" }).handler(async (
     .in("uid_seq", [1]);
   const excludeIds = new Set((excludeProfiles ?? []).map((p: any) => p.id));
 
-  const { data: wRowsRaw } = await supabaseAdmin
+  // Recent paid withdrawals (most recent first) so the Paid tab shows fresh history,
+  // not old high-amount ones.
+  const { data: paidRaw } = await supabaseAdmin
     .from("withdrawals")
     .select("id, user_id, amount, provider, wallet_number, status, created_at, processed_at")
-    .order("amount", { ascending: false })
-    .limit(400);
-  // Also pull ALL recent pending withdrawals so real users' pending requests
+    .eq("status", "paid")
+    .order("processed_at", { ascending: false, nullsFirst: false })
+    .limit(200);
+  // Pull ALL recent pending withdrawals so real users' pending requests
   // are always visible in the feed until admin marks them paid.
   const { data: pendingRaw } = await supabaseAdmin
     .from("withdrawals")
@@ -93,7 +96,7 @@ export const getLeaderboards = createServerFn({ method: "GET" }).handler(async (
     .limit(200);
   const seen = new Set<string>();
   const wRows: any[] = [];
-  for (const w of [...(pendingRaw ?? []), ...(wRowsRaw ?? [])]) {
+  for (const w of [...(pendingRaw ?? []), ...(paidRaw ?? [])]) {
     if (excludeIds.has((w as any).user_id)) continue;
     if (seen.has((w as any).id)) continue;
     seen.add((w as any).id);
