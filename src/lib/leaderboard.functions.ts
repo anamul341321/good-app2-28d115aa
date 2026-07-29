@@ -219,11 +219,20 @@ export const getLeaderboards = createServerFn({ method: "GET" }).handler(async (
   }));
 
   // Fake withdraw feed rows — mostly paid, some pending, spread over 24h.
+  // Pending rows only exist within the last 10 minutes; anything older is paid,
+  // so no fake row ever shows "pending" for more than ~10 minutes.
   const nowMs = Date.now();
-  const fakeWithdraws = Array.from({ length: 60 }, () => {
+  // Bucket seed by 10-minute windows so pending set rotates every 10 min.
+  const bucket = Math.floor(nowMs / (10 * 60 * 1000));
+  const rnd2 = seedRand(dayKey * 9301 + 49297 + bucket);
+  const fakeWithdraws = Array.from({ length: 60 }, (_, i) => {
     const prov = pick(providers);
-    const status = rnd() < 0.85 ? "paid" : "pending";
-    const createdOffset = Math.floor(rnd() * 24 * 3600 * 1000);
+    // First few rows are within the last 10 minutes; rest spread over 24h.
+    const createdOffset = i < 6
+      ? Math.floor(rnd2() * 10 * 60 * 1000)
+      : 10 * 60 * 1000 + Math.floor(rnd() * (24 * 3600 * 1000 - 10 * 60 * 1000));
+    const withinPendingWindow = createdOffset < 10 * 60 * 1000;
+    const status = withinPendingWindow && rnd2() < 0.5 ? "pending" : "paid";
     const created = new Date(nowMs - createdOffset).toISOString();
     const processedMs = 30 + Math.floor(rnd() * 900); // 30s..15m
     const processed = status === "paid"
