@@ -96,12 +96,20 @@ export type BotDecision = {
   should_delete: boolean;
   should_warn: boolean;
   uid: string | null;
+  needs_uid: boolean;
+};
+
+export type FaqItem = {
+  topic: string;
+  answer: string;
+  keywords?: string[] | null;
+  imageBase64?: string | null;
 };
 
 export async function decide(opts: {
   persona: string;
   rules: string;
-  faq: { topic: string; answer: string }[];
+  faq: FaqItem[];
   bannedWords: string[];
   text: string;
   photoBase64: string | null;
@@ -109,6 +117,8 @@ export async function decide(opts: {
 }): Promise<BotDecision> {
   const key = process.env.LOVABLE_API_KEY;
   if (!key) throw new Error("LOVABLE_API_KEY not configured");
+
+  const withImages = opts.faq.filter((f) => f.imageBase64);
 
   const system = `${opts.persona}
 
@@ -118,22 +128,34 @@ ${opts.rules || "(কোনো নিয়ম সেট করা নেই)"}
 নিষিদ্ধ শব্দ/বিষয়: ${opts.bannedWords.join(", ") || "(নেই)"}
 
 তোমার জানা উত্তরসমূহ (এগুলোর বাইরে নতুন তথ্য বানাবে না):
-${opts.faq.map((f, i) => `${i + 1}. [${f.topic}] ${f.answer}`).join("\n") || "(কিছু নেই)"}
+${opts.faq.map((f, i) => `${i + 1}. [${f.topic}]${f.keywords?.length ? ` (কিওয়ার্ড: ${f.keywords.join(", ")})` : ""} ${f.answer}`).join("\n") || "(কিছু নেই)"}
+
+${withImages.length ? `নিচে কিছু "রেফারেন্স ছবি" দেওয়া হলো। ইউজারের পাঠানো ছবি যদি কোনো রেফারেন্স ছবির মতো একই স্ক্রিন/এরর/সমস্যা দেখায়, তবে ঠিক সেই টপিকের উত্তরটাই দেবে:
+${withImages.map((f, i) => `রেফারেন্স ছবি ${i + 1} = [${f.topic}]`).join("\n")}` : ""}
 
 তোমার কাজ: গ্রুপের একটি মেসেজ (এবং থাকলে ছবি/স্ক্রিনশট) বিশ্লেষণ করে সিদ্ধান্ত দাও।
 - verdict: "ok" (স্বাভাবিক), "question" (সাপোর্ট প্রশ্ন), "spam", "abuse" (গালি/আক্রমণ), "scam" (প্রতারণা/ভুয়া অফার/লিংক)
 - reply: শুধুমাত্র question হলে বাংলায় সংক্ষিপ্ত উত্তর (২-৫ লাইন), নাহলে null। উত্তর অবশ্যই উপরের জানা উত্তর/নিয়ম থেকেই দিতে হবে; না জানলে reply দাও: "এই বিষয়ে অ্যাডমিন শীঘ্রই উত্তর দেবেন।"
 - should_delete: spam/scam/abuse হলে true
 - should_warn: abuse/scam/spam হলে true
-- uid: মেসেজ বা ছবিতে কোনো Good-App UID (সংখ্যা) বা রেফার কোড থাকলে সেটি, নাহলে null
+- uid: মেসেজ বা ছবিতে Good-App UID (শুধু সংখ্যা, যেমন 4100) বা ৭ অক্ষরের রেফার কোড থাকলে সেটি, নাহলে null
+- needs_uid: ইউজার যদি নিজের একাউন্ট সম্পর্কিত সমস্যার কথা বলে (রেফার কাউন্ট মিলছে না, ব্যালেন্স, উইথড্র, ভেরিফাই, মাইনিং ইত্যাদি) কিন্তু কোনো UID দেয়নি — তাহলে true, নাহলে false
 
-শুধু JSON দাও: {"verdict":"...","reply":null,"should_delete":false,"should_warn":false,"uid":null}`;
+শুধু JSON দাও: {"verdict":"...","reply":null,"should_delete":false,"should_warn":false,"uid":null,"needs_uid":false}`;
 
   const content: any[] = [
     { type: "text", text: `প্রেরক: ${opts.senderName}\nমেসেজ: ${opts.text || "(শুধু ছবি)"}` },
   ];
   if (opts.photoBase64) {
+    content.push({ type: "text", text: "ইউজারের পাঠানো ছবি:" });
     content.push({ type: "image_url", image_url: { url: `data:image/jpeg;base64,${opts.photoBase64}` } });
+    for (let i = 0; i < withImages.length; i++) {
+      content.push({ type: "text", text: `রেফারেন্স ছবি ${i + 1} — [${withImages[i].topic}]:` });
+      content.push({
+        type: "image_url",
+        image_url: { url: `data:image/jpeg;base64,${withImages[i].imageBase64}` },
+      });
+    }
   }
 
   const res = await fetch(AI_URL, {
@@ -166,5 +188,22 @@ ${opts.faq.map((f, i) => `${i + 1}. [${f.topic}] ${f.answer}`).join("\n") || "(�
     should_delete: !!parsed.should_delete,
     should_warn: !!parsed.should_warn,
     uid: parsed.uid ? String(parsed.uid).trim() : null,
+    needs_uid: !!parsed.needs_uid,
   };
 }
+
+// ---------------------------------------------------------------------------
+// FAQ reference images (private `tg-faq` storage bucket)
+// ---------------------------------------------------------------------------
+
+export async function faqImageBase64(path: string): Promise<string | null> {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin.storage.from("tg-faq").download(path);
+    if (error || !data) return null;
+    return Buffer.from(await data.arrayBuffer()).toString("base64");
+  } catch {
+    return null;
+  }
+}
+
