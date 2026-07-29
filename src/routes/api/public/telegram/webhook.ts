@@ -213,7 +213,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               return Response.json({ ok: true, flow: "reset" });
             }
 
-            }
+
           }
         }
 
