@@ -97,6 +97,9 @@ function SettingsPanel() {
         delete_bad_messages: !!form.delete_bad_messages,
         uid_lookup_enabled: form.uid_lookup_enabled !== false,
         ask_uid_message: form.ask_uid_message ?? "",
+        slot_reset_enabled: form.slot_reset_enabled !== false,
+        ask_slot_message: form.ask_slot_message ?? "",
+
         group_chat_id: form.group_chat_id?.trim() || null,
         admin_chat_id: form.admin_chat_id?.trim() || null,
         admin_mention: form.admin_mention?.trim() || null,
@@ -156,6 +159,9 @@ function SettingsPanel() {
         <Toggle label="খারাপ মেসেজ ডিলিট" value={!!form.delete_bad_messages} onChange={(v) => set("delete_bad_messages", v)} />
         <Toggle label="UID লুকআপ" hint="UID পেলে সাথে সাথে একাউন্টের সব তথ্য গ্রুপে দেবে"
           value={form.uid_lookup_enabled !== false} onChange={(v) => set("uid_lookup_enabled", v)} />
+        <Toggle label="স্লট রিসেট" hint="কেউ স্লট রিসেট চাইলে বট UID ও স্লট নম্বর জিজ্ঞেস করে নিজেই রিসেট করবে"
+          value={form.slot_reset_enabled !== false} onChange={(v) => set("slot_reset_enabled", v)} />
+
       </div>
 
 
@@ -170,7 +176,10 @@ function SettingsPanel() {
           value={String(form.warn_threshold ?? 3)} onChange={(v) => set("warn_threshold", v)} />
         <Area label="UID চাওয়ার মেসেজ" rows={2}
           value={form.ask_uid_message ?? ""} onChange={(v) => set("ask_uid_message", v)} />
+        <Area label="স্লট নম্বর চাওয়ার মেসেজ" rows={2}
+          value={form.ask_slot_message ?? ""} onChange={(v) => set("ask_slot_message", v)} />
         <Area label="Bot এর পরিচয় / আচরণ" rows={4} value={form.persona ?? ""} onChange={(v) => set("persona", v)} />
+
         <Area label="গ্রুপের নিয়ম (bot এগুলো মানবে ও শেখাবে)" rows={6} value={form.rules ?? ""} onChange={(v) => set("rules", v)} />
 
         <Area label="নিষিদ্ধ শব্দ (কমা দিয়ে আলাদা)" rows={3}

@@ -541,6 +541,7 @@ export type Database = {
         Row: {
           admin_chat_id: string | null
           admin_mention: string | null
+          ask_slot_message: string
           ask_uid_message: string
           auto_reply_enabled: boolean
           banned_words: string[]
@@ -553,6 +554,7 @@ export type Database = {
           persona: string
           photo_analysis_enabled: boolean
           rules: string
+          slot_reset_enabled: boolean
           uid_lookup_enabled: boolean
           updated_at: string
           warn_threshold: number
@@ -560,6 +562,7 @@ export type Database = {
         Insert: {
           admin_chat_id?: string | null
           admin_mention?: string | null
+          ask_slot_message?: string
           ask_uid_message?: string
           auto_reply_enabled?: boolean
           banned_words?: string[]
@@ -572,6 +575,7 @@ export type Database = {
           persona?: string
           photo_analysis_enabled?: boolean
           rules?: string
+          slot_reset_enabled?: boolean
           uid_lookup_enabled?: boolean
           updated_at?: string
           warn_threshold?: number
@@ -579,6 +583,7 @@ export type Database = {
         Update: {
           admin_chat_id?: string | null
           admin_mention?: string | null
+          ask_slot_message?: string
           ask_uid_message?: string
           auto_reply_enabled?: boolean
           banned_words?: string[]
@@ -591,6 +596,7 @@ export type Database = {
           persona?: string
           photo_analysis_enabled?: boolean
           rules?: string
+          slot_reset_enabled?: boolean
           uid_lookup_enabled?: boolean
           updated_at?: string
           warn_threshold?: number
@@ -708,6 +714,48 @@ export type Database = {
           tg_user_id?: number
           username?: string | null
           warn_count?: number
+        }
+        Relationships: []
+      }
+      tg_sessions: {
+        Row: {
+          app_user_id: string | null
+          chat_id: number
+          created_at: string
+          data: Json
+          expires_at: string
+          id: string
+          intent: string
+          step: string
+          tg_user_id: number
+          uid: string | null
+          updated_at: string
+        }
+        Insert: {
+          app_user_id?: string | null
+          chat_id: number
+          created_at?: string
+          data?: Json
+          expires_at?: string
+          id?: string
+          intent: string
+          step: string
+          tg_user_id: number
+          uid?: string | null
+          updated_at?: string
+        }
+        Update: {
+          app_user_id?: string | null
+          chat_id?: number
+          created_at?: string
+          data?: Json
+          expires_at?: string
+          id?: string
+          intent?: string
+          step?: string
+          tg_user_id?: number
+          uid?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
