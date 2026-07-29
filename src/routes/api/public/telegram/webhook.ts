@@ -108,6 +108,28 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         };
         const pickSlot = (s: string): number | null => pickSlots(s)[0] ?? null;
         const isCancel = /(বাতিল|cancel|থাক|লাগবে না)/i.test(norm);
+        const verificationDateKind = (s: string): "first" | "reverify" | "all" | null => {
+          if (/(kotodin|koto\s*din|কতদিন|কত\s*দিন)[^\n]{0,30}(por|pore|পর|পরে)[^\n]{0,30}(re\s*-?\s*verify|reverify|রি\s*-?\s*ভেরিফাই)/i.test(s)) {
+            return null;
+          }
+          const asksDate = /(তারিখ|কবে|কতদিন|kotodin|kobe|kokhon|koto\s*(?:tarikh|ratikh|date|din)|tarikh|ratikh|date|when|hoise|hoyche|hoyeche|korche|kora\s*hoyche)/i.test(s);
+          const asksVerify = /(verify|verification|ভেরিফাই|ভেরিফিকেশন|face|ফেস)/i.test(s);
+          if (!asksDate || !asksVerify) return null;
+          if (/(re\s*-?\s*verify|reverify|রি\s*-?\s*ভেরিফাই|রি-ভেরিফাই)/i.test(s)) return "reverify";
+          if (/(1st|first|১ম|প্রথম|prothom)/i.test(s)) return "first";
+          return "all";
+        };
+        const pickVerificationQuery = (s: string): string | null => {
+          const explicitUid = s.match(/(?:uid|ইউআইডি|আইডি|id)\s*[:#-]?\s*([A-Za-z0-9]{2,10})/i);
+          if (explicitUid) return explicitUid[1].trim();
+          const namedUser = s.match(/(?:user\s*\d+\s+)?([A-Za-z][A-Za-z .]{1,35})\s*(?:er|এর|র)\s+(?:face|ফেস|1st|first|verify|verification|ভেরিফাই)/i);
+          if (namedUser) return namedUser[1].trim();
+          const banglaName = s.match(/([\u0980-\u09FF]{2,}(?:\s+[\u0980-\u09FF]{2,})?)\s*(?:এর|র)\s+(?:ফেস|ভেরিফাই|ভেরিফিকেশন)/i);
+          if (banglaName) return banglaName[1].trim();
+          const only = s.trim().match(/^[#\s]*([A-Za-z0-9]{2,10})[\s.]*$/);
+          if (only) return only[1].trim();
+          return null;
+        };
 
         const logMessage = async (verdict: string, action: string, reply: string | null, uid: string | null) => {
           await supabaseAdmin.from("tg_messages").insert({
@@ -214,6 +236,35 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               await sendMessage(chatId, "ঠিক আছে, রিসেটের অনুরোধটি বাতিল করা হলো। 🙂", msg.message_id);
               await logMessage("question", "slot-reset-cancel", null, sess.uid);
               return Response.json({ ok: true, flow: "cancelled" });
+            }
+
+            if (sess.intent === "verification_dates" && sess.step === "await_uid") {
+              const query = pickVerificationQuery(norm) || pickUid(norm);
+              if (!query) {
+                await sendMessage(
+                  chatId,
+                  "🆔 যার ভেরিফিকেশনের তারিখ জানতে চান, তার <b>UID</b> লিখুন। নাম দিয়েও লিখতে পারেন, তবে UID দিলে সবচেয়ে ঠিক রিপোর্ট পাবেন।",
+                  msg.message_id,
+                );
+                return Response.json({ ok: true, flow: "verification-date-await-uid" });
+              }
+
+              const { buildVerificationDateReport } = await import("@/lib/telegram-lookup.server");
+              const kind = ((sess.data as any)?.kind || "first") as "first" | "reverify" | "all";
+              const res = await buildVerificationDateReport(query, kind);
+              if (res.found) {
+                await clearSession();
+                await sendMessage(chatId, res.card, msg.message_id);
+                await logMessage("question", `verification-date:${kind}`, res.card, res.uid);
+                return Response.json({ ok: true, flow: "verification-date-report" });
+              }
+              const matches = (res as any).ambiguous as any[] | undefined;
+              const reply = matches?.length
+                ? `একই নামে একাধিক ইউজার পাওয়া গেছে। সঠিক UID লিখুন:\n${matches.map((p) => `• ${p.display_name || "ইউজার"} — UID <code>${p.uid_seq ?? "—"}</code>`).join("\n")}`
+                : `❌ <code>${query}</code> দিয়ে কোনো ইউজার পাওয়া যায়নি। সঠিক UID লিখুন।`;
+              await sendMessage(chatId, reply, msg.message_id);
+              await logMessage("question", "verification-date-notfound", reply, null);
+              return Response.json({ ok: true, flow: "verification-date-notfound" });
             }
 
             if (sess.step === "await_uid") {
@@ -536,6 +587,39 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           actions.push("earning-info");
           await logMessage(decision.verdict, actions.join(","), reply, matchedUid);
           return Response.json({ ok: true, flow: "earning_info", actions });
+        }
+
+        // ---- "১ম verify কবে/কত তারিখে হয়েছে?" → ask UID, then report dates --
+        const dateKind = verificationDateKind(norm);
+        if (dateKind && !decision.should_delete && settings.auto_reply_enabled) {
+          const query = pickVerificationQuery(norm);
+          if (query) {
+            const { buildVerificationDateReport } = await import("@/lib/telegram-lookup.server");
+            const res = await buildVerificationDateReport(query, dateKind);
+            const reply = res.found
+              ? res.card
+              : (res as any).ambiguous?.length
+                ? `একই নামে একাধিক ইউজার পাওয়া গেছে। সঠিক UID লিখুন:\n${(res as any).ambiguous.map((p: any) => `• ${p.display_name || "ইউজার"} — UID <code>${p.uid_seq ?? "—"}</code>`).join("\n")}`
+                : `❌ <code>${query}</code> দিয়ে কোনো ইউজার পাওয়া যায়নি। সঠিক UID লিখুন।`;
+            await sendMessage(chatId, reply, msg.message_id);
+            actions.push(`verification-date:${dateKind}`);
+            await logMessage(decision.verdict, actions.join(","), reply, res.found ? res.uid : null);
+            return Response.json({ ok: true, flow: "verification-date", actions });
+          }
+
+          await saveSession({
+            intent: "verification_dates",
+            step: "await_uid",
+            data: { kind: dateKind },
+            uid: null,
+            app_user_id: null,
+          });
+          const label = dateKind === "reverify" ? "রি-ভেরিফাই" : dateKind === "all" ? "ভেরিফিকেশন" : "১ম ভেরিফাই";
+          const reply = `🗓️ ${label} তারিখ দেখে দিচ্ছি।\nযার রিপোর্ট চান, তার <b>UID</b> লিখুন (যেমন: 4100)।`;
+          await sendMessage(chatId, reply, msg.message_id);
+          actions.push(`verification-date-ask-uid:${dateKind}`);
+          await logMessage(decision.verdict, actions.join(","), reply, null);
+          return Response.json({ ok: true, flow: "verification-date-ask-uid", actions });
         }
 
         // ---- "একাউন্ট/ভেরিফাই হয় না" → browser + face rules -----------------

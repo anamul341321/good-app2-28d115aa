@@ -12,6 +12,26 @@ function bdt(n: number) {
   return `${Math.round(n).toLocaleString("en-US")}৳`;
 }
 
+function dhaka(iso?: string | null) {
+  if (!iso) return "তারিখ নেই";
+  return new Date(iso).toLocaleString("bn-BD", {
+    timeZone: "Asia/Dhaka",
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+}
+
+function daysAgo(iso?: string | null) {
+  if (!iso) return "—";
+  const days = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000));
+  if (days === 0) return "আজ";
+  return `${days.toLocaleString("bn-BD")} দিন আগে`;
+}
+
 async function pagedIds(
   db: any,
   table: string,
@@ -32,6 +52,41 @@ async function pagedIds(
 }
 
 export type LookupResult = { found: false } | { found: true; card: string };
+
+type ProfilePick = { id: string; display_name: string | null; uid_seq: number | null; referral_code?: string | null };
+
+async function findProfilesForQuery(db: any, queryRaw: string): Promise<ProfilePick[]> {
+  const query = queryRaw.trim();
+  if (!query) return [];
+
+  if (/^\d+$/.test(query)) {
+    const { data } = await db
+      .from("profiles")
+      .select("id, display_name, uid_seq, referral_code")
+      .eq("uid_seq", Number(query))
+      .maybeSingle();
+    return data ? [data] : [];
+  }
+
+  if (/^[A-Za-z0-9]{6,10}$/.test(query)) {
+    const { data } = await db
+      .from("profiles")
+      .select("id, display_name, uid_seq, referral_code")
+      .eq("referral_code", query.toUpperCase())
+      .maybeSingle();
+    if (data) return [data];
+  }
+
+  const safe = query.replace(/[%_]/g, "").slice(0, 40);
+  if (safe.length < 2) return [];
+  const { data } = await db
+    .from("profiles")
+    .select("id, display_name, uid_seq, referral_code")
+    .ilike("display_name", `%${safe}%`)
+    .order("uid_seq", { ascending: true })
+    .limit(6);
+  return (data ?? []) as ProfilePick[];
+}
 
 export async function buildUserCard(uidRaw: string): Promise<LookupResult> {
   const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
@@ -142,4 +197,65 @@ export async function buildUserCard(uidRaw: string): Promise<LookupResult> {
     (debt ? `   ⚠️ বকেয়া (ফেরতযোগ্য): <b>${bdt(debt)}</b>\n` : "");
 
   return { found: true, card };
+}
+
+export type VerificationDateKind = "first" | "reverify" | "all";
+
+export type VerificationDateReport =
+  | { found: false; ambiguous?: ProfilePick[] }
+  | { found: true; uid: string; card: string };
+
+export async function buildVerificationDateReport(
+  queryRaw: string,
+  kind: VerificationDateKind = "first",
+): Promise<VerificationDateReport> {
+  const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
+  const matches = await findProfilesForQuery(db, queryRaw);
+  if (matches.length !== 1) {
+    return matches.length ? { found: false, ambiguous: matches } : { found: false };
+  }
+
+  const profile = matches[0];
+  const { data } = await db
+    .from("tasks")
+    .select("slot, status, wallet_address, initial_verify_at, last_reverified_at, reverify_count")
+    .eq("user_id", profile.id)
+    .order("slot", { ascending: true });
+
+  const tasks = data ?? [];
+  const firstRows = tasks.filter((t: any) =>
+    !!t.wallet_address && (!!t.initial_verify_at || t.status === "verified" || t.status === "done"),
+  );
+  const reRows = tasks.filter((t: any) => Number(t.reverify_count ?? 0) > 0 || !!t.last_reverified_at);
+
+  const line = (t: any, type: "first" | "re") => {
+    const iso = type === "first" ? t.initial_verify_at : t.last_reverified_at;
+    const extra = type === "re" && Number(t.reverify_count ?? 0) > 1
+      ? ` — ${Number(t.reverify_count).toLocaleString("bn-BD")} বার`
+      : "";
+    return `   • স্লট <b>${Number(t.slot).toLocaleString("bn-BD")}</b> — ${dhaka(iso)} (${daysAgo(iso)})${extra}`;
+  };
+
+  const showFirst = kind === "first" || kind === "all";
+  const showRe = kind === "reverify" || kind === "all";
+  const parts: string[] = [
+    `🗓️ <b>ভেরিফিকেশন তারিখ রিপোর্ট</b>`,
+    `👤 <b>${profile.display_name || "ইউজার"}</b> — UID <code>${profile.uid_seq ?? queryRaw}</code>`,
+  ];
+
+  if (showFirst) {
+    parts.push(
+      `\n✅ <b>১ম ফেস ভেরিফাই: ${firstRows.length.toLocaleString("bn-BD")} টি</b>`,
+      firstRows.length ? firstRows.map((t: any) => line(t, "first")).join("\n") : "   এখনো কোনো ১ম ভেরিফাই তারিখ পাওয়া যায়নি।",
+    );
+  }
+
+  if (showRe) {
+    parts.push(
+      `\n🔁 <b>রি-ভেরিফাই: ${reRows.length.toLocaleString("bn-BD")} টি</b>`,
+      reRows.length ? reRows.map((t: any) => line(t, "re")).join("\n") : "   এখনো কোনো রি-ভেরিফাই তারিখ পাওয়া যায়নি।",
+    );
+  }
+
+  return { found: true, uid: String(profile.uid_seq ?? queryRaw), card: parts.join("\n") };
 }
