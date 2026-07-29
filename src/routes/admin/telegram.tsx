@@ -15,7 +15,7 @@ import {
 
 export const Route = createFileRoute("/admin/telegram")({ component: TelegramAdmin });
 
-type Tab = "settings" | "faq" | "bans" | "log";
+type Tab = "settings" | "faq" | "lookup" | "bans" | "log";
 
 function TelegramAdmin() {
   const [tab, setTab] = useState<Tab>("settings");
