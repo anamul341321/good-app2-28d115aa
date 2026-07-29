@@ -97,6 +97,9 @@ function SettingsPanel() {
         delete_bad_messages: !!form.delete_bad_messages,
         uid_lookup_enabled: form.uid_lookup_enabled !== false,
         ask_uid_message: form.ask_uid_message ?? "",
+        slot_reset_enabled: form.slot_reset_enabled !== false,
+        ask_slot_message: form.ask_slot_message ?? "",
+
         group_chat_id: form.group_chat_id?.trim() || null,
         admin_chat_id: form.admin_chat_id?.trim() || null,
         admin_mention: form.admin_mention?.trim() || null,
