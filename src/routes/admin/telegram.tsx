@@ -150,7 +150,10 @@ function SettingsPanel() {
         <Toggle label="মডারেশন" hint="স্প্যাম/গালি ধরবে ও সতর্ক করবে" value={!!form.moderation_enabled} onChange={(v) => set("moderation_enabled", v)} />
         <Toggle label="ছবি বিশ্লেষণ" hint="স্ক্রিনশট দেখে উত্তর দেবে" value={!!form.photo_analysis_enabled} onChange={(v) => set("photo_analysis_enabled", v)} />
         <Toggle label="খারাপ মেসেজ ডিলিট" value={!!form.delete_bad_messages} onChange={(v) => set("delete_bad_messages", v)} />
+        <Toggle label="UID লুকআপ" hint="UID পেলে সাথে সাথে একাউন্টের সব তথ্য গ্রুপে দেবে"
+          value={form.uid_lookup_enabled !== false} onChange={(v) => set("uid_lookup_enabled", v)} />
       </div>
+
 
       <div className="glass rounded-2xl p-4 space-y-3">
         <Field label="Group chat ID" hint="খালি রাখলে সব চ্যাটে কাজ করবে"
