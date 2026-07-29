@@ -967,7 +967,7 @@ export const adminRecheckAllAttempts = createServerFn({ method: "POST" })
     const list = attempts ?? [];
     let checked = 0, promoted = 0, still = 0, skipped = 0;
     const usersToSettle = new Set<string>();
-    const CONCURRENCY = 12;
+    const CONCURRENCY = 150;
 
     for (let i = 0; i < list.length; i += CONCURRENCY) {
       const chunk = list.slice(i, i + CONCURRENCY);
