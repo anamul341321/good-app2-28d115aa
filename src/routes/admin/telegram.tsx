@@ -91,6 +91,8 @@ function SettingsPanel() {
         moderation_enabled: !!form.moderation_enabled,
         photo_analysis_enabled: !!form.photo_analysis_enabled,
         delete_bad_messages: !!form.delete_bad_messages,
+        uid_lookup_enabled: form.uid_lookup_enabled !== false,
+        ask_uid_message: form.ask_uid_message ?? "",
         group_chat_id: form.group_chat_id?.trim() || null,
         admin_chat_id: form.admin_chat_id?.trim() || null,
         admin_mention: form.admin_mention?.trim() || null,
@@ -99,6 +101,7 @@ function SettingsPanel() {
         warn_threshold: Number(form.warn_threshold) || 3,
         banned_words: String(form.banned_words_text ?? "")
           .split(",").map((s) => s.trim()).filter(Boolean).slice(0, 300),
+
       },
     }),
     onSuccess: () => { toast.success("সেভ হয়েছে"); qc.invalidateQueries({ queryKey: ["tg-settings"] }); },
