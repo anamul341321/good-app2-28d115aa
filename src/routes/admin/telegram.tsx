@@ -4,12 +4,14 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   Bot, Loader2, Save, Plus, Trash2, ShieldAlert, MessageSquare, Link2, CheckCircle2, XCircle,
+  Image as ImageIcon, Search, Send,
 } from "lucide-react";
 import {
   tgGetSettings, tgSaveSettings, tgRegisterWebhook,
-  tgListFaq, tgUpsertFaq, tgDeleteFaq,
+  tgListFaq, tgUpsertFaq, tgDeleteFaq, tgLookupUid, tgSendToGroup,
   tgListBanRequests, tgResolveBanRequest, tgUnban, tgRecentMessages,
 } from "@/lib/telegram-bot.functions";
+
 
 export const Route = createFileRoute("/admin/telegram")({ component: TelegramAdmin });
 
