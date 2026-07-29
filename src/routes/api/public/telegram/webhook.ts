@@ -482,6 +482,54 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return Response.json({ ok: true, flow: "photo_request", actions });
         }
 
+        // ---- "উইথড্র দিয়েছি টাকা আসে নাই" → show pending requests with time ---
+        if (decision.intent === "withdraw_status" && !decision.should_delete
+            && settings.auto_reply_enabled) {
+          const uid = decision.uid || (decision as any)._knownUid || pickUid(norm);
+          if (uid) {
+            const { buildWithdrawStatusCard } = await import("@/lib/telegram-withdraw.server");
+            const res = await buildWithdrawStatusCard(uid);
+            const reply = res.found
+              ? res.card
+              : `❌ UID <code>${uid}</code> দিয়ে কোনো একাউন্ট পাওয়া যায়নি। প্রোফাইল পেজ থেকে সঠিক UID টি দেখে লিখুন।`;
+            await sendMessage(chatId, reply, msg.message_id);
+            actions.push("withdraw-status");
+            await logMessage(decision.verdict, actions.join(","), reply, res.found ? uid : null);
+            return Response.json({ ok: true, flow: "withdraw_status", actions });
+          }
+          const ask =
+            `🧾 ${senderName}, এখনই দেখে দিচ্ছি 🙂\n` +
+            `আপনার <b>UID</b> নম্বরটি লিখুন (যেমন: 4100) — কোন কোন উইথড্র পেন্ডিং আছে, কখন রিকোয়েস্ট দিয়েছেন সব দেখিয়ে দেব।`;
+          await sendMessage(chatId, ask, msg.message_id);
+          actions.push("withdraw-ask-uid");
+          await logMessage(decision.verdict, actions.join(","), ask, null);
+          return Response.json({ ok: true, flow: "withdraw_status", actions });
+        }
+
+        // ---- "কিভাবে টাকা পাবো" → full earning guide -------------------------
+        if (decision.intent === "earning_info" && !decision.should_delete
+            && settings.auto_reply_enabled) {
+          const { loadRates, earningGuideReply } = await import("@/lib/telegram-knowledge.server");
+          const reply = decision.reply
+            ? `${decision.reply}\n\n${earningGuideReply(senderName, await loadRates())}`
+            : earningGuideReply(senderName, await loadRates());
+          await sendMessage(chatId, reply, msg.message_id);
+          actions.push("earning-info");
+          await logMessage(decision.verdict, actions.join(","), reply, matchedUid);
+          return Response.json({ ok: true, flow: "earning_info", actions });
+        }
+
+        // ---- "একাউন্ট/ভেরিফাই হয় না" → browser + face rules -----------------
+        if (decision.intent === "verify_help" && !decision.should_delete
+            && settings.auto_reply_enabled) {
+          const { verifyTipsReply } = await import("@/lib/telegram-knowledge.server");
+          const reply = verifyTipsReply(senderName);
+          await sendMessage(chatId, reply, msg.message_id);
+          actions.push("verify-help");
+          await logMessage(decision.verdict, actions.join(","), reply, matchedUid);
+          return Response.json({ ok: true, flow: "verify_help", actions });
+        }
+
         // ---- pick a saved voice note for this topic, if the admin recorded one -
         const voiceMatch = (() => {
           const list = (voiceRows ?? []) as any[];
