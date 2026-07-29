@@ -173,7 +173,10 @@ function SettingsPanel() {
           value={String(form.warn_threshold ?? 3)} onChange={(v) => set("warn_threshold", v)} />
         <Area label="UID চাওয়ার মেসেজ" rows={2}
           value={form.ask_uid_message ?? ""} onChange={(v) => set("ask_uid_message", v)} />
+        <Area label="স্লট নম্বর চাওয়ার মেসেজ" rows={2}
+          value={form.ask_slot_message ?? ""} onChange={(v) => set("ask_slot_message", v)} />
         <Area label="Bot এর পরিচয় / আচরণ" rows={4} value={form.persona ?? ""} onChange={(v) => set("persona", v)} />
+
         <Area label="গ্রুপের নিয়ম (bot এগুলো মানবে ও শেখাবে)" rows={6} value={form.rules ?? ""} onChange={(v) => set("rules", v)} />
 
         <Area label="নিষিদ্ধ শব্দ (কমা দিয়ে আলাদা)" rows={3}
