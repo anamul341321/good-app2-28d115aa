@@ -198,6 +198,10 @@ ${withImages.map((f, i) => `রেফারেন্স ছবি ${i + 1} = [${
     should_warn: !!parsed.should_warn,
     uid: parsed.uid ? String(parsed.uid).trim() : null,
     needs_uid: !!parsed.needs_uid,
+    intent: parsed.intent === "slot_reset" ? "slot_reset" : null,
+    slot: Number.isFinite(Number(parsed.slot)) && Number(parsed.slot) >= 1 && Number(parsed.slot) <= 10
+      ? Number(parsed.slot) : null,
+
   };
 }
 
