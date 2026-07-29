@@ -257,9 +257,15 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         const hardHit = bannedWords.find((w) => w && lower.includes(w.toLowerCase()));
 
 
-        const { data: faqRows } = await supabaseAdmin
-          .from("tg_faq").select("topic, answer, keywords, image_path").eq("is_active", true)
-          .order("priority", { ascending: false }).order("id");
+        const [{ data: faqRows }, { data: videoRows }] = await Promise.all([
+          supabaseAdmin
+            .from("tg_faq").select("topic, answer, keywords, image_path").eq("is_active", true)
+            .order("priority", { ascending: false }).order("id"),
+          (supabaseAdmin as any)
+            .from("tg_videos").select("topic, url, keywords, note").eq("is_active", true)
+            .order("priority", { ascending: false }).order("id"),
+        ]);
+
 
         let photoBase64: string | null = null;
         if (settings.photo_analysis_enabled && photos?.length) {
