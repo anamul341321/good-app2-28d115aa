@@ -29,9 +29,9 @@ function findIcon(name: string): string | null {
   }
 }
 
-const styles = findAsset(/^styles-[A-Za-z0-9]+\.css$/);
-const mainJs = findAsset(/^index-[A-Za-z0-9]+\.js$/);
-const clientJs = findAsset(/^client-[A-Za-z0-9]+\.js$/);
+const styles = findAsset(/^styles-[A-Za-z0-9_-]+\.css$/);
+const mainJs = findEntry('index');
+const clientJs = findEntry('client');
 const favicon = findIcon('favicon');
 const icon192 = findIcon('icon-192');
 
