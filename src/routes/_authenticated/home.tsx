@@ -913,68 +913,213 @@ function VoucherPopup({ vouchers, onClaimed }: { vouchers: any[]; onClaimed: () 
   );
 }
 
-function Leaderboards() {
-  const { data } = useQuery({
-    queryKey: ["leaderboards", "v1"],
+function useLeaderboardsData() {
+  return useQuery({
+    queryKey: ["leaderboards", "v2"],
     queryFn: () => getLeaderboards(),
-    staleTime: 5 * 60_000,
-    refetchInterval: 5 * 60_000,
+    staleTime: 60_000,
+    refetchInterval: 60_000,
     retry: 1,
   });
+}
+
+function Leaderboards() {
+  const { data } = useLeaderboardsData();
+  const [open, setOpen] = useState(false);
+  const [tab, setTab] = useState<"ref" | "ver">("ref");
 
   if (!data) return null;
   const { topReferrers = [], topVerified = [] } = data as any;
   if (topReferrers.length === 0 && topVerified.length === 0) return null;
 
   const medal = (i: number) => (i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `#${i + 1}`);
+  const rows = tab === "ref" ? topReferrers : topVerified;
 
   return (
-    <div className="grid grid-cols-1 gap-3">
-      <div className="rounded-3xl p-4 shadow-xl relative overflow-hidden text-white"
-           style={{ background: "linear-gradient(135deg,#f59e0b 0%,#ef4444 55%,#8b5cf6 100%)" }}>
-        <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/15 blur-2xl" />
-        <div className="relative flex items-center gap-2 mb-2">
-          <Crown className="w-4 h-4 text-yellow-100" />
-          <p className="text-[11px] uppercase tracking-[0.25em] font-black">টপ ১০ রেফারার</p>
+    <div className="rounded-3xl overflow-hidden shadow-xl border border-white/10"
+         style={{ background: tab === "ref"
+           ? "linear-gradient(135deg,#f59e0b 0%,#ef4444 55%,#8b5cf6 100%)"
+           : "linear-gradient(135deg,#0ea5e9 0%,#22d3ee 50%,#10b981 100%)" }}>
+      <button onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center gap-3 p-4 text-white btn-press">
+        <div className="w-11 h-11 rounded-2xl bg-white/25 backdrop-blur border border-white/40 flex items-center justify-center text-2xl shadow-lg shrink-0">🏆</div>
+        <div className="flex-1 text-left min-w-0">
+          <p className="text-[10px] uppercase tracking-[0.25em] font-black opacity-95 flex items-center gap-1">
+            <Crown className="w-3 h-3" /> লিডারবোর্ড
+          </p>
+          <p className="text-base font-black leading-tight drop-shadow">টপ ১০ রেফারার · টপ ১০ ভেরিফায়ার</p>
+          <p className="text-[11px] opacity-95 font-bold mt-0.5">দেখতে ক্লিক করুন</p>
         </div>
-        <ol className="relative space-y-1.5">
-          {topReferrers.slice(0, 10).map((r: any, i: number) => (
-            <li key={r.id} className="flex items-center justify-between rounded-xl bg-white/15 backdrop-blur border border-white/20 px-2.5 py-1.5">
-              <div className="flex items-center gap-2 min-w-0">
-                <span className="text-sm font-black w-7 shrink-0">{medal(i)}</span>
-                <span className="text-sm font-black truncate">{r.name}</span>
-                <span className="text-[10px] opacity-80 mono-num shrink-0">UID {r.uid}</span>
-              </div>
-              <span className="mono-num text-sm font-black shrink-0">{r.count}</span>
-            </li>
-          ))}
-        </ol>
-        <p className="relative text-[10px] mt-2 opacity-90">সবচেয়ে বেশি রেফার করা ইউজারদের তালিকা</p>
-      </div>
+        <ChevronDown className={`w-5 h-5 text-white transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
 
-      <div className="rounded-3xl p-4 shadow-xl relative overflow-hidden text-white"
-           style={{ background: "linear-gradient(135deg,#0ea5e9 0%,#22d3ee 50%,#10b981 100%)" }}>
-        <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/15 blur-2xl" />
-        <div className="relative flex items-center gap-2 mb-2">
-          <BadgeCheck className="w-4 h-4 text-white" />
-          <p className="text-[11px] uppercase tracking-[0.25em] font-black">টপ ১০ ভেরিফায়ার</p>
+      {open && (
+        <div className="px-4 pb-4 animate-in fade-in slide-in-from-top-1">
+          <div className="flex gap-2 mb-3">
+            <button onClick={() => setTab("ref")}
+              className={`flex-1 py-1.5 rounded-xl text-[11px] font-black border transition ${
+                tab === "ref" ? "bg-white text-navy border-white" : "bg-white/10 text-white border-white/30"
+              }`}>
+              <Crown className="w-3 h-3 inline mr-1" /> টপ রেফারার
+            </button>
+            <button onClick={() => setTab("ver")}
+              className={`flex-1 py-1.5 rounded-xl text-[11px] font-black border transition ${
+                tab === "ver" ? "bg-white text-navy border-white" : "bg-white/10 text-white border-white/30"
+              }`}>
+              <BadgeCheck className="w-3 h-3 inline mr-1" /> টপ ভেরিফায়ার
+            </button>
+          </div>
+          <ol className="space-y-1.5">
+            {rows.slice(0, 10).map((r: any, i: number) => (
+              <li key={r.id} className="flex items-center justify-between rounded-xl bg-white/15 backdrop-blur border border-white/20 px-2.5 py-1.5 text-white">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-sm font-black w-7 shrink-0">{medal(i)}</span>
+                  <span className="text-sm font-black truncate">{r.name}</span>
+                  <span className="text-[10px] opacity-80 mono-num shrink-0">UID {r.uid}</span>
+                </div>
+                <span className="mono-num text-sm font-black shrink-0">{r.count}</span>
+              </li>
+            ))}
+          </ol>
+          <p className="text-[10px] mt-2 opacity-90 text-white">
+            {tab === "ref"
+              ? "রেফারদের কাছ থেকে সবচেয়ে বেশি ভেরিফিকেশন এসেছে যাদের"
+              : "সবচেয়ে বেশি ফেস ভেরিফাই করা ইউজার"}
+          </p>
         </div>
-        <ol className="relative space-y-1.5">
-          {topVerified.slice(0, 10).map((r: any, i: number) => (
-            <li key={r.id} className="flex items-center justify-between rounded-xl bg-white/15 backdrop-blur border border-white/20 px-2.5 py-1.5">
-              <div className="flex items-center gap-2 min-w-0">
-                <span className="text-sm font-black w-7 shrink-0">{medal(i)}</span>
-                <span className="text-sm font-black truncate">{r.name}</span>
-                <span className="text-[10px] opacity-90 mono-num shrink-0">UID {r.uid}</span>
-              </div>
-              <span className="mono-num text-sm font-black shrink-0">{r.count}</span>
-            </li>
-          ))}
-        </ol>
-        <p className="relative text-[10px] mt-2 opacity-90">সবচেয়ে বেশি ফেস ভেরিফাই করা ইউজারদের তালিকা</p>
-      </div>
+      )}
     </div>
   );
 }
+
+function fmtWait(sec: number) {
+  if (!sec || sec < 0) return "—";
+  const m = Math.floor(sec / 60);
+  const h = Math.floor(m / 60);
+  const d = Math.floor(h / 24);
+  if (d > 0) return `${d}দিন ${h % 24}ঘ`;
+  if (h > 0) return `${h}ঘ ${m % 60}মি`;
+  if (m > 0) return `${m}মি ${sec % 60}সে`;
+  return `${sec}সে`;
+}
+
+function useTicker(intervalMs = 1000) {
+  const [, set] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => set((n) => n + 1), intervalMs);
+    return () => clearInterval(id);
+  }, [intervalMs]);
+}
+
+function WithdrawFeed() {
+  const { data } = useLeaderboardsData();
+  const [open, setOpen] = useState(false);
+  const [q, setQ] = useState("");
+  const [tab, setTab] = useState<"pending" | "paid">("pending");
+  useTicker(1000);
+
+  if (!data) return null;
+  const { withdraws = [], avgWaitSeconds = 0 } = data as any;
+  if (withdraws.length === 0) return null;
+
+  const filtered = (withdraws as any[]).filter((w) => {
+    if (tab === "pending" && w.status !== "pending") return false;
+    if (tab === "paid" && w.status !== "paid") return false;
+    if (!q.trim()) return true;
+    const s = q.trim().toLowerCase();
+    return String(w.uid).includes(s) || (w.name || "").toLowerCase().includes(s);
+  });
+
+  const pendingCount = (withdraws as any[]).filter((w) => w.status === "pending").length;
+
+  return (
+    <div className="rounded-3xl overflow-hidden shadow-xl border border-white/10"
+         style={{ background: "linear-gradient(135deg,#0f172a 0%,#1e293b 55%,#334155 100%)" }}>
+      <button onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center gap-3 p-4 text-white btn-press">
+        <div className="w-11 h-11 rounded-2xl bg-emerald/30 backdrop-blur border border-emerald/40 flex items-center justify-center text-2xl shadow-lg shrink-0">💸</div>
+        <div className="flex-1 text-left min-w-0">
+          <p className="text-[10px] uppercase tracking-[0.25em] font-black opacity-90 flex items-center gap-1 text-emerald">
+            লাইভ পেমেন্ট
+          </p>
+          <p className="text-base font-black leading-tight">সবার withdraw list</p>
+          <p className="text-[11px] opacity-90 font-bold mt-0.5">
+            গড় পেমেন্ট সময়: <span className="mono-num text-emerald">{fmtWait(avgWaitSeconds)}</span>
+            {pendingCount > 0 && <span className="ml-2 text-amber">· {pendingCount} pending</span>}
+          </p>
+        </div>
+        <ChevronDown className={`w-5 h-5 text-white transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+
+      {open && (
+        <div className="px-4 pb-4 animate-in fade-in slide-in-from-top-1">
+          <div className="flex gap-2 mb-2">
+            <button onClick={() => setTab("pending")}
+              className={`flex-1 py-1.5 rounded-xl text-[11px] font-black border transition ${
+                tab === "pending" ? "bg-amber text-navy border-amber" : "bg-white/10 text-white border-white/30"
+              }`}>
+              ⏳ Pending
+            </button>
+            <button onClick={() => setTab("paid")}
+              className={`flex-1 py-1.5 rounded-xl text-[11px] font-black border transition ${
+                tab === "paid" ? "bg-emerald text-white border-emerald" : "bg-white/10 text-white border-white/30"
+              }`}>
+              ✅ Paid
+            </button>
+          </div>
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="আপনার UID বা নাম দিয়ে খুঁজুন…"
+            className="w-full mb-2 px-3 py-2 rounded-xl bg-white/10 border border-white/20 text-white placeholder:text-white/50 text-xs outline-none focus:border-white/60"
+          />
+          <ol className="space-y-1.5 max-h-[420px] overflow-y-auto pr-1">
+            {filtered.slice(0, 100).map((w: any) => {
+              const created = new Date(w.created_at).getTime();
+              const paidAt = w.processed_at ? new Date(w.processed_at).getTime() : null;
+              const endMs = paidAt ?? Date.now();
+              const elapsed = Math.max(0, Math.floor((endMs - created) / 1000));
+              const isPaid = w.status === "paid";
+              const isRej = w.status === "rejected";
+              return (
+                <li key={w.id} className="rounded-xl bg-white/10 backdrop-blur border border-white/15 px-2.5 py-1.5 text-white">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-black truncate">
+                        {w.name} <span className="text-[10px] opacity-70 mono-num">UID {w.uid}</span>
+                      </p>
+                      <p className="text-[10px] opacity-80 mono-num truncate">
+                        {String(w.provider).toUpperCase()} · {w.wallet_masked}
+                      </p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="mono-num font-black text-sm text-emerald">{Math.floor(Number(w.amount))}৳</p>
+                      <p className={`text-[10px] font-black ${isPaid ? "text-emerald" : isRej ? "text-rose" : "text-amber"}`}>
+                        {isPaid ? "✅ Paid" : isRej ? "✕ Rejected" : "⏳ Pending"}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mt-1 flex items-center justify-between text-[10px] opacity-90">
+                    <span className="mono-num">
+                      {isPaid ? "সময় লেগেছে" : isRej ? "সময়" : "কাউন্টডাউন"}: <span className={isPaid ? "text-emerald" : "text-amber"}>{fmtWait(elapsed)}</span>
+                    </span>
+                    <span className="mono-num opacity-70">{new Date(w.created_at).toLocaleDateString("bn-BD")}</span>
+                  </div>
+                </li>
+              );
+            })}
+            {filtered.length === 0 && (
+              <li className="text-center py-6 text-white/70 text-xs">কোনো রেকর্ড নেই</li>
+            )}
+          </ol>
+          <p className="text-[10px] mt-2 opacity-80 text-white">
+            গোপনীয়তার জন্য নম্বর হাইড করা — শুধু নাম ও UID দেখানো হচ্ছে
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 
 
