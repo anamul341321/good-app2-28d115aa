@@ -7,7 +7,8 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
       POST: async ({ request }) => {
         const {
           getBotToken, webhookSecretFor, sendMessage, deleteMessage,
-          restrictUser, getPhotoBase64, decide, faqImageBase64,
+          restrictUser, getPhotoBase64, decide, faqImageBase64, banChatMember,
+
         } = await import("@/lib/telegram-bot.server");
 
         let expected: string;
@@ -46,6 +47,18 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         const { data: seen } = await supabaseAdmin
           .from("tg_messages").select("update_id").eq("update_id", update.update_id).maybeSingle();
         if (seen) return Response.json({ ok: true, duplicate: true });
+
+        // ---- offender record (warnings / block state) -------------------------
+        const { data: offender } = msg.from?.id
+          ? await supabaseAdmin.from("tg_offenders").select("*").eq("tg_user_id", msg.from.id).maybeSingle()
+          : { data: null as any };
+
+        // Already blocked → delete anything they manage to post and stop.
+        if ((offender as any)?.blocked) {
+          if (settings.delete_bad_messages) await deleteMessage(chatId, msg.message_id);
+          return Response.json({ ok: true, blocked: true });
+        }
+
 
         // ---- helpers for the guided slot-reset conversation -------------------
         const bnDigits = (s: string) =>
@@ -279,6 +292,19 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           };
 
         } else if (text.trim() || photoBase64) {
+          // Everything this user said before — used both for smarter answers and
+          // for finding the UID they gave earlier when they start misbehaving.
+          let history: string[] = [];
+          let knownUid: string | null = (offender as any)?.known_uid ?? null;
+          if (msg.from?.id) {
+            const { data: past } = await supabaseAdmin
+              .from("tg_messages").select("text, matched_uid, created_at")
+              .eq("tg_user_id", msg.from.id)
+              .order("created_at", { ascending: false }).limit(12);
+            history = (past ?? []).map((p: any) => p.text).filter(Boolean).reverse().slice(-8);
+            if (!knownUid) knownUid = (past ?? []).find((p: any) => p.matched_uid)?.matched_uid ?? null;
+          }
+
           try {
             decision = await decide({
               persona: settings.persona,
@@ -288,10 +314,16 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               text,
               photoBase64,
               senderName,
+              smart: (settings as any).smart_mode !== false,
+              history,
+              knownUid,
+              warnCount: (offender as any)?.warn_count ?? 0,
             });
           } catch (e) {
             console.error("[tg] decide failed", e);
           }
+          
+          (decision as any)._knownUid = knownUid;
         }
 
 
@@ -307,9 +339,35 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         let appUserId: string | null = null;
 
         if (settings.moderation_enabled && decision.should_warn && msg.from?.id) {
-          const { data: off } = await supabaseAdmin
-            .from("tg_offenders").select("warn_count").eq("tg_user_id", msg.from.id).maybeSingle();
-          const warnCount = (off?.warn_count ?? 0) + 1;
+          const warnCount = ((offender as any)?.warn_count ?? 0) + 1;
+          const blockThreshold = Number((settings as any).block_threshold ?? 5);
+          const autoBlock = (settings as any).auto_block_enabled !== false;
+
+          // Which UID does this troublemaker belong to? Check the message, the
+          // chat history and the linked app profile.
+          let uidForWarn: string | null =
+            decision.uid || (decision as any)._knownUid || (offender as any)?.known_uid || null;
+          if (!uidForWarn) {
+            const { data: past } = await supabaseAdmin
+              .from("tg_messages").select("matched_uid")
+              .eq("tg_user_id", msg.from.id).not("matched_uid", "is", null)
+              .order("created_at", { ascending: false }).limit(1);
+            uidForWarn = (past ?? [])[0]?.matched_uid ?? null;
+          }
+          if (!uidForWarn) {
+            const { data: linked } = await supabaseAdmin
+              .from("profiles").select("id, uid_seq").eq("telegram_user_id", msg.from.id).maybeSingle();
+            if (linked) { appUserId = linked.id; uidForWarn = String(linked.uid_seq ?? "") || null; }
+          }
+          if (!appUserId && uidForWarn && /^\d+$/.test(uidForWarn)) {
+            const { data: byUid } = await supabaseAdmin
+              .from("profiles").select("id").eq("uid_seq", Number(uidForWarn)).maybeSingle();
+            if (byUid) appUserId = byUid.id;
+          }
+          matchedUid = matchedUid || uidForWarn;
+
+          const willBlock = autoBlock && warnCount >= blockThreshold;
+
           await supabaseAdmin.from("tg_offenders").upsert({
             tg_user_id: msg.from.id,
             username: msg.from.username ?? null,
@@ -317,31 +375,49 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             warn_count: warnCount,
             last_reason: decision.verdict,
             last_offense_at: new Date().toISOString(),
+            known_uid: uidForWarn,
+            app_user_id: appUserId,
+            chat_id: msg.chat.id,
+            ...(willBlock
+              ? {
+                  blocked: true,
+                  blocked_at: new Date().toISOString(),
+                  blocked_reason: `${decision.verdict} — ${warnCount} বার নিয়মভঙ্গ`,
+                }
+              : {}),
           });
           actions.push(`warn:${warnCount}`);
 
-          await sendMessage(
-            chatId,
-            `⚠️ <b>${senderName}</b>, আপনার মেসেজটি গ্রুপের নিয়মভঙ্গ করেছে (${decision.verdict}).\nসতর্কতা: <b>${warnCount}/${settings.warn_threshold}</b>`,
-            msg.message_id,
-          );
+          if (!willBlock) {
+            await sendMessage(
+              chatId,
+              `⚠️ <b>${senderName}</b>, আপনার মেসেজটি গ্রুপের নিয়মভঙ্গ করেছে (${decision.verdict})।\n` +
+                `সতর্কতা: <b>${warnCount}/${blockThreshold}</b>\n` +
+                (uidForWarn
+                  ? `🆔 আপনার Good-App UID <code>${uidForWarn}</code> আমাদের কাছে আছে — বারবার এমন করলে এই একাউন্টটি ব্যান হয়ে যাবে এবং সব ব্যালেন্স বাতিল হবে।\n`
+                  : "") +
+                `🙏 অনুগ্রহ করে ভদ্রভাবে কথা বলুন।`,
+              msg.message_id,
+            );
+          }
 
-          if (warnCount >= settings.warn_threshold) {
+          if (warnCount >= settings.warn_threshold && !willBlock) {
             await restrictUser(chatId, msg.from.id, 60 * 60);
             actions.push("muted-1h");
+          }
 
-            // Try to match the offender to an app account.
-            if (!matchedUid) {
-              const { data: linked } = await supabaseAdmin
-                .from("profiles").select("id, uid_seq").eq("telegram_user_id", msg.from.id).maybeSingle();
-              if (linked) { appUserId = linked.id; matchedUid = String(linked.uid_seq ?? ""); }
-            }
-            if (!appUserId && matchedUid && /^\d+$/.test(matchedUid)) {
-              const { data: byUid } = await supabaseAdmin
-                .from("profiles").select("id").eq("uid_seq", Number(matchedUid)).maybeSingle();
-              if (byUid) appUserId = byUid.id;
-            }
+          if (willBlock) {
+            await banChatMember(chatId, msg.from.id);
+            actions.push("blocked");
+            await sendMessage(
+              chatId,
+              `🚫 <b>${senderName}</b> কে গ্রুপ থেকে ব্লক করা হয়েছে।\n` +
+                (uidForWarn ? `🆔 UID: <code>${uidForWarn}</code>\n` : "") +
+                `কারণ: বারবার নিয়মভঙ্গ (${warnCount} বার)।`,
+            );
+          }
 
+          if (warnCount >= settings.warn_threshold) {
             const { data: existing } = await supabaseAdmin
               .from("tg_ban_requests").select("id")
               .eq("tg_user_id", msg.from.id).eq("status", "pending").maybeSingle();
@@ -362,16 +438,17 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             const adminChat = settings.admin_chat_id || settings.group_chat_id || chatId;
             await sendMessage(
               adminChat,
-              `🚨 <b>Ban approval দরকার</b>\n` +
+              `🚨 <b>${willBlock ? "ইউজার ব্লক করা হয়েছে" : "Ban approval দরকার"}</b>\n` +
                 `${settings.admin_mention ? settings.admin_mention + "\n" : ""}` +
                 `ইউজার: <b>${senderName}</b>${msg.from.username ? ` (@${msg.from.username})` : ""}\n` +
                 `Telegram ID: <code>${msg.from.id}</code>\n` +
                 `App UID: <code>${matchedUid || "পাওয়া যায়নি"}</code>\n` +
                 `কারণ: ${decision.verdict} — ${warnCount} বার\n\n` +
-                `Admin panel → Telegram Bot → Ban requests থেকে approve করুন।`,
+                `Admin panel → Telegram Bot → ব্লক লিস্ট থেকে দেখুন / আনব্লক করুন।`,
             );
           }
         }
+
 
         if (settings.auto_reply_enabled && decision.reply && !decision.should_delete
             && decision.intent !== "slot_reset") {

@@ -4,18 +4,20 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   Bot, Loader2, Save, Plus, Trash2, ShieldAlert, MessageSquare, Link2, CheckCircle2, XCircle,
-  Image as ImageIcon, Search, Send,
+  Image as ImageIcon, Search, Send, Ban, ShieldCheck, HelpCircle,
 } from "lucide-react";
 import {
   tgGetSettings, tgSaveSettings, tgRegisterWebhook,
   tgListFaq, tgUpsertFaq, tgDeleteFaq, tgLookupUid, tgSendToGroup,
   tgListBanRequests, tgResolveBanRequest, tgUnban, tgRecentMessages,
+  tgListBlocked, tgSetBlocked,
 } from "@/lib/telegram-bot.functions";
 
 
 export const Route = createFileRoute("/admin/telegram")({ component: TelegramAdmin });
 
-type Tab = "settings" | "faq" | "lookup" | "bans" | "log";
+type Tab = "settings" | "faq" | "lookup" | "blocked" | "bans" | "log";
+
 
 function TelegramAdmin() {
   const [tab, setTab] = useState<Tab>("settings");
@@ -34,7 +36,7 @@ function TelegramAdmin() {
       <div className="flex gap-2 overflow-x-auto -mx-4 px-4 pb-1 scrollbar-none">
         {([
           ["settings", "সেটিংস"], ["faq", "উত্তর/নিয়ম"], ["lookup", "UID লুকআপ"],
-          ["bans", "Ban requests"], ["log", "Activity"],
+          ["blocked", "ব্লক লিস্ট"], ["bans", "Ban requests"], ["log", "Activity"],
         ] as [Tab, string][]).map(([k, label]) => (
           <button key={k} onClick={() => setTab(k)}
             className={`shrink-0 rounded-xl px-3 py-2 text-xs font-black border ${
@@ -48,8 +50,10 @@ function TelegramAdmin() {
       {tab === "settings" && <SettingsPanel />}
       {tab === "faq" && <FaqPanel />}
       {tab === "lookup" && <LookupPanel />}
+      {tab === "blocked" && <BlockedPanel />}
       {tab === "bans" && <BansPanel />}
       {tab === "log" && <LogPanel />}
+
 
     </div>
   );
@@ -99,6 +103,11 @@ function SettingsPanel() {
         ask_uid_message: form.ask_uid_message ?? "",
         slot_reset_enabled: form.slot_reset_enabled !== false,
         ask_slot_message: form.ask_slot_message ?? "",
+        smart_mode: form.smart_mode !== false,
+        auto_block_enabled: form.auto_block_enabled !== false,
+        block_threshold: Number(form.block_threshold) || 5,
+
+
 
         group_chat_id: form.group_chat_id?.trim() || null,
         admin_chat_id: form.admin_chat_id?.trim() || null,
@@ -166,6 +175,10 @@ function SettingsPanel() {
           value={form.uid_lookup_enabled !== false} onChange={(v) => set("uid_lookup_enabled", v)} />
         <Toggle label="স্লট রিসেট" hint="কেউ স্লট রিসেট চাইলে বট UID ও স্লট নম্বর জিজ্ঞেস করে নিজেই রিসেট করবে"
           value={form.slot_reset_enabled !== false} onChange={(v) => set("slot_reset_enabled", v)} />
+        <Toggle label="স্মার্ট মোড 🧠" hint="আপনার লেখা উত্তরে মিল না পেলে বট নিজে বুঝে ভদ্রভাবে উত্তর দেবে"
+          value={form.smart_mode !== false} onChange={(v) => set("smart_mode", v)} />
+        <Toggle label="অটো ব্লক 🚫" hint="বারবার নিয়ম ভাঙলে বট নিজেই গ্রুপ থেকে ব্লক করে দেবে"
+          value={form.auto_block_enabled !== false} onChange={(v) => set("auto_block_enabled", v)} />
 
       </div>
 
@@ -179,6 +192,9 @@ function SettingsPanel() {
           value={form.admin_mention ?? ""} onChange={(v) => set("admin_mention", v)} />
         <Field label="কত সতর্কতার পর ban request" type="number"
           value={String(form.warn_threshold ?? 3)} onChange={(v) => set("warn_threshold", v)} />
+        <Field label="কত সতর্কতার পর অটো ব্লক" type="number" hint="যেমন ৫ — ৫ বার নিয়ম ভাঙলে গ্রুপ থেকে ব্লক"
+          value={String(form.block_threshold ?? 5)} onChange={(v) => set("block_threshold", v)} />
+
         <Area label="UID চাওয়ার মেসেজ" rows={2}
           value={form.ask_uid_message ?? ""} onChange={(v) => set("ask_uid_message", v)} />
         <Area label="স্লট নম্বর চাওয়ার মেসেজ" rows={2}
@@ -305,15 +321,24 @@ function FaqPanel() {
 
   return (
     <div className="space-y-3">
+      <div className="glass rounded-2xl p-4 border border-cyan/30">
+        <h3 className="font-black text-sm flex items-center gap-2">
+          <HelpCircle className="w-4 h-4 text-cyan" /> কোন ঘরে কী লিখবেন (সহজ ব্যাখ্যা)
+        </h3>
+        <ul className="mt-2 space-y-1.5 text-[11px] text-muted-foreground leading-relaxed">
+          <li>📌 <b className="text-foreground">উত্তর</b> — সবচেয়ে জরুরি ঘর। ইউজার এই সমস্যার কথা বললে বট ঠিক এই কথাটাই বলবে। শুধু এই ঘরটা পূরণ করলেই চলবে।</li>
+          <li>🖼️ <b className="text-foreground">রেফারেন্স স্ক্রিনশট</b> — ঐচ্ছিক। ছবি দিলে ইউজার একই রকম ছবি পাঠালেই বট এই উত্তরটা দেবে।</li>
+          <li>🏷️ <b className="text-foreground">বিষয়</b> — শুধু আপনার চেনার জন্য নাম (যেমন "উইথড্র দেরি")। খালি রাখলে আমরা নিজেরাই নাম বসিয়ে দেব।</li>
+          <li>🔑 <b className="text-foreground">কীওয়ার্ড</b> — ঐচ্ছিক। ইউজার কোন শব্দ লিখলে এই উত্তর দেবে (যেমন: withdraw, টাকা, দেরি)। খালি রাখলেও বট নিজে বুঝে নেবে।</li>
+        </ul>
+      </div>
+
       <div className="glass rounded-2xl p-4 space-y-2">
         <h3 className="font-black text-sm flex items-center gap-2"><Plus className="w-4 h-4 text-emerald" /> নতুন উত্তর যোগ করুন</h3>
         <p className="text-[10px] text-muted-foreground">
-          এখানে যা লিখবেন, bot ঠিক সেটাই ব্যবহার করে উত্তর দেবে — বাইরের তথ্য বানাবে না।
-          ছবি যোগ করলে ইউজার একই রকম স্ক্রিনশট পাঠালে bot এই উত্তরটিই দেবে।
+          শুধু <b>উত্তর</b> লিখুন (চাইলে ছবি দিন) — বাকিটা ঐচ্ছিক।
         </p>
-        <Field label="বিষয়" value={draft.topic} onChange={(v) => setDraft({ ...draft, topic: v })} />
-        <Field label="কীওয়ার্ড (কমা দিয়ে)" value={draft.keywords} onChange={(v) => setDraft({ ...draft, keywords: v })} />
-        <Area label="উত্তর" rows={5} value={draft.answer} onChange={(v) => setDraft({ ...draft, answer: v })} />
+        <Area label="উত্তর (এটাই বট বলবে)" rows={5} value={draft.answer} onChange={(v) => setDraft({ ...draft, answer: v })} />
 
         <div>
           <label className="block text-[11px] font-black mb-1">রেফারেন্স স্ক্রিনশট (ঐচ্ছিক)</label>
@@ -333,18 +358,26 @@ function FaqPanel() {
           {img && <img src={img.preview} alt="preview" className="mt-2 h-28 rounded-xl border border-border object-cover" />}
         </div>
 
+        <Field label="বিষয় (ঐচ্ছিক — নিজের চেনার জন্য)" value={draft.topic} onChange={(v) => setDraft({ ...draft, topic: v })} />
+        <Field label="কীওয়ার্ড (ঐচ্ছিক, কমা দিয়ে)" value={draft.keywords} onChange={(v) => setDraft({ ...draft, keywords: v })} />
+
         <button
-          onClick={() => draft.topic.trim() && draft.answer.trim() && upsert.mutate({
-            topic: draft.topic.trim(),
-            keywords: draft.keywords.split(",").map((s) => s.trim()).filter(Boolean),
-            answer: draft.answer.trim(), priority: 0, is_active: true,
-            image_base64: img?.b64 ?? null,
-          })}
+          onClick={() => {
+            if (!draft.answer.trim()) { toast.error("উত্তর লিখুন"); return; }
+            const auto = draft.answer.trim().split(/\s+/).slice(0, 5).join(" ");
+            upsert.mutate({
+              topic: draft.topic.trim() || (img ? `ছবি: ${auto}` : auto).slice(0, 110),
+              keywords: draft.keywords.split(",").map((s) => s.trim()).filter(Boolean),
+              answer: draft.answer.trim(), priority: 0, is_active: true,
+              image_base64: img?.b64 ?? null,
+            });
+          }}
           disabled={upsert.isPending}
           className="w-full py-2.5 rounded-xl gradient-cta font-black text-sm disabled:opacity-50">
           {upsert.isPending ? "সেভ হচ্ছে…" : "যোগ করুন"}
         </button>
       </div>
+
 
       {isLoading ? (
         <div className="py-8 flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-cyan" /></div>
@@ -548,6 +581,81 @@ function LogPanel() {
           <p className="text-[10px] text-muted-foreground mt-1">{m.action} · {new Date(m.created_at).toLocaleString("bn-BD")}</p>
         </div>
       ))}
+    </div>
+  );
+}
+
+function BlockedPanel() {
+  const qc = useQueryClient();
+  const { data, isLoading } = useQuery({
+    queryKey: ["tg-blocked"], queryFn: () => tgListBlocked(), refetchInterval: 20000,
+  });
+  const [onlyBlocked, setOnlyBlocked] = useState(true);
+
+  const setBlocked = useMutation({
+    mutationFn: (v: { tg_user_id: number; blocked: boolean }) =>
+      tgSetBlocked({ data: { ...v, reset_warnings: !v.blocked } }),
+    onSuccess: (r: any) => {
+      if (r.ok) { toast.success("সম্পন্ন ✅"); qc.invalidateQueries({ queryKey: ["tg-blocked"] }); }
+      else toast.error(r.error);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const rows = ((data as any[]) ?? []).filter((r) => (onlyBlocked ? r.blocked : true));
+
+  return (
+    <div className="space-y-3">
+      <div className="glass rounded-2xl p-4">
+        <h3 className="font-black text-sm flex items-center gap-2">
+          <Ban className="w-4 h-4 text-rose-400" /> ব্লক করা ইউজার
+        </h3>
+        <p className="text-[11px] text-muted-foreground mt-1">
+          বারবার নিয়ম ভাঙলে বট নিজেই গ্রুপ থেকে ব্লক করে দেয়। এখান থেকে যেকোনো সময় আনব্লক করতে পারবেন —
+          আনব্লক করলে সতর্কতাও শূন্য হয়ে যাবে।
+        </p>
+        <div className="mt-2">
+          <Toggle label="শুধু ব্লক করা ইউজার দেখাও" value={onlyBlocked} onChange={setOnlyBlocked} />
+        </div>
+      </div>
+
+      {isLoading ? (
+        <div className="py-8 flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-cyan" /></div>
+      ) : rows.length === 0 ? (
+        <p className="text-center text-xs text-muted-foreground py-6">
+          {onlyBlocked ? "কেউ ব্লক করা নেই 🎉" : "কোনো রেকর্ড নেই"}
+        </p>
+      ) : (
+        rows.map((r: any) => (
+          <div key={r.tg_user_id}
+            className={`glass rounded-xl p-3 border ${r.blocked ? "border-rose-500/50" : "border-border"}`}>
+            <div className="flex items-center gap-2">
+              {r.blocked ? <Ban className="w-4 h-4 text-rose-400 shrink-0" />
+                : <ShieldCheck className="w-4 h-4 text-emerald shrink-0" />}
+              <p className="text-xs font-black truncate">
+                {r.full_name || "ইউজার"}{r.username ? ` (@${r.username})` : ""}
+              </p>
+            </div>
+            <p className="text-[10px] text-muted-foreground mt-1">
+              TG ID: {r.tg_user_id} · UID: {r.known_uid || "—"} · সতর্কতা: {r.warn_count}
+            </p>
+            {r.blocked_reason && <p className="text-[10px] text-rose-300 mt-1">কারণ: {r.blocked_reason}</p>}
+            <p className="text-[10px] text-muted-foreground mt-1">
+              শেষ নিয়মভঙ্গ: {new Date(r.last_offense_at).toLocaleString("bn-BD")}
+            </p>
+            <button
+              onClick={() => setBlocked.mutate({ tg_user_id: r.tg_user_id, blocked: !r.blocked })}
+              disabled={setBlocked.isPending}
+              className={`mt-2 w-full py-2 rounded-xl text-xs font-black border disabled:opacity-50 ${
+                r.blocked
+                  ? "bg-emerald/15 border-emerald/50 text-emerald"
+                  : "bg-rose-500/15 border-rose-500/50 text-rose-300"
+              }`}>
+              {r.blocked ? "আনব্লক করুন" : "ব্লক করুন"}
+            </button>
+          </div>
+        ))
+      )}
     </div>
   );
 }
