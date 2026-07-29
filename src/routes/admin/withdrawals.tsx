@@ -158,7 +158,7 @@ function AdminWithdrawals() {
         </>
       )}
 
-      {filter !== "admin" && (
+      {filter !== "admin" && filter !== "paid-by" && (
       <div className="space-y-2">
         {filtered.length === 0 && <p className="text-center text-xs text-muted-foreground py-6">No records</p>}
         {filtered.map((w: any) => {
