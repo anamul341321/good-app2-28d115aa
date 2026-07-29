@@ -4,18 +4,20 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   Bot, Loader2, Save, Plus, Trash2, ShieldAlert, MessageSquare, Link2, CheckCircle2, XCircle,
-  Image as ImageIcon, Search, Send,
+  Image as ImageIcon, Search, Send, Ban, ShieldCheck, HelpCircle,
 } from "lucide-react";
 import {
   tgGetSettings, tgSaveSettings, tgRegisterWebhook,
   tgListFaq, tgUpsertFaq, tgDeleteFaq, tgLookupUid, tgSendToGroup,
   tgListBanRequests, tgResolveBanRequest, tgUnban, tgRecentMessages,
+  tgListBlocked, tgSetBlocked,
 } from "@/lib/telegram-bot.functions";
 
 
 export const Route = createFileRoute("/admin/telegram")({ component: TelegramAdmin });
 
-type Tab = "settings" | "faq" | "lookup" | "bans" | "log";
+type Tab = "settings" | "faq" | "lookup" | "blocked" | "bans" | "log";
+
 
 function TelegramAdmin() {
   const [tab, setTab] = useState<Tab>("settings");
