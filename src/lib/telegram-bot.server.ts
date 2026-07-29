@@ -42,6 +42,36 @@ export function sendMessage(chatId: string | number, text: string, replyTo?: num
   });
 }
 
+/** Send a stored voice note (opus/mp3/ogg bytes) into a chat. */
+export async function sendVoice(
+  chatId: string | number,
+  bytes: Uint8Array,
+  filename: string,
+  caption?: string,
+  replyTo?: number,
+) {
+  const token = getBotToken();
+  const isOgg = /\.(ogg|oga|opus)$/i.test(filename);
+  const method = isOgg ? "sendVoice" : "sendAudio";
+  const field = isOgg ? "voice" : "audio";
+  const form = new FormData();
+  form.append("chat_id", String(chatId));
+  if (caption) { form.append("caption", caption.slice(0, 1000)); form.append("parse_mode", "HTML"); }
+  if (replyTo) { form.append("reply_to_message_id", String(replyTo)); form.append("allow_sending_without_reply", "true"); }
+  form.append(field, new Blob([bytes as unknown as BlobPart], {
+    type: isOgg ? "audio/ogg" : "audio/mpeg",
+  }), filename);
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${token}/${method}`, { method: "POST", body: form });
+    const json: any = await res.json();
+    if (!json?.ok) { console.error("[tg] sendVoice failed", json?.description); return null; }
+    return json.result;
+  } catch (e) {
+    console.error("[tg] sendVoice error", e);
+    return null;
+  }
+}
+
 export function deleteMessage(chatId: string | number, messageId: number) {
   return api("deleteMessage", { chat_id: chatId, message_id: messageId });
 }
@@ -109,7 +139,9 @@ export type BotDecision = {
   uid: string | null;
   needs_uid: boolean;
   /** "slot_reset" when the user is asking to clear/restart a verification slot. */
-  intent: "slot_reset" | "photo_request" | "video_request" | null;
+  intent: "slot_reset" | "photo_request" | "video_request" | "voice_request" | null;
+  /** topic name of the saved voice/video the bot should send along with the reply */
+  media_topic?: string | null;
   /** Slot number if the user already mentioned one. */
   slot: number | null;
   /** true when the bot has no idea and a human should take over */
@@ -122,6 +154,12 @@ export type FaqItem = {
   answer: string;
   keywords?: string[] | null;
   imageBase64?: string | null;
+};
+
+export type VoiceItem = {
+  topic: string;
+  keywords?: string[] | null;
+  note?: string | null;
 };
 
 export type VideoItem = {
@@ -137,6 +175,7 @@ export async function decide(opts: {
   rules: string;
   faq: FaqItem[];
   videos?: VideoItem[];
+  voices?: VoiceItem[];
   bannedWords: string[];
   text: string;
   photoBase64: string | null;
@@ -159,6 +198,7 @@ export async function decide(opts: {
 
   const withImages = opts.faq.filter((f) => f.imageBase64);
   const videos = opts.videos ?? [];
+  const voices = opts.voices ?? [];
   const support = opts.supportUsername || "@anamulmunni";
 
   const system = `${opts.persona}
@@ -175,6 +215,9 @@ ${opts.faq.map((f, i) => `${i + 1}. [${f.topic}]${f.keywords?.length ? ` (কি
 
 ${videos.length ? `ভিডিও টিউটোরিয়াল লিংক (ইউজার ভিডিও/দেখতে চাইলে বা বিষয়টা ভিডিওতে ভালো বোঝা যাবে মনে হলে উত্তরের সাথে হুবহু লিংকটি দেবে):
 ${videos.map((v, i) => `${i + 1}. [${v.topic}]${v.keywords?.length ? ` (কিওয়ার্ড: ${v.keywords.join(", ")})` : ""}${v.note ? ` — ${v.note}` : ""} → ${v.url}`).join("\n")}` : ""}
+
+${voices.length ? `ভয়েস মেসেজ লাইব্রেরি (এই টপিকগুলোর জন্য অ্যাডমিনের রেকর্ড করা ভয়েস আছে। ইউজারের সমস্যা এর কোনোটার সাথে মিললে — বিশেষ করে ইউজার ভয়েস/অডিও/বুঝিয়ে বলতে চাইলে — media_topic-এ হুবহু ঐ টপিকের নাম দেবে):
+${voices.map((v, i) => `${i + 1}. [${v.topic}]${v.keywords?.length ? ` (কিওয়ার্ড: ${v.keywords.join(", ")})` : ""}${v.note ? ` — ${v.note}` : ""}`).join("\n")}` : ""}
 
 ${withImages.length ? `নিচে কিছু "রেফারেন্স ছবি" দেওয়া হলো। ইউজারের পাঠানো ছবি যদি কোনো রেফারেন্স ছবির মতো একই স্ক্রিন/এরর/সমস্যা দেখায়, তবে ঠিক সেই টপিকের উত্তরটাই দেবে:
 ${withImages.map((f, i) => `রেফারেন্স ছবি ${i + 1} = [${f.topic}]`).join("\n")}` : ""}
@@ -209,11 +252,12 @@ ${opts.warnCount ? `এই ইউজার ইতিমধ্যে ${opts.warnC
 - should_warn: abuse/scam/spam হলে true
 - uid: মেসেজ বা ছবিতে Good-App UID (শুধু সংখ্যা, যেমন 4100) বা ৭ অক্ষরের রেফার কোড থাকলে সেটি, নাহলে null
 - needs_uid: ইউজার যদি নিজের একাউন্ট সম্পর্কিত সমস্যার কথা বলে (রেফার কাউন্ট, ব্যালেন্স, উইথড্র, ভেরিফাই, মাইনিং, হিসাব ইত্যাদি) কিন্তু কোনো UID দেয়নি — তাহলে true
-- intent: স্লট রিসেট/খালি/ক্লিয়ার চাইলে "slot_reset"; ছবি/ফটো/স্ক্রিনশট/key দেখতে চাইলে "photo_request"; ভিডিও/টিউটোরিয়াল চাইলে "video_request"; নাহলে null
+- intent: স্লট রিসেট/খালি/ক্লিয়ার চাইলে "slot_reset"; ছবি/ফটো/স্ক্রিনশট/key দেখতে চাইলে "photo_request"; ভিডিও/টিউটোরিয়াল চাইলে "video_request"; ভয়েস/অডিও/মুখে বলে বোঝাতে চাইলে "voice_request"; নাহলে null
+- media_topic: উপরের ভয়েস/ভিডিও লাইব্রেরির কোনো টপিক এই সমস্যার সাথে মিললে হুবহু সেই টপিকের নাম, নাহলে null
 - slot: মেসেজে স্লট নম্বর বলা থাকলে সেই সংখ্যা, নাহলে null
 - মনে রাখবে: intent = "slot_reset" হলে reply অবশ্যই null দেবে (বট নিজেই পরের ধাপ চালাবে)।
 
-শুধু JSON দাও: {"verdict":"...","reply":null,"should_delete":false,"should_warn":false,"uid":null,"needs_uid":false,"intent":null,"slot":null,"escalate":false}`;
+শুধু JSON দাও: {"verdict":"...","reply":null,"should_delete":false,"should_warn":false,"uid":null,"needs_uid":false,"intent":null,"slot":null,"media_topic":null,"escalate":false}`;
 
 
   const content: any[] = [
@@ -257,7 +301,7 @@ ${opts.warnCount ? `এই ইউজার ইতিমধ্যে ${opts.warnC
 
   const verdict = ["ok", "question", "spam", "abuse", "scam"].includes(parsed.verdict)
     ? parsed.verdict : "ok";
-  const intent = ["slot_reset", "photo_request", "video_request"].includes(parsed.intent)
+  const intent = ["slot_reset", "photo_request", "video_request", "voice_request"].includes(parsed.intent)
     ? parsed.intent : null;
   return {
     verdict,
@@ -269,8 +313,46 @@ ${opts.warnCount ? `এই ইউজার ইতিমধ্যে ${opts.warnC
     intent,
     slot: Number.isFinite(Number(parsed.slot)) && Number(parsed.slot) >= 1 && Number(parsed.slot) <= 500
       ? Number(parsed.slot) : null,
+    media_topic: typeof parsed.media_topic === "string" && parsed.media_topic.trim()
+      ? parsed.media_topic.trim() : null,
     escalate: !!parsed.escalate,
   };
+}
+
+/** Friendly generic troubleshooting answer when nothing specific matches. */
+export function genericHelpReply(name: string): string {
+  const openers = [
+    `${name}, চিন্তার কিছু নেই 🙂 বেশিরভাগ সময় ছোট একটা টেকনিক্যাল ঝামেলার কারণেই এমন হয়।`,
+    `আচ্ছা ${name}, দেখুন তো নিচের ধাপগুলো করে 👇 সাধারণত এতেই সমস্যা ঠিক হয়ে যায়।`,
+    `${name} ভাই, এটা খুব common একটা সমস্যা 😊 নিচের নিয়মে চেষ্টা করলেই কাজ হয়ে যাওয়ার কথা।`,
+  ];
+  const closers = [
+    `এরপরও না হলে জানাবেন — আমরা পাশে আছি 💙`,
+    `তারপরও সমস্যা থাকলে আবার মেসেজ দিন, আমরা দেখে দেব 🤝`,
+    `এতেও কাজ না হলে একটু পরে আবার চেষ্টা করুন, তারপর জানাবেন 🙂`,
+  ];
+  const pick = (a: string[]) => a[Math.floor(Math.random() * a.length)];
+  return (
+    `${pick(openers)}\n\n` +
+    `<b>১️⃣</b> ফোনটা একবার <b>বন্ধ করে আবার চালু</b> করুন।\n` +
+    `<b>২️⃣</b> অ্যাপ/ব্রাউজারের <b>ক্যাশ ক্লিয়ার</b> করে আবার ঢুকুন।\n` +
+    `<b>৩️⃣</b> এবার <b>অন্য একটি ব্রাউজার</b> দিয়ে চেষ্টা করুন — যেমন <b>Firefox</b>, <b>Opera</b> বা <b>Mises</b>। ` +
+    `Chrome-এ না হলে Play Store থেকে অন্য একটি ব্রাউজার নামিয়ে সেখান দিয়ে ট্রাই করুন।\n` +
+    `<b>৪️⃣</b> ভালো ইন্টারনেট (WiFi বা 4G) দিয়ে চেষ্টা করুন, এবং ভেরিফাইয়ের সময় মুখে যেন <b>পর্যাপ্ত আলো</b> থাকে।\n\n` +
+    `${pick(closers)}`
+  );
+}
+
+/** Read a stored voice note from the private `tg-voice` bucket. */
+export async function voiceBytes(path: string): Promise<Uint8Array | null> {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin.storage.from("tg-voice").download(path);
+    if (error || !data) return null;
+    return new Uint8Array(await data.arrayBuffer());
+  } catch {
+    return null;
+  }
 }
 
 /** Varied, human-sounding refusal when someone asks for a stored photo/key. */
