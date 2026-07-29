@@ -4,16 +4,18 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   Bot, Loader2, Save, Plus, Trash2, ShieldAlert, MessageSquare, Link2, CheckCircle2, XCircle,
+  Image as ImageIcon, Search, Send,
 } from "lucide-react";
 import {
   tgGetSettings, tgSaveSettings, tgRegisterWebhook,
-  tgListFaq, tgUpsertFaq, tgDeleteFaq,
+  tgListFaq, tgUpsertFaq, tgDeleteFaq, tgLookupUid, tgSendToGroup,
   tgListBanRequests, tgResolveBanRequest, tgUnban, tgRecentMessages,
 } from "@/lib/telegram-bot.functions";
 
+
 export const Route = createFileRoute("/admin/telegram")({ component: TelegramAdmin });
 
-type Tab = "settings" | "faq" | "bans" | "log";
+type Tab = "settings" | "faq" | "lookup" | "bans" | "log";
 
 function TelegramAdmin() {
   const [tab, setTab] = useState<Tab>("settings");
@@ -31,7 +33,7 @@ function TelegramAdmin() {
 
       <div className="flex gap-2 overflow-x-auto -mx-4 px-4 pb-1 scrollbar-none">
         {([
-          ["settings", "সেটিংস"], ["faq", "উত্তর/নিয়ম"],
+          ["settings", "সেটিংস"], ["faq", "উত্তর/নিয়ম"], ["lookup", "UID লুকআপ"],
           ["bans", "Ban requests"], ["log", "Activity"],
         ] as [Tab, string][]).map(([k, label]) => (
           <button key={k} onClick={() => setTab(k)}
@@ -45,8 +47,10 @@ function TelegramAdmin() {
 
       {tab === "settings" && <SettingsPanel />}
       {tab === "faq" && <FaqPanel />}
+      {tab === "lookup" && <LookupPanel />}
       {tab === "bans" && <BansPanel />}
       {tab === "log" && <LogPanel />}
+
     </div>
   );
 }
@@ -91,6 +95,8 @@ function SettingsPanel() {
         moderation_enabled: !!form.moderation_enabled,
         photo_analysis_enabled: !!form.photo_analysis_enabled,
         delete_bad_messages: !!form.delete_bad_messages,
+        uid_lookup_enabled: form.uid_lookup_enabled !== false,
+        ask_uid_message: form.ask_uid_message ?? "",
         group_chat_id: form.group_chat_id?.trim() || null,
         admin_chat_id: form.admin_chat_id?.trim() || null,
         admin_mention: form.admin_mention?.trim() || null,
@@ -99,6 +105,7 @@ function SettingsPanel() {
         warn_threshold: Number(form.warn_threshold) || 3,
         banned_words: String(form.banned_words_text ?? "")
           .split(",").map((s) => s.trim()).filter(Boolean).slice(0, 300),
+
       },
     }),
     onSuccess: () => { toast.success("সেভ হয়েছে"); qc.invalidateQueries({ queryKey: ["tg-settings"] }); },
@@ -147,7 +154,10 @@ function SettingsPanel() {
         <Toggle label="মডারেশন" hint="স্প্যাম/গালি ধরবে ও সতর্ক করবে" value={!!form.moderation_enabled} onChange={(v) => set("moderation_enabled", v)} />
         <Toggle label="ছবি বিশ্লেষণ" hint="স্ক্রিনশট দেখে উত্তর দেবে" value={!!form.photo_analysis_enabled} onChange={(v) => set("photo_analysis_enabled", v)} />
         <Toggle label="খারাপ মেসেজ ডিলিট" value={!!form.delete_bad_messages} onChange={(v) => set("delete_bad_messages", v)} />
+        <Toggle label="UID লুকআপ" hint="UID পেলে সাথে সাথে একাউন্টের সব তথ্য গ্রুপে দেবে"
+          value={form.uid_lookup_enabled !== false} onChange={(v) => set("uid_lookup_enabled", v)} />
       </div>
+
 
       <div className="glass rounded-2xl p-4 space-y-3">
         <Field label="Group chat ID" hint="খালি রাখলে সব চ্যাটে কাজ করবে"
@@ -158,8 +168,11 @@ function SettingsPanel() {
           value={form.admin_mention ?? ""} onChange={(v) => set("admin_mention", v)} />
         <Field label="কত সতর্কতার পর ban request" type="number"
           value={String(form.warn_threshold ?? 3)} onChange={(v) => set("warn_threshold", v)} />
+        <Area label="UID চাওয়ার মেসেজ" rows={2}
+          value={form.ask_uid_message ?? ""} onChange={(v) => set("ask_uid_message", v)} />
         <Area label="Bot এর পরিচয় / আচরণ" rows={4} value={form.persona ?? ""} onChange={(v) => set("persona", v)} />
         <Area label="গ্রুপের নিয়ম (bot এগুলো মানবে ও শেখাবে)" rows={6} value={form.rules ?? ""} onChange={(v) => set("rules", v)} />
+
         <Area label="নিষিদ্ধ শব্দ (কমা দিয়ে আলাদা)" rows={3}
           value={form.banned_words_text ?? ""} onChange={(v) => set("banned_words_text", v)} />
         <button onClick={() => save.mutate()} disabled={save.isPending}
@@ -200,10 +213,26 @@ function FaqPanel() {
   const qc = useQueryClient();
   const { data, isLoading } = useQuery({ queryKey: ["tg-faq"], queryFn: () => tgListFaq() });
   const [draft, setDraft] = useState({ topic: "", keywords: "", answer: "", priority: 0 });
+  const [img, setImg] = useState<{ b64: string; preview: string } | null>(null);
+
+  const pickImage = async (file: File | undefined) => {
+    if (!file) return;
+    if (file.size > 6_000_000) { toast.error("ছবি ৬MB এর কম দিন"); return; }
+    const buf = await file.arrayBuffer();
+    let bin = "";
+    const bytes = new Uint8Array(buf);
+    for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+    setImg({ b64: btoa(bin), preview: URL.createObjectURL(file) });
+  };
 
   const upsert = useMutation({
     mutationFn: (v: any) => tgUpsertFaq({ data: v }),
-    onSuccess: () => { toast.success("সেভ হয়েছে"); setDraft({ topic: "", keywords: "", answer: "", priority: 0 }); qc.invalidateQueries({ queryKey: ["tg-faq"] }); },
+    onSuccess: () => {
+      toast.success("সেভ হয়েছে");
+      setDraft({ topic: "", keywords: "", answer: "", priority: 0 });
+      setImg(null);
+      qc.invalidateQueries({ queryKey: ["tg-faq"] });
+    },
     onError: (e: any) => toast.error(e.message),
   });
   const del = useMutation({
@@ -217,19 +246,40 @@ function FaqPanel() {
         <h3 className="font-black text-sm flex items-center gap-2"><Plus className="w-4 h-4 text-emerald" /> নতুন উত্তর যোগ করুন</h3>
         <p className="text-[10px] text-muted-foreground">
           এখানে যা লিখবেন, bot ঠিক সেটাই ব্যবহার করে উত্তর দেবে — বাইরের তথ্য বানাবে না।
+          ছবি যোগ করলে ইউজার একই রকম স্ক্রিনশট পাঠালে bot এই উত্তরটিই দেবে।
         </p>
         <Field label="বিষয়" value={draft.topic} onChange={(v) => setDraft({ ...draft, topic: v })} />
         <Field label="কীওয়ার্ড (কমা দিয়ে)" value={draft.keywords} onChange={(v) => setDraft({ ...draft, keywords: v })} />
         <Area label="উত্তর" rows={5} value={draft.answer} onChange={(v) => setDraft({ ...draft, answer: v })} />
+
+        <div>
+          <label className="block text-[11px] font-black mb-1">রেফারেন্স স্ক্রিনশট (ঐচ্ছিক)</label>
+          <div className="flex items-center gap-2">
+            <label className="flex-1 cursor-pointer rounded-xl border border-dashed border-border bg-surface-2 px-3 py-2.5 text-[11px] font-black text-center">
+              <ImageIcon className="w-3.5 h-3.5 inline mr-1 text-cyan" />
+              {img ? "ছবি বদলান" : "ছবি নির্বাচন করুন"}
+              <input type="file" accept="image/*" className="hidden"
+                onChange={(e) => pickImage(e.target.files?.[0])} />
+            </label>
+            {img && (
+              <button onClick={() => setImg(null)} className="p-2 rounded-lg bg-surface-2 border border-border">
+                <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+              </button>
+            )}
+          </div>
+          {img && <img src={img.preview} alt="preview" className="mt-2 h-28 rounded-xl border border-border object-cover" />}
+        </div>
+
         <button
           onClick={() => draft.topic.trim() && draft.answer.trim() && upsert.mutate({
             topic: draft.topic.trim(),
             keywords: draft.keywords.split(",").map((s) => s.trim()).filter(Boolean),
             answer: draft.answer.trim(), priority: 0, is_active: true,
+            image_base64: img?.b64 ?? null,
           })}
           disabled={upsert.isPending}
           className="w-full py-2.5 rounded-xl gradient-cta font-black text-sm disabled:opacity-50">
-          যোগ করুন
+          {upsert.isPending ? "সেভ হচ্ছে…" : "যোগ করুন"}
         </button>
       </div>
 
@@ -248,18 +298,79 @@ function FaqPanel() {
                   {f.keywords?.length > 0 && (
                     <p className="text-[10px] text-cyan mt-1">🔑 {f.keywords.join(", ")}</p>
                   )}
+                  {f.image_url && (
+                    <img src={f.image_url} alt={f.topic}
+                      className="mt-2 h-24 rounded-lg border border-border object-cover" />
+                  )}
                 </div>
                 <button onClick={() => del.mutate(f.id)} className="shrink-0 p-2 rounded-lg bg-surface-2">
                   <Trash2 className="w-3.5 h-3.5 text-rose-400" />
                 </button>
               </div>
             </div>
+
           ))}
         </div>
       )}
     </div>
   );
 }
+
+function LookupPanel() {
+  const [uid, setUid] = useState("");
+  const [card, setCard] = useState<string | null>(null);
+
+  const look = useMutation({
+    mutationFn: () => tgLookupUid({ data: { uid: uid.trim() } }),
+    onSuccess: (r: any) => {
+      if (r.ok) setCard(r.card);
+      else { setCard(null); toast.error("এই UID তে কোনো একাউন্ট নেই"); }
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const send = useMutation({
+    mutationFn: () => tgSendToGroup({ data: { text: card! } }),
+    onSuccess: (r: any) => r.ok ? toast.success("গ্রুপে পাঠানো হয়েছে ✅") : toast.error(r.error),
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  return (
+    <div className="space-y-3">
+      <div className="glass rounded-2xl p-4 space-y-2">
+        <h3 className="font-black text-sm flex items-center gap-2">
+          <Search className="w-4 h-4 text-cyan" /> UID দিয়ে একাউন্ট দেখুন
+        </h3>
+        <p className="text-[10px] text-muted-foreground">
+          bot গ্রুপে ঠিক এই তথ্যটাই পাঠায়। এখান থেকে যাচাই করে চাইলে নিজেও গ্রুপে পাঠাতে পারেন।
+        </p>
+        <div className="flex gap-2">
+          <input value={uid} onChange={(e) => setUid(e.target.value)}
+            placeholder="UID বা রেফার কোড"
+            className="flex-1 px-3 py-2 rounded-xl bg-surface-2 border border-border text-sm outline-none focus:border-amber" />
+          <button onClick={() => uid.trim() && look.mutate()} disabled={look.isPending}
+            className="px-4 rounded-xl gradient-cta font-black text-xs disabled:opacity-50">
+            {look.isPending ? "…" : "খুঁজুন"}
+          </button>
+        </div>
+      </div>
+
+      {card && (
+        <div className="glass rounded-2xl p-4 space-y-3">
+          <pre className="text-[11px] whitespace-pre-wrap leading-relaxed font-[inherit]">
+            {card.replace(/<\/?[^>]+>/g, "")}
+          </pre>
+          <button onClick={() => send.mutate()} disabled={send.isPending}
+            className="w-full py-2.5 rounded-xl bg-surface-2 border border-border font-black text-xs flex items-center justify-center gap-2">
+            <Send className="w-3.5 h-3.5 text-cyan" /> {send.isPending ? "পাঠানো হচ্ছে…" : "গ্রুপে পাঠান"}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 
 function BansPanel() {
   const qc = useQueryClient();

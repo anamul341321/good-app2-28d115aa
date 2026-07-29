@@ -29,6 +29,8 @@ const settingsSchema = z.object({
   moderation_enabled: z.boolean(),
   photo_analysis_enabled: z.boolean(),
   delete_bad_messages: z.boolean(),
+  uid_lookup_enabled: z.boolean(),
+  ask_uid_message: z.string().max(600),
   group_chat_id: z.string().max(64).nullable(),
   admin_chat_id: z.string().max(64).nullable(),
   admin_mention: z.string().max(64).nullable(),
@@ -37,6 +39,7 @@ const settingsSchema = z.object({
   banned_words: z.array(z.string().max(60)).max(300),
   warn_threshold: z.number().int().min(1).max(20),
 });
+
 
 export const tgSaveSettings = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => settingsSchema.parse(i))
@@ -64,7 +67,16 @@ export const tgListFaq = createServerFn({ method: "GET" }).handler(async () => {
   const db = await guard();
   const { data } = await db.from("tg_faq").select("*")
     .order("priority", { ascending: false }).order("id");
-  return data ?? [];
+  const rows = (data ?? []) as any[];
+  // Signed preview URLs for stored reference screenshots.
+  await Promise.all(
+    rows.map(async (r) => {
+      if (!r.image_path) return;
+      const { data: s } = await db.storage.from("tg-faq").createSignedUrl(r.image_path, 3600);
+      r.image_url = s?.signedUrl ?? null;
+    }),
+  );
+  return rows;
 });
 
 export const tgUpsertFaq = createServerFn({ method: "POST" })
@@ -75,13 +87,30 @@ export const tgUpsertFaq = createServerFn({ method: "POST" })
     answer: z.string().trim().min(1).max(4000),
     priority: z.number().int().min(0).max(100),
     is_active: z.boolean(),
+    // base64 (no data: prefix) of a newly uploaded reference screenshot
+    image_base64: z.string().max(9_000_000).nullable().optional(),
+    remove_image: z.boolean().optional(),
   }).parse(i))
   .handler(async ({ data }) => {
     const db = await guard();
-    const row = { ...data, updated_at: new Date().toISOString() };
+    const { image_base64, remove_image, ...rest } = data;
+    const row: Record<string, unknown> = { ...rest, updated_at: new Date().toISOString() };
+
+    if (image_base64) {
+      const path = `faq/${crypto.randomUUID()}.jpg`;
+      const bytes = Buffer.from(image_base64, "base64");
+      const { error: upErr } = await db.storage.from("tg-faq")
+        .upload(path, bytes, { contentType: "image/jpeg", upsert: false });
+      if (upErr) throw new Error(upErr.message);
+      row.image_path = path;
+    } else if (remove_image) {
+      row.image_path = null;
+    }
+
     const { error } = data.id
-      ? await db.from("tg_faq").update(row).eq("id", data.id)
-      : await db.from("tg_faq").insert(row);
+      ? await db.from("tg_faq").update(row as any).eq("id", data.id)
+      : await db.from("tg_faq").insert(row as any);
+
     if (error) throw new Error(error.message);
     return { ok: true as const };
   });
@@ -90,9 +119,39 @@ export const tgDeleteFaq = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data }) => {
     const db = await guard();
+    const { data: row } = await db.from("tg_faq").select("image_path").eq("id", data.id).maybeSingle();
+    if ((row as any)?.image_path) {
+      await db.storage.from("tg-faq").remove([(row as any).image_path]);
+    }
     await db.from("tg_faq").delete().eq("id", data.id);
     return { ok: true as const };
   });
+
+// ---- Manual UID lookup from the admin panel -------------------------------
+
+export const tgLookupUid = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => z.object({ uid: z.string().trim().min(1).max(30) }).parse(i))
+  .handler(async ({ data }) => {
+    await guard();
+    const { buildUserCard } = await import("@/lib/telegram-lookup.server");
+    const res = await buildUserCard(data.uid);
+    return res.found ? { ok: true as const, card: res.card } : { ok: false as const };
+  });
+
+// ---- Send a message to the group from the admin panel ---------------------
+
+export const tgSendToGroup = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => z.object({ text: z.string().trim().min(1).max(4000) }).parse(i))
+  .handler(async ({ data }) => {
+    const db = await guard();
+    const { data: s } = await db.from("tg_bot_settings").select("group_chat_id").eq("id", "default").maybeSingle();
+    const chat = (s as any)?.group_chat_id;
+    if (!chat) return { ok: false as const, error: "Group chat ID সেট করা নেই" };
+    const { sendMessage } = await import("@/lib/telegram-bot.server");
+    const res = await sendMessage(chat, data.text);
+    return res ? { ok: true as const } : { ok: false as const, error: "পাঠানো যায়নি" };
+  });
+
 
 // ---- Ban requests ---------------------------------------------------------
 

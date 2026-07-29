@@ -541,6 +541,7 @@ export type Database = {
         Row: {
           admin_chat_id: string | null
           admin_mention: string | null
+          ask_uid_message: string
           auto_reply_enabled: boolean
           banned_words: string[]
           created_at: string
@@ -552,12 +553,14 @@ export type Database = {
           persona: string
           photo_analysis_enabled: boolean
           rules: string
+          uid_lookup_enabled: boolean
           updated_at: string
           warn_threshold: number
         }
         Insert: {
           admin_chat_id?: string | null
           admin_mention?: string | null
+          ask_uid_message?: string
           auto_reply_enabled?: boolean
           banned_words?: string[]
           created_at?: string
@@ -569,12 +572,14 @@ export type Database = {
           persona?: string
           photo_analysis_enabled?: boolean
           rules?: string
+          uid_lookup_enabled?: boolean
           updated_at?: string
           warn_threshold?: number
         }
         Update: {
           admin_chat_id?: string | null
           admin_mention?: string | null
+          ask_uid_message?: string
           auto_reply_enabled?: boolean
           banned_words?: string[]
           created_at?: string
@@ -586,6 +591,7 @@ export type Database = {
           persona?: string
           photo_analysis_enabled?: boolean
           rules?: string
+          uid_lookup_enabled?: boolean
           updated_at?: string
           warn_threshold?: number
         }
@@ -596,6 +602,7 @@ export type Database = {
           answer: string
           created_at: string
           id: string
+          image_path: string | null
           is_active: boolean
           keywords: string[]
           priority: number
@@ -606,6 +613,7 @@ export type Database = {
           answer: string
           created_at?: string
           id?: string
+          image_path?: string | null
           is_active?: boolean
           keywords?: string[]
           priority?: number
@@ -616,6 +624,7 @@ export type Database = {
           answer?: string
           created_at?: string
           id?: string
+          image_path?: string | null
           is_active?: boolean
           keywords?: string[]
           priority?: number

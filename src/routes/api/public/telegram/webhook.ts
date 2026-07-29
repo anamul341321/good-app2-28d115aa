@@ -7,7 +7,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
       POST: async ({ request }) => {
         const {
           getBotToken, webhookSecretFor, sendMessage, deleteMessage,
-          restrictUser, getPhotoBase64, decide,
+          restrictUser, getPhotoBase64, decide, faqImageBase64,
         } = await import("@/lib/telegram-bot.server");
 
         let expected: string;
@@ -52,24 +52,37 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         const hardHit = bannedWords.find((w) => w && lower.includes(w.toLowerCase()));
 
         const { data: faqRows } = await supabaseAdmin
-          .from("tg_faq").select("topic, answer, keywords").eq("is_active", true)
+          .from("tg_faq").select("topic, answer, keywords, image_path").eq("is_active", true)
           .order("priority", { ascending: false }).order("id");
-        const faq = (faqRows ?? []).map((f: any) => ({ topic: f.topic, answer: f.answer }));
 
         let photoBase64: string | null = null;
         if (settings.photo_analysis_enabled && photos?.length) {
           photoBase64 = await getPhotoBase64(photos[photos.length - 1].file_id);
         }
 
+        // Reference screenshots are only loaded when the user actually sent a photo.
+        const faq: any[] = [];
+        let imgBudget = 6;
+        for (const f of faqRows ?? []) {
+          let imageBase64: string | null = null;
+          if (photoBase64 && (f as any).image_path && imgBudget > 0) {
+            imageBase64 = await faqImageBase64((f as any).image_path);
+            if (imageBase64) imgBudget--;
+          }
+          faq.push({ topic: f.topic, answer: f.answer, keywords: (f as any).keywords, imageBase64 });
+        }
+
         let decision = {
           verdict: "ok" as const, reply: null as string | null,
           should_delete: false, should_warn: false, uid: null as string | null,
+          needs_uid: false,
         } as Awaited<ReturnType<typeof decide>>;
 
         if (hardHit) {
           decision = {
             verdict: "abuse", reply: null,
             should_delete: !!settings.delete_bad_messages, should_warn: true, uid: null,
+            needs_uid: false,
           };
         } else if (text.trim() || photoBase64) {
           try {
@@ -86,6 +99,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             console.error("[tg] decide failed", e);
           }
         }
+
 
         const actions: string[] = [];
 
@@ -169,6 +183,41 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           await sendMessage(chatId, decision.reply, msg.message_id);
           actions.push("replied");
         }
+
+        // ---- UID lookup: instant account card in the group --------------------
+        if ((settings as any).uid_lookup_enabled !== false && !decision.should_delete) {
+          const inline = text.match(/\b(\d{2,9})\b/);
+          const candidate = decision.uid || (decision.needs_uid ? null : inline?.[1] ?? null);
+
+          if (candidate) {
+            const { buildUserCard } = await import("@/lib/telegram-lookup.server");
+            try {
+              const res = await buildUserCard(candidate);
+              if (res.found) {
+                await sendMessage(chatId, res.card, msg.message_id);
+                actions.push("uid-card");
+                matchedUid = candidate;
+              } else if (decision.verdict === "question") {
+                await sendMessage(
+                  chatId,
+                  `❌ UID <code>${candidate}</code> দিয়ে কোনো একাউন্ট পাওয়া যায়নি। অ্যাপের প্রোফাইল পেজ থেকে সঠিক UID টি দেখে আবার লিখুন।`,
+                  msg.message_id,
+                );
+                actions.push("uid-notfound");
+              }
+            } catch (e) {
+              console.error("[tg] uid lookup failed", e);
+            }
+          } else if (decision.needs_uid && settings.auto_reply_enabled) {
+            await sendMessage(
+              chatId,
+              `🔎 ${(settings as any).ask_uid_message || "আপনার Good-App UID টি লিখুন।"}`,
+              msg.message_id,
+            );
+            actions.push("asked-uid");
+          }
+        }
+
 
         await supabaseAdmin.from("tg_messages").insert({
           update_id: update.update_id,
