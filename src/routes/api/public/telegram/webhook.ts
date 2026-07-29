@@ -57,10 +57,24 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           const code = s.match(/\b([A-Za-z0-9]{7})\b/);
           return code ? code[1].toUpperCase() : null;
         };
-        const pickSlot = (s: string): number | null => {
-          const m2 = s.match(/\b([1-9]|10)\b/);
-          return m2 ? Number(m2[1]) : null;
+        // Accepts: "3", "5 ta", "2,3,4", "২-৫", "3 4 7", "সব"/"all"
+        const wantsAll = /(সব|সবগুলো|সবগুলা|all|full)/i.test(norm);
+        const pickSlots = (s: string): number[] => {
+          const out: number[] = [];
+          const range = s.matchAll(/\b(\d{1,3})\s*(?:-|–|to|থেকে)\s*(\d{1,3})\b/g);
+          let rest = s;
+          for (const r of range) {
+            const a = Number(r[1]), b = Number(r[2]);
+            if (a >= 1 && b >= a && b - a < 100) for (let i = a; i <= b; i++) out.push(i);
+            rest = rest.replace(r[0], " ");
+          }
+          for (const m2 of rest.matchAll(/\b(\d{1,3})\b/g)) {
+            const n = Number(m2[1]);
+            if (n >= 1 && n <= 500) out.push(n);
+          }
+          return Array.from(new Set(out));
         };
+        const pickSlot = (s: string): number | null => pickSlots(s)[0] ?? null;
         const isCancel = /(বাতিল|cancel|থাক|লাগবে না)/i.test(norm);
 
         const logMessage = async (verdict: string, action: string, reply: string | null, uid: string | null) => {
@@ -96,28 +110,110 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           } as any, { onConflict: "tg_user_id,chat_id" });
         };
 
-        const doReset = async (uid: string, slot: number) => {
-          const { resetSlotForUid } = await import("@/lib/telegram-slot.server");
-          const res = await resetSlotForUid(uid, slot);
-          if (res.ok) {
-            await clearSession();
+        const doReset = async (uid: string, slots: number[]) => {
+          const { resetSlotsForUid, listSlotNumbers } = await import("@/lib/telegram-slot.server");
+          const list = slots.length ? slots : await listSlotNumbers(uid);
+          const res = await resetSlotsForUid(uid, list);
+
+          if (!res.found) {
+            await sendMessage(chatId, `❌ UID <code>${uid}</code> দিয়ে কোনো একাউন্ট পাওয়া যায়নি।`, msg.message_id);
+            await logMessage("question", "slot-reset-failed", "uid not found", uid);
+            return false;
+          }
+
+          await clearSession();
+          const okLine = res.done.length
+            ? `✅ রিসেট হয়েছে: <b>${res.done.map((s) => `স্লট ${s}`).join(", ")}</b>`
+            : "⚠️ কোনো স্লট রিসেট করা যায়নি।";
+          const failLine = res.failed.length
+            ? `\n❌ পারা যায়নি: ${res.failed.map((f) => `স্লট ${f.slot} (${f.error})`).join(", ")}`
+            : "";
+
+          await sendMessage(
+            chatId,
+            `🔄 <b>স্লট রিসেট রিপোর্ট</b>\n\n` +
+              `👤 একাউন্ট: <b>${res.name}</b>\n🆔 UID: <code>${uid}</code>\n\n` +
+              okLine + failLine +
+              (res.done.length
+                ? `\n\nএই স্লটগুলো এখন সম্পূর্ণ খালি — পুরোনো ফেস ও key মুছে ফেলা হয়েছে।\n` +
+                  `👉 অ্যাপে গিয়ে নতুন করে ফেস ভেরিফিকেশন করুন (একবার রিফ্রেশ দিন)।`
+                : ""),
+            msg.message_id,
+          );
+          await logMessage("question", `slot-reset:${res.done.join("|") || "none"}`, "slot reset", uid);
+          return res.done.length > 0;
+        };
+
+        // ---- admin login inside Telegram: /admin <password> -------------------
+        const isAdminUser = async () => {
+          if (!msg.from?.id) return false;
+          const { data } = await supabaseAdmin
+            .from("tg_sessions").select("expires_at")
+            .eq("tg_user_id", msg.from.id).eq("intent", "admin")
+            .gt("expires_at", new Date().toISOString()).limit(1);
+          return !!data?.length;
+        };
+
+        const adminCmd = norm.match(/^\/admin(?:@\w+)?\s+(.+)$/i);
+        if (adminCmd && msg.from?.id) {
+          const pass = adminCmd[1].trim();
+          const { passwordMatches, hashMatches } = await import("@/lib/admin-session.server");
+          const { data: row } = await supabaseAdmin
+            .from("admin_settings").select("password_hash").eq("id", "default").maybeSingle();
+          const ok = row?.password_hash
+            ? hashMatches(pass, row.password_hash)
+            : !!process.env.ADMIN_PASSWORD && passwordMatches(pass, process.env.ADMIN_PASSWORD);
+
+          // Never leave the password visible in the chat.
+          await deleteMessage(chatId, msg.message_id).catch(() => {});
+
+          if (ok) {
+            await supabaseAdmin.from("tg_sessions").upsert({
+              tg_user_id: msg.from.id,
+              chat_id: msg.chat.id,
+              intent: "admin",
+              step: "authed",
+              uid: null,
+              app_user_id: null,
+              expires_at: new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString(),
+              updated_at: new Date().toISOString(),
+            } as any, { onConflict: "tg_user_id,chat_id" });
             await sendMessage(
               chatId,
-              `✅ <b>স্লট ${res.slot} রিসেট সম্পন্ন হয়েছে</b>\n\n` +
-                `👤 একাউন্ট: <b>${res.name}</b>\n` +
-                `🆔 UID: <code>${uid}</code>\n\n` +
-                `স্লটটি এখন সম্পূর্ণ খালি — পুরোনো ফেস ও key মুছে ফেলা হয়েছে।\n` +
-                `👉 এখন অ্যাপে গিয়ে স্লট ${res.slot} এ নতুন করে ফেস ভেরিফিকেশন করুন।\n` +
-                `অ্যাপটি একবার রিফ্রেশ/বন্ধ করে খুললে নতুন অবস্থা দেখতে পাবেন।`,
-              msg.message_id,
+              `🔐 <b>অ্যাডমিন লগইন সফল</b> — ১২ ঘণ্টার জন্য চালু।\n\n` +
+                `কমান্ড:\n` +
+                `<code>/reset UID স্লট</code> — যেমন <code>/reset 4100 2,5,7</code> বা <code>/reset 4100 সব</code>\n` +
+                `<code>/logout</code> — লগআউট`,
             );
-            await logMessage("question", `slot-reset:${slot}`, "slot reset done", uid);
-            return true;
+            await logMessage("ok", "admin-login", null, null);
+          } else {
+            await sendMessage(chatId, "❌ পাসওয়ার্ড ভুল।");
+            await logMessage("ok", "admin-login-failed", null, null);
           }
-          await sendMessage(chatId, `❌ ${res.error}`, msg.message_id);
-          await logMessage("question", "slot-reset-failed", res.error, uid);
-          return false;
-        };
+          return Response.json({ ok: true, flow: "admin-login" });
+        }
+
+        if (/^\/logout\b/i.test(norm) && msg.from?.id) {
+          await supabaseAdmin.from("tg_sessions").delete()
+            .eq("tg_user_id", msg.from.id).eq("intent", "admin");
+          await sendMessage(chatId, "🔓 অ্যাডমিন লগআউট হয়েছে।", msg.message_id);
+          await logMessage("ok", "admin-logout", null, null);
+          return Response.json({ ok: true, flow: "admin-logout" });
+        }
+
+        const resetCmd = norm.match(/^\/reset(?:@\w+)?\s+(\S+)\s*(.*)$/i);
+        if (resetCmd) {
+          if (!(await isAdminUser())) {
+            await sendMessage(chatId, "🔐 এই কমান্ডটি শুধু অ্যাডমিনের জন্য। আগে <code>/admin আপনার-পাসওয়ার্ড</code> দিয়ে লগইন করুন (বটের প্রাইভেট চ্যাটে দিলে নিরাপদ)।", msg.message_id);
+            return Response.json({ ok: true, flow: "admin-required" });
+          }
+          const uidArg = resetCmd[1].replace(/\D/g, "") || resetCmd[1].toUpperCase();
+          const rest = resetCmd[2] ?? "";
+          await doReset(uidArg, /(সব|all)/i.test(rest) ? [] : pickSlots(rest));
+          return Response.json({ ok: true, flow: "admin-reset" });
+        }
+
+
 
         // ---- continue an in-progress slot-reset conversation -------------------
         if (msg.from?.id) {
@@ -156,17 +252,17 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
                 );
                 return Response.json({ ok: true, flow: "uid-notfound" });
               }
-              const slotNow = pickSlot(norm.replace(uid, " "));
-              if (slotNow) {
+              const slotsNow = pickSlots(norm.replace(uid, " "));
+              if (slotsNow.length || wantsAll) {
                 await saveSession({ step: "await_slot", uid, app_user_id: prof.id });
-                await doReset(uid, slotNow);
+                await doReset(uid, wantsAll ? [] : slotsNow);
                 return Response.json({ ok: true, flow: "reset" });
               }
               await saveSession({ step: "await_slot", uid, app_user_id: prof.id });
               await sendMessage(
                 chatId,
                 `✅ একাউন্ট পাওয়া গেছে: <b>${prof.display_name || "ইউজার"}</b> (UID <code>${uid}</code>)\n\n` +
-                  `🔢 ${settings.ask_slot_message || "কোন নম্বর স্লটটি রিসেট করতে চান? (১ থেকে ১০)"}`,
+                  `🔢 ${settings.ask_slot_message || "কোন কোন স্লট রিসেট করতে চান? এক বা একাধিক নম্বর লিখুন (যেমন: 3 অথবা 2,5,7 অথবা 2-6, সবগুলোর জন্য লিখুন \"সব\")"}`,
                 msg.message_id,
               );
               await logMessage("question", "asked-slot", null, uid);
@@ -174,18 +270,20 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             }
 
             if (sess.step === "await_slot" && sess.uid) {
-              const slot = pickSlot(norm);
-              if (!slot) {
+              const slots = pickSlots(norm);
+              if (!slots.length && !wantsAll) {
                 await sendMessage(
                   chatId,
-                  "🔢 অনুগ্রহ করে <b>১ থেকে ১০</b> এর মধ্যে স্লট নম্বরটি লিখুন (যেমন: 3)।",
+                  "🔢 স্লট নম্বর লিখুন — একটি (যেমন: 3), একাধিক (2,5,7), রেঞ্জ (2-6) অথবা সবগুলোর জন্য <b>সব</b>।",
                   msg.message_id,
                 );
                 return Response.json({ ok: true, flow: "await_slot" });
               }
-              await doReset(sess.uid, slot);
+              await doReset(sess.uid, wantsAll ? [] : slots);
               return Response.json({ ok: true, flow: "reset" });
             }
+
+
           }
         }
 
@@ -345,20 +443,21 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               );
               actions.push("slot-reset:uid-notfound");
             } else {
-              const slot = decision.slot ?? pickSlot(norm.replace(uid, " "));
+              const slots = pickSlots(norm.replace(uid, " "));
               await saveSession({ step: "await_slot", uid, app_user_id: prof.id });
-              if (slot) {
-                await doReset(uid, slot);
+              if (slots.length || wantsAll) {
+                await doReset(uid, wantsAll ? [] : slots);
                 actions.push("slot-reset:done");
               } else {
                 await sendMessage(
                   chatId,
                   `✅ একাউন্ট পাওয়া গেছে: <b>${prof.display_name || "ইউজার"}</b> (UID <code>${uid}</code>)\n\n` +
-                    `🔢 ${settings.ask_slot_message || "কোন নম্বর স্লটটি রিসেট করতে চান? (১ থেকে ১০)"}`,
+                    `🔢 ${settings.ask_slot_message || "কোন কোন স্লট রিসেট করতে চান? এক বা একাধিক নম্বর লিখুন (যেমন: 3 অথবা 2,5,7 অথবা 2-6, সবগুলোর জন্য লিখুন \"সব\")"}`,
                   msg.message_id,
                 );
                 actions.push("slot-reset:asked-slot");
               }
+
               matchedUid = uid;
             }
           } else {
