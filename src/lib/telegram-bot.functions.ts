@@ -108,8 +108,9 @@ export const tgUpsertFaq = createServerFn({ method: "POST" })
     }
 
     const { error } = data.id
-      ? await db.from("tg_faq").update(row).eq("id", data.id)
+      ? await db.from("tg_faq").update(row as any).eq("id", data.id)
       : await db.from("tg_faq").insert(row as any);
+
     if (error) throw new Error(error.message);
     return { ok: true as const };
   });
