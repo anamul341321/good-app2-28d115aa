@@ -1161,6 +1161,12 @@ function DailyReportPanel({ userId }: { userId: string }) {
 
 function buildReportHtml(d: any): string {
   const esc = (s: any) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
+  const maskPhone = (raw: any) => {
+    const s = String(raw ?? "").trim();
+    if (!s) return "—";
+    if (s.length <= 5) return "•".repeat(s.length);
+    return s.slice(0, 3) + "•".repeat(Math.max(4, s.length - 5)) + s.slice(-2);
+  };
   const genDate = new Date(d.generatedAt).toLocaleString("en-GB", { timeZone: "Asia/Dhaka" });
   const todayStr = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Dhaka" });
   const todayBn = new Date().toLocaleDateString("bn-BD", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Dhaka" });
