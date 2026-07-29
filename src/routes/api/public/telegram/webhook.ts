@@ -301,13 +301,15 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           // Everything this user said before — used both for smarter answers and
           // for finding the UID they gave earlier when they start misbehaving.
           let history: string[] = [];
+          let pastReplies: string[] = [];
           let knownUid: string | null = (offender as any)?.known_uid ?? null;
           if (msg.from?.id) {
             const { data: past } = await supabaseAdmin
-              .from("tg_messages").select("text, matched_uid, created_at")
+              .from("tg_messages").select("text, bot_reply, matched_uid, created_at")
               .eq("tg_user_id", msg.from.id)
               .order("created_at", { ascending: false }).limit(12);
             history = (past ?? []).map((p: any) => p.text).filter(Boolean).reverse().slice(-8);
+            pastReplies = (past ?? []).map((p: any) => p.bot_reply).filter(Boolean).slice(0, 4);
             if (!knownUid) knownUid = (past ?? []).find((p: any) => p.matched_uid)?.matched_uid ?? null;
           }
 
@@ -316,18 +318,22 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               persona: settings.persona,
               rules: settings.rules,
               faq,
+              videos: (videoRows ?? []) as any[],
               bannedWords,
               text,
               photoBase64,
               senderName,
               smart: (settings as any).smart_mode !== false,
               history,
+              pastReplies: (settings as any).reply_variety === false ? [] : pastReplies,
               knownUid,
               warnCount: (offender as any)?.warn_count ?? 0,
+              supportUsername: (settings as any).support_username || "@anamulmunni",
             });
           } catch (e) {
             console.error("[tg] decide failed", e);
           }
+
           
           (decision as any)._knownUid = knownUid;
         }
