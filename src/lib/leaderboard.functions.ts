@@ -83,7 +83,23 @@ export const getLeaderboards = createServerFn({ method: "GET" }).handler(async (
     .select("id, user_id, amount, provider, wallet_number, status, created_at, processed_at")
     .order("amount", { ascending: false })
     .limit(400);
-  const wRows = (wRowsRaw ?? []).filter((w: any) => !excludeIds.has(w.user_id)).slice(0, 200);
+  // Also pull ALL recent pending withdrawals so real users' pending requests
+  // are always visible in the feed until admin marks them paid.
+  const { data: pendingRaw } = await supabaseAdmin
+    .from("withdrawals")
+    .select("id, user_id, amount, provider, wallet_number, status, created_at, processed_at")
+    .eq("status", "pending")
+    .order("created_at", { ascending: false })
+    .limit(200);
+  const seen = new Set<string>();
+  const wRows: any[] = [];
+  for (const w of [...(pendingRaw ?? []), ...(wRowsRaw ?? [])]) {
+    if (excludeIds.has((w as any).user_id)) continue;
+    if (seen.has((w as any).id)) continue;
+    seen.add((w as any).id);
+    wRows.push(w);
+    if (wRows.length >= 200) break;
+  }
 
   // Full paid history for top-payees leaderboard — sum of paid amount per user.
   const paidByUser = new Map<string, number>();
@@ -253,7 +269,13 @@ export const getLeaderboards = createServerFn({ method: "GET" }).handler(async (
   const mergedRefs = [...realTopRef, ...fakeReferrers].sort((a, b) => b.count - a.count).slice(0, 10);
   const mergedVers = [...realTopVer, ...fakeVerified].sort((a, b) => b.count - a.count).slice(0, 10);
   const mergedPayees = [...topPayees, ...fakePayees].sort((a, b) => b.total - a.total).slice(0, 20);
-  const mergedWithdraws = [...withdraws, ...fakeWithdraws].sort((a, b) => b.amount - a.amount).slice(0, 200);
+  const realPending = withdraws.filter((w) => w.status === "pending");
+  const rest = [...withdraws.filter((w) => w.status !== "pending"), ...fakeWithdraws]
+    .sort((a, b) => b.amount - a.amount);
+  const mergedWithdraws = [
+    ...realPending.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
+    ...rest,
+  ].slice(0, 200);
 
   return {
     topReferrers: mergedRefs,
