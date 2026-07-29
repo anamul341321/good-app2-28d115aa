@@ -139,7 +139,15 @@ export type BotDecision = {
   uid: string | null;
   needs_uid: boolean;
   /** "slot_reset" when the user is asking to clear/restart a verification slot. */
-  intent: "slot_reset" | "photo_request" | "video_request" | "voice_request" | null;
+  intent:
+    | "slot_reset"
+    | "photo_request"
+    | "video_request"
+    | "voice_request"
+    | "withdraw_status"
+    | "earning_info"
+    | "verify_help"
+    | null;
   /** topic name of the saved voice/video the bot should send along with the reply */
   media_topic?: string | null;
   /** Slot number if the user already mentioned one. */
@@ -192,6 +200,8 @@ export async function decide(opts: {
   warnCount?: number;
   /** telegram username of the human support person */
   supportUsername?: string;
+  /** live app rules/rates knowledge block */
+  knowledge?: string;
 }): Promise<BotDecision> {
   const key = process.env.LOVABLE_API_KEY;
   if (!key) throw new Error("LOVABLE_API_KEY not configured");
@@ -204,6 +214,9 @@ export async function decide(opts: {
   const system = `${opts.persona}
 
 তুমি Good-App এর অফিসিয়াল সাপোর্ট অ্যাসিস্ট্যান্ট। তুমি একজন মানুষের মতো স্বাভাবিক, বন্ধুত্বপূর্ণ ও বুদ্ধিমান ভঙ্গিতে বাংলায় কথা বলবে।
+
+${opts.knowledge ?? ""}
+
 
 গ্রুপের নিয়ম:
 ${opts.rules || "(কোনো নিয়ম সেট করা নেই)"}
@@ -238,11 +251,15 @@ ${opts.warnCount ? `এই ইউজার ইতিমধ্যে ${opts.warnC
 💬 উত্তরের ধরন:
 - প্রতিবার আলাদা শব্দ/গঠনে লিখবে — রোবটের মতো একই লাইন বারবার নয়।
 - ছোট, পরিষ্কার, উষ্ণ; দরকারমতো ইমোজি; হুবহু কপি-পেস্ট নয়।
+- ❌ কখনোই লিখবে না "এই বিষয়ে অ্যাডমিন উত্তর দেবেন", "অ্যাডমিন শীঘ্রই জানাবেন", "অপেক্ষা করুন অ্যাডমিন আসবেন" — এসব বাক্য সম্পূর্ণ নিষিদ্ধ। তুমি নিজেই মূল উত্তরটা দেবে, শুধু আসল কথাটাই বলবে।
+- ভূমিকা/অপ্রয়োজনীয় লাইন বাদ দিয়ে সরাসরি কাজের উত্তর দেবে।
+- "কিভাবে টাকা পাবো / ইনকাম কিভাবে / বোনাস কত" জাতীয় প্রশ্নে উপরের আয়ের ধাপ ও রেটগুলো সুন্দর করে সাজিয়ে বুঝিয়ে দেবে (১০ স্লট ১ম ভেরিফাই → ৩/৪ দিন পর রি-ভেরিফাই → বোনাস ও মাইনিং)।
 - ইউজার যা-ই জানতে চাক (রেফার সংখ্যা, ব্যালেন্স, ভেরিফাই, উইথড্র, মাইনিং, নিয়ম) — জানার চেষ্টা করবে, এড়িয়ে যাবে না। একাউন্টভিত্তিক হলে UID চাইবে।
+- স্লট নিয়ে কথা বললে কখনো "১ থেকে ১০" বলবে না — ইউজারের ২৩/২৫ নম্বর স্লটও থাকতে পারে।
 
 তোমার কাজ: গ্রুপের একটি মেসেজ (এবং থাকলে ছবি/স্ক্রিনশট) বিশ্লেষণ করে সিদ্ধান্ত দাও।
 - verdict: "ok" (স্বাভাবিক), "question" (সাপোর্ট প্রশ্ন), "spam", "abuse" (গালি/আক্রমণ/অ্যাডমিনকে হুমকি), "scam" (প্রতারণা/ভুয়া অফার/লিংক)
-- reply: প্রশ্ন হলে বাংলায় সংক্ষিপ্ত, ভদ্র ও পরিষ্কার উত্তর (২-৫ লাইন), নাহলে null।${
+- reply: প্রশ্ন হলে বাংলায় সংক্ষিপ্ত, ভদ্র ও পরিষ্কার উত্তর (২-৬ লাইন), নাহলে null।${
     opts.smart
       ? ` উপরের জানা উত্তরে মিল থাকলে সেটাই নিজের ভাষায় বলবে। মিল না থাকলে নিজে পুরো অ্যাপের নিয়ম ও যুক্তি বিশ্লেষণ করে সহায়ক উত্তর বের করবে — কিন্তু টাকা, ব্যালেন্স, পেমেন্টের তারিখ নিয়ে কখনো বানানো তথ্য দেবে না।`
       : ` উত্তর অবশ্যই উপরের জানা উত্তর/নিয়ম থেকেই দিতে হবে।`
@@ -251,10 +268,10 @@ ${opts.warnCount ? `এই ইউজার ইতিমধ্যে ${opts.warnC
 - should_delete: spam/scam/abuse হলে true
 - should_warn: abuse/scam/spam হলে true
 - uid: মেসেজ বা ছবিতে Good-App UID (শুধু সংখ্যা, যেমন 4100) বা ৭ অক্ষরের রেফার কোড থাকলে সেটি, নাহলে null
-- needs_uid: ইউজার যদি নিজের একাউন্ট সম্পর্কিত সমস্যার কথা বলে (রেফার কাউন্ট, ব্যালেন্স, উইথড্র, ভেরিফাই, মাইনিং, হিসাব ইত্যাদি) কিন্তু কোনো UID দেয়নি — তাহলে true
-- intent: স্লট রিসেট/খালি/ক্লিয়ার চাইলে "slot_reset"; ছবি/ফটো/স্ক্রিনশট/key দেখতে চাইলে "photo_request"; ভিডিও/টিউটোরিয়াল চাইলে "video_request"; ভয়েস/অডিও/মুখে বলে বোঝাতে চাইলে "voice_request"; নাহলে null
+- needs_uid: ইউজার যদি নিজের একাউন্ট সম্পর্কিত সমস্যার কথা বলে (রেফার কাউন্ট, ব্যালেন্স, উইথড্র স্ট্যাটাস, ভেরিফাই, মাইনিং, হিসাব ইত্যাদি) কিন্তু কোনো UID দেয়নি — তাহলে true
+- intent: স্লট রিসেট/খালি/ক্লিয়ার চাইলে "slot_reset"; ছবি/ফটো/স্ক্রিনশট/key দেখতে চাইলে "photo_request"; ভিডিও/টিউটোরিয়াল চাইলে "video_request"; ভয়েস/অডিও চাইলে "voice_request"; "উইথড্র দিয়েছি টাকা আসেনি / কখন পাবো / পেমেন্ট কই" জাতীয় হলে "withdraw_status"; "কিভাবে টাকা পাবো / ইনকাম / বোনাস রেট" হলে "earning_info"; "একাউন্ট হয় না / ভেরিফাই হয় না / রি-ভেরিফাই হয় না / এরর আসে" হলে "verify_help"; নাহলে null
 - media_topic: উপরের ভয়েস/ভিডিও লাইব্রেরির কোনো টপিক এই সমস্যার সাথে মিললে হুবহু সেই টপিকের নাম, নাহলে null
-- slot: মেসেজে স্লট নম্বর বলা থাকলে সেই সংখ্যা, নাহলে null
+- slot: মেসেজে স্লট নম্বর বলা থাকলে সেই সংখ্যা (যেকোনো সংখ্যা হতে পারে), নাহলে null
 - মনে রাখবে: intent = "slot_reset" হলে reply অবশ্যই null দেবে (বট নিজেই পরের ধাপ চালাবে)।
 
 শুধু JSON দাও: {"verdict":"...","reply":null,"should_delete":false,"should_warn":false,"uid":null,"needs_uid":false,"intent":null,"slot":null,"media_topic":null,"escalate":false}`;
@@ -282,6 +299,7 @@ ${opts.warnCount ? `এই ইউজার ইতিমধ্যে ${opts.warnC
     body: JSON.stringify({
       model: MODEL,
       temperature: 1,
+      max_tokens: 700,
       messages: [
         { role: "system", content: system },
         { role: "user", content },
@@ -301,11 +319,14 @@ ${opts.warnCount ? `এই ইউজার ইতিমধ্যে ${opts.warnC
 
   const verdict = ["ok", "question", "spam", "abuse", "scam"].includes(parsed.verdict)
     ? parsed.verdict : "ok";
-  const intent = ["slot_reset", "photo_request", "video_request", "voice_request"].includes(parsed.intent)
-    ? parsed.intent : null;
+  const intent = [
+    "slot_reset", "photo_request", "video_request", "voice_request",
+    "withdraw_status", "earning_info", "verify_help",
+  ].includes(parsed.intent) ? parsed.intent : null;
   return {
     verdict,
-    reply: typeof parsed.reply === "string" && parsed.reply.trim() ? parsed.reply.trim() : null,
+    reply: typeof parsed.reply === "string" && parsed.reply.trim()
+      ? stripAdminFiller(parsed.reply.trim()) : null,
     should_delete: !!parsed.should_delete,
     should_warn: !!parsed.should_warn,
     uid: parsed.uid ? String(parsed.uid).trim() : null,
@@ -317,6 +338,18 @@ ${opts.warnCount ? `এই ইউজার ইতিমধ্যে ${opts.warnC
       ? parsed.media_topic.trim() : null,
     escalate: !!parsed.escalate,
   };
+}
+
+/** Remove filler lines like "অ্যাডমিন শীঘ্রই উত্তর দেবেন" from a reply. */
+export function stripAdminFiller(reply: string): string {
+  const bad = /(অ্যাডমিন|এডমিন|admin)[^\n।]{0,40}(উত্তর দেবেন|জানাবেন|reply|রিপ্লাই|দেখবেন|আসবেন)[^\n।]{0,20}।?/gi;
+  const cleaned = reply
+    .split("\n")
+    .map((l) => l.replace(bad, "").trim())
+    .filter((l) => l.length > 0)
+    .join("\n")
+    .trim();
+  return cleaned;
 }
 
 /** Friendly generic troubleshooting answer when nothing specific matches. */
