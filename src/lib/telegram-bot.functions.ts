@@ -36,6 +36,10 @@ const settingsSchema = z.object({
   smart_mode: z.boolean(),
   auto_block_enabled: z.boolean(),
   block_threshold: z.number().int().min(1).max(50),
+  support_username: z.string().max(64).nullable().optional(),
+  photo_privacy_enabled: z.boolean().optional(),
+  escalate_enabled: z.boolean().optional(),
+  reply_variety: z.boolean().optional(),
 
   group_chat_id: z.string().max(64).nullable(),
   admin_chat_id: z.string().max(64).nullable(),
@@ -45,6 +49,44 @@ const settingsSchema = z.object({
   banned_words: z.array(z.string().max(60)).max(300),
   warn_threshold: z.number().int().min(1).max(20),
 });
+
+// ---- Video tutorial links -------------------------------------------------
+
+export const tgListVideos = createServerFn({ method: "GET" }).handler(async () => {
+  const db = await guard();
+  const { data } = await (db as any).from("tg_videos").select("*")
+    .order("priority", { ascending: false }).order("id");
+  return (data ?? []) as any[];
+});
+
+export const tgUpsertVideo = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => z.object({
+    id: z.string().uuid().optional(),
+    topic: z.string().trim().min(1).max(120),
+    keywords: z.array(z.string().max(60)).max(50),
+    url: z.string().trim().url().max(500),
+    note: z.string().trim().max(500).nullable().optional(),
+    priority: z.number().int().min(0).max(100),
+    is_active: z.boolean(),
+  }).parse(i))
+  .handler(async ({ data }) => {
+    const db = await guard();
+    const row = { ...data, updated_at: new Date().toISOString() };
+    const { error } = data.id
+      ? await (db as any).from("tg_videos").update(row).eq("id", data.id)
+      : await (db as any).from("tg_videos").insert(row);
+    if (error) throw new Error(error.message);
+    return { ok: true as const };
+  });
+
+export const tgDeleteVideo = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => z.object({ id: z.string().uuid() }).parse(i))
+  .handler(async ({ data }) => {
+    const db = await guard();
+    await (db as any).from("tg_videos").delete().eq("id", data.id);
+    return { ok: true as const };
+  });
+
 
 
 
