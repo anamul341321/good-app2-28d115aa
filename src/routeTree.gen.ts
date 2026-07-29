@@ -20,6 +20,7 @@ import { Route as AdminWithdrawalsRouteImport } from './routes/admin/withdrawals
 import { Route as AdminWalletsRouteImport } from './routes/admin/wallets'
 import { Route as AdminUsersRouteImport } from './routes/admin/users'
 import { Route as AdminUnverifiedRouteImport } from './routes/admin/unverified'
+import { Route as AdminTelegramRouteImport } from './routes/admin/telegram'
 import { Route as AdminReverifyRouteImport } from './routes/admin/reverify'
 import { Route as AdminRechargesRouteImport } from './routes/admin/recharges'
 import { Route as AdminPaidReportRouteImport } from './routes/admin/paid-report'
@@ -95,6 +96,11 @@ const AdminUsersRoute = AdminUsersRouteImport.update({
 const AdminUnverifiedRoute = AdminUnverifiedRouteImport.update({
   id: '/unverified',
   path: '/unverified',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminTelegramRoute = AdminTelegramRouteImport.update({
+  id: '/telegram',
+  path: '/telegram',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminReverifyRoute = AdminReverifyRouteImport.update({
@@ -232,6 +238,7 @@ export interface FileRoutesByFullPath {
   '/admin/paid-report': typeof AdminPaidReportRoute
   '/admin/recharges': typeof AdminRechargesRoute
   '/admin/reverify': typeof AdminReverifyRoute
+  '/admin/telegram': typeof AdminTelegramRoute
   '/admin/unverified': typeof AdminUnverifiedRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/wallets': typeof AdminWalletsRoute
@@ -265,6 +272,7 @@ export interface FileRoutesByTo {
   '/admin/paid-report': typeof AdminPaidReportRoute
   '/admin/recharges': typeof AdminRechargesRoute
   '/admin/reverify': typeof AdminReverifyRoute
+  '/admin/telegram': typeof AdminTelegramRoute
   '/admin/unverified': typeof AdminUnverifiedRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/wallets': typeof AdminWalletsRoute
@@ -301,6 +309,7 @@ export interface FileRoutesById {
   '/admin/paid-report': typeof AdminPaidReportRoute
   '/admin/recharges': typeof AdminRechargesRoute
   '/admin/reverify': typeof AdminReverifyRoute
+  '/admin/telegram': typeof AdminTelegramRoute
   '/admin/unverified': typeof AdminUnverifiedRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/wallets': typeof AdminWalletsRoute
@@ -337,6 +346,7 @@ export interface FileRouteTypes {
     | '/admin/paid-report'
     | '/admin/recharges'
     | '/admin/reverify'
+    | '/admin/telegram'
     | '/admin/unverified'
     | '/admin/users'
     | '/admin/wallets'
@@ -370,6 +380,7 @@ export interface FileRouteTypes {
     | '/admin/paid-report'
     | '/admin/recharges'
     | '/admin/reverify'
+    | '/admin/telegram'
     | '/admin/unverified'
     | '/admin/users'
     | '/admin/wallets'
@@ -405,6 +416,7 @@ export interface FileRouteTypes {
     | '/admin/paid-report'
     | '/admin/recharges'
     | '/admin/reverify'
+    | '/admin/telegram'
     | '/admin/unverified'
     | '/admin/users'
     | '/admin/wallets'
@@ -507,6 +519,13 @@ declare module '@tanstack/react-router' {
       path: '/unverified'
       fullPath: '/admin/unverified'
       preLoaderRoute: typeof AdminUnverifiedRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/telegram': {
+      id: '/admin/telegram'
+      path: '/telegram'
+      fullPath: '/admin/telegram'
+      preLoaderRoute: typeof AdminTelegramRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/reverify': {
@@ -705,6 +724,7 @@ interface AdminRouteChildren {
   AdminPaidReportRoute: typeof AdminPaidReportRoute
   AdminRechargesRoute: typeof AdminRechargesRoute
   AdminReverifyRoute: typeof AdminReverifyRoute
+  AdminTelegramRoute: typeof AdminTelegramRoute
   AdminUnverifiedRoute: typeof AdminUnverifiedRoute
   AdminUsersRoute: typeof AdminUsersRoute
   AdminWalletsRoute: typeof AdminWalletsRoute
@@ -721,6 +741,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminPaidReportRoute: AdminPaidReportRoute,
   AdminRechargesRoute: AdminRechargesRoute,
   AdminReverifyRoute: AdminReverifyRoute,
+  AdminTelegramRoute: AdminTelegramRoute,
   AdminUnverifiedRoute: AdminUnverifiedRoute,
   AdminUsersRoute: AdminUsersRoute,
   AdminWalletsRoute: AdminWalletsRoute,
