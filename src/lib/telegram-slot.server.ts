@@ -131,9 +131,11 @@ export async function resetSlotsForUid(uid: string, slots: number[]): Promise<Ba
   return {
     found: true,
     name: profile.display_name || `UID ${profile.uid_seq}`,
+    uid: String(profile.uid_seq ?? uid),
     done,
     failed,
   };
+
 }
 
 /** Slot numbers that actually exist for an account (used for "সব স্লট" requests). */
