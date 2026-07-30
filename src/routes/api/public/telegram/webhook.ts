@@ -439,6 +439,33 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return res.done.length > 0;
         };
 
+        // ইউজার কোনো নির্দিষ্ট স্লট নিয়ে সমস্যার কথা বললে ("৩ নম্বর স্লটে
+        // রি-ভেরিফাই হচ্ছে না") — উত্তরের সাথে জিজ্ঞেস করব স্লটটি রিসেট করে
+        // দেব কি না। রাজি হলে UID চেয়ে সাথে সাথেই রিসেট করে দেব।
+        const mentionedSlot: number | null = (() => {
+          const m =
+            norm.match(/(\d{1,3})\s*(?:no|nombor|number|নম্বর|নাম্বার|নং)?\s*(?:er|এর)?\s*(?:slot|স্লট)/i) ||
+            norm.match(/(?:slot|স্লট)\s*(?:no|number|নম্বর|নাম্বার|নং)?\s*[:#-]?\s*(\d{1,3})/i);
+          const n = m ? Number(m[1]) : NaN;
+          return Number.isInteger(n) && n >= 1 && n <= 500 ? n : null;
+        })();
+
+        const offerSlotResetSuffix = async (): Promise<string> => {
+          if (!mentionedSlot || !reportsProblem || !msg.from?.id) return "";
+          if ((settings as any).slot_reset_enabled === false) return "";
+          try {
+            await saveSession({ step: "offer_reset", uid: null, app_user_id: null, data: { slots: [mentionedSlot] } });
+          } catch {
+            return "";
+          }
+          return (
+            `\n\n———\n🔄 আপনি কি <b>${mentionedSlot} নম্বর স্লটটি</b> রিসেট করে নিতে চান?\n` +
+            `রিসেট করলে ওই স্লটটি একদম খালি হয়ে যাবে, তারপর নতুন করে (১৮+ ফেস দিয়ে) আবার ভেরিফাই করতে পারবেন।\n\n` +
+            `👉 চাইলে লিখুন <b>হ্যাঁ</b> — এরপর শুধু আপনার <b>UID</b> নম্বরটি দিলেই আমি সাথে সাথে স্লটটি রিসেট করে জানিয়ে দেব 💙`
+          );
+        };
+
+
         // ---- open commands: no password needed ------------------------------
         if (/^\/(start|help|admin)\b/i.test(norm)) {
           await sendMessage(
