@@ -405,6 +405,9 @@ function PaidByPanel({ data, loading }: { data: any[]; loading: boolean }) {
         <p className="mono-num font-black text-2xl mt-1">{total.toFixed(2)} ৳</p>
         <p className="text-[10px] text-muted-foreground">{data.length} জন admin · সব paid withdrawal মিলিয়ে</p>
       </div>
+
+      <DailyReport data={data} />
+
       <input
         value={q}
         onChange={(e) => setQ(e.target.value)}
