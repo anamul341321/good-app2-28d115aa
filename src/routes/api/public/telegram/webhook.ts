@@ -71,6 +71,21 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             ? isChatAdmin(chatId, msg.reply_to_message.from.id).catch(() => false)
             : Promise.resolve(false),
         ]);
+        // Exception: when an admin announces that a password was changed, the bot
+        // confirms it to the user instead of staying silent.
+        const passwordChanged = senderIsAdmin && !isBotCommand && text.trim().length > 0
+          && /(password|পাসওয়ার্ড|pass ?word)/i.test(text)
+          && /(change|changed|change kora|change kore|পরিবর্তন|চেঞ্জ|বদলে|reset|রিসেট|new password|নতুন পাসওয়ার্ড)/i.test(text);
+        if (passwordChanged && settings.auto_reply_enabled) {
+          const reply =
+            `✅ <b>আপনার পাসওয়ার্ডটি সফলভাবে পরিবর্তন করা হয়েছে।</b>\n\n` +
+            `📩 অ্যাডমিন আপনার <b>ইনবক্সে</b> ডিফল্ট পাসওয়ার্ডটি পাঠিয়ে দিয়েছেন — সেটি দিয়ে লগইন করুন।\n\n` +
+            `⚠️ মনে রাখবেন, লগইন করার পর অবশ্যই আপনার <b>প্রোফাইল পেজে</b> গিয়ে পাসওয়ার্ডটি পরিবর্তন করে ` +
+            `নিজের একটি <b>নতুন পাসওয়ার্ড</b> দিয়ে নেবেন 🔐`;
+          await sendMessage(chatId, reply, msg.message_id);
+          
+          return Response.json({ ok: true, flow: "password-changed" });
+        }
         if ((senderIsAdmin && !isBotCommand) || repliedToAdmin) {
           return Response.json({ ok: true, ignored: senderIsAdmin ? "admin-message" : "reply-to-admin" });
         }
