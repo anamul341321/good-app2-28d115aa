@@ -1021,8 +1021,11 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
                   return { f, score };
                 })
                 .sort((a, b) => b.score - a.score)[0];
-              if (scored && scored.score > 0 && scored.f.answer) {
-                const base = String(scored.f.answer).trim();
+              const ocrAnswer = scored && scored.score > 0
+                ? await faqAnswerFor(scored.f, text || shotText)
+                : null;
+              if (ocrAnswer) {
+                const base = ocrAnswer.trim();
                 const reply = (await humanizeReply(base, text || shotText, [])) || base;
                 await sendMessage(chatId, reply, msg.message_id);
                 await logMessage("question", `faq-ocr:${scored.f.topic}`, reply, null);
