@@ -179,7 +179,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         const meInfo = await getMe().catch(() => null);
         const mentionsBot = !!meInfo && new RegExp(`@${meInfo.username}\\b`, "i").test(text);
         const repliedToBot = msg.reply_to_message?.from?.id === meInfo?.id;
-        if (senderIsAdmin && !isBotCommand && (mentionsBot || repliedToBot) && text.trim()) {
+        if (senderIsAdmin && !isBotCommand && (mentionsBot || repliedToBot || !!voiceHeard) && text.trim()) {
           const order = text.replace(new RegExp(`@${meInfo?.username ?? "___"}`, "ig"), "").trim();
           const targetName = msg.reply_to_message && !msg.reply_to_message.from?.is_bot
             ? [msg.reply_to_message.from?.first_name, msg.reply_to_message.from?.last_name].filter(Boolean).join(" ")
