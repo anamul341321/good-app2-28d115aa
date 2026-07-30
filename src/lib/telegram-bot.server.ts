@@ -475,7 +475,7 @@ export async function humanizeReply(answer: string, userText?: string, avoid?: s
       body: JSON.stringify({
         model: MODEL,
         temperature: 1,
-        max_tokens: 700,
+        max_tokens: 450,
         messages: [
           {
             role: "user",
@@ -484,8 +484,10 @@ export async function humanizeReply(answer: string, userText?: string, avoid?: s
 নিয়ম:
 - কোনো তথ্য, নিয়ম, সংখ্যা, লিংক বাদ দেবে না বা বানাবে না।
 - টোন: ${tone}।
-- ছোট ছোট লাইন, মাঝে ফাঁকা লাইন, দরকারে ২-৩টা ইমোজি। HTML ট্যাগ (<b>) থাকলে রাখতে পারো, Markdown ব্যবহার করবে না।
+- <b>সংক্ষেপে</b> লিখবে — মূল উত্তরের চেয়ে লম্বা কখনোই নয়, বরং ছোট করবে। সাধারণ কথা ১–৩ লাইনে, হিসাব/ধাপ হলে সর্বোচ্চ ৫-৬ লাইন। গ্রুপে স্প্যাম মনে হয় এমন লম্বা মেসেজ নয়।
+- ছোট ছোট লাইন, দরকারে ১-২টা ইমোজি। HTML ট্যাগ (<b>) থাকলে রাখতে পারো, Markdown ব্যবহার করবে না।
 - শুরুটা প্রতিবার আলাদা হবে, রোবটের মতো একই বাক্য নয়।
+
 ${avoid?.length ? `- আগের এই রিপ্লাইগুলোর মতো শোনাবে না:\n${avoid.slice(0, 3).map((a) => `"${a.slice(0, 160)}"`).join("\n")}` : ""}
 ${userText ? `\nইউজার বলেছে: "${userText.slice(0, 300)}"` : ""}
 
@@ -558,7 +560,16 @@ async function transcribeAudioStt(base64: string, format: string, key: string): 
     const form = new FormData();
     form.append("model", "openai/gpt-4o-transcribe");
     form.append("stream", "true");
+    form.append("language", "bn");
+    // Domain vocabulary hint — Bengali support callers mix Bangla + Roman Bangla
+    // and app jargon; without this the model mangles UID/slot/withdraw words.
+    form.append(
+      "prompt",
+      "বাংলা ভয়েস। Good-App সাপোর্ট। সম্ভাব্য শব্দ: UID, স্লট, ফেস ভেরিফাই, রি-ভেরিফাই, হোয়াইটলিস্ট, " +
+        "উইথড্র, বিকাশ, নগদ, রিচার্জ, মাইনিং, রেফার, বোনাস, ফি, চার্জ, কেটে নিয়েছে, টাকা, রিসেট, পাসওয়ার্ড।",
+    );
     form.append("file", new Blob([bytes as unknown as BlobPart], { type: audioMime(ext) }), `telegram-voice.${ext}`);
+
     const res = await fetch("https://ai.gateway.lovable.dev/v1/audio/transcriptions", {
       method: "POST",
       headers: { "Lovable-API-Key": key },
