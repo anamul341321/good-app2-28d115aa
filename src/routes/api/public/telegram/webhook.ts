@@ -969,7 +969,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             && !decision.should_delete && !decision.needs_uid && !matchedUid
             && decision.intent === null && !decision.escalate
             && (decision.verdict === "question" || !!photoBase64 || !!voiceHeard)) {
-          const { smartAnswer, genericHelpReply } = await import("@/lib/telegram-bot.server");
+          const { smartAnswer, escalateReply } = await import("@/lib/telegram-bot.server");
           const { loadRates, knowledgeText } = await import("@/lib/telegram-knowledge.server");
           const faqText = (faqRows ?? [])
             .slice(0, 40)
@@ -981,11 +981,13 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             knowledge: knowledgeText(await loadRates()),
             faqs: faqText,
           });
-          const reply = smart || genericHelpReply(senderName);
+          const mention = (settings as any).admin_mention
+            || (settings as any).support_username || "@anamulmunni";
+          const reply = smart || `${escalateReply(senderName, mention)}\n${mention}`;
           await sendMessage(chatId, reply, msg.message_id);
-          actions.push(smart ? "smart-answer" : "generic-help");
+          actions.push(smart ? "smart-answer" : "escalated");
           await logMessage(decision.verdict, actions.join(","), reply, matchedUid);
-          return Response.json({ ok: true, flow: smart ? "smart-answer" : "generic-help", actions });
+          return Response.json({ ok: true, flow: smart ? "smart-answer" : "escalated", actions });
         }
 
 
