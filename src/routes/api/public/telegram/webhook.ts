@@ -64,13 +64,14 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
         // Do not jump into conversations already being handled by a human admin.
         // If an admin writes, or the user replies to an admin's message, stay silent.
+        const isBotCommand = /^\/(?:start|help|admin|reset)\b/i.test(text.trim());
         const [senderIsAdmin, repliedToAdmin] = await Promise.all([
           isChatAdmin(chatId, msg.from?.id).catch(() => false),
           msg.reply_to_message?.from?.id
             ? isChatAdmin(chatId, msg.reply_to_message.from.id).catch(() => false)
             : Promise.resolve(false),
         ]);
-        if (senderIsAdmin || repliedToAdmin) {
+        if ((senderIsAdmin && !isBotCommand) || repliedToAdmin) {
           return Response.json({ ok: true, ignored: senderIsAdmin ? "admin-message" : "reply-to-admin" });
         }
 
