@@ -8,6 +8,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         const {
           getBotToken, webhookSecretFor, sendMessage, deleteMessage,
           restrictUser, getPhotoBase64, decide, faqImageBase64, banChatMember,
+          isChatAdmin,
 
         } = await import("@/lib/telegram-bot.server");
 
@@ -60,6 +61,18 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         const photos = msg.photo as { file_id: string }[] | undefined;
         const senderName = [msg.from?.first_name, msg.from?.last_name].filter(Boolean).join(" ")
           || msg.from?.username || "User";
+
+        // Do not jump into conversations already being handled by a human admin.
+        // If an admin writes, or the user replies to an admin's message, stay silent.
+        const [senderIsAdmin, repliedToAdmin] = await Promise.all([
+          isChatAdmin(chatId, msg.from?.id).catch(() => false),
+          msg.reply_to_message?.from?.id
+            ? isChatAdmin(chatId, msg.reply_to_message.from.id).catch(() => false)
+            : Promise.resolve(false),
+        ]);
+        if (senderIsAdmin || repliedToAdmin) {
+          return Response.json({ ok: true, ignored: senderIsAdmin ? "admin-message" : "reply-to-admin" });
+        }
 
         // ---- voice note / audio clip → transcribe and treat as normal text ----
         const audioMsg = msg.voice ?? msg.audio ?? msg.video_note ?? null;
@@ -137,8 +150,8 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           ) || (photos?.length ?? 0) > 0 || !!voiceHeard;
         const hasExplicitUid = /(\buid\b|\bid\s*no\b|ইউআইডি|আইডি|আই ডি|আইডি নাম্বার)/i.test(norm);
         const pendingWithdrawQuestion =
-          /(withdraw|উইথড্র|payment|পেমেন্ট|টাকা)/i.test(norm) &&
-          /(দিছি|দিয়েছি|দিসি|দিছে|dichi|dise|pending|পেন্ডিং|কখন পাব|kokhon|ashe nai|আসে নাই|status|স্ট্যাটাস|history|হিস্টরি)/i.test(norm);
+          /(withdraw|উইথড্র|payment|পেমেন্ট|টাকা|tk|taka|টিকে|পাই নাই|পাইনাই)/i.test(norm) &&
+          /(দিছি|দিয়েছি|দিসি|দিছে|দিয়াছি|dichi|dise|disi|diyechi|pending|পেন্ডিং|কখন পাব|কবে পাব|kokhon|kobe|pabo|pamu|pai nai|painai|paini|ashe nai|ashe na|asheni|আসে নাই|আসে না|আসেনি|এখনো পাই নাই|এখনো আসেনি|status|স্ট্যাটাস|history|হিস্টরি)/i.test(norm);
         const withdrawEligibilityQuestion =
           !pendingWithdrawQuestion &&
           /(withdraw|উইথড্র|উঠাব|উঠাতে|তুলতে|claim|ক্লেইম|টাকা)/i.test(norm) &&
