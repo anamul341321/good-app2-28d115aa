@@ -635,6 +635,38 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             console.error("[tg] faq image match failed", e);
           }
 
+          // Read the text inside the screenshot and match it against the saved
+          // admin answers + built-in library (image-vs-image alone missed the
+          // obvious ones like the "You must be 18 years or older" page).
+          try {
+            const { readScreenshotText, humanizeReply } = await import("@/lib/telegram-bot.server");
+            shotText = await readScreenshotText(photoBase64);
+            if (shotText) {
+              const hay = shotText.toLowerCase();
+              const scored = faq
+                .map((f) => {
+                  const keys: string[] = [
+                    ...(Array.isArray(f.keywords) ? f.keywords : String(f.keywords ?? "").split(/[,\n]/)),
+                    String(f.topic ?? ""),
+                  ]
+                    .map((k) => String(k).trim().toLowerCase())
+                    .filter((k) => k.length > 3);
+                  const score = keys.filter((k) => hay.includes(k)).length;
+                  return { f, score };
+                })
+                .sort((a, b) => b.score - a.score)[0];
+              if (scored && scored.score > 0 && scored.f.answer) {
+                const base = String(scored.f.answer).trim();
+                const reply = (await humanizeReply(base, text || shotText, [])) || base;
+                await sendMessage(chatId, reply, msg.message_id);
+                await logMessage("question", `faq-ocr:${scored.f.topic}`, reply, null);
+                return Response.json({ ok: true, flow: "faq-ocr", topic: scored.f.topic });
+              }
+            }
+          } catch (e) {
+            console.error("[tg] screenshot ocr match failed", e);
+          }
+
           // No admin screenshot matched → try the built-in problem library
           // (e.g. GoodDollar "We found your twin" duplicate-face page).
           try {
@@ -650,6 +682,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             console.error("[tg] builtin faq photo match failed", e);
           }
         }
+
 
         // Plain-text match against the built-in problem library.
         if (!photoBase64 && settings.auto_reply_enabled && text.trim()) {
