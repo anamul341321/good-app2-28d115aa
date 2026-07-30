@@ -635,6 +635,51 @@ export function stripAdminFiller(reply: string): string {
  * Last-resort screenshot answer: read whatever is on the user's screenshot and
  * explain the problem + fix in Bengali. Used when no admin FAQ image matched.
  */
+/**
+ * Read a screenshot and match it against the built-in FAQ topics (no reference
+ * images needed) — e.g. GoodDollar's "We found your twin" duplicate-face page.
+ */
+export async function matchBuiltinFaqPhoto(photoBase64: string): Promise<string | null> {
+  const key = process.env.LOVABLE_API_KEY;
+  if (!key) return null;
+  const { BUILTIN_FAQS } = await import("./telegram-builtin-faq.server");
+  const list = BUILTIN_FAQS.map(
+    (f, i) => `${i}) ${f.topic} — স্ক্রিনশটে থাকতে পারে: ${f.screenshot.join(" / ")}`,
+  ).join("\n");
+  try {
+    const res = await fetch(AI_URL, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: MODEL,
+        temperature: 0,
+        max_tokens: 10,
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text:
+                  `স্ক্রিনশটের লেখাগুলো পড়ো। নিচের টপিকগুলোর মধ্যে কোনটির লেখা স্ক্রিনশটে হুবহু আছে?\n${list}\n\n` +
+                  `শুধু নম্বরটি লেখো। কোনোটির সাথেই স্পষ্টভাবে না মিললে -1 লেখো।`,
+              },
+              { type: "image_url", image_url: { url: `data:image/jpeg;base64,${photoBase64}` } },
+            ],
+          },
+        ],
+      }),
+    });
+    if (!res.ok) return null;
+    const data: any = await res.json();
+    const idx = parseInt(String(data.choices?.[0]?.message?.content ?? "").match(/-?\d+/)?.[0] ?? "-1", 10);
+    if (idx < 0 || idx >= BUILTIN_FAQS.length) return null;
+    return BUILTIN_FAQS[idx].answer;
+  } catch {
+    return null;
+  }
+}
+
 export async function analyzeScreenshotReply(opts: {
   photoBase64: string;
   name: string;
