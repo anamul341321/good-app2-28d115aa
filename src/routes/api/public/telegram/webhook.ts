@@ -416,16 +416,20 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           );
         const isThanksOnly = (s: string) =>
           /^(thanks|thank you|tnx|ty|ধন্যবাদ|থ্যাংকস|শুকরিয়া|jazakallah|জাযাকাল্লাহ)[\s.!।🙏😊🙂]*$/i.test(s.trim());
+        const { stripSlotMentions } = await import("@/lib/telegram-slot.server");
         const pickUid = (s: string): string | null => {
-          const source = bnDigits(s).trim();
-          if (isAffirmation(source)) return null;
-          const explicit = source.match(/(?:uid|ইউআইডি|আইডি|আই ডি|id\s*no|আইডি নাম্বার)\s*[:#-]?\s*([A-Za-z0-9]{2,10})/i);
+          const raw = bnDigits(s).trim();
+          if (isAffirmation(raw)) return null;
+          const explicit = raw.match(/(?:uid|ইউআইডি|আইডি|আই ডি|id\s*no|আইডি নাম্বার)\s*[:#-]?\s*([A-Za-z0-9]{2,10})/i);
           if (explicit) return explicit[1].trim().toUpperCase();
+          // "৪ নম্বর স্লট" এর ৪ কখনোই UID নয় — তাই স্লটের কথা বাদ দিয়ে খুঁজি।
+          const source = stripSlotMentions(raw);
           const num = source.match(/\b(\d{1,9})\b/);
           if (num) return num[1];
           const code = source.match(/\b([A-Za-z0-9]{7})\b/);
           return code && /\d/.test(code[1]) ? code[1].toUpperCase() : null;
         };
+
         const pickUidFromCurrentOrReply = (): string | null => pickUid(norm) || (replyNorm ? pickUid(replyNorm) : null);
 
         // Accepts: "3", "5 ta", "2,3,4", "২-৫", "3 4 7", "সব"/"all"
