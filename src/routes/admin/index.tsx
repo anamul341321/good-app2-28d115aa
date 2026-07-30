@@ -5,6 +5,8 @@ import { adminChangePassword } from "@/lib/admin-auth.functions";
 import { Loader2, Users, ArrowDownToLine, ScanFace, Clock, AlertTriangle, TrendingUp, Wallet, CheckCircle2, ShieldCheck, Smartphone, HandCoins, Copy, CheckCheck, FileText, KeyRound } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
+import { WhitelistMonitor } from "@/components/WhitelistMonitor";
+
 
 export const Route = createFileRoute("/admin/")({ component: AdminDashboard });
 
