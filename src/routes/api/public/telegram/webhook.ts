@@ -1064,11 +1064,11 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         }
 
         // ---- "ফেস নিয়ে আপনারা কী করেন?" → privacy/security answer, not account lookup
-        if (asksFacePrivacy && !decision.should_delete && settings.auto_reply_enabled) {
+        if (asksFacePrivacy && settings.auto_reply_enabled) {
           const { facePrivacyReply } = await import("@/lib/telegram-knowledge.server");
           const reply = facePrivacyReply(senderName);
           await sendMessage(chatId, reply, msg.message_id);
-          await logMessage(decision.verdict, "face-privacy", reply, null);
+          await logMessage("question", "face-privacy", reply, null);
           return Response.json({ ok: true, flow: "face-privacy" });
         }
 
