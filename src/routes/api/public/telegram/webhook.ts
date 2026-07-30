@@ -501,6 +501,12 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           /(refer|reffer|refar|রেফার|referral|রেফারে|রেফারার|under|আন্ডার)[^\n]{0,80}(join|জয়েন|joined|asche|আসছে|ashche|aishe|hoise|হইছে|hoyeche|হয়েছে|ache|আছে|kar|কার|কে|ke)/i.test(norm) ||
           /(ke|কে|কার)[^\n]{0,60}(eneche|এনেছে|anse|আনছে|niye asche|নিয়ে আসছে)/i.test(norm);
 
+        // "রেফার করেছি কিন্তু রেফার বাড়ে না / কমে গেছে" → রেফার হিস্টরি + কারণ
+        const complainsReferralCount =
+          /(refer|reffer|refar|রেফার|referral|রেফারেল)/i.test(norm) &&
+          /(bare na|বাড়ে না|barche na|বাড়ছে না|bad?he na|kome|কমে|kome gese|কমে গেছে|komeche|কমেছে|jog hoi na|যোগ হয় না|jog hoy nai|যোগ হয় নাই|add hoi na|অ্যাড হয় না|add hocche na|dekhachhe na|দেখাচ্ছে না|dekhai na|দেখায় না|count hoi na|কাউন্ট হয় না|kmi|কমি)/i.test(norm);
+
+
 
 
         const verificationDateKind = (s: string): "first" | "reverify" | "all" | null => {
