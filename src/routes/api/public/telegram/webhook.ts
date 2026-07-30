@@ -711,6 +711,12 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           needs_uid: false, intent: null, slot: null,
         } as Awaited<ReturnType<typeof decide>>;
 
+        // Conversation context reused by every later answer path (smartAnswer,
+        // escalation, final fallback) so follow-up questions keep their thread.
+        let convoHistory: string[] = [];
+        let convoReplies: string[] = [];
+        let recallText = "";
+
         if (hardHit) {
           decision = {
             verdict: "abuse", reply: null,
@@ -733,6 +739,16 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             pastReplies = (past ?? []).map((p: any) => p.bot_reply).filter(Boolean).slice(0, 4);
             if (!knownUid) knownUid = (past ?? []).find((p: any) => p.matched_uid)?.matched_uid ?? null;
           }
+          convoHistory = history;
+          convoReplies = pastReplies;
+
+          // Group memory: what was asked & answered before for the same topic.
+          try {
+            const { recallSimilar } = await import("@/lib/telegram-bot.server");
+            recallText = await recallSimilar(text || shotText);
+          } catch (e) {
+            console.error("[tg] recall failed", e);
+          }
 
           try {
             const { loadRates, knowledgeText } = await import("@/lib/telegram-knowledge.server");
@@ -740,7 +756,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             decision = await decide({
               persona: settings.persona,
               rules: settings.rules,
-              knowledge: knowledgeText(rates),
+              knowledge: knowledgeText(rates) + recallText,
               faq,
               videos: (videoRows ?? []) as any[],
               voices: ((voiceRows ?? []) as any[]).map((v: any) => ({
@@ -764,6 +780,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           
           (decision as any)._knownUid = knownUid;
         }
+
 
 
         const actions: string[] = [];
