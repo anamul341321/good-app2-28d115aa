@@ -309,7 +309,7 @@ export async function agentAnswer(opts: {
   // Questions whose answer lives in the database — force a real lookup on the
   // first turn so the model can never answer them from memory/guesswork.
   const needsData =
-    /(\d{1,7})|uid|ইউ ?আই ?ডি|স্লট|slot|ভেরিফা|verif|রেফার|refer|ব্যালেন্স|balance|উইথড্র|withdraw|ফি|fee|চার্জ|charge|বোনাস|bonus|মাইনিং|mining|হোয়াইটলিস্ট|whitelist|বিকাশ|bkash|নগদ|nagad|usdt|রিচার্জ|recharge|পেন্ডিং|pending|একাউন্ট|account/i.test(
+    /(\d{1,7})|uid|ইউ ?আই ?ডি|স্লট|slot|ভেরিফা|verif|রেফার|refer|ব্যালেন্স|balance|উইথড্র|withdraw|ফি|fee|চার্জ|charge|বোনাস|bonus|মাইনিং|mining|হোয়াইটলিস্ট|whitelist|বিকাশ|bkash|নগদ|nagad|usdt|রিচার্জ|recharge|পেন্ডিং|pending|একাউন্ট|account|নম্বর|নাম্বার|number|wallet|ওয়ালেট/i.test(
       q,
     );
 
