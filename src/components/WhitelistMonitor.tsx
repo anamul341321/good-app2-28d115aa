@@ -11,7 +11,7 @@ function ago(iso?: string | null) {
   return `${Math.floor(m / 60)} ঘণ্টা আগে`;
 }
 
-/** Live view of the auto whitelist check (cron every 2 minutes, 100 per batch). */
+/** Live view of the resumable auto whitelist check (100 keys per batch). */
 export function WhitelistMonitor() {
   const { data, isLoading } = useQuery({
     queryKey: ["admin-whitelist-runs"],
@@ -22,7 +22,8 @@ export function WhitelistMonitor() {
 
   const current: any = data?.current ?? null;
   const last: any = data?.last ?? null;
-  const stuck = !!current && Date.now() - new Date(current.started_at).getTime() > 4 * 60 * 1000;
+  const heartbeat = current?.heartbeat_at ?? current?.started_at;
+  const stuck = !!current && Date.now() - new Date(heartbeat).getTime() > 2 * 60 * 1000;
   const live = !!current && !stuck;
   const shown: any = current ?? last;
 
@@ -47,7 +48,7 @@ export function WhitelistMonitor() {
       {isLoading ? (
         <div className="py-3 flex justify-center"><Loader2 className="w-4 h-4 animate-spin text-cyan" /></div>
       ) : !shown ? (
-        <p className="text-[11px] text-muted-foreground">এখনো কোনো চেক চালু হয়নি — ২ মিনিটের মধ্যে প্রথম চেক শুরু হবে।</p>
+        <p className="text-[11px] text-muted-foreground">এখনো কোনো চেক চালু হয়নি — অটো worker শিগগিরই শুরু হবে।</p>
       ) : (
         <>
           <div>
@@ -75,9 +76,9 @@ export function WhitelistMonitor() {
             {shown.status === "error" ? (
               <><AlertTriangle className="w-3 h-3 text-rose" /> সমস্যা: {shown.error_message ?? "unknown"}</>
             ) : live ? (
-              <><Loader2 className="w-3 h-3 animate-spin text-emerald" /> শুরু হয়েছে {ago(shown.started_at)}</>
+              <><Loader2 className="w-3 h-3 animate-spin text-emerald" /> সর্বশেষ batch {ago(shown.heartbeat_at ?? shown.started_at)}</>
             ) : (
-              <><CheckCircle2 className="w-3 h-3 text-emerald" /> শেষ হয়েছে {ago(shown.finished_at ?? shown.started_at)} · প্রতি ২ মিনিট পর আবার চলবে</>
+              <><CheckCircle2 className="w-3 h-3 text-emerald" /> সব key শেষ হয়েছে {ago(shown.finished_at ?? shown.started_at)} · ৩ মিনিট পর নতুন cycle</>
             )}
           </div>
 
