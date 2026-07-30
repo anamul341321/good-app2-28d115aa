@@ -576,6 +576,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         ]);
 
 
+        let shotText = "";
         let photoBase64: string | null = null;
         if (settings.photo_analysis_enabled && photos?.length) {
           photoBase64 = await getPhotoBase64(photos[photos.length - 1].file_id);
