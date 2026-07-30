@@ -1753,3 +1753,19 @@ export const adminUserDailyReport = createServerFn({ method: "POST" })
       windowDays: daysBack,
     };
   });
+
+// ---------------- Auto whitelist check monitor ----------------
+// Shows the admin whether the every-2-minutes cron job is actually running,
+// how many wallets it checked and how far the current batch has got.
+export const adminWhitelistRuns = createServerFn({ method: "GET" }).handler(async () => {
+  const supabaseAdmin = await gate();
+  const { data } = await supabaseAdmin
+    .from("whitelist_runs")
+    .select("*")
+    .order("started_at", { ascending: false })
+    .limit(10);
+  const runs = data ?? [];
+  const current = runs.find((r: any) => r.status === "running") ?? null;
+  const last = runs.find((r: any) => r.status !== "running") ?? null;
+  return { runs, current, last, serverNow: new Date().toISOString() };
+});

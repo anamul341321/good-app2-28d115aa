@@ -20,19 +20,56 @@ export const Route = createFileRoute("/api/public/whitelist-recheck")({
           return new Response("forbidden", { status: 401 });
         }
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+        // Skip if a previous run is still going (cron fires every 2 minutes).
+        const { data: running } = await supabaseAdmin
+          .from("whitelist_runs")
+          .select("id, started_at")
+          .eq("status", "running")
+          .order("started_at", { ascending: false })
+          .limit(1);
+        const stale = running?.[0]
+          && Date.now() - new Date(running[0].started_at as string).getTime() > 10 * 60 * 1000;
+        if (running?.[0] && !stale) {
+          return Response.json({ ok: true, skipped: "already-running" });
+        }
+        if (stale) {
+          await supabaseAdmin.from("whitelist_runs")
+            .update({ status: "timeout", finished_at: new Date().toISOString() })
+            .eq("id", running![0].id as string);
+        }
+
+        const CONCURRENCY = 100;
+        const { data: runRow } = await supabaseAdmin
+          .from("whitelist_runs")
+          .insert({ status: "running", batch_size: CONCURRENCY })
+          .select("id")
+          .maybeSingle();
+        const runId = runRow?.id as string | undefined;
+        const touchRun = async (patch: any) => {
+          if (!runId) return;
+          await supabaseAdmin.from("whitelist_runs").update(patch).eq("id", runId);
+        };
+
+
         const { data: tasks, error } = await supabaseAdmin
           .from("tasks")
           .select("id, user_id, wallet_address, status, whitelist_ok, initial_verify_at, last_reverified_at, reverify_count")
           .in("status", ["verified", "done"])
           .not("wallet_address", "is", null);
-        if (error) return Response.json({ error: error.message }, { status: 500 });
+        if (error) {
+          await touchRun({ status: "error", error_message: error.message, finished_at: new Date().toISOString() });
+          return Response.json({ error: error.message }, { status: 500 });
+        }
 
         const list = tasks ?? [];
         const affectedUsers = new Set<string>();
         let checked = 0, flipped = 0, restored = 0, pendingChecked = 0, pendingPromoted = 0;
+        let batches = 0;
         const now = new Date();
         const nowIso = now.toISOString();
-        const CONCURRENCY = 100;
+        await touchRun({ wallets_total: list.length });
+
 
         for (let i = 0; i < list.length; i += CONCURRENCY) {
           const chunk = list.slice(i, i + CONCURRENCY);
@@ -56,7 +93,10 @@ export const Route = createFileRoute("/api/public/whitelist-recheck")({
               restored++;
             }
           }
+          batches++;
+          await touchRun({ wallets_checked: checked, batches_done: batches, flipped, restored });
         }
+
 
         // Also check generated/not-submitted keys. This replaces the need for
         // an admin to press "সব whitelist check" every few minutes.
@@ -70,10 +110,16 @@ export const Route = createFileRoute("/api/public/whitelist-recheck")({
             .order("created_at")
             .order("id")
             .range(from, from + 999);
-          if (attemptsError) return Response.json({ error: attemptsError.message }, { status: 500 });
+          if (attemptsError) {
+            await touchRun({ status: "error", error_message: attemptsError.message, finished_at: new Date().toISOString() });
+            return Response.json({ error: attemptsError.message }, { status: 500 });
+          }
           attempts.push(...(page ?? []));
           if (!page || page.length < 1000) break;
         }
+        await touchRun({ pending_total: attempts.length });
+
+
 
         for (let i = 0; i < attempts.length; i += CONCURRENCY) {
           const chunk = attempts.slice(i, i + CONCURRENCY);
@@ -125,13 +171,27 @@ export const Route = createFileRoute("/api/public/whitelist-recheck")({
             affectedUsers.add(attempt.user_id);
             pendingPromoted++;
           }
+          batches++;
+          await touchRun({ batches_done: batches, pending_checked: pendingChecked, pending_promoted: pendingPromoted, restored });
         }
 
         await Promise.all(
           Array.from(affectedUsers).map((uid) => supabaseAdmin.rpc("settle_mining", { _user_id: uid })),
         );
 
+        await touchRun({
+          status: "done",
+          finished_at: new Date().toISOString(),
+          wallets_checked: checked,
+          batches_done: batches,
+          flipped,
+          restored,
+          pending_checked: pendingChecked,
+          pending_promoted: pendingPromoted,
+        });
+
         return Response.json({ ok: true, checked, flipped, restored, pendingChecked, pendingPromoted, affectedUsers: affectedUsers.size });
+
       },
     },
   },

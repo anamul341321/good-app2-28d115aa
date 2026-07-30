@@ -5,6 +5,8 @@ import { adminChangePassword } from "@/lib/admin-auth.functions";
 import { Loader2, Users, ArrowDownToLine, ScanFace, Clock, AlertTriangle, TrendingUp, Wallet, CheckCircle2, ShieldCheck, Smartphone, HandCoins, Copy, CheckCheck, FileText, KeyRound } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
+import { WhitelistMonitor } from "@/components/WhitelistMonitor";
+
 
 export const Route = createFileRoute("/admin/")({ component: AdminDashboard });
 
@@ -30,7 +32,10 @@ function AdminDashboard() {
 
   return (
     <div className="space-y-4">
+      <WhitelistMonitor />
+
       {/* Money panel */}
+
       <div className="grid grid-cols-2 gap-3">
         <BigStat label="মোট মাইনিং জমা" value={money ? money.totalAccrued.toFixed(2) : "…"} unit="TK" accent="cyan" icon={<TrendingUp className="w-4 h-4" />} />
         <BigStat label="মোট Paid Out" value={money ? money.totalPaid.toFixed(2) : "…"} unit="TK" accent="emerald" icon={<CheckCircle2 className="w-4 h-4" />} />
