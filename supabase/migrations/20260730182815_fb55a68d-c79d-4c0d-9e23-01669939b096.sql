@@ -1,0 +1,1 @@
+UPDATE public.whitelist_runs SET status='timeout', finished_at=now() WHERE status='running' AND started_at < now() - interval '4 minutes';
