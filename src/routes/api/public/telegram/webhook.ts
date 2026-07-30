@@ -741,6 +741,20 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         ]);
 
 
+        // Problem replies get the matching tutorial video link appended (if the
+        // admin saved one for that topic) so users can watch instead of asking again.
+        const videoSuffix = (extra?: string): string => {
+          const list = (videoRows ?? []) as any[];
+          if (!list.length) return "";
+          const hay = `${norm} ${(extra || "").toLowerCase()}`;
+          const match = list.find((v: any) =>
+            (v.keywords ?? []).some((k: string) => k && hay.includes(String(k).toLowerCase()))
+            || (v.topic && hay.includes(String(v.topic).toLowerCase())),
+          );
+          if (!match?.url) return "";
+          return `\n\n📺 <b>${match.topic}</b> — ভিডিওতে দেখে নিন: ${match.url}`;
+        };
+
         let shotText = "";
         let photoBase64: string | null = null;
         if (settings.photo_analysis_enabled && photos?.length) {
@@ -1054,7 +1068,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               const { humanizeReply } = await import("@/lib/telegram-bot.server");
               const base = builtinFaqReply(senderName, hit);
               const reply = (await humanizeReply(base, text, recentReplies)) || base;
-              await sendMessage(chatId, reply + (await offerSlotResetSuffix()), msg.message_id);
+              await sendMessage(chatId, reply + videoSuffix(text) + (await offerSlotResetSuffix()), msg.message_id);
               await logMessage("question", `faq-builtin:${hit.topic}`, reply, null);
               return Response.json({ ok: true, flow: "faq-builtin-text" });
             }
@@ -1445,7 +1459,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         if (decision.intent === "verify_help" && reportsVerifyFailure && !decision.should_delete
             && settings.auto_reply_enabled) {
           const { verifyTipsReply } = await import("@/lib/telegram-knowledge.server");
-          const reply = verifyTipsReply(senderName);
+          const reply = verifyTipsReply(senderName) + videoSuffix(text);
           await sendMessage(chatId, reply, msg.message_id);
           actions.push("verify-help");
           await logMessage(decision.verdict, actions.join(","), reply, matchedUid);
@@ -1473,7 +1487,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             knowledge: knowledgeText(await loadRates()),
           });
           if (reply) {
-            await sendMessage(chatId, reply, msg.message_id);
+            await sendMessage(chatId, reply + videoSuffix(shotText), msg.message_id);
             actions.push("photo-analysis");
             await logMessage("question", actions.join(","), reply, null);
             return Response.json({ ok: true, flow: "photo-analysis", actions });
@@ -1499,7 +1513,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
         if (settings.auto_reply_enabled && decision.reply && !decision.should_delete
             && decision.intent !== "slot_reset") {
-          await sendMessage(chatId, decision.reply + (await offerSlotResetSuffix()), msg.message_id);
+          await sendMessage(chatId, decision.reply + videoSuffix(text) + (await offerSlotResetSuffix()), msg.message_id);
           actions.push("replied");
         }
 
@@ -1528,7 +1542,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             knowledge: knowledgeText(await loadRates()),
           });
           if (reply) {
-            await sendMessage(chatId, reply, msg.message_id);
+            await sendMessage(chatId, reply + videoSuffix(shotText), msg.message_id);
             actions.push("photo-analysis");
             await logMessage("question", actions.join(","), reply, matchedUid);
             return Response.json({ ok: true, flow: "photo-analysis", actions });
@@ -1557,7 +1571,9 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           });
           const mention = (settings as any).admin_mention
             || (settings as any).support_username || "@anamulmunni";
-          const reply = smart || `${escalateReply(senderName, mention)}\n${mention}`;
+          const reply = smart
+            ? smart + videoSuffix(text)
+            : `${escalateReply(senderName, mention)}\n${mention}`;
           await sendMessage(chatId, reply, msg.message_id);
           actions.push(smart ? "smart-answer" : "escalated");
           await logMessage(decision.verdict, actions.join(","), reply, matchedUid);
@@ -1582,7 +1598,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           const mention = (settings as any).admin_mention
             || (settings as any).support_username || "@anamulmunni";
           const reply = smart
-            ? smart
+            ? smart + videoSuffix(text)
             : `${escalateReply(senderName, mention)}\n${mention}`;
           await sendMessage(chatId, reply, msg.message_id);
           actions.push("escalated");
