@@ -1118,13 +1118,17 @@ export type Database = {
           error_message: string | null
           finished_at: string | null
           flipped: number
+          heartbeat_at: string
           id: string
           pending_checked: number
+          pending_cursor: string | null
           pending_promoted: number
           pending_total: number
+          phase: string
           restored: number
           started_at: string
           status: string
+          wallet_cursor: string | null
           wallets_checked: number
           wallets_total: number
         }
@@ -1134,13 +1138,17 @@ export type Database = {
           error_message?: string | null
           finished_at?: string | null
           flipped?: number
+          heartbeat_at?: string
           id?: string
           pending_checked?: number
+          pending_cursor?: string | null
           pending_promoted?: number
           pending_total?: number
+          phase?: string
           restored?: number
           started_at?: string
           status?: string
+          wallet_cursor?: string | null
           wallets_checked?: number
           wallets_total?: number
         }
@@ -1150,13 +1158,17 @@ export type Database = {
           error_message?: string | null
           finished_at?: string | null
           flipped?: number
+          heartbeat_at?: string
           id?: string
           pending_checked?: number
+          pending_cursor?: string | null
           pending_promoted?: number
           pending_total?: number
+          phase?: string
           restored?: number
           started_at?: string
           status?: string
+          wallet_cursor?: string | null
           wallets_checked?: number
           wallets_total?: number
         }
