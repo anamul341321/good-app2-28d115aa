@@ -291,7 +291,9 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return "all";
         };
         const pickVerificationQuery = (s: string): string | null => {
+          if (isAffirmation(s)) return null;
           const explicitUid = s.match(/(?:uid|ইউআইডি|আইডি|id)\s*[:#-]?\s*([A-Za-z0-9]{2,10})/i);
+
           if (explicitUid) return explicitUid[1].trim();
           const namedUser = s.match(/(?:user\s*\d+\s+)?([A-Za-z][A-Za-z .]{1,35})\s*(?:er|এর|র)\s+(?:face|ফেস|1st|first|verify|verification|ভেরিফাই)/i);
           if (namedUser) return namedUser[1].trim();
