@@ -167,9 +167,20 @@ export function verifyRequirementsReply(name: string): string {
     `• কোনো <b>জন্ম নিবন্ধন, পাসপোর্ট বা ডকুমেন্ট</b> লাগে না\n` +
     `• কোনো <b>ইনভেস্ট বা টাকা</b> লাগে না\n` +
     `• সেলফি ছবি আপলোড করা লাগে না — শুধু লাইভ ফেস স্ক্যান\n\n` +
-    `🔐 আমরা কারো ছবি সংরক্ষণ করি না — ভেরিফিকেশন সরাসরি Good-App এর সিস্টেমে হয়।\n\n` +
+    `🔐 ফেস স্ক্যান শুধু ভেরিফিকেশন ও নিরাপত্তা যাচাইয়ের জন্য ব্যবহার হয় — অন্য কোনো কাজে নয়।\n\n` +
     `এরপর ১০টি স্লট ফেস ভেরিফাই করলেই বোনাস শুরু, আর ৩–৪ দিন পর রি-ভেরিফাই করলে মাইনিং চালু হয়ে যায় 💙`
   );
+}
+
+/** Short answer for "free money dile face diye ki koren?" privacy/security questions. */
+export function facePrivacyReply(name: string): string {
+  const replies = [
+    `${name}, কেউ ফাউ ফাউ টাকা দিচ্ছে না — তাই ফেস ভেরিফিকেশন রাখা হয়েছে যেন <b>একজন মানুষ একবারই কাজ করতে পারে</b>।\n\nফেস শুধু আসল ইউজার, duplicate account ও কম বয়সী face চেক করার জন্য লাগে। অন্য কোনো কাজে face ব্যবহার/শেয়ার/বিক্রি করা হয় না।`,
+    `ভালো প্রশ্ন ${name} 🙂\n\nফেস নেওয়ার উদ্দেশ্য একটাই — fake/multiple account বন্ধ রাখা এবং payment যেন সত্যিকারের ইউজাররাই পায়। আপনার face দিয়ে আমাদের কোনো আলাদা কাজ নেই, শুধু verification security check।`,
+    `${name} ভাই, টাকা দেওয়ার আগে system নিশ্চিত হয় মানুষটা real এবং একই face দিয়ে বারবার account করা হচ্ছে না।\n\nতাই face লাগে। এটা income হিসাব দেখার বিষয় না — এটা শুধু নিরাপত্তা ও fair payment এর জন্য।`,
+    `আসলে face verification না থাকলে একজনই অনেক account করে unfair ভাবে টাকা নিতে পারত।\n\nতাই Good-App face দিয়ে শুধু duplicate/age/security যাচাই করে। এর বাইরে face নিয়ে কোনো কাজ করা হয় না ${name}।`,
+  ];
+  return replies[Math.floor(Math.random() * replies.length)];
 }
 
 const bn = (n: number) =>
