@@ -905,3 +905,57 @@ export async function smartAnswer(opts: {
     return null;
   }
 }
+
+/** Bot's own username (cached per worker) — used to detect @mentions. */
+let _meCache: { username: string; id: number } | null = null;
+export async function getMe(): Promise<{ username: string; id: number } | null> {
+  if (_meCache) return _meCache;
+  const me = await api<{ username?: string; id?: number }>("getMe", {});
+  if (!me?.username || !me?.id) return null;
+  _meCache = { username: me.username, id: me.id };
+  return _meCache;
+}
+
+/**
+ * অ্যাডমিন বটকে মেনশন করে যা করতে বলেছেন, সেটাকে গ্রুপে পাঠানোর মতো
+ * সুন্দর বাংলা মেসেজে সাজিয়ে দেয়।
+ */
+export async function adminCompose(instruction: string, targetName?: string | null): Promise<string | null> {
+  const key = process.env.LOVABLE_API_KEY;
+  if (!key) return null;
+  const q = (instruction || "").trim();
+  if (!q) return null;
+  try {
+    const res = await fetch(AI_URL, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: MODEL,
+        temperature: 0.6,
+        max_tokens: 500,
+        messages: [
+          {
+            role: "system",
+            content:
+              `তুমি Good-App সাপোর্ট গ্রুপের বট। অ্যাডমিন তোমাকে একটা নির্দেশ দিয়েছেন — ` +
+              `সেই নির্দেশ অনুযায়ী গ্রুপে পাঠানোর জন্য ভদ্র, পরিষ্কার বাংলা মেসেজ লিখে দাও।\n` +
+              `নিয়ম:\n• শুধু মেসেজটাই লিখবে, কোনো ব্যাখ্যা বা "ঠিক আছে" নয়।\n` +
+              `• HTML <b> ট্যাগ ব্যবহার করতে পারো, ২-৮ লাইনের মধ্যে রাখবে।\n` +
+              `• কারো UID, ছবি, key বা ব্যক্তিগত তথ্য নিজে থেকে যোগ করবে না।\n` +
+              `• অ্যাডমিন যা বলেননি, তা বানিয়ে লিখবে না।`,
+          },
+          {
+            role: "user",
+            content: `${targetName ? `যাকে বলা হচ্ছে: ${targetName}\n` : ""}অ্যাডমিনের নির্দেশ: ${q}`,
+          },
+        ],
+      }),
+    });
+    if (!res.ok) return null;
+    const data: any = await res.json();
+    const out = String(data.choices?.[0]?.message?.content ?? "").trim();
+    return out || null;
+  } catch {
+    return null;
+  }
+}
