@@ -781,7 +781,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         // read the screenshot directly and answer from app rules instead.
         const vaguePhotoReply = !!decision.reply &&
           /(কীভাবে সাহায্য|কিভাবে সাহায্য|সহায়তা করতে পারি|help করতে পারি|বলুন|জানাতে পারেন|কি সমস্যা)/i.test(decision.reply);
-        if (settings.auto_reply_enabled && photoBase64 && !voiceMatch
+        if (settings.auto_reply_enabled && photoBase64
             && !decision.should_delete && decision.intent === null
             && (!decision.reply || decision.needs_uid || vaguePhotoReply)) {
           const { analyzeScreenshotReply } = await import("@/lib/telegram-bot.server");
