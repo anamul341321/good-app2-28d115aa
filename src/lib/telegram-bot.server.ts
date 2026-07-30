@@ -78,7 +78,7 @@ export async function readScreenshotText(photoBase64: string): Promise<string> {
       body: JSON.stringify({
         model: MODEL,
         temperature: 0,
-        max_tokens: 300,
+        max_tokens: 900,
         messages: [
           {
             role: "user",
@@ -405,7 +405,7 @@ export async function humanizeReply(answer: string, userText?: string, avoid?: s
       body: JSON.stringify({
         model: MODEL,
         temperature: 1,
-        max_tokens: 700,
+        max_tokens: 2200,
         messages: [
           {
             role: "user",
@@ -448,7 +448,7 @@ export async function transcribeAudio(base64: string, format: string): Promise<s
       body: JSON.stringify({
         model: MODEL,
         temperature: 0,
-        max_tokens: 400,
+        max_tokens: 900,
         messages: [
           {
             role: "user",
@@ -634,7 +634,7 @@ ${opts.warnCount ? `এই ইউজার ইতিমধ্যে ${opts.warnC
     body: JSON.stringify({
       model: MODEL,
       temperature: 1,
-      max_tokens: 700,
+      max_tokens: 2200,
       messages: [
         { role: "system", content: system },
         { role: "user", content },
@@ -752,7 +752,7 @@ export async function analyzeScreenshotReply(opts: {
       body: JSON.stringify({
         model: MODEL,
         temperature: 0.8,
-        max_tokens: 500,
+        max_tokens: 1600,
         messages: [
           {
             role: "user",
@@ -929,7 +929,7 @@ export async function smartAnswer(opts: {
       body: JSON.stringify({
         model: MODEL,
         temperature: 0.9,
-        max_tokens: 600,
+        max_tokens: 1800,
         messages: [
           {
             role: "system",
@@ -989,7 +989,7 @@ export async function adminCompose(instruction: string, targetName?: string | nu
       body: JSON.stringify({
         model: MODEL,
         temperature: 0.6,
-        max_tokens: 500,
+        max_tokens: 1600,
         messages: [
           {
             role: "system",
