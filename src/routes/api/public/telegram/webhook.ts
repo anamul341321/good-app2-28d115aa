@@ -125,6 +125,17 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         };
         const pickSlot = (s: string): number | null => pickSlots(s)[0] ?? null;
         const isCancel = /(বাতিল|cancel|থাক|লাগবে না)/i.test(norm);
+        // Is this message a plain answer to what the bot just asked, or has the
+        // user moved on to a completely new question? (never keep looping)
+        const stripped = norm.replace(/[০-৯0-9,\s.\-–#]/g, "").trim();
+        const looksLikeSlotAnswer = (wantsAll || pickSlots(norm).length > 0) && stripped.length <= 10;
+        const looksLikeUidAnswer =
+          !!pickUid(norm) && (stripped.length <= 10 || /\b(uid|আইডি)\b/i.test(norm));
+        const questionish =
+          /(\?|কেন|কন\b|\bkn\b|keno|kivabe|kibhabe|কিভাবে|koita|কয়টা|কতটা|কত|koto|kobe|কবে|kokhon|withdraw|উইথড্র|balance|ব্যালেন্স|refer|রেফার|verify|ভেরিফাই|mining|মাইনিং|bonus|বোনাস|problem|somossa|সমস্যা|help|সাহায্য|\bki\b|কি\b|admin|অ্যাডমিন|এডমিন)/i.test(
+            norm,
+          ) || (photos?.length ?? 0) > 0 || !!voiceHeard;
+
         const verificationDateKind = (s: string): "first" | "reverify" | "all" | null => {
           if (/(kotodin|koto\s*din|কতদিন|কত\s*দিন)[^\n]{0,30}(por|pore|পর|পরে)[^\n]{0,30}(re\s*-?\s*verify|reverify|রি\s*-?\s*ভেরিফাই)/i.test(s)) {
             return null;
@@ -244,8 +255,19 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             .from("tg_sessions").select("*")
             .eq("tg_user_id", msg.from.id).eq("chat_id", msg.chat.id).maybeSingle();
 
-          const alive = sess && new Date(sess.expires_at).getTime() > Date.now();
-          if (sess && !alive) await clearSession();
+          const aliveRaw = sess && new Date(sess.expires_at).getTime() > Date.now();
+          if (sess && !aliveRaw) await clearSession();
+
+          // The user changed the subject → forget the pending question and
+          // answer what they actually asked now.
+          const answering =
+            sess?.step === "await_slot"
+              ? looksLikeSlotAnswer
+              : looksLikeUidAnswer || looksLikeSlotAnswer;
+          if (aliveRaw && sess && !answering && !isCancel && questionish) {
+            await clearSession();
+          }
+          const alive = aliveRaw && (answering || isCancel || !questionish);
 
           if (alive && sess) {
             if (isCancel) {
@@ -254,6 +276,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               await logMessage("question", "slot-reset-cancel", null, sess.uid);
               return Response.json({ ok: true, flow: "cancelled" });
             }
+
 
             if (sess.intent === "verification_dates" && sess.step === "await_uid") {
               const query = pickVerificationQuery(norm) || pickUid(norm);
@@ -338,6 +361,20 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
           }
         }
+
+        // ---- "অ্যাডমিন কোথায়?" → funny reply that mentions the real admin ----
+        if (
+          settings.auto_reply_enabled &&
+          /(admin|অ্যাডমিন|এডমিন|এ্যাডমিন)/i.test(norm) &&
+          /(kothai|kothay|কোথায়|kotha|নাই|nai|ase na|আসেন না|কে\b|ke\b|koi|কই|dakun|ডাকুন|call)/i.test(norm)
+        ) {
+          const { adminWhereReply } = await import("@/lib/telegram-bot.server");
+          const reply = adminWhereReply(senderName, (settings as any).support_username || "@anamulmunni");
+          await sendMessage(chatId, reply, msg.message_id);
+          await logMessage("question", "admin-where", reply, null);
+          return Response.json({ ok: true, flow: "admin-where" });
+        }
+
 
         const bannedWords: string[] = settings.banned_words ?? [];
         const lower = text.toLowerCase();
