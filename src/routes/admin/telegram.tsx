@@ -429,7 +429,9 @@ function FaqPanel() {
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <p className="text-xs font-black truncate">{f.topic}</p>
-                  <p className="text-[11px] text-muted-foreground whitespace-pre-wrap mt-1">{f.answer}</p>
+                  <p className="text-[11px] text-muted-foreground whitespace-pre-wrap mt-1">
+                    {f.answer || "🤖 উত্তর লেখা নেই — বট নিজেই অ্যাপের নিয়ম দেখে উত্তর দেবে"}
+                  </p>
                   {f.keywords?.length > 0 && (
                     <p className="text-[10px] text-cyan mt-1">🔑 {f.keywords.join(", ")}</p>
                   )}

@@ -306,28 +306,45 @@ export async function agentAnswer(opts: {
   }
   messages.push({ role: "user", content: `${opts.name} এখন লিখেছে: ${q}` });
 
-  // Questions whose answer lives in the database — force a real lookup on the
-  // first turn so the model can never answer them from memory/guesswork.
-  const needsData =
-    /(\d{1,7})|uid|ইউ ?আই ?ডি|স্লট|slot|ভেরিফা|verif|রেফার|refer|ব্যালেন্স|balance|উইথড্র|withdraw|ফি|fee|চার্জ|charge|বোনাস|bonus|মাইনিং|mining|হোয়াইটলিস্ট|whitelist|বিকাশ|bkash|নগদ|nagad|usdt|রিচার্জ|recharge|পেন্ডিং|pending|একাউন্ট|account|নম্বর|নাম্বার|number|wallet|ওয়ালেট/i.test(
+  // Questions whose answer really lives in the database (a concrete identifier
+  // or an explicit account/data word). Generic chit-chat must NOT be forced
+  // into a tool call — that used to make the bot look up garbage and then say
+  // "জানি না".
+  const hasIdentifier = /\b\d{2,12}\b|uid|ইউ ?আই ?ডি|01\d{9}/i.test(q);
+  const dataWord =
+    /(স্লট|slot|ব্যালেন্স|balance|উইথড্র|withdraw|ফি|fee|চার্জ|charge|বোনাস|bonus|রেফার|refer|ভেরিফা|verif|হোয়াইটলিস্ট|whitelist|নম্বর|নাম্বার|number|ওয়ালেট|wallet|একাউন্ট|account|সেটিং|setting|চালু|বন্ধ)/i.test(
       q,
     );
+  const needsData = hasIdentifier && dataWord;
 
-  try {
+  const ask = async (forceTools: boolean): Promise<string | null> => {
+    const messages2: Msg[] = messages.slice();
     for (let step = 0; step < 5; step++) {
-      const res = await fetch(AI_URL, {
-        method: "POST",
-        headers: { "Lovable-API-Key": key, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: MODEL,
-          tools: TOOLS,
-          messages,
-          ...(step === 0 && needsData ? { tool_choice: "required" as const } : {}),
-        }),
-      });
+      let res: Response;
+      try {
+        res = await fetch(AI_URL, {
+          method: "POST",
+          headers: { "Lovable-API-Key": key, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: MODEL,
+            tools: TOOLS,
+            messages: messages2,
+            ...(step === 0 && forceTools ? { tool_choice: "required" as const } : {}),
+          }),
+        });
+      } catch (e) {
+        console.error("[tg-agent] fetch failed", e);
+        return null;
+      }
 
       if (!res.ok) {
-        console.error("[tg-agent] gateway", res.status, await res.text());
+        const body = await res.text();
+        console.error("[tg-agent] gateway", res.status, body.slice(0, 300));
+        // Rate limit / transient → one short wait and retry the same step.
+        if ((res.status === 429 || res.status >= 500) && step < 4) {
+          await new Promise((r) => setTimeout(r, 1200));
+          continue;
+        }
         return null;
       }
       const data: any = await res.json();
@@ -336,12 +353,12 @@ export async function agentAnswer(opts: {
 
       const calls = m.tool_calls;
       if (calls?.length) {
-        messages.push({ role: "assistant", content: m.content ?? "", tool_calls: calls });
+        messages2.push({ role: "assistant", content: m.content ?? "", tool_calls: calls });
         for (const c of calls) {
           let args: any = {};
           try { args = JSON.parse(c.function?.arguments || "{}"); } catch { /* ignore */ }
           const out = await runTool(c.function?.name, args);
-          messages.push({ role: "tool", tool_call_id: c.id, content: out.slice(0, 4000) });
+          messages2.push({ role: "tool", tool_call_id: c.id, content: out.slice(0, 4000) });
         }
         continue;
       }
@@ -351,8 +368,48 @@ export async function agentAnswer(opts: {
       const { stripAdminFiller, stripBrandName } = await import("./telegram-bot.server");
       return stripAdminFiller(stripBrandName(out));
     }
+    return null;
+  };
+
+  try {
+    // First pass (tools forced only when a real identifier is present).
+    const first = await ask(needsData);
+    if (first) return first;
+    // Second chance: let the model answer from the rulebook without forced tools,
+    // instead of silently escalating with "জানি না".
+    if (needsData) {
+      const relaxed = await ask(false);
+      if (relaxed) return relaxed;
+    }
   } catch (e) {
     console.error("[tg-agent] error", e);
   }
   return null;
+}
+
+/**
+ * The admin saved only a question (and maybe a screenshot) with no answer text.
+ * Write the answer ourselves from the app's real rules/database.
+ */
+export async function composeFaqAnswer(opts: {
+  name: string;
+  topic: string;
+  keywords?: string[];
+  userText?: string;
+  knowledge: string;
+  rulebook?: string;
+  faqs?: string;
+}): Promise<string | null> {
+  const question =
+    `${opts.userText?.trim() || opts.topic}\n\n` +
+    `(অ্যাডমিন এই বিষয়টি সেভ করে রেখেছেন: "${opts.topic}"` +
+    (opts.keywords?.length ? ` — সম্পর্কিত শব্দ: ${opts.keywords.slice(0, 8).join(", ")}` : "") +
+    `। অ্যাপের আসল নিয়ম অনুযায়ী ইউজারকে সংক্ষেপে বাংলায় সমাধান বলে দাও।)`;
+  return agentAnswer({
+    name: opts.name,
+    question,
+    knowledge: opts.knowledge,
+    rulebook: opts.rulebook,
+    faqs: opts.faqs,
+  });
 }
