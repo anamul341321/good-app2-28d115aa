@@ -4,6 +4,7 @@ import { adminReverifyQueue, adminRunWhitelistCheck, adminReverifyByUser } from 
 import { Loader2, Clock, CheckCircle2, RefreshCw, AlertTriangle, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { WhitelistMonitor } from "@/components/WhitelistMonitor";
 
 export const Route = createFileRoute("/admin/reverify")({ component: ReverifyQueue });
 
@@ -47,6 +48,8 @@ function ReverifyQueue() {
 
   return (
     <div className="space-y-3">
+      <WhitelistMonitor />
+
       <button onClick={() => run.mutate()} disabled={run.isPending}
         className="w-full gradient-cta rounded-xl py-2.5 text-xs font-black flex items-center justify-center gap-2 disabled:opacity-60">
         {run.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
