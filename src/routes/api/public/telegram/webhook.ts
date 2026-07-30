@@ -109,6 +109,43 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         const senderName = [msg.from?.first_name, msg.from?.last_name].filter(Boolean).join(" ")
           || msg.from?.username || "User";
 
+        // ---- voice note / audio clip → transcribe BEFORE admin/mention logic ----
+        // Admin voice replies were previously ignored because the admin-silence
+        // guard ran before transcription, so text was still empty. From here on,
+        // every path (admin mention, normal support, fallback agent) sees the
+        // current voice message as normal text.
+        const audioMsg = msg.voice ?? msg.audio ?? msg.video_note ?? null;
+        let voiceHeard: string | null = null;
+        const captionText = text.trim();
+        if (audioMsg?.file_id) {
+          const { getFileBase64, transcribeAudio } = await import("@/lib/telegram-bot.server");
+          const file = await getFileBase64(audioMsg.file_id);
+          if (file) {
+            const ext = (file.path.split(".").pop() || "ogg").toLowerCase();
+            const fmt = ["wav", "mp3", "webm", "m4a", "ogg", "aac", "flac"].includes(ext)
+              ? ext
+              : msg.video_note ? "mp4" : "ogg";
+            voiceHeard = await transcribeAudio(file.base64, fmt);
+            // প্রথমবার না বুঝলে আরেকবার চেষ্টা করবে (নেটওয়ার্ক/মডেল হেঁচকি এড়াতে)
+            if (!voiceHeard || voiceHeard.replace(/[^\p{L}\p{N}]/gu, "").length < 3) {
+              voiceHeard = await transcribeAudio(file.base64, fmt);
+            }
+            if (voiceHeard) voiceHeard = voiceHeard.trim();
+            if (voiceHeard) text = captionText ? `${captionText}\n${voiceHeard}`.trim() : voiceHeard;
+          }
+          // Couldn't understand the voice → politely ask again instead of
+          // guessing and sending an unrelated answer.
+          if ((!voiceHeard || voiceHeard.replace(/[^\p{L}\p{N}]/gu, "").length < 3) && !captionText) {
+            const who = msg.from?.first_name ? `${msg.from.first_name}, ` : "";
+            await sendMessage(
+              chatId,
+              `${who}দুঃখিত 🙏 আপনার ভয়েসটা ঠিকমতো বুঝতে পারিনি।\nএকটু আস্তে করে আবার বলবেন, অথবা লিখে পাঠান — আমি সাথে সাথে সাহায্য করছি 💙`,
+              msg.message_id,
+            );
+            return Response.json({ ok: true, flow: "voice-unclear" });
+          }
+        }
+
         // Do not jump into conversations already being handled by a human admin.
         // If an admin writes, or the user replies to an admin's message, stay silent.
         const isBotCommand = /^\/(?:start|help|admin|reset)\b/i.test(text.trim());
@@ -255,11 +292,17 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             if (askCtx || /(ki|কি|kivabe|কীভাবে|কিভাবে|keno|কেন|bolo|বলো|bujhao|বুঝিয়ে)/i.test(bnDigits)) {
               const { smartAnswer } = await import("@/lib/telegram-bot.server");
               const { knowledgeText, loadRates: lr } = await import("@/lib/telegram-knowledge.server");
-              const ans = await smartAnswer({
+              const { appRulebook } = await import("@/lib/telegram-app-rules.server");
+              const { agentAnswer } = await import("@/lib/telegram-agent.server");
+              const rates = await lr();
+              const base = {
                 name: targetName || "বন্ধুরা",
                 question: order,
-                knowledge: knowledgeText(await lr()),
-              });
+                knowledge: knowledgeText(rates),
+              };
+              const ans =
+                (await agentAnswer({ ...base, rulebook: appRulebook(rates), isAdmin: true }))
+                ?? (await smartAnswer(base));
               if (ans && ans !== "NO_ANSWER") {
                 await sendMessage(chatId, ans, replyTo);
                 return Response.json({ ok: true, flow: "admin-smart" });
@@ -314,44 +357,6 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           }
           return Response.json({ ok: true, ignored: senderIsAdmin ? "admin-message" : "reply-to-admin" });
         }
-
-
-        // ---- voice note / audio clip → transcribe and treat as normal text ----
-        const audioMsg = msg.voice ?? msg.audio ?? msg.video_note ?? null;
-        let voiceHeard: string | null = null;
-        const captionText = text.trim();
-        if (audioMsg?.file_id) {
-          const { getFileBase64, transcribeAudio } = await import("@/lib/telegram-bot.server");
-          const file = await getFileBase64(audioMsg.file_id);
-          if (file) {
-            const ext = (file.path.split(".").pop() || "ogg").toLowerCase();
-            const fmt = ["wav", "mp3", "webm", "m4a", "ogg", "aac", "flac"].includes(ext)
-              ? ext
-              : msg.video_note ? "mp4" : "ogg";
-            voiceHeard = await transcribeAudio(file.base64, fmt);
-            // প্রথমবার না বুঝলে আরেকবার চেষ্টা করবে (নেটওয়ার্ক/মডেল হেঁচকি এড়াতে)
-            if (!voiceHeard || voiceHeard.replace(/[^\p{L}\p{N}]/gu, "").length < 3) {
-              voiceHeard = await transcribeAudio(file.base64, fmt);
-            }
-            if (voiceHeard) voiceHeard = voiceHeard.trim();
-            if (voiceHeard) text = captionText ? `${captionText}\n${voiceHeard}`.trim() : voiceHeard;
-          }
-          // Couldn't understand the voice → politely ask again instead of
-          // guessing and sending an unrelated answer.
-          if ((!voiceHeard || voiceHeard.replace(/[^\p{L}\p{N}]/gu, "").length < 3) && !captionText) {
-            const who = msg.from?.first_name ? `${msg.from.first_name}, ` : "";
-            await sendMessage(
-              chatId,
-              `${who}দুঃখিত 🙏 আপনার ভয়েসটা ঠিকমতো বুঝতে পারিনি।\nএকটু আস্তে করে আবার বলবেন, অথবা লিখে পাঠান — আমি সাথে সাথে সাহায্য করছি 💙`,
-              msg.message_id,
-            );
-            return Response.json({ ok: true, flow: "voice-unclear" });
-          }
-        }
-
-
-
-
 
         // Idempotency: skip if this update was already stored.
         const { data: seen } = await supabaseAdmin
