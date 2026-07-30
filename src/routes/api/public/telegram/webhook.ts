@@ -35,9 +35,17 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         if (!settings?.enabled) return Response.json({ ok: true, disabled: true });
 
         const chatId = String(msg.chat.id);
-        if (settings.group_chat_id && settings.group_chat_id !== chatId) {
-          return Response.json({ ok: true, ignored: "other-chat" });
-        }
+        // group_chat_id এ কমা দিয়ে একাধিক গ্রুপ আইডি রাখা যায়; ফাঁকা থাকলে সব গ্রুপে কাজ করবে।
+        const allowedChats = String(settings.group_chat_id ?? "")
+          .split(/[,\s]+/).map((s) => s.trim()).filter(Boolean);
+        const chatAllowed = allowedChats.length === 0 || allowedChats.includes(chatId);
+        const addChatToAllowList = async () => {
+          if (allowedChats.includes(chatId)) return;
+          await supabaseAdmin.from("tg_bot_settings")
+            .update({ group_chat_id: [...allowedChats, chatId].join(",") })
+            .eq("id", "default");
+        };
+
 
         // ---- new members joined → warm welcome -------------------------------
         const joined = (msg.new_chat_members ?? []) as any[];
