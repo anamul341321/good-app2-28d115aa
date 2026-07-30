@@ -88,12 +88,17 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         // Do not jump into conversations already being handled by a human admin.
         // If an admin writes, or the user replies to an admin's message, stay silent.
         const isBotCommand = /^\/(?:start|help|admin|reset)\b/i.test(text.trim());
-        const [senderIsAdmin, repliedToAdmin] = await Promise.all([
+        // গ্রুপের মালিক (support_username) সবসময় অ্যাডমিন হিসেবেই গণ্য হবে
+        const ownerUsername = String((settings as any).support_username || "@anamulmunni")
+          .replace(/^@/, "").toLowerCase();
+        const senderIsOwner = (msg.from?.username ?? "").toLowerCase() === ownerUsername;
+        const [chatAdminFlag, repliedToAdmin] = await Promise.all([
           isChatAdmin(chatId, msg.from?.id).catch(() => false),
           msg.reply_to_message?.from?.id && !msg.reply_to_message?.from?.is_bot
             ? isChatAdmin(chatId, msg.reply_to_message.from.id).catch(() => false)
             : Promise.resolve(false),
         ]);
+        const senderIsAdmin = chatAdminFlag || senderIsOwner;
         // Exception: when an admin announces that a password was changed, the bot
         // confirms it to the user instead of staying silent.
         const passwordChanged = senderIsAdmin && !isBotCommand && text.trim().length > 0
