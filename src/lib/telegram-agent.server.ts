@@ -142,26 +142,40 @@ async function runTool(name: string, args: any): Promise<string> {
       const slots = await listSlotNumbers(String(args?.uid ?? ""));
       return slots.length ? `স্লট: ${slots.join(", ")}` : "কোনো স্লট পাওয়া যায়নি।";
     }
-    if (name === "app_status") {
+    if (name === "fee_quote") {
+      const amount = Number(args?.amount);
+      if (!Number.isFinite(amount) || amount <= 0) {
+        return "নিয়ম: ১০০৳ বা বেশি হলে ফি ১০%, ১০০৳ এর কম হলে ২০%।";
+      }
+      // Same rule as withdraw.functions.ts (single source of truth).
+      const feeRate = amount < 100 ? 0.2 : 0.1;
+      const fee = Math.floor(amount * feeRate);
+      return `উইথড্র ${amount}৳ → ফি ${fee}৳ (${Math.round(feeRate * 100)}%) → হাতে আসবে ${amount - fee}৳।`;
+    }
+    if (name === "bonus_settings" || name === "app_status") {
       const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
       const { loadRates, knowledgeText } = await import("./telegram-knowledge.server");
       const rates = await loadRates();
       const [{ data: settings }, users, verified] = await Promise.all([
-        db.from("admin_settings").select("*").limit(1).maybeSingle(),
+        db.from("bonus_settings").select("*").eq("id", "default").maybeSingle(),
         db.from("profiles").select("id", { count: "exact", head: true }),
         db.from("tasks").select("id", { count: "exact", head: true }).not("initial_verify_at", "is", null),
       ]);
       const s: any = settings ?? {};
-      const pay = Object.entries(s)
-        .filter(([k]) => /enabled|_on$|window|mode/i.test(k))
-        .map(([k, v]) => `${k}=${String(v)}`)
-        .join(", ");
+      const onOff = (v: any) => (v === false ? "বন্ধ" : "চালু");
+      const live =
+        `পেমেন্ট মেথড: বিকাশ ${onOff(s.bkash_enabled)}, নগদ ${onOff(s.nagad_enabled)}, ` +
+        `মোবাইল রিচার্জ ${onOff(s.recharge_enabled)}, USDT ${onOff(s.usdt_enabled)}\n` +
+        `বোনাস: ১ম ভেরিফাই ${s.first_verify_bonus ?? "-"}৳, রি-ভেরিফাই ${s.reverify_bonus ?? "-"}৳, রেফারার ${s.referrer_bonus ?? "-"}৳` +
+        (s.promo_active ? ` | প্রমো চালু: ${s.promo_title ?? ""}` : "");
+      if (name === "bonus_settings") return live;
       return (
         knowledgeText(rates) +
-        `\n\nলাইভ অবস্থা: মোট ইউজার ${users.count ?? 0}, মোট ভেরিফাইড স্লট ${verified.count ?? 0}` +
-        (pay ? `\nসেটিংস: ${pay}` : "")
+        `\n\nলাইভ অবস্থা: মোট ইউজার ${users.count ?? 0}, মোট ভেরিফাইড স্লট ${verified.count ?? 0}\n` +
+        live
       );
     }
+
   } catch (e) {
     console.error("[tg-agent] tool error", name, e);
     return "টুল চালাতে সমস্যা হয়েছে।";
