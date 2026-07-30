@@ -67,6 +67,16 @@ async function findProfilesForQuery(db: any, queryRaw: string): Promise<ProfileP
   const query = queryRaw.trim();
   if (!query) return [];
 
+  const digitsOnly = query.replace(/\D/g, "");
+  if (digitsOnly.length >= 10) {
+    const { data } = await db
+      .from("profiles")
+      .select("id, display_name, uid_seq, referral_code")
+      .in("phone_number", phoneVariants(query))
+      .limit(1);
+    if (data?.length) return data as ProfilePick[];
+  }
+
   if (/^\d+$/.test(query)) {
     const { data } = await db
       .from("profiles")
@@ -75,6 +85,7 @@ async function findProfilesForQuery(db: any, queryRaw: string): Promise<ProfileP
       .maybeSingle();
     return data ? [data] : [];
   }
+
 
   if (/^[A-Za-z0-9]{6,10}$/.test(query)) {
     const { data } = await db
