@@ -426,3 +426,69 @@ export async function buildReverifyStatusReport(queryRaw: string): Promise<Verif
 
   return { found: true, uid: String(profile.uid_seq ?? queryRaw), card };
 }
+
+/**
+ * "আমি রেফার করেছি কিন্তু রেফার বাড়ে না" — show the real referral history and
+ * explain why the counted number can drop (a friend's slot needs re-verify) and
+ * come back once they re-verify.
+ */
+export async function buildReferralHistoryReport(uidRaw: string): Promise<ReferralJoinResult> {
+  const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
+
+  const matches = await findProfilesForQuery(db, uidRaw.trim());
+  if (matches.length !== 1) return { found: false };
+  const profile = matches[0];
+
+  const { data: referees } = await db
+    .from("profiles")
+    .select("id, display_name, uid_seq, created_at")
+    .eq("referred_by", profile.id)
+    .order("created_at", { ascending: true });
+
+  const list = referees ?? [];
+  const ids = list.map((r: any) => r.id);
+  const rows: any[] = [];
+  for (let i = 0; i < ids.length; i += 150) {
+    const chunk = ids.slice(i, i + 150);
+    const part = await pagedIds(db, "tasks", "user_id, slot, status, wallet_address, whitelist_ok", (q: any) =>
+      q.in("user_id", chunk),
+    );
+    rows.push(...part);
+  }
+
+  const okSlots = new Map<string, Set<number>>();
+  const pendingSlots = new Map<string, Set<number>>();
+  for (const t of rows) {
+    if (!t.wallet_address) continue;
+    if (t.status !== "done" && t.status !== "verified") continue;
+    const bucket = t.whitelist_ok === false ? pendingSlots : okSlots;
+    if (!bucket.has(t.user_id)) bucket.set(t.user_id, new Set());
+    bucket.get(t.user_id)!.add(t.slot);
+  }
+
+  let counted = 0;
+  let waiting = 0;
+  const lines: string[] = [];
+  for (const r of list) {
+    const ok = okSlots.get(r.id)?.size ?? 0;
+    const pend = pendingSlots.get(r.id)?.size ?? 0;
+    if (ok >= 10) counted++;
+    else if (ok + pend >= 10) waiting++;
+    lines.push(
+      `   • <b>${r.display_name || "ইউজার"}</b> — UID <code>${r.uid_seq ?? "—"}</code> · ${ok}/10 ` +
+        (ok >= 10 ? "✅ গণনায় আছে" : pend ? `⏳ ${pend} টি স্লটে রি-ভেরিফাই বাকি` : "🕒 ফেস বাকি"),
+    );
+  }
+
+  const card =
+    `👥 <b>রেফার হিস্টরি</b> — <b>${profile.display_name || "ইউজার"}</b> (UID <code>${profile.uid_seq ?? "—"}</code>)\n\n` +
+    `মোট রেফার: <b>${list.length}</b> জন\n` +
+    `গণনায় আছে (১০/১০ ঠিক আছে): <b>${counted}</b> জন\n` +
+    (waiting ? `রি-ভেরিফাইয়ের অপেক্ষায়: <b>${waiting}</b> জন\n` : "") +
+    (lines.length ? `\n${lines.slice(0, 15).join("\n")}\n` + (lines.length > 15 ? `   … আরও ${lines.length - 15} জন\n` : "") : "\nএখনো কেউ আপনার রেফারে join করেনি।\n") +
+    `\n📌 <b>রেফার সংখ্যা কমে যায় কেন?</b>\n` +
+    `আপনার কোনো বন্ধুর স্লটে যখন <b>রি-ভেরিফাই</b> চাওয়া হয়, তখন ওই স্লটটি সাময়িকভাবে গণনার বাইরে চলে যায় — তাই আপনার রেফার হিসাবও কমে দেখায়।\n` +
+    `✅ সে আবার রি-ভেরিফাই সম্পন্ন করলেই স্লটটি আবার যোগ হয়ে যাবে এবং আপনার হিসাবও আগের মতো বেড়ে যাবে 💙`;
+
+  return { found: true, uid: String(profile.uid_seq ?? uidRaw), card };
+}
