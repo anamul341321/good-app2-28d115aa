@@ -1191,6 +1191,9 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             question: text,
             knowledge: knowledgeText(await loadRates()),
             faqs: faqText,
+            history: convoHistory,
+            pastReplies: convoReplies,
+            recall: recallText,
           });
           const mention = (settings as any).admin_mention
             || (settings as any).support_username || "@anamulmunni";
@@ -1212,6 +1215,9 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             name: senderName,
             question: text,
             knowledge: knowledgeText(await loadRates()),
+            history: convoHistory,
+            pastReplies: convoReplies,
+            recall: recallText,
           });
           const mention = (settings as any).admin_mention
             || (settings as any).support_username || "@anamulmunni";
@@ -1338,6 +1344,9 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               name: senderName,
               question: text,
               knowledge: knowledgeText(await loadRates()),
+              history: convoHistory,
+              pastReplies: convoReplies,
+              recall: recallText,
             });
           }
           if (!reply) reply = `${escalateReply(senderName, mention)}\n${mention}`;
