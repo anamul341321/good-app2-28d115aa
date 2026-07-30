@@ -330,12 +330,21 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           /(withdraw|উইথড্র|উঠাব|উঠাতে|তুলতে|claim|ক্লেইম|টাকা)/i.test(norm) &&
           /(পারব|parbo|পারবো|যাবে|jabe|হবে|hobe|দিতে পারব|নিতে পারব|উঠবে|unblock|আনলক|লক|lock)/i.test(norm);
 
+        // ইউজার কোনো সমস্যার কথা বললে (যেমন "রি-ভেরিফাই করতে গেলে বলতেছে ১৮
+        // বছরের নিচে") সেটা একাউন্ট-হিসাব চাওয়া নয় — তখন UID না চেয়ে সরাসরি
+        // সমস্যার সমাধান বলতে হবে।
+        const reportsProblem =
+          /(bolteche|bolteche|বলতেছে|বলছে|বলতেসে|বলে|dekhacche|দেখাচ্ছে|দেখায়|show korche|hocche na|হচ্ছে না|hoi na|হয় না|হয়না|hocche nah|hoy nai|হয় নাই|হচ্ছে নাহ|parchi na|পারছি না|পারতেছি না|partesi na|somossa|সমস্যা|problem|error|এরর|failed|ফেইল|fail|আটকে|atke|18|১৮|under ?age|বয়স)/i
+            .test(norm);
+
         // "আমার কয়টা রেফার হয়েছে?", "আমার ব্যালেন্স কত?", "কয়টা ভেরিফাই হয়েছে?"
         // → এগুলোর উত্তর একাউন্ট ডেটা থেকেই দিতে হবে, তাই UID চেয়ে কার্ড দেখাই।
         const asksOwnAccount =
           !pendingWithdrawQuestion &&
+          !reportsProblem &&
           /(আমার|amar|amr|my|আমি|ami|nijer|নিজের|acount|account|একাউন্ট|অ্যাকাউন্ট)/i.test(norm) &&
           /(refer|reffer|রেফার|ব্যালেন্স|balance|verify|ভেরিফাই|verification|ভেরিফিকেশন|face|ফেস|slot|স্লট|mining|মাইনিং|bonus|বোনাস|টাকা|taka|tk|income|ইনকাম|status|স্ট্যাটাস|details|ডিটেইলস|koto|কত|koita|কয়টা|kota|hoyeche|hoyche|hoise|আছে|ache)/i.test(norm);
+
 
 
         const verificationDateKind = (s: string): "first" | "reverify" | "all" | null => {
