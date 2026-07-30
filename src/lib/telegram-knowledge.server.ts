@@ -4,6 +4,7 @@
 
 import { miningWindowInfo, nextOpenLabelBn } from "./mining-window";
 import { builtinFaqKnowledge } from "./telegram-builtin-faq.server";
+import { appRulebook } from "./telegram-app-rules.server";
 
 export type AppRates = {
   firstVerify: number;
