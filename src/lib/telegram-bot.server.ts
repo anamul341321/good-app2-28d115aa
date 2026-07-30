@@ -510,6 +510,54 @@ export function stripAdminFiller(reply: string): string {
 }
 
 /** Friendly generic troubleshooting answer when nothing specific matches. */
+/**
+ * Last-resort screenshot answer: read whatever is on the user's screenshot and
+ * explain the problem + fix in Bengali. Used when no admin FAQ image matched.
+ */
+export async function analyzeScreenshotReply(opts: {
+  photoBase64: string;
+  name: string;
+  text: string;
+  knowledge: string;
+}): Promise<string | null> {
+  const key = process.env.LOVABLE_API_KEY;
+  if (!key) return null;
+  try {
+    const res = await fetch(AI_URL, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: MODEL,
+        temperature: 0.8,
+        max_tokens: 500,
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text:
+                  `তুমি Good-App এর সাপোর্ট অ্যাসিস্ট্যান্ট। নিচের স্ক্রিনশটটি ভালো করে দেখো (লেখা/এরর/বোতাম পড়ো) এবং ${opts.name} কে বাংলায় বুঝিয়ে বলো ` +
+                  `এটা আসলে কী সমস্যা এবং কীভাবে ঠিক করবে। ৩-৬ লাইন, উষ্ণ ও পরিষ্কার, দরকারে নাম্বার দিয়ে ধাপ। ` +
+                  `HTML <b> ট্যাগ ব্যবহার করতে পারো। "অ্যাডমিন উত্তর দেবেন" জাতীয় কথা লিখবে না, নিজেই সমাধান দেবে। ` +
+                  `ফেস ভেরিফিকেশন এরর হলে: ব্রাউজার বদলানো, ফোন রিস্টার্ট, Airplane mode on/off, মোবাইল ডেটা, ১৮+ ফেস, ভালো আলো — এসব পরামর্শ দেবে।\n\n` +
+                  `${opts.knowledge}\n\nইউজারের সাথের লেখা: ${opts.text || "(কিছু লেখেনি)"}`,
+              },
+              { type: "image_url", image_url: { url: `data:image/jpeg;base64,${opts.photoBase64}` } },
+            ],
+          },
+        ],
+      }),
+    });
+    if (!res.ok) return null;
+    const data: any = await res.json();
+    const out = String(data.choices?.[0]?.message?.content ?? "").trim();
+    return out ? stripAdminFiller(out) : null;
+  } catch {
+    return null;
+  }
+}
+
 export function genericHelpReply(name: string): string {
   const openers = [
     `${name}, চিন্তার কিছু নেই 🙂 বেশিরভাগ সময় ছোট একটা টেকনিক্যাল ঝামেলার কারণেই এমন হয়।`,
