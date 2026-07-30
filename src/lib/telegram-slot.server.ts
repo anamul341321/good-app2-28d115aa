@@ -5,6 +5,14 @@ export type SlotResetResult =
   | { ok: true; slot: number; name: string; hadWallet: boolean }
   | { ok: false; error: string };
 
+/** Words like "৪ নম্বর স্লট" must never be read as a UID. */
+export function stripSlotMentions(s: string): string {
+  return s
+    .replace(/(\d{1,3})\s*(?:no|nombor|number|নম্বর|নাম্বার|নং)?\s*(?:er|এর)?\s*(?:slot|স্লট)/gi, " ")
+    .replace(/(?:slot|স্লট)\s*(?:no|number|নম্বর|নাম্বার|নং)?\s*[:#-]?\s*(\d{1,3})/gi, " ");
+}
+
+
 export async function findProfileByUid(uid: string) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const clean = uid.trim();
@@ -72,6 +80,21 @@ export async function resetSlotForUid(uid: string, slot: number): Promise<SlotRe
   }).eq("id", task.id);
   if (error) return { ok: false, error: "রিসেট করা যায়নি, একটু পরে আবার চেষ্টা করুন।" };
 
+  // A pending attempt can be re-created by the whitelist job between the
+  // delete above and this update — clear again after the slot is emptied.
+  await supabaseAdmin.from("unverified_attempts")
+    .delete().eq("user_id", profile.id).eq("slot", slot);
+
+  // Verify the row is genuinely empty now; never report success on a no-op.
+  const { data: after } = await supabaseAdmin
+    .from("tasks")
+    .select("status, wallet_address, face_photo_url")
+    .eq("id", task.id)
+    .maybeSingle();
+  if (!after || after.status !== "empty" || after.wallet_address || after.face_photo_url) {
+    return { ok: false, error: "স্লটটি খালি হয়নি — অ্যাডমিন প্যানেল থেকে চেষ্টা করুন।" };
+  }
+
   return {
     ok: true,
     slot,
@@ -83,9 +106,12 @@ export async function resetSlotForUid(uid: string, slot: number): Promise<SlotRe
 export type BatchResetResult = {
   found: boolean;
   name: string;
+  /** UID the bot actually resolved — shown back so a wrong UID is obvious. */
+  uid?: string;
   done: number[];
   failed: { slot: number; error: string }[];
 };
+
 
 /** Reset any number of slots at once for one account. */
 export async function resetSlotsForUid(uid: string, slots: number[]): Promise<BatchResetResult> {
@@ -105,9 +131,11 @@ export async function resetSlotsForUid(uid: string, slots: number[]): Promise<Ba
   return {
     found: true,
     name: profile.display_name || `UID ${profile.uid_seq}`,
+    uid: String(profile.uid_seq ?? uid),
     done,
     failed,
   };
+
 }
 
 /** Slot numbers that actually exist for an account (used for "সব স্লট" requests). */
