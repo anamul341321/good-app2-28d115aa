@@ -759,6 +759,29 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               return Response.json({ ok: true, flow: "referral-join-session" });
             }
 
+            if (sess.intent === "referral_history" && sess.step === "await_uid") {
+              const uid = pickUidFromCurrentOrReply();
+              if (!uid) {
+                await sendMessage(
+                  chatId,
+                  `🆔 আপনার <b>UID</b> নম্বরটি লিখুন — তাহলে আপনার পুরো রেফার হিস্টরি দেখে জানিয়ে দিচ্ছি।`,
+                  msg.message_id,
+                );
+                return Response.json({ ok: true, flow: "referral-history-await-uid" });
+              }
+              const { buildReferralHistoryReport } = await import("@/lib/telegram-lookup.server");
+              const res = await buildReferralHistoryReport(uid);
+              if (res.found) await clearSession();
+              const reply = res.found
+                ? res.card
+                : `❌ UID <code>${uid}</code> দিয়ে কোনো একাউন্ট পাওয়া যায়নি। সঠিক UID টি লিখুন।`;
+              await sendMessage(chatId, reply, msg.message_id);
+              await logMessage("question", "referral-history", reply, res.found ? res.uid : null);
+              return Response.json({ ok: true, flow: "referral-history-session" });
+            }
+
+
+
 
             if (sess.intent === "verification_dates" && sess.step === "await_uid") {
               const query = pickVerificationQuery(norm) || pickUidFromCurrentOrReply();
