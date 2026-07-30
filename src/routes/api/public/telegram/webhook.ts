@@ -988,8 +988,14 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         if (!decision.reply && decision.escalate && !decision.should_delete
             && !decision.needs_uid && decision.intent === null
             && settings.auto_reply_enabled && (settings as any).escalate_enabled !== false) {
-          const { escalateReply, genericHelpReply } = await import("@/lib/telegram-bot.server");
-          const reply = `${genericHelpReply(senderName)}\n\n` +
+          const { escalateReply, genericHelpReply, smartAnswer } = await import("@/lib/telegram-bot.server");
+          const { loadRates, knowledgeText } = await import("@/lib/telegram-knowledge.server");
+          const smart = await smartAnswer({
+            name: senderName,
+            question: text,
+            knowledge: knowledgeText(await loadRates()),
+          });
+          const reply = `${smart || genericHelpReply(senderName)}\n\n` +
             escalateReply(senderName, (settings as any).support_username || "@anamulmunni");
           await sendMessage(chatId, reply, msg.message_id);
           actions.push("escalated");
