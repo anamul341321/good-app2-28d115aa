@@ -486,7 +486,11 @@ ${userText ? `\nইউজার বলেছে: "${userText.slice(0, 300)}"` : 
     if (!res.ok) return answer;
     const data: any = await res.json();
     const out = String(data.choices?.[0]?.message?.content ?? "").trim();
-    return out.length > 20 ? out : answer;
+    // মডেল মাঝে মাঝে রিরাইট না করে নিজের ইনস্ট্রাকশন/অ্যানালাইসিস (ইংরেজিতে,
+    // "Emoji count", "Tone:", "purely text with HTML" ইত্যাদি) ফেরত দেয় —
+    // সেটা গ্রুপে পাঠালে ইউজার কিছুই বোঝে না। এমন হলে মূল উত্তরটাই যাবে।
+    if (!out || out.length <= 20 || isMetaOutput(out, answer)) return answer;
+    return out;
   } catch {
     return answer;
   }
