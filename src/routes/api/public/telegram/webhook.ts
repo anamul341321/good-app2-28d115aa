@@ -180,7 +180,12 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             // প্রশ্ন/টপিক বুঝিয়ে বলতে বললে → অ্যাপের রুলবুক থেকে গ্রাউন্ডেড উত্তর
             if (askCtx || /(ki|কি|kivabe|কীভাবে|কিভাবে|keno|কেন|bolo|বলো|bujhao|বুঝিয়ে)/i.test(bnDigits)) {
               const { smartAnswer } = await import("@/lib/telegram-bot.server");
-              const ans = await smartAnswer(order, targetName || "বন্ধুরা", []);
+              const { knowledgeText, loadRates: lr } = await import("@/lib/telegram-knowledge.server");
+              const ans = await smartAnswer({
+                name: targetName || "বন্ধুরা",
+                question: order,
+                knowledge: knowledgeText(await lr()),
+              });
               if (ans && ans !== "NO_ANSWER") {
                 await sendMessage(chatId, ans, replyTo);
                 return Response.json({ ok: true, flow: "admin-smart" });
