@@ -458,6 +458,21 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           faq.push({ topic: f.topic, answer: f.answer, keywords: (f as any).keywords, imageBase64 });
         }
 
+        // Built-in answers (always available) — admin rows above take priority.
+        {
+          const { BUILTIN_FAQS } = await import("@/lib/telegram-builtin-faq.server");
+          for (const b of BUILTIN_FAQS) {
+            if (faq.some((f) => String(f.topic).trim().toLowerCase() === b.topic.trim().toLowerCase())) continue;
+            faq.push({
+              topic: b.topic,
+              answer: b.answer,
+              keywords: [...b.keywords, ...b.screenshot],
+              imageBase64: null,
+            });
+          }
+        }
+
+
         if (photoBase64 && settings.auto_reply_enabled) {
           try {
             const { matchFaqImage, humanizeReply } = await import("@/lib/telegram-bot.server");
