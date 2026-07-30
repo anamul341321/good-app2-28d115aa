@@ -455,3 +455,130 @@ function PaidByPanel({ data, loading }: { data: any[]; loading: boolean }) {
     </div>
   );
 }
+
+// ---------- Daily report: প্রতিদিন কে কত টাকা paid করেছে ----------
+function DailyReport({ data }: { data: any[] }) {
+  const [openDay, setOpenDay] = useState<string | null>(null);
+
+  const days = useMemo(() => {
+    const map = new Map<string, { date: string; total: number; count: number; admins: Map<string, { total: number; count: number }> }>();
+    for (const a of data) {
+      for (const e of a.entries ?? []) {
+        if (!e.processed_at) continue;
+        const d = new Date(e.processed_at);
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+        if (!map.has(key)) map.set(key, { date: key, total: 0, count: 0, admins: new Map() });
+        const day = map.get(key)!;
+        day.total += Number(e.amount) || 0;
+        day.count += 1;
+        const cur = day.admins.get(a.name) ?? { total: 0, count: 0 };
+        cur.total += Number(e.amount) || 0;
+        cur.count += 1;
+        day.admins.set(a.name, cur);
+      }
+    }
+    return [...map.values()]
+      .map((d) => ({ ...d, adminList: [...d.admins.entries()].map(([name, v]) => ({ name, ...v })).sort((x, y) => y.total - x.total) }))
+      .sort((x, y) => (x.date < y.date ? 1 : -1));
+  }, [data]);
+
+  const grand = useMemo(() => days.reduce((s, d) => s + d.total, 0), [days]);
+
+  const bnDate = (key: string) =>
+    new Date(key + "T00:00:00").toLocaleDateString("bn-BD", { day: "numeric", month: "long", year: "numeric" });
+
+  const todayKey = (() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  })();
+
+  const downloadCsv = () => {
+    const lines = ["Date,Admin,Payments,Amount(BDT)"];
+    for (const d of days) for (const a of d.adminList) lines.push(`${d.date},"${a.name}",${a.count},${a.total.toFixed(2)}`);
+    lines.push(`,,TOTAL,${grand.toFixed(2)}`);
+    const blob = new Blob(["\uFEFF" + lines.join("\n")], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `daily-payout-report-${todayKey}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("CSV ডাউনলোড হয়েছে");
+  };
+
+  const printReport = () => {
+    const rows = days
+      .map(
+        (d) => `<tr class="day"><td>${bnDate(d.date)}</td><td>${d.count}</td><td>${d.total.toFixed(2)} BDT</td></tr>` +
+          d.adminList.map((a) => `<tr><td style="padding-left:24px">↳ ${a.name}</td><td>${a.count}</td><td>${a.total.toFixed(2)} BDT</td></tr>`).join(""),
+      )
+      .join("");
+    const html = `<!doctype html><html><head><meta charset="utf-8"><title>Daily Payout Report</title>
+<style>body{font-family:system-ui,sans-serif;padding:24px;color:#111}h1{font-size:20px;margin:0}
+p.sub{color:#666;font-size:12px;margin:4px 0 16px}table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{border-bottom:1px solid #ddd;padding:6px 8px;text-align:left}tr.day td{background:#f3f7ff;font-weight:700}
+.total{margin-top:16px;font-size:18px;font-weight:800}</style></head><body>
+<h1>Good-App · Daily Payout Report</h1>
+<p class="sub">Generated: ${new Date().toLocaleString()}</p>
+<table><thead><tr><th>তারিখ / Admin</th><th>পেমেন্ট</th><th>টাকা</th></tr></thead><tbody>${rows}</tbody></table>
+<p class="total">সর্বমোট: ${grand.toFixed(2)} BDT</p>
+</body></html>`;
+    const w = window.open("", "_blank");
+    if (!w) { toast.error("Popup ব্লক হয়েছে"); return; }
+    w.document.write(html);
+    w.document.close();
+    w.focus();
+    setTimeout(() => w.print(), 400);
+  };
+
+  if (days.length === 0) return null;
+
+  return (
+    <div className="space-y-2">
+      <div className="glass rounded-xl p-3 border border-emerald/30 bg-emerald/5">
+        <div className="flex items-center justify-between gap-2">
+          <div>
+            <p className="text-[10px] font-black text-emerald uppercase tracking-widest">📅 Daily Report</p>
+            <p className="mono-num font-black text-xl mt-0.5">{grand.toFixed(2)} ৳</p>
+            <p className="text-[10px] text-muted-foreground">{days.length} দিনের মোট হিসাব</p>
+          </div>
+          <div className="flex flex-col gap-1.5 shrink-0">
+            <button onClick={printReport} className="px-3 py-1.5 rounded-lg bg-cyan/20 border border-cyan/40 text-cyan text-[11px] font-black">🖨️ Print / PDF</button>
+            <button onClick={downloadCsv} className="px-3 py-1.5 rounded-lg bg-emerald/20 border border-emerald/40 text-emerald text-[11px] font-black">⬇️ CSV</button>
+          </div>
+        </div>
+      </div>
+
+      {days.map((d) => (
+        <div key={d.date} className="rounded-xl border border-white/10 bg-white/5">
+          <button onClick={() => setOpenDay(openDay === d.date ? null : d.date)} className="w-full flex items-center gap-3 p-3 text-left">
+            <div className="min-w-0 flex-1">
+              <p className="font-black text-sm truncate">
+                {bnDate(d.date)}{" "}
+                {d.date === todayKey && <span className="ml-1 text-[9px] px-1.5 py-0.5 rounded-full bg-emerald/20 text-emerald align-middle">আজ</span>}
+              </p>
+              <p className="text-[10px] text-muted-foreground">{d.count} পেমেন্ট · {d.adminList.length} জন admin</p>
+            </div>
+            <div className="text-right shrink-0">
+              <p className="mono-num font-black text-emerald">{d.total.toFixed(0)}৳</p>
+              <ChevronDown className={`w-4 h-4 inline transition-transform ${openDay === d.date ? "rotate-180" : ""}`} />
+            </div>
+          </button>
+          {openDay === d.date && (
+            <div className="px-3 pb-3 space-y-1.5">
+              {d.adminList.map((a) => (
+                <div key={a.name} className="rounded-lg bg-background/50 border border-white/10 px-2.5 py-1.5 flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold truncate">{a.name}</p>
+                    <p className="text-[10px] text-muted-foreground">{a.count} পেমেন্ট</p>
+                  </div>
+                  <p className="mono-num font-black text-emerald text-sm shrink-0">{a.total.toFixed(0)}৳</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
