@@ -83,7 +83,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             `⚠️ মনে রাখবেন, লগইন করার পর অবশ্যই আপনার <b>প্রোফাইল পেজে</b> গিয়ে পাসওয়ার্ডটি পরিবর্তন করে ` +
             `নিজের একটি <b>নতুন পাসওয়ার্ড</b> দিয়ে নেবেন 🔐`;
           await sendMessage(chatId, reply, msg.message_id);
-          await logMessage("info", "password-changed", reply, null);
+          
           return Response.json({ ok: true, flow: "password-changed" });
         }
         if ((senderIsAdmin && !isBotCommand) || repliedToAdmin) {
