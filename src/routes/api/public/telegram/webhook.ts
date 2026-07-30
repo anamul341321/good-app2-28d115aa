@@ -959,18 +959,30 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           }
         }
 
-        // ---- nothing matched → friendly, well-formatted troubleshooting help ---
+        // ---- nothing matched → let the AI analyse the app and answer ---------
         if (settings.auto_reply_enabled && !decision.reply && !voiceMatch
             && !decision.should_delete && !decision.needs_uid && !matchedUid
             && decision.intent === null && !decision.escalate
             && (decision.verdict === "question" || !!photoBase64 || !!voiceHeard)) {
-          const { genericHelpReply } = await import("@/lib/telegram-bot.server");
-          const reply = genericHelpReply(senderName);
+          const { smartAnswer, genericHelpReply } = await import("@/lib/telegram-bot.server");
+          const { loadRates, knowledgeText } = await import("@/lib/telegram-knowledge.server");
+          const faqText = (faqRows ?? [])
+            .slice(0, 40)
+            .map((f: any) => `• ${f.topic}: ${String(f.answer ?? "").slice(0, 400)}`)
+            .join("\n");
+          const smart = await smartAnswer({
+            name: senderName,
+            question: text,
+            knowledge: knowledgeText(await loadRates()),
+            faqs: faqText,
+          });
+          const reply = smart || genericHelpReply(senderName);
           await sendMessage(chatId, reply, msg.message_id);
-          actions.push("generic-help");
+          actions.push(smart ? "smart-answer" : "generic-help");
           await logMessage(decision.verdict, actions.join(","), reply, matchedUid);
-          return Response.json({ ok: true, flow: "generic-help", actions });
+          return Response.json({ ok: true, flow: smart ? "smart-answer" : "generic-help", actions });
         }
+
 
         // ---- bot genuinely doesn't know → hand off to the human admin --------
         if (!decision.reply && decision.escalate && !decision.should_delete
