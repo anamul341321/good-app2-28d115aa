@@ -186,6 +186,14 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           /(withdraw|উইথড্র|উঠাব|উঠাতে|তুলতে|claim|ক্লেইম|টাকা)/i.test(norm) &&
           /(পারব|parbo|পারবো|যাবে|jabe|হবে|hobe|দিতে পারব|নিতে পারব|উঠবে|unblock|আনলক|লক|lock)/i.test(norm);
 
+        // "আমার কয়টা রেফার হয়েছে?", "আমার ব্যালেন্স কত?", "কয়টা ভেরিফাই হয়েছে?"
+        // → এগুলোর উত্তর একাউন্ট ডেটা থেকেই দিতে হবে, তাই UID চেয়ে কার্ড দেখাই।
+        const asksOwnAccount =
+          !pendingWithdrawQuestion &&
+          /(আমার|amar|amr|my|আমি|ami|nijer|নিজের|acount|account|একাউন্ট|অ্যাকাউন্ট)/i.test(norm) &&
+          /(refer|reffer|রেফার|ব্যালেন্স|balance|verify|ভেরিফাই|verification|ভেরিফিকেশন|face|ফেস|slot|স্লট|mining|মাইনিং|bonus|বোনাস|টাকা|taka|tk|income|ইনকাম|status|স্ট্যাটাস|details|ডিটেইলস|koto|কত|koita|কয়টা|kota|hoyeche|hoyche|hoise|আছে|ache)/i.test(norm);
+
+
         const verificationDateKind = (s: string): "first" | "reverify" | "all" | null => {
           if (/(kotodin|koto\s*din|কতদিন|কত\s*দিন)[^\n]{0,30}(por|pore|পর|পরে)[^\n]{0,30}(re\s*-?\s*verify|reverify|রি\s*-?\s*ভেরিফাই)/i.test(s)) {
             return null;
@@ -311,7 +319,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           // The user changed the subject → forget the pending question and
           // answer what they actually asked now.
           const answering =
-            sess?.intent === "withdraw_status" || sess?.intent === "verification_dates"
+            sess?.intent === "withdraw_status" || sess?.intent === "verification_dates" || sess?.intent === "account_info"
               ? looksLikeUidAnswer
               : sess?.step === "await_slot"
                 ? looksLikeSlotAnswer
@@ -350,6 +358,27 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               await sendMessage(chatId, reply, msg.message_id);
               await logMessage("question", "withdraw-status", reply, res.found ? uid : null);
               return Response.json({ ok: true, flow: "withdraw-status-session" });
+            }
+
+            if (sess.intent === "account_info" && sess.step === "await_uid") {
+              const uid = pickUid(norm);
+              if (!uid) {
+                await sendMessage(
+                  chatId,
+                  `🆔 আপনার <b>UID</b> নম্বরটি লিখুন (অ্যাপের প্রোফাইল পেজে পাবেন, যেমন: 4100)।\nUID পেলেই আপনার রেফার, ভেরিফাই, ব্যালেন্স সব দেখিয়ে দিচ্ছি।`,
+                  msg.message_id,
+                );
+                return Response.json({ ok: true, flow: "account-info-await-uid" });
+              }
+              const { buildUserCard } = await import("@/lib/telegram-lookup.server");
+              const res = await buildUserCard(uid);
+              if (res.found) await clearSession();
+              const reply = res.found
+                ? res.card
+                : `❌ UID <code>${uid}</code> দিয়ে কোনো একাউন্ট পাওয়া যায়নি। সঠিক UID টি লিখুন।`;
+              await sendMessage(chatId, reply, msg.message_id);
+              await logMessage("question", "account-info", reply, res.found ? uid : null);
+              return Response.json({ ok: true, flow: "account-info-session" });
             }
 
 
@@ -846,6 +875,36 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return Response.json({ ok: true, flow: "verification-date-ask-uid", actions });
         }
 
+        // ---- "আমার কয়টা রেফার/ভেরিফাই/ব্যালেন্স?" → UID নিয়ে একাউন্ট কার্ড -----
+        if (asksOwnAccount && !decision.should_delete
+            && settings.auto_reply_enabled) {
+          const uid = decision.uid || (hasExplicitUid ? pickUid(norm) : null)
+            || (decision as any)._knownUid || null;
+          if (uid) {
+            const { buildUserCard } = await import("@/lib/telegram-lookup.server");
+            const res = await buildUserCard(String(uid));
+            if (res.found) {
+              await sendMessage(chatId, res.card, msg.message_id);
+              actions.push("account-info");
+              await logMessage(decision.verdict, actions.join(","), res.card, String(uid));
+              return Response.json({ ok: true, flow: "account_info", actions });
+            }
+          }
+          if (msg.from?.id) {
+            await saveSession({ intent: "account_info", step: "await_uid", uid: null, app_user_id: null });
+          }
+          const ask =
+            `🆔 ${senderName}, আপনার হিসাবটা এখনই দেখে দিচ্ছি।\n\n` +
+            `দয়া করে আপনার <b>UID</b> নম্বরটি লিখুন (অ্যাপের প্রোফাইল পেজে পাবেন, যেমন: 4100)।\n` +
+            `UID পেলেই আপনার মোট রেফার, ১ম ভেরিফাই, রি-ভেরিফাই, ব্যালেন্স ও উইথড্র — সব একসাথে জানিয়ে দেব 💙`;
+          await sendMessage(chatId, ask, msg.message_id);
+          actions.push("account-info-ask-uid");
+          await logMessage(decision.verdict, actions.join(","), ask, null);
+          return Response.json({ ok: true, flow: "account_info_ask_uid", actions });
+        }
+
+
+
         // ---- "কী কী লাগে / কোনো ডকুমেন্ট লাগে?" → requirements answer --------
         const asksRequirements =
           /(ki ki lage|কি কি লাগে|কী কী লাগে|ki lage|কি লাগে|কী লাগে|ki dorkar|কি দরকার|কী দরকার|what.*(need|require)|requirement|nid|এনআইডি|জাতীয় পরিচয়|birth certificate|জন্ম নিবন্ধন|passport|পাসপোর্ট|document|ডকুমেন্ট|কাগজ)/i
@@ -1118,6 +1177,38 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             actions.push("asked-uid");
           }
         }
+
+        // ---- শেষ রক্ষা: কোনো উত্তরই পাঠানো হয়নি → চুপ না থেকে উত্তর/UID চাই ----
+        const repliedSomething = actions.some((a) =>
+          /replied|answer|voice|video|card|escalat|account|withdraw|verify|photo|asked/i.test(a),
+        );
+        if (settings.auto_reply_enabled && !repliedSomething && !decision.should_delete
+            && (text.trim() || photoBase64)) {
+          const { smartAnswer, escalateReply } = await import("@/lib/telegram-bot.server");
+          const { loadRates, knowledgeText } = await import("@/lib/telegram-knowledge.server");
+          const mention = (settings as any).admin_mention
+            || (settings as any).support_username || "@anamulmunni";
+          let reply: string | null = null;
+          if (decision.needs_uid) {
+            if (msg.from?.id) {
+              await saveSession({ intent: "account_info", step: "await_uid", uid: null, app_user_id: null });
+            }
+            reply =
+              `🆔 ${senderName}, আপনার একাউন্টের তথ্য দেখে জানাতে আপনার <b>UID</b> নম্বরটি দরকার।\n` +
+              `দয়া করে UID টি লিখুন (অ্যাপের প্রোফাইল পেজে পাবেন) — সাথে সাথেই সব হিসাব জানিয়ে দেব 💙`;
+          } else {
+            reply = await smartAnswer({
+              name: senderName,
+              question: text,
+              knowledge: knowledgeText(await loadRates()),
+            });
+          }
+          if (!reply) reply = `${escalateReply(senderName, mention)}\n${mention}`;
+          await sendMessage(chatId, reply, msg.message_id);
+          actions.push("fallback-answer");
+        }
+
+
 
 
         await supabaseAdmin.from("tg_messages").insert({
