@@ -319,7 +319,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           // The user changed the subject → forget the pending question and
           // answer what they actually asked now.
           const answering =
-            sess?.intent === "withdraw_status" || sess?.intent === "verification_dates"
+            sess?.intent === "withdraw_status" || sess?.intent === "verification_dates" || sess?.intent === "account_info"
               ? looksLikeUidAnswer
               : sess?.step === "await_slot"
                 ? looksLikeSlotAnswer
