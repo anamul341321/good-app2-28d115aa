@@ -22,11 +22,22 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         if (supplied !== expected) return new Response("unauthorized", { status: 401 });
 
         const update: any = await request.json().catch(() => null);
-        const msg = update?.message ?? update?.edited_message;
+        // নতুন মেম্বার join হলে Telegram কখনো service message পাঠায়, কখনো শুধু
+        // chat_member update পাঠায় (invite link / approval দিয়ে join করলে)।
+        const cm = update?.chat_member;
+        const cmJoined =
+          cm &&
+          ["left", "kicked"].includes(cm.old_chat_member?.status) &&
+          ["member", "restricted"].includes(cm.new_chat_member?.status) &&
+          !cm.new_chat_member?.user?.is_bot
+            ? cm.new_chat_member.user
+            : null;
+        const msg = update?.message ?? update?.edited_message ?? (cmJoined ? { chat: cm.chat, from: cm.from, new_chat_members: [cmJoined] } : null);
         if (!msg?.chat?.id || typeof update?.update_id !== "number") {
           return Response.json({ ok: true, ignored: true });
         }
-        if (msg.from?.is_bot) return Response.json({ ok: true, ignored: "bot" });
+        if (!cmJoined && msg.from?.is_bot) return Response.json({ ok: true, ignored: "bot" });
+
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
