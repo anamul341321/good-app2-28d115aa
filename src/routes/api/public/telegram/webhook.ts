@@ -1283,9 +1283,12 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
                 return { f, score };
               })
               .sort((a, b) => b.score - a.score)[0];
-            if (scoredAdmin && scoredAdmin.score >= 1 && scoredAdmin.f.answer) {
+            const adminAnswer = scoredAdmin && scoredAdmin.score >= 1
+              ? await faqAnswerFor(scoredAdmin.f, text)
+              : null;
+            if (adminAnswer) {
               const { humanizeReply } = await import("@/lib/telegram-bot.server");
-              const base = String(scoredAdmin.f.answer).trim();
+              const base = adminAnswer.trim();
               const reply = (await humanizeReply(base, text, recentReplies)) || base;
               await sendMessage(chatId, reply, msg.message_id);
               await logMessage("question", `faq-admin:${scoredAdmin.f.topic}`, reply, null);
