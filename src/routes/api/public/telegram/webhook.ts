@@ -193,10 +193,27 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             }
           }
 
+          // অ্যাডমিন কোনো সেটিংস বদলাতে বললে (নগদ বন্ধ / বিকাশ চালু / বোনাস
+          // পরিবর্তন / নোটিশ দেওয়া) → বট নিজেই কাজটা করে ফেলবে, তারপর জানাবে।
+          {
+            const { interpretAdminOrder, runAdminOps, opsAnnouncement } = await import(
+              "@/lib/telegram-admin-actions.server"
+            );
+            const ops = await interpretAdminOrder(order);
+            if (ops.length) {
+              const { done, failed } = await runAdminOps(ops);
+              if (done.length || failed.length) {
+                await sendMessage(chatId, opsAnnouncement(done, failed), replyTo);
+                return Response.json({ ok: true, flow: "admin-action", done, failed });
+              }
+            }
+          }
+
           // বাকি সব: অ্যাডমিনের নির্দেশমতো সুন্দর মেসেজ সাজিয়ে গ্রুপে পাঠাবে
           const composed = await adminCompose(order, targetName);
           await sendMessage(chatId, composed || order, replyTo);
           return Response.json({ ok: true, flow: "admin-instruction" });
+
         }
 
         if ((senderIsAdmin && !isBotCommand) || repliedToAdmin) {
