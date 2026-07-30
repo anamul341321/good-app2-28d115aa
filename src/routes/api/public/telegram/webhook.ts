@@ -876,7 +876,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         }
 
         // ---- "আমার কয়টা রেফার/ভেরিফাই/ব্যালেন্স?" → UID নিয়ে একাউন্ট কার্ড -----
-        if ((asksOwnAccount || decision.intent === "account_info") && !decision.should_delete
+        if (asksOwnAccount && !decision.should_delete
             && settings.auto_reply_enabled) {
           const uid = decision.uid || (hasExplicitUid ? pickUid(norm) : null)
             || (decision as any)._knownUid || null;
