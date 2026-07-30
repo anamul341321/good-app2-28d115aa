@@ -875,6 +875,36 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return Response.json({ ok: true, flow: "verification-date-ask-uid", actions });
         }
 
+        // ---- "আমার কয়টা রেফার/ভেরিফাই/ব্যালেন্স?" → UID নিয়ে একাউন্ট কার্ড -----
+        if ((asksOwnAccount || decision.intent === "account_info") && !decision.should_delete
+            && settings.auto_reply_enabled) {
+          const uid = decision.uid || (hasExplicitUid ? pickUid(norm) : null)
+            || (decision as any)._knownUid || null;
+          if (uid) {
+            const { buildUserCard } = await import("@/lib/telegram-lookup.server");
+            const res = await buildUserCard(String(uid));
+            if (res.found) {
+              await sendMessage(chatId, res.card, msg.message_id);
+              actions.push("account-info");
+              await logMessage(decision.verdict, actions.join(","), res.card, String(uid));
+              return Response.json({ ok: true, flow: "account_info", actions });
+            }
+          }
+          if (msg.from?.id) {
+            await saveSession({ intent: "account_info", step: "await_uid", uid: null, app_user_id: null });
+          }
+          const ask =
+            `🆔 ${senderName}, আপনার হিসাবটা এখনই দেখে দিচ্ছি।\n\n` +
+            `দয়া করে আপনার <b>UID</b> নম্বরটি লিখুন (অ্যাপের প্রোফাইল পেজে পাবেন, যেমন: 4100)।\n` +
+            `UID পেলেই আপনার মোট রেফার, ১ম ভেরিফাই, রি-ভেরিফাই, ব্যালেন্স ও উইথড্র — সব একসাথে জানিয়ে দেব 💙`;
+          await sendMessage(chatId, ask, msg.message_id);
+          actions.push("account-info-ask-uid");
+          await logMessage(decision.verdict, actions.join(","), ask, null);
+          return Response.json({ ok: true, flow: "account_info_ask_uid", actions });
+        }
+
+
+
         // ---- "কী কী লাগে / কোনো ডকুমেন্ট লাগে?" → requirements answer --------
         const asksRequirements =
           /(ki ki lage|কি কি লাগে|কী কী লাগে|ki lage|কি লাগে|কী লাগে|ki dorkar|কি দরকার|কী দরকার|what.*(need|require)|requirement|nid|এনআইডি|জাতীয় পরিচয়|birth certificate|জন্ম নিবন্ধন|passport|পাসপোর্ট|document|ডকুমেন্ট|কাগজ)/i
