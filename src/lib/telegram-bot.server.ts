@@ -45,7 +45,16 @@ export function sanitizeTelegramHtml(input: string): string {
     .replace(/^#{1,6}\s*/gm, "");
   // escape any tag that is not in the allowed subset
   out = out.replace(/<([^<>]*)>/g, (m, inner) => (ALLOWED.test(String(inner)) ? m : `&lt;${inner}&gt;`));
-  return out.trim();
+  return stripBrandName(out).trim();
+}
+
+/** Never let the upstream identity provider's name reach users — always say Good-App. */
+export function stripBrandName(input: string): string {
+  return input
+    .replace(/good\s*-?\s*dollar/gi, "Good-App")
+    .replace(/গুড\s*-?\s*ডলার/g, "Good-App")
+    .replace(/\bG\$\b/g, "Good-App")
+    .replace(/(Good-App\s+){2,}/g, "Good-App ");
 }
 
 /** Send a Telegram message, replying to the user's exact message when provided. */
