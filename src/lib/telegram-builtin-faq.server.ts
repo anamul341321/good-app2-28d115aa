@@ -66,7 +66,10 @@ export const BUILTIN_FAQS: BuiltinFaq[] = [
     keywords: [
       "18+", "18 plus", "boyos", "বয়স", "age problem", "kid face", "ছোট ফেস",
       "kom boyos", "under 18", "choto chele", "বাচ্চার ফেস",
+      "১৮ বছর", "18 bochor", "18 bosor", "বছরের নিচে", "bochorer niche",
+      "18 years", "১৮ বছরের নিচে", "niche boyos", "কম বয়স",
     ],
+
     answer:
       `এখানে <b>১৮ বছরের বেশি বয়সের ফেস</b> লাগে 🙂 কম বয়সী ফেস দিলে Good-App সেটা গ্রহণ করে না।\n\n` +
       `⚠️ খুব গুরুত্বপূর্ণ কথা — <b>কম বয়সী ফেস দিয়ে প্রথমবার ভেরিফিকেশন হয়ে গেলেও পরে সমস্যা হয়</b>। ` +
