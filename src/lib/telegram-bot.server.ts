@@ -1015,6 +1015,14 @@ export async function adminCompose(instruction: string, targetName?: string | nu
   if (!key) return null;
   const q = (instruction || "").trim();
   if (!q) return null;
+  let rules = "";
+  try {
+    const { loadRates } = await import("./telegram-knowledge.server");
+    const { appRulebook } = await import("./telegram-app-rules.server");
+    rules = appRulebook(await loadRates());
+  } catch {
+    rules = "";
+  }
   try {
     const res = await fetch(AI_URL, {
       method: "POST",
