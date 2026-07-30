@@ -729,11 +729,30 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           }
         }
 
+        // ---- screenshot with no FAQ match → read the screenshot and explain ----
+        if (settings.auto_reply_enabled && photoBase64 && !decision.reply && !voiceMatch
+            && !decision.should_delete && decision.intent === null) {
+          const { analyzeScreenshotReply } = await import("@/lib/telegram-bot.server");
+          const { loadRates, knowledgeText } = await import("@/lib/telegram-knowledge.server");
+          const reply = await analyzeScreenshotReply({
+            photoBase64,
+            name: senderName,
+            text,
+            knowledge: knowledgeText(await loadRates()),
+          });
+          if (reply) {
+            await sendMessage(chatId, reply, msg.message_id);
+            actions.push("photo-analysis");
+            await logMessage("question", actions.join(","), reply, matchedUid);
+            return Response.json({ ok: true, flow: "photo-analysis", actions });
+          }
+        }
+
         // ---- nothing matched → friendly, well-formatted troubleshooting help ---
         if (settings.auto_reply_enabled && !decision.reply && !voiceMatch
             && !decision.should_delete && !decision.needs_uid && !matchedUid
             && decision.intent === null && !decision.escalate
-            && decision.verdict === "question") {
+            && (decision.verdict === "question" || !!photoBase64 || !!voiceHeard)) {
           const { genericHelpReply } = await import("@/lib/telegram-bot.server");
           const reply = genericHelpReply(senderName);
           await sendMessage(chatId, reply, msg.message_id);
