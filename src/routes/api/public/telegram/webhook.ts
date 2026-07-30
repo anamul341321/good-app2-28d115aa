@@ -124,9 +124,11 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             ? [msg.reply_to_message.from?.first_name, msg.reply_to_message.from?.last_name].filter(Boolean).join(" ")
             : null;
           const replyTo = msg.reply_to_message?.message_id ?? msg.message_id;
+          const replyContextText = String(msg.reply_to_message?.text ?? msg.reply_to_message?.caption ?? "");
 
           // "uid 4100 er details / card" → একাউন্ট কার্ড
-          const cardCmd = order.match(/(?:uid|ইউআইডি|আইডি)\s*[:#-]?\s*(\d{1,9})/i);
+          const cardCmd = order.match(/(?:uid|ইউআইডি|আইডি)\s*[:#-]?\s*(\d{1,9})/i)
+            || replyContextText.match(/(?:uid|ইউআইডি|আইডি)\s*[:#-]?\s*(\d{1,9})/i);
           if (cardCmd && /(details|ডিটেইলস|card|কার্ড|hisab|হিসাব|check|চেক|dekha|দেখা|info|তথ্য)/i.test(order)
               && !/(verify|verification|ভেরিফাই|ভেরিফিকেশন|face|ফেস|date|time|তারিখ|সময়|কবে|status|স্ট্যাটাস|রি\s*-?ভেরিফাই|re\s*-?verify|first|1st|প্রথম|১ম)/i.test(order)) {
             const { buildUserCard } = await import("@/lib/telegram-lookup.server");
