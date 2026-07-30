@@ -41,6 +41,14 @@ export const Route = createFileRoute("/api/public/whitelist-recheck")({
       run = created;
     }
 
+    const leaseToken = crypto.randomUUID();
+    const { data: leaseClaimed, error: leaseError } = await supabaseAdmin.rpc("claim_whitelist_run", {
+      _run_id: run.id,
+      _lease_token: leaseToken,
+    });
+    if (leaseError) return Response.json({ error: leaseError.message }, { status: 500 });
+    if (!leaseClaimed) return Response.json({ ok: true, skipped: "worker-active" });
+
     const affected = new Set<string>();
     let phase = run.phase ?? "wallets";
     let walletCursor = run.wallet_cursor as string | null;
@@ -59,7 +67,7 @@ export const Route = createFileRoute("/api/public/whitelist-recheck")({
         wallets_checked: walletsChecked, pending_checked: pendingChecked,
         pending_promoted: pendingPromoted, flipped, restored, batches_done: batchesDone,
         heartbeat_at: new Date().toISOString(), ...extra,
-      }).eq("id", run.id);
+      }).eq("id", run.id).eq("lease_token", leaseToken);
     };
 
     while (Date.now() - workStartedAt < MAX_WORK_MS && !completed) {
