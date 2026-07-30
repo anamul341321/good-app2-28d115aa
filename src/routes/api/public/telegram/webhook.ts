@@ -160,9 +160,16 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             : Promise.resolve(false),
         ]);
         const senderIsAdmin = chatAdminFlag || senderIsOwner;
+        // অ্যাডমিনের মেসেজে বট তখনই সাড়া দেবে যখন তাকে সরাসরি মেনশন করা হয়
+        // অথবা বটের মেসেজে রিপ্লাই দেওয়া হয়। নাহলে বট চুপ থাকবে (ইউজারের
+        // মেসেজে আগের মতোই উত্তর দেবে)।
+        const meInfo = await getMe().catch(() => null);
+        const mentionsBot = !!meInfo && new RegExp(`@${meInfo.username}\\b`, "i").test(text);
+        const repliedToBot = msg.reply_to_message?.from?.id === meInfo?.id;
+        const adminAddressedBot = mentionsBot || repliedToBot;
         // Exception: when an admin announces that a password was changed, the bot
         // confirms it to the user instead of staying silent.
-        const passwordChanged = senderIsAdmin && !isBotCommand && text.trim().length > 0
+        const passwordChanged = senderIsAdmin && adminAddressedBot && !isBotCommand && text.trim().length > 0
           && /(password|পাসওয়ার্ড|pass ?word)/i.test(text)
           && /(change|changed|change kora|change kore|পরিবর্তন|চেঞ্জ|বদলে|reset|রিসেট|new password|নতুন পাসওয়ার্ড)/i.test(text);
         if (passwordChanged && settings.auto_reply_enabled) {
@@ -176,10 +183,8 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return Response.json({ ok: true, flow: "password-changed" });
         }
         // ---- অ্যাডমিন বটকে মেনশন করে কিছু করতে বললে বট সেটা করবে -------------
-        const meInfo = await getMe().catch(() => null);
-        const mentionsBot = !!meInfo && new RegExp(`@${meInfo.username}\\b`, "i").test(text);
-        const repliedToBot = msg.reply_to_message?.from?.id === meInfo?.id;
-        if (senderIsAdmin && !isBotCommand && (mentionsBot || repliedToBot || !!voiceHeard) && text.trim()) {
+        if (senderIsAdmin && !isBotCommand && adminAddressedBot && text.trim()) {
+
           const order = text.replace(new RegExp(`@${meInfo?.username ?? "___"}`, "ig"), "").trim();
           const targetName = msg.reply_to_message && !msg.reply_to_message.from?.is_bot
             ? [msg.reply_to_message.from?.first_name, msg.reply_to_message.from?.last_name].filter(Boolean).join(" ")
