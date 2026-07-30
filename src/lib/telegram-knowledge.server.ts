@@ -199,8 +199,6 @@ export function slotEarningReply(
   const base = 10 * MONTHLY_PER_SLOT; // ১০ স্লট = ৫০০৳
   const monthlyLine = (n: number) =>
     `• <b>${bn(n)} স্লট</b>  →  মাসে <b>${bn(n * MONTHLY_PER_SLOT)}৳</b>`;
-  const bonusLine = (n: number) =>
-    `• <b>${bn(n)} স্লট</b>  →  এককালীন <b>${bn(n * perSlotTotal)}৳</b>`;
 
   const others = [10, 20, 50].filter((n) => !slots || n !== slots).slice(0, 3);
 
