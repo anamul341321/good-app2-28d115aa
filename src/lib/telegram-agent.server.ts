@@ -105,7 +105,33 @@ const TOOLS = [
       parameters: { type: "object", properties: {}, required: [] },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "payment_numbers",
+      description:
+        "ইউজারের সেভ করা পেমেন্ট নম্বর (বিকাশ/নগদ/USDT) কোনগুলো আছে তা মাস্ক করে দেখায়। UID লাগবে।",
+      parameters: { type: "object", properties: { uid: { type: "string" } }, required: ["uid"] },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "reset_payment_numbers",
+      description:
+        "ভুল নম্বর সেভ হয়ে গেলে ইউজারের সেভ করা পেমেন্ট নম্বর মুছে দেয়, যাতে সে নতুন নম্বর যোগ করতে পারে। UID অবশ্যই লাগবে; provider দিলে শুধু ঐ মেথডের নম্বর মুছবে।",
+      parameters: {
+        type: "object",
+        properties: {
+          uid: { type: "string", description: "ইউজারের UID" },
+          provider: { type: "string", enum: ["bkash", "nagad", "usdt"], description: "ঐচ্ছিক" },
+        },
+        required: ["uid"],
+      },
+    },
+  },
 ];
+
 
 
 async function runTool(name: string, args: any): Promise<string> {
