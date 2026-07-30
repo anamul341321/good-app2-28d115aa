@@ -25,6 +25,19 @@ const TOOLS = [
   {
     type: "function",
     function: {
+      name: "referral_join_report",
+      description:
+        "কোন UID/ইউজার কার রেফারে join করেছে তা ডেটাবেজ থেকে আনে — রেফারারের নাম, UID ও রেফার কোডসহ।",
+      parameters: {
+        type: "object",
+        properties: { query: { type: "string", description: "UID / phone / referral code" } },
+        required: ["query"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
       name: "verification_dates",
       description: "ইউজারের প্রতিটি স্লটের ১ম ভেরিফাই ও রি-ভেরিফাই তারিখ-সময় দেখায়।",
       parameters: {
@@ -78,6 +91,12 @@ async function runTool(name: string, args: any): Promise<string> {
       const { buildUserCard } = await import("./telegram-lookup.server");
       const r: any = await buildUserCard(String(args?.query ?? ""));
       if (!r?.found) return "এই আইডেন্টিফায়ারে কোনো একাউন্ট পাওয়া যায়নি।";
+      return r.card;
+    }
+    if (name === "referral_join_report") {
+      const { buildReferralJoinReport } = await import("./telegram-lookup.server");
+      const r: any = await buildReferralJoinReport(String(args?.query ?? ""));
+      if (!r?.found) return "এই UID/আইডেন্টিফায়ারে কোনো একাউন্ট পাওয়া যায়নি।";
       return r.card;
     }
     if (name === "verification_dates") {
@@ -152,6 +171,7 @@ export async function agentAnswer(opts: {
     `তুমি Good-App এর সাপোর্ট এজেন্ট — তোমার হাতে অ্যাপের ডেটাবেজ দেখার টুল আছে।\n` +
     `• প্রশ্নে কোনো UID/ফোন/নাম/রেফারেল কোড থাকলে বা কারো একাউন্ট/স্লট/ভেরিফাই/উইথড্রর অবস্থা জানতে চাইলে ` +
     `আন্দাজে উত্তর দেবে না — আগে উপযুক্ত টুল কল করে আসল ডেটা দেখে তারপর উত্তর দেবে।\n` +
+    `• কেউ যদি জিজ্ঞেস করে "এই UID কার রেফারে join হয়েছে / kar refer a / referred by / কার আন্ডারে" — অবশ্যই referral_join_report টুল কল করবে; lookup_user কার্ড দেখিয়ে এড়িয়ে যাবে না।\n` +
     `• অ্যাপের কোনো সেটিং/রেট/চালু-বন্ধ জানতে চাইলে app_status টুল ব্যবহার করবে।\n` +
     `• কোনো আইডেন্টিফায়ার না থাকলে ভদ্রভাবে UID চাইবে।\n` +
     (opts.isAdmin ? `• এই ব্যক্তি অ্যাডমিন — যেকোনো একাউন্টের রিপোর্ট দেখাতে পারো।\n`
