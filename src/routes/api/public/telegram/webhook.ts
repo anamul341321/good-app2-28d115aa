@@ -866,7 +866,12 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         }
 
         // ---- "একাউন্ট/ভেরিফাই হয় না" → browser + face rules -----------------
-        if (decision.intent === "verify_help" && !decision.should_delete
+        // Only fire the fixed tips list when the user really reports a failure;
+        // otherwise the AI answers the actual question below.
+        const reportsVerifyFailure =
+          /(হয় না|hoy na|hoi na|হচ্ছে না|hocche na|পারছি না|parchi na|parteci na|error|এরর|fail|ফেইল|problem|somossa|সমস্যা|আসে না|ashe na|নিচ্ছে না|niche na|আটকে|atke|wrong|ভুল)/i
+            .test(norm);
+        if (decision.intent === "verify_help" && reportsVerifyFailure && !decision.should_delete
             && settings.auto_reply_enabled) {
           const { verifyTipsReply } = await import("@/lib/telegram-knowledge.server");
           const reply = verifyTipsReply(senderName);
@@ -959,25 +964,43 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           }
         }
 
-        // ---- nothing matched → friendly, well-formatted troubleshooting help ---
+        // ---- nothing matched → let the AI analyse the app and answer ---------
         if (settings.auto_reply_enabled && !decision.reply && !voiceMatch
             && !decision.should_delete && !decision.needs_uid && !matchedUid
             && decision.intent === null && !decision.escalate
             && (decision.verdict === "question" || !!photoBase64 || !!voiceHeard)) {
-          const { genericHelpReply } = await import("@/lib/telegram-bot.server");
-          const reply = genericHelpReply(senderName);
+          const { smartAnswer, genericHelpReply } = await import("@/lib/telegram-bot.server");
+          const { loadRates, knowledgeText } = await import("@/lib/telegram-knowledge.server");
+          const faqText = (faqRows ?? [])
+            .slice(0, 40)
+            .map((f: any) => `• ${f.topic}: ${String(f.answer ?? "").slice(0, 400)}`)
+            .join("\n");
+          const smart = await smartAnswer({
+            name: senderName,
+            question: text,
+            knowledge: knowledgeText(await loadRates()),
+            faqs: faqText,
+          });
+          const reply = smart || genericHelpReply(senderName);
           await sendMessage(chatId, reply, msg.message_id);
-          actions.push("generic-help");
+          actions.push(smart ? "smart-answer" : "generic-help");
           await logMessage(decision.verdict, actions.join(","), reply, matchedUid);
-          return Response.json({ ok: true, flow: "generic-help", actions });
+          return Response.json({ ok: true, flow: smart ? "smart-answer" : "generic-help", actions });
         }
+
 
         // ---- bot genuinely doesn't know → hand off to the human admin --------
         if (!decision.reply && decision.escalate && !decision.should_delete
             && !decision.needs_uid && decision.intent === null
             && settings.auto_reply_enabled && (settings as any).escalate_enabled !== false) {
-          const { escalateReply, genericHelpReply } = await import("@/lib/telegram-bot.server");
-          const reply = `${genericHelpReply(senderName)}\n\n` +
+          const { escalateReply, genericHelpReply, smartAnswer } = await import("@/lib/telegram-bot.server");
+          const { loadRates, knowledgeText } = await import("@/lib/telegram-knowledge.server");
+          const smart = await smartAnswer({
+            name: senderName,
+            question: text,
+            knowledge: knowledgeText(await loadRates()),
+          });
+          const reply = `${smart || genericHelpReply(senderName)}\n\n` +
             escalateReply(senderName, (settings as any).support_username || "@anamulmunni");
           await sendMessage(chatId, reply, msg.message_id);
           actions.push("escalated");

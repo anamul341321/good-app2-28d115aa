@@ -850,3 +850,53 @@ export function videoReply(name: string, url: string, topic?: string | null, not
     `দেখে বুঝতে সমস্যা হলে বলুন, আমি লিখেও বুঝিয়ে দেব 💙`
   );
 }
+
+/**
+ * Free-form smart answer: the bot reads the app knowledge base + saved FAQs and
+ * answers ANY question in its own words instead of dumping a fixed template.
+ */
+export async function smartAnswer(opts: {
+  name: string;
+  question: string;
+  knowledge: string;
+  faqs?: string;
+}): Promise<string | null> {
+  const key = process.env.LOVABLE_API_KEY;
+  if (!key) return null;
+  const q = (opts.question || "").trim();
+  if (!q) return null;
+  try {
+    const res = await fetch(AI_URL, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: MODEL,
+        temperature: 0.9,
+        max_tokens: 600,
+        messages: [
+          {
+            role: "system",
+            content:
+              `তুমি Good-App এর দক্ষ বাংলা সাপোর্ট এজেন্ট। ইউজারের প্রশ্নটা মন দিয়ে পড়ে ` +
+              `ঠিক সেই প্রশ্নেরই উত্তর দেবে — অপ্রাসঙ্গিক টিপস বা রেডিমেড লিস্ট কপি করবে না।\n` +
+              `নিয়ম:\n` +
+              `• নিচের knowledge থেকে বিশ্লেষণ করে সরাসরি উত্তর দাও (৩-৮ লাইন), HTML <b> ট্যাগ ব্যবহার করতে পারো।\n` +
+              `• মানুষের মতো স্বাভাবিক, উষ্ণ ভাষা — প্রতিবার একটু ভিন্ন গঠনে লিখবে।\n` +
+              `• "অ্যাডমিন উত্তর দেবেন / অপেক্ষা করুন" জাতীয় ফিলার লিখবে না, নিজেই সমাধান দেবে।\n` +
+              `• কারো UID/একাউন্টের হিসাব চাওয়া না হলে কারো ডেটা দেখাবে না।\n` +
+              `• কারো ছবি/key দেখানো যাবে না; ছবি সংরক্ষণের কথা কখনো বলবে না।\n` +
+              `• উত্তর জানা না থাকলে অ্যাপের নিয়ম থেকে যুক্তি করে সবচেয়ে সঠিক উত্তরটা দাও।\n\n` +
+              `${opts.knowledge}\n\n${opts.faqs ? `সেভ করা প্রশ্নোত্তর:\n${opts.faqs}` : ""}`,
+          },
+          { role: "user", content: `${opts.name} লিখেছে: ${q}` },
+        ],
+      }),
+    });
+    if (!res.ok) return null;
+    const data: any = await res.json();
+    const out = String(data.choices?.[0]?.message?.content ?? "").trim();
+    return out ? stripAdminFiller(out) : null;
+  } catch {
+    return null;
+  }
+}
