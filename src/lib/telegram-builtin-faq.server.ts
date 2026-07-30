@@ -80,13 +80,15 @@ export const BUILTIN_FAQS: BuiltinFaq[] = [
   },
 
   {
-    topic: "ক্যামেরা পারমিশন / ক্যামেরা কাজ করছে না",
-    screenshot: ["camera", "permission", "allow camera"],
-    keywords: ["camera", "ক্যামেরা", "permission", "পারমিশন", "cam kaj kore na"],
+    topic: "ক্যামেরা পারমিশন / We can't access your camera",
+    screenshot: ["camera", "permission", "allow camera", "can't access your camera", "enable camera permission", "device settings"],
+    keywords: ["camera", "ক্যামেরা", "permission", "পারমিশন", "cam kaj kore na", "camera access"],
     answer:
-      `ব্রাউজারে ক্যামেরার <b>Allow</b> পারমিশন দিতে হবে 📷\n\n` +
-      `Settings → Site settings → Camera → Allow করুন, তারপর পেজটা রিফ্রেশ করে আবার চেষ্টা করুন। তবুও না হলে অন্য একটা ব্রাউজার দিয়ে করুন 🙂`,
+      `স্যার, আগে একবার ক্যামেরার পারমিশন <b>Allow</b> না দেওয়ায় ব্রাউজারটি ক্যামেরা ব্লক করে রেখেছে 📷\n\n` +
+      `👉 এই ব্রাউজার দিয়ে আর হবে না — অন্য একটি ব্রাউজার (Chrome / Opera / Firefox) ডাউনলোড করে সেখান থেকে লগইন করে আবার চেষ্টা করুন।\n` +
+      `⚠️ মনে রাখবেন — নতুন ব্রাউজারে ক্যামেরা চাইলে অবশ্যই <b>Allow</b> দিবেন, তাহলেই ফেস ভেরিফিকেশন হয়ে যাবে 🙂`,
   },
+
   {
     topic: "লিংক এক্সপায়ার / সেশন শেষ",
     screenshot: ["expired", "session", "link is no longer valid"],
