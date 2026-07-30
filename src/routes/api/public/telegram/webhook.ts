@@ -255,8 +255,19 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             .from("tg_sessions").select("*")
             .eq("tg_user_id", msg.from.id).eq("chat_id", msg.chat.id).maybeSingle();
 
-          const alive = sess && new Date(sess.expires_at).getTime() > Date.now();
-          if (sess && !alive) await clearSession();
+          const aliveRaw = sess && new Date(sess.expires_at).getTime() > Date.now();
+          if (sess && !aliveRaw) await clearSession();
+
+          // The user changed the subject → forget the pending question and
+          // answer what they actually asked now.
+          const answering =
+            sess?.step === "await_slot"
+              ? looksLikeSlotAnswer
+              : looksLikeUidAnswer || looksLikeSlotAnswer;
+          if (aliveRaw && sess && !answering && !isCancel && questionish) {
+            await clearSession();
+          }
+          const alive = aliveRaw && (answering || isCancel || !questionish);
 
           if (alive && sess) {
             if (isCancel) {
@@ -265,6 +276,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               await logMessage("question", "slot-reset-cancel", null, sess.uid);
               return Response.json({ ok: true, flow: "cancelled" });
             }
+
 
             if (sess.intent === "verification_dates" && sess.step === "await_uid") {
               const query = pickVerificationQuery(norm) || pickUid(norm);
