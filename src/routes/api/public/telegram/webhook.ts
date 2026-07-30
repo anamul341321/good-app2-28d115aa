@@ -226,7 +226,12 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               /(hisab|হিসাব|হিসেব|bujiye|বুঝিয়ে|bujhiye|koto|কত|income|ইনকাম|আয়|calculation)/i.test(
                 bnDigits,
               );
-            if (askCtx && /(refer|reffer|রেফার|referral)/i.test(bnDigits)) {
+            if (
+              askCtx &&
+              (/(refer|reffer|রেফার|referral)/i.test(bnDigits) ||
+                /(bondhu|বন্ধু|friend|যাকে|jake|kauke|কাউকে|downline|টিম)/i.test(bnDigits))
+            ) {
+
               const { loadRates, referralEarningReply } = await import(
                 "@/lib/telegram-knowledge.server"
               );
