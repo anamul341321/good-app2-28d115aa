@@ -1743,6 +1743,38 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return Response.json({ ok: true, flow: "verification-date-ask-uid", actions });
         }
 
+        // ---- "রেফার করেছি কিন্তু রেফার বাড়ে না" → রেফার হিস্টরি + কারণ --------
+        if (complainsReferralCount && !decision.should_delete && settings.auto_reply_enabled) {
+          let uid: string | null = explicitOrBareUid() || previousKnownUid;
+          if (!uid && msg.from?.id) {
+            const { data: linked } = await supabaseAdmin
+              .from("profiles").select("uid_seq").eq("telegram_user_id", msg.from.id).maybeSingle();
+            if (linked?.uid_seq != null) uid = String(linked.uid_seq);
+          }
+          if (uid) {
+            const { buildReferralHistoryReport } = await import("@/lib/telegram-lookup.server");
+            const res = await buildReferralHistoryReport(String(uid));
+            if (res.found) {
+              await sendMessage(chatId, res.card, msg.message_id);
+              actions.push("referral-history");
+              await logMessage(decision.verdict, actions.join(","), res.card, res.uid);
+              return Response.json({ ok: true, flow: "referral_history", actions });
+            }
+          }
+          if (msg.from?.id) {
+            await saveSession({ intent: "referral_history", step: "await_uid", uid: null, app_user_id: null });
+          }
+          const ask =
+            `👥 ${senderName}, আপনার রেফার হিসাবটা দেখে দিচ্ছি।\n\n` +
+            `দয়া করে আপনার <b>UID</b> নম্বরটি লিখুন (অ্যাপের প্রোফাইল পেজে পাবেন)।\n` +
+            `UID পেলেই কে কে আপনার রেফারে আছে, কার কয়টা ফেস ঠিক আছে — সব দেখিয়ে দেব 💙`;
+          await sendMessage(chatId, ask, msg.message_id);
+          actions.push("referral-history-ask-uid");
+          await logMessage(decision.verdict, actions.join(","), ask, null);
+          return Response.json({ ok: true, flow: "referral_history_ask_uid", actions });
+        }
+
+
         // ---- "আমার কয়টা রেফার/ভেরিফাই/ব্যালেন্স?" → UID নিয়ে একাউন্ট কার্ড -----
         if (asksOwnAccount && !decision.should_delete
             && settings.auto_reply_enabled) {
