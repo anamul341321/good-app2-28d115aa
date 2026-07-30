@@ -1738,19 +1738,25 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             && (decision.verdict === "question" || !!photoBase64 || !!voiceHeard)) {
           const { smartAnswer, escalateReply } = await import("@/lib/telegram-bot.server");
           const { loadRates, knowledgeText } = await import("@/lib/telegram-knowledge.server");
+          const { appRulebook } = await import("@/lib/telegram-app-rules.server");
+          const { agentAnswer } = await import("@/lib/telegram-agent.server");
           const faqText = (faqRows ?? [])
             .slice(0, 40)
             .map((f: any) => `• ${f.topic}: ${String(f.answer ?? "").slice(0, 400)}`)
             .join("\n");
-          const smart = await smartAnswer({
+          const rates = await loadRates();
+          const base = {
             name: senderName,
             question: text,
-            knowledge: knowledgeText(await loadRates()),
+            knowledge: knowledgeText(rates),
             faqs: faqText,
             history: convoHistory,
             pastReplies: convoReplies,
             recall: recallText,
-          });
+          };
+          const smart =
+            (await agentAnswer({ ...base, rulebook: appRulebook(rates), isAdmin: senderIsAdmin }))
+            ?? (await smartAnswer(base));
           const mention = (settings as any).admin_mention
             || (settings as any).support_username || "@anamulmunni";
           const reply = smart
