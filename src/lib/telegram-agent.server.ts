@@ -83,7 +83,30 @@ const TOOLS = [
       parameters: { type: "object", properties: {}, required: [] },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "fee_quote",
+      description:
+        "উইথড্রতে কত ফি কাটবে ও হাতে কত আসবে — অ্যাপের আসল নিয়ম থেকে হিসাব করে দেয়। টাকার অংক জানা থাকলে দিতে হবে।",
+      parameters: {
+        type: "object",
+        properties: { amount: { type: "number", description: "উইথড্র অ্যামাউন্ট (৳)" } },
+        required: ["amount"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "bonus_settings",
+      description:
+        "ডেটাবেজ থেকে বর্তমান বোনাস/প্রমো রেট ও পেমেন্ট মেথড চালু-বন্ধ অবস্থা আনে (bKash, Nagad, রিচার্জ, USDT)।",
+      parameters: { type: "object", properties: {}, required: [] },
+    },
+  },
 ];
+
 
 async function runTool(name: string, args: any): Promise<string> {
   try {
@@ -119,26 +142,40 @@ async function runTool(name: string, args: any): Promise<string> {
       const slots = await listSlotNumbers(String(args?.uid ?? ""));
       return slots.length ? `স্লট: ${slots.join(", ")}` : "কোনো স্লট পাওয়া যায়নি।";
     }
-    if (name === "app_status") {
+    if (name === "fee_quote") {
+      const amount = Number(args?.amount);
+      if (!Number.isFinite(amount) || amount <= 0) {
+        return "নিয়ম: ১০০৳ বা বেশি হলে ফি ১০%, ১০০৳ এর কম হলে ২০%।";
+      }
+      // Same rule as withdraw.functions.ts (single source of truth).
+      const feeRate = amount < 100 ? 0.2 : 0.1;
+      const fee = Math.floor(amount * feeRate);
+      return `উইথড্র ${amount}৳ → ফি ${fee}৳ (${Math.round(feeRate * 100)}%) → হাতে আসবে ${amount - fee}৳।`;
+    }
+    if (name === "bonus_settings" || name === "app_status") {
       const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
       const { loadRates, knowledgeText } = await import("./telegram-knowledge.server");
       const rates = await loadRates();
       const [{ data: settings }, users, verified] = await Promise.all([
-        db.from("admin_settings").select("*").limit(1).maybeSingle(),
+        db.from("bonus_settings").select("*").eq("id", "default").maybeSingle(),
         db.from("profiles").select("id", { count: "exact", head: true }),
         db.from("tasks").select("id", { count: "exact", head: true }).not("initial_verify_at", "is", null),
       ]);
       const s: any = settings ?? {};
-      const pay = Object.entries(s)
-        .filter(([k]) => /enabled|_on$|window|mode/i.test(k))
-        .map(([k, v]) => `${k}=${String(v)}`)
-        .join(", ");
+      const onOff = (v: any) => (v === false ? "বন্ধ" : "চালু");
+      const live =
+        `পেমেন্ট মেথড: বিকাশ ${onOff(s.bkash_enabled)}, নগদ ${onOff(s.nagad_enabled)}, ` +
+        `মোবাইল রিচার্জ ${onOff(s.recharge_enabled)}, USDT ${onOff(s.usdt_enabled)}\n` +
+        `বোনাস: ১ম ভেরিফাই ${s.first_verify_bonus ?? "-"}৳, রি-ভেরিফাই ${s.reverify_bonus ?? "-"}৳, রেফারার ${s.referrer_bonus ?? "-"}৳` +
+        (s.promo_active ? ` | প্রমো চালু: ${s.promo_title ?? ""}` : "");
+      if (name === "bonus_settings") return live;
       return (
         knowledgeText(rates) +
-        `\n\nলাইভ অবস্থা: মোট ইউজার ${users.count ?? 0}, মোট ভেরিফাইড স্লট ${verified.count ?? 0}` +
-        (pay ? `\nসেটিংস: ${pay}` : "")
+        `\n\nলাইভ অবস্থা: মোট ইউজার ${users.count ?? 0}, মোট ভেরিফাইড স্লট ${verified.count ?? 0}\n` +
+        live
       );
     }
+
   } catch (e) {
     console.error("[tg-agent] tool error", name, e);
     return "টুল চালাতে সমস্যা হয়েছে।";
@@ -172,8 +209,11 @@ export async function agentAnswer(opts: {
     `• প্রশ্নে কোনো UID/ফোন/নাম/রেফারেল কোড থাকলে বা কারো একাউন্ট/স্লট/ভেরিফাই/উইথড্রর অবস্থা জানতে চাইলে ` +
     `আন্দাজে উত্তর দেবে না — আগে উপযুক্ত টুল কল করে আসল ডেটা দেখে তারপর উত্তর দেবে।\n` +
     `• কেউ যদি জিজ্ঞেস করে "এই UID কার রেফারে join হয়েছে / kar refer a / referred by / কার আন্ডারে" — অবশ্যই referral_join_report টুল কল করবে; lookup_user কার্ড দেখিয়ে এড়িয়ে যাবে না।\n` +
-    `• অ্যাপের কোনো সেটিং/রেট/চালু-বন্ধ জানতে চাইলে app_status টুল ব্যবহার করবে।\n` +
+    `• অ্যাপের কোনো সেটিং/রেট/বোনাস/চালু-বন্ধ জানতে চাইলে app_status বা bonus_settings টুল ব্যবহার করবে — মুখস্থ বলবে না।\n` +
+    `• উইথড্রে কত ফি কাটবে/কত হাতে আসবে জিজ্ঞেস করলে fee_quote টুল দিয়ে হিসাব করবে, নিজে আন্দাজে অংক বলবে না।\n` +
+    `• ⚠️ কখনো আন্দাজ/অনুমান করে উত্তর দেবে না। যে তথ্য ডেটাবেজে আছে (একাউন্ট, স্লট, ভেরিফাই, রেফার, ব্যালেন্স, উইথড্র, সেটিংস, ফি) সেটা সবসময় টুল কল করে দেখে নিয়ে তারপর বলবে।\n` +
     `• কোনো আইডেন্টিফায়ার না থাকলে ভদ্রভাবে UID চাইবে।\n` +
+
     (opts.isAdmin ? `• এই ব্যক্তি অ্যাডমিন — যেকোনো একাউন্টের রিপোর্ট দেখাতে পারো।\n`
                   : `• অন্য কারো ব্যক্তিগত ডেটা দেখাবে না; ইউজার নিজের UID দিলে তবেই দেখাবে।\n`) +
     `• কখনোই private key, wallet key বা ফেসের ছবি দেখাবে না; ছবি/কী কোথায় বা কীভাবে সংরক্ষণ হয় সেটাও কখনো বলবে না — শুধু বলবে তথ্য সুরক্ষিত ও নিরাপত্তা যাচাইয়ের কাজে ব্যবহৃত হয়।\n` +
@@ -224,13 +264,26 @@ export async function agentAnswer(opts: {
   }
   messages.push({ role: "user", content: `${opts.name} এখন লিখেছে: ${q}` });
 
+  // Questions whose answer lives in the database — force a real lookup on the
+  // first turn so the model can never answer them from memory/guesswork.
+  const needsData =
+    /(\d{1,7})|uid|ইউ ?আই ?ডি|স্লট|slot|ভেরিফা|verif|রেফার|refer|ব্যালেন্স|balance|উইথড্র|withdraw|ফি|fee|চার্জ|charge|বোনাস|bonus|মাইনিং|mining|হোয়াইটলিস্ট|whitelist|বিকাশ|bkash|নগদ|nagad|usdt|রিচার্জ|recharge|পেন্ডিং|pending|একাউন্ট|account/i.test(
+      q,
+    );
+
   try {
-    for (let step = 0; step < 4; step++) {
+    for (let step = 0; step < 5; step++) {
       const res = await fetch(AI_URL, {
         method: "POST",
         headers: { "Lovable-API-Key": key, "Content-Type": "application/json" },
-        body: JSON.stringify({ model: MODEL, tools: TOOLS, messages }),
+        body: JSON.stringify({
+          model: MODEL,
+          tools: TOOLS,
+          messages,
+          ...(step === 0 && needsData ? { tool_choice: "required" as const } : {}),
+        }),
       });
+
       if (!res.ok) {
         console.error("[tg-agent] gateway", res.status, await res.text());
         return null;
