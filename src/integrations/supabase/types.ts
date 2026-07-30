@@ -674,7 +674,7 @@ export type Database = {
       }
       tg_faq: {
         Row: {
-          answer: string
+          answer: string | null
           created_at: string
           id: string
           image_path: string | null
@@ -685,7 +685,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          answer: string
+          answer?: string | null
           created_at?: string
           id?: string
           image_path?: string | null
@@ -696,7 +696,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          answer?: string
+          answer?: string | null
           created_at?: string
           id?: string
           image_path?: string | null
