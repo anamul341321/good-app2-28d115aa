@@ -473,6 +473,11 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           /(face|ফেস|mukh|মুখ|scan|স্ক্যান|ছবি|photo|ফটো|pic|পিক)[^\n]{0,120}(ki koren|ki koro|কী করেন|কি করেন|কি করো|কি করেন|নিয়ে.*করেন|নিয়া.*করেন|use|ব্যবহার|sell|বিক্রি|share|শেয়ার|data|ডাটা|তথ্য)/i.test(norm) ||
           /(fau fau|ফাউ ফাউ|free|ফ্রি|tk|টাকা|payment|পেমেন্ট)[^\n]{0,120}(dicche|দিচ্ছে|dei|দেয়|দেন|দেয়)[^\n]{0,160}(face|ফেস|mukh|মুখ|ছবি|photo|ফটো)/i.test(norm);
 
+        const asksReferralJoin =
+          /(kar|কার|jar|যার|kon|কোন|which|who|ke|কে)[^\n]{0,80}(refer|reffer|refar|রেফার|referral|রেফারে|রেফারার|under|আন্ডার)/i.test(norm) ||
+          /(refer|reffer|refar|রেফার|referral|রেফারে|রেফারার|under|আন্ডার)[^\n]{0,80}(join|জয়েন|joined|asche|আসছে|ashche|aishe|hoise|হইছে|hoyeche|হয়েছে|ache|আছে|kar|কার|কে|ke)/i.test(norm) ||
+          /(ke|কে|কার)[^\n]{0,60}(eneche|এনেছে|anse|আনছে|niye asche|নিয়ে আসছে)/i.test(norm);
+
 
 
         const verificationDateKind = (s: string): "first" | "reverify" | "all" | null => {
@@ -641,7 +646,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             sess?.step === "offer_reset"
               ? isAffirmation(norm) || looksLikeUidAnswer ||
                 /(রিসেট|reset|হ্যাঁ|হা|জি|করে দিন|kore din|kore den|chai|চাই)/i.test(norm)
-              : sess?.intent === "withdraw_status" || sess?.intent === "verification_dates" || sess?.intent === "account_info"
+              : sess?.intent === "withdraw_status" || sess?.intent === "verification_dates" || sess?.intent === "account_info" || sess?.intent === "referral_join"
                 ? looksLikeUidAnswer
                 : sess?.step === "await_slot"
                   ? looksLikeSlotAnswer
@@ -702,6 +707,27 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               await sendMessage(chatId, reply, msg.message_id);
               await logMessage("question", "account-info", reply, res.found ? uid : null);
               return Response.json({ ok: true, flow: "account-info-session" });
+            }
+
+            if (sess.intent === "referral_join" && sess.step === "await_uid") {
+              const uid = pickUidFromCurrentOrReply();
+              if (!uid) {
+                await sendMessage(
+                  chatId,
+                  `🔗 কোন একাউন্ট কার রেফারে join করেছে সেটা দেখতে তার <b>UID</b> নম্বরটি লিখুন (যেমন: 72)।`,
+                  msg.message_id,
+                );
+                return Response.json({ ok: true, flow: "referral-join-await-uid" });
+              }
+              const { buildReferralJoinReport } = await import("@/lib/telegram-lookup.server");
+              const res = await buildReferralJoinReport(uid);
+              if (res.found) await clearSession();
+              const reply = res.found
+                ? res.card
+                : `❌ UID <code>${uid}</code> দিয়ে কোনো একাউন্ট পাওয়া যায়নি। সঠিক UID টি লিখুন।`;
+              await sendMessage(chatId, reply, msg.message_id);
+              await logMessage("question", "referral-join", reply, res.found ? res.uid : null);
+              return Response.json({ ok: true, flow: "referral-join-session" });
             }
 
 
@@ -1475,6 +1501,30 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           actions.push("withdraw-eligibility");
           await logMessage(decision.verdict, actions.join(","), reply, null);
           return Response.json({ ok: true, flow: "withdraw_eligibility", actions });
+        }
+
+        // ---- "UID 72 কার রেফারে join হয়েছে?" → exact referred_by lookup ----
+        if (asksReferralJoin && !decision.should_delete && settings.auto_reply_enabled) {
+          const uid = explicitOrBareUid() || pickUid(norm);
+          if (uid) {
+            const { buildReferralJoinReport } = await import("@/lib/telegram-lookup.server");
+            const res = await buildReferralJoinReport(uid);
+            const reply = res.found
+              ? res.card
+              : `❌ UID <code>${uid}</code> দিয়ে কোনো একাউন্ট পাওয়া যায়নি। সঠিক UID টি লিখুন।`;
+            await sendMessage(chatId, reply, msg.message_id);
+            actions.push("referral-join");
+            await logMessage(decision.verdict, actions.join(","), reply, res.found ? res.uid : null);
+            return Response.json({ ok: true, flow: "referral_join", actions });
+          }
+          if (msg.from?.id) {
+            await saveSession({ intent: "referral_join", step: "await_uid", uid: null, app_user_id: null });
+          }
+          const reply = `🔗 কোন ইউজার কার রেফারে join করেছে সেটা দেখে দিচ্ছি।\nতার <b>UID</b> নম্বরটি লিখুন — যেমন <code>72</code>।`;
+          await sendMessage(chatId, reply, msg.message_id);
+          actions.push("referral-join-ask-uid");
+          await logMessage(decision.verdict, actions.join(","), reply, null);
+          return Response.json({ ok: true, flow: "referral_join_ask_uid", actions });
         }
 
         // ---- "উইথড্র দিয়েছি টাকা আসে নাই" → show pending requests with time ---

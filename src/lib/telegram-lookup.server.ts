@@ -63,6 +63,10 @@ export type LookupResult = { found: false } | { found: true; card: string };
 
 type ProfilePick = { id: string; display_name: string | null; uid_seq: number | null; referral_code?: string | null };
 
+export type ReferralJoinResult =
+  | { found: false }
+  | { found: true; uid: string; card: string };
+
 async function findProfilesForQuery(db: any, queryRaw: string): Promise<ProfilePick[]> {
   const query = queryRaw.trim();
   if (!query) return [];
@@ -243,6 +247,71 @@ export async function buildUserCard(uidRaw: string): Promise<LookupResult> {
     (debt ? `   ⚠️ বকেয়া (ফেরতযোগ্য): <b>${bdt(debt)}</b>\n` : "");
 
   return { found: true, card };
+}
+
+/**
+ * "UID 72 কার রেফারে join হয়েছে?" — show the real referrer from profiles.referred_by.
+ */
+export async function buildReferralJoinReport(uidRaw: string): Promise<ReferralJoinResult> {
+  const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
+
+  const query = uidRaw.trim();
+  const cols = "id, display_name, uid_seq, referral_code, referred_by, created_at";
+  let profile: any = null;
+
+  const digits = query.replace(/\D/g, "");
+  if (digits.length >= 10) {
+    const { data } = await db
+      .from("profiles")
+      .select(cols)
+      .in("phone_number", phoneVariants(query))
+      .limit(1);
+    profile = data?.[0] ?? null;
+  }
+
+  if (!profile && /^\d+$/.test(query)) {
+    const { data } = await db
+      .from("profiles")
+      .select(cols)
+      .eq("uid_seq", Number(query))
+      .maybeSingle();
+    profile = data;
+  }
+
+  if (!profile && /^[A-Za-z0-9]{4,12}$/.test(query)) {
+    const { data } = await db
+      .from("profiles")
+      .select(cols)
+      .eq("referral_code", query.toUpperCase())
+      .maybeSingle();
+    profile = data;
+  }
+
+  if (!profile) return { found: false };
+
+  let referrer: any = null;
+  if (profile.referred_by) {
+    const { data } = await db
+      .from("profiles")
+      .select("id, display_name, uid_seq, referral_code, created_at")
+      .eq("id", profile.referred_by)
+      .maybeSingle();
+    referrer = data;
+  }
+
+  const card = referrer
+    ? `🔗 <b>রেফার রিপোর্ট</b>\n\n` +
+      `👤 <b>${profile.display_name || "ইউজার"}</b> — UID <code>${profile.uid_seq ?? "—"}</code>\n` +
+      `✅ এই একাউন্টটি <b>${referrer.display_name || "ইউজার"}</b> এর রেফারে join করেছে।\n` +
+      `🆔 রেফারারের UID: <code>${referrer.uid_seq ?? "—"}</code>\n` +
+      `🔖 রেফার কোড: <code>${referrer.referral_code ?? "—"}</code>\n` +
+      `📅 Join: ${dhaka(profile.created_at)}`
+    : `🔗 <b>রেফার রিপোর্ট</b>\n\n` +
+      `👤 <b>${profile.display_name || "ইউজার"}</b> — UID <code>${profile.uid_seq ?? "—"}</code>\n` +
+      `ℹ️ এই একাউন্টে কোনো রেফারার পাওয়া যায়নি — সম্ভবত direct join করেছে।\n` +
+      `📅 Join: ${dhaka(profile.created_at)}`;
+
+  return { found: true, uid: String(profile.uid_seq ?? query), card };
 }
 
 export type VerificationDateKind = "first" | "reverify" | "all";
