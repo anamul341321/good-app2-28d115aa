@@ -439,6 +439,33 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return res.done.length > 0;
         };
 
+        // ইউজার কোনো নির্দিষ্ট স্লট নিয়ে সমস্যার কথা বললে ("৩ নম্বর স্লটে
+        // রি-ভেরিফাই হচ্ছে না") — উত্তরের সাথে জিজ্ঞেস করব স্লটটি রিসেট করে
+        // দেব কি না। রাজি হলে UID চেয়ে সাথে সাথেই রিসেট করে দেব।
+        const mentionedSlot: number | null = (() => {
+          const m =
+            norm.match(/(\d{1,3})\s*(?:no|nombor|number|নম্বর|নাম্বার|নং)?\s*(?:er|এর)?\s*(?:slot|স্লট)/i) ||
+            norm.match(/(?:slot|স্লট)\s*(?:no|number|নম্বর|নাম্বার|নং)?\s*[:#-]?\s*(\d{1,3})/i);
+          const n = m ? Number(m[1]) : NaN;
+          return Number.isInteger(n) && n >= 1 && n <= 500 ? n : null;
+        })();
+
+        const offerSlotResetSuffix = async (): Promise<string> => {
+          if (!mentionedSlot || !reportsProblem || !msg.from?.id) return "";
+          if ((settings as any).slot_reset_enabled === false) return "";
+          try {
+            await saveSession({ step: "offer_reset", uid: null, app_user_id: null, data: { slots: [mentionedSlot] } });
+          } catch {
+            return "";
+          }
+          return (
+            `\n\n———\n🔄 আপনি কি <b>${mentionedSlot} নম্বর স্লটটি</b> রিসেট করে নিতে চান?\n` +
+            `রিসেট করলে ওই স্লটটি একদম খালি হয়ে যাবে, তারপর নতুন করে (১৮+ ফেস দিয়ে) আবার ভেরিফাই করতে পারবেন।\n\n` +
+            `👉 চাইলে লিখুন <b>হ্যাঁ</b> — এরপর শুধু আপনার <b>UID</b> নম্বরটি দিলেই আমি সাথে সাথে স্লটটি রিসেট করে জানিয়ে দেব 💙`
+          );
+        };
+
+
         // ---- open commands: no password needed ------------------------------
         if (/^\/(start|help|admin)\b/i.test(norm)) {
           await sendMessage(
@@ -474,11 +501,15 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           // The user changed the subject → forget the pending question and
           // answer what they actually asked now.
           const answering =
-            sess?.intent === "withdraw_status" || sess?.intent === "verification_dates" || sess?.intent === "account_info"
-              ? looksLikeUidAnswer
-              : sess?.step === "await_slot"
-                ? looksLikeSlotAnswer
-                : looksLikeUidAnswer || looksLikeSlotAnswer;
+            sess?.step === "offer_reset"
+              ? isAffirmation(norm) || looksLikeUidAnswer ||
+                /(রিসেট|reset|হ্যাঁ|হা|জি|করে দিন|kore din|kore den|chai|চাই)/i.test(norm)
+              : sess?.intent === "withdraw_status" || sess?.intent === "verification_dates" || sess?.intent === "account_info"
+                ? looksLikeUidAnswer
+                : sess?.step === "await_slot"
+                  ? looksLikeSlotAnswer
+                  : looksLikeUidAnswer || looksLikeSlotAnswer;
+
           if (aliveRaw && sess && !answering && !isCancel && questionish) {
             await clearSession();
           }
@@ -566,6 +597,47 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               return Response.json({ ok: true, flow: "verification-date-notfound" });
             }
 
+            // বট নিজে থেকে "স্লটটি রিসেট করে দেব?" জিজ্ঞেস করেছিল — এখানে
+            // হ্যাঁ/না এর উত্তর নেওয়া হয়।
+            if (sess.step === "offer_reset") {
+              const pending = (((sess.data as any)?.slots ?? []) as number[]).filter((n) => Number(n) > 0);
+              const slotLabel = pending.length ? `${pending.join(", ")} নম্বর স্লট` : "স্লটটি";
+              const said = norm;
+              const saidNo = /(না|na\b|no\b|lagbe na|লাগবে না|চাই না|chai na|থাক)/i.test(said);
+              const saidYes =
+                isAffirmation(said) || /(হ্যাঁ|হা\b|জি|রিসেট|reset|করে দিন|kore din|kore den|chai|চাই|dao|দাও)/i.test(said);
+
+              if (saidNo && !saidYes) {
+                await clearSession();
+                await sendMessage(chatId, "ঠিক আছে, রিসেট করা হলো না 🙂 অন্য কোনো সাহায্য লাগলে নির্দ্বিধায় বলবেন 💙", msg.message_id);
+                return Response.json({ ok: true, flow: "offer-reset-declined" });
+              }
+
+              const uidNow = pickUid(said);
+              if (uidNow) {
+                const { findProfileByUid } = await import("@/lib/telegram-slot.server");
+                const prof = await findProfileByUid(uidNow);
+                if (prof) {
+                  await saveSession({ step: "await_slot", uid: uidNow, app_user_id: prof.id, data: { slots: pending } });
+                  await doReset(uidNow, pending);
+                  return Response.json({ ok: true, flow: "offer-reset-done" });
+                }
+              }
+
+              if (saidYes || uidNow) {
+                await saveSession({ step: "await_uid", data: { slots: pending } });
+                await sendMessage(
+                  chatId,
+                  `দারুণ! 😊 <b>${slotLabel}</b> রিসেট করে দিচ্ছি।\n\n` +
+                    `🆔 শুধু আপনার <b>UID</b> নম্বরটি লিখুন (অ্যাপের প্রোফাইল পেজে পাবেন, যেমন: 4100)।\n` +
+                    `UID পেলেই সাথে সাথে রিসেট করে জানিয়ে দেব 💙`,
+                  msg.message_id,
+                );
+                await logMessage("question", "offer-reset-accepted", null, null);
+                return Response.json({ ok: true, flow: "offer-reset-await-uid" });
+              }
+            }
+
             if (sess.step === "await_uid") {
               const uid = pickUid(norm);
               if (!uid) {
@@ -586,7 +658,14 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
                 );
                 return Response.json({ ok: true, flow: "uid-notfound" });
               }
+              const remembered = (((sess.data as any)?.slots ?? []) as number[]).filter((n) => Number(n) > 0);
+              if (remembered.length) {
+                await saveSession({ step: "await_slot", uid, app_user_id: prof.id, data: { slots: remembered } });
+                await doReset(uid, remembered);
+                return Response.json({ ok: true, flow: "reset" });
+              }
               const slotsNow = pickSlots(norm.replace(uid, " "));
+
               if (slotsNow.length || wantsAll) {
                 await saveSession({ step: "await_slot", uid, app_user_id: prof.id });
                 await doReset(uid, wantsAll ? [] : slotsNow);
@@ -752,7 +831,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             const answer = await matchBuiltinFaqPhoto(photoBase64);
             if (answer) {
               const reply = (await humanizeReply(answer, text, [])) || answer;
-              await sendMessage(chatId, reply, msg.message_id);
+              await sendMessage(chatId, reply + (await offerSlotResetSuffix()), msg.message_id);
               await logMessage("question", "faq-builtin-image", reply, null);
               return Response.json({ ok: true, flow: "faq-builtin-image" });
             }
@@ -949,7 +1028,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               const { humanizeReply } = await import("@/lib/telegram-bot.server");
               const base = builtinFaqReply(senderName, hit);
               const reply = (await humanizeReply(base, text, recentReplies)) || base;
-              await sendMessage(chatId, reply, msg.message_id);
+              await sendMessage(chatId, reply + (await offerSlotResetSuffix()), msg.message_id);
               await logMessage("question", `faq-builtin:${hit.topic}`, reply, null);
               return Response.json({ ok: true, flow: "faq-builtin-text" });
             }
@@ -1394,7 +1473,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
         if (settings.auto_reply_enabled && decision.reply && !decision.should_delete
             && decision.intent !== "slot_reset") {
-          await sendMessage(chatId, decision.reply, msg.message_id);
+          await sendMessage(chatId, decision.reply + (await offerSlotResetSuffix()), msg.message_id);
           actions.push("replied");
         }
 
