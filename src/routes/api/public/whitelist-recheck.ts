@@ -52,17 +52,25 @@ export const Route = createFileRoute("/api/public/whitelist-recheck")({
         };
 
 
-        const { data: tasks, error } = await supabaseAdmin
-          .from("tasks")
-          .select("id, user_id, wallet_address, status, whitelist_ok, initial_verify_at, last_reverified_at, reverify_count")
-          .in("status", ["verified", "done"])
-          .not("wallet_address", "is", null);
-        if (error) {
-          await touchRun({ status: "error", error_message: error.message, finished_at: new Date().toISOString() });
-          return Response.json({ error: error.message }, { status: 500 });
+        // PostgREST caps a plain select at 1000 rows — page through everything.
+        const list: any[] = [];
+        for (let from = 0; ; from += 1000) {
+          const { data: page, error } = await supabaseAdmin
+            .from("tasks")
+            .select("id, user_id, wallet_address, status, whitelist_ok, initial_verify_at, last_reverified_at, reverify_count")
+            .in("status", ["verified", "done"])
+            .not("wallet_address", "is", null)
+            .order("created_at")
+            .order("id")
+            .range(from, from + 999);
+          if (error) {
+            await touchRun({ status: "error", error_message: error.message, finished_at: new Date().toISOString() });
+            return Response.json({ error: error.message }, { status: 500 });
+          }
+          list.push(...(page ?? []));
+          if (!page || page.length < 1000) break;
         }
 
-        const list = tasks ?? [];
         const affectedUsers = new Set<string>();
         let checked = 0, flipped = 0, restored = 0, pendingChecked = 0, pendingPromoted = 0;
         let batches = 0;
