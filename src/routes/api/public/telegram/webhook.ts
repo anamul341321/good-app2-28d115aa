@@ -285,6 +285,28 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               return Response.json({ ok: true, flow: "cancelled" });
             }
 
+            if (sess.intent === "withdraw_status" && sess.step === "await_uid") {
+              const uid = pickUid(norm);
+              if (!uid) {
+                await sendMessage(
+                  chatId,
+                  "🧾 পেন্ডিং/পেইড উইথড্র স্ট্যাটাস দেখতে আপনার <b>UID</b> নম্বরটি লিখুন।",
+                  msg.message_id,
+                );
+                return Response.json({ ok: true, flow: "withdraw-await-uid" });
+              }
+
+              const { buildWithdrawStatusCard } = await import("@/lib/telegram-withdraw.server");
+              const res = await buildWithdrawStatusCard(uid);
+              const reply = res.found
+                ? res.card
+                : `❌ UID <code>${uid}</code> দিয়ে কোনো একাউন্ট পাওয়া যায়নি। সঠিক UID টি লিখুন।`;
+              if (res.found) await clearSession();
+              await sendMessage(chatId, reply, msg.message_id);
+              await logMessage("question", "withdraw-status", reply, res.found ? uid : null);
+              return Response.json({ ok: true, flow: "withdraw-status-session" });
+            }
+
 
             if (sess.intent === "verification_dates" && sess.step === "await_uid") {
               const query = pickVerificationQuery(norm) || pickUid(norm);
@@ -665,6 +687,9 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           const ask = pendingWithdrawQuestion
             ? `🧾 ${senderName}, পেন্ডিং/পেইড স্ট্যাটাস দেখতে আপনার <b>UID</b> নম্বরটি লিখুন।\nUID দিলে কোন রিকোয়েস্ট কখন দিয়েছেন সব দেখিয়ে দেব।`
             : withdrawEligibilityReply(senderName);
+          if (pendingWithdrawQuestion && msg.from?.id) {
+            await saveSession({ intent: "withdraw_status", step: "await_uid", uid: null, app_user_id: null });
+          }
           await sendMessage(chatId, ask, msg.message_id);
           actions.push(pendingWithdrawQuestion ? "withdraw-ask-uid" : "withdraw-rule");
           await logMessage(decision.verdict, actions.join(","), ask, null);
