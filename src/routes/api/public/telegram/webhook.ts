@@ -138,6 +138,29 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             return Response.json({ ok: true, flow: "admin-card" });
           }
 
+          // Owner/admin: "UID 4100 er sob slot er first verify date time dekhao"
+          // or "ei UID e 3 din hoise re-verify chay na keno" → show real app data,
+          // never repeat the admin's sentence back.
+          if (cardCmd && /(verify|verification|ভেরিফাই|ভেরিফিকেশন|face|ফেস|date|time|তারিখ|সময়|কবে|status|স্ট্যাটাস|রি\s*-?ভেরিফাই|re\s*-?verify|first|1st|প্রথম|১ম)/i.test(order)) {
+            const { buildVerificationDateReport, buildReverifyStatusReport } = await import("@/lib/telegram-lookup.server");
+            const wantsReverifyStatus =
+              /(re\s*-?verify|reverify|রি\s*-?ভেরিফাই|রি-ভেরিফাই)[^\n]{0,80}(চায় না|চাই না|চাচ্ছে না|আসে না|আসেনি|ashe na|chay na|chai na|hocche na|hoy na|কেন|keno|kn|status|স্ট্যাটাস)/i.test(order) ||
+              /(৩|3|৪|4)\s*(দিন|din|day)[^\n]{0,80}(re\s*-?verify|reverify|রি\s*-?ভেরিফাই|রি-ভেরিফাই)/i.test(order);
+            const kind = /(re\s*-?verify|reverify|রি\s*-?ভেরিফাই|রি-ভেরিফাই)/i.test(order)
+              ? "reverify"
+              : /(first|1st|প্রথম|১ম)/i.test(order)
+                ? "first"
+                : "all";
+            const res = wantsReverifyStatus
+              ? await buildReverifyStatusReport(cardCmd[1])
+              : await buildVerificationDateReport(cardCmd[1], kind as "first" | "reverify" | "all");
+            const reply = res.found
+              ? res.card
+              : `❌ UID <code>${cardCmd[1]}</code> দিয়ে কোনো ইউজার পাওয়া যায়নি।`;
+            await sendMessage(chatId, reply, replyTo);
+            return Response.json({ ok: true, flow: wantsReverifyStatus ? "admin-reverify-status" : "admin-verification-dates" });
+          }
+
           // "video dao / টিউটোরিয়াল দাও"
           if (/(video|ভিডিও|tutorial|টিউটোরিয়াল)/i.test(order)) {
             const { data: vids } = await supabaseAdmin
@@ -226,6 +249,27 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         }
 
         if ((senderIsAdmin && !isBotCommand) || repliedToAdmin) {
+          // Save human admin replies as learning examples. Later, recallSimilar()
+          // can use the exact question → admin answer pair instead of guessing.
+          if (senderIsAdmin && text.trim() && msg.reply_to_message && !msg.reply_to_message.from?.is_bot) {
+            const original = String(msg.reply_to_message.text ?? msg.reply_to_message.caption ?? "").trim();
+            if (original) {
+              await supabaseAdmin.from("tg_messages").insert({
+                update_id: update.update_id,
+                chat_id: msg.chat.id,
+                message_id: msg.message_id,
+                tg_user_id: msg.reply_to_message.from?.id ?? null,
+                username: msg.reply_to_message.from?.username ?? null,
+                full_name: [msg.reply_to_message.from?.first_name, msg.reply_to_message.from?.last_name].filter(Boolean).join(" ") || "User",
+                text: original.slice(0, 2000),
+                has_photo: !!msg.reply_to_message.photo?.length,
+                verdict: "question",
+                action: "admin-reply-learning",
+                bot_reply: text.slice(0, 2000),
+                matched_uid: null,
+              });
+            }
+          }
           return Response.json({ ok: true, ignored: senderIsAdmin ? "admin-message" : "reply-to-admin" });
         }
 
@@ -293,6 +337,8 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           /^(yes|yeah|yep|ya|ha|haa|hae|hmm|hm|ok|okay|k|ji|jee|acha|accha|thik|thik ache|right|sure|thanks|thank you|tnx|ty|done|nice|good|👍|✅|হ্যাঁ|হা|হুম|জি|জ্বি|আচ্ছা|ঠিক|ঠিক আছে|ধন্যবাদ|ওকে)[\s.!।]*$/i.test(
             s.trim(),
           );
+        const isThanksOnly = (s: string) =>
+          /^(thanks|thank you|tnx|ty|ধন্যবাদ|থ্যাংকস|শুকরিয়া|jazakallah|জাযাকাল্লাহ)[\s.!।🙏😊🙂]*$/i.test(s.trim());
         const pickUid = (s: string): string | null => {
           if (isAffirmation(s)) return null;
           const num = s.match(/\b(\d{1,9})\b/);
@@ -351,8 +397,15 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         const asksOwnAccount =
           !pendingWithdrawQuestion &&
           !reportsProblem &&
-          /(আমার|amar|amr|my|আমি|ami|nijer|নিজের|acount|account|একাউন্ট|অ্যাকাউন্ট)/i.test(norm) &&
-          /(refer|reffer|রেফার|ব্যালেন্স|balance|verify|ভেরিফাই|verification|ভেরিফিকেশন|face|ফেস|slot|স্লট|mining|মাইনিং|bonus|বোনাস|টাকা|taka|tk|income|ইনকাম|status|স্ট্যাটাস|details|ডিটেইলস|koto|কত|koita|কয়টা|kota|hoyeche|hoyche|hoise|আছে|ache)/i.test(norm);
+          (
+            (/(আমার|amar|amr|my|আমি|ami|nijer|নিজের|acount|account|একাউন্ট|অ্যাকাউন্ট)/i.test(norm) &&
+              /(refer|reffer|রেফার|ব্যালেন্স|balance|verify|ভেরিফাই|verification|ভেরিফিকেশন|face|ফেস|slot|স্লট|mining|মাইনিং|bonus|বোনাস|টাকা|taka|tk|income|ইনকাম|status|স্ট্যাটাস|details|ডিটেইলস|koto|কত|koita|কয়টা|kota|hoyeche|hoyche|hoise|আছে|ache|list|লিস্ট|তালিকা)/i.test(norm)) ||
+            /(refer|reffer|referral|রেফার|রেফারেল)[^\n]{0,30}(list|লিস্ট|তালিকা|koita|কয়টা|koyta|koto|কত|hisab|হিসাব)/i.test(norm)
+          );
+
+        const asksReverifyStatus =
+          /(re\s*-?verify|reverify|রি\s*-?ভেরিফাই|রি ভেরিফাই|রি-ভেরিফাই)[^\n]{0,90}(চায় না|চাই না|চাচ্ছে না|আসে না|আসেনি|ashe na|chay na|chai na|hocche na|hoy na|হয় না|কেন|keno|kn|কবে|kokhon|কখন|status|স্ট্যাটাস)/i.test(norm) ||
+          /(3|৩|4|৪)\s*(din|দিন|day)[^\n]{0,120}(first|1st|প্রথম|১ম|verify|ভেরিফাই)[^\n]{0,120}(re\s*-?verify|reverify|রি\s*-?ভেরিফাই|রি-ভেরিফাই)/i.test(norm);
 
 
 
@@ -413,6 +466,14 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             ...row,
           } as any, { onConflict: "tg_user_id,chat_id" });
         };
+
+        if (settings.auto_reply_enabled && isThanksOnly(norm)) {
+          await clearSession();
+          const reply = `স্বাগতম ${senderName} 🙂\nআর কোনো সাহায্য লাগলে এখানেই লিখবেন।`;
+          await sendMessage(chatId, reply, msg.message_id);
+          await logMessage("ok", "thanks", reply, null);
+          return Response.json({ ok: true, flow: "thanks" });
+        }
 
         const doReset = async (uid: string, slots: number[]) => {
           const { resetSlotsForUid, listSlotNumbers } = await import("@/lib/telegram-slot.server");
@@ -588,9 +649,11 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
                 return Response.json({ ok: true, flow: "verification-date-await-uid" });
               }
 
-              const { buildVerificationDateReport } = await import("@/lib/telegram-lookup.server");
-              const kind = ((sess.data as any)?.kind || "first") as "first" | "reverify" | "all";
-              const res = await buildVerificationDateReport(query, kind);
+              const { buildVerificationDateReport, buildReverifyStatusReport } = await import("@/lib/telegram-lookup.server");
+              const kind = ((sess.data as any)?.kind || "first") as "first" | "reverify" | "all" | "reverify_status";
+              const res = kind === "reverify_status"
+                ? await buildReverifyStatusReport(query)
+                : await buildVerificationDateReport(query, kind);
               if (res.found) {
                 await clearSession();
                 await sendMessage(chatId, res.card, msg.message_id);
@@ -1346,6 +1409,38 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         }
 
         // ---- "১ম verify কবে/কত তারিখে হয়েছে?" → ask UID, then report dates --
+        if (asksReverifyStatus && !decision.should_delete && settings.auto_reply_enabled) {
+          const query = pickVerificationQuery(norm) || (hasExplicitUid ? pickUid(norm) : null);
+          if (query) {
+            const { buildReverifyStatusReport } = await import("@/lib/telegram-lookup.server");
+            const res = await buildReverifyStatusReport(query);
+            const reply = res.found
+              ? res.card
+              : (res as any).ambiguous?.length
+                ? `একই নামে একাধিক ইউজার পাওয়া গেছে। সঠিক UID লিখুন:\n${(res as any).ambiguous.map((p: any) => `• ${p.display_name || "ইউজার"} — UID <code>${p.uid_seq ?? "—"}</code>`).join("\n")}`
+                : `❌ <code>${query}</code> দিয়ে কোনো ইউজার পাওয়া যায়নি। সঠিক UID লিখুন।`;
+            await sendMessage(chatId, reply, msg.message_id);
+            actions.push("reverify-status");
+            await logMessage(decision.verdict, actions.join(","), reply, res.found ? res.uid : null);
+            return Response.json({ ok: true, flow: "reverify-status", actions });
+          }
+
+          await saveSession({
+            intent: "verification_dates",
+            step: "await_uid",
+            data: { kind: "reverify_status" },
+            uid: null,
+            app_user_id: null,
+          });
+          const reply =
+            `🆔 কোন ইউজারের রি-ভেরিফাই কেন আসছে না সেটা দেখে দিচ্ছি।\n` +
+            `তার <b>UID</b> নম্বরটি লিখুন — আমি সব স্লটের ১ম ভেরিফাই সময়, কাউন্টডাউন ও রি-ভেরিফাই স্ট্যাটাস দেখিয়ে দেব।`;
+          await sendMessage(chatId, reply, msg.message_id);
+          actions.push("reverify-status-ask-uid");
+          await logMessage(decision.verdict, actions.join(","), reply, null);
+          return Response.json({ ok: true, flow: "reverify-status-ask-uid", actions });
+        }
+
         const dateKind = verificationDateKind(norm);
         if (dateKind && !decision.should_delete && settings.auto_reply_enabled) {
           const query = pickVerificationQuery(norm);
