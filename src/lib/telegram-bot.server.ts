@@ -373,7 +373,8 @@ export async function matchFaqImage(opts: {
   const key = process.env.LOVABLE_API_KEY;
   if (!key) throw new Error("LOVABLE_API_KEY not configured");
 
-  const refs = opts.faq.filter((f) => f.imageBase64 && f.answer.trim()).slice(0, 10);
+  // উত্তর লেখা না থাকলেও ছবি থাকলে ম্যাচ করবে — উত্তর বট নিজেই বানিয়ে নেবে।
+  const refs = opts.faq.filter((f) => f.imageBase64).slice(0, 10);
   if (!refs.length) return null;
 
   const scores = await Promise.all(
