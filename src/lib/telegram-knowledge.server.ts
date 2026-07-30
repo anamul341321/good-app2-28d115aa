@@ -199,62 +199,31 @@ export function slotEarningReply(
   const base = 10 * MONTHLY_PER_SLOT; // ১০ স্লট = ৫০০৳
   const monthlyLine = (n: number) =>
     `• <b>${bn(n)} স্লট</b>  →  মাসে <b>${bn(n * MONTHLY_PER_SLOT)}৳</b>`;
-  const bonusLine = (n: number) =>
-    `• <b>${bn(n)} স্লট</b>  →  এককালীন <b>${bn(n * perSlotTotal)}৳</b>`;
 
-  const others = [10, 15, 20, 30, 50].filter((n) => !slots || n !== slots).slice(0, 4);
-
-  // step-by-step ratio explanation the way the admin wants it
-  const ratio = (n: number) =>
-    `📐 <b>হিসাবটা এভাবে দেখুন</b>\n\n` +
-    `১) ১০টি স্লটে মাসে = <b>${bn(base)}৳</b>\n\n` +
-    `২) তাহলে ১টি স্লটে = ${bn(base)} ÷ ১০ = <b>${bn(MONTHLY_PER_SLOT)}৳</b>\n\n` +
-    `৩) তাহলে ${bn(n)}টি স্লটে = ${bn(n)} × ${bn(MONTHLY_PER_SLOT)} = <b>${bn(n * MONTHLY_PER_SLOT)}৳ প্রতি মাসে</b> ⛏️\n\n`;
+  const others = [10, 20, 50].filter((n) => !slots || n !== slots).slice(0, 3);
 
   if (monthly || !slots) {
     if (slots) {
       return (
-        `${name}, একদম সহজ করে দেখাই 🙂\n\n` +
-        `━━━━━━━━━━━━━━\n\n` +
-        ratio(slots) +
-        `━━━━━━━━━━━━━━\n\n` +
-        `✅ <b>উত্তর: ${bn(slots)} স্লট = মাসে ${bn(slots * MONTHLY_PER_SLOT)}৳</b>\n\n` +
-        `এই টাকাটা <b>প্রতি মাসেই</b> আসবে (মাইনিং)।\n\n` +
-        `🎁 আর ${bn(slots)} স্লট ভেরিফাই + রি-ভেরিফাই করার জন্য <b>${bn(slots * perSlotTotal)}৳</b> বোনাস — এটা <b>একবারই</b>, প্রতি মাসে নয়।\n\n` +
-        `━━━━━━━━━━━━━━\n\n` +
-        `📊 <b>আরও কিছু উদাহরণ</b>\n\n` +
-        `${others.map(monthlyLine).join("\n\n")}\n\n` +
-        `📈 স্লটের কোনো লিমিট নেই — যত স্লট, তত বেশি মাসিক আয়।\n\n` +
-        `🏦 মাইনিংয়ের টাকা প্রতি মাসের <b>১–৩ তারিখে</b> তোলা যায়; বোনাস যেকোনো সময় 💙`
+        `${name}, ১০ স্লট = ${bn(base)}৳/মাস, তাই ১ স্লট = ${bn(MONTHLY_PER_SLOT)}৳।\n\n` +
+        `✅ <b>${bn(slots)} স্লট = মাসে ${bn(slots * MONTHLY_PER_SLOT)}৳</b> (প্রতি মাসেই) ⛏️\n\n` +
+        `🎁 সাথে এককালীন বোনাস <b>${bn(slots * perSlotTotal)}৳</b> (একবারই) 💙`
       );
     }
     return (
-      `${name}, স্লট অনুযায়ী মাসিক আয়ের হিসাবটা এমন 👇\n\n` +
-      `━━━━━━━━━━━━━━\n\n` +
-      `১০টি স্লটে মাসে = <b>${bn(base)}৳</b>\n\n` +
-      `তাই ১টি স্লটে = <b>${bn(MONTHLY_PER_SLOT)}৳</b> প্রতি মাসে\n\n` +
-      `━━━━━━━━━━━━━━\n\n` +
-      `📊 <b>উদাহরণ</b>\n\n` +
-      `${others.map(monthlyLine).join("\n\n")}\n\n` +
-      `📈 স্লটের কোনো লিমিট নেই — যত স্লট, তত বেশি মাসিক আয়।\n\n` +
-      `🏦 মাইনিংয়ের টাকা প্রতি মাসের <b>১–৩ তারিখে</b> তোলা যায় 💙`
+      `${name}, ১০ স্লট = ${bn(base)}৳/মাস → ১ স্লট = <b>${bn(MONTHLY_PER_SLOT)}৳</b>/মাস।\n\n` +
+      `${others.map(monthlyLine).join("\n")}\n\n` +
+      `📈 স্লটের লিমিট নেই 💙`
     );
   }
 
   return (
-    `${name}, ${bn(slots)}টি স্লটের হিসাব 🙂\n\n` +
-    `━━━━━━━━━━━━━━\n\n` +
-    ratio(slots) +
-    `━━━━━━━━━━━━━━\n\n` +
-    `🎁 <b>এককালীন বোনাস (একবারই)</b>\n\n` +
-    `প্রতি স্লটে ১ম ভেরিফাই ${bn(perSlotFirst)}৳ + রি-ভেরিফাই ${bn(perSlotRe)}৳ = ${bn(perSlotTotal)}৳\n\n` +
-    `${bn(slots)} × ${bn(perSlotTotal)} = <b>${bn(slots * perSlotTotal)}৳</b>\n\n` +
-    `━━━━━━━━━━━━━━\n\n` +
-    `📊 <b>তুলনা</b>\n\n` +
-    `${others.map(bonusLine).join("\n\n")}\n\n` +
-    `🏦 বোনাস যেকোনো সময়, মাইনিং প্রতি মাসের <b>১–৩ তারিখে</b> তোলা যায় 💙`
+    `${name}, ${bn(slots)} স্লট 👇\n\n` +
+    `⛏️ মাসে <b>${bn(slots * MONTHLY_PER_SLOT)}৳</b> (১ স্লট = ${bn(MONTHLY_PER_SLOT)}৳)\n\n` +
+    `🎁 এককালীন বোনাস <b>${bn(slots * perSlotTotal)}৳</b> (একবারই) 💙`
   );
 }
+
 
 /**
  * "আমি যাকে রেফার করবো সে ১০টি রি-ভেরিফাই করলে আমি কত পাবো?" —
@@ -266,19 +235,8 @@ export function referralEarningReply(name: string, r: AppRates): string {
   const monthlyFull = 10 * MONTHLY_PER_SLOT; // ১০ স্লট = ৫০০৳/মাস
   const commission = Math.round(monthlyFull * 0.10); // ১০% = ৫০৳/মাস
   return (
-    `${name}, রেফার থেকে আপনার আয়টা এভাবে হয় 👇\n\n` +
-    `━━━━━━━━━━━━━━\n\n` +
-    `🎁 <b>এককালীন বোনাস (একবারই)</b>\n\n` +
-    `১) আপনার রেফারে আসা ইউজার <b>১০টি স্লট ১ম ভেরিফাই</b> সম্পন্ন করলে → আপনি পাবেন <b>${tk(ref)}</b>\n\n` +
-    `২) ঐ একই ইউজার <b>১০টি স্লট রি-ভেরিফাই</b> সম্পন্ন করলে → আপনি পাবেন আরও <b>${tk(re)}</b>\n\n` +
-    `✅ অর্থাৎ একজন রেফার থেকেই মোট <b>${tk(ref + re)}</b> 💵\n\n` +
-    `━━━━━━━━━━━━━━\n\n` +
-    `⛏️ <b>প্রতি মাসের কমিশন (চলতেই থাকবে)</b>\n\n` +
-    `ঐ ইউজারের রি-ভেরিফাই সম্পন্ন হয়ে <b>মাইনিং চালু</b> হলে, তার মাইনিং থেকে আপনি প্রতি মাসে <b>১০%</b> কমিশন পাবেন।\n\n` +
-    `হিসাব: ১০টি স্লটে মাসে ${bn(monthlyFull)}৳ → তার ১০% = <b>${bn(commission)}৳ প্রতি মাসে</b>\n\n` +
-    `📈 এভাবে ৫ জন রেফার করলে = মাসে <b>${bn(commission * 5)}৳</b>, ১০ জন হলে = মাসে <b>${bn(commission * 10)}৳</b> — রেফার যত বেশি, মাসিক আয়ও তত বেশি।\n\n` +
-    `━━━━━━━━━━━━━━\n\n` +
-    `🔓 মনে রাখবেন: রেফার লিংক চালু হতে আপনার নিজের <b>১০টি স্লট ১ম ভেরিফাই</b> সম্পন্ন থাকতে হবে।\n\n` +
-    `🏦 বোনাসের টাকা যেকোনো সময় তোলা যায়, মাইনিংয়ের টাকা প্রতি মাসের <b>১–৩ তারিখে</b> 💙`
+    `${name}, রেফারি ১০টি স্লট রি-ভেরিফাই করলে 👇\n\n` +
+    `⛏️ তার মাইনিং ${bn(monthlyFull)}৳/মাস → আপনি পাবেন <b>১০% = ${bn(commission)}৳ প্রতি মাসে</b> (চলতেই থাকবে)\n\n` +
+    `🎁 সাথে এককালীন বোনাস: ১ম ভেরিফাইয়ে ${tk(ref)} + রি-ভেরিফাইয়ে ${tk(re)} = <b>${tk(ref + re)}</b> (একবারই) 💙`
   );
 }
