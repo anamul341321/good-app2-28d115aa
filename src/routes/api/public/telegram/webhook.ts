@@ -1123,7 +1123,30 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             /(refer|reffer|refar|রেফার|রেফারেল|referral|রেফারে|আমাকে কত|amake koto)/i.test(bnDigits) ||
             (thirdParty && selfGain);
 
+          // ---- "টাকা কেটে নিলো কেন" → উইথড্র ফি (ছোট, নিশ্চিত উত্তর) ----
+          const feeCtx =
+            /(fee|ফি|charge|চার্জ|kete|কেটে|কাটে|kate|katse|কাটল|কেটেছে|kom pelam|কম পেলাম|kom paisi|কম পাইছি|deduct)/i.test(
+              bnDigits,
+            ) && /(withdraw|উইথড্র|tk|টাকা|taka|৳|bkash|বিকাশ|nagad|নগদ)/i.test(bnDigits);
+          if (feeCtx) {
+            const m = bnDigits.match(/(\d{2,6})\s*(tk|টাকা|taka|৳)?/);
+            const amt = m ? Number(m[1]) : null;
+            const line =
+              amt && amt >= 10 && amt <= 100000
+                ? `আপনি <b>${amt}৳</b> চেয়েছেন → ফি <b>${Math.floor(amt * (amt < 100 ? 0.2 : 0.1))}৳</b> (${amt < 100 ? "২০" : "১০"}%) → হাতে <b>${amt - Math.floor(amt * (amt < 100 ? 0.2 : 0.1))}৳</b>।`
+                : `১০০৳ বা বেশি তুললে ফি ১০%, ১০০৳ এর কম হলে ২০%।`;
+            const reply =
+              `${senderName} ভাই, এটা কোনো ভুল নয় 🙂\n` +
+              `প্রতিটি উইথড্রে অ্যাপের সার্ভিস ফি কাটা হয়।\n` +
+              `${line}\n` +
+              `একসাথে বেশি টাকা তুললে ফি তুলনামূলক কম পড়ে 💙`;
+            await sendMessage(chatId, reply, msg.message_id);
+            await logMessage("question", "withdraw-fee", reply, null);
+            return Response.json({ ok: true, flow: "withdraw-fee" });
+          }
+
           if (money && referCtx) {
+
             try {
               const { loadRates, referralEarningReply } = await import(
                 "@/lib/telegram-knowledge.server"
