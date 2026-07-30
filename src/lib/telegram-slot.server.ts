@@ -80,6 +80,21 @@ export async function resetSlotForUid(uid: string, slot: number): Promise<SlotRe
   }).eq("id", task.id);
   if (error) return { ok: false, error: "রিসেট করা যায়নি, একটু পরে আবার চেষ্টা করুন।" };
 
+  // A pending attempt can be re-created by the whitelist job between the
+  // delete above and this update — clear again after the slot is emptied.
+  await supabaseAdmin.from("unverified_attempts")
+    .delete().eq("user_id", profile.id).eq("slot", slot);
+
+  // Verify the row is genuinely empty now; never report success on a no-op.
+  const { data: after } = await supabaseAdmin
+    .from("tasks")
+    .select("status, wallet_address, face_photo_url")
+    .eq("id", task.id)
+    .maybeSingle();
+  if (!after || after.status !== "empty" || after.wallet_address || after.face_photo_url) {
+    return { ok: false, error: "স্লটটি খালি হয়নি — অ্যাডমিন প্যানেল থেকে চেষ্টা করুন।" };
+  }
+
   return {
     ok: true,
     slot,
@@ -91,9 +106,12 @@ export async function resetSlotForUid(uid: string, slot: number): Promise<SlotRe
 export type BatchResetResult = {
   found: boolean;
   name: string;
+  /** UID the bot actually resolved — shown back so a wrong UID is obvious. */
+  uid?: string;
   done: number[];
   failed: { slot: number; error: string }[];
 };
+
 
 /** Reset any number of slots at once for one account. */
 export async function resetSlotsForUid(uid: string, slots: number[]): Promise<BatchResetResult> {
