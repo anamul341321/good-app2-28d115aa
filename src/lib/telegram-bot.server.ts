@@ -57,6 +57,21 @@ export function stripBrandName(input: string): string {
     .replace(/(Good-App\s+){2,}/g, "Good-App ");
 }
 
+/** Close any tag left open by chunk-splitting so Telegram never rejects a part. */
+function balanceHtml(chunk: string): string {
+  const stack: string[] = [];
+  const re = /<(\/?)(b|strong|i|em|u|s|code|pre|a)(\s[^<>]*)?>/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(chunk))) {
+    const tag = m[2].toLowerCase();
+    if (m[1]) {
+      const idx = stack.lastIndexOf(tag);
+      if (idx >= 0) stack.splice(idx, 1);
+    } else stack.push(tag);
+  }
+  return chunk + stack.reverse().map((t) => `</${t}>`).join("");
+}
+
 /** Send a Telegram message, replying to the user's exact message when provided. */
 export async function sendMessage(chatId: string | number, text: string, _replyTo?: number) {
   const full = sanitizeTelegramHtml(text);
@@ -76,9 +91,10 @@ export async function sendMessage(chatId: string | number, text: string, _replyT
 
   let last: unknown = null;
   for (let i = 0; i < chunks.length; i++) {
+    const piece = balanceHtml(chunks[i]);
     const body: Record<string, unknown> = {
       chat_id: chatId,
-      text: chunks[i],
+      text: piece,
       parse_mode: "HTML",
       disable_web_page_preview: true,
     };
@@ -86,7 +102,18 @@ export async function sendMessage(chatId: string | number, text: string, _replyT
       body.reply_to_message_id = _replyTo;
       body.allow_sending_without_reply = true;
     }
-    last = await api("sendMessage", body);
+    let sent = await api("sendMessage", body);
+    // HTML parse error → পুরো মেসেজটা হারিয়ে যেতো; এখন প্লেইন টেক্সটে আবার পাঠানো হয়।
+    if (!sent) {
+      const plain = piece.replace(/<[^<>]*>/g, "").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
+      sent = await api("sendMessage", {
+        chat_id: chatId,
+        text: plain,
+        disable_web_page_preview: true,
+        ...(i === 0 && _replyTo ? { reply_to_message_id: _replyTo, allow_sending_without_reply: true } : {}),
+      });
+    }
+    last = sent;
   }
   return last;
 }
