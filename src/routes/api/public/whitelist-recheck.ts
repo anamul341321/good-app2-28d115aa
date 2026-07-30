@@ -110,10 +110,16 @@ export const Route = createFileRoute("/api/public/whitelist-recheck")({
             .order("created_at")
             .order("id")
             .range(from, from + 999);
-          if (attemptsError) return Response.json({ error: attemptsError.message }, { status: 500 });
+          if (attemptsError) {
+            await touchRun({ status: "error", error_message: attemptsError.message, finished_at: new Date().toISOString() });
+            return Response.json({ error: attemptsError.message }, { status: 500 });
+          }
           attempts.push(...(page ?? []));
           if (!page || page.length < 1000) break;
         }
+        await touchRun({ pending_total: attempts.length });
+
+
 
         for (let i = 0; i < attempts.length; i += CONCURRENCY) {
           const chunk = attempts.slice(i, i + CONCURRENCY);
