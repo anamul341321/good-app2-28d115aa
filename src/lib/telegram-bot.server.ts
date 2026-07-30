@@ -917,6 +917,12 @@ export async function smartAnswer(opts: {
   question: string;
   knowledge: string;
   faqs?: string;
+  /** ইউজারের আগের মেসেজগুলো (পুরোনো → নতুন) — ফলো-আপ প্রশ্ন বুঝতে। */
+  history?: string[];
+  /** বটের আগের রিপ্লাই, যাতে ধারাবাহিকতা থাকে। */
+  pastReplies?: string[];
+  /** গ্রুপের পুরোনো একই ধরনের প্রশ্ন-উত্তর। */
+  recall?: string;
 }): Promise<string | null> {
   const key = process.env.LOVABLE_API_KEY;
   if (!key) return null;
@@ -936,6 +942,8 @@ export async function smartAnswer(opts: {
             content:
               `তুমি Good-App এর দক্ষ বাংলা সাপোর্ট এজেন্ট। ইউজারের প্রশ্নটা মন দিয়ে পড়ে ` +
               `ঠিক সেই প্রশ্নেরই উত্তর দেবে — অপ্রাসঙ্গিক টিপস বা রেডিমেড লিস্ট কপি করবে না।\n` +
+              `আগের কথোপকথন থাকলে সেটার ধারাবাহিকতা রাখবে — ইউজার ছোট করে ফলো-আপ করলে (যেমন "তাহলে প্রথমবার হলো কেমনে?") ` +
+              `আগের বিষয়টার সাথে মিলিয়েই উত্তর দেবে, নতুন অপ্রাসঙ্গিক টপিকে যাবে না।\n` +
               `সবচেয়ে কঠিন নিয়ম: <b>শুধু নিচের knowledge/FAQ-তে থাকা তথ্য দিয়েই উত্তর দেবে</b>। ` +
               `সাধারণ অ্যাপ/ওয়েবসাইটে যা থাকে (OTP, Forgot Password, ইমেইল লিংক, KYC ডকুমেন্ট ইত্যাদি) ` +
               `তা এখানে আছে ধরে নেবে না — knowledge-এ না থাকলে সেটা নেই।\n` +
@@ -943,16 +951,29 @@ export async function smartAnswer(opts: {
               `শুধু ঠিক এই শব্দটি লিখবে: NO_ANSWER\n` +
               `নিয়ম:\n` +
               `• knowledge থেকে বিশ্লেষণ করে সরাসরি উত্তর দাও (৩-৮ লাইন), HTML <b> ট্যাগ ব্যবহার করতে পারো।\n` +
+              `• উত্তর অবশ্যই সম্পূর্ণ হবে — মাঝপথে বাক্য থামাবে না।\n` +
               `• মানুষের মতো স্বাভাবিক, উষ্ণ ভাষা — প্রতিবার একটু ভিন্ন গঠনে লিখবে।\n` +
               `• "অ্যাডমিন উত্তর দেবেন / অপেক্ষা করুন" জাতীয় ফিলার লিখবে না।\n` +
               `• কারো UID/একাউন্টের হিসাব চাওয়া না হলে কারো ডেটা দেখাবে না।\n` +
               `• কারো ছবি/key দেখানো যাবে না; ছবি সংরক্ষণের কথা কখনো বলবে না।\n\n` +
-              `${opts.knowledge}\n\n${opts.faqs ? `সেভ করা প্রশ্নোত্তর:\n${opts.faqs}` : ""}`,
+              `${opts.knowledge}${opts.recall ?? ""}\n\n${opts.faqs ? `সেভ করা প্রশ্নোত্তর:\n${opts.faqs}` : ""}`,
           },
-          { role: "user", content: `${opts.name} লিখেছে: ${q}` },
+          ...(opts.history?.length
+            ? [{
+                role: "user" as const,
+                content:
+                  `আগের কথোপকথন (পুরোনো → নতুন):\n` +
+                  opts.history.slice(-6).map((h) => `- ${String(h).slice(0, 300)}`).join("\n") +
+                  (opts.pastReplies?.length
+                    ? `\nবট আগে বলেছিল:\n${opts.pastReplies.slice(0, 2).map((r) => `- ${String(r).replace(/<[^>]+>/g, "").slice(0, 300)}`).join("\n")}`
+                    : ""),
+              }]
+            : []),
+          { role: "user", content: `${opts.name} এখন লিখেছে: ${q}` },
         ],
       }),
     });
+
     if (!res.ok) return null;
     const data: any = await res.json();
     const out = String(data.choices?.[0]?.message?.content ?? "").trim();
