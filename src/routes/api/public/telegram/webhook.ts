@@ -1028,7 +1028,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               const { humanizeReply } = await import("@/lib/telegram-bot.server");
               const base = builtinFaqReply(senderName, hit);
               const reply = (await humanizeReply(base, text, recentReplies)) || base;
-              await sendMessage(chatId, reply, msg.message_id);
+              await sendMessage(chatId, reply + (await offerSlotResetSuffix()), msg.message_id);
               await logMessage("question", `faq-builtin:${hit.topic}`, reply, null);
               return Response.json({ ok: true, flow: "faq-builtin-text" });
             }
