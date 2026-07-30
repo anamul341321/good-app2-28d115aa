@@ -335,6 +335,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         const bnDigits = (s: string) =>
           s.replace(/[০-৯]/g, (d) => String("০১২৩৪৫৬৭৮৯".indexOf(d)));
         const norm = bnDigits(text).trim();
+        const replyNorm = bnDigits(String(msg.reply_to_message?.text ?? msg.reply_to_message?.caption ?? "")).trim();
         // "yes", "ok", "ji", "ধন্যবাদ" — এগুলো কখনোই UID নয়।
         const isAffirmation = (s: string) =>
           /^(yes|yeah|yep|ya|ha|haa|hae|hmm|hm|ok|okay|k|ji|jee|acha|accha|thik|thik ache|right|sure|thanks|thank you|tnx|ty|done|nice|good|👍|✅|হ্যাঁ|হা|হুম|জি|জ্বি|আচ্ছা|ঠিক|ঠিক আছে|ধন্যবাদ|ওকে)[\s.!।]*$/i.test(
@@ -343,12 +344,16 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         const isThanksOnly = (s: string) =>
           /^(thanks|thank you|tnx|ty|ধন্যবাদ|থ্যাংকস|শুকরিয়া|jazakallah|জাযাকাল্লাহ)[\s.!।🙏😊🙂]*$/i.test(s.trim());
         const pickUid = (s: string): string | null => {
-          if (isAffirmation(s)) return null;
-          const num = s.match(/\b(\d{1,9})\b/);
+          const source = bnDigits(s).trim();
+          if (isAffirmation(source)) return null;
+          const explicit = source.match(/(?:uid|ইউআইডি|আইডি|আই ডি|id\s*no|আইডি নাম্বার)\s*[:#-]?\s*([A-Za-z0-9]{2,10})/i);
+          if (explicit) return explicit[1].trim().toUpperCase();
+          const num = source.match(/\b(\d{1,9})\b/);
           if (num) return num[1];
-          const code = s.match(/\b([A-Za-z0-9]{7})\b/);
+          const code = source.match(/\b([A-Za-z0-9]{7})\b/);
           return code && /\d/.test(code[1]) ? code[1].toUpperCase() : null;
         };
+        const pickUidFromCurrentOrReply = (): string | null => pickUid(norm) || (replyNorm ? pickUid(replyNorm) : null);
 
         // Accepts: "3", "5 ta", "2,3,4", "২-৫", "3 4 7", "সব"/"all"
         const wantsAll = /(সব|সবগুলো|সবগুলা|all|full)/i.test(norm);
@@ -468,8 +473,9 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             .eq("tg_user_id", msg.from.id).eq("chat_id", msg.chat.id);
         };
         const saveSession = async (row: Record<string, unknown>) => {
+          if (!msg.from?.id) return;
           await supabaseAdmin.from("tg_sessions").upsert({
-            tg_user_id: msg.from!.id,
+            tg_user_id: msg.from.id,
             chat_id: msg.chat.id,
             intent: "slot_reset",
             expires_at: new Date(Date.now() + 20 * 60 * 1000).toISOString(),
@@ -605,7 +611,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             }
 
             if (sess.intent === "withdraw_status" && sess.step === "await_uid") {
-              const uid = pickUid(norm);
+              const uid = pickUidFromCurrentOrReply();
               if (!uid) {
                 await sendMessage(
                   chatId,
@@ -628,7 +634,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             }
 
             if (sess.intent === "account_info" && sess.step === "await_uid") {
-              const uid = pickUid(norm);
+              const uid = pickUidFromCurrentOrReply();
               if (!uid) {
                 await sendMessage(
                   chatId,
@@ -650,7 +656,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
 
             if (sess.intent === "verification_dates" && sess.step === "await_uid") {
-              const query = pickVerificationQuery(norm) || pickUid(norm);
+              const query = pickVerificationQuery(norm) || pickUidFromCurrentOrReply();
               if (!query) {
                 await sendMessage(
                   chatId,
@@ -696,7 +702,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
                 return Response.json({ ok: true, flow: "offer-reset-declined" });
               }
 
-              const uidNow = pickUid(said);
+              const uidNow = pickUid(said) || (replyNorm ? pickUid(replyNorm) : null);
               if (uidNow) {
                 const { findProfileByUid } = await import("@/lib/telegram-slot.server");
                 const prof = await findProfileByUid(uidNow);
@@ -722,7 +728,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             }
 
             if (sess.step === "await_uid") {
-              const uid = pickUid(norm);
+              const uid = pickUidFromCurrentOrReply();
               if (!uid) {
                 await sendMessage(
                   chatId,
