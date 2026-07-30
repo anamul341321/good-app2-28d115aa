@@ -444,6 +444,20 @@ Answer ONLY JSON: {"best": <1-${refs.length} or 0 if none really matches>}`,
  * Rewrite a canned admin answer so it reads like a real person typed it —
  * same facts, different wording/opening each time.
  */
+/**
+ * Detect when the rewrite model returned its own instructions / meta-analysis
+ * (English bullet lists like "*Emoji count*: 2-3 emojis", "purely text with
+ * HTML", "Tone:") instead of an actual Bengali support reply.
+ */
+function isMetaOutput(out: string, original: string): boolean {
+  const bn = (out.match(/[\u0980-\u09FF]/g) ?? []).length;
+  const letters = (out.match(/[A-Za-z\u0980-\u09FF]/g) ?? []).length || 1;
+  const origBn = (original.match(/[\u0980-\u09FF]/g) ?? []).length;
+  // মূল উত্তর বাংলা অথচ রিরাইট প্রায় পুরোটাই ইংরেজি → মেটা টেক্সট
+  if (origBn > 20 && bn / letters < 0.3) return true;
+  return /(emoji count|tone\s*:|purely text|markdown|html tag|line count|word count|instruction|rewrite|as an ai|system prompt|\*\s*\*[A-Za-z][^*]{2,}\*\s*:)/i.test(out);
+}
+
 export async function humanizeReply(answer: string, userText?: string, avoid?: string[]): Promise<string> {
   const key = process.env.LOVABLE_API_KEY;
   if (!key) return answer;
@@ -478,7 +492,7 @@ ${userText ? `\nইউজার বলেছে: "${userText.slice(0, 300)}"` : 
 মূল উত্তর:
 """${answer}"""
 
-শুধু নতুন লেখা উত্তরটা দাও, আর কিছু নয়।`,
+শুধু বাংলায় লেখা চূড়ান্ত রিপ্লাইটাই দাও — কোনো ইংরেজি ব্যাখ্যা, নিয়ম, টোন/ইমোজি সংক্রান্ত মন্তব্য বা লিস্ট লিখবে না।`,
           },
         ],
       }),
@@ -486,7 +500,11 @@ ${userText ? `\nইউজার বলেছে: "${userText.slice(0, 300)}"` : 
     if (!res.ok) return answer;
     const data: any = await res.json();
     const out = String(data.choices?.[0]?.message?.content ?? "").trim();
-    return out.length > 20 ? out : answer;
+    // মডেল মাঝে মাঝে রিরাইট না করে নিজের ইনস্ট্রাকশন/অ্যানালাইসিস (ইংরেজিতে,
+    // "Emoji count", "Tone:", "purely text with HTML" ইত্যাদি) ফেরত দেয় —
+    // সেটা গ্রুপে পাঠালে ইউজার কিছুই বোঝে না। এমন হলে মূল উত্তরটাই যাবে।
+    if (!out || out.length <= 20 || isMetaOutput(out, answer)) return answer;
+    return out;
   } catch {
     return answer;
   }
