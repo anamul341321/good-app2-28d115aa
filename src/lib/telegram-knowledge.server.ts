@@ -3,6 +3,7 @@
 // itself instead of saying "admin will reply".
 
 import { miningWindowInfo, nextOpenLabelBn } from "./mining-window";
+import { builtinFaqKnowledge } from "./telegram-builtin-faq.server";
 
 export type AppRates = {
   firstVerify: number;
