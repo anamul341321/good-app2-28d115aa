@@ -2,6 +2,8 @@
 // Fed into the AI prompt so the bot can answer earning/withdraw/verify questions
 // itself instead of saying "admin will reply".
 
+import { miningWindowInfo, nextOpenLabelBn } from "./mining-window";
+
 export type AppRates = {
   firstVerify: number;
   reVerify: number;
@@ -100,6 +102,22 @@ export function earningGuideReply(name: string, r: AppRates): string {
   );
 }
 
+/** Direct answer for "উইথড্র দিতে পারব?" without requiring UID. */
+export function withdrawEligibilityReply(name: string): string {
+  const win = miningWindowInfo();
+  const openLine = win.isOpen
+    ? `✅ এখন মাইনিং উইথড্র উইন্ডো খোলা আছে — আজই রিকোয়েস্ট দিতে পারবেন।`
+    : `🔒 মাইনিং ব্যালেন্স এখন লক — <b>${nextOpenLabelBn()}</b> থেকে আবার উইথড্র দিতে পারবেন (আর ${win.daysUntilOpen.toLocaleString("bn-BD")} দিন)।`;
+
+  return (
+    `${name}, স্ক্রিনশটে যদি <b>বোনাস ০৳</b> দেখায় আর টাকা <b>মাইনিং ব্যালেন্সে</b> থাকে, তাহলে এখনই withdraw হবে না।\n\n` +
+    `${openLine}\n\n` +
+    `🎁 <b>বোনাস</b> থাকলে সেটা যেকোনো সময় withdraw করা যায়।\n` +
+    `⛏️ <b>মাইনিং</b> টাকা শুধু প্রতি মাসের <b>১, ২, ৩ তারিখ</b> withdraw করা যায়।\n\n` +
+    `তাই আপনার টাকাটা যদি mining-এর হয়, ওই তারিখে unblock হলে withdraw দিন 🙂`
+  );
+}
+
 /** Rules answer for "account/verify hoy na" questions. */
 export function verifyTipsReply(name: string): string {
   const openers = [
@@ -119,3 +137,4 @@ export function verifyTipsReply(name: string): string {
     `এরপরও না হলে জানাবেন — আমরা পাশে আছি 💙`
   );
 }
+

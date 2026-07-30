@@ -135,6 +135,14 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           /(\?|কেন|কন\b|\bkn\b|keno|kivabe|kibhabe|কিভাবে|koita|কয়টা|কতটা|কত|koto|kobe|কবে|kokhon|withdraw|উইথড্র|balance|ব্যালেন্স|refer|রেফার|verify|ভেরিফাই|mining|মাইনিং|bonus|বোনাস|problem|somossa|সমস্যা|help|সাহায্য|\bki\b|কি\b|admin|অ্যাডমিন|এডমিন)/i.test(
             norm,
           ) || (photos?.length ?? 0) > 0 || !!voiceHeard;
+        const hasExplicitUid = /(\buid\b|\bid\s*no\b|ইউআইডি|আইডি|আই ডি|আইডি নাম্বার)/i.test(norm);
+        const pendingWithdrawQuestion =
+          /(withdraw|উইথড্র|payment|পেমেন্ট|টাকা)/i.test(norm) &&
+          /(দিছি|দিয়েছি|দিসি|দিছে|dichi|dise|pending|পেন্ডিং|কখন পাব|kokhon|ashe nai|আসে নাই|status|স্ট্যাটাস|history|হিস্টরি)/i.test(norm);
+        const withdrawEligibilityQuestion =
+          !pendingWithdrawQuestion &&
+          /(withdraw|উইথড্র|উঠাব|উঠাতে|তুলতে|claim|ক্লেইম|টাকা)/i.test(norm) &&
+          /(পারব|parbo|পারবো|যাবে|jabe|হবে|hobe|দিতে পারব|নিতে পারব|উঠবে|unblock|আনলক|লক|lock)/i.test(norm);
 
         const verificationDateKind = (s: string): "first" | "reverify" | "all" | null => {
           if (/(kotodin|koto\s*din|কতদিন|কত\s*দিন)[^\n]{0,30}(por|pore|পর|পরে)[^\n]{0,30}(re\s*-?\s*verify|reverify|রি\s*-?\s*ভেরিফাই)/i.test(s)) {
@@ -275,6 +283,28 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               await sendMessage(chatId, "ঠিক আছে, রিসেটের অনুরোধটি বাতিল করা হলো। 🙂", msg.message_id);
               await logMessage("question", "slot-reset-cancel", null, sess.uid);
               return Response.json({ ok: true, flow: "cancelled" });
+            }
+
+            if (sess.intent === "withdraw_status" && sess.step === "await_uid") {
+              const uid = pickUid(norm);
+              if (!uid) {
+                await sendMessage(
+                  chatId,
+                  "🧾 পেন্ডিং/পেইড উইথড্র স্ট্যাটাস দেখতে আপনার <b>UID</b> নম্বরটি লিখুন।",
+                  msg.message_id,
+                );
+                return Response.json({ ok: true, flow: "withdraw-await-uid" });
+              }
+
+              const { buildWithdrawStatusCard } = await import("@/lib/telegram-withdraw.server");
+              const res = await buildWithdrawStatusCard(uid);
+              const reply = res.found
+                ? res.card
+                : `❌ UID <code>${uid}</code> দিয়ে কোনো একাউন্ট পাওয়া যায়নি। সঠিক UID টি লিখুন।`;
+              if (res.found) await clearSession();
+              await sendMessage(chatId, reply, msg.message_id);
+              await logMessage("question", "withdraw-status", reply, res.found ? uid : null);
+              return Response.json({ ok: true, flow: "withdraw-status-session" });
             }
 
 
@@ -626,10 +656,22 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return Response.json({ ok: true, flow: "photo_request", actions });
         }
 
+        // ---- "উইথড্র দিতে পারব?" → answer rules, never show old UID card -----
+        if (withdrawEligibilityQuestion && !decision.should_delete && settings.auto_reply_enabled) {
+          const { withdrawEligibilityReply } = await import("@/lib/telegram-knowledge.server");
+          const reply = decision.reply && !photoBase64 && !decision.needs_uid && decision.intent !== "withdraw_status"
+            ? decision.reply
+            : withdrawEligibilityReply(senderName);
+          await sendMessage(chatId, reply, msg.message_id);
+          actions.push("withdraw-eligibility");
+          await logMessage(decision.verdict, actions.join(","), reply, null);
+          return Response.json({ ok: true, flow: "withdraw_eligibility", actions });
+        }
+
         // ---- "উইথড্র দিয়েছি টাকা আসে নাই" → show pending requests with time ---
         if (decision.intent === "withdraw_status" && !decision.should_delete
             && settings.auto_reply_enabled) {
-          const uid = decision.uid || (decision as any)._knownUid || pickUid(norm);
+          const uid = hasExplicitUid ? (decision.uid || pickUid(norm)) : null;
           if (uid) {
             const { buildWithdrawStatusCard } = await import("@/lib/telegram-withdraw.server");
             const res = await buildWithdrawStatusCard(uid);
@@ -641,11 +683,15 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             await logMessage(decision.verdict, actions.join(","), reply, res.found ? uid : null);
             return Response.json({ ok: true, flow: "withdraw_status", actions });
           }
-          const ask =
-            `🧾 ${senderName}, এখনই দেখে দিচ্ছি 🙂\n` +
-            `আপনার <b>UID</b> নম্বরটি লিখুন (যেমন: 4100) — কোন কোন উইথড্র পেন্ডিং আছে, কখন রিকোয়েস্ট দিয়েছেন সব দেখিয়ে দেব।`;
+          const { withdrawEligibilityReply } = await import("@/lib/telegram-knowledge.server");
+          const ask = pendingWithdrawQuestion
+            ? `🧾 ${senderName}, পেন্ডিং/পেইড স্ট্যাটাস দেখতে আপনার <b>UID</b> নম্বরটি লিখুন।\nUID দিলে কোন রিকোয়েস্ট কখন দিয়েছেন সব দেখিয়ে দেব।`
+            : withdrawEligibilityReply(senderName);
+          if (pendingWithdrawQuestion && msg.from?.id) {
+            await saveSession({ intent: "withdraw_status", step: "await_uid", uid: null, app_user_id: null });
+          }
           await sendMessage(chatId, ask, msg.message_id);
-          actions.push("withdraw-ask-uid");
+          actions.push(pendingWithdrawQuestion ? "withdraw-ask-uid" : "withdraw-rule");
           await logMessage(decision.verdict, actions.join(","), ask, null);
           return Response.json({ ok: true, flow: "withdraw_status", actions });
         }
@@ -729,6 +775,30 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         }
 
 
+
+        // ---- screenshot fallback before normal text reply ---------------------
+        // If the AI gives a vague greeting or tries to ask UID for a screenshot,
+        // read the screenshot directly and answer from app rules instead.
+        const vaguePhotoReply = !!decision.reply &&
+          /(কীভাবে সাহায্য|কিভাবে সাহায্য|সহায়তা করতে পারি|help করতে পারি|বলুন|জানাতে পারেন|কি সমস্যা)/i.test(decision.reply);
+        if (settings.auto_reply_enabled && photoBase64
+            && !decision.should_delete && decision.intent === null
+            && (!decision.reply || decision.needs_uid || vaguePhotoReply)) {
+          const { analyzeScreenshotReply } = await import("@/lib/telegram-bot.server");
+          const { loadRates, knowledgeText } = await import("@/lib/telegram-knowledge.server");
+          const reply = await analyzeScreenshotReply({
+            photoBase64,
+            name: senderName,
+            text,
+            knowledge: knowledgeText(await loadRates()),
+          });
+          if (reply) {
+            await sendMessage(chatId, reply, msg.message_id);
+            actions.push("photo-analysis");
+            await logMessage("question", actions.join(","), reply, null);
+            return Response.json({ ok: true, flow: "photo-analysis", actions });
+          }
+        }
 
         // ---- pick a saved voice note for this topic, if the admin recorded one -
         const voiceMatch = (() => {
@@ -866,14 +936,11 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           // Only look an account up when the user really meant a UID —
           // never because a general question happened to contain a number
           // (e.g. "10 ta verify korar por kotodin por re verify?").
-          const explicitUid = /\b(uid|আইডি|আই ডি|id\s*no|আইডি নাম্বার)\b/i.test(norm);
+          const explicitUid = hasExplicitUid;
           const onlyNumber = /^[#\s]*([A-Za-z0-9]{2,9})[\s.]*$/.test(norm.trim());
-          const accountTopic = /(রেফার|refer|ব্যালেন্স|balance|হিসাব|একাউন্ট|account|উইথড্র|withdraw|মাইনিং|mining|বোনাস|bonus)/i.test(norm);
-          const askedAccount = explicitUid || onlyNumber || (accountTopic && !!decision.uid);
-          const inline = text.match(/\b(\d{2,9})\b/);
-          const candidate = askedAccount
-            ? decision.uid || (decision.needs_uid ? null : inline?.[1] ?? null)
-            : null;
+          const explicitUidValue = norm.match(/(?:uid|ইউআইডি|আইডি|আই ডি|id\s*no|আইডি নাম্বার)\s*[:#-]?\s*([A-Za-z0-9]{2,10})/i)?.[1] ?? null;
+          const onlyValue = norm.trim().match(/^[#\s]*([A-Za-z0-9]{2,9})[\s.]*$/)?.[1] ?? null;
+          const candidate = explicitUid ? (explicitUidValue || decision.uid || pickUid(norm)) : onlyNumber ? onlyValue : null;
 
 
           if (candidate) {
@@ -895,7 +962,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             } catch (e) {
               console.error("[tg] uid lookup failed", e);
             }
-          } else if (decision.needs_uid && settings.auto_reply_enabled) {
+          } else if (decision.needs_uid && settings.auto_reply_enabled && pendingWithdrawQuestion) {
             await sendMessage(
               chatId,
               `🔎 ${(settings as any).ask_uid_message || "আপনার Good-App UID টি লিখুন।"}`,
