@@ -786,9 +786,10 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               const m = bnDigits.match(/(\d{1,4})\s*(ta|টা|টি|ti|slot|স্লট)?/);
               const n = m ? Number(m[1]) : null;
               const slots = n && n >= 1 && n <= 500 ? n : null;
+              const monthly = /(mase|মাসে|monthly|মাসিক|per month|প্রতি মাস|mas e|প্রতিমাসে)/i.test(bnDigits);
               const { loadRates, slotEarningReply } = await import("@/lib/telegram-knowledge.server");
               const rates = await loadRates();
-              const reply = slotEarningReply(senderName, rates, slots);
+              const reply = slotEarningReply(senderName, rates, slots, monthly);
               await sendMessage(chatId, reply, msg.message_id);
               await logMessage("question", `slot-earning:${slots ?? "general"}`, reply, null);
               return Response.json({ ok: true, flow: "slot-earning" });
