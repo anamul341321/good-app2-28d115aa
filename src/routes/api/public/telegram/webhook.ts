@@ -1272,7 +1272,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         const bareUidFrom = (s: string): string | null => {
           if (isAffirmation(s)) return null;
           const only = s.trim().match(/^[#\s]*([A-Za-z0-9]{2,9})[\s.!।]*$/)?.[1] ?? null;
-          return isUidLikeValue(only) ? only.toUpperCase() : null;
+          return only && isUidLikeValue(only) ? only.toUpperCase() : null;
         };
         const explicitOrBareUid = (): string | null => {
           if (hasExplicitUid) return pickUid(norm);
