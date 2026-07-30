@@ -46,10 +46,11 @@ export const Route = createFileRoute("/api/public/whitelist-recheck")({
           .select("id")
           .maybeSingle();
         const runId = runRow?.id as string | undefined;
-        const touchRun = async (patch: Record<string, unknown>) => {
+        const touchRun = async (patch: any) => {
           if (!runId) return;
           await supabaseAdmin.from("whitelist_runs").update(patch).eq("id", runId);
         };
+
 
         const { data: tasks, error } = await supabaseAdmin
           .from("tasks")
