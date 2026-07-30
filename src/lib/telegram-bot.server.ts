@@ -32,18 +32,25 @@ async function api<T = any>(method: string, body: Record<string, unknown>): Prom
   }
 }
 
-/**
- * Send a plain message. We intentionally do NOT quote the user's own message
- * (no reply_to) — repeating the user's text back looks robotic in the group.
- * The `replyTo` argument is kept for call-site compatibility and ignored.
- */
+/** Send a Telegram message, replying to the user's exact message when provided. */
 export function sendMessage(chatId: string | number, text: string, _replyTo?: number) {
-  return api("sendMessage", {
+  const body: Record<string, unknown> = {
     chat_id: chatId,
     text,
     parse_mode: "HTML",
     disable_web_page_preview: true,
-  });
+  };
+  if (_replyTo) {
+    body.reply_to_message_id = _replyTo;
+    body.allow_sending_without_reply = true;
+  }
+  return api("sendMessage", body);
+}
+
+export async function isChatAdmin(chatId: string | number, userId?: number | null): Promise<boolean> {
+  if (!userId) return false;
+  const member = await api<{ status?: string }>("getChatMember", { chat_id: chatId, user_id: userId });
+  return member?.status === "creator" || member?.status === "administrator";
 }
 
 
@@ -400,6 +407,7 @@ ${opts.warnCount ? `এই ইউজার ইতিমধ্যে ${opts.warnC
 - ইউজার শেষ যে কথাটা লিখেছে, ঠিক <b>সেটারই</b> উত্তর দেবে — আগের কথা ধরে বসে থাকবে না, একই প্রশ্ন বারবার করবে না। ইউজার প্রসঙ্গ বদলালে সাথে সাথে নতুন প্রসঙ্গে উত্তর দেবে।
 - কেউ কাউকে @mention করা সম্পূর্ণ স্বাভাবিক — এর জন্য কখনোই warning/delete দেবে না (should_warn = false, should_delete = false)।
 - কেউ "অ্যাডমিন কোথায় / অ্যাডমিন কে / অ্যাডমিন আসেন না" জাতীয় কথা বললে মজার-বন্ধুত্বপূর্ণ ভঙ্গিতে ${support} কে মেনশন করে বলবে অ্যাডমিন আছেন।
+- যদি মেসেজটি কোনো গ্রুপ অ্যাডমিন/মডারেটরের নিজের উত্তর বা অ্যাডমিনের মেসেজের reply হয়, তুমি হস্তক্ষেপ করবে না — শুধু সাধারণ ইউজারের সমস্যায় উত্তর দেবে।
 
 - ❌ কখনোই লিখবে না "এই বিষয়ে অ্যাডমিন উত্তর দেবেন", "অ্যাডমিন শীঘ্রই জানাবেন", "অপেক্ষা করুন অ্যাডমিন আসবেন" — এসব বাক্য সম্পূর্ণ নিষিদ্ধ। তুমি নিজেই মূল উত্তরটা দেবে, শুধু আসল কথাটাই বলবে।
 - ভূমিকা/অপ্রয়োজনীয় লাইন বাদ দিয়ে সরাসরি কাজের উত্তর দেবে।
@@ -410,6 +418,7 @@ ${opts.warnCount ? `এই ইউজার ইতিমধ্যে ${opts.warnC
 - ❌ মেসেজে কোনো সংখ্যা থাকলেই সেটাকে UID ভাববে না। "১০টি স্লট", "৩-৪ দিন", "২০০৳" — এগুলো UID নয়। uid শুধু তখনই দেবে যখন ইউজার স্পষ্টভাবে নিজের UID/আইডি নম্বর জানাচ্ছে বা নিজের একাউন্টের হিসাব চাইছে।
 - ❌ আগের history/knownUid দেখে বর্তমান প্রশ্নে account card দেবে না। বর্তমান মেসেজে UID/"আমার UID" না থাকলে uid = null রাখবে। অন্য ইউজারের হিসাব/UID কখনো আন্দাজ করবে না।
 - "উইথড্র করতে পারব?", "টাকা উঠবে?", "withdraw dite parbo?" — এমন সাধারণ eligibility প্রশ্নে intent = null রেখে reply-তে নিয়ম বুঝিয়ে দেবে; UID চাইবে না, পুরোনো UID দেখাবে না।
+- "withdraw দিয়েছি টাকা আসেনি", "tk ekhono pai nai", "টাকা কখন পাবো" — এগুলো পেন্ডিং payment status প্রশ্ন; intent = "withdraw_status" দেবে এবং UID না থাকলে needs_uid = true করবে।
 - যদি স্ক্রিনশটে দেখা যায় bonus ০৳ এবং টাকা mining balance-এ আছে, উত্তর দেবে: বোনাস নেই, টাকাটা মাইনিং; তাই প্রতি মাসের ১-৩ তারিখ unlock হলে withdraw করা যাবে।
 - "কিভাবে কাজ করব / ভিডিও দিন / দেখিয়ে দিন" ধরনের প্রশ্নে intent = "video_request" দেবে।
 
