@@ -353,6 +353,17 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           .from("tg_messages").select("update_id").eq("update_id", update.update_id).maybeSingle();
         if (seen) return Response.json({ ok: true, duplicate: true });
 
+        // ---- security guard: non-admins can't extract secrets or order edits ----
+        if (!senderIsAdmin && text.trim()) {
+          const { detectSensitive, sensitiveReply } = await import("@/lib/telegram-guard.server");
+          const kind = detectSensitive(text);
+          if (kind) {
+            await sendMessage(chatId, sensitiveReply(kind, msg.from?.first_name), msg.message_id);
+            return Response.json({ ok: true, flow: `guard-${kind}` });
+          }
+        }
+
+
         // ---- offender record (warnings / block state) -------------------------
         const { data: offender } = msg.from?.id
           ? await supabaseAdmin.from("tg_offenders").select("*").eq("tg_user_id", msg.from.id).maybeSingle()
