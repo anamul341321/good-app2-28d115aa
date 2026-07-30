@@ -751,6 +751,94 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         }
 
 
+        // Recent bot replies for this user — used to avoid repeating the same
+        // wording and to detect "I already did that, still not working".
+        let recentReplies: string[] = [];
+        let lastTopic = "";
+        let lastBase = "";
+        if (msg.from?.id) {
+          try {
+            const { data: prevN } = await supabaseAdmin
+              .from("tg_messages").select("action, bot_reply, created_at")
+              .eq("tg_user_id", msg.from.id)
+              .order("created_at", { ascending: false }).limit(4);
+            recentReplies = (prevN ?? []).map((p: any) => p.bot_reply).filter(Boolean);
+            const last: any = (prevN ?? []).find((p: any) => p.bot_reply);
+            if (last && Date.now() - new Date(last.created_at).getTime() < 6 * 60 * 60 * 1000) {
+              lastTopic = String(last.action ?? "").split(":").slice(1).join(":").trim();
+              lastBase = String(last.bot_reply ?? "");
+            }
+          } catch (e) {
+            console.error("[tg] recent replies load failed", e);
+          }
+        }
+
+        // ---- "already tried, still not working" → think, don't repeat --------
+        if (!photoBase64 && settings.auto_reply_enabled && text.trim() && lastBase) {
+          const t = text.trim();
+          const stillFailing =
+            t.length <= 160 &&
+            /(tao hoi na|tao hoy na|tao hocche na|tao hoche na|তবুও হয় না|তবু হয় না|তাও হয় না|তাও হচ্ছে না|তবুও হচ্ছে না|korchi tao|korlam tao|kore o hoy na|kore dekhsi|করেছি তবুও|করলাম তবুও|same problem|ekhono hoy na|এখনো হয় না|এখনও হচ্ছে না|abaro same|আবারও একই|hocche na vai|hoy nai)/i.test(t);
+          if (stillFailing) {
+            try {
+              const { smartAnswer } = await import("@/lib/telegram-bot.server");
+              const { loadRates, knowledgeText } = await import("@/lib/telegram-knowledge.server");
+              const rates = await loadRates();
+              const ans = await smartAnswer({
+                name: senderName,
+                question:
+                  `ইউজার আগের দেওয়া সমাধানের ধাপগুলো করেও সফল হয়নি, বলছে: "${t}". ` +
+                  `একই মেসেজ আবার হুবহু দেবে না, আগের ধাপগুলোর লিস্ট আবার লিখবে না। ` +
+                  `নিজে চিন্তা করে নতুন করে বলবে — যেমন: ধাপগুলো ঠিকভাবে করলে সাধারণত হয়ে যায়, ` +
+                  `কিন্তু তার ফোনে/ব্রাউজারে সমস্যা থাকতে পারে, তাই অন্য একটি ফোনে তার আইডি লগইন করে ঐ ফোন দিয়ে ফেস ভেরিফিকেশনের কাজটি চালিয়ে যেতে বলবে — এভাবে করলে সাধারণত হয়ে যায়। ` +
+                  `সাথে ছোট করে ১-২টি ভিন্ন টিপস দিতে পারে (নতুন ব্রাউজার, মোবাইল ডেটা, একটু পরে চেষ্টা)। ` +
+                  `ভাষা হবে সহজ, আন্তরিক বাংলা এবং প্রতিবার একটু ভিন্নভাবে গোছানো।`,
+                knowledge:
+                  knowledgeText(rates) +
+                  (lastTopic ? `\n\n🔁 আগের শনাক্ত হওয়া সমস্যা: ${lastTopic}` : "") +
+                  `\n\nআগে যে উত্তর দেওয়া হয়েছিল (এটা আর হুবহু বলা যাবে না):\n${lastBase}`,
+                pastReplies: recentReplies,
+              });
+              if (ans && ans.trim() && ans.trim() !== "NO_ANSWER") {
+                await sendMessage(chatId, ans, msg.message_id);
+                await logMessage("question", `still-failing:${lastTopic || "prev"}`, ans, null);
+                return Response.json({ ok: true, flow: "still-failing" });
+              }
+            } catch (e) {
+              console.error("[tg] still-failing follow-up failed", e);
+            }
+          }
+        }
+
+        // ---- Admin panel FAQ: deterministic keyword/topic match --------------
+        if (!photoBase64 && settings.auto_reply_enabled && text.trim() && (faqRows ?? []).length) {
+          try {
+            const hay = ` ${text.toLowerCase()} `;
+            const scoredAdmin = (faqRows ?? [])
+              .map((f: any) => {
+                const raw: string[] = Array.isArray(f.keywords)
+                  ? f.keywords
+                  : String(f.keywords ?? "").split(/[,\n]/);
+                const keys = [...raw, ...String(f.topic ?? "").split(/[\s,/|—-]+/)]
+                  .map((k) => String(k).trim().toLowerCase())
+                  .filter((k) => k.length > 2);
+                const score = keys.filter((k) => hay.includes(k)).length;
+                return { f, score };
+              })
+              .sort((a, b) => b.score - a.score)[0];
+            if (scoredAdmin && scoredAdmin.score >= 2 && scoredAdmin.f.answer) {
+              const { humanizeReply } = await import("@/lib/telegram-bot.server");
+              const base = String(scoredAdmin.f.answer).trim();
+              const reply = (await humanizeReply(base, text, recentReplies)) || base;
+              await sendMessage(chatId, reply, msg.message_id);
+              await logMessage("question", `faq-admin:${scoredAdmin.f.topic}`, reply, null);
+              return Response.json({ ok: true, flow: "faq-admin-text" });
+            }
+          } catch (e) {
+            console.error("[tg] admin faq text match failed", e);
+          }
+        }
+
         // Plain-text match against the built-in problem library.
         if (!photoBase64 && settings.auto_reply_enabled && text.trim()) {
           try {
@@ -759,7 +847,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             if (hit) {
               const { humanizeReply } = await import("@/lib/telegram-bot.server");
               const base = builtinFaqReply(senderName, hit);
-              const reply = (await humanizeReply(base, text, [])) || base;
+              const reply = (await humanizeReply(base, text, recentReplies)) || base;
               await sendMessage(chatId, reply, msg.message_id);
               await logMessage("question", `faq-builtin:${hit.topic}`, reply, null);
               return Response.json({ ok: true, flow: "faq-builtin-text" });
