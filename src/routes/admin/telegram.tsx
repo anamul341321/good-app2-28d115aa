@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import {
   tgGetSettings, tgSaveSettings, tgRegisterWebhook,
-  tgListFaq, tgUpsertFaq, tgDeleteFaq, tgLookupUid, tgSendToGroup,
+  tgListFaq, tgUpsertFaq, tgDeleteFaq, tgLookupUid, tgSendToGroup, tgReplyToUser,
   tgListBanRequests, tgResolveBanRequest, tgUnban, tgRecentMessages,
   tgListBlocked, tgSetBlocked, tgListVideos, tgUpsertVideo, tgDeleteVideo,
   tgListVoices, tgUpsertVoice, tgDeleteVoice,
