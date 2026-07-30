@@ -255,7 +255,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           if (senderIsAdmin && text.trim() && msg.reply_to_message && !msg.reply_to_message.from?.is_bot) {
             const original = String(msg.reply_to_message.text ?? msg.reply_to_message.caption ?? "").trim();
             if (original) {
-              await supabaseAdmin.from("tg_messages").insert({
+              await supabaseAdmin.from("tg_messages").upsert({
                 update_id: update.update_id,
                 chat_id: msg.chat.id,
                 message_id: msg.message_id,
@@ -268,7 +268,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
                 action: "admin-reply-learning",
                 bot_reply: text.slice(0, 2000),
                 matched_uid: null,
-              });
+              }, { onConflict: "update_id" });
             }
           }
           return Response.json({ ok: true, ignored: senderIsAdmin ? "admin-message" : "reply-to-admin" });
