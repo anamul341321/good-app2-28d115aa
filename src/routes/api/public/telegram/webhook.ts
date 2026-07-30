@@ -220,12 +220,19 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         const bnDigits = (s: string) =>
           s.replace(/[০-৯]/g, (d) => String("০১২৩৪৫৬৭৮৯".indexOf(d)));
         const norm = bnDigits(text).trim();
+        // "yes", "ok", "ji", "ধন্যবাদ" — এগুলো কখনোই UID নয়।
+        const isAffirmation = (s: string) =>
+          /^(yes|yeah|yep|ya|ha|haa|hae|hmm|hm|ok|okay|k|ji|jee|acha|accha|thik|thik ache|right|sure|thanks|thank you|tnx|ty|done|nice|good|👍|✅|হ্যাঁ|হা|হুম|জি|জ্বি|আচ্ছা|ঠিক|ঠিক আছে|ধন্যবাদ|ওকে)[\s.!।]*$/i.test(
+            s.trim(),
+          );
         const pickUid = (s: string): string | null => {
+          if (isAffirmation(s)) return null;
           const num = s.match(/\b(\d{1,9})\b/);
           if (num) return num[1];
           const code = s.match(/\b([A-Za-z0-9]{7})\b/);
-          return code ? code[1].toUpperCase() : null;
+          return code && /\d/.test(code[1]) ? code[1].toUpperCase() : null;
         };
+
         // Accepts: "3", "5 ta", "2,3,4", "২-৫", "3 4 7", "সব"/"all"
         const wantsAll = /(সব|সবগুলো|সবগুলা|all|full)/i.test(norm);
         const pickSlots = (s: string): number[] => {
@@ -284,13 +291,15 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return "all";
         };
         const pickVerificationQuery = (s: string): string | null => {
+          if (isAffirmation(s)) return null;
           const explicitUid = s.match(/(?:uid|ইউআইডি|আইডি|id)\s*[:#-]?\s*([A-Za-z0-9]{2,10})/i);
+
           if (explicitUid) return explicitUid[1].trim();
           const namedUser = s.match(/(?:user\s*\d+\s+)?([A-Za-z][A-Za-z .]{1,35})\s*(?:er|এর|র)\s+(?:face|ফেস|1st|first|verify|verification|ভেরিফাই)/i);
           if (namedUser) return namedUser[1].trim();
           const banglaName = s.match(/([\u0980-\u09FF]{2,}(?:\s+[\u0980-\u09FF]{2,})?)\s*(?:এর|র)\s+(?:ফেস|ভেরিফাই|ভেরিফিকেশন)/i);
           if (banglaName) return banglaName[1].trim();
-          const only = s.trim().match(/^[#\s]*([A-Za-z0-9]{2,10})[\s.]*$/);
+          const only = s.trim().match(/^[#\s]*(\d{2,10}|[A-Za-z0-9]{6,10})[\s.]*$/);
           if (only) return only[1].trim();
           return null;
         };
@@ -1343,10 +1352,16 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           // never because a general question happened to contain a number
           // (e.g. "10 ta verify korar por kotodin por re verify?").
           const explicitUid = hasExplicitUid;
-          const onlyNumber = /^[#\s]*([A-Za-z0-9]{2,9})[\s.]*$/.test(norm.trim());
+          // A bare word like "yes", "ok", "thanks" is NOT a UID. Only accept a
+          // pure number, or a referral-code-like token that contains a digit.
+          const bareToken = norm.trim().match(/^[#\s]*([A-Za-z0-9]{2,9})[\s.!]*$/)?.[1] ?? null;
+          const isUidLike = (v: string | null) =>
+            !!v && (/^\d{2,9}$/.test(v) || (/\d/.test(v) && /^[A-Za-z0-9]{6,9}$/.test(v)));
+          const onlyValue = isUidLike(bareToken) ? bareToken : null;
           const explicitUidValue = norm.match(/(?:uid|ইউআইডি|আইডি|আই ডি|id\s*no|আইডি নাম্বার)\s*[:#-]?\s*([A-Za-z0-9]{2,10})/i)?.[1] ?? null;
-          const onlyValue = norm.trim().match(/^[#\s]*([A-Za-z0-9]{2,9})[\s.]*$/)?.[1] ?? null;
-          const candidate = explicitUid ? (explicitUidValue || decision.uid || pickUid(norm)) : onlyNumber ? onlyValue : null;
+          const rawCandidate = explicitUid ? (explicitUidValue || decision.uid || pickUid(norm)) : onlyValue;
+          const candidate = isUidLike(rawCandidate) ? rawCandidate : null;
+
 
 
           if (candidate) {
