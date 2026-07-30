@@ -264,13 +264,26 @@ export async function agentAnswer(opts: {
   }
   messages.push({ role: "user", content: `${opts.name} এখন লিখেছে: ${q}` });
 
+  // Questions whose answer lives in the database — force a real lookup on the
+  // first turn so the model can never answer them from memory/guesswork.
+  const needsData =
+    /(\d{1,7})|uid|ইউ ?আই ?ডি|স্লট|slot|ভেরিফা|verif|রেফার|refer|ব্যালেন্স|balance|উইথড্র|withdraw|ফি|fee|চার্জ|charge|বোনাস|bonus|মাইনিং|mining|হোয়াইটলিস্ট|whitelist|বিকাশ|bkash|নগদ|nagad|usdt|রিচার্জ|recharge|পেন্ডিং|pending|একাউন্ট|account/i.test(
+      q,
+    );
+
   try {
-    for (let step = 0; step < 4; step++) {
+    for (let step = 0; step < 5; step++) {
       const res = await fetch(AI_URL, {
         method: "POST",
         headers: { "Lovable-API-Key": key, "Content-Type": "application/json" },
-        body: JSON.stringify({ model: MODEL, tools: TOOLS, messages }),
+        body: JSON.stringify({
+          model: MODEL,
+          tools: TOOLS,
+          messages,
+          ...(step === 0 && needsData ? { tool_choice: "required" as const } : {}),
+        }),
       });
+
       if (!res.ok) {
         console.error("[tg-agent] gateway", res.status, await res.text());
         return null;
