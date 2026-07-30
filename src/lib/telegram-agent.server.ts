@@ -83,7 +83,30 @@ const TOOLS = [
       parameters: { type: "object", properties: {}, required: [] },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "fee_quote",
+      description:
+        "উইথড্রতে কত ফি কাটবে ও হাতে কত আসবে — অ্যাপের আসল নিয়ম থেকে হিসাব করে দেয়। টাকার অংক জানা থাকলে দিতে হবে।",
+      parameters: {
+        type: "object",
+        properties: { amount: { type: "number", description: "উইথড্র অ্যামাউন্ট (৳)" } },
+        required: ["amount"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "bonus_settings",
+      description:
+        "ডেটাবেজ থেকে বর্তমান বোনাস/প্রমো রেট ও পেমেন্ট মেথড চালু-বন্ধ অবস্থা আনে (bKash, Nagad, রিচার্জ, USDT)।",
+      parameters: { type: "object", properties: {}, required: [] },
+    },
+  },
 ];
+
 
 async function runTool(name: string, args: any): Promise<string> {
   try {
