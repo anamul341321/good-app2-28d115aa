@@ -32,11 +32,27 @@ async function api<T = any>(method: string, body: Record<string, unknown>): Prom
   }
 }
 
+/**
+ * Telegram only understands a small HTML subset. Models often reply with
+ * Markdown (**bold**), which showed up literally in the group, and any stray
+ * "<" made Telegram reject the whole message (user saw a half-written reply).
+ */
+export function sanitizeTelegramHtml(input: string): string {
+  const ALLOWED = /^(\/?)(b|strong|i|em|u|s|code|pre|a)(\s[^<>]*)?$/i;
+  let out = input
+    .replace(/\*\*(.+?)\*\*/gs, "<b>$1</b>")
+    .replace(/(^|\s)\*(?!\s)([^*\n]+?)\*(?=\s|$|[।,.!?])/g, "$1<i>$2</i>")
+    .replace(/^#{1,6}\s*/gm, "");
+  // escape any tag that is not in the allowed subset
+  out = out.replace(/<([^<>]*)>/g, (m, inner) => (ALLOWED.test(String(inner)) ? m : `&lt;${inner}&gt;`));
+  return out.trim();
+}
+
 /** Send a Telegram message, replying to the user's exact message when provided. */
 export function sendMessage(chatId: string | number, text: string, _replyTo?: number) {
   const body: Record<string, unknown> = {
     chat_id: chatId,
-    text,
+    text: sanitizeTelegramHtml(text).slice(0, 4000),
     parse_mode: "HTML",
     disable_web_page_preview: true,
   };
@@ -46,6 +62,47 @@ export function sendMessage(chatId: string | number, text: string, _replyTo?: nu
   }
   return api("sendMessage", body);
 }
+
+/**
+ * OCR: read every visible line of text from a screenshot. Image-vs-image
+ * matching alone missed obvious cases (e.g. the 18+ page) — reading the error
+ * text lets us match the saved admin/built-in answers deterministically.
+ */
+export async function readScreenshotText(photoBase64: string): Promise<string> {
+  const key = process.env.LOVABLE_API_KEY;
+  if (!key) return "";
+  try {
+    const res = await fetch(AI_URL, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: MODEL,
+        temperature: 0,
+        max_tokens: 300,
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text:
+                  "Transcribe ALL visible text in this screenshot, verbatim, one line per line. " +
+                  "Include error messages, buttons and small print. No commentary.",
+              },
+              { type: "image_url", image_url: { url: `data:image/jpeg;base64,${photoBase64}` } },
+            ],
+          },
+        ],
+      }),
+    });
+    if (!res.ok) return "";
+    const data: any = await res.json();
+    return String(data.choices?.[0]?.message?.content ?? "").trim();
+  } catch {
+    return "";
+  }
+}
+
 
 export async function isChatAdmin(chatId: string | number, userId?: number | null): Promise<boolean> {
   if (!userId) return false;
