@@ -96,29 +96,56 @@ async function findProfilesForQuery(db: any, queryRaw: string): Promise<ProfileP
   return (data ?? []) as ProfilePick[];
 }
 
+/** ফোন নম্বরের সম্ভাব্য রূপগুলো (01..., 8801..., +8801...) */
+function phoneVariants(raw: string): string[] {
+  const d = raw.replace(/\D/g, "");
+  const local = d.startsWith("880") ? d.slice(3) : d;
+  const l = local.startsWith("0") ? local : `0${local}`;
+  const bare = l.replace(/^0/, "");
+  return Array.from(new Set([raw.trim(), d, l, bare, `88${l}`, `+88${l}`]));
+}
+
 export async function buildUserCard(uidRaw: string): Promise<LookupResult> {
   const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
 
   const uid = uidRaw.trim();
+  const cols =
+    "id, display_name, phone_number, uid_seq, referral_code, referred_by, banned, banned_reason, created_at";
   let profile: any = null;
 
-  if (/^\d+$/.test(uid)) {
+  // ফোন নম্বর দিয়ে খোঁজা (১০+ ডিজিট হলে সেটা UID নয়, নম্বর)
+  const digits = uid.replace(/\D/g, "");
+  if (digits.length >= 10) {
     const { data } = await db
-      .from("profiles")
-      .select("id, display_name, phone_number, uid_seq, referral_code, referred_by, banned, banned_reason, created_at")
+      .from("profiles").select(cols)
+      .in("phone_number", phoneVariants(uid))
+      .limit(1);
+    profile = data?.[0] ?? null;
+  }
+
+  if (!profile && /^\d+$/.test(uid)) {
+    const { data } = await db
+      .from("profiles").select(cols)
       .eq("uid_seq", Number(uid))
       .maybeSingle();
     profile = data;
   }
-  if (!profile) {
+  if (!profile && /^[A-Za-z0-9]{4,12}$/.test(uid)) {
     const { data } = await db
-      .from("profiles")
-      .select("id, display_name, phone_number, uid_seq, referral_code, referred_by, banned, banned_reason, created_at")
+      .from("profiles").select(cols)
       .eq("referral_code", uid.toUpperCase())
       .maybeSingle();
     profile = data;
   }
+  if (!profile && !/^\d+$/.test(uid) && uid.length >= 3) {
+    const { data } = await db
+      .from("profiles").select(cols)
+      .ilike("display_name", `%${uid.replace(/[%_]/g, "").slice(0, 40)}%`)
+      .limit(1);
+    profile = data?.[0] ?? null;
+  }
   if (!profile) return { found: false };
+
 
   // Settle mining so the balance shown is live.
   try { await db.rpc("settle_mining", { _user_id: profile.id }); } catch { /* ignore */ }
