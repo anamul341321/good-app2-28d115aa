@@ -78,7 +78,7 @@ export async function readScreenshotText(photoBase64: string): Promise<string> {
       body: JSON.stringify({
         model: MODEL,
         temperature: 0,
-        max_tokens: 300,
+        max_tokens: 900,
         messages: [
           {
             role: "user",
@@ -405,7 +405,7 @@ export async function humanizeReply(answer: string, userText?: string, avoid?: s
       body: JSON.stringify({
         model: MODEL,
         temperature: 1,
-        max_tokens: 700,
+        max_tokens: 2200,
         messages: [
           {
             role: "user",
@@ -448,7 +448,7 @@ export async function transcribeAudio(base64: string, format: string): Promise<s
       body: JSON.stringify({
         model: MODEL,
         temperature: 0,
-        max_tokens: 400,
+        max_tokens: 900,
         messages: [
           {
             role: "user",
@@ -634,7 +634,7 @@ ${opts.warnCount ? `এই ইউজার ইতিমধ্যে ${opts.warnC
     body: JSON.stringify({
       model: MODEL,
       temperature: 1,
-      max_tokens: 700,
+      max_tokens: 2200,
       messages: [
         { role: "system", content: system },
         { role: "user", content },
@@ -752,7 +752,7 @@ export async function analyzeScreenshotReply(opts: {
       body: JSON.stringify({
         model: MODEL,
         temperature: 0.8,
-        max_tokens: 500,
+        max_tokens: 1600,
         messages: [
           {
             role: "user",
@@ -917,6 +917,12 @@ export async function smartAnswer(opts: {
   question: string;
   knowledge: string;
   faqs?: string;
+  /** ইউজারের আগের মেসেজগুলো (পুরোনো → নতুন) — ফলো-আপ প্রশ্ন বুঝতে। */
+  history?: string[];
+  /** বটের আগের রিপ্লাই, যাতে ধারাবাহিকতা থাকে। */
+  pastReplies?: string[];
+  /** গ্রুপের পুরোনো একই ধরনের প্রশ্ন-উত্তর। */
+  recall?: string;
 }): Promise<string | null> {
   const key = process.env.LOVABLE_API_KEY;
   if (!key) return null;
@@ -929,13 +935,15 @@ export async function smartAnswer(opts: {
       body: JSON.stringify({
         model: MODEL,
         temperature: 0.9,
-        max_tokens: 600,
+        max_tokens: 1800,
         messages: [
           {
             role: "system",
             content:
               `তুমি Good-App এর দক্ষ বাংলা সাপোর্ট এজেন্ট। ইউজারের প্রশ্নটা মন দিয়ে পড়ে ` +
               `ঠিক সেই প্রশ্নেরই উত্তর দেবে — অপ্রাসঙ্গিক টিপস বা রেডিমেড লিস্ট কপি করবে না।\n` +
+              `আগের কথোপকথন থাকলে সেটার ধারাবাহিকতা রাখবে — ইউজার ছোট করে ফলো-আপ করলে (যেমন "তাহলে প্রথমবার হলো কেমনে?") ` +
+              `আগের বিষয়টার সাথে মিলিয়েই উত্তর দেবে, নতুন অপ্রাসঙ্গিক টপিকে যাবে না।\n` +
               `সবচেয়ে কঠিন নিয়ম: <b>শুধু নিচের knowledge/FAQ-তে থাকা তথ্য দিয়েই উত্তর দেবে</b>। ` +
               `সাধারণ অ্যাপ/ওয়েবসাইটে যা থাকে (OTP, Forgot Password, ইমেইল লিংক, KYC ডকুমেন্ট ইত্যাদি) ` +
               `তা এখানে আছে ধরে নেবে না — knowledge-এ না থাকলে সেটা নেই।\n` +
@@ -943,16 +951,29 @@ export async function smartAnswer(opts: {
               `শুধু ঠিক এই শব্দটি লিখবে: NO_ANSWER\n` +
               `নিয়ম:\n` +
               `• knowledge থেকে বিশ্লেষণ করে সরাসরি উত্তর দাও (৩-৮ লাইন), HTML <b> ট্যাগ ব্যবহার করতে পারো।\n` +
+              `• উত্তর অবশ্যই সম্পূর্ণ হবে — মাঝপথে বাক্য থামাবে না।\n` +
               `• মানুষের মতো স্বাভাবিক, উষ্ণ ভাষা — প্রতিবার একটু ভিন্ন গঠনে লিখবে।\n` +
               `• "অ্যাডমিন উত্তর দেবেন / অপেক্ষা করুন" জাতীয় ফিলার লিখবে না।\n` +
               `• কারো UID/একাউন্টের হিসাব চাওয়া না হলে কারো ডেটা দেখাবে না।\n` +
               `• কারো ছবি/key দেখানো যাবে না; ছবি সংরক্ষণের কথা কখনো বলবে না।\n\n` +
-              `${opts.knowledge}\n\n${opts.faqs ? `সেভ করা প্রশ্নোত্তর:\n${opts.faqs}` : ""}`,
+              `${opts.knowledge}${opts.recall ?? ""}\n\n${opts.faqs ? `সেভ করা প্রশ্নোত্তর:\n${opts.faqs}` : ""}`,
           },
-          { role: "user", content: `${opts.name} লিখেছে: ${q}` },
+          ...(opts.history?.length
+            ? [{
+                role: "user" as const,
+                content:
+                  `আগের কথোপকথন (পুরোনো → নতুন):\n` +
+                  opts.history.slice(-6).map((h) => `- ${String(h).slice(0, 300)}`).join("\n") +
+                  (opts.pastReplies?.length
+                    ? `\nবট আগে বলেছিল:\n${opts.pastReplies.slice(0, 2).map((r) => `- ${String(r).replace(/<[^>]+>/g, "").slice(0, 300)}`).join("\n")}`
+                    : ""),
+              }]
+            : []),
+          { role: "user", content: `${opts.name} এখন লিখেছে: ${q}` },
         ],
       }),
     });
+
     if (!res.ok) return null;
     const data: any = await res.json();
     const out = String(data.choices?.[0]?.message?.content ?? "").trim();
@@ -989,7 +1010,7 @@ export async function adminCompose(instruction: string, targetName?: string | nu
       body: JSON.stringify({
         model: MODEL,
         temperature: 0.6,
-        max_tokens: 500,
+        max_tokens: 1600,
         messages: [
           {
             role: "system",
@@ -1014,5 +1035,54 @@ export async function adminCompose(instruction: string, targetName?: string | nu
     return out || null;
   } catch {
     return null;
+  }
+}
+
+/**
+ * গ্রুপ-মেমরি: আগে এই ধরনের প্রশ্ন কেউ করেছিল কি না এবং তখন কী উত্তর দেওয়া
+ * হয়েছিল — সেটা খুঁজে এনে AI-কে অতিরিক্ত কনটেক্সট হিসেবে দেওয়া হয়।
+ */
+export async function recallSimilar(question: string): Promise<string> {
+  const q = (question || "").trim();
+  if (q.length < 4) return "";
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const words = Array.from(
+      new Set(
+        q
+          .toLowerCase()
+          .replace(/[^\p{L}\p{N}\s]/gu, " ")
+          .split(/\s+/)
+          .filter((w) => w.length > 3),
+      ),
+    ).slice(0, 4);
+    if (!words.length) return "";
+
+    const seen = new Set<string>();
+    const pairs: { q: string; a: string }[] = [];
+    for (const w of words) {
+      const { data } = await supabaseAdmin
+        .from("tg_messages")
+        .select("text, bot_reply, created_at")
+        .ilike("text", `%${w}%`)
+        .not("bot_reply", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(3);
+      for (const r of (data ?? []) as any[]) {
+        const key = String(r.bot_reply).slice(0, 80);
+        if (!r.text || !r.bot_reply || seen.has(key)) continue;
+        seen.add(key);
+        pairs.push({ q: String(r.text).slice(0, 200), a: String(r.bot_reply).replace(/<[^>]+>/g, "").slice(0, 500) });
+      }
+      if (pairs.length >= 6) break;
+    }
+    if (!pairs.length) return "";
+
+    return (
+      `\n\n🗂️ গ্রুপে আগে একই ধরনের প্রশ্নে যা উত্তর দেওয়া হয়েছিল (তথ্য মিললে এখান থেকেই ধারাবাহিক উত্তর দাও, হুবহু কপি করবে না):\n` +
+      pairs.map((p) => `• প্রশ্ন: ${p.q}\n  উত্তর: ${p.a}`).join("\n")
+    );
+  } catch {
+    return "";
   }
 }
