@@ -1738,19 +1738,25 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             && (decision.verdict === "question" || !!photoBase64 || !!voiceHeard)) {
           const { smartAnswer, escalateReply } = await import("@/lib/telegram-bot.server");
           const { loadRates, knowledgeText } = await import("@/lib/telegram-knowledge.server");
+          const { appRulebook } = await import("@/lib/telegram-app-rules.server");
+          const { agentAnswer } = await import("@/lib/telegram-agent.server");
           const faqText = (faqRows ?? [])
             .slice(0, 40)
             .map((f: any) => `• ${f.topic}: ${String(f.answer ?? "").slice(0, 400)}`)
             .join("\n");
-          const smart = await smartAnswer({
+          const rates = await loadRates();
+          const base = {
             name: senderName,
             question: text,
-            knowledge: knowledgeText(await loadRates()),
+            knowledge: knowledgeText(rates),
             faqs: faqText,
             history: convoHistory,
             pastReplies: convoReplies,
             recall: recallText,
-          });
+          };
+          const smart =
+            (await agentAnswer({ ...base, rulebook: appRulebook(rates), isAdmin: senderIsAdmin }))
+            ?? (await smartAnswer(base));
           const mention = (settings as any).admin_mention
             || (settings as any).support_username || "@anamulmunni";
           const reply = smart
@@ -1769,14 +1775,20 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             && settings.auto_reply_enabled && (settings as any).escalate_enabled !== false) {
           const { escalateReply, smartAnswer } = await import("@/lib/telegram-bot.server");
           const { loadRates, knowledgeText } = await import("@/lib/telegram-knowledge.server");
-          const smart = await smartAnswer({
+          const { appRulebook } = await import("@/lib/telegram-app-rules.server");
+          const { agentAnswer } = await import("@/lib/telegram-agent.server");
+          const rates2 = await loadRates();
+          const base2 = {
             name: senderName,
             question: text,
-            knowledge: knowledgeText(await loadRates()),
+            knowledge: knowledgeText(rates2),
             history: convoHistory,
             pastReplies: convoReplies,
             recall: recallText,
-          });
+          };
+          const smart =
+            (await agentAnswer({ ...base2, rulebook: appRulebook(rates2), isAdmin: senderIsAdmin }))
+            ?? (await smartAnswer(base2));
           const mention = (settings as any).admin_mention
             || (settings as any).support_username || "@anamulmunni";
           const reply = smart
@@ -1904,14 +1916,20 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               `🆔 ${senderName}, আপনার একাউন্টের তথ্য দেখে জানাতে আপনার <b>UID</b> নম্বরটি দরকার।\n` +
               `দয়া করে UID টি লিখুন (অ্যাপের প্রোফাইল পেজে পাবেন) — সাথে সাথেই সব হিসাব জানিয়ে দেব 💙`;
           } else {
-            reply = await smartAnswer({
+            const { appRulebook } = await import("@/lib/telegram-app-rules.server");
+            const { agentAnswer } = await import("@/lib/telegram-agent.server");
+            const rates3 = await loadRates();
+            const base3 = {
               name: senderName,
               question: text,
-              knowledge: knowledgeText(await loadRates()),
+              knowledge: knowledgeText(rates3),
               history: convoHistory,
               pastReplies: convoReplies,
               recall: recallText,
-            });
+            };
+            reply =
+              (await agentAnswer({ ...base3, rulebook: appRulebook(rates3), isAdmin: senderIsAdmin }))
+              ?? (await smartAnswer(base3));
           }
           if (!reply) reply = `${escalateReply(senderName, mention)}\n${mention}`;
           await sendMessage(chatId, reply, msg.message_id);
