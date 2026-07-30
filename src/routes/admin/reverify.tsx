@@ -56,9 +56,8 @@ function ReverifyQueue() {
         {run.isPending ? (progress || "চেক চলছে…") : "Whitelist auto-check চালু"}
       </button>
 
-      <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold px-1">
-        Total in queue: {rows.length} · Ready now: {ready.length} · Auto চেক প্রতি ৫ মিনিটে
-      </p>
+
+
 
       {byUser && byUser.length > 0 && (
         <div className="space-y-2">
