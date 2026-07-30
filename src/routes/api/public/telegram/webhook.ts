@@ -818,20 +818,22 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return Response.json({ ok: true, flow: "verification-date-ask-uid", actions });
         }
 
-        // ---- "একাউন্ট/ভেরিফাই হয় না" → browser + face rules -----------------
-        if (decision.intent === "verify_help" && !decision.should_delete
-            && settings.auto_reply_enabled) {
-          const { verifyTipsReply } = await import("@/lib/telegram-knowledge.server");
-          const reply = verifyTipsReply(senderName);
+        // ---- "কী কী লাগে / কোনো ডকুমেন্ট লাগে?" → requirements answer --------
+        const asksRequirements =
+          /(ki ki lage|কি কি লাগে|কী কী লাগে|ki lage|কি লাগে|কী লাগে|ki dorkar|কি দরকার|কী দরকার|what.*(need|require)|requirement|nid|এনআইডি|জাতীয় পরিচয়|birth certificate|জন্ম নিবন্ধন|passport|পাসপোর্ট|document|ডকুমেন্ট|কাগজ)/i
+            .test(norm);
+        if (asksRequirements && !decision.should_delete && settings.auto_reply_enabled) {
+          const { verifyRequirementsReply } = await import("@/lib/telegram-knowledge.server");
+          const reply = verifyRequirementsReply(senderName);
           await sendMessage(chatId, reply, msg.message_id);
-          actions.push("verify-help");
+          actions.push("verify-requirements");
           await logMessage(decision.verdict, actions.join(","), reply, matchedUid);
-          return Response.json({ ok: true, flow: "verify_help", actions });
+          return Response.json({ ok: true, flow: "verify_requirements", actions });
         }
 
-        // ---- "ভিডিও দিন / কিভাবে কাজ করবো" → tutorial video link -------------
-        const howToWork = /(kivabe|kivbe|kibhabe|কিভাবে|কীভাবে)[^\n]{0,25}(kaj|কাজ|use|চালাব|করব|করবো|start|শুরু)/i.test(norm)
-          || /(video|ভিডিও|টিউটোরিয়াল|tutorial)/i.test(norm);
+        // ---- "ভিডিও দিন / কিভাবে করবো" → tutorial video link -----------------
+        const howToWork = /(kivabe|kivbe|kibhabe|কিভাবে|কীভাবে|kmne|kemne|কেমনে)[^\n]{0,30}(kaj|কাজ|use|চালাব|করব|করবো|করতে হয়|start|শুরু|verify|ভেরিফাই|verification|ভেরিফিকেশন|face|ফেস|withdraw|উইথড্র|refer|রেফার)/i.test(norm)
+          || /(video|ভিডিও|টিউটোরিয়াল|tutorial|dekhiye|দেখিয়ে)/i.test(norm);
         if ((decision.intent === "video_request" || howToWork) && !decision.should_delete
             && settings.auto_reply_enabled) {
           const list = (videoRows ?? []) as any[];
