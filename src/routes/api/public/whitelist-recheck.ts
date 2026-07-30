@@ -71,14 +71,18 @@ export const Route = createFileRoute("/api/public/whitelist-recheck")({
     let completed = false;
     let batchesThisRequest = 0;
 
+    const walletsTotal = Number(run.wallets_total ?? 0);
+    const pendingTotal = Number(run.pending_total ?? 0);
     const save = async (extra: Record<string, unknown> = {}) => {
       await supabaseAdmin.from("whitelist_runs").update({
         phase, wallet_cursor: walletCursor, pending_cursor: pendingCursor,
-        wallets_checked: walletsChecked, pending_checked: pendingChecked,
+        wallets_checked: walletsTotal > 0 ? Math.min(walletsChecked, walletsTotal) : walletsChecked,
+        pending_checked: pendingTotal > 0 ? Math.min(pendingChecked, pendingTotal) : pendingChecked,
         pending_promoted: pendingPromoted, flipped, restored, batches_done: batchesDone,
         heartbeat_at: new Date().toISOString(), ...extra,
       }).eq("id", run.id).eq("lease_token", leaseToken);
     };
+
 
     while (batchesThisRequest < MAX_BATCHES_PER_REQUEST && !completed) {
       if (phase === "wallets") {
