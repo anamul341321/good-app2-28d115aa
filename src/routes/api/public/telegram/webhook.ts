@@ -430,7 +430,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               `👤 একাউন্ট: <b>${res.name}</b>\n🆔 UID: <code>${uid}</code>\n\n` +
               okLine + failLine +
               (res.done.length
-                ? `\n\nএই স্লটগুলো এখন সম্পূর্ণ খালি — পুরোনো ফেস ও key মুছে ফেলা হয়েছে।\n` +
+                ? `\n\nএই স্লটগুলো এখন সম্পূর্ণ খালি হয়ে গেছে।\n` +
                   `👉 অ্যাপে গিয়ে নতুন করে ফেস ভেরিফিকেশন করুন (একবার রিফ্রেশ দিন)।`
                 : ""),
             msg.message_id,
