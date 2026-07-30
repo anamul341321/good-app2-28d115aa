@@ -1,6 +1,17 @@
 // Telegram bot webhook — receives group messages, moderates + auto-replies.
 import { createFileRoute } from "@tanstack/react-router";
 
+// একই ইউজারের জন্য service-message আর chat_member দুইবার welcome ঠেকাতে ছোট ক্যাশ।
+const recentWelcomes = new Map<string, number>();
+function alreadyWelcomed(key: string) {
+  const now = Date.now();
+  for (const [k, t] of recentWelcomes) if (now - t > 5 * 60_000) recentWelcomes.delete(k);
+  if (recentWelcomes.has(key)) return true;
+  recentWelcomes.set(key, now);
+  return false;
+}
+
+
 export const Route = createFileRoute("/api/public/telegram/webhook")({
   server: {
     handlers: {
