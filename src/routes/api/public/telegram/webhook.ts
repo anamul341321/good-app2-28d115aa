@@ -326,10 +326,23 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             }
           }
 
-          // বাকি সব: অ্যাডমিনের নির্দেশমতো সুন্দর মেসেজ সাজিয়ে গ্রুপে পাঠাবে
-          const composed = await adminCompose(order, targetName);
-          await sendMessage(chatId, composed || order, replyTo);
-          return Response.json({ ok: true, flow: "admin-instruction" });
+          // বাকি সব: অ্যাডমিনের নির্দেশমতো সুন্দর মেসেজ সাজিয়ে গ্রুপে পাঠাবে।
+          // কখনোই অ্যাডমিনের নির্দেশটাই হুবহু ফেরত পাঠাবে না।
+          const composed = (await adminCompose(order, targetName))?.trim();
+          const echoed =
+            !composed ||
+            composed.toLowerCase().replace(/\s+/g, " ") === order.toLowerCase().replace(/\s+/g, " ");
+          if (!echoed) {
+            await sendMessage(chatId, composed, replyTo);
+            return Response.json({ ok: true, flow: "admin-instruction" });
+          }
+          await sendMessage(
+            chatId,
+            "✅ স্যার, নির্দেশটি পেয়েছি। একটু স্পষ্ট করে বলুন কী করতে হবে — আমি সাথে সাথেই করে দিচ্ছি।",
+            replyTo,
+          );
+          return Response.json({ ok: true, flow: "admin-instruction-unclear" });
+
 
         }
 
