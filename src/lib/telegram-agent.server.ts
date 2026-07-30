@@ -105,7 +105,7 @@ async function runTool(name: string, args: any): Promise<string> {
       const { loadRates, knowledgeText } = await import("./telegram-knowledge.server");
       const rates = await loadRates();
       const [{ data: settings }, users, verified] = await Promise.all([
-        db.from("app_settings").select("*").limit(1).maybeSingle(),
+        db.from("admin_settings").select("*").limit(1).maybeSingle(),
         db.from("profiles").select("id", { count: "exact", head: true }),
         db.from("tasks").select("id", { count: "exact", head: true }).not("initial_verify_at", "is", null),
       ]);
