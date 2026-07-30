@@ -109,6 +109,43 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         const senderName = [msg.from?.first_name, msg.from?.last_name].filter(Boolean).join(" ")
           || msg.from?.username || "User";
 
+        // ---- voice note / audio clip → transcribe BEFORE admin/mention logic ----
+        // Admin voice replies were previously ignored because the admin-silence
+        // guard ran before transcription, so text was still empty. From here on,
+        // every path (admin mention, normal support, fallback agent) sees the
+        // current voice message as normal text.
+        const audioMsg = msg.voice ?? msg.audio ?? msg.video_note ?? null;
+        let voiceHeard: string | null = null;
+        const captionText = text.trim();
+        if (audioMsg?.file_id) {
+          const { getFileBase64, transcribeAudio } = await import("@/lib/telegram-bot.server");
+          const file = await getFileBase64(audioMsg.file_id);
+          if (file) {
+            const ext = (file.path.split(".").pop() || "ogg").toLowerCase();
+            const fmt = ["wav", "mp3", "webm", "m4a", "ogg", "aac", "flac"].includes(ext)
+              ? ext
+              : msg.video_note ? "mp4" : "ogg";
+            voiceHeard = await transcribeAudio(file.base64, fmt);
+            // প্রথমবার না বুঝলে আরেকবার চেষ্টা করবে (নেটওয়ার্ক/মডেল হেঁচকি এড়াতে)
+            if (!voiceHeard || voiceHeard.replace(/[^\p{L}\p{N}]/gu, "").length < 3) {
+              voiceHeard = await transcribeAudio(file.base64, fmt);
+            }
+            if (voiceHeard) voiceHeard = voiceHeard.trim();
+            if (voiceHeard) text = captionText ? `${captionText}\n${voiceHeard}`.trim() : voiceHeard;
+          }
+          // Couldn't understand the voice → politely ask again instead of
+          // guessing and sending an unrelated answer.
+          if ((!voiceHeard || voiceHeard.replace(/[^\p{L}\p{N}]/gu, "").length < 3) && !captionText) {
+            const who = msg.from?.first_name ? `${msg.from.first_name}, ` : "";
+            await sendMessage(
+              chatId,
+              `${who}দুঃখিত 🙏 আপনার ভয়েসটা ঠিকমতো বুঝতে পারিনি।\nএকটু আস্তে করে আবার বলবেন, অথবা লিখে পাঠান — আমি সাথে সাথে সাহায্য করছি 💙`,
+              msg.message_id,
+            );
+            return Response.json({ ok: true, flow: "voice-unclear" });
+          }
+        }
+
         // Do not jump into conversations already being handled by a human admin.
         // If an admin writes, or the user replies to an admin's message, stay silent.
         const isBotCommand = /^\/(?:start|help|admin|reset)\b/i.test(text.trim());
@@ -142,7 +179,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         const meInfo = await getMe().catch(() => null);
         const mentionsBot = !!meInfo && new RegExp(`@${meInfo.username}\\b`, "i").test(text);
         const repliedToBot = msg.reply_to_message?.from?.id === meInfo?.id;
-        if (senderIsAdmin && !isBotCommand && (mentionsBot || repliedToBot) && text.trim()) {
+        if (senderIsAdmin && !isBotCommand && (mentionsBot || repliedToBot || !!voiceHeard) && text.trim()) {
           const order = text.replace(new RegExp(`@${meInfo?.username ?? "___"}`, "ig"), "").trim();
           const targetName = msg.reply_to_message && !msg.reply_to_message.from?.is_bot
             ? [msg.reply_to_message.from?.first_name, msg.reply_to_message.from?.last_name].filter(Boolean).join(" ")
@@ -255,11 +292,17 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             if (askCtx || /(ki|কি|kivabe|কীভাবে|কিভাবে|keno|কেন|bolo|বলো|bujhao|বুঝিয়ে)/i.test(bnDigits)) {
               const { smartAnswer } = await import("@/lib/telegram-bot.server");
               const { knowledgeText, loadRates: lr } = await import("@/lib/telegram-knowledge.server");
-              const ans = await smartAnswer({
+              const { appRulebook } = await import("@/lib/telegram-app-rules.server");
+              const { agentAnswer } = await import("@/lib/telegram-agent.server");
+              const rates = await lr();
+              const base = {
                 name: targetName || "বন্ধুরা",
                 question: order,
-                knowledge: knowledgeText(await lr()),
-              });
+                knowledge: knowledgeText(rates),
+              };
+              const ans =
+                (await agentAnswer({ ...base, rulebook: appRulebook(rates), isAdmin: true }))
+                ?? (await smartAnswer(base));
               if (ans && ans !== "NO_ANSWER") {
                 await sendMessage(chatId, ans, replyTo);
                 return Response.json({ ok: true, flow: "admin-smart" });
@@ -314,44 +357,6 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           }
           return Response.json({ ok: true, ignored: senderIsAdmin ? "admin-message" : "reply-to-admin" });
         }
-
-
-        // ---- voice note / audio clip → transcribe and treat as normal text ----
-        const audioMsg = msg.voice ?? msg.audio ?? msg.video_note ?? null;
-        let voiceHeard: string | null = null;
-        const captionText = text.trim();
-        if (audioMsg?.file_id) {
-          const { getFileBase64, transcribeAudio } = await import("@/lib/telegram-bot.server");
-          const file = await getFileBase64(audioMsg.file_id);
-          if (file) {
-            const ext = (file.path.split(".").pop() || "ogg").toLowerCase();
-            const fmt = ["wav", "mp3", "webm", "m4a", "ogg", "aac", "flac"].includes(ext)
-              ? ext
-              : msg.video_note ? "mp4" : "ogg";
-            voiceHeard = await transcribeAudio(file.base64, fmt);
-            // প্রথমবার না বুঝলে আরেকবার চেষ্টা করবে (নেটওয়ার্ক/মডেল হেঁচকি এড়াতে)
-            if (!voiceHeard || voiceHeard.replace(/[^\p{L}\p{N}]/gu, "").length < 3) {
-              voiceHeard = await transcribeAudio(file.base64, fmt);
-            }
-            if (voiceHeard) voiceHeard = voiceHeard.trim();
-            if (voiceHeard) text = captionText ? `${captionText}\n${voiceHeard}`.trim() : voiceHeard;
-          }
-          // Couldn't understand the voice → politely ask again instead of
-          // guessing and sending an unrelated answer.
-          if ((!voiceHeard || voiceHeard.replace(/[^\p{L}\p{N}]/gu, "").length < 3) && !captionText) {
-            const who = msg.from?.first_name ? `${msg.from.first_name}, ` : "";
-            await sendMessage(
-              chatId,
-              `${who}দুঃখিত 🙏 আপনার ভয়েসটা ঠিকমতো বুঝতে পারিনি।\nএকটু আস্তে করে আবার বলবেন, অথবা লিখে পাঠান — আমি সাথে সাথে সাহায্য করছি 💙`,
-              msg.message_id,
-            );
-            return Response.json({ ok: true, flow: "voice-unclear" });
-          }
-        }
-
-
-
-
 
         // Idempotency: skip if this update was already stored.
         const { data: seen } = await supabaseAdmin
@@ -1767,8 +1772,16 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           ) ?? null;
         })();
 
+        // Tiny follow-ups like "?" after a voice/message should not get a
+        // generic greeting. Use the agent with recent history instead.
+        const tinyFollowup = /^[?？!！.।\s]+$/.test(norm) ||
+          /^(ki|কি|keno|কেন|kn|mane|মানে|bujhi nai|বুঝি নাই)[\s.!?।]*$/i.test(norm);
+        const genericSupportReply = !!decision.reply &&
+          /(কীভাবে সাহায্য|কিভাবে সাহায্য|সহায়তা করতে পারি|help করতে পারি|বলুন|জানাবেন|কি সমস্যা|কোনো প্রশ্ন|স্বাগতম)/i.test(decision.reply);
+        const bypassDecisionReply = genericSupportReply && (tinyFollowup || !!voiceHeard);
+
         if (settings.auto_reply_enabled && decision.reply && !decision.should_delete
-            && decision.intent !== "slot_reset") {
+            && decision.intent !== "slot_reset" && !bypassDecisionReply) {
           await sendMessage(chatId, decision.reply + videoSuffix(text) + (await offerSlotResetSuffix()), msg.message_id);
           actions.push("replied");
         }
@@ -1806,7 +1819,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         }
 
         // ---- nothing matched → let the AI analyse the app and answer ---------
-        if (settings.auto_reply_enabled && !decision.reply && !voiceMatch
+        if (settings.auto_reply_enabled && (!decision.reply || bypassDecisionReply) && !voiceMatch
             && !decision.should_delete && !decision.needs_uid && !matchedUid
             && decision.intent === null && !decision.escalate
             && (decision.verdict === "question" || !!photoBase64 || !!voiceHeard)) {
@@ -1821,7 +1834,9 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           const rates = await loadRates();
           const base = {
             name: senderName,
-            question: text,
+            question: bypassDecisionReply
+              ? `${text}\n\nএটা আগের কথার/ভয়েসের ফলোআপ। history দেখে আগের প্রশ্ন বা ভয়েসের বিষয়টা বুঝে সরাসরি উত্তর দাও; generic greeting দেবে না।`
+              : text,
             knowledge: knowledgeText(rates),
             faqs: faqText,
             history: convoHistory,
@@ -1844,7 +1859,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
 
         // ---- bot genuinely doesn't know → hand off to the human admin --------
-        if (!decision.reply && decision.escalate && !decision.should_delete
+        if ((!decision.reply || bypassDecisionReply) && decision.escalate && !decision.should_delete
             && !decision.needs_uid && decision.intent === null
             && settings.auto_reply_enabled && (settings as any).escalate_enabled !== false) {
           const { escalateReply, smartAnswer } = await import("@/lib/telegram-bot.server");
@@ -1854,7 +1869,9 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           const rates2 = await loadRates();
           const base2 = {
             name: senderName,
-            question: text,
+            question: bypassDecisionReply
+              ? `${text}\n\nএটা আগের কথার/ভয়েসের ফলোআপ। history দেখে আগের প্রশ্ন বা ভয়েসের বিষয়টা বুঝে সরাসরি উত্তর দাও; generic greeting দেবে না।`
+              : text,
             knowledge: knowledgeText(rates2),
             history: convoHistory,
             pastReplies: convoReplies,
@@ -1995,7 +2012,9 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             const rates3 = await loadRates();
             const base3 = {
               name: senderName,
-              question: text,
+              question: bypassDecisionReply
+                ? `${text}\n\nএটা আগের কথার/ভয়েসের ফলোআপ। history দেখে আগের প্রশ্ন বা ভয়েসের বিষয়টা বুঝে সরাসরি উত্তর দাও; generic greeting দেবে না।`
+                : text,
               knowledge: knowledgeText(rates3),
               history: convoHistory,
               pastReplies: convoReplies,
@@ -2008,6 +2027,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           if (!reply) reply = `${escalateReply(senderName, mention)}\n${mention}`;
           await sendMessage(chatId, reply, msg.message_id);
           actions.push("fallback-answer");
+          decision.reply = reply;
         }
 
 

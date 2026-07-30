@@ -103,7 +103,7 @@ export async function readScreenshotText(photoBase64: string): Promise<string> {
   try {
     const res = await fetch(AI_URL, {
       method: "POST",
-      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      headers: { "Lovable-API-Key": key, "Content-Type": "application/json" },
       body: JSON.stringify({
         model: MODEL,
         temperature: 0,
@@ -306,7 +306,7 @@ Answer ONLY with JSON: {"same": true|false, "confidence": 0.0-1.0}`;
 
   const res = await fetch(AI_URL, {
     method: "POST",
-    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+    headers: { "Lovable-API-Key": key, "Content-Type": "application/json" },
     body: JSON.stringify({
       model: MODEL,
       temperature: 0,
@@ -398,7 +398,7 @@ Answer ONLY JSON: {"best": <1-${refs.length} or 0 if none really matches>}`,
 
   const res = await fetch(AI_URL, {
     method: "POST",
-    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+    headers: { "Lovable-API-Key": key, "Content-Type": "application/json" },
     body: JSON.stringify({ model: MODEL, temperature: 0, max_tokens: 40, messages: [{ role: "user", content }] }),
   });
   if (!res.ok) return -1;
@@ -430,7 +430,7 @@ export async function humanizeReply(answer: string, userText?: string, avoid?: s
   try {
     const res = await fetch(AI_URL, {
       method: "POST",
-      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      headers: { "Lovable-API-Key": key, "Content-Type": "application/json" },
       body: JSON.stringify({
         model: MODEL,
         temperature: 1,
@@ -516,7 +516,7 @@ async function transcribeAudioStt(base64: string, format: string, key: string): 
     form.append("file", new Blob([bytes as unknown as BlobPart], { type: audioMime(ext) }), `telegram-voice.${ext}`);
     const res = await fetch("https://ai.gateway.lovable.dev/v1/audio/transcriptions", {
       method: "POST",
-      headers: { Authorization: `Bearer ${key}` },
+      headers: { "Lovable-API-Key": key },
       body: form,
     });
     if (!res.ok) {
@@ -540,7 +540,7 @@ export async function transcribeAudio(base64: string, format: string): Promise<s
   try {
     const res = await fetch(AI_URL, {
       method: "POST",
-      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      headers: { "Lovable-API-Key": key, "Content-Type": "application/json" },
       body: JSON.stringify({
         model: MODEL,
         temperature: 0,
@@ -736,7 +736,7 @@ ${opts.warnCount ? `এই ইউজার ইতিমধ্যে ${opts.warnC
 
   const res = await fetch(AI_URL, {
     method: "POST",
-    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+    headers: { "Lovable-API-Key": key, "Content-Type": "application/json" },
     body: JSON.stringify({
       model: MODEL,
       temperature: 1,
@@ -812,7 +812,7 @@ export async function matchBuiltinFaqPhoto(photoBase64: string): Promise<string 
   try {
     const res = await fetch(AI_URL, {
       method: "POST",
-      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      headers: { "Lovable-API-Key": key, "Content-Type": "application/json" },
       body: JSON.stringify({
         model: MODEL,
         temperature: 0,
@@ -854,7 +854,7 @@ export async function analyzeScreenshotReply(opts: {
   try {
     const res = await fetch(AI_URL, {
       method: "POST",
-      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      headers: { "Lovable-API-Key": key, "Content-Type": "application/json" },
       body: JSON.stringify({
         model: MODEL,
         temperature: 0.8,
@@ -1040,7 +1040,7 @@ export async function smartAnswer(opts: {
   try {
     const res = await fetch(AI_URL, {
       method: "POST",
-      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      headers: { "Lovable-API-Key": key, "Content-Type": "application/json" },
       body: JSON.stringify({
         model: MODEL,
         temperature: 0.9,
@@ -1134,7 +1134,7 @@ export async function adminCompose(instruction: string, targetName?: string | nu
   try {
     const res = await fetch(AI_URL, {
       method: "POST",
-      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      headers: { "Lovable-API-Key": key, "Content-Type": "application/json" },
       body: JSON.stringify({
         model: MODEL,
         temperature: 0.6,
