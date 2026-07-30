@@ -187,40 +187,28 @@ export type VideoItem = {
   note?: string | null;
 };
 
-export async function matchFaqImage(opts: {
-  photoBase64: string;
-  faq: FaqItem[];
-}): Promise<FaqImageMatch | null> {
-  const key = process.env.LOVABLE_API_KEY;
-  if (!key) throw new Error("LOVABLE_API_KEY not configured");
+/**
+ * Compare the user's screenshot against ONE admin reference image.
+ * One-vs-one comparison is far more reliable than asking the model to rank a
+ * whole gallery in a single call, and the calls run in parallel so it stays fast.
+ */
+async function matchOneFaqImage(
+  photoBase64: string,
+  ref: FaqItem,
+  key: string,
+): Promise<number> {
+  const prompt = `You compare two mobile screenshots for a support bot.
 
-  const refs = opts.faq.filter((f) => f.imageBase64 && f.answer.trim()).slice(0, 8);
-  if (!refs.length) return null;
+IMAGE A = a screenshot a user just sent.
+IMAGE B = an admin-saved reference screenshot for the problem "${ref.topic}".
 
-  const prompt = `You are matching a Telegram support screenshot to admin-saved FAQ reference screenshots.
+Decide if they show the SAME app screen / same error / same problem.
+Ignore: crop, zoom, phone status bar, Telegram chat frame or bubbles, screenshot-of-a-screenshot, language of the phone UI, time, battery.
+Focus on: the app screen shown, headline/error text, buttons, illustration, overall layout.
 
-Task: Compare the USER_SCREENSHOT with each REFERENCE screenshot. Pick the FAQ only when it shows the same app screen/error/problem, even if the crop, phone UI, Telegram bubble, or scale is different.
+Examples of a MATCH: both show GoodDollar "Something went wrong on our side..." face verification error; both show the "You must be 18 years or older" block; both show the same wallet/withdraw screen.
 
-Important examples:
-- If both show the GoodDollar "You must be 18 years or older to get verified" / under 18 face verification screen, match that reference.
-- If both show the same "Something went wrong" verification screen, match that reference.
-
-Return ONLY JSON:
-{"matched": true, "topic": "exact topic", "confidence": 0.0 to 1.0}
-or {"matched": false, "topic": null, "confidence": 0}
-
-Reference topics:
-${refs.map((f, i) => `${i + 1}. ${f.topic}`).join("\n")}`;
-
-  const content: any[] = [
-    { type: "text", text: prompt },
-    { type: "text", text: "USER_SCREENSHOT:" },
-    { type: "image_url", image_url: { url: `data:image/jpeg;base64,${opts.photoBase64}` } },
-  ];
-  for (let i = 0; i < refs.length; i++) {
-    content.push({ type: "text", text: `REFERENCE ${i + 1} — ${refs[i].topic}:` });
-    content.push({ type: "image_url", image_url: { url: `data:image/jpeg;base64,${refs[i].imageBase64}` } });
-  }
+Answer ONLY with JSON: {"same": true|false, "confidence": 0.0-1.0}`;
 
   const res = await fetch(AI_URL, {
     method: "POST",
@@ -228,27 +216,112 @@ ${refs.map((f, i) => `${i + 1}. ${f.topic}`).join("\n")}`;
     body: JSON.stringify({
       model: MODEL,
       temperature: 0,
-      max_tokens: 120,
-      messages: [{ role: "user", content }],
+      max_tokens: 60,
+      messages: [
+        {
+          role: "user",
+          content: [
+            { type: "text", text: prompt },
+            { type: "text", text: "IMAGE A (user):" },
+            { type: "image_url", image_url: { url: `data:image/jpeg;base64,${photoBase64}` } },
+            { type: "text", text: "IMAGE B (reference):" },
+            { type: "image_url", image_url: { url: `data:image/jpeg;base64,${ref.imageBase64}` } },
+          ],
+        },
+      ],
     }),
   });
-
   if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`AI gateway ${res.status}: ${body.slice(0, 200)}`);
+    console.error("[tg] faq image compare failed", res.status, (await res.text()).slice(0, 200));
+    return 0;
   }
   const data: any = await res.json();
   const raw: string = data.choices?.[0]?.message?.content ?? "";
   const m = raw.match(/\{[\s\S]*\}/);
   let parsed: any = {};
   try { parsed = m ? JSON.parse(m[0]) : {}; } catch { parsed = {}; }
-
-  const topic = typeof parsed.topic === "string" ? parsed.topic.trim() : "";
-  const confidence = Number(parsed.confidence) || 0;
-  const found = refs.find((f) => f.topic.trim().toLowerCase() === topic.toLowerCase());
-  if (!parsed.matched || !found || confidence < 0.72) return null;
-  return { topic: found.topic, confidence };
+  if (!parsed.same) return 0;
+  const c = Number(parsed.confidence);
+  return Number.isFinite(c) ? c : 0.8;
 }
+
+export async function matchFaqImage(opts: {
+  photoBase64: string;
+  faq: FaqItem[];
+}): Promise<FaqImageMatch | null> {
+  const key = process.env.LOVABLE_API_KEY;
+  if (!key) throw new Error("LOVABLE_API_KEY not configured");
+
+  const refs = opts.faq.filter((f) => f.imageBase64 && f.answer.trim()).slice(0, 10);
+  if (!refs.length) return null;
+
+  const scores = await Promise.all(
+    refs.map((r) => matchOneFaqImage(opts.photoBase64, r, key).catch(() => 0)),
+  );
+
+  let bestIdx = -1;
+  let best = 0;
+  scores.forEach((s, i) => {
+    if (s > best) { best = s; bestIdx = i; }
+  });
+  if (bestIdx < 0 || best < 0.55) return null;
+  return { topic: refs[bestIdx].topic, confidence: best };
+}
+
+/** Transcribe a Telegram voice note / audio clip to text (Bengali friendly). */
+export async function transcribeAudio(base64: string, format: string): Promise<string | null> {
+  const key = process.env.LOVABLE_API_KEY;
+  if (!key) return null;
+  try {
+    const res = await fetch(AI_URL, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: MODEL,
+        temperature: 0,
+        max_tokens: 400,
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: "এই অডিওটি শুনে ঠিক যা বলা হয়েছে তা বাংলায় লিখে দাও। শুধু কথাগুলো লিখবে, অন্য কিছু নয়। কিছু বোঝা না গেলে খালি রাখবে।",
+              },
+              { type: "input_audio", input_audio: { data: base64, format } },
+            ],
+          },
+        ],
+      }),
+    });
+    if (!res.ok) {
+      console.error("[tg] transcribe failed", res.status, (await res.text()).slice(0, 200));
+      return null;
+    }
+    const data: any = await res.json();
+    const out = String(data.choices?.[0]?.message?.content ?? "").trim();
+    return out || null;
+  } catch (e) {
+    console.error("[tg] transcribe error", e);
+    return null;
+  }
+}
+
+/** Download any Telegram file as base64 (voice notes, audio, documents). */
+export async function getFileBase64(fileId: string): Promise<{ base64: string; path: string } | null> {
+  const token = getBotToken();
+  const file = await api<{ file_path: string }>("getFile", { file_id: fileId });
+  if (!file?.file_path) return null;
+  try {
+    const res = await fetch(`https://api.telegram.org/file/bot${token}/${file.file_path}`);
+    if (!res.ok) return null;
+    const buf = Buffer.from(await res.arrayBuffer());
+    return { base64: buf.toString("base64"), path: file.file_path };
+  } catch {
+    return null;
+  }
+}
+
 
 
 export async function decide(opts: {
