@@ -202,59 +202,30 @@ export function slotEarningReply(
   const bonusLine = (n: number) =>
     `• <b>${bn(n)} স্লট</b>  →  এককালীন <b>${bn(n * perSlotTotal)}৳</b>`;
 
-  const others = [10, 15, 20, 30, 50].filter((n) => !slots || n !== slots).slice(0, 4);
-
-  // step-by-step ratio explanation the way the admin wants it
-  const ratio = (n: number) =>
-    `📐 <b>হিসাবটা এভাবে দেখুন</b>\n\n` +
-    `১) ১০টি স্লটে মাসে = <b>${bn(base)}৳</b>\n\n` +
-    `২) তাহলে ১টি স্লটে = ${bn(base)} ÷ ১০ = <b>${bn(MONTHLY_PER_SLOT)}৳</b>\n\n` +
-    `৩) তাহলে ${bn(n)}টি স্লটে = ${bn(n)} × ${bn(MONTHLY_PER_SLOT)} = <b>${bn(n * MONTHLY_PER_SLOT)}৳ প্রতি মাসে</b> ⛏️\n\n`;
+  const others = [10, 20, 50].filter((n) => !slots || n !== slots).slice(0, 3);
 
   if (monthly || !slots) {
     if (slots) {
       return (
-        `${name}, একদম সহজ করে দেখাই 🙂\n\n` +
-        `━━━━━━━━━━━━━━\n\n` +
-        ratio(slots) +
-        `━━━━━━━━━━━━━━\n\n` +
-        `✅ <b>উত্তর: ${bn(slots)} স্লট = মাসে ${bn(slots * MONTHLY_PER_SLOT)}৳</b>\n\n` +
-        `এই টাকাটা <b>প্রতি মাসেই</b> আসবে (মাইনিং)।\n\n` +
-        `🎁 আর ${bn(slots)} স্লট ভেরিফাই + রি-ভেরিফাই করার জন্য <b>${bn(slots * perSlotTotal)}৳</b> বোনাস — এটা <b>একবারই</b>, প্রতি মাসে নয়।\n\n` +
-        `━━━━━━━━━━━━━━\n\n` +
-        `📊 <b>আরও কিছু উদাহরণ</b>\n\n` +
-        `${others.map(monthlyLine).join("\n\n")}\n\n` +
-        `📈 স্লটের কোনো লিমিট নেই — যত স্লট, তত বেশি মাসিক আয়।\n\n` +
-        `🏦 মাইনিংয়ের টাকা প্রতি মাসের <b>১–৩ তারিখে</b> তোলা যায়; বোনাস যেকোনো সময় 💙`
+        `${name}, ১০ স্লট = ${bn(base)}৳/মাস, তাই ১ স্লট = ${bn(MONTHLY_PER_SLOT)}৳।\n\n` +
+        `✅ <b>${bn(slots)} স্লট = মাসে ${bn(slots * MONTHLY_PER_SLOT)}৳</b> (প্রতি মাসেই) ⛏️\n\n` +
+        `🎁 সাথে এককালীন বোনাস <b>${bn(slots * perSlotTotal)}৳</b> (একবারই) 💙`
       );
     }
     return (
-      `${name}, স্লট অনুযায়ী মাসিক আয়ের হিসাবটা এমন 👇\n\n` +
-      `━━━━━━━━━━━━━━\n\n` +
-      `১০টি স্লটে মাসে = <b>${bn(base)}৳</b>\n\n` +
-      `তাই ১টি স্লটে = <b>${bn(MONTHLY_PER_SLOT)}৳</b> প্রতি মাসে\n\n` +
-      `━━━━━━━━━━━━━━\n\n` +
-      `📊 <b>উদাহরণ</b>\n\n` +
-      `${others.map(monthlyLine).join("\n\n")}\n\n` +
-      `📈 স্লটের কোনো লিমিট নেই — যত স্লট, তত বেশি মাসিক আয়।\n\n` +
-      `🏦 মাইনিংয়ের টাকা প্রতি মাসের <b>১–৩ তারিখে</b> তোলা যায় 💙`
+      `${name}, ১০ স্লট = ${bn(base)}৳/মাস → ১ স্লট = <b>${bn(MONTHLY_PER_SLOT)}৳</b>/মাস।\n\n` +
+      `${others.map(monthlyLine).join("\n")}\n\n` +
+      `📈 স্লটের লিমিট নেই 💙`
     );
   }
 
   return (
-    `${name}, ${bn(slots)}টি স্লটের হিসাব 🙂\n\n` +
-    `━━━━━━━━━━━━━━\n\n` +
-    ratio(slots) +
-    `━━━━━━━━━━━━━━\n\n` +
-    `🎁 <b>এককালীন বোনাস (একবারই)</b>\n\n` +
-    `প্রতি স্লটে ১ম ভেরিফাই ${bn(perSlotFirst)}৳ + রি-ভেরিফাই ${bn(perSlotRe)}৳ = ${bn(perSlotTotal)}৳\n\n` +
-    `${bn(slots)} × ${bn(perSlotTotal)} = <b>${bn(slots * perSlotTotal)}৳</b>\n\n` +
-    `━━━━━━━━━━━━━━\n\n` +
-    `📊 <b>তুলনা</b>\n\n` +
-    `${others.map(bonusLine).join("\n\n")}\n\n` +
-    `🏦 বোনাস যেকোনো সময়, মাইনিং প্রতি মাসের <b>১–৩ তারিখে</b> তোলা যায় 💙`
+    `${name}, ${bn(slots)} স্লট 👇\n\n` +
+    `⛏️ মাসে <b>${bn(slots * MONTHLY_PER_SLOT)}৳</b> (১ স্লট = ${bn(MONTHLY_PER_SLOT)}৳)\n\n` +
+    `🎁 এককালীন বোনাস <b>${bn(slots * perSlotTotal)}৳</b> (একবারই) 💙`
   );
 }
+
 
 /**
  * "আমি যাকে রেফার করবো সে ১০টি রি-ভেরিফাই করলে আমি কত পাবো?" —
