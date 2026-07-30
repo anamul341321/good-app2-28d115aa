@@ -32,11 +32,7 @@ async function api<T = any>(method: string, body: Record<string, unknown>): Prom
   }
 }
 
-/**
- * Send a plain message. We intentionally do NOT quote the user's own message
- * (no reply_to) — repeating the user's text back looks robotic in the group.
- * The `replyTo` argument is kept for call-site compatibility and ignored.
- */
+/** Send a Telegram message, replying to the user's exact message when provided. */
 export function sendMessage(chatId: string | number, text: string, _replyTo?: number) {
   const body: Record<string, unknown> = {
     chat_id: chatId,
