@@ -1264,6 +1264,25 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         let banRequested = false;
         let matchedUid: string | null = decision.uid;
         let appUserId: string | null = null;
+        const previousKnownUid = typeof (decision as any)._knownUid === "string"
+          ? String((decision as any)._knownUid)
+          : null;
+        const isUidLikeValue = (v: string | null) =>
+          !!v && (/^\d{2,9}$/.test(v) || (/\d/.test(v) && /^[A-Za-z0-9]{6,9}$/.test(v)));
+        const bareUidFrom = (s: string): string | null => {
+          if (isAffirmation(s)) return null;
+          const only = s.trim().match(/^[#\s]*([A-Za-z0-9]{2,9})[\s.!।]*$/)?.[1] ?? null;
+          return isUidLikeValue(only) ? only.toUpperCase() : null;
+        };
+        const explicitOrBareUid = (): string | null => {
+          if (hasExplicitUid) return pickUid(norm);
+          const bare = bareUidFrom(norm);
+          if (bare) return bare;
+          if (replyNorm && /(\buid\b|\bid\s*no\b|ইউআইডি|আইডি|আই ডি|আইডি নাম্বার)/i.test(replyNorm)) {
+            return pickUid(replyNorm);
+          }
+          return null;
+        };
 
         if (settings.moderation_enabled && decision.should_warn && msg.from?.id) {
           const warnCount = ((offender as any)?.warn_count ?? 0) + 1;
@@ -1403,7 +1422,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         // ---- "উইথড্র দিয়েছি টাকা আসে নাই" → show pending requests with time ---
         if ((decision.intent === "withdraw_status" || pendingWithdrawQuestion) && !decision.should_delete
             && settings.auto_reply_enabled) {
-          const uid = hasExplicitUid ? (decision.uid || pickUid(norm)) : null;
+          const uid = explicitOrBareUid() || previousKnownUid;
           if (uid) {
             const { buildWithdrawStatusCard } = await import("@/lib/telegram-withdraw.server");
             const res = await buildWithdrawStatusCard(uid);
@@ -1444,7 +1463,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
         // ---- "১ম verify কবে/কত তারিখে হয়েছে?" → ask UID, then report dates --
         if (asksReverifyStatus && !decision.should_delete && settings.auto_reply_enabled) {
-          const query = pickVerificationQuery(norm) || (hasExplicitUid ? pickUid(norm) : null);
+          const query = pickVerificationQuery(norm) || explicitOrBareUid() || previousKnownUid;
           if (query) {
             const { buildReverifyStatusReport } = await import("@/lib/telegram-lookup.server");
             const res = await buildReverifyStatusReport(query);
@@ -1477,7 +1496,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
         const dateKind = verificationDateKind(norm);
         if (dateKind && !decision.should_delete && settings.auto_reply_enabled) {
-          const query = pickVerificationQuery(norm);
+          const query = pickVerificationQuery(norm) || explicitOrBareUid() || previousKnownUid;
           if (query) {
             const { buildVerificationDateReport } = await import("@/lib/telegram-lookup.server");
             const res = await buildVerificationDateReport(query, dateKind);
@@ -1513,7 +1532,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           // ⚠️ কখনোই অনুমান করে অন্য কারো UID দেখানো যাবে না।
           // শুধু (ক) এই মেসেজেই স্পষ্ট UID লেখা থাকলে, অথবা
           // (খ) এই টেলিগ্রাম একাউন্টটি নিজেই কোনো প্রোফাইলের সাথে লিংক করা থাকলে।
-          let uid: string | null = hasExplicitUid ? pickUid(norm) : null;
+          let uid: string | null = explicitOrBareUid() || previousKnownUid;
           if (!uid && msg.from?.id) {
             const { data: linked } = await supabaseAdmin
               .from("profiles").select("uid_seq").eq("telegram_user_id", msg.from.id).maybeSingle();
