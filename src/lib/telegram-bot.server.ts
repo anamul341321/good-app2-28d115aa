@@ -211,11 +211,12 @@ IMAGE B = an admin-saved reference screenshot for the problem "${ref.topic}".
 
 Decide if they show the SAME app screen / same error / same problem.
 Ignore: crop, zoom, phone status bar, Telegram chat frame or bubbles, screenshot-of-a-screenshot, language of the phone UI, time, battery.
-Focus on: the app screen shown, headline/error text, buttons, illustration, overall layout.
+Focus on: the exact headline/error text, buttons, illustration, overall layout.
 
-Examples of a MATCH: both show GoodDollar "Something went wrong on our side..." face verification error; both show the "You must be 18 years or older" block; both show the same wallet/withdraw screen.
+BE STRICT about telling similar errors apart. Different error TEXT = different problem, even if the app, colours and layout look identical. For example "Something went wrong on our side" is NOT the same as "You must be 18 years or older", and neither is the same as a camera/permission or duplicate-face error. If the visible error sentence differs, answer same=false.
 
 Answer ONLY with JSON: {"same": true|false, "confidence": 0.0-1.0}`;
+
 
   const res = await fetch(AI_URL, {
     method: "POST",
