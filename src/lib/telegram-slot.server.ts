@@ -5,6 +5,14 @@ export type SlotResetResult =
   | { ok: true; slot: number; name: string; hadWallet: boolean }
   | { ok: false; error: string };
 
+/** Words like "৪ নম্বর স্লট" must never be read as a UID. */
+export function stripSlotMentions(s: string): string {
+  return s
+    .replace(/(\d{1,3})\s*(?:no|nombor|number|নম্বর|নাম্বার|নং)?\s*(?:er|এর)?\s*(?:slot|স্লট)/gi, " ")
+    .replace(/(?:slot|স্লট)\s*(?:no|number|নম্বর|নাম্বার|নং)?\s*[:#-]?\s*(\d{1,3})/gi, " ");
+}
+
+
 export async function findProfileByUid(uid: string) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const clean = uid.trim();
