@@ -165,6 +165,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         // ---- voice note / audio clip → transcribe and treat as normal text ----
         const audioMsg = msg.voice ?? msg.audio ?? msg.video_note ?? null;
         let voiceHeard: string | null = null;
+        const captionText = text.trim();
         if (audioMsg?.file_id) {
           const { getFileBase64, transcribeAudio } = await import("@/lib/telegram-bot.server");
           const file = await getFileBase64(audioMsg.file_id);
@@ -174,12 +175,16 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               ? ext
               : msg.video_note ? "mp4" : "ogg";
             voiceHeard = await transcribeAudio(file.base64, fmt);
+            // প্রথমবার না বুঝলে আরেকবার চেষ্টা করবে (নেটওয়ার্ক/মডেল হেঁচকি এড়াতে)
+            if (!voiceHeard || voiceHeard.replace(/[^\p{L}\p{N}]/gu, "").length < 3) {
+              voiceHeard = await transcribeAudio(file.base64, fmt);
+            }
             if (voiceHeard) voiceHeard = voiceHeard.trim();
             if (voiceHeard) text = `${text ? text + "\n" : ""}${voiceHeard}`.trim();
           }
           // Couldn't understand the voice → politely ask again instead of
           // guessing and sending an unrelated answer.
-          if (!voiceHeard || voiceHeard.replace(/[^\p{L}\p{N}]/gu, "").length < 3) {
+          if ((!voiceHeard || voiceHeard.replace(/[^\p{L}\p{N}]/gu, "").length < 3) && !captionText) {
             const who = msg.from?.first_name ? `${msg.from.first_name}, ` : "";
             await sendMessage(
               chatId,
@@ -189,6 +194,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             return Response.json({ ok: true, flow: "voice-unclear" });
           }
         }
+
 
 
 
