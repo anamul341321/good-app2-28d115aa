@@ -166,6 +166,15 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               /(hisab|হিসাব|হিসেব|bujiye|বুঝিয়ে|bujhiye|koto|কত|income|ইনকাম|আয়|calculation)/i.test(
                 bnDigits,
               );
+            if (askCtx && /(refer|reffer|রেফার|referral)/i.test(bnDigits)) {
+              const { loadRates, referralEarningReply } = await import(
+                "@/lib/telegram-knowledge.server"
+              );
+              const rates = await loadRates();
+              const reply = referralEarningReply(targetName || "বন্ধুরা", rates);
+              await sendMessage(chatId, reply, replyTo);
+              return Response.json({ ok: true, flow: "admin-referral-earning" });
+            }
             if (slotCtx && askCtx) {
               const m = bnDigits.match(/(\d{1,4})\s*(ta|টা|টি|ti|slot|স্লট)?/);
               const n = m ? Number(m[1]) : null;
@@ -926,13 +935,30 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           const bnDigits = t.replace(/[০-৯]/g, (d) => String("০১২৩৪৫৬৭৮৯".indexOf(d)));
           const miningCtx = /(mining|মাইনিং|maining|minig)/i.test(bnDigits);
           const money =
-            /(koto taka|koto tk|কত টাকা|কতো টাকা|income|ইনকাম|আয়|earn|kototaka|koto pabo|কত পাবো|কত পাব|hisab|হিসাব|bujiye|বুঝিয়ে|bujhiye|calculation|হিসেব)/i.test(
+            /(koto taka|koto tk|কত টাকা|কতো টাকা|income|ইনকাম|আয়|earn|kototaka|koto pabo|কত পাবো|কত পাব|kt taka|কত দিবে|koto dibe|hisab|হিসাব|bujiye|বুঝিয়ে|bujhiye|calculation|হিসেব)/i.test(
               bnDigits,
             );
+          const referCtx =
+            /(refer|reffer|refar|রেফার|রেফারেল|referral|রেফারে|আমাকে কত|amake koto)/i.test(bnDigits);
+          if (money && referCtx) {
+            try {
+              const { loadRates, referralEarningReply } = await import(
+                "@/lib/telegram-knowledge.server"
+              );
+              const rates = await loadRates();
+              const reply = referralEarningReply(senderName, rates);
+              await sendMessage(chatId, reply, msg.message_id);
+              await logMessage("question", "referral-earning", reply, null);
+              return Response.json({ ok: true, flow: "referral-earning" });
+            } catch (e) {
+              console.error("[tg] referral earning reply failed", e);
+            }
+          }
           const slotCtx =
             miningCtx ||
             /(slot|স্লট|re verify|re-verify|reverify|রি ভেরিফ|রি-ভেরিফ|verification|ভেরিফিকেশন|face)/i.test(bnDigits);
           if (money && slotCtx) {
+
             try {
               const m = bnDigits.match(/(\d{1,4})\s*(ta|টা|টি|ti|slot|স্লট)?/);
               const n = m ? Number(m[1]) : null;
