@@ -22,8 +22,10 @@ export function WhitelistMonitor() {
 
   const current: any = data?.current ?? null;
   const last: any = data?.last ?? null;
-  const live = !!current;
+  const stuck = !!current && Date.now() - new Date(current.started_at).getTime() > 4 * 60 * 1000;
+  const live = !!current && !stuck;
   const shown: any = current ?? last;
+
 
   const total = (shown?.wallets_total ?? 0) + (shown?.pending_total ?? 0);
   const done = (shown?.wallets_checked ?? 0) + (shown?.pending_checked ?? 0);
