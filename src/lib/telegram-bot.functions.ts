@@ -272,6 +272,64 @@ export const tgSendToGroup = createServerFn({ method: "POST" })
     return res ? { ok: true as const } : { ok: false as const, error: "পাঠানো যায়নি" };
   });
 
+// ---- Reply to one specific user (bot mentions them) -----------------------
+// অ্যাডমিন প্যানেল থেকে: ইউজারের টেলিগ্রাম username + কোন মেসেজের রিপ্লাই
+// চাই সেটার কিছু অংশ + আসল উত্তর — বট ইউজারকে মেনশন করে ওই মেসেজে রিপ্লাই দেবে।
+
+export const tgReplyToUser = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        username: z.string().trim().min(1).max(64),
+        messageText: z.string().trim().max(500).optional(),
+        reply: z.string().trim().min(1).max(3500),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data }) => {
+    const db = await guard();
+    const uname = data.username.replace(/^@/, "").trim();
+
+    let q = db
+      .from("tg_messages")
+      .select("chat_id, message_id, username, full_name, tg_user_id, text, created_at")
+      .ilike("username", uname)
+      .order("created_at", { ascending: false })
+      .limit(20);
+    const { data: rows } = await q;
+    let target = (rows ?? [])[0] as any;
+
+    if (data.messageText) {
+      const needle = data.messageText.toLowerCase().slice(0, 80);
+      const match = (rows ?? []).find((r: any) =>
+        String(r.text ?? "").toLowerCase().includes(needle),
+      );
+      if (match) target = match;
+    }
+
+    if (!target) {
+      const { data: s } = await db
+        .from("tg_bot_settings").select("group_chat_id").eq("id", "default").maybeSingle();
+      const chat = (s as any)?.group_chat_id;
+      if (!chat) return { ok: false as const, error: "এই username এর কোনো মেসেজ পাওয়া যায়নি এবং group chat ID সেট করা নেই" };
+      const { sendMessage } = await import("@/lib/telegram-bot.server");
+      const res = await sendMessage(chat, `@${uname}\n${data.reply}`);
+      return res
+        ? { ok: true as const, repliedTo: false, note: "পুরনো মেসেজ পাওয়া যায়নি — গ্রুপে মেনশন করে পাঠানো হয়েছে" }
+        : { ok: false as const, error: "পাঠানো যায়নি" };
+    }
+
+    const { sendMessage } = await import("@/lib/telegram-bot.server");
+    const res = await sendMessage(
+      target.chat_id,
+      `@${uname}\n${data.reply}`,
+      target.message_id ?? undefined,
+    );
+    return res
+      ? { ok: true as const, repliedTo: true, name: target.full_name ?? uname }
+      : { ok: false as const, error: "পাঠানো যায়নি" };
+  });
+
 
 // ---- Ban requests ---------------------------------------------------------
 

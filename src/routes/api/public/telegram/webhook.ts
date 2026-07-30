@@ -160,9 +160,16 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             : Promise.resolve(false),
         ]);
         const senderIsAdmin = chatAdminFlag || senderIsOwner;
+        // অ্যাডমিনের মেসেজে বট তখনই সাড়া দেবে যখন তাকে সরাসরি মেনশন করা হয়
+        // অথবা বটের মেসেজে রিপ্লাই দেওয়া হয়। নাহলে বট চুপ থাকবে (ইউজারের
+        // মেসেজে আগের মতোই উত্তর দেবে)।
+        const meInfo = await getMe().catch(() => null);
+        const mentionsBot = !!meInfo && new RegExp(`@${meInfo.username}\\b`, "i").test(text);
+        const repliedToBot = msg.reply_to_message?.from?.id === meInfo?.id;
+        const adminAddressedBot = mentionsBot || repliedToBot;
         // Exception: when an admin announces that a password was changed, the bot
         // confirms it to the user instead of staying silent.
-        const passwordChanged = senderIsAdmin && !isBotCommand && text.trim().length > 0
+        const passwordChanged = senderIsAdmin && adminAddressedBot && !isBotCommand && text.trim().length > 0
           && /(password|পাসওয়ার্ড|pass ?word)/i.test(text)
           && /(change|changed|change kora|change kore|পরিবর্তন|চেঞ্জ|বদলে|reset|রিসেট|new password|নতুন পাসওয়ার্ড)/i.test(text);
         if (passwordChanged && settings.auto_reply_enabled) {
@@ -176,10 +183,8 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return Response.json({ ok: true, flow: "password-changed" });
         }
         // ---- অ্যাডমিন বটকে মেনশন করে কিছু করতে বললে বট সেটা করবে -------------
-        const meInfo = await getMe().catch(() => null);
-        const mentionsBot = !!meInfo && new RegExp(`@${meInfo.username}\\b`, "i").test(text);
-        const repliedToBot = msg.reply_to_message?.from?.id === meInfo?.id;
-        if (senderIsAdmin && !isBotCommand && (mentionsBot || repliedToBot || !!voiceHeard) && text.trim()) {
+        if (senderIsAdmin && !isBotCommand && adminAddressedBot && text.trim()) {
+
           const order = text.replace(new RegExp(`@${meInfo?.username ?? "___"}`, "ig"), "").trim();
           const targetName = msg.reply_to_message && !msg.reply_to_message.from?.is_bot
             ? [msg.reply_to_message.from?.first_name, msg.reply_to_message.from?.last_name].filter(Boolean).join(" ")
@@ -496,6 +501,12 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           /(refer|reffer|refar|রেফার|referral|রেফারে|রেফারার|under|আন্ডার)[^\n]{0,80}(join|জয়েন|joined|asche|আসছে|ashche|aishe|hoise|হইছে|hoyeche|হয়েছে|ache|আছে|kar|কার|কে|ke)/i.test(norm) ||
           /(ke|কে|কার)[^\n]{0,60}(eneche|এনেছে|anse|আনছে|niye asche|নিয়ে আসছে)/i.test(norm);
 
+        // "রেফার করেছি কিন্তু রেফার বাড়ে না / কমে গেছে" → রেফার হিস্টরি + কারণ
+        const complainsReferralCount =
+          /(refer|reffer|refar|রেফার|referral|রেফারেল)/i.test(norm) &&
+          /(bare na|বাড়ে না|barche na|বাড়ছে না|bad?he na|kome|কমে|kome gese|কমে গেছে|komeche|কমেছে|jog hoi na|যোগ হয় না|jog hoy nai|যোগ হয় নাই|add hoi na|অ্যাড হয় না|add hocche na|dekhachhe na|দেখাচ্ছে না|dekhai na|দেখায় না|count hoi na|কাউন্ট হয় না|kmi|কমি)/i.test(norm);
+
+
 
 
         const verificationDateKind = (s: string): "first" | "reverify" | "all" | null => {
@@ -664,7 +675,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             sess?.step === "offer_reset"
               ? isAffirmation(norm) || looksLikeUidAnswer ||
                 /(রিসেট|reset|হ্যাঁ|হা|জি|করে দিন|kore din|kore den|chai|চাই)/i.test(norm)
-              : sess?.intent === "withdraw_status" || sess?.intent === "verification_dates" || sess?.intent === "account_info" || sess?.intent === "referral_join"
+              : sess?.intent === "withdraw_status" || sess?.intent === "verification_dates" || sess?.intent === "account_info" || sess?.intent === "referral_join" || sess?.intent === "referral_history"
                 ? looksLikeUidAnswer
                 : sess?.step === "await_slot"
                   ? looksLikeSlotAnswer
@@ -747,6 +758,29 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               await logMessage("question", "referral-join", reply, res.found ? res.uid : null);
               return Response.json({ ok: true, flow: "referral-join-session" });
             }
+
+            if (sess.intent === "referral_history" && sess.step === "await_uid") {
+              const uid = pickUidFromCurrentOrReply();
+              if (!uid) {
+                await sendMessage(
+                  chatId,
+                  `🆔 আপনার <b>UID</b> নম্বরটি লিখুন — তাহলে আপনার পুরো রেফার হিস্টরি দেখে জানিয়ে দিচ্ছি।`,
+                  msg.message_id,
+                );
+                return Response.json({ ok: true, flow: "referral-history-await-uid" });
+              }
+              const { buildReferralHistoryReport } = await import("@/lib/telegram-lookup.server");
+              const res = await buildReferralHistoryReport(uid);
+              if (res.found) await clearSession();
+              const reply = res.found
+                ? res.card
+                : `❌ UID <code>${uid}</code> দিয়ে কোনো একাউন্ট পাওয়া যায়নি। সঠিক UID টি লিখুন।`;
+              await sendMessage(chatId, reply, msg.message_id);
+              await logMessage("question", "referral-history", reply, res.found ? res.uid : null);
+              return Response.json({ ok: true, flow: "referral-history-session" });
+            }
+
+
 
 
             if (sess.intent === "verification_dates" && sess.step === "await_uid") {
@@ -1708,6 +1742,38 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           await logMessage(decision.verdict, actions.join(","), reply, null);
           return Response.json({ ok: true, flow: "verification-date-ask-uid", actions });
         }
+
+        // ---- "রেফার করেছি কিন্তু রেফার বাড়ে না" → রেফার হিস্টরি + কারণ --------
+        if (complainsReferralCount && !decision.should_delete && settings.auto_reply_enabled) {
+          let uid: string | null = explicitOrBareUid() || previousKnownUid;
+          if (!uid && msg.from?.id) {
+            const { data: linked } = await supabaseAdmin
+              .from("profiles").select("uid_seq").eq("telegram_user_id", msg.from.id).maybeSingle();
+            if (linked?.uid_seq != null) uid = String(linked.uid_seq);
+          }
+          if (uid) {
+            const { buildReferralHistoryReport } = await import("@/lib/telegram-lookup.server");
+            const res = await buildReferralHistoryReport(String(uid));
+            if (res.found) {
+              await sendMessage(chatId, res.card, msg.message_id);
+              actions.push("referral-history");
+              await logMessage(decision.verdict, actions.join(","), res.card, res.uid);
+              return Response.json({ ok: true, flow: "referral_history", actions });
+            }
+          }
+          if (msg.from?.id) {
+            await saveSession({ intent: "referral_history", step: "await_uid", uid: null, app_user_id: null });
+          }
+          const ask =
+            `👥 ${senderName}, আপনার রেফার হিসাবটা দেখে দিচ্ছি।\n\n` +
+            `দয়া করে আপনার <b>UID</b> নম্বরটি লিখুন (অ্যাপের প্রোফাইল পেজে পাবেন)।\n` +
+            `UID পেলেই কে কে আপনার রেফারে আছে, কার কয়টা ফেস ঠিক আছে — সব দেখিয়ে দেব 💙`;
+          await sendMessage(chatId, ask, msg.message_id);
+          actions.push("referral-history-ask-uid");
+          await logMessage(decision.verdict, actions.join(","), ask, null);
+          return Response.json({ ok: true, flow: "referral_history_ask_uid", actions });
+        }
+
 
         // ---- "আমার কয়টা রেফার/ভেরিফাই/ব্যালেন্স?" → UID নিয়ে একাউন্ট কার্ড -----
         if (asksOwnAccount && !decision.should_delete
