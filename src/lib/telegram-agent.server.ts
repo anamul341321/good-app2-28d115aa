@@ -168,6 +168,16 @@ async function runTool(name: string, args: any): Promise<string> {
       const slots = await listSlotNumbers(String(args?.uid ?? ""));
       return slots.length ? `স্লট: ${slots.join(", ")}` : "কোনো স্লট পাওয়া যায়নি।";
     }
+    if (name === "payment_numbers") {
+      const { listPaymentNumbers } = await import("./telegram-wallet.server");
+      return await listPaymentNumbers(String(args?.uid ?? ""));
+    }
+    if (name === "reset_payment_numbers") {
+      const { resetPaymentNumbersForUid, walletResetReply } = await import("./telegram-wallet.server");
+      const res = await resetPaymentNumbersForUid(String(args?.uid ?? ""), args?.provider ?? null);
+      return walletResetReply(res);
+    }
+
     if (name === "fee_quote") {
       const amount = Number(args?.amount);
       if (!Number.isFinite(amount) || amount <= 0) {
