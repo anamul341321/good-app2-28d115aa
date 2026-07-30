@@ -1,6 +1,8 @@
 // Server-only: the bot's built-in knowledge about how Good-App actually works.
 // Fed into the AI prompt so the bot can answer earning/withdraw/verify questions
 // itself instead of saying "admin will reply".
+
+import { miningWindowInfo, nextOpenLabelBn } from "./mining-window";
 import { miningWindowInfo, nextOpenLabelBn } from "./mining-window";
 
 export type AppRates = {
@@ -134,5 +136,26 @@ export function verifyTipsReply(name: string): string {
     `<b>৫️⃣</b> অবশ্যই <b>১৮ বছরের বেশি বয়সের ফেস</b> দিয়ে ভেরিফাই করুন — কম বয়সী ফেসে ভেরিফাই না-ও হতে পারে, আর পরে রি-ভেরিফাইয়ে সমস্যা হয়।\n` +
     `<b>৬️⃣</b> মুখে ভালো আলো রাখুন, চশমা/টুপি খুলে নিন।\n\n` +
     `এরপরও না হলে জানাবেন — আমরা পাশে আছি 💙`
+  );
+}
+
+export function withdrawEligibilityReply(name: string, now: number = Date.now()): string {
+  const window = miningWindowInfo(now);
+  const nextOpen = nextOpenLabelBn(now);
+
+  if (window.isOpen) {
+    return (
+      `${name}, এখন <b>মাইনিং উইথড্রের সময় চলছে</b> ✅\n\n` +
+      `💙 <b>বোনাস ব্যালেন্স</b> থাকলে যেকোনো সময় উইথড্র করা যায়।\n` +
+      `⛏️ <b>মাইনিং ব্যালেন্স</b> শুধু প্রতি মাসের <b>১–৩ তারিখ</b> আনলক থাকে।\n\n` +
+      `আপনার স্ক্রিনে যদি বোনাস <b>০৳</b> থাকে আর টাকা মাইনিং-এ থাকে, তাহলে এই ১–৩ তারিখের মধ্যেই withdraw দিতে হবে।`
+    );
+  }
+
+  return (
+    `${name}, আপনার টাকাটা যদি <b>মাইনিং ব্যালেন্স</b>-এ থাকে, তাহলে এখন withdraw হবে না।\n\n` +
+    `💙 <b>বোনাসের টাকা</b> যেকোনো সময় তোলা যায়।\n` +
+    `⛏️ <b>মাইনিংয়ের টাকা</b> প্রতি মাসের <b>১–৩ তারিখ</b> আনলক হয়।\n\n` +
+    `পরের আনলক: <b>${nextOpen}</b>। তখন ৩ দিনের মধ্যে mining withdraw দিতে পারবেন।`
   );
 }
