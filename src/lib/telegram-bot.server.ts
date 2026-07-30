@@ -475,7 +475,7 @@ export async function humanizeReply(answer: string, userText?: string, avoid?: s
       body: JSON.stringify({
         model: MODEL,
         temperature: 1,
-        max_tokens: 700,
+        max_tokens: 450,
         messages: [
           {
             role: "user",
@@ -484,8 +484,10 @@ export async function humanizeReply(answer: string, userText?: string, avoid?: s
 নিয়ম:
 - কোনো তথ্য, নিয়ম, সংখ্যা, লিংক বাদ দেবে না বা বানাবে না।
 - টোন: ${tone}।
-- ছোট ছোট লাইন, মাঝে ফাঁকা লাইন, দরকারে ২-৩টা ইমোজি। HTML ট্যাগ (<b>) থাকলে রাখতে পারো, Markdown ব্যবহার করবে না।
+- <b>সংক্ষেপে</b> লিখবে — মূল উত্তরের চেয়ে লম্বা কখনোই নয়, বরং ছোট করবে। সাধারণ কথা ১–৩ লাইনে, হিসাব/ধাপ হলে সর্বোচ্চ ৫-৬ লাইন। গ্রুপে স্প্যাম মনে হয় এমন লম্বা মেসেজ নয়।
+- ছোট ছোট লাইন, দরকারে ১-২টা ইমোজি। HTML ট্যাগ (<b>) থাকলে রাখতে পারো, Markdown ব্যবহার করবে না।
 - শুরুটা প্রতিবার আলাদা হবে, রোবটের মতো একই বাক্য নয়।
+
 ${avoid?.length ? `- আগের এই রিপ্লাইগুলোর মতো শোনাবে না:\n${avoid.slice(0, 3).map((a) => `"${a.slice(0, 160)}"`).join("\n")}` : ""}
 ${userText ? `\nইউজার বলেছে: "${userText.slice(0, 300)}"` : ""}
 
