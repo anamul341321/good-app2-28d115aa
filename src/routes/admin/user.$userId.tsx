@@ -1008,14 +1008,6 @@ function UserDetail() {
   );
 }
 
-function SumRow({ label, value, color }: { label: string; value: number; color: string }) {
-  return (
-    <div className="bg-surface-2 rounded-lg px-2 py-1.5">
-      <p className="text-[9px] text-muted-foreground">{label}</p>
-      <p className={`mono-num font-black text-[13px] text-${color}`}>{value >= 0 ? "+" : ""}{value.toFixed(2)}৳</p>
-    </div>
-  );
-}
 
 // ---------- Daily Referral Activity Report ----------
 function DailyReportPanel({ userId }: { userId: string }) {
