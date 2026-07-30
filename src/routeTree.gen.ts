@@ -38,6 +38,7 @@ import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedOffersRouteImport } from './routes/_authenticated/offers'
 import { Route as AuthenticatedKycRouteImport } from './routes/_authenticated/kyc'
 import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
+import { Route as ApiPublicWhitelistRecheckRouteImport } from './routes/api/public/whitelist-recheck'
 import { Route as ApiPublicTourAudioRouteImport } from './routes/api/public/tour-audio'
 import { Route as AdminUserUserIdRouteImport } from './routes/admin/user.$userId'
 import { Route as AuthenticatedTaskSlotRouteImport } from './routes/_authenticated/task.$slot'
@@ -187,6 +188,12 @@ const AuthenticatedHomeRoute = AuthenticatedHomeRouteImport.update({
   path: '/home',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiPublicWhitelistRecheckRoute =
+  ApiPublicWhitelistRecheckRouteImport.update({
+    id: '/api/public/whitelist-recheck',
+    path: '/api/public/whitelist-recheck',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicTourAudioRoute = ApiPublicTourAudioRouteImport.update({
   id: '/api/public/tour-audio',
   path: '/api/public/tour-audio',
@@ -241,6 +248,7 @@ export interface FileRoutesByFullPath {
   '/task/$slot': typeof AuthenticatedTaskSlotRoute
   '/admin/user/$userId': typeof AdminUserUserIdRoute
   '/api/public/tour-audio': typeof ApiPublicTourAudioRoute
+  '/api/public/whitelist-recheck': typeof ApiPublicWhitelistRecheckRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
 export interface FileRoutesByTo {
@@ -274,6 +282,7 @@ export interface FileRoutesByTo {
   '/task/$slot': typeof AuthenticatedTaskSlotRoute
   '/admin/user/$userId': typeof AdminUserUserIdRoute
   '/api/public/tour-audio': typeof ApiPublicTourAudioRoute
+  '/api/public/whitelist-recheck': typeof ApiPublicWhitelistRecheckRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
 export interface FileRoutesById {
@@ -310,6 +319,7 @@ export interface FileRoutesById {
   '/_authenticated/task/$slot': typeof AuthenticatedTaskSlotRoute
   '/admin/user/$userId': typeof AdminUserUserIdRoute
   '/api/public/tour-audio': typeof ApiPublicTourAudioRoute
+  '/api/public/whitelist-recheck': typeof ApiPublicWhitelistRecheckRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
 export interface FileRouteTypes {
@@ -346,6 +356,7 @@ export interface FileRouteTypes {
     | '/task/$slot'
     | '/admin/user/$userId'
     | '/api/public/tour-audio'
+    | '/api/public/whitelist-recheck'
     | '/api/public/telegram/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -379,6 +390,7 @@ export interface FileRouteTypes {
     | '/task/$slot'
     | '/admin/user/$userId'
     | '/api/public/tour-audio'
+    | '/api/public/whitelist-recheck'
     | '/api/public/telegram/webhook'
   id:
     | '__root__'
@@ -414,6 +426,7 @@ export interface FileRouteTypes {
     | '/_authenticated/task/$slot'
     | '/admin/user/$userId'
     | '/api/public/tour-audio'
+    | '/api/public/whitelist-recheck'
     | '/api/public/telegram/webhook'
   fileRoutesById: FileRoutesById
 }
@@ -425,6 +438,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   CardUidRoute: typeof CardUidRoute
   ApiPublicTourAudioRoute: typeof ApiPublicTourAudioRoute
+  ApiPublicWhitelistRecheckRoute: typeof ApiPublicWhitelistRecheckRoute
   ApiPublicTelegramWebhookRoute: typeof ApiPublicTelegramWebhookRoute
 }
 
@@ -633,6 +647,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedHomeRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/whitelist-recheck': {
+      id: '/api/public/whitelist-recheck'
+      path: '/api/public/whitelist-recheck'
+      fullPath: '/api/public/whitelist-recheck'
+      preLoaderRoute: typeof ApiPublicWhitelistRecheckRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/tour-audio': {
       id: '/api/public/tour-audio'
       path: '/api/public/tour-audio'
@@ -739,8 +760,19 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   CardUidRoute: CardUidRoute,
   ApiPublicTourAudioRoute: ApiPublicTourAudioRoute,
+  ApiPublicWhitelistRecheckRoute: ApiPublicWhitelistRecheckRoute,
   ApiPublicTelegramWebhookRoute: ApiPublicTelegramWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
