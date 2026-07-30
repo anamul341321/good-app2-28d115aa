@@ -93,7 +93,10 @@ export const Route = createFileRoute("/api/public/whitelist-recheck")({
               restored++;
             }
           }
+          batches++;
+          await touchRun({ wallets_checked: checked, batches_done: batches, flipped, restored });
         }
+
 
         // Also check generated/not-submitted keys. This replaces the need for
         // an admin to press "সব whitelist check" every few minutes.
