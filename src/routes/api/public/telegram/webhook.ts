@@ -866,8 +866,12 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         }
 
         // ---- "একাউন্ট/ভেরিফাই হয় না" → browser + face rules -----------------
-        if (decision.intent === "verify_help" && !decision.should_delete
-            && settings.auto_reply_enabled) {
+        // Only fire the fixed tips list when the user really reports a failure;
+        // otherwise the AI answers the actual question below.
+        const reportsVerifyFailure =
+          /(হয় না|hoy na|hoi na|হচ্ছে না|hocche na|পারছি না|parchi na|parteci na|error|এরর|fail|ফেইল|problem|somossa|সমস্যা|আসে না|ashe na|নিচ্ছে না|niche na|আটকে|atke|wrong|ভুল)/i
+            .test(norm);
+        if (decision.intent === "verify_help" && reportsVerifyFailure && !decision.should_delete
           const { verifyTipsReply } = await import("@/lib/telegram-knowledge.server");
           const reply = verifyTipsReply(senderName);
           await sendMessage(chatId, reply, msg.message_id);
