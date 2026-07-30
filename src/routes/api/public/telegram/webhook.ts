@@ -362,6 +362,20 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           }
         }
 
+        // ---- "অ্যাডমিন কোথায়?" → funny reply that mentions the real admin ----
+        if (
+          settings.auto_reply_enabled &&
+          /(admin|অ্যাডমিন|এডমিন|এ্যাডমিন)/i.test(norm) &&
+          /(kothai|kothay|কোথায়|kotha|নাই|nai|ase na|আসেন না|কে\b|ke\b|koi|কই|dakun|ডাকুন|call)/i.test(norm)
+        ) {
+          const { adminWhereReply } = await import("@/lib/telegram-bot.server");
+          const reply = adminWhereReply(senderName, (settings as any).support_username || "@anamulmunni");
+          await sendMessage(chatId, reply, msg.message_id);
+          await logMessage("question", "admin-where", reply, null);
+          return Response.json({ ok: true, flow: "admin-where" });
+        }
+
+
         const bannedWords: string[] = settings.banned_words ?? [];
         const lower = text.toLowerCase();
         const hardHit = bannedWords.find((w) => w && lower.includes(w.toLowerCase()));
