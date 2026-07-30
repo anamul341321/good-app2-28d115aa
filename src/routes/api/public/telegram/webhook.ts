@@ -1092,7 +1092,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           const reply = await analyzeScreenshotReply({
             photoBase64,
             name: senderName,
-            text,
+            text: shotText ? `${text}\n\n[স্ক্রিনশটের লেখা]\n${shotText}` : text,
             knowledge: knowledgeText(await loadRates()),
           });
           if (reply) {
@@ -1147,7 +1147,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           const reply = await analyzeScreenshotReply({
             photoBase64,
             name: senderName,
-            text,
+            text: shotText ? `${text}\n\n[স্ক্রিনশটের লেখা]\n${shotText}` : text,
             knowledge: knowledgeText(await loadRates()),
           });
           if (reply) {
