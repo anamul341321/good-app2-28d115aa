@@ -1016,3 +1016,52 @@ export async function adminCompose(instruction: string, targetName?: string | nu
     return null;
   }
 }
+
+/**
+ * গ্রুপ-মেমরি: আগে এই ধরনের প্রশ্ন কেউ করেছিল কি না এবং তখন কী উত্তর দেওয়া
+ * হয়েছিল — সেটা খুঁজে এনে AI-কে অতিরিক্ত কনটেক্সট হিসেবে দেওয়া হয়।
+ */
+export async function recallSimilar(question: string): Promise<string> {
+  const q = (question || "").trim();
+  if (q.length < 4) return "";
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const words = Array.from(
+      new Set(
+        q
+          .toLowerCase()
+          .replace(/[^\p{L}\p{N}\s]/gu, " ")
+          .split(/\s+/)
+          .filter((w) => w.length > 3),
+      ),
+    ).slice(0, 4);
+    if (!words.length) return "";
+
+    const seen = new Set<string>();
+    const pairs: { q: string; a: string }[] = [];
+    for (const w of words) {
+      const { data } = await supabaseAdmin
+        .from("tg_messages")
+        .select("text, bot_reply, created_at")
+        .ilike("text", `%${w}%`)
+        .not("bot_reply", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(3);
+      for (const r of (data ?? []) as any[]) {
+        const key = String(r.bot_reply).slice(0, 80);
+        if (!r.text || !r.bot_reply || seen.has(key)) continue;
+        seen.add(key);
+        pairs.push({ q: String(r.text).slice(0, 200), a: String(r.bot_reply).replace(/<[^>]+>/g, "").slice(0, 500) });
+      }
+      if (pairs.length >= 6) break;
+    }
+    if (!pairs.length) return "";
+
+    return (
+      `\n\n🗂️ গ্রুপে আগে একই ধরনের প্রশ্নে যা উত্তর দেওয়া হয়েছিল (তথ্য মিললে এখান থেকেই ধারাবাহিক উত্তর দাও, হুবহু কপি করবে না):\n` +
+      pairs.map((p) => `• প্রশ্ন: ${p.q}\n  উত্তর: ${p.a}`).join("\n")
+    );
+  } catch {
+    return "";
+  }
+}
