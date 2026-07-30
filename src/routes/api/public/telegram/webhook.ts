@@ -360,6 +360,27 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               return Response.json({ ok: true, flow: "withdraw-status-session" });
             }
 
+            if (sess.intent === "account_info" && sess.step === "await_uid") {
+              const uid = pickUid(norm);
+              if (!uid) {
+                await sendMessage(
+                  chatId,
+                  `🆔 আপনার <b>UID</b> নম্বরটি লিখুন (অ্যাপের প্রোফাইল পেজে পাবেন, যেমন: 4100)।\nUID পেলেই আপনার রেফার, ভেরিফাই, ব্যালেন্স সব দেখিয়ে দিচ্ছি।`,
+                  msg.message_id,
+                );
+                return Response.json({ ok: true, flow: "account-info-await-uid" });
+              }
+              const { buildUserCard } = await import("@/lib/telegram-lookup.server");
+              const res = await buildUserCard(uid);
+              if (res.found) await clearSession();
+              const reply = res.found
+                ? res.card
+                : `❌ UID <code>${uid}</code> দিয়ে কোনো একাউন্ট পাওয়া যায়নি। সঠিক UID টি লিখুন।`;
+              await sendMessage(chatId, reply, msg.message_id);
+              await logMessage("question", "account-info", reply, res.found ? uid : null);
+              return Response.json({ ok: true, flow: "account-info-session" });
+            }
+
 
             if (sess.intent === "verification_dates" && sess.step === "await_uid") {
               const query = pickVerificationQuery(norm) || pickUid(norm);
