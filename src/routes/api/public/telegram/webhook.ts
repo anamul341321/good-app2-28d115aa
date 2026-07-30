@@ -50,6 +50,19 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         // ---- new members joined → warm welcome -------------------------------
         const joined = (msg.new_chat_members ?? []) as any[];
         if (joined.length) {
+          // বটকে নতুন গ্রুপে অ্যাড করা হলে সেই গ্রুপটি নিজে থেকেই অনুমোদিত তালিকায় যোগ হবে।
+          const me = await getMe().catch(() => null);
+          if (me && joined.some((m: any) => m?.is_bot && (m.id === me.id || m.username === me.username))) {
+            await addChatToAllowList();
+            await sendMessage(
+              chatId,
+              `🤖 <b>Good-App সাপোর্ট বট চালু হয়েছে!</b>\n\n` +
+                `এখন থেকে এই গ্রুপে যেকোনো প্রশ্ন লিখে বা ভয়েস পাঠিয়ে জিজ্ঞেস করতে পারেন — আমি সাথে সাথে সাহায্য করব 💙\n` +
+                `⚠️ সব ফিচার ঠিকমতো কাজ করতে বটকে গ্রুপের <b>অ্যাডমিন</b> বানিয়ে দিন।`,
+            );
+            return Response.json({ ok: true, flow: "bot-added" });
+          }
+          if (!chatAllowed) return Response.json({ ok: true, ignored: "other-chat" });
           if ((settings as any).welcome_enabled !== false) {
             const { welcomeReply } = await import("@/lib/telegram-bot.server");
             for (const m of joined) {
@@ -63,7 +76,9 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           }
           return Response.json({ ok: true, flow: "welcome" });
         }
+        if (!chatAllowed) return Response.json({ ok: true, ignored: "other-chat" });
         if (msg.left_chat_member) return Response.json({ ok: true, ignored: "left" });
+
 
         let text: string = msg.text ?? msg.caption ?? "";
         const photos = msg.photo as { file_id: string }[] | undefined;
