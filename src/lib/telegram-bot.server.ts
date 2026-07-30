@@ -286,7 +286,6 @@ export async function transcribeAudio(base64: string, format: string): Promise<s
             content: [
               {
                 type: "text",
-                text: "এই অডিওটি শুনে ঠিক যা বলা হয়েছে তা বাংলায় লিখে দাও। শুধু কথাগুলো লিখবে, অন্য কিছু নয়। কিছু বোঝা না গেলে খালি রাখবে।",
                 text: "এই Telegram voice/audio খুব মনোযোগ দিয়ে শুনে ইউজার ঠিক কী জানতে চাইছে তা বাংলায় লিখে দাও। Roman Bangla, আঞ্চলিক উচ্চারণ, অস্পষ্ট শব্দ—সব মিলিয়ে অর্থ ধরার চেষ্টা করবে। শুধু কথাগুলো/প্রশ্নটা লিখবে, কোনো ব্যাখ্যা নয়। একদমই না বোঝা গেলে খালি রাখবে।",
               },
               { type: "input_audio", input_audio: { data: base64, format } },
