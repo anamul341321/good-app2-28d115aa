@@ -558,7 +558,16 @@ async function transcribeAudioStt(base64: string, format: string, key: string): 
     const form = new FormData();
     form.append("model", "openai/gpt-4o-transcribe");
     form.append("stream", "true");
+    form.append("language", "bn");
+    // Domain vocabulary hint — Bengali support callers mix Bangla + Roman Bangla
+    // and app jargon; without this the model mangles UID/slot/withdraw words.
+    form.append(
+      "prompt",
+      "বাংলা ভয়েস। Good-App সাপোর্ট। সম্ভাব্য শব্দ: UID, স্লট, ফেস ভেরিফাই, রি-ভেরিফাই, হোয়াইটলিস্ট, " +
+        "উইথড্র, বিকাশ, নগদ, রিচার্জ, মাইনিং, রেফার, বোনাস, ফি, চার্জ, কেটে নিয়েছে, টাকা, রিসেট, পাসওয়ার্ড।",
+    );
     form.append("file", new Blob([bytes as unknown as BlobPart], { type: audioMime(ext) }), `telegram-voice.${ext}`);
+
     const res = await fetch("https://ai.gateway.lovable.dev/v1/audio/transcriptions", {
       method: "POST",
       headers: { "Lovable-API-Key": key },
