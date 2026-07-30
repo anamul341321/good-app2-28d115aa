@@ -50,6 +50,14 @@ export const Route = createFileRoute("/api/public/whitelist-recheck")({
     if (leaseError) return Response.json({ error: leaseError.message }, { status: 500 });
     if (!leaseClaimed) return Response.json({ ok: true, skipped: "worker-active" });
 
+    // Re-read the run AFTER winning the lease: another worker may have advanced
+    // the cursor/counters between our first read and the claim. Using the stale
+    // snapshot re-checked the same batches and inflated the counters.
+    const { data: fresh } = await supabaseAdmin.from("whitelist_runs").select("*").eq("id", run.id).maybeSingle();
+    if (fresh) run = fresh;
+
+
+
     const affected = new Set<string>();
     let phase = run.phase ?? "wallets";
     let walletCursor = run.wallet_cursor as string | null;
@@ -63,14 +71,18 @@ export const Route = createFileRoute("/api/public/whitelist-recheck")({
     let completed = false;
     let batchesThisRequest = 0;
 
+    let walletsTotal = Number(run.wallets_total ?? 0);
+    let pendingTotal = Number(run.pending_total ?? 0);
     const save = async (extra: Record<string, unknown> = {}) => {
       await supabaseAdmin.from("whitelist_runs").update({
         phase, wallet_cursor: walletCursor, pending_cursor: pendingCursor,
-        wallets_checked: walletsChecked, pending_checked: pendingChecked,
+        wallets_checked: walletsTotal > 0 ? Math.min(walletsChecked, walletsTotal) : walletsChecked,
+        pending_checked: pendingTotal > 0 ? Math.min(pendingChecked, pendingTotal) : pendingChecked,
         pending_promoted: pendingPromoted, flipped, restored, batches_done: batchesDone,
         heartbeat_at: new Date().toISOString(), ...extra,
       }).eq("id", run.id).eq("lease_token", leaseToken);
     };
+
 
     while (batchesThisRequest < MAX_BATCHES_PER_REQUEST && !completed) {
       if (phase === "wallets") {
@@ -84,7 +96,15 @@ export const Route = createFileRoute("/api/public/whitelist-recheck")({
           return Response.json({ error: error.message }, { status: 500 });
         }
         const batch = data ?? [];
-        if (!batch.length) { phase = "pending"; await save(); continue; }
+        if (!batch.length) {
+          phase = "pending";
+          const { count } = await supabaseAdmin.from("unverified_attempts").select("id", { count: "exact", head: true })
+            .in("kind", ["first_verify", "reverify"]).not("wallet_address", "is", null);
+          pendingTotal = count ?? 0;
+          walletsTotal = walletsChecked;
+          await save({ pending_total: pendingTotal, wallets_total: walletsTotal });
+          continue;
+        }
         const flags = await Promise.all(batch.map((task) =>
           isWhitelistedRPC(task.wallet_address as string).catch(() => null)));
         const changes = await Promise.all(batch.map(async (task, index) => {

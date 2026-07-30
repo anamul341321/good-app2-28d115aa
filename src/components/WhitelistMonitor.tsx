@@ -29,7 +29,8 @@ export function WhitelistMonitor() {
 
 
   const total = (shown?.wallets_total ?? 0) + (shown?.pending_total ?? 0);
-  const done = (shown?.wallets_checked ?? 0) + (shown?.pending_checked ?? 0);
+  const rawDone = (shown?.wallets_checked ?? 0) + (shown?.pending_checked ?? 0);
+  const done = total > 0 ? Math.min(rawDone, total) : rawDone;
   const pct = total > 0 ? Math.min(100, Math.round((done / total) * 100)) : 0;
 
   return (
@@ -89,7 +90,7 @@ export function WhitelistMonitor() {
                 <div key={r.id} className="flex items-center justify-between text-[10px]">
                   <span className="text-muted-foreground">{ago(r.started_at)}</span>
                   <span className="mono-num">
-                    {(r.wallets_checked ?? 0) + (r.pending_checked ?? 0)} চেক · +{r.pending_promoted ?? 0} · -{r.flipped ?? 0}
+                    {Math.min((r.wallets_checked ?? 0) + (r.pending_checked ?? 0), ((r.wallets_total ?? 0) + (r.pending_total ?? 0)) || Infinity)} চেক · +{r.pending_promoted ?? 0} · -{r.flipped ?? 0}
                   </span>
                   <span className={r.status === "done" ? "text-emerald" : r.status === "running" ? "text-amber" : "text-rose"}>
                     {r.status === "done" ? "✅" : r.status === "running" ? "⏳" : "⚠️"}
