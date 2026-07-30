@@ -981,7 +981,8 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               const matchedFaq = faq.find(
                 (f) => String(f.topic).trim().toLowerCase() === imageMatch.topic.trim().toLowerCase(),
               );
-              if (matchedFaq?.answer) {
+              const answerText = matchedFaq ? await faqAnswerFor(matchedFaq, text || shotText) : null;
+              if (answerText) {
                 let recent: string[] = [];
                 if (msg.from?.id) {
                   const { data: prev } = await supabaseAdmin
@@ -990,7 +991,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
                     .order("created_at", { ascending: false }).limit(3);
                   recent = (prev ?? []).map((p: any) => p.bot_reply).filter(Boolean);
                 }
-                const reply = await humanizeReply(String(matchedFaq.answer).trim(), text, recent);
+                const reply = await humanizeReply(answerText.trim(), text, recent);
                 await sendMessage(chatId, reply, msg.message_id);
                 await logMessage("question", `faq-image:${imageMatch.topic}:${imageMatch.confidence.toFixed(2)}`, reply, null);
                 return Response.json({ ok: true, flow: "faq-image-match", topic: imageMatch.topic });
