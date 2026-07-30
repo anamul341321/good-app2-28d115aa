@@ -56,10 +56,27 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         }
         if (msg.left_chat_member) return Response.json({ ok: true, ignored: "left" });
 
-        const text: string = msg.text ?? msg.caption ?? "";
+        let text: string = msg.text ?? msg.caption ?? "";
         const photos = msg.photo as { file_id: string }[] | undefined;
         const senderName = [msg.from?.first_name, msg.from?.last_name].filter(Boolean).join(" ")
           || msg.from?.username || "User";
+
+        // ---- voice note / audio clip → transcribe and treat as normal text ----
+        const audioMsg = msg.voice ?? msg.audio ?? msg.video_note ?? null;
+        let voiceHeard: string | null = null;
+        if (audioMsg?.file_id) {
+          const { getFileBase64, transcribeAudio } = await import("@/lib/telegram-bot.server");
+          const file = await getFileBase64(audioMsg.file_id);
+          if (file) {
+            const ext = (file.path.split(".").pop() || "ogg").toLowerCase();
+            const fmt = ["wav", "mp3", "webm", "m4a", "ogg", "aac", "flac"].includes(ext)
+              ? ext
+              : msg.video_note ? "mp4" : "ogg";
+            voiceHeard = await transcribeAudio(file.base64, fmt);
+            if (voiceHeard) text = `${text ? text + "\n" : ""}${voiceHeard}`.trim();
+          }
+        }
+
 
 
         // Idempotency: skip if this update was already stored.
