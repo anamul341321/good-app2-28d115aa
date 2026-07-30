@@ -220,12 +220,19 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         const bnDigits = (s: string) =>
           s.replace(/[০-৯]/g, (d) => String("০১২৩৪৫৬৭৮৯".indexOf(d)));
         const norm = bnDigits(text).trim();
+        // "yes", "ok", "ji", "ধন্যবাদ" — এগুলো কখনোই UID নয়।
+        const isAffirmation = (s: string) =>
+          /^(yes|yeah|yep|ya|ha|haa|hae|hmm|hm|ok|okay|k|ji|jee|acha|accha|thik|thik ache|right|sure|thanks|thank you|tnx|ty|done|nice|good|👍|✅|হ্যাঁ|হা|হুম|জি|জ্বি|আচ্ছা|ঠিক|ঠিক আছে|ধন্যবাদ|ওকে)[\s.!।]*$/i.test(
+            s.trim(),
+          );
         const pickUid = (s: string): string | null => {
+          if (isAffirmation(s)) return null;
           const num = s.match(/\b(\d{1,9})\b/);
           if (num) return num[1];
           const code = s.match(/\b([A-Za-z0-9]{7})\b/);
-          return code ? code[1].toUpperCase() : null;
+          return code && /\d/.test(code[1]) ? code[1].toUpperCase() : null;
         };
+
         // Accepts: "3", "5 ta", "2,3,4", "২-৫", "3 4 7", "সব"/"all"
         const wantsAll = /(সব|সবগুলো|সবগুলা|all|full)/i.test(norm);
         const pickSlots = (s: string): number[] => {
