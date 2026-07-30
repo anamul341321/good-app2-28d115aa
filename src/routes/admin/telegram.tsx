@@ -503,9 +503,74 @@ function LookupPanel() {
           </button>
         </div>
       )}
+
+      <ReplyToUserPanel />
     </div>
   );
 }
+
+function ReplyToUserPanel() {
+  const [username, setUsername] = useState("");
+  const [messageText, setMessageText] = useState("");
+  const [reply, setReply] = useState("");
+
+  const send = useMutation({
+    mutationFn: () =>
+      tgReplyToUser({
+        data: {
+          username: username.trim(),
+          messageText: messageText.trim() || undefined,
+          reply: reply.trim(),
+        },
+      }),
+    onSuccess: (r: any) => {
+      if (!r.ok) return toast.error(r.error);
+      toast.success(r.repliedTo ? "ইউজারের মেসেজে রিপ্লাই দেওয়া হয়েছে ✅" : r.note || "পাঠানো হয়েছে ✅");
+      setReply("");
+      setMessageText("");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  return (
+    <div className="glass rounded-2xl p-4 space-y-2">
+      <h3 className="font-black text-sm flex items-center gap-2">
+        <Send className="w-4 h-4 text-amber" /> ইউজারকে বট দিয়ে রিপ্লাই দিন
+      </h3>
+      <p className="text-[10px] text-muted-foreground">
+        ইউজারের টেলিগ্রাম username দিন। কোন মেসেজের রিপ্লাই চান সেটার কিছু অংশ লিখলে বট ঠিক ওই
+        মেসেজেই মেনশন করে রিপ্লাই দেবে।
+      </p>
+      <input
+        value={username}
+        onChange={(e) => setUsername(e.target.value)}
+        placeholder="@username"
+        className="w-full px-3 py-2 rounded-xl bg-surface-2 border border-border text-sm outline-none focus:border-amber"
+      />
+      <input
+        value={messageText}
+        onChange={(e) => setMessageText(e.target.value)}
+        placeholder="কোন মেসেজের রিপ্লাই? (ঐ মেসেজের কিছু অংশ — না দিলে সর্বশেষ মেসেজ)"
+        className="w-full px-3 py-2 rounded-xl bg-surface-2 border border-border text-xs outline-none focus:border-amber"
+      />
+      <textarea
+        value={reply}
+        onChange={(e) => setReply(e.target.value)}
+        rows={4}
+        placeholder="যে উত্তরটি পাঠাতে চান…"
+        className="w-full px-3 py-2 rounded-xl bg-surface-2 border border-border text-sm outline-none focus:border-amber"
+      />
+      <button
+        onClick={() => username.trim() && reply.trim() && send.mutate()}
+        disabled={send.isPending}
+        className="w-full py-2.5 rounded-xl gradient-cta font-black text-xs disabled:opacity-50"
+      >
+        {send.isPending ? "পাঠানো হচ্ছে…" : "মেনশন করে রিপ্লাই পাঠান"}
+      </button>
+    </div>
+  );
+}
+
 
 
 
