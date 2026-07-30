@@ -1111,6 +1111,57 @@ export type Database = {
           },
         ]
       }
+      whitelist_runs: {
+        Row: {
+          batch_size: number
+          batches_done: number
+          error_message: string | null
+          finished_at: string | null
+          flipped: number
+          id: string
+          pending_checked: number
+          pending_promoted: number
+          pending_total: number
+          restored: number
+          started_at: string
+          status: string
+          wallets_checked: number
+          wallets_total: number
+        }
+        Insert: {
+          batch_size?: number
+          batches_done?: number
+          error_message?: string | null
+          finished_at?: string | null
+          flipped?: number
+          id?: string
+          pending_checked?: number
+          pending_promoted?: number
+          pending_total?: number
+          restored?: number
+          started_at?: string
+          status?: string
+          wallets_checked?: number
+          wallets_total?: number
+        }
+        Update: {
+          batch_size?: number
+          batches_done?: number
+          error_message?: string | null
+          finished_at?: string | null
+          flipped?: number
+          id?: string
+          pending_checked?: number
+          pending_promoted?: number
+          pending_total?: number
+          restored?: number
+          started_at?: string
+          status?: string
+          wallets_checked?: number
+          wallets_total?: number
+        }
+        Relationships: []
+      }
       withdrawals: {
         Row: {
           admin_note: string | null
