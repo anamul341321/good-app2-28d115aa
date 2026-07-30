@@ -187,40 +187,28 @@ export type VideoItem = {
   note?: string | null;
 };
 
-export async function matchFaqImage(opts: {
-  photoBase64: string;
-  faq: FaqItem[];
-}): Promise<FaqImageMatch | null> {
-  const key = process.env.LOVABLE_API_KEY;
-  if (!key) throw new Error("LOVABLE_API_KEY not configured");
+/**
+ * Compare the user's screenshot against ONE admin reference image.
+ * One-vs-one comparison is far more reliable than asking the model to rank a
+ * whole gallery in a single call, and the calls run in parallel so it stays fast.
+ */
+async function matchOneFaqImage(
+  photoBase64: string,
+  ref: FaqItem,
+  key: string,
+): Promise<number> {
+  const prompt = `You compare two mobile screenshots for a support bot.
 
-  const refs = opts.faq.filter((f) => f.imageBase64 && f.answer.trim()).slice(0, 8);
-  if (!refs.length) return null;
+IMAGE A = a screenshot a user just sent.
+IMAGE B = an admin-saved reference screenshot for the problem "${ref.topic}".
 
-  const prompt = `You are matching a Telegram support screenshot to admin-saved FAQ reference screenshots.
+Decide if they show the SAME app screen / same error / same problem.
+Ignore: crop, zoom, phone status bar, Telegram chat frame or bubbles, screenshot-of-a-screenshot, language of the phone UI, time, battery.
+Focus on: the app screen shown, headline/error text, buttons, illustration, overall layout.
 
-Task: Compare the USER_SCREENSHOT with each REFERENCE screenshot. Pick the FAQ only when it shows the same app screen/error/problem, even if the crop, phone UI, Telegram bubble, or scale is different.
+Examples of a MATCH: both show GoodDollar "Something went wrong on our side..." face verification error; both show the "You must be 18 years or older" block; both show the same wallet/withdraw screen.
 
-Important examples:
-- If both show the GoodDollar "You must be 18 years or older to get verified" / under 18 face verification screen, match that reference.
-- If both show the same "Something went wrong" verification screen, match that reference.
-
-Return ONLY JSON:
-{"matched": true, "topic": "exact topic", "confidence": 0.0 to 1.0}
-or {"matched": false, "topic": null, "confidence": 0}
-
-Reference topics:
-${refs.map((f, i) => `${i + 1}. ${f.topic}`).join("\n")}`;
-
-  const content: any[] = [
-    { type: "text", text: prompt },
-    { type: "text", text: "USER_SCREENSHOT:" },
-    { type: "image_url", image_url: { url: `data:image/jpeg;base64,${opts.photoBase64}` } },
-  ];
-  for (let i = 0; i < refs.length; i++) {
-    content.push({ type: "text", text: `REFERENCE ${i + 1} — ${refs[i].topic}:` });
-    content.push({ type: "image_url", image_url: { url: `data:image/jpeg;base64,${refs[i].imageBase64}` } });
-  }
+Answer ONLY with JSON: {"same": true|false, "confidence": 0.0-1.0}`;
 
   const res = await fetch(AI_URL, {
     method: "POST",
@@ -228,27 +216,112 @@ ${refs.map((f, i) => `${i + 1}. ${f.topic}`).join("\n")}`;
     body: JSON.stringify({
       model: MODEL,
       temperature: 0,
-      max_tokens: 120,
-      messages: [{ role: "user", content }],
+      max_tokens: 60,
+      messages: [
+        {
+          role: "user",
+          content: [
+            { type: "text", text: prompt },
+            { type: "text", text: "IMAGE A (user):" },
+            { type: "image_url", image_url: { url: `data:image/jpeg;base64,${photoBase64}` } },
+            { type: "text", text: "IMAGE B (reference):" },
+            { type: "image_url", image_url: { url: `data:image/jpeg;base64,${ref.imageBase64}` } },
+          ],
+        },
+      ],
     }),
   });
-
   if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`AI gateway ${res.status}: ${body.slice(0, 200)}`);
+    console.error("[tg] faq image compare failed", res.status, (await res.text()).slice(0, 200));
+    return 0;
   }
   const data: any = await res.json();
   const raw: string = data.choices?.[0]?.message?.content ?? "";
   const m = raw.match(/\{[\s\S]*\}/);
   let parsed: any = {};
   try { parsed = m ? JSON.parse(m[0]) : {}; } catch { parsed = {}; }
-
-  const topic = typeof parsed.topic === "string" ? parsed.topic.trim() : "";
-  const confidence = Number(parsed.confidence) || 0;
-  const found = refs.find((f) => f.topic.trim().toLowerCase() === topic.toLowerCase());
-  if (!parsed.matched || !found || confidence < 0.72) return null;
-  return { topic: found.topic, confidence };
+  if (!parsed.same) return 0;
+  const c = Number(parsed.confidence);
+  return Number.isFinite(c) ? c : 0.8;
 }
+
+export async function matchFaqImage(opts: {
+  photoBase64: string;
+  faq: FaqItem[];
+}): Promise<FaqImageMatch | null> {
+  const key = process.env.LOVABLE_API_KEY;
+  if (!key) throw new Error("LOVABLE_API_KEY not configured");
+
+  const refs = opts.faq.filter((f) => f.imageBase64 && f.answer.trim()).slice(0, 10);
+  if (!refs.length) return null;
+
+  const scores = await Promise.all(
+    refs.map((r) => matchOneFaqImage(opts.photoBase64, r, key).catch(() => 0)),
+  );
+
+  let bestIdx = -1;
+  let best = 0;
+  scores.forEach((s, i) => {
+    if (s > best) { best = s; bestIdx = i; }
+  });
+  if (bestIdx < 0 || best < 0.55) return null;
+  return { topic: refs[bestIdx].topic, confidence: best };
+}
+
+/** Transcribe a Telegram voice note / audio clip to text (Bengali friendly). */
+export async function transcribeAudio(base64: string, format: string): Promise<string | null> {
+  const key = process.env.LOVABLE_API_KEY;
+  if (!key) return null;
+  try {
+    const res = await fetch(AI_URL, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: MODEL,
+        temperature: 0,
+        max_tokens: 400,
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: "এই অডিওটি শুনে ঠিক যা বলা হয়েছে তা বাংলায় লিখে দাও। শুধু কথাগুলো লিখবে, অন্য কিছু নয়। কিছু বোঝা না গেলে খালি রাখবে।",
+              },
+              { type: "input_audio", input_audio: { data: base64, format } },
+            ],
+          },
+        ],
+      }),
+    });
+    if (!res.ok) {
+      console.error("[tg] transcribe failed", res.status, (await res.text()).slice(0, 200));
+      return null;
+    }
+    const data: any = await res.json();
+    const out = String(data.choices?.[0]?.message?.content ?? "").trim();
+    return out || null;
+  } catch (e) {
+    console.error("[tg] transcribe error", e);
+    return null;
+  }
+}
+
+/** Download any Telegram file as base64 (voice notes, audio, documents). */
+export async function getFileBase64(fileId: string): Promise<{ base64: string; path: string } | null> {
+  const token = getBotToken();
+  const file = await api<{ file_path: string }>("getFile", { file_id: fileId });
+  if (!file?.file_path) return null;
+  try {
+    const res = await fetch(`https://api.telegram.org/file/bot${token}/${file.file_path}`);
+    if (!res.ok) return null;
+    const buf = Buffer.from(await res.arrayBuffer());
+    return { base64: buf.toString("base64"), path: file.file_path };
+  } catch {
+    return null;
+  }
+}
+
 
 
 export async function decide(opts: {
@@ -327,16 +400,23 @@ ${opts.warnCount ? `এই ইউজার ইতিমধ্যে ${opts.warnC
 - ❌ কখনোই লিখবে না "এই বিষয়ে অ্যাডমিন উত্তর দেবেন", "অ্যাডমিন শীঘ্রই জানাবেন", "অপেক্ষা করুন অ্যাডমিন আসবেন" — এসব বাক্য সম্পূর্ণ নিষিদ্ধ। তুমি নিজেই মূল উত্তরটা দেবে, শুধু আসল কথাটাই বলবে।
 - ভূমিকা/অপ্রয়োজনীয় লাইন বাদ দিয়ে সরাসরি কাজের উত্তর দেবে।
 - "কিভাবে টাকা পাবো / ইনকাম কিভাবে / বোনাস কত" জাতীয় প্রশ্নে উপরের আয়ের ধাপ ও রেটগুলো সুন্দর করে সাজিয়ে বুঝিয়ে দেবে (১০ স্লট ১ম ভেরিফাই → ৩/৪ দিন পর রি-ভেরিফাই → বোনাস ও মাইনিং)।
-- ইউজার যা-ই জানতে চাক (রেফার সংখ্যা, ব্যালেন্স, ভেরিফাই, উইথড্র, মাইনিং, নিয়ম) — জানার চেষ্টা করবে, এড়িয়ে যাবে না। একাউন্টভিত্তিক হলে UID চাইবে।
+- ইউজার যা-ই জানতে চাক (রেফার সংখ্যা, ব্যালেন্স, ভেরিফাই, উইথড্র, ফি, মাইনিং, নিয়ম) — জানার চেষ্টা করবে, এড়িয়ে যাবে না। একাউন্টভিত্তিক হলে UID চাইবে।
 - স্লট নিয়ে কথা বললে কখনো "১ থেকে ১০" বলবে না — ইউজারের ২৩/২৫ নম্বর স্লটও থাকতে পারে।
 - ❌ ইউজারের মেসেজটা হুবহু আবার লিখবে না বা কোট করবে না — সরাসরি সুন্দর করে গুছিয়ে উত্তর দেবে।
 - ❌ মেসেজে কোনো সংখ্যা থাকলেই সেটাকে UID ভাববে না। "১০টি স্লট", "৩-৪ দিন", "২০০৳" — এগুলো UID নয়। uid শুধু তখনই দেবে যখন ইউজার স্পষ্টভাবে নিজের UID/আইডি নম্বর জানাচ্ছে বা নিজের একাউন্টের হিসাব চাইছে।
 - "কিভাবে কাজ করব / ভিডিও দিন / দেখিয়ে দিন" ধরনের প্রশ্নে intent = "video_request" দেবে।
 
+🧠 সর্বজ্ঞ নীতি (খুব গুরুত্বপূর্ণ):
+- Good-App সম্পর্কিত **যেকোনো** প্রশ্নের উত্তর তুমি দেবে — কোনো প্রশ্ন এড়িয়ে যাবে না, চুপ থাকবে না।
+- ইউজার যদি বলে "৪০০৳ উইথড্র দিয়েছি কিন্তু ৩৬০৳ পেয়েছি" — তখন প্ল্যাটফর্ম ফি-এর হিসাব করে বুঝিয়ে দেবে (উপরের ফি নিয়ম দেখে)। টাকা কম আসার কারণ সবসময় ফি দিয়ে ব্যাখ্যা করবে।
+- ছবি এলে সেটা ভালোভাবে দেখে কী স্ক্রিন/এরর দেখাচ্ছে বুঝে সেই অনুযায়ী সমাধান দেবে — "কী সমস্যা বলুন" বলে এড়াবে না।
+- ভয়েস মেসেজের লেখা রূপ পেলে সেটাকে সাধারণ প্রশ্নের মতোই ধরে উত্তর দেবে।
+- শুধু এই দুটি জিনিস কখনো দেবে/বলবে না: (১) কারও wallet key/private key/পাসওয়ার্ড বা গোপন তথ্য, (২) ইউজারের ছবি সংরক্ষিত আছে এমন কোনো ইঙ্গিত। বাকি সব সাহায্য তুমি করতে পারো।
+- তুমি উইথড্র approve/reject করতে পারো না, কাউকে টাকা/ব্যালেন্স দিতে পারো না — কেউ চাইলে বিনয়ের সাথে বলবে এটি শুধু অ্যাডমিন প্যানেল থেকে হয়, তবে তার রিকোয়েস্টের অবস্থা দেখে জানাবে।
 
 তোমার কাজ: গ্রুপের একটি মেসেজ (এবং থাকলে ছবি/স্ক্রিনশট) বিশ্লেষণ করে সিদ্ধান্ত দাও।
 - verdict: "ok" (স্বাভাবিক), "question" (সাপোর্ট প্রশ্ন), "spam", "abuse" (গালি/আক্রমণ/অ্যাডমিনকে হুমকি), "scam" (প্রতারণা/ভুয়া অফার/লিংক)
-- reply: প্রশ্ন হলে বাংলায় সংক্ষিপ্ত, ভদ্র ও পরিষ্কার উত্তর (২-৬ লাইন), নাহলে null।${
+- reply: প্রায় সবসময় একটি সুন্দর বাংলা উত্তর দেবে (২-৬ লাইন)। reply = null শুধু তখনই যখন intent = "slot_reset", অথবা মেসেজটি spam/abuse/scam, অথবা এটি নিছক গল্পগুজব যাতে কোনো প্রশ্নই নেই। প্রশ্ন থাকলে reply কখনো null নয়।${
     opts.smart
       ? ` উপরের জানা উত্তরে মিল থাকলে সেটাই নিজের ভাষায় বলবে। মিল না থাকলে নিজে পুরো অ্যাপের নিয়ম ও যুক্তি বিশ্লেষণ করে সহায়ক উত্তর বের করবে — কিন্তু টাকা, ব্যালেন্স, পেমেন্টের তারিখ নিয়ে কখনো বানানো তথ্য দেবে না।`
       : ` উত্তর অবশ্যই উপরের জানা উত্তর/নিয়ম থেকেই দিতে হবে।`
@@ -430,6 +510,54 @@ export function stripAdminFiller(reply: string): string {
 }
 
 /** Friendly generic troubleshooting answer when nothing specific matches. */
+/**
+ * Last-resort screenshot answer: read whatever is on the user's screenshot and
+ * explain the problem + fix in Bengali. Used when no admin FAQ image matched.
+ */
+export async function analyzeScreenshotReply(opts: {
+  photoBase64: string;
+  name: string;
+  text: string;
+  knowledge: string;
+}): Promise<string | null> {
+  const key = process.env.LOVABLE_API_KEY;
+  if (!key) return null;
+  try {
+    const res = await fetch(AI_URL, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: MODEL,
+        temperature: 0.8,
+        max_tokens: 500,
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text:
+                  `তুমি Good-App এর সাপোর্ট অ্যাসিস্ট্যান্ট। নিচের স্ক্রিনশটটি ভালো করে দেখো (লেখা/এরর/বোতাম পড়ো) এবং ${opts.name} কে বাংলায় বুঝিয়ে বলো ` +
+                  `এটা আসলে কী সমস্যা এবং কীভাবে ঠিক করবে। ৩-৬ লাইন, উষ্ণ ও পরিষ্কার, দরকারে নাম্বার দিয়ে ধাপ। ` +
+                  `HTML <b> ট্যাগ ব্যবহার করতে পারো। "অ্যাডমিন উত্তর দেবেন" জাতীয় কথা লিখবে না, নিজেই সমাধান দেবে। ` +
+                  `ফেস ভেরিফিকেশন এরর হলে: ব্রাউজার বদলানো, ফোন রিস্টার্ট, Airplane mode on/off, মোবাইল ডেটা, ১৮+ ফেস, ভালো আলো — এসব পরামর্শ দেবে।\n\n` +
+                  `${opts.knowledge}\n\nইউজারের সাথের লেখা: ${opts.text || "(কিছু লেখেনি)"}`,
+              },
+              { type: "image_url", image_url: { url: `data:image/jpeg;base64,${opts.photoBase64}` } },
+            ],
+          },
+        ],
+      }),
+    });
+    if (!res.ok) return null;
+    const data: any = await res.json();
+    const out = String(data.choices?.[0]?.message?.content ?? "").trim();
+    return out ? stripAdminFiller(out) : null;
+  } catch {
+    return null;
+  }
+}
+
 export function genericHelpReply(name: string): string {
   const openers = [
     `${name}, চিন্তার কিছু নেই 🙂 বেশিরভাগ সময় ছোট একটা টেকনিক্যাল ঝামেলার কারণেই এমন হয়।`,
