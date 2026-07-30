@@ -501,11 +501,15 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           // The user changed the subject → forget the pending question and
           // answer what they actually asked now.
           const answering =
-            sess?.intent === "withdraw_status" || sess?.intent === "verification_dates" || sess?.intent === "account_info"
-              ? looksLikeUidAnswer
-              : sess?.step === "await_slot"
-                ? looksLikeSlotAnswer
-                : looksLikeUidAnswer || looksLikeSlotAnswer;
+            sess?.step === "offer_reset"
+              ? isAffirmation(norm) || looksLikeUidAnswer ||
+                /(রিসেট|reset|হ্যাঁ|হা|জি|করে দিন|kore din|kore den|chai|চাই)/i.test(norm)
+              : sess?.intent === "withdraw_status" || sess?.intent === "verification_dates" || sess?.intent === "account_info"
+                ? looksLikeUidAnswer
+                : sess?.step === "await_slot"
+                  ? looksLikeSlotAnswer
+                  : looksLikeUidAnswer || looksLikeSlotAnswer;
+
           if (aliveRaw && sess && !answering && !isCancel && questionish) {
             await clearSession();
           }
