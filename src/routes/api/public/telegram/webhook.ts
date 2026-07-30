@@ -400,6 +400,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         const asksOwnAccount =
           !pendingWithdrawQuestion &&
           !reportsProblem &&
+          !howToTopic &&
           (
             (/(আমার|amar|amr|my|আমি|ami|nijer|নিজের|acount|account|একাউন্ট|অ্যাকাউন্ট)/i.test(norm) &&
               /(refer|reffer|রেফার|ব্যালেন্স|balance|verify|ভেরিফাই|verification|ভেরিফিকেশন|face|ফেস|slot|স্লট|mining|মাইনিং|bonus|বোনাস|টাকা|taka|tk|income|ইনকাম|status|স্ট্যাটাস|details|ডিটেইলস|koto|কত|koita|কয়টা|kota|hoyeche|hoyche|hoise|আছে|ache|list|লিস্ট|তালিকা)/i.test(norm)) ||
@@ -414,6 +415,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           /(face|ফেস|mukh|মুখ|scan|স্ক্যান|ছবি|photo|ফটো|pic|পিক)[^\n]{0,120}(ki koren|ki koro|কী করেন|কি করেন|কি করো|কি করেন|নিয়ে.*করেন|নিয়া.*করেন|use|ব্যবহার|sell|বিক্রি|share|শেয়ার|data|ডাটা|তথ্য)/i.test(norm) ||
           /(fau fau|ফাউ ফাউ|free|ফ্রি|tk|টাকা|payment|পেমেন্ট)[^\n]{0,120}(dicche|দিচ্ছে|dei|দেয়|দেন|দেয়)[^\n]{0,160}(face|ফেস|mukh|মুখ|ছবি|photo|ফটো)/i.test(norm);
 
+        const { detectHowTo, howToReply } = await import("@/lib/telegram-knowledge.server");
         const howToTopic = detectHowTo(norm);
 
 
@@ -1062,6 +1064,14 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               console.error("[tg] slot earning reply failed", e);
             }
           }
+        }
+
+        // ---- "কিভাবে withdraw/password reset করব?" → সরাসরি নিয়ম, UID নয়
+        if (howToTopic && settings.auto_reply_enabled && !photoBase64) {
+          const reply = howToReply(senderName, howToTopic);
+          await sendMessage(chatId, reply, msg.message_id);
+          await logMessage("question", `how-to:${howToTopic}`, reply, null);
+          return Response.json({ ok: true, flow: "how-to" });
         }
 
         // ---- "ফেস নিয়ে আপনারা কী করেন?" → privacy/security answer, not account lookup
