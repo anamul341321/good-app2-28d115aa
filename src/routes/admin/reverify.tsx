@@ -56,14 +56,16 @@ function ReverifyQueue() {
         {run.isPending ? (progress || "চেক চলছে…") : "Whitelist auto-check চালু"}
       </button>
 
-      <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold px-1">
-        Total in queue: {rows.length} · Ready now: {ready.length} · Auto চেক প্রতি ৫ মিনিটে
-      </p>
+
+
 
       {byUser && byUser.length > 0 && (
         <div className="space-y-2">
           <p className="text-[10px] uppercase tracking-widest text-violet font-bold px-1 flex items-center gap-1">
-            <User className="w-3 h-3" /> By user ({byUser.length})
+            <User className="w-3 h-3" /> ইউজার অনুযায়ী ({byUser.length})
+          </p>
+          <p className="text-[10px] text-muted-foreground px-1 leading-relaxed">
+            🔴 Whitelist নেই — এখনই রি-ভেরিফাই দরকার · ⚡ সময় হয়ে গেছে — রি-ভেরিফাই করা যাবে · ⏳ সময় হয়নি
           </p>
           {byUser.map((u: any) => (
             <Link key={u.user_id} to="/admin/user/$userId" params={{ userId: u.user_id }}
@@ -74,14 +76,15 @@ function ReverifyQueue() {
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-black truncate">{u.display_name || u.phone_number || "—"}</p>
                 <p className="text-[10px] text-muted-foreground truncate">
-                  {u.urgent > 0 && <span className="text-rose font-black">🔴 {u.urgent} urgent · </span>}
-                  {u.ready > 0 && <span className="text-amber font-black">⚡ {u.ready} ready · </span>}
-                  {u.waiting > 0 && <span>⏳ {u.waiting} waiting</span>}
+                  {u.urgent > 0 && <span className="text-rose font-black">🔴 {u.urgent} টি whitelist নেই · </span>}
+                  {u.ready > 0 && <span className="text-amber font-black">⚡ {u.ready} টি সময় হয়েছে · </span>}
+                  {u.waiting > 0 && <span>⏳ {u.waiting} টি অপেক্ষায়</span>}
                 </p>
               </div>
               <span className="text-muted-foreground text-xs">→</span>
             </Link>
           ))}
+
         </div>
       )}
 

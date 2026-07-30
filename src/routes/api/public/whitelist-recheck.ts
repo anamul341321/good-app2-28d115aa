@@ -29,7 +29,8 @@ export const Route = createFileRoute("/api/public/whitelist-recheck")({
           .order("started_at", { ascending: false })
           .limit(1);
         const stale = running?.[0]
-          && Date.now() - new Date(running[0].started_at as string).getTime() > 10 * 60 * 1000;
+          && Date.now() - new Date(running[0].started_at as string).getTime() > 4 * 60 * 1000;
+
         if (running?.[0] && !stale) {
           return Response.json({ ok: true, skipped: "already-running" });
         }
