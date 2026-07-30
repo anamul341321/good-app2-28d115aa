@@ -1120,6 +1120,8 @@ export type Database = {
           flipped: number
           heartbeat_at: string
           id: string
+          lease_token: string | null
+          lease_until: string | null
           pending_checked: number
           pending_cursor: string | null
           pending_promoted: number
@@ -1140,6 +1142,8 @@ export type Database = {
           flipped?: number
           heartbeat_at?: string
           id?: string
+          lease_token?: string | null
+          lease_until?: string | null
           pending_checked?: number
           pending_cursor?: string | null
           pending_promoted?: number
@@ -1160,6 +1164,8 @@ export type Database = {
           flipped?: number
           heartbeat_at?: string
           id?: string
+          lease_token?: string | null
+          lease_until?: string | null
           pending_checked?: number
           pending_cursor?: string | null
           pending_promoted?: number
@@ -1227,6 +1233,10 @@ export type Database = {
     }
     Functions: {
       claim_reverify_bonus: { Args: { _user_id: string }; Returns: number }
+      claim_whitelist_run: {
+        Args: { _lease_token: string; _run_id: string }
+        Returns: boolean
+      }
       create_recharge_request: {
         Args: {
           _amount: number
