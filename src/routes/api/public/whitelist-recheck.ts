@@ -171,13 +171,27 @@ export const Route = createFileRoute("/api/public/whitelist-recheck")({
             affectedUsers.add(attempt.user_id);
             pendingPromoted++;
           }
+          batches++;
+          await touchRun({ batches_done: batches, pending_checked: pendingChecked, pending_promoted: pendingPromoted, restored });
         }
 
         await Promise.all(
           Array.from(affectedUsers).map((uid) => supabaseAdmin.rpc("settle_mining", { _user_id: uid })),
         );
 
+        await touchRun({
+          status: "done",
+          finished_at: new Date().toISOString(),
+          wallets_checked: checked,
+          batches_done: batches,
+          flipped,
+          restored,
+          pending_checked: pendingChecked,
+          pending_promoted: pendingPromoted,
+        });
+
         return Response.json({ ok: true, checked, flipped, restored, pendingChecked, pendingPromoted, affectedUsers: affectedUsers.size });
+
       },
     },
   },
