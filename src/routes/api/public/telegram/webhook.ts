@@ -852,6 +852,19 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return Response.json({ ok: true, flow: "video", actions });
         }
 
+        // ---- "একাউন্ট/ভেরিফাই হয় না" → browser + face rules -----------------
+        if (decision.intent === "verify_help" && !decision.should_delete
+            && settings.auto_reply_enabled) {
+          const { verifyTipsReply } = await import("@/lib/telegram-knowledge.server");
+          const reply = verifyTipsReply(senderName);
+          await sendMessage(chatId, reply, msg.message_id);
+          actions.push("verify-help");
+          await logMessage(decision.verdict, actions.join(","), reply, matchedUid);
+          return Response.json({ ok: true, flow: "verify_help", actions });
+        }
+
+
+
 
 
         // ---- screenshot fallback before normal text reply ---------------------
