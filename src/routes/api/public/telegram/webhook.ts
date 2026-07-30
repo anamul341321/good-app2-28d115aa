@@ -299,7 +299,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           if (namedUser) return namedUser[1].trim();
           const banglaName = s.match(/([\u0980-\u09FF]{2,}(?:\s+[\u0980-\u09FF]{2,})?)\s*(?:এর|র)\s+(?:ফেস|ভেরিফাই|ভেরিফিকেশন)/i);
           if (banglaName) return banglaName[1].trim();
-          const only = s.trim().match(/^[#\s]*([A-Za-z0-9]{2,10})[\s.]*$/);
+          const only = s.trim().match(/^[#\s]*(\d{2,10}|[A-Za-z0-9]{6,10})[\s.]*$/);
           if (only) return only[1].trim();
           return null;
         };
