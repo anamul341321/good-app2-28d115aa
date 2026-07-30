@@ -39,8 +39,9 @@ export function WhitelistMonitor() {
           <p className="text-[11px] uppercase tracking-widest font-black text-cyan">Auto whitelist check</p>
         </div>
         <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${live ? "bg-emerald text-white" : "bg-surface-2 text-muted-foreground border border-border"}`}>
-          {live ? "🟢 চলছে এখন" : "⏳ অপেক্ষায়"}
+          {live ? "🟢 চলছে এখন" : stuck ? "⚠️ আটকে গেছে — আবার শুরু হবে" : "⏳ অপেক্ষায়"}
         </span>
+
       </div>
 
       {isLoading ? (
