@@ -1343,10 +1343,16 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           // never because a general question happened to contain a number
           // (e.g. "10 ta verify korar por kotodin por re verify?").
           const explicitUid = hasExplicitUid;
-          const onlyNumber = /^[#\s]*([A-Za-z0-9]{2,9})[\s.]*$/.test(norm.trim());
+          // A bare word like "yes", "ok", "thanks" is NOT a UID. Only accept a
+          // pure number, or a referral-code-like token that contains a digit.
+          const bareToken = norm.trim().match(/^[#\s]*([A-Za-z0-9]{2,9})[\s.!]*$/)?.[1] ?? null;
+          const isUidLike = (v: string | null) =>
+            !!v && (/^\d{2,9}$/.test(v) || (/\d/.test(v) && /^[A-Za-z0-9]{6,9}$/.test(v)));
+          const onlyValue = isUidLike(bareToken) ? bareToken : null;
           const explicitUidValue = norm.match(/(?:uid|ইউআইডি|আইডি|আই ডি|id\s*no|আইডি নাম্বার)\s*[:#-]?\s*([A-Za-z0-9]{2,10})/i)?.[1] ?? null;
-          const onlyValue = norm.trim().match(/^[#\s]*([A-Za-z0-9]{2,9})[\s.]*$/)?.[1] ?? null;
-          const candidate = explicitUid ? (explicitUidValue || decision.uid || pickUid(norm)) : onlyNumber ? onlyValue : null;
+          const rawCandidate = explicitUid ? (explicitUidValue || decision.uid || pickUid(norm)) : onlyValue;
+          const candidate = isUidLike(rawCandidate) ? rawCandidate : null;
+
 
 
           if (candidate) {
