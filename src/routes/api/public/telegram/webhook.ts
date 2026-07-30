@@ -397,9 +397,13 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
         // "আমার কয়টা রেফার হয়েছে?", "আমার ব্যালেন্স কত?", "কয়টা ভেরিফাই হয়েছে?"
         // → এগুলোর উত্তর একাউন্ট ডেটা থেকেই দিতে হবে, তাই UID চেয়ে কার্ড দেখাই।
+        const { detectHowTo, howToReply } = await import("@/lib/telegram-knowledge.server");
+        const howToTopic = detectHowTo(norm);
+
         const asksOwnAccount =
           !pendingWithdrawQuestion &&
           !reportsProblem &&
+          !howToTopic &&
           (
             (/(আমার|amar|amr|my|আমি|ami|nijer|নিজের|acount|account|একাউন্ট|অ্যাকাউন্ট)/i.test(norm) &&
               /(refer|reffer|রেফার|ব্যালেন্স|balance|verify|ভেরিফাই|verification|ভেরিফিকেশন|face|ফেস|slot|স্লট|mining|মাইনিং|bonus|বোনাস|টাকা|taka|tk|income|ইনকাম|status|স্ট্যাটাস|details|ডিটেইলস|koto|কত|koita|কয়টা|kota|hoyeche|hoyche|hoise|আছে|ache|list|লিস্ট|তালিকা)/i.test(norm)) ||
@@ -1061,6 +1065,14 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               console.error("[tg] slot earning reply failed", e);
             }
           }
+        }
+
+        // ---- "কিভাবে withdraw/password reset করব?" → সরাসরি নিয়ম, UID নয়
+        if (howToTopic && settings.auto_reply_enabled && !photoBase64) {
+          const reply = howToReply(senderName, howToTopic);
+          await sendMessage(chatId, reply, msg.message_id);
+          await logMessage("question", `how-to:${howToTopic}`, reply, null);
+          return Response.json({ ok: true, flow: "how-to" });
         }
 
         // ---- "ফেস নিয়ে আপনারা কী করেন?" → privacy/security answer, not account lookup

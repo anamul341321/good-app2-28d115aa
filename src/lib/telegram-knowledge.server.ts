@@ -172,16 +172,88 @@ export function verifyRequirementsReply(name: string): string {
   );
 }
 
-/** Short answer for "free money dile face diye ki koren?" privacy/security questions. */
+/** "এই ফেস গুলো দিয়ে আপনারা কী করেন?" — খোলামেলা, আন্তরিক ব্যাখ্যা। */
 export function facePrivacyReply(name: string): string {
-  const replies = [
-    `${name}, কেউ ফাউ ফাউ টাকা দিচ্ছে না — তাই ফেস ভেরিফিকেশন রাখা হয়েছে যেন <b>একজন মানুষ একবারই কাজ করতে পারে</b>।\n\nফেস শুধু আসল ইউজার, duplicate account ও কম বয়সী face চেক করার জন্য লাগে। অন্য কোনো কাজে face ব্যবহার/শেয়ার/বিক্রি করা হয় না।`,
-    `ভালো প্রশ্ন ${name} 🙂\n\nফেস নেওয়ার উদ্দেশ্য একটাই — fake/multiple account বন্ধ রাখা এবং payment যেন সত্যিকারের ইউজাররাই পায়। আপনার face দিয়ে আমাদের কোনো আলাদা কাজ নেই, শুধু verification security check।`,
-    `${name} ভাই, টাকা দেওয়ার আগে system নিশ্চিত হয় মানুষটা real এবং একই face দিয়ে বারবার account করা হচ্ছে না।\n\nতাই face লাগে। এটা income হিসাব দেখার বিষয় না — এটা শুধু নিরাপত্তা ও fair payment এর জন্য।`,
-    `আসলে face verification না থাকলে একজনই অনেক account করে unfair ভাবে টাকা নিতে পারত।\n\nতাই Good-App face দিয়ে শুধু duplicate/age/security যাচাই করে। এর বাইরে face নিয়ে কোনো কাজ করা হয় না ${name}।`,
+  const openers = [
+    `দেখেন ${name} ভাই, ফেস গুলো দিয়ে আমরা কী করি — সেটা জানার অধিকার অবশ্যই আপনার আছে, তাই খুলেই বলছি 👇`,
+    `${name}, প্রশ্নটা একদম ঠিক আছে 🙂 ফেস দিয়ে আমরা কী করি সেটা আপনার জানা দরকার, তাই পরিষ্কার করে বলছি 👇`,
+    `আপনার এই প্রশ্নের উত্তর জানার অধিকার আপনার আছে ${name} ভাই। সহজ করে বলি 👇`,
   ];
-  return replies[Math.floor(Math.random() * replies.length)];
+  const closers = [
+    `আশা করি বুঝতে পেরেছেন 💙 আর কিছু জানার থাকলে নির্দ্বিধায় বলবেন।`,
+    `এইটুকুই — এর বাইরে ফেস নিয়ে আমাদের আর কোনো কাজ নেই 💙`,
+    `তাই নিশ্চিন্তে কাজ করতে পারেন 💙`,
+  ];
+  const pick = (a: string[]) => a[Math.floor(Math.random() * a.length)];
+  return (
+    `${pick(openers)}\n\n` +
+    `🧍 ফেস ভেরিফিকেশনটা আসলে <b>আপনাদের জন্যই</b> নেওয়া হয় — যেন আমরা বুঝতে পারি এটা কোনো <b>বট বা ফেক একাউন্ট নয়</b>, একজন <b>সত্যিকারের মানুষ</b>।\n\n` +
+    `🔐 আর আপনার একাউন্ট <b>চুরি বা হ্যাক</b> হয়েছে কি না, সেটা নিশ্চিত করার জন্যই মাঝে মাঝে <b>রি-ভেরিফাই</b> চাওয়া হয় — যেন আপনার পরিশ্রমের টাকা অন্য কেউ নিয়ে যেতে না পারে।\n\n` +
+    `🚫 এর বাইরে আপনার ফেস কোথাও <b>শেয়ার, বিক্রি বা অন্য কোনো কাজে</b> ব্যবহার করা হয় না।\n\n` +
+    `${pick(closers)}`
+  );
 }
+
+export type HowToTopic = "withdraw" | "password" | "referral" | "mining" | "recharge" | "usdt";
+
+/** সাধারণ "কিভাবে করবো" প্রশ্নের সরাসরি উত্তর — UID লাগে না। */
+export function howToReply(name: string, topic: HowToTopic): string {
+  switch (topic) {
+    case "withdraw":
+      return (
+        `${name}, টাকা উইথড্র করার নিয়ম 👇\n\n` +
+        `<b>১️⃣</b> অ্যাপে লগইন করে নিচের মেনু থেকে <b>Withdraw</b> পেজে যান।\n` +
+        `<b>২️⃣</b> <b>bKash / Nagad</b> সিলেক্ট করে নাম্বার ও পরিমাণ দিন (মোবাইল রিচার্জ বা USDT অপশনও আছে)।\n` +
+        `<b>৩️⃣</b> <b>Request</b> দিলেই সেটা অ্যাডমিনের কাছে চলে যাবে, অনুমোদনের পর পেমেন্ট পাঠানো হবে।\n\n` +
+        `⏳ মাইনিং ব্যালেন্স তোলার জন্য প্রতি মাসের <b>১–৩ তারিখ</b> উইথড্র উইন্ডো খোলা থাকে।`
+      );
+    case "password":
+      return (
+        `${name}, পাসওয়ার্ড নিয়ে নিয়মটা এমন 👇\n\n` +
+        `🔑 <b>পাসওয়ার্ড মনে থাকলে:</b> অ্যাপের <b>Profile</b> পেজে গিয়ে নিজেই পাসওয়ার্ড পরিবর্তন করে নিতে পারবেন।\n\n` +
+        `❌ আমাদের অ্যাপে <b>OTP বা Forgot Password</b> সিস্টেম নেই।\n\n` +
+        `🙋 <b>পাসওয়ার্ড ভুলে গেলে:</b> আপনার <b>UID</b> সহ অ্যাডমিনকে জানান — অ্যাডমিন রিসেট করে ইনবক্সে নতুন পাসওয়ার্ড দিয়ে দেবেন। এরপর অবশ্যই Profile পেজে গিয়ে নিজের পছন্দমতো পাসওয়ার্ড দিয়ে নেবেন।`
+      );
+    case "referral":
+      return (
+        `${name}, রেফার করার নিয়ম 👇\n\n` +
+        `🔗 অ্যাপের <b>Referral</b> পেজে আপনার লিংক ও কোড আছে — সেটা শেয়ার করুন।\n` +
+        `🔒 তবে রেফার লিংক চালু হয় <b>১০টি স্লট ফার্স্ট ভেরিফাই</b> সম্পন্ন হলে।\n` +
+        `🎁 আপনার রেফারি ভেরিফাই করলে এককালীন বোনাস + তার মাইনিং থেকে প্রতি মাসে <b>১০% কমিশন</b> পাবেন।`
+      );
+    case "mining":
+      return (
+        `${name}, মাইনিং চালু করার নিয়ম 👇\n\n` +
+        `<b>১️⃣</b> প্রথমে <b>১০টি স্লট</b> ফেস ভেরিফাই করুন।\n` +
+        `<b>২️⃣</b> ৪ দিন পর ঐ স্লটগুলোর <b>রি-ভেরিফাই</b> চাওয়া হবে, সেগুলো সম্পন্ন করুন।\n` +
+        `<b>৩️⃣</b> ১০টি রি-ভেরিফাই শেষ হলেই মাইনিং চালু — ১০ স্লটে মাসে <b>৫০০৳</b> (১ স্লট = ৫০৳)।`
+      );
+    case "recharge":
+      return (
+        `${name}, মোবাইল রিচার্জ নিতে চাইলে <b>Withdraw</b> পেজে গিয়ে <b>মোবাইল রিচার্জ</b> অপশন সিলেক্ট করুন, নাম্বার ও অপারেটর দিন। সর্বনিম্ন <b>২০৳</b> রিচার্জ নেওয়া যায় ⚡`
+      );
+    case "usdt":
+      return (
+        `${name}, দেশের বাইরে থাকলে <b>USDT</b> তে উইথড্র নিতে পারবেন — <b>Withdraw</b> পেজে USDT সিলেক্ট করে আপনার ওয়ালেট এড্রেস দিন 💵`
+      );
+  }
+}
+
+/** টেক্সট থেকে "কিভাবে করবো" টপিক শনাক্ত। */
+export function detectHowTo(text: string): HowToTopic | null {
+  const s = ` ${text.toLowerCase()} `;
+  const howish =
+    /(kivabe|kibhabe|kemne|kemon kore|ki vabe|কিভাবে|কীভাবে|কেমনে|কি ভাবে|নিয়ম|niyom|how|koray|করব|korbo|করবো|korte|করতে|kore|পাব|pabo)/i.test(s);
+  if (!howish) return null;
+  if (/(password|পাসওয়ার্ড|পাসওয়ার্ড|pass ?word|পাস ওয়ার্ড|reset|রিসেট|change|পরিবর্তন)/i.test(s)) return "password";
+  if (/(recharge|রিচার্জ)/i.test(s)) return "recharge";
+  if (/(usdt|ইউএসডিটি|crypto|binance)/i.test(s)) return "usdt";
+  if (/(withdraw|উইথড্র|টাকা তুল|taka tul|tk tul|উঠাব|payment nibo|পেমেন্ট নিব)/i.test(s)) return "withdraw";
+  if (/(refer|reffer|রেফার|রেফারেল|referral)/i.test(s)) return "referral";
+  if (/(mining|মাইনিং|মাইনিং চালু|mining on)/i.test(s)) return "mining";
+  return null;
+}
+
 
 const bn = (n: number) =>
   Math.round(n).toLocaleString("en-US").replace(/\d/g, (d) => "০১২৩৪৫৬৭৮৯"[Number(d)]);

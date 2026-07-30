@@ -58,19 +58,39 @@ export function stripBrandName(input: string): string {
 }
 
 /** Send a Telegram message, replying to the user's exact message when provided. */
-export function sendMessage(chatId: string | number, text: string, _replyTo?: number) {
-  const body: Record<string, unknown> = {
-    chat_id: chatId,
-    text: sanitizeTelegramHtml(text).slice(0, 4000),
-    parse_mode: "HTML",
-    disable_web_page_preview: true,
-  };
-  if (_replyTo) {
-    body.reply_to_message_id = _replyTo;
-    body.allow_sending_without_reply = true;
+export async function sendMessage(chatId: string | number, text: string, _replyTo?: number) {
+  const full = sanitizeTelegramHtml(text);
+  // Telegram caps a message at 4096 chars — আগে কেটে ফেলা হতো, তাই লেখা অসম্পূর্ণ
+  // দেখাতো। এখন বড় উত্তর কয়েক ভাগে পাঠানো হয়।
+  const chunks: string[] = [];
+  let rest = full;
+  while (rest.length > 3800) {
+    let cut = rest.lastIndexOf("\n\n", 3800);
+    if (cut < 1500) cut = rest.lastIndexOf("\n", 3800);
+    if (cut < 1500) cut = rest.lastIndexOf(" ", 3800);
+    if (cut < 1500) cut = 3800;
+    chunks.push(rest.slice(0, cut));
+    rest = rest.slice(cut).trimStart();
   }
-  return api("sendMessage", body);
+  chunks.push(rest);
+
+  let last: unknown = null;
+  for (let i = 0; i < chunks.length; i++) {
+    const body: Record<string, unknown> = {
+      chat_id: chatId,
+      text: chunks[i],
+      parse_mode: "HTML",
+      disable_web_page_preview: true,
+    };
+    if (_replyTo && i === 0) {
+      body.reply_to_message_id = _replyTo;
+      body.allow_sending_without_reply = true;
+    }
+    last = await api("sendMessage", body);
+  }
+  return last;
 }
+
 
 /**
  * OCR: read every visible line of text from a screenshot. Image-vs-image
