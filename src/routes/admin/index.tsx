@@ -30,7 +30,10 @@ function AdminDashboard() {
 
   return (
     <div className="space-y-4">
+      <WhitelistMonitor />
+
       {/* Money panel */}
+
       <div className="grid grid-cols-2 gap-3">
         <BigStat label="মোট মাইনিং জমা" value={money ? money.totalAccrued.toFixed(2) : "…"} unit="TK" accent="cyan" icon={<TrendingUp className="w-4 h-4" />} />
         <BigStat label="মোট Paid Out" value={money ? money.totalPaid.toFixed(2) : "…"} unit="TK" accent="emerald" icon={<CheckCircle2 className="w-4 h-4" />} />
