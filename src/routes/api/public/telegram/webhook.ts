@@ -773,6 +773,31 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           }
         }
 
+        // ---- "X টা স্লট/রি-ভেরিফাই করলে কত টাকা?" → সঠিক হিসাব ----------------
+        if (!photoBase64 && settings.auto_reply_enabled && text.trim()) {
+          const t = text.trim();
+          const bnDigits = t.replace(/[০-৯]/g, (d) => String("০১২৩৪৫৬৭৮৯".indexOf(d)));
+          const money =
+            /(koto taka|koto tk|কত টাকা|কতো টাকা|income|ইনকাম|আয়|earn|kototaka|koto pabo|কত পাবো|কত পাব|hisab|হিসাব)/i.test(bnDigits);
+          const slotCtx =
+            /(slot|স্লট|re verify|re-verify|reverify|রি ভেরিফ|রি-ভেরিফ|verification|ভেরিফিকেশন|face)/i.test(bnDigits);
+          if (money && slotCtx) {
+            try {
+              const m = bnDigits.match(/(\d{1,4})\s*(ta|টা|টি|ti|slot|স্লট)?/);
+              const n = m ? Number(m[1]) : null;
+              const slots = n && n >= 1 && n <= 500 ? n : null;
+              const { loadRates, slotEarningReply } = await import("@/lib/telegram-knowledge.server");
+              const rates = await loadRates();
+              const reply = slotEarningReply(senderName, rates, slots);
+              await sendMessage(chatId, reply, msg.message_id);
+              await logMessage("question", `slot-earning:${slots ?? "general"}`, reply, null);
+              return Response.json({ ok: true, flow: "slot-earning" });
+            } catch (e) {
+              console.error("[tg] slot earning reply failed", e);
+            }
+          }
+        }
+
         // ---- "already tried, still not working" → think, don't repeat --------
         if (!photoBase64 && settings.auto_reply_enabled && text.trim() && lastBase) {
           const t = text.trim();

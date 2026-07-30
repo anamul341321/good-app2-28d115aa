@@ -170,3 +170,40 @@ export function verifyRequirementsReply(name: string): string {
     `এরপর ১০টি স্লট ফেস ভেরিফাই করলেই বোনাস শুরু, আর ৩–৪ দিন পর রি-ভেরিফাই করলে মাইনিং চালু হয়ে যায় 💙`
   );
 }
+
+const bn = (n: number) =>
+  Math.round(n).toLocaleString("en-US").replace(/\d/g, (d) => "০১২৩৪৫৬৭৮৯"[Number(d)]);
+
+/**
+ * "১৫টা রি-ভেরিফাই করলে মাসে কত ইনকাম?" — স্লট সংখ্যা অনুযায়ী সঠিক হিসাব।
+ * প্রতি ১০ স্লটে যা পাওয়া যায়, সেটাই স্লট অনুপাতে হিসাব করা হয়।
+ */
+export function slotEarningReply(name: string, r: AppRates, slots?: number | null): string {
+  const first = r.promoFirst ?? r.firstVerify;
+  const re = r.promoRe ?? r.reVerify;
+  const perSlotFirst = first / 10;
+  const perSlotRe = re / 10;
+  const perSlotTotal = perSlotFirst + perSlotRe;
+
+  const line = (n: number) =>
+    `• <b>${bn(n)} স্লট</b> → ১ম ভেরিফাই বোনাস ${bn(n * perSlotFirst)}৳ + রি-ভেরিফাই বোনাস ${bn(n * perSlotRe)}৳ = <b>${bn(n * perSlotTotal)}৳</b>`;
+
+  const head = slots
+    ? `${name}, ${bn(slots)}টি স্লটের হিসাবটা একদম পরিষ্কার করে বলছি 🙂\n\n` +
+      `✅ <b>${bn(slots)} স্লট রি-ভেরিফাই সম্পন্ন হলে আপনি পাবেন ${bn(slots * perSlotTotal)}৳ বোনাস</b> 💰\n` +
+      `(প্রতি ১০ স্লটে ${bn(first + re)}৳ হিসাবে — অর্থাৎ প্রতি স্লটে ${bn(perSlotTotal)}৳)\n\n`
+    : `${name}, স্লট অনুযায়ী আয়ের হিসাবটা এমন 👇\n\n`;
+
+  const table = [10, 15, 20, 30, 50]
+    .filter((n) => !slots || n !== slots)
+    .slice(0, 4)
+    .map(line)
+    .join("\n");
+
+  return (
+    head +
+    `📊 <b>উদাহরণ হিসাব:</b>\n${slots ? line(slots) + "\n" : ""}${table}\n\n` +
+    `⛏️ <b>এরপর মাইনিং:</b> রি-ভেরিফাই সম্পন্ন স্লটগুলোর মাইনিং চালু হয়ে যায়। যত বেশি স্লট, মাইনিং ব্যালেন্স তত বেশি বাড়বে — <b>স্লটের কোনো লিমিট নেই</b>, ইচ্ছেমতো স্লট বাড়িয়ে আয়ও বাড়াতে পারবেন 📈\n\n` +
+    `🏦 <b>উইথড্র:</b> বোনাসের টাকা যেকোনো সময়, আর মাইনিংয়ের টাকা প্রতি মাসের <b>১–৩ তারিখের</b> মধ্যে বিকাশ/নগদে তুলতে পারবেন 💙`
+  );
+}
