@@ -150,11 +150,21 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           const replyTo = msg.reply_to_message?.message_id ?? msg.message_id;
           const replyContextText = String(msg.reply_to_message?.text ?? msg.reply_to_message?.caption ?? "");
 
-          // "uid 4100 er details / card" → একাউন্ট কার্ড
-          const cardCmd = order.match(/(?:uid|ইউআইডি|আইডি)\s*[:#-]?\s*(\d{1,9})/i)
-            || replyContextText.match(/(?:uid|ইউআইডি|আইডি)\s*[:#-]?\s*(\d{1,9})/i);
-          if (cardCmd && /(details|ডিটেইলস|card|কার্ড|hisab|হিসাব|check|চেক|dekha|দেখা|info|তথ্য)/i.test(order)
+          // "uid 4100 er details" / "01720095454 ei account ta check koro" → একাউন্ট কার্ড
+          const refFrom = (s: string): string | null => {
+            const t = String(s || "");
+            const labeled = t.match(/(?:uid|ইউআইডি|আইডি|id)\s*[:#-]?\s*(\d{1,9})/i);
+            if (labeled) return labeled[1];
+            const phone = t.match(/(?:\+?88)?0?1[3-9]\d{8}\b/);
+            if (phone) return phone[0];
+            const bare = t.match(/(?<![\d@])(\d{2,7})(?![\d])/);
+            return bare ? bare[1] : null;
+          };
+          const accountRef = refFrom(order) || refFrom(replyContextText);
+          const cardCmd = accountRef ? ([accountRef, accountRef] as unknown as RegExpMatchArray) : null;
+          if (cardCmd && /(details|ডিটেইলস|card|কার্ড|hisab|হিসাব|check|চেক|chek|dekho|dekh|দেখো|dekha|দেখা|info|তথ্য|account|একাউন্ট|অ্যাকাউন্ট|somossa|সমস্যা|problem)/i.test(order)
               && !/(verify|verification|ভেরিফাই|ভেরিফিকেশন|face|ফেস|date|time|তারিখ|সময়|কবে|status|স্ট্যাটাস|রি\s*-?ভেরিফাই|re\s*-?verify|first|1st|প্রথম|১ম)/i.test(order)) {
+
             const { buildUserCard } = await import("@/lib/telegram-lookup.server");
             const res = await buildUserCard(cardCmd[1]);
             await sendMessage(
