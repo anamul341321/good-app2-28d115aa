@@ -661,6 +661,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             await logMessage(decision.verdict, actions.join(","), reply, res.found ? uid : null);
             return Response.json({ ok: true, flow: "withdraw_status", actions });
           }
+          const { withdrawEligibilityReply } = await import("@/lib/telegram-knowledge.server");
           const ask = pendingWithdrawQuestion
             ? `🧾 ${senderName}, পেন্ডিং/পেইড স্ট্যাটাস দেখতে আপনার <b>UID</b> নম্বরটি লিখুন।\nUID দিলে কোন রিকোয়েস্ট কখন দিয়েছেন সব দেখিয়ে দেব।`
             : withdrawEligibilityReply(senderName);
@@ -888,7 +889,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           // (e.g. "10 ta verify korar por kotodin por re verify?").
           const explicitUid = hasExplicitUid;
           const onlyNumber = /^[#\s]*([A-Za-z0-9]{2,9})[\s.]*$/.test(norm.trim());
-          const explicitUidValue = norm.match(/(?:uid|ইউআইডি|আইডি|আই ডি|id\s*no|আইডি নাম্বার)\s*[:#-]?\s*([A-Za-z0-9]{2,10})/i)?.[2] ?? null;
+          const explicitUidValue = norm.match(/(?:uid|ইউআইডি|আইডি|আই ডি|id\s*no|আইডি নাম্বার)\s*[:#-]?\s*([A-Za-z0-9]{2,10})/i)?.[1] ?? null;
           const onlyValue = norm.trim().match(/^[#\s]*([A-Za-z0-9]{2,9})[\s.]*$/)?.[1] ?? null;
           const candidate = explicitUid ? (explicitUidValue || decision.uid || pickUid(norm)) : onlyNumber ? onlyValue : null;
 
