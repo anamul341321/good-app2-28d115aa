@@ -50,6 +50,14 @@ export const Route = createFileRoute("/api/public/whitelist-recheck")({
     if (leaseError) return Response.json({ error: leaseError.message }, { status: 500 });
     if (!leaseClaimed) return Response.json({ ok: true, skipped: "worker-active" });
 
+    // Re-read the run AFTER winning the lease: another worker may have advanced
+    // the cursor/counters between our first read and the claim. Using the stale
+    // snapshot re-checked the same batches and inflated the counters.
+    const { data: fresh } = await supabaseAdmin.from("whitelist_runs").select("*").eq("id", run.id).maybeSingle();
+    if (fresh) run = fresh;
+
+
+
     const affected = new Set<string>();
     let phase = run.phase ?? "wallets";
     let walletCursor = run.wallet_cursor as string | null;
