@@ -460,14 +460,22 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
         if (photoBase64 && settings.auto_reply_enabled) {
           try {
-            const { matchFaqImage } = await import("@/lib/telegram-bot.server");
+            const { matchFaqImage, humanizeReply } = await import("@/lib/telegram-bot.server");
             const imageMatch = await matchFaqImage({ photoBase64, faq });
             if (imageMatch) {
               const matchedFaq = faq.find(
                 (f) => String(f.topic).trim().toLowerCase() === imageMatch.topic.trim().toLowerCase(),
               );
               if (matchedFaq?.answer) {
-                const reply = String(matchedFaq.answer).trim();
+                let recent: string[] = [];
+                if (msg.from?.id) {
+                  const { data: prev } = await supabaseAdmin
+                    .from("tg_messages").select("bot_reply")
+                    .eq("tg_user_id", msg.from.id)
+                    .order("created_at", { ascending: false }).limit(3);
+                  recent = (prev ?? []).map((p: any) => p.bot_reply).filter(Boolean);
+                }
+                const reply = await humanizeReply(String(matchedFaq.answer).trim(), text, recent);
                 await sendMessage(chatId, reply, msg.message_id);
                 await logMessage("question", `faq-image:${imageMatch.topic}:${imageMatch.confidence.toFixed(2)}`, reply, null);
                 return Response.json({ ok: true, flow: "faq-image-match", topic: imageMatch.topic });
@@ -477,6 +485,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             console.error("[tg] faq image match failed", e);
           }
         }
+
 
         let decision = {
           verdict: "ok" as const, reply: null as string | null,

@@ -211,11 +211,12 @@ IMAGE B = an admin-saved reference screenshot for the problem "${ref.topic}".
 
 Decide if they show the SAME app screen / same error / same problem.
 Ignore: crop, zoom, phone status bar, Telegram chat frame or bubbles, screenshot-of-a-screenshot, language of the phone UI, time, battery.
-Focus on: the app screen shown, headline/error text, buttons, illustration, overall layout.
+Focus on: the exact headline/error text, buttons, illustration, overall layout.
 
-Examples of a MATCH: both show GoodDollar "Something went wrong on our side..." face verification error; both show the "You must be 18 years or older" block; both show the same wallet/withdraw screen.
+BE STRICT about telling similar errors apart. Different error TEXT = different problem, even if the app, colours and layout look identical. For example "Something went wrong on our side" is NOT the same as "You must be 18 years or older", and neither is the same as a camera/permission or duplicate-face error. If the visible error sentence differs, answer same=false.
 
 Answer ONLY with JSON: {"same": true|false, "confidence": 0.0-1.0}`;
+
 
   const res = await fetch(AI_URL, {
     method: "POST",
@@ -266,14 +267,118 @@ export async function matchFaqImage(opts: {
     refs.map((r) => matchOneFaqImage(opts.photoBase64, r, key).catch(() => 0)),
   );
 
-  let bestIdx = -1;
-  let best = 0;
-  scores.forEach((s, i) => {
-    if (s > best) { best = s; bestIdx = i; }
-  });
-  if (bestIdx < 0 || best < 0.55) return null;
-  return { topic: refs[bestIdx].topic, confidence: best };
+  const ranked = refs
+    .map((r, i) => ({ ref: r, score: scores[i], idx: i }))
+    .sort((a, b) => b.score - a.score);
+
+  const top = ranked[0];
+  if (!top || top.score < 0.55) return null;
+
+  // When several saved screenshots score close together (same app, different
+  // error text) force the model to pick exactly one — otherwise every similar
+  // screenshot would get the first topic's answer.
+  const close = ranked.filter((r) => r.score >= 0.5 && top.score - r.score <= 0.2).slice(0, 4);
+  if (close.length > 1) {
+    const picked = await pickBestFaqImage(opts.photoBase64, close.map((c) => c.ref), key).catch(() => -1);
+    if (picked >= 0 && picked < close.length) {
+      return { topic: close[picked].ref.topic, confidence: Math.max(close[picked].score, 0.6) };
+    }
+  }
+
+  return { topic: top.ref.topic, confidence: top.score };
 }
+
+/** Forced-choice pass: show the user's screenshot next to the close candidates. */
+async function pickBestFaqImage(photoBase64: string, refs: FaqItem[], key: string): Promise<number> {
+  const content: any[] = [
+    {
+      type: "text",
+      text: `A user sent IMAGE A. Below are ${refs.length} admin reference screenshots (REF 1..${refs.length}), each for a DIFFERENT problem.
+
+Pick the ONE reference that shows the exact same error/screen as IMAGE A. Compare the visible error/headline text word by word — that is the deciding factor, not colours or layout.
+
+Reference topics:
+${refs.map((r, i) => `REF ${i + 1}: ${r.topic}`).join("\n")}
+
+Answer ONLY JSON: {"best": <1-${refs.length} or 0 if none really matches>}`,
+    },
+    { type: "text", text: "IMAGE A (user):" },
+    { type: "image_url", image_url: { url: `data:image/jpeg;base64,${photoBase64}` } },
+  ];
+  refs.forEach((r, i) => {
+    content.push({ type: "text", text: `REF ${i + 1} (${r.topic}):` });
+    content.push({ type: "image_url", image_url: { url: `data:image/jpeg;base64,${r.imageBase64}` } });
+  });
+
+  const res = await fetch(AI_URL, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ model: MODEL, temperature: 0, max_tokens: 40, messages: [{ role: "user", content }] }),
+  });
+  if (!res.ok) return -1;
+  const data: any = await res.json();
+  const m = String(data.choices?.[0]?.message?.content ?? "").match(/\{[\s\S]*\}/);
+  if (!m) return -1;
+  try {
+    const best = Number(JSON.parse(m[0]).best);
+    return Number.isFinite(best) && best >= 1 ? best - 1 : -1;
+  } catch {
+    return -1;
+  }
+}
+
+/**
+ * Rewrite a canned admin answer so it reads like a real person typed it —
+ * same facts, different wording/opening each time.
+ */
+export async function humanizeReply(answer: string, userText?: string, avoid?: string[]): Promise<string> {
+  const key = process.env.LOVABLE_API_KEY;
+  if (!key) return answer;
+  const tones = [
+    "বন্ধুর মতো সহজ ও আন্তরিক",
+    "শান্ত, ভরসা দেওয়া সাপোর্ট এজেন্টের মতো",
+    "ছোট ছোট লাইনে, একটু প্রাণবন্ত",
+    "ভদ্র ও গুছানো, একটু আনুষ্ঠানিক",
+  ];
+  const tone = tones[Math.floor(Math.random() * tones.length)];
+  try {
+    const res = await fetch(AI_URL, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: MODEL,
+        temperature: 1,
+        max_tokens: 700,
+        messages: [
+          {
+            role: "user",
+            content: `তুমি Good-App এর সাপোর্ট এজেন্ট (মানুষ, বট নয়)। নিচের উত্তরটা একই তথ্য রেখে নিজের ভাষায় নতুন করে লিখো।
+
+নিয়ম:
+- কোনো তথ্য, নিয়ম, সংখ্যা, লিংক বাদ দেবে না বা বানাবে না।
+- টোন: ${tone}।
+- ছোট ছোট লাইন, মাঝে ফাঁকা লাইন, দরকারে ২-৩টা ইমোজি। HTML ট্যাগ (<b>) থাকলে রাখতে পারো, Markdown ব্যবহার করবে না।
+- শুরুটা প্রতিবার আলাদা হবে, রোবটের মতো একই বাক্য নয়।
+${avoid?.length ? `- আগের এই রিপ্লাইগুলোর মতো শোনাবে না:\n${avoid.slice(0, 3).map((a) => `"${a.slice(0, 160)}"`).join("\n")}` : ""}
+${userText ? `\nইউজার বলেছে: "${userText.slice(0, 300)}"` : ""}
+
+মূল উত্তর:
+"""${answer}"""
+
+শুধু নতুন লেখা উত্তরটা দাও, আর কিছু নয়।`,
+          },
+        ],
+      }),
+    });
+    if (!res.ok) return answer;
+    const data: any = await res.json();
+    const out = String(data.choices?.[0]?.message?.content ?? "").trim();
+    return out.length > 20 ? out : answer;
+  } catch {
+    return answer;
+  }
+}
+
 
 /** Transcribe a Telegram voice note / audio clip to text (Bengali friendly). */
 export async function transcribeAudio(base64: string, format: string): Promise<string | null> {
