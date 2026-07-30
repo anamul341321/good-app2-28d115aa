@@ -1775,14 +1775,20 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             && settings.auto_reply_enabled && (settings as any).escalate_enabled !== false) {
           const { escalateReply, smartAnswer } = await import("@/lib/telegram-bot.server");
           const { loadRates, knowledgeText } = await import("@/lib/telegram-knowledge.server");
-          const smart = await smartAnswer({
+          const { appRulebook } = await import("@/lib/telegram-app-rules.server");
+          const { agentAnswer } = await import("@/lib/telegram-agent.server");
+          const rates2 = await loadRates();
+          const base2 = {
             name: senderName,
             question: text,
-            knowledge: knowledgeText(await loadRates()),
+            knowledge: knowledgeText(rates2),
             history: convoHistory,
             pastReplies: convoReplies,
             recall: recallText,
-          });
+          };
+          const smart =
+            (await agentAnswer({ ...base2, rulebook: appRulebook(rates2), isAdmin: senderIsAdmin }))
+            ?? (await smartAnswer(base2));
           const mention = (settings as any).admin_mention
             || (settings as any).support_username || "@anamulmunni";
           const reply = smart
