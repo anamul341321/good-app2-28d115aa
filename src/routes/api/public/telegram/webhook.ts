@@ -127,7 +127,8 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
           // "uid 4100 er details / card" → একাউন্ট কার্ড
           const cardCmd = order.match(/(?:uid|ইউআইডি|আইডি)\s*[:#-]?\s*(\d{1,9})/i);
-          if (cardCmd && /(details|ডিটেইলস|card|কার্ড|hisab|হিসাব|check|চেক|dekha|দেখা|info|তথ্য)/i.test(order)) {
+          if (cardCmd && /(details|ডিটেইলস|card|কার্ড|hisab|হিসাব|check|চেক|dekha|দেখা|info|তথ্য)/i.test(order)
+              && !/(verify|verification|ভেরিফাই|ভেরিফিকেশন|face|ফেস|date|time|তারিখ|সময়|কবে|status|স্ট্যাটাস|রি\s*-?ভেরিফাই|re\s*-?verify|first|1st|প্রথম|১ম)/i.test(order)) {
             const { buildUserCard } = await import("@/lib/telegram-lookup.server");
             const res = await buildUserCard(cardCmd[1]);
             await sendMessage(
@@ -1109,7 +1110,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
                 return { f, score };
               })
               .sort((a, b) => b.score - a.score)[0];
-            if (scoredAdmin && scoredAdmin.score >= 2 && scoredAdmin.f.answer) {
+            if (scoredAdmin && scoredAdmin.score >= 1 && scoredAdmin.f.answer) {
               const { humanizeReply } = await import("@/lib/telegram-bot.server");
               const base = String(scoredAdmin.f.answer).trim();
               const reply = (await humanizeReply(base, text, recentReplies)) || base;
