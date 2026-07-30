@@ -948,6 +948,30 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           }
         }
 
+        // অ্যাডমিন শুধু প্রশ্ন/ছবি সেভ করলে (উত্তর লেখা না থাকলে) বট নিজেই
+        // অ্যাপের নিয়ম ও ডেটাবেজ দেখে উত্তরটা লিখে দেবে।
+        const faqAnswerFor = async (f: any, userText?: string): Promise<string | null> => {
+          const saved = String(f?.answer ?? "").trim();
+          if (saved) return saved;
+          try {
+            const { composeFaqAnswer } = await import("@/lib/telegram-agent.server");
+            const { knowledgeText, loadRates } = await import("@/lib/telegram-knowledge.server");
+            const { appRulebook } = await import("@/lib/telegram-app-rules.server");
+            const rates = await loadRates();
+            return await composeFaqAnswer({
+              name: senderName,
+              topic: String(f?.topic ?? ""),
+              keywords: Array.isArray(f?.keywords) ? f.keywords : [],
+              userText,
+              knowledge: knowledgeText(rates),
+              rulebook: appRulebook(rates),
+            });
+          } catch (e) {
+            console.error("[tg] faq compose failed", e);
+            return null;
+          }
+        };
+
 
         if (photoBase64 && settings.auto_reply_enabled) {
           try {
