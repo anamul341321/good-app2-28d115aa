@@ -135,7 +135,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           /(\?|কেন|কন\b|\bkn\b|keno|kivabe|kibhabe|কিভাবে|koita|কয়টা|কতটা|কত|koto|kobe|কবে|kokhon|withdraw|উইথড্র|balance|ব্যালেন্স|refer|রেফার|verify|ভেরিফাই|mining|মাইনিং|bonus|বোনাস|problem|somossa|সমস্যা|help|সাহায্য|\bki\b|কি\b|admin|অ্যাডমিন|এডমিন)/i.test(
             norm,
           ) || (photos?.length ?? 0) > 0 || !!voiceHeard;
-        const hasExplicitUid = /\b(uid|ইউআইডি|আইডি|আই ডি|id\s*no|আইডি নাম্বার)\b/i.test(norm);
+        const hasExplicitUid = /(\buid\b|\bid\s*no\b|ইউআইডি|আইডি|আই ডি|আইডি নাম্বার)/i.test(norm);
         const pendingWithdrawQuestion =
           /(withdraw|উইথড্র|payment|পেমেন্ট|টাকা)/i.test(norm) &&
           /(দিছি|দিয়েছি|দিসি|দিছে|dichi|dise|pending|পেন্ডিং|কখন পাব|kokhon|ashe nai|আসে নাই|status|স্ট্যাটাস|history|হিস্টরি)/i.test(norm);
@@ -659,7 +659,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         // ---- "উইথড্র দিতে পারব?" → answer rules, never show old UID card -----
         if (withdrawEligibilityQuestion && !decision.should_delete && settings.auto_reply_enabled) {
           const { withdrawEligibilityReply } = await import("@/lib/telegram-knowledge.server");
-          const reply = decision.reply && !decision.needs_uid && decision.intent !== "withdraw_status"
+          const reply = decision.reply && !photoBase64 && !decision.needs_uid && decision.intent !== "withdraw_status"
             ? decision.reply
             : withdrawEligibilityReply(senderName);
           await sendMessage(chatId, reply, msg.message_id);
