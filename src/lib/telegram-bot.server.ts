@@ -444,6 +444,20 @@ Answer ONLY JSON: {"best": <1-${refs.length} or 0 if none really matches>}`,
  * Rewrite a canned admin answer so it reads like a real person typed it —
  * same facts, different wording/opening each time.
  */
+/**
+ * Detect when the rewrite model returned its own instructions / meta-analysis
+ * (English bullet lists like "*Emoji count*: 2-3 emojis", "purely text with
+ * HTML", "Tone:") instead of an actual Bengali support reply.
+ */
+function isMetaOutput(out: string, original: string): boolean {
+  const bn = (out.match(/[\u0980-\u09FF]/g) ?? []).length;
+  const letters = (out.match(/[A-Za-z\u0980-\u09FF]/g) ?? []).length || 1;
+  const origBn = (original.match(/[\u0980-\u09FF]/g) ?? []).length;
+  // মূল উত্তর বাংলা অথচ রিরাইট প্রায় পুরোটাই ইংরেজি → মেটা টেক্সট
+  if (origBn > 20 && bn / letters < 0.3) return true;
+  return /(emoji count|tone\s*:|purely text|markdown|html tag|line count|word count|instruction|rewrite|as an ai|system prompt|\*\s*\*[A-Za-z][^*]{2,}\*\s*:)/i.test(out);
+}
+
 export async function humanizeReply(answer: string, userText?: string, avoid?: string[]): Promise<string> {
   const key = process.env.LOVABLE_API_KEY;
   if (!key) return answer;
