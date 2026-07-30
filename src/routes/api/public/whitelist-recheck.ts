@@ -3,7 +3,9 @@ import { createFileRoute } from "@tanstack/react-router";
 import { isWhitelistedRPC } from "@/lib/celo-whitelist";
 
 const BATCH_SIZE = 100;
-const MAX_WORK_MS = 40_000;
+// Exactly one 100-key batch per request. The scheduler resumes from the saved
+// cursor, so no request can grow long enough to hit the platform timeout.
+const MAX_WORK_MS = 1;
 const NEXT_CYCLE_DELAY_MS = 3 * 60 * 1000;
 
 export const Route = createFileRoute("/api/public/whitelist-recheck")({
