@@ -329,7 +329,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               voiceHeard = await transcribeAudio(file.base64, fmt);
             }
             if (voiceHeard) voiceHeard = voiceHeard.trim();
-            if (voiceHeard) text = `${text ? text + "\n" : ""}${voiceHeard}`.trim();
+            if (voiceHeard) text = captionText ? `${captionText}\n${voiceHeard}`.trim() : voiceHeard;
           }
           // Couldn't understand the voice → politely ask again instead of
           // guessing and sending an unrelated answer.

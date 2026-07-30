@@ -466,10 +466,77 @@ ${userText ? `\nইউজার বলেছে: "${userText.slice(0, 300)}"` : 
 }
 
 
+function audioMime(format: string): string {
+  const f = format.toLowerCase().replace(/[^a-z0-9]/g, "");
+  if (f === "mp3") return "audio/mpeg";
+  if (f === "wav") return "audio/wav";
+  if (f === "m4a" || f === "mp4") return "audio/mp4";
+  if (f === "webm") return "audio/webm";
+  if (f === "aac") return "audio/aac";
+  if (f === "flac") return "audio/flac";
+  return "audio/ogg";
+}
+
+function cleanTranscriptText(input: string): string | null {
+  const out = stripBrandName(input)
+    .replace(/^```(?:json)?/i, "")
+    .replace(/```$/i, "")
+    .replace(/^\s*(transcript|শোনা কথা|ভয়েস|voice)\s*[:：-]\s*/i, "")
+    .trim();
+  if (!out || out.replace(/[^\p{L}\p{N}]/gu, "").length < 3) return null;
+  return out;
+}
+
+function transcriptFromSse(raw: string): string | null {
+  let done = "";
+  let deltas = "";
+  for (const line of raw.split(/\r?\n/)) {
+    if (!line.startsWith("data:")) continue;
+    const payload = line.slice(5).trim();
+    if (!payload || payload === "[DONE]") continue;
+    try {
+      const json = JSON.parse(payload);
+      if (json?.type === "transcript.text.done" && typeof json.text === "string") done = json.text;
+      if (json?.type === "transcript.text.delta" && typeof json.delta === "string") deltas += json.delta;
+    } catch {
+      // Ignore non-JSON keepalive chunks.
+    }
+  }
+  return cleanTranscriptText(done || deltas);
+}
+
+async function transcribeAudioStt(base64: string, format: string, key: string): Promise<string | null> {
+  try {
+    const ext = format.toLowerCase().replace(/[^a-z0-9]/g, "") || "ogg";
+    const bytes = Buffer.from(base64, "base64");
+    if (bytes.byteLength < 512) return null;
+    const form = new FormData();
+    form.append("model", "openai/gpt-4o-transcribe");
+    form.append("stream", "true");
+    form.append("file", new Blob([bytes as unknown as BlobPart], { type: audioMime(ext) }), `telegram-voice.${ext}`);
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/audio/transcriptions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${key}` },
+      body: form,
+    });
+    if (!res.ok) {
+      console.error("[tg] stt transcribe failed", res.status, (await res.text()).slice(0, 200));
+      return null;
+    }
+    const raw = await res.text();
+    return transcriptFromSse(raw);
+  } catch (e) {
+    console.error("[tg] stt transcribe error", e);
+    return null;
+  }
+}
+
 /** Transcribe a Telegram voice note / audio clip to text (Bengali friendly). */
 export async function transcribeAudio(base64: string, format: string): Promise<string | null> {
   const key = process.env.LOVABLE_API_KEY;
   if (!key) return null;
+  const stt = await transcribeAudioStt(base64, format, key);
+  if (stt) return stt;
   try {
     const res = await fetch(AI_URL, {
       method: "POST",
@@ -485,10 +552,12 @@ export async function transcribeAudio(base64: string, format: string): Promise<s
               {
                 type: "text",
                 text:
-                  "এই Telegram voice/audio খুব মনোযোগ দিয়ে শুনে ইউজার ঠিক কী জানতে চাইছে তা বাংলায় লিখে দাও। " +
-                  "Bangla, Roman Bangla, আঞ্চলিক উচ্চারণ, ভাঙা বাক্য—সব মিলিয়ে অর্থ ধরবে। " +
+                  "এই Telegram voice/audio খুব মনোযোগ দিয়ে শুনে ইউজার এখন ঠিক কী বলছে/জানতে চাইছে তা বাংলায় লিখে দাও। " +
+                  "শুধু অডিওর কথাই ধরবে — আগের চ্যাট, reply করা পুরোনো মেসেজ, password/UID/যেকোনো পুরোনো context থেকে কিছু অনুমান করবে না। " +
+                  "Bangla, Roman Bangla, আঞ্চলিক উচ্চারণ, ভাঙা বাক্য—সব মিলিয়ে বর্তমান অডিওর অর্থ ধরবে। " +
                   "Good-App, UID, রেফার, ফেস ভেরিফাই, রি-ভেরিফাই, উইথড্র, স্লট, কতদিন/কবে—এই শব্দগুলো বিশেষভাবে ধরবে। " +
                   "যদি ইউজার বলে ‘৩ দিন হলো first verify করেছি কিন্তু re-verify চায় না’ তাহলে সেটাই লিখবে, generic কথা বানাবে না। " +
+                  "অডিওতে password শব্দ না থাকলে password নিয়ে কিছু লিখবে না। " +
                   "শুধু শোনা কথাগুলো/প্রশ্নটা লিখবে, কোনো ব্যাখ্যা নয়। একদমই না বোঝা গেলে খালি রাখবে।",
               },
               { type: "input_audio", input_audio: { data: base64, format } },
@@ -503,7 +572,7 @@ export async function transcribeAudio(base64: string, format: string): Promise<s
     }
     const data: any = await res.json();
     const out = String(data.choices?.[0]?.message?.content ?? "").trim();
-    return out || null;
+    return cleanTranscriptText(out);
   } catch (e) {
     console.error("[tg] transcribe error", e);
     return null;
