@@ -67,7 +67,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         const isBotCommand = /^\/(?:start|help|admin|reset)\b/i.test(text.trim());
         const [senderIsAdmin, repliedToAdmin] = await Promise.all([
           isChatAdmin(chatId, msg.from?.id).catch(() => false),
-          msg.reply_to_message?.from?.id
+          msg.reply_to_message?.from?.id && !msg.reply_to_message?.from?.is_bot
             ? isChatAdmin(chatId, msg.reply_to_message.from.id).catch(() => false)
             : Promise.resolve(false),
         ]);
