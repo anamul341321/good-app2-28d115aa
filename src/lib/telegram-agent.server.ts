@@ -212,8 +212,8 @@ export async function agentAnswer(opts: {
     for (let step = 0; step < 4; step++) {
       const res = await fetch(AI_URL, {
         method: "POST",
-        headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ model: MODEL, temperature: 0.6, max_tokens: 700, tools: TOOLS, messages }),
+        headers: { "Lovable-API-Key": key, "Content-Type": "application/json" },
+        body: JSON.stringify({ model: MODEL, tools: TOOLS, messages }),
       });
       if (!res.ok) {
         console.error("[tg-agent] gateway", res.status, await res.text());
