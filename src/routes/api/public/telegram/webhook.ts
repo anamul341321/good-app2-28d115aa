@@ -878,8 +878,15 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         // ---- "আমার কয়টা রেফার/ভেরিফাই/ব্যালেন্স?" → UID নিয়ে একাউন্ট কার্ড -----
         if (asksOwnAccount && !decision.should_delete
             && settings.auto_reply_enabled) {
-          const uid = decision.uid || (hasExplicitUid ? pickUid(norm) : null)
-            || (decision as any)._knownUid || null;
+          // ⚠️ কখনোই অনুমান করে অন্য কারো UID দেখানো যাবে না।
+          // শুধু (ক) এই মেসেজেই স্পষ্ট UID লেখা থাকলে, অথবা
+          // (খ) এই টেলিগ্রাম একাউন্টটি নিজেই কোনো প্রোফাইলের সাথে লিংক করা থাকলে।
+          let uid: string | null = hasExplicitUid ? pickUid(norm) : null;
+          if (!uid && msg.from?.id) {
+            const { data: linked } = await supabaseAdmin
+              .from("profiles").select("uid_seq").eq("telegram_user_id", msg.from.id).maybeSingle();
+            if (linked?.uid_seq != null) uid = String(linked.uid_seq);
+          }
           if (uid) {
             const { buildUserCard } = await import("@/lib/telegram-lookup.server");
             const res = await buildUserCard(String(uid));
@@ -890,6 +897,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               return Response.json({ ok: true, flow: "account_info", actions });
             }
           }
+
           if (msg.from?.id) {
             await saveSession({ intent: "account_info", step: "await_uid", uid: null, app_user_id: null });
           }
