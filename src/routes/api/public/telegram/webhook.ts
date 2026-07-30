@@ -1473,7 +1473,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
         if (settings.auto_reply_enabled && decision.reply && !decision.should_delete
             && decision.intent !== "slot_reset") {
-          await sendMessage(chatId, decision.reply, msg.message_id);
+          await sendMessage(chatId, decision.reply + (await offerSlotResetSuffix()), msg.message_id);
           actions.push("replied");
         }
 
