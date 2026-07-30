@@ -1772,8 +1772,16 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           ) ?? null;
         })();
 
+        // Tiny follow-ups like "?" after a voice/message should not get a
+        // generic greeting. Use the agent with recent history instead.
+        const tinyFollowup = /^[?？!！.।\s]+$/.test(norm) ||
+          /^(ki|কি|keno|কেন|kn|mane|মানে|bujhi nai|বুঝি নাই)[\s.!?।]*$/i.test(norm);
+        const genericSupportReply = !!decision.reply &&
+          /(কীভাবে সাহায্য|কিভাবে সাহায্য|সহায়তা করতে পারি|help করতে পারি|বলুন|জানাবেন|কি সমস্যা|কোনো প্রশ্ন|স্বাগতম)/i.test(decision.reply);
+        const bypassDecisionReply = genericSupportReply && (tinyFollowup || !!voiceHeard);
+
         if (settings.auto_reply_enabled && decision.reply && !decision.should_delete
-            && decision.intent !== "slot_reset") {
+            && decision.intent !== "slot_reset" && !bypassDecisionReply) {
           await sendMessage(chatId, decision.reply + videoSuffix(text) + (await offerSlotResetSuffix()), msg.message_id);
           actions.push("replied");
         }
@@ -1811,7 +1819,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         }
 
         // ---- nothing matched → let the AI analyse the app and answer ---------
-        if (settings.auto_reply_enabled && !decision.reply && !voiceMatch
+        if (settings.auto_reply_enabled && (!decision.reply || bypassDecisionReply) && !voiceMatch
             && !decision.should_delete && !decision.needs_uid && !matchedUid
             && decision.intent === null && !decision.escalate
             && (decision.verdict === "question" || !!photoBase64 || !!voiceHeard)) {
@@ -1826,7 +1834,9 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           const rates = await loadRates();
           const base = {
             name: senderName,
-            question: text,
+            question: bypassDecisionReply
+              ? `${text}\n\nএটা আগের কথার/ভয়েসের ফলোআপ। history দেখে আগের প্রশ্ন বা ভয়েসের বিষয়টা বুঝে সরাসরি উত্তর দাও; generic greeting দেবে না।`
+              : text,
             knowledge: knowledgeText(rates),
             faqs: faqText,
             history: convoHistory,
@@ -1849,7 +1859,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
 
         // ---- bot genuinely doesn't know → hand off to the human admin --------
-        if (!decision.reply && decision.escalate && !decision.should_delete
+        if ((!decision.reply || bypassDecisionReply) && decision.escalate && !decision.should_delete
             && !decision.needs_uid && decision.intent === null
             && settings.auto_reply_enabled && (settings as any).escalate_enabled !== false) {
           const { escalateReply, smartAnswer } = await import("@/lib/telegram-bot.server");
@@ -1859,7 +1869,9 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           const rates2 = await loadRates();
           const base2 = {
             name: senderName,
-            question: text,
+            question: bypassDecisionReply
+              ? `${text}\n\nএটা আগের কথার/ভয়েসের ফলোআপ। history দেখে আগের প্রশ্ন বা ভয়েসের বিষয়টা বুঝে সরাসরি উত্তর দাও; generic greeting দেবে না।`
+              : text,
             knowledge: knowledgeText(rates2),
             history: convoHistory,
             pastReplies: convoReplies,
@@ -2000,7 +2012,9 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             const rates3 = await loadRates();
             const base3 = {
               name: senderName,
-              question: text,
+              question: bypassDecisionReply
+                ? `${text}\n\nএটা আগের কথার/ভয়েসের ফলোআপ। history দেখে আগের প্রশ্ন বা ভয়েসের বিষয়টা বুঝে সরাসরি উত্তর দাও; generic greeting দেবে না।`
+                : text,
               knowledge: knowledgeText(rates3),
               history: convoHistory,
               pastReplies: convoReplies,
@@ -2013,6 +2027,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           if (!reply) reply = `${escalateReply(senderName, mention)}\n${mention}`;
           await sendMessage(chatId, reply, msg.message_id);
           actions.push("fallback-answer");
+          decision.reply = reply;
         }
 
 
