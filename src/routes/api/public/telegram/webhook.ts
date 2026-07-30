@@ -166,6 +166,15 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               /(hisab|হিসাব|হিসেব|bujiye|বুঝিয়ে|bujhiye|koto|কত|income|ইনকাম|আয়|calculation)/i.test(
                 bnDigits,
               );
+            if (askCtx && /(refer|reffer|রেফার|referral)/i.test(bnDigits)) {
+              const { loadRates, referralEarningReply } = await import(
+                "@/lib/telegram-knowledge.server"
+              );
+              const rates = await loadRates();
+              const reply = referralEarningReply(targetName || "বন্ধুরা", rates);
+              await sendMessage(chatId, reply, replyTo);
+              return Response.json({ ok: true, flow: "admin-referral-earning" });
+            }
             if (slotCtx && askCtx) {
               const m = bnDigits.match(/(\d{1,4})\s*(ta|টা|টি|ti|slot|স্লট)?/);
               const n = m ? Number(m[1]) : null;
