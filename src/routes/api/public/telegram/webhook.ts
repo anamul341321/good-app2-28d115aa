@@ -1,6 +1,17 @@
 // Telegram bot webhook — receives group messages, moderates + auto-replies.
 import { createFileRoute } from "@tanstack/react-router";
 
+// একই ইউজারের জন্য service-message আর chat_member দুইবার welcome ঠেকাতে ছোট ক্যাশ।
+const recentWelcomes = new Map<string, number>();
+function alreadyWelcomed(key: string) {
+  const now = Date.now();
+  for (const [k, t] of recentWelcomes) if (now - t > 5 * 60_000) recentWelcomes.delete(k);
+  if (recentWelcomes.has(key)) return true;
+  recentWelcomes.set(key, now);
+  return false;
+}
+
+
 export const Route = createFileRoute("/api/public/telegram/webhook")({
   server: {
     handlers: {
@@ -22,11 +33,22 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         if (supplied !== expected) return new Response("unauthorized", { status: 401 });
 
         const update: any = await request.json().catch(() => null);
-        const msg = update?.message ?? update?.edited_message;
+        // নতুন মেম্বার join হলে Telegram কখনো service message পাঠায়, কখনো শুধু
+        // chat_member update পাঠায় (invite link / approval দিয়ে join করলে)।
+        const cm = update?.chat_member;
+        const cmJoined =
+          cm &&
+          ["left", "kicked"].includes(cm.old_chat_member?.status) &&
+          ["member", "restricted"].includes(cm.new_chat_member?.status) &&
+          !cm.new_chat_member?.user?.is_bot
+            ? cm.new_chat_member.user
+            : null;
+        const msg = update?.message ?? update?.edited_message ?? (cmJoined ? { chat: cm.chat, from: cm.from, new_chat_members: [cmJoined] } : null);
         if (!msg?.chat?.id || typeof update?.update_id !== "number") {
           return Response.json({ ok: true, ignored: true });
         }
-        if (msg.from?.is_bot) return Response.json({ ok: true, ignored: "bot" });
+        if (!cmJoined && msg.from?.is_bot) return Response.json({ ok: true, ignored: "bot" });
+
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -67,12 +89,14 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             const { welcomeReply } = await import("@/lib/telegram-bot.server");
             for (const m of joined) {
               if (m?.is_bot) continue;
+              if (alreadyWelcomed(`${chatId}:${m.id}`)) continue;
               const nm = [m.first_name, m.last_name].filter(Boolean).join(" ") || m.username || "বন্ধু";
               await sendMessage(
                 chatId,
                 welcomeReply(nm, (settings as any).welcome_message ?? null, (settings as any).default_video_url ?? null),
               );
             }
+
           }
           return Response.json({ ok: true, flow: "welcome" });
         }
