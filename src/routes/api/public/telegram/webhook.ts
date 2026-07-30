@@ -410,6 +410,10 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           /(re\s*-?verify|reverify|রি\s*-?ভেরিফাই|রি ভেরিফাই|রি-ভেরিফাই)[^\n]{0,90}(চায় না|চাই না|চাচ্ছে না|আসে না|আসেনি|ashe na|chay na|chai na|hocche na|hoy na|হয় না|কেন|keno|kn|কবে|kokhon|কখন|status|স্ট্যাটাস)/i.test(norm) ||
           /(3|৩|4|৪)\s*(din|দিন|day)[^\n]{0,120}(first|1st|প্রথম|১ম|verify|ভেরিফাই)[^\n]{0,120}(re\s*-?verify|reverify|রি\s*-?ভেরিফাই|রি-ভেরিফাই)/i.test(norm);
 
+        const asksFacePrivacy =
+          /(face|ফেস|mukh|মুখ|scan|স্ক্যান|ছবি|photo|ফটো|pic|পিক)[^\n]{0,120}(ki koren|ki koro|কী করেন|কি করেন|কি করো|কি করেন|নিয়ে.*করেন|নিয়া.*করেন|use|ব্যবহার|sell|বিক্রি|share|শেয়ার|data|ডাটা|তথ্য)/i.test(norm) ||
+          /(fau fau|ফাউ ফাউ|free|ফ্রি|tk|টাকা|payment|পেমেন্ট)[^\n]{0,120}(dicche|দিচ্ছে|dei|দেয়|দেন|দেয়)[^\n]{0,160}(face|ফেস|mukh|মুখ|ছবি|photo|ফটো)/i.test(norm);
+
 
 
         const verificationDateKind = (s: string): "first" | "reverify" | "all" | null => {
@@ -1057,6 +1061,15 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               console.error("[tg] slot earning reply failed", e);
             }
           }
+        }
+
+        // ---- "ফেস নিয়ে আপনারা কী করেন?" → privacy/security answer, not account lookup
+        if (asksFacePrivacy && !decision.should_delete && settings.auto_reply_enabled) {
+          const { facePrivacyReply } = await import("@/lib/telegram-knowledge.server");
+          const reply = facePrivacyReply(senderName);
+          await sendMessage(chatId, reply, msg.message_id);
+          await logMessage(decision.verdict, "face-privacy", reply, null);
+          return Response.json({ ok: true, flow: "face-privacy" });
         }
 
         // ---- "already tried, still not working" → think, don't repeat --------
