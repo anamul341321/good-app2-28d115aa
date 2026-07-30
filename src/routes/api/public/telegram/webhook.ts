@@ -602,7 +602,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           await sendMessage(
             chatId,
             `🔄 <b>স্লট রিসেট রিপোর্ট</b>\n\n` +
-              `👤 একাউন্ট: <b>${res.name}</b>\n🆔 UID: <code>${uid}</code>\n\n` +
+              `👤 একাউন্ট: <b>${res.name}</b>\n🆔 UID: <code>${res.uid ?? uid}</code>\n\n` +
               okLine + failLine +
               (res.done.length
                 ? `\n\nএই স্লটগুলো এখন সম্পূর্ণ খালি হয়ে গেছে।\n` +
