@@ -1077,8 +1077,16 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             /(koto taka|koto tk|কত টাকা|কতো টাকা|income|ইনকাম|আয়|earn|kototaka|koto pabo|কত পাবো|কত পাব|kt taka|কত দিবে|koto dibe|hisab|হিসাব|bujiye|বুঝিয়ে|bujhiye|calculation|হিসেব)/i.test(
               bnDigits,
             );
+          // "আমার বন্ধু/যাকে রেফার করেছি সে ১০টা করলে আমি কত পাবো?" — এটাও রেফারেল প্রশ্ন
+          const thirdParty =
+            /(bondhu|bondu|বন্ধু|friend|jake|যাকে|jaka|kauke|কাউকে|jodi she|যদি সে|se jodi|সে যদি|amar under|আমার আন্ডার|আমার নিচে|downline|team|টিম|amar lok|আমার লোক|amar member|নতুন কেউ|keu jodi|কেউ যদি)/i.test(
+              bnDigits,
+            );
+          const selfGain = /(ami koto|আমি কত|amake koto|আমাকে কত|ami ki pabo|আমি কি পাবো|amar ki|আমার কত)/i.test(bnDigits);
           const referCtx =
-            /(refer|reffer|refar|রেফার|রেফারেল|referral|রেফারে|আমাকে কত|amake koto)/i.test(bnDigits);
+            /(refer|reffer|refar|রেফার|রেফারেল|referral|রেফারে|আমাকে কত|amake koto)/i.test(bnDigits) ||
+            (thirdParty && selfGain);
+
           if (money && referCtx) {
             try {
               const { loadRates, referralEarningReply } = await import(
