@@ -1571,7 +1571,9 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           });
           const mention = (settings as any).admin_mention
             || (settings as any).support_username || "@anamulmunni";
-          const reply = smart || `${escalateReply(senderName, mention)}\n${mention}`;
+          const reply = smart
+            ? smart + videoSuffix(text)
+            : `${escalateReply(senderName, mention)}\n${mention}`;
           await sendMessage(chatId, reply, msg.message_id);
           actions.push(smart ? "smart-answer" : "escalated");
           await logMessage(decision.verdict, actions.join(","), reply, matchedUid);
@@ -1596,7 +1598,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           const mention = (settings as any).admin_mention
             || (settings as any).support_username || "@anamulmunni";
           const reply = smart
-            ? smart
+            ? smart + videoSuffix(text)
             : `${escalateReply(senderName, mention)}\n${mention}`;
           await sendMessage(chatId, reply, msg.message_id);
           actions.push("escalated");
