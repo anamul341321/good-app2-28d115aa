@@ -776,6 +776,30 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
 
 
+        // ---- screenshot fallback before normal text reply ---------------------
+        // If the AI gives a vague greeting or tries to ask UID for a screenshot,
+        // read the screenshot directly and answer from app rules instead.
+        const vaguePhotoReply = !!decision.reply &&
+          /(কীভাবে সাহায্য|কিভাবে সাহায্য|সহায়তা করতে পারি|help করতে পারি|বলুন|জানাতে পারেন|কি সমস্যা)/i.test(decision.reply);
+        if (settings.auto_reply_enabled && photoBase64 && !voiceMatch
+            && !decision.should_delete && decision.intent === null
+            && (!decision.reply || decision.needs_uid || vaguePhotoReply)) {
+          const { analyzeScreenshotReply } = await import("@/lib/telegram-bot.server");
+          const { loadRates, knowledgeText } = await import("@/lib/telegram-knowledge.server");
+          const reply = await analyzeScreenshotReply({
+            photoBase64,
+            name: senderName,
+            text,
+            knowledge: knowledgeText(await loadRates()),
+          });
+          if (reply) {
+            await sendMessage(chatId, reply, msg.message_id);
+            actions.push("photo-analysis");
+            await logMessage("question", actions.join(","), reply, null);
+            return Response.json({ ok: true, flow: "photo-analysis", actions });
+          }
+        }
+
         // ---- pick a saved voice note for this topic, if the admin recorded one -
         const voiceMatch = (() => {
           const list = (voiceRows ?? []) as any[];
