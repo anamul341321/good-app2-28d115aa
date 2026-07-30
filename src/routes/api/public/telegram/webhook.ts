@@ -397,6 +397,9 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
         // "আমার কয়টা রেফার হয়েছে?", "আমার ব্যালেন্স কত?", "কয়টা ভেরিফাই হয়েছে?"
         // → এগুলোর উত্তর একাউন্ট ডেটা থেকেই দিতে হবে, তাই UID চেয়ে কার্ড দেখাই।
+        const { detectHowTo, howToReply } = await import("@/lib/telegram-knowledge.server");
+        const howToTopic = detectHowTo(norm);
+
         const asksOwnAccount =
           !pendingWithdrawQuestion &&
           !reportsProblem &&
@@ -415,8 +418,6 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           /(face|ফেস|mukh|মুখ|scan|স্ক্যান|ছবি|photo|ফটো|pic|পিক)[^\n]{0,120}(ki koren|ki koro|কী করেন|কি করেন|কি করো|কি করেন|নিয়ে.*করেন|নিয়া.*করেন|use|ব্যবহার|sell|বিক্রি|share|শেয়ার|data|ডাটা|তথ্য)/i.test(norm) ||
           /(fau fau|ফাউ ফাউ|free|ফ্রি|tk|টাকা|payment|পেমেন্ট)[^\n]{0,120}(dicche|দিচ্ছে|dei|দেয়|দেন|দেয়)[^\n]{0,160}(face|ফেস|mukh|মুখ|ছবি|photo|ফটো)/i.test(norm);
 
-        const { detectHowTo, howToReply } = await import("@/lib/telegram-knowledge.server");
-        const howToTopic = detectHowTo(norm);
 
 
         const verificationDateKind = (s: string): "first" | "reverify" | "all" | null => {
