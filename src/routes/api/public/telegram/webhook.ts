@@ -1178,6 +1178,38 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           }
         }
 
+        // ---- শেষ রক্ষা: কোনো উত্তরই পাঠানো হয়নি → চুপ না থেকে উত্তর/UID চাই ----
+        const repliedSomething = actions.some((a) =>
+          /replied|answer|voice|video|card|escalat|account|withdraw|verify|photo|asked/i.test(a),
+        );
+        if (settings.auto_reply_enabled && !repliedSomething && !decision.should_delete
+            && (text.trim() || photoBase64)) {
+          const { smartAnswer, escalateReply } = await import("@/lib/telegram-bot.server");
+          const { loadRates, knowledgeText } = await import("@/lib/telegram-knowledge.server");
+          const mention = (settings as any).admin_mention
+            || (settings as any).support_username || "@anamulmunni";
+          let reply: string | null = null;
+          if (decision.needs_uid) {
+            if (msg.from?.id) {
+              await saveSession({ intent: "account_info", step: "await_uid", uid: null, app_user_id: null });
+            }
+            reply =
+              `🆔 ${senderName}, আপনার একাউন্টের তথ্য দেখে জানাতে আপনার <b>UID</b> নম্বরটি দরকার।\n` +
+              `দয়া করে UID টি লিখুন (অ্যাপের প্রোফাইল পেজে পাবেন) — সাথে সাথেই সব হিসাব জানিয়ে দেব 💙`;
+          } else {
+            reply = await smartAnswer({
+              name: senderName,
+              question: text,
+              knowledge: knowledgeText(await loadRates()),
+            });
+          }
+          if (!reply) reply = `${escalateReply(senderName, mention)}\n${mention}`;
+          await sendMessage(chatId, reply, msg.message_id);
+          actions.push("fallback-answer");
+        }
+
+
+
 
         await supabaseAdmin.from("tg_messages").insert({
           update_id: update.update_id,
