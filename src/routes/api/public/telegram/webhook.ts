@@ -782,16 +782,23 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         if (!photoBase64 && settings.auto_reply_enabled && text.trim()) {
           const t = text.trim();
           const bnDigits = t.replace(/[০-৯]/g, (d) => String("০১২৩৪৫৬৭৮৯".indexOf(d)));
+          const miningCtx = /(mining|মাইনিং|maining|minig)/i.test(bnDigits);
           const money =
-            /(koto taka|koto tk|কত টাকা|কতো টাকা|income|ইনকাম|আয়|earn|kototaka|koto pabo|কত পাবো|কত পাব|hisab|হিসাব)/i.test(bnDigits);
+            /(koto taka|koto tk|কত টাকা|কতো টাকা|income|ইনকাম|আয়|earn|kototaka|koto pabo|কত পাবো|কত পাব|hisab|হিসাব|bujiye|বুঝিয়ে|bujhiye|calculation|হিসেব)/i.test(
+              bnDigits,
+            );
           const slotCtx =
+            miningCtx ||
             /(slot|স্লট|re verify|re-verify|reverify|রি ভেরিফ|রি-ভেরিফ|verification|ভেরিফিকেশন|face)/i.test(bnDigits);
           if (money && slotCtx) {
             try {
               const m = bnDigits.match(/(\d{1,4})\s*(ta|টা|টি|ti|slot|স্লট)?/);
               const n = m ? Number(m[1]) : null;
               const slots = n && n >= 1 && n <= 500 ? n : null;
-              const monthly = /(mase|মাসে|monthly|মাসিক|per month|প্রতি মাস|mas e|প্রতিমাসে)/i.test(bnDigits);
+              const monthly =
+                miningCtx ||
+                /(mase|মাসে|monthly|মাসিক|per month|প্রতি মাস|mas e|প্রতিমাসে)/i.test(bnDigits);
+
               const { loadRates, slotEarningReply } = await import("@/lib/telegram-knowledge.server");
               const rates = await loadRates();
               const reply = slotEarningReply(senderName, rates, slots, monthly);
