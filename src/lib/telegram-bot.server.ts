@@ -614,6 +614,18 @@ export function escalateReply(name: string, support: string): string {
   return options[Math.floor(Math.random() * options.length)];
 }
 
+/** Funny, warm answer when someone asks "admin kothai / admin ke?" */
+export function adminWhereReply(name: string, support: string): string {
+  const options = [
+    `${name} ভাই, অ্যাডমিন এখানেই আছেন 😄 একটু চা খেতে গেছেন মনে হয় ☕\nএই যে ডাক দিলাম — ${support} 👋 উনি দেখলেই রিপ্লাই দেবেন।`,
+    `অ্যাডমিন হারিয়ে যাননি 😁 কাজে ব্যস্ত আছেন একটু।\nএই নিন ডাক — ${support} 🔔 আর জরুরি হলে ওনাকে ইনবক্সও করতে পারেন।`,
+    `খুঁজছেন কাকে? 😎 অ্যাডমিন তো সবসময় নজর রাখছেন!\n${support} — এই যে মেনশন দিলাম, একটু অপেক্ষা করুন 🙂`,
+    `${name}, অ্যাডমিন ঘুমাননি 😄 এই গ্রুপেই আছেন।\n${support} 👈 এখানে নক করলেই সাড়া পাবেন।`,
+  ];
+  return options[Math.floor(Math.random() * options.length)];
+}
+
+
 
 // ---------------------------------------------------------------------------
 // FAQ reference images (private `tg-faq` storage bucket)
