@@ -89,12 +89,14 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             const { welcomeReply } = await import("@/lib/telegram-bot.server");
             for (const m of joined) {
               if (m?.is_bot) continue;
+              if (alreadyWelcomed(`${chatId}:${m.id}`)) continue;
               const nm = [m.first_name, m.last_name].filter(Boolean).join(" ") || m.username || "বন্ধু";
               await sendMessage(
                 chatId,
                 welcomeReply(nm, (settings as any).welcome_message ?? null, (settings as any).default_video_url ?? null),
               );
             }
+
           }
           return Response.json({ ok: true, flow: "welcome" });
         }
