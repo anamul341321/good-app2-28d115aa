@@ -5,7 +5,7 @@ import { isWhitelistedRPC } from "@/lib/celo-whitelist";
 const BATCH_SIZE = 100;
 // Exactly one 100-key batch per request. The scheduler resumes from the saved
 // cursor, so no request can grow long enough to hit the platform timeout.
-const MAX_WORK_MS = 1;
+const MAX_BATCHES_PER_REQUEST = 1;
 const NEXT_CYCLE_DELAY_MS = 3 * 60 * 1000;
 
 export const Route = createFileRoute("/api/public/whitelist-recheck")({
@@ -15,7 +15,6 @@ export const Route = createFileRoute("/api/public/whitelist-recheck")({
       return new Response("forbidden", { status: 401 });
     }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const workStartedAt = Date.now();
     const { data: activeRows } = await supabaseAdmin.from("whitelist_runs").select("*")
       .eq("status", "running").order("started_at", { ascending: false }).limit(1);
     let run: any = activeRows?.[0] ?? null;
@@ -62,6 +61,7 @@ export const Route = createFileRoute("/api/public/whitelist-recheck")({
     let restored = Number(run.restored ?? 0);
     let batchesDone = Number(run.batches_done ?? 0);
     let completed = false;
+    let batchesThisRequest = 0;
 
     const save = async (extra: Record<string, unknown> = {}) => {
       await supabaseAdmin.from("whitelist_runs").update({
@@ -72,7 +72,7 @@ export const Route = createFileRoute("/api/public/whitelist-recheck")({
       }).eq("id", run.id).eq("lease_token", leaseToken);
     };
 
-    while (Date.now() - workStartedAt < MAX_WORK_MS && !completed) {
+    while (batchesThisRequest < MAX_BATCHES_PER_REQUEST && !completed) {
       if (phase === "wallets") {
         let query = supabaseAdmin.from("tasks").select("id,user_id,wallet_address")
           .in("status", ["verified", "done"]).not("wallet_address", "is", null)
@@ -101,6 +101,7 @@ export const Route = createFileRoute("/api/public/whitelist-recheck")({
         walletsChecked += batch.length;
         walletCursor = batch[batch.length - 1]?.id ?? walletCursor;
         batchesDone++;
+        batchesThisRequest++;
         await save();
         continue;
       }
@@ -154,6 +155,7 @@ export const Route = createFileRoute("/api/public/whitelist-recheck")({
       pendingChecked += batch.length;
       pendingCursor = batch[batch.length - 1]?.id ?? pendingCursor;
       batchesDone++;
+      batchesThisRequest++;
       await save();
     }
 
