@@ -87,9 +87,22 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               ? ext
               : msg.video_note ? "mp4" : "ogg";
             voiceHeard = await transcribeAudio(file.base64, fmt);
+            if (voiceHeard) voiceHeard = voiceHeard.trim();
             if (voiceHeard) text = `${text ? text + "\n" : ""}${voiceHeard}`.trim();
           }
+          // Couldn't understand the voice → politely ask again instead of
+          // guessing and sending an unrelated answer.
+          if (!voiceHeard || voiceHeard.replace(/[^\p{L}\p{N}]/gu, "").length < 3) {
+            const who = msg.from?.first_name ? `${msg.from.first_name}, ` : "";
+            await sendMessage(
+              chatId,
+              `${who}দুঃখিত 🙏 আপনার ভয়েসটা ঠিকমতো বুঝতে পারিনি।\nএকটু আস্তে করে আবার বলবেন, অথবা লিখে পাঠান — আমি সাথে সাথে সাহায্য করছি 💙`,
+              msg.message_id,
+            );
+            return Response.json({ ok: true, flow: "voice-unclear" });
+          }
         }
+
 
 
 
