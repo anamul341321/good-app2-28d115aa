@@ -1,0 +1,1 @@
+ALTER TABLE public.tg_faq ALTER COLUMN answer DROP NOT NULL;

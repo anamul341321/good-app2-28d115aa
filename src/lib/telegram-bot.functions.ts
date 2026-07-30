@@ -137,7 +137,8 @@ export const tgUpsertFaq = createServerFn({ method: "POST" })
     id: z.string().uuid().optional(),
     topic: z.string().trim().min(1).max(120),
     keywords: z.array(z.string().max(60)).max(50),
-    answer: z.string().trim().min(1).max(4000),
+    // উত্তর ঐচ্ছিক — খালি রাখলে বট নিজেই অ্যাপের নিয়ম দেখে উত্তর বানাবে।
+    answer: z.string().trim().max(4000).nullable().optional(),
     priority: z.number().int().min(0).max(100),
     is_active: z.boolean(),
     // base64 (no data: prefix) of a newly uploaded reference screenshot
@@ -147,7 +148,11 @@ export const tgUpsertFaq = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const db = await guard();
     const { image_base64, remove_image, ...rest } = data;
-    const row: Record<string, unknown> = { ...rest, updated_at: new Date().toISOString() };
+    const row: Record<string, unknown> = {
+      ...rest,
+      answer: (rest.answer ?? "").trim() || null,
+      updated_at: new Date().toISOString(),
+    };
 
     if (image_base64) {
       const path = `faq/${crypto.randomUUID()}.jpg`;

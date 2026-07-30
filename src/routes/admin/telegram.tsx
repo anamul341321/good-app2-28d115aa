@@ -355,22 +355,21 @@ function FaqPanel() {
           <HelpCircle className="w-4 h-4 text-cyan" /> কোন ঘরে কী লিখবেন (সহজ ব্যাখ্যা)
         </h3>
         <ul className="mt-2 space-y-1.5 text-[11px] text-muted-foreground leading-relaxed">
-          <li>📌 <b className="text-foreground">উত্তর</b> — সবচেয়ে জরুরি ঘর। ইউজার এই সমস্যার কথা বললে বট এই উত্তরটাই সুন্দর করে বলবে।</li>
-          <li>🖼️ <b className="text-foreground">রেফারেন্স স্ক্রিনশট</b> — ঐচ্ছিক। ছবি দিলে ইউজার একই রকম ছবি পাঠালেই বট এই উত্তরটা দেবে।</li>
-          <li>🏷️ <b className="text-foreground">বিষয়</b> — শুধু আপনার চেনার জন্য নাম (যেমন "উইথড্র দেরি")। খালি রাখলে আমরা নিজেরাই নাম বসিয়ে দেব।</li>
-          <li>🔑 <b className="text-foreground">ইউজার কী লিখতে পারে</b> — নিচের ছোট ঘরে ২-৪টা শব্দ লিখুন। যেমন: <b className="text-foreground">বয়স বেশি তাও হচ্ছে না, 20+ face fail</b>। খালি রাখলেও সেভ হবে।</li>
+          <li>❓ <b className="text-foreground">প্রশ্ন / সমস্যা</b> — শুধু ইউজার যা বলে সেটাই লিখুন। যেমন: “ক্যামেরা কাজ করছে না”।</li>
+          <li>🖼️ <b className="text-foreground">স্ক্রিনশট</b> — ঐচ্ছিক। ছবি দিলে ইউজার একই রকম ছবি পাঠালেই বট এই বিষয়টি ধরে ফেলবে।</li>
+          <li>✍️ <b className="text-foreground">উত্তর</b> — <b className="text-foreground">ঐচ্ছিক</b>। খালি রাখলে বট নিজেই অ্যাপের নিয়ম ও ডেটাবেজ দেখে উত্তর বানিয়ে দেবে।</li>
         </ul>
       </div>
 
       <div className="glass rounded-2xl p-4 space-y-2">
-        <h3 className="font-black text-sm flex items-center gap-2"><Plus className="w-4 h-4 text-emerald" /> নতুন উত্তর যোগ করুন</h3>
+        <h3 className="font-black text-sm flex items-center gap-2"><Plus className="w-4 h-4 text-emerald" /> নতুন প্রশ্ন যোগ করুন</h3>
         <p className="text-[10px] text-muted-foreground leading-relaxed">
-          সহজ নিয়ম: <b>উত্তর</b> লিখুন → চাইলে <b>ইউজার যে কথাগুলো বলতে পারে</b> ২-৪টা লিখুন → <b>যোগ করুন</b> চাপুন।
+          সহজ নিয়ম: <b>প্রশ্ন</b> লিখুন → চাইলে <b>ছবি</b> দিন → <b>যোগ করুন</b> চাপুন। উত্তর না লিখলেও চলবে।
         </p>
-        <Area label="উত্তর (এটাই বট বলবে)" rows={5} value={draft.answer} onChange={(v) => setDraft({ ...draft, answer: v })} />
+        <Area label="প্রশ্ন / সমস্যা (ইউজার যা বলে)" rows={3} value={draft.topic} onChange={(v) => setDraft({ ...draft, topic: v })} />
 
         <div>
-          <label className="block text-[11px] font-black mb-1">রেফারেন্স স্ক্রিনশট (ঐচ্ছিক)</label>
+          <label className="block text-[11px] font-black mb-1">স্ক্রিনশট (ঐচ্ছিক)</label>
           <div className="flex items-center gap-2">
             <label className="flex-1 cursor-pointer rounded-xl border border-dashed border-border bg-surface-2 px-3 py-2.5 text-[11px] font-black text-center">
               <ImageIcon className="w-3.5 h-3.5 inline mr-1 text-cyan" />
@@ -387,21 +386,28 @@ function FaqPanel() {
           {img && <img src={img.preview} alt="preview" className="mt-2 h-28 rounded-xl border border-border object-cover" />}
         </div>
 
-        <Field label="বিষয়/নাম (ঐচ্ছিক)" hint="শুধু আপনার চেনার জন্য। যেমন: 18+ সমস্যা, উইথড্র দেরি" value={draft.topic} onChange={(v) => setDraft({ ...draft, topic: v })} />
-        <Field label="ইউজার কী লিখতে পারে (ঐচ্ছিক)" hint="কমা দিয়ে লিখুন। যেমন: বয়স বেশি তাও হচ্ছে না, 20 plus, face fail, reverify hocche na" value={draft.keywords} onChange={(v) => setDraft({ ...draft, keywords: v })} />
+        <Area label="উত্তর (ঐচ্ছিক — খালি রাখলে বট নিজেই বলবে)" rows={4} value={draft.answer} onChange={(v) => setDraft({ ...draft, answer: v })} />
+        <Field label="ইউজার আরও কী কী লিখতে পারে (ঐচ্ছিক)" hint="কমা দিয়ে লিখুন। যেমন: ক্যামেরা আসছে না, camera permission, face fail" value={draft.keywords} onChange={(v) => setDraft({ ...draft, keywords: v })} />
 
         <div className="rounded-xl border border-emerald/30 bg-emerald/5 p-3 text-[11px] leading-relaxed text-muted-foreground">
-          <b className="text-foreground">উদাহরণ:</b> কেউ যদি বলে “বয়স ২০+ তাও হচ্ছে না”, তাহলে উপরের ঘরে আপনার উত্তর লিখুন, আর “ইউজার কী লিখতে পারে” ঘরে লিখুন: <b className="text-foreground">বয়স বেশি, 20+, ১৮+, face fail</b>
+          <b className="text-foreground">মনে রাখুন:</b> শুধু প্রশ্ন ও ছবি দিলেই যথেষ্ট — একই ধরনের প্রশ্ন বা ছবি দেখলে বট নিজেই অ্যাপের নিয়ম অনুযায়ী উত্তর দেবে।
         </div>
 
         <button
           onClick={() => {
-            if (!draft.answer.trim()) { toast.error("উত্তর লিখুন"); return; }
-            const auto = draft.answer.trim().split(/\s+/).slice(0, 5).join(" ");
+            const question = draft.topic.trim();
+            if (!question && !img && !draft.answer.trim()) {
+              toast.error("প্রশ্ন লিখুন অথবা ছবি দিন");
+              return;
+            }
+            const auto = (question || draft.answer.trim()).split(/\s+/).slice(0, 8).join(" ");
             upsert.mutate({
-              topic: draft.topic.trim() || (img ? `ছবি: ${auto}` : auto).slice(0, 110),
-              keywords: draft.keywords.split(",").map((s) => s.trim()).filter(Boolean),
-              answer: draft.answer.trim(), priority: 0, is_active: true,
+              topic: (question || (img ? `ছবি: ${auto}` : auto)).slice(0, 110),
+              keywords: [
+                ...draft.keywords.split(",").map((s) => s.trim()).filter(Boolean),
+                ...(question ? [question.slice(0, 60)] : []),
+              ],
+              answer: draft.answer.trim() || null, priority: 0, is_active: true,
               image_base64: img?.b64 ?? null,
             });
           }}
@@ -423,7 +429,9 @@ function FaqPanel() {
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <p className="text-xs font-black truncate">{f.topic}</p>
-                  <p className="text-[11px] text-muted-foreground whitespace-pre-wrap mt-1">{f.answer}</p>
+                  <p className="text-[11px] text-muted-foreground whitespace-pre-wrap mt-1">
+                    {f.answer || "🤖 উত্তর লেখা নেই — বট নিজেই অ্যাপের নিয়ম দেখে উত্তর দেবে"}
+                  </p>
                   {f.keywords?.length > 0 && (
                     <p className="text-[10px] text-cyan mt-1">🔑 {f.keywords.join(", ")}</p>
                   )}

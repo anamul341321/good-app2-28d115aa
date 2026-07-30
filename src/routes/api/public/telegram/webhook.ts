@@ -326,10 +326,23 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             }
           }
 
-          // বাকি সব: অ্যাডমিনের নির্দেশমতো সুন্দর মেসেজ সাজিয়ে গ্রুপে পাঠাবে
-          const composed = await adminCompose(order, targetName);
-          await sendMessage(chatId, composed || order, replyTo);
-          return Response.json({ ok: true, flow: "admin-instruction" });
+          // বাকি সব: অ্যাডমিনের নির্দেশমতো সুন্দর মেসেজ সাজিয়ে গ্রুপে পাঠাবে।
+          // কখনোই অ্যাডমিনের নির্দেশটাই হুবহু ফেরত পাঠাবে না।
+          const composed = (await adminCompose(order, targetName))?.trim();
+          const echoed =
+            !composed ||
+            composed.toLowerCase().replace(/\s+/g, " ") === order.toLowerCase().replace(/\s+/g, " ");
+          if (!echoed) {
+            await sendMessage(chatId, composed, replyTo);
+            return Response.json({ ok: true, flow: "admin-instruction" });
+          }
+          await sendMessage(
+            chatId,
+            "✅ স্যার, নির্দেশটি পেয়েছি। একটু স্পষ্ট করে বলুন কী করতে হবে — আমি সাথে সাথেই করে দিচ্ছি।",
+            replyTo,
+          );
+          return Response.json({ ok: true, flow: "admin-instruction-unclear" });
+
 
         }
 
@@ -948,6 +961,30 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           }
         }
 
+        // অ্যাডমিন শুধু প্রশ্ন/ছবি সেভ করলে (উত্তর লেখা না থাকলে) বট নিজেই
+        // অ্যাপের নিয়ম ও ডেটাবেজ দেখে উত্তরটা লিখে দেবে।
+        const faqAnswerFor = async (f: any, userText?: string): Promise<string | null> => {
+          const saved = String(f?.answer ?? "").trim();
+          if (saved) return saved;
+          try {
+            const { composeFaqAnswer } = await import("@/lib/telegram-agent.server");
+            const { knowledgeText, loadRates } = await import("@/lib/telegram-knowledge.server");
+            const { appRulebook } = await import("@/lib/telegram-app-rules.server");
+            const rates = await loadRates();
+            return await composeFaqAnswer({
+              name: senderName,
+              topic: String(f?.topic ?? ""),
+              keywords: Array.isArray(f?.keywords) ? f.keywords : [],
+              userText,
+              knowledge: knowledgeText(rates),
+              rulebook: appRulebook(rates),
+            });
+          } catch (e) {
+            console.error("[tg] faq compose failed", e);
+            return null;
+          }
+        };
+
 
         if (photoBase64 && settings.auto_reply_enabled) {
           try {
@@ -957,7 +994,8 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               const matchedFaq = faq.find(
                 (f) => String(f.topic).trim().toLowerCase() === imageMatch.topic.trim().toLowerCase(),
               );
-              if (matchedFaq?.answer) {
+              const answerText = matchedFaq ? await faqAnswerFor(matchedFaq, text || shotText) : null;
+              if (answerText) {
                 let recent: string[] = [];
                 if (msg.from?.id) {
                   const { data: prev } = await supabaseAdmin
@@ -966,7 +1004,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
                     .order("created_at", { ascending: false }).limit(3);
                   recent = (prev ?? []).map((p: any) => p.bot_reply).filter(Boolean);
                 }
-                const reply = await humanizeReply(String(matchedFaq.answer).trim(), text, recent);
+                const reply = await humanizeReply(answerText.trim(), text, recent);
                 await sendMessage(chatId, reply, msg.message_id);
                 await logMessage("question", `faq-image:${imageMatch.topic}:${imageMatch.confidence.toFixed(2)}`, reply, null);
                 return Response.json({ ok: true, flow: "faq-image-match", topic: imageMatch.topic });
@@ -996,8 +1034,11 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
                   return { f, score };
                 })
                 .sort((a, b) => b.score - a.score)[0];
-              if (scored && scored.score > 0 && scored.f.answer) {
-                const base = String(scored.f.answer).trim();
+              const ocrAnswer = scored && scored.score > 0
+                ? await faqAnswerFor(scored.f, text || shotText)
+                : null;
+              if (ocrAnswer) {
+                const base = ocrAnswer.trim();
                 const reply = (await humanizeReply(base, text || shotText, [])) || base;
                 await sendMessage(chatId, reply, msg.message_id);
                 await logMessage("question", `faq-ocr:${scored.f.topic}`, reply, null);
@@ -1255,9 +1296,12 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
                 return { f, score };
               })
               .sort((a, b) => b.score - a.score)[0];
-            if (scoredAdmin && scoredAdmin.score >= 1 && scoredAdmin.f.answer) {
+            const adminAnswer = scoredAdmin && scoredAdmin.score >= 1
+              ? await faqAnswerFor(scoredAdmin.f, text)
+              : null;
+            if (adminAnswer) {
               const { humanizeReply } = await import("@/lib/telegram-bot.server");
-              const base = String(scoredAdmin.f.answer).trim();
+              const base = adminAnswer.trim();
               const reply = (await humanizeReply(base, text, recentReplies)) || base;
               await sendMessage(chatId, reply, msg.message_id);
               await logMessage("question", `faq-admin:${scoredAdmin.f.topic}`, reply, null);
