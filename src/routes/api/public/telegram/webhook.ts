@@ -156,6 +156,38 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             return Response.json({ ok: true, flow: "admin-video" });
           }
 
+          // "মাইনিং/স্লটের হিসাব বুঝিয়ে দাও" → অ্যাপের আসল হিসাব (বানানো তথ্য নয়)
+          {
+            const bnDigits = order.replace(/[০-৯]/g, (d) => String("০১২৩৪৫৬৭৮৯".indexOf(d)));
+            const miningCtx = /(mining|মাইনিং|maining)/i.test(bnDigits);
+            const slotCtx =
+              miningCtx || /(slot|স্লট|re verify|রি-ভেরিফ|রি ভেরিফ|reverify)/i.test(bnDigits);
+            const askCtx =
+              /(hisab|হিসাব|হিসেব|bujiye|বুঝিয়ে|bujhiye|koto|কত|income|ইনকাম|আয়|calculation)/i.test(
+                bnDigits,
+              );
+            if (slotCtx && askCtx) {
+              const m = bnDigits.match(/(\d{1,4})\s*(ta|টা|টি|ti|slot|স্লট)?/);
+              const n = m ? Number(m[1]) : null;
+              const slots = n && n >= 1 && n <= 500 ? n : null;
+              const { loadRates, slotEarningReply } = await import("@/lib/telegram-knowledge.server");
+              const rates = await loadRates();
+              const reply = slotEarningReply(targetName || "বন্ধুরা", rates, slots, true);
+              await sendMessage(chatId, reply, replyTo);
+              return Response.json({ ok: true, flow: "admin-slot-earning" });
+            }
+
+            // প্রশ্ন/টপিক বুঝিয়ে বলতে বললে → অ্যাপের রুলবুক থেকে গ্রাউন্ডেড উত্তর
+            if (askCtx || /(ki|কি|kivabe|কীভাবে|কিভাবে|keno|কেন|bolo|বলো|bujhao|বুঝিয়ে)/i.test(bnDigits)) {
+              const { smartAnswer } = await import("@/lib/telegram-bot.server");
+              const ans = await smartAnswer(order, targetName || "বন্ধুরা", []);
+              if (ans && ans !== "NO_ANSWER") {
+                await sendMessage(chatId, ans, replyTo);
+                return Response.json({ ok: true, flow: "admin-smart" });
+              }
+            }
+          }
+
           // বাকি সব: অ্যাডমিনের নির্দেশমতো সুন্দর মেসেজ সাজিয়ে গ্রুপে পাঠাবে
           const composed = await adminCompose(order, targetName);
           await sendMessage(chatId, composed || order, replyTo);
