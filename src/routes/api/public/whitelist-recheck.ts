@@ -71,8 +71,8 @@ export const Route = createFileRoute("/api/public/whitelist-recheck")({
     let completed = false;
     let batchesThisRequest = 0;
 
-    const walletsTotal = Number(run.wallets_total ?? 0);
-    const pendingTotal = Number(run.pending_total ?? 0);
+    let walletsTotal = Number(run.wallets_total ?? 0);
+    let pendingTotal = Number(run.pending_total ?? 0);
     const save = async (extra: Record<string, unknown> = {}) => {
       await supabaseAdmin.from("whitelist_runs").update({
         phase, wallet_cursor: walletCursor, pending_cursor: pendingCursor,
@@ -96,7 +96,15 @@ export const Route = createFileRoute("/api/public/whitelist-recheck")({
           return Response.json({ error: error.message }, { status: 500 });
         }
         const batch = data ?? [];
-        if (!batch.length) { phase = "pending"; await save(); continue; }
+        if (!batch.length) {
+          phase = "pending";
+          const { count } = await supabaseAdmin.from("unverified_attempts").select("id", { count: "exact", head: true })
+            .in("kind", ["first_verify", "reverify"]).not("wallet_address", "is", null);
+          pendingTotal = count ?? 0;
+          walletsTotal = walletsChecked;
+          await save({ pending_total: pendingTotal, wallets_total: walletsTotal });
+          continue;
+        }
         const flags = await Promise.all(batch.map((task) =>
           isWhitelistedRPC(task.wallet_address as string).catch(() => null)));
         const changes = await Promise.all(batch.map(async (task, index) => {
