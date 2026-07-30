@@ -282,9 +282,11 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           // The user changed the subject → forget the pending question and
           // answer what they actually asked now.
           const answering =
-            sess?.step === "await_slot"
-              ? looksLikeSlotAnswer
-              : looksLikeUidAnswer || looksLikeSlotAnswer;
+            sess?.intent === "withdraw_status" || sess?.intent === "verification_dates"
+              ? looksLikeUidAnswer
+              : sess?.step === "await_slot"
+                ? looksLikeSlotAnswer
+                : looksLikeUidAnswer || looksLikeSlotAnswer;
           if (aliveRaw && sess && !answering && !isCancel && questionish) {
             await clearSession();
           }
@@ -303,7 +305,8 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               if (!uid) {
                 await sendMessage(
                   chatId,
-                  "🧾 পেন্ডিং/পেইড উইথড্র স্ট্যাটাস দেখতে আপনার <b>UID</b> নম্বরটি লিখুন।",
+                  `দুঃখিত ${senderName}, আপনার পেমেন্ট দেরি হওয়ায় আমরা আন্তরিকভাবে দুঃখিত 🙏\n\n` +
+                    `দয়া করে আপনার <b>UID</b> নম্বরটি লিখুন।\nUID পেলেই আমি সাথে সাথে আপনার pending/paid withdraw details দেখে জানিয়ে দেব।`,
                   msg.message_id,
                 );
                 return Response.json({ ok: true, flow: "withdraw-await-uid" });
@@ -682,7 +685,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         }
 
         // ---- "উইথড্র দিয়েছি টাকা আসে নাই" → show pending requests with time ---
-        if (decision.intent === "withdraw_status" && !decision.should_delete
+        if ((decision.intent === "withdraw_status" || pendingWithdrawQuestion) && !decision.should_delete
             && settings.auto_reply_enabled) {
           const uid = hasExplicitUid ? (decision.uid || pickUid(norm)) : null;
           if (uid) {
@@ -698,7 +701,8 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           }
           const { withdrawEligibilityReply } = await import("@/lib/telegram-knowledge.server");
           const ask = pendingWithdrawQuestion
-            ? `🧾 ${senderName}, পেন্ডিং/পেইড স্ট্যাটাস দেখতে আপনার <b>UID</b> নম্বরটি লিখুন।\nUID দিলে কোন রিকোয়েস্ট কখন দিয়েছেন সব দেখিয়ে দেব।`
+            ? `দুঃখিত ${senderName}, আপনার পেমেন্ট দেরি হওয়ায় আমরা আন্তরিকভাবে দুঃখিত 🙏\n\n` +
+              `দয়া করে আপনার <b>UID</b> নম্বরটি লিখুন।\nUID পেলেই আমি আপনার pending/paid withdraw request, সময় ও status দেখে জানিয়ে দেব।`
             : withdrawEligibilityReply(senderName);
           if (pendingWithdrawQuestion && msg.from?.id) {
             await saveSession({ intent: "withdraw_status", step: "await_uid", uid: null, app_user_id: null });
