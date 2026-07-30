@@ -109,9 +109,58 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           
           return Response.json({ ok: true, flow: "password-changed" });
         }
+        // ---- অ্যাডমিন বটকে মেনশন করে কিছু করতে বললে বট সেটা করবে -------------
+        const meInfo = await getMe().catch(() => null);
+        const mentionsBot = !!meInfo && new RegExp(`@${meInfo.username}\\b`, "i").test(text);
+        const repliedToBot = msg.reply_to_message?.from?.id === meInfo?.id;
+        if (senderIsAdmin && !isBotCommand && (mentionsBot || repliedToBot) && text.trim()) {
+          const order = text.replace(new RegExp(`@${meInfo?.username ?? "___"}`, "ig"), "").trim();
+          const targetName = msg.reply_to_message && !msg.reply_to_message.from?.is_bot
+            ? [msg.reply_to_message.from?.first_name, msg.reply_to_message.from?.last_name].filter(Boolean).join(" ")
+            : null;
+          const replyTo = msg.reply_to_message?.message_id ?? msg.message_id;
+
+          // "uid 4100 er details / card" → একাউন্ট কার্ড
+          const cardCmd = order.match(/(?:uid|ইউআইডি|আইডি)\s*[:#-]?\s*(\d{1,9})/i);
+          if (cardCmd && /(details|ডিটেইলস|card|কার্ড|hisab|হিসাব|check|চেক|dekha|দেখা|info|তথ্য)/i.test(order)) {
+            const { buildUserCard } = await import("@/lib/telegram-lookup.server");
+            const res = await buildUserCard(cardCmd[1]);
+            await sendMessage(
+              chatId,
+              res.found ? res.card : `❌ UID <code>${cardCmd[1]}</code> দিয়ে কোনো একাউন্ট পাওয়া যায়নি।`,
+              replyTo,
+            );
+            return Response.json({ ok: true, flow: "admin-card" });
+          }
+
+          // "video dao / টিউটোরিয়াল দাও"
+          if (/(video|ভিডিও|tutorial|টিউটোরিয়াল)/i.test(order)) {
+            const { data: vids } = await supabaseAdmin
+              .from("tg_videos").select("topic, keywords, note, url").eq("is_active", true);
+            const hay = order.toLowerCase();
+            const match = (vids ?? []).find((v: any) =>
+              (v.keywords ?? []).some((k: string) => k && hay.includes(String(k).toLowerCase()))
+              || (v.topic && hay.includes(String(v.topic).toLowerCase()))) as any;
+            const { videoReply, DEFAULT_TUTORIAL_VIDEO } = await import("@/lib/telegram-bot.server");
+            const url = match?.url || (settings as any).default_video_url || DEFAULT_TUTORIAL_VIDEO;
+            await sendMessage(
+              chatId,
+              videoReply(targetName || "বন্ধু", url, match?.topic ?? null, match?.note ?? null),
+              replyTo,
+            );
+            return Response.json({ ok: true, flow: "admin-video" });
+          }
+
+          // বাকি সব: অ্যাডমিনের নির্দেশমতো সুন্দর মেসেজ সাজিয়ে গ্রুপে পাঠাবে
+          const composed = await adminCompose(order, targetName);
+          await sendMessage(chatId, composed || order, replyTo);
+          return Response.json({ ok: true, flow: "admin-instruction" });
+        }
+
         if ((senderIsAdmin && !isBotCommand) || repliedToAdmin) {
           return Response.json({ ok: true, ignored: senderIsAdmin ? "admin-message" : "reply-to-admin" });
         }
+
 
         // ---- voice note / audio clip → transcribe and treat as normal text ----
         const audioMsg = msg.voice ?? msg.audio ?? msg.video_note ?? null;
