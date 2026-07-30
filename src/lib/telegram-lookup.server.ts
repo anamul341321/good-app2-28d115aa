@@ -32,6 +32,14 @@ function daysAgo(iso?: string | null) {
   return `${days.toLocaleString("bn-BD")} দিন আগে`;
 }
 
+function durationLeftBn(targetMs: number) {
+  const left = Math.max(0, targetMs - Date.now());
+  const days = Math.floor(left / 86_400_000);
+  const hours = Math.ceil((left % 86_400_000) / 3_600_000);
+  if (days <= 0) return `${Math.max(1, hours).toLocaleString("bn-BD")} ঘণ্টা`;
+  return `${days.toLocaleString("bn-BD")} দিন ${hours.toLocaleString("bn-BD")} ঘণ্টা`;
+}
+
 async function pagedIds(
   db: any,
   table: string,
@@ -258,4 +266,56 @@ export async function buildVerificationDateReport(
   }
 
   return { found: true, uid: String(profile.uid_seq ?? queryRaw), card: parts.join("\n") };
+}
+
+export async function buildReverifyStatusReport(queryRaw: string): Promise<VerificationDateReport> {
+  const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
+  const matches = await findProfilesForQuery(db, queryRaw);
+  if (matches.length !== 1) {
+    return matches.length ? { found: false, ambiguous: matches } : { found: false };
+  }
+
+  const profile = matches[0];
+  const { data } = await db
+    .from("tasks")
+    .select("slot, status, wallet_address, initial_verify_at, reverify_due_at, last_reverified_at, reverify_count, whitelist_ok")
+    .eq("user_id", profile.id)
+    .order("slot", { ascending: true });
+
+  const tasks = data ?? [];
+  const verified = tasks.filter((t: any) =>
+    !!t.wallet_address && (!!t.initial_verify_at || t.status === "verified" || t.status === "done"),
+  );
+  const asked = verified.filter((t: any) => t.whitelist_ok === false);
+  const reDone = verified.filter((t: any) => Number(t.reverify_count ?? 0) > 0 || !!t.last_reverified_at);
+
+  const lines = verified.slice(0, 30).map((t: any) => {
+    const slot = Number(t.slot).toLocaleString("bn-BD");
+    const firstAt = dhaka(t.initial_verify_at);
+    const reCount = Number(t.reverify_count ?? 0);
+    if (t.whitelist_ok === false) {
+      return `• স্লট <b>${slot}</b> — ১ম: ${firstAt} → 🔁 <b>রি-ভেরিফাই চাওয়া হয়েছে</b>`;
+    }
+    if (reCount > 0 || t.last_reverified_at) {
+      return `• স্লট <b>${slot}</b> — ১ম: ${firstAt} → ✅ রি-ভেরিফাই হয়েছে (${dhaka(t.last_reverified_at)})`;
+    }
+    const base = t.reverify_due_at || (t.initial_verify_at
+      ? new Date(new Date(t.initial_verify_at).getTime() + 4 * 86_400_000).toISOString()
+      : null);
+    if (base && new Date(base).getTime() > Date.now()) {
+      return `• স্লট <b>${slot}</b> — ১ম: ${firstAt} → ⏳ আনুমানিক ${durationLeftBn(new Date(base).getTime())} বাকি`;
+    }
+    return `• স্লট <b>${slot}</b> — ১ম: ${firstAt} → এখনো রি-ভেরিফাই সিগন্যাল আসেনি`;
+  });
+
+  const card =
+    `🗓️ <b>রি-ভেরিফাই স্ট্যাটাস রিপোর্ট</b>\n` +
+    `👤 <b>${profile.display_name || "ইউজার"}</b> — UID <code>${profile.uid_seq ?? queryRaw}</code>\n\n` +
+    `✅ ১ম ভেরিফাই: <b>${verified.length.toLocaleString("bn-BD")}</b> টি\n` +
+    `🔁 রি-ভেরিফাই চাওয়া হয়েছে: <b>${asked.length.toLocaleString("bn-BD")}</b> টি\n` +
+    `✅ রি-ভেরিফাই সম্পন্ন: <b>${reDone.length.toLocaleString("bn-BD")}</b> টি\n\n` +
+    (lines.length ? lines.join("\n") : "এখনো কোনো ১ম ভেরিফাই স্লট পাওয়া যায়নি।") +
+    `\n\n<b>নোট:</b> ১ম ভেরিফাই করার পর সাধারণত ৪ দিনের কাউন্টডাউন/সিস্টেম সিগন্যাল অনুযায়ী রি-ভেরিফাই আসে। ৩ দিন হলে অনেক সময় এখনো সময় হয় না।`;
+
+  return { found: true, uid: String(profile.uid_seq ?? queryRaw), card };
 }

@@ -355,17 +355,17 @@ function FaqPanel() {
           <HelpCircle className="w-4 h-4 text-cyan" /> কোন ঘরে কী লিখবেন (সহজ ব্যাখ্যা)
         </h3>
         <ul className="mt-2 space-y-1.5 text-[11px] text-muted-foreground leading-relaxed">
-          <li>📌 <b className="text-foreground">উত্তর</b> — সবচেয়ে জরুরি ঘর। ইউজার এই সমস্যার কথা বললে বট ঠিক এই কথাটাই বলবে। শুধু এই ঘরটা পূরণ করলেই চলবে।</li>
+          <li>📌 <b className="text-foreground">উত্তর</b> — সবচেয়ে জরুরি ঘর। ইউজার এই সমস্যার কথা বললে বট এই উত্তরটাই সুন্দর করে বলবে।</li>
           <li>🖼️ <b className="text-foreground">রেফারেন্স স্ক্রিনশট</b> — ঐচ্ছিক। ছবি দিলে ইউজার একই রকম ছবি পাঠালেই বট এই উত্তরটা দেবে।</li>
           <li>🏷️ <b className="text-foreground">বিষয়</b> — শুধু আপনার চেনার জন্য নাম (যেমন "উইথড্র দেরি")। খালি রাখলে আমরা নিজেরাই নাম বসিয়ে দেব।</li>
-          <li>🔑 <b className="text-foreground">কীওয়ার্ড</b> — ঐচ্ছিক। ইউজার কোন শব্দ লিখলে এই উত্তর দেবে (যেমন: withdraw, টাকা, দেরি)। খালি রাখলেও বট নিজে বুঝে নেবে।</li>
+          <li>🔑 <b className="text-foreground">ইউজার কী লিখতে পারে</b> — নিচের ছোট ঘরে ২-৪টা শব্দ লিখুন। যেমন: <b className="text-foreground">বয়স বেশি তাও হচ্ছে না, 20+ face fail</b>। খালি রাখলেও সেভ হবে।</li>
         </ul>
       </div>
 
       <div className="glass rounded-2xl p-4 space-y-2">
         <h3 className="font-black text-sm flex items-center gap-2"><Plus className="w-4 h-4 text-emerald" /> নতুন উত্তর যোগ করুন</h3>
-        <p className="text-[10px] text-muted-foreground">
-          শুধু <b>উত্তর</b> লিখুন (চাইলে ছবি দিন) — বাকিটা ঐচ্ছিক।
+        <p className="text-[10px] text-muted-foreground leading-relaxed">
+          সহজ নিয়ম: <b>উত্তর</b> লিখুন → চাইলে <b>ইউজার যে কথাগুলো বলতে পারে</b> ২-৪টা লিখুন → <b>যোগ করুন</b> চাপুন।
         </p>
         <Area label="উত্তর (এটাই বট বলবে)" rows={5} value={draft.answer} onChange={(v) => setDraft({ ...draft, answer: v })} />
 
@@ -387,8 +387,12 @@ function FaqPanel() {
           {img && <img src={img.preview} alt="preview" className="mt-2 h-28 rounded-xl border border-border object-cover" />}
         </div>
 
-        <Field label="বিষয় (ঐচ্ছিক — নিজের চেনার জন্য)" value={draft.topic} onChange={(v) => setDraft({ ...draft, topic: v })} />
-        <Field label="কীওয়ার্ড (ঐচ্ছিক, কমা দিয়ে)" value={draft.keywords} onChange={(v) => setDraft({ ...draft, keywords: v })} />
+        <Field label="বিষয়/নাম (ঐচ্ছিক)" hint="শুধু আপনার চেনার জন্য। যেমন: 18+ সমস্যা, উইথড্র দেরি" value={draft.topic} onChange={(v) => setDraft({ ...draft, topic: v })} />
+        <Field label="ইউজার কী লিখতে পারে (ঐচ্ছিক)" hint="কমা দিয়ে লিখুন। যেমন: বয়স বেশি তাও হচ্ছে না, 20 plus, face fail, reverify hocche na" value={draft.keywords} onChange={(v) => setDraft({ ...draft, keywords: v })} />
+
+        <div className="rounded-xl border border-emerald/30 bg-emerald/5 p-3 text-[11px] leading-relaxed text-muted-foreground">
+          <b className="text-foreground">উদাহরণ:</b> কেউ যদি বলে “বয়স ২০+ তাও হচ্ছে না”, তাহলে উপরের ঘরে আপনার উত্তর লিখুন, আর “ইউজার কী লিখতে পারে” ঘরে লিখুন: <b className="text-foreground">বয়স বেশি, 20+, ১৮+, face fail</b>
+        </div>
 
         <button
           onClick={() => {
