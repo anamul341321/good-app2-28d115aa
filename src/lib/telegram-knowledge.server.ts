@@ -3,6 +3,7 @@
 // itself instead of saying "admin will reply".
 
 import { miningWindowInfo, nextOpenLabelBn } from "./mining-window";
+import { builtinFaqKnowledge } from "./telegram-builtin-faq.server";
 
 export type AppRates = {
   firstVerify: number;
@@ -77,7 +78,7 @@ ${r.rechargeOn ? "- মোবাইল রিচার্জ চালু আছ
 - ১৮ বছরের বেশি বয়সের ফেস দিয়ে ভেরিফাই করুন; কম বয়সী ফেসে অনেক সময় হয় না এবং পরে রি-ভেরিফাইয়ে সমস্যা হয়।
 - মুখে পর্যাপ্ত আলো রাখুন, চশমা/টুপি খুলে নিন।
 
-🔢 স্লট: ইউজারের স্লট সংখ্যা ১০ এর বেশিও হতে পারে (যেমন ২৩, ২৫ নম্বর স্লট)। কখনো বলবে না "১ থেকে ১০ এর মধ্যে"; যেকোনো স্লট নম্বর রিসেট করা যায়।`;
+🔢 স্লট: ইউজারের স্লট সংখ্যা ১০ এর বেশিও হতে পারে (যেমন ২৩, ২৫ নম্বর স্লট)। কখনো বলবে না "১ থেকে ১০ এর মধ্যে"; যেকোনো স্লট নম্বর রিসেট করা যায়।${builtinFaqKnowledge()}`;
 }
 
 /** Ready-made, well formatted answer for "কিভাবে টাকা পাবো" type questions. */

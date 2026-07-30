@@ -458,6 +458,21 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           faq.push({ topic: f.topic, answer: f.answer, keywords: (f as any).keywords, imageBase64 });
         }
 
+        // Built-in answers (always available) — admin rows above take priority.
+        {
+          const { BUILTIN_FAQS } = await import("@/lib/telegram-builtin-faq.server");
+          for (const b of BUILTIN_FAQS) {
+            if (faq.some((f) => String(f.topic).trim().toLowerCase() === b.topic.trim().toLowerCase())) continue;
+            faq.push({
+              topic: b.topic,
+              answer: b.answer,
+              keywords: [...b.keywords, ...b.screenshot],
+              imageBase64: null,
+            });
+          }
+        }
+
+
         if (photoBase64 && settings.auto_reply_enabled) {
           try {
             const { matchFaqImage, humanizeReply } = await import("@/lib/telegram-bot.server");
@@ -484,7 +499,41 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           } catch (e) {
             console.error("[tg] faq image match failed", e);
           }
+
+          // No admin screenshot matched → try the built-in problem library
+          // (e.g. GoodDollar "We found your twin" duplicate-face page).
+          try {
+            const { matchBuiltinFaqPhoto, humanizeReply } = await import("@/lib/telegram-bot.server");
+            const answer = await matchBuiltinFaqPhoto(photoBase64);
+            if (answer) {
+              const reply = (await humanizeReply(answer, text, [])) || answer;
+              await sendMessage(chatId, reply, msg.message_id);
+              await logMessage("question", "faq-builtin-image", reply, null);
+              return Response.json({ ok: true, flow: "faq-builtin-image" });
+            }
+          } catch (e) {
+            console.error("[tg] builtin faq photo match failed", e);
+          }
         }
+
+        // Plain-text match against the built-in problem library.
+        if (!photoBase64 && settings.auto_reply_enabled && text.trim()) {
+          try {
+            const { matchBuiltinFaqText, builtinFaqReply } = await import("@/lib/telegram-builtin-faq.server");
+            const hit = matchBuiltinFaqText(text);
+            if (hit) {
+              const { humanizeReply } = await import("@/lib/telegram-bot.server");
+              const base = builtinFaqReply(senderName, hit);
+              const reply = (await humanizeReply(base, text, [])) || base;
+              await sendMessage(chatId, reply, msg.message_id);
+              await logMessage("question", `faq-builtin:${hit.topic}`, reply, null);
+              return Response.json({ ok: true, flow: "faq-builtin-text" });
+            }
+          } catch (e) {
+            console.error("[tg] builtin faq text match failed", e);
+          }
+        }
+
 
 
         let decision = {
