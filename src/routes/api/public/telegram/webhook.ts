@@ -1916,14 +1916,20 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               `🆔 ${senderName}, আপনার একাউন্টের তথ্য দেখে জানাতে আপনার <b>UID</b> নম্বরটি দরকার।\n` +
               `দয়া করে UID টি লিখুন (অ্যাপের প্রোফাইল পেজে পাবেন) — সাথে সাথেই সব হিসাব জানিয়ে দেব 💙`;
           } else {
-            reply = await smartAnswer({
+            const { appRulebook } = await import("@/lib/telegram-app-rules.server");
+            const { agentAnswer } = await import("@/lib/telegram-agent.server");
+            const rates3 = await loadRates();
+            const base3 = {
               name: senderName,
               question: text,
-              knowledge: knowledgeText(await loadRates()),
+              knowledge: knowledgeText(rates3),
               history: convoHistory,
               pastReplies: convoReplies,
               recall: recallText,
-            });
+            };
+            reply =
+              (await agentAnswer({ ...base3, rulebook: appRulebook(rates3), isAdmin: senderIsAdmin }))
+              ?? (await smartAnswer(base3));
           }
           if (!reply) reply = `${escalateReply(senderName, mention)}\n${mention}`;
           await sendMessage(chatId, reply, msg.message_id);
