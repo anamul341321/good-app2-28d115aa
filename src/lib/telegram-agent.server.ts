@@ -105,7 +105,33 @@ const TOOLS = [
       parameters: { type: "object", properties: {}, required: [] },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "payment_numbers",
+      description:
+        "ইউজারের সেভ করা পেমেন্ট নম্বর (বিকাশ/নগদ/USDT) কোনগুলো আছে তা মাস্ক করে দেখায়। UID লাগবে।",
+      parameters: { type: "object", properties: { uid: { type: "string" } }, required: ["uid"] },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "reset_payment_numbers",
+      description:
+        "ভুল নম্বর সেভ হয়ে গেলে ইউজারের সেভ করা পেমেন্ট নম্বর মুছে দেয়, যাতে সে নতুন নম্বর যোগ করতে পারে। UID অবশ্যই লাগবে; provider দিলে শুধু ঐ মেথডের নম্বর মুছবে।",
+      parameters: {
+        type: "object",
+        properties: {
+          uid: { type: "string", description: "ইউজারের UID" },
+          provider: { type: "string", enum: ["bkash", "nagad", "usdt"], description: "ঐচ্ছিক" },
+        },
+        required: ["uid"],
+      },
+    },
+  },
 ];
+
 
 
 async function runTool(name: string, args: any): Promise<string> {
@@ -142,6 +168,16 @@ async function runTool(name: string, args: any): Promise<string> {
       const slots = await listSlotNumbers(String(args?.uid ?? ""));
       return slots.length ? `স্লট: ${slots.join(", ")}` : "কোনো স্লট পাওয়া যায়নি।";
     }
+    if (name === "payment_numbers") {
+      const { listPaymentNumbers } = await import("./telegram-wallet.server");
+      return await listPaymentNumbers(String(args?.uid ?? ""));
+    }
+    if (name === "reset_payment_numbers") {
+      const { resetPaymentNumbersForUid, walletResetReply } = await import("./telegram-wallet.server");
+      const res = await resetPaymentNumbersForUid(String(args?.uid ?? ""), args?.provider ?? null);
+      return walletResetReply(res);
+    }
+
     if (name === "fee_quote") {
       const amount = Number(args?.amount);
       if (!Number.isFinite(amount) || amount <= 0) {
@@ -220,7 +256,13 @@ export async function agentAnswer(opts: {
     (opts.isAdmin ? "" :
       `• সাধারণ ইউজার ব্যালেন্স বাড়াতে/কমাতে, সেটিং বদলাতে, ভেরিফাই/হোয়াইটলিস্ট করে দিতে বা কোনো এডিট করতে বললে ভদ্রভাবে না বলবে — এসব শুধু অ্যাডমিন করতে পারেন।\n`) +
 
+    `\n💳 ভুল পেমেন্ট নম্বর প্রসঙ্গে:\n` +
+    `• কেউ বলে "ভুল বিকাশ/নগদ নম্বর সেভ হয়ে গেছে / নম্বর বদলাতে চাই / নম্বর রিসেট করে দিন" — "পারব না" বলবে না। ` +
+    `UID নিয়ে reset_payment_numbers টুল চালিয়ে নম্বর মুছে দেবে, তারপর বলবে অ্যাপে গিয়ে সঠিক নম্বরটি নতুন করে যোগ করতে।\n` +
+    `• UID না দিলে ভদ্রভাবে UID (আর চাইলে কোন মেথড — বিকাশ/নগদ/USDT) জিজ্ঞেস করবে।\n` +
+    `• টুলের ফলাফলে যা লেখা আছে সেটাই সংক্ষেপে জানাবে; পুরো নম্বর কখনো লিখবে না।\n` +
     `\n🔄 স্লট রিসেট/ডিলিট প্রসঙ্গে (খুব গুরুত্বপূর্ণ):\n` +
+
     `• "সাপোর্ট বটের স্লট রিসেট করার ক্ষমতা নেই" — এই কথা কখনোই বলবে না। ইউজার UID ও স্লট নম্বর দিলে স্লট রিসেট করে দেওয়া যায়।\n` +
     `• আগে lookup_user/list_slots টুল দিয়ে দেখে নেবে ঐ স্লটটির অবস্থা কী।\n` +
     `• স্লটটি যদি এখনো খালি/ভেরিফিকেশন শুরুই করা হয়নি — তাহলে সরাসরি "পারব না" বলবে না; সুন্দর করে বোঝাবে: ` +
@@ -267,7 +309,7 @@ export async function agentAnswer(opts: {
   // Questions whose answer lives in the database — force a real lookup on the
   // first turn so the model can never answer them from memory/guesswork.
   const needsData =
-    /(\d{1,7})|uid|ইউ ?আই ?ডি|স্লট|slot|ভেরিফা|verif|রেফার|refer|ব্যালেন্স|balance|উইথড্র|withdraw|ফি|fee|চার্জ|charge|বোনাস|bonus|মাইনিং|mining|হোয়াইটলিস্ট|whitelist|বিকাশ|bkash|নগদ|nagad|usdt|রিচার্জ|recharge|পেন্ডিং|pending|একাউন্ট|account/i.test(
+    /(\d{1,7})|uid|ইউ ?আই ?ডি|স্লট|slot|ভেরিফা|verif|রেফার|refer|ব্যালেন্স|balance|উইথড্র|withdraw|ফি|fee|চার্জ|charge|বোনাস|bonus|মাইনিং|mining|হোয়াইটলিস্ট|whitelist|বিকাশ|bkash|নগদ|nagad|usdt|রিচার্জ|recharge|পেন্ডিং|pending|একাউন্ট|account|নম্বর|নাম্বার|number|wallet|ওয়ালেট/i.test(
       q,
     );
 
