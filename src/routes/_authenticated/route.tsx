@@ -11,6 +11,8 @@ import { LanguageToggle } from "@/components/LanguageToggle";
 import { LanguagePicker } from "@/components/LanguagePicker";
 import { useLang } from "@/lib/i18n";
 import { SlotResetApproval } from "@/components/SlotResetApproval";
+import { StartGate } from "@/components/StartGate";
+
 
 
 export const Route = createFileRoute("/_authenticated")({
@@ -75,7 +77,9 @@ function AuthedLayout() {
   }
 
   return (
+    <StartGate>
     <div className="min-h-screen pb-24">
+
       <header className="sticky top-0 z-30 glass">
         <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -117,8 +121,10 @@ function AuthedLayout() {
       <SlotResetApproval />
 
     </div>
+    </StartGate>
   );
 }
+
 
 function ProfileButton() {
   const { data } = useQuery({ queryKey: ["profile-history"], queryFn: () => getProfileHistory(), staleTime: 60_000 });

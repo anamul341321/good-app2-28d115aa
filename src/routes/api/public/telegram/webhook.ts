@@ -623,6 +623,21 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           } as any, { onConflict: "tg_user_id,chat_id" });
         };
 
+        // অ্যাপ থেকে "শুরু করুন" চাপলে টেলিগ্রাম + UID লিংক হয়ে যায় — তাই
+        // চেনা ইউজারের কাছে আর কখনো UID চাইব না (গোপনে চিনে নেব, বলব না)।
+        let _linkedUid: string | null | undefined;
+        const linkedUid = async (): Promise<string | null> => {
+          if (_linkedUid !== undefined) return _linkedUid;
+          if (!msg.from?.id) return (_linkedUid = null);
+          const { data } = await supabaseAdmin
+            .from("profiles").select("uid_seq")
+            .eq("telegram_user_id", msg.from.id).maybeSingle();
+          const uid = (data as { uid_seq?: number | null } | null)?.uid_seq;
+          return (_linkedUid = uid != null ? String(uid) : null);
+        };
+
+
+
         if (settings.auto_reply_enabled && isThanksOnly(norm)) {
           await clearSession();
           const reply = `স্বাগতম ${senderName} 🙂\nআর কোনো সাহায্য লাগলে এখানেই লিখবেন।`;
@@ -743,10 +758,11 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           if ((settings as any).slot_reset_enabled === false) return "";
           const forced = !mentionedSlot && (underAgeHit() || wantsSlotRemoval);
           if (!forced && (!mentionedSlot || !reportsProblem)) return "";
+          const known = await linkedUid();
           try {
             await saveSession({
-              step: mentionedSlot ? "offer_reset" : "await_uid",
-              uid: null,
+              step: mentionedSlot ? "offer_reset" : known ? "await_slot" : "await_uid",
+              uid: known,
               app_user_id: null,
               data: { slots: mentionedSlot ? [mentionedSlot] : [] },
             });
@@ -757,15 +773,20 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             return (
               `\n\n———\n🔄 জি অবশ্যই স্যার, আমরা আপনার স্লটটি রিসেট করে দিতে পারি।\n` +
               `রিসেট করলে ওই স্লটটি একদম খালি হয়ে যাবে, তারপর নতুন করে (১৮+ ফেস দিয়ে) আবার ভেরিফাই করতে পারবেন।\n\n` +
-              `👉 দয়া করে আপনার <b>UID</b> নম্বরটি দিন এবং বলুন <b>কত নম্বর স্লটটি</b> রিসেট করতে চান 💙`
+              (known
+                ? `👉 শুধু বলুন <b>কত নম্বর স্লটটি</b> রিসেট করতে চান (যেমন: 3, বা 2,5,7) 💙`
+                : `👉 দয়া করে আপনার <b>UID</b> নম্বরটি দিন এবং বলুন <b>কত নম্বর স্লটটি</b> রিসেট করতে চান 💙`)
             );
           }
           return (
             `\n\n———\n🔄 আপনি কি <b>${mentionedSlot} নম্বর স্লটটি</b> রিসেট করে নিতে চান?\n` +
             `রিসেট করলে ওই স্লটটি একদম খালি হয়ে যাবে, তারপর নতুন করে (১৮+ ফেস দিয়ে) আবার ভেরিফাই করতে পারবেন।\n\n` +
-            `👉 চাইলে লিখুন <b>হ্যাঁ</b> — এরপর শুধু আপনার <b>UID</b> নম্বরটি দিলেই আমি সাথে সাথে স্লটটি রিসেট করে জানিয়ে দেব 💙`
+            (known
+              ? `👉 চাইলে শুধু লিখুন <b>হ্যাঁ</b> — সাথে সাথেই স্লটটি রিসেটের অনুরোধ পাঠিয়ে দেব 💙`
+              : `👉 চাইলে লিখুন <b>হ্যাঁ</b> — এরপর শুধু আপনার <b>UID</b> নম্বরটি দিলেই আমি সাথে সাথে স্লটটি রিসেট করে জানিয়ে দেব 💙`)
           );
         };
+
 
 
 
@@ -827,7 +848,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             }
 
             if (sess.intent === "withdraw_status" && sess.step === "await_uid") {
-              const uid = pickUidFromCurrentOrReply();
+              const uid = pickUidFromCurrentOrReply() || (await linkedUid());
               if (!uid) {
                 await sendMessage(
                   chatId,
@@ -850,7 +871,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             }
 
             if (sess.intent === "account_info" && sess.step === "await_uid") {
-              const uid = pickUidFromCurrentOrReply();
+              const uid = pickUidFromCurrentOrReply() || (await linkedUid());
               if (!uid) {
                 await sendMessage(
                   chatId,
@@ -871,7 +892,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             }
 
             if (sess.intent === "referral_join" && sess.step === "await_uid") {
-              const uid = pickUidFromCurrentOrReply();
+              const uid = pickUidFromCurrentOrReply() || (await linkedUid());
               if (!uid) {
                 await sendMessage(
                   chatId,
@@ -892,7 +913,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             }
 
             if (sess.intent === "referral_history" && sess.step === "await_uid") {
-              const uid = pickUidFromCurrentOrReply();
+              const uid = pickUidFromCurrentOrReply() || (await linkedUid());
               if (!uid) {
                 await sendMessage(
                   chatId,
@@ -962,7 +983,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
                 return Response.json({ ok: true, flow: "offer-reset-declined" });
               }
 
-              const uidNow = pickUid(said) || (replyNorm ? pickUid(replyNorm) : null);
+              const uidNow = pickUid(said) || (replyNorm ? pickUid(replyNorm) : null) || (await linkedUid());
               if (uidNow) {
                 const { findProfileByUid } = await import("@/lib/telegram-slot.server");
                 const prof = await findProfileByUid(uidNow);
@@ -993,7 +1014,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
                 await sendPendingResetNotice(already);
                 return Response.json({ ok: true, flow: "slot-reset-pending" });
               }
-              const uid = pickUidFromCurrentOrReply();
+              const uid = pickUidFromCurrentOrReply() || (await linkedUid());
               if (!uid) {
                 await sendMessage(
                   chatId,
@@ -1751,7 +1772,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
         // ---- "UID 72 কার রেফারে join হয়েছে?" → exact referred_by lookup ----
         if (asksReferralJoin && !decision.should_delete && settings.auto_reply_enabled) {
-          const uid = explicitOrBareUid() || pickUid(norm);
+          const uid = explicitOrBareUid() || pickUid(norm) || (await linkedUid());
           if (uid) {
             const { buildReferralJoinReport } = await import("@/lib/telegram-lookup.server");
             const res = await buildReferralJoinReport(uid);
@@ -1894,7 +1915,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
         if (wantsSlotRemoval && !decision.should_delete && settings.auto_reply_enabled
             && (settings as any).slot_reset_enabled !== false && msg.from?.id) {
-          const uid = explicitOrBareUid() || pickUid(norm);
+          const uid = explicitOrBareUid() || pickUid(norm) || (await linkedUid());
           if (!uid) {
             const already = await pendingResetInfo();
             if (already) {
@@ -2268,7 +2289,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         // ---- guided slot reset: ask UID → ask slot → reset --------------------
         if (decision.intent === "slot_reset" && (settings as any).slot_reset_enabled !== false
             && !decision.should_delete && msg.from?.id) {
-          const uid = decision.uid || pickUid(norm);
+          const uid = decision.uid || pickUid(norm) || (await linkedUid());
           if (!uid) {
             const already = await pendingResetInfo();
             if (already) {

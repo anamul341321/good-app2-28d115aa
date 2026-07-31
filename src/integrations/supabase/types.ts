@@ -300,12 +300,14 @@ export type Database = {
           kyc_verified_at: string | null
           mother_name: string | null
           nid_number: string | null
+          onboarded_at: string | null
           phone_number: string | null
           post_office: string | null
           referral_code: string
           referral_unlock_override: boolean
           referred_by: string | null
           telegram_user_id: number | null
+          tg_link_skipped: boolean
           thana_upazila: string | null
           uid_seq: number | null
           village_area: string | null
@@ -333,12 +335,14 @@ export type Database = {
           kyc_verified_at?: string | null
           mother_name?: string | null
           nid_number?: string | null
+          onboarded_at?: string | null
           phone_number?: string | null
           post_office?: string | null
           referral_code: string
           referral_unlock_override?: boolean
           referred_by?: string | null
           telegram_user_id?: number | null
+          tg_link_skipped?: boolean
           thana_upazila?: string | null
           uid_seq?: number | null
           village_area?: string | null
@@ -366,12 +370,14 @@ export type Database = {
           kyc_verified_at?: string | null
           mother_name?: string | null
           nid_number?: string | null
+          onboarded_at?: string | null
           phone_number?: string | null
           post_office?: string | null
           referral_code?: string
           referral_unlock_override?: boolean
           referred_by?: string | null
           telegram_user_id?: number | null
+          tg_link_skipped?: boolean
           thana_upazila?: string | null
           uid_seq?: number | null
           village_area?: string | null

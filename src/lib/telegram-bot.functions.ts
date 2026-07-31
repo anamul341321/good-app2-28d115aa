@@ -449,3 +449,72 @@ export const tgSetBlocked = createServerFn({ method: "POST" })
 
     return { ok: true as const };
   });
+
+// ---- Broadcast: গ্রুপে বা যাদের টেলিগ্রাম লিংক হয়েছে সবার DM-এ ------------
+
+/** কতজনের টেলিগ্রাম লিংক হয়েছে (DM পাঠানো যাবে) — অ্যাডমিন প্যানেলে দেখানোর জন্য। */
+export const tgBroadcastAudience = createServerFn({ method: "GET" }).handler(async () => {
+  const db = await guard();
+  const { count } = await db
+    .from("profiles")
+    .select("id", { count: "exact", head: true })
+    .not("telegram_user_id", "is", null);
+  return { linked: count ?? 0 };
+});
+
+export const tgBroadcast = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        text: z.string().trim().min(1).max(3500),
+        target: z.enum(["group", "dm", "one"]),
+        uid: z.string().trim().max(30).optional(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data }) => {
+    const db = await guard();
+    const { sendMessage } = await import("@/lib/telegram-bot.server");
+
+    if (data.target === "group") {
+      const { data: s } = await db
+        .from("tg_bot_settings").select("group_chat_id").eq("id", "default").maybeSingle();
+      const chat = (s as any)?.group_chat_id;
+      if (!chat) return { ok: false as const, error: "Group chat ID সেট করা নেই" };
+      const res = await sendMessage(chat, data.text);
+      return res ? { ok: true as const, sent: 1, failed: 0 } : { ok: false as const, error: "পাঠানো যায়নি" };
+    }
+
+    if (data.target === "one") {
+      const uid = (data.uid ?? "").trim();
+      if (!uid) return { ok: false as const, error: "UID দিন" };
+      const { data: prof } = await db
+        .from("profiles").select("telegram_user_id, display_name")
+        .eq("uid_seq", Number(uid) || -1).maybeSingle();
+      const tg = (prof as any)?.telegram_user_id;
+      if (!tg) return { ok: false as const, error: "এই UID-এর টেলিগ্রাম লিংক হয়নি (অ্যাপে “শুরু করুন” চাপলে লিংক হবে)" };
+      const res = await sendMessage(tg, data.text);
+      return res
+        ? { ok: true as const, sent: 1, failed: 0 }
+        : { ok: false as const, error: "পাঠানো যায়নি (ইউজার বট ব্লক করে থাকতে পারে)" };
+    }
+
+    const { data: rows } = await db
+      .from("profiles").select("telegram_user_id")
+      .not("telegram_user_id", "is", null)
+      .limit(5000);
+
+    let sent = 0;
+    let failed = 0;
+    for (const r of (rows ?? []) as { telegram_user_id: number }[]) {
+      try {
+        const res = await sendMessage(r.telegram_user_id, data.text);
+        if (res) sent++; else failed++;
+      } catch {
+        failed++;
+      }
+      // Telegram rate limit: ~30 msg/sec — একটু বিরতি দিয়ে পাঠাই।
+      await new Promise((r2) => setTimeout(r2, 60));
+    }
+    return { ok: true as const, sent, failed };
+  });
