@@ -979,3 +979,69 @@ function VoicePanel() {
     </div>
   );
 }
+
+// ---- ব্রডকাস্ট: গ্রুপে / সব লিংকড ইউজারের DM-এ / একজনকে ------------------
+function BroadcastPanel() {
+  const [target, setTarget] = useState<"group" | "dm" | "one">("dm");
+  const [uid, setUid] = useState("");
+  const [text, setText] = useState("");
+
+  const { data: audience } = useQuery({
+    queryKey: ["tg-broadcast-audience"],
+    queryFn: () => tgBroadcastAudience(),
+    staleTime: 60_000,
+  });
+
+  const send = useMutation({
+    mutationFn: () => tgBroadcast({ data: { text, target, uid: uid || undefined } }),
+    onSuccess: (r: any) => {
+      if (!r?.ok) return toast.error(r?.error ?? "পাঠানো যায়নি");
+      toast.success(`পাঠানো হয়েছে: ${r.sent}${r.failed ? ` • ব্যর্থ: ${r.failed}` : ""}`);
+      setText("");
+    },
+    onError: () => toast.error("পাঠানো যায়নি"),
+  });
+
+  return (
+    <div className="glass rounded-2xl p-4 space-y-3">
+      <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold flex items-center gap-1.5">
+        <Send className="w-3.5 h-3.5 text-cyan" /> ব্রডকাস্ট মেসেজ
+      </p>
+      <p className="text-[11px] text-muted-foreground leading-relaxed">
+        যারা অ্যাপে “শুরু করুন” চেপেছে তাদের টেলিগ্রাম লিংক হয়ে গেছে — এখন এক ক্লিকেই সবাইকে DM পাঠানো যায়।
+        লিংক হয়েছে: <b className="mono-num text-cyan">{audience?.linked ?? 0}</b> জন।
+      </p>
+
+      <div className="grid grid-cols-3 gap-2">
+        {([["dm", "সব DM"], ["group", "গ্রুপে"], ["one", "একজনকে"]] as [typeof target, string][]).map(([k, label]) => (
+          <button key={k} onClick={() => setTarget(k)}
+            className={`rounded-xl px-2 py-2 text-[11px] font-black border ${
+              target === k ? "gradient-cta border-transparent" : "bg-surface-2 border-border text-muted-foreground"
+            }`}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {target === "one" && (
+        <input value={uid} onChange={(e) => setUid(e.target.value)} placeholder="UID (যেমন 4100)"
+          className="w-full px-3 py-2.5 rounded-xl bg-surface-2 border border-border text-xs font-bold outline-none focus:border-cyan" />
+      )}
+
+      <textarea value={text} onChange={(e) => setText(e.target.value)} rows={6}
+        placeholder="মেসেজ লিখুন… (HTML চলবে: <b>বোল্ড</b>)"
+        className="w-full px-3 py-2.5 rounded-xl bg-surface-2 border border-border text-xs font-bold outline-none focus:border-cyan" />
+
+      <button onClick={() => send.mutate()} disabled={send.isPending || !text.trim()}
+        className="gradient-cta w-full rounded-xl py-3 text-xs font-black flex items-center justify-center gap-2 disabled:opacity-50">
+        {send.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+        পাঠান
+      </button>
+      {target === "dm" && (
+        <p className="text-[10px] text-muted-foreground">
+          ⚠️ অনেকজনকে পাঠাতে কিছুটা সময় লাগবে (Telegram লিমিটের কারণে ধীরে পাঠানো হয়)। যারা বট ব্লক করেছে তাদের ব্যর্থ দেখাবে।
+        </p>
+      )}
+    </div>
+  );
+}
