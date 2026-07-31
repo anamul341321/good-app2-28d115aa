@@ -886,7 +886,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             }
 
             if (sess.intent === "referral_join" && sess.step === "await_uid") {
-              const uid = pickUidFromCurrentOrReply();
+              const uid = pickUidFromCurrentOrReply() || (await linkedUid());
               if (!uid) {
                 await sendMessage(
                   chatId,
