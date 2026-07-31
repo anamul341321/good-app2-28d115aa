@@ -1773,3 +1773,54 @@ export const adminWhitelistRuns = createServerFn({ method: "GET" }).handler(asyn
   const last = runs.find((r: any) => r.status !== "running") ?? null;
   return { runs, current, last, serverNow: new Date().toISOString() };
 });
+
+// ---------------- Active mining users ----------------
+// Lists every user whose mining meter is currently running, with the reason
+// (10 re-verified slots / admin forced / referral commission only).
+export const adminActiveMiningUsers = createServerFn({ method: "GET" }).handler(async () => {
+  const supabaseAdmin = await gate();
+
+  const rows: any[] = [];
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await supabaseAdmin
+      .from("mining_state")
+      .select("*, profiles:user_id(display_name, phone_number, uid_seq, banned)")
+      .eq("is_active", true)
+      .order("accrued_amount", { ascending: false })
+      .range(from, from + 999);
+    if (error) throw new Error(error.message);
+    rows.push(...(data ?? []));
+    if (!data || data.length < 1000) break;
+  }
+
+  const list = rows.map((m: any) => {
+    const slots = Number(m.effective_task_count ?? 0);
+    const refs = Number(m.qualifying_referees ?? 0);
+    const monthly = 500 * (slots / 10 + 0.1 * refs);
+    return {
+      userId: m.user_id as string,
+      name: m.profiles?.display_name ?? "User",
+      phone: m.profiles?.phone_number ?? "",
+      uid: Number(m.profiles?.uid_seq ?? 0),
+      banned: !!m.profiles?.banned,
+      slots,
+      refs,
+      monthly,
+      accrued: Number(m.accrued_amount ?? 0),
+      withdrawn: Number(m.withdrawn_amount ?? 0),
+      bonus: Number(m.bonus_amount ?? 0),
+      referralAccrued: Number(m.referral_accrued ?? 0),
+      forced: !!m.admin_forced_active,
+      activatedAt: m.activated_at ?? null,
+      lastCreditedAt: m.last_credited_at ?? null,
+    };
+  }).sort((a, b) => b.monthly - a.monthly || b.accrued - a.accrued);
+
+  return {
+    total: list.length,
+    forcedCount: list.filter((u) => u.forced).length,
+    refOnlyCount: list.filter((u) => u.slots < 10 && u.refs > 0).length,
+    monthlyTotal: list.reduce((s, u) => s + u.monthly, 0),
+    users: list,
+  };
+});

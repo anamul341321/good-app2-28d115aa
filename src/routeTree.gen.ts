@@ -24,6 +24,7 @@ import { Route as AdminTelegramRouteImport } from './routes/admin/telegram'
 import { Route as AdminReverifyRouteImport } from './routes/admin/reverify'
 import { Route as AdminRechargesRouteImport } from './routes/admin/recharges'
 import { Route as AdminPaidReportRouteImport } from './routes/admin/paid-report'
+import { Route as AdminMiningRouteImport } from './routes/admin/mining'
 import { Route as AdminKycRouteImport } from './routes/admin/kyc'
 import { Route as AdminFacesRouteImport } from './routes/admin/faces'
 import { Route as AdminBonusSettingsRouteImport } from './routes/admin/bonus-settings'
@@ -116,6 +117,11 @@ const AdminRechargesRoute = AdminRechargesRouteImport.update({
 const AdminPaidReportRoute = AdminPaidReportRouteImport.update({
   id: '/paid-report',
   path: '/paid-report',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminMiningRoute = AdminMiningRouteImport.update({
+  id: '/mining',
+  path: '/mining',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminKycRoute = AdminKycRouteImport.update({
@@ -235,6 +241,7 @@ export interface FileRoutesByFullPath {
   '/admin/bonus-settings': typeof AdminBonusSettingsRoute
   '/admin/faces': typeof AdminFacesRoute
   '/admin/kyc': typeof AdminKycRoute
+  '/admin/mining': typeof AdminMiningRoute
   '/admin/paid-report': typeof AdminPaidReportRoute
   '/admin/recharges': typeof AdminRechargesRoute
   '/admin/reverify': typeof AdminReverifyRoute
@@ -269,6 +276,7 @@ export interface FileRoutesByTo {
   '/admin/bonus-settings': typeof AdminBonusSettingsRoute
   '/admin/faces': typeof AdminFacesRoute
   '/admin/kyc': typeof AdminKycRoute
+  '/admin/mining': typeof AdminMiningRoute
   '/admin/paid-report': typeof AdminPaidReportRoute
   '/admin/recharges': typeof AdminRechargesRoute
   '/admin/reverify': typeof AdminReverifyRoute
@@ -306,6 +314,7 @@ export interface FileRoutesById {
   '/admin/bonus-settings': typeof AdminBonusSettingsRoute
   '/admin/faces': typeof AdminFacesRoute
   '/admin/kyc': typeof AdminKycRoute
+  '/admin/mining': typeof AdminMiningRoute
   '/admin/paid-report': typeof AdminPaidReportRoute
   '/admin/recharges': typeof AdminRechargesRoute
   '/admin/reverify': typeof AdminReverifyRoute
@@ -343,6 +352,7 @@ export interface FileRouteTypes {
     | '/admin/bonus-settings'
     | '/admin/faces'
     | '/admin/kyc'
+    | '/admin/mining'
     | '/admin/paid-report'
     | '/admin/recharges'
     | '/admin/reverify'
@@ -377,6 +387,7 @@ export interface FileRouteTypes {
     | '/admin/bonus-settings'
     | '/admin/faces'
     | '/admin/kyc'
+    | '/admin/mining'
     | '/admin/paid-report'
     | '/admin/recharges'
     | '/admin/reverify'
@@ -413,6 +424,7 @@ export interface FileRouteTypes {
     | '/admin/bonus-settings'
     | '/admin/faces'
     | '/admin/kyc'
+    | '/admin/mining'
     | '/admin/paid-report'
     | '/admin/recharges'
     | '/admin/reverify'
@@ -547,6 +559,13 @@ declare module '@tanstack/react-router' {
       path: '/paid-report'
       fullPath: '/admin/paid-report'
       preLoaderRoute: typeof AdminPaidReportRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/mining': {
+      id: '/admin/mining'
+      path: '/mining'
+      fullPath: '/admin/mining'
+      preLoaderRoute: typeof AdminMiningRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/kyc': {
@@ -721,6 +740,7 @@ interface AdminRouteChildren {
   AdminBonusSettingsRoute: typeof AdminBonusSettingsRoute
   AdminFacesRoute: typeof AdminFacesRoute
   AdminKycRoute: typeof AdminKycRoute
+  AdminMiningRoute: typeof AdminMiningRoute
   AdminPaidReportRoute: typeof AdminPaidReportRoute
   AdminRechargesRoute: typeof AdminRechargesRoute
   AdminReverifyRoute: typeof AdminReverifyRoute
@@ -738,6 +758,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminBonusSettingsRoute: AdminBonusSettingsRoute,
   AdminFacesRoute: AdminFacesRoute,
   AdminKycRoute: AdminKycRoute,
+  AdminMiningRoute: AdminMiningRoute,
   AdminPaidReportRoute: AdminPaidReportRoute,
   AdminRechargesRoute: AdminRechargesRoute,
   AdminReverifyRoute: AdminReverifyRoute,
