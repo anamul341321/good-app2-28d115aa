@@ -2283,7 +2283,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         // ---- guided slot reset: ask UID → ask slot → reset --------------------
         if (decision.intent === "slot_reset" && (settings as any).slot_reset_enabled !== false
             && !decision.should_delete && msg.from?.id) {
-          const uid = decision.uid || pickUid(norm);
+          const uid = decision.uid || pickUid(norm) || (await linkedUid());
           if (!uid) {
             const already = await pendingResetInfo();
             if (already) {
