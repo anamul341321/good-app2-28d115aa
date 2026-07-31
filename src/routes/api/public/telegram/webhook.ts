@@ -983,7 +983,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
                 return Response.json({ ok: true, flow: "offer-reset-declined" });
               }
 
-              const uidNow = pickUid(said) || (replyNorm ? pickUid(replyNorm) : null);
+              const uidNow = pickUid(said) || (replyNorm ? pickUid(replyNorm) : null) || (await linkedUid());
               if (uidNow) {
                 const { findProfileByUid } = await import("@/lib/telegram-slot.server");
                 const prof = await findProfileByUid(uidNow);
