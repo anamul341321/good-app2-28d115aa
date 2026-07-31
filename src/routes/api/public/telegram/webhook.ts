@@ -18,7 +18,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
       POST: async ({ request }) => {
         const {
           getBotToken, webhookSecretFor, sendMessage, deleteMessage,
-          restrictUser, getPhotoBase64, decide, faqImageBase64, banChatMember,
+          restrictUser, getPhotoBase64, decide, faqImageBase64,
           isChatAdmin, getMe, adminCompose,
 
         } = await import("@/lib/telegram-bot.server");
@@ -1562,8 +1562,6 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
         if (settings.moderation_enabled && decision.should_warn && msg.from?.id) {
           const warnCount = ((offender as any)?.warn_count ?? 0) + 1;
-          const blockThreshold = Number((settings as any).block_threshold ?? 5);
-          const autoBlock = (settings as any).auto_block_enabled !== false;
 
           // Which UID does this troublemaker belong to? Check the message, the
           // chat history and the linked app profile.
