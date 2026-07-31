@@ -865,7 +865,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             }
 
             if (sess.intent === "account_info" && sess.step === "await_uid") {
-              const uid = pickUidFromCurrentOrReply();
+              const uid = pickUidFromCurrentOrReply() || (await linkedUid());
               if (!uid) {
                 await sendMessage(
                   chatId,
