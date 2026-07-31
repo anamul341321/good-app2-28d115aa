@@ -103,6 +103,7 @@ export type Database = {
           usdt_rate_bdt: number
           withdraw_enabled: boolean
           withdraw_off_message: string | null
+          withdraw_off_until: string | null
         }
         Insert: {
           bkash_enabled?: boolean
@@ -129,6 +130,7 @@ export type Database = {
           usdt_rate_bdt?: number
           withdraw_enabled?: boolean
           withdraw_off_message?: string | null
+          withdraw_off_until?: string | null
         }
         Update: {
           bkash_enabled?: boolean
@@ -155,6 +157,7 @@ export type Database = {
           usdt_rate_bdt?: number
           withdraw_enabled?: boolean
           withdraw_off_message?: string | null
+          withdraw_off_until?: string | null
         }
         Relationships: []
       }
