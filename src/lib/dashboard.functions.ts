@@ -17,7 +17,7 @@ export const getDashboard = createServerFn({ method: "GET" })
         supabase.from("user_roles").select("role").eq("user_id", userId),
         supabaseAdmin.from("unverified_attempts").select("id", { count: "exact", head: true })
           .eq("user_id", userId).eq("kind", "first_verify"),
-        supabaseAdmin.from("bonus_settings").select("bkash_enabled,nagad_enabled,bkash_off_message,nagad_off_message,recharge_enabled,recharge_off_message,usdt_enabled,usdt_off_message,usdt_rate_bdt,withdraw_enabled,withdraw_off_message").eq("id", "default").maybeSingle(),
+        supabaseAdmin.from("bonus_settings").select("bkash_enabled,nagad_enabled,bkash_off_message,nagad_off_message,recharge_enabled,recharge_off_message,usdt_enabled,usdt_off_message,usdt_rate_bdt,withdraw_enabled,withdraw_off_message,withdraw_off_until").eq("id", "default").maybeSingle(),
       ]);
 
     if ((profile as any)?.banned) {
@@ -128,7 +128,12 @@ export const getDashboard = createServerFn({ method: "GET" })
         usdtRateBdt: Number(bonusSettings?.usdt_rate_bdt ?? 130),
         rechargeEnabled: (bonusSettings as any)?.recharge_enabled !== false,
         rechargeOffMessage: (bonusSettings as any)?.recharge_off_message ?? null,
-        withdrawEnabled: (bonusSettings as any)?.withdraw_enabled !== false,
+        withdrawEnabled:
+          (bonusSettings as any)?.withdraw_enabled !== false ||
+          ((bonusSettings as any)?.withdraw_off_until
+            ? new Date((bonusSettings as any).withdraw_off_until).getTime() <= Date.now()
+            : false),
+        withdrawOffUntil: (bonusSettings as any)?.withdraw_off_until ?? null,
         withdrawOffMessage: (bonusSettings as any)?.withdraw_off_message ?? null,
       },
       isAdmin,
