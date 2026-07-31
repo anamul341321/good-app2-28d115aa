@@ -296,13 +296,28 @@ export const completeReverify = createServerFn({ method: "POST" })
     const { data: task } = await supabaseAdmin
       .from("tasks").select("*").eq("id", data.taskId).eq("user_id", userId).maybeSingle();
     if (!task) throw new Error("টাস্ক পাওয়া যায়নি");
-    if (task.status !== "verified") throw new Error("রি-ভেরিফাই প্রস্তুত নয়");
-    if (task.whitelist_ok !== false) throw new Error("এই key-এর এখন রি-ভেরিফাই প্রয়োজন নেই");
+    if (task.status === "empty") throw new Error("এই স্লটে এখনো কোনো verify হয়নি");
     if (!task.wallet_address) throw new Error("এই key-এর wallet পাওয়া যায়নি");
 
     const { isWhitelistedRPC } = await import("./celo-whitelist");
     const whitelistRestored = await isWhitelistedRPC(task.wallet_address);
     if (!whitelistRestored) throw new Error("Good-App-এ key এখনো whitelist হয়নি");
+
+    // Race with the 5-minute auto whitelist checker: it may already have
+    // restored this task (status -> done) while the user was taking the photo.
+    // That is a success, not an error — just save the fresh photo and finish.
+    if (task.status === "done") {
+      if (data.newPhotoBase64) {
+        const path = await uploadFace(supabaseAdmin, userId, task.slot, data.newPhotoBase64);
+        await supabaseAdmin.from("tasks").update({ face_photo_url: path })
+          .eq("id", task.id).eq("user_id", userId);
+      }
+      await supabaseAdmin.rpc("settle_mining", { _user_id: userId });
+      const { data: ms } = await supabaseAdmin
+        .from("mining_state").select("effective_task_count").eq("user_id", userId).maybeSingle();
+      return { ok: true, alreadyDone: true, miningActivated: (ms?.effective_task_count ?? 0) >= TOTAL_TASKS };
+    }
+
 
     let newPath = task.face_photo_url;
     if (data.newPhotoBase64) {
