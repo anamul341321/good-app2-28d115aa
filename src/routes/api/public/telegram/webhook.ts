@@ -1909,7 +1909,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
         if (wantsSlotRemoval && !decision.should_delete && settings.auto_reply_enabled
             && (settings as any).slot_reset_enabled !== false && msg.from?.id) {
-          const uid = explicitOrBareUid() || pickUid(norm);
+          const uid = explicitOrBareUid() || pickUid(norm) || (await linkedUid());
           if (!uid) {
             const already = await pendingResetInfo();
             if (already) {
