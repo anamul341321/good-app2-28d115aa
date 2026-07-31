@@ -1112,7 +1112,14 @@ export async function smartAnswer(opts: {
   // NO_ANSWER or the call failed — one calm low-temperature retry before we
   // hand off to the admin. Without this, the same question randomly gets
   // "আমি জানি না" even though the answer is in the rulebook.
-  for (const temperature of [0.9, 0.2]) {
+  // শেষ পাসে NO_ANSWER একদম নিষিদ্ধ — নইলে একই প্রশ্নে কখনো সুন্দর উত্তর,
+  // কখনো "আমি জানি না" আসে (ইউজারের কাছে বট হঠাৎ বোকা হয়ে গেছে মনে হয়)।
+  const passes: { temperature: number; force: boolean }[] = [
+    { temperature: 0.8, force: false },
+    { temperature: 0.2, force: false },
+    { temperature: 0.1, force: true },
+  ];
+  for (const { temperature, force } of passes) {
   try {
     const res = await fetch(AI_URL, {
       method: "POST",
