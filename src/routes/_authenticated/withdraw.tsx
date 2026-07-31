@@ -234,9 +234,7 @@ function WithdrawPage() {
             <div className="mt-3 inline-block rounded-xl bg-background/70 border border-amber/40 px-4 py-2.5">
               <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">{t("উইথড্র সময়", "Withdraw hours")}</p>
               <p className="mono-num font-black text-xl text-amber mt-0.5" translate="no">
-                {withdrawWindowInfo(now).isClosed
-                  ? t("শুক্রবার দুপুর ১:০০ – শনিবার সকাল ১০:০০ বন্ধ", "Fri 1:00 PM – Sat 10:00 AM closed")
-                  : t("সকাল ১০:০০ – রাত ১০:০০", "10:00 AM – 10:00 PM")}
+                {t("সকাল ১০:০০ – রাত ১০:০০", "10:00 AM – 10:00 PM")}
               </p>
             </div>
             <p className="text-[10px] text-muted-foreground mt-3">{t("এই সময়ের বাইরে পেমেন্ট সিস্টেম স্বয়ংক্রিয়ভাবে চালু হয়ে যাবে ইনশাআল্লাহ ✨", "The payment system will resume automatically, InshaAllah ✨")}</p>

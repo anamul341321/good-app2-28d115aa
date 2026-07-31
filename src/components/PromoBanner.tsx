@@ -113,6 +113,15 @@ export function PromoBanner({ rates }: { rates?: PromoRates | null }) {
       <p className="relative mt-2.5 text-[10px] flex items-center gap-1 text-yellow-100 font-bold">
         <Clock className="w-3 h-3" /> অফার শেষ হবে {new Date(endMs).toLocaleDateString("bn-BD")} — দেরি না করে শুরু করুন!
       </p>
+
+      <div className="promo-urgent relative mt-2 rounded-2xl border border-yellow-200/60 bg-black/30 px-3 py-2 text-center">
+        <p className="text-[11px] font-black text-yellow-100 leading-snug">
+          🔥 সময় শেষ হওয়ার আগেই ২X বোনাসটা নিয়ে নিন! 🔥
+        </p>
+        <p className="text-[9px] text-white/85 mt-0.5">
+          {d > 0 ? `আর মাত্র ${d} দিন বাকি` : `আর মাত্র ${h} ঘণ্টা বাকি`} — এখনই ১০টি স্লট verify করে ডাবল বোনাস লুফে নিন!
+        </p>
+      </div>
     </div>
   );
 }

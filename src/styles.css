@@ -932,6 +932,23 @@
   0%,100% { opacity:0; transform: scale(0.4); }
   50%     { opacity:1; transform: scale(1.4); }
 }
+.promo-fire { position:absolute; inset:0; pointer-events:none; overflow:hidden; }
+.promo-fire span {
+  position:absolute; bottom:-14px; font-size:18px; line-height:1;
+  filter: drop-shadow(0 0 6px rgba(251,146,60,0.9));
+  animation: promoFireRise 3.2s ease-in infinite;
+  opacity:0;
+}
+@keyframes promoFireRise {
+  0%   { transform: translateY(0) scale(0.7) rotate(-6deg); opacity:0; }
+  20%  { opacity:0.95; }
+  100% { transform: translateY(-160px) scale(1.25) rotate(8deg); opacity:0; }
+}
+.promo-urgent { animation: promoUrgent 1.4s ease-in-out infinite; }
+@keyframes promoUrgent {
+  0%,100% { transform: scale(1);    box-shadow: 0 0 0 0 rgba(253,224,71,0.55); }
+  50%     { transform: scale(1.02); box-shadow: 0 0 0 8px rgba(253,224,71,0); }
+}
 
 /* ═══════════ Premium Mining Counter (v2) ═══════════ */
 .mc-premium {
