@@ -185,6 +185,8 @@ function HomePage() {
       />
       </div>
 
+      <ReferralCommissionCard />
+
       
 
 
