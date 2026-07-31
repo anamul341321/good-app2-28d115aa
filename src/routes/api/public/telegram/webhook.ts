@@ -1588,7 +1588,9 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           }
           matchedUid = matchedUid || uidForWarn;
 
-          const willBlock = autoBlock && warnCount >= blockThreshold;
+          // ব্যান নয় — ৩০ মিনিটের ফ্রিজ। সময় শেষ হলে টেলিগ্রাম নিজে থেকেই
+          // আবার লেখার অনুমতি ফিরিয়ে দেয়, অ্যাডমিনকে কিছু করতে হয় না।
+          const FREEZE_SEC = 30 * 60;
 
           await supabaseAdmin.from("tg_offenders").upsert({
             tg_user_id: msg.from.id,
@@ -1600,76 +1602,36 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             known_uid: uidForWarn,
             app_user_id: appUserId,
             chat_id: msg.chat.id,
-            ...(willBlock
-              ? {
-                  blocked: true,
-                  blocked_at: new Date().toISOString(),
-                  blocked_reason: `${decision.verdict} — ${warnCount} বার নিয়মভঙ্গ`,
-                }
-              : {}),
           });
           actions.push(`warn:${warnCount}`);
 
-          if (!willBlock) {
-            await sendMessage(
-              chatId,
-              `⚠️ <b>${senderName}</b>, আপনার মেসেজটি গ্রুপের নিয়মভঙ্গ করেছে (${decision.verdict})।\n` +
-                `সতর্কতা: <b>${warnCount}/${blockThreshold}</b>\n` +
-                (uidForWarn
-                  ? `🆔 আপনার Good-App UID <code>${uidForWarn}</code> আমাদের কাছে আছে — বারবার এমন করলে এই একাউন্টটি ব্যান হয়ে যাবে এবং সব ব্যালেন্স বাতিল হবে।\n`
-                  : "") +
-                `🙏 অনুগ্রহ করে ভদ্রভাবে কথা বলুন।`,
-              msg.message_id,
-            );
-          }
+          await restrictUser(chatId, msg.from.id, FREEZE_SEC);
+          actions.push("frozen-30m");
 
-          if (warnCount >= settings.warn_threshold && !willBlock) {
-            await restrictUser(chatId, msg.from.id, 60 * 60);
-            actions.push("muted-1h");
-          }
-
-          if (willBlock) {
-            await banChatMember(chatId, msg.from.id);
-            actions.push("blocked");
-            await sendMessage(
-              chatId,
-              `🚫 <b>${senderName}</b> কে গ্রুপ থেকে ব্লক করা হয়েছে।\n` +
-                (uidForWarn ? `🆔 UID: <code>${uidForWarn}</code>\n` : "") +
-                `কারণ: বারবার নিয়মভঙ্গ (${warnCount} বার)।`,
-            );
-          }
+          await sendMessage(
+            chatId,
+            `❄️ <b>${senderName}</b> কে <b>৩০ মিনিটের জন্য ফ্রিজ</b> করা হলো (${decision.verdict})।\n` +
+              `⏳ ৩০ মিনিট পর নিজে থেকেই আবার লিখতে পারবেন — কাউকে কিছু বলতে হবে না।\n` +
+              (uidForWarn ? `🆔 UID: <code>${uidForWarn}</code>\n` : "") +
+              `🙏 অনুগ্রহ করে গ্রুপে ভদ্রভাবে কথা বলুন।`,
+            msg.message_id,
+          );
 
           if (warnCount >= settings.warn_threshold) {
-            const { data: existing } = await supabaseAdmin
-              .from("tg_ban_requests").select("id")
-              .eq("tg_user_id", msg.from.id).eq("status", "pending").maybeSingle();
-            if (!existing) {
-              await supabaseAdmin.from("tg_ban_requests").insert({
-                tg_user_id: msg.from.id,
-                username: msg.from.username ?? null,
-                full_name: senderName,
-                reason: `${decision.verdict} — ${warnCount} বার নিয়মভঙ্গ`,
-                evidence: text.slice(0, 500),
-                matched_uid: matchedUid,
-                app_user_id: appUserId,
-              });
-              banRequested = true;
-              actions.push("ban-requested");
-            }
-
             const adminChat = settings.admin_chat_id || settings.group_chat_id || chatId;
             await sendMessage(
               adminChat,
-              `🚨 <b>${willBlock ? "ইউজার ব্লক করা হয়েছে" : "Ban approval দরকার"}</b>\n` +
+              `❄️ <b>একজনকে ফ্রিজ করা হয়েছে</b>\n` +
                 `${settings.admin_mention ? settings.admin_mention + "\n" : ""}` +
                 `ইউজার: <b>${senderName}</b>${msg.from.username ? ` (@${msg.from.username})` : ""}\n` +
                 `Telegram ID: <code>${msg.from.id}</code>\n` +
                 `App UID: <code>${matchedUid || "পাওয়া যায়নি"}</code>\n` +
-                `কারণ: ${decision.verdict} — ${warnCount} বার\n\n` +
-                `Admin panel → Telegram Bot → ব্লক লিস্ট থেকে দেখুন / আনব্লক করুন।`,
+                `অপরাধ: ${decision.verdict} (${warnCount} বার)\n\n` +
+                `এই অপরাধের জন্য আমি তাকে <b>৩০ মিনিটের জন্য ফ্রিজ</b> করে দিয়েছি — ৩০ মিনিট পর অটোমেটিক খুলে যাবে, আপনাকে কিছু করতে হবে না।`,
             );
           }
         }
+
 
 
         // ---- someone asked for a stored photo / key: never share, always deny -
