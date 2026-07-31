@@ -1008,7 +1008,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
                 await sendPendingResetNotice(already);
                 return Response.json({ ok: true, flow: "slot-reset-pending" });
               }
-              const uid = pickUidFromCurrentOrReply();
+              const uid = pickUidFromCurrentOrReply() || (await linkedUid());
               if (!uid) {
                 await sendMessage(
                   chatId,
