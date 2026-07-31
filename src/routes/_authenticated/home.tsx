@@ -509,6 +509,7 @@ function HomePage() {
           </p>
           <p className="text-[11px] text-white/90 mt-0.5">{t("গ্রুপে মেসেজ দিন — দ্রুত সাহায্য পাবেন", "Message the group — quick help")}</p>
         </a>
+        <BotStartButton />
       </div>
 
 
