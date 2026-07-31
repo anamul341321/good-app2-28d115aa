@@ -476,7 +476,7 @@ export async function humanizeReply(answer: string, userText?: string, avoid?: s
       body: JSON.stringify({
         model: MODEL,
         temperature: 1,
-        max_tokens: 1000,
+        max_tokens: 2500,
         messages: [
           {
             role: "user",
@@ -506,7 +506,12 @@ ${userText ? `\nইউজার বলেছে: "${userText.slice(0, 300)}"` : 
     // মডেল মাঝে মাঝে রিরাইট না করে নিজের ইনস্ট্রাকশন/অ্যানালাইসিস (ইংরেজিতে,
     // "Emoji count", "Tone:", "purely text with HTML" ইত্যাদি) ফেরত দেয় —
     // সেটা গ্রুপে পাঠালে ইউজার কিছুই বোঝে না। এমন হলে মূল উত্তরটাই যাবে।
-    if (!out || out.length <= 20 || isMetaOutput(out, answer)) return answer;
+    // মডেল টোকেন লিমিটে আটকে গেলে লেখা মাঝপথে কেটে যায় — তখন অর্ধেক বাংলা
+    // মেসেজ না পাঠিয়ে মূল পূর্ণ উত্তরটাই যাবে।
+    const truncated =
+      data.choices?.[0]?.finish_reason === "length" ||
+      (out.length > 80 && !/[।!?…"”)\]]\s*$/.test(out) && !/[\u{1F300}-\u{1FAFF}]\s*$/u.test(out));
+    if (!out || out.length <= 20 || truncated || isMetaOutput(out, answer)) return answer;
     return out;
   } catch {
     return answer;
