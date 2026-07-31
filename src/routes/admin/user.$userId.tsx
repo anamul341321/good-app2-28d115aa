@@ -437,6 +437,28 @@ function UserDetail() {
             <span className="text-[9px] font-black uppercase">{m?.is_active ? "ON" : "OFF"}</span>
           </button>
         </div>
+
+        {/* Why is mining ON — 2 parts */}
+        {(() => {
+          const selfRe = Number(data.faceSummary?.reverifies ?? 0);
+          const refs = Number(m?.qualifying_referees ?? 0);
+          const selfOn = selfRe >= 10;
+          return (
+            <div className="grid grid-cols-2 gap-2">
+              <div className={`rounded-xl border px-3 py-2 ${selfOn ? "bg-emerald/10 border-emerald/30" : "bg-surface-2 border-border"}`}>
+                <p className="text-[9px] uppercase tracking-widest font-black text-muted-foreground">Self mining</p>
+                <p className={`text-sm font-black ${selfOn ? "text-emerald" : "text-muted-foreground"}`}>{selfOn ? "ON" : "OFF"}</p>
+                <p className="text-[9px] text-muted-foreground mono-num">{selfRe}/10 re-verify</p>
+              </div>
+              <div className={`rounded-xl border px-3 py-2 ${refs > 0 ? "bg-violet/10 border-violet/30" : "bg-surface-2 border-border"}`}>
+                <p className="text-[9px] uppercase tracking-widest font-black text-muted-foreground">Referral 10%</p>
+                <p className={`text-sm font-black ${refs > 0 ? "text-violet" : "text-muted-foreground"}`}>{refs > 0 ? "ON" : "OFF"}</p>
+                <p className="text-[9px] text-muted-foreground mono-num">{refs} mining referee</p>
+              </div>
+            </div>
+          );
+        })()}
+
         {(m as any)?.admin_forced_active && (
           <div className="flex items-center justify-between rounded-lg bg-amber/10 border border-amber/30 px-3 py-2">
             <p className="text-[10px] text-amber font-bold">⚠ Admin নিজে Mining ON করেছেন</p>
