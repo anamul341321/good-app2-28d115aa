@@ -13,6 +13,8 @@ import nagadLogo from "@/assets/nagad-logo.png";
 import usdtLogo from "@/assets/usdt-logo.png";
 import { useLang } from "@/lib/i18n";
 import { miningWindowInfo, nextOpenLabelBn } from "@/lib/mining-window";
+import { withdrawWindowInfo } from "@/lib/withdraw-window";
+import { WithdrawClosedBanner } from "@/components/WithdrawClosedBanner";
 
 
 
@@ -99,6 +101,9 @@ function WithdrawPage() {
   const chosenEnabled = provider === "bkash" ? payout.bkashEnabled : provider === "nagad" ? payout.nagadEnabled : false;
   const chosenOffMsg  = provider === "bkash" ? payout.bkashOffMessage : payout.nagadOffMessage;
 
+  const adminWithdrawOff = (data as any)?.payoutSettings?.withdrawEnabled === false;
+  const withdrawClosed = withdrawWindowInfo(now).isClosed || adminWithdrawOff;
+
   return (
     <div className="space-y-4 pt-2">
       <PageVoice pageId="withdraw" steps={["withdraw.intro","withdraw.amount","withdraw.submit"]} />
@@ -106,6 +111,11 @@ function WithdrawPage() {
         <ArrowDownToLine className="w-8 h-8 text-rose mx-auto" />
         <h1 className="text-2xl font-black mt-1">{t("উইথড্র", "Withdraw")}</h1>
       </div>
+
+      <WithdrawClosedBanner
+        adminOff={adminWithdrawOff}
+        adminMessage={(data as any)?.payoutSettings?.withdrawOffMessage}
+      />
 
       {debts.length > 0 && (
         <div className="rounded-2xl p-5 border-2 border-rose bg-linear-to-br from-rose/25 via-rose/10 to-amber/10 space-y-3 shadow-lg">
@@ -342,7 +352,7 @@ function WithdrawPage() {
                   <Copy className="w-3 h-3 text-muted-foreground" />
                 </button>
               </div>
-              <button disabled={mut.isPending || Math.floor(Number(amount) || 0) < MIN_WITHDRAW_BDT || Math.floor(Number(amount) || 0) > claimable}
+              <button disabled={withdrawClosed || mut.isPending || Math.floor(Number(amount) || 0) < MIN_WITHDRAW_BDT || Math.floor(Number(amount) || 0) > claimable}
                 data-voice="withdraw.submit"
                 className="w-full py-4 rounded-xl gradient-cta font-black text-base flex items-center justify-center gap-2 disabled:opacity-50">
                 {mut.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
@@ -361,6 +371,7 @@ function WithdrawPage() {
           usdtOffMsg={usdtOffMsg}
           onSubmit={() => mut.mutate()}
           submitting={mut.isPending}
+          closed={withdrawClosed}
           t={t}
         />
       )}
@@ -624,9 +635,10 @@ function UsdtWithdrawCard(props: {
   usdtOffMsg: string | null;
   onSubmit: () => void;
   submitting: boolean;
+  closed?: boolean;
   t: (bn: string, en: string) => string;
 }) {
-  const { claimable, amount, setAmount, usdtAddress, setUsdtAddress, usdtRate, usdtEnabled, usdtOffMsg, onSubmit, submitting, t } = props;
+  const { claimable, amount, setAmount, usdtAddress, setUsdtAddress, usdtRate, usdtEnabled, usdtOffMsg, onSubmit, submitting, closed, t } = props;
   const CELO_RE = /^0x[a-fA-F0-9]{40}$/;
   const addrValid = CELO_RE.test(usdtAddress.trim());
   const gross = Math.floor(Number(amount) || 0);
@@ -771,7 +783,7 @@ function UsdtWithdrawCard(props: {
       </div>
 
       <button
-        disabled={submitting || gross < MIN_WITHDRAW_BDT || gross > claimable || !addrValid}
+        disabled={closed || submitting || gross < MIN_WITHDRAW_BDT || gross > claimable || !addrValid}
         className="w-full py-4 rounded-xl font-black text-base flex items-center justify-center gap-2 disabled:opacity-50 text-white shadow-lg"
         style={{ background: "linear-gradient(120deg,#10b981,#06b6d4)" }}>
         {submitting && <Loader2 className="w-4 h-4 animate-spin" />}

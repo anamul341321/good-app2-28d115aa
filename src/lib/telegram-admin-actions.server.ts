@@ -22,17 +22,19 @@ type ToggleField =
   | "nagad_enabled"
   | "usdt_enabled"
   | "recharge_enabled"
+  | "withdraw_enabled"
   | "first_verify_mining_mode"
   | "promo_active";
 
 type NumberField = "first_verify_bonus" | "reverify_bonus" | "referrer_bonus" | "usdt_rate_bdt";
-type MessageField = "bkash_off_message" | "nagad_off_message" | "usdt_off_message" | "recharge_off_message";
+type MessageField = "bkash_off_message" | "nagad_off_message" | "usdt_off_message" | "recharge_off_message" | "withdraw_off_message";
 
 const TOGGLES: ToggleField[] = [
   "bkash_enabled",
   "nagad_enabled",
   "usdt_enabled",
   "recharge_enabled",
+  "withdraw_enabled",
   "first_verify_mining_mode",
   "promo_active",
 ];
@@ -42,6 +44,7 @@ const MESSAGES: MessageField[] = [
   "nagad_off_message",
   "usdt_off_message",
   "recharge_off_message",
+  "withdraw_off_message",
 ];
 
 const LABEL: Record<string, string> = {
@@ -49,6 +52,7 @@ const LABEL: Record<string, string> = {
   nagad_enabled: "নগদ উইথড্র",
   usdt_enabled: "USDT উইথড্র",
   recharge_enabled: "মোবাইল রিচার্জ",
+  withdraw_enabled: "উইথড্র রিকোয়েস্ট",
   first_verify_mining_mode: "ফার্স্ট ভেরিফাই মাইনিং মোড",
   promo_active: "প্রোমো অফার",
   first_verify_bonus: "ফার্স্ট ভেরিফাই বোনাস",
