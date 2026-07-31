@@ -11,6 +11,8 @@ import { LanguageToggle } from "@/components/LanguageToggle";
 import { LanguagePicker } from "@/components/LanguagePicker";
 import { useLang } from "@/lib/i18n";
 import { SlotResetApproval } from "@/components/SlotResetApproval";
+import { StartGate } from "@/components/StartGate";
+
 
 
 export const Route = createFileRoute("/_authenticated")({
