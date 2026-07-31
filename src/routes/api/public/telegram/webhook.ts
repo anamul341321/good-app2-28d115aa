@@ -1766,7 +1766,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
         // ---- "UID 72 কার রেফারে join হয়েছে?" → exact referred_by lookup ----
         if (asksReferralJoin && !decision.should_delete && settings.auto_reply_enabled) {
-          const uid = explicitOrBareUid() || pickUid(norm);
+          const uid = explicitOrBareUid() || pickUid(norm) || (await linkedUid());
           if (uid) {
             const { buildReferralJoinReport } = await import("@/lib/telegram-lookup.server");
             const res = await buildReferralJoinReport(uid);
