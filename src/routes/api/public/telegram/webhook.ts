@@ -18,7 +18,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
       POST: async ({ request }) => {
         const {
           getBotToken, webhookSecretFor, sendMessage, deleteMessage,
-          restrictUser, getPhotoBase64, decide, faqImageBase64, banChatMember,
+          restrictUser, getPhotoBase64, decide, faqImageBase64,
           isChatAdmin, getMe, adminCompose,
 
         } = await import("@/lib/telegram-bot.server");
@@ -527,6 +527,14 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           /(5|৫|পাঁচ|panch)\s*(ta|টা|টি|ti)?\s*(slot|স্লট)/i.test(norm) &&
           /(prothom|প্রথম|১ম|1st|first)/i.test(norm);
 
+        // "আমি তো প্রথম ১০টার বোনাস নিয়েছি, এখন আরও ১০টা করলে কি আবার বোনাস পাবো?"
+        const asksExtraSlotBonus =
+          /(bonus|বোনাস)/i.test(norm) &&
+          /(aro|আরও|আরো|abar|আবার|extra|এক্সট্রা|notun|নতুন|porer|পরের|second|dwitiyo|দ্বিতীয়|20|২০|30|৩০|50|৫০|barale|বাড়ালে|barai|বাড়াই|add kori|যোগ কর)/i.test(norm) &&
+          /(slot|স্লট)/i.test(norm);
+
+
+
 
 
         const verificationDateKind = (s: string): "first" | "reverify" | "all" | null => {
@@ -596,38 +604,42 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return Response.json({ ok: true, flow: "thanks" });
         }
 
+        // স্লট রিসেট সরাসরি হয় না — একজন আরেকজনের স্লট রিসেট করাতে না পারে
+        // সেজন্য অ্যাপে ইউজারের নিজের অনুমোদন লাগে।
         const doReset = async (uid: string, slots: number[]) => {
-          const { resetSlotsForUid, listSlotNumbers } = await import("@/lib/telegram-slot.server");
-          const list = slots.length ? slots : await listSlotNumbers(uid);
-          const res = await resetSlotsForUid(uid, list);
+          const { createSlotResetRequest } = await import("@/lib/slot-reset-requests.server");
+          const res = await createSlotResetRequest({
+            uid,
+            slots,
+            requestedBy: `telegram:${msg.from?.id ?? ""}`,
+            chatId,
+            tgUserId: msg.from?.id ?? null,
+            tgMessageId: msg.message_id ?? null,
+          });
 
-          if (!res.found) {
-            await sendMessage(chatId, `❌ UID <code>${uid}</code> দিয়ে কোনো একাউন্ট পাওয়া যায়নি।`, msg.message_id);
-            await logMessage("question", "slot-reset-failed", "uid not found", uid);
+          if (!res.ok) {
+            await sendMessage(chatId, `❌ ${res.error}`, msg.message_id);
+            await logMessage("question", "slot-reset-failed", res.error, uid);
             return false;
           }
 
           await clearSession();
-          const okLine = res.done.length
-            ? `✅ রিসেট হয়েছে: <b>${res.done.map((s) => `স্লট ${s}`).join(", ")}</b>`
-            : "⚠️ কোনো স্লট রিসেট করা যায়নি।";
-          const failLine = res.failed.length
-            ? `\n❌ পারা যায়নি: ${res.failed.map((f) => `স্লট ${f.slot} (${f.error})`).join(", ")}`
-            : "";
-
           await sendMessage(
             chatId,
-            `🔄 <b>স্লট রিসেট রিপোর্ট</b>\n\n` +
-              `👤 একাউন্ট: <b>${res.name}</b>\n🆔 UID: <code>${res.uid ?? uid}</code>\n\n` +
-              okLine + failLine +
-              (res.done.length
-                ? `\n\nএই স্লটগুলো এখন সম্পূর্ণ খালি হয়ে গেছে।\n` +
-                  `👉 অ্যাপে গিয়ে নতুন করে ফেস ভেরিফিকেশন করুন (একবার রিফ্রেশ দিন)।`
-                : ""),
+            `🔄 <b>স্লট রিসেটের অনুরোধ পাঠানো হয়েছে</b>\n\n` +
+              `👤 একাউন্ট: <b>${res.name}</b>\n🆔 UID: <code>${res.uid}</code>\n` +
+              `📦 স্লট: <b>${res.slots.map((s) => `${s} নম্বর`).join(", ")}</b>\n\n` +
+              `🔐 নিরাপত্তার জন্য অন্য কেউ যেন আপনার স্লট রিসেট করাতে না পারে, তাই <b>আপনার নিজের অনুমোদন</b> লাগবে।\n\n` +
+              `👉 এভাবে অনুমোদন করবেন:\n` +
+              `১️⃣ অ্যাপে লগইন করুন (একবার রিফ্রেশ দিন)\n` +
+              `২️⃣ স্ক্রিনে আসা <b>“স্লট রিসেটের অনুমোদন দরকার”</b> বক্সটি দেখবেন\n` +
+              `৩️⃣ <b>“হ্যাঁ, রিসেট করুন”</b> চাপুন\n\n` +
+              `✅ অনুমোদন দেওয়ার সাথে সাথেই স্লটটি রিসেট হবে এবং আমি এখানে রিপোর্ট দিয়ে জানিয়ে দেব 💙`,
             msg.message_id,
           );
-          await logMessage("question", `slot-reset:${res.done.join("|") || "none"}`, "slot reset", uid);
-          return res.done.length > 0;
+          await logMessage("question", `slot-reset-request:${res.slots.join("|")}`, "reset approval requested", uid);
+          return true;
+
         };
 
         // ইউজার কোনো নির্দিষ্ট স্লট নিয়ে সমস্যার কথা বললে ("৩ নম্বর স্লটে
@@ -641,10 +653,21 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return Number.isInteger(n) && n >= 1 && n <= 500 ? n : null;
         })();
 
+        /**
+         * স্ক্রিনশটটি অন্য কোনো সমস্যার (ক্যামেরা পারমিশন, লিংক এক্সপায়ার,
+         * টুইন/ডুপ্লিকেট ফেস, নেটওয়ার্ক) হলে বয়সের কথা তোলা যাবে না — ইউজার
+         * যেই স্ক্রিনশট দিয়েছে, উত্তরটাও ঠিক সেটারই হবে।
+         */
+        const otherErrorHit = (): boolean =>
+          /(camera|ক্যামেরা|permission|পারমিশন|access your camera|device settings|expired|no longer valid|লিংক এক্সপায়ার|twin|already verified|network|internet|something went wrong)/i
+            .test(`${norm} ${shotText || ""}`);
+
         /** স্ক্রিনশটে/লেখায় "১৮ বছরের নিচে" ধরনের বার্তা আছে কি না। */
         const underAgeHit = (): boolean =>
-          /(18|১৮)\s*(\+|বছর|bochor|years?)?[^\n]{0,40}(niche|নিচে|under|kom|কম|below)|under\s*-?\s*age|আপনার বয়স/i
+          !otherErrorHit() &&
+          /(18|১৮)\s*(\+|বছর|bochor|years?)?[^\n]{0,40}(niche|নিচে|under|kom|কম|below)|under\s*-?\s*age|আপনার বয়স|too young|minimum age/i
             .test(`${norm} ${shotText || ""}`);
+
 
         const offerSlotResetSuffix = async (): Promise<string> => {
           if (!msg.from?.id) return "";
@@ -1547,8 +1570,6 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
         if (settings.moderation_enabled && decision.should_warn && msg.from?.id) {
           const warnCount = ((offender as any)?.warn_count ?? 0) + 1;
-          const blockThreshold = Number((settings as any).block_threshold ?? 5);
-          const autoBlock = (settings as any).auto_block_enabled !== false;
 
           // Which UID does this troublemaker belong to? Check the message, the
           // chat history and the linked app profile.
@@ -1573,7 +1594,9 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           }
           matchedUid = matchedUid || uidForWarn;
 
-          const willBlock = autoBlock && warnCount >= blockThreshold;
+          // ব্যান নয় — ৩০ মিনিটের ফ্রিজ। সময় শেষ হলে টেলিগ্রাম নিজে থেকেই
+          // আবার লেখার অনুমতি ফিরিয়ে দেয়, অ্যাডমিনকে কিছু করতে হয় না।
+          const FREEZE_SEC = 30 * 60;
 
           await supabaseAdmin.from("tg_offenders").upsert({
             tg_user_id: msg.from.id,
@@ -1585,76 +1608,36 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             known_uid: uidForWarn,
             app_user_id: appUserId,
             chat_id: msg.chat.id,
-            ...(willBlock
-              ? {
-                  blocked: true,
-                  blocked_at: new Date().toISOString(),
-                  blocked_reason: `${decision.verdict} — ${warnCount} বার নিয়মভঙ্গ`,
-                }
-              : {}),
           });
           actions.push(`warn:${warnCount}`);
 
-          if (!willBlock) {
-            await sendMessage(
-              chatId,
-              `⚠️ <b>${senderName}</b>, আপনার মেসেজটি গ্রুপের নিয়মভঙ্গ করেছে (${decision.verdict})।\n` +
-                `সতর্কতা: <b>${warnCount}/${blockThreshold}</b>\n` +
-                (uidForWarn
-                  ? `🆔 আপনার Good-App UID <code>${uidForWarn}</code> আমাদের কাছে আছে — বারবার এমন করলে এই একাউন্টটি ব্যান হয়ে যাবে এবং সব ব্যালেন্স বাতিল হবে।\n`
-                  : "") +
-                `🙏 অনুগ্রহ করে ভদ্রভাবে কথা বলুন।`,
-              msg.message_id,
-            );
-          }
+          await restrictUser(chatId, msg.from.id, FREEZE_SEC);
+          actions.push("frozen-30m");
 
-          if (warnCount >= settings.warn_threshold && !willBlock) {
-            await restrictUser(chatId, msg.from.id, 60 * 60);
-            actions.push("muted-1h");
-          }
-
-          if (willBlock) {
-            await banChatMember(chatId, msg.from.id);
-            actions.push("blocked");
-            await sendMessage(
-              chatId,
-              `🚫 <b>${senderName}</b> কে গ্রুপ থেকে ব্লক করা হয়েছে।\n` +
-                (uidForWarn ? `🆔 UID: <code>${uidForWarn}</code>\n` : "") +
-                `কারণ: বারবার নিয়মভঙ্গ (${warnCount} বার)।`,
-            );
-          }
+          await sendMessage(
+            chatId,
+            `❄️ <b>${senderName}</b> কে <b>৩০ মিনিটের জন্য ফ্রিজ</b> করা হলো (${decision.verdict})।\n` +
+              `⏳ ৩০ মিনিট পর নিজে থেকেই আবার লিখতে পারবেন — কাউকে কিছু বলতে হবে না।\n` +
+              (uidForWarn ? `🆔 UID: <code>${uidForWarn}</code>\n` : "") +
+              `🙏 অনুগ্রহ করে গ্রুপে ভদ্রভাবে কথা বলুন।`,
+            msg.message_id,
+          );
 
           if (warnCount >= settings.warn_threshold) {
-            const { data: existing } = await supabaseAdmin
-              .from("tg_ban_requests").select("id")
-              .eq("tg_user_id", msg.from.id).eq("status", "pending").maybeSingle();
-            if (!existing) {
-              await supabaseAdmin.from("tg_ban_requests").insert({
-                tg_user_id: msg.from.id,
-                username: msg.from.username ?? null,
-                full_name: senderName,
-                reason: `${decision.verdict} — ${warnCount} বার নিয়মভঙ্গ`,
-                evidence: text.slice(0, 500),
-                matched_uid: matchedUid,
-                app_user_id: appUserId,
-              });
-              banRequested = true;
-              actions.push("ban-requested");
-            }
-
             const adminChat = settings.admin_chat_id || settings.group_chat_id || chatId;
             await sendMessage(
               adminChat,
-              `🚨 <b>${willBlock ? "ইউজার ব্লক করা হয়েছে" : "Ban approval দরকার"}</b>\n` +
+              `❄️ <b>একজনকে ফ্রিজ করা হয়েছে</b>\n` +
                 `${settings.admin_mention ? settings.admin_mention + "\n" : ""}` +
                 `ইউজার: <b>${senderName}</b>${msg.from.username ? ` (@${msg.from.username})` : ""}\n` +
                 `Telegram ID: <code>${msg.from.id}</code>\n` +
                 `App UID: <code>${matchedUid || "পাওয়া যায়নি"}</code>\n` +
-                `কারণ: ${decision.verdict} — ${warnCount} বার\n\n` +
-                `Admin panel → Telegram Bot → ব্লক লিস্ট থেকে দেখুন / আনব্লক করুন।`,
+                `অপরাধ: ${decision.verdict} (${warnCount} বার)\n\n` +
+                `এই অপরাধের জন্য আমি তাকে <b>৩০ মিনিটের জন্য ফ্রিজ</b> করে দিয়েছি — ৩০ মিনিট পর অটোমেটিক খুলে যাবে, আপনাকে কিছু করতে হবে না।`,
             );
           }
         }
+
 
 
         // ---- someone asked for a stored photo / key: never share, always deny -
@@ -1811,7 +1794,18 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return Response.json({ ok: true, flow: "verification-date-ask-uid", actions });
         }
 
+        // ---- "আরও ১০টা স্লট করলে কি আবার বোনাস পাবো?" → না, বোনাস শুধু ১ম ১০টায় --
+        if (asksExtraSlotBonus && !decision.should_delete && settings.auto_reply_enabled) {
+          const { BUILTIN_FAQS } = await import("@/lib/telegram-builtin-faq.server");
+          const reply = BUILTIN_FAQS[0].answer;
+          await sendMessage(chatId, reply, msg.message_id);
+          actions.push("extra-slot-bonus");
+          await logMessage(decision.verdict, actions.join(","), reply, null);
+          return Response.json({ ok: true, flow: "extra-slot-bonus", actions });
+        }
+
         // ---- "যেগুলো হয় না ওগুলো রিমুভ করা যাবে?" → UID + স্লট নিয়ে রিসেট -----
+
         if (wantsSlotRemoval && !decision.should_delete && settings.auto_reply_enabled
             && (settings as any).slot_reset_enabled !== false && msg.from?.id) {
           const uid = explicitOrBareUid() || pickUid(norm);
