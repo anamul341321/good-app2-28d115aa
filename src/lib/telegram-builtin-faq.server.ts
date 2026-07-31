@@ -14,6 +14,23 @@ const pick = (a: string[]) => a[Math.floor(Math.random() * a.length)];
 
 export const BUILTIN_FAQS: BuiltinFaq[] = [
   {
+    topic: "পেমেন্ট করতে কত সময় লাগে?",
+    screenshot: [],
+    keywords: [
+      "payment korte koto somoy", "payment koto somoy", "koto somoy lage",
+      "kotokkhon por taka", "kotokkhon lage", "taka koto somoy", "taka kokhon asbe",
+      "withdraw koto somoy", "payment kokhon", "koto somoy pore taka",
+      "পেমেন্ট করতে কতো সময়", "পেমেন্ট করতে কত সময়", "কত সময় লাগে", "কতো সময় লাগে",
+      "কতক্ষণ পর টাকা", "টাকা কখন আসবে", "কতক্ষণ লাগে", "পেমেন্ট কখন",
+    ],
+    answer:
+      `⏱️ উইথড্র রিকোয়েস্ট দেওয়ার পর সাধারণত <b>৫ থেকে ১০ মিনিটের</b> মধ্যেই টাকা আপনার bKash/Nagad নম্বরে চলে আসে ✅\n\n` +
+      `• রিকোয়েস্টটি "paid" হয়ে গেলে ড্যাশবোর্ডেই দেখতে পাবেন\n` +
+      `• মাঝে মাঝে চাপ বেশি থাকলে একটু বেশি সময় লাগতে পারে — চিন্তার কিছু নেই, টাকা আসবেই 💙\n\n` +
+      `১০–১৫ মিনিট পরেও না পেলে শুধু আপনার UID টা দিন, আমি সাথে সাথে দেখে জানাচ্ছি 🙂`,
+  },
+
+  {
     topic: "১০টার পর আরও স্লট যোগ করলে কি আবার বোনাস পাওয়া যাবে?",
     screenshot: [],
     keywords: [

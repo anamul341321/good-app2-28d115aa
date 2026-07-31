@@ -1,28 +1,18 @@
-import { useEffect, useState } from "react";
 import banner from "@/assets/withdraw-jumma-banner.jpg";
 import { withdrawWindowInfo } from "@/lib/withdraw-window";
 
-function fmt(ms: number) {
-  const total = Math.max(0, Math.floor(ms / 1000));
-  const h = Math.floor(total / 3600);
-  const m = Math.floor((total % 3600) / 60);
-  const s = total % 60;
-  const p = (n: number) => String(n).padStart(2, "0");
-  return `${p(h)} : ${p(m)} : ${p(s)}`;
-}
+const LINES = [
+  "আজ পবিত্র জুমার দিন — সবাইকে জুমা মোবারক 🌙",
+  "জুমার দিনে বেশি বেশি দরুদ পড়ুন, দোয়া কবুলের দিন 🤲",
+  "আপনার ইবাদত, রিজিক ও ইনকাম — সব বরকতময় হোক 💙",
+];
 
 /**
  * জুমা মোবারক ব্যানার — প্রতি শুক্রবার অটো দেখাবে, রাত ১২:০০টায় অটো চলে যাবে।
  * অ্যাডমিন ম্যানুয়ালি withdraw বন্ধ রাখলেও দেখাবে।
  */
 export function WithdrawClosedBanner({ adminOff, adminMessage }: { adminOff?: boolean; adminMessage?: string | null }) {
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(id);
-  }, []);
-
-  const win = withdrawWindowInfo(now);
+  const win = withdrawWindowInfo(Date.now());
   const show = win.showJummaBanner || !!adminOff;
   if (!show) return null;
 
@@ -45,12 +35,12 @@ export function WithdrawClosedBanner({ adminOff, adminMessage }: { adminOff?: bo
         <p className="max-w-[62%] text-[11px] leading-snug text-muted-foreground">
           {adminOff
             ? (adminMessage || "উইথড্র রিকোয়েস্ট আপাতত বন্ধ আছে — একটু পরে আবার চেষ্টা করুন।")
-            : "আজ শুক্রবার — সবাইকে জুমা মোবারক। উইথড্র স্বাভাবিকভাবেই চালু আছে ✅"}
+            : LINES[0]}
         </p>
         {!adminOff && (
-          <div className="mt-1 w-fit rounded-xl border border-amber/40 bg-background/70 px-3 py-1.5 backdrop-blur-sm">
-            <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">ব্যানার থাকবে আর</p>
-            <p className="mono-num text-sm font-black text-amber">{fmt(win.msUntilBannerEnd)}</p>
+          <div className="mt-1 max-w-[66%] rounded-xl border border-amber/40 bg-background/70 px-3 py-1.5 backdrop-blur-sm">
+            <p className="text-[10px] font-bold leading-snug text-amber">{LINES[1]}</p>
+            <p className="mt-0.5 text-[9px] leading-snug text-muted-foreground">{LINES[2]}</p>
           </div>
         )}
       </div>
