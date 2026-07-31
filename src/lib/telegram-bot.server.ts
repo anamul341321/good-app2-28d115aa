@@ -1170,15 +1170,18 @@ export async function smartAnswer(opts: {
       }),
     });
 
-    if (!res.ok) return null;
+    if (!res.ok) continue;
     const data: any = await res.json();
     const out = String(data.choices?.[0]?.message?.content ?? "").trim();
-    if (!out || /NO[_\s-]?ANSWER/i.test(out)) return null;
+    if (!out || /NO[_\s-]?ANSWER/i.test(out)) continue;
     return stripAdminFiller(out);
   } catch {
-    return null;
+    // network/timeout — try the calmer pass, then give up
   }
+  }
+  return null;
 }
+
 
 /** Bot's own username (cached per worker) — used to detect @mentions. */
 let _meCache: { username: string; id: number } | null = null;
