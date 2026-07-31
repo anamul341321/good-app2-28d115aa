@@ -510,6 +510,22 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           /(refer|reffer|refar|রেফার|referral|রেফারেল)/i.test(norm) &&
           /(bare na|বাড়ে না|barche na|বাড়ছে না|bad?he na|kome|কমে|kome gese|কমে গেছে|komeche|কমেছে|jog hoi na|যোগ হয় না|jog hoy nai|যোগ হয় নাই|add hoi na|অ্যাড হয় না|add hocche na|dekhachhe na|দেখাচ্ছে না|dekhai na|দেখায় না|count hoi na|কাউন্ট হয় না|kmi|কমি)/i.test(norm);
 
+        // "যেগুলো রি-ভেরিফাই হয় না ওগুলো রিমুভ/ডিলিট করা যাবে?" → হিসাব নয়,
+        // সরাসরি স্লট রিসেটের অফার (UID + স্লট নম্বর নিয়ে)।
+        const wantsSlotRemoval =
+          /(remove|রিমুভ|delete|ডিলিট|muche|মুছ|bad de|বাদ দ|clear|ক্লিয়ার|reset|রিসেট|খালি|khali)/i.test(norm) &&
+          /(slot|স্লট|face|ফেস|verify|ভেরিফাই|verification|ভেরিফিকেশন|oigula|ওইগুলো|ওগুলো|ogulo|eigula|এইগুলো|egula|account|একাউন্ট)/i.test(norm);
+
+        // "আমার রেফার হয় না / রেফার লিংক কাজ করে না" → নিজের ৫টি স্লট ভেরিফাই লাগবে
+        const asksReferralUnlock =
+          /(refer|reffer|refar|রেফার|referral|রেফারেল)/i.test(norm) &&
+          /(hoi na|hoy na|হয় না|হয়না|hocche na|হচ্ছে না|kaj kore na|কাজ করে না|lock|লক|block|ব্লক|link|লিংক|korte parchi na|করতে পারছি না|parchi na|পারছি না|open hoi na|খোলে না|unlock|আনলক)/i.test(norm) &&
+          !/(kome|কমে|bare na|বাড়ে না)/i.test(norm);
+
+        // "৫টা স্লট কি প্রথমবার ভেরিফাই করলেই হবে?" → হ্যাঁ
+        const asksFiveSlotFirstVerify =
+          /(5|৫|পাঁচ|panch)\s*(ta|টা|টি|ti)?\s*(slot|স্লট)/i.test(norm) &&
+          /(prothom|প্রথম|১ম|1st|first)/i.test(norm);
 
 
 
@@ -625,13 +641,32 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return Number.isInteger(n) && n >= 1 && n <= 500 ? n : null;
         })();
 
+        /** স্ক্রিনশটে/লেখায় "১৮ বছরের নিচে" ধরনের বার্তা আছে কি না। */
+        const underAgeHit = (): boolean =>
+          /(18|১৮)\s*(\+|বছর|bochor|years?)?[^\n]{0,40}(niche|নিচে|under|kom|কম|below)|under\s*-?\s*age|আপনার বয়স/i
+            .test(`${norm} ${shotText || ""}`);
+
         const offerSlotResetSuffix = async (): Promise<string> => {
-          if (!mentionedSlot || !reportsProblem || !msg.from?.id) return "";
+          if (!msg.from?.id) return "";
           if ((settings as any).slot_reset_enabled === false) return "";
+          const forced = !mentionedSlot && (underAgeHit() || wantsSlotRemoval);
+          if (!forced && (!mentionedSlot || !reportsProblem)) return "";
           try {
-            await saveSession({ step: "offer_reset", uid: null, app_user_id: null, data: { slots: [mentionedSlot] } });
+            await saveSession({
+              step: mentionedSlot ? "offer_reset" : "await_uid",
+              uid: null,
+              app_user_id: null,
+              data: { slots: mentionedSlot ? [mentionedSlot] : [] },
+            });
           } catch {
             return "";
+          }
+          if (!mentionedSlot) {
+            return (
+              `\n\n———\n🔄 জি অবশ্যই স্যার, আমরা আপনার স্লটটি রিসেট করে দিতে পারি।\n` +
+              `রিসেট করলে ওই স্লটটি একদম খালি হয়ে যাবে, তারপর নতুন করে (১৮+ ফেস দিয়ে) আবার ভেরিফাই করতে পারবেন।\n\n` +
+              `👉 দয়া করে আপনার <b>UID</b> নম্বরটি দিন এবং বলুন <b>কত নম্বর স্লটটি</b> রিসেট করতে চান 💙`
+            );
           }
           return (
             `\n\n———\n🔄 আপনি কি <b>${mentionedSlot} নম্বর স্লটটি</b> রিসেট করে নিতে চান?\n` +
@@ -639,6 +674,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             `👉 চাইলে লিখুন <b>হ্যাঁ</b> — এরপর শুধু আপনার <b>UID</b> নম্বরটি দিলেই আমি সাথে সাথে স্লটটি রিসেট করে জানিয়ে দেব 💙`
           );
         };
+
 
 
         // ---- open commands: no password needed ------------------------------
@@ -955,17 +991,45 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
         // Problem replies get the matching tutorial video link appended (if the
         // admin saved one for that topic) so users can watch instead of asking again.
-        const videoSuffix = (extra?: string): string => {
+        /**
+         * অ্যাডমিন কিওয়ার্ড না দিলেও যেন ঠিক ভিডিওটি যায় — তাই বিষয় অনুযায়ী
+         * (কিভাবে কাজ করবেন / ভেরিফাই হয় না / দূরে থাকা বন্ধু) ম্যাপিং করা আছে।
+         */
+        const pickVideo = (extra?: string): any | null => {
           const list = (videoRows ?? []) as any[];
-          if (!list.length) return "";
+          if (!list.length) return null;
           const hay = `${norm} ${(extra || "").toLowerCase()}`;
-          const match = list.find((v: any) =>
+          const byKeyword = list.find((v: any) =>
             (v.keywords ?? []).some((k: string) => k && hay.includes(String(k).toLowerCase()))
             || (v.topic && hay.includes(String(v.topic).toLowerCase())),
           );
+          if (byKeyword) return byKeyword;
+
+          const topicOf = (re: RegExp) => list.find((v: any) => re.test(String(v.topic || "")));
+          // ১) দূরে থাকা বন্ধুকে দিয়ে রি-ভেরিফাই
+          if (/(dure|দূরে|dur|far|onno jaygay|অন্য জায়গায়|bideshe|বিদেশ|chole gese|চলে গেছে|kache nei|কাছে নেই)/i.test(hay)) {
+            const v = topicOf(/(dure|দূরে|friend|বন্ধু|re ?-?verify)/i);
+            if (v) return v;
+          }
+          // ২) ভেরিফাই হচ্ছে না / something went wrong / ব্রাউজার সমস্যা
+          if (/(hocche na|হচ্ছে না|hoi na|হয় না|something went wrong|error|এরর|somossa|সমস্যা|browser|ব্রাউজার|camera|ক্যামেরা|fail|ফেইল)/i.test(hay)) {
+            const v = topicOf(/(hoi na|হয় না|verification|verify|ভেরিফা|wrong|problem|সমস্যা)/i);
+            if (v) return v;
+          }
+          // ৩) কিভাবে কাজ করবেন
+          if (/(kivabe|কিভাবে|কীভাবে|kemne|কেমনে|kaj|কাজ|shuru|শুরু|new|নতুন|tutorial|টিউটোরিয়াল|video|ভিডিও)/i.test(hay)) {
+            const v = topicOf(/(kivabe|কিভাবে|কাজ|kaj|tutorial|শুরু)/i);
+            if (v) return v;
+          }
+          return null;
+        };
+
+        const videoSuffix = (extra?: string): string => {
+          const match = pickVideo(extra);
           if (!match?.url) return "";
           return `\n\n📺 <b>${match.topic}</b> — ভিডিওতে দেখে নিন: ${match.url}`;
         };
+
 
         let shotText = "";
         let photoBase64: string | null = null;
@@ -1747,7 +1811,74 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return Response.json({ ok: true, flow: "verification-date-ask-uid", actions });
         }
 
+        // ---- "যেগুলো হয় না ওগুলো রিমুভ করা যাবে?" → UID + স্লট নিয়ে রিসেট -----
+        if (wantsSlotRemoval && !decision.should_delete && settings.auto_reply_enabled
+            && (settings as any).slot_reset_enabled !== false && msg.from?.id) {
+          const uid = explicitOrBareUid() || pickUid(norm);
+          const slots = uid ? pickSlots(norm.replace(uid, " ")) : (mentionedSlot ? [mentionedSlot] : []);
+          if (uid) {
+            const { findProfileByUid } = await import("@/lib/telegram-slot.server");
+            const prof = await findProfileByUid(uid);
+            if (prof && (slots.length || wantsAll)) {
+              await saveSession({ step: "await_slot", uid, app_user_id: prof.id });
+              await doReset(uid, wantsAll ? [] : slots);
+              return Response.json({ ok: true, flow: "removal-reset", actions });
+            }
+            if (prof) {
+              await saveSession({ step: "await_slot", uid, app_user_id: prof.id });
+              const ask =
+                `জি অবশ্যই স্যার 🙂 আপনার UID <code>${uid}</code> পেয়েছি।\n` +
+                `এবার বলুন <b>কত নম্বর স্লটটি</b> রিসেট করতে চান (যেমন: 3, অথবা 2,5,7, অথবা সবগুলোর জন্য লিখুন "সব")।`;
+              await sendMessage(chatId, ask, msg.message_id);
+              actions.push("removal-ask-slot");
+              await logMessage(decision.verdict, actions.join(","), ask, uid);
+              return Response.json({ ok: true, flow: "removal-ask-slot", actions });
+            }
+          }
+          await saveSession({ step: "await_uid", uid: null, app_user_id: null, data: { slots } });
+          const ask =
+            `জি অবশ্যই স্যার, আমরা আপনার স্লটটি রিসেট করে দিতে পারি 🙂\n` +
+            `রিসেট করলে ওই স্লটটি একদম খালি হয়ে যাবে, তারপর নতুন ফেস দিয়ে আবার ভেরিফাই করতে পারবেন।\n\n` +
+            `👉 দয়া করে আপনার <b>UID</b> নম্বরটি দিন এবং বলুন <b>কত নম্বর স্লটটি</b> রিসেট করতে চান 💙`;
+          await sendMessage(chatId, ask, msg.message_id);
+          actions.push("removal-ask-uid");
+          await logMessage(decision.verdict, actions.join(","), ask, null);
+          return Response.json({ ok: true, flow: "removal-ask-uid", actions });
+        }
+
+        // ---- "আমার রেফার হয় না কেন?" → রেফার লিংক আনলকের নিয়ম ----------------
+        if ((asksReferralUnlock || asksFiveSlotFirstVerify) && !decision.should_delete
+            && settings.auto_reply_enabled) {
+          const reply = asksFiveSlotFirstVerify && !asksReferralUnlock
+            ? `হ্যাঁ স্যার ✅ প্রথমবারের ফেস ভেরিফিকেশন দিয়েই হবে — নিজের <b>৫টি স্লটে ১ম ভেরিফাই</b> সম্পন্ন হলেই আপনার রেফার লিংক আনলক হয়ে যাবে 💙`
+            : `${senderName}, রেফার লিংক আনলক করার নিয়মটি হলো —\n\n` +
+              `👉 আপনি অন্য বন্ধুদের রেফার করতে চাইলে আগে <b>নিজের ৫টি স্লট ভেরিফাই</b> করতে হবে।\n` +
+              `৫টি স্লট হয়ে গেলেই আপনার রেফার লিংকটি সাথে সাথে আনলক হয়ে যাবে, তখন যত খুশি রেফার করতে পারবেন 💙\n\n` +
+              `(৫টি স্লট প্রথমবারের ফেস ভেরিফিকেশন করলেই হবে।)`;
+          await sendMessage(chatId, reply, msg.message_id);
+          actions.push("referral-unlock");
+          await logMessage(decision.verdict, actions.join(","), reply, null);
+          return Response.json({ ok: true, flow: "referral-unlock", actions });
+        }
+
+        // ---- "আগে ভেরিফাই করেছিলাম, এখন রি-ভেরিফাই নিচ্ছে না" → স্ক্রিনশট চাই --
+        if (!photos?.length && !decision.should_delete && settings.auto_reply_enabled
+            && /(age|আগে|প্রথমে|prothome)/i.test(norm)
+            && /(verify|ভেরিফাই|verification|ভেরিফিকেশন)/i.test(norm)
+            && /(re\s*-?verify|reverify|রি\s*-?ভেরিফাই)/i.test(norm)
+            && /(nicche na|নিচ্ছে না|hocche na|হচ্ছে না|hoi na|হয় না|nei|নেই|ashe na|আসে না)/i.test(norm)) {
+          const reply =
+            `${senderName}, বিষয়টি দেখে দিচ্ছি 🙂\n` +
+            `দয়া করে রি-ভেরিফাই করতে গেলে যে লেখা/এরর আসছে তার একটি <b>স্ক্রিনশট</b> পাঠান।\n` +
+            `স্ক্রিনশট দেখেই বলে দিতে পারব সমস্যা কোথায় এবং দরকার হলে স্লটটি রিসেট করে দেব 💙`;
+          await sendMessage(chatId, reply, msg.message_id);
+          actions.push("ask-screenshot");
+          await logMessage(decision.verdict, actions.join(","), reply, null);
+          return Response.json({ ok: true, flow: "ask-screenshot", actions });
+        }
+
         // ---- "রেফার করেছি কিন্তু রেফার বাড়ে না" → রেফার হিস্টরি + কারণ --------
+
         if (complainsReferralCount && !decision.should_delete && settings.auto_reply_enabled) {
           let uid: string | null = explicitOrBareUid() || previousKnownUid;
           if (!uid && msg.from?.id) {
@@ -1837,11 +1968,11 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             && settings.auto_reply_enabled) {
           const list = (videoRows ?? []) as any[];
           const topic = (decision as any).media_topic as string | null;
-          const hay = norm.toLowerCase();
           const match =
             (topic && list.find((v) => String(v.topic).trim().toLowerCase() === topic.trim().toLowerCase())) ||
-            list.find((v: any) => (v.keywords ?? []).some((k: string) => k && hay.includes(String(k).toLowerCase()))) ||
+            pickVideo(shotText) ||
             null;
+
           const { videoReply, DEFAULT_TUTORIAL_VIDEO } = await import("@/lib/telegram-bot.server");
           const url = match?.url || (settings as any).default_video_url || DEFAULT_TUTORIAL_VIDEO;
           const reply = videoReply(senderName, url, match?.topic ?? null, match?.note ?? null);
@@ -1888,7 +2019,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             knowledge: knowledgeText(await loadRates()),
           });
           if (reply) {
-            await sendMessage(chatId, reply + videoSuffix(shotText), msg.message_id);
+            await sendMessage(chatId, reply + videoSuffix(shotText) + (await offerSlotResetSuffix()), msg.message_id);
             actions.push("photo-analysis");
             await logMessage("question", actions.join(","), reply, null);
             return Response.json({ ok: true, flow: "photo-analysis", actions });
@@ -1951,7 +2082,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             knowledge: knowledgeText(await loadRates()),
           });
           if (reply) {
-            await sendMessage(chatId, reply + videoSuffix(shotText), msg.message_id);
+            await sendMessage(chatId, reply + videoSuffix(shotText) + (await offerSlotResetSuffix()), msg.message_id);
             actions.push("photo-analysis");
             await logMessage("question", actions.join(","), reply, matchedUid);
             return Response.json({ ok: true, flow: "photo-analysis", actions });
