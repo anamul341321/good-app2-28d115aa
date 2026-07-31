@@ -9,7 +9,7 @@ import { MiningCounter } from "@/components/MiningCounter";
 import bonusGirl from "@/assets/bonus-girl.png";
 import { CheckCircle2, Camera, Lock, Sparkles, Loader2, X, Plus, Crown, Users, Heart, ShieldCheck, BadgeCheck, ChevronDown, MessageCircle, Gift } from "lucide-react";
 import { AnnouncementTicker } from "@/components/AnnouncementTicker";
-import { WithdrawClosedBanner } from "@/components/WithdrawClosedBanner";
+import { HeroBanner } from "@/components/HeroBanner";
 import { TourReplayButton } from "@/components/GuidedTour";
 import { PageVoice } from "@/components/PageVoice";
 import { VideoTutorialButton } from "@/components/VideoTutorialButton";
@@ -124,9 +124,10 @@ function HomePage() {
 
       <PageVoice pageId="home" steps={["home.welcome","home.mining","home.claim","home.main","home.witness","home.tap.slot","home.open.photo","reverify.button"]} />
       <AnnouncementTicker />
-      <WithdrawClosedBanner
+      <HeroBanner
         adminOff={(data as any)?.payoutSettings?.withdrawEnabled === false}
         adminMessage={(data as any)?.payoutSettings?.withdrawOffMessage}
+        rates={(data as any)?.bonus?.rates ?? null}
       />
       <WithdrawFeed />
 

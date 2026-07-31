@@ -34,6 +34,7 @@ function BonusSettings() {
   const [rechargeMsg, setRechargeMsg] = useState("");
   const [withdrawOn, setWithdrawOn] = useState(true);
   const [withdrawMsg, setWithdrawMsg] = useState("");
+  const [offUntil, setOffUntil] = useState<string | null>(null);
   const [usdtOn, setUsdtOn] = useState(true);
   const [usdtMsg, setUsdtMsg] = useState("");
 
@@ -61,6 +62,7 @@ function BonusSettings() {
     setUsdtMsg(d.usdt_off_message ?? "");
     setWithdrawOn(d.withdraw_enabled !== false);
     setWithdrawMsg(d.withdraw_off_message ?? "");
+    setOffUntil(d.withdraw_off_until ?? null);
   }, [data]);
 
   const save = useMutation({
@@ -87,9 +89,39 @@ function BonusSettings() {
         usdt_off_message: usdtMsg || null,
         withdraw_enabled: withdrawOn,
         withdraw_off_message: withdrawMsg || null,
+        withdraw_off_until: withdrawOn ? null : offUntil,
       } as any,
     }),
     onSuccess: () => { toast.success("✅ বোনাস সেটিংস সেভ হয়েছে"); refetch(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const pauseOneDay = useMutation({
+    mutationFn: () => adminUpdateBonusSettings({
+      data: {
+        first_verify_bonus: Number(fv),
+        reverify_bonus: Number(rv),
+        referrer_bonus: Number(rf),
+        withdraw_enabled: false,
+        withdraw_off_message: withdrawMsg || "উইথড্র রিকোয়েস্ট ১ দিনের জন্য বন্ধ রাখা হয়েছে — আগামীকাল আবার চালু হবে ইনশাআল্লাহ।",
+        withdraw_off_until: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      } as any,
+    }),
+    onSuccess: () => { toast.success("⏸️ withdraw ১ দিনের জন্য বন্ধ করা হলো"); refetch(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const resumeNow = useMutation({
+    mutationFn: () => adminUpdateBonusSettings({
+      data: {
+        first_verify_bonus: Number(fv),
+        reverify_bonus: Number(rv),
+        referrer_bonus: Number(rf),
+        withdraw_enabled: true,
+        withdraw_off_until: null,
+      } as any,
+    }),
+    onSuccess: () => { toast.success("✅ withdraw আবার চালু"); refetch(); },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -221,8 +253,29 @@ function BonusSettings() {
             setMsg={setWithdrawMsg}
           />
           <p className="text-[9px] text-muted-foreground -mt-1">
-            OFF করলে সব withdraw বন্ধ। এছাড়া অটো: প্রতি শুক্রবার দুপুর ১:০০টা → শনিবার সকাল ১০:০০টা withdraw বন্ধ থাকে।
+            OFF করলে সব withdraw বন্ধ। কোনো অটো সাপ্তাহিক বন্ধ নেই — শুক্রবারেও withdraw চালু থাকে (শুধু জুমা মোবারক ব্যানার দেখায়)।
           </p>
+          <div className="grid grid-cols-2 gap-2 pt-1">
+            <button
+              onClick={() => pauseOneDay.mutate()}
+              disabled={pauseOneDay.isPending}
+              className="rounded-xl bg-rose/15 border-2 border-rose/50 px-3 py-2 text-[11px] font-black text-rose btn-press disabled:opacity-50"
+            >
+              ⏸️ ১ দিনের জন্য withdraw বন্ধ
+            </button>
+            <button
+              onClick={() => resumeNow.mutate()}
+              disabled={resumeNow.isPending}
+              className="rounded-xl bg-emerald/15 border-2 border-emerald/50 px-3 py-2 text-[11px] font-black text-emerald btn-press disabled:opacity-50"
+            >
+              ▶️ এখনই আবার চালু করো
+            </button>
+          </div>
+          {offUntil && withdrawOn === false && (
+            <p className="text-[9px] text-rose font-bold">
+              অটো চালু হবে: {new Date(offUntil).toLocaleString("bn-BD")}
+            </p>
+          )}
           <PayoutRow name="বিকাশ" on={bkashOn} setOn={setBkashOn} msg={bkashMsg} setMsg={setBkashMsg} />
           <PayoutRow name="নগদ"  on={nagadOn} setOn={setNagadOn} msg={nagadMsg} setMsg={setNagadMsg} />
           <PayoutRow name="মোবাইল রিচার্জ" on={rechargeOn} setOn={setRechargeOn} msg={rechargeMsg} setMsg={setRechargeMsg} />
