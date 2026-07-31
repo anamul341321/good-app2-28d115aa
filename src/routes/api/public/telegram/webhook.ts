@@ -1053,6 +1053,12 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return `\n\n📺 <b>${match.topic}</b> — ভিডিওতে দেখে নিন: ${match.url}`;
         };
 
+        const withdrawHowToReply = (name: string) =>
+          `${name}, উইথড্র করার আলাদা ভিডিও এখনো যোগ করা হয়নি। তবে খুব সহজ 👇\n\n` +
+          `১️⃣ Wallet পেজে bKash/Nagad নম্বর সেভ করুন\n` +
+          `২️⃣ Withdraw পেজে মাধ্যম ও টাকার পরিমাণ দিন\n` +
+          `৩️⃣ রিকোয়েস্ট Submit করুন — সাধারণত ৫–১০ মিনিটে পেমেন্ট পাবেন ✅`;
+
 
         let shotText = "";
         let photoBase64: string | null = null;
@@ -1491,13 +1497,19 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             pastReplies = (past ?? []).map((p: any) => p.bot_reply).filter(Boolean).slice(0, 4);
             if (!knownUid) knownUid = (past ?? []).find((p: any) => p.matched_uid)?.matched_uid ?? null;
           }
-          convoHistory = history;
+          // A full unrelated history makes the model answer the previous topic
+          // instead of the user's current question. Only carry context for an
+          // explicit reply/follow-up; standalone questions are self-contained.
+          const isShortFollowUp = norm.length <= 90 &&
+            /^(তাহলে|তাইলে|তারপর|এরপর|এটা|ওটা|ঐটা|সেটা|আর|কিন্তু|হ্যাঁ|না|কেন|কিভাবে|কীভাবে|কেমনে|then|so|but|why|how|eta|oita|seta|tarpor|erpor|taile|tahole)\b/i.test(norm);
+          const keepContext = repliedToBot || isShortFollowUp;
+          convoHistory = keepContext ? history : [];
           convoReplies = pastReplies;
 
           // Group memory: what was asked & answered before for the same topic.
           try {
             const { recallSimilar } = await import("@/lib/telegram-bot.server");
-            recallText = await recallSimilar(text || shotText);
+            recallText = keepContext ? await recallSimilar(text || shotText) : "";
           } catch (e) {
             console.error("[tg] recall failed", e);
           }
@@ -1519,7 +1531,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               photoBase64,
               senderName,
               smart: (settings as any).smart_mode !== false,
-              history,
+              history: keepContext ? history : [],
               pastReplies: (settings as any).reply_variety === false ? [] : pastReplies,
               knownUid,
               warnCount: (offender as any)?.warn_count ?? 0,
@@ -1956,16 +1968,31 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         }
 
         // ---- "ভিডিও দিন / কিভাবে করবো" → tutorial video link -----------------
-        const howToWork = /(kivabe|kivbe|kibhabe|কিভাবে|কীভাবে|kmne|kemne|কেমনে)[^\n]{0,30}(kaj|কাজ|use|চালাব|করব|করবো|করতে হয়|start|শুরু|verify|ভেরিফাই|verification|ভেরিফিকেশন|face|ফেস|withdraw|উইথড্র|refer|রেফার)/i.test(norm)
+        const howToWork = /(kivabe|kivbe|kibhabe|কিভাবে|কীভাবে|kmne|kemne|কেমনে)[^\n]{0,30}(kaj|কাজ|use|চালাব|করব|করবো|করতে হয়|start|শুরু|verify|ভেরিফাই|verification|ভেরিফিকেশন|face|ফেস|refer|রেফার)/i.test(norm)
           || /(video|ভিডিও|টিউটোরিয়াল|tutorial|dekhiye|দেখিয়ে)/i.test(norm);
         if ((decision.intent === "video_request" || howToWork) && !decision.should_delete
             && settings.auto_reply_enabled) {
           const list = (videoRows ?? []) as any[];
           const topic = (decision as any).media_topic as string | null;
-          const match =
-            (topic && list.find((v) => String(v.topic).trim().toLowerCase() === topic.trim().toLowerCase())) ||
-            pickVideo(shotText) ||
+          const asksWithdrawVideo = /(withdraw|উইথড্র|টাকা তোলা|টাকা তুলব|টাকা তুলবো)/i.test(norm);
+          const withdrawVideo = asksWithdrawVideo
+            ? list.find((v) => {
+                const labels = `${String(v.topic ?? "")} ${(v.keywords ?? []).join(" ")}`;
+                return /(withdraw|উইথড্র|টাকা তোলা)/i.test(labels);
+              })
+            : null;
+          const match = withdrawVideo ||
+            (!asksWithdrawVideo && topic && list.find((v) => String(v.topic).trim().toLowerCase() === topic.trim().toLowerCase())) ||
+            (!asksWithdrawVideo ? pickVideo(shotText) : null) ||
             null;
+
+          if (asksWithdrawVideo && !match?.url) {
+            const reply = withdrawHowToReply(senderName);
+            await sendMessage(chatId, reply, msg.message_id);
+            actions.push("withdraw-video-fallback");
+            await logMessage(decision.verdict, actions.join(","), reply, matchedUid);
+            return Response.json({ ok: true, flow: "withdraw-video-fallback", actions });
+          }
 
           const { videoReply, DEFAULT_TUTORIAL_VIDEO } = await import("@/lib/telegram-bot.server");
           const url = match?.url || (settings as any).default_video_url || DEFAULT_TUTORIAL_VIDEO;
