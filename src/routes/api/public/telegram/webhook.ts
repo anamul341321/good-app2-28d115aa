@@ -527,6 +527,14 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           /(5|৫|পাঁচ|panch)\s*(ta|টা|টি|ti)?\s*(slot|স্লট)/i.test(norm) &&
           /(prothom|প্রথম|১ম|1st|first)/i.test(norm);
 
+        // "আমি তো প্রথম ১০টার বোনাস নিয়েছি, এখন আরও ১০টা করলে কি আবার বোনাস পাবো?"
+        const asksExtraSlotBonus =
+          /(bonus|বোনাস)/i.test(norm) &&
+          /(aro|আরও|আরো|abar|আবার|extra|এক্সট্রা|notun|নতুন|porer|পরের|second|dwitiyo|দ্বিতীয়|20|২০|30|৩০|50|৫০|barale|বাড়ালে|barai|বাড়াই|add kori|যোগ কর)/i.test(norm) &&
+          /(slot|স্লট)/i.test(norm);
+
+
+
 
 
         const verificationDateKind = (s: string): "first" | "reverify" | "all" | null => {
