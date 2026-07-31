@@ -100,6 +100,33 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           }
           return Response.json({ ok: true, flow: "welcome" });
         }
+        // ---- অ্যাপ থেকে ডিপ-লিংকে /start → টেলিগ্রাম অ্যাকাউন্ট লিংক ----------
+        const startTextRaw: string = String(msg.text ?? "").trim();
+        if (msg.chat?.type === "private" && /^\/start\b/i.test(startTextRaw)) {
+          const payload = startTextRaw.split(/\s+/)[1] ?? "";
+          const uidMatch = /^uid[_-]?(\d+)$/i.exec(payload);
+          let linkedUid: string | null = null;
+          if (uidMatch && msg.from?.id) {
+            const { data: prof } = await supabaseAdmin
+              .from("profiles").select("id, uid_seq")
+              .eq("uid_seq", Number(uidMatch[1])).maybeSingle();
+            if (prof) {
+              await supabaseAdmin.from("profiles")
+                .update({ telegram_user_id: msg.from.id }).eq("id", prof.id);
+              linkedUid = String(prof.uid_seq ?? "");
+            }
+          }
+          const who = msg.from?.first_name || "বন্ধু";
+          await sendMessage(
+            chatId,
+            `🤖 <b>স্বাগতম ${who}!</b>\n\n` +
+              (linkedUid
+                ? `✅ আপনার অ্যাকাউন্ট (UID <b>${linkedUid}</b>) বটের সাথে যুক্ত হয়েছে — এখন বারবার UID লিখতে হবে না।\n\n`
+                : "") +
+              `যেকোনো প্রশ্ন লিখে বা ভয়েস পাঠিয়ে জিজ্ঞেস করুন — আমি সাথে সাথেই সাহায্য করব 💙`,
+          );
+          return Response.json({ ok: true, flow: "start" });
+        }
         if (!chatAllowed) return Response.json({ ok: true, ignored: "other-chat" });
         if (msg.left_chat_member) return Response.json({ ok: true, ignored: "left" });
 
