@@ -1106,14 +1106,21 @@ export async function smartAnswer(opts: {
   if (!key) return null;
   const q = (opts.question || "").trim();
   if (!q) return null;
+  // Two passes: a natural/creative pass, then — if the model bailed with
+  // NO_ANSWER or the call failed — one calm low-temperature retry before we
+  // hand off to the admin. Without this, the same question randomly gets
+  // "আমি জানি না" even though the answer is in the rulebook.
+  for (const temperature of [0.9, 0.2]) {
   try {
     const res = await fetch(AI_URL, {
       method: "POST",
       headers: { "Lovable-API-Key": key, "Content-Type": "application/json" },
+      signal: AbortSignal.timeout(25_000),
       body: JSON.stringify({
         model: MODEL,
-        temperature: 0.9,
+        temperature,
         max_tokens: 900,
+
         messages: [
           {
             role: "system",
