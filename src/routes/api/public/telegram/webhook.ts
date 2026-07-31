@@ -991,17 +991,45 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
         // Problem replies get the matching tutorial video link appended (if the
         // admin saved one for that topic) so users can watch instead of asking again.
-        const videoSuffix = (extra?: string): string => {
+        /**
+         * অ্যাডমিন কিওয়ার্ড না দিলেও যেন ঠিক ভিডিওটি যায় — তাই বিষয় অনুযায়ী
+         * (কিভাবে কাজ করবেন / ভেরিফাই হয় না / দূরে থাকা বন্ধু) ম্যাপিং করা আছে।
+         */
+        const pickVideo = (extra?: string): any | null => {
           const list = (videoRows ?? []) as any[];
-          if (!list.length) return "";
+          if (!list.length) return null;
           const hay = `${norm} ${(extra || "").toLowerCase()}`;
-          const match = list.find((v: any) =>
+          const byKeyword = list.find((v: any) =>
             (v.keywords ?? []).some((k: string) => k && hay.includes(String(k).toLowerCase()))
             || (v.topic && hay.includes(String(v.topic).toLowerCase())),
           );
+          if (byKeyword) return byKeyword;
+
+          const topicOf = (re: RegExp) => list.find((v: any) => re.test(String(v.topic || "")));
+          // ১) দূরে থাকা বন্ধুকে দিয়ে রি-ভেরিফাই
+          if (/(dure|দূরে|dur|far|onno jaygay|অন্য জায়গায়|bideshe|বিদেশ|chole gese|চলে গেছে|kache nei|কাছে নেই)/i.test(hay)) {
+            const v = topicOf(/(dure|দূরে|friend|বন্ধু|re ?-?verify)/i);
+            if (v) return v;
+          }
+          // ২) ভেরিফাই হচ্ছে না / something went wrong / ব্রাউজার সমস্যা
+          if (/(hocche na|হচ্ছে না|hoi na|হয় না|something went wrong|error|এরর|somossa|সমস্যা|browser|ব্রাউজার|camera|ক্যামেরা|fail|ফেইল)/i.test(hay)) {
+            const v = topicOf(/(hoi na|হয় না|verification|verify|ভেরিফা|wrong|problem|সমস্যা)/i);
+            if (v) return v;
+          }
+          // ৩) কিভাবে কাজ করবেন
+          if (/(kivabe|কিভাবে|কীভাবে|kemne|কেমনে|kaj|কাজ|shuru|শুরু|new|নতুন|tutorial|টিউটোরিয়াল|video|ভিডিও)/i.test(hay)) {
+            const v = topicOf(/(kivabe|কিভাবে|কাজ|kaj|tutorial|শুরু)/i);
+            if (v) return v;
+          }
+          return null;
+        };
+
+        const videoSuffix = (extra?: string): string => {
+          const match = pickVideo(extra);
           if (!match?.url) return "";
           return `\n\n📺 <b>${match.topic}</b> — ভিডিওতে দেখে নিন: ${match.url}`;
         };
+
 
         let shotText = "";
         let photoBase64: string | null = null;
