@@ -56,7 +56,11 @@ export async function buildWithdrawStatusCard(uidRaw: string): Promise<WithdrawS
     .filter((m: number) => m > 0 && m < 60 * 48);
   const avg = diffs.length ? Math.round(diffs.reduce((a, b) => a + b, 0) / diffs.length) : null;
 
-  const head = `👤 <b>${profile.display_name || "ইউজার"}</b> — UID <code>${profile.uid_seq ?? uidRaw}</code>\n`;
+  const { withdrawOffMessageBn } = await import("@/lib/withdraw-window");
+  const offNote = withdrawOffMessageBn();
+  const head =
+    `👤 <b>${profile.display_name || "ইউজার"}</b> — UID <code>${profile.uid_seq ?? uidRaw}</code>\n` +
+    (offNote ? `\n🌙 <b>এখন উইথড্র বন্ধ</b> — ${offNote}\n` : "");
 
   if (!pending.length) {
     return {
