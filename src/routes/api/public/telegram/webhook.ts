@@ -961,6 +961,11 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             }
 
             if (sess.step === "await_uid") {
+              const already = await pendingResetInfo();
+              if (already) {
+                await sendPendingResetNotice(already);
+                return Response.json({ ok: true, flow: "slot-reset-pending" });
+              }
               const uid = pickUidFromCurrentOrReply();
               if (!uid) {
                 await sendMessage(
