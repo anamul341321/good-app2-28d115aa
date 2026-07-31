@@ -1968,11 +1968,11 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             && settings.auto_reply_enabled) {
           const list = (videoRows ?? []) as any[];
           const topic = (decision as any).media_topic as string | null;
-          const hay = norm.toLowerCase();
           const match =
             (topic && list.find((v) => String(v.topic).trim().toLowerCase() === topic.trim().toLowerCase())) ||
-            list.find((v: any) => (v.keywords ?? []).some((k: string) => k && hay.includes(String(k).toLowerCase()))) ||
+            pickVideo(shotText) ||
             null;
+
           const { videoReply, DEFAULT_TUTORIAL_VIDEO } = await import("@/lib/telegram-bot.server");
           const url = match?.url || (settings as any).default_video_url || DEFAULT_TUTORIAL_VIDEO;
           const reply = videoReply(senderName, url, match?.topic ?? null, match?.note ?? null);
