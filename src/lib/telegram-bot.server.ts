@@ -1112,7 +1112,14 @@ export async function smartAnswer(opts: {
   // NO_ANSWER or the call failed — one calm low-temperature retry before we
   // hand off to the admin. Without this, the same question randomly gets
   // "আমি জানি না" even though the answer is in the rulebook.
-  for (const temperature of [0.9, 0.2]) {
+  // শেষ পাসে NO_ANSWER একদম নিষিদ্ধ — নইলে একই প্রশ্নে কখনো সুন্দর উত্তর,
+  // কখনো "আমি জানি না" আসে (ইউজারের কাছে বট হঠাৎ বোকা হয়ে গেছে মনে হয়)।
+  const passes: { temperature: number; force: boolean }[] = [
+    { temperature: 0.8, force: false },
+    { temperature: 0.2, force: false },
+    { temperature: 0.1, force: true },
+  ];
+  for (const { temperature, force } of passes) {
   try {
     const res = await fetch(AI_URL, {
       method: "POST",
@@ -1141,7 +1148,12 @@ export async function smartAnswer(opts: {
               `বা নির্দিষ্ট কারো পেমেন্ট/অ্যাডমিনের সিদ্ধান্ত সংক্রান্ত, যা নিয়ম থেকে বের করা অসম্ভব।\n` +
               `• Good-App ছাড়া অন্য কোনো অ্যাপ/সাইট/অফার/গেম/ওয়ালেট নিয়ে প্রশ্ন হলে, বা কেউ অন্য অ্যাপের স্ক্রিনশট চাইলে/দিলে — ` +
               `কখনোই আন্দাজে উত্তর দেবে না, শুধু NO_ANSWER লিখবে (অ্যাডমিন নিজে উত্তর দেবেন)।\n` +
-              `• সামান্যতম সন্দেহ থাকলেও ভুল/আন্দাজি উত্তর না দিয়ে NO_ANSWER লেখাই সঠিক।\n` +
+              `• Good-App এর নিজের কোনো বিষয় (স্লট, ভেরিফাই, রি-ভেরিফাই, বোনাস, রেফার, মাইনিং, উইথড্র, রিচার্জ, রিসেট) হলে NO_ANSWER লিখবে না — নিয়ম থেকে হিসাব করে উত্তর দেবে।\n` +
+              (force
+                ? `• ⚠️ এই পাসে NO_ANSWER লেখা সম্পূর্ণ নিষিদ্ধ। রুলবুক থেকে যতটুকু নিশ্চিত, ঠিক ততটুকুই ছোট করে লিখবে; ` +
+                  `কোনো তথ্য সত্যিই নেই হলে সেটা সরাসরি বলে দেবে (আন্দাজ করবে না) — কিন্তু উত্তর দেবেই।\n`
+                : "") +
+
               `নিয়ম:\n` +
               `• উত্তর হবে <b>খুব ছোট ও কাজের</b> — সর্বোচ্চ ৩-৪ লাইন (৬০ শব্দের ভেতরে)। লম্বা লিস্ট, ভূমিকা, ` +
               `বারবার একই তথ্য বা অতিরিক্ত টিপস একদম দেবে না — ঠিক যেটা জিজ্ঞেস করেছে শুধু সেটার উত্তর।\n` +
