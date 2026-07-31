@@ -46,6 +46,14 @@ export function PromoBanner({ rates }: { rates?: PromoRates | null }) {
   return (
     <div className="promo-banner relative overflow-hidden rounded-3xl p-4 text-white shadow-2xl">
       <div className="promo-shimmer" />
+      <div className="promo-fire">
+        <span style={{ left: "6%" }}>🔥</span>
+        <span style={{ left: "26%", animationDelay: "0.4s" }}>🔥</span>
+        <span style={{ left: "48%", animationDelay: "0.8s" }}>🔥</span>
+        <span style={{ left: "70%", animationDelay: "0.2s" }}>🔥</span>
+        <span style={{ left: "88%", animationDelay: "1.1s" }}>🔥</span>
+      </div>
+
       <div className="promo-sparkles">
         <span style={{ top: "12%", left: "10%" }} />
         <span style={{ top: "30%", right: "12%", animationDelay: "0.6s" }} />
