@@ -1783,7 +1783,74 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return Response.json({ ok: true, flow: "verification-date-ask-uid", actions });
         }
 
+        // ---- "যেগুলো হয় না ওগুলো রিমুভ করা যাবে?" → UID + স্লট নিয়ে রিসেট -----
+        if (wantsSlotRemoval && !decision.should_delete && settings.auto_reply_enabled
+            && (settings as any).slot_reset_enabled !== false && msg.from?.id) {
+          const uid = explicitOrBareUid() || pickUid(norm);
+          const slots = uid ? pickSlots(norm.replace(uid, " ")) : (mentionedSlot ? [mentionedSlot] : []);
+          if (uid) {
+            const { findProfileByUid } = await import("@/lib/telegram-slot.server");
+            const prof = await findProfileByUid(uid);
+            if (prof && (slots.length || wantsAll)) {
+              await saveSession({ step: "await_slot", uid, app_user_id: prof.id });
+              await doReset(uid, wantsAll ? [] : slots);
+              return Response.json({ ok: true, flow: "removal-reset", actions });
+            }
+            if (prof) {
+              await saveSession({ step: "await_slot", uid, app_user_id: prof.id });
+              const ask =
+                `জি অবশ্যই স্যার 🙂 আপনার UID <code>${uid}</code> পেয়েছি।\n` +
+                `এবার বলুন <b>কত নম্বর স্লটটি</b> রিসেট করতে চান (যেমন: 3, অথবা 2,5,7, অথবা সবগুলোর জন্য লিখুন "সব")।`;
+              await sendMessage(chatId, ask, msg.message_id);
+              actions.push("removal-ask-slot");
+              await logMessage(decision.verdict, actions.join(","), ask, uid);
+              return Response.json({ ok: true, flow: "removal-ask-slot", actions });
+            }
+          }
+          await saveSession({ step: "await_uid", uid: null, app_user_id: null, data: { slots } });
+          const ask =
+            `জি অবশ্যই স্যার, আমরা আপনার স্লটটি রিসেট করে দিতে পারি 🙂\n` +
+            `রিসেট করলে ওই স্লটটি একদম খালি হয়ে যাবে, তারপর নতুন ফেস দিয়ে আবার ভেরিফাই করতে পারবেন।\n\n` +
+            `👉 দয়া করে আপনার <b>UID</b> নম্বরটি দিন এবং বলুন <b>কত নম্বর স্লটটি</b> রিসেট করতে চান 💙`;
+          await sendMessage(chatId, ask, msg.message_id);
+          actions.push("removal-ask-uid");
+          await logMessage(decision.verdict, actions.join(","), ask, null);
+          return Response.json({ ok: true, flow: "removal-ask-uid", actions });
+        }
+
+        // ---- "আমার রেফার হয় না কেন?" → রেফার লিংক আনলকের নিয়ম ----------------
+        if ((asksReferralUnlock || asksFiveSlotFirstVerify) && !decision.should_delete
+            && settings.auto_reply_enabled) {
+          const reply = asksFiveSlotFirstVerify && !asksReferralUnlock
+            ? `হ্যাঁ স্যার ✅ প্রথমবারের ফেস ভেরিফিকেশন দিয়েই হবে — নিজের <b>৫টি স্লটে ১ম ভেরিফাই</b> সম্পন্ন হলেই আপনার রেফার লিংক আনলক হয়ে যাবে 💙`
+            : `${senderName}, রেফার লিংক আনলক করার নিয়মটি হলো —\n\n` +
+              `👉 আপনি অন্য বন্ধুদের রেফার করতে চাইলে আগে <b>নিজের ৫টি স্লট ভেরিফাই</b> করতে হবে।\n` +
+              `৫টি স্লট হয়ে গেলেই আপনার রেফার লিংকটি সাথে সাথে আনলক হয়ে যাবে, তখন যত খুশি রেফার করতে পারবেন 💙\n\n` +
+              `(৫টি স্লট প্রথমবারের ফেস ভেরিফিকেশন করলেই হবে।)`;
+          await sendMessage(chatId, reply, msg.message_id);
+          actions.push("referral-unlock");
+          await logMessage(decision.verdict, actions.join(","), reply, null);
+          return Response.json({ ok: true, flow: "referral-unlock", actions });
+        }
+
+        // ---- "আগে ভেরিফাই করেছিলাম, এখন রি-ভেরিফাই নিচ্ছে না" → স্ক্রিনশট চাই --
+        if (!photos?.length && !decision.should_delete && settings.auto_reply_enabled
+            && /(age|আগে|প্রথমে|prothome)/i.test(norm)
+            && /(verify|ভেরিফাই|verification|ভেরিফিকেশন)/i.test(norm)
+            && /(re\s*-?verify|reverify|রি\s*-?ভেরিফাই)/i.test(norm)
+            && /(nicche na|নিচ্ছে না|hocche na|হচ্ছে না|hoi na|হয় না|nei|নেই|ashe na|আসে না)/i.test(norm)) {
+          const reply =
+            `${senderName}, বিষয়টি দেখে দিচ্ছি 🙂\n` +
+            `দয়া করে রি-ভেরিফাই করতে গেলে যে লেখা/এরর আসছে তার একটি <b>স্ক্রিনশট</b> পাঠান।\n` +
+            `স্ক্রিনশট দেখেই বলে দিতে পারব সমস্যা কোথায় এবং দরকার হলে স্লটটি রিসেট করে দেব 💙`;
+          await sendMessage(chatId, reply, msg.message_id);
+          actions.push("ask-screenshot");
+          await logMessage(decision.verdict, actions.join(","), reply, null);
+          return Response.json({ ok: true, flow: "ask-screenshot", actions });
+        }
+
         // ---- "রেফার করেছি কিন্তু রেফার বাড়ে না" → রেফার হিস্টরি + কারণ --------
+
         if (complainsReferralCount && !decision.should_delete && settings.auto_reply_enabled) {
           let uid: string | null = explicitOrBareUid() || previousKnownUid;
           if (!uid && msg.from?.id) {
