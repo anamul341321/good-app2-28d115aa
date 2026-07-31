@@ -642,6 +642,48 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
         };
 
+        // একই ইউজারের একটা রিসেট অনুরোধ pending থাকলে আবার UID চাইব না —
+        // মনে করিয়ে দেব কোন কোন স্লটের অনুরোধ পাঠানো আছে ও কীভাবে অনুমোদন করবে।
+        const pendingResetInfo = async () => {
+          if (!msg.from?.id) return null;
+          const { data } = await supabaseAdmin
+            .from("slot_reset_requests")
+            .select("id, slots, user_id, created_at")
+            .eq("tg_user_id", msg.from.id)
+            .eq("status", "pending")
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          if (!data) return null;
+          const { data: prof } = await supabaseAdmin
+            .from("profiles").select("uid_seq, display_name").eq("id", data.user_id).maybeSingle();
+          return {
+            slots: ((data.slots as number[]) ?? []),
+            uid: prof?.uid_seq != null ? String(prof.uid_seq) : "",
+            name: prof?.display_name || "ইউজার",
+          };
+        };
+
+        const sendPendingResetNotice = async (p: { slots: number[]; uid: string; name: string }) => {
+          await clearSession();
+          const slotText = p.slots.length
+            ? p.slots.map((s) => `${s} নম্বর`).join(", ")
+            : "সব";
+          await sendMessage(
+            chatId,
+            `✅ <b>আপনার স্লট রিসেটের অনুরোধ আগেই পাঠানো হয়েছে</b> — নতুন করে UID দেওয়ার দরকার নেই 🙂\n\n` +
+              `👤 একাউন্ট: <b>${p.name}</b>${p.uid ? `\n🆔 UID: <code>${p.uid}</code>` : ""}\n` +
+              `📦 অনুরোধ করা স্লট: <b>${slotText}</b>\n\n` +
+              `⏳ এখন শুধু <b>আপনার নিজের অনুমোদন</b> বাকি:\n` +
+              `১️⃣ অ্যাপে লগইন করে একবার রিফ্রেশ দিন\n` +
+              `২️⃣ স্ক্রিনে আসা <b>“স্লট রিসেটের অনুমোদন দরকার”</b> বক্সটি দেখুন\n` +
+              `৩️⃣ <b>“হ্যাঁ, রিসেট করুন”</b> চাপুন\n\n` +
+              `✅ অনুমোদন দিলেই স্লটটি রিসেট হবে এবং আমি এখানেই রিপোর্ট দিয়ে জানাব 💙`,
+            msg.message_id,
+          );
+          await logMessage("question", `slot-reset-pending:${p.slots.join("|")}`, "pending reset reminder", p.uid || null);
+        };
+
         // ইউজার কোনো নির্দিষ্ট স্লট নিয়ে সমস্যার কথা বললে ("৩ নম্বর স্লটে
         // রি-ভেরিফাই হচ্ছে না") — উত্তরের সাথে জিজ্ঞেস করব স্লটটি রিসেট করে
         // দেব কি না। রাজি হলে UID চেয়ে সাথে সাথেই রিসেট করে দেব।
@@ -919,6 +961,11 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             }
 
             if (sess.step === "await_uid") {
+              const already = await pendingResetInfo();
+              if (already) {
+                await sendPendingResetNotice(already);
+                return Response.json({ ok: true, flow: "slot-reset-pending" });
+              }
               const uid = pickUidFromCurrentOrReply();
               if (!uid) {
                 await sendMessage(
@@ -1821,6 +1868,13 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         if (wantsSlotRemoval && !decision.should_delete && settings.auto_reply_enabled
             && (settings as any).slot_reset_enabled !== false && msg.from?.id) {
           const uid = explicitOrBareUid() || pickUid(norm);
+          if (!uid) {
+            const already = await pendingResetInfo();
+            if (already) {
+              await sendPendingResetNotice(already);
+              return Response.json({ ok: true, flow: "slot-reset-pending" });
+            }
+          }
           const slots = uid ? pickSlots(norm.replace(uid, " ")) : (mentionedSlot ? [mentionedSlot] : []);
           if (uid) {
             const { findProfileByUid } = await import("@/lib/telegram-slot.server");
@@ -2188,6 +2242,13 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         if (decision.intent === "slot_reset" && (settings as any).slot_reset_enabled !== false
             && !decision.should_delete && msg.from?.id) {
           const uid = decision.uid || pickUid(norm);
+          if (!uid) {
+            const already = await pendingResetInfo();
+            if (already) {
+              await sendPendingResetNotice(already);
+              return Response.json({ ok: true, flow: "slot-reset-pending" });
+            }
+          }
           if (uid) {
             const { findProfileByUid } = await import("@/lib/telegram-slot.server");
             const prof = await findProfileByUid(uid);
