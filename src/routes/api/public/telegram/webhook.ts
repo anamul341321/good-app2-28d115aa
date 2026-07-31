@@ -596,38 +596,42 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return Response.json({ ok: true, flow: "thanks" });
         }
 
+        // স্লট রিসেট সরাসরি হয় না — একজন আরেকজনের স্লট রিসেট করাতে না পারে
+        // সেজন্য অ্যাপে ইউজারের নিজের অনুমোদন লাগে।
         const doReset = async (uid: string, slots: number[]) => {
-          const { resetSlotsForUid, listSlotNumbers } = await import("@/lib/telegram-slot.server");
-          const list = slots.length ? slots : await listSlotNumbers(uid);
-          const res = await resetSlotsForUid(uid, list);
+          const { createSlotResetRequest } = await import("@/lib/slot-reset-requests.server");
+          const res = await createSlotResetRequest({
+            uid,
+            slots,
+            requestedBy: `telegram:${msg.from?.id ?? ""}`,
+            chatId,
+            tgUserId: msg.from?.id ?? null,
+            tgMessageId: msg.message_id ?? null,
+          });
 
-          if (!res.found) {
-            await sendMessage(chatId, `❌ UID <code>${uid}</code> দিয়ে কোনো একাউন্ট পাওয়া যায়নি।`, msg.message_id);
-            await logMessage("question", "slot-reset-failed", "uid not found", uid);
+          if (!res.ok) {
+            await sendMessage(chatId, `❌ ${res.error}`, msg.message_id);
+            await logMessage("question", "slot-reset-failed", res.error, uid);
             return false;
           }
 
           await clearSession();
-          const okLine = res.done.length
-            ? `✅ রিসেট হয়েছে: <b>${res.done.map((s) => `স্লট ${s}`).join(", ")}</b>`
-            : "⚠️ কোনো স্লট রিসেট করা যায়নি।";
-          const failLine = res.failed.length
-            ? `\n❌ পারা যায়নি: ${res.failed.map((f) => `স্লট ${f.slot} (${f.error})`).join(", ")}`
-            : "";
-
           await sendMessage(
             chatId,
-            `🔄 <b>স্লট রিসেট রিপোর্ট</b>\n\n` +
-              `👤 একাউন্ট: <b>${res.name}</b>\n🆔 UID: <code>${res.uid ?? uid}</code>\n\n` +
-              okLine + failLine +
-              (res.done.length
-                ? `\n\nএই স্লটগুলো এখন সম্পূর্ণ খালি হয়ে গেছে।\n` +
-                  `👉 অ্যাপে গিয়ে নতুন করে ফেস ভেরিফিকেশন করুন (একবার রিফ্রেশ দিন)।`
-                : ""),
+            `🔄 <b>স্লট রিসেটের অনুরোধ পাঠানো হয়েছে</b>\n\n` +
+              `👤 একাউন্ট: <b>${res.name}</b>\n🆔 UID: <code>${res.uid}</code>\n` +
+              `📦 স্লট: <b>${res.slots.map((s) => `${s} নম্বর`).join(", ")}</b>\n\n` +
+              `🔐 নিরাপত্তার জন্য অন্য কেউ যেন আপনার স্লট রিসেট করাতে না পারে, তাই <b>আপনার নিজের অনুমোদন</b> লাগবে।\n\n` +
+              `👉 এভাবে অনুমোদন করবেন:\n` +
+              `১️⃣ অ্যাপে লগইন করুন (একবার রিফ্রেশ দিন)\n` +
+              `২️⃣ স্ক্রিনে আসা <b>“স্লট রিসেটের অনুমোদন দরকার”</b> বক্সটি দেখবেন\n` +
+              `৩️⃣ <b>“হ্যাঁ, রিসেট করুন”</b> চাপুন\n\n` +
+              `✅ অনুমোদন দেওয়ার সাথে সাথেই স্লটটি রিসেট হবে এবং আমি এখানে রিপোর্ট দিয়ে জানিয়ে দেব 💙`,
             msg.message_id,
           );
-          await logMessage("question", `slot-reset:${res.done.join("|") || "none"}`, "slot reset", uid);
-          return res.done.length > 0;
+          await logMessage("question", `slot-reset-request:${res.slots.join("|")}`, "reset approval requested", uid);
+          return true;
+
         };
 
         // ইউজার কোনো নির্দিষ্ট স্লট নিয়ে সমস্যার কথা বললে ("৩ নম্বর স্লটে
