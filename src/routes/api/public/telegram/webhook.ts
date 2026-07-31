@@ -2054,7 +2054,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             knowledge: knowledgeText(await loadRates()),
           });
           if (reply) {
-            await sendMessage(chatId, reply + videoSuffix(shotText), msg.message_id);
+            await sendMessage(chatId, reply + videoSuffix(shotText) + (await offerSlotResetSuffix()), msg.message_id);
             actions.push("photo-analysis");
             await logMessage("question", actions.join(","), reply, matchedUid);
             return Response.json({ ok: true, flow: "photo-analysis", actions });
