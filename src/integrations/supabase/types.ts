@@ -236,6 +236,7 @@ export type Database = {
           is_active: boolean
           last_credited_at: string | null
           qualifying_referees: number
+          referral_accrued: number
           user_id: string
           withdrawn_amount: number
         }
@@ -248,6 +249,7 @@ export type Database = {
           is_active?: boolean
           last_credited_at?: string | null
           qualifying_referees?: number
+          referral_accrued?: number
           user_id: string
           withdrawn_amount?: number
         }
@@ -260,6 +262,7 @@ export type Database = {
           is_active?: boolean
           last_credited_at?: string | null
           qualifying_referees?: number
+          referral_accrued?: number
           user_id?: string
           withdrawn_amount?: number
         }
