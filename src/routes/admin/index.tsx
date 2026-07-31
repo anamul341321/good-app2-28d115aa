@@ -137,11 +137,11 @@ function AdminDashboard() {
         <QuickCard to="/admin/wallets" icon={<Wallet className="w-5 h-5" />} value={stats.wallets} label="Wallets bound" accent="emerald" />
         <QuickCard to="/admin/kyc" icon={<ShieldCheck className="w-5 h-5" />} value={(stats as any).kycVerified ?? 0} label="KYC verified" accent="violet" />
         <QuickCard to="/admin/recharges" icon={<Smartphone className="w-5 h-5" />} value={(stats as any).recharges ?? 0} label="Recharge history" accent="cyan" />
-        <div className="glass rounded-2xl p-3">
+        <Link to="/admin/mining" className="glass rounded-2xl p-3 hover:border-cyan transition">
           <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Mining now</p>
           <p className="mono-num font-black text-2xl text-cyan mt-1">{stats.mining.activeUsers}</p>
-          <p className="text-[10px] text-muted-foreground">active users</p>
-        </div>
+          <p className="text-[10px] text-muted-foreground">active users · নাম দেখুন →</p>
+        </Link>
       </div>
 
       {/* Task breakdown */}
