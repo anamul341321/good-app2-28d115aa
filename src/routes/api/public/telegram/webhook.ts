@@ -758,10 +758,11 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           if ((settings as any).slot_reset_enabled === false) return "";
           const forced = !mentionedSlot && (underAgeHit() || wantsSlotRemoval);
           if (!forced && (!mentionedSlot || !reportsProblem)) return "";
+          const known = await linkedUid();
           try {
             await saveSession({
-              step: mentionedSlot ? "offer_reset" : "await_uid",
-              uid: null,
+              step: mentionedSlot ? "offer_reset" : known ? "await_slot" : "await_uid",
+              uid: known,
               app_user_id: null,
               data: { slots: mentionedSlot ? [mentionedSlot] : [] },
             });
@@ -772,15 +773,20 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             return (
               `\n\n———\n🔄 জি অবশ্যই স্যার, আমরা আপনার স্লটটি রিসেট করে দিতে পারি।\n` +
               `রিসেট করলে ওই স্লটটি একদম খালি হয়ে যাবে, তারপর নতুন করে (১৮+ ফেস দিয়ে) আবার ভেরিফাই করতে পারবেন।\n\n` +
-              `👉 দয়া করে আপনার <b>UID</b> নম্বরটি দিন এবং বলুন <b>কত নম্বর স্লটটি</b> রিসেট করতে চান 💙`
+              (known
+                ? `👉 শুধু বলুন <b>কত নম্বর স্লটটি</b> রিসেট করতে চান (যেমন: 3, বা 2,5,7) 💙`
+                : `👉 দয়া করে আপনার <b>UID</b> নম্বরটি দিন এবং বলুন <b>কত নম্বর স্লটটি</b> রিসেট করতে চান 💙`)
             );
           }
           return (
             `\n\n———\n🔄 আপনি কি <b>${mentionedSlot} নম্বর স্লটটি</b> রিসেট করে নিতে চান?\n` +
             `রিসেট করলে ওই স্লটটি একদম খালি হয়ে যাবে, তারপর নতুন করে (১৮+ ফেস দিয়ে) আবার ভেরিফাই করতে পারবেন।\n\n` +
-            `👉 চাইলে লিখুন <b>হ্যাঁ</b> — এরপর শুধু আপনার <b>UID</b> নম্বরটি দিলেই আমি সাথে সাথে স্লটটি রিসেট করে জানিয়ে দেব 💙`
+            (known
+              ? `👉 চাইলে শুধু লিখুন <b>হ্যাঁ</b> — সাথে সাথেই স্লটটি রিসেটের অনুরোধ পাঠিয়ে দেব 💙`
+              : `👉 চাইলে লিখুন <b>হ্যাঁ</b> — এরপর শুধু আপনার <b>UID</b> নম্বরটি দিলেই আমি সাথে সাথে স্লটটি রিসেট করে জানিয়ে দেব 💙`)
           );
         };
+
 
 
 
