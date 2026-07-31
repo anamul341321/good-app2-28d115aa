@@ -119,8 +119,10 @@ function AuthedLayout() {
       <SlotResetApproval />
 
     </div>
+    </StartGate>
   );
 }
+
 
 function ProfileButton() {
   const { data } = useQuery({ queryKey: ["profile-history"], queryFn: () => getProfileHistory(), staleTime: 60_000 });
