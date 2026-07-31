@@ -427,6 +427,51 @@ export type Database = {
           },
         ]
       }
+      slot_reset_requests: {
+        Row: {
+          created_at: string
+          id: string
+          note: string | null
+          requested_by: string | null
+          resolved_at: string | null
+          slots: number[]
+          status: string
+          tg_chat_id: string | null
+          tg_message_id: number | null
+          tg_user_id: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          note?: string | null
+          requested_by?: string | null
+          resolved_at?: string | null
+          slots?: number[]
+          status?: string
+          tg_chat_id?: string | null
+          tg_message_id?: number | null
+          tg_user_id?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          note?: string | null
+          requested_by?: string | null
+          resolved_at?: string | null
+          slots?: number[]
+          status?: string
+          tg_chat_id?: string | null
+          tg_message_id?: number | null
+          tg_user_id?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       task_reset_backups: {
         Row: {
           attempts: Json
