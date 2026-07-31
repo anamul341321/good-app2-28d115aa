@@ -623,6 +623,21 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           } as any, { onConflict: "tg_user_id,chat_id" });
         };
 
+        // অ্যাপ থেকে "শুরু করুন" চাপলে টেলিগ্রাম + UID লিংক হয়ে যায় — তাই
+        // চেনা ইউজারের কাছে আর কখনো UID চাইব না (গোপনে চিনে নেব, বলব না)।
+        let _linkedUid: string | null | undefined;
+        const linkedUid = async (): Promise<string | null> => {
+          if (_linkedUid !== undefined) return _linkedUid;
+          if (!msg.from?.id) return (_linkedUid = null);
+          const { data } = await supabaseAdmin
+            .from("profiles").select("uid_seq")
+            .eq("telegram_user_id", msg.from.id).maybeSingle();
+          const uid = (data as { uid_seq?: number | null } | null)?.uid_seq;
+          return (_linkedUid = uid != null ? String(uid) : null);
+        };
+
+
+
         if (settings.auto_reply_enabled && isThanksOnly(norm)) {
           await clearSession();
           const reply = `স্বাগতম ${senderName} 🙂\nআর কোনো সাহায্য লাগলে এখানেই লিখবেন।`;
