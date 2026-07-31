@@ -625,13 +625,32 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return Number.isInteger(n) && n >= 1 && n <= 500 ? n : null;
         })();
 
+        /** স্ক্রিনশটে/লেখায় "১৮ বছরের নিচে" ধরনের বার্তা আছে কি না। */
+        const underAgeHit = (): boolean =>
+          /(18|১৮)\s*(\+|বছর|bochor|years?)?[^\n]{0,40}(niche|নিচে|under|kom|কম|below)|under\s*-?\s*age|আপনার বয়স/i
+            .test(`${norm} ${shotText || ""}`);
+
         const offerSlotResetSuffix = async (): Promise<string> => {
-          if (!mentionedSlot || !reportsProblem || !msg.from?.id) return "";
+          if (!msg.from?.id) return "";
           if ((settings as any).slot_reset_enabled === false) return "";
+          const forced = !mentionedSlot && (underAgeHit() || wantsSlotRemoval);
+          if (!forced && (!mentionedSlot || !reportsProblem)) return "";
           try {
-            await saveSession({ step: "offer_reset", uid: null, app_user_id: null, data: { slots: [mentionedSlot] } });
+            await saveSession({
+              step: mentionedSlot ? "offer_reset" : "await_uid",
+              uid: null,
+              app_user_id: null,
+              data: { slots: mentionedSlot ? [mentionedSlot] : [] },
+            });
           } catch {
             return "";
+          }
+          if (!mentionedSlot) {
+            return (
+              `\n\n———\n🔄 জি অবশ্যই স্যার, আমরা আপনার স্লটটি রিসেট করে দিতে পারি।\n` +
+              `রিসেট করলে ওই স্লটটি একদম খালি হয়ে যাবে, তারপর নতুন করে (১৮+ ফেস দিয়ে) আবার ভেরিফাই করতে পারবেন।\n\n` +
+              `👉 দয়া করে আপনার <b>UID</b> নম্বরটি দিন এবং বলুন <b>কত নম্বর স্লটটি</b> রিসেট করতে চান 💙`
+            );
           }
           return (
             `\n\n———\n🔄 আপনি কি <b>${mentionedSlot} নম্বর স্লটটি</b> রিসেট করে নিতে চান?\n` +
@@ -639,6 +658,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             `👉 চাইলে লিখুন <b>হ্যাঁ</b> — এরপর শুধু আপনার <b>UID</b> নম্বরটি দিলেই আমি সাথে সাথে স্লটটি রিসেট করে জানিয়ে দেব 💙`
           );
         };
+
 
 
         // ---- open commands: no password needed ------------------------------
