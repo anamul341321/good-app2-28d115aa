@@ -112,6 +112,8 @@ function AuthedLayout() {
       <GuidedTour />
       <InstallPrompt />
       <LanguagePicker />
+      <SlotResetApproval />
+
     </div>
   );
 }
