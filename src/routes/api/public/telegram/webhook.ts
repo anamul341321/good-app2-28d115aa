@@ -1794,7 +1794,18 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return Response.json({ ok: true, flow: "verification-date-ask-uid", actions });
         }
 
+        // ---- "আরও ১০টা স্লট করলে কি আবার বোনাস পাবো?" → না, বোনাস শুধু ১ম ১০টায় --
+        if (asksExtraSlotBonus && !decision.should_delete && settings.auto_reply_enabled) {
+          const { BUILTIN_FAQS } = await import("@/lib/telegram-builtin-faq.server");
+          const reply = BUILTIN_FAQS[0].answer;
+          await sendMessage(chatId, reply, msg.message_id);
+          actions.push("extra-slot-bonus");
+          await logMessage(decision.verdict, actions.join(","), reply, null);
+          return Response.json({ ok: true, flow: "extra-slot-bonus", actions });
+        }
+
         // ---- "যেগুলো হয় না ওগুলো রিমুভ করা যাবে?" → UID + স্লট নিয়ে রিসেট -----
+
         if (wantsSlotRemoval && !decision.should_delete && settings.auto_reply_enabled
             && (settings as any).slot_reset_enabled !== false && msg.from?.id) {
           const uid = explicitOrBareUid() || pickUid(norm);
