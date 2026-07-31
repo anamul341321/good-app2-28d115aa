@@ -2242,6 +2242,13 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         if (decision.intent === "slot_reset" && (settings as any).slot_reset_enabled !== false
             && !decision.should_delete && msg.from?.id) {
           const uid = decision.uid || pickUid(norm);
+          if (!uid) {
+            const already = await pendingResetInfo();
+            if (already) {
+              await sendPendingResetNotice(already);
+              return Response.json({ ok: true, flow: "slot-reset-pending" });
+            }
+          }
           if (uid) {
             const { findProfileByUid } = await import("@/lib/telegram-slot.server");
             const prof = await findProfileByUid(uid);
