@@ -1968,7 +1968,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         }
 
         // ---- "ভিডিও দিন / কিভাবে করবো" → tutorial video link -----------------
-        const howToWork = /(kivabe|kivbe|kibhabe|কিভাবে|কীভাবে|kmne|kemne|কেমনে)[^\n]{0,30}(kaj|কাজ|use|চালাব|করব|করবো|করতে হয়|start|শুরু|verify|ভেরিফাই|verification|ভেরিফিকেশন|face|ফেস|withdraw|উইথড্র|refer|রেফার)/i.test(norm)
+        const howToWork = /(kivabe|kivbe|kibhabe|কিভাবে|কীভাবে|kmne|kemne|কেমনে)[^\n]{0,30}(kaj|কাজ|use|চালাব|করব|করবো|করতে হয়|start|শুরু|verify|ভেরিফাই|verification|ভেরিফিকেশন|face|ফেস|refer|রেফার)/i.test(norm)
           || /(video|ভিডিও|টিউটোরিয়াল|tutorial|dekhiye|দেখিয়ে)/i.test(norm);
         if ((decision.intent === "video_request" || howToWork) && !decision.should_delete
             && settings.auto_reply_enabled) {

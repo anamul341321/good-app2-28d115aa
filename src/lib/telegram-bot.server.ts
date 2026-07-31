@@ -810,7 +810,7 @@ ${opts.warnCount ? `এই ইউজার ইতিমধ্যে ${opts.warnC
     headers: { "Lovable-API-Key": key, "Content-Type": "application/json" },
     body: JSON.stringify({
       model: MODEL,
-      temperature: 0.2,
+      temperature: 0,
       max_tokens: 1200,
       messages: [
         { role: "system", content: system },
