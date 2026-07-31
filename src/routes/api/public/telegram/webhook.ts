@@ -645,10 +645,21 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return Number.isInteger(n) && n >= 1 && n <= 500 ? n : null;
         })();
 
+        /**
+         * স্ক্রিনশটটি অন্য কোনো সমস্যার (ক্যামেরা পারমিশন, লিংক এক্সপায়ার,
+         * টুইন/ডুপ্লিকেট ফেস, নেটওয়ার্ক) হলে বয়সের কথা তোলা যাবে না — ইউজার
+         * যেই স্ক্রিনশট দিয়েছে, উত্তরটাও ঠিক সেটারই হবে।
+         */
+        const otherErrorHit = (): boolean =>
+          /(camera|ক্যামেরা|permission|পারমিশন|access your camera|device settings|expired|no longer valid|লিংক এক্সপায়ার|twin|already verified|network|internet|something went wrong)/i
+            .test(`${norm} ${shotText || ""}`);
+
         /** স্ক্রিনশটে/লেখায় "১৮ বছরের নিচে" ধরনের বার্তা আছে কি না। */
         const underAgeHit = (): boolean =>
-          /(18|১৮)\s*(\+|বছর|bochor|years?)?[^\n]{0,40}(niche|নিচে|under|kom|কম|below)|under\s*-?\s*age|আপনার বয়স/i
+          !otherErrorHit() &&
+          /(18|১৮)\s*(\+|বছর|bochor|years?)?[^\n]{0,40}(niche|নিচে|under|kom|কম|below)|under\s*-?\s*age|আপনার বয়স|too young|minimum age/i
             .test(`${norm} ${shotText || ""}`);
+
 
         const offerSlotResetSuffix = async (): Promise<string> => {
           if (!msg.from?.id) return "";
