@@ -510,6 +510,22 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           /(refer|reffer|refar|রেফার|referral|রেফারেল)/i.test(norm) &&
           /(bare na|বাড়ে না|barche na|বাড়ছে না|bad?he na|kome|কমে|kome gese|কমে গেছে|komeche|কমেছে|jog hoi na|যোগ হয় না|jog hoy nai|যোগ হয় নাই|add hoi na|অ্যাড হয় না|add hocche na|dekhachhe na|দেখাচ্ছে না|dekhai na|দেখায় না|count hoi na|কাউন্ট হয় না|kmi|কমি)/i.test(norm);
 
+        // "যেগুলো রি-ভেরিফাই হয় না ওগুলো রিমুভ/ডিলিট করা যাবে?" → হিসাব নয়,
+        // সরাসরি স্লট রিসেটের অফার (UID + স্লট নম্বর নিয়ে)।
+        const wantsSlotRemoval =
+          /(remove|রিমুভ|delete|ডিলিট|muche|মুছ|bad de|বাদ দ|clear|ক্লিয়ার|reset|রিসেট|খালি|khali)/i.test(norm) &&
+          /(slot|স্লট|face|ফেস|verify|ভেরিফাই|verification|ভেরিফিকেশন|oigula|ওইগুলো|ওগুলো|ogulo|eigula|এইগুলো|egula|account|একাউন্ট)/i.test(norm);
+
+        // "আমার রেফার হয় না / রেফার লিংক কাজ করে না" → নিজের ৫টি স্লট ভেরিফাই লাগবে
+        const asksReferralUnlock =
+          /(refer|reffer|refar|রেফার|referral|রেফারেল)/i.test(norm) &&
+          /(hoi na|hoy na|হয় না|হয়না|hocche na|হচ্ছে না|kaj kore na|কাজ করে না|lock|লক|block|ব্লক|link|লিংক|korte parchi na|করতে পারছি না|parchi na|পারছি না|open hoi na|খোলে না|unlock|আনলক)/i.test(norm) &&
+          !/(kome|কমে|bare na|বাড়ে না)/i.test(norm);
+
+        // "৫টা স্লট কি প্রথমবার ভেরিফাই করলেই হবে?" → হ্যাঁ
+        const asksFiveSlotFirstVerify =
+          /(5|৫|পাঁচ|panch)\s*(ta|টা|টি|ti)?\s*(slot|স্লট)/i.test(norm) &&
+          /(prothom|প্রথম|১ম|1st|first)/i.test(norm);
 
 
 
