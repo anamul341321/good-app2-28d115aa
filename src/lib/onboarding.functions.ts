@@ -59,15 +59,15 @@ export const getOnboardingState = createServerFn({ method: "GET" })
 export const completeOnboarding = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) =>
-    z.object({ mode: z.enum(["telegram", "skip"]) }).parse(i),
+    z.object({ mode: z.literal("telegram") }).parse(i),
   )
-  .handler(async ({ data, context }) => {
+  .handler(async ({ context }) => {
     const { supabase, userId } = context;
     await supabase
       .from("profiles")
       .update({
         onboarded_at: new Date().toISOString(),
-        tg_link_skipped: data.mode === "skip",
+        tg_link_skipped: false,
       })
       .eq("id", userId);
     return { ok: true as const };

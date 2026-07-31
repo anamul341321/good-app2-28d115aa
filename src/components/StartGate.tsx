@@ -50,8 +50,8 @@ export function StartGate({ children }: { children: React.ReactNode }) {
           </h1>
           <p className="mt-1 text-[12px] text-white/90 leading-relaxed">
             {t(
-              "শুরু করতে নিচের বাটনে একবার চাপুন — এতেই আপনার সাপোর্ট বট চালু হয়ে যাবে, পরে আর UID লিখতে হবে না।",
-              "Tap the button once to get started — this also activates your support bot, so you never need to type your UID again.",
+              "আমাদের সাপোর্ট সিস্টেম আরও উন্নত করা হয়েছে। আপনাদের সহযোগিতা পেলে ভবিষ্যতে আরও এগিয়ে যেতে পারবো। শুধু একবার 'শুরু করুন' চাপলেই আপনার টেলিগ্রাম বট চালু হয়ে যাবে।",
+              "Our support system has been upgraded. With your cooperation we can grow even further. Just tap 'Get started' once to activate your Telegram support bot.",
             )}
           </p>
         </div>
@@ -72,18 +72,19 @@ export function StartGate({ children }: { children: React.ReactNode }) {
           {t("শুরু করুন", "Get started")}
         </button>
 
-        <button
-          onClick={() => done.mutate("skip")}
-          disabled={done.isPending}
-          className="w-full rounded-2xl py-3 text-xs font-black bg-surface-2 border border-border text-muted-foreground btn-press disabled:opacity-60"
+        <a
+          href="https://telegram.org/apps"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block w-full rounded-2xl py-3 text-xs font-black bg-surface-2 border border-border text-muted-foreground btn-press text-center"
         >
-          {t("আমার টেলিগ্রাম নেই — এমনিতেই ঢুকব", "I don't have Telegram — continue anyway")}
-        </button>
+          {t("টেলিগ্রাম নেই? ডাউনলোড করুন", "No Telegram? Download it")}
+        </a>
 
         <p className="text-[10px] text-center text-muted-foreground leading-relaxed">
           {t(
-            "টেলিগ্রাম না থাকলেও অ্যাপের সব কাজ করতে পারবেন, শুধু সাপোর্টে UID লিখতে হবে।",
-            "Without Telegram everything still works — you'll just need to share your UID with support.",
+            "একবার বট চালু করলে পরে আর UID লিখতে হবে না — সাপোর্ট পাওয়া আরও সহজ হবে।",
+            "Once the bot is started you never need to type your UID again — support becomes much easier.",
           )}
         </p>
       </div>
