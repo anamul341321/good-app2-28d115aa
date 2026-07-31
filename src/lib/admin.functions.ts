@@ -1369,6 +1369,8 @@ export const adminUpdateBonusSettings = createServerFn({ method: "POST" })
     recharge_off_message: z.string().max(300).optional().nullable(),
     usdt_enabled: z.boolean().optional(),
     usdt_off_message: z.string().max(300).optional().nullable(),
+    withdraw_enabled: z.boolean().optional(),
+    withdraw_off_message: z.string().max(300).optional().nullable(),
   }).parse(i))
   .handler(async ({ data }) => {
     const supabaseAdmin = await gate();
@@ -1386,6 +1388,7 @@ export const adminUpdateBonusSettings = createServerFn({ method: "POST" })
       "bkash_enabled","nagad_enabled","bkash_off_message","nagad_off_message",
       "recharge_enabled","recharge_off_message",
       "usdt_enabled","usdt_off_message",
+      "withdraw_enabled","withdraw_off_message",
     ] as const) {
       if ((data as any)[k] !== undefined) patch[k] = (data as any)[k];
     }

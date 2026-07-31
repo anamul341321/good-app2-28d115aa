@@ -47,6 +47,15 @@ export const requestWithdraw = createServerFn({ method: "POST" })
     const usdtEnabled = (settings as any)?.usdt_enabled !== false;
     const usdtRate = Number((settings as any)?.usdt_rate_bdt ?? 130);
 
+    // Weekly auto pause: Friday 1:00 PM → Saturday 10:00 AM (Asia/Dhaka)
+    const { withdrawOffMessageBn } = await import("./withdraw-window");
+    const autoOff = withdrawOffMessageBn();
+    if (autoOff) throw new Error(autoOff);
+    // Manual admin switch
+    if ((settings as any)?.withdraw_enabled === false) {
+      throw new Error((settings as any)?.withdraw_off_message || "উইথড্র রিকোয়েস্ট আপাতত বন্ধ আছে — একটু পরে আবার চেষ্টা করুন।");
+    }
+
     const { data: userWallets } = await supabase.from("wallets").select("*").eq("user_id", userId);
     const walletBkash = (userWallets ?? []).find((w: any) => w.provider === "bkash") ?? null;
     const walletNagad = (userWallets ?? []).find((w: any) => w.provider === "nagad") ?? null;

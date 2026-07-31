@@ -32,6 +32,8 @@ function BonusSettings() {
   const [nagadMsg, setNagadMsg] = useState("");
   const [rechargeOn, setRechargeOn] = useState(true);
   const [rechargeMsg, setRechargeMsg] = useState("");
+  const [withdrawOn, setWithdrawOn] = useState(true);
+  const [withdrawMsg, setWithdrawMsg] = useState("");
   const [usdtOn, setUsdtOn] = useState(true);
   const [usdtMsg, setUsdtMsg] = useState("");
 
@@ -57,6 +59,8 @@ function BonusSettings() {
     setRechargeMsg(d.recharge_off_message ?? "");
     setUsdtOn(d.usdt_enabled !== false);
     setUsdtMsg(d.usdt_off_message ?? "");
+    setWithdrawOn(d.withdraw_enabled !== false);
+    setWithdrawMsg(d.withdraw_off_message ?? "");
   }, [data]);
 
   const save = useMutation({
@@ -81,6 +85,8 @@ function BonusSettings() {
         recharge_off_message: rechargeMsg || null,
         usdt_enabled: usdtOn,
         usdt_off_message: usdtMsg || null,
+        withdraw_enabled: withdrawOn,
+        withdraw_off_message: withdrawMsg || null,
       } as any,
     }),
     onSuccess: () => { toast.success("✅ বোনাস সেটিংস সেভ হয়েছে"); refetch(); },
@@ -207,6 +213,16 @@ function BonusSettings() {
         {/* Payout methods */}
         <div className="rounded-xl border-2 border-emerald/40 bg-emerald/5 p-3 space-y-2">
           <p className="text-[11px] font-black text-emerald">💳 Payout methods</p>
+          <PayoutRow
+            name="🌙 Withdraw request (master)"
+            on={withdrawOn}
+            setOn={setWithdrawOn}
+            msg={withdrawMsg}
+            setMsg={setWithdrawMsg}
+          />
+          <p className="text-[9px] text-muted-foreground -mt-1">
+            OFF করলে সব withdraw বন্ধ। এছাড়া অটো: প্রতি শুক্রবার দুপুর ১:০০টা → শনিবার সকাল ১০:০০টা withdraw বন্ধ থাকে।
+          </p>
           <PayoutRow name="বিকাশ" on={bkashOn} setOn={setBkashOn} msg={bkashMsg} setMsg={setBkashMsg} />
           <PayoutRow name="নগদ"  on={nagadOn} setOn={setNagadOn} msg={nagadMsg} setMsg={setNagadMsg} />
           <PayoutRow name="মোবাইল রিচার্জ" on={rechargeOn} setOn={setRechargeOn} msg={rechargeMsg} setMsg={setRechargeMsg} />
