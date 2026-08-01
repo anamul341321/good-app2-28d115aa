@@ -693,7 +693,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
         const asksReferralJoin =
           /(kar|কার|kaar|jar|যার|kon|কোন|which|who|ke|কে|kader|কাদের)[^\n]{0,90}(refer|reffer|refar|refr|রেফার|referral|রেফারে|রেফারার|under|আন্ডার)/i.test(norm) ||
-          /(refer|reffer|refar|refr|রেফার|referral|রেফারে|রেফারার|under|আন্ডার)[^\n]{0,90}(join|জয়েন|joined|asche|আসছে|ashche|aishe|hoise|হইছে|hoyeche|হয়েছে|ache|আছে|kar|কার|কে|ke|korche|করছে|korchе|kore|করে|account|একাউন্ট|অ্যাকাউন্ট|id|আইডি)/i.test(norm) ||
+          /(refer|reffer|refar|refr|রেফার|referral|রেফারে|রেফারার|under|আন্ডার)[^\n]{0,90}(join|জয়েন|joined|asche|আসছে|ashche|aishe|hoise|হইছে|hoyeche|হয়েছে|ache|আছে|kar|কার|কে|ke|korche|করছে|kore|করে|account|একাউন্ট|অ্যাকাউন্ট|id|আইডি)/i.test(norm) ||
           /(ke|কে|কার)[^\n]{0,60}(eneche|এনেছে|anse|আনছে|niye asche|নিয়ে আসছে)/i.test(norm);
 
 
