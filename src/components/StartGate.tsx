@@ -73,12 +73,12 @@ export function StartGate({ children }: { children: React.ReactNode }) {
         </button>
 
         <a
-          href="https://telegram.org/apps"
+          href="https://play.google.com/store/apps/details?id=org.telegram.messenger"
           target="_blank"
           rel="noopener noreferrer"
           className="block w-full rounded-2xl py-3 text-xs font-black bg-surface-2 border border-border text-muted-foreground btn-press text-center"
         >
-          {t("টেলিগ্রাম নেই? ডাউনলোড করুন", "No Telegram? Download it")}
+          {t("টেলিগ্রাম নেই? Play Store থেকে ডাউনলোড করুন", "No Telegram? Get it on Play Store")}
         </a>
 
         <p className="text-[10px] text-center text-muted-foreground leading-relaxed">
