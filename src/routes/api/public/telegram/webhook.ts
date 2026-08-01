@@ -270,6 +270,72 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           const replyTo = msg.reply_to_message?.message_id ?? msg.message_id;
           const replyContextText = String(msg.reply_to_message?.text ?? msg.reply_to_message?.caption ?? "");
 
+          // ---- আনফ্রিজ: "@bot unfreeze" (reply দিয়ে) / "ফ্রিজ খুলে দাও" / "unfreeze @user" / "unfreeze 4238"
+          if (/(unfreeze|un\s*freeze|unmute|unblock|আনফ্রিজ|আনব্লক|ফ্রিজ\s*(খুলে|তুলে|বাতিল|off)|freeze\s*(khule|tule|off))/i.test(order)) {
+            const { unrestrictUser } = await import("@/lib/telegram-bot.server");
+            let targetId: number | null =
+              msg.reply_to_message && !msg.reply_to_message.from?.is_bot
+                ? (msg.reply_to_message.from?.id ?? null)
+                : null;
+            let shownName = targetName;
+
+            if (!targetId) {
+              const uname = order.match(/@([A-Za-z0-9_]{4,32})/)?.[1];
+              if (uname && uname.toLowerCase() !== (meInfo?.username ?? "").toLowerCase()) {
+                const { data: off } = await supabaseAdmin
+                  .from("tg_offenders").select("tg_user_id, full_name")
+                  .ilike("username", uname).maybeSingle();
+                if (off) { targetId = Number(off.tg_user_id); shownName = off.full_name ?? `@${uname}`; }
+              }
+            }
+            if (!targetId) {
+              const uidTxt = order.match(/(?:uid|ইউআইডি|আইডি|id)?\s*[:#-]?\s*(\d{2,9})/i)?.[1];
+              if (uidTxt) {
+                const { data: prof } = await supabaseAdmin
+                  .from("profiles").select("telegram_user_id, display_name")
+                  .eq("uid_seq", Number(uidTxt)).maybeSingle();
+                if (prof?.telegram_user_id) {
+                  targetId = Number(prof.telegram_user_id);
+                  shownName = prof.display_name ?? `UID ${uidTxt}`;
+                }
+                if (!targetId) {
+                  const { data: off2 } = await supabaseAdmin
+                    .from("tg_offenders").select("tg_user_id, full_name")
+                    .eq("known_uid", uidTxt).maybeSingle();
+                  if (off2) { targetId = Number(off2.tg_user_id); shownName = off2.full_name ?? `UID ${uidTxt}`; }
+                }
+              }
+            }
+
+            if (!targetId) {
+              await sendMessage(
+                chatId,
+                `ℹ️ কাকে আনফ্রিজ করব বুঝতে পারিনি।\n\n` +
+                  `👉 তার মেসেজে <b>reply</b> দিয়ে লিখুন: <code>@${meInfo?.username ?? "bot"} unfreeze</code>\n` +
+                  `অথবা লিখুন: <code>unfreeze @username</code> / <code>unfreeze uid 4238</code>`,
+                replyTo,
+              );
+              return Response.json({ ok: true, flow: "unfreeze-no-target" });
+            }
+
+            await unrestrictUser(chatId, targetId);
+            await supabaseAdmin.from("tg_offenders").update({
+              warn_count: 0,
+              blocked: false,
+              unblocked_at: new Date().toISOString(),
+              last_reason: "admin unfreeze",
+            }).eq("tg_user_id", targetId);
+
+            await sendMessage(
+              chatId,
+              `✅ <b>${shownName || "ইউজার"}</b> এর ফ্রিজ খুলে দেওয়া হয়েছে 💙\n` +
+                `এখনই আবার গ্রুপে লিখতে পারবেন — কোনো অপেক্ষা লাগবে না।`,
+              replyTo,
+            );
+            return Response.json({ ok: true, flow: "unfreeze" });
+          }
+
+
           // "uid 4100 er details" / "01720095454 ei account ta check koro" → একাউন্ট কার্ড
           const refFrom = (s: string): string | null => {
             const t = String(s || "");
@@ -1726,7 +1792,14 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return null;
         };
 
-        if (settings.moderation_enabled && decision.should_warn && msg.from?.id) {
+        // ফ্রিজ শুধু স্পষ্ট গালি/স্ক্যামে হবে। কেউ অন্যকে সাহায্য করার কথা বললে
+        // ("যারা বুঝতেছেন না আমাকে ইনবক্স করেন") কখনোই ফ্রিজ/warning হবে না।
+        const { looksHelpful, isHardAbuse } = await import("@/lib/telegram-guard.server");
+        const freezeText = `${text} ${shotText ?? ""}`.trim();
+        const freezeAllowed = !!hardHit || isHardAbuse(freezeText);
+        const freezeSafe = looksHelpful(freezeText) || !freezeAllowed;
+
+        if (settings.moderation_enabled && decision.should_warn && !freezeSafe && msg.from?.id) {
           const warnCount = ((offender as any)?.warn_count ?? 0) + 1;
 
           // Which UID does this troublemaker belong to? Check the message, the

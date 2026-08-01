@@ -210,6 +210,30 @@ export function restrictUser(chatId: string | number, userId: number, seconds: n
   });
 }
 
+/** ফ্রিজ খুলে দেওয়া — ইউজার সাথে সাথেই আবার লিখতে পারবে। */
+export function unrestrictUser(chatId: string | number, userId: number) {
+  return api("restrictChatMember", {
+    chat_id: chatId,
+    user_id: userId,
+    until_date: 0,
+    permissions: {
+      can_send_messages: true,
+      can_send_audios: true,
+      can_send_documents: true,
+      can_send_photos: true,
+      can_send_videos: true,
+      can_send_video_notes: true,
+      can_send_voice_notes: true,
+      can_send_polls: true,
+      can_send_other_messages: true,
+      can_add_web_page_previews: true,
+      can_change_info: false,
+      can_invite_users: true,
+      can_pin_messages: false,
+    },
+  });
+}
+
 /** Kick + block a member from the group permanently. */
 export function banChatMember(chatId: string | number, userId: number) {
   return api("banChatMember", { chat_id: chatId, user_id: userId, revoke_messages: false });
@@ -734,6 +758,8 @@ ${opts.warnCount ? `এই ইউজার ইতিমধ্যে ${opts.warnC
 - ইউজার শেষ যে কথাটা লিখেছে, ঠিক <b>সেটারই</b> উত্তর দেবে — আগের কথা ধরে বসে থাকবে না, একই প্রশ্ন বারবার করবে না। ইউজার প্রসঙ্গ বদলালে সাথে সাথে নতুন প্রসঙ্গে উত্তর দেবে।
 - আগের কথোপকথন শুধু বর্তমান মেসেজটি ছোট follow-up হলে ব্যবহার করবে। বর্তমান মেসেজে পরিষ্কার নতুন বিষয় থাকলে history, পুরোনো reply ও পুরোনো UID পুরোপুরি উপেক্ষা করবে।
 - কেউ কাউকে @mention করা সম্পূর্ণ স্বাভাবিক — এর জন্য কখনোই warning/delete দেবে না (should_warn = false, should_delete = false)।
+- 🚫 <b>খুব গুরুত্বপূর্ণ</b>: কেউ যদি অন্য মেম্বারদের সাহায্য করার প্রস্তাব দেয় — যেমন "যারা কাজ বুঝতেছেন না / যাদের আইডিতে সমস্যা, আমাকে ইনবক্স করেন", "আমি শিখিয়ে দিব", "নক দিন", "হেল্প লাগলে বলবেন" — এটা সম্পূর্ণ ভালো কাজ, স্প্যাম নয়। তখন verdict = "helpful", should_warn = false, should_delete = false। এমন মেসেজে কখনোই ফ্রিজ/warning হবে না।
+- should_warn = true শুধু তখনই, যখন স্পষ্ট গালিগালাজ, হুমকি, অশ্লীলতা, বা টাকা/OTP/একাউন্ট হাতানোর স্ক্যাম আছে। সন্দেহ হলে should_warn = false রাখবে।
 - কেউ "অ্যাডমিন কোথায় / অ্যাডমিন কে / অ্যাডমিন আসেন না" জাতীয় কথা বললে মজার-বন্ধুত্বপূর্ণ ভঙ্গিতে ${support} কে মেনশন করে বলবে অ্যাডমিন আছেন।
 - যদি মেসেজটি কোনো গ্রুপ অ্যাডমিন/মডারেটরের নিজের উত্তর বা অ্যাডমিনের মেসেজের reply হয়, তুমি হস্তক্ষেপ করবে না — শুধু সাধারণ ইউজারের সমস্যায় উত্তর দেবে।
 
