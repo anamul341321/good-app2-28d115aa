@@ -1101,7 +1101,7 @@ function StartedPanel() {
               </div>
               <p className="text-[11px] text-muted-foreground mono-num">TG ID: {r.telegram_user_id}{r.phone_number ? ` • ${r.phone_number}` : ""}</p>
               <p className="text-[10px] text-muted-foreground">
-                {r.kyc_verified ? "✅ KYC ভেরিফাইড" : "⚠️ শুধু লিংক"} • {r.kyc_verified_at ? new Date(r.kyc_verified_at).toLocaleString() : "—"}
+                {r.kyc_verified || r.telegram_user_id ? "✅ KYC ভেরিফাইড" : "⚠️ KYC হয়নি"} • {r.kyc_verified_at ? new Date(r.kyc_verified_at).toLocaleString() : "—"}
               </p>
               {r.duplicate && (
                 <p className="text-[10px] font-black text-rose-500 mt-1">⚠️ এই টেলিগ্রাম দিয়ে একাধিক UID যুক্ত আছে</p>
