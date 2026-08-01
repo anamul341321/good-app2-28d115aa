@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { MIN_WITHDRAW_BDT } from "./constants";
+import { MIN_WITHDRAW_BDT, MIN_PAYOUT_BDT, withdrawPayout } from "./constants";
 import { computeLiveBalance } from "./mining";
 
 const CELO_ADDR_RE = /^0x[a-fA-F0-9]{40}$/;
@@ -18,7 +18,9 @@ export const requestWithdraw = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const amount = Math.floor(data.amount);
-    if (amount < MIN_WITHDRAW_BDT) throw new Error(`সর্বনিম্ন উইথড্র ${MIN_WITHDRAW_BDT}৳`);
+    if (amount < MIN_WITHDRAW_BDT || withdrawPayout(amount) < MIN_PAYOUT_BDT) {
+      throw new Error(`সর্বনিম্ন উইথড্র ${MIN_WITHDRAW_BDT}৳ — ফি কাটার পর হাতে কমপক্ষে ${MIN_PAYOUT_BDT}৳ আসতে হবে`);
+    }
 
     // KYC (টেলিগ্রাম বট লিংক) ছাড়া উইথড্র বন্ধ
     const { data: kycProf } = await supabase
