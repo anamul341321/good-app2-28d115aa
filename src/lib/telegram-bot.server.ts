@@ -210,6 +210,30 @@ export function restrictUser(chatId: string | number, userId: number, seconds: n
   });
 }
 
+/** ফ্রিজ খুলে দেওয়া — ইউজার সাথে সাথেই আবার লিখতে পারবে। */
+export function unrestrictUser(chatId: string | number, userId: number) {
+  return api("restrictChatMember", {
+    chat_id: chatId,
+    user_id: userId,
+    until_date: 0,
+    permissions: {
+      can_send_messages: true,
+      can_send_audios: true,
+      can_send_documents: true,
+      can_send_photos: true,
+      can_send_videos: true,
+      can_send_video_notes: true,
+      can_send_voice_notes: true,
+      can_send_polls: true,
+      can_send_other_messages: true,
+      can_add_web_page_previews: true,
+      can_change_info: false,
+      can_invite_users: true,
+      can_pin_messages: false,
+    },
+  });
+}
+
 /** Kick + block a member from the group permanently. */
 export function banChatMember(chatId: string | number, userId: number) {
   return api("banChatMember", { chat_id: chatId, user_id: userId, revoke_messages: false });
