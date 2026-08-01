@@ -1399,7 +1399,36 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
 
         if (photoBase64 && settings.auto_reply_enabled) {
+          // স্ক্রিনশটের লেখা পড়ে যদি কোনো সেভ করা ভয়েস গাইডের সাথে মেলে
+          // (যেমন "Something went wrong") তাহলে সবার আগে ভয়েসটা পাঠিয়ে দিই।
           try {
+            const { readScreenshotText, voiceBytes, sendVoice } = await import("@/lib/telegram-bot.server");
+            shotText = shotText || (await readScreenshotText(photoBase64)) || "";
+            const shotLower = shotText.toLowerCase();
+            const vMatch = shotLower
+              ? ((voiceRows as any[]) ?? []).find((v: any) =>
+                  [...(Array.isArray(v.keywords) ? v.keywords : []), String(v.topic ?? "")]
+                    .map((k: any) => String(k).trim().toLowerCase())
+                    .filter((k: string) => k.length > 4)
+                    .some((k: string) => shotLower.includes(k)),
+                )
+              : null;
+            if (vMatch?.audio_path) {
+              const bytes = await voiceBytes(vMatch.audio_path);
+              if (bytes) {
+                await sendVoice(
+                  chatId, bytes, String(vMatch.audio_path).split("/").pop() || "voice.mp3",
+                  `🎧 <b>${vMatch.topic}</b>${vMatch.note ? ` — ${vMatch.note}` : ""}`,
+                  msg.message_id,
+                );
+              }
+            }
+          } catch (e) {
+            console.error("[tg] screenshot voice match failed", e);
+          }
+
+          try {
+
             const { matchFaqImage, humanizeReply } = await import("@/lib/telegram-bot.server");
             const imageMatch = await matchFaqImage({ photoBase64, faq });
             if (imageMatch) {
