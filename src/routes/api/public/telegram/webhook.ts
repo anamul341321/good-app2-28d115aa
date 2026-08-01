@@ -1460,34 +1460,9 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           // obvious ones like the "You must be 18 years or older" page).
           try {
             const { readScreenshotText, humanizeReply } = await import("@/lib/telegram-bot.server");
-            shotText = await readScreenshotText(photoBase64);
+            shotText = shotText || (await readScreenshotText(photoBase64)) || "";
             if (shotText) {
-              // স্ক্রিনশটের লেখা যদি কোনো সেভ করা ভয়েস গাইডের সাথে মেলে
-              // (যেমন "Something went wrong") তাহলে ভয়েসটাও পাঠিয়ে দিই।
-              try {
-                const shotLower = shotText.toLowerCase();
-                const vMatch = ((voiceRows as any[]) ?? []).find((v: any) =>
-                  [...(Array.isArray(v.keywords) ? v.keywords : []), String(v.topic ?? "")]
-                    .map((k: any) => String(k).trim().toLowerCase())
-                    .filter((k: string) => k.length > 4)
-                    .some((k: string) => shotLower.includes(k)),
-                );
-                if (vMatch?.audio_path) {
-                  const { voiceBytes, sendVoice } = await import("@/lib/telegram-bot.server");
-                  const bytes = await voiceBytes(vMatch.audio_path);
-                  if (bytes) {
-                    await sendVoice(
-                      chatId, bytes, String(vMatch.audio_path).split("/").pop() || "voice.mp3",
-                      `🎧 <b>${vMatch.topic}</b>${vMatch.note ? ` — ${vMatch.note}` : ""}`,
-                      msg.message_id,
-                    );
-                  }
-                }
-              } catch (e) {
-                console.error("[tg] screenshot voice match failed", e);
-              }
-            }
-            if (shotText) {
+
 
               const hay = shotText.toLowerCase();
               const scored = faq
