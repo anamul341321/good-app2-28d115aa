@@ -17,6 +17,11 @@ export type AppRates = {
   promoRef: number | null;
   usdtRate: number;
   rechargeOn: boolean;
+  withdrawOn: boolean;
+  withdrawOffMsg: string | null;
+  bkashOn: boolean;
+  nagadOn: boolean;
+  usdtOn: boolean;
 };
 
 export async function loadRates(): Promise<AppRates> {
@@ -30,6 +35,11 @@ export async function loadRates(): Promise<AppRates> {
     (!b.promo_start_at || new Date(b.promo_start_at).getTime() <= now) &&
     (!b.promo_end_at || new Date(b.promo_end_at).getTime() >= now);
 
+  // Withdraw is OFF only when admin disabled it AND any timed pause hasn't expired.
+  const offUntil = b.withdraw_off_until ? new Date(b.withdraw_off_until).getTime() : null;
+  const pauseExpired = offUntil !== null && offUntil <= now;
+  const withdrawOn = !(b.withdraw_enabled === false && !pauseExpired);
+
   return {
     firstVerify: Number(b.first_verify_bonus ?? 50),
     reVerify: Number(b.reverify_bonus ?? 200),
@@ -41,8 +51,14 @@ export async function loadRates(): Promise<AppRates> {
     promoRef: promo ? Number(b.promo_referrer_bonus ?? 0) || null : null,
     usdtRate: Number(b.usdt_rate_bdt ?? 130),
     rechargeOn: b.recharge_enabled !== false,
+    withdrawOn,
+    withdrawOffMsg: withdrawOn ? null : (b.withdraw_off_message ?? null),
+    bkashOn: b.bkash_enabled !== false,
+    nagadOn: b.nagad_enabled !== false,
+    usdtOn: b.usdt_enabled !== false,
   };
 }
+
 
 const tk = (n: number) => `${Math.round(n)}৳`;
 
