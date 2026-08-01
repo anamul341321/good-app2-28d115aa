@@ -1513,6 +1513,30 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           }
         }
 
+        // ---- "এই UID কার রেফারে join করেছে?" → আগেই হ্যান্ডেল (FAQ/how-to এর আগে)
+        if (asksReferralJoin && !photoBase64 && settings.auto_reply_enabled) {
+          const uid = explicitOrBareUid() || pickUid(norm);
+          if (uid) {
+            const { buildReferralJoinReport } = await import("@/lib/telegram-lookup.server");
+            const res = await buildReferralJoinReport(uid);
+            const reply = res.found
+              ? res.card
+              : `❌ UID <code>${uid}</code> দিয়ে কোনো একাউন্ট পাওয়া যায়নি। সঠিক UID টি লিখুন।`;
+            await sendMessage(chatId, reply, msg.message_id);
+            await logMessage("question", "referral-join", reply, res.found ? res.uid : null);
+            return Response.json({ ok: true, flow: "referral_join_early" });
+          }
+          if (msg.from?.id) {
+            await saveSession({ intent: "referral_join", step: "await_uid", uid: null, app_user_id: null });
+          }
+          const askReply =
+            `🔗 কোন একাউন্ট কার রেফারে join করেছে সেটা দেখে দিচ্ছি।\n` +
+            `শুধু ওই ইউজারের <b>UID</b> নম্বরটি লিখুন 💙`;
+          await sendMessage(chatId, askReply, msg.message_id);
+          await logMessage("question", "referral-join-ask-uid", askReply, null);
+          return Response.json({ ok: true, flow: "referral_join_ask_uid_early" });
+        }
+
 
         // Recent bot replies for this user — used to avoid repeating the same
         // wording and to detect "I already did that, still not working".
