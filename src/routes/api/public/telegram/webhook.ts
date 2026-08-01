@@ -178,6 +178,52 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           }
         }
 
+        // ---- প্রাইভেট চ্যাটে UID পাঠালেই KYC লিংক হয়ে যাবে ----------------
+        if (msg.chat?.type === "private" && msg.from?.id) {
+          const bare = /^\s*(?:uid|আইডি)?\s*[:#-]?\s*(\d{2,9})\s*$/i.exec(text.trim());
+          if (bare) {
+            const { data: alreadyLinked } = await supabaseAdmin
+              .from("profiles").select("uid_seq")
+              .eq("telegram_user_id", msg.from.id).maybeSingle();
+            if (!alreadyLinked) {
+              const { data: prof } = await supabaseAdmin
+                .from("profiles").select("id, uid_seq, telegram_user_id, display_name")
+                .eq("uid_seq", Number(bare[1])).maybeSingle();
+              if (!prof) {
+                await sendMessage(
+                  chatId,
+                  `❌ এই UID (<b>${bare[1]}</b>) আমাদের সিস্টেমে পাওয়া যায়নি।\nঅ্যাপের হোম পেজে নামের নিচে <b>UID</b> বাটনে চাপ দিলে সঠিক নম্বরটি কপি হবে — সেটি পাঠান 💙`,
+                  msg.message_id,
+                );
+                return Response.json({ ok: true, flow: "kyc-uid-notfound" });
+              }
+              if (prof.telegram_user_id && prof.telegram_user_id !== msg.from.id) {
+                await sendMessage(
+                  chatId,
+                  `⚠️ এই UID টি আগেই অন্য একটি টেলিগ্রাম অ্যাকাউন্টের সাথে যুক্ত করা আছে।\nএটি আপনার নিজের আইডি হলে সাপোর্টে জানান 🙏`,
+                  msg.message_id,
+                );
+                return Response.json({ ok: true, flow: "kyc-uid-taken" });
+              }
+              await supabaseAdmin.from("profiles").update({
+                telegram_user_id: msg.from.id,
+                kyc_verified: true,
+                kyc_verified_at: new Date().toISOString(),
+              }).eq("id", prof.id);
+              await sendMessage(
+                chatId,
+                `✅ <b>KYC সম্পন্ন! অ্যাকাউন্ট ভেরিফাইড 🎉</b>\n\n` +
+                  `UID <b>${prof.uid_seq}</b> — ${prof.display_name || "ইউজার"}\n\n` +
+                  `🔵 প্রোফাইলে <b>নীল ✔ ব্যাজ</b> চলে এসেছে\n💸 <b>উইথড্র চালু</b> হয়ে গেছে\n🙌 এখন থেকে আর UID লিখতে হবে না — স্লট রিসেট, ব্যালেন্স, সব কিছু শুধু বললেই হবে 💙`,
+                msg.message_id,
+              );
+              return Response.json({ ok: true, flow: "kyc-linked" });
+            }
+          }
+        }
+
+
+
         // Do not jump into conversations already being handled by a human admin.
         // If an admin writes, or the user replies to an admin's message, stay silent.
         const isBotCommand = /^\/(?:start|help|admin|reset)\b/i.test(text.trim());
