@@ -12,13 +12,13 @@ import {
   tgListBanRequests, tgResolveBanRequest, tgUnban, tgRecentMessages,
   tgListBlocked, tgSetBlocked, tgListVideos, tgUpsertVideo, tgDeleteVideo,
   tgListVoices, tgUpsertVoice, tgDeleteVoice,
-  tgBroadcast, tgBroadcastAudience,
+  tgBroadcast, tgBroadcastAudience, tgListLinkedProfiles,
 } from "@/lib/telegram-bot.functions";
 
 
 export const Route = createFileRoute("/admin/telegram")({ component: TelegramAdmin });
 
-type Tab = "settings" | "broadcast" | "faq" | "voices" | "videos" | "lookup" | "blocked" | "bans" | "log";
+type Tab = "settings" | "started" | "broadcast" | "faq" | "voices" | "videos" | "lookup" | "blocked" | "bans" | "log";
 
 
 
@@ -38,7 +38,7 @@ function TelegramAdmin() {
 
       <div className="flex gap-2 overflow-x-auto -mx-4 px-4 pb-1 scrollbar-none">
         {([
-          ["settings", "সেটিংস"], ["broadcast", "ব্রডকাস্ট"], ["faq", "উত্তর/নিয়ম"], ["voices", "ভয়েস"], ["videos", "ভিডিও লিংক"], ["lookup", "UID লুকআপ"],
+          ["settings", "সেটিংস"], ["started", "বট Start (KYC)"], ["broadcast", "ব্রডকাস্ট"], ["faq", "উত্তর/নিয়ম"], ["voices", "ভয়েস"], ["videos", "ভিডিও লিংক"], ["lookup", "UID লুকআপ"],
           ["blocked", "ব্লক লিস্ট"], ["bans", "Ban requests"], ["log", "Activity"],
         ] as [Tab, string][]).map(([k, label]) => (
           <button key={k} onClick={() => setTab(k)}
@@ -51,6 +51,7 @@ function TelegramAdmin() {
       </div>
 
       {tab === "settings" && <SettingsPanel />}
+      {tab === "started" && <StartedPanel />}
       {tab === "broadcast" && <BroadcastPanel />}
       {tab === "faq" && <FaqPanel />}
 
@@ -1041,6 +1042,74 @@ function BroadcastPanel() {
         <p className="text-[10px] text-muted-foreground">
           ⚠️ অনেকজনকে পাঠাতে কিছুটা সময় লাগবে (Telegram লিমিটের কারণে ধীরে পাঠানো হয়)। যারা বট ব্লক করেছে তাদের ব্যর্থ দেখাবে।
         </p>
+      )}
+    </div>
+  );
+}
+
+// ---- কারা বট Start করেছে (টেলিগ্রাম KYC তালিকা) ---------------------------
+function StartedPanel() {
+  const { data, isLoading } = useQuery({
+    queryKey: ["tg-linked-profiles"],
+    queryFn: () => tgListLinkedProfiles(),
+    staleTime: 30_000,
+  });
+  const [q, setQ] = useState("");
+
+  const rows = (data?.rows ?? []).filter((r: any) => {
+    const s = q.trim().toLowerCase();
+    if (!s) return true;
+    return (
+      String(r.uid_seq ?? "").includes(s) ||
+      String(r.telegram_user_id ?? "").includes(s) ||
+      (r.display_name ?? "").toLowerCase().includes(s) ||
+      (r.phone_number ?? "").includes(s)
+    );
+  });
+
+  return (
+    <div className="glass rounded-2xl p-4 space-y-3">
+      <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold flex items-center gap-1.5">
+        <Link2 className="w-3.5 h-3.5 text-cyan" /> বট Start করেছে / KYC হয়েছে
+      </p>
+      <div className="grid grid-cols-2 gap-2">
+        <div className="rounded-xl bg-surface-2 border border-border p-3">
+          <p className="text-[10px] text-muted-foreground font-bold">মোট Start/KYC</p>
+          <p className="text-xl font-black mono-num">{data?.total ?? 0}</p>
+        </div>
+        <div className="rounded-xl bg-surface-2 border border-border p-3">
+          <p className="text-[10px] text-muted-foreground font-bold">একই টেলিগ্রাম একাধিক UID</p>
+          <p className="text-xl font-black mono-num text-rose-500">{data?.duplicates ?? 0}</p>
+        </div>
+      </div>
+
+      <div className="relative">
+        <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="UID / নাম / ফোন / Telegram ID"
+          className="w-full pl-9 pr-3 py-2.5 bg-surface-2 border border-border rounded-xl outline-none focus:border-cyan text-sm" />
+      </div>
+
+      {isLoading ? (
+        <div className="py-8 flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-cyan" /></div>
+      ) : (
+        <div className="space-y-2">
+          {rows.map((r: any) => (
+            <div key={r.id} className={`rounded-xl border p-3 ${r.duplicate ? "border-rose-400 bg-rose-500/5" : "border-border bg-surface-2"}`}>
+              <div className="flex items-center justify-between gap-2">
+                <p className="font-black text-sm truncate">{r.display_name || "—"}</p>
+                <span className="text-[10px] mono-num bg-cyan/15 text-cyan px-2 py-0.5 rounded-full">UID {r.uid_seq}</span>
+              </div>
+              <p className="text-[11px] text-muted-foreground mono-num">TG ID: {r.telegram_user_id}{r.phone_number ? ` • ${r.phone_number}` : ""}</p>
+              <p className="text-[10px] text-muted-foreground">
+                {r.kyc_verified ? "✅ KYC ভেরিফাইড" : "⚠️ শুধু লিংক"} • {r.kyc_verified_at ? new Date(r.kyc_verified_at).toLocaleString() : "—"}
+              </p>
+              {r.duplicate && (
+                <p className="text-[10px] font-black text-rose-500 mt-1">⚠️ এই টেলিগ্রাম দিয়ে একাধিক UID যুক্ত আছে</p>
+              )}
+            </div>
+          ))}
+          {rows.length === 0 && <p className="text-center text-sm text-muted-foreground py-6">কেউ পাওয়া যায়নি</p>}
+        </div>
       )}
     </div>
   );
