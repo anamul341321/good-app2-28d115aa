@@ -1515,7 +1515,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
         // ---- "এই UID কার রেফারে join করেছে?" → আগেই হ্যান্ডেল (FAQ/how-to এর আগে)
         if (asksReferralJoin && !photoBase64 && settings.auto_reply_enabled) {
-          const uid = explicitOrBareUid() || pickUid(norm);
+          const uid = pickUidFromCurrentOrReply();
           if (uid) {
             const { buildReferralJoinReport } = await import("@/lib/telegram-lookup.server");
             const res = await buildReferralJoinReport(uid);
