@@ -125,7 +125,8 @@ export async function buildUserCard(uidRaw: string): Promise<LookupResult> {
 
   const uid = uidRaw.trim();
   const cols =
-    "id, display_name, phone_number, uid_seq, referral_code, referred_by, banned, banned_reason, created_at";
+    "id, display_name, phone_number, uid_seq, referral_code, referred_by, banned, banned_reason, created_at, kyc_verified, telegram_user_id";
+
   let profile: any = null;
 
   // ফোন নম্বর দিয়ে খোঁজা (১০+ ডিজিট হলে সেটা UID নয়, নম্বর)
