@@ -263,13 +263,24 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
                 chatId,
                 `✅ <b>KYC সম্পন্ন! অ্যাকাউন্ট ভেরিফাইড 🎉</b>\n\n` +
                   `UID <b>${prof.uid_seq}</b> — ${prof.display_name || "ইউজার"}\n\n` +
-                  `🔵 প্রোফাইলে <b>নীল ✔ ব্যাজ</b> চলে এসেছে\n💸 <b>উইথড্র চালু</b> হয়ে গেছে\n🙌 এখন থেকে আর UID লিখতে হবে না — স্লট রিসেট, ব্যালেন্স, সব কিছু শুধু বললেই হবে 💙`,
+                  `🔵 প্রোফাইলে <b>নীল ✔ ব্যাজ</b> চলে এসেছে\n💸 <b>উইথড্র চালু</b> হয়ে গেছে 💙`,
                 msg.message_id,
               );
               return Response.json({ ok: true, flow: "kyc-linked" });
             }
           }
+
+          // DM-এ বট শুধু KYC-ই করবে — বাকি কোনো কথা বলবে না।
+          await sendMessage(
+            chatId,
+            `🔐 এখানে শুধু <b>KYC</b> হয়।\nআপনার <b>UID নম্বরটি</b> লিখে পাঠান — KYC হয়ে যাবে।\n\nঅন্য যেকোনো প্রশ্ন আমাদের <b>গ্রুপে</b> করুন 💙`,
+            msg.message_id,
+          );
+          return Response.json({ ok: true, flow: "dm-kyc-only" });
         }
+
+
+
 
 
 
