@@ -233,6 +233,14 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               );
               return Response.json({ ok: true, flow: "kyc-tg-already-used" });
             }
+            if (alreadyLinked) {
+              await sendMessage(
+                chatId,
+                `✅ <b>আপনার KYC আগেই সম্পন্ন আছে</b>\nUID <b>${(alreadyLinked as any).uid_seq}</b> — ${(alreadyLinked as any).display_name || "ইউজার"} 💙`,
+                msg.message_id,
+              );
+              return Response.json({ ok: true, flow: "kyc-already" });
+            }
             if (!alreadyLinked) {
 
               const { data: prof } = await supabaseAdmin
