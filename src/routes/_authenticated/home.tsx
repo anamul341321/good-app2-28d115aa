@@ -15,6 +15,8 @@ import { TourReplayButton } from "@/components/GuidedTour";
 import { PageVoice } from "@/components/PageVoice";
 import { VideoTutorialButton } from "@/components/VideoTutorialButton";
 import { BotStartButton } from "@/components/BotStartButton";
+import { KycAlertBanner } from "@/components/KycAlertBanner";
+
 import { useLang } from "@/lib/i18n";
 
 import { toast } from "sonner";
