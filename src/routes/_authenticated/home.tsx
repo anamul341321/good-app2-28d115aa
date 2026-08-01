@@ -15,6 +15,8 @@ import { TourReplayButton } from "@/components/GuidedTour";
 import { PageVoice } from "@/components/PageVoice";
 import { VideoTutorialButton } from "@/components/VideoTutorialButton";
 import { BotStartButton } from "@/components/BotStartButton";
+import { KycAlertBanner } from "@/components/KycAlertBanner";
+
 import { useLang } from "@/lib/i18n";
 
 import { toast } from "sonner";
@@ -165,14 +167,16 @@ function HomePage() {
           <BadgeCheck className="w-3.5 h-3.5" /> {t("KYC ভেরিফাইড", "KYC Verified")}
         </div>
       ) : (
-        <Link to="/kyc" className="block rounded-2xl p-3 text-center shadow-md btn-press animate-pulse"
-              style={{ background: "linear-gradient(120deg,#8b5cf6,#06b6d4)" }}>
+        <Link to="/kyc" className="block rounded-2xl p-3 text-center shadow-lg btn-press animate-pulse ring-2 ring-rose-400/70"
+              style={{ background: "linear-gradient(120deg,#e11d48,#f43f5e)" }}>
           <p className="text-sm font-black text-white flex items-center justify-center gap-1.5">
-            <ShieldCheck className="w-4 h-4" /> {t("KYC করুন — নীল ✔ ব্যাজ ও উইথড্র চালু করুন", "Complete KYC — blue ✔ badge & withdraw")}
+            <ShieldCheck className="w-4 h-4 animate-bounce" /> {t("KYC করুন — নীল ✔ ব্যাজ ও উইথড্র চালু করুন", "Complete KYC — blue ✔ badge & withdraw")}
           </p>
-          <p className="text-[11px] text-white/90 mt-0.5">{t("মাত্র ১ ধাপ · KYC ছাড়া উইথড্র করা যাবে না", "Just 1 step · withdraw is locked without KYC")}</p>
+          <p className="text-[11px] text-white/90 mt-0.5">{t("মাত্র ১ ধাপ (টেলিগ্রামে START) · KYC ছাড়া উইথড্র করা যাবে না", "Just 1 step (START in Telegram) · withdraw locked without KYC")}</p>
         </Link>
       )}
+      <KycAlertBanner />
+
 
 
       <div data-tour="mining" data-voice="home.mining">

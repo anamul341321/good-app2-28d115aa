@@ -125,7 +125,8 @@ export async function buildUserCard(uidRaw: string): Promise<LookupResult> {
 
   const uid = uidRaw.trim();
   const cols =
-    "id, display_name, phone_number, uid_seq, referral_code, referred_by, banned, banned_reason, created_at";
+    "id, display_name, phone_number, uid_seq, referral_code, referred_by, banned, banned_reason, created_at, kyc_verified, telegram_user_id";
+
   let profile: any = null;
 
   // ফোন নম্বর দিয়ে খোঁজা (১০+ ডিজিট হলে সেটা UID নয়, নম্বর)
@@ -227,10 +228,16 @@ export async function buildUserCard(uidRaw: string): Promise<LookupResult> {
     }
   }
 
+  const kycOk = !!profile.kyc_verified && !!profile.telegram_user_id;
   const card =
     `👤 <b>${profile.display_name || "ইউজার"}</b> — UID <code>${profile.uid_seq ?? "—"}</code>\n` +
     `📱 ${mask(profile.phone_number)}   🔗 রেফার কোড: <code>${profile.referral_code}</code>\n` +
+    (kycOk
+      ? `🔵 <b>KYC: ভেরিফাইড ✅</b> — উইথড্র চালু\n`
+      : `🔴 <b>KYC: হয়নি (unverified)</b> — একাউন্ট ঠিকই আছে, তবে KYC ছাড়া <b>টাকা তোলা যাবে না</b>।\n` +
+        `   👉 অ্যাপের হোম পেজে লাল <b>“KYC করুন”</b> বাটনে চাপ দিন → টেলিগ্রাম খুলবে → <b>START</b> চাপুন → KYC শেষ (১০ সেকেন্ডের কাজ) 💙\n`) +
     (profile.banned ? `🚫 <b>একাউন্ট ব্যান</b> — ${profile.banned_reason || "কারণ নেই"}\n` : "") +
+
     `\n<b>✅ ফেস ভেরিফিকেশন</b>\n` +
     `   ১ম ভেরিফাই: <b>${firstVerified}/10</b>\n` +
     `   রি-ভেরিফাই: <b>${reVerified}/10</b>\n` +
