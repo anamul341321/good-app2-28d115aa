@@ -1,0 +1,1 @@
+UPDATE public.tg_bot_settings SET auto_reply_enabled = true, updated_at = now() WHERE id = 'default';
