@@ -518,3 +518,26 @@ export const tgBroadcast = createServerFn({ method: "POST" })
     }
     return { ok: true as const, sent, failed };
   });
+
+// ---- কারা বট Start করেছে (টেলিগ্রাম লিংক/KYC) — অ্যাডমিন প্যানেলের তালিকা ----
+export const tgListLinkedProfiles = createServerFn({ method: "GET" }).handler(async () => {
+  const db = await guard();
+  const { data } = await db
+    .from("profiles")
+    .select("id, uid_seq, display_name, phone_number, telegram_user_id, kyc_verified, kyc_verified_at")
+    .not("telegram_user_id", "is", null)
+    .order("kyc_verified_at", { ascending: false })
+    .limit(5000);
+
+  const rows = (data ?? []) as any[];
+  const seen = new Map<string, number>();
+  for (const r of rows) {
+    const k = String(r.telegram_user_id);
+    seen.set(k, (seen.get(k) ?? 0) + 1);
+  }
+  return {
+    total: rows.length,
+    duplicates: [...seen.values()].filter((n) => n > 1).length,
+    rows: rows.map((r) => ({ ...r, duplicate: (seen.get(String(r.telegram_user_id)) ?? 0) > 1 })),
+  };
+});
