@@ -391,116 +391,153 @@ function AdminWithdrawals() {
   );
 }
 
+// ---------- Payout report: কোন তারিখে কোন admin কাকে কত টাকা paid করেছে ----------
+type PayEntry = {
+  id: string;
+  admin: string;
+  amount: number;
+  processed_at: string;
+  provider: string;
+  wallet_number: string;
+  user_name: string;
+  uid: number | null;
+  user_id: string;
+};
+
+const dayKeyOf = (iso: string) => {
+  const d = new Date(iso);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
+const bnDate = (key: string) =>
+  new Date(key + "T00:00:00").toLocaleDateString("bn-BD", { day: "numeric", month: "long", year: "numeric" });
+const timeOf = (iso: string) => new Date(iso).toLocaleTimeString("bn-BD", { hour: "2-digit", minute: "2-digit" });
+const todayKey = () => dayKeyOf(new Date().toISOString());
+
 function PaidByPanel({ data, loading }: { data: any[]; loading: boolean }) {
-  const [open, setOpen] = useState<string | null>(null);
+  const [view, setView] = useState<"date" | "admin">("date");
+  const [range, setRange] = useState<"today" | "7" | "30" | "all">("7");
   const [q, setQ] = useState("");
-  const total = useMemo(() => data.reduce((s, a) => s + Number(a.total), 0), [data]);
-  if (loading) return <div className="py-6 flex justify-center"><Loader2 className="w-4 h-4 animate-spin text-cyan" /></div>;
-  const filtered = data.filter((a) => !q.trim() || a.name.toLowerCase().includes(q.trim().toLowerCase()));
+  const [openDay, setOpenDay] = useState<string | null>(todayKey());
+  const [openAdmin, setOpenAdmin] = useState<string | null>(null);
+  const [openDayAdmin, setOpenDayAdmin] = useState<string | null>(null);
 
-  return (
-    <div className="space-y-2">
-      <div className="glass rounded-xl p-3 border border-cyan/30 bg-cyan/5">
-        <p className="text-[10px] font-black text-cyan uppercase tracking-widest">Paid-By Admin Summary</p>
-        <p className="mono-num font-black text-2xl mt-1">{total.toFixed(2)} ৳</p>
-        <p className="text-[10px] text-muted-foreground">{data.length} জন admin · সব paid withdrawal মিলিয়ে</p>
-      </div>
-
-      <DailyReport data={data} />
-
-      <input
-        value={q}
-        onChange={(e) => setQ(e.target.value)}
-        placeholder="Admin name দিয়ে খুঁজুন…"
-        className="w-full px-3 py-2 rounded-xl bg-background/60 border border-white/10 text-xs outline-none focus:border-cyan"
-      />
-      {filtered.length === 0 && <p className="text-center text-xs text-muted-foreground py-6">কোনো record নেই</p>}
-      {filtered.map((a) => (
-        <div key={a.name} className="rounded-xl border border-cyan/30 bg-gradient-to-br from-cyan/10 to-blue-500/5">
-          <button
-            onClick={() => setOpen(open === a.name ? null : a.name)}
-            className="w-full flex items-center gap-3 p-3 text-left">
-            <div className="w-10 h-10 rounded-xl bg-cyan/20 border border-cyan/40 flex items-center justify-center shrink-0">
-              <UserCheck className="w-5 h-5 text-cyan" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="font-black truncate">{a.name}</p>
-              <p className="text-[10px] text-muted-foreground">{a.count} পেমেন্ট · click to see breakdown</p>
-            </div>
-            <div className="text-right shrink-0">
-              <p className="mono-num font-black text-emerald">{Number(a.total).toFixed(0)}৳</p>
-              <ChevronDown className={`w-4 h-4 inline transition-transform ${open === a.name ? "rotate-180" : ""}`} />
-            </div>
-          </button>
-          {open === a.name && (
-            <div className="px-3 pb-3 space-y-1.5">
-              {a.entries.map((e: any) => (
-                <div key={e.id} className="rounded-lg bg-white/5 border border-white/10 px-2.5 py-1.5 flex items-center justify-between gap-2">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-bold truncate">
-                      {e.user_name} <span className="text-[10px] text-muted-foreground mono-num">#{e.uid ?? "-"}</span>
-                    </p>
-                    <p className="text-[10px] text-muted-foreground mono-num truncate">
-                      {String(e.provider).toUpperCase()} · {e.wallet_number}
-                    </p>
-                    <p className="text-[9px] text-muted-foreground">{new Date(e.processed_at).toLocaleString()}</p>
-                  </div>
-                  <p className="mono-num font-black text-emerald text-sm shrink-0">{Number(e.amount).toFixed(0)}৳</p>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// ---------- Daily report: প্রতিদিন কে কত টাকা paid করেছে ----------
-function DailyReport({ data }: { data: any[] }) {
-  const [openDay, setOpenDay] = useState<string | null>(null);
-
-  const days = useMemo(() => {
-    const map = new Map<string, { date: string; total: number; count: number; admins: Map<string, { total: number; count: number }> }>();
-    for (const a of data) {
+  // ফ্ল্যাট লিস্ট — প্রতিটি paid withdrawal একটি এন্ট্রি
+  const all: PayEntry[] = useMemo(() => {
+    const out: PayEntry[] = [];
+    for (const a of data ?? []) {
       for (const e of a.entries ?? []) {
         if (!e.processed_at) continue;
-        const d = new Date(e.processed_at);
-        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-        if (!map.has(key)) map.set(key, { date: key, total: 0, count: 0, admins: new Map() });
-        const day = map.get(key)!;
-        day.total += Number(e.amount) || 0;
-        day.count += 1;
-        const cur = day.admins.get(a.name) ?? { total: 0, count: 0 };
-        cur.total += Number(e.amount) || 0;
-        cur.count += 1;
-        day.admins.set(a.name, cur);
+        out.push({
+          id: e.id,
+          admin: a.name,
+          amount: Number(e.amount) || 0,
+          processed_at: e.processed_at,
+          provider: String(e.provider ?? ""),
+          wallet_number: e.wallet_number ?? "",
+          user_name: e.user_name ?? "User",
+          uid: e.uid ?? null,
+          user_id: e.user_id,
+        });
       }
     }
-    return [...map.values()]
-      .map((d) => ({ ...d, adminList: [...d.admins.entries()].map(([name, v]) => ({ name, ...v })).sort((x, y) => y.total - x.total) }))
-      .sort((x, y) => (x.date < y.date ? 1 : -1));
+    return out.sort((x, y) => (x.processed_at < y.processed_at ? 1 : -1));
   }, [data]);
 
-  const grand = useMemo(() => days.reduce((s, d) => s + d.total, 0), [days]);
+  const entries = useMemo(() => {
+    const now = Date.now();
+    const days = range === "today" ? 0 : range === "7" ? 7 : range === "30" ? 30 : null;
+    const s = q.trim().toLowerCase();
+    return all.filter((e) => {
+      if (days !== null) {
+        if (days === 0) { if (dayKeyOf(e.processed_at) !== todayKey()) return false; }
+        else if (now - new Date(e.processed_at).getTime() > days * 864e5) return false;
+      }
+      if (!s) return true;
+      return (
+        e.admin.toLowerCase().includes(s) ||
+        e.user_name.toLowerCase().includes(s) ||
+        String(e.uid ?? "").includes(s) ||
+        e.wallet_number.includes(s)
+      );
+    });
+  }, [all, range, q]);
 
-  const bnDate = (key: string) =>
-    new Date(key + "T00:00:00").toLocaleDateString("bn-BD", { day: "numeric", month: "long", year: "numeric" });
+  const grand = useMemo(() => entries.reduce((s, e) => s + e.amount, 0), [entries]);
+  const adminCount = useMemo(() => new Set(entries.map((e) => e.admin)).size, [entries]);
+  const todayTotal = useMemo(
+    () => all.filter((e) => dayKeyOf(e.processed_at) === todayKey()).reduce((s, e) => s + e.amount, 0),
+    [all],
+  );
 
-  const todayKey = (() => {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-  })();
+  // তারিখ → admin → পেমেন্ট
+  const days = useMemo(() => {
+    const map = new Map<string, PayEntry[]>();
+    for (const e of entries) {
+      const k = dayKeyOf(e.processed_at);
+      if (!map.has(k)) map.set(k, []);
+      map.get(k)!.push(e);
+    }
+    return [...map.entries()]
+      .map(([date, list]) => {
+        const byAdmin = new Map<string, PayEntry[]>();
+        for (const e of list) {
+          if (!byAdmin.has(e.admin)) byAdmin.set(e.admin, []);
+          byAdmin.get(e.admin)!.push(e);
+        }
+        return {
+          date,
+          total: list.reduce((s, e) => s + e.amount, 0),
+          count: list.length,
+          admins: [...byAdmin.entries()]
+            .map(([name, list2]) => ({ name, list: list2, total: list2.reduce((s, e) => s + e.amount, 0), count: list2.length }))
+            .sort((x, y) => y.total - x.total),
+        };
+      })
+      .sort((x, y) => (x.date < y.date ? 1 : -1));
+  }, [entries]);
+
+  // admin → তারিখ → পেমেন্ট
+  const admins = useMemo(() => {
+    const map = new Map<string, PayEntry[]>();
+    for (const e of entries) {
+      if (!map.has(e.admin)) map.set(e.admin, []);
+      map.get(e.admin)!.push(e);
+    }
+    return [...map.entries()]
+      .map(([name, list]) => {
+        const byDay = new Map<string, PayEntry[]>();
+        for (const e of list) {
+          const k = dayKeyOf(e.processed_at);
+          if (!byDay.has(k)) byDay.set(k, []);
+          byDay.get(k)!.push(e);
+        }
+        return {
+          name,
+          total: list.reduce((s, e) => s + e.amount, 0),
+          count: list.length,
+          days: [...byDay.entries()]
+            .map(([date, list2]) => ({ date, list: list2, total: list2.reduce((s, e) => s + e.amount, 0), count: list2.length }))
+            .sort((x, y) => (x.date < y.date ? 1 : -1)),
+        };
+      })
+      .sort((x, y) => y.total - x.total);
+  }, [entries]);
+
+  const rangeLabel =
+    range === "today" ? "আজকের হিসাব" : range === "7" ? "গত ৭ দিন" : range === "30" ? "গত ৩০ দিন" : "সব সময়ের হিসাব";
 
   const downloadCsv = () => {
-    const lines = ["Date,Admin,Payments,Amount(BDT)"];
-    for (const d of days) for (const a of d.adminList) lines.push(`${d.date},"${a.name}",${a.count},${a.total.toFixed(2)}`);
-    lines.push(`,,TOTAL,${grand.toFixed(2)}`);
+    const lines = ["Date,Time,Admin,User,UID,Provider,Number,Amount(BDT)"];
+    for (const e of entries)
+      lines.push(
+        `${dayKeyOf(e.processed_at)},${timeOf(e.processed_at)},"${e.admin}","${e.user_name}",${e.uid ?? ""},${e.provider},${e.wallet_number},${e.amount.toFixed(2)}`,
+      );
+    lines.push(`,,,,,,TOTAL,${grand.toFixed(2)}`);
     const blob = new Blob(["\uFEFF" + lines.join("\n")], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `daily-payout-report-${todayKey}.csv`;
+    a.download = `payout-report-${todayKey()}.csv`;
     a.click();
     URL.revokeObjectURL(url);
     toast.success("CSV ডাউনলোড হয়েছে");
@@ -509,18 +546,31 @@ function DailyReport({ data }: { data: any[] }) {
   const printReport = () => {
     const rows = days
       .map(
-        (d) => `<tr class="day"><td>${bnDate(d.date)}</td><td>${d.count}</td><td>${d.total.toFixed(2)} BDT</td></tr>` +
-          d.adminList.map((a) => `<tr><td style="padding-left:24px">↳ ${a.name}</td><td>${a.count}</td><td>${a.total.toFixed(2)} BDT</td></tr>`).join(""),
+        (d) =>
+          `<tr class="day"><td>${bnDate(d.date)}</td><td>${d.count} পেমেন্ট</td><td>${d.total.toFixed(2)} BDT</td></tr>` +
+          d.admins
+            .map(
+              (a) =>
+                `<tr class="adm"><td style="padding-left:22px">↳ ${a.name}</td><td>${a.count} পেমেন্ট</td><td>${a.total.toFixed(2)} BDT</td></tr>` +
+                a.list
+                  .map(
+                    (e) =>
+                      `<tr><td style="padding-left:44px">${e.user_name} (UID ${e.uid ?? "-"}) · ${e.provider.toUpperCase()} ${e.wallet_number}</td><td>${timeOf(e.processed_at)}</td><td>${e.amount.toFixed(2)} BDT</td></tr>`,
+                  )
+                  .join(""),
+            )
+            .join(""),
       )
       .join("");
-    const html = `<!doctype html><html><head><meta charset="utf-8"><title>Daily Payout Report</title>
+    const html = `<!doctype html><html><head><meta charset="utf-8"><title>Payout Report</title>
 <style>body{font-family:system-ui,sans-serif;padding:24px;color:#111}h1{font-size:20px;margin:0}
-p.sub{color:#666;font-size:12px;margin:4px 0 16px}table{width:100%;border-collapse:collapse;font-size:13px}
-th,td{border-bottom:1px solid #ddd;padding:6px 8px;text-align:left}tr.day td{background:#f3f7ff;font-weight:700}
+p.sub{color:#666;font-size:12px;margin:4px 0 16px}table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{border-bottom:1px solid #ddd;padding:5px 8px;text-align:left}
+tr.day td{background:#eef4ff;font-weight:800;font-size:13px}tr.adm td{background:#f7f7f7;font-weight:700}
 .total{margin-top:16px;font-size:18px;font-weight:800}</style></head><body>
-<h1>Good-App · Daily Payout Report</h1>
+<h1>Good-App · Payout Report (${rangeLabel})</h1>
 <p class="sub">Generated: ${new Date().toLocaleString()}</p>
-<table><thead><tr><th>তারিখ / Admin</th><th>পেমেন্ট</th><th>টাকা</th></tr></thead><tbody>${rows}</tbody></table>
+<table><thead><tr><th>তারিখ / Admin / কাকে</th><th>সময় / পেমেন্ট</th><th>টাকা</th></tr></thead><tbody>${rows}</tbody></table>
 <p class="total">সর্বমোট: ${grand.toFixed(2)} BDT</p>
 </body></html>`;
     const w = window.open("", "_blank");
@@ -531,48 +581,129 @@ th,td{border-bottom:1px solid #ddd;padding:6px 8px;text-align:left}tr.day td{bac
     setTimeout(() => w.print(), 400);
   };
 
-  if (days.length === 0) return null;
+  if (loading) return <div className="py-6 flex justify-center"><Loader2 className="w-4 h-4 animate-spin text-cyan" /></div>;
 
   return (
-    <div className="space-y-2">
-      <div className="glass rounded-xl p-3 border border-emerald/30 bg-emerald/5">
-        <div className="flex items-center justify-between gap-2">
-          <div>
-            <p className="text-[10px] font-black text-emerald uppercase tracking-widest">📅 Daily Report</p>
-            <p className="mono-num font-black text-xl mt-0.5">{grand.toFixed(2)} ৳</p>
-            <p className="text-[10px] text-muted-foreground">{days.length} দিনের মোট হিসাব</p>
+    <div className="space-y-2.5">
+      {/* সারসংক্ষেপ */}
+      <div className="glass rounded-2xl p-3.5 border border-cyan/30 bg-gradient-to-br from-cyan/10 to-emerald/5">
+        <p className="text-[10px] font-black text-cyan uppercase tracking-widest">💸 Payout হিসাব · {rangeLabel}</p>
+        <p className="mono-num font-black text-3xl mt-0.5 text-emerald">{grand.toFixed(2)} ৳</p>
+        <p className="text-[11px] text-muted-foreground">
+          {entries.length} পেমেন্ট · {adminCount} জন admin · {days.length} দিন
+        </p>
+        <div className="grid grid-cols-2 gap-2 mt-2.5">
+          <div className="rounded-xl bg-background/50 border border-white/10 p-2">
+            <p className="text-[9px] text-muted-foreground font-black uppercase">আজ দেওয়া হয়েছে</p>
+            <p className="mono-num font-black text-lg text-emerald">{todayTotal.toFixed(0)}৳</p>
           </div>
-          <div className="flex flex-col gap-1.5 shrink-0">
-            <button onClick={printReport} className="px-3 py-1.5 rounded-lg bg-cyan/20 border border-cyan/40 text-cyan text-[11px] font-black">🖨️ Print / PDF</button>
-            <button onClick={downloadCsv} className="px-3 py-1.5 rounded-lg bg-emerald/20 border border-emerald/40 text-emerald text-[11px] font-black">⬇️ CSV</button>
+          <div className="rounded-xl bg-background/50 border border-white/10 p-2">
+            <p className="text-[9px] text-muted-foreground font-black uppercase">সব সময় মিলিয়ে</p>
+            <p className="mono-num font-black text-lg">{all.reduce((s, e) => s + e.amount, 0).toFixed(0)}৳</p>
           </div>
+        </div>
+        <div className="flex gap-1.5 mt-2.5">
+          <button onClick={printReport} className="flex-1 px-3 py-2 rounded-xl bg-cyan/20 border border-cyan/40 text-cyan text-[11px] font-black">🖨️ Print / PDF</button>
+          <button onClick={downloadCsv} className="flex-1 px-3 py-2 rounded-xl bg-emerald/20 border border-emerald/40 text-emerald text-[11px] font-black">⬇️ CSV</button>
         </div>
       </div>
 
-      {days.map((d) => (
-        <div key={d.date} className="rounded-xl border border-white/10 bg-white/5">
+      {/* ভিউ + সময় ফিল্টার */}
+      <div className="flex gap-1.5">
+        {([["date", "📅 তারিখ অনুযায়ী"], ["admin", "👤 Admin অনুযায়ী"]] as const).map(([id, label]) => (
+          <button key={id} onClick={() => setView(id)}
+            className={`flex-1 px-3 py-2 rounded-xl text-[11px] font-black border ${view === id ? "bg-cyan/20 border-cyan/50 text-cyan" : "bg-white/5 border-white/10 text-muted-foreground"}`}>
+            {label}
+          </button>
+        ))}
+      </div>
+      <div className="flex gap-1.5 overflow-x-auto pb-0.5">
+        {([["today", "আজ"], ["7", "৭ দিন"], ["30", "৩০ দিন"], ["all", "সব"]] as const).map(([id, label]) => (
+          <button key={id} onClick={() => setRange(id)}
+            className={`px-3 py-1.5 rounded-full text-[11px] font-black whitespace-nowrap border ${range === id ? "bg-emerald/20 border-emerald/50 text-emerald" : "bg-white/5 border-white/10 text-muted-foreground"}`}>
+            {label}
+          </button>
+        ))}
+      </div>
+      <input
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        placeholder="Admin নাম / user নাম / UID / নম্বর দিয়ে খুঁজুন…"
+        className="w-full px-3 py-2 rounded-xl bg-background/60 border border-white/10 text-xs outline-none focus:border-cyan"
+      />
+
+      {entries.length === 0 && <p className="text-center text-xs text-muted-foreground py-8">এই সময়ে কোনো payout নেই</p>}
+
+      {/* তারিখ অনুযায়ী */}
+      {view === "date" && days.map((d) => (
+        <div key={d.date} className="rounded-2xl border border-white/10 bg-white/5 overflow-hidden">
           <button onClick={() => setOpenDay(openDay === d.date ? null : d.date)} className="w-full flex items-center gap-3 p-3 text-left">
             <div className="min-w-0 flex-1">
               <p className="font-black text-sm truncate">
-                {bnDate(d.date)}{" "}
-                {d.date === todayKey && <span className="ml-1 text-[9px] px-1.5 py-0.5 rounded-full bg-emerald/20 text-emerald align-middle">আজ</span>}
+                {bnDate(d.date)}
+                {d.date === todayKey() && <span className="ml-1 text-[9px] px-1.5 py-0.5 rounded-full bg-emerald/20 text-emerald align-middle">আজ</span>}
               </p>
-              <p className="text-[10px] text-muted-foreground">{d.count} পেমেন্ট · {d.adminList.length} জন admin</p>
+              <p className="text-[10px] text-muted-foreground">
+                {d.count} জনকে দেওয়া হয়েছে · {d.admins.length} জন admin
+              </p>
             </div>
             <div className="text-right shrink-0">
-              <p className="mono-num font-black text-emerald">{d.total.toFixed(0)}৳</p>
+              <p className="mono-num font-black text-emerald text-base">{d.total.toFixed(0)}৳</p>
               <ChevronDown className={`w-4 h-4 inline transition-transform ${openDay === d.date ? "rotate-180" : ""}`} />
             </div>
           </button>
           {openDay === d.date && (
-            <div className="px-3 pb-3 space-y-1.5">
-              {d.adminList.map((a) => (
-                <div key={a.name} className="rounded-lg bg-background/50 border border-white/10 px-2.5 py-1.5 flex items-center justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold truncate">{a.name}</p>
-                    <p className="text-[10px] text-muted-foreground">{a.count} পেমেন্ট</p>
+            <div className="px-2.5 pb-2.5 space-y-1.5">
+              {d.admins.map((a) => {
+                const key = `${d.date}|${a.name}`;
+                const open = openDayAdmin === key;
+                return (
+                  <div key={key} className="rounded-xl bg-background/50 border border-cyan/20">
+                    <button onClick={() => setOpenDayAdmin(open ? null : key)} className="w-full flex items-center gap-2 px-2.5 py-2 text-left">
+                      <UserCheck className="w-4 h-4 text-cyan shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-black truncate">{a.name}</p>
+                        <p className="text-[10px] text-muted-foreground">{a.count} পেমেন্ট · কাকে কত দেখতে চাপ দিন</p>
+                      </div>
+                      <p className="mono-num font-black text-emerald text-sm shrink-0">{a.total.toFixed(0)}৳</p>
+                      <ChevronDown className={`w-3.5 h-3.5 shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
+                    </button>
+                    {open && <div className="px-2 pb-2 space-y-1">{a.list.map((e) => <PayRow key={e.id} e={e} />)}</div>}
                   </div>
-                  <p className="mono-num font-black text-emerald text-sm shrink-0">{a.total.toFixed(0)}৳</p>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      ))}
+
+      {/* Admin অনুযায়ী */}
+      {view === "admin" && admins.map((a) => (
+        <div key={a.name} className="rounded-2xl border border-cyan/30 bg-gradient-to-br from-cyan/10 to-blue-500/5 overflow-hidden">
+          <button onClick={() => setOpenAdmin(openAdmin === a.name ? null : a.name)} className="w-full flex items-center gap-3 p-3 text-left">
+            <div className="w-10 h-10 rounded-xl bg-cyan/20 border border-cyan/40 flex items-center justify-center shrink-0">
+              <UserCheck className="w-5 h-5 text-cyan" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="font-black truncate">{a.name}</p>
+              <p className="text-[10px] text-muted-foreground">{a.count} পেমেন্ট · {a.days.length} দিন</p>
+            </div>
+            <div className="text-right shrink-0">
+              <p className="mono-num font-black text-emerald">{a.total.toFixed(0)}৳</p>
+              <ChevronDown className={`w-4 h-4 inline transition-transform ${openAdmin === a.name ? "rotate-180" : ""}`} />
+            </div>
+          </button>
+          {openAdmin === a.name && (
+            <div className="px-2.5 pb-2.5 space-y-1.5">
+              {a.days.map((d) => (
+                <div key={d.date} className="rounded-xl bg-background/50 border border-white/10 p-2">
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <p className="text-[11px] font-black">
+                      {bnDate(d.date)} <span className="text-muted-foreground font-bold">· {d.count} পেমেন্ট</span>
+                    </p>
+                    <p className="mono-num font-black text-emerald text-sm">{d.total.toFixed(0)}৳</p>
+                  </div>
+                  <div className="space-y-1">{d.list.map((e) => <PayRow key={e.id} e={e} />)}</div>
                 </div>
               ))}
             </div>
@@ -582,3 +713,25 @@ th,td{border-bottom:1px solid #ddd;padding:6px 8px;text-align:left}tr.day td{bac
     </div>
   );
 }
+
+function PayRow({ e }: { e: PayEntry }) {
+  return (
+    <Link
+      to="/admin/user/$userId"
+      params={{ userId: e.user_id }}
+      className="rounded-lg bg-white/5 border border-white/10 px-2.5 py-1.5 flex items-center justify-between gap-2 hover:border-cyan/40"
+    >
+      <div className="min-w-0 flex-1">
+        <p className="text-xs font-bold truncate">
+          {e.user_name} <span className="text-[10px] text-muted-foreground mono-num">#{e.uid ?? "-"}</span>
+        </p>
+        <p className="text-[10px] text-muted-foreground mono-num truncate">
+          {e.provider.toUpperCase()} · {e.wallet_number}
+        </p>
+        <p className="text-[9px] text-muted-foreground">🕒 {timeOf(e.processed_at)}</p>
+      </div>
+      <p className="mono-num font-black text-emerald text-sm shrink-0">{e.amount.toFixed(0)}৳</p>
+    </Link>
+  );
+}
+
