@@ -112,6 +112,12 @@ export function InstallPrompt() {
               </p>
             </div>
             <button
+              onClick={() => setShowIosSheet(true)}
+              className="shrink-0 px-2 py-2 rounded-xl bg-white/20 text-white font-black text-[11px] btn-press"
+            >
+              নিয়ম
+            </button>
+            <button
               onClick={install}
               className="shrink-0 px-3 py-2 rounded-xl bg-white text-violet-700 font-black text-xs flex items-center gap-1 btn-press shadow-md"
             >
