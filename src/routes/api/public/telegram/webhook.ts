@@ -692,9 +692,10 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           /(fau fau|ফাউ ফাউ|free|ফ্রি|tk|টাকা|payment|পেমেন্ট)[^\n]{0,120}(dicche|দিচ্ছে|dei|দেয়|দেন|দেয়)[^\n]{0,160}(face|ফেস|mukh|মুখ|ছবি|photo|ফটো)/i.test(norm);
 
         const asksReferralJoin =
-          /(kar|কার|jar|যার|kon|কোন|which|who|ke|কে)[^\n]{0,80}(refer|reffer|refar|রেফার|referral|রেফারে|রেফারার|under|আন্ডার)/i.test(norm) ||
-          /(refer|reffer|refar|রেফার|referral|রেফারে|রেফারার|under|আন্ডার)[^\n]{0,80}(join|জয়েন|joined|asche|আসছে|ashche|aishe|hoise|হইছে|hoyeche|হয়েছে|ache|আছে|kar|কার|কে|ke)/i.test(norm) ||
+          /(kar|কার|kaar|jar|যার|kon|কোন|which|who|ke|কে|kader|কাদের)[^\n]{0,90}(refer|reffer|refar|refr|রেফার|referral|রেফারে|রেফারার|under|আন্ডার)/i.test(norm) ||
+          /(refer|reffer|refar|refr|রেফার|referral|রেফারে|রেফারার|under|আন্ডার)[^\n]{0,90}(join|জয়েন|joined|asche|আসছে|ashche|aishe|hoise|হইছে|hoyeche|হয়েছে|ache|আছে|kar|কার|কে|ke|korche|করছে|korchе|kore|করে|account|একাউন্ট|অ্যাকাউন্ট|id|আইডি)/i.test(norm) ||
           /(ke|কে|কার)[^\n]{0,60}(eneche|এনেছে|anse|আনছে|niye asche|নিয়ে আসছে)/i.test(norm);
+
 
         // "রেফার করেছি কিন্তু রেফার বাড়ে না / কমে গেছে" → রেফার হিস্টরি + কারণ
         const complainsReferralCount =
