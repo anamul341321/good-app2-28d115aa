@@ -217,9 +217,22 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           const bare = /^\s*(?:uid|আইডি)?\s*[:#-]?\s*(\d{2,9})\s*$/i.exec(text.trim());
           if (bare) {
             const { data: alreadyLinked } = await supabaseAdmin
-              .from("profiles").select("uid_seq")
+              .from("profiles").select("uid_seq, display_name")
               .eq("telegram_user_id", msg.from.id).maybeSingle();
+            // একটি টেলিগ্রাম = একটি UID: আগে লিংক থাকলে নতুন UID নেওয়া হবে না
+            if (alreadyLinked && bare[1].length >= 3 && String((alreadyLinked as any).uid_seq ?? "") !== bare[1]) {
+              await sendMessage(
+                chatId,
+                `⚠️ <b>এই টেলিগ্রাম অ্যাকাউন্টটি দিয়ে আগেই KYC করা হয়েছে</b>\n\n` +
+                  `🔗 যুক্ত আছে: UID <b>${(alreadyLinked as any).uid_seq}</b> — ${(alreadyLinked as any).display_name || "ইউজার"}\n\n` +
+                  `📌 নিয়ম: <b>একটি টেলিগ্রাম = একটি অ্যাকাউন্টের KYC</b>। নতুন অ্যাকাউন্টের KYC করতে <b>অন্য একটি টেলিগ্রাম</b> ব্যবহার করুন।\n` +
+                  `🙏 কোনো ভুল হলে সাপোর্টে জানান — আমরা দেখে ঠিক করে দেব 💙`,
+                msg.message_id,
+              );
+              return Response.json({ ok: true, flow: "kyc-tg-already-used" });
+            }
             if (!alreadyLinked) {
+
               const { data: prof } = await supabaseAdmin
                 .from("profiles").select("id, uid_seq, telegram_user_id, display_name")
                 .eq("uid_seq", Number(bare[1])).maybeSingle();
