@@ -28,7 +28,8 @@ export const requestWithdraw = createServerFn({ method: "POST" })
       .select("kyc_verified, telegram_user_id")
       .eq("id", userId)
       .maybeSingle();
-    const kycOk = !!(kycProf as any)?.kyc_verified && !!(kycProf as any)?.telegram_user_id;
+    // টেলিগ্রাম লিংক থাকলেই KYC ধরা হবে (পুরোনো লিংক করা একাউন্টও চলবে)
+    const kycOk = !!(kycProf as any)?.telegram_user_id || !!(kycProf as any)?.kyc_verified;
     if (!kycOk) {
       throw new Error("🔐 উইথড্র করতে আগে KYC করতে হবে — হোম পেজের 'KYC করুন' বাটনে চাপ দিয়ে টেলিগ্রাম বট Start করুন (১ মিনিটের কাজ)।");
     }
