@@ -100,7 +100,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           }
           return Response.json({ ok: true, flow: "welcome" });
         }
-        // ---- অ্যাপ থেকে ডিপ-লিংকে /start → টেলিগ্রাম অ্যাকাউন্ট লিংক ----------
+        // ---- /start → টেলিগ্রাম অ্যাকাউন্ট লিংক (এটাই আমাদের KYC) ----------
         const startTextRaw: string = String(msg.text ?? "").trim();
         if (msg.chat?.type === "private" && /^\/start\b/i.test(startTextRaw)) {
           const payload = startTextRaw.split(/\s+/)[1] ?? "";
@@ -112,7 +112,11 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               .eq("uid_seq", Number(uidMatch[1])).maybeSingle();
             if (prof) {
               await supabaseAdmin.from("profiles")
-                .update({ telegram_user_id: msg.from.id }).eq("id", prof.id);
+                .update({
+                  telegram_user_id: msg.from.id,
+                  kyc_verified: true,
+                  kyc_verified_at: new Date().toISOString(),
+                }).eq("id", prof.id);
               linkedUid = String(prof.uid_seq ?? "");
             }
           }
@@ -121,12 +125,13 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             chatId,
             `🤖 <b>স্বাগতম ${who}!</b>\n\n` +
               (linkedUid
-                ? `✅ আপনার অ্যাকাউন্ট (UID <b>${linkedUid}</b>) বটের সাথে যুক্ত হয়েছে — এখন বারবার UID লিখতে হবে না।\n\n`
-                : "") +
-              `যেকোনো প্রশ্ন লিখে বা ভয়েস পাঠিয়ে জিজ্ঞেস করুন — আমি সাথে সাথেই সাহায্য করব 💙`,
+                ? `✅ <b>KYC সম্পন্ন হয়েছে!</b>\nআপনার অ্যাকাউন্ট (UID <b>${linkedUid}</b>) ভেরিফাই হয়ে গেছে — প্রোফাইলে নীল ✔ ব্যাজ পেয়ে যাবেন এবং এখন উইথড্র করতে পারবেন।\nআর কখনো UID লিখতে হবে না 💙`
+                : `🔐 <b>KYC ভেরিফিকেশন (মাত্র ১ ধাপ)</b>\n\nআপনার Good-App এর <b>UID নম্বরটি</b> এখানে লিখে পাঠান — ব্যাস, KYC হয়ে যাবে।\n\n👉 UID কোথায়? অ্যাপের হোম পেজে নামের নিচে <b>UID</b> লেখা বাটনেই আছে।\n\n✅ KYC করলে: প্রোফাইলে <b>নীল ✔ ব্যাজ</b>, অ্যাকাউন্ট ভেরিফাইড, এবং <b>উইথড্র চালু</b>।\n❌ KYC না করলে টাকা তোলা যাবে না (বাকি সব কাজ চলবে)।`) +
+              `\n\nযেকোনো প্রশ্ন লিখে বা ভয়েস পাঠিয়ে জিজ্ঞেস করুন — আমি সাথে সাথেই সাহায্য করব 💙`,
           );
           return Response.json({ ok: true, flow: "start" });
         }
+
         if (!chatAllowed) return Response.json({ ok: true, ignored: "other-chat" });
         if (msg.left_chat_member) return Response.json({ ok: true, ignored: "left" });
 
@@ -172,6 +177,52 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             return Response.json({ ok: true, flow: "voice-unclear" });
           }
         }
+
+        // ---- প্রাইভেট চ্যাটে UID পাঠালেই KYC লিংক হয়ে যাবে ----------------
+        if (msg.chat?.type === "private" && msg.from?.id) {
+          const bare = /^\s*(?:uid|আইডি)?\s*[:#-]?\s*(\d{2,9})\s*$/i.exec(text.trim());
+          if (bare) {
+            const { data: alreadyLinked } = await supabaseAdmin
+              .from("profiles").select("uid_seq")
+              .eq("telegram_user_id", msg.from.id).maybeSingle();
+            if (!alreadyLinked) {
+              const { data: prof } = await supabaseAdmin
+                .from("profiles").select("id, uid_seq, telegram_user_id, display_name")
+                .eq("uid_seq", Number(bare[1])).maybeSingle();
+              if (!prof) {
+                await sendMessage(
+                  chatId,
+                  `❌ এই UID (<b>${bare[1]}</b>) আমাদের সিস্টেমে পাওয়া যায়নি।\nঅ্যাপের হোম পেজে নামের নিচে <b>UID</b> বাটনে চাপ দিলে সঠিক নম্বরটি কপি হবে — সেটি পাঠান 💙`,
+                  msg.message_id,
+                );
+                return Response.json({ ok: true, flow: "kyc-uid-notfound" });
+              }
+              if (prof.telegram_user_id && prof.telegram_user_id !== msg.from.id) {
+                await sendMessage(
+                  chatId,
+                  `⚠️ এই UID টি আগেই অন্য একটি টেলিগ্রাম অ্যাকাউন্টের সাথে যুক্ত করা আছে।\nএটি আপনার নিজের আইডি হলে সাপোর্টে জানান 🙏`,
+                  msg.message_id,
+                );
+                return Response.json({ ok: true, flow: "kyc-uid-taken" });
+              }
+              await supabaseAdmin.from("profiles").update({
+                telegram_user_id: msg.from.id,
+                kyc_verified: true,
+                kyc_verified_at: new Date().toISOString(),
+              }).eq("id", prof.id);
+              await sendMessage(
+                chatId,
+                `✅ <b>KYC সম্পন্ন! অ্যাকাউন্ট ভেরিফাইড 🎉</b>\n\n` +
+                  `UID <b>${prof.uid_seq}</b> — ${prof.display_name || "ইউজার"}\n\n` +
+                  `🔵 প্রোফাইলে <b>নীল ✔ ব্যাজ</b> চলে এসেছে\n💸 <b>উইথড্র চালু</b> হয়ে গেছে\n🙌 এখন থেকে আর UID লিখতে হবে না — স্লট রিসেট, ব্যালেন্স, সব কিছু শুধু বললেই হবে 💙`,
+                msg.message_id,
+              );
+              return Response.json({ ok: true, flow: "kyc-linked" });
+            }
+          }
+        }
+
+
 
         // Do not jump into conversations already being handled by a human admin.
         // If an admin writes, or the user replies to an admin's message, stay silent.

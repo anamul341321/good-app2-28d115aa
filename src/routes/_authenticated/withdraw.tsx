@@ -117,6 +117,21 @@ function WithdrawPage() {
         adminMessage={(data as any)?.payoutSettings?.withdrawOffMessage}
       />
 
+      {!(data?.profile as any)?.kyc_verified && (
+        <Link
+          to="/kyc"
+          className="block rounded-2xl p-4 border-2 border-cyan bg-linear-to-br from-violet/20 via-cyan/10 to-emerald/10 shadow-lg btn-press"
+        >
+          <p className="text-sm font-black flex items-center gap-2">
+            <ShieldAlert className="w-4 h-4 text-rose" /> KYC ছাড়া উইথড্র করা যাবে না
+          </p>
+          <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">
+            মাত্র ১ ধাপ — টেলিগ্রাম বট Start করলেই KYC সম্পন্ন, নীল ✔ ব্যাজ ও উইথড্র চালু হবে। এখানে চাপ দিন 👉
+          </p>
+        </Link>
+      )}
+
+
       {debts.length > 0 && (
         <div className="rounded-2xl p-5 border-2 border-rose bg-linear-to-br from-rose/25 via-rose/10 to-amber/10 space-y-3 shadow-lg">
           <div className="flex items-center gap-2">
