@@ -11,7 +11,6 @@ import { LanguageToggle } from "@/components/LanguageToggle";
 import { LanguagePicker } from "@/components/LanguagePicker";
 import { useLang } from "@/lib/i18n";
 import { SlotResetApproval } from "@/components/SlotResetApproval";
-import { StartGate } from "@/components/StartGate";
 
 
 
@@ -77,7 +76,6 @@ function AuthedLayout() {
   }
 
   return (
-    <StartGate>
     <div className="min-h-screen pb-24">
 
       <header className="sticky top-0 z-30 glass">
@@ -121,7 +119,6 @@ function AuthedLayout() {
       <SlotResetApproval />
 
     </div>
-    </StartGate>
   );
 }
 
