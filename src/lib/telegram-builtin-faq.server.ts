@@ -14,6 +14,25 @@ const pick = (a: string[]) => a[Math.floor(Math.random() * a.length)];
 
 export const BUILTIN_FAQS: BuiltinFaq[] = [
   {
+    topic: "অ্যাপ ডাউনলোড / ইনস্টল করার নিয়ম",
+    screenshot: [],
+    keywords: [
+      "apps download", "app download", "download korbo", "download kivabe",
+      "apps kivabe download", "install korbo", "install kivabe", "apps install",
+      "app install", "apk", "play store", "playstore", "home screen",
+      "অ্যাপ ডাউনলোড", "অ্যাপস ডাউনলোড", "ডাউনলোড করবো", "ডাউনলোড কিভাবে",
+      "ইনস্টল করবো", "ইনস্টল কিভাবে", "অ্যাপ ইনস্টল", "এপস ডাউনলোড",
+    ],
+    answer:
+      `📲 <b>অ্যাপটি ইনস্টল করার নিয়ম</b> (খুব সহজ, ১ মিনিটের কাজ) 👇\n\n` +
+      `<b>১️⃣</b> <b>Chrome</b> ব্রাউজার দিয়ে আমাদের অফিসিয়াল ওয়েবসাইট <b>https://goodapp2.live</b> ওপেন করুন।\n` +
+      `<b>২️⃣</b> উপরের ডান পাশে থাকা তিনটি ডট <b>(⋮)</b> মেনুতে ক্লিক করুন।\n` +
+      `<b>৩️⃣</b> নিচের দিকে স্ক্রল করলে <b>"Add to Home Screen"</b> অপশনটি পাবেন — সেটিতে ক্লিক করুন।\n` +
+      `<b>৪️⃣</b> এরপর উপরে থাকা <b>"Install"</b> বাটনে চাপ দিলেই অ্যাপটি আপনার ফোনে ইনস্টল হয়ে যাবে ✅\n\n` +
+      `📌 অ্যাপের ভেতরে উপরে <b>"অ্যাপ ইনস্টল করুন"</b> ব্যানারেও এই নিয়মটি ছবি আকারে দেখতে পাবেন।`,
+  },
+
+  {
     topic: "পেমেন্ট করতে কত সময় লাগে?",
     screenshot: [],
     keywords: [

@@ -112,6 +112,12 @@ export function InstallPrompt() {
               </p>
             </div>
             <button
+              onClick={() => setShowIosSheet(true)}
+              className="shrink-0 px-2 py-2 rounded-xl bg-white/20 text-white font-black text-[11px] btn-press"
+            >
+              নিয়ম
+            </button>
+            <button
               onClick={install}
               className="shrink-0 px-3 py-2 rounded-xl bg-white text-violet-700 font-black text-xs flex items-center gap-1 btn-press shadow-md"
             >
@@ -162,15 +168,19 @@ export function InstallPrompt() {
               <ol className="space-y-3 text-sm">
                 <li className="flex gap-3 items-start">
                   <span className="w-6 h-6 rounded-full bg-emerald-500 text-white font-black text-xs flex items-center justify-center shrink-0">১</span>
-                  <span className="flex-1">Chrome ব্রাউজারের উপরে ডান দিকে <b>⋮</b> মেনুতে চাপুন</span>
+                  <span className="flex-1"><b>Chrome</b> ব্রাউজার দিয়ে আমাদের অফিসিয়াল ওয়েবসাইট <b>https://goodapp2.live</b> ওপেন করুন</span>
                 </li>
                 <li className="flex gap-3 items-start">
                   <span className="w-6 h-6 rounded-full bg-emerald-500 text-white font-black text-xs flex items-center justify-center shrink-0">২</span>
-                  <span className="flex-1"><b>"Install app"</b> অথবা <b>"Add to Home screen"</b> সিলেক্ট করুন</span>
+                  <span className="flex-1">উপরের ডান পাশে থাকা তিনটি ডট <b>(⋮)</b> মেনুতে ক্লিক করুন</span>
                 </li>
                 <li className="flex gap-3 items-start">
                   <span className="w-6 h-6 rounded-full bg-emerald-500 text-white font-black text-xs flex items-center justify-center shrink-0">৩</span>
-                  <span className="flex-1"><b>Install</b> চাপলে হোম স্ক্রিনে অ্যাপ চলে আসবে</span>
+                  <span className="flex-1">নিচের দিকে স্ক্রল করে <b>"Add to Home Screen"</b> অপশনে ক্লিক করুন</span>
+                </li>
+                <li className="flex gap-3 items-start">
+                  <span className="w-6 h-6 rounded-full bg-emerald-500 text-white font-black text-xs flex items-center justify-center shrink-0">৪</span>
+                  <span className="flex-1">এরপর উপরে থাকা <b>"Install"</b> বাটনে চাপ দিলেই অ্যাপটি ফোনে ইনস্টল হয়ে যাবে ✅</span>
                 </li>
               </ol>
             )}
