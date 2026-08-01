@@ -20,6 +20,17 @@ export const requestWithdraw = createServerFn({ method: "POST" })
     const amount = Math.floor(data.amount);
     if (amount < MIN_WITHDRAW_BDT) throw new Error(`সর্বনিম্ন উইথড্র ${MIN_WITHDRAW_BDT}৳`);
 
+    // KYC (টেলিগ্রাম বট লিংক) ছাড়া উইথড্র বন্ধ
+    const { data: kycProf } = await supabase
+      .from("profiles")
+      .select("kyc_verified, telegram_user_id")
+      .eq("id", userId)
+      .maybeSingle();
+    const kycOk = !!(kycProf as any)?.kyc_verified && !!(kycProf as any)?.telegram_user_id;
+    if (!kycOk) {
+      throw new Error("🔐 উইথড্র করতে আগে KYC করতে হবে — হোম পেজের 'KYC করুন' বাটনে চাপ দিয়ে টেলিগ্রাম বট Start করুন (১ মিনিটের কাজ)।");
+    }
+
     // Daily limit: max 3 withdraw requests per 24h
     const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     const { count: dailyCount } = await supabase
