@@ -45,3 +45,27 @@ export function sensitiveReply(kind: GuardKind, name?: string): string {
       return `${who}দুঃখিত 🙏 অ্যাপের কোনো সেটিং বা একাউন্টে পরিবর্তন আমি ইউজারের অনুরোধে করতে পারি না — এটা শুধু অ্যাডমিন করতে পারেন।\nকোনো সমস্যা থাকলে বলুন, আমি সাহায্য করছি 💙`;
   }
 }
+
+/**
+ * সাহায্য করার প্রস্তাব / ভদ্র কথা — এগুলো কখনোই warning বা ফ্রিজের কারণ নয়।
+ * যেমন: "যারা কাজ বুঝতেছেন না, আমাকে ইনবক্স করেন" — এটা helpful, spam নয়।
+ */
+const HELPFUL =
+  /(সাহায্য|help|হেল্প|বুঝ|bujh|bujte|বুঝতে|শিখ|shikh|জিজ্ঞ|জানতে চান|inbox|ইনবক্স|ইনবক্স করেন|nock|নক|knock|message|মেসেজ|বলবেন|জানাবেন|dekhiye|দেখিয়ে|শেখা|guide|গাইড)/i;
+const ABUSIVE =
+  /(চুদ|চোদ|মাদার|বাল|খানকি|শালা|কুত্তা|শুয়ে?র|হারাম\s*জাদা|বেশ্যা|fuck|f\*ck|bitch|bastard|madar|chud|khanki|kutta|suar)/i;
+const SCAMMY =
+  /(dm\s*me\s*for\s*(money|earn)|invest\s*kore\s*double|টাকা\s*ডাবল|hack|হ্যাক|otp\s*(দেন|দিন|share)|account\s*(kine|বিক্রি|sell|kinbo))/i;
+
+export function looksHelpful(raw: string): boolean {
+  const t = (raw || "").trim();
+  if (!t) return false;
+  if (ABUSIVE.test(t) || SCAMMY.test(t)) return false;
+  return HELPFUL.test(t);
+}
+
+/** স্পষ্ট গালি/স্ক্যাম — শুধু এগুলোতেই ফ্রিজ হবে। */
+export function isHardAbuse(raw: string): boolean {
+  const t = (raw || "").trim();
+  return !!t && (ABUSIVE.test(t) || SCAMMY.test(t));
+}
