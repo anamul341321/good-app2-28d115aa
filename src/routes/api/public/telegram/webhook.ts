@@ -1726,7 +1726,14 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return null;
         };
 
-        if (settings.moderation_enabled && decision.should_warn && msg.from?.id) {
+        // ফ্রিজ শুধু স্পষ্ট গালি/স্ক্যামে হবে। কেউ অন্যকে সাহায্য করার কথা বললে
+        // ("যারা বুঝতেছেন না আমাকে ইনবক্স করেন") কখনোই ফ্রিজ/warning হবে না।
+        const { looksHelpful, isHardAbuse } = await import("@/lib/telegram-guard.server");
+        const freezeText = `${text} ${shotText ?? ""}`.trim();
+        const freezeAllowed = !!hardHit || isHardAbuse(freezeText);
+        const freezeSafe = looksHelpful(freezeText) || !freezeAllowed;
+
+        if (settings.moderation_enabled && decision.should_warn && !freezeSafe && msg.from?.id) {
           const warnCount = ((offender as any)?.warn_count ?? 0) + 1;
 
           // Which UID does this troublemaker belong to? Check the message, the
