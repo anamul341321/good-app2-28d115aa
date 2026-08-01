@@ -60,7 +60,9 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         // group_chat_id এ কমা দিয়ে একাধিক গ্রুপ আইডি রাখা যায়; ফাঁকা থাকলে সব গ্রুপে কাজ করবে।
         const allowedChats = String(settings.group_chat_id ?? "")
           .split(/[,\s]+/).map((s) => s.trim()).filter(Boolean);
-        const chatAllowed = allowedChats.length === 0 || allowedChats.includes(chatId);
+        // প্রাইভেট চ্যাট (KYC/সাপোর্ট DM) সবসময় অনুমোদিত — গ্রুপ হোয়াইটলিস্ট শুধু গ্রুপের জন্য
+        const isPrivateChat = msg.chat?.type === "private";
+        const chatAllowed = isPrivateChat || allowedChats.length === 0 || allowedChats.includes(chatId);
         const addChatToAllowList = async () => {
           if (allowedChats.includes(chatId)) return;
           await supabaseAdmin.from("tg_bot_settings")
