@@ -101,16 +101,48 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return Response.json({ ok: true, flow: "welcome" });
         }
         // ---- /start → টেলিগ্রাম অ্যাকাউন্ট লিংক (এটাই আমাদের KYC) ----------
+        // নিয়ম: একটি টেলিগ্রাম অ্যাকাউন্ট দিয়ে শুধু একটি UID-ই KYC হবে।
         const startTextRaw: string = String(msg.text ?? "").trim();
         if (msg.chat?.type === "private" && /^\/start\b/i.test(startTextRaw)) {
           const payload = startTextRaw.split(/\s+/)[1] ?? "";
           const uidMatch = /^uid[_-]?(\d+)$/i.exec(payload);
+          const who = msg.from?.first_name || "বন্ধু";
+
+          // এই টেলিগ্রামটি আগে কোনো UID-তে ব্যবহার হয়েছে কি না
+          let existing: { uid_seq: number | null; display_name: string | null } | null = null;
+          if (msg.from?.id) {
+            const { data } = await supabaseAdmin
+              .from("profiles").select("uid_seq, display_name")
+              .eq("telegram_user_id", msg.from.id).maybeSingle();
+            existing = (data as any) ?? null;
+          }
+
+          if (existing) {
+            const sameUid = uidMatch && String(existing.uid_seq ?? "") === String(Number(uidMatch[1]));
+            await sendMessage(
+              chatId,
+              `🤖 <b>স্বাগতম ${who}!</b>\n\n` +
+                (sameUid
+                  ? `✅ <b>আপনার KYC আগেই সম্পন্ন আছে</b>\nUID <b>${existing.uid_seq}</b> — ${existing.display_name || "ইউজার"}\nপ্রোফাইলে নীল ✔ ব্যাজ ও উইথড্র চালু আছে 💙`
+                  : `⚠️ <b>এই টেলিগ্রাম অ্যাকাউন্টটি দিয়ে আগেই KYC করা হয়েছে</b>\n\n` +
+                    `🔗 যুক্ত আছে: UID <b>${existing.uid_seq}</b> — ${existing.display_name || "ইউজার"}\n\n` +
+                    `📌 নিয়ম: <b>একটি টেলিগ্রাম = একটি অ্যাকাউন্টের KYC</b>। তাই নতুন অ্যাকাউন্টের KYC এই টেলিগ্রাম দিয়ে হবে না।\n` +
+                    `👉 নতুন অ্যাকাউন্টটির KYC করতে <b>অন্য একটি টেলিগ্রাম নম্বর</b> ব্যবহার করুন।\n` +
+                    `🙏 ভুল হলে বা এটি আপনার নিজের পুরোনো আইডি হলে সাপোর্টে জানান — আমরা দেখে ঠিক করে দেব।`) +
+                `\n\nযেকোনো প্রশ্ন লিখে বা ভয়েস পাঠিয়ে জিজ্ঞেস করুন — আমি সাথে সাথেই সাহায্য করব 💙`,
+            );
+            return Response.json({ ok: true, flow: "start-already-linked" });
+          }
+
           let linkedUid: string | null = null;
+          let uidTakenBy: string | null = null;
           if (uidMatch && msg.from?.id) {
             const { data: prof } = await supabaseAdmin
-              .from("profiles").select("id, uid_seq")
+              .from("profiles").select("id, uid_seq, telegram_user_id")
               .eq("uid_seq", Number(uidMatch[1])).maybeSingle();
-            if (prof) {
+            if (prof && (prof as any).telegram_user_id) {
+              uidTakenBy = String((prof as any).uid_seq ?? "");
+            } else if (prof) {
               await supabaseAdmin.from("profiles")
                 .update({
                   telegram_user_id: msg.from.id,
@@ -120,17 +152,19 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               linkedUid = String(prof.uid_seq ?? "");
             }
           }
-          const who = msg.from?.first_name || "বন্ধু";
           await sendMessage(
             chatId,
             `🤖 <b>স্বাগতম ${who}!</b>\n\n` +
               (linkedUid
                 ? `✅ <b>KYC সম্পন্ন হয়েছে!</b>\nআপনার অ্যাকাউন্ট (UID <b>${linkedUid}</b>) ভেরিফাই হয়ে গেছে — প্রোফাইলে নীল ✔ ব্যাজ পেয়ে যাবেন এবং এখন উইথড্র করতে পারবেন।\nআর কখনো UID লিখতে হবে না 💙`
-                : `🔐 <b>KYC ভেরিফিকেশন (মাত্র ১ ধাপ)</b>\n\nআপনার Good-App এর <b>UID নম্বরটি</b> এখানে লিখে পাঠান — ব্যাস, KYC হয়ে যাবে।\n\n👉 UID কোথায়? অ্যাপের হোম পেজে নামের নিচে <b>UID</b> লেখা বাটনেই আছে।\n\n✅ KYC করলে: প্রোফাইলে <b>নীল ✔ ব্যাজ</b>, অ্যাকাউন্ট ভেরিফাইড, এবং <b>উইথড্র চালু</b>।\n❌ KYC না করলে টাকা তোলা যাবে না (বাকি সব কাজ চলবে)।`) +
+                : uidTakenBy
+                  ? `⚠️ <b>UID ${uidTakenBy} এর KYC আগেই অন্য একটি টেলিগ্রাম দিয়ে করা আছে</b>\n\n📌 নিয়ম: একটি অ্যাকাউন্টের KYC একবারই হয়। এটি আপনার নিজের আইডি হলে সাপোর্টে জানান 🙏`
+                  : `🔐 <b>KYC ভেরিফিকেশন (মাত্র ১ ধাপ)</b>\n\nআপনার Good-App এর <b>UID নম্বরটি</b> এখানে লিখে পাঠান — ব্যাস, KYC হয়ে যাবে।\n\n👉 UID কোথায়? অ্যাপের হোম পেজে নামের নিচে <b>UID</b> লেখা বাটনেই আছে।\n\n📌 মনে রাখবেন: <b>একটি টেলিগ্রাম দিয়ে একটি অ্যাকাউন্টেরই KYC</b> হবে।\n\n✅ KYC করলে: প্রোফাইলে <b>নীল ✔ ব্যাজ</b>, অ্যাকাউন্ট ভেরিফাইড, এবং <b>উইথড্র চালু</b>।\n❌ KYC না করলে টাকা তোলা যাবে না (বাকি সব কাজ চলবে)।`) +
               `\n\nযেকোনো প্রশ্ন লিখে বা ভয়েস পাঠিয়ে জিজ্ঞেস করুন — আমি সাথে সাথেই সাহায্য করব 💙`,
           );
           return Response.json({ ok: true, flow: "start" });
         }
+
 
         if (!chatAllowed) return Response.json({ ok: true, ignored: "other-chat" });
         if (msg.left_chat_member) return Response.json({ ok: true, ignored: "left" });
@@ -183,9 +217,22 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           const bare = /^\s*(?:uid|আইডি)?\s*[:#-]?\s*(\d{2,9})\s*$/i.exec(text.trim());
           if (bare) {
             const { data: alreadyLinked } = await supabaseAdmin
-              .from("profiles").select("uid_seq")
+              .from("profiles").select("uid_seq, display_name")
               .eq("telegram_user_id", msg.from.id).maybeSingle();
+            // একটি টেলিগ্রাম = একটি UID: আগে লিংক থাকলে নতুন UID নেওয়া হবে না
+            if (alreadyLinked && bare[1].length >= 3 && String((alreadyLinked as any).uid_seq ?? "") !== bare[1]) {
+              await sendMessage(
+                chatId,
+                `⚠️ <b>এই টেলিগ্রাম অ্যাকাউন্টটি দিয়ে আগেই KYC করা হয়েছে</b>\n\n` +
+                  `🔗 যুক্ত আছে: UID <b>${(alreadyLinked as any).uid_seq}</b> — ${(alreadyLinked as any).display_name || "ইউজার"}\n\n` +
+                  `📌 নিয়ম: <b>একটি টেলিগ্রাম = একটি অ্যাকাউন্টের KYC</b>। নতুন অ্যাকাউন্টের KYC করতে <b>অন্য একটি টেলিগ্রাম</b> ব্যবহার করুন।\n` +
+                  `🙏 কোনো ভুল হলে সাপোর্টে জানান — আমরা দেখে ঠিক করে দেব 💙`,
+                msg.message_id,
+              );
+              return Response.json({ ok: true, flow: "kyc-tg-already-used" });
+            }
             if (!alreadyLinked) {
+
               const { data: prof } = await supabaseAdmin
                 .from("profiles").select("id, uid_seq, telegram_user_id, display_name")
                 .eq("uid_seq", Number(bare[1])).maybeSingle();
