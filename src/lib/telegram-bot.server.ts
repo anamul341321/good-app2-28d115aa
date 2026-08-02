@@ -167,27 +167,29 @@ export async function isChatAdmin(chatId: string | number, userId?: number | nul
 }
 
 
-/** Send a stored voice note (opus/mp3/ogg bytes) into a chat. */
+/**
+ * Send a stored clip as a real Telegram **voice note** (round waveform bubble),
+ * never as an audio/music file. Telegram accepts .ogg/.opus, .mp3 and .m4a for
+ * sendVoice, so we always use sendVoice and never attach a caption/title —
+ * that's what used to print the file name + "mp3" over the player.
+ */
 export async function sendVoice(
   chatId: string | number,
   bytes: Uint8Array,
   filename: string,
-  caption?: string,
+  _caption?: string,
   replyTo?: number,
 ) {
   const token = getBotToken();
   const isOgg = /\.(ogg|oga|opus)$/i.test(filename);
-  const method = isOgg ? "sendVoice" : "sendAudio";
-  const field = isOgg ? "voice" : "audio";
   const form = new FormData();
   form.append("chat_id", String(chatId));
-  if (caption) { form.append("caption", caption.slice(0, 1000)); form.append("parse_mode", "HTML"); }
   if (replyTo) { form.append("reply_to_message_id", String(replyTo)); form.append("allow_sending_without_reply", "true"); }
-  form.append(field, new Blob([bytes as unknown as BlobPart], {
+  form.append("voice", new Blob([bytes as unknown as BlobPart], {
     type: isOgg ? "audio/ogg" : "audio/mpeg",
-  }), filename);
+  }), isOgg ? filename : "voice.ogg");
   try {
-    const res = await fetch(`https://api.telegram.org/bot${token}/${method}`, { method: "POST", body: form });
+    const res = await fetch(`https://api.telegram.org/bot${token}/sendVoice`, { method: "POST", body: form });
     const json: any = await res.json();
     if (!json?.ok) { console.error("[tg] sendVoice failed", json?.description); return null; }
     return json.result;
@@ -196,6 +198,7 @@ export async function sendVoice(
     return null;
   }
 }
+
 
 export function deleteMessage(chatId: string | number, messageId: number) {
   return api("deleteMessage", { chat_id: chatId, message_id: messageId });
