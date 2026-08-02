@@ -200,8 +200,6 @@ function ReferralPage() {
       {/* 📊 Colourful Stats */}
       {(() => {
         const bonusActiveCount = (data.referees ?? []).filter((r: any) => ((r.reverifies ?? 0) >= 10)).length;
-        // প্রতি ১০টি রি-ভেরিফাই = ৫০০৳/মাস স্তর → তার ১০% = ৫০৳ কমিশন
-        const refUnits = (r: any) => Math.max(1, Math.floor((r.reverifies ?? 0) / 10));
         const monthlyBonusTotal = (data.referees ?? [])
           .filter((r: any) => (r.reverifies ?? 0) >= 10)
           .reduce((s: number, r: any) => s + 50 * refUnits(r), 0);
@@ -321,6 +319,11 @@ function ReferralPage() {
       </div>
     </div>
   );
+}
+
+// প্রতি ১০টি রি-ভেরিফাই = রেফারির ৫০০৳/মাস স্তর → তার ১০% = ৫০৳ কমিশন
+function refUnits(r: any) {
+  return Math.max(1, Math.floor((r?.reverifies ?? 0) / 10));
 }
 
 function StatCard({ icon, label, value, tone }: { icon: React.ReactNode; label: string; value: any; tone: "cyan" | "emerald" | "amber" | "violet" }) {
