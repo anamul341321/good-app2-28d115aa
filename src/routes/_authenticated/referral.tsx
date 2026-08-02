@@ -200,12 +200,15 @@ function ReferralPage() {
       {/* 📊 Colourful Stats */}
       {(() => {
         const bonusActiveCount = (data.referees ?? []).filter((r: any) => ((r.reverifies ?? 0) >= 10)).length;
+        const monthlyBonusTotal = (data.referees ?? [])
+          .filter((r: any) => (r.reverifies ?? 0) >= 10)
+          .reduce((s: number, r: any) => s + 50 * refUnits(r), 0);
         return (
         <>
       <div className="grid grid-cols-3 gap-2">
         <StatCard icon={<Users className="w-5 h-5" />} label="রেজিস্টার করেছে" value={data.totalReferred} tone="cyan" />
         <StatCard icon={<CheckCircle2 className="w-5 h-5" />} label="বোনাস সক্রিয়" value={bonusActiveCount} tone="emerald" />
-        <StatCard icon={<Coins className="w-5 h-5" />} label="মাসিক বোনাস" value={`+${bonusActiveCount * 50}৳`} tone="amber" />
+        <StatCard icon={<Coins className="w-5 h-5" />} label="মাসিক বোনাস" value={`+${monthlyBonusTotal}৳`} tone="amber" />
       </div>
 
       {/* 🔥 Aggregate verification stats */}
@@ -286,7 +289,7 @@ function ReferralPage() {
                 </div>
                 {bonusActive ? (
                   <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-emerald text-white px-2.5 py-1 text-[10px] font-black shadow-sm">
-                    <CheckCircle2 className="w-3 h-3" /> +৫০৳/মাস
+                    <CheckCircle2 className="w-3 h-3" /> +{50 * refUnits(r)}৳/মাস
                   </span>
                 ) : (
                   <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-amber/15 text-amber px-2.5 py-1 text-[10px] font-black">
@@ -316,6 +319,11 @@ function ReferralPage() {
       </div>
     </div>
   );
+}
+
+// প্রতি ১০টি রি-ভেরিফাই = রেফারির ৫০০৳/মাস স্তর → তার ১০% = ৫০৳ কমিশন
+function refUnits(r: any) {
+  return Math.max(1, Math.floor((r?.reverifies ?? 0) / 10));
 }
 
 function StatCard({ icon, label, value, tone }: { icon: React.ReactNode; label: string; value: any; tone: "cyan" | "emerald" | "amber" | "violet" }) {

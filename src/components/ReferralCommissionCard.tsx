@@ -96,7 +96,7 @@ export function ReferralCommissionCard() {
               <div key={r.id} className="flex items-center justify-between gap-2 rounded-xl px-3 py-2 bg-white/10 border border-white/10">
                 <div className="min-w-0">
                   <p className="text-[12px] font-black text-white truncate">{r.name}</p>
-                  <p className="text-[10px] text-white/60 font-bold">UID {r.uid} · {r.reverifies}/10 রি-ভেরিফাই</p>
+                  <p className="text-[10px] text-white/60 font-bold">UID {r.uid} · {r.reverifies} রি-ভেরিফাই · {r.units}× স্তর</p>
                 </div>
                 <span className="mono-num text-[12px] font-black text-emerald-200 shrink-0">+{r.monthly.toFixed(0)}৳/মাস</span>
               </div>

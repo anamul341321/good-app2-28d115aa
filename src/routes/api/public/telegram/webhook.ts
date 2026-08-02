@@ -1399,17 +1399,25 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
 
         if (photoBase64 && settings.auto_reply_enabled) {
-          // স্ক্রিনশটের লেখা পড়ে যদি কোনো সেভ করা ভয়েস গাইডের সাথে মেলে
-          // (যেমন "Something went wrong") তাহলে সবার আগে ভয়েসটা পাঠিয়ে দিই।
+          // স্ক্রিনশটে ঠিক ঐ সমস্যার লেখা থাকলেই সেভ করা ভয়েস যাবে।
+          // "try again" / "face verification" এর মতো সাধারণ শব্দ সব এররেই থাকে,
+          // তাই ওগুলো দিয়ে ম্যাচ করা হয় না — শুধু নির্দিষ্ট বাক্যাংশ দিয়ে।
           try {
             const { readScreenshotText, voiceBytes, sendVoice } = await import("@/lib/telegram-bot.server");
             shotText = shotText || (await readScreenshotText(photoBase64)) || "";
             const shotLower = shotText.toLowerCase();
-            const vMatch = shotLower
+            // Twin / duplicate-face errors must never trigger another topic's voice.
+            const isDuplicateShot = /(already|duplicate|twin|someone else|another account|onno account|ডুপ্লিকেট|আগে.*ভেরিফাই)/i.test(shotLower);
+            const GENERIC = [
+              "try again", "face verification", "face verification error", "ভেরিফিকেশন এরর",
+              "verification error", "verify", "camera", "error", "সমস্যা",
+            ];
+            const vMatch = shotLower && !isDuplicateShot
               ? ((voiceRows as any[]) ?? []).find((v: any) =>
                   [...(Array.isArray(v.keywords) ? v.keywords : []), String(v.topic ?? "")]
                     .map((k: any) => String(k).trim().toLowerCase())
-                    .filter((k: string) => k.length > 4)
+                    // distinctive phrases only: long, multi-word, not generic
+                    .filter((k: string) => k.length >= 14 && k.includes(" ") && !GENERIC.includes(k))
                     .some((k: string) => shotLower.includes(k)),
                 )
               : null;
@@ -1418,7 +1426,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               if (bytes) {
                 await sendVoice(
                   chatId, bytes, String(vMatch.audio_path).split("/").pop() || "voice.mp3",
-                  `🎧 <b>${vMatch.topic}</b>${vMatch.note ? ` — ${vMatch.note}` : ""}`,
+                  undefined,
                   msg.message_id,
                 );
               }
@@ -1426,6 +1434,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           } catch (e) {
             console.error("[tg] screenshot voice match failed", e);
           }
+
 
           try {
 
@@ -2434,9 +2443,10 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           if (bytes) {
             await sendVoice(
               chatId, bytes, voiceMatch.audio_path.split("/").pop() || "voice.ogg",
-              `🎧 <b>${voiceMatch.topic}</b>${voiceMatch.note ? ` — ${voiceMatch.note}` : ""}`,
+              undefined,
               msg.message_id,
             );
+
             actions.push("voice");
           }
         }

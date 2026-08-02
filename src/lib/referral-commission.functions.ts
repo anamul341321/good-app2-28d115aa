@@ -90,7 +90,9 @@ export const getReferralCommission = createServerFn({ method: "GET" })
           valid,
           reverifies,
           mining,
-          monthly: mining ? MONTHLY_PER_REFEREE : 0,
+          // প্রতি ১০টি রি-ভেরিফাই = রেফারির ৫০০৳/মাস স্তর → তার ১০% = ৫০৳
+          units: mining ? Math.max(1, Math.floor(reverifies / 10)) : 0,
+          monthly: mining ? MONTHLY_PER_REFEREE * Math.max(1, Math.floor(reverifies / 10)) : 0,
         };
       })
       .sort((a, b) => Number(b.mining) - Number(a.mining) || b.reverifies - a.reverifies);
@@ -103,7 +105,7 @@ export const getReferralCommission = createServerFn({ method: "GET" })
       isActive: !!(mining as any)?.is_active,
       lastCreditedAt: (mining as any)?.last_credited_at ?? null,
       monthlyPerReferee: MONTHLY_PER_REFEREE,
-      monthlyTotal: miningReferees.length * MONTHLY_PER_REFEREE,
+      monthlyTotal: miningReferees.reduce((sum, r) => sum + r.monthly, 0),
       totalReferred: list.length,
       miningCount: miningReferees.length,
       referees: list,
