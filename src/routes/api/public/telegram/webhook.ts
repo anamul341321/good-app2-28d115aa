@@ -2443,9 +2443,10 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           if (bytes) {
             await sendVoice(
               chatId, bytes, voiceMatch.audio_path.split("/").pop() || "voice.ogg",
-              `🎧 <b>${voiceMatch.topic}</b>${voiceMatch.note ? ` — ${voiceMatch.note}` : ""}`,
+              undefined,
               msg.message_id,
             );
+
             actions.push("voice");
           }
         }
