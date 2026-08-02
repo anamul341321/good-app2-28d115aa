@@ -1589,35 +1589,6 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
                 // same question, so do not send the same explanation twice.
                 await logMessage("question", "screenshot-followup-already-answered", null, null);
                 return Response.json({ ok: true, flow: "screenshot-followup-already-answered" });
-                /*
-                const topic = String(shot.action ?? "").split(":").slice(1).join(":").trim();
-                const matched = topic
-                  ? faq.find(
-                      (f) =>
-                        String(f.topic).trim().toLowerCase() === topic.toLowerCase(),
-                    )
-                  : null;
-                const base = String(matched?.answer ?? shot.bot_reply).trim();
-                const { smartAnswer } = await import("@/lib/telegram-bot.server");
-                const { loadRates, knowledgeText } = await import("@/lib/telegram-knowledge.server");
-                const rates = await loadRates();
-                const ans = await smartAnswer({
-                  name: senderName,
-                  question:
-                    `ইউজার একটু আগে যে স্ক্রিনশট পাঠিয়েছে সেটার ব্যাপারেই জানতে চাইছে: "${t}" — মানে ঐ সমস্যাটা কেন আসে। ` +
-                    `নতুন করে স্ক্রিনশট চাইবে না, "কী লেখা উঠছে বলুন" বলবে না, সাধারণ ৩টি কারণের লিস্ট দেবে না। ` +
-                    `শুধু ঐ নির্দিষ্ট সমস্যাটি কেন হয় সেটা সহজ বাংলায় বুঝিয়ে বলো এবং করণীয় বলো।`,
-                  knowledge:
-                    knowledgeText(rates) +
-                    `\n\n🖼 ইউজারের আগের স্ক্রিনশটে শনাক্ত হওয়া সমস্যা: ${topic || "(আগের রিপ্লাই দেখো)"}\n` +
-                    `ঐ সমস্যার নির্ধারিত উত্তর:\n${base}`,
-                  pastReplies: [String(shot.bot_reply)],
-                });
-                const out = ans && ans.trim() && ans.trim() !== "NO_ANSWER" ? ans : base;
-                await sendMessage(chatId, out, msg.message_id);
-                await logMessage("question", `shot-followup:${topic || "prev"}`, out, null);
-                return Response.json({ ok: true, flow: "screenshot-followup" });
-                */
               }
             } catch (e) {
               console.error("[tg] screenshot follow-up failed", e);
