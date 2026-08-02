@@ -1057,7 +1057,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
                 return Response.json({ ok: true, flow: "wallet-reset-await-provider" });
               }
 
-              const uid = pickUidFromCurrentOrReply() || (await linkedUid());
+              const uid = pickUidFromCurrentOrReply();
               if (!uid) {
                 await saveSession({ intent: "wallet_reset", step: "await_uid", data: { provider } });
                 await sendMessage(
@@ -2200,7 +2200,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             return Response.json({ ok: true, flow: "wallet-reset-ask-provider" });
           }
 
-          const uid = pickUidFromCurrentOrReply() || (await linkedUid());
+          const uid = pickUidFromCurrentOrReply();
           if (uid) {
             const { resetPaymentNumbersForUid, walletResetReply } = await import("@/lib/telegram-wallet.server");
             const result = await resetPaymentNumbersForUid(uid, walletResetProvider);
