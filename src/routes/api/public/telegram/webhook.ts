@@ -63,6 +63,31 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         // প্রাইভেট চ্যাট (KYC/সাপোর্ট DM) সবসময় অনুমোদিত — গ্রুপ হোয়াইটলিস্ট শুধু গ্রুপের জন্য
         const isPrivateChat = msg.chat?.type === "private";
         const chatAllowed = isPrivateChat || allowedChats.length === 0 || allowedChats.includes(chatId);
+
+        // Claim the Telegram update before voice transcription / screenshot OCR.
+        // Telegram may retry slow webhook deliveries; the update_id primary key
+        // makes this insert an atomic lock so two handlers can never reply twice.
+        const initialText = String(msg.text ?? msg.caption ?? "");
+        const { error: claimError } = await supabaseAdmin.from("tg_messages").insert({
+          update_id: update.update_id,
+          chat_id: msg.chat.id,
+          message_id: msg.message_id ?? null,
+          tg_user_id: msg.from?.id ?? null,
+          username: msg.from?.username ?? null,
+          full_name: [msg.from?.first_name, msg.from?.last_name].filter(Boolean).join(" ") || msg.from?.username || "User",
+          text: initialText.slice(0, 2000),
+          has_photo: !!msg.photo?.length,
+          verdict: "processing",
+          action: "processing",
+          bot_reply: null,
+          matched_uid: null,
+        });
+        if (claimError?.code === "23505") return Response.json({ ok: true, duplicate: true });
+        if (claimError) {
+          console.error("[tg] update claim failed", claimError.message);
+          return Response.json({ ok: false, error: "update-claim-failed" }, { status: 500 });
+        }
+
         const addChatToAllowList = async () => {
           if (allowedChats.includes(chatId)) return;
           await supabaseAdmin.from("tg_bot_settings")
@@ -590,11 +615,6 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return Response.json({ ok: true, ignored: senderIsAdmin ? "admin-message" : "reply-to-admin" });
         }
 
-        // Idempotency: skip if this update was already stored.
-        const { data: seen } = await supabaseAdmin
-          .from("tg_messages").select("update_id").eq("update_id", update.update_id).maybeSingle();
-        if (seen) return Response.json({ ok: true, duplicate: true });
-
         // ---- security guard: non-admins can't extract secrets or order edits ----
         if (!senderIsAdmin && text.trim()) {
           const { detectSensitive, sensitiveReply } = await import("@/lib/telegram-guard.server");
@@ -735,6 +755,16 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           /(remove|রিমুভ|delete|ডিলিট|muche|মুছ|bad de|বাদ দ|clear|ক্লিয়ার|reset|রিসেট|খালি|khali|katte|kete|kate|kata|kaita|কাটতে|কেটে|কাটা|কাটাই|কাইটা)/i.test(norm) &&
           /(slot|স্লট|face|ফেস|verify|ভেরিফাই|verification|ভেরিফিকেশন|oigula|ওইগুলো|ওগুলো|ogulo|eigula|এইগুলো|egula|account|একাউন্ট)/i.test(norm);
 
+        const walletResetProvider = /(?:nagad|নগদ)/i.test(norm)
+          ? "nagad"
+          : /(?:bkash|b\s*kash|বিকাশ)/i.test(norm)
+            ? "bkash"
+            : null;
+        const wantsWalletReset =
+          /(nagad|নগদ|bkash|b\s*kash|বিকাশ|payment|পেমেন্ট|wallet|ওয়ালেট)/i.test(norm) &&
+          /(number|নম্বর|নাম্বার|নং)/i.test(norm) &&
+          /(change|চেঞ্জ|bodla|বদলা|বদল|poriborton|পরিবর্তন|reset|রিসেট|remove|রিমুভ|delete|ডিলিট|muche|মুছ|ভুল|wrong)/i.test(norm);
+
         // "আমার রেফার হয় না / রেফার লিংক কাজ করে না" → নিজের ৫টি স্লট ভেরিফাই লাগবে
         const asksReferralUnlock =
           /(refer|reffer|refar|রেফার|referral|রেফারেল)/i.test(norm) &&
@@ -782,20 +812,14 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         };
 
         const logMessage = async (verdict: string, action: string, reply: string | null, uid: string | null) => {
-          await supabaseAdmin.from("tg_messages").insert({
-            update_id: update.update_id,
-            chat_id: msg.chat.id,
-            message_id: msg.message_id,
-            tg_user_id: msg.from?.id ?? null,
-            username: msg.from?.username ?? null,
-            full_name: senderName,
+          await supabaseAdmin.from("tg_messages").update({
             text: text.slice(0, 2000),
             has_photo: !!photos?.length,
             verdict,
             action,
             bot_reply: reply,
             matched_uid: uid,
-          });
+          }).eq("update_id", update.update_id);
         };
 
         const clearSession = async () => {
@@ -1020,7 +1044,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             sess?.step === "offer_reset"
               ? isAffirmation(norm) || looksLikeUidAnswer ||
                 /(রিসেট|reset|হ্যাঁ|হা|জি|করে দিন|kore din|kore den|chai|চাই)/i.test(norm)
-              : sess?.intent === "withdraw_status" || sess?.intent === "verification_dates" || sess?.intent === "account_info" || sess?.intent === "referral_join" || sess?.intent === "referral_history"
+              : sess?.intent === "withdraw_status" || sess?.intent === "verification_dates" || sess?.intent === "account_info" || sess?.intent === "referral_join" || sess?.intent === "referral_history" || sess?.intent === "wallet_reset"
                 ? looksLikeUidAnswer
                 : sess?.step === "await_slot"
                   ? looksLikeSlotAnswer
@@ -1037,6 +1061,34 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               await sendMessage(chatId, "ঠিক আছে, রিসেটের অনুরোধটি বাতিল করা হলো। 🙂", msg.message_id);
               await logMessage("question", "slot-reset-cancel", null, sess.uid);
               return Response.json({ ok: true, flow: "cancelled" });
+            }
+
+            if (sess.intent === "wallet_reset") {
+              const rememberedProvider = (sess.data as any)?.provider as "bkash" | "nagad" | undefined;
+              const provider = rememberedProvider || walletResetProvider;
+              if (sess.step === "await_provider" && !provider) {
+                await sendMessage(chatId, "কোন নম্বরটি বদলাতে চান—<b>বিকাশ</b> নাকি <b>নগদ</b>?", msg.message_id);
+                return Response.json({ ok: true, flow: "wallet-reset-await-provider" });
+              }
+
+              const uid = pickUidFromCurrentOrReply();
+              if (!uid) {
+                await saveSession({ intent: "wallet_reset", step: "await_uid", data: { provider } });
+                await sendMessage(
+                  chatId,
+                  `${provider === "nagad" ? "নগদ" : "বিকাশ"} নম্বরটি রিসেট করে দিচ্ছি। শুধু আপনার <b>UID</b> লিখুন।`,
+                  msg.message_id,
+                );
+                return Response.json({ ok: true, flow: "wallet-reset-await-uid" });
+              }
+
+              const { resetPaymentNumbersForUid, walletResetReply } = await import("@/lib/telegram-wallet.server");
+              const result = await resetPaymentNumbersForUid(uid, provider);
+              const reply = walletResetReply(result);
+              if (result.ok) await clearSession();
+              await sendMessage(chatId, reply, msg.message_id);
+              await logMessage("question", `wallet-reset:${provider ?? "all"}`, reply, result.ok ? uid : null);
+              return Response.json({ ok: true, flow: "wallet-reset-complete" });
             }
 
             if (sess.intent === "withdraw_status" && sess.step === "await_uid") {
@@ -1546,33 +1598,11 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
                 shot?.bot_reply &&
                 Date.now() - new Date(shot.created_at).getTime() < 60 * 60 * 1000;
               if (fresh) {
-                const topic = String(shot.action ?? "").split(":").slice(1).join(":").trim();
-                const matched = topic
-                  ? faq.find(
-                      (f) =>
-                        String(f.topic).trim().toLowerCase() === topic.toLowerCase(),
-                    )
-                  : null;
-                const base = String(matched?.answer ?? shot.bot_reply).trim();
-                const { smartAnswer } = await import("@/lib/telegram-bot.server");
-                const { loadRates, knowledgeText } = await import("@/lib/telegram-knowledge.server");
-                const rates = await loadRates();
-                const ans = await smartAnswer({
-                  name: senderName,
-                  question:
-                    `ইউজার একটু আগে যে স্ক্রিনশট পাঠিয়েছে সেটার ব্যাপারেই জানতে চাইছে: "${t}" — মানে ঐ সমস্যাটা কেন আসে। ` +
-                    `নতুন করে স্ক্রিনশট চাইবে না, "কী লেখা উঠছে বলুন" বলবে না, সাধারণ ৩টি কারণের লিস্ট দেবে না। ` +
-                    `শুধু ঐ নির্দিষ্ট সমস্যাটি কেন হয় সেটা সহজ বাংলায় বুঝিয়ে বলো এবং করণীয় বলো।`,
-                  knowledge:
-                    knowledgeText(rates) +
-                    `\n\n🖼 ইউজারের আগের স্ক্রিনশটে শনাক্ত হওয়া সমস্যা: ${topic || "(আগের রিপ্লাই দেখো)"}\n` +
-                    `ঐ সমস্যার নির্ধারিত উত্তর:\n${base}`,
-                  pastReplies: [String(shot.bot_reply)],
-                });
-                const out = ans && ans.trim() && ans.trim() !== "NO_ANSWER" ? ans : base;
-                await sendMessage(chatId, out, msg.message_id);
-                await logMessage("question", `shot-followup:${topic || "prev"}`, out, null);
-                return Response.json({ ok: true, flow: "screenshot-followup" });
+                // The screenshot itself has already received the full answer.
+                // A separate “এটা কী সমস্যা?” immediately afterwards is the
+                // same question, so do not send the same explanation twice.
+                await logMessage("question", "screenshot-followup-already-answered", null, null);
+                return Response.json({ ok: true, flow: "screenshot-followup-already-answered" });
               }
             } catch (e) {
               console.error("[tg] screenshot follow-up failed", e);
@@ -2174,6 +2204,40 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return Response.json({ ok: true, flow: "extra-slot-bonus", actions });
         }
 
+        // ---- বিকাশ/নগদ নম্বর বদলানো → provider মনে রেখে UID নিয়ে reset --------
+        if (wantsWalletReset && !decision.should_delete && settings.auto_reply_enabled && msg.from?.id) {
+          if (!walletResetProvider) {
+            await saveSession({ intent: "wallet_reset", step: "await_provider", uid: null, app_user_id: null, data: {} });
+            const ask = "অবশ্যই—কোন নম্বরটি বদলাতে চান, <b>বিকাশ</b> নাকি <b>নগদ</b>?";
+            await sendMessage(chatId, ask, msg.message_id);
+            await logMessage("question", "wallet-reset-ask-provider", ask, null);
+            return Response.json({ ok: true, flow: "wallet-reset-ask-provider" });
+          }
+
+          const uid = pickUidFromCurrentOrReply();
+          if (uid) {
+            const { resetPaymentNumbersForUid, walletResetReply } = await import("@/lib/telegram-wallet.server");
+            const result = await resetPaymentNumbersForUid(uid, walletResetProvider);
+            const reply = walletResetReply(result);
+            await sendMessage(chatId, reply, msg.message_id);
+            await logMessage("question", `wallet-reset:${walletResetProvider}`, reply, result.ok ? uid : null);
+            return Response.json({ ok: true, flow: "wallet-reset-complete" });
+          }
+
+          await saveSession({
+            intent: "wallet_reset",
+            step: "await_uid",
+            uid: null,
+            app_user_id: null,
+            data: { provider: walletResetProvider },
+          });
+          const providerLabel = walletResetProvider === "nagad" ? "নগদ" : "বিকাশ";
+          const ask = `${providerLabel} নম্বরটি বদলানোর ব্যবস্থা করছি 🙂\nশুধু আপনার <b>UID</b> লিখুন—পেলেই পুরোনো ${providerLabel} নম্বরটি রিসেট করে দেব।`;
+          await sendMessage(chatId, ask, msg.message_id);
+          await logMessage("question", `wallet-reset-ask-uid:${walletResetProvider}`, ask, null);
+          return Response.json({ ok: true, flow: "wallet-reset-ask-uid" });
+        }
+
         // ---- "যেগুলো হয় না ওগুলো রিমুভ করা যাবে?" → UID + স্লট নিয়ে রিসেট -----
 
         if (wantsSlotRemoval && !decision.should_delete && settings.auto_reply_enabled
@@ -2698,20 +2762,14 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
 
 
-        await supabaseAdmin.from("tg_messages").insert({
-          update_id: update.update_id,
-          chat_id: msg.chat.id,
-          message_id: msg.message_id,
-          tg_user_id: msg.from?.id ?? null,
-          username: msg.from?.username ?? null,
-          full_name: senderName,
+        await supabaseAdmin.from("tg_messages").update({
           text: text.slice(0, 2000),
           has_photo: !!photos?.length,
           verdict: decision.verdict,
           action: actions.join(",") || "none",
           bot_reply: decision.reply,
           matched_uid: matchedUid,
-        });
+        }).eq("update_id", update.update_id);
 
         return Response.json({ ok: true, verdict: decision.verdict, actions, banRequested });
       },
