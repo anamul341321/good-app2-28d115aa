@@ -732,7 +732,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         // "যেগুলো রি-ভেরিফাই হয় না ওগুলো রিমুভ/ডিলিট করা যাবে?" → হিসাব নয়,
         // সরাসরি স্লট রিসেটের অফার (UID + স্লট নম্বর নিয়ে)।
         const wantsSlotRemoval =
-          /(remove|রিমুভ|delete|ডিলিট|muche|মুছ|bad de|বাদ দ|clear|ক্লিয়ার|reset|রিসেট|খালি|khali)/i.test(norm) &&
+          /(remove|রিমুভ|delete|ডিলিট|muche|মুছ|bad de|বাদ দ|clear|ক্লিয়ার|reset|রিসেট|খালি|khali|katte|kete|kate|kata|kaita|কাটতে|কেটে|কাটা|কাটাই|কাইটা)/i.test(norm) &&
           /(slot|স্লট|face|ফেস|verify|ভেরিফাই|verification|ভেরিফিকেশন|oigula|ওইগুলো|ওগুলো|ogulo|eigula|এইগুলো|egula|account|একাউন্ট)/i.test(norm);
 
         // "আমার রেফার হয় না / রেফার লিংক কাজ করে না" → নিজের ৫টি স্লট ভেরিফাই লাগবে
