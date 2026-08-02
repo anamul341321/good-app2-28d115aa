@@ -63,6 +63,31 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         // প্রাইভেট চ্যাট (KYC/সাপোর্ট DM) সবসময় অনুমোদিত — গ্রুপ হোয়াইটলিস্ট শুধু গ্রুপের জন্য
         const isPrivateChat = msg.chat?.type === "private";
         const chatAllowed = isPrivateChat || allowedChats.length === 0 || allowedChats.includes(chatId);
+
+        // Claim the Telegram update before voice transcription / screenshot OCR.
+        // Telegram may retry slow webhook deliveries; the update_id primary key
+        // makes this insert an atomic lock so two handlers can never reply twice.
+        const initialText = String(msg.text ?? msg.caption ?? "");
+        const { error: claimError } = await supabaseAdmin.from("tg_messages").insert({
+          update_id: update.update_id,
+          chat_id: msg.chat.id,
+          message_id: msg.message_id ?? null,
+          tg_user_id: msg.from?.id ?? null,
+          username: msg.from?.username ?? null,
+          full_name: [msg.from?.first_name, msg.from?.last_name].filter(Boolean).join(" ") || msg.from?.username || "User",
+          text: initialText.slice(0, 2000),
+          has_photo: !!msg.photo?.length,
+          verdict: "processing",
+          action: "processing",
+          bot_reply: null,
+          matched_uid: null,
+        });
+        if (claimError?.code === "23505") return Response.json({ ok: true, duplicate: true });
+        if (claimError) {
+          console.error("[tg] update claim failed", claimError.message);
+          return Response.json({ ok: false, error: "update-claim-failed" }, { status: 500 });
+        }
+
         const addChatToAllowList = async () => {
           if (allowedChats.includes(chatId)) return;
           await supabaseAdmin.from("tg_bot_settings")
@@ -590,11 +615,6 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return Response.json({ ok: true, ignored: senderIsAdmin ? "admin-message" : "reply-to-admin" });
         }
 
-        // Idempotency: skip if this update was already stored.
-        const { data: seen } = await supabaseAdmin
-          .from("tg_messages").select("update_id").eq("update_id", update.update_id).maybeSingle();
-        if (seen) return Response.json({ ok: true, duplicate: true });
-
         // ---- security guard: non-admins can't extract secrets or order edits ----
         if (!senderIsAdmin && text.trim()) {
           const { detectSensitive, sensitiveReply } = await import("@/lib/telegram-guard.server");
@@ -792,20 +812,14 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         };
 
         const logMessage = async (verdict: string, action: string, reply: string | null, uid: string | null) => {
-          await supabaseAdmin.from("tg_messages").insert({
-            update_id: update.update_id,
-            chat_id: msg.chat.id,
-            message_id: msg.message_id,
-            tg_user_id: msg.from?.id ?? null,
-            username: msg.from?.username ?? null,
-            full_name: senderName,
+          await supabaseAdmin.from("tg_messages").update({
             text: text.slice(0, 2000),
             has_photo: !!photos?.length,
             verdict,
             action,
             bot_reply: reply,
             matched_uid: uid,
-          });
+          }).eq("update_id", update.update_id);
         };
 
         const clearSession = async () => {
@@ -2748,20 +2762,14 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
 
 
-        await supabaseAdmin.from("tg_messages").insert({
-          update_id: update.update_id,
-          chat_id: msg.chat.id,
-          message_id: msg.message_id,
-          tg_user_id: msg.from?.id ?? null,
-          username: msg.from?.username ?? null,
-          full_name: senderName,
+        await supabaseAdmin.from("tg_messages").update({
           text: text.slice(0, 2000),
           has_photo: !!photos?.length,
           verdict: decision.verdict,
           action: actions.join(",") || "none",
           bot_reply: decision.reply,
           matched_uid: matchedUid,
-        });
+        }).eq("update_id", update.update_id);
 
         return Response.json({ ok: true, verdict: decision.verdict, actions, banRequested });
       },
