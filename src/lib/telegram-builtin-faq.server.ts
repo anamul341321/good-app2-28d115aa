@@ -14,6 +14,24 @@ const pick = (a: string[]) => a[Math.floor(Math.random() * a.length)];
 
 export const BUILTIN_FAQS: BuiltinFaq[] = [
   {
+    topic: "অ্যাপের অফিসিয়াল লিংক",
+    screenshot: [],
+    keywords: [
+      "apps link", "app link", "apper link", "apps er link", "app er link",
+      "link den", "link dan", "link dio", "link ta den", "website link",
+      "official link", "site link", "link kothay", "link please", "link plz",
+      "অ্যাপের লিংক", "অ্যাপ লিংক", "লিংক দেন", "লিংক দিন", "লিংক টা দেন",
+      "ওয়েবসাইট লিংক", "অফিসিয়াল লিংক", "লিংক কোথায়",
+    ],
+    answer:
+      `🔗 <b>আমাদের অফিসিয়াল লিংক</b> 👇\n\n` +
+      `👉 <b>https://goodapp2.live</b>\n\n` +
+      `📲 Chrome দিয়ে লিংকটি ওপেন করে <b>⋮ মেনু → Add to Home Screen → Install</b> চাপলেই অ্যাপটি ফোনে ইনস্টল হয়ে যাবে ✅\n` +
+      `⚠️ শুধু এই একটাই অফিসিয়াল লিংক — অন্য কোনো লিংক ব্যবহার করবেন না।`,
+  },
+
+  {
+
     topic: "অ্যাপ ডাউনলোড / ইনস্টল করার নিয়ম",
     screenshot: [],
     keywords: [
