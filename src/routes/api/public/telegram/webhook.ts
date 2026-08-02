@@ -470,6 +470,23 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             return Response.json({ ok: true, flow: "admin-video" });
           }
 
+          // অ্যাডমিন কোনো সেটিংস বদলাতে বললে (নগদ বন্ধ / বিকাশ চালু / বোনাস
+          // পরিবর্তন / নোটিশ দেওয়া) → আগে কাজটা করে ফেলবে, তারপর জানাবে।
+          // এটা ব্যাখ্যা/স্মার্ট-উত্তরের আগেই চলে, নইলে নির্দেশ শুধু কথা হয়ে যায়।
+          {
+            const { interpretAdminOrder, runAdminOps, opsAnnouncement } = await import(
+              "@/lib/telegram-admin-actions.server"
+            );
+            const ops = await interpretAdminOrder(order);
+            if (ops.length) {
+              const { done, failed } = await runAdminOps(ops);
+              if (done.length || failed.length) {
+                await sendMessage(chatId, opsAnnouncement(done, failed), replyTo);
+                return Response.json({ ok: true, flow: "admin-action", done, failed });
+              }
+            }
+          }
+
           // "মাইনিং/স্লটের হিসাব বুঝিয়ে দাও" → অ্যাপের আসল হিসাব (বানানো তথ্য নয়)
           {
             const bnDigits = order.replace(/[০-৯]/g, (d) => String("০১২৩৪৫৬৭৮৯".indexOf(d)));
@@ -506,7 +523,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             }
 
             // প্রশ্ন/টপিক বুঝিয়ে বলতে বললে → অ্যাপের রুলবুক থেকে গ্রাউন্ডেড উত্তর
-            if (askCtx || /(ki|কি|kivabe|কীভাবে|কিভাবে|keno|কেন|bolo|বলো|bujhao|বুঝিয়ে)/i.test(bnDigits)) {
+            if (askCtx || /(\bki\b|কি\b|\bkivabe\b|কীভাবে|কিভাবে|\bkeno\b|কেন|\bbolo\b|বলো|\bbujhao\b|বুঝিয়ে)/i.test(bnDigits)) {
               const { smartAnswer } = await import("@/lib/telegram-bot.server");
               const { knowledgeText, loadRates: lr } = await import("@/lib/telegram-knowledge.server");
               const { appRulebook } = await import("@/lib/telegram-app-rules.server");
@@ -527,21 +544,6 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             }
           }
 
-          // অ্যাডমিন কোনো সেটিংস বদলাতে বললে (নগদ বন্ধ / বিকাশ চালু / বোনাস
-          // পরিবর্তন / নোটিশ দেওয়া) → বট নিজেই কাজটা করে ফেলবে, তারপর জানাবে।
-          {
-            const { interpretAdminOrder, runAdminOps, opsAnnouncement } = await import(
-              "@/lib/telegram-admin-actions.server"
-            );
-            const ops = await interpretAdminOrder(order);
-            if (ops.length) {
-              const { done, failed } = await runAdminOps(ops);
-              if (done.length || failed.length) {
-                await sendMessage(chatId, opsAnnouncement(done, failed), replyTo);
-                return Response.json({ ok: true, flow: "admin-action", done, failed });
-              }
-            }
-          }
 
           // বাকি সব: অ্যাডমিনের নির্দেশমতো সুন্দর মেসেজ সাজিয়ে গ্রুপে পাঠাবে।
           // কখনোই অ্যাডমিনের নির্দেশটাই হুবহু ফেরত পাঠাবে না।
@@ -666,7 +668,11 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         // Is this message a plain answer to what the bot just asked, or has the
         // user moved on to a completely new question? (never keep looping)
         const stripped = norm.replace(/[০-৯0-9,\s.\-–#]/g, "").trim();
-        const looksLikeSlotAnswer = (wantsAll || pickSlots(norm).length > 0) && stripped.length <= 10;
+        // "৩ নম্বর স্লটটা কেটে দাও" — এটাও স্লটের উত্তরই, শুধু "৩" লেখা জরুরি নয়।
+        const mentionsSlotWord =
+          /(slot|স্লট|নম্বর|নাম্বার|নং|nombor|number|reset|রিসেট|কেটে|kete|kate|মুছ|delete|clear|খালি|khali|বাদ)/i.test(norm);
+        const looksLikeSlotAnswer =
+          (wantsAll || pickSlots(norm).length > 0) && (stripped.length <= 10 || mentionsSlotWord);
         const looksLikeUidAnswer =
           !!pickUid(norm) && (stripped.length <= 10 || /\b(uid|আইডি)\b/i.test(norm));
         const questionish =
