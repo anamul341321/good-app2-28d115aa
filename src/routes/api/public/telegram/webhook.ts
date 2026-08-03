@@ -2196,8 +2196,9 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
         // ---- "আরও ১০টা স্লট করলে কি আবার বোনাস পাবো?" → না, বোনাস শুধু ১ম ১০টায় --
         if (asksExtraSlotBonus && !decision.should_delete && settings.auto_reply_enabled) {
-          const { BUILTIN_FAQS } = await import("@/lib/telegram-builtin-faq.server");
-          const reply = BUILTIN_FAQS[0].answer;
+          const { builtinFaqByTopic, BUILTIN_FAQS } = await import("@/lib/telegram-builtin-faq.server");
+          const reply = (builtinFaqByTopic("আরও স্লট") ?? builtinFaqByTopic("বোনাস") ?? BUILTIN_FAQS[0]).answer;
+
           await sendMessage(chatId, reply, msg.message_id);
           actions.push("extra-slot-bonus");
           await logMessage(decision.verdict, actions.join(","), reply, null);
