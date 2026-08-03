@@ -70,7 +70,9 @@ export function EmailVerifyGate() {
       }
       setDest(res?.destination ?? val);
       setStep("code");
-      toast.success("কোড পাঠানো হয়েছে — মেইলবক্স দেখুন");
+      setExpiresIn(10 * 60);
+      setResendIn(60);
+      toast.success("কোড পাঠানো হয়েছে — মেইলবক্স দেখুন (১০ মিনিটের মধ্যে বসান)");
     } catch (err: any) {
       toast.error(err?.message ?? "কোড পাঠানো যায়নি");
     } finally {
