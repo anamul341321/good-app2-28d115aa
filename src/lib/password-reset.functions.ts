@@ -1,13 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 
 /**
- * পাসওয়ার্ড ভুলে গেলে: ইউজারের Gmail/ইমেইলে ৬ ডিজিটের কোড যায়।
- * ইমেইল সেভ না থাকলে (পুরনো একাউন্ট) লিংক করা Telegram-এ কোড যায়।
+ * পাসওয়ার্ড ভুলে গেলে: ইউজারের Gmail/ইমেইলে ৬ ডিজিটের কোড যায় (শুধু ইমেইল)।
  */
-
-function cleanPhone(input: string) {
-  return (input || "").replace(/\D/g, "").slice(0, 11);
-}
 
 function maskEmail(email: string) {
   const [l, d] = email.split("@");
@@ -17,26 +12,17 @@ function maskEmail(email: string) {
 
 async function findProfile(identifier: string) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const raw = (identifier || "").trim();
+  const raw = (identifier || "").trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(raw)) return null;
 
-  if (raw.includes("@")) {
-    const { data } = await supabaseAdmin
-      .from("profiles")
-      .select("id, display_name, email, telegram_user_id")
-      .ilike("email", raw)
-      .maybeSingle();
-    return data;
-  }
-
-  const phone = cleanPhone(raw);
-  if (!/^01\d{9}$/.test(phone)) return null;
   const { data } = await supabaseAdmin
     .from("profiles")
-    .select("id, display_name, email, telegram_user_id")
-    .eq("phone_number", phone)
+    .select("id, display_name, email")
+    .ilike("email", raw)
     .maybeSingle();
   return data;
 }
+
 
 export const requestPasswordResetOtp = createServerFn({ method: "POST" })
   .inputValidator((d: { phone: string }) => d)
