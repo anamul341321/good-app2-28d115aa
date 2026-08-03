@@ -217,18 +217,36 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         const audioMsg = msg.voice ?? msg.audio ?? msg.video_note ?? null;
         let voiceHeard: string | null = null;
         const captionText = text.trim();
-        if (audioMsg?.file_id) {
+        // KYC (প্রাইভেট চ্যাট) কখনোই AI/ক্রেডিটের উপর নির্ভর করবে না — DM-এ ভয়েস এলে
+        // ট্রান্সক্রিপশন না করে সরাসরি UID লিখে পাঠাতে বলা হবে।
+        if (audioMsg?.file_id && isPrivateChat && !captionText) {
+          await sendMessage(
+            chatId,
+            `🔐 এখানে শুধু <b>KYC</b> হয়।\nআপনার <b>UID নম্বরটি লিখে</b> পাঠান — সাথে সাথে KYC হয়ে যাবে 💙`,
+            msg.message_id,
+          );
+          return Response.json({ ok: true, flow: "dm-voice-kyc-hint" });
+        }
+        if (audioMsg?.file_id && !isPrivateChat) {
           const { getFileBase64, transcribeAudio } = await import("@/lib/telegram-bot.server");
-          const file = await getFileBase64(audioMsg.file_id);
+          const file = await getFileBase64(audioMsg.file_id).catch(() => null);
           if (file) {
             const ext = (file.path.split(".").pop() || "ogg").toLowerCase();
             const fmt = ["wav", "mp3", "webm", "m4a", "ogg", "aac", "flac"].includes(ext)
               ? ext
               : msg.video_note ? "mp4" : "ogg";
-            voiceHeard = await transcribeAudio(file.base64, fmt);
+            const hear = async () => {
+              try {
+                return await transcribeAudio(file.base64, fmt);
+              } catch (e) {
+                console.error("[tg] transcribe failed", (e as Error)?.message);
+                return null;
+              }
+            };
+            voiceHeard = await hear();
             // প্রথমবার না বুঝলে আরেকবার চেষ্টা করবে (নেটওয়ার্ক/মডেল হেঁচকি এড়াতে)
             if (!voiceHeard || voiceHeard.replace(/[^\p{L}\p{N}]/gu, "").length < 3) {
-              voiceHeard = await transcribeAudio(file.base64, fmt);
+              voiceHeard = await hear();
             }
             if (voiceHeard) voiceHeard = voiceHeard.trim();
             if (voiceHeard) text = captionText ? `${captionText}\n${voiceHeard}`.trim() : voiceHeard;
