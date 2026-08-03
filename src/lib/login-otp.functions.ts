@@ -118,22 +118,29 @@ export const startLoginOtp = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => LoginInput.parse(input))
   .handler(async ({ data }) => {
     const acc = await resolveAccount(data.identifier);
-    const session = await verifyPassword(acc.authEmail, data.password);
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // পাসওয়ার্ড চেক আর শেষ কোডের সময় — একসাথে (দ্রুত)
+    const [session, recentRes] = await Promise.all([
+      verifyPassword(acc.authEmail, data.password),
+      acc.id
+        ? supabaseAdmin
+            .from("email_verify_otps")
+            .select("created_at")
+            .eq("user_id", acc.id)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle()
+        : Promise.resolve({ data: null } as any),
+    ]);
 
     // Gmail লিংক করা নেই → সরাসরি ঢুকবে, ভেতরে গেট Gmail চাইবে
     if (!acc.id || !acc.contactEmail || !acc.emailVerified) {
       return { ok: true as const, needOtp: false as const, session };
     }
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
-    const { data: recent } = await supabaseAdmin
-      .from("email_verify_otps")
-      .select("created_at")
-      .eq("user_id", acc.id)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    const recent = recentRes?.data as { created_at?: string } | null;
     if (recent?.created_at && Date.now() - new Date(recent.created_at).getTime() < 60_000) {
       return {
         ok: true as const,
@@ -144,12 +151,13 @@ export const startLoginOtp = createServerFn({ method: "POST" })
     }
 
     const code = String(Math.floor(100000 + Math.random() * 900000));
-    await supabaseAdmin.from("email_verify_otps").insert({
+    const insertPromise = supabaseAdmin.from("email_verify_otps").insert({
       user_id: acc.id,
       email: acc.contactEmail,
       code,
       expires_at: new Date(Date.now() + 10 * 60_000).toISOString(),
     });
+
 
     try {
       const { sendSystemEmail } = await import("@/lib/email-otp.server");
