@@ -26,9 +26,11 @@ export const getEmailVerifyStatus = createServerFn({ method: "GET" })
       .maybeSingle();
 
     const email = ((data as any)?.email ?? "") as string;
+    const verified = !!(data as any)?.email_verified && !!email;
     return {
-      verified: !!(data as any)?.email_verified && !!email,
+      verified,
       email: email ? maskEmail(email) : null,
+      pendingEmail: verified ? null : email || null,
     };
   });
 
