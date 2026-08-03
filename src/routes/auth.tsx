@@ -102,6 +102,7 @@ export function AuthPage() {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [referralCode, setReferralCode] = useState("");
+  const [gmail, setGmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [scanOpen, setScanOpen] = useState(false);
@@ -148,6 +149,10 @@ export function AuthPage() {
       toast.error("আপনার নাম লিখুন");
       return null;
     }
+    if (mode === "signup" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(gmail.trim())) {
+      toast.error("সঠিক Gmail ঠিকানা দিন");
+      return null;
+    }
     if (password.length < 6) {
       toast.error("পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে");
       return null;
@@ -187,7 +192,7 @@ export function AuthPage() {
     const cleanPhone = phone.replace(/\D/g, "").slice(0, 11);
     setLoading(true);
     try {
-      await register({ data: { name, phone: cleanPhone, password, referralCode: referralCode || null } });
+      await register({ data: { name, phone: cleanPhone, password, gmail: gmail.trim().toLowerCase(), referralCode: referralCode || null } });
       const { error } = await supabase.auth.signInWithPassword({
         email: phoneToEmail(cleanPhone), password,
       });
@@ -328,6 +333,22 @@ export function AuthPage() {
                 className="w-full mt-1 px-4 py-3 bg-white border-2 border-border rounded-xl text-sm outline-none focus:border-cyan mono-num text-navy transition"
               />
             </div>
+            {mode === "signup" && (
+              <div data-voice="auth.email">
+                <label className="text-[11px] font-black text-rose uppercase tracking-wider">
+                  📧 Gmail (ভেরিফিকেশন লাগবে)
+                </label>
+                <input
+                  type="email" inputMode="email" autoComplete="email" required
+                  value={gmail} onChange={(e) => setGmail(e.target.value)}
+                  placeholder="yourname@gmail.com"
+                  className="w-full mt-1 px-4 py-3 bg-white border-2 border-border rounded-xl text-sm outline-none focus:border-rose text-navy transition"
+                />
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  একাউন্ট খোলার পর এই Gmail-এ কোড যাবে — কোড বসালেই Gmail লিংক হবে ও পাসওয়ার্ড ভুলে গেলে নিজেই রিসেট করতে পারবেন।
+                </p>
+              </div>
+            )}
             <div data-voice="auth.password">
               <label className="text-[11px] font-black text-violet uppercase tracking-wider">পাসওয়ার্ড</label>
               <input

@@ -18,8 +18,10 @@ export interface TemplateEntry {
  *   // then add to TEMPLATES: 'welcome': welcomeTemplate
  */
 import { template as passwordResetOtpTemplate } from './password-reset-otp'
+import { template as emailVerifyOtpTemplate } from './email-verify-otp'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'password-reset-otp': passwordResetOtpTemplate,
+  'email-verify-otp': emailVerifyOtpTemplate,
 }
 
