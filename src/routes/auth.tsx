@@ -519,6 +519,55 @@ export function AuthPage() {
         </div>
 
         {scanOpen && <QrScanner onResult={handleScan} onClose={() => setScanOpen(false)} />}
+
+        {otpOpen && (
+          <div className="fixed inset-0 z-[95] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+            <div
+              className="w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300"
+              style={{ background: "linear-gradient(160deg,#0ea5e9,#6366f1,#8b5cf6)" }}
+            >
+              <div className="p-5 text-white space-y-3">
+                <h2 className="text-center text-lg font-black drop-shadow">🔐 লগইন ভেরিফিকেশন</h2>
+                <p className="text-center text-[12.5px] font-bold leading-relaxed">
+                  আপনার Gmail <b translate="no">{otpDest}</b>-এ ৬ ডিজিটের কোড পাঠানো হয়েছে। কোডটি
+                  বসিয়ে লগইন সম্পূর্ণ করুন।
+                </p>
+                <input
+                  inputMode="numeric"
+                  value={otpCode}
+                  onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  placeholder="৬ ডিজিটের কোড"
+                  className="w-full rounded-2xl px-4 py-3 text-center text-[18px] font-black tracking-[8px] text-slate-900 bg-white/95 outline-none mono-num"
+                />
+                <button
+                  type="button"
+                  onClick={doLoginConfirm}
+                  disabled={loading || otpCode.length !== 6}
+                  className="w-full rounded-2xl py-3 font-black text-[14px] bg-white text-indigo-700 btn-press disabled:opacity-60 flex items-center justify-center gap-2"
+                >
+                  {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+                  ভেরিফাই করে লগইন
+                </button>
+                <button
+                  type="button"
+                  onClick={() => doLoginStart(otpId)}
+                  disabled={loading}
+                  className="w-full text-[11.5px] font-bold text-white/85 underline"
+                >
+                  আবার কোড পাঠান
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setOtpOpen(false)}
+                  className="w-full text-[11.5px] font-bold text-white/70"
+                >
+                  বাতিল
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {forgotOpen && (
           <ForgotPasswordDialog onClose={() => setForgotOpen(false)} />
         )}
