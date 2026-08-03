@@ -18,6 +18,15 @@ export const registerWithPhone = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const email = phoneToEmail(data.phone);
+    const gmail = data.gmail.trim().toLowerCase();
+
+    // এক Gmail = এক একাউন্ট
+    const { data: gmailTaken } = await supabaseAdmin
+      .from("profiles")
+      .select("id")
+      .ilike("email", gmail)
+      .maybeSingle();
+    if (gmailTaken) throw new Error("এই Gmail দিয়ে ইতোমধ্যে একাউন্ট আছে");
 
     let refCode: string | null = null;
     if (data.referralCode && data.referralCode.trim().length > 0) {
