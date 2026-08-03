@@ -1,5 +1,4 @@
 import * as React from 'react'
-
 import {
   Body,
   Button,
@@ -23,26 +22,25 @@ export const InviteEmail = ({
   siteUrl,
   confirmationUrl,
 }: InviteEmailProps) => (
-  <Html lang="en" dir="ltr">
+  <Html lang="bn" dir="ltr">
     <Head />
-    <Preview>You've been invited to join {siteName}</Preview>
+    <Preview>{siteName}-তে আপনাকে আমন্ত্রণ জানানো হয়েছে</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Heading style={h1}>You've been invited</Heading>
+        <Text style={brand}>{siteName}</Text>
+        <Heading style={h1}>আপনাকে আমন্ত্রণ জানানো হয়েছে</Heading>
         <Text style={text}>
-          You've been invited to join{' '}
+          আপনাকে{' '}
           <Link href={siteUrl} style={link}>
             <strong>{siteName}</strong>
           </Link>
-          . Click the button below to accept the invitation and create your
-          account.
+          -তে যোগ দেওয়ার জন্য আমন্ত্রণ জানানো হয়েছে। আমন্ত্রণটি গ্রহণ করে একাউন্ট তৈরি করতে নিচের বাটনে ক্লিক করুন।
         </Text>
         <Button style={button} href={confirmationUrl}>
-          Accept Invitation
+          আমন্ত্রণ গ্রহণ করুন
         </Button>
-        <Text style={footer}>
-          If you weren't expecting this invitation, you can safely ignore this
-          email.
+        <Text style={muted}>
+          যদি আপনি এই আমন্ত্রণ আশা না করেন, এই মেইলটি বাদ দিতে পারেন।
         </Text>
       </Container>
     </Body>
@@ -51,27 +49,21 @@ export const InviteEmail = ({
 
 export default InviteEmail
 
-const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif' }
-const container = { padding: '20px 25px' }
-const h1 = {
-  fontSize: '22px',
-  fontWeight: 'bold' as const,
-  color: '#000000',
-  margin: '0 0 20px',
-}
-const text = {
-  fontSize: '14px',
-  color: '#55575d',
-  lineHeight: '1.5',
-  margin: '0 0 25px',
-}
-const link = { color: 'inherit', textDecoration: 'underline' }
+const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, Helvetica, sans-serif' }
+const container = { padding: '28px 24px', maxWidth: '480px' }
+const brand = { fontSize: '13px', fontWeight: 700, color: '#0ea5e9', letterSpacing: '1px', margin: '0 0 8px' }
+const h1 = { fontSize: '22px', color: '#0f172a', margin: '0 0 16px' }
+const text = { fontSize: '14px', color: '#334155', lineHeight: '22px', margin: '0 0 16px' }
+const link = { color: '#0ea5e9', textDecoration: 'none' }
 const button = {
-  backgroundColor: '#000000',
+  backgroundColor: '#0f172a',
   color: '#ffffff',
   fontSize: '14px',
-  borderRadius: '8px',
-  padding: '12px 20px',
+  fontWeight: 700,
+  borderRadius: '12px',
+  padding: '14px 24px',
   textDecoration: 'none',
+  display: 'inline-block',
+  margin: '0 0 16px',
 }
-const footer = { fontSize: '12px', color: '#999999', margin: '30px 0 0' }
+const muted = { fontSize: '12px', color: '#64748b', lineHeight: '19px', margin: 0 }

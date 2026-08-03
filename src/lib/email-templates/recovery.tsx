@@ -1,5 +1,4 @@
 import * as React from 'react'
-
 import {
   Body,
   Button,
@@ -20,22 +19,21 @@ export const RecoveryEmail = ({
   siteName,
   confirmationUrl,
 }: RecoveryEmailProps) => (
-  <Html lang="en" dir="ltr">
+  <Html lang="bn" dir="ltr">
     <Head />
-    <Preview>Reset your password for {siteName}</Preview>
+    <Preview>{siteName}-এ আপনার পাসওয়ার্ড রিসেট করুন</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Heading style={h1}>Reset your password</Heading>
+        <Text style={brand}>{siteName}</Text>
+        <Heading style={h1}>পাসওয়ার্ড রিসেট করুন</Heading>
         <Text style={text}>
-          We received a request to reset your password for {siteName}. Click
-          the button below to choose a new password.
+          {siteName}-এ আপনার পাসওয়ার্ড রিসেট করার একটি অনুরোধ পাওয়া গেছে। নতুন পাসওয়ার্ড সেট করতে নিচের বাটনে ক্লিক করুন।
         </Text>
         <Button style={button} href={confirmationUrl}>
-          Reset Password
+          পাসওয়ার্ড রিসেট করুন
         </Button>
-        <Text style={footer}>
-          If you didn't request a password reset, you can safely ignore this
-          email. Your password will not be changed.
+        <Text style={muted}>
+          যদি আপনি পাসওয়ার্ড রিসেট না চেয়ে থাকেন, এই মেইলটি বাদ দিন। আপনার পাসওয়ার্ড অপরিবর্তিত থাকবে।
         </Text>
       </Container>
     </Body>
@@ -44,26 +42,20 @@ export const RecoveryEmail = ({
 
 export default RecoveryEmail
 
-const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif' }
-const container = { padding: '20px 25px' }
-const h1 = {
-  fontSize: '22px',
-  fontWeight: 'bold' as const,
-  color: '#000000',
-  margin: '0 0 20px',
-}
-const text = {
-  fontSize: '14px',
-  color: '#55575d',
-  lineHeight: '1.5',
-  margin: '0 0 25px',
-}
+const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, Helvetica, sans-serif' }
+const container = { padding: '28px 24px', maxWidth: '480px' }
+const brand = { fontSize: '13px', fontWeight: 700, color: '#0ea5e9', letterSpacing: '1px', margin: '0 0 8px' }
+const h1 = { fontSize: '22px', color: '#0f172a', margin: '0 0 16px' }
+const text = { fontSize: '14px', color: '#334155', lineHeight: '22px', margin: '0 0 16px' }
 const button = {
-  backgroundColor: '#000000',
+  backgroundColor: '#0f172a',
   color: '#ffffff',
   fontSize: '14px',
-  borderRadius: '8px',
-  padding: '12px 20px',
+  fontWeight: 700,
+  borderRadius: '12px',
+  padding: '14px 24px',
   textDecoration: 'none',
+  display: 'inline-block',
+  margin: '0 0 16px',
 }
-const footer = { fontSize: '12px', color: '#999999', margin: '30px 0 0' }
+const muted = { fontSize: '12px', color: '#64748b', lineHeight: '19px', margin: 0 }
