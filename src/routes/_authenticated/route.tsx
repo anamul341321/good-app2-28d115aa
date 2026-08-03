@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet, Link, useRouter } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
-import { Home, Wallet, ArrowDownToLine, LogOut, Loader2, RefreshCcw, Gift, User } from "lucide-react";
+import { Home, Wallet, ArrowDownToLine, LogOut, Loader2, RefreshCcw, Gift, User, Settings } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { getProfileHistory } from "@/lib/profile.functions";
 import { useEffect, useState } from "react";
@@ -12,6 +12,7 @@ import { LanguagePicker } from "@/components/LanguagePicker";
 import { useLang } from "@/lib/i18n";
 import { SlotResetApproval } from "@/components/SlotResetApproval";
 import { EmailVerifyGate } from "@/components/EmailVerifyGate";
+import { useDeviceGuard } from "@/hooks/useDeviceGuard";
 
 
 
@@ -55,6 +56,11 @@ function AuthedLayout() {
     };
   }, [router]);
 
+
+  useDeviceGuard(() => {
+    setAuthState("unauthenticated");
+    router.navigate({ to: "/auth", replace: true });
+  });
 
   const logout = async () => {
     await supabase.auth.signOut();
@@ -104,6 +110,10 @@ function AuthedLayout() {
           </div>
           <div className="flex items-center gap-1.5">
             <LanguageToggle />
+            <Link to="/settings" aria-label="সেটিংস"
+              className="btn-press p-2 rounded-lg bg-surface-2 border border-border text-muted-foreground hover:text-cyan">
+              <Settings className="w-4 h-4" />
+            </Link>
             <button onClick={logout} data-voice="common.logout"
               className="btn-press p-2 rounded-lg bg-surface-2 border border-border text-muted-foreground hover:text-rose">
               <LogOut className="w-4 h-4" />
