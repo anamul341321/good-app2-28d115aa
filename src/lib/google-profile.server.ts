@@ -10,6 +10,10 @@ export function maskEmail(email: string) {
   return `${local.slice(0, 2)}***@${domain}`;
 }
 
+export function isValidEmail(email: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
 export async function createPublishableClient() {
   const key = process.env["SUPABASE_PUBLISHABLE_KEY"];
   const url = process.env["SUPABASE_URL"];
