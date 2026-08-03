@@ -181,7 +181,7 @@ export function ProfileCompleteGate() {
     setBusy(true);
     try {
       await saveFn({
-        data: { name, password, phone: phone || null, referralCode: ref || null },
+        data: { name, password, phone, referralCode: ref || null },
       });
       try {
         localStorage.removeItem("good-app-google-intent");
