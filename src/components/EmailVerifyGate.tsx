@@ -5,6 +5,8 @@ import { toast } from "sonner";
 import { Mail, Loader2, ShieldCheck, KeyRound } from "lucide-react";
 import { getEmailVerifyStatus, requestEmailVerifyOtp, confirmEmailVerifyOtp } from "@/lib/email-verify.functions";
 
+const TEMP_EMAIL_BYPASS_KEY = "ga_email_setup_bypass";
+
 /**
  * যাদের একাউন্টে ভেরিফাইড Gmail নেই (আগে শুধু নম্বর দিয়ে খোলা), অ্যাপে ঢুকলেই
  * এই স্ক্রিনটি Gmail ভেরিফিকেশন চাইবে — কোড বসালেই ইমেইল একাউন্টে লিংক হবে।
@@ -27,6 +29,7 @@ export function EmailVerifyGate() {
   const [dest, setDest] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [visible, setVisible] = useState(false);
+  const [emailUnavailable, setEmailUnavailable] = useState(false);
   // কোডের মেয়াদ (১০ মিনিট) ও আবার কোড চাওয়ার (৬০ সেকেন্ড) কাউন্টডাউন
   const [expiresIn, setExpiresIn] = useState(0);
   const [resendIn, setResendIn] = useState(0);
@@ -43,6 +46,7 @@ export function EmailVerifyGate() {
   const fmt = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
   useEffect(() => {
+    if (sessionStorage.getItem(TEMP_EMAIL_BYPASS_KEY) === "1") return;
     if (data && !data.verified) {
       setVisible(true);
       if ((data as any).pendingEmail) setEmail((prev) => prev || (data as any).pendingEmail);
@@ -74,6 +78,7 @@ export function EmailVerifyGate() {
       setResendIn(60);
       toast.success("কোড পাঠানো হয়েছে — মেইলবক্স দেখুন (১০ মিনিটের মধ্যে বসান)");
     } catch (err: any) {
+      setEmailUnavailable(true);
       toast.error(err?.message ?? "কোড পাঠানো যায়নি");
     } finally {
       setBusy(false);
@@ -176,6 +181,23 @@ export function EmailVerifyGate() {
           <p className="text-center text-[10.5px] text-white/80 font-bold">
             🔒 একটি Gmail শুধু একটি একাউন্টে ব্যবহার করা যাবে
           </p>
+          {emailUnavailable && (
+            <div className="space-y-2 rounded-2xl bg-white/15 p-3 text-center">
+              <p className="text-[11.5px] font-bold leading-relaxed">
+                ইমেইল সার্ভিস সেটআপ চলছে। আপাতত কাজ চালিয়ে যেতে পারবেন; পরে আবার ৬ ডিজিটের কোড দিয়ে ভেরিফাই করতে হবে।
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  sessionStorage.setItem(TEMP_EMAIL_BYPASS_KEY, "1");
+                  setVisible(false);
+                }}
+                className="w-full rounded-2xl bg-white py-2.5 text-[13px] font-black text-indigo-700 btn-press"
+              >
+                আপাতত অ্যাপে প্রবেশ করুন
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
