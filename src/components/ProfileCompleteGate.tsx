@@ -181,7 +181,7 @@ export function ProfileCompleteGate() {
     setBusy(true);
     try {
       await saveFn({
-        data: { name, password, phone: phone || null, referralCode: ref || null },
+        data: { name, password, phone, referralCode: ref || null },
       });
       try {
         localStorage.removeItem("good-app-google-intent");
@@ -206,8 +206,8 @@ export function ProfileCompleteGate() {
         </div>
         <h2 className="text-center text-lg font-black drop-shadow">একাউন্ট সম্পূর্ণ করুন</h2>
         <p className="text-center text-[12.5px] font-bold leading-relaxed">
-          Google দিয়ে ঢুকেছেন 🎉 এখন আপনার নাম ও একটি পাসওয়ার্ড দিন — এরপর Gmail-এ কোড গিয়ে
-          ভেরিফিকেশন শেষ হবে।
+          Google দিয়ে ঢুকেছেন 🎉 এখন আপনার নাম, মোবাইল নম্বর ও একটি পাসওয়ার্ড দিন — এরপর Gmail-এ
+          কোড গিয়ে ভেরিফিকেশন শেষ হবে।
         </p>
         <input
           value={name}
@@ -234,7 +234,7 @@ export function ProfileCompleteGate() {
             autoComplete="tel"
             value={phone}
             onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 11))}
-            placeholder="মোবাইল নম্বর (ইচ্ছা করলে দিন)"
+            placeholder="মোবাইল নম্বর (আবশ্যক)"
             className="w-full rounded-2xl pl-9 pr-4 py-3 text-[14px] font-bold text-slate-900 bg-white/95 outline-none mono-num"
           />
         </div>
@@ -246,7 +246,7 @@ export function ProfileCompleteGate() {
         />
         <button
           type="submit"
-          disabled={busy || name.trim().length < 2 || password.length < 6}
+          disabled={busy || name.trim().length < 2 || password.length < 6 || !/^01\d{9}$/.test(phone)}
           className="w-full rounded-2xl py-3 font-black text-[14px] bg-white text-emerald-700 btn-press disabled:opacity-60 flex items-center justify-center gap-2"
         >
           {busy && <Loader2 className="w-4 h-4 animate-spin" />}

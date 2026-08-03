@@ -102,7 +102,7 @@ export const completeGoogleProfile = createServerFn({ method: "POST" })
       .object({
         name: z.string().trim().min(2, "নাম লিখুন").max(80),
         password: z.string().min(6, "পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে"),
-        phone: z.string().trim().optional().nullable(),
+        phone: z.string().trim().min(1, "মোবাইল নম্বর দিন"),
         referralCode: z.string().trim().max(20).optional().nullable(),
       })
       .parse(input),
@@ -111,8 +111,8 @@ export const completeGoogleProfile = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const phone = (data.phone ?? "").replace(/\D/g, "").slice(0, 11);
-    if (phone && !/^01\d{9}$/.test(phone)) {
-      throw new Error("নম্বর দিলে ১১ ডিজিটের সঠিক নম্বর দিন (০১ দিয়ে শুরু)");
+    if (!/^01\d{9}$/.test(phone)) {
+      throw new Error("১১ ডিজিটের সঠিক মোবাইল নম্বর দিন (০১ দিয়ে শুরু)");
     }
     if (phone) {
       const { data: taken } = await supabaseAdmin
