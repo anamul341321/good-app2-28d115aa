@@ -24,12 +24,14 @@ export const getGoogleProfileStatus = createServerFn({ method: "GET" })
 
     const { data } = await supabaseAdmin
       .from("profiles")
-      .select("display_name, phone_number, email")
+      .select("display_name, phone_number, email, email_verified")
       .eq("id", context.userId)
       .maybeSingle();
 
     const email = (((data as any)?.email ?? g.googleEmail) || "").toLowerCase();
     const name = ((data as any)?.display_name ?? "") as string;
+    const phone = String((data as any)?.phone_number ?? "");
+    const existingAccount = /^01\d{9}$/.test(phone) && name.trim().length >= 2;
 
     // এই Gmail আগেই অন্য একাউন্টে ভেরিফাইড আছে কি না
     let conflict = false;
@@ -47,13 +49,15 @@ export const getGoogleProfileStatus = createServerFn({ method: "GET" })
       }
     }
 
-    const needsProfile = g.isGoogle && !conflict && !(g.completed && name.trim().length >= 2);
+    const needsProfile = g.isGoogle && !conflict && !existingAccount && !(g.completed && name.trim().length >= 2);
 
     return {
       isGoogle: g.isGoogle,
       needsProfile,
       conflict,
       conflictEmail,
+      existingAccount,
+      emailVerified: Boolean((data as any)?.email_verified),
       email,
       suggestedName: name || g.metaName,
       name,
@@ -140,13 +144,22 @@ export const startGoogleAccountLink = createServerFn({ method: "POST" })
     if (!g.isGoogle || !g.googleEmail) throw new Error("Google একাউন্ট পাওয়া যায়নি");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: target } = await supabaseAdmin
+    const { data: otherTarget } = await supabaseAdmin
       .from("profiles")
       .select("id, display_name")
       .ilike("email", g.googleEmail)
       .neq("id", context.userId)
       .maybeSingle();
-    if (!target) throw new Error("এই Gmail-এ পুরোনো কোনো একাউন্ট পাওয়া যায়নি");
+    const { data: currentTarget } = otherTarget
+      ? { data: null }
+      : await supabaseAdmin
+          .from("profiles")
+          .select("id, display_name")
+          .eq("id", context.userId)
+          .ilike("email", g.googleEmail)
+          .maybeSingle();
+    const target = otherTarget ?? currentTarget;
+    if (!target) throw new Error("এই Gmail-এ কোনো একাউন্ট পাওয়া যায়নি — সাইন-আপ করুন");
 
     const { data: recent } = await supabaseAdmin
       .from("email_verify_otps")
@@ -197,13 +210,22 @@ export const completeGoogleAccountLink = createServerFn({ method: "POST" })
     if (!g.isGoogle || !g.googleEmail) throw new Error("Google একাউন্ট পাওয়া যায়নি");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: target } = await supabaseAdmin
+    const { data: otherTarget } = await supabaseAdmin
       .from("profiles")
       .select("id")
       .ilike("email", g.googleEmail)
       .neq("id", context.userId)
       .maybeSingle();
-    if (!target) throw new Error("এই Gmail-এ পুরোনো কোনো একাউন্ট পাওয়া যায়নি");
+    const { data: currentTarget } = otherTarget
+      ? { data: null }
+      : await supabaseAdmin
+          .from("profiles")
+          .select("id")
+          .eq("id", context.userId)
+          .ilike("email", g.googleEmail)
+          .maybeSingle();
+    const target = otherTarget ?? currentTarget;
+    if (!target) throw new Error("এই Gmail-এ কোনো একাউন্ট পাওয়া যায়নি — সাইন-আপ করুন");
 
     const targetId = (target as any).id as string;
 
@@ -258,6 +280,11 @@ export const completeGoogleAccountLink = createServerFn({ method: "POST" })
       .from("profiles")
       .update({ email_verified: true, email_verified_at: new Date().toISOString() } as any)
       .eq("id", targetId);
+
+    // Google identity ইতোমধ্যে সঠিক পুরোনো account-এ যুক্ত থাকলে বর্তমান session-ই রাখি।
+    if (targetId === context.userId) {
+      return { ok: true as const, session: null };
+    }
 
     // Google callback-এর সাময়িক account সরিয়ে পুরোনো account-এর auth email-কে
     // verified Gmail করা হয়। এরপর একই Google বাছলে auth নিজেই পুরোনো account

@@ -60,8 +60,10 @@ export function ProfileCompleteGate() {
 
   if (!data || !data.isGoogle) return null;
 
-  // ---------- পুরোনো একাউন্টের সাথে লিংক (একই Gmail) ----------
-  if (data.conflict) {
+  const needsGoogleLoginCode = data.conflict || (intent === "login" && data.existingAccount);
+
+  // ---------- একই Gmail-এর পুরোনো/বর্তমান একাউন্টে code দিয়ে login ----------
+  if (needsGoogleLoginCode) {
     return (
       <Shell gradient="linear-gradient(160deg,#0ea5e9,#6366f1,#8b5cf6)">
         <div className="mx-auto w-16 h-16 rounded-full bg-white/20 flex items-center justify-center">
@@ -116,7 +118,7 @@ export function ProfileCompleteGate() {
                 setBusy(true);
                 try {
                   const res: any = await linkConfirm({ data: { code: linkCode } });
-                  await supabase.auth.setSession(res.session);
+                  if (res.session) await supabase.auth.setSession(res.session);
                   try { localStorage.removeItem("good-app-google-intent"); } catch {}
                   toast.success("স্বাগতম! আপনার পুরোনো একাউন্টে ঢুকেছেন 💙");
                   window.location.href = "/home";
