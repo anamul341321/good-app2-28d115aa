@@ -436,43 +436,76 @@ function PasswordSelfChange() {
   const [open, setOpen] = useState(false);
   const [nx, setNx] = useState("");
   const [nx2, setNx2] = useState("");
+  const [code, setCode] = useState("");
+  const [step, setStep] = useState<"form" | "code">("form");
+  const [dest, setDest] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const submit = async () => {
+
+  const sendCode = async () => {
     if (nx.length < 6) return toast.error("কমপক্ষে ৬ অক্ষর দিন");
     if (nx !== nx2) return toast.error("পাসওয়ার্ড মিলছে না");
     setBusy(true);
     try {
-      const { supabase } = await import("@/integrations/supabase/client");
-      const { error } = await supabase.auth.updateUser({ password: nx });
-      if (error) throw error;
-      toast.success("পাসওয়ার্ড পরিবর্তন হয়েছে");
-      setNx(""); setNx2(""); setOpen(false);
-    } catch (e: any) { toast.error(e.message ?? "পরিবর্তন হয়নি"); }
+      const { requestPasswordChangeOtp } = await import("@/lib/password-change.functions");
+      const res: any = await requestPasswordChangeOtp();
+      setDest(res?.destination ?? null);
+      setStep("code");
+      toast.success("Gmail-এ ৬ ডিজিটের কোড পাঠানো হয়েছে");
+    } catch (e: any) { toast.error(e?.message ?? "কোড পাঠানো যায়নি"); }
     finally { setBusy(false); }
   };
+
+  const submit = async () => {
+    setBusy(true);
+    try {
+      const { changePasswordWithOtp } = await import("@/lib/password-change.functions");
+      await changePasswordWithOtp({ data: { code, newPassword: nx } });
+      toast.success("পাসওয়ার্ড পরিবর্তন হয়েছে");
+      setNx(""); setNx2(""); setCode(""); setStep("form"); setOpen(false);
+    } catch (e: any) { toast.error(e?.message ?? "পরিবর্তন হয়নি"); }
+    finally { setBusy(false); }
+  };
+
   return (
     <div className="glass rounded-2xl p-4 no-print">
       <button onClick={() => setOpen(v => !v)} className="flex items-center gap-2 w-full text-left">
         <div className="w-9 h-9 rounded-lg bg-violet/15 flex items-center justify-center text-violet">🔑</div>
         <div className="flex-1">
           <p className="text-sm font-black">পাসওয়ার্ড পরিবর্তন</p>
-          <p className="text-[11px] text-muted-foreground">যেকোনো নতুন পাসওয়ার্ড সেট করুন</p>
+          <p className="text-[11px] text-muted-foreground">Gmail-এ কোড যাবে, কোড দিলেই বদলাবে</p>
         </div>
         <span className="text-muted-foreground text-xs">{open ? "▲" : "▼"}</span>
       </button>
-      {open && (
+      {open && step === "form" && (
         <div className="mt-3 space-y-2">
           <input type="password" value={nx} onChange={e => setNx(e.target.value)} placeholder="নতুন পাসওয়ার্ড"
             className="w-full px-3 py-2 rounded-lg bg-surface-2 border border-border text-sm outline-none focus:border-violet" />
           <input type="password" value={nx2} onChange={e => setNx2(e.target.value)} placeholder="আবার লিখুন"
             className="w-full px-3 py-2 rounded-lg bg-surface-2 border border-border text-sm outline-none focus:border-violet" />
-          <button onClick={submit} disabled={busy}
+          <button onClick={sendCode} disabled={busy}
+            className="w-full gradient-cta rounded-lg py-2 text-sm font-black flex items-center justify-center gap-2 disabled:opacity-60">
+            {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+            Gmail-এ কোড পাঠান
+          </button>
+        </div>
+      )}
+      {open && step === "code" && (
+        <div className="mt-3 space-y-2">
+          <p className="text-[11.5px] font-bold text-muted-foreground">কোড পাঠানো হয়েছে: <b translate="no">{dest}</b></p>
+          <input inputMode="numeric" value={code}
+            onChange={e => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+            placeholder="৬ ডিজিটের কোড"
+            className="w-full px-3 py-2 rounded-lg bg-surface-2 border border-border text-sm text-center tracking-[8px] font-black mono-num outline-none focus:border-violet" />
+          <button onClick={submit} disabled={busy || code.length !== 6}
             className="w-full gradient-cta rounded-lg py-2 text-sm font-black flex items-center justify-center gap-2 disabled:opacity-60">
             {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
             সেভ করুন
           </button>
+          <button onClick={() => { setStep("form"); setCode(""); }}
+            className="w-full py-1 text-[11px] font-black text-cyan underline underline-offset-4">পিছনে</button>
         </div>
       )}
     </div>
   );
 }
+
