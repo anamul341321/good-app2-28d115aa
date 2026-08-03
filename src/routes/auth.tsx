@@ -126,7 +126,7 @@ export function AuthPage() {
       const m = raw.match(/card\/([0-9a-f-]{8,})/i);
       const candidate = m?.[1] ?? raw.trim();
       const res = await resolveUid({ data: { uid: candidate } });
-      setPhone(res.phone);
+      setLoginId(res.phone);
       setMode("login");
       toast.success("UID পাওয়া গেছে — এবার পাসওয়ার্ড দিন");
     } catch (e: any) {
