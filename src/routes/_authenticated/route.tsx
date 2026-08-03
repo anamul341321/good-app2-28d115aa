@@ -12,6 +12,7 @@ import { LanguagePicker } from "@/components/LanguagePicker";
 import { useLang } from "@/lib/i18n";
 import { SlotResetApproval } from "@/components/SlotResetApproval";
 import { EmailVerifyGate } from "@/components/EmailVerifyGate";
+import { ProfileCompleteGate } from "@/components/ProfileCompleteGate";
 import { useDeviceGuard } from "@/hooks/useDeviceGuard";
 
 
@@ -140,7 +141,9 @@ function AuthedLayout() {
       <InstallPrompt />
       <LanguagePicker />
       <SlotResetApproval />
+      <ProfileCompleteGate />
       <EmailVerifyGate />
+
 
     </div>
   );

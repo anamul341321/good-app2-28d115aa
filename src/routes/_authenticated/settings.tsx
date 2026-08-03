@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getAccountSettings, changePhoneNumber } from "@/lib/account.functions";
 import { listMyDevices, revokeDevice, revokeOtherDevices } from "@/lib/sessions.functions";
 import { requestEmailVerifyOtp, confirmEmailVerifyOtp } from "@/lib/email-verify.functions";
+import { requestPasswordChangeOtp, changePasswordWithOtp } from "@/lib/password-change.functions";
 import { getDeviceId } from "@/hooks/useDeviceGuard";
 
 export const Route = createFileRoute("/_authenticated/settings")({
@@ -66,10 +67,16 @@ function SettingsPage() {
     refetchInterval: 60_000,
   });
 
-  // password
+  // password (Gmail কোড দিয়ে নিশ্চিত করা হয়)
   const [curPw, setCurPw] = useState("");
   const [newPw, setNewPw] = useState("");
   const [pwBusy, setPwBusy] = useState(false);
+  const [pwStep, setPwStep] = useState<"form" | "code">("form");
+  const [pwCode, setPwCode] = useState("");
+  const [pwDest, setPwDest] = useState<string | null>(null);
+  const sendPwOtp = useServerFn(requestPasswordChangeOtp);
+  const confirmPwOtp = useServerFn(changePasswordWithOtp);
+
 
   // email change
   const [newEmail, setNewEmail] = useState("");
@@ -85,7 +92,7 @@ function SettingsPage() {
     if (acc?.phone) setNewPhone(acc.phone);
   }, [acc?.phone]);
 
-  async function changePassword() {
+  async function sendPwCode() {
     if (newPw.length < 6) return toast.error("নতুন পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে");
     setPwBusy(true);
     try {
@@ -94,14 +101,26 @@ function SettingsPage() {
       if (!email) throw new Error("সেশন পাওয়া যায়নি — আবার লগইন করুন");
       const { error: signErr } = await supabase.auth.signInWithPassword({ email, password: curPw });
       if (signErr) throw new Error("বর্তমান পাসওয়ার্ড ভুল");
-      const { error } = await supabase.auth.updateUser({ password: newPw });
-      if (error) throw new Error("পাসওয়ার্ড পরিবর্তন হয়নি");
-      toast.success("পাসওয়ার্ড পরিবর্তন হয়েছে");
-      setCurPw(""); setNewPw("");
+      const res: any = await sendPwOtp();
+      setPwDest(res?.destination ?? null);
+      setPwStep("code");
+      toast.success("Gmail-এ ৬ ডিজিটের কোড পাঠানো হয়েছে");
     } catch (e: any) {
       toast.error(e?.message ?? "সমস্যা হয়েছে");
     } finally { setPwBusy(false); }
   }
+
+  async function changePassword() {
+    setPwBusy(true);
+    try {
+      await confirmPwOtp({ data: { code: pwCode, newPassword: newPw } });
+      toast.success("পাসওয়ার্ড পরিবর্তন হয়েছে");
+      setCurPw(""); setNewPw(""); setPwCode(""); setPwStep("form");
+    } catch (e: any) {
+      toast.error(e?.message ?? "সমস্যা হয়েছে");
+    } finally { setPwBusy(false); }
+  }
+
 
   async function emailSendCode() {
     setEmailBusy(true);
@@ -155,23 +174,45 @@ function SettingsPage() {
       <Card
         icon={<KeyRound className="w-4 h-4 text-gold" />}
         title="পাসওয়ার্ড পরিবর্তন"
-        desc="নিরাপত্তার জন্য মাঝে মাঝে পাসওয়ার্ড বদলান।"
+        desc="নিরাপত্তার জন্য Gmail-এ পাঠানো ৬ ডিজিটের কোড দিয়ে নিশ্চিত করতে হবে।"
       >
-        <div className="space-y-2">
-          <div>
-            <label className="text-[11px] font-black text-cyan uppercase tracking-wider">বর্তমান পাসওয়ার্ড</label>
-            <input type="password" value={curPw} onChange={(e) => setCurPw(e.target.value)} className={inputCls} />
+        {pwStep === "form" ? (
+          <div className="space-y-2">
+            <div>
+              <label className="text-[11px] font-black text-cyan uppercase tracking-wider">বর্তমান পাসওয়ার্ড</label>
+              <input type="password" value={curPw} onChange={(e) => setCurPw(e.target.value)} className={inputCls} />
+            </div>
+            <div>
+              <label className="text-[11px] font-black text-emerald uppercase tracking-wider">নতুন পাসওয়ার্ড</label>
+              <input type="password" value={newPw} onChange={(e) => setNewPw(e.target.value)} className={inputCls} />
+            </div>
+            <button onClick={sendPwCode} disabled={pwBusy || !curPw || newPw.length < 6}
+              className="w-full py-3 rounded-xl gradient-cta font-black text-sm flex items-center justify-center gap-2 disabled:opacity-60 btn-press">
+              {pwBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              Gmail-এ কোড পাঠান
+            </button>
           </div>
-          <div>
-            <label className="text-[11px] font-black text-emerald uppercase tracking-wider">নতুন পাসওয়ার্ড</label>
-            <input type="password" value={newPw} onChange={(e) => setNewPw(e.target.value)} className={inputCls} />
+        ) : (
+          <div className="space-y-2">
+            <p className="text-[12px] font-bold text-muted-foreground">
+              কোড পাঠানো হয়েছে: <b translate="no">{pwDest}</b>
+            </p>
+            <input inputMode="numeric" value={pwCode}
+              onChange={(e) => setPwCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              placeholder="৬ ডিজিটের কোড"
+              className={`${inputCls} text-center tracking-[8px] font-black mono-num`} />
+            <button onClick={changePassword} disabled={pwBusy || pwCode.length !== 6}
+              className="w-full py-3 rounded-xl gradient-cta font-black text-sm flex items-center justify-center gap-2 disabled:opacity-60 btn-press">
+              {pwBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
+              কোড দিয়ে পাসওয়ার্ড সেভ করুন
+            </button>
+            <button onClick={() => { setPwStep("form"); setPwCode(""); }}
+              className="w-full py-2 text-[11.5px] font-black text-cyan underline underline-offset-4">
+              পিছনে
+            </button>
           </div>
-          <button onClick={changePassword} disabled={pwBusy || !curPw || newPw.length < 6}
-            className="w-full py-3 rounded-xl gradient-cta font-black text-sm flex items-center justify-center gap-2 disabled:opacity-60 btn-press">
-            {pwBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
-            পাসওয়ার্ড সেভ করুন
-          </button>
-        </div>
+        )}
+
       </Card>
 
       <Card
