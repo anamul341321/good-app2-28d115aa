@@ -244,6 +244,12 @@ export function AuthPage() {
   async function doGoogle() {
     setLoading(true);
     try {
+      // "লগইন" নাকি "সাইন-আপ" — Google থেকে ফেরার পর গেট এটা দেখে সিদ্ধান্ত নেবে
+      try {
+        localStorage.setItem("good-app-google-intent", mode);
+        if (referralCode.trim())
+          localStorage.setItem("good-app-ref-code", referralCode.trim().toUpperCase());
+      } catch {}
       const { lovable } = await import("@/integrations/lovable/index");
       const res: any = await lovable.auth.signInWithOAuth("google", {
         redirect_uri: window.location.origin,
