@@ -139,6 +139,11 @@ export function EmailVerifyGate() {
               <p className="text-center text-[12px] font-bold bg-white/15 rounded-xl py-2">
                 কোড পাঠানো হয়েছে: <b translate="no">{dest}</b>
               </p>
+              <p className="text-center text-[12px] font-black bg-white/20 rounded-xl py-2 mono-num">
+                {expiresIn > 0
+                  ? `⏳ কোডের মেয়াদ শেষ হবে ${fmt(expiresIn)} মিনিটে`
+                  : "⌛ কোডের সময় শেষ — আবার কোড পাঠান"}
+              </p>
               <input
                 inputMode="numeric"
                 value={code}
@@ -156,11 +161,15 @@ export function EmailVerifyGate() {
               </button>
               <button
                 type="button"
+                disabled={resendIn > 0}
                 onClick={() => { setStep("email"); setCode(""); }}
-                className="w-full text-[11.5px] font-bold text-white/85 underline"
+                className="w-full text-[11.5px] font-bold text-white/85 underline disabled:opacity-60 disabled:no-underline"
               >
-                ইমেইল বদলাতে চাই / আবার কোড পাঠান
+                {resendIn > 0
+                  ? `আবার কোড পাঠানো যাবে ${fmt(resendIn)} পরে`
+                  : "ইমেইল বদলাতে চাই / আবার কোড পাঠান"}
               </button>
+
             </form>
           )}
 
