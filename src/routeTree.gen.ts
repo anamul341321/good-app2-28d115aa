@@ -43,6 +43,7 @@ import { Route as ApiPublicWhitelistRecheckRouteImport } from './routes/api/publ
 import { Route as ApiPublicTourAudioRouteImport } from './routes/api/public/tour-audio'
 import { Route as AdminUserUserIdRouteImport } from './routes/admin/user.$userId'
 import { Route as AuthenticatedTaskSlotRouteImport } from './routes/_authenticated/task.$slot'
+import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
 
 const AuthRoute = AuthRouteImport.update({
@@ -215,6 +216,12 @@ const AuthenticatedTaskSlotRoute = AuthenticatedTaskSlotRouteImport.update({
   path: '/task/$slot',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const LovableEmailQueueProcessRoute =
+  LovableEmailQueueProcessRouteImport.update({
+    id: '/lovable/email/queue/process',
+    path: '/lovable/email/queue/process',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicTelegramWebhookRoute =
   ApiPublicTelegramWebhookRouteImport.update({
     id: '/api/public/telegram/webhook',
@@ -257,6 +264,7 @@ export interface FileRoutesByFullPath {
   '/api/public/tour-audio': typeof ApiPublicTourAudioRoute
   '/api/public/whitelist-recheck': typeof ApiPublicWhitelistRecheckRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -292,6 +300,7 @@ export interface FileRoutesByTo {
   '/api/public/tour-audio': typeof ApiPublicTourAudioRoute
   '/api/public/whitelist-recheck': typeof ApiPublicWhitelistRecheckRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -330,6 +339,7 @@ export interface FileRoutesById {
   '/api/public/tour-audio': typeof ApiPublicTourAudioRoute
   '/api/public/whitelist-recheck': typeof ApiPublicWhitelistRecheckRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -368,6 +378,7 @@ export interface FileRouteTypes {
     | '/api/public/tour-audio'
     | '/api/public/whitelist-recheck'
     | '/api/public/telegram/webhook'
+    | '/lovable/email/queue/process'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -403,6 +414,7 @@ export interface FileRouteTypes {
     | '/api/public/tour-audio'
     | '/api/public/whitelist-recheck'
     | '/api/public/telegram/webhook'
+    | '/lovable/email/queue/process'
   id:
     | '__root__'
     | '/'
@@ -440,6 +452,7 @@ export interface FileRouteTypes {
     | '/api/public/tour-audio'
     | '/api/public/whitelist-recheck'
     | '/api/public/telegram/webhook'
+    | '/lovable/email/queue/process'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -452,6 +465,7 @@ export interface RootRouteChildren {
   ApiPublicTourAudioRoute: typeof ApiPublicTourAudioRoute
   ApiPublicWhitelistRecheckRoute: typeof ApiPublicWhitelistRecheckRoute
   ApiPublicTelegramWebhookRoute: typeof ApiPublicTelegramWebhookRoute
+  LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -694,6 +708,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTaskSlotRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/lovable/email/queue/process': {
+      id: '/lovable/email/queue/process'
+      path: '/lovable/email/queue/process'
+      fullPath: '/lovable/email/queue/process'
+      preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/telegram/webhook': {
       id: '/api/public/telegram/webhook'
       path: '/api/public/telegram/webhook'
@@ -783,17 +804,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicTourAudioRoute: ApiPublicTourAudioRoute,
   ApiPublicWhitelistRecheckRoute: ApiPublicWhitelistRecheckRoute,
   ApiPublicTelegramWebhookRoute: ApiPublicTelegramWebhookRoute,
+  LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
