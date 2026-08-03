@@ -2770,11 +2770,22 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               (await agentAnswer({ ...base3, rulebook: appRulebook(rates3), isAdmin: senderIsAdmin }))
               ?? (await smartAnswer(base3));
           }
+          const escalated = !reply;
           if (!reply) reply = `${escalateReply(senderName, mention)}\n${mention}`;
           await sendMessage(chatId, reply, msg.message_id);
           actions.push("fallback-answer");
           decision.reply = reply;
+          // Remember this answer so the same question never costs credits again.
+          if (!escalated && !decision.needs_uid) {
+            try {
+              const { saveCachedReply } = await import("@/lib/telegram-reply-cache.server");
+              await saveCachedReply(text, reply);
+            } catch (e) {
+              console.error("[tg] reply cache save failed", e);
+            }
+          }
         }
+
 
 
 
