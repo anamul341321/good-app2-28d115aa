@@ -41,6 +41,7 @@ const settingsSchema = z.object({
   escalate_enabled: z.boolean().optional(),
   reply_variety: z.boolean().optional(),
   welcome_enabled: z.boolean().optional(),
+  kyc_enabled: z.boolean().optional(),
   welcome_message: z.string().max(2000).nullable().optional(),
   default_video_url: z.string().max(500).nullable().optional(),
 

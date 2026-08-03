@@ -1,0 +1,1 @@
+ALTER TABLE public.tg_bot_settings ADD COLUMN IF NOT EXISTS kyc_enabled boolean NOT NULL DEFAULT true;
