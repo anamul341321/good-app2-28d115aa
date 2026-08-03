@@ -27,18 +27,17 @@ async function findProfile(identifier: string) {
 export const requestPasswordResetOtp = createServerFn({ method: "POST" })
   .inputValidator((d: { phone: string }) => d)
   .handler(async ({ data }) => {
-    const identifier = (data.phone || "").trim();
-    if (!identifier) throw new Error("মোবাইল নম্বর অথবা ইমেইল দিন");
+    const identifier = (data.phone || "").trim().toLowerCase();
+    if (!identifier) throw new Error("আপনার Gmail/ইমেইল দিন");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier)) {
+      throw new Error("সঠিক Gmail/ইমেইল ঠিকানা দিন");
+    }
 
     const prof = await findProfile(identifier);
-    if (!prof) throw new Error("এই নম্বর/ইমেইলে কোনো একাউন্ট পাওয়া যায়নি");
+    if (!prof) throw new Error("এই ইমেইলে কোনো একাউন্ট পাওয়া যায়নি");
 
     const email = (prof.email || "").trim();
-    if (!email && !prof.telegram_user_id) {
-      throw new Error(
-        "এই একাউন্টে ইমেইল বা Telegram কিছুই সেভ নেই, তাই কোড পাঠানো যাচ্ছে না। Telegram গ্রুপে অ্যাডমিনের সাথে যোগাযোগ করুন।",
-      );
-    }
+    if (!email) throw new Error("এই একাউন্টে ইমেইল সেভ নেই — অ্যাডমিনের সাথে যোগাযোগ করুন");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -57,45 +56,32 @@ export const requestPasswordResetOtp = createServerFn({ method: "POST" })
     const code = String(Math.floor(100000 + Math.random() * 900000));
     const expiresAt = new Date(Date.now() + 10 * 60_000).toISOString();
 
-    let channel: "email" | "telegram" = email ? "email" : "telegram";
-
     await supabaseAdmin.from("password_reset_otps").insert({
       user_id: prof.id,
       code,
-      channel,
+      channel: "email",
       expires_at: expiresAt,
     });
 
-    if (email) {
-      try {
-        const { sendSystemEmail } = await import("@/lib/email-otp.server");
-        await sendSystemEmail({
-          templateName: "password-reset-otp",
-          to: email,
-          templateData: { code, name: prof.display_name ?? undefined },
-        });
-      } catch (err) {
-        console.error("password reset email failed", err);
-        // ইমেইল না গেলে Telegram fallback
-        if (!prof.telegram_user_id) throw new Error("কোড পাঠানো যায়নি, একটু পরে আবার চেষ্টা করুন");
-        channel = "telegram";
-      }
-    }
-
-    if (channel === "telegram") {
-      const { sendMessage } = await import("@/lib/telegram-bot.server");
-      await sendMessage(
-        prof.telegram_user_id!,
-        `🔐 পাসওয়ার্ড রিসেট কোড: <b>${code}</b>\n\n১০ মিনিটের মধ্যে ব্যবহার করুন। কোডটি কাউকে দেবেন না।`,
-      );
+    try {
+      const { sendSystemEmail } = await import("@/lib/email-otp.server");
+      await sendSystemEmail({
+        templateName: "password-reset-otp",
+        to: email,
+        templateData: { code, name: prof.display_name ?? undefined },
+      });
+    } catch (err) {
+      console.error("password reset email failed", err);
+      throw new Error("কোড পাঠানো যায়নি, একটু পরে আবার চেষ্টা করুন");
     }
 
     return {
       ok: true as const,
-      channel,
-      destination: channel === "email" ? maskEmail(email) : "Telegram",
+      channel: "email" as const,
+      destination: maskEmail(email),
     };
   });
+
 
 export const resetPasswordWithOtp = createServerFn({ method: "POST" })
   .inputValidator((d: { phone: string; code: string; newPassword: string }) => d)
