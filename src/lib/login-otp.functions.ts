@@ -70,11 +70,14 @@ async function resolveAccount(identifier: string): Promise<Account> {
   if (!prof) throw new Error("এই নম্বর/Gmail-এ কোনো একাউন্ট পাওয়া যায়নি");
 
   let authEmail = prof.phone_number ? phoneToEmail(prof.phone_number) : "";
-  try {
-    const { data: u } = await supabaseAdmin.auth.admin.getUserById(prof.id);
-    if (u?.user?.email) authEmail = u.user.email;
-  } catch {
-    /* ignore */
+  if (!authEmail) {
+    // নম্বর সেভ নেই — তখনই শুধু auth থেকে ইমেইল আনি (একটা extra roundtrip বাঁচে)
+    try {
+      const { data: u } = await supabaseAdmin.auth.admin.getUserById(prof.id);
+      if (u?.user?.email) authEmail = u.user.email;
+    } catch {
+      /* ignore */
+    }
   }
   if (!authEmail) throw new Error("এই একাউন্টে লগইন তথ্য পাওয়া যায়নি — অ্যাডমিনের সাথে যোগাযোগ করুন");
 
