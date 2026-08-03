@@ -27,6 +27,20 @@ export function EmailVerifyGate() {
   const [dest, setDest] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [visible, setVisible] = useState(false);
+  // কোডের মেয়াদ (১০ মিনিট) ও আবার কোড চাওয়ার (৬০ সেকেন্ড) কাউন্টডাউন
+  const [expiresIn, setExpiresIn] = useState(0);
+  const [resendIn, setResendIn] = useState(0);
+
+  useEffect(() => {
+    if (expiresIn <= 0 && resendIn <= 0) return;
+    const id = setInterval(() => {
+      setExpiresIn((v) => (v > 0 ? v - 1 : 0));
+      setResendIn((v) => (v > 0 ? v - 1 : 0));
+    }, 1000);
+    return () => clearInterval(id);
+  }, [expiresIn, resendIn]);
+
+  const fmt = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
   useEffect(() => {
     if (data && !data.verified) {
@@ -56,7 +70,9 @@ export function EmailVerifyGate() {
       }
       setDest(res?.destination ?? val);
       setStep("code");
-      toast.success("কোড পাঠানো হয়েছে — মেইলবক্স দেখুন");
+      setExpiresIn(10 * 60);
+      setResendIn(60);
+      toast.success("কোড পাঠানো হয়েছে — মেইলবক্স দেখুন (১০ মিনিটের মধ্যে বসান)");
     } catch (err: any) {
       toast.error(err?.message ?? "কোড পাঠানো যায়নি");
     } finally {
@@ -123,6 +139,11 @@ export function EmailVerifyGate() {
               <p className="text-center text-[12px] font-bold bg-white/15 rounded-xl py-2">
                 কোড পাঠানো হয়েছে: <b translate="no">{dest}</b>
               </p>
+              <p className="text-center text-[12px] font-black bg-white/20 rounded-xl py-2 mono-num">
+                {expiresIn > 0
+                  ? `⏳ কোডের মেয়াদ শেষ হবে ${fmt(expiresIn)} মিনিটে`
+                  : "⌛ কোডের সময় শেষ — আবার কোড পাঠান"}
+              </p>
               <input
                 inputMode="numeric"
                 value={code}
@@ -140,11 +161,15 @@ export function EmailVerifyGate() {
               </button>
               <button
                 type="button"
+                disabled={resendIn > 0}
                 onClick={() => { setStep("email"); setCode(""); }}
-                className="w-full text-[11.5px] font-bold text-white/85 underline"
+                className="w-full text-[11.5px] font-bold text-white/85 underline disabled:opacity-60 disabled:no-underline"
               >
-                ইমেইল বদলাতে চাই / আবার কোড পাঠান
+                {resendIn > 0
+                  ? `আবার কোড পাঠানো যাবে ${fmt(resendIn)} পরে`
+                  : "ইমেইল বদলাতে চাই / আবার কোড পাঠান"}
               </button>
+
             </form>
           )}
 
