@@ -25,7 +25,7 @@ export const requestWithdraw = createServerFn({ method: "POST" })
     // KYC (টেলিগ্রাম বট লিংক) ছাড়া উইথড্র বন্ধ
     const { data: kycProf } = await supabase
       .from("profiles")
-      .select("kyc_verified, telegram_user_id")
+      .select("kyc_verified, telegram_user_id, email, email_verified")
       .eq("id", userId)
       .maybeSingle();
     // টেলিগ্রাম লিংক থাকলেই KYC ধরা হবে (পুরোনো লিংক করা একাউন্টও চলবে)
@@ -33,6 +33,13 @@ export const requestWithdraw = createServerFn({ method: "POST" })
     if (!kycOk) {
       throw new Error("🔐 উইথড্র করতে আগে KYC করতে হবে — হোম পেজের 'KYC করুন' বাটনে চাপ দিয়ে টেলিগ্রাম বট Start করুন (১ মিনিটের কাজ)।");
     }
+
+    // পেমেন্ট নিরাপত্তার জন্য Gmail ভেরিফিকেশন দরকার
+    const emailOk = !!(kycProf as any)?.email_verified && !!(kycProf as any)?.email;
+    if (!emailOk) {
+      throw new Error("📧 উইথড্র চালু করতে আগে Gmail ভেরিফাই করুন — উপরের লাল বারে চাপ দিয়ে Gmail-এ কোড নিয়ে ভেরিফাই করে নিন (১ মিনিটের কাজ)।");
+    }
+
 
     // Daily limit: max 3 withdraw requests per 24h
     const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();

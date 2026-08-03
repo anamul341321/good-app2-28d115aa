@@ -1,19 +1,28 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Loader2, Phone, UserRound } from "lucide-react";
-import { getGoogleProfileStatus, completeGoogleProfile } from "@/lib/google-profile.functions";
+import { Loader2, Phone, UserRound, KeyRound, ShieldCheck, LogIn } from "lucide-react";
+import {
+  getGoogleProfileStatus,
+  completeGoogleProfile,
+  startGoogleAccountLink,
+  completeGoogleAccountLink,
+} from "@/lib/google-profile.functions";
 import { supabase } from "@/integrations/supabase/client";
 
 /**
- * Google দিয়ে ঢোকা নতুন ইউজারের নাম + মোবাইল নম্বর নেওয়া হয়।
- * এরপর Gmail ভেরিফিকেশন গেট কোড চাইবে।
+ * Google দিয়ে ঢোকার পর:
+ *  - নতুন Gmail → নাম + পাসওয়ার্ড (+ referral optional) নেওয়া হয়, তারপর Gmail-এ কোড।
+ *  - আগের একাউন্টের Gmail → কোড দিয়ে যাচাই করে পুরোনো একাউন্টেই ঢোকানো হয়।
+ *  - "লগইন" চেপে নতুন Gmail দিলে → একাউন্ট নেই বলে সাইন-আপ করতে বলা হয়।
  */
 export function ProfileCompleteGate() {
   const qc = useQueryClient();
   const statusFn = useServerFn(getGoogleProfileStatus);
   const saveFn = useServerFn(completeGoogleProfile);
+  const linkStart = useServerFn(startGoogleAccountLink);
+  const linkConfirm = useServerFn(completeGoogleAccountLink);
 
   const { data } = useQuery({
     queryKey: ["google-profile-status"],
@@ -22,32 +31,148 @@ export function ProfileCompleteGate() {
   });
 
   const [name, setName] = useState("");
+  const [password, setPassword] = useState("");
   const [phone, setPhone] = useState("");
   const [ref, setRef] = useState("");
   const [busy, setBusy] = useState(false);
+  const [forceSignup, setForceSignup] = useState(false);
 
-  if (!data || !data.needsProfile) return null;
+  // পুরোনো একাউন্টে লিংক করার OTP ধাপ
+  const [linkStep, setLinkStep] = useState<"intro" | "code">("intro");
+  const [linkCode, setLinkCode] = useState("");
+  const [linkDest, setLinkDest] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (data?.suggestedName && !name) setName(data.suggestedName);
+    if (typeof window !== "undefined" && !ref) {
+      const saved = localStorage.getItem("good-app-ref-code");
+      if (saved) setRef(saved.toUpperCase());
+    }
+  }, [data?.suggestedName]);
+
+  const intent =
+    typeof window !== "undefined" ? localStorage.getItem("good-app-google-intent") : null;
+
+  async function bailOut() {
+    await supabase.auth.signOut();
+    window.location.href = "/auth";
+  }
+
+  if (!data || !data.isGoogle) return null;
+
+  // ---------- পুরোনো একাউন্টের সাথে লিংক (একই Gmail) ----------
   if (data.conflict) {
     return (
-      <div className="fixed inset-0 z-[95] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-        <div className="w-full max-w-sm rounded-3xl bg-surface-2 border border-border p-5 space-y-3 text-center">
-          <h2 className="text-base font-black text-rose">এই Gmail আগেই ব্যবহার হয়েছে</h2>
-          <p className="text-[12.5px] font-bold text-muted-foreground leading-relaxed">
-            এই Gmail দিয়ে আগে একাউন্ট খোলা হয়েছে। অনুগ্রহ করে আপনার মোবাইল নম্বর ও পাসওয়ার্ড দিয়ে
-            লগইন করুন।
-          </p>
-          <button
-            onClick={async () => {
-              await supabase.auth.signOut();
-              window.location.href = "/auth";
-            }}
-            className="w-full rounded-2xl py-3 font-black text-[14px] gradient-cta btn-press"
-          >
-            লগইন পেজে যান
-          </button>
+      <Shell gradient="linear-gradient(160deg,#0ea5e9,#6366f1,#8b5cf6)">
+        <div className="mx-auto w-16 h-16 rounded-full bg-white/20 flex items-center justify-center">
+          <ShieldCheck className="w-9 h-9" />
         </div>
-      </div>
+        <h2 className="text-center text-lg font-black drop-shadow">আপনার পুরোনো একাউন্টে ঢুকছেন</h2>
+        <p className="text-center text-[12.5px] font-bold leading-relaxed">
+          এই Gmail আপনার আগের একাউন্টে যুক্ত আছে। নিরাপত্তার জন্য Gmail-এ পাঠানো ৬ ডিজিটের কোড
+          বসালেই সেই একাউন্টেই ঢুকে যাবেন 💙
+        </p>
+
+        {linkStep === "intro" ? (
+          <button
+            disabled={busy}
+            onClick={async () => {
+              setBusy(true);
+              try {
+                const res: any = await linkStart({});
+                setLinkDest(res?.destination ?? data.conflictEmail);
+                setLinkStep("code");
+                toast.success(
+                  res?.resent === false
+                    ? "কোড আগেই পাঠানো হয়েছে — মেইলবক্স দেখুন"
+                    : "Gmail-এ কোড পাঠানো হয়েছে",
+                );
+              } catch (e: any) {
+                toast.error(e?.message ?? "কোড পাঠানো যায়নি");
+              } finally {
+                setBusy(false);
+              }
+            }}
+            className="w-full rounded-2xl py-3 font-black text-[14px] bg-white text-indigo-700 btn-press disabled:opacity-60 flex items-center justify-center gap-2"
+          >
+            {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogIn className="w-4 h-4" />}
+            Gmail-এ কোড পাঠান
+          </button>
+        ) : (
+          <div className="space-y-3">
+            <p className="text-center text-[12px] font-bold bg-white/15 rounded-xl py-2">
+              কোড পাঠানো হয়েছে: <b translate="no">{linkDest}</b>
+            </p>
+            <input
+              inputMode="numeric"
+              value={linkCode}
+              onChange={(e) => setLinkCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              placeholder="৬ ডিজিটের কোড"
+              className="w-full rounded-2xl px-4 py-3 text-center text-[18px] font-black tracking-[8px] text-slate-900 bg-white/95 outline-none mono-num"
+            />
+            <button
+              disabled={busy || linkCode.length !== 6}
+              onClick={async () => {
+                setBusy(true);
+                try {
+                  const res: any = await linkConfirm({ data: { code: linkCode } });
+                  await supabase.auth.setSession(res.session);
+                  try { localStorage.removeItem("good-app-google-intent"); } catch {}
+                  toast.success("স্বাগতম! আপনার পুরোনো একাউন্টে ঢুকেছেন 💙");
+                  window.location.href = "/home";
+                } catch (e: any) {
+                  toast.error(e?.message ?? "কোড মেলেনি");
+                } finally {
+                  setBusy(false);
+                }
+              }}
+              className="w-full rounded-2xl py-3 font-black text-[14px] bg-white text-indigo-700 btn-press disabled:opacity-60 flex items-center justify-center gap-2"
+            >
+              {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <KeyRound className="w-4 h-4" />}
+              ভেরিফাই করে ঢুকুন
+            </button>
+            <button
+              onClick={() => setLinkStep("intro")}
+              className="w-full text-[11.5px] font-bold text-white/85 underline"
+            >
+              আবার কোড পাঠান
+            </button>
+          </div>
+        )}
+        <button onClick={bailOut} className="w-full text-[11.5px] font-bold text-white/80 underline">
+          অন্য উপায়ে লগইন করব
+        </button>
+      </Shell>
+    );
+  }
+
+  if (!data.needsProfile) return null;
+
+  // ---------- লগইন চেপে নতুন Gmail দিলে: একাউন্ট নেই ----------
+  if (intent === "login" && !forceSignup) {
+    return (
+      <Shell gradient="linear-gradient(160deg,#f59e0b,#f43f5e,#e11d48)">
+        <div className="mx-auto w-16 h-16 rounded-full bg-white/20 flex items-center justify-center">
+          <UserRound className="w-9 h-9" />
+        </div>
+        <h2 className="text-center text-lg font-black drop-shadow">এই Gmail-এ কোনো একাউন্ট নেই</h2>
+        <p className="text-center text-[12.5px] font-bold leading-relaxed">
+          এই Gmail দিয়ে আগে কোনো একাউন্ট খোলা হয়নি। চাইলে এখনই নতুন একাউন্ট খুলে নিতে পারেন —
+          মাত্র ১ মিনিটের কাজ।
+        </p>
+        <button
+          onClick={() => {
+            localStorage.setItem("good-app-google-intent", "signup");
+            setForceSignup(true);
+          }}
+          className="w-full rounded-2xl py-3 font-black text-[14px] bg-white text-rose-600 btn-press"
+        >
+          নতুন একাউন্ট খুলি
+        </button>
+        <button onClick={bailOut} className="w-full text-[11.5px] font-bold text-white/85 underline">
+          লগইন পেজে ফিরে যান
+        </button>
+      </Shell>
     );
   }
 
@@ -55,8 +180,14 @@ export function ProfileCompleteGate() {
     e.preventDefault();
     setBusy(true);
     try {
-      await saveFn({ data: { name, phone, referralCode: ref || null } });
-      toast.success("প্রোফাইল সেভ হয়েছে — এখন Gmail ভেরিফাই করুন");
+      await saveFn({
+        data: { name, password, phone: phone || null, referralCode: ref || null },
+      });
+      try {
+        localStorage.removeItem("good-app-google-intent");
+        localStorage.removeItem("good-app-ref-code");
+      } catch {}
+      toast.success("প্রোফাইল সেভ হয়েছে — এখন Gmail-এ কোড দিয়ে ভেরিফাই করুন");
       await qc.invalidateQueries({ queryKey: ["google-profile-status"] });
       await qc.invalidateQueries({ queryKey: ["email-verify-status"] });
     } catch (err: any) {
@@ -66,54 +197,74 @@ export function ProfileCompleteGate() {
     }
   }
 
+  // ---------- Google সাইন-আপ: নাম + পাসওয়ার্ড + referral ----------
+  return (
+    <Shell gradient="linear-gradient(160deg,#10b981,#0ea5e9,#6366f1)">
+      <form onSubmit={submit} className="space-y-3">
+        <div className="mx-auto w-16 h-16 rounded-full bg-white/20 flex items-center justify-center">
+          <UserRound className="w-9 h-9" />
+        </div>
+        <h2 className="text-center text-lg font-black drop-shadow">একাউন্ট সম্পূর্ণ করুন</h2>
+        <p className="text-center text-[12.5px] font-bold leading-relaxed">
+          Google দিয়ে ঢুকেছেন 🎉 এখন আপনার নাম ও একটি পাসওয়ার্ড দিন — এরপর Gmail-এ কোড গিয়ে
+          ভেরিফিকেশন শেষ হবে।
+        </p>
+        <input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="আপনার নাম"
+          autoComplete="name"
+          className="w-full rounded-2xl px-4 py-3 text-[14px] font-bold text-slate-900 bg-white/95 outline-none"
+        />
+        <div className="relative">
+          <KeyRound className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+          <input
+            type="password"
+            autoComplete="new-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="নতুন পাসওয়ার্ড (কমপক্ষে ৬ অক্ষর)"
+            className="w-full rounded-2xl pl-9 pr-4 py-3 text-[14px] font-bold text-slate-900 bg-white/95 outline-none"
+          />
+        </div>
+        <div className="relative">
+          <Phone className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+          <input
+            inputMode="numeric"
+            autoComplete="tel"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 11))}
+            placeholder="মোবাইল নম্বর (ইচ্ছা করলে দিন)"
+            className="w-full rounded-2xl pl-9 pr-4 py-3 text-[14px] font-bold text-slate-900 bg-white/95 outline-none mono-num"
+          />
+        </div>
+        <input
+          value={ref}
+          onChange={(e) => setRef(e.target.value.toUpperCase())}
+          placeholder="Referral code (থাকলে দিন — ঐচ্ছিক)"
+          className="w-full rounded-2xl px-4 py-3 text-[13px] font-bold text-slate-900 bg-white/95 outline-none"
+        />
+        <button
+          type="submit"
+          disabled={busy || name.trim().length < 2 || password.length < 6}
+          className="w-full rounded-2xl py-3 font-black text-[14px] bg-white text-emerald-700 btn-press disabled:opacity-60 flex items-center justify-center gap-2"
+        >
+          {busy && <Loader2 className="w-4 h-4 animate-spin" />}
+          সেভ করুন
+        </button>
+      </form>
+    </Shell>
+  );
+}
+
+function Shell({ gradient, children }: { gradient: string; children: React.ReactNode }) {
   return (
     <div className="fixed inset-0 z-[95] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
       <div
         className="w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-500"
-        style={{ background: "linear-gradient(160deg,#10b981,#0ea5e9,#6366f1)" }}
+        style={{ background: gradient }}
       >
-        <form onSubmit={submit} className="p-5 text-white space-y-3">
-          <div className="mx-auto w-16 h-16 rounded-full bg-white/20 flex items-center justify-center">
-            <UserRound className="w-9 h-9" />
-          </div>
-          <h2 className="text-center text-lg font-black drop-shadow">প্রোফাইল সম্পূর্ণ করুন</h2>
-          <p className="text-center text-[12.5px] font-bold leading-relaxed">
-            Google দিয়ে ঢুকেছেন 🎉 এখন নাম ও মোবাইল নম্বর দিন, তারপর Gmail-এ কোড পাঠিয়ে
-            ভেরিফিকেশন শেষ হবে।
-          </p>
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="আপনার নাম"
-            autoComplete="name"
-            className="w-full rounded-2xl px-4 py-3 text-[14px] font-bold text-slate-900 bg-white/95 outline-none"
-          />
-          <div className="relative">
-            <Phone className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-            <input
-              inputMode="numeric"
-              autoComplete="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 11))}
-              placeholder="01XXXXXXXXX"
-              className="w-full rounded-2xl pl-9 pr-4 py-3 text-[14px] font-bold text-slate-900 bg-white/95 outline-none mono-num"
-            />
-          </div>
-          <input
-            value={ref}
-            onChange={(e) => setRef(e.target.value.toUpperCase())}
-            placeholder="Referral code (না থাকলে খালি রাখুন)"
-            className="w-full rounded-2xl px-4 py-3 text-[13px] font-bold text-slate-900 bg-white/95 outline-none"
-          />
-          <button
-            type="submit"
-            disabled={busy || name.trim().length < 2 || phone.length !== 11}
-            className="w-full rounded-2xl py-3 font-black text-[14px] bg-white text-emerald-700 btn-press disabled:opacity-60 flex items-center justify-center gap-2"
-          >
-            {busy && <Loader2 className="w-4 h-4 animate-spin" />}
-            সেভ করুন
-          </button>
-        </form>
+        <div className="p-5 text-white space-y-3">{children}</div>
       </div>
     </div>
   );

@@ -27,8 +27,23 @@ export const getEmailVerifyStatus = createServerFn({ method: "GET" })
 
     const email = ((data as any)?.email ?? "") as string;
     const verified = !!(data as any)?.email_verified && !!email;
+
+    // Google দিয়ে ঢোকা ইউজারের Gmail নিজে থেকেই জানা — সে নিজে ইমেইল লিখবে না
+    let oauthEmail: string | null = null;
+    try {
+      const { data: u } = await supabaseAdmin.auth.admin.getUserById(context.userId);
+      const ids: any[] = (u as any)?.user?.identities ?? [];
+      const g = ids.find((i) => i.provider === "google");
+      if (g) oauthEmail = String(g.identity_data?.email ?? (u as any)?.user?.email ?? "").toLowerCase() || null;
+    } catch {
+      /* ignore */
+    }
+
     return {
       verified,
+      // Google একাউন্টে ভেরিফিকেশন বাধ্যতামূলক, বাকিরা চাইলে পরেও করতে পারবে
+      required: !!oauthEmail,
+      oauthEmail,
       email: email ? maskEmail(email) : null,
       pendingEmail: verified ? null : email || null,
     };
