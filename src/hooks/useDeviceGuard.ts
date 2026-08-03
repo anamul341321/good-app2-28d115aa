@@ -46,6 +46,9 @@ export function useDeviceGuard(onRevoked?: () => void) {
 
     const ping = async () => {
       try {
+        // সেশন না থাকলে সার্ভার ফাংশন কল করব না (Unauthorized এড়াতে)
+        const { data: sess } = await supabase.auth.getSession();
+        if (!sess?.session?.access_token) return;
         const res: any = await touch({
           data: { deviceId, label: deviceLabel(), userAgent: navigator.userAgent },
         });
@@ -59,6 +62,7 @@ export function useDeviceGuard(onRevoked?: () => void) {
         /* নেটওয়ার্ক সমস্যা — কিছু করব না */
       }
     };
+
 
     ping();
     const timer = setInterval(ping, 60_000);
