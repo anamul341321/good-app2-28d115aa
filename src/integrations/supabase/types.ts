@@ -286,6 +286,39 @@ export type Database = {
         }
         Relationships: []
       }
+      email_verify_otps: {
+        Row: {
+          attempts: number
+          code: string
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          used_at: string | null
+          user_id: string
+        }
+        Insert: {
+          attempts?: number
+          code: string
+          created_at?: string
+          email: string
+          expires_at: string
+          id?: string
+          used_at?: string | null
+          user_id: string
+        }
+        Update: {
+          attempts?: number
+          code?: string
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          used_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       mining_claims: {
         Row: {
           amount: number
@@ -410,6 +443,8 @@ export type Database = {
           display_name: string | null
           district: string | null
           email: string | null
+          email_verified: boolean
+          email_verified_at: string | null
           father_name: string | null
           full_address: string | null
           id: string
@@ -445,6 +480,8 @@ export type Database = {
           display_name?: string | null
           district?: string | null
           email?: string | null
+          email_verified?: boolean
+          email_verified_at?: string | null
           father_name?: string | null
           full_address?: string | null
           id: string
@@ -480,6 +517,8 @@ export type Database = {
           display_name?: string | null
           district?: string | null
           email?: string | null
+          email_verified?: boolean
+          email_verified_at?: string | null
           father_name?: string | null
           full_address?: string | null
           id?: string
