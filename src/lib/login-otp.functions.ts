@@ -194,34 +194,42 @@ export const completeLoginOtp = createServerFn({ method: "POST" })
     const acc = await resolveAccount(data.identifier);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const { data: otp } = await supabaseAdmin
-      .from("email_verify_otps")
-      .select("id, code, attempts, expires_at")
-      .eq("user_id", acc.id)
-      .is("used_at", null)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    // কোড যাচাই আর পাসওয়ার্ড/সেশন — একসাথে (দ্রুত লগইন)
+    const [otpRes, sessionRes] = await Promise.all([
+      supabaseAdmin
+        .from("email_verify_otps")
+        .select("id, code, attempts, expires_at")
+        .eq("user_id", acc.id)
+        .is("used_at", null)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      verifyPassword(acc.authEmail, data.password).catch((e: any) => e as Error),
+    ]);
 
+    const otp = otpRes?.data as any;
     if (!otp) throw new Error("কোড পাওয়া যায়নি — আবার কোড পাঠান");
-    if (new Date((otp as any).expires_at).getTime() < Date.now()) {
+    if (new Date(otp.expires_at).getTime() < Date.now()) {
       throw new Error("কোডের সময় শেষ — নতুন কোড নিন");
     }
-    if (((otp as any).attempts ?? 0) >= 5) throw new Error("অনেকবার ভুল হয়েছে — নতুন কোড নিন");
-    if ((otp as any).code !== code) {
+    if ((otp.attempts ?? 0) >= 5) throw new Error("অনেকবার ভুল হয়েছে — নতুন কোড নিন");
+    if (otp.code !== code) {
       await supabaseAdmin
         .from("email_verify_otps")
-        .update({ attempts: ((otp as any).attempts ?? 0) + 1 })
-        .eq("id", (otp as any).id);
+        .update({ attempts: (otp.attempts ?? 0) + 1 })
+        .eq("id", otp.id);
       throw new Error("কোড মেলেনি");
     }
 
-    const session = await verifyPassword(acc.authEmail, data.password);
+    if (sessionRes instanceof Error) throw sessionRes;
+    const session = sessionRes;
 
-    await supabaseAdmin
+    // কোড ব্যবহৃত মার্ক — এর জন্য ইউজারকে অপেক্ষা করাতে হবে না
+    void supabaseAdmin
       .from("email_verify_otps")
       .update({ used_at: new Date().toISOString() })
-      .eq("id", (otp as any).id);
+      .eq("id", otp.id);
 
     return { ok: true as const, session };
+
   });
