@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getAccountSettings, changePhoneNumber } from "@/lib/account.functions";
 import { listMyDevices, revokeDevice, revokeOtherDevices } from "@/lib/sessions.functions";
 import { requestEmailVerifyOtp, confirmEmailVerifyOtp } from "@/lib/email-verify.functions";
+import { requestPasswordChangeOtp, changePasswordWithOtp } from "@/lib/password-change.functions";
 import { getDeviceId } from "@/hooks/useDeviceGuard";
 
 export const Route = createFileRoute("/_authenticated/settings")({
