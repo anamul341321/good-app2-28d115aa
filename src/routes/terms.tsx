@@ -1,0 +1,146 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { FileText, ShieldCheck, Coins, UserCheck, Wallet, Gift, AlertTriangle, Scale, Mail, ArrowLeft } from "lucide-react";
+
+export const Route = createFileRoute("/terms")({
+  head: () => ({
+    meta: [
+      { title: "নিয়ম ও শর্তাবলি | Good-App" },
+      { name: "description", content: "Good-App ব্যবহারের নিয়ম, ফেস ভেরিফিকেশন, বোনাস, উইথড্র, রেফারেল ও একাউন্ট নিরাপত্তার সব শর্তাবলি এক জায়গায়।" },
+      { property: "og:title", content: "নিয়ম ও শর্তাবলি | Good-App" },
+      { property: "og:description", content: "Good-App-এর ব্যবহারবিধি, উইথড্র নিয়ম ও গোপনীয়তা নীতি বিস্তারিত পড়ুন।" },
+      { property: "og:type", content: "article" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
+  component: TermsPage,
+});
+
+const SECTIONS: { icon: React.ElementType; title: string; points: string[] }[] = [
+  {
+    icon: UserCheck,
+    title: "১. একাউন্ট ও পরিচয়",
+    points: [
+      "একটি মোবাইল নম্বর ও একটি Gmail দিয়ে শুধুমাত্র একটি একাউন্ট খোলা যাবে।",
+      "নিজের আসল নাম ও নিজের নম্বর ব্যবহার করতে হবে; ভুল বা অন্যের তথ্য দিলে একাউন্ট বাতিল হবে।",
+      "একই টেলিগ্রাম দিয়ে একাধিক একাউন্টের KYC করা যাবে না — এক টেলিগ্রাম = এক UID।",
+      "একাউন্টের পাসওয়ার্ড ও কোড (OTP) কাউকে শেয়ার করা যাবে না; শেয়ার করলে দায় ব্যবহারকারীর।",
+    ],
+  },
+  {
+    icon: ShieldCheck,
+    title: "২. ফেস ভেরিফিকেশন",
+    points: [
+      "ব্যবহারকারী প্রকৃত মানুষ কি না — শুধু সেটি নিশ্চিত করতেই ফেস ভেরিফিকেশন নেওয়া হয়।",
+      "NID, OTP, ব্যাংক PIN বা পাসওয়ার্ড কখনোই চাওয়া হয় না। ভেরিফিকেশন সম্পূর্ণ ঐচ্ছিক।",
+      "অন্যের ছবি, ভিডিও বা ফেক ফেস ব্যবহার করলে একাউন্ট স্থায়ীভাবে বন্ধ ও পেমেন্ট বাতিল হবে।",
+      "Good-App whitelist বাতিল হলেই রি-ভেরিফাই চাওয়া হবে; whitelist ঠিক থাকলে কিছু করতে হবে না।",
+    ],
+  },
+  {
+    icon: Coins,
+    title: "৩. মাইনিং ও আয়",
+    points: [
+      "১০টি স্লট সম্পূর্ণ ভেরিফাই হলেই মাসিক হারে লাইভ মাইনিং শুরু হয়।",
+      "মাইনিং ব্যালান্স প্রতি সেকেন্ডে হিসাব হয়; স্লট বাতিল হলে মাইনিং বন্ধ হতে পারে।",
+      "ভুলবশত অতিরিক্ত পেমেন্ট গেলে সেই পরিমাণ একাউন্টে ঋণ (warning) হিসেবে যোগ হবে এবং তা সমন্বয় করতে হবে।",
+    ],
+  },
+  {
+    icon: Gift,
+    title: "৪. বোনাস ও রেফারেল",
+    points: [
+      "প্রথম ১০টি স্লট first verify সম্পূর্ণ করলে ১০০৳ এবং ১০টি স্লট re-verify করলে ২০০৳ — সর্বমোট ৩০০৳ বোনাস।",
+      "বোনাস শুধু প্রথম ১০টি স্লটের জন্য একবারই প্রযোজ্য; পরে নতুন স্লট করলে আর বোনাস নেই।",
+      "রেফার লিংক আনলক হবে ৫টি স্লট first verify সম্পূর্ণ হলে।",
+      "রেফারকৃত ব্যবহারকারীর মাইনিং চালু থাকলে রেফারার মাসিক ১০% কমিশন পাবেন।",
+      "নিজের একাধিক একাউন্ট দিয়ে রেফার (self-referral) সম্পূর্ণ নিষিদ্ধ — ধরা পড়লে সব বোনাস বাতিল।",
+    ],
+  },
+  {
+    icon: Wallet,
+    title: "৫. উইথড্র নিয়ম",
+    points: [
+      "বিকাশ / নগদ / USDT-তে উইথড্র নেওয়া যাবে; ন্যূনতম উইথড্র সীমা অ্যাপে দেখানো হয়।",
+      "প্রতি মাসের নির্দিষ্ট উইথড্র উইন্ডোতে অনুরোধ করতে হবে; শুক্রবার দুপুর ১:০০টা থেকে শনিবার সকাল ১০:০০টা পর্যন্ত উইথড্র বন্ধ থাকে।",
+      "উইথড্রের আগে KYC (টেলিগ্রাম লিংক) সম্পূর্ণ থাকা বাধ্যতামূলক।",
+      "ভুল ওয়ালেট নম্বর দিলে টাকা ফেরত পাওয়ার নিশ্চয়তা নেই; নম্বর পরিবর্তন করতে সাপোর্টে জানাতে হবে।",
+      "সাধারণত পেমেন্ট ৫–১০ মিনিটের মধ্যে দেওয়া হয়, তবে সর্বোচ্চ ২৪ ঘণ্টা সময় লাগতে পারে।",
+    ],
+  },
+  {
+    icon: AlertTriangle,
+    title: "৬. নিষিদ্ধ কাজ",
+    points: [
+      "একাধিক একাউন্ট, ফেক ফেস, বট বা অটোমেশন ব্যবহার করা যাবে না।",
+      "টেলিগ্রাম গ্রুপে অশালীন বা স্প্যাম মেসেজ দিলে ৩০ মিনিটের জন্য ফ্রিজ করা হবে; বারবার করলে ব্যান।",
+      "অন্যের UID দিয়ে স্লট রিসেট বা তথ্য চাওয়া নিষিদ্ধ — স্লট রিসেটে মালিকের অনুমোদন লাগবে।",
+    ],
+  },
+  {
+    icon: ShieldCheck,
+    title: "৭. নিরাপত্তা ও গোপনীয়তা",
+    points: [
+      "লগইনের জন্য পাসওয়ার্ড ব্যবহার হয়; ইমেইল ভেরিফিকেশন ও পাসওয়ার্ড রিসেটে শুধু ৬ ডিজিটের কোড যায় — কোনো লিংক পাঠানো হয় না।",
+      "নিজে লগআউট না করলে অ্যাপ আপনাকে লগআউট করবে না; সেটিংস থেকে অন্য ফোনের সেশন লগআউট করা যায়।",
+      "আপনার তথ্য কোনো তৃতীয় পক্ষের কাছে বিক্রি করা হয় না।",
+    ],
+  },
+  {
+    icon: Scale,
+    title: "৮. সাধারণ শর্ত",
+    points: [
+      "যেকোনো বিতর্কিত বিষয়ে অ্যাডমিনের সিদ্ধান্তই চূড়ান্ত।",
+      "নিয়ম ও হার সময়ে সময়ে পরিবর্তন হতে পারে; পরিবর্তন অ্যাপে জানানো হবে।",
+      "অ্যাপ ব্যবহার করা মানেই আপনি এই সব শর্তে সম্মত আছেন।",
+    ],
+  },
+];
+
+function TermsPage() {
+  return (
+    <main className="min-h-screen px-4 py-6">
+      <div className="max-w-md mx-auto space-y-4">
+        <Link to="/home" className="inline-flex items-center gap-1 text-[11px] font-black text-muted-foreground btn-press">
+          <ArrowLeft className="w-3.5 h-3.5" /> ফিরে যান
+        </Link>
+
+        <header className="premium-panel rounded-2xl p-5 text-center">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl gradient-navy mb-3">
+            <FileText className="w-7 h-7 text-gold" />
+          </div>
+          <h1 className="text-xl font-black text-navy">নিয়ম ও শর্তাবলি</h1>
+          <p className="text-[11px] text-muted-foreground mt-1">
+            Good-App ব্যবহারের আগে নিচের নিয়মগুলো ভালোভাবে পড়ে নিন।
+          </p>
+          <p className="text-[10px] text-muted-foreground mt-2">সর্বশেষ হালনাগাদ: আগস্ট ২০২৬</p>
+        </header>
+
+        {SECTIONS.map((s) => (
+          <section key={s.title} className="premium-panel rounded-2xl p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="w-8 h-8 rounded-xl gradient-navy flex items-center justify-center">
+                <s.icon className="w-4 h-4 text-gold" />
+              </span>
+              <h2 className="text-sm font-black text-navy">{s.title}</h2>
+            </div>
+            <ul className="space-y-2">
+              {s.points.map((p) => (
+                <li key={p} className="flex gap-2 text-[12px] leading-5 text-navy/80">
+                  <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-cyan shrink-0" />
+                  <span>{p}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))}
+
+        <section className="premium-panel rounded-2xl p-4 flex items-start gap-3">
+          <Mail className="w-4 h-4 text-cyan mt-0.5" />
+          <p className="text-[11px] text-muted-foreground">
+            কোনো প্রশ্ন থাকলে আমাদের টেলিগ্রাম সাপোর্টে মেসেজ দিন — ২৪/৭ সহায়তা পাবেন।
+          </p>
+        </section>
+      </div>
+    </main>
+  );
+}
