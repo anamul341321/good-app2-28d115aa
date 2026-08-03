@@ -246,7 +246,7 @@ export function ProfileCompleteGate() {
         />
         <button
           type="submit"
-          disabled={busy || name.trim().length < 2 || password.length < 6}
+          disabled={busy || name.trim().length < 2 || password.length < 6 || !/^01\d{9}$/.test(phone)}
           className="w-full rounded-2xl py-3 font-black text-[14px] bg-white text-emerald-700 btn-press disabled:opacity-60 flex items-center justify-center gap-2"
         >
           {busy && <Loader2 className="w-4 h-4 animate-spin" />}
