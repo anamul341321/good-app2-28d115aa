@@ -112,15 +112,22 @@ export const completeGoogleProfile = createServerFn({ method: "POST" })
       .eq("id", context.userId)
       .maybeSingle();
 
+    // Google-এর Gmail ইতোমধ্যে যাচাই করা — profile-এ verified হিসেবে সেভ করা হয়
+    const g = await getGoogleIdentity(context.userId);
+
     const { error } = await supabaseAdmin
       .from("profiles")
       .update({
         display_name: data.name.trim(),
         ...(phone ? { phone_number: phone } : {}),
+        ...(g.googleEmail
+          ? { email: g.googleEmail, email_verified: true, email_verified_at: new Date().toISOString() }
+          : {}),
         ...(referredBy && !(current as any)?.referred_by ? { referred_by: referredBy } : {}),
       } as any)
       .eq("id", context.userId);
     if (error) throw new Error("সেভ করা যায়নি — আবার চেষ্টা করুন");
+
 
     // পাসওয়ার্ড সেট — পরে নম্বর/Gmail + পাসওয়ার্ড দিয়েও লগইন করা যাবে
     const { error: passErr } = await supabaseAdmin.auth.admin.updateUserById(context.userId, {
