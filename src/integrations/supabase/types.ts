@@ -1056,6 +1056,36 @@ export type Database = {
         }
         Relationships: []
       }
+      tg_reply_cache: {
+        Row: {
+          created_at: string
+          hits: number
+          id: string
+          question: string
+          question_key: string
+          reply: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          hits?: number
+          id?: string
+          question: string
+          question_key: string
+          reply: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          hits?: number
+          id?: string
+          question?: string
+          question_key?: string
+          reply?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       tg_sessions: {
         Row: {
           app_user_id: string | null
