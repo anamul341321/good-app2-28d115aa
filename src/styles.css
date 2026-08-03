@@ -1074,3 +1074,39 @@
   0%   { transform: translateX(-100%); }
   100% { transform: translateX(100%); }
 }
+
+/* ==========================================================
+   Performance: মোবাইলে scroll/typing smooth রাখার জন্য ভারী
+   (background-position / box-shadow) animation বন্ধ — শুধু
+   transform/opacity ভিত্তিক animation চালু থাকবে।
+   ========================================================== */
+@media (hover: none), (max-width: 900px), (prefers-reduced-motion: reduce) {
+  .gradient-aurora,
+  .ref-hero,
+  .ref-gradient-text {
+    animation: none !important;
+    background-size: 100% 100% !important;
+  }
+  .shimmer-border::before,
+  .shine::after,
+  .video-tutorial-shine,
+  .mc-cta::after {
+    animation: none !important;
+  }
+  .pulse-glow,
+  .bounce-soft,
+  .spin-slow,
+  .float-anim,
+  .ref-sparkle,
+  .ref-coin {
+    animation: none !important;
+  }
+}
+
+/* টাচ ডিভাইসে hover transform বন্ধ — tap latency কমে */
+@media (hover: none) {
+  .btn-press:hover { transform: none; filter: none; }
+}
+
+html { -webkit-tap-highlight-color: transparent; }
+input, textarea, select { touch-action: manipulation; }

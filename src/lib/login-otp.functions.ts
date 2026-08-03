@@ -70,11 +70,14 @@ async function resolveAccount(identifier: string): Promise<Account> {
   if (!prof) throw new Error("এই নম্বর/Gmail-এ কোনো একাউন্ট পাওয়া যায়নি");
 
   let authEmail = prof.phone_number ? phoneToEmail(prof.phone_number) : "";
-  try {
-    const { data: u } = await supabaseAdmin.auth.admin.getUserById(prof.id);
-    if (u?.user?.email) authEmail = u.user.email;
-  } catch {
-    /* ignore */
+  if (!authEmail) {
+    // নম্বর সেভ নেই — তখনই শুধু auth থেকে ইমেইল আনি (একটা extra roundtrip বাঁচে)
+    try {
+      const { data: u } = await supabaseAdmin.auth.admin.getUserById(prof.id);
+      if (u?.user?.email) authEmail = u.user.email;
+    } catch {
+      /* ignore */
+    }
   }
   if (!authEmail) throw new Error("এই একাউন্টে লগইন তথ্য পাওয়া যায়নি — অ্যাডমিনের সাথে যোগাযোগ করুন");
 
@@ -115,22 +118,29 @@ export const startLoginOtp = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => LoginInput.parse(input))
   .handler(async ({ data }) => {
     const acc = await resolveAccount(data.identifier);
-    const session = await verifyPassword(acc.authEmail, data.password);
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // পাসওয়ার্ড চেক আর শেষ কোডের সময় — একসাথে (দ্রুত)
+    const [session, recentRes] = await Promise.all([
+      verifyPassword(acc.authEmail, data.password),
+      acc.id
+        ? supabaseAdmin
+            .from("email_verify_otps")
+            .select("created_at")
+            .eq("user_id", acc.id)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle()
+        : Promise.resolve({ data: null } as any),
+    ]);
 
     // Gmail লিংক করা নেই → সরাসরি ঢুকবে, ভেতরে গেট Gmail চাইবে
     if (!acc.id || !acc.contactEmail || !acc.emailVerified) {
       return { ok: true as const, needOtp: false as const, session };
     }
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
-    const { data: recent } = await supabaseAdmin
-      .from("email_verify_otps")
-      .select("created_at")
-      .eq("user_id", acc.id)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    const recent = recentRes?.data as { created_at?: string } | null;
     if (recent?.created_at && Date.now() - new Date(recent.created_at).getTime() < 60_000) {
       return {
         ok: true as const,
@@ -141,7 +151,7 @@ export const startLoginOtp = createServerFn({ method: "POST" })
     }
 
     const code = String(Math.floor(100000 + Math.random() * 900000));
-    await supabaseAdmin.from("email_verify_otps").insert({
+    const insertPromise = supabaseAdmin.from("email_verify_otps").insert({
       user_id: acc.id,
       email: acc.contactEmail,
       code,
@@ -150,15 +160,20 @@ export const startLoginOtp = createServerFn({ method: "POST" })
 
     try {
       const { sendSystemEmail } = await import("@/lib/email-otp.server");
-      await sendSystemEmail({
-        templateName: "email-verify-otp",
-        to: acc.contactEmail,
-        templateData: { code, name: acc.displayName ?? undefined },
-      });
+      // কোড সেভ ও মেইল পাঠানো একসাথে — অপেক্ষা কম
+      await Promise.all([
+        insertPromise,
+        sendSystemEmail({
+          templateName: "email-verify-otp",
+          to: acc.contactEmail,
+          templateData: { code, name: acc.displayName ?? undefined },
+        }),
+      ]);
     } catch (err) {
       console.error("login otp send failed", err);
       throw new Error("কোড পাঠানো যায়নি, একটু পরে আবার চেষ্টা করুন");
     }
+
 
     return {
       ok: true as const,
@@ -179,34 +194,41 @@ export const completeLoginOtp = createServerFn({ method: "POST" })
     const acc = await resolveAccount(data.identifier);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const { data: otp } = await supabaseAdmin
-      .from("email_verify_otps")
-      .select("id, code, attempts, expires_at")
-      .eq("user_id", acc.id)
-      .is("used_at", null)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    // কোড যাচাই আর পাসওয়ার্ড/সেশন — একসাথে (দ্রুত লগইন)
+    const [otpRes, sessionRes] = await Promise.all([
+      supabaseAdmin
+        .from("email_verify_otps")
+        .select("id, code, attempts, expires_at")
+        .eq("user_id", acc.id)
+        .is("used_at", null)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      verifyPassword(acc.authEmail, data.password).catch((e: any) => e as Error),
+    ]);
 
+    const otp = otpRes?.data as any;
     if (!otp) throw new Error("কোড পাওয়া যায়নি — আবার কোড পাঠান");
-    if (new Date((otp as any).expires_at).getTime() < Date.now()) {
+    if (new Date(otp.expires_at).getTime() < Date.now()) {
       throw new Error("কোডের সময় শেষ — নতুন কোড নিন");
     }
-    if (((otp as any).attempts ?? 0) >= 5) throw new Error("অনেকবার ভুল হয়েছে — নতুন কোড নিন");
-    if ((otp as any).code !== code) {
+    if ((otp.attempts ?? 0) >= 5) throw new Error("অনেকবার ভুল হয়েছে — নতুন কোড নিন");
+    if (otp.code !== code) {
       await supabaseAdmin
         .from("email_verify_otps")
-        .update({ attempts: ((otp as any).attempts ?? 0) + 1 })
-        .eq("id", (otp as any).id);
+        .update({ attempts: (otp.attempts ?? 0) + 1 })
+        .eq("id", otp.id);
       throw new Error("কোড মেলেনি");
     }
 
-    const session = await verifyPassword(acc.authEmail, data.password);
+    if (sessionRes instanceof Error) throw sessionRes;
+    const session = sessionRes;
 
     await supabaseAdmin
       .from("email_verify_otps")
       .update({ used_at: new Date().toISOString() })
-      .eq("id", (otp as any).id);
+      .eq("id", otp.id);
 
     return { ok: true as const, session };
+
   });
