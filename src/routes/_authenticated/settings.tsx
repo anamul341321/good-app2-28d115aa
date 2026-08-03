@@ -66,10 +66,16 @@ function SettingsPage() {
     refetchInterval: 60_000,
   });
 
-  // password
+  // password (Gmail কোড দিয়ে নিশ্চিত করা হয়)
   const [curPw, setCurPw] = useState("");
   const [newPw, setNewPw] = useState("");
   const [pwBusy, setPwBusy] = useState(false);
+  const [pwStep, setPwStep] = useState<"form" | "code">("form");
+  const [pwCode, setPwCode] = useState("");
+  const [pwDest, setPwDest] = useState<string | null>(null);
+  const sendPwOtp = useServerFn(requestPasswordChangeOtp);
+  const confirmPwOtp = useServerFn(changePasswordWithOtp);
+
 
   // email change
   const [newEmail, setNewEmail] = useState("");
