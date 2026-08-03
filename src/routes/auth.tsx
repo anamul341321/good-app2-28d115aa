@@ -204,7 +204,13 @@ export function AuthPage() {
   async function doLoginStart(identifier: string) {
     setLoading(true);
     try {
-      const res: any = await startOtp({ data: { identifier, password } });
+      const timeout = new Promise<never>((_, reject) =>
+        window.setTimeout(() => reject(new Error("লগইন করতে বেশি সময় লাগছে — আবার চেষ্টা করুন")), 20_000),
+      );
+      const res: any = await Promise.race([
+        startOtp({ data: { identifier, password } }),
+        timeout,
+      ]);
       if (!res.needOtp && res.session) {
         await applySession(res.session);
         toast.success("স্বাগতম!");
