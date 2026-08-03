@@ -23,8 +23,12 @@ export function ForgotPasswordDialog({
   async function handleSend() {
     setLoading(true);
     try {
-      await sendOtp({ data: { phone } });
-      toast.success("আপনার Telegram-এ ৬ ডিজিটের কোড পাঠানো হয়েছে");
+      const res: any = await sendOtp({ data: { phone } });
+      toast.success(
+        res?.channel === "email"
+          ? `${res.destination} — এই ইমেইলে ৬ ডিজিটের কোড পাঠানো হয়েছে`
+          : "আপনার Telegram-এ ৬ ডিজিটের কোড পাঠানো হয়েছে",
+      );
       setStep("code");
     } catch (e: any) {
       toast.error(e?.message ?? "কোড পাঠানো যায়নি");
@@ -32,6 +36,7 @@ export function ForgotPasswordDialog({
       setLoading(false);
     }
   }
+
 
   async function handleReset() {
     setLoading(true);
@@ -63,39 +68,40 @@ export function ForgotPasswordDialog({
           </div>
           <h2 className="text-lg font-black text-navy">পাসওয়ার্ড ভুলে গেছেন?</h2>
           <p className="text-[11px] text-muted-foreground mt-1">
-            আপনার লিংক করা Telegram-এ কোড পাঠানো হবে, কোড দিয়েই নতুন পাসওয়ার্ড সেট করুন।
+            আপনার মোবাইল নম্বর বা ইমেইল দিন — কোড আপনার Gmail/ইমেইলে যাবে, কোড দিয়েই নতুন পাসওয়ার্ড সেট করুন।
           </p>
         </div>
 
         {step === "phone" ? (
           <div className="space-y-3">
             <div>
-              <label className="text-[11px] font-black text-cyan uppercase tracking-wider">মোবাইল নম্বর</label>
+              <label className="text-[11px] font-black text-cyan uppercase tracking-wider">
+                মোবাইল নম্বর বা ইমেইল
+              </label>
               <input
-                inputMode="numeric"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 11))}
-                placeholder="০১XXXXXXXXX"
-                maxLength={11}
-                className="w-full mt-1 px-4 py-3 bg-white border-2 border-border rounded-xl text-sm outline-none focus:border-cyan mono-num text-navy"
+                onChange={(e) => setPhone(e.target.value.trim())}
+                placeholder="০১XXXXXXXXX অথবা you@gmail.com"
+                className="w-full mt-1 px-4 py-3 bg-white border-2 border-border rounded-xl text-sm outline-none focus:border-cyan text-navy"
               />
             </div>
             <button
               onClick={handleSend}
-              disabled={loading || phone.length !== 11}
+              disabled={loading || phone.trim().length < 5}
               className="w-full py-3.5 rounded-xl gradient-cta font-black text-sm flex items-center justify-center gap-2 disabled:opacity-60 btn-press"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
               কোড পাঠান
             </button>
             <p className="text-[10px] text-center text-muted-foreground">
-              Telegram লিংক না থাকলে গ্রুপে অ্যাডমিনের সাথে যোগাযোগ করুন।
+              ইমেইল ইনবক্সে না পেলে Spam/Promotions ফোল্ডার দেখুন।
             </p>
           </div>
         ) : (
+
           <div className="space-y-3">
             <div>
-              <label className="text-[11px] font-black text-violet uppercase tracking-wider">Telegram কোড</label>
+              <label className="text-[11px] font-black text-violet uppercase tracking-wider">ভেরিফিকেশন কোড</label>
               <input
                 inputMode="numeric"
                 value={code}
