@@ -256,14 +256,27 @@ export function builtinFaqKnowledge(): string {
 export function matchBuiltinFaqText(text: string): BuiltinFaq | null {
   const hay = text.toLowerCase();
   if (!hay.trim()) return null;
+  const matches = (k: string) => {
+    const key = k.toLowerCase().trim();
+    if (key.length < 3) return false;
+    // 3-letter keys (kyc, apk…) only count as a whole word, never inside another word.
+    if (key.length === 3 && /^[a-z]+$/.test(key)) {
+      return new RegExp(`(^|[^a-z])${key}([^a-z]|$)`, "i").test(hay);
+    }
+    return key.length > 3 && hay.includes(key);
+  };
   for (const f of BUILTIN_FAQS) {
-    const hit = [...f.keywords, ...f.screenshot].some(
-      (k) => k.length > 3 && hay.includes(k.toLowerCase()),
-    );
-    if (hit) return f;
+    if ([...f.keywords, ...f.screenshot].some(matches)) return f;
   }
   return null;
 }
+
+/** Find a built-in answer by its topic label (safer than an array index). */
+export function builtinFaqByTopic(fragment: string): BuiltinFaq | null {
+  const q = fragment.toLowerCase();
+  return BUILTIN_FAQS.find((f) => f.topic.toLowerCase().includes(q)) ?? null;
+}
+
 
 export function builtinFaqReply(name: string, f: BuiltinFaq): string {
   const openers = [
