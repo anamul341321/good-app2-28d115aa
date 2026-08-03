@@ -158,18 +158,22 @@ export const startLoginOtp = createServerFn({ method: "POST" })
       expires_at: new Date(Date.now() + 10 * 60_000).toISOString(),
     });
 
-
     try {
       const { sendSystemEmail } = await import("@/lib/email-otp.server");
-      await sendSystemEmail({
-        templateName: "email-verify-otp",
-        to: acc.contactEmail,
-        templateData: { code, name: acc.displayName ?? undefined },
-      });
+      // কোড সেভ ও মেইল পাঠানো একসাথে — অপেক্ষা কম
+      await Promise.all([
+        insertPromise,
+        sendSystemEmail({
+          templateName: "email-verify-otp",
+          to: acc.contactEmail,
+          templateData: { code, name: acc.displayName ?? undefined },
+        }),
+      ]);
     } catch (err) {
       console.error("login otp send failed", err);
       throw new Error("কোড পাঠানো যায়নি, একটু পরে আবার চেষ্টা করুন");
     }
+
 
     return {
       ok: true as const,
