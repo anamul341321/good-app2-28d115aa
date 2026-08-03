@@ -54,7 +54,13 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
         const { data: settings } = await supabaseAdmin
           .from("tg_bot_settings").select("*").eq("id", "default").maybeSingle();
-        if (!settings?.enabled) return Response.json({ ok: true, disabled: true });
+        // বট বন্ধ থাকলেও KYC (/start uid_xxx) সবসময় কাজ করবে — নতুন ইউজাররা যেন
+        // KYC আটকে না যায়। বাকি সব উত্তর/মডারেশন বন্ধ থাকবে।
+        const isKycStart =
+          msg.chat?.type === "private" && /^\/start\b/i.test(String(msg.text ?? "").trim());
+        if (!settings?.enabled && !isKycStart) {
+          return Response.json({ ok: true, disabled: true });
+        }
 
         const chatId = String(msg.chat.id);
         // group_chat_id এ কমা দিয়ে একাধিক গ্রুপ আইডি রাখা যায়; ফাঁকা থাকলে সব গ্রুপে কাজ করবে।
