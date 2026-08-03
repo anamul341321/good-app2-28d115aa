@@ -27,6 +27,20 @@ export function EmailVerifyGate() {
   const [dest, setDest] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [visible, setVisible] = useState(false);
+  // কোডের মেয়াদ (১০ মিনিট) ও আবার কোড চাওয়ার (৬০ সেকেন্ড) কাউন্টডাউন
+  const [expiresIn, setExpiresIn] = useState(0);
+  const [resendIn, setResendIn] = useState(0);
+
+  useEffect(() => {
+    if (expiresIn <= 0 && resendIn <= 0) return;
+    const id = setInterval(() => {
+      setExpiresIn((v) => (v > 0 ? v - 1 : 0));
+      setResendIn((v) => (v > 0 ? v - 1 : 0));
+    }, 1000);
+    return () => clearInterval(id);
+  }, [expiresIn, resendIn]);
+
+  const fmt = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
   useEffect(() => {
     if (data && !data.verified) {
