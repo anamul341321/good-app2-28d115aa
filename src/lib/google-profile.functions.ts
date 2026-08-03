@@ -1,6 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import {
+  createPublishableClient,
+  getGoogleIdentity,
+  maskEmail,
+  phoneToEmail,
+} from "@/lib/google-profile.server";
 
 /**
  * Google দিয়ে সাইন-আপ/লগইন:
@@ -10,52 +16,11 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
  *    একাউন্টেই লগইন হবে (নতুন কোনো একাউন্ট তৈরি হবে না)।
  */
 
-function phoneToEmail(phone: string) {
-  return `u${phone}@facemine.app`;
-}
-
-function maskEmail(email: string) {
-  const [l, d] = email.split("@");
-  if (!l || !d) return "***";
-  return `${l.slice(0, 2)}***@${d}`;
-}
-
-async function publishableClient() {
-  const { createClient } = await import("@supabase/supabase-js");
-  const key = process.env["SUPABASE_PUBLISHABLE_KEY"]!;
-  return createClient(process.env["SUPABASE_URL"]!, key, {
-    auth: { persistSession: false, autoRefreshToken: false, storage: undefined },
-    global: {
-      fetch: (input: any, init: any) => {
-        const h = new Headers(init?.headers);
-        if (key.startsWith("sb_") && h.get("Authorization") === `Bearer ${key}`) h.delete("Authorization");
-        h.set("apikey", key);
-        return fetch(input, { ...init, headers: h });
-      },
-    },
-  });
-}
-
-/** এই ইউজারটি Google দিয়ে ঢুকেছে কি না + তার Google Gmail */
-async function googleIdentity(userId: string) {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data } = await supabaseAdmin.auth.admin.getUserById(userId);
-  const u: any = data?.user;
-  const ids: any[] = u?.identities ?? [];
-  const google = ids.find((i) => i.provider === "google");
-  return {
-    isGoogle: !!google,
-    googleEmail: String(google?.identity_data?.email ?? u?.email ?? "").toLowerCase(),
-    completed: !!u?.user_metadata?.profile_completed,
-    metaName: String(u?.user_metadata?.full_name ?? u?.user_metadata?.name ?? ""),
-  };
-}
-
 export const getGoogleProfileStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const g = await googleIdentity(context.userId);
+    const g = await getGoogleIdentity(context.userId);
 
     const { data } = await supabaseAdmin
       .from("profiles")
@@ -171,7 +136,7 @@ export const completeGoogleProfile = createServerFn({ method: "POST" })
 export const startGoogleAccountLink = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const g = await googleIdentity(context.userId);
+    const g = await getGoogleIdentity(context.userId);
     if (!g.isGoogle || !g.googleEmail) throw new Error("Google একাউন্ট পাওয়া যায়নি");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -225,7 +190,7 @@ export const completeGoogleAccountLink = createServerFn({ method: "POST" })
     const code = data.code.replace(/\D/g, "").slice(0, 6);
     if (code.length !== 6) throw new Error("৬ ডিজিটের কোড দিন");
 
-    const g = await googleIdentity(context.userId);
+    const g = await getGoogleIdentity(context.userId);
     if (!g.isGoogle || !g.googleEmail) throw new Error("Google একাউন্ট পাওয়া যায়নি");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -273,7 +238,7 @@ export const completeGoogleAccountLink = createServerFn({ method: "POST" })
     const tokenHash = (link as any)?.properties?.hashed_token as string | undefined;
     if (linkErr || !tokenHash) throw new Error("লগইন সেশন তৈরি করা যায়নি — আবার চেষ্টা করুন");
 
-    const pub = await publishableClient();
+    const pub = await createPublishableClient();
     const { data: sess, error: otpErr } = await pub.auth.verifyOtp({
       type: "magiclink",
       token_hash: tokenHash,
@@ -290,11 +255,22 @@ export const completeGoogleAccountLink = createServerFn({ method: "POST" })
       .update({ email_verified: true, email_verified_at: new Date().toISOString() } as any)
       .eq("id", targetId);
 
-    // অতিরিক্ত (Google-এ তৈরি) একাউন্টটি মুছে ফেলা হয় — যাতে ডুপ্লিকেট না থাকে
-    try {
-      await supabaseAdmin.auth.admin.deleteUser(context.userId);
-    } catch (err) {
-      console.error("google duplicate cleanup failed", err);
+    // Google callback-এর সাময়িক account সরিয়ে পুরোনো account-এর auth email-কে
+    // verified Gmail করা হয়। এরপর একই Google বাছলে auth নিজেই পুরোনো account
+    // চিনবে—প্রতিবার আর সাময়িক/duplicate account তৈরি হবে না।
+    const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(context.userId);
+    if (deleteError) {
+      console.error("google duplicate cleanup failed", deleteError);
+      throw new Error("Google login সম্পূর্ণ করা যায়নি — আবার চেষ্টা করুন");
+    }
+
+    const { error: authEmailError } = await supabaseAdmin.auth.admin.updateUserById(targetId, {
+      email: g.googleEmail,
+      email_confirm: true,
+    });
+    if (authEmailError) {
+      console.error("google auth email link failed", authEmailError);
+      throw new Error("Gmail পুরোনো একাউন্টে যুক্ত করা যায়নি — আবার চেষ্টা করুন");
     }
 
     return {
