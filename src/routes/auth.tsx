@@ -141,6 +141,7 @@ export function AuthPage() {
       if (ref) {
         setReferralCode(ref.toUpperCase());
         setMode("signup");
+        try { localStorage.setItem("good-app-ref-code", ref.toUpperCase()); } catch {}
       }
     }
     supabase.auth.getSession().then(({ data }) => {
