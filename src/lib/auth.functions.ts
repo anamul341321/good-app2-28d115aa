@@ -57,13 +57,14 @@ export const registerWithPhone = createServerFn({ method: "POST" })
     }
 
 
-    const { error } = await supabaseAdmin.auth.admin.createUser({
+    const { data: created, error } = await supabaseAdmin.auth.admin.createUser({
       email,
       password: data.password,
       email_confirm: true,
       user_metadata: {
         display_name: data.name,
         phone_number: data.phone,
+        contact_email: gmail,
         ...(refCode ? { referral_code: refCode } : {}),
       },
     });
@@ -73,6 +74,14 @@ export const registerWithPhone = createServerFn({ method: "POST" })
         throw new Error("এই নম্বর দিয়ে ইতোমধ্যে account আছে");
       }
       throw new Error(error.message);
+    }
+
+    // প্রোফাইলে Gmail সেভ (ভেরিফাই হবে অ্যাপে কোড বসিয়ে)
+    if (created?.user?.id) {
+      await supabaseAdmin
+        .from("profiles")
+        .update({ email: gmail, email_verified: false } as any)
+        .eq("id", created.user.id);
     }
 
     return { ok: true, email };
