@@ -206,8 +206,8 @@ export function ProfileCompleteGate() {
         </div>
         <h2 className="text-center text-lg font-black drop-shadow">একাউন্ট সম্পূর্ণ করুন</h2>
         <p className="text-center text-[12.5px] font-bold leading-relaxed">
-          Google দিয়ে ঢুকেছেন 🎉 এখন আপনার নাম ও একটি পাসওয়ার্ড দিন — এরপর Gmail-এ কোড গিয়ে
-          ভেরিফিকেশন শেষ হবে।
+          Google দিয়ে ঢুকেছেন 🎉 এখন আপনার নাম, মোবাইল নম্বর ও একটি পাসওয়ার্ড দিন — এরপর Gmail-এ
+          কোড গিয়ে ভেরিফিকেশন শেষ হবে।
         </p>
         <input
           value={name}
