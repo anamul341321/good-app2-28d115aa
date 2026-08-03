@@ -192,7 +192,7 @@ export function AuthPage() {
     const cleanPhone = phone.replace(/\D/g, "").slice(0, 11);
     setLoading(true);
     try {
-      await register({ data: { name, phone: cleanPhone, password, referralCode: referralCode || null } });
+      await register({ data: { name, phone: cleanPhone, password, gmail: gmail.trim().toLowerCase(), referralCode: referralCode || null } });
       const { error } = await supabase.auth.signInWithPassword({
         email: phoneToEmail(cleanPhone), password,
       });
