@@ -234,7 +234,7 @@ export function ProfileCompleteGate() {
             autoComplete="tel"
             value={phone}
             onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 11))}
-            placeholder="মোবাইল নম্বর (ইচ্ছা করলে দিন)"
+            placeholder="মোবাইল নম্বর (আবশ্যক)"
             className="w-full rounded-2xl pl-9 pr-4 py-3 text-[14px] font-bold text-slate-900 bg-white/95 outline-none mono-num"
           />
         </div>
