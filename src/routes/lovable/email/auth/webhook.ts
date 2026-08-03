@@ -12,12 +12,12 @@ import { EmailChangeEmail } from '@/lib/email-templates/email-change'
 import { ReauthenticationEmail } from '@/lib/email-templates/reauthentication'
 
 const EMAIL_SUBJECTS: Record<string, string> = {
-  signup: 'Confirm your email',
-  invite: "You've been invited",
-  magiclink: 'Your login link',
-  recovery: 'Reset your password',
-  email_change: 'Confirm your new email',
-  reauthentication: 'Your verification code',
+  signup: 'Good-App — আপনার ইমেইল নিশ্চিত করুন',
+  invite: 'Good-App — আপনাকে আমন্ত্রণ জানানো হয়েছে',
+  magiclink: 'Good-App — আপনার লগইন লিংক',
+  recovery: 'Good-App — পাসওয়ার্ড রিসেট করুন',
+  email_change: 'Good-App — নতুন ইমেইল নিশ্চিত করুন',
+  reauthentication: 'Good-App — ভেরিফিকেশন কোড',
 }
 
 // Template mapping
@@ -31,7 +31,7 @@ const EMAIL_TEMPLATES: Record<string, React.ComponentType<any>> = {
 }
 
 // Configuration
-const SITE_NAME = "good-app2"
+const SITE_NAME = "Good-App"
 const SENDER_DOMAIN = "notify.goodapp2.live"
 const ROOT_DOMAIN = "goodapp2.live"
 const FROM_DOMAIN = "notify.goodapp2.live"
