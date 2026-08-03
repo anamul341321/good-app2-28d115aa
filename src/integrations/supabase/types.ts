@@ -836,6 +836,7 @@ export type Database = {
           escalate_enabled: boolean
           group_chat_id: string | null
           id: string
+          kyc_enabled: boolean
           moderation_enabled: boolean
           persona: string
           photo_analysis_enabled: boolean
@@ -868,6 +869,7 @@ export type Database = {
           escalate_enabled?: boolean
           group_chat_id?: string | null
           id?: string
+          kyc_enabled?: boolean
           moderation_enabled?: boolean
           persona?: string
           photo_analysis_enabled?: boolean
@@ -900,6 +902,7 @@ export type Database = {
           escalate_enabled?: boolean
           group_chat_id?: string | null
           id?: string
+          kyc_enabled?: boolean
           moderation_enabled?: boolean
           persona?: string
           photo_analysis_enabled?: boolean
