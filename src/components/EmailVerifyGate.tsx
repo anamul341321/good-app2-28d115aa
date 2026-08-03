@@ -2,12 +2,14 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Mail, Loader2, ShieldCheck, KeyRound } from "lucide-react";
+import { Mail, Loader2, ShieldCheck, KeyRound, AlertTriangle } from "lucide-react";
 import { getEmailVerifyStatus, requestEmailVerifyOtp, confirmEmailVerifyOtp } from "@/lib/email-verify.functions";
 
 /**
- * যাদের একাউন্টে ভেরিফাইড Gmail নেই (আগে শুধু নম্বর দিয়ে খোলা), অ্যাপে ঢুকলেই
- * এই স্ক্রিনটি Gmail ভেরিফিকেশন চাইবে — কোড বসালেই ইমেইল একাউন্টে লিংক হবে।
+ * Gmail ভেরিফিকেশন গেট।
+ *  - Google দিয়ে ঢোকা ইউজার: Gmail আগেই জানা, কোড বসানো বাধ্যতামূলক।
+ *  - নম্বর+পাসওয়ার্ড একাউন্ট: এখনই বা পরে করতে পারবে — না করা পর্যন্ত উপরে
+ *    লাল "Gmail ভেরিফিকেশন প্রয়োজন" বার দেখাবে এবং উইথড্র চালু হবে না।
  */
 export function EmailVerifyGate() {
   const qc = useQueryClient();
@@ -26,11 +28,14 @@ export function EmailVerifyGate() {
   const [code, setCode] = useState("");
   const [dest, setDest] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [visible, setVisible] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [deferred, setDeferred] = useState(false);
   const [emailUnavailable, setEmailUnavailable] = useState(false);
-  // কোডের মেয়াদ (১০ মিনিট) ও আবার কোড চাওয়ার (৬০ সেকেন্ড) কাউন্টডাউন
   const [expiresIn, setExpiresIn] = useState(0);
   const [resendIn, setResendIn] = useState(0);
+
+  const required = !!data?.required;
+  const oauthEmail = data?.oauthEmail ?? null;
 
   useEffect(() => {
     if (expiresIn <= 0 && resendIn <= 0) return;
@@ -44,17 +49,23 @@ export function EmailVerifyGate() {
   const fmt = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
   useEffect(() => {
-    if (data && !data.verified) {
-      setVisible(true);
+    if (!data) return;
+    if (data.verified) {
+      setOpen(false);
+      return;
     }
-    if (data?.verified) setVisible(false);
-  }, [data]);
+    if (oauthEmail && !email) setEmail(oauthEmail);
+    const dismissed =
+      typeof window !== "undefined" && sessionStorage.getItem("gmail-verify-later") === "1";
+    if (data.required || !dismissed) setOpen(true);
+    else setDeferred(true);
+  }, [data, oauthEmail]);
 
-  if (!visible) return null;
+  if (!data || data.verified) return null;
 
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
-    const val = email.trim().toLowerCase();
+    const val = (oauthEmail ?? email).trim().toLowerCase();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) {
       toast.error("সঠিক Gmail ঠিকানা দিন");
       return;
@@ -65,7 +76,7 @@ export function EmailVerifyGate() {
       if (res?.alreadyVerified) {
         toast.success("এই ইমেইল আগেই ভেরিফাইড");
         await qc.invalidateQueries({ queryKey: ["email-verify-status"] });
-        setVisible(false);
+        setOpen(false);
         return;
       }
       setDest(res?.destination ?? val);
@@ -89,12 +100,39 @@ export function EmailVerifyGate() {
       toast.success("Gmail ভেরিফাইড হয়েছে 💙");
       await qc.invalidateQueries({ queryKey: ["email-verify-status"] });
       await qc.invalidateQueries({ queryKey: ["dashboard"] });
-      setVisible(false);
+      setOpen(false);
+      setDeferred(false);
     } catch (err: any) {
       toast.error(err?.message ?? "কোড মেলেনি");
     } finally {
       setBusy(false);
     }
+  }
+
+  function later() {
+    try {
+      sessionStorage.setItem("gmail-verify-later", "1");
+    } catch {}
+    setOpen(false);
+    setDeferred(true);
+  }
+
+  if (!open) {
+    if (!deferred) return null;
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        className="fixed top-[58px] inset-x-0 z-[70] mx-auto max-w-md px-4"
+      >
+        <div className="rounded-2xl px-3 py-2 flex items-center gap-2 text-white font-black text-[12px] shadow-lg animate-pulse"
+          style={{ background: "linear-gradient(90deg,#e11d48,#f43f5e)" }}>
+          <AlertTriangle className="w-4 h-4 shrink-0" />
+          <span className="text-left leading-snug">
+            🔴 Gmail ভেরিফিকেশন প্রয়োজন — উইথড্র চালু করতে এখনই ভেরিফাই করুন
+          </span>
+        </div>
+      </button>
+    );
   }
 
   return (
@@ -107,25 +145,29 @@ export function EmailVerifyGate() {
           <div className="mx-auto w-16 h-16 rounded-full bg-white/20 flex items-center justify-center animate-pulse">
             <Mail className="w-9 h-9" />
           </div>
-          <h2 className="text-center text-lg font-black drop-shadow">
-            📧 Gmail ভেরিফিকেশন বাধ্যতামূলক
-          </h2>
+          <h2 className="text-center text-lg font-black drop-shadow">📧 Gmail ভেরিফিকেশন</h2>
           <p className="text-center text-[12.5px] font-bold leading-relaxed">
-            আপনার একাউন্টের নিরাপত্তার জন্য একটি Gmail লিংক করতে হবে। পরে পাসওয়ার্ড ভুলে
-            গেলে এই Gmail-এ কোড পাঠিয়ে নিজেই পাসওয়ার্ড বদলাতে পারবেন।
+            একাউন্টের নিরাপত্তা ও উইথড্র চালু রাখতে একটি Gmail ভেরিফাই করে রাখুন। পাসওয়ার্ড ভুলে
+            গেলেও এই Gmail-এ কোড পাঠিয়ে নিজেই ঠিক করতে পারবেন।
           </p>
 
           {step === "email" ? (
             <form onSubmit={handleSend} className="space-y-3">
-              <input
-                type="email"
-                inputMode="email"
-                autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="yourname@gmail.com"
-                className="w-full rounded-2xl px-4 py-3 text-[14px] font-bold text-slate-900 bg-white/95 outline-none"
-              />
+              {oauthEmail ? (
+                <p className="text-center text-[13px] font-black bg-white/20 rounded-2xl py-3" translate="no">
+                  {oauthEmail}
+                </p>
+              ) : (
+                <input
+                  type="email"
+                  inputMode="email"
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="yourname@gmail.com"
+                  className="w-full rounded-2xl px-4 py-3 text-[14px] font-bold text-slate-900 bg-white/95 outline-none"
+                />
+              )}
               <button
                 type="submit"
                 disabled={busy}
@@ -168,10 +210,21 @@ export function EmailVerifyGate() {
               >
                 {resendIn > 0
                   ? `আবার কোড পাঠানো যাবে ${fmt(resendIn)} পরে`
-                  : "ইমেইল বদলাতে চাই / আবার কোড পাঠান"}
+                  : oauthEmail
+                    ? "আবার কোড পাঠান"
+                    : "ইমেইল বদলাতে চাই / আবার কোড পাঠান"}
               </button>
-
             </form>
+          )}
+
+          {!required && (
+            <button
+              type="button"
+              onClick={later}
+              className="w-full text-[11.5px] font-black text-white/90 underline"
+            >
+              এখন নয়, পরে করব
+            </button>
           )}
 
           <p className="text-center text-[10.5px] text-white/80 font-bold">
