@@ -85,7 +85,7 @@ function SettingsPage() {
     if (acc?.phone) setNewPhone(acc.phone);
   }, [acc?.phone]);
 
-  async function changePassword() {
+  async function sendPwCode() {
     if (newPw.length < 6) return toast.error("নতুন পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে");
     setPwBusy(true);
     try {
@@ -94,14 +94,26 @@ function SettingsPage() {
       if (!email) throw new Error("সেশন পাওয়া যায়নি — আবার লগইন করুন");
       const { error: signErr } = await supabase.auth.signInWithPassword({ email, password: curPw });
       if (signErr) throw new Error("বর্তমান পাসওয়ার্ড ভুল");
-      const { error } = await supabase.auth.updateUser({ password: newPw });
-      if (error) throw new Error("পাসওয়ার্ড পরিবর্তন হয়নি");
-      toast.success("পাসওয়ার্ড পরিবর্তন হয়েছে");
-      setCurPw(""); setNewPw("");
+      const res: any = await sendPwOtp();
+      setPwDest(res?.destination ?? null);
+      setPwStep("code");
+      toast.success("Gmail-এ ৬ ডিজিটের কোড পাঠানো হয়েছে");
     } catch (e: any) {
       toast.error(e?.message ?? "সমস্যা হয়েছে");
     } finally { setPwBusy(false); }
   }
+
+  async function changePassword() {
+    setPwBusy(true);
+    try {
+      await confirmPwOtp({ data: { code: pwCode, newPassword: newPw } });
+      toast.success("পাসওয়ার্ড পরিবর্তন হয়েছে");
+      setCurPw(""); setNewPw(""); setPwCode(""); setPwStep("form");
+    } catch (e: any) {
+      toast.error(e?.message ?? "সমস্যা হয়েছে");
+    } finally { setPwBusy(false); }
+  }
+
 
   async function emailSendCode() {
     setEmailBusy(true);
