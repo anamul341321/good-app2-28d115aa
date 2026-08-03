@@ -5,8 +5,6 @@ import { toast } from "sonner";
 import { Mail, Loader2, ShieldCheck, KeyRound } from "lucide-react";
 import { getEmailVerifyStatus, requestEmailVerifyOtp, confirmEmailVerifyOtp } from "@/lib/email-verify.functions";
 
-const TEMP_EMAIL_BYPASS_KEY = "ga_email_setup_bypass";
-
 /**
  * যাদের একাউন্টে ভেরিফাইড Gmail নেই (আগে শুধু নম্বর দিয়ে খোলা), অ্যাপে ঢুকলেই
  * এই স্ক্রিনটি Gmail ভেরিফিকেশন চাইবে — কোড বসালেই ইমেইল একাউন্টে লিংক হবে।
@@ -46,7 +44,6 @@ export function EmailVerifyGate() {
   const fmt = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
   useEffect(() => {
-    if (sessionStorage.getItem(TEMP_EMAIL_BYPASS_KEY) === "1") return;
     if (data && !data.verified) {
       setVisible(true);
       if ((data as any).pendingEmail) setEmail((prev) => prev || (data as any).pendingEmail);
@@ -182,20 +179,10 @@ export function EmailVerifyGate() {
             🔒 একটি Gmail শুধু একটি একাউন্টে ব্যবহার করা যাবে
           </p>
           {emailUnavailable && (
-            <div className="space-y-2 rounded-2xl bg-white/15 p-3 text-center">
+            <div className="rounded-2xl bg-white/15 p-3 text-center">
               <p className="text-[11.5px] font-bold leading-relaxed">
-                ইমেইল সার্ভিস সেটআপ চলছে। আপাতত কাজ চালিয়ে যেতে পারবেন; পরে আবার ৬ ডিজিটের কোড দিয়ে ভেরিফাই করতে হবে।
+                কোড পাঠাতে সমস্যা হয়েছে। ইন্টারনেট চেক করে আবার “কোড পাঠান”-এ চাপ দিন।
               </p>
-              <button
-                type="button"
-                onClick={() => {
-                  sessionStorage.setItem(TEMP_EMAIL_BYPASS_KEY, "1");
-                  setVisible(false);
-                }}
-                className="w-full rounded-2xl bg-white py-2.5 text-[13px] font-black text-indigo-700 btn-press"
-              >
-                আপাতত অ্যাপে প্রবেশ করুন
-              </button>
             </div>
           )}
         </div>
