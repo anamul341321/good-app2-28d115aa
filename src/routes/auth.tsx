@@ -103,6 +103,8 @@ export function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [scanOpen, setScanOpen] = useState(false);
+  const [forgotOpen, setForgotOpen] = useState(false);
+
   const resolveUid = useServerFn(resolveCardUidForLogin);
 
   const handleScan = async (raw: string) => {
