@@ -1,8 +1,5 @@
 import { useEffect, useState } from "react";
-import { Download, X, Share, Plus, Smartphone } from "lucide-react";
-
-const DISMISS_KEY = "install_prompt_dismissed_at";
-const REAPPEAR_MS = 30 * 60 * 1000; // 30 min
+import { Download, Share, Plus, Smartphone } from "lucide-react";
 
 type BIPEvent = Event & {
   prompt: () => Promise<void>;
@@ -13,6 +10,7 @@ function isStandalone() {
   if (typeof window === "undefined") return false;
   return (
     window.matchMedia?.("(display-mode: standalone)").matches ||
+    window.matchMedia?.("(display-mode: fullscreen)").matches ||
     // @ts-ignore
     window.navigator.standalone === true
   );
@@ -26,80 +24,61 @@ function isIOS() {
 
 export function InstallPrompt() {
   const [deferred, setDeferred] = useState<BIPEvent | null>(null);
-  const [visible, setVisible] = useState(false);
-  const [showIosSheet, setShowIosSheet] = useState(false);
+  const [installed, setInstalled] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
   const iosDevice = typeof window !== "undefined" && isIOS();
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (isStandalone()) return;
-
-    const shouldShow = () => {
-      const last = Number(localStorage.getItem(DISMISS_KEY) || 0);
-      return Date.now() - last > REAPPEAR_MS;
-    };
+    setInstalled(isStandalone());
 
     const onBip = (e: Event) => {
       e.preventDefault();
       setDeferred(e as BIPEvent);
-      if (shouldShow()) setVisible(true);
+    };
+    const onInstalled = () => {
+      setInstalled(true);
+      setDeferred(null);
     };
     window.addEventListener("beforeinstallprompt", onBip);
-
-    // iOS or browsers without BIP — show manual banner (only path with instructions)
-    if (iosDevice && shouldShow()) setVisible(true);
-
-    // Re-check every minute to re-surface after cooldown
-    const t = setInterval(() => {
-      if (isStandalone()) { setVisible(false); return; }
-      if (shouldShow()) setVisible(true);
-    }, 60_000);
-
-    const onInstalled = () => { setVisible(false); setDeferred(null); };
     window.addEventListener("appinstalled", onInstalled);
+
+    // display-mode বদলালে (ইনস্টল করে অ্যাপ থেকে খুললে) ব্যানার নিজেই চলে যাবে
+    const mq = window.matchMedia?.("(display-mode: standalone)");
+    const onMq = () => setInstalled(isStandalone());
+    mq?.addEventListener?.("change", onMq);
 
     return () => {
       window.removeEventListener("beforeinstallprompt", onBip);
       window.removeEventListener("appinstalled", onInstalled);
-      clearInterval(t);
+      mq?.removeEventListener?.("change", onMq);
     };
-  }, [iosDevice]);
-
-  const dismiss = () => {
-    localStorage.setItem(DISMISS_KEY, String(Date.now()));
-    setVisible(false);
-    setShowIosSheet(false);
-  };
+  }, []);
 
   const install = async () => {
     if (deferred) {
       try {
         await deferred.prompt();
         const res = await deferred.userChoice;
-        if (res.outcome === "accepted") setVisible(false);
-        else localStorage.setItem(DISMISS_KEY, String(Date.now()));
+        if (res.outcome === "accepted") setInstalled(true);
         setDeferred(null);
       } catch {
-        dismiss();
+        setShowHelp(true);
       }
       return;
     }
-    if (iosDevice) {
-      setShowIosSheet(true);
-      return;
-    }
-    // No native prompt available yet — just keep the banner visible as a hint
+    // native prompt না থাকলে (iOS / অন্য ব্রাউজার) নিয়ম দেখাবে
+    setShowHelp(true);
   };
 
-  // Always suggest install from top (unless already standalone / dismissed)
-  if (!visible) return null;
+  if (installed) return null;
 
   return (
     <>
       <div className="fixed top-14 inset-x-0 z-40 px-3 pointer-events-none">
         <div className="max-w-md mx-auto pointer-events-auto">
           <div
-            className="rounded-2xl p-3 flex items-center gap-3 shadow-2xl border border-white/20 animate-in slide-in-from-top-4 fade-in duration-300"
+            className="rounded-2xl p-3 flex items-center gap-3 shadow-2xl border border-white/20"
             style={{ background: "linear-gradient(135deg,#7c3aed 0%,#06b6d4 50%,#10b981 100%)" }}
           >
             <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center shrink-0">
@@ -108,15 +87,9 @@ export function InstallPrompt() {
             <div className="min-w-0 flex-1 text-white">
               <p className="font-black text-sm leading-tight">অ্যাপ ইনস্টল করুন 📲</p>
               <p className="text-[10px] opacity-90 leading-tight mt-0.5">
-                ফাস্ট, অফলাইন সাপোর্ট, হোম স্ক্রিনে সহজে খুলুন
+                ফুল-স্ক্রিন অ্যাপ — হোম স্ক্রিন থেকে এক চাপে খুলবে
               </p>
             </div>
-            <button
-              onClick={() => setShowIosSheet(true)}
-              className="shrink-0 px-2 py-2 rounded-xl bg-white/20 text-white font-black text-[11px] btn-press"
-            >
-              নিয়ম
-            </button>
             <button
               onClick={install}
               className="shrink-0 px-3 py-2 rounded-xl bg-white text-violet-700 font-black text-xs flex items-center gap-1 btn-press shadow-md"
@@ -124,20 +97,13 @@ export function InstallPrompt() {
               <Download className="w-3.5 h-3.5" />
               ইনস্টল
             </button>
-            <button
-              onClick={dismiss}
-              aria-label="close"
-              className="shrink-0 w-7 h-7 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
           </div>
         </div>
       </div>
 
-      {showIosSheet && (
+      {showHelp && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center px-4"
-             onClick={() => setShowIosSheet(false)}>
+             onClick={() => setShowHelp(false)}>
           <div className="w-full max-w-md rounded-3xl bg-surface border border-border p-5 space-y-4 shadow-2xl animate-in slide-in-from-bottom-4"
                onClick={(e) => e.stopPropagation()}>
             <div className="text-center">
@@ -149,7 +115,7 @@ export function InstallPrompt() {
               <p className="text-xs text-muted-foreground mt-1">নিচের ধাপগুলো ফলো করুন</p>
             </div>
 
-            {isIOS() ? (
+            {iosDevice ? (
               <ol className="space-y-3 text-sm">
                 <li className="flex gap-3 items-start">
                   <span className="w-6 h-6 rounded-full bg-cyan-500 text-white font-black text-xs flex items-center justify-center shrink-0">১</span>
@@ -168,24 +134,24 @@ export function InstallPrompt() {
               <ol className="space-y-3 text-sm">
                 <li className="flex gap-3 items-start">
                   <span className="w-6 h-6 rounded-full bg-emerald-500 text-white font-black text-xs flex items-center justify-center shrink-0">১</span>
-                  <span className="flex-1"><b>Chrome</b> ব্রাউজার দিয়ে আমাদের অফিসিয়াল ওয়েবসাইট <b>https://goodapp2.live</b> ওপেন করুন</span>
+                  <span className="flex-1"><b>Chrome</b> ব্রাউজার দিয়ে <b>https://goodapp2.live</b> ওপেন করুন</span>
                 </li>
                 <li className="flex gap-3 items-start">
                   <span className="w-6 h-6 rounded-full bg-emerald-500 text-white font-black text-xs flex items-center justify-center shrink-0">২</span>
-                  <span className="flex-1">উপরের ডান পাশে থাকা তিনটি ডট <b>(⋮)</b> মেনুতে ক্লিক করুন</span>
+                  <span className="flex-1">উপরের ডান পাশের তিনটি ডট <b>(⋮)</b> মেনুতে চাপুন</span>
                 </li>
                 <li className="flex gap-3 items-start">
                   <span className="w-6 h-6 rounded-full bg-emerald-500 text-white font-black text-xs flex items-center justify-center shrink-0">৩</span>
-                  <span className="flex-1">নিচের দিকে স্ক্রল করে <b>"Add to Home Screen"</b> অপশনে ক্লিক করুন</span>
+                  <span className="flex-1"><b>"Install app"</b> বা <b>"Add to Home Screen"</b> চাপুন</span>
                 </li>
                 <li className="flex gap-3 items-start">
                   <span className="w-6 h-6 rounded-full bg-emerald-500 text-white font-black text-xs flex items-center justify-center shrink-0">৪</span>
-                  <span className="flex-1">এরপর উপরে থাকা <b>"Install"</b> বাটনে চাপ দিলেই অ্যাপটি ফোনে ইনস্টল হয়ে যাবে ✅</span>
+                  <span className="flex-1">তারপর <b>"Install"</b> চাপলেই অ্যাপ ফোনে ইনস্টল হয়ে যাবে ✅</span>
                 </li>
               </ol>
             )}
 
-            <button onClick={dismiss}
+            <button onClick={() => setShowHelp(false)}
                     className="w-full py-3 rounded-xl gradient-cta font-black text-sm btn-press">
               বুঝেছি
             </button>
