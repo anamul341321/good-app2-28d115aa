@@ -25,9 +25,7 @@ export function ForgotPasswordDialog({
     try {
       const res: any = await sendOtp({ data: { phone } });
       toast.success(
-        res?.channel === "email"
-          ? `${res.destination} — এই ইমেইলে ৬ ডিজিটের কোড পাঠানো হয়েছে`
-          : "আপনার Telegram-এ ৬ ডিজিটের কোড পাঠানো হয়েছে",
+        `${res?.destination ?? "আপনার ইমেইলে"} — এই ইমেইলে ৬ ডিজিটের কোড পাঠানো হয়েছে`,
       );
       setStep("code");
     } catch (e: any) {
@@ -68,7 +66,7 @@ export function ForgotPasswordDialog({
           </div>
           <h2 className="text-lg font-black text-navy">পাসওয়ার্ড ভুলে গেছেন?</h2>
           <p className="text-[11px] text-muted-foreground mt-1">
-            আপনার মোবাইল নম্বর বা ইমেইল দিন — কোড আপনার Gmail/ইমেইলে যাবে, কোড দিয়েই নতুন পাসওয়ার্ড সেট করুন।
+            আপনার Gmail/ইমেইল দিন — ৬ ডিজিটের কোড ওই ইমেইলে যাবে, কোড দিয়েই নতুন পাসওয়ার্ড সেট করুন।
           </p>
         </div>
 
@@ -76,18 +74,21 @@ export function ForgotPasswordDialog({
           <div className="space-y-3">
             <div>
               <label className="text-[11px] font-black text-cyan uppercase tracking-wider">
-                মোবাইল নম্বর বা ইমেইল
+                Gmail / ইমেইল
               </label>
               <input
                 value={phone}
-                onChange={(e) => setPhone(e.target.value.trim())}
-                placeholder="০১XXXXXXXXX অথবা you@gmail.com"
+                onChange={(e) => setPhone(e.target.value.trim().toLowerCase())}
+                placeholder="you@gmail.com"
+                type="email"
+                inputMode="email"
+                autoComplete="email"
                 className="w-full mt-1 px-4 py-3 bg-white border-2 border-border rounded-xl text-sm outline-none focus:border-cyan text-navy"
               />
             </div>
             <button
               onClick={handleSend}
-              disabled={loading || phone.trim().length < 5}
+              disabled={loading || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(phone)}
               className="w-full py-3.5 rounded-xl gradient-cta font-black text-sm flex items-center justify-center gap-2 disabled:opacity-60 btn-press"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
@@ -133,7 +134,7 @@ export function ForgotPasswordDialog({
               onClick={() => setStep("phone")}
               className="w-full py-2 text-[11px] font-bold text-muted-foreground"
             >
-              ← নম্বর বদলাতে চাই / আবার কোড নিতে চাই
+              ← ইমেইল বদলাতে চাই / আবার কোড নিতে চাই
             </button>
           </div>
         )}

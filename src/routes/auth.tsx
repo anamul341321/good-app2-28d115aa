@@ -388,7 +388,7 @@ export function AuthPage() {
 
         {scanOpen && <QrScanner onResult={handleScan} onClose={() => setScanOpen(false)} />}
         {forgotOpen && (
-          <ForgotPasswordDialog initialPhone={phone} onClose={() => setForgotOpen(false)} />
+          <ForgotPasswordDialog onClose={() => setForgotOpen(false)} />
         )}
 
 
