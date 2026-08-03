@@ -117,6 +117,7 @@ export function ProfileCompleteGate() {
                 try {
                   const res: any = await linkConfirm({ data: { code: linkCode } });
                   await supabase.auth.setSession(res.session);
+                  try { localStorage.removeItem("good-app-google-intent"); } catch {}
                   toast.success("স্বাগতম! আপনার পুরোনো একাউন্টে ঢুকেছেন 💙");
                   window.location.href = "/home";
                 } catch (e: any) {
@@ -182,6 +183,10 @@ export function ProfileCompleteGate() {
       await saveFn({
         data: { name, password, phone: phone || null, referralCode: ref || null },
       });
+      try {
+        localStorage.removeItem("good-app-google-intent");
+        localStorage.removeItem("good-app-ref-code");
+      } catch {}
       toast.success("প্রোফাইল সেভ হয়েছে — এখন Gmail-এ কোড দিয়ে ভেরিফাই করুন");
       await qc.invalidateQueries({ queryKey: ["google-profile-status"] });
       await qc.invalidateQueries({ queryKey: ["email-verify-status"] });
