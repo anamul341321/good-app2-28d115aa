@@ -224,8 +224,7 @@ export const completeLoginOtp = createServerFn({ method: "POST" })
     if (sessionRes instanceof Error) throw sessionRes;
     const session = sessionRes;
 
-    // কোড ব্যবহৃত মার্ক — এর জন্য ইউজারকে অপেক্ষা করাতে হবে না
-    void supabaseAdmin
+    await supabaseAdmin
       .from("email_verify_otps")
       .update({ used_at: new Date().toISOString() })
       .eq("id", otp.id);
