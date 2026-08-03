@@ -213,6 +213,24 @@ export const BUILTIN_FAQS: BuiltinFaq[] = [
       `👉 অ্যাপে ফিরে গিয়ে ঐ স্লট থেকে <b>নতুন করে ভেরিফিকেশন শুরু</b> করুন, নতুন লিংক তৈরি হবে এবং কাজ করবে 🙂`,
   },
   {
+    topic: "KYC কী / কিভাবে করবো",
+    screenshot: [],
+    keywords: [
+      "kyc", "kyc ki", "kyc কি", "kyc কী", "কেওয়াইসি", "kyc korbo", "kyc kivabe",
+      "kyc kore", "kyc lagbe", "kyc verified", "kyc verify", "kyc mane",
+      "kyc কিভাবে", "কেওয়াইসি কি", "কেওয়াইসি কিভাবে",
+    ],
+    answer:
+      `📌 <b>KYC মানে আপনার একাউন্টটি আপনারই — এই নিশ্চয়তা</b> 🙂\n` +
+      `KYC করলে প্রোফাইলে <b>নীল ✔ ব্যাজ</b> যোগ হয় এবং <b>উইথড্র চালু</b> হয়।\n\n` +
+      `<b>কিভাবে করবেন (১ মিনিটের কাজ):</b>\n` +
+      `<b>১️⃣</b> অ্যাপে ঢুকে <b>KYC</b> পেজে যান\n` +
+      `<b>২️⃣</b> <b>“KYC শুরু করুন (টেলিগ্রাম)”</b> বাটনে চাপ দিন — এই বটটিই খুলে যাবে\n` +
+      `<b>৩️⃣</b> নিচে <b>START</b> বাটনে একবার চাপ দিন — ব্যাস, KYC সম্পন্ন ✅\n\n` +
+      `⚠️ একটি টেলিগ্রাম দিয়ে <b>একটিই UID</b> KYC করা যাবে।\n` +
+      `ℹ️ KYC ছাড়া অ্যাপের সব কাজ চলবে, শুধু <b>টাকা তোলা যাবে না</b> 💙`,
+  },
+  {
     topic: "Whitelist হচ্ছে না / pending দেখাচ্ছে",
     screenshot: ["not whitelisted", "pending", "whitelist"],
     keywords: ["whitelist", "হোয়াইটলিস্ট", "pending", "check hoy na"],
@@ -221,6 +239,7 @@ export const BUILTIN_FAQS: BuiltinFaq[] = [
       `একটু অপেক্ষা করুন — নিজে থেকেই আপডেট হয়ে যাবে 💙`,
   },
 ];
+
 
 /** Compact text block so the AI (and screenshot analyzer) knows these answers. */
 export function builtinFaqKnowledge(): string {
@@ -237,14 +256,27 @@ export function builtinFaqKnowledge(): string {
 export function matchBuiltinFaqText(text: string): BuiltinFaq | null {
   const hay = text.toLowerCase();
   if (!hay.trim()) return null;
+  const matches = (k: string) => {
+    const key = k.toLowerCase().trim();
+    if (key.length < 3) return false;
+    // 3-letter keys (kyc, apk…) only count as a whole word, never inside another word.
+    if (key.length === 3 && /^[a-z]+$/.test(key)) {
+      return new RegExp(`(^|[^a-z])${key}([^a-z]|$)`, "i").test(hay);
+    }
+    return key.length > 3 && hay.includes(key);
+  };
   for (const f of BUILTIN_FAQS) {
-    const hit = [...f.keywords, ...f.screenshot].some(
-      (k) => k.length > 3 && hay.includes(k.toLowerCase()),
-    );
-    if (hit) return f;
+    if ([...f.keywords, ...f.screenshot].some(matches)) return f;
   }
   return null;
 }
+
+/** Find a built-in answer by its topic label (safer than an array index). */
+export function builtinFaqByTopic(fragment: string): BuiltinFaq | null {
+  const q = fragment.toLowerCase();
+  return BUILTIN_FAQS.find((f) => f.topic.toLowerCase().includes(q)) ?? null;
+}
+
 
 export function builtinFaqReply(name: string, f: BuiltinFaq): string {
   const openers = [

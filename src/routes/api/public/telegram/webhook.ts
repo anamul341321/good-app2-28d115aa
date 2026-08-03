@@ -1825,14 +1825,14 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         }
 
         // Plain-text match against the built-in problem library.
+        // No AI rewrite here — the fixed answer is already correct and this
+        // keeps credit usage at zero for common questions.
         if (!photoBase64 && settings.auto_reply_enabled && text.trim()) {
           try {
             const { matchBuiltinFaqText, builtinFaqReply } = await import("@/lib/telegram-builtin-faq.server");
             const hit = matchBuiltinFaqText(text);
             if (hit) {
-              const { humanizeReply } = await import("@/lib/telegram-bot.server");
-              const base = builtinFaqReply(senderName, hit);
-              const reply = (await humanizeReply(base, text, recentReplies)) || base;
+              const reply = builtinFaqReply(senderName, hit);
               await sendMessage(chatId, reply + videoSuffix(text) + (await offerSlotResetSuffix()), msg.message_id);
               await logMessage("question", `faq-builtin:${hit.topic}`, reply, null);
               return Response.json({ ok: true, flow: "faq-builtin-text" });
@@ -1841,6 +1841,22 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             console.error("[tg] builtin faq text match failed", e);
           }
         }
+
+        // ---- Answer memory: same question asked again → reuse the saved reply --
+        if (!photoBase64 && settings.auto_reply_enabled && text.trim()) {
+          try {
+            const { getCachedReply } = await import("@/lib/telegram-reply-cache.server");
+            const cached = await getCachedReply(text);
+            if (cached) {
+              await sendMessage(chatId, cached, msg.message_id);
+              await logMessage("question", "cached-reply", cached, null);
+              return Response.json({ ok: true, flow: "cached-reply" });
+            }
+          } catch (e) {
+            console.error("[tg] reply cache lookup failed", e);
+          }
+        }
+
 
 
 
@@ -2196,8 +2212,9 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
         // ---- "আরও ১০টা স্লট করলে কি আবার বোনাস পাবো?" → না, বোনাস শুধু ১ম ১০টায় --
         if (asksExtraSlotBonus && !decision.should_delete && settings.auto_reply_enabled) {
-          const { BUILTIN_FAQS } = await import("@/lib/telegram-builtin-faq.server");
-          const reply = BUILTIN_FAQS[0].answer;
+          const { builtinFaqByTopic, BUILTIN_FAQS } = await import("@/lib/telegram-builtin-faq.server");
+          const reply = (builtinFaqByTopic("আরও স্লট") ?? builtinFaqByTopic("বোনাস") ?? BUILTIN_FAQS[0]).answer;
+
           await sendMessage(chatId, reply, msg.message_id);
           actions.push("extra-slot-bonus");
           await logMessage(decision.verdict, actions.join(","), reply, null);
@@ -2753,11 +2770,22 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               (await agentAnswer({ ...base3, rulebook: appRulebook(rates3), isAdmin: senderIsAdmin }))
               ?? (await smartAnswer(base3));
           }
+          const escalated = !reply;
           if (!reply) reply = `${escalateReply(senderName, mention)}\n${mention}`;
           await sendMessage(chatId, reply, msg.message_id);
           actions.push("fallback-answer");
           decision.reply = reply;
+          // Remember this answer so the same question never costs credits again.
+          if (!escalated && !decision.needs_uid) {
+            try {
+              const { saveCachedReply } = await import("@/lib/telegram-reply-cache.server");
+              await saveCachedReply(text, reply);
+            } catch (e) {
+              console.error("[tg] reply cache save failed", e);
+            }
+          }
         }
+
 
 
 
