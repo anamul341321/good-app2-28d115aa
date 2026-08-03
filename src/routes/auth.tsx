@@ -475,6 +475,24 @@ export function AuthPage() {
               {mode === "login" ? "লগইন করুন" : "পরবর্তী ধাপ"}
             </button>
 
+            <div className="flex items-center gap-2 py-1">
+              <span className="h-px flex-1 bg-border" />
+              <span className="text-[10px] font-black text-muted-foreground">অথবা</span>
+              <span className="h-px flex-1 bg-border" />
+            </div>
+            <button
+              type="button" onClick={doGoogle} disabled={loading}
+              className="w-full py-3 rounded-xl font-black text-sm flex items-center justify-center gap-2 bg-white border-2 border-border text-navy btn-press disabled:opacity-60"
+            >
+              <svg viewBox="0 0 48 48" className="w-5 h-5" aria-hidden>
+                <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.6l6.7-6.7C35.6 2.5 30.2 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.8 6.1C12.3 13.2 17.7 9.5 24 9.5z"/>
+                <path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-2.8-.4-4.1H24v8.1h12.5c-.3 2.1-1.6 5.2-4.6 7.3l7.6 5.9c4.5-4.2 6.6-10.3 6.6-17.2z"/>
+                <path fill="#FBBC05" d="M10.4 28.7A14.6 14.6 0 019.6 24c0-1.6.3-3.2.8-4.7l-7.8-6.1A24 24 0 000 24c0 3.9.9 7.5 2.6 10.8l7.8-6.1z"/>
+                <path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.6-5.8l-7.6-5.9c-2 1.4-4.7 2.4-8 2.4-6.3 0-11.7-3.7-13.6-9.1l-7.8 6.1C6.5 42.6 14.6 48 24 48z"/>
+              </svg>
+              Continue with Google
+            </button>
+
             {mode === "login" && (
               <>
                 <button
