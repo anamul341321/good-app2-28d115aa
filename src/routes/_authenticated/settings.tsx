@@ -174,23 +174,45 @@ function SettingsPage() {
       <Card
         icon={<KeyRound className="w-4 h-4 text-gold" />}
         title="পাসওয়ার্ড পরিবর্তন"
-        desc="নিরাপত্তার জন্য মাঝে মাঝে পাসওয়ার্ড বদলান।"
+        desc="নিরাপত্তার জন্য Gmail-এ পাঠানো ৬ ডিজিটের কোড দিয়ে নিশ্চিত করতে হবে।"
       >
-        <div className="space-y-2">
-          <div>
-            <label className="text-[11px] font-black text-cyan uppercase tracking-wider">বর্তমান পাসওয়ার্ড</label>
-            <input type="password" value={curPw} onChange={(e) => setCurPw(e.target.value)} className={inputCls} />
+        {pwStep === "form" ? (
+          <div className="space-y-2">
+            <div>
+              <label className="text-[11px] font-black text-cyan uppercase tracking-wider">বর্তমান পাসওয়ার্ড</label>
+              <input type="password" value={curPw} onChange={(e) => setCurPw(e.target.value)} className={inputCls} />
+            </div>
+            <div>
+              <label className="text-[11px] font-black text-emerald uppercase tracking-wider">নতুন পাসওয়ার্ড</label>
+              <input type="password" value={newPw} onChange={(e) => setNewPw(e.target.value)} className={inputCls} />
+            </div>
+            <button onClick={sendPwCode} disabled={pwBusy || !curPw || newPw.length < 6}
+              className="w-full py-3 rounded-xl gradient-cta font-black text-sm flex items-center justify-center gap-2 disabled:opacity-60 btn-press">
+              {pwBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              Gmail-এ কোড পাঠান
+            </button>
           </div>
-          <div>
-            <label className="text-[11px] font-black text-emerald uppercase tracking-wider">নতুন পাসওয়ার্ড</label>
-            <input type="password" value={newPw} onChange={(e) => setNewPw(e.target.value)} className={inputCls} />
+        ) : (
+          <div className="space-y-2">
+            <p className="text-[12px] font-bold text-muted-foreground">
+              কোড পাঠানো হয়েছে: <b translate="no">{pwDest}</b>
+            </p>
+            <input inputMode="numeric" value={pwCode}
+              onChange={(e) => setPwCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              placeholder="৬ ডিজিটের কোড"
+              className={`${inputCls} text-center tracking-[8px] font-black mono-num`} />
+            <button onClick={changePassword} disabled={pwBusy || pwCode.length !== 6}
+              className="w-full py-3 rounded-xl gradient-cta font-black text-sm flex items-center justify-center gap-2 disabled:opacity-60 btn-press">
+              {pwBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
+              কোড দিয়ে পাসওয়ার্ড সেভ করুন
+            </button>
+            <button onClick={() => { setPwStep("form"); setPwCode(""); }}
+              className="w-full py-2 text-[11.5px] font-black text-cyan underline underline-offset-4">
+              পিছনে
+            </button>
           </div>
-          <button onClick={changePassword} disabled={pwBusy || !curPw || newPw.length < 6}
-            className="w-full py-3 rounded-xl gradient-cta font-black text-sm flex items-center justify-center gap-2 disabled:opacity-60 btn-press">
-            {pwBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
-            পাসওয়ার্ড সেভ করুন
-          </button>
-        </div>
+        )}
+
       </Card>
 
       <Card
