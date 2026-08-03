@@ -1,40 +1,33 @@
 import * as React from 'react'
 import {
   Body,
-  Button,
   Container,
   Head,
   Heading,
   Html,
   Preview,
+  Section,
   Text,
 } from '@react-email/components'
 
 interface MagicLinkEmailProps {
   siteName: string
-  confirmationUrl: string
+  token?: string
 }
 
-export const MagicLinkEmail = ({
-  siteName,
-  confirmationUrl,
-}: MagicLinkEmailProps) => (
+export const MagicLinkEmail = ({ siteName, token = '000000' }: MagicLinkEmailProps) => (
   <Html lang="bn" dir="ltr">
     <Head />
-    <Preview>{siteName}-এ লগইন করার লিংক</Preview>
+    <Preview>{siteName} লগইন কোড: {token}</Preview>
     <Body style={main}>
       <Container style={container}>
         <Text style={brand}>{siteName}</Text>
-        <Heading style={h1}>আপনার লগইন লিংক</Heading>
-        <Text style={text}>
-          {siteName}-এ লগইন করতে নিচের বাটনে ক্লিক করুন। এই লিংকটি অল্প সময়ের মধ্যে মেয়াদ শেষ হবে।
-        </Text>
-        <Button style={button} href={confirmationUrl}>
-          লগইন করুন
-        </Button>
-        <Text style={muted}>
-          যদি আপনি লগইন লিংক না চেয়ে থাকেন, এই মেইলটি বাদ দিতে পারেন।
-        </Text>
+        <Heading style={h1}>লগইন কোড</Heading>
+        <Text style={text}>অ্যাপে লগইন করতে নিচের ৬ ডিজিটের কোডটি বসান।</Text>
+        <Section style={codeBox}>
+          <Text style={codeText}>{token}</Text>
+        </Section>
+        <Text style={muted}>কোডটি ১০ মিনিট পর্যন্ত কাজ করবে। কাউকে শেয়ার করবেন না।</Text>
       </Container>
     </Body>
   </Html>
@@ -45,17 +38,20 @@ export default MagicLinkEmail
 const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, Helvetica, sans-serif' }
 const container = { padding: '28px 24px', maxWidth: '480px' }
 const brand = { fontSize: '13px', fontWeight: 700, color: '#0ea5e9', letterSpacing: '1px', margin: '0 0 8px' }
-const h1 = { fontSize: '22px', color: '#0f172a', margin: '0 0 16px' }
+const h1 = { fontSize: '22px', color: '#0f172a', margin: '0 0 12px' }
 const text = { fontSize: '14px', color: '#334155', lineHeight: '22px', margin: '0 0 16px' }
-const button = {
+const codeBox = {
   backgroundColor: '#0f172a',
-  color: '#ffffff',
-  fontSize: '14px',
-  fontWeight: 700,
-  borderRadius: '12px',
-  padding: '14px 24px',
-  textDecoration: 'none',
-  display: 'inline-block',
+  borderRadius: '14px',
+  padding: '18px',
+  textAlign: 'center' as const,
   margin: '0 0 16px',
+}
+const codeText = {
+  color: '#ffffff',
+  fontSize: '30px',
+  fontWeight: 700,
+  letterSpacing: '8px',
+  margin: 0,
 }
 const muted = { fontSize: '12px', color: '#64748b', lineHeight: '19px', margin: 0 }
