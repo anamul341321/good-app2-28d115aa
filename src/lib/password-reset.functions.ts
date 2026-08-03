@@ -1,36 +1,60 @@
 import { createServerFn } from "@tanstack/react-start";
 
 /**
- * পাসওয়ার্ড ভুলে গেলে: ইউজারের লিংক করা Telegram-এ ৬ ডিজিটের কোড পাঠানো হয়,
- * কোড দিয়ে নতুন পাসওয়ার্ড সেট করা যায়।
+ * পাসওয়ার্ড ভুলে গেলে: ইউজারের Gmail/ইমেইলে ৬ ডিজিটের কোড যায়।
+ * ইমেইল সেভ না থাকলে (পুরনো একাউন্ট) লিংক করা Telegram-এ কোড যায়।
  */
 
 function cleanPhone(input: string) {
   return (input || "").replace(/\D/g, "").slice(0, 11);
 }
 
+function maskEmail(email: string) {
+  const [l, d] = email.split("@");
+  if (!l || !d) return "***";
+  return `${l.slice(0, 2)}***@${d}`;
+}
+
+async function findProfile(identifier: string) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const raw = (identifier || "").trim();
+
+  if (raw.includes("@")) {
+    const { data } = await supabaseAdmin
+      .from("profiles")
+      .select("id, display_name, email, telegram_user_id")
+      .ilike("email", raw)
+      .maybeSingle();
+    return data;
+  }
+
+  const phone = cleanPhone(raw);
+  if (!/^01\d{9}$/.test(phone)) return null;
+  const { data } = await supabaseAdmin
+    .from("profiles")
+    .select("id, display_name, email, telegram_user_id")
+    .eq("phone_number", phone)
+    .maybeSingle();
+  return data;
+}
+
 export const requestPasswordResetOtp = createServerFn({ method: "POST" })
   .inputValidator((d: { phone: string }) => d)
   .handler(async ({ data }) => {
-    const phone = cleanPhone(data.phone);
-    if (!/^01\d{9}$/.test(phone)) {
-      throw new Error("১১ ডিজিটের সঠিক মোবাইল নম্বর দিন");
+    const identifier = (data.phone || "").trim();
+    if (!identifier) throw new Error("মোবাইল নম্বর অথবা ইমেইল দিন");
+
+    const prof = await findProfile(identifier);
+    if (!prof) throw new Error("এই নম্বর/ইমেইলে কোনো একাউন্ট পাওয়া যায়নি");
+
+    const email = (prof.email || "").trim();
+    if (!email && !prof.telegram_user_id) {
+      throw new Error(
+        "এই একাউন্টে ইমেইল বা Telegram কিছুই সেভ নেই, তাই কোড পাঠানো যাচ্ছে না। Telegram গ্রুপে অ্যাডমিনের সাথে যোগাযোগ করুন।",
+      );
     }
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
-    const { data: prof } = await supabaseAdmin
-      .from("profiles")
-      .select("id, display_name, uid_seq, telegram_user_id")
-      .eq("phone_number", phone)
-      .maybeSingle();
-
-    if (!prof) throw new Error("এই নম্বরে কোনো একাউন্ট পাওয়া যায়নি");
-    if (!prof.telegram_user_id) {
-      throw new Error(
-        "এই একাউন্টে Telegram লিংক করা নেই, তাই কোড পাঠানো যাচ্ছে না। আমাদের Telegram গ্রুপে অ্যাডমিনের সাথে যোগাযোগ করুন।",
-      );
-    }
 
     // ৬০ সেকেন্ডে একবারের বেশি কোড নয়
     const { data: recent } = await supabaseAdmin
@@ -47,41 +71,59 @@ export const requestPasswordResetOtp = createServerFn({ method: "POST" })
     const code = String(Math.floor(100000 + Math.random() * 900000));
     const expiresAt = new Date(Date.now() + 10 * 60_000).toISOString();
 
+    let channel: "email" | "telegram" = email ? "email" : "telegram";
+
     await supabaseAdmin.from("password_reset_otps").insert({
       user_id: prof.id,
       code,
-      channel: "telegram",
+      channel,
       expires_at: expiresAt,
     });
 
-    const { sendMessage } = await import("@/lib/telegram-bot.server");
-    await sendMessage(
-      prof.telegram_user_id,
-      `🔐 পাসওয়ার্ড রিসেট কোড: <b>${code}</b>\n\n১০ মিনিটের মধ্যে ব্যবহার করুন। কোডটি কাউকে দেবেন না।`,
-    );
+    if (email) {
+      try {
+        const { sendSystemEmail } = await import("@/lib/email-otp.server");
+        await sendSystemEmail({
+          templateName: "password-reset-otp",
+          to: email,
+          templateData: { code, name: prof.display_name ?? undefined },
+        });
+      } catch (err) {
+        console.error("password reset email failed", err);
+        // ইমেইল না গেলে Telegram fallback
+        if (!prof.telegram_user_id) throw new Error("কোড পাঠানো যায়নি, একটু পরে আবার চেষ্টা করুন");
+        channel = "telegram";
+      }
+    }
 
-    return { ok: true as const, channel: "telegram" as const };
+    if (channel === "telegram") {
+      const { sendMessage } = await import("@/lib/telegram-bot.server");
+      await sendMessage(
+        prof.telegram_user_id!,
+        `🔐 পাসওয়ার্ড রিসেট কোড: <b>${code}</b>\n\n১০ মিনিটের মধ্যে ব্যবহার করুন। কোডটি কাউকে দেবেন না।`,
+      );
+    }
+
+    return {
+      ok: true as const,
+      channel,
+      destination: channel === "email" ? maskEmail(email) : "Telegram",
+    };
   });
 
 export const resetPasswordWithOtp = createServerFn({ method: "POST" })
   .inputValidator((d: { phone: string; code: string; newPassword: string }) => d)
   .handler(async ({ data }) => {
-    const phone = cleanPhone(data.phone);
     const code = (data.code || "").replace(/\D/g, "").slice(0, 6);
-    if (!/^01\d{9}$/.test(phone)) throw new Error("সঠিক মোবাইল নম্বর দিন");
     if (code.length !== 6) throw new Error("৬ ডিজিটের কোড দিন");
     if ((data.newPassword || "").length < 6) {
       throw new Error("নতুন পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে");
     }
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const prof = await findProfile(data.phone);
+    if (!prof) throw new Error("এই নম্বর/ইমেইলে কোনো একাউন্ট পাওয়া যায়নি");
 
-    const { data: prof } = await supabaseAdmin
-      .from("profiles")
-      .select("id")
-      .eq("phone_number", phone)
-      .maybeSingle();
-    if (!prof) throw new Error("এই নম্বরে কোনো একাউন্ট পাওয়া যায়নি");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const { data: otp } = await supabaseAdmin
       .from("password_reset_otps")
