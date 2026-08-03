@@ -1,19 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { isValidEmail, maskEmail } from "@/lib/google-profile.server";
 
 /**
  * Gmail/ইমেইল ভেরিফিকেশন — লগইন করা ইউজার নিজের ইমেইল দিয়ে ৬ ডিজিটের কোড নিয়ে
  * ইমেইলটি একাউন্টের সাথে স্থায়ীভাবে লিংক করবে। পরে "পাসওয়ার্ড ভুলে গেছেন?"-এ
  * এই ইমেইলেই কোড যাবে।
  */
-
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-function maskEmail(email: string) {
-  const [l, d] = email.split("@");
-  if (!l || !d) return "***";
-  return `${l.slice(0, 2)}***@${d}`;
-}
 
 export const getEmailVerifyStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -25,16 +18,28 @@ export const getEmailVerifyStatus = createServerFn({ method: "GET" })
       .eq("id", context.userId)
       .maybeSingle();
 
-    const email = ((data as any)?.email ?? "") as string;
+    const email = String((data as any)?.email ?? "").trim().toLowerCase();
     const verified = !!(data as any)?.email_verified && !!email;
 
     // Google দিয়ে ঢোকা ইউজারের Gmail নিজে থেকেই জানা — সে নিজে ইমেইল লিখবে না
     let oauthEmail: string | null = null;
     try {
       const { data: u } = await supabaseAdmin.auth.admin.getUserById(context.userId);
-      const ids: any[] = (u as any)?.user?.identities ?? [];
+      const authUser = (u as any)?.user;
+      const ids: any[] = authUser?.identities ?? [];
       const g = ids.find((i) => i.provider === "google");
-      if (g) oauthEmail = String(g.identity_data?.email ?? (u as any)?.user?.email ?? "").toLowerCase() || null;
+      if (g) oauthEmail = String(g.identity_data?.email ?? authUser?.email ?? "").toLowerCase() || null;
+
+      // পুরোনো phone-based account-এ Gmail আগে profile-এ verify করা থাকলে
+      // auth email-ও একই Gmail করি। এতে Google ওই account-কেই চিনতে পারে।
+      const authEmail = String(authUser?.email ?? "").toLowerCase();
+      if (verified && !g && email && authEmail !== email) {
+        const { error: syncError } = await supabaseAdmin.auth.admin.updateUserById(context.userId, {
+          email,
+          email_confirm: true,
+        });
+        if (syncError) console.error("verified Gmail auth sync failed", syncError);
+      }
     } catch {
       /* ignore */
     }
@@ -54,7 +59,7 @@ export const requestEmailVerifyOtp = createServerFn({ method: "POST" })
   .inputValidator((d: { email: string }) => d)
   .handler(async ({ data, context }) => {
     const email = (data.email || "").trim().toLowerCase();
-    if (!EMAIL_RE.test(email)) throw new Error("সঠিক Gmail/ইমেইল ঠিকানা দিন");
+    if (!isValidEmail(email)) throw new Error("সঠিক Gmail/ইমেইল ঠিকানা দিন");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -154,6 +159,15 @@ export const confirmEmailVerifyOtp = createServerFn({ method: "POST" })
       .neq("id", context.userId)
       .maybeSingle();
     if (taken) throw new Error("এই ইমেইলটি অন্য একটি একাউন্টে ব্যবহার করা হয়েছে");
+
+    const { error: authEmailError } = await supabaseAdmin.auth.admin.updateUserById(context.userId, {
+      email,
+      email_confirm: true,
+    });
+    if (authEmailError) {
+      console.error("verified Gmail auth link failed", authEmailError);
+      throw new Error("Gmail একাউন্টে যুক্ত করা যায়নি — আবার চেষ্টা করুন");
+    }
 
     const { error } = await supabaseAdmin
       .from("profiles")
