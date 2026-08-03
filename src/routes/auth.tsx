@@ -149,6 +149,10 @@ export function AuthPage() {
       toast.error("আপনার নাম লিখুন");
       return null;
     }
+    if (mode === "signup" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(gmail.trim())) {
+      toast.error("সঠিক Gmail ঠিকানা দিন");
+      return null;
+    }
     if (password.length < 6) {
       toast.error("পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে");
       return null;
