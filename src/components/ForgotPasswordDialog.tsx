@@ -101,7 +101,7 @@ export function ForgotPasswordDialog({
 
           <div className="space-y-3">
             <div>
-              <label className="text-[11px] font-black text-violet uppercase tracking-wider">Telegram কোড</label>
+              <label className="text-[11px] font-black text-violet uppercase tracking-wider">ভেরিফিকেশন কোড</label>
               <input
                 inputMode="numeric"
                 value={code}
