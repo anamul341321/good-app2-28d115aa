@@ -46,7 +46,6 @@ export function EmailVerifyGate() {
   useEffect(() => {
     if (data && !data.verified) {
       setVisible(true);
-      if ((data as any).pendingEmail) setEmail((prev) => prev || (data as any).pendingEmail);
     }
     if (data?.verified) setVisible(false);
   }, [data]);
