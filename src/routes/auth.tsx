@@ -12,6 +12,8 @@ import logo from "@/assets/logo.png";
 import { PageVoice } from "@/components/PageVoice";
 import { VideoTutorialButton } from "@/components/VideoTutorialButton";
 import { QrScanner } from "@/components/QrScanner";
+import { ForgotPasswordDialog } from "@/components/ForgotPasswordDialog";
+
 import { QrCode as QrCodeIcon } from "lucide-react";
 
 
