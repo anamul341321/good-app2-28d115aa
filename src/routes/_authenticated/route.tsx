@@ -130,6 +130,7 @@ function AuthedLayout() {
       <InstallPrompt />
       <LanguagePicker />
       <SlotResetApproval />
+      <EmailVerifyGate />
 
     </div>
   );
