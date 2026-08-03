@@ -55,10 +55,13 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         const { data: settings } = await supabaseAdmin
           .from("tg_bot_settings").select("*").eq("id", "default").maybeSingle();
         if (!settings) return Response.json({ ok: true, disabled: true });
-        // বট বন্ধ থাকলেও KYC (/start uid_xxx) সবসময় কাজ করবে — নতুন ইউজাররা যেন
-        // KYC আটকে না যায়। বাকি সব উত্তর/মডারেশন বন্ধ থাকবে।
+        // "KYC চালু" টগলটি অন থাকলে বটের বাকি সব বন্ধ থাকলেও KYC (/start uid_xxx)
+        // সবসময় কাজ করবে — সবাই KYC করতে পারবে, কিন্তু অন্য কোনো রিপ্লাই যাবে না।
+        const kycAllowed = (settings as any).kyc_enabled !== false;
         const isKycStart =
-          msg.chat?.type === "private" && /^\/start\b/i.test(String(msg.text ?? "").trim());
+          kycAllowed &&
+          msg.chat?.type === "private" &&
+          /^\/start\b/i.test(String(msg.text ?? "").trim());
         if (!settings.enabled && !isKycStart) {
           return Response.json({ ok: true, disabled: true });
         }
