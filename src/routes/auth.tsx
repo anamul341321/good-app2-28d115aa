@@ -8,6 +8,7 @@ import {
   HandHeart, HelpCircle, ChevronDown, Heart, Users, Gift, Coins,
 } from "lucide-react";
 import { registerWithPhone, resolveCardUidForLogin } from "@/lib/auth.functions";
+import { startLoginOtp, completeLoginOtp } from "@/lib/login-otp.functions";
 import logo from "@/assets/logo.png";
 import { PageVoice } from "@/components/PageVoice";
 import { VideoTutorialButton } from "@/components/VideoTutorialButton";
@@ -107,8 +108,16 @@ export function AuthPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [scanOpen, setScanOpen] = useState(false);
   const [forgotOpen, setForgotOpen] = useState(false);
+  const [loginId, setLoginId] = useState("");
+  const [otpOpen, setOtpOpen] = useState(false);
+  const [otpId, setOtpId] = useState("");
+  const [otpCode, setOtpCode] = useState("");
+  const [otpDest, setOtpDest] = useState<string | null>(null);
+  const startOtp = useServerFn(startLoginOtp);
+  const confirmOtp = useServerFn(completeLoginOtp);
 
   const resolveUid = useServerFn(resolveCardUidForLogin);
+
 
   const handleScan = async (raw: string) => {
     setScanOpen(false);
@@ -162,31 +171,93 @@ export function AuthPage() {
 
   const onFormNext = (e: React.FormEvent) => {
     e.preventDefault();
+    if (mode === "login") {
+      const id = loginId.trim();
+      const digits = id.replace(/\D/g, "");
+      const isPhone = /^01\d{9}$/.test(digits);
+      const isMail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(id);
+      if (!isPhone && !isMail) {
+        toast.error("১১ ডিজিটের নম্বর অথবা Gmail দিন");
+        return;
+      }
+      if (password.length < 6) {
+        toast.error("পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে");
+        return;
+      }
+      doLoginStart(isPhone ? digits : id.toLowerCase());
+      return;
+    }
     const ok = validateForm();
     if (!ok) return;
-    if (mode === "signup") setStep("agreement");
-    else doLogin(ok);
+    setStep("agreement");
   };
 
-  async function doLogin(cleanPhone: string) {
+  async function applySession(session: { access_token: string; refresh_token: string }) {
+    const { error } = await supabase.auth.setSession({
+      access_token: session.access_token,
+      refresh_token: session.refresh_token,
+    });
+    if (error) throw new Error("সেশন তৈরি করা যায়নি — আবার চেষ্টা করুন");
+  }
+
+  async function doLoginStart(identifier: string) {
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: phoneToEmail(cleanPhone), password,
-      });
-      if (error) {
-        const msg = (error.message || "").toLowerCase();
-        if (msg.includes("invalid") || msg.includes("credentials")) {
-          throw new Error("ভুল নম্বর বা পাসওয়ার্ড — এই নম্বরে account না থাকলে Sign Up করুন");
-        }
-        throw error;
+      const res: any = await startOtp({ data: { identifier, password } });
+      if (!res.needOtp && res.session) {
+        await applySession(res.session);
+        toast.success("স্বাগতম!");
+        nav({ to: "/home" });
+        return;
       }
+      setOtpId(identifier);
+      setOtpDest(res.destination ?? null);
+      setOtpCode("");
+      setOtpOpen(true);
+      toast.success(
+        res.resent === false
+          ? "কোড আগেই পাঠানো হয়েছে — মেইলবক্স দেখুন"
+          : "Gmail-এ ৬ ডিজিটের কোড পাঠানো হয়েছে",
+      );
+    } catch (e: any) {
+      toast.error(e?.message ?? "লগইন করা যায়নি");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function doLoginConfirm() {
+    setLoading(true);
+    try {
+      const res: any = await confirmOtp({ data: { identifier: otpId, password, code: otpCode } });
+      await applySession(res.session);
+      setOtpOpen(false);
       toast.success("স্বাগতম!");
       nav({ to: "/home" });
     } catch (e: any) {
-      toast.error(e.message ?? "কিছু সমস্যা হয়েছে");
-    } finally { setLoading(false); }
+      toast.error(e?.message ?? "কোড মেলেনি");
+    } finally {
+      setLoading(false);
+    }
   }
+
+  async function doGoogle() {
+    setLoading(true);
+    try {
+      const { lovable } = await import("@/integrations/lovable/index");
+      const res: any = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin,
+      });
+      if (res?.error) throw new Error(res.error.message ?? "Google লগইন করা যায়নি");
+      if (res?.redirected) return;
+      nav({ to: "/home" });
+    } catch (e: any) {
+      toast.error(e?.message ?? "Google লগইন করা যায়নি");
+    } finally {
+      setLoading(false);
+    }
+  }
+
 
   async function doSignup() {
     const cleanPhone = phone.replace(/\D/g, "").slice(0, 11);
@@ -324,15 +395,37 @@ export function AuthPage() {
                 />
               </div>
             )}
-            <div data-voice="auth.phone">
-              <label className="text-[11px] font-black text-cyan uppercase tracking-wider">মোবাইল নম্বর</label>
-              <input
-                inputMode="numeric" required value={phone}
-                onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 11))}
-                placeholder="০১XXXXXXXXX (১১ ডিজিট)" maxLength={11}
-                className="w-full mt-1 px-4 py-3 bg-white border-2 border-border rounded-xl text-sm outline-none focus:border-cyan mono-num text-navy transition"
-              />
-            </div>
+            {mode === "login" ? (
+              <div data-voice="auth.phone">
+                <label className="text-[11px] font-black text-cyan uppercase tracking-wider">
+                  মোবাইল নম্বর অথবা Gmail
+                </label>
+                <input
+                  required value={loginId}
+                  onChange={(e) => setLoginId(e.target.value.trim())}
+                  autoComplete="username"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  placeholder="01XXXXXXXXX অথবা yourname@gmail.com"
+                  className="w-full mt-1 px-4 py-3 bg-white border-2 border-border rounded-xl text-sm outline-none focus:border-cyan text-navy transition"
+                />
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  যেটা সহজ সেটাই দিন — লগইনের সময় আপনার Gmail-এ ৬ ডিজিটের কোড যাবে।
+                </p>
+              </div>
+            ) : (
+              <div data-voice="auth.phone">
+                <label className="text-[11px] font-black text-cyan uppercase tracking-wider">মোবাইল নম্বর</label>
+                <input
+                  inputMode="numeric" required value={phone}
+                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 11))}
+                  placeholder="০১XXXXXXXXX (১১ ডিজিট)" maxLength={11}
+                  autoComplete="tel"
+                  className="w-full mt-1 px-4 py-3 bg-white border-2 border-border rounded-xl text-sm outline-none focus:border-cyan mono-num text-navy transition"
+                />
+              </div>
+            )}
+
             {mode === "signup" && (
               <div data-voice="auth.email">
                 <label className="text-[11px] font-black text-rose uppercase tracking-wider">
