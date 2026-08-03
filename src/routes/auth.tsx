@@ -358,14 +358,22 @@ export function AuthPage() {
             </button>
 
             {mode === "login" && (
-              <button
-                type="button" onClick={() => setScanOpen(true)}
-                data-voice="auth.qr.scan"
-                className="w-full py-3 rounded-xl font-black text-sm flex items-center justify-center gap-2 text-white btn-press shadow-lg"
-                style={{ background: "linear-gradient(120deg,#06b6d4,#8b5cf6,#ef476f)" }}
-              >
-                <QrCodeIcon className="w-4 h-4" /> QR কার্ড স্ক্যান করে লগইন
-              </button>
+              <>
+                <button
+                  type="button" onClick={() => setScanOpen(true)}
+                  data-voice="auth.qr.scan"
+                  className="w-full py-3 rounded-xl font-black text-sm flex items-center justify-center gap-2 text-white btn-press shadow-lg"
+                  style={{ background: "linear-gradient(120deg,#06b6d4,#8b5cf6,#ef476f)" }}
+                >
+                  <QrCodeIcon className="w-4 h-4" /> QR কার্ড স্ক্যান করে লগইন
+                </button>
+                <button
+                  type="button" onClick={() => setForgotOpen(true)}
+                  className="w-full py-2 text-[12px] font-black text-cyan underline underline-offset-4"
+                >
+                  পাসওয়ার্ড ভুলে গেছেন?
+                </button>
+              </>
             )}
           </form>
 
@@ -375,6 +383,10 @@ export function AuthPage() {
         </div>
 
         {scanOpen && <QrScanner onResult={handleScan} onClose={() => setScanOpen(false)} />}
+        {forgotOpen && (
+          <ForgotPasswordDialog initialPhone={phone} onClose={() => setForgotOpen(false)} />
+        )}
+
 
 
         {/* Mission banner */}
