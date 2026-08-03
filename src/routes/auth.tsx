@@ -328,6 +328,22 @@ export function AuthPage() {
                 className="w-full mt-1 px-4 py-3 bg-white border-2 border-border rounded-xl text-sm outline-none focus:border-cyan mono-num text-navy transition"
               />
             </div>
+            {mode === "signup" && (
+              <div data-voice="auth.email">
+                <label className="text-[11px] font-black text-rose uppercase tracking-wider">
+                  📧 Gmail (ভেরিফিকেশন লাগবে)
+                </label>
+                <input
+                  type="email" inputMode="email" autoComplete="email" required
+                  value={gmail} onChange={(e) => setGmail(e.target.value)}
+                  placeholder="yourname@gmail.com"
+                  className="w-full mt-1 px-4 py-3 bg-white border-2 border-border rounded-xl text-sm outline-none focus:border-rose text-navy transition"
+                />
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  একাউন্ট খোলার পর এই Gmail-এ কোড যাবে — কোড বসালেই Gmail লিংক হবে ও পাসওয়ার্ড ভুলে গেলে নিজেই রিসেট করতে পারবেন।
+                </p>
+              </div>
+            )}
             <div data-voice="auth.password">
               <label className="text-[11px] font-black text-violet uppercase tracking-wider">পাসওয়ার্ড</label>
               <input
