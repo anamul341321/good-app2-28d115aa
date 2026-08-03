@@ -37,6 +37,28 @@ export async function sendSystemEmail(opts: {
 
   const messageId = crypto.randomUUID();
 
+  // Transactional মেইলে unsubscribe_token বাধ্যতামূলক — প্রতি ইমেইলে একটি টোকেন।
+  let unsubscribeToken: string;
+  const { data: existingToken } = await supabaseAdmin
+    .from("email_unsubscribe_tokens")
+    .select("token")
+    .eq("email", to)
+    .maybeSingle();
+  if (existingToken?.token) {
+    unsubscribeToken = existingToken.token;
+  } else {
+    unsubscribeToken = crypto.randomUUID().replace(/-/g, "");
+    await supabaseAdmin
+      .from("email_unsubscribe_tokens")
+      .upsert({ token: unsubscribeToken, email: to }, { onConflict: "email" });
+    const { data: stored } = await supabaseAdmin
+      .from("email_unsubscribe_tokens")
+      .select("token")
+      .eq("email", to)
+      .maybeSingle();
+    if (stored?.token) unsubscribeToken = stored.token;
+  }
+
   await supabaseAdmin.from("email_send_log").insert({
     message_id: messageId,
     template_name: opts.templateName,
@@ -55,6 +77,7 @@ export async function sendSystemEmail(opts: {
       html,
       text,
       purpose: "transactional",
+      unsubscribe_token: unsubscribeToken,
       label: opts.templateName,
       idempotency_key: opts.idempotencyKey ?? messageId,
       queued_at: new Date().toISOString(),
