@@ -25,23 +25,35 @@ function AuthedLayout() {
 
   useEffect(() => {
     let active = true;
-    supabase.auth.getUser().then(({ data, error }) => {
+
+    // নেটওয়ার্ক সমস্যা হলে যেন লগআউট না হয়ে যায়:
+    // লোকাল সেশন থাকলে সেটাকেই বিশ্বাস করি, শুধু আসল sign-out হলে বের করে দিই।
+    supabase.auth.getSession().then(async ({ data }) => {
       if (!active) return;
-      if (error || !data.user) {
+      if (!data.session) {
         setAuthState("unauthenticated");
         return;
       }
       setAuthState("authenticated");
+      // ব্যাকগ্রাউন্ডে যাচাই — শুধু সেশন সত্যিই বাতিল হলে বের করি
+      const { data: u, error } = await supabase.auth.getUser();
+      if (!active) return;
+      if (!error && !u.user) setAuthState("unauthenticated");
     });
 
-    const sub = supabase.auth.onAuthStateChange((_e, session) => {
-      if (!session) setAuthState("unauthenticated");
+    const sub = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_OUT") {
+        setAuthState("unauthenticated");
+        return;
+      }
+      if (session) setAuthState("authenticated");
     });
     return () => {
       active = false;
       sub.data.subscription.unsubscribe();
     };
   }, [router]);
+
 
   const logout = async () => {
     await supabase.auth.signOut();
