@@ -120,20 +120,28 @@ export function EmailVerifyGate() {
   if (!open) {
     if (!deferred) return null;
     return (
-      <button
-        onClick={() => setOpen(true)}
-        className="fixed top-[58px] inset-x-0 z-[70] mx-auto max-w-md px-4"
-      >
-        <div className="rounded-2xl px-3 py-2 flex items-center gap-2 text-white font-black text-[12px] shadow-lg animate-pulse"
-          style={{ background: "linear-gradient(90deg,#e11d48,#f43f5e)" }}>
-          <AlertTriangle className="w-4 h-4 shrink-0" />
-          <span className="text-left leading-snug">
-            🔴 Gmail ভেরিফিকেশন প্রয়োজন — উইথড্র চালু করতে এখনই ভেরিফাই করুন
-          </span>
+      <div className="fixed top-[124px] inset-x-0 z-[70] px-3 pointer-events-none">
+        <div className="max-w-md mx-auto pointer-events-auto">
+          <div
+            className="rounded-2xl px-3 py-2 flex items-center gap-2 shadow-lg border border-white/20"
+            style={{ background: "linear-gradient(90deg,#dc2626,#e11d48)" }}
+          >
+            <AlertTriangle className="w-4 h-4 shrink-0 text-white" />
+            <p className="flex-1 min-w-0 text-white font-black text-[11.5px] leading-tight">
+              Gmail ভেরিফিকেশন প্রয়োজন
+            </p>
+            <button
+              onClick={() => setOpen(true)}
+              className="shrink-0 px-3 py-1.5 rounded-xl bg-white text-rose-700 font-black text-[11px] btn-press"
+            >
+              Verify now
+            </button>
+          </div>
         </div>
-      </button>
+      </div>
     );
   }
+
 
   return (
     <div className="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
