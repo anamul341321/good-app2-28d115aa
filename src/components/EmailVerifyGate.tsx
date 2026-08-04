@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Mail, Loader2, ShieldCheck, KeyRound, AlertTriangle } from "lucide-react";
 import { getEmailVerifyStatus, requestEmailVerifyOtp, confirmEmailVerifyOtp } from "@/lib/email-verify.functions";
+import { getAuthMode } from "@/lib/auth-mode.functions";
 
 /**
  * Gmail ভেরিফিকেশন গেট।
