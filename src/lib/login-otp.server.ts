@@ -53,6 +53,7 @@ async function resolveAccount(identifier: string): Promise<Account> {
       return {
         id: "",
         authEmail: phoneToEmail(digits),
+        authEmails: [phoneToEmail(digits)],
         contactEmail: "",
         emailVerified: false,
         displayName: null,
@@ -72,23 +73,29 @@ async function resolveAccount(identifier: string): Promise<Account> {
 
   if (!profile) throw new Error("এই নম্বর/Gmail-এ কোনো একাউন্ট পাওয়া যায়নি");
 
-  let authEmail = profile.phone_number ? phoneToEmail(profile.phone_number) : "";
-  if (!authEmail) {
-    const { data } = await supabaseAdmin.auth.admin.getUserById(profile.id);
-    authEmail = data?.user?.email ?? "";
-  }
-  if (!authEmail) throw new Error("এই একাউন্টে লগইন তথ্য পাওয়া যায়নি — অ্যাডমিনের সাথে যোগাযোগ করুন");
+  // একাউন্টে যে যে ইমেইল দিয়ে auth হতে পারে — সবগুলো চেষ্টা করব
+  const candidates: string[] = [];
+  if (profile.phone_number) candidates.push(phoneToEmail(profile.phone_number));
+  const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(profile.id);
+  const realAuthEmail = (authUser?.user?.email ?? "").toLowerCase();
+  if (realAuthEmail && !candidates.includes(realAuthEmail)) candidates.push(realAuthEmail);
+  const profileEmail = (profile.email ?? "").toLowerCase();
+  if (profileEmail && !candidates.includes(profileEmail)) candidates.push(profileEmail);
+
+  if (candidates.length === 0)
+    throw new Error("এই একাউন্টে লগইন তথ্য পাওয়া যায়নি — অ্যাডমিনের সাথে যোগাযোগ করুন");
 
   return {
     id: profile.id,
-    authEmail,
-    contactEmail: (profile.email ?? "").toLowerCase(),
+    authEmail: candidates[0]!,
+    authEmails: candidates,
+    contactEmail: profileEmail,
     emailVerified: Boolean(profile.email_verified),
     displayName: profile.display_name ?? null,
   };
 }
 
-async function verifyPassword(authEmail: string, password: string) {
+async function signInWith(authEmail: string, password: string) {
   const { createClient } = await import("@supabase/supabase-js");
   const key = process.env["SUPABASE_PUBLISHABLE_KEY"];
   const url = process.env["SUPABASE_URL"];
@@ -108,9 +115,18 @@ async function verifyPassword(authEmail: string, password: string) {
     },
   });
   const { data, error } = await client.auth.signInWithPassword({ email: authEmail, password });
-  if (error || !data.session) throw new Error("ভুল নম্বর/Gmail অথবা পাসওয়ার্ড");
+  if (error || !data.session) return null;
   return { access_token: data.session.access_token, refresh_token: data.session.refresh_token };
 }
+
+async function verifyPassword(account: Account, password: string) {
+  for (const email of account.authEmails) {
+    const session = await signInWith(email, password);
+    if (session) return session;
+  }
+  throw new Error("ভুল নম্বর/Gmail অথবা পাসওয়ার্ড");
+}
+
 
 async function startLoginOtpWork(data: LoginData) {
   const { isEmailOtpEnabled } = await import("./auth-mode.server");
