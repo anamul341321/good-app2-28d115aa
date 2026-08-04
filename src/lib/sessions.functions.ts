@@ -119,13 +119,38 @@ export const requestDeviceApproval = createServerFn({ method: "POST" })
 
     const main = (mains ?? [])[0] as any;
     const email = ((prof as any)?.email as string) || "";
+
+    // অনুমতি দেওয়ার মতো কোনো সক্রিয় ফোন নেই — তাহলে এই ফোনটিই চালু করে দিই,
+    // না হলে ইউজার নিজের একাউন্টেই ঢুকতে পারবে না।
+    if (!main) {
+      await supabaseAdmin
+        .from("user_devices")
+        .update({
+          revoked_at: null,
+          approval_state: null,
+          approval_requested_at: null,
+          last_seen_at: new Date().toISOString(),
+        } as any)
+        .eq("user_id", context.userId)
+        .eq("device_id", deviceId);
+      return {
+        autoUnlocked: true as const,
+        mainDeviceLabel: null,
+        mainDeviceLastSeen: null,
+        emailAvailable: !!((prof as any)?.email_verified && email),
+        emailMasked: email ? email.replace(/^(.{2}).*(@.*)$/, "$1***$2") : null,
+      };
+    }
+
     return {
+      autoUnlocked: false as const,
       mainDeviceLabel: (main?.label as string) || null,
       mainDeviceLastSeen: (main?.last_seen_at as string) || null,
       emailAvailable: !!((prof as any)?.email_verified && email),
       emailMasked: email ? email.replace(/^(.{2}).*(@.*)$/, "$1***$2") : null,
     };
   });
+
 
 /** এই ফোনটি এখনো অনুমতির অপেক্ষায় আছে কি না */
 export const getDeviceApprovalState = createServerFn({ method: "POST" })
