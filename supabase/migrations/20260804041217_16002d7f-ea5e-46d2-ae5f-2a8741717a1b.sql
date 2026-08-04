@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "face-photos no direct access" ON storage.objects;
