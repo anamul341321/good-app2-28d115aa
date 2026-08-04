@@ -9,6 +9,7 @@ import {
   startGoogleAccountLink,
   completeGoogleAccountLink,
 } from "@/lib/google-profile.functions";
+import { getAuthMode } from "@/lib/auth-mode.functions";
 import { supabase } from "@/integrations/supabase/client";
 
 /**
@@ -23,6 +24,16 @@ export function ProfileCompleteGate() {
   const saveFn = useServerFn(completeGoogleProfile);
   const linkStart = useServerFn(startGoogleAccountLink);
   const linkConfirm = useServerFn(completeGoogleAccountLink);
+
+  const { data: mode, isLoading: modeLoading } = useQuery({
+    queryKey: ["auth-mode"],
+    queryFn: () => getAuthMode(),
+    staleTime: 60_000,
+  });
+
+  // Gmail OTP switch OFF থাকলে Google দিয়ে সরাসরি ঢোকা যাবে — কোনো গেট/কোড ছাড়াই।
+  // mode লোড হওয়া পর্যন্ত gate দেখাব না, যাতো loading-এ অযথা modal না ওঠে।
+  if (modeLoading || mode?.emailOtpEnabled === false) return null;
 
   const { data } = useQuery({
     queryKey: ["google-profile-status"],

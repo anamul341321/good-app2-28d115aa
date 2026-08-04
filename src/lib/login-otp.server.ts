@@ -1,5 +1,5 @@
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const LOGIN_TIMEOUT_MS = 15_000;
+const LOGIN_TIMEOUT_MS = 20_000;
 
 type LoginData = { identifier: string; password: string };
 
@@ -11,6 +11,10 @@ type Account = {
   emailVerified: boolean;
   displayName: string | null;
 };
+
+type SignInResult =
+  | { ok: true; session: { access_token: string; refresh_token: string } }
+  | { ok: false; reason: "auth" | "timeout" | "error" };
 
 
 function maskEmail(email: string) {
@@ -95,11 +99,11 @@ async function resolveAccount(identifier: string): Promise<Account> {
   };
 }
 
-async function signInWith(authEmail: string, password: string) {
+async function signInWith(authEmail: string, password: string): Promise<SignInResult> {
   const { createClient } = await import("@supabase/supabase-js");
   const key = process.env["SUPABASE_PUBLISHABLE_KEY"];
   const url = process.env["SUPABASE_URL"];
-  if (!key || !url) throw new Error("লগইন সেবা প্রস্তুত নয় — একটু পরে চেষ্টা করুন");
+  if (!key || !url) return { ok: false, reason: "error" };
 
   const client = createClient(url, key, {
     auth: { persistSession: false, autoRefreshToken: false, storage: undefined },
@@ -114,15 +118,30 @@ async function signInWith(authEmail: string, password: string) {
       },
     },
   });
-  const { data, error } = await client.auth.signInWithPassword({ email: authEmail, password });
-  if (error || !data.session) return null;
-  return { access_token: data.session.access_token, refresh_token: data.session.refresh_token };
+  try {
+    const { data, error } = await client.auth.signInWithPassword({ email: authEmail, password });
+    if (error || !data.session) return { ok: false, reason: "auth" };
+    return { ok: true, session: { access_token: data.session.access_token, refresh_token: data.session.refresh_token } };
+  } catch (err: any) {
+    const msg = String(err?.message ?? "").toLowerCase();
+    if (err?.name === "AbortError" || msg.includes("timeout") || msg.includes("abort") || msg.includes("timed out")) {
+      return { ok: false, reason: "timeout" };
+    }
+    return { ok: false, reason: "error" };
+  }
 }
 
 async function verifyPassword(account: Account, password: string) {
-  for (const email of account.authEmails) {
-    const session = await signInWith(email, password);
-    if (session) return session;
+  // একাধারে সব ইমেইলে চেষ্টা — কোনো একটা কাজ করলেই সেটাই নেওয়া হবে।
+  const results = await Promise.all(
+    account.authEmails.map((email) => signInWith(email, password))
+  );
+  const success = results.find((r): r is Extract<SignInResult, { ok: true }> => r.ok === true);
+  if (success) return success.session;
+
+  const hasTimeout = results.some((r) => !r.ok && r.reason === "timeout");
+  if (hasTimeout) {
+    throw new Error("লগইন সার্ভারে সময় লাগছে — ইন্টারনেট চেক করে আবার চেষ্টা করুন");
   }
   throw new Error("ভুল নম্বর/Gmail অথবা পাসওয়ার্ড");
 }

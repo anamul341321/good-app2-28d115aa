@@ -5,7 +5,7 @@ let cache: { value: boolean; at: number } | null = null;
  * Admin panel থেকে switch off করলে সব কিছু আগের মতো — শুধু নম্বর/পাসওয়ার্ড।
  */
 export async function isEmailOtpEnabled(): Promise<boolean> {
-  if (cache && Date.now() - cache.at < 15_000) return cache.value;
+  if (cache && Date.now() - cache.at < 3_000) return cache.value;
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data } = await supabaseAdmin
@@ -19,4 +19,9 @@ export async function isEmailOtpEnabled(): Promise<boolean> {
   } catch {
     return true;
   }
+}
+
+/** Admin switch toggle করলে cache তৎক্ষণাৎ invalidate হয়ে যাবে। */
+export function resetEmailOtpCache() {
+  cache = null;
 }
