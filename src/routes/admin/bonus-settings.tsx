@@ -188,6 +188,42 @@ function BonusSettings() {
         </p>
       </div>
 
+      {/* Gmail কোড (OTP) সিস্টেম Switch */}
+      <div className={`rounded-2xl p-4 border-2 space-y-2 ${otpMode ? "border-cyan/50 bg-cyan/5" : "border-amber/50 bg-amber/5"}`}>
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className={`text-[11px] uppercase tracking-widest font-black ${otpMode ? "text-cyan" : "text-amber"}`}>
+              📧 Gmail কোড (OTP) সিস্টেম
+            </p>
+            <p className="text-sm font-black mt-0.5">
+              {otpMode
+                ? "ON — registration/login/password change-এ Gmail কোড লাগবে"
+                : "OFF — আগের মতো শুধু নম্বর + পাসওয়ার্ড"}
+            </p>
+          </div>
+          <button
+            disabled={save.isPending}
+            onClick={() => {
+              const next = !otpMode;
+              if (!confirm(next
+                ? "SURE? ON করলে সবাইকে Gmail verification ও login কোড দিতে হবে।"
+                : "SURE? OFF করলে Gmail verification/কোড লাগবে না — সব আগের মতো নম্বর+পাসওয়ার্ডে চলবে।")) return;
+              setOtpMode(next);
+              save.mutate();
+            }}
+            className={`shrink-0 w-16 h-9 rounded-full relative transition ${otpMode ? "bg-cyan" : "bg-surface-2 border border-border"} disabled:opacity-50`}>
+            <span className={`absolute top-1 w-7 h-7 rounded-full bg-white shadow transition-all ${otpMode ? "left-8" : "left-1"}`} />
+          </button>
+        </div>
+        <p className="text-[10px] text-muted-foreground leading-snug">
+          {otpMode
+            ? "🔐 এখন Gmail ছাড়া registration হবে না, login-এ কোড যাবে, password change-এও কোড লাগবে।"
+            : "🕰️ Legacy mode: Gmail লাগবে না, কোড যাবে না, forgot-password admin থেকে reset করতে হবে।"}
+        </p>
+      </div>
+
+
+
 
       <div className="glass rounded-2xl p-4 space-y-3">
         <Field
