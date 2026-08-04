@@ -84,6 +84,7 @@ function UnverifiedPage() {
   }
 
   const copy = (s: string) => { navigator.clipboard.writeText(s); toast.success("Copy হয়েছে"); };
+  const [zoom, setZoom] = useState<string | null>(null);
 
   return (
     <div className="space-y-2">
@@ -121,7 +122,12 @@ function UnverifiedPage() {
         <div key={r.id} className="glass rounded-xl p-3 space-y-2">
           <div className="flex gap-3">
             {r.signed_url ? (
-              <img src={r.signed_url} className="w-16 h-16 rounded-lg object-cover border border-border" />
+              <img
+                src={r.signed_url}
+                alt={r.face_label || "face"}
+                onClick={() => setZoom(r.signed_url)}
+                className="w-16 h-16 rounded-lg object-cover border border-border cursor-zoom-in active:scale-95 transition"
+              />
             ) : (
               <div className="w-16 h-16 rounded-lg bg-surface-2 flex items-center justify-center">
                 <AlertTriangle className="w-5 h-5 text-amber" />
@@ -166,6 +172,20 @@ function UnverifiedPage() {
       {(!data || data.length === 0) && (
         <div className="glass rounded-xl p-6 text-center text-xs text-muted-foreground">
           কোনো not-whitelisted attempt নেই।
+        </div>
+      )}
+      {zoom && (
+        <div
+          onClick={() => setZoom(null)}
+          className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4"
+        >
+          <img src={zoom} alt="zoom" className="max-w-full max-h-full rounded-lg object-contain" />
+          <button
+            onClick={() => setZoom(null)}
+            className="absolute top-4 right-4 px-3 py-1.5 rounded-lg bg-white/15 text-white text-xs font-bold"
+          >
+            ✕ বন্ধ
+          </button>
         </div>
       )}
     </div>
