@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { Printer, Download, FileText, X, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 const tk = (n: number) => `${n.toFixed(2)}৳`;
 const bn = (s: string) => new Date(s).toLocaleString("bn-BD");
@@ -33,19 +34,35 @@ export function EarningsStatement({ data, onClose }: { data: StatementData; onCl
   const [busy, setBusy] = useState(false);
 
   const downloadPng = async () => {
-    if (!sheetRef.current) return;
+    const node = sheetRef.current;
+    if (!node) return;
     setBusy(true);
     try {
-      const html2canvas = (await import("html2canvas")).default;
-      const canvas = await html2canvas(sheetRef.current, { scale: 2, backgroundColor: "#ffffff", useCORS: true });
+      // html-to-image uses the browser's own renderer (SVG foreignObject), so
+      // modern CSS colors (oklch) don't break it the way html2canvas does.
+      const { toPng } = await import("html-to-image");
+      const dataUrl = await toPng(node, {
+        backgroundColor: "#ffffff",
+        pixelRatio: 2,
+        cacheBust: true,
+        width: node.scrollWidth,
+        height: node.scrollHeight,
+      });
       const link = document.createElement("a");
       link.download = `earnings-${data.uid ?? "user"}-${new Date().toISOString().slice(0, 10)}.png`;
-      link.href = canvas.toDataURL("image/png");
+      link.href = dataUrl;
+      document.body.appendChild(link);
       link.click();
+      link.remove();
+      toast.success("ছবি ডাউনলোড হয়েছে — Gallery/Downloads ফোল্ডারে দেখুন 📥");
+    } catch (e: any) {
+      console.error("statement png failed", e);
+      toast.error("ছবি বানানো যায়নি — 'প্রিন্ট' বাটন দিয়ে PDF হিসেবে সেভ করুন");
     } finally {
       setBusy(false);
     }
   };
+
 
   const totalIn = data.totalIn;
 
