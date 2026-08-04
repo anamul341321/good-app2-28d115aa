@@ -245,13 +245,16 @@ export async function speakBengali(rawText: string): Promise<Uint8Array | null> 
   if (!keys.length) return null;
 
   const chunks = chunkScript(text);
+  // সব চাংক একসাথে (parallel) বানানো হয় — তাই লম্বা উত্তরেও ভয়েস প্রায় সাথে সাথেই আসে।
+  const chunks = chunkScript(text);
+  const results = await Promise.all(chunks.map((c) => pcmForChunk(c, voice, keys)));
   const pcms: Uint8Array[] = [];
-  for (const chunk of chunks) {
-    const pcm = await pcmForChunk(chunk, voice, keys);
-    if (!pcm) break; // quota/model gave up — send what we already have
+  for (const pcm of results) {
+    if (!pcm) break; // একটা চাংক ব্যর্থ হলে সেখান পর্যন্তই পাঠাই (ক্রম ঠিক রাখতে)
     pcms.push(pcm);
   }
   if (!pcms.length) return null;
+
 
   const total = pcms.reduce((n, p) => n + p.length, 0);
   const joined = new Uint8Array(total);
