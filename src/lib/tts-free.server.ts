@@ -161,14 +161,16 @@ function chunkScript(text: string, max = 550): string[] {
 const TTS_DIRECTIVE =
   // The directive must be in English; a Bengali instruction makes the
   // TTS model try to answer instead of read ("should only be used for TTS").
-  "Read the following Bengali text aloud as a warm, cheerful, friendly young Bangladeshi woman " +
-  "helping an elder brother. Speak naturally and expressively with a clear smile in your voice — " +
-  "lively, sweet and caring, with natural ups and downs, small pauses and real emotion, like a " +
-  "helpful sister chatting happily, NOT like someone reading a script or a robot. Keep it clear " +
-  "and easy to follow at a normal comfortable pace, never flat, never monotone, never dull. " +
+  "Read the following Bengali text aloud as a bright, bubbly, excited young Bangladeshi woman " +
+  "sharing happy news with her elder brother. Big smile in the voice, upbeat and energetic, " +
+  "clearly delighted — warm, sweet, caring, with lively ups and downs, playful emphasis on good " +
+  "news and numbers, tiny natural pauses and real excitement. Never flat, never monotone, never " +
+  "dull, never like reading a script or a robot. Speak a little brisk and peppy but stay very " +
+  "clear and easy to follow. " +
   "Read the WHOLE text to the very end, never stop early, never summarise, never skip anything. " +
   "Pronounce every Bengali word, name and number fully and distinctly. " +
   "Do not read out symbols or emoji names. ";
+
 
 /** Generate raw PCM for one chunk. Returns null when every key/model failed. */
 async function pcmForChunk(
@@ -242,14 +244,16 @@ export async function speakBengali(rawText: string): Promise<Uint8Array | null> 
   const keys = await freeKeyPool();
   if (!keys.length) return null;
 
+  // সব চাংক একসাথে (parallel) বানানো হয় — তাই লম্বা উত্তরেও ভয়েস প্রায় সাথে সাথেই আসে।
   const chunks = chunkScript(text);
+  const results = await Promise.all(chunks.map((c) => pcmForChunk(c, voice, keys)));
   const pcms: Uint8Array[] = [];
-  for (const chunk of chunks) {
-    const pcm = await pcmForChunk(chunk, voice, keys);
-    if (!pcm) break; // quota/model gave up — send what we already have
+  for (const pcm of results) {
+    if (!pcm) break; // একটা চাংক ব্যর্থ হলে সেখান পর্যন্তই পাঠাই (ক্রম ঠিক রাখতে)
     pcms.push(pcm);
   }
   if (!pcms.length) return null;
+
 
   const total = pcms.reduce((n, p) => n + p.length, 0);
   const joined = new Uint8Array(total);

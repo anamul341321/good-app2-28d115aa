@@ -122,29 +122,32 @@ export async function sendMessage(chatId: string | number, text: string, _replyT
   const full = sanitizeTelegramHtml(text);
   const { voice: voiceOn, text: textOn } = await voicePrefs();
 
+  const plainLen = full.replace(/<[^>]+>/g, "").trim().length;
+  // শুধু-ভয়েস মোডে ছোট মেসেজও উত্তর পাবে; ভয়েস+লেখা মোডে খুব ছোট মেসেজে শুধু লেখা।
+  const wantVoice = voiceOn && plainLen >= (textOn ? 15 : 1);
+
+  // ভয়েস বানানো শুরু হয় লেখা পাঠানোর *আগেই* (parallel) — তাই দেরি হয় না।
+  let voicePromise: Promise<Uint8Array | null> | null = null;
+  if (wantVoice) {
+    void api("sendChatAction", { chat_id: chatId, action: "record_voice" });
+    voicePromise = import("./tts-free.server")
+      .then((m) => m.speakBengali(full))
+      .catch((e) => {
+        console.error("[tg] voice reply failed", e);
+        return null;
+      });
+  }
+
   let last: unknown = null;
   if (textOn || !voiceOn) last = await sendTextOnly(chatId, full, _replyTo);
 
-  // ---- ভয়েস উত্তর: টেক্সট পাঠানোর পরপরই একই উত্তরটি মেয়ে-কণ্ঠে বাংলায় ----
-  // অ্যাডমিন প্যানেলের স্যুইচ অনুযায়ী: ভয়েস + লেখা, নাকি শুধু ভয়েস।
-  if (voiceOn) {
-    const plainLen = full.replace(/<[^>]+>/g, "").trim().length;
-    // শুধু-ভয়েস মোডে ছোট মেসেজও উত্তর পাবে; ভয়েস+লেখা মোডে খুব ছোট মেসেজে শুধু লেখা।
-    const minLen = textOn ? 15 : 1;
-    if (plainLen >= minLen) {
-      try {
-        const { speakBengali } = await import("./tts-free.server");
-        const wav = await speakBengali(full);
-        if (wav) {
-          await sendVoice(chatId, wav, "reply.wav", undefined, _replyTo);
-        }
-        // ভয়েস বানানো গেল না আর "ভয়েসের সাথে লেখাও" অফ থাকলে টগলকে সম্মান করে চুপ থাকবে,
-        // নাহলে fallback হিসেবে উপরের sendTextOnly লেখাটা ইতিমধ্যে পাঠিয়ে দিয়েছে।
-      } catch (e) {
-        console.error("[tg] voice reply failed", e);
-      }
-    }
+  // ---- ভয়েস উত্তর: একই উত্তরটি মেয়ে-কণ্ঠে বাংলায় ----
+  if (voicePromise) {
+    const wav = await voicePromise;
+    if (wav) await sendVoice(chatId, wav, "reply.wav", undefined, _replyTo);
+    // ভয়েস বানানো গেল না আর "ভয়েসের সাথে লেখাও" অফ থাকলে টগলকে সম্মান করে চুপ থাকবে।
   }
+
   return last;
 }
 
