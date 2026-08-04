@@ -33,14 +33,20 @@ export function BalanceHistory({ mining, income, withdrawals, debts }: {
   // Mining part of accrued = everything credited that wasn't a bonus/gift.
   const miningPart = Math.max(0, accrued - bonusTotal - transferIn);
   const bonusPart = Math.max(0, bonusTotal - voucher - adminPlus);
+  // Referral 10% commission is credited *inside* mining — split it out so it is
+  // obvious how much of the mining income came from the user's referrals.
+  const referralPart = Math.min(miningPart, Math.max(0, Number(t.referralAccrued ?? mining?.referral_accrued ?? 0)));
+  const selfMiningPart = Math.max(0, miningPart - referralPart);
 
   const sources: Source[] = [
-    { key: "mining", label: "⛏️ মাইনিং (স্লট থেকে)", amount: miningPart, color: "text-cyan" },
+    { key: "mining", label: "⛏️ নিজের স্লট মাইনিং", amount: selfMiningPart, color: "text-cyan" },
+    { key: "refcom", label: "🤝 রেফার ১০% কমিশন (মাইনিং-এর ভেতরে)", amount: referralPart, color: "text-emerald" },
     { key: "bonus", label: "🎉 বোনাস (first/re-verify)", amount: bonusPart, color: "text-amber" },
     { key: "voucher", label: "🎁 ভাউচার (claim করা)", amount: voucher, color: "text-amber" },
     { key: "admin", label: "➕ অ্যাডমিন যোগ করেছে", amount: adminPlus, color: "text-emerald" },
     { key: "transfer", label: "📥 অন্য user পাঠিয়েছে", amount: transferIn, color: "text-violet" },
   ].filter((s) => s.amount > 0.004);
+
 
   const totalIn = sources.reduce((s, x) => s + x.amount, 0);
   const outs = [
