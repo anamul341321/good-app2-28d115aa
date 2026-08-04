@@ -11,6 +11,8 @@ type Props = {
   lastCreditedAt: string | null;
   effectiveTaskCount?: number;
   qualifyingReferees?: number;
+  selfQualified?: boolean;
+
   displayTaskCount?: number;
   leagueCount?: number;
   bonusTotal?: number;
@@ -30,7 +32,7 @@ function leagueFor(n: number): { name: string; emoji: string; from: string; to: 
 
 export function MiningCounter({
   accrued, withdrawn, isActive, lastCreditedAt,
-  effectiveTaskCount = 0, qualifyingReferees = 0, displayTaskCount, leagueCount,
+  effectiveTaskCount = 0, qualifyingReferees = 0, selfQualified = true, displayTaskCount, leagueCount,
   bonusTotal = 0, referralAccrued = 0,
 }: Props) {
 
@@ -45,14 +47,17 @@ export function MiningCounter({
 
   const balance = computeLiveBalance({
     accrued, withdrawn, isActive, lastCreditedAt,
-    effectiveTaskCount, qualifyingReferees, now,
+    effectiveTaskCount, qualifyingReferees, selfQualified, now,
   });
-  const live = isActive && (effectiveTaskCount > 0 || qualifyingReferees > 0);
-  const shownSlots = Math.max(effectiveTaskCount, displayTaskCount ?? 0);
+  // Self mining only counts after the user's own 10 re-verifies are done.
+  const selfSlots = selfQualified ? effectiveTaskCount : 0;
+  const live = isActive && (selfSlots > 0 || qualifyingReferees > 0);
+  const shownSlots = selfQualified ? Math.max(effectiveTaskCount, displayTaskCount ?? 0) : 0;
   const ratePerMonth = 500 * (shownSlots / 10 + 0.10 * qualifyingReferees);
   const bonusMonth = 500 * 0.10 * qualifyingReferees;
   const claimable = Math.floor(balance);
-  const league = leagueFor(leagueCount ?? shownSlots);
+  const league = leagueFor(leagueCount ?? Math.max(effectiveTaskCount, displayTaskCount ?? 0));
+
 
   // Balance split (same rule the withdraw server uses): withdrawals are taken
   // from bonus first, so the remaining bonus part is what's still un-withdrawn.

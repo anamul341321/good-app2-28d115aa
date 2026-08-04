@@ -187,6 +187,8 @@ function HomePage() {
         lastCreditedAt={data.mining?.last_credited_at ?? null}
         effectiveTaskCount={Number(data.mining?.effective_task_count ?? 0)}
         qualifyingReferees={Number(data.mining?.qualifying_referees ?? 0)}
+        selfQualified={(data.mining as any)?.self_qualified !== false}
+
         displayTaskCount={submittedCount}
         leagueCount={submittedCount}
         bonusTotal={Number((data.mining as any)?.bonus_amount ?? 0)}
