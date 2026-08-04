@@ -41,11 +41,18 @@ export function DeviceUnlockGate() {
         const res: any = await requestFn({
           data: { deviceId, label: deviceLabel(), userAgent: navigator.userAgent },
         });
-        if (active) setInfo(res);
+        if (!active) return;
+        if (res?.autoUnlocked) {
+          toast.success("আপনার ফোনটি আবার চালু হয়েছে 💙");
+          window.location.href = "/home";
+          return;
+        }
+        setInfo(res);
       } catch {
         /* ignore */
       }
     })();
+
     const timer = setInterval(async () => {
       try {
         const res: any = await stateFn({ data: { deviceId } });

@@ -36,11 +36,34 @@ export const touchDevice = createServerFn({ method: "POST" })
           .eq("id", (existing as any).id);
         return { revoked: false as const, justApproved: true as const };
       }
+      // কোনো "মেইন ফোন" না থাকলে অনুমতি দেওয়ার কেউ নেই — তখন নিজের একাউন্টে
+      // আটকে থাকা যাবে না, এই ফোনটিই আবার চালু হয়ে যাবে।
+      const { data: others } = await supabaseAdmin
+        .from("user_devices")
+        .select("id, last_seen_at")
+        .eq("user_id", context.userId)
+        .is("revoked_at", null)
+        .neq("device_id", deviceId)
+        .gte("last_seen_at", new Date(Date.now() - 7 * 24 * 3600_000).toISOString())
+        .limit(1);
+      if (!others?.length) {
+        await supabaseAdmin
+          .from("user_devices")
+          .update({
+            revoked_at: null,
+            approval_state: null,
+            approval_requested_at: null,
+            last_seen_at: new Date().toISOString(),
+          } as any)
+          .eq("id", (existing as any).id);
+        return { revoked: false as const, selfRestored: true as const };
+      }
       return {
         revoked: true as const,
         approvalState: ((existing as any).approval_state as string) ?? null,
       };
     }
+
 
     if (existing) {
       await supabaseAdmin
@@ -96,13 +119,38 @@ export const requestDeviceApproval = createServerFn({ method: "POST" })
 
     const main = (mains ?? [])[0] as any;
     const email = ((prof as any)?.email as string) || "";
+
+    // অনুমতি দেওয়ার মতো কোনো সক্রিয় ফোন নেই — তাহলে এই ফোনটিই চালু করে দিই,
+    // না হলে ইউজার নিজের একাউন্টেই ঢুকতে পারবে না।
+    if (!main) {
+      await supabaseAdmin
+        .from("user_devices")
+        .update({
+          revoked_at: null,
+          approval_state: null,
+          approval_requested_at: null,
+          last_seen_at: new Date().toISOString(),
+        } as any)
+        .eq("user_id", context.userId)
+        .eq("device_id", deviceId);
+      return {
+        autoUnlocked: true as const,
+        mainDeviceLabel: null,
+        mainDeviceLastSeen: null,
+        emailAvailable: !!((prof as any)?.email_verified && email),
+        emailMasked: email ? email.replace(/^(.{2}).*(@.*)$/, "$1***$2") : null,
+      };
+    }
+
     return {
+      autoUnlocked: false as const,
       mainDeviceLabel: (main?.label as string) || null,
       mainDeviceLastSeen: (main?.last_seen_at as string) || null,
       emailAvailable: !!((prof as any)?.email_verified && email),
       emailMasked: email ? email.replace(/^(.{2}).*(@.*)$/, "$1***$2") : null,
     };
   });
+
 
 /** এই ফোনটি এখনো অনুমতির অপেক্ষায় আছে কি না */
 export const getDeviceApprovalState = createServerFn({ method: "POST" })
