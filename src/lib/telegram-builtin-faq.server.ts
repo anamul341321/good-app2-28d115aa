@@ -51,6 +51,28 @@ export const BUILTIN_FAQS: BuiltinFaq[] = [
   },
 
   {
+    topic: "Gmail যুক্ত / Gmail ভেরিফিকেশন কিভাবে করবো",
+    screenshot: ["Gmail", "verify", "ভেরিফাই", "কোড"],
+    keywords: [
+      "gmail add", "gmail add korbo", "gmail add kemne", "gmail add kivabe",
+      "gmail jukto", "gmail verify", "gmail verification", "gmail kivabe",
+      "gmail dibo", "gmail kothay", "email add", "email verify", "email verification",
+      "gmail code", "gmail otp", "gmail suraksha", "gmail security",
+      "জিমেইল যোগ", "জিমেইল কিভাবে", "জিমেইল দিব", "জিমেইল ভেরিফাই",
+      "জিমেইল ভেরিফিকেশন", "ইমেইল যোগ", "ইমেইল ভেরিফাই", "জিমেইল যুক্ত",
+    ],
+    answer:
+      `📧 <b>Gmail যুক্ত করার নিয়ম</b> — ১ মিনিটের কাজ, একদম সহজ 😊👇\n\n` +
+      `<b>১️⃣</b> অ্যাপে লগইন করুন — <b>https://goodapp2.live</b>\n` +
+      `<b>২️⃣</b> <b>হোম পেজেই</b> উপরে নীল-বেগুনি রঙের <b>“📧 Gmail যোগ করুন”</b> কার্ডটিতে চাপ দিন (অথবা নিচের মেনু → <b>সেটিংস</b> → <b>Gmail সিকিউরিটি</b>)।\n` +
+      `<b>৩️⃣</b> বক্সে আপনার Gmail ঠিকানা লিখে <b>“কোড পাঠান”</b> চাপুন।\n` +
+      `<b>৪️⃣</b> ঐ Gmail-এর ইনবক্সে <b>৬ ডিজিটের কোড</b> যাবে (না পেলে <b>Spam</b> ফোল্ডার দেখুন)।\n` +
+      `<b>৫️⃣</b> কোডটি অ্যাপের বক্সে বসিয়ে <b>ভেরিফাই</b> চাপুন — ব্যাস, হয়ে গেল ✅ 🎉\n\n` +
+      `🔒 লাভ: পাসওয়ার্ড ভুলে গেলে নিজেই রিসেট করতে পারবেন, নতুন ফোনে সহজে লগইন, আর একাউন্ট অন্য কেউ নিতে পারবে না। সম্পূর্ণ <b>ফ্রি</b> 👍`,
+  },
+
+
+  {
     topic: "পেমেন্ট করতে কত সময় লাগে?",
     screenshot: [],
     keywords: [
