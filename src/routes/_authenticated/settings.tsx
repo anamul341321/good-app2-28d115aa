@@ -104,6 +104,12 @@ function SettingsPage() {
     if (acc?.phone) setNewPhone(acc.phone);
   }, [acc?.phone]);
 
+  // Gmail আগেই যোগ থাকলে নতুন Gmail-এর বক্স লুকানো থাকবে
+  useEffect(() => {
+    if (acc?.emailVerified) setShowEmailForm(false);
+  }, [acc?.emailVerified]);
+
+
   async function sendPwCode() {
     if (newPw.length < 6) return toast.error("নতুন পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে");
     setPwBusy(true);
