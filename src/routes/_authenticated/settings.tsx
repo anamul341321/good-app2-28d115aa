@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
-  Settings as SettingsIcon, ShieldCheck, KeyRound, Smartphone, Mail, Phone,
+  Settings as SettingsIcon, ShieldCheck, KeyRound, Smartphone, Phone,
   Loader2, LogOut, MonitorSmartphone, FileText, Send, Check,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
