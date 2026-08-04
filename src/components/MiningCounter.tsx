@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { computeLiveBalance } from "@/lib/mining";
+import { computeLiveBalance, monthlyRate, MONTHLY_PER_SLOT } from "@/lib/mining";
 import { miningWindowInfo, nextOpenLabelBn } from "@/lib/mining-window";
 import { Wallet, Sparkles } from "lucide-react";
 
@@ -11,6 +11,8 @@ type Props = {
   lastCreditedAt: string | null;
   effectiveTaskCount?: number;
   qualifyingReferees?: number;
+  selfSlots?: number;
+  referralUnits?: number;
   selfQualified?: boolean;
 
   displayTaskCount?: number;
@@ -18,6 +20,7 @@ type Props = {
   bonusTotal?: number;
   referralAccrued?: number;
 };
+
 
 
 // League tiers based on total submitted slots.
