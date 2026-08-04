@@ -962,6 +962,14 @@ function UserDetail() {
         )}
       </div>
 
+      {/* Step-by-step reconciliation of bonus + mining */}
+      {(data as any).breakdown && (
+        <div className="glass rounded-2xl p-4 space-y-3 border border-amber/30">
+          <p className="text-[10px] uppercase tracking-widest text-amber font-black">ধাপে ধাপে হিসাব — বোনাস ও মাইনিং</p>
+          <EarningsBreakdown data={(data as any).breakdown} />
+        </div>
+      )}
+
       {/* Balance history — where the money came from and where it went */}
       <BalanceHistory
         mining={data.mining}
