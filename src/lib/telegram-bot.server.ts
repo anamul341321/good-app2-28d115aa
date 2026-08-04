@@ -117,7 +117,25 @@ export async function sendMessage(chatId: string | number, text: string, _replyT
     }
     last = sent;
   }
+  // ---- ভয়েস উত্তর: টেক্সট পাঠানোর পরপরই একই উত্তরটি মেয়ে-কণ্ঠে বাংলায় ----
+  // টেক্সট আগে যায় (তাই দ্রুত মনে হয়), ভয়েসটা তার পরে যোগ হয়। ফ্রি Gemini
+  // TTS ব্যবহার করা হয়, তাই ক্রেডিট কাটে না; কী না থাকলে চুপচাপ শুধু টেক্সট।
+  if (voiceRepliesEnabled() && full.replace(/<[^>]+>/g, "").trim().length >= 15) {
+    try {
+      const { speakBengali } = await import("./tts-free.server");
+      const wav = await speakBengali(full);
+      if (wav) await sendVoice(chatId, wav, "reply.wav", undefined, _replyTo);
+    } catch (e) {
+      console.error("[tg] voice reply failed", e);
+    }
+  }
   return last;
+}
+
+/** ভয়েস উত্তর বন্ধ করতে চাইলে BOT_VOICE_REPLY=off সেট করলেই হবে। */
+function voiceRepliesEnabled(): boolean {
+  const v = String(process.env.BOT_VOICE_REPLY ?? "").trim().toLowerCase();
+  return !(v === "off" || v === "0" || v === "false");
 }
 
 
