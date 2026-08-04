@@ -651,7 +651,7 @@ export function AuthPage() {
           </div>
         )}
 
-        {forgotOpen && (
+        {forgotOpen && otpEnabled && (
           <ForgotPasswordDialog onClose={() => setForgotOpen(false)} />
         )}
 
