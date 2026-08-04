@@ -13,7 +13,10 @@ type Props = {
   qualifyingReferees?: number;
   displayTaskCount?: number;
   leagueCount?: number;
+  bonusTotal?: number;
+  referralAccrued?: number;
 };
+
 
 // League tiers based on total submitted slots.
 function leagueFor(n: number): { name: string; emoji: string; from: string; to: string } | null {
