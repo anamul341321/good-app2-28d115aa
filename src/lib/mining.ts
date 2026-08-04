@@ -1,13 +1,42 @@
 import { MINING_RATE_BDT_PER_SEC, TOTAL_TASKS } from "./constants";
 
+// Per-slot mining rate: every re-verified slot mines 500৳/10 = 50৳ per month.
+// First 10 slots are mandatory to start mining; every extra re-verified slot
+// adds its own 50৳/month on top (11 slots → 550৳, 12 → 600৳ …).
+export const MONTHLY_PER_SLOT = 50;
+export const RATE_PER_SLOT_SEC = MINING_RATE_BDT_PER_SEC / TOTAL_TASKS;
+
+// Referrer earns 10% of whatever the referee earns → 5৳/month per referee slot,
+// i.e. 0.1 slot-unit per referee slot.
+export const REFERRAL_SHARE = 0.1;
+
+export function miningUnits(input: {
+  selfSlots?: number;
+  referralUnits?: number;
+  effectiveTaskCount?: number;
+  qualifyingReferees?: number;
+  selfQualified?: boolean;
+}): { selfUnits: number; refUnits: number } {
+  const selfOk = input.selfQualified !== false;
+  const rawSelf = input.selfSlots ?? input.effectiveTaskCount ?? 0;
+  const selfUnits = selfOk ? Math.max(0, rawSelf) : 0;
+  const refUnits = Math.max(0, input.referralUnits ?? input.qualifyingReferees ?? 0);
+  return { selfUnits, refUnits };
+}
+
+export function monthlyRate(input: Parameters<typeof miningUnits>[0]): number {
+  const { selfUnits, refUnits } = miningUnits(input);
+  return MONTHLY_PER_SLOT * (selfUnits + refUnits);
+}
+
 // Live computed mining balance.
-// Effective rate = base_rate * (effective_task_count / TOTAL_TASKS)
-//                + base_rate * 0.10 * qualifying_referees
 export function computeLiveBalance(input: {
   accrued: number;
   withdrawn: number;
   isActive: boolean;
   lastCreditedAt: string | null;
+  selfSlots?: number;
+  referralUnits?: number;
   effectiveTaskCount?: number;
   qualifyingReferees?: number;
   selfQualified?: boolean;
@@ -16,11 +45,8 @@ export function computeLiveBalance(input: {
 }): number {
   const now = input.now ?? Date.now();
   let total = input.accrued;
-  // Self mining only counts when the user themself completed 10 re-verifies.
-  const selfOk = input.selfQualified !== false;
-  const eff = selfOk ? Math.max(0, input.effectiveTaskCount ?? 0) : 0;
-  const refs = Math.max(0, input.qualifyingReferees ?? 0);
-  const rate = MINING_RATE_BDT_PER_SEC * (eff / TOTAL_TASKS + 0.10 * refs);
+  const { selfUnits, refUnits } = miningUnits(input);
+  const rate = RATE_PER_SLOT_SEC * (selfUnits + refUnits);
 
   if (input.isActive && input.lastCreditedAt && rate > 0) {
     const last = new Date(input.lastCreditedAt).getTime();
