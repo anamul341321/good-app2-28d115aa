@@ -9,6 +9,7 @@ import {
   startGoogleAccountLink,
   completeGoogleAccountLink,
 } from "@/lib/google-profile.functions";
+import { getAuthMode } from "@/lib/auth-mode.functions";
 import { supabase } from "@/integrations/supabase/client";
 
 /**
