@@ -244,7 +244,6 @@ export async function speakBengali(rawText: string): Promise<Uint8Array | null> 
   const keys = await freeKeyPool();
   if (!keys.length) return null;
 
-  const chunks = chunkScript(text);
   // সব চাংক একসাথে (parallel) বানানো হয় — তাই লম্বা উত্তরেও ভয়েস প্রায় সাথে সাথেই আসে।
   const chunks = chunkScript(text);
   const results = await Promise.all(chunks.map((c) => pcmForChunk(c, voice, keys)));
