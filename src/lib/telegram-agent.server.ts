@@ -326,7 +326,7 @@ export async function agentAnswer(opts: {
     for (let step = 0; step < 5; step++) {
       let res: Response;
       try {
-        res = await fetch(AI_URL, {
+        res = await aiFetch(AI_URL, {
           method: "POST",
           headers: { "Lovable-API-Key": key, "Content-Type": "application/json" },
           body: JSON.stringify({

@@ -128,7 +128,7 @@ export async function readScreenshotText(photoBase64: string): Promise<string> {
   const key = process.env.LOVABLE_API_KEY;
   if (!key) return "";
   try {
-    const res = await fetch(AI_URL, {
+    const res = await aiFetch(AI_URL, {
       method: "POST",
       headers: { "Lovable-API-Key": key, "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -358,7 +358,7 @@ BE STRICT about telling similar errors apart. Different error TEXT = different p
 Answer ONLY with JSON: {"same": true|false, "confidence": 0.0-1.0}`;
 
 
-  const res = await fetch(AI_URL, {
+  const res = await aiFetch(AI_URL, {
     method: "POST",
     headers: { "Lovable-API-Key": key, "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -451,7 +451,7 @@ Answer ONLY JSON: {"best": <1-${refs.length} or 0 if none really matches>}`,
     content.push({ type: "image_url", image_url: { url: `data:image/jpeg;base64,${r.imageBase64}` } });
   });
 
-  const res = await fetch(AI_URL, {
+  const res = await aiFetch(AI_URL, {
     method: "POST",
     headers: { "Lovable-API-Key": key, "Content-Type": "application/json" },
     body: JSON.stringify({ model: MODEL, temperature: 0, max_tokens: 40, messages: [{ role: "user", content }] }),
@@ -497,7 +497,7 @@ export async function humanizeReply(answer: string, userText?: string, avoid?: s
   ];
   const tone = tones[Math.floor(Math.random() * tones.length)];
   try {
-    const res = await fetch(AI_URL, {
+    const res = await aiFetch(AI_URL, {
       method: "POST",
       headers: { "Lovable-API-Key": key, "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -627,7 +627,7 @@ export async function transcribeAudio(base64: string, format: string): Promise<s
   const stt = await transcribeAudioStt(base64, format, key);
   if (stt) return stt;
   try {
-    const res = await fetch(AI_URL, {
+    const res = await aiFetch(AI_URL, {
       method: "POST",
       headers: { "Lovable-API-Key": key, "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -834,7 +834,7 @@ ${opts.warnCount ? `এই ইউজার ইতিমধ্যে ${opts.warnC
     }
   }
 
-  const res = await fetch(AI_URL, {
+  const res = await aiFetch(AI_URL, {
     method: "POST",
     headers: { "Lovable-API-Key": key, "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -910,7 +910,7 @@ export async function matchBuiltinFaqPhoto(photoBase64: string): Promise<string 
     (f, i) => `${i}) ${f.topic} — স্ক্রিনশটে থাকতে পারে: ${f.screenshot.join(" / ")}`,
   ).join("\n");
   try {
-    const res = await fetch(AI_URL, {
+    const res = await aiFetch(AI_URL, {
       method: "POST",
       headers: { "Lovable-API-Key": key, "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -952,7 +952,7 @@ export async function analyzeScreenshotReply(opts: {
   const key = process.env.LOVABLE_API_KEY;
   if (!key) return null;
   try {
-    const res = await fetch(AI_URL, {
+    const res = await aiFetch(AI_URL, {
       method: "POST",
       headers: { "Lovable-API-Key": key, "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -1150,7 +1150,7 @@ export async function smartAnswer(opts: {
   ];
   for (const { temperature, force } of passes) {
   try {
-    const res = await fetch(AI_URL, {
+    const res = await aiFetch(AI_URL, {
       method: "POST",
       headers: { "Lovable-API-Key": key, "Content-Type": "application/json" },
       signal: AbortSignal.timeout(25_000),
@@ -1254,7 +1254,7 @@ export async function adminCompose(instruction: string, targetName?: string | nu
     rules = "";
   }
   try {
-    const res = await fetch(AI_URL, {
+    const res = await aiFetch(AI_URL, {
       method: "POST",
       headers: { "Lovable-API-Key": key, "Content-Type": "application/json" },
       body: JSON.stringify({
