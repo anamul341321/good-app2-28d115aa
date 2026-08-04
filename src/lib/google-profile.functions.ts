@@ -51,12 +51,16 @@ export const getGoogleProfileStatus = createServerFn({ method: "GET" })
 
     const needsProfile = g.isGoogle && !conflict && !existingAccount && !(g.completed && name.trim().length >= 2);
 
+    const { isEmailOtpEnabled } = await import("./auth-mode.server");
+    const otpRequired = await isEmailOtpEnabled();
+
     return {
       isGoogle: g.isGoogle,
       needsProfile,
       conflict,
       conflictEmail,
       existingAccount,
+      otpRequired,
       emailVerified: Boolean((data as any)?.email_verified),
       email,
       suggestedName: name || g.metaName,
