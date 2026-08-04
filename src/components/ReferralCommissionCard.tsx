@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Users, TrendingUp, Lock } from "lucide-react";
 import { getReferralCommission } from "@/lib/referral-commission.functions";
-import { MINING_RATE_BDT_PER_SEC } from "@/lib/constants";
+import { RATE_PER_SLOT_SEC } from "@/lib/mining";
 
 export function ReferralCommissionCard() {
   const fetchCommission = useServerFn(getReferralCommission);
@@ -14,7 +14,7 @@ export function ReferralCommissionCard() {
   });
 
   const [now, setNow] = useState(Date.now());
-  const live = !!data?.isActive && Number(data?.qualifyingReferees ?? 0) > 0;
+  const live = !!data?.isActive && Number(data?.referralUnits ?? data?.qualifyingReferees ?? 0) > 0;
 
   useEffect(() => {
     if (!live) return;
@@ -24,7 +24,8 @@ export function ReferralCommissionCard() {
 
   if (!data) return null;
 
-  const ratePerSec = MINING_RATE_BDT_PER_SEC * 0.1 * Number(data.qualifyingReferees ?? 0);
+  const refUnits = Number(data.referralUnits ?? data.qualifyingReferees ?? 0);
+  const ratePerSec = RATE_PER_SLOT_SEC * refUnits;
   let balance = Number(data.referralAccrued ?? 0);
   if (live && data.lastCreditedAt) {
     const elapsed = Math.max(0, (now - new Date(data.lastCreditedAt).getTime()) / 1000);
