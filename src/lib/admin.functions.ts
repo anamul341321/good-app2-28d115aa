@@ -1398,6 +1398,7 @@ export const adminUpdateBonusSettings = createServerFn({ method: "POST" })
     }
     const { error } = await supabaseAdmin.from("bonus_settings").upsert(patch);
     if (error) throw new Error(error.message);
+    resetEmailOtpCache();
     return { ok: true };
   });
 
