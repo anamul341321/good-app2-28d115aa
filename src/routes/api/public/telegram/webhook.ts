@@ -2852,9 +2852,10 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             const rates3 = await loadRates();
             const base3 = {
               name: senderName,
-              question: bypassDecisionReply
+              question: (bypassDecisionReply
                 ? `${text}\n\nএটা আগের কথার/ভয়েসের ফলোআপ। history দেখে আগের প্রশ্ন বা ভয়েসের বিষয়টা বুঝে সরাসরি উত্তর দাও; generic greeting দেবে না।`
-                : text,
+                : text) + quotedContext,
+
               knowledge: knowledgeText(rates3),
               history: convoHistory,
               pastReplies: convoReplies,
