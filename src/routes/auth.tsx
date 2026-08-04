@@ -200,7 +200,7 @@ export function AuthPage() {
       toast.error("আপনার নাম লিখুন");
       return null;
     }
-    if (mode === "signup" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(gmail.trim())) {
+    if (mode === "signup" && otpEnabled && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(gmail.trim())) {
       toast.error("সঠিক Gmail ঠিকানা দিন");
       return null;
     }
