@@ -187,6 +187,8 @@ function HomePage() {
         lastCreditedAt={data.mining?.last_credited_at ?? null}
         effectiveTaskCount={Number(data.mining?.effective_task_count ?? 0)}
         qualifyingReferees={Number(data.mining?.qualifying_referees ?? 0)}
+        selfSlots={Number((data.mining as any)?.self_slots ?? 0)}
+        referralUnits={Number((data.mining as any)?.referral_units ?? 0)}
         selfQualified={(data.mining as any)?.self_qualified !== false}
 
         displayTaskCount={submittedCount}

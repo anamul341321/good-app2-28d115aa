@@ -1799,9 +1799,11 @@ export const adminActiveMiningUsers = createServerFn({ method: "GET" }).handler(
 
   const list = rows.map((m: any) => {
     const selfOk = m.self_qualified !== false || !!m.admin_forced_active;
-    const slots = selfOk ? Number(m.effective_task_count ?? 0) : 0;
+    const slots = selfOk ? Number((m as any).self_slots ?? m.effective_task_count ?? 0) : 0;
     const refs = Number(m.qualifying_referees ?? 0);
-    const monthly = 500 * (slots / 10 + 0.1 * refs);
+    const refUnits = Number((m as any).referral_units ?? refs);
+    // 50৳/month per re-verified slot; referrer earns 10% of referee earnings.
+    const monthly = 50 * (slots + refUnits);
 
     return {
       userId: m.user_id as string,

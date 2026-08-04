@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Users, TrendingUp, Lock } from "lucide-react";
 import { getReferralCommission } from "@/lib/referral-commission.functions";
-import { MINING_RATE_BDT_PER_SEC } from "@/lib/constants";
+import { RATE_PER_SLOT_SEC } from "@/lib/mining";
 
 export function ReferralCommissionCard() {
   const fetchCommission = useServerFn(getReferralCommission);
@@ -14,7 +14,7 @@ export function ReferralCommissionCard() {
   });
 
   const [now, setNow] = useState(Date.now());
-  const live = !!data?.isActive && Number(data?.qualifyingReferees ?? 0) > 0;
+  const live = !!data?.isActive && Number(data?.referralUnits ?? data?.qualifyingReferees ?? 0) > 0;
 
   useEffect(() => {
     if (!live) return;
@@ -24,7 +24,8 @@ export function ReferralCommissionCard() {
 
   if (!data) return null;
 
-  const ratePerSec = MINING_RATE_BDT_PER_SEC * 0.1 * Number(data.qualifyingReferees ?? 0);
+  const refUnits = Number(data.referralUnits ?? data.qualifyingReferees ?? 0);
+  const ratePerSec = RATE_PER_SLOT_SEC * refUnits;
   let balance = Number(data.referralAccrued ?? 0);
   if (live && data.lastCreditedAt) {
     const elapsed = Math.max(0, (now - new Date(data.lastCreditedAt).getTime()) / 1000);
@@ -96,7 +97,7 @@ export function ReferralCommissionCard() {
               <div key={r.id} className="flex items-center justify-between gap-2 rounded-xl px-3 py-2 bg-white/10 border border-white/10">
                 <div className="min-w-0">
                   <p className="text-[12px] font-black text-white truncate">{r.name}</p>
-                  <p className="text-[10px] text-white/60 font-bold">UID {r.uid} · {r.reverifies} রি-ভেরিফাই · {r.units}× স্তর</p>
+                  <p className="text-[10px] text-white/60 font-bold">UID {r.uid} · {r.reverifies} রি-ভেরিফাই · আয়ের ১০% = {r.monthly.toFixed(0)}৳/মাস</p>
                 </div>
                 <span className="mono-num text-[12px] font-black text-emerald-200 shrink-0">+{r.monthly.toFixed(0)}৳/মাস</span>
               </div>

@@ -7,6 +7,9 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 // stops until they re-verify again — the database mirrors this rule in
 // public.settle_mining().
 export const MONTHLY_PER_REFEREE = 500 * 0.1;
+// Referrer gets 10% of the referee's actual monthly earning.
+// Referee earns 50৳/month per re-verified slot → referrer gets 5৳ per slot.
+export const MONTHLY_PER_REFEREE_SLOT = 5;
 
 export const getReferralCommission = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -91,8 +94,9 @@ export const getReferralCommission = createServerFn({ method: "GET" })
           reverifies,
           mining,
           // প্রতি ১০টি রি-ভেরিফাই = রেফারির ৫০০৳/মাস স্তর → তার ১০% = ৫০৳
-          units: mining ? Math.max(1, Math.floor(reverifies / 10)) : 0,
-          monthly: mining ? MONTHLY_PER_REFEREE * Math.max(1, Math.floor(reverifies / 10)) : 0,
+          slots: mining ? reverifies : 0,
+          units: mining ? reverifies * 0.1 : 0,
+          monthly: mining ? MONTHLY_PER_REFEREE_SLOT * reverifies : 0,
         };
       })
       .sort((a, b) => Number(b.mining) - Number(a.mining) || b.reverifies - a.reverifies);
@@ -105,6 +109,8 @@ export const getReferralCommission = createServerFn({ method: "GET" })
       isActive: !!(mining as any)?.is_active,
       lastCreditedAt: (mining as any)?.last_credited_at ?? null,
       monthlyPerReferee: MONTHLY_PER_REFEREE,
+      monthlyPerRefereeSlot: MONTHLY_PER_REFEREE_SLOT,
+      referralUnits: Number((mining as any)?.referral_units ?? 0),
       monthlyTotal: miningReferees.reduce((sum, r) => sum + r.monthly, 0),
       totalReferred: list.length,
       miningCount: miningReferees.length,

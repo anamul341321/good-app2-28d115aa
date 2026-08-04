@@ -360,7 +360,9 @@ export type Database = {
           last_credited_at: string | null
           qualifying_referees: number
           referral_accrued: number
+          referral_units: number
           self_qualified: boolean
+          self_slots: number
           user_id: string
           withdrawn_amount: number
         }
@@ -374,7 +376,9 @@ export type Database = {
           last_credited_at?: string | null
           qualifying_referees?: number
           referral_accrued?: number
+          referral_units?: number
           self_qualified?: boolean
+          self_slots?: number
           user_id: string
           withdrawn_amount?: number
         }
@@ -388,7 +392,9 @@ export type Database = {
           last_credited_at?: string | null
           qualifying_referees?: number
           referral_accrued?: number
+          referral_units?: number
           self_qualified?: boolean
+          self_slots?: number
           user_id?: string
           withdrawn_amount?: number
         }

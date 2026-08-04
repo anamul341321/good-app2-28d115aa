@@ -81,6 +81,8 @@ function WithdrawPage() {
     isActive: mining.is_active, lastCreditedAt: mining.last_credited_at,
     effectiveTaskCount: Number((mining as any).effective_task_count ?? 0),
     qualifyingReferees: Number((mining as any).qualifying_referees ?? 0),
+    selfSlots: Number((mining as any).self_slots ?? 0),
+    referralUnits: Number((mining as any).referral_units ?? 0),
     selfQualified: (mining as any).self_qualified !== false,
     debt: debtTotal,
     now,
