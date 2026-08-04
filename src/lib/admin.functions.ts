@@ -1798,9 +1798,11 @@ export const adminActiveMiningUsers = createServerFn({ method: "GET" }).handler(
   }
 
   const list = rows.map((m: any) => {
-    const slots = Number(m.effective_task_count ?? 0);
+    const selfOk = m.self_qualified !== false || !!m.admin_forced_active;
+    const slots = selfOk ? Number(m.effective_task_count ?? 0) : 0;
     const refs = Number(m.qualifying_referees ?? 0);
     const monthly = 500 * (slots / 10 + 0.1 * refs);
+
     return {
       userId: m.user_id as string,
       name: m.profiles?.display_name ?? "User",
