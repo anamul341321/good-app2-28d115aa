@@ -202,17 +202,34 @@ export async function sendVoice(
 ) {
   const token = getBotToken();
   const isOgg = /\.(ogg|oga|opus)$/i.test(filename);
-  const form = new FormData();
-  form.append("chat_id", String(chatId));
-  if (replyTo) { form.append("reply_to_message_id", String(replyTo)); form.append("allow_sending_without_reply", "true"); }
-  form.append("voice", new Blob([bytes as unknown as BlobPart], {
-    type: isOgg ? "audio/ogg" : "audio/mpeg",
-  }), isOgg ? filename : "voice.ogg");
-  try {
-    const res = await fetch(`https://api.telegram.org/bot${token}/sendVoice`, { method: "POST", body: form });
+  const isWav = /\.wav$/i.test(filename);
+  const mime = isOgg ? "audio/ogg" : isWav ? "audio/wav" : "audio/mpeg";
+  const name = isOgg ? filename : isWav ? "voice.wav" : "voice.ogg";
+  const build = () => {
+    const form = new FormData();
+    form.append("chat_id", String(chatId));
+    if (replyTo) {
+      form.append("reply_to_message_id", String(replyTo));
+      form.append("allow_sending_without_reply", "true");
+    }
+    return form;
+  };
+  const post = async (method: string, field: string) => {
+    const form = build();
+    form.append(field, new Blob([bytes as unknown as BlobPart], { type: mime }), name);
+    const res = await fetch(`https://api.telegram.org/bot${token}/${method}`, { method: "POST", body: form });
     const json: any = await res.json();
-    if (!json?.ok) { console.error("[tg] sendVoice failed", json?.description); return null; }
+    if (!json?.ok) {
+      console.error(`[tg] ${method} failed`, json?.description);
+      return null;
+    }
     return json.result;
+  };
+  try {
+    const voice = await post("sendVoice", "voice");
+    if (voice) return voice;
+    // WAV-এর ক্ষেত্রে Telegram মাঝে মাঝে voice নেয় না — তখন audio হিসেবে যাবে।
+    return await post("sendAudio", "audio");
   } catch (e) {
     console.error("[tg] sendVoice error", e);
     return null;
