@@ -209,7 +209,7 @@ function BonusSettings() {
                 ? "SURE? ON করলে সবাইকে Gmail verification ও login কোড দিতে হবে।"
                 : "SURE? OFF করলে Gmail verification/কোড লাগবে না — সব আগের মতো নম্বর+পাসওয়ার্ডে চলবে।")) return;
               setOtpMode(next);
-              save.mutate();
+              save.mutate(undefined);
             }}
             className={`shrink-0 w-16 h-9 rounded-full relative transition ${otpMode ? "bg-cyan" : "bg-surface-2 border border-border"} disabled:opacity-50`}>
             <span className={`absolute top-1 w-7 h-7 rounded-full bg-white shadow transition-all ${otpMode ? "left-8" : "left-1"}`} />
@@ -325,7 +325,7 @@ function BonusSettings() {
         </div>
 
         <button
-          onClick={() => save.mutate()}
+          onClick={() => save.mutate(undefined)}
           disabled={save.isPending}
           className="w-full py-3 rounded-xl gradient-cta text-white font-black flex items-center justify-center gap-2 disabled:opacity-60">
           {save.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
