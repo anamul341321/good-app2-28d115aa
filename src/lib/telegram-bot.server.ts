@@ -146,6 +146,30 @@ export async function sendMessage(chatId: string | number, text: string, _replyT
 }
 
 /**
+ * Send a photo from a URL (used for the hisab card image). Returns false when
+ * Telegram could not fetch/render it — the caller already sent the text hisab.
+ */
+export async function sendPhotoUrl(
+  chatId: string | number,
+  photoUrl: string,
+  caption?: string,
+  replyTo?: number,
+): Promise<boolean> {
+  const body: Record<string, unknown> = { chat_id: chatId, photo: photoUrl };
+  if (caption) {
+    body.caption = sanitizeTelegramHtml(caption).slice(0, 1000);
+    body.parse_mode = "HTML";
+  }
+  if (replyTo) {
+    body.reply_to_message_id = replyTo;
+    body.allow_sending_without_reply = true;
+  }
+  const res = await api("sendPhoto", body);
+  return !!res;
+}
+
+
+/**
  * ভয়েস সেটিং: অ্যাডমিন প্যানেলের স্যুইচ (৩০ সেকেন্ড ক্যাশ)।
  * voice_reply_enabled → ভয়েস দেবে কি না। voice_text_enabled → ভয়েসের সাথে
  * লেখাও যাবে কি না (অফ করলে শুধু ভয়েস)। ENV BOT_VOICE_REPLY=off দিলে ভয়েস বন্ধ।
