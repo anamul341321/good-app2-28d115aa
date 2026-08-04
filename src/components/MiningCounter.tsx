@@ -35,7 +35,9 @@ function leagueFor(n: number): { name: string; emoji: string; from: string; to: 
 
 export function MiningCounter({
   accrued, withdrawn, isActive, lastCreditedAt,
-  effectiveTaskCount = 0, qualifyingReferees = 0, selfQualified = true, displayTaskCount, leagueCount,
+  effectiveTaskCount = 0, qualifyingReferees = 0,
+  selfSlots: selfSlotsProp, referralUnits: referralUnitsProp,
+  selfQualified = true, displayTaskCount, leagueCount,
   bonusTotal = 0, referralAccrued = 0,
 }: Props) {
 
@@ -48,18 +50,28 @@ export function MiningCounter({
     return () => clearInterval(id);
   }, [isActive]);
 
+  const rateArgs = {
+    selfSlots: selfSlotsProp,
+    referralUnits: referralUnitsProp,
+    effectiveTaskCount,
+    qualifyingReferees,
+    selfQualified,
+  };
   const balance = computeLiveBalance({
-    accrued, withdrawn, isActive, lastCreditedAt,
-    effectiveTaskCount, qualifyingReferees, selfQualified, now,
+    accrued, withdrawn, isActive, lastCreditedAt, ...rateArgs, now,
   });
   // Self mining only counts after the user's own 10 re-verifies are done.
-  const selfSlots = selfQualified ? effectiveTaskCount : 0;
-  const live = isActive && (selfSlots > 0 || qualifyingReferees > 0);
-  const shownSlots = selfQualified ? Math.max(effectiveTaskCount, displayTaskCount ?? 0) : 0;
-  const ratePerMonth = 500 * (shownSlots / 10 + 0.10 * qualifyingReferees);
-  const bonusMonth = 500 * 0.10 * qualifyingReferees;
+  const rawSelfSlots = selfSlotsProp ?? effectiveTaskCount;
+  const selfSlots = selfQualified ? rawSelfSlots : 0;
+  const refUnits = referralUnitsProp ?? qualifyingReferees;
+  const live = isActive && (selfSlots > 0 || refUnits > 0);
+  const shownSlots = selfSlots;
+  const ratePerMonth = monthlyRate(rateArgs);
+  const selfMonth = MONTHLY_PER_SLOT * selfSlots;
+  const bonusMonth = MONTHLY_PER_SLOT * refUnits;
   const claimable = Math.floor(balance);
   const league = leagueFor(leagueCount ?? Math.max(effectiveTaskCount, displayTaskCount ?? 0));
+
 
 
   // Balance split (same rule the withdraw server uses): withdrawals are taken
