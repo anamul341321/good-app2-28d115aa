@@ -17,6 +17,9 @@ import { useDeviceGuard } from "@/hooks/useDeviceGuard";
 import { getAppStatus } from "@/lib/app-status.functions";
 import { MaintenanceScreen } from "@/components/MaintenanceGate";
 import { UserNoticeBanner } from "@/components/UserNoticeBanner";
+import { DeviceUnlockGate } from "@/components/DeviceUnlockGate";
+import { DeviceApprovalPrompt } from "@/components/DeviceApprovalPrompt";
+
 
 
 
