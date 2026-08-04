@@ -1,6 +1,5 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { touchDevice } from "@/lib/sessions.functions";
 
@@ -16,7 +15,8 @@ export function getDeviceId() {
   return id;
 }
 
-function deviceLabel() {
+export function deviceLabel() {
+  if (typeof navigator === "undefined") return "ডিভাইস";
   const ua = navigator.userAgent;
   const os = /Android/i.test(ua)
     ? "Android"
@@ -33,11 +33,12 @@ function deviceLabel() {
 
 /**
  * প্রতি ৬০ সেকেন্ডে নিজের ডিভাইস "জীবিত" জানায়। ইউজার নিজের অন্য ফোন থেকে
- * এই ডিভাইসটি লগআউট করে দিলে এখানে অটো সাইন-আউট হয়ে যায়।
- * নেটওয়ার্ক সমস্যায় কোনো লগআউট হবে না।
+ * এই ডিভাইসটি লগআউট করে দিলে এখানে `revoked` true হয় — তখন সাইন-আউট না করে
+ * অনুমতি/কোড দিয়ে আবার চালু করার স্ক্রিন দেখানো হয়।
  */
-export function useDeviceGuard(onRevoked?: () => void) {
+export function useDeviceGuard(): boolean {
   const touch = useServerFn(touchDevice);
+  const [revoked, setRevoked] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -46,30 +47,26 @@ export function useDeviceGuard(onRevoked?: () => void) {
 
     const ping = async () => {
       try {
-        // সেশন না থাকলে সার্ভার ফাংশন কল করব না (Unauthorized এড়াতে)
         const { data: sess } = await supabase.auth.getSession();
         if (!sess?.session?.access_token) return;
         const res: any = await touch({
           data: { deviceId, label: deviceLabel(), userAgent: navigator.userAgent },
         });
         if (!active) return;
-        if (res?.revoked) {
-          toast.error("আপনি অন্য ডিভাইস থেকে এই ফোনটি লগআউট করেছেন");
-          await supabase.auth.signOut();
-          onRevoked?.();
-        }
+        setRevoked(!!res?.revoked);
       } catch {
         /* নেটওয়ার্ক সমস্যা — কিছু করব না */
       }
     };
 
-
     ping();
-    const timer = setInterval(ping, 60_000);
+    const timer = setInterval(ping, 30_000);
     return () => {
       active = false;
       clearInterval(timer);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  return revoked;
 }
