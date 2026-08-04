@@ -83,6 +83,42 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_keys: {
+        Row: {
+          active: boolean
+          api_key: string
+          calls: number
+          created_at: string
+          exhausted_until: string | null
+          id: string
+          label: string | null
+          last_error: string | null
+          last_used_at: string | null
+        }
+        Insert: {
+          active?: boolean
+          api_key: string
+          calls?: number
+          created_at?: string
+          exhausted_until?: string | null
+          id?: string
+          label?: string | null
+          last_error?: string | null
+          last_used_at?: string | null
+        }
+        Update: {
+          active?: boolean
+          api_key?: string
+          calls?: number
+          created_at?: string
+          exhausted_until?: string | null
+          id?: string
+          label?: string | null
+          last_error?: string | null
+          last_used_at?: string | null
+        }
+        Relationships: []
+      }
       announcements: {
         Row: {
           created_at: string
