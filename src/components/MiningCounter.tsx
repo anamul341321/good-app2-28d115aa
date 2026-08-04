@@ -157,6 +157,25 @@ export function MiningCounter({
           <p className="text-sm font-black text-yellow-100 mt-2 drop-shadow tracking-wide">৳ টাকা</p>
         </div>
 
+        {/* Balance split — mining vs bonus, in plain Bengali */}
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          <div className="rounded-2xl p-2.5 border border-white/20 bg-white/10 backdrop-blur-md">
+            <p className="text-[9px] font-black tracking-widest text-white/70">⛏️ মাইনিং ব্যালেন্স</p>
+            <p className="mono-num text-base font-black text-cyan-100 mt-0.5">{miningPart.toFixed(2)}<span className="text-[10px] text-white/60">৳</span></p>
+            <p className="text-[8px] text-white/60 leading-tight mt-0.5">
+              নিজের {selfPart.toFixed(2)}৳ + রেফার ১০% {refPart.toFixed(2)}৳ · ১–৩ তারিখে তোলা যাবে
+            </p>
+          </div>
+          <div className="rounded-2xl p-2.5 border border-white/20 bg-white/10 backdrop-blur-md">
+            <p className="text-[9px] font-black tracking-widest text-white/70">🎁 বোনাস ব্যালেন্স</p>
+            <p className="mono-num text-base font-black text-yellow-100 mt-0.5">{bonusPart.toFixed(2)}<span className="text-[10px] text-white/60">৳</span></p>
+            <p className="text-[8px] text-white/60 leading-tight mt-0.5">
+              ফার্স্ট/রি-ভেরিফাই ও রেফার বোনাস · যেকোনো সময় তোলা যাবে
+            </p>
+          </div>
+        </div>
+
+
         {/* Rate stat pills */}
         <div className="mt-4 grid grid-cols-2 gap-2">
           <div className="mc-stat rounded-xl p-2.5">
