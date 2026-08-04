@@ -52,7 +52,7 @@ export async function hearBengali(
       {
         role: "user",
         parts: [
-          { text: PROMPT },
+          { text: PROMPT + hintBlock },
           { inline_data: { mime_type: mimeFor(ext), data: base64 } },
         ],
       },
