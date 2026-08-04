@@ -1714,8 +1714,9 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             /(fee|ফি|charge|চার্জ|kete|কেটে|কাটে|kate|katse|কাটল|কেটেছে|kom pelam|কম পেলাম|kom paisi|কম পাইছি|deduct)/i.test(
               bnDigits,
             ) && /(withdraw|উইথড্র|tk|টাকা|taka|৳|bkash|বিকাশ|nagad|নগদ)/i.test(bnDigits);
-
+          if (feeCtx) {
             const m = bnDigits.match(/(\d{2,6})\s*(tk|টাকা|taka|৳)?/);
+
             const amt = m ? Number(m[1]) : null;
             const line =
               amt && amt >= 10 && amt <= 100000
