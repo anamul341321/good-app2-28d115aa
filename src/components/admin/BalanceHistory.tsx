@@ -205,6 +205,10 @@ export function BalanceHistory({ mining, income, withdrawals, debts, profile, br
               sources: sources.map((s) => ({ key: s.key, label: s.label, amount: s.amount })),
               outs,
               rows: ledgerRows.map((r) => ({ id: r.id, label: r.label, note: r.note, amount: r.amt, created_at: r.created_at })),
+              bonusSteps: breakdown?.bonus?.steps,
+              bonusTotal: breakdown?.bonus?.total,
+              miningSteps: breakdown?.mining?.steps,
+              miningTotal: breakdown?.mining?.total,
             }}
             onClose={() => setShowSheet(false)}
           />
