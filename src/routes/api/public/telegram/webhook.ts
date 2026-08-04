@@ -1703,11 +1703,18 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             (thirdParty && selfGain);
 
           // ---- "টাকা কেটে নিলো কেন" → উইথড্র ফি (ছোট, নিশ্চিত উত্তর) ----
+          // ⚠️ স্লট/ভেরিফাই/বোনাস প্রসঙ্গ থাকলে এটা কখনোই চলবে না — "১০টা ভেরিফাই
+          // করলে কত টাকা পাবো" প্রশ্নে আগে ভুল করে ফি-র উত্তর যেত।
+          const earnAskCtx =
+            /(slot|স্লট|verify|ভেরিফ|verification|ভেরিফিকেশন|bonus|বোনাস|mining|মাইনিং|refer|রেফার|pabo|পাবো|পাব|dibe|দিবে|income|ইনকাম|আয়)/i.test(
+              bnDigits,
+            );
           const feeCtx =
+            !earnAskCtx &&
             /(fee|ফি|charge|চার্জ|kete|কেটে|কাটে|kate|katse|কাটল|কেটেছে|kom pelam|কম পেলাম|kom paisi|কম পাইছি|deduct)/i.test(
               bnDigits,
             ) && /(withdraw|উইথড্র|tk|টাকা|taka|৳|bkash|বিকাশ|nagad|নগদ)/i.test(bnDigits);
-          if (feeCtx) {
+
             const m = bnDigits.match(/(\d{2,6})\s*(tk|টাকা|taka|৳)?/);
             const amt = m ? Number(m[1]) : null;
             const line =
