@@ -1378,7 +1378,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         // ---- ইউজার শুধু UID লিখলে (আগেই যা চেয়েছিল সেটাই) সাথে সাথে হিসাব -----
         // আগে আবার "কী চেক করে দেব?" জিজ্ঞেস করা হতো — সেটা বিরক্তিকর, তাই
         // খালি নম্বর পেলেই সরাসরি পুরো একাউন্টের হিসাব পাঠিয়ে দিই।
-        if (settings.auto_reply_enabled && !photoBase64 && /^(?:uid|ইউআইডি|আইডি)?\s*[:#-]?\s*\d{1,9}\s*$/i.test(norm)) {
+        if (settings.auto_reply_enabled && !(photos?.length ?? 0) && /^(?:uid|ইউআইডি|আইডি)?\s*[:#-]?\s*\d{1,9}\s*$/i.test(norm)) {
           const bareUid = (norm.match(/\d{1,9}/) || [""])[0];
           if (bareUid) {
             const { buildUserCard } = await import("@/lib/telegram-lookup.server");
