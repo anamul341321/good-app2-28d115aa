@@ -84,6 +84,7 @@ function UnverifiedPage() {
   }
 
   const copy = (s: string) => { navigator.clipboard.writeText(s); toast.success("Copy হয়েছে"); };
+  const [zoom, setZoom] = useState<string | null>(null);
 
   return (
     <div className="space-y-2">
