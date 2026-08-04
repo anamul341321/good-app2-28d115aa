@@ -5,7 +5,7 @@ const PhoneSignupInput = z.object({
   name: z.string().trim().min(2, "নাম লাগবে").max(80, "নাম অনেক বড়"),
   phone: z.string().trim().regex(/^01\d{9}$/, "১১ ডিজিটের BD নম্বর লাগবে"),
   password: z.string().min(6, "পাসওয়ার্ড কমপক্ষে ৬ অক্ষর"),
-  gmail: z.string().trim().toLowerCase().email("সঠিক Gmail ঠিকানা দিন"),
+  gmail: z.string().trim().toLowerCase().optional().nullable(),
   referralCode: z.string().trim().max(20).optional().nullable(),
 });
 
@@ -17,16 +17,24 @@ export const registerWithPhone = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => PhoneSignupInput.parse(input))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { isEmailOtpEnabled } = await import("./auth-mode.server");
+    const otpEnabled = await isEmailOtpEnabled();
     const email = phoneToEmail(data.phone);
-    const gmail = data.gmail.trim().toLowerCase();
+    const gmail = (data.gmail ?? "").trim().toLowerCase();
+
+    if (otpEnabled && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(gmail)) {
+      throw new Error("সঠিক Gmail ঠিকানা দিন");
+    }
 
     // এক Gmail = এক একাউন্ট
-    const { data: gmailTaken } = await supabaseAdmin
-      .from("profiles")
-      .select("id")
-      .ilike("email", gmail)
-      .maybeSingle();
-    if (gmailTaken) throw new Error("এই Gmail দিয়ে ইতোমধ্যে একাউন্ট আছে");
+    if (gmail) {
+      const { data: gmailTaken } = await supabaseAdmin
+        .from("profiles")
+        .select("id")
+        .ilike("email", gmail)
+        .maybeSingle();
+      if (gmailTaken) throw new Error("এই Gmail দিয়ে ইতোমধ্যে একাউন্ট আছে");
+    }
 
     let refCode: string | null = null;
     if (data.referralCode && data.referralCode.trim().length > 0) {
