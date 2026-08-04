@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { REFERRAL_UNLOCK_THRESHOLD, REVERIFY_INTERVAL_MS } from "@/lib/constants";
+import { resetEmailOtpCache } from "@/lib/auth-mode.server";
 
 async function gate() {
   const { requireAdminSession } = await import("@/lib/admin-session.server");
