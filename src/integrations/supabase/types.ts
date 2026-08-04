@@ -56,6 +56,33 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_answer_cache: {
+        Row: {
+          answer: string
+          created_at: string
+          hits: number
+          qhash: string
+          question: string
+          updated_at: string
+        }
+        Insert: {
+          answer: string
+          created_at?: string
+          hits?: number
+          qhash: string
+          question: string
+          updated_at?: string
+        }
+        Update: {
+          answer?: string
+          created_at?: string
+          hits?: number
+          qhash?: string
+          question?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       announcements: {
         Row: {
           created_at: string
