@@ -968,6 +968,7 @@ function UserDetail() {
         income={data.income}
         withdrawals={data.withdrawals ?? []}
         debts={data.debts ?? []}
+        profile={data.profile}
       />
 
       {/* Bonus Voucher */}
