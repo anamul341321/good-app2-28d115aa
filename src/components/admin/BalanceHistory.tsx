@@ -157,32 +157,47 @@ export function BalanceHistory({ mining, income, withdrawals, debts, profile }: 
       {/* Chronological ledger */}
       <div className="pt-2 border-t border-border space-y-1.5 max-h-96 overflow-y-auto">
         <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">তারিখ অনুযায়ী পূর্ণ হিসাব</p>
-        {(() => {
-          const rows: any[] = [];
-          for (const v of income.vouchers ?? []) rows.push({ id: `v${v.id}`, amt: v.status === "claimed" ? Number(v.amount) : 0, created_at: v.created_at, label: `🎁 ভাউচার · ${v.status === "claimed" ? "claim হয়েছে" : "pending"}`, note: v.reason });
-          for (const c of income.adminCredits ?? []) rows.push({ id: `c${c.id}`, amt: Number(c.amount), created_at: c.created_at, label: Number(c.amount) >= 0 ? "➕ অ্যাডমিন balance দিয়েছে" : "➖ অ্যাডমিন balance কেটেছে", note: c.note });
-          for (const r of income.recharges ?? []) rows.push({ id: `r${r.id}`, amt: r.status === "failed" ? 0 : -Number(r.amount), created_at: r.created_at, label: `📱 মোবাইল রিচার্জ · ${r.operator ?? ""} · ${r.status}`, note: r.mobile });
-          for (const c of income.miningClaims ?? []) rows.push({ id: `mc${c.id}`, amt: Number(c.amount ?? 0), created_at: c.created_at, label: "⛏️ মাইনিং ক্লেইম (আগেই ব্যালেন্সে যোগ ছিল)", note: `নিজের ${tk(Number(c.self_amount ?? 0))} + রেফার ১০% ${tk(Number(c.referral_amount ?? 0))}` });
-          for (const x of income.transfersIn ?? []) rows.push({ id: `i${x.id}`, amt: Number(x.amount), created_at: x.created_at, label: "📥 অন্য user পাঠিয়েছে", note: x.note });
-          for (const x of income.transfersOut ?? []) rows.push({ id: `o${x.id}`, amt: -Number(x.amount), created_at: x.created_at, label: "📤 অন্যকে পাঠিয়েছে", note: x.note });
-
-          for (const w of withdrawals ?? []) rows.push({ id: `w${w.id}`, amt: w.status === "paid" ? -Number(w.amount) : 0, created_at: w.created_at, label: `💸 Withdraw · ${w.status === "paid" ? "দেওয়া হয়েছে" : w.status === "rejected" ? "বাতিল" : "অপেক্ষায়"}`, note: `${String(w.provider).toUpperCase()} ${w.wallet_number ?? ""}` });
-          for (const d of debts ?? []) rows.push({ id: `d${d.id}`, amt: d.status === "active" ? -Number(d.amount) : 0, created_at: d.created_at, label: `⚠️ Warning/ঋণ · ${d.status === "active" ? "বাকি" : "শোধ"}`, note: d.message });
-          rows.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-          if (rows.length === 0) return <p className="text-[11px] text-muted-foreground">শুধু মাইনিং থেকেই ব্যালেন্স এসেছে — আর কোনো লেনদেন নেই।</p>;
-          return rows.map((r) => (
-            <div key={r.id} className="flex items-start justify-between gap-2 bg-surface-2 rounded-lg px-2 py-1.5">
-              <div className="min-w-0 flex-1">
-                <p className="text-[11px] font-bold">{r.label}</p>
-                {r.note && <p className="text-[9px] text-muted-foreground truncate">{r.note}</p>}
-                <p className="text-[9px] text-muted-foreground">{new Date(r.created_at).toLocaleString()}</p>
-              </div>
-              <p className={`mono-num font-black text-[12px] shrink-0 ${r.amt > 0 ? "text-emerald" : r.amt < 0 ? "text-rose" : "text-muted-foreground"}`}>
-                {r.amt > 0 ? "+" : ""}{r.amt === 0 ? "0.00৳" : tk(r.amt)}
-              </p>
+        {ledgerRows.length === 0 ? (
+          <p className="text-[11px] text-muted-foreground">শুধু মাইনিং থেকেই ব্যালেন্স এসেছে — আর কোনো লেনদেন নেই।</p>
+        ) : ledgerRows.map((r) => (
+          <div key={r.id} className="flex items-start justify-between gap-2 bg-surface-2 rounded-lg px-2 py-1.5">
+            <div className="min-w-0 flex-1">
+              <p className="text-[11px] font-bold">{r.label}</p>
+              {r.note && <p className="text-[9px] text-muted-foreground truncate">{r.note}</p>}
+              <p className="text-[9px] text-muted-foreground">{new Date(r.created_at).toLocaleString()}</p>
             </div>
-          ));
-        })()}
+            <p className={`mono-num font-black text-[12px] shrink-0 ${r.amt > 0 ? "text-emerald" : r.amt < 0 ? "text-rose" : "text-muted-foreground"}`}>
+              {r.amt > 0 ? "+" : ""}{r.amt === 0 ? "0.00৳" : tk(r.amt)}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      {/* Printable / downloadable statement */}
+      <div className="pt-2 border-t border-border space-y-3">
+        <button
+          onClick={() => setShowSheet((v) => !v)}
+          className="w-full rounded-xl px-3 py-2.5 text-[12px] font-black flex items-center justify-center gap-1.5 border border-violet/40 text-violet bg-violet/5 btn-press print:hidden"
+        >
+          <FileText className="w-3.5 h-3.5" /> {showSheet ? "বিবরণী বন্ধ করুন" : "📄 আয়ের বিবরণী (প্রিন্ট / ডাউনলোড)"}
+        </button>
+        {showSheet && (
+          <EarningsStatement
+            data={{
+              name: profile?.display_name ?? "ইউজার",
+              uid: profile?.uid_seq ?? null,
+              phone: profile?.phone_number ?? null,
+              balance,
+              totalIn,
+              totalOut,
+              debt: debtActive,
+              sources: sources.map((s) => ({ key: s.key, label: s.label, amount: s.amount })),
+              outs,
+              rows: ledgerRows.map((r) => ({ id: r.id, label: r.label, note: r.note, amount: r.amt, created_at: r.created_at })),
+            }}
+            onClose={() => setShowSheet(false)}
+          />
+        )}
       </div>
 
       <p className="text-[9px] text-muted-foreground flex items-start gap-1">
