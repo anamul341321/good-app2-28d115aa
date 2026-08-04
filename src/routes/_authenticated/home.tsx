@@ -189,6 +189,9 @@ function HomePage() {
         qualifyingReferees={Number(data.mining?.qualifying_referees ?? 0)}
         displayTaskCount={submittedCount}
         leagueCount={submittedCount}
+        bonusTotal={Number((data.mining as any)?.bonus_amount ?? 0)}
+        referralAccrued={Number((data.mining as any)?.referral_accrued ?? 0)}
+
       />
       </div>
 
