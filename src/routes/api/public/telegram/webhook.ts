@@ -2472,10 +2472,24 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             if (res.found) {
               await sendMessage(chatId, res.card, msg.message_id);
               actions.push("account-info");
+              // "মোট হিসাব / full details / ধাপে ধাপে" চাইলে পুরো হিসাবও পাঠাবে
+              try {
+                const { wantsFullHisab, fullHisabText } = await import("@/lib/telegram-hisab.server");
+                if (wantsFullHisab(norm)) {
+                  const hisab = await fullHisabText(String(uid));
+                  if (hisab) {
+                    await sendMessage(chatId, hisab, msg.message_id);
+                    actions.push("full-hisab");
+                  }
+                }
+              } catch (e) {
+                console.error("[tg] full hisab failed", e);
+              }
               await logMessage(decision.verdict, actions.join(","), res.card, String(uid));
               return Response.json({ ok: true, flow: "account_info", actions });
             }
           }
+
 
           if (msg.from?.id) {
             await saveSession({ intent: "account_info", step: "await_uid", uid: null, app_user_id: null });
