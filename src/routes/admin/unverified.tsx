@@ -174,6 +174,20 @@ function UnverifiedPage() {
           কোনো not-whitelisted attempt নেই।
         </div>
       )}
+      {zoom && (
+        <div
+          onClick={() => setZoom(null)}
+          className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4"
+        >
+          <img src={zoom} alt="zoom" className="max-w-full max-h-full rounded-lg object-contain" />
+          <button
+            onClick={() => setZoom(null)}
+            className="absolute top-4 right-4 px-3 py-1.5 rounded-lg bg-white/15 text-white text-xs font-bold"
+          >
+            ✕ বন্ধ
+          </button>
+        </div>
+      )}
     </div>
   );
 }
