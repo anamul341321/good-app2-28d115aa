@@ -46,6 +46,7 @@ function BonusSettings() {
     setRv(String(d.reverify_bonus ?? 200));
     setRf(String(d.referrer_bonus ?? 100));
     setFvMode(!!d.first_verify_mining_mode);
+    setOtpMode(d.email_otp_enabled !== false);
     setPromoActive(!!d.promo_active);
     setPromoTitle(d.promo_title ?? "");
     setPromoStart(d.promo_start_at ? d.promo_start_at.slice(0, 16) : "");
