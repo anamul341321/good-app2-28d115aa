@@ -27,6 +27,12 @@ async function findProfile(identifier: string) {
 export const requestPasswordResetOtp = createServerFn({ method: "POST" })
   .inputValidator((d: { phone: string }) => d)
   .handler(async ({ data }) => {
+    // Gmail কোড সিস্টেম OFF থাকলে ইমেইলে কোড যায় না — তাই এই পথ বন্ধ।
+    const { isEmailOtpEnabled } = await import("./auth-mode.server");
+    if (!(await isEmailOtpEnabled())) {
+      throw new Error("এখন ইমেইল কোড সিস্টেম বন্ধ — পাসওয়ার্ড রিসেটের জন্য অ্যাডমিনের সাথে যোগাযোগ করুন");
+    }
+
     const identifier = (data.phone || "").trim().toLowerCase();
     if (!identifier) throw new Error("আপনার Gmail/ইমেইল দিন");
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier)) {

@@ -578,12 +578,20 @@ export function AuthPage() {
                 >
                   <QrCodeIcon className="w-4 h-4" /> QR কার্ড স্ক্যান করে লগইন
                 </button>
-                <button
-                  type="button" onClick={() => setForgotOpen(true)}
-                  className="w-full py-2 text-[12px] font-black text-cyan underline underline-offset-4"
-                >
-                  পাসওয়ার্ড ভুলে গেছেন?
-                </button>
+                {/* Gmail কোড সিস্টেম OFF থাকলে ইমেইলে কোড যায় না, তাই
+                    "পাসওয়ার্ড ভুলে গেছেন?" লুকানো — অ্যাডমিন রিসেট করে দেবেন। */}
+                {otpEnabled ? (
+                  <button
+                    type="button" onClick={() => setForgotOpen(true)}
+                    className="w-full py-2 text-[12px] font-black text-cyan underline underline-offset-4"
+                  >
+                    পাসওয়ার্ড ভুলে গেছেন?
+                  </button>
+                ) : (
+                  <p className="text-[11px] text-center font-bold text-muted-foreground pt-1">
+                    পাসওয়ার্ড ভুলে গেলে অ্যাডমিনের সাথে যোগাযোগ করুন — অ্যাডমিন রিসেট করে দেবেন।
+                  </p>
+                )}
               </>
             )}
           </form>
@@ -643,7 +651,7 @@ export function AuthPage() {
           </div>
         )}
 
-        {forgotOpen && (
+        {forgotOpen && otpEnabled && (
           <ForgotPasswordDialog onClose={() => setForgotOpen(false)} />
         )}
 
