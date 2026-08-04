@@ -11,6 +11,8 @@ type Props = {
   lastCreditedAt: string | null;
   effectiveTaskCount?: number;
   qualifyingReferees?: number;
+  selfQualified?: boolean;
+
   displayTaskCount?: number;
   leagueCount?: number;
   bonusTotal?: number;
