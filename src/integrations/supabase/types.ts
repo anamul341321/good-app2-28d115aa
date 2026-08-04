@@ -81,6 +81,7 @@ export type Database = {
         Row: {
           bkash_enabled: boolean
           bkash_off_message: string | null
+          email_otp_enabled: boolean
           first_verify_bonus: number
           first_verify_mining_mode: boolean
           id: string
@@ -108,6 +109,7 @@ export type Database = {
         Insert: {
           bkash_enabled?: boolean
           bkash_off_message?: string | null
+          email_otp_enabled?: boolean
           first_verify_bonus?: number
           first_verify_mining_mode?: boolean
           id?: string
@@ -135,6 +137,7 @@ export type Database = {
         Update: {
           bkash_enabled?: boolean
           bkash_off_message?: string | null
+          email_otp_enabled?: boolean
           first_verify_bonus?: number
           first_verify_mining_mode?: boolean
           id?: string
