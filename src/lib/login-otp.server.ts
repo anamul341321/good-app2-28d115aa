@@ -44,16 +44,18 @@ async function resolveAccount(identifier: string): Promise<Account> {
   const raw = identifier.trim().toLowerCase();
   const digits = raw.replace(/\D/g, "");
 
-  let profile: any = null;
+  let rows: any[] = [];
   if (/^01\d{9}$/.test(digits)) {
     const { data, error } = await supabaseAdmin
       .from("profiles")
-      .select("id, display_name, email, email_verified, phone_number")
+      .select("id, display_name, email, email_verified, phone_number, created_at")
       .eq("phone_number", digits)
-      .maybeSingle();
+      .order("email_verified", { ascending: false })
+      .order("created_at", { ascending: false })
+      .limit(5);
     if (error) throw new Error("একাউন্ট খুঁজতে সমস্যা হয়েছে — আবার চেষ্টা করুন");
-    profile = data;
-    if (!profile) {
+    rows = data ?? [];
+    if (rows.length === 0) {
       return {
         id: "",
         authEmail: phoneToEmail(digits),
@@ -66,28 +68,42 @@ async function resolveAccount(identifier: string): Promise<Account> {
   } else if (EMAIL_RE.test(raw)) {
     const { data, error } = await supabaseAdmin
       .from("profiles")
-      .select("id, display_name, email, email_verified, phone_number")
+      .select("id, display_name, email, email_verified, phone_number, created_at")
       .ilike("email", raw)
-      .maybeSingle();
+      .order("email_verified", { ascending: false })
+      .order("created_at", { ascending: false })
+      .limit(5);
     if (error) throw new Error("একাউন্ট খুঁজতে সমস্যা হয়েছে — আবার চেষ্টা করুন");
-    profile = data;
+    rows = data ?? [];
   } else {
     throw new Error("১১ ডিজিটের নম্বর অথবা Gmail দিন");
   }
 
-  if (!profile) throw new Error("এই নম্বর/Gmail-এ কোনো একাউন্ট পাওয়া যায়নি");
+  if (rows.length === 0) throw new Error("এই নম্বর/Gmail-এ কোনো একাউন্ট পাওয়া যায়নি");
+
+  const profile = rows[0];
 
   // একাউন্টে যে যে ইমেইল দিয়ে auth হতে পারে — সবগুলো চেষ্টা করব
+  // (একই নম্বরে একাধিক profile থাকলে সবগুলোর ইমেইলই চেষ্টা করা হয়)
   const candidates: string[] = [];
-  if (profile.phone_number) candidates.push(phoneToEmail(profile.phone_number));
-  const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(profile.id);
-  const realAuthEmail = (authUser?.user?.email ?? "").toLowerCase();
-  if (realAuthEmail && !candidates.includes(realAuthEmail)) candidates.push(realAuthEmail);
-  const profileEmail = (profile.email ?? "").toLowerCase();
-  if (profileEmail && !candidates.includes(profileEmail)) candidates.push(profileEmail);
+  const push = (email?: string | null) => {
+    const e = (email ?? "").toLowerCase().trim();
+    if (e && !candidates.includes(e)) candidates.push(e);
+  };
+  if (raw && EMAIL_RE.test(raw)) push(raw);
+  for (const row of rows) {
+    push(row.phone_number ? phoneToEmail(row.phone_number) : null);
+    push(row.email);
+  }
+  const authUsers = await Promise.all(
+    rows.map((row) => supabaseAdmin.auth.admin.getUserById(row.id).catch(() => null)),
+  );
+  for (const u of authUsers) push((u as any)?.data?.user?.email);
 
   if (candidates.length === 0)
     throw new Error("এই একাউন্টে লগইন তথ্য পাওয়া যায়নি — অ্যাডমিনের সাথে যোগাযোগ করুন");
+
+  const profileEmail = (profile.email ?? "").toLowerCase();
 
   return {
     id: profile.id,
@@ -98,6 +114,7 @@ async function resolveAccount(identifier: string): Promise<Account> {
     displayName: profile.display_name ?? null,
   };
 }
+
 
 async function signInWith(authEmail: string, password: string): Promise<SignInResult> {
   const { createClient } = await import("@supabase/supabase-js");
