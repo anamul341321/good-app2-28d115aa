@@ -13,7 +13,7 @@
 
 const TTS_MODELS = [
   "gemini-2.5-flash-preview-tts",
-  "gemini-2.5-flash-tts",
+  "gemini-3.1-flash-tts-preview",
   "gemini-2.5-pro-preview-tts",
 ];
 
@@ -129,7 +129,9 @@ export async function speakBengali(rawText: string): Promise<Uint8Array | null> 
         role: "user",
         parts: [
           {
-            text: `বন্ধুর মতো নরম, আন্তরিক ও স্পষ্ট বাংলায় পড়ে শোনাও: ${text}`,
+            // The directive must be in English; a Bengali instruction makes the
+            // TTS model try to answer instead of read ("should only be used for TTS").
+            text: `Say warmly and clearly, like a friendly Bangladeshi girl helping a customer: ${text}`,
           },
         ],
       },
