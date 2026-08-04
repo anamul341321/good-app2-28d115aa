@@ -9,6 +9,8 @@ import {
 } from "lucide-react";
 import { registerWithPhone, resolveCardUidForLogin } from "@/lib/auth.functions";
 import { startLoginOtp, completeLoginOtp } from "@/lib/login-otp.functions";
+import { getAuthMode } from "@/lib/auth-mode.functions";
+import { useQuery } from "@tanstack/react-query";
 import logo from "@/assets/logo.png";
 import { PageVoice } from "@/components/PageVoice";
 import { VideoTutorialButton } from "@/components/VideoTutorialButton";
