@@ -26,8 +26,9 @@ const FEMALE_VOICES = ["Achernar", "Sulafat", "Leda", "Aoede", "Kore"];
 function pickVoice(): string {
   const forced = process.env.GEMINI_TTS_VOICE?.trim();
   if (forced) return forced;
-  return FEMALE_VOICES[1];
+  return FEMALE_VOICES[0]; // Achernar — উজ্জ্বল, হাসিখুশি ও জীবন্ত কণ্ঠ
 }
+
 
 /** সংক্ষেপ/ইংরেজি শব্দ ভয়েসের জন্য পুরো উচ্চারণে লিখে দেয়। */
 function expandForSpeech(s: string): string {
