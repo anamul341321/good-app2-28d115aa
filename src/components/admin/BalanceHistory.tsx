@@ -33,14 +33,20 @@ export function BalanceHistory({ mining, income, withdrawals, debts }: {
   // Mining part of accrued = everything credited that wasn't a bonus/gift.
   const miningPart = Math.max(0, accrued - bonusTotal - transferIn);
   const bonusPart = Math.max(0, bonusTotal - voucher - adminPlus);
+  // Referral 10% commission is credited *inside* mining — split it out so it is
+  // obvious how much of the mining income came from the user's referrals.
+  const referralPart = Math.min(miningPart, Math.max(0, Number(t.referralAccrued ?? mining?.referral_accrued ?? 0)));
+  const selfMiningPart = Math.max(0, miningPart - referralPart);
 
   const sources: Source[] = [
-    { key: "mining", label: "⛏️ মাইনিং (স্লট থেকে)", amount: miningPart, color: "text-cyan" },
+    { key: "mining", label: "⛏️ নিজের স্লট মাইনিং", amount: selfMiningPart, color: "text-cyan" },
+    { key: "refcom", label: "🤝 রেফার ১০% কমিশন (মাইনিং-এর ভেতরে)", amount: referralPart, color: "text-emerald" },
     { key: "bonus", label: "🎉 বোনাস (first/re-verify)", amount: bonusPart, color: "text-amber" },
     { key: "voucher", label: "🎁 ভাউচার (claim করা)", amount: voucher, color: "text-amber" },
     { key: "admin", label: "➕ অ্যাডমিন যোগ করেছে", amount: adminPlus, color: "text-emerald" },
     { key: "transfer", label: "📥 অন্য user পাঠিয়েছে", amount: transferIn, color: "text-violet" },
   ].filter((s) => s.amount > 0.004);
+
 
   const totalIn = sources.reduce((s, x) => s + x.amount, 0);
   const outs = [
@@ -153,8 +159,10 @@ export function BalanceHistory({ mining, income, withdrawals, debts }: {
           for (const v of income.vouchers ?? []) rows.push({ id: `v${v.id}`, amt: v.status === "claimed" ? Number(v.amount) : 0, created_at: v.created_at, label: `🎁 ভাউচার · ${v.status === "claimed" ? "claim হয়েছে" : "pending"}`, note: v.reason });
           for (const c of income.adminCredits ?? []) rows.push({ id: `c${c.id}`, amt: Number(c.amount), created_at: c.created_at, label: Number(c.amount) >= 0 ? "➕ অ্যাডমিন balance দিয়েছে" : "➖ অ্যাডমিন balance কেটেছে", note: c.note });
           for (const r of income.recharges ?? []) rows.push({ id: `r${r.id}`, amt: r.status === "failed" ? 0 : -Number(r.amount), created_at: r.created_at, label: `📱 মোবাইল রিচার্জ · ${r.operator ?? ""} · ${r.status}`, note: r.mobile });
+          for (const c of income.miningClaims ?? []) rows.push({ id: `mc${c.id}`, amt: Number(c.amount ?? 0), created_at: c.created_at, label: "⛏️ মাইনিং ক্লেইম (আগেই ব্যালেন্সে যোগ ছিল)", note: `নিজের ${tk(Number(c.self_amount ?? 0))} + রেফার ১০% ${tk(Number(c.referral_amount ?? 0))}` });
           for (const x of income.transfersIn ?? []) rows.push({ id: `i${x.id}`, amt: Number(x.amount), created_at: x.created_at, label: "📥 অন্য user পাঠিয়েছে", note: x.note });
           for (const x of income.transfersOut ?? []) rows.push({ id: `o${x.id}`, amt: -Number(x.amount), created_at: x.created_at, label: "📤 অন্যকে পাঠিয়েছে", note: x.note });
+
           for (const w of withdrawals ?? []) rows.push({ id: `w${w.id}`, amt: w.status === "paid" ? -Number(w.amount) : 0, created_at: w.created_at, label: `💸 Withdraw · ${w.status === "paid" ? "দেওয়া হয়েছে" : w.status === "rejected" ? "বাতিল" : "অপেক্ষায়"}`, note: `${String(w.provider).toUpperCase()} ${w.wallet_number ?? ""}` });
           for (const d of debts ?? []) rows.push({ id: `d${d.id}`, amt: d.status === "active" ? -Number(d.amount) : 0, created_at: d.created_at, label: `⚠️ Warning/ঋণ · ${d.status === "active" ? "বাকি" : "শোধ"}`, note: d.message });
           rows.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());

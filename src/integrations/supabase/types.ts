@@ -334,7 +334,10 @@ export type Database = {
           balance_after: number
           created_at: string
           id: string
+          kind: string
           note: string | null
+          referral_amount: number
+          self_amount: number
           user_id: string
         }
         Insert: {
@@ -342,7 +345,10 @@ export type Database = {
           balance_after?: number
           created_at?: string
           id?: string
+          kind?: string
           note?: string | null
+          referral_amount?: number
+          self_amount?: number
           user_id: string
         }
         Update: {
@@ -350,7 +356,10 @@ export type Database = {
           balance_after?: number
           created_at?: string
           id?: string
+          kind?: string
           note?: string | null
+          referral_amount?: number
+          self_amount?: number
           user_id?: string
         }
         Relationships: []
@@ -1595,6 +1604,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      claim_mining_earnings: { Args: { _user_id: string }; Returns: Json }
       claim_reverify_bonus: { Args: { _user_id: string }; Returns: number }
       claim_whitelist_run: {
         Args: { _lease_token: string; _run_id: string }

@@ -42,6 +42,7 @@ import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedOffersRouteImport } from './routes/_authenticated/offers'
 import { Route as AuthenticatedKycRouteImport } from './routes/_authenticated/kyc'
 import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
+import { Route as AuthenticatedEarningsRouteImport } from './routes/_authenticated/earnings'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as ApiPublicWhitelistRecheckRouteImport } from './routes/api/public/whitelist-recheck'
 import { Route as ApiPublicTourAudioRouteImport } from './routes/api/public/tour-audio'
@@ -218,6 +219,11 @@ const AuthenticatedHomeRoute = AuthenticatedHomeRouteImport.update({
   path: '/home',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedEarningsRoute = AuthenticatedEarningsRouteImport.update({
+  id: '/earnings',
+  path: '/earnings',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
   id: '/lovable/email/suppression',
   path: '/lovable/email/suppression',
@@ -285,6 +291,7 @@ export interface FileRoutesByFullPath {
   '/admin-login': typeof AdminLoginRoute
   '/auth': typeof AuthRoute
   '/terms': typeof TermsRoute
+  '/earnings': typeof AuthenticatedEarningsRoute
   '/home': typeof AuthenticatedHomeRoute
   '/kyc': typeof AuthenticatedKycRoute
   '/offers': typeof AuthenticatedOffersRoute
@@ -329,6 +336,7 @@ export interface FileRoutesByTo {
   '/admin-login': typeof AdminLoginRoute
   '/auth': typeof AuthRoute
   '/terms': typeof TermsRoute
+  '/earnings': typeof AuthenticatedEarningsRoute
   '/home': typeof AuthenticatedHomeRoute
   '/kyc': typeof AuthenticatedKycRoute
   '/offers': typeof AuthenticatedOffersRoute
@@ -376,6 +384,7 @@ export interface FileRoutesById {
   '/admin-login': typeof AdminLoginRoute
   '/auth': typeof AuthRoute
   '/terms': typeof TermsRoute
+  '/_authenticated/earnings': typeof AuthenticatedEarningsRoute
   '/_authenticated/home': typeof AuthenticatedHomeRoute
   '/_authenticated/kyc': typeof AuthenticatedKycRoute
   '/_authenticated/offers': typeof AuthenticatedOffersRoute
@@ -423,6 +432,7 @@ export interface FileRouteTypes {
     | '/admin-login'
     | '/auth'
     | '/terms'
+    | '/earnings'
     | '/home'
     | '/kyc'
     | '/offers'
@@ -467,6 +477,7 @@ export interface FileRouteTypes {
     | '/admin-login'
     | '/auth'
     | '/terms'
+    | '/earnings'
     | '/home'
     | '/kyc'
     | '/offers'
@@ -513,6 +524,7 @@ export interface FileRouteTypes {
     | '/admin-login'
     | '/auth'
     | '/terms'
+    | '/_authenticated/earnings'
     | '/_authenticated/home'
     | '/_authenticated/kyc'
     | '/_authenticated/offers'
@@ -806,6 +818,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedHomeRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/earnings': {
+      id: '/_authenticated/earnings'
+      path: '/earnings'
+      fullPath: '/earnings'
+      preLoaderRoute: typeof AuthenticatedEarningsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/lovable/email/suppression': {
       id: '/lovable/email/suppression'
       path: '/lovable/email/suppression'
@@ -887,6 +906,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedEarningsRoute: typeof AuthenticatedEarningsRoute
   AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
   AuthenticatedKycRoute: typeof AuthenticatedKycRoute
   AuthenticatedOffersRoute: typeof AuthenticatedOffersRoute
@@ -902,6 +922,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedEarningsRoute: AuthenticatedEarningsRoute,
   AuthenticatedHomeRoute: AuthenticatedHomeRoute,
   AuthenticatedKycRoute: AuthenticatedKycRoute,
   AuthenticatedOffersRoute: AuthenticatedOffersRoute,
@@ -979,13 +1000,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

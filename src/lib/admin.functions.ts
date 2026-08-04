@@ -217,7 +217,7 @@ export const adminUserDetail = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => z.object({ userId: z.string().uuid() }).parse(i))
   .handler(async ({ data }) => {
     const supabaseAdmin = await gate();
-    const [profile, tasks, mining, wallets, withdrawals, unverified, referrals, debts, vouchersAll, creditsAll, rechargesAll, transfersIn, transfersOut, authUserRes] = await Promise.all([
+    const [profile, tasks, mining, wallets, withdrawals, unverified, referrals, debts, vouchersAll, creditsAll, rechargesAll, transfersIn, transfersOut, miningClaimsAll, authUserRes] = await Promise.all([
       supabaseAdmin.from("profiles").select("*").eq("id", data.userId).maybeSingle(),
       supabaseAdmin.from("tasks").select("*").eq("user_id", data.userId).order("slot"),
       supabaseAdmin.from("mining_state").select("*").eq("user_id", data.userId).maybeSingle(),
@@ -231,8 +231,10 @@ export const adminUserDetail = createServerFn({ method: "POST" })
       supabaseAdmin.from("recharges").select("id, amount, mobile, operator, status, created_at").eq("user_id", data.userId).order("created_at", { ascending: false }),
       supabaseAdmin.from("transfers").select("id, amount, note, sender_id, created_at").eq("receiver_id", data.userId).order("created_at", { ascending: false }),
       supabaseAdmin.from("transfers").select("id, amount, note, receiver_id, created_at").eq("sender_id", data.userId).order("created_at", { ascending: false }),
+      supabaseAdmin.from("mining_claims").select("id, amount, self_amount, referral_amount, balance_after, note, created_at").eq("user_id", data.userId).order("created_at", { ascending: false }).limit(200),
       supabaseAdmin.auth.admin.getUserById(data.userId).catch(() => null),
     ]);
+
 
     // Sign task face-photo URLs in parallel with fault-tolerance — sequential awaits
     // and a single failing signed URL were the primary reason the detail page hung.
@@ -353,6 +355,7 @@ export const adminUserDetail = createServerFn({ method: "POST" })
         recharges: rechargesAll.data ?? [],
         transfersIn: transfersIn.data ?? [],
         transfersOut: transfersOut.data ?? [],
+        miningClaims: miningClaimsAll.data ?? [],
         totals: {
           vouchersClaimed: (vouchersAll.data ?? []).filter((v: any) => v.status === "claimed").reduce((s: number, v: any) => s + Number(v.amount), 0),
           adminCreditsPositive: (creditsAll.data ?? []).filter((c: any) => Number(c.amount) > 0).reduce((s: number, c: any) => s + Number(c.amount), 0),
@@ -361,10 +364,13 @@ export const adminUserDetail = createServerFn({ method: "POST" })
           transfersInTotal: (transfersIn.data ?? []).reduce((s: number, t: any) => s + Number(t.amount), 0),
           transfersOutTotal: (transfersOut.data ?? []).reduce((s: number, t: any) => s + Number(t.amount), 0),
           withdrawalsPaid: (withdrawals.data ?? []).filter((w: any) => w.status === "paid").reduce((s: number, w: any) => s + Number(w.amount), 0),
+          referralAccrued: Number((mining.data as any)?.referral_accrued ?? 0),
+          miningClaimedTotal: (miningClaimsAll.data ?? []).reduce((s: number, c: any) => s + Number(c.amount ?? 0), 0),
         },
       },
     };
   });
+
 
 
 export const adminAddDebt = createServerFn({ method: "POST" })
