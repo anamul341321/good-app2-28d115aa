@@ -25,6 +25,7 @@ const tk = (n: number) => `${n.toFixed(2)}৳`;
 
 function EarningsPage() {
   const qc = useQueryClient();
+  const [showSheet, setShowSheet] = useState(false);
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["earnings"],
     queryFn: () => getEarnings(),
@@ -57,6 +58,14 @@ function EarningsPage() {
     { key: "transfer", label: "📥 অন্য ইউজার পাঠিয়েছে", amount: t.transferInTotal, color: "text-violet" },
   ].filter((s) => s.amount > 0.004);
   const totalIn = sources.reduce((s, x) => s + x.amount, 0);
+  const outs = [
+    { label: "💸 উইথড্র হয়েছে", amount: data.rows.filter((r) => r.kind === "withdraw").reduce((s, r) => s + Math.abs(Math.min(0, r.amount)), 0) },
+    { label: "📱 মোবাইল রিচার্জ", amount: data.rows.filter((r) => r.kind === "recharge").reduce((s, r) => s + Math.abs(Math.min(0, r.amount)), 0) },
+    { label: "📤 অন্যকে পাঠিয়েছেন", amount: data.rows.filter((r) => r.kind === "transfer_out").reduce((s, r) => s + Math.abs(Math.min(0, r.amount)), 0) },
+    { label: "➖ অ্যাডমিন কেটেছে", amount: data.rows.filter((r) => r.kind === "admin_out").reduce((s, r) => s + Math.abs(Math.min(0, r.amount)), 0) },
+    { label: "⚠️ ভুল পেমেন্ট ফেরত বাকি", amount: t.debtActive },
+  ].filter((o) => o.amount > 0.004);
+  const totalOut = outs.reduce((s, x) => s + x.amount, 0);
 
   return (
     <div className="space-y-5 pt-2 pb-8">
@@ -136,6 +145,40 @@ function EarningsPage() {
         <p className="text-[10px] text-muted-foreground leading-relaxed">
           📌 রেফার কমিশন আলাদা কোনো ওয়ালেটে যায় না — এটি আপনার মাইনিং ব্যালেন্সের সাথেই যোগ হয়, তাই উপরে আলাদা করে দেখানো হচ্ছে কতটুকু রেফার থেকে এসেছে।
         </p>
+      </div>
+
+      {/* Printable statement */}
+      <div className="premium-panel rounded-3xl p-5 space-y-3 print:shadow-none">
+        <div className="flex items-center gap-2 print:hidden">
+          <FileText className="w-4 h-4 text-violet" />
+          <p className="text-[10px] uppercase tracking-widest font-black text-muted-foreground">আয়ের বিবরণী — প্রিন্ট / ডাউনলোড</p>
+        </div>
+        <p className="text-[11px] text-muted-foreground leading-relaxed print:hidden">
+          🧾 নিচের বাটনে চাপ দিলে সাদা কাগজের মতো সুন্দর একটি বিবরণী তৈরি হবে — কোথা থেকে কত টাকা এসেছে, কোথায় গেছে, তারিখসহ সব। চাইলে ছবি হিসেবে ডাউনলোড করে যে কাউকে পাঠাতে পারবেন।
+        </p>
+        <button
+          onClick={() => setShowSheet((v) => !v)}
+          className="w-full py-3 rounded-2xl gradient-cta text-white font-black text-sm btn-press print:hidden"
+        >
+          {showSheet ? "বিবরণী বন্ধ করুন" : "📄 আমার আয়ের বিবরণী দেখুন"}
+        </button>
+        {showSheet && (
+          <EarningsStatement
+            data={{
+              name: data.profile?.name ?? "ইউজার",
+              uid: data.profile?.uid ?? null,
+              phone: data.profile?.phone ?? null,
+              balance: t.balance,
+              totalIn,
+              totalOut,
+              debt: t.debtActive,
+              sources: sources.map((s) => ({ key: s.key, label: s.label, amount: s.amount })),
+              outs,
+              rows: data.rows.map((r) => ({ id: r.id, label: r.label, note: r.note, amount: r.amount, created_at: r.created_at })),
+            }}
+            onClose={() => setShowSheet(false)}
+          />
+        )}
       </div>
 
       {/* Ledger */}
