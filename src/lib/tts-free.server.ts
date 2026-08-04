@@ -174,7 +174,7 @@ const TTS_DIRECTIVE =
 async function pcmForChunk(
   text: string,
   voice: string,
-  keys: { id?: string; key: string }[],
+  keys: { id?: string | null; key: string }[],
 ): Promise<Uint8Array | null> {
   const body = {
     contents: [{ role: "user", parts: [{ text: `${TTS_DIRECTIVE}Text: ${text}` }] }],
