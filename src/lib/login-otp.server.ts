@@ -6,10 +6,12 @@ type LoginData = { identifier: string; password: string };
 type Account = {
   id: string;
   authEmail: string;
+  authEmails: string[];
   contactEmail: string;
   emailVerified: boolean;
   displayName: string | null;
 };
+
 
 function maskEmail(email: string) {
   const [local, domain] = email.split("@");
