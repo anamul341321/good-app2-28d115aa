@@ -29,8 +29,13 @@ async function loadProfile(userId: string) {
 export const requestPasswordChangeOtp = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    const { isEmailOtpEnabled } = await import("./auth-mode.server");
+    if (!(await isEmailOtpEnabled())) {
+      return { ok: true as const, skipOtp: true as const, destination: null };
+    }
     const prof = await loadProfile(context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
 
     const { data: recent } = await supabaseAdmin
       .from("password_reset_otps")
