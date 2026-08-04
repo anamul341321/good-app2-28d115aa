@@ -1,5 +1,5 @@
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const LOGIN_TIMEOUT_MS = 15_000;
+const LOGIN_TIMEOUT_MS = 20_000;
 
 type LoginData = { identifier: string; password: string };
 
@@ -11,6 +11,10 @@ type Account = {
   emailVerified: boolean;
   displayName: string | null;
 };
+
+type SignInResult =
+  | { ok: true; session: { access_token: string; refresh_token: string } }
+  | { ok: false; reason: "auth" | "timeout" | "error" };
 
 
 function maskEmail(email: string) {
