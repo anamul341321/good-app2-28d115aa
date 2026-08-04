@@ -74,11 +74,8 @@ function balanceHtml(chunk: string): string {
   return chunk + stack.reverse().map((t) => `</${t}>`).join("");
 }
 
-/** Send a Telegram message, replying to the user's exact message when provided. */
-export async function sendMessage(chatId: string | number, text: string, _replyTo?: number) {
-  const full = sanitizeTelegramHtml(text);
-  // Telegram caps a message at 4096 chars — আগে কেটে ফেলা হতো, তাই লেখা অসম্পূর্ণ
-  // দেখাতো। এখন বড় উত্তর কয়েক ভাগে পাঠানো হয়।
+/** Split a long reply into Telegram-safe chunks and send them as text. */
+async function sendTextOnly(chatId: string | number, full: string, _replyTo?: number) {
   const chunks: string[] = [];
   let rest = full;
   while (rest.length > 3800) {
@@ -117,6 +114,17 @@ export async function sendMessage(chatId: string | number, text: string, _replyT
     }
     last = sent;
   }
+  return last;
+}
+
+/** Send a Telegram message, replying to the user's exact message when provided. */
+export async function sendMessage(chatId: string | number, text: string, _replyTo?: number) {
+  const full = sanitizeTelegramHtml(text);
+  const { voice: voiceOn, text: textOn } = await voicePrefs();
+
+  let last: unknown = null;
+  if (textOn || !voiceOn) last = await sendTextOnly(chatId, full, _replyTo);
+
   // ---- ভয়েস উত্তর: টেক্সট পাঠানোর পরপরই একই উত্তরটি মেয়ে-কণ্ঠে বাংলায় ----
   // অ্যাডমিন প্যানেলের স্যুইচ অনুযায়ী: ভয়েস + লেখা, নাকি শুধু ভয়েস।
   if (voiceOn && full.replace(/<[^>]+>/g, "").trim().length >= 15) {
