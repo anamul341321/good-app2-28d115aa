@@ -68,13 +68,13 @@ function BonusSettings() {
   }, [data]);
 
   const save = useMutation({
-    mutationFn: () => adminUpdateBonusSettings({
+    mutationFn: (override?: { email_otp_enabled?: boolean }) => adminUpdateBonusSettings({
       data: {
         first_verify_bonus: Number(fv),
         reverify_bonus: Number(rv),
         referrer_bonus: Number(rf),
         first_verify_mining_mode: fvMode,
-        email_otp_enabled: otpMode,
+        email_otp_enabled: override?.email_otp_enabled ?? otpMode,
         promo_active: promoActive,
         promo_title: promoTitle || null,
         promo_start_at: promoStart ? new Date(promoStart).toISOString() : null,
