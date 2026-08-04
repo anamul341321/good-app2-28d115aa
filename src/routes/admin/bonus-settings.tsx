@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { adminGetBonusSettings, adminUpdateBonusSettings, adminSetFirstVerifyMiningMode } from "@/lib/admin.functions";
+import { adminGetBonusSettings, adminUpdateBonusSettings, adminSetFirstVerifyMiningMode, adminSetMaintenance } from "@/lib/admin.functions";
 import { Gift, Loader2, Save } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -36,6 +36,8 @@ function BonusSettings() {
   const [withdrawOn, setWithdrawOn] = useState(true);
   const [withdrawMsg, setWithdrawMsg] = useState("");
   const [offUntil, setOffUntil] = useState<string | null>(null);
+  const [maintOn, setMaintOn] = useState(false);
+  const [maintMsg, setMaintMsg] = useState("");
   const [usdtOn, setUsdtOn] = useState(true);
   const [usdtMsg, setUsdtMsg] = useState("");
 
@@ -60,6 +62,8 @@ function BonusSettings() {
     setNagadMsg(d.nagad_off_message ?? "");
     setRechargeOn(d.recharge_enabled !== false);
     setRechargeMsg(d.recharge_off_message ?? "");
+    setMaintOn(d.maintenance_enabled === true);
+    setMaintMsg(d.maintenance_message ?? "");
     setUsdtOn(d.usdt_enabled !== false);
     setUsdtMsg(d.usdt_off_message ?? "");
     setWithdrawOn(d.withdraw_enabled !== false);
@@ -128,6 +132,16 @@ function BonusSettings() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const saveMaint = useMutation({
+    mutationFn: (enabled: boolean) => adminSetMaintenance({ data: { enabled, message: maintMsg.trim() || null } }),
+    onSuccess: (_r, enabled) => {
+      setMaintOn(enabled);
+      toast.success(enabled ? "🛠️ Maintenance mode ON — অ্যাপ বন্ধ" : "✅ Maintenance mode OFF — অ্যাপ চালু");
+      refetch();
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const toggleFvMode = useMutation({
     mutationFn: (enabled: boolean) => adminSetFirstVerifyMiningMode({ data: { enabled } }),
     onSuccess: (_r, enabled) => {
@@ -155,6 +169,39 @@ function BonusSettings() {
           এখানে বোনাস টাকার অংক পরিবর্তন করলে সব নতুন ইউজারের জন্য সাথে সাথে চালু হয়ে যাবে।
           যারা আগে বোনাস পেয়ে গেছে তারা আর দ্বিতীয়বার পাবে না — নতুনরা এই নতুন অংক পাবে।
         </p>
+      </div>
+
+      {/* Maintenance mode */}
+      <div className={`rounded-2xl p-4 border-2 space-y-2 ${maintOn ? "border-rose/60 bg-rose/10" : "border-border bg-surface-2"}`}>
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className={`text-[11px] uppercase tracking-widest font-black ${maintOn ? "text-rose" : "text-muted-foreground"}`}>
+              🛠️ Maintenance mode
+            </p>
+            <p className="text-sm font-black mt-0.5">
+              {maintOn ? "ON — অ্যাপ বন্ধ, ইউজার শুধু বাংলা নোটিশ দেখবে" : "OFF — অ্যাপ স্বাভাবিক চলছে"}
+            </p>
+          </div>
+          <button
+            disabled={saveMaint.isPending}
+            onClick={() => {
+              const next = !maintOn;
+              if (!confirm(next
+                ? "SURE? ON করলে কোনো user কিছুই করতে পারবে না — শুধু 'কাজ চলছে' মেসেজ দেখবে।"
+                : "Maintenance OFF করে অ্যাপ আবার চালু করবেন?")) return;
+              saveMaint.mutate(next);
+            }}
+            className={`shrink-0 w-16 h-9 rounded-full relative transition ${maintOn ? "bg-rose" : "bg-surface-2 border border-border"} disabled:opacity-50`}>
+            <span className={`absolute top-1 w-7 h-7 rounded-full bg-white shadow transition-all ${maintOn ? "left-8" : "left-1"}`} />
+          </button>
+        </div>
+        <textarea value={maintMsg} onChange={(e) => setMaintMsg(e.target.value.slice(0, 1000))} rows={3}
+          placeholder="ইউজারকে যা দেখাবেন (খালি রাখলে সুন্দর ডিফল্ট বাংলা মেসেজ যাবে)"
+          className="w-full px-3 py-2 rounded-xl bg-white border border-border text-sm outline-none focus:border-rose resize-y" />
+        <button onClick={() => saveMaint.mutate(maintOn)} disabled={saveMaint.isPending}
+          className="w-full py-2 rounded-xl gradient-navy text-gold font-black text-xs disabled:opacity-50">
+          মেসেজ সেভ করুন
+        </button>
       </div>
 
       {/* Global Mining Mode Switch */}
