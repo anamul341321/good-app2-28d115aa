@@ -48,7 +48,7 @@ function expandForSpeech(s: string): string {
     .replace(/স্যার/g, "ভাইয়া");
 }
 
-/** Strip HTML/markdown/links so the voice reads clean Bengali sentences. */
+/** Strip HTML/markdown/links/emoji so the voice reads clean Bengali sentences. */
 export function voiceScript(html: string): string {
   return expandForSpeech(
     String(html || "")
@@ -58,11 +58,18 @@ export function voiceScript(html: string): string {
       .replace(/&amp;/g, "and")
       .replace(/&lt;|&gt;/g, " ")
       .replace(/https?:\/\/\S+/g, " লিংকটি নিচে লেখা আছে ")
+      // Emoji/pictographs make the TTS model say their names out loud
+      // ("💙" → "ভালোবাসা"), so remove them before speaking.
+      .replace(
+        /[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}\u{20E3}\u{1F1E6}-\u{1F1FF}\u2190-\u21FF\u2022\u25A0-\u25FF]/gu,
+        " ",
+      )
       .replace(/[*_`#>]+/g, " "),
   )
     .replace(/\s+/g, " ")
     .trim();
 }
+
 
 
 async function sha(text: string): Promise<string> {
