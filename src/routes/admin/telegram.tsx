@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   Bot, Loader2, Save, Plus, Trash2, ShieldAlert, MessageSquare, Link2, CheckCircle2, XCircle,
-  Image as ImageIcon, Search, Send, Ban, ShieldCheck, HelpCircle,
+  Image as ImageIcon, Search, Send, Ban, ShieldCheck, HelpCircle, KeyRound,
 } from "lucide-react";
 import {
   tgGetSettings, tgSaveSettings, tgRegisterWebhook,
@@ -13,12 +13,13 @@ import {
   tgListBlocked, tgSetBlocked, tgListVideos, tgUpsertVideo, tgDeleteVideo,
   tgListVoices, tgUpsertVoice, tgDeleteVoice,
   tgBroadcast, tgBroadcastAudience, tgListLinkedProfiles,
+  tgListAiKeys, tgAddAiKey, tgSetAiKeyActive, tgDeleteAiKey,
 } from "@/lib/telegram-bot.functions";
 
 
 export const Route = createFileRoute("/admin/telegram")({ component: TelegramAdmin });
 
-type Tab = "settings" | "started" | "broadcast" | "faq" | "voices" | "videos" | "lookup" | "blocked" | "bans" | "log";
+type Tab = "settings" | "aikeys" | "started" | "broadcast" | "faq" | "voices" | "videos" | "lookup" | "blocked" | "bans" | "log";
 
 
 
@@ -38,7 +39,7 @@ function TelegramAdmin() {
 
       <div className="flex gap-2 overflow-x-auto -mx-4 px-4 pb-1 scrollbar-none">
         {([
-          ["settings", "সেটিংস"], ["started", "বট Start (KYC)"], ["broadcast", "ব্রডকাস্ট"], ["faq", "উত্তর/নিয়ম"], ["voices", "ভয়েস"], ["videos", "ভিডিও লিংক"], ["lookup", "UID লুকআপ"],
+          ["settings", "সেটিংস"], ["aikeys", "AI কী"], ["started", "বট Start (KYC)"], ["broadcast", "ব্রডকাস্ট"], ["faq", "উত্তর/নিয়ম"], ["voices", "ভয়েস"], ["videos", "ভিডিও লিংক"], ["lookup", "UID লুকআপ"],
           ["blocked", "ব্লক লিস্ট"], ["bans", "Ban requests"], ["log", "Activity"],
         ] as [Tab, string][]).map(([k, label]) => (
           <button key={k} onClick={() => setTab(k)}
@@ -51,6 +52,7 @@ function TelegramAdmin() {
       </div>
 
       {tab === "settings" && <SettingsPanel />}
+      {tab === "aikeys" && <AiKeyPanel />}
       {tab === "started" && <StartedPanel />}
       {tab === "broadcast" && <BroadcastPanel />}
       {tab === "faq" && <FaqPanel />}
@@ -1114,6 +1116,110 @@ function StartedPanel() {
           {rows.length === 0 && <p className="text-center text-sm text-muted-foreground py-6">কেউ পাওয়া যায়নি</p>}
         </div>
       )}
+    </div>
+  );
+}
+
+function AiKeyPanel() {
+  const qc = useQueryClient();
+  const { data, isLoading } = useQuery({ queryKey: ["tg-ai-keys"], queryFn: () => tgListAiKeys() });
+  const [key, setKey] = useState("");
+  const [label, setLabel] = useState("");
+
+  const add = useMutation({
+    mutationFn: () => tgAddAiKey({ data: { key: key.trim(), label: label.trim() || undefined } }),
+    onSuccess: () => {
+      setKey(""); setLabel("");
+      toast.success("কী সেভ হয়েছে ✅ — এটি এখন থেকেই ব্যবহার হবে");
+      qc.invalidateQueries({ queryKey: ["tg-ai-keys"] });
+    },
+    onError: (e: any) => toast.error(e?.message || "কী সেভ করা যায়নি"),
+  });
+  const toggle = useMutation({
+    mutationFn: (v: { id: string; active: boolean }) => tgSetAiKeyActive({ data: v }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["tg-ai-keys"] }),
+  });
+  const del = useMutation({
+    mutationFn: (id: string) => tgDeleteAiKey({ data: { id } }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["tg-ai-keys"] }),
+  });
+
+  const keys = data?.keys ?? [];
+  const live = keys.filter((k) => k.active && !k.onCooldown).length;
+
+  return (
+    <div className="space-y-3">
+      <div className="glass rounded-2xl p-4 space-y-3">
+        <div className="flex items-center gap-2">
+          <KeyRound className="w-4 h-4 text-cyan" />
+          <h3 className="text-sm font-black">AI কী যোগ করুন (ফ্রি Gemini কী)</h3>
+        </div>
+        <p className="text-[11px] text-muted-foreground leading-snug">
+          একটি বক্সে একটি কী দিয়ে <b>সেভ</b> দিন — যত ইচ্ছা কী যোগ করা যাবে। একটি কীর ফ্রি লিমিট
+          শেষ হলে বট <b>নিজে থেকেই</b> পরের কী ব্যবহার করবে, ১ ঘণ্টা পর আগের কী আবার চেষ্টা করবে।
+        </p>
+        <input
+          value={key} onChange={(e) => setKey(e.target.value)} placeholder="AIza... (Google AI Studio কী)"
+          className="w-full rounded-xl bg-surface-2 border border-border px-3 py-2.5 text-xs font-mono"
+        />
+        <input
+          value={label} onChange={(e) => setLabel(e.target.value)} placeholder="নাম/নোট (ঐচ্ছিক) — যেমন: Gmail-1"
+          className="w-full rounded-xl bg-surface-2 border border-border px-3 py-2.5 text-xs"
+        />
+        <button
+          onClick={() => add.mutate()} disabled={key.trim().length < 20 || add.isPending}
+          className="w-full gradient-cta rounded-xl py-2.5 text-xs font-black flex items-center justify-center gap-2 disabled:opacity-50"
+        >
+          {add.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />} কী সেভ করুন
+        </button>
+      </div>
+
+      <div className="glass rounded-2xl p-4">
+        <p className="text-[11px] font-black mb-2">
+          মোট কী: {keys.length} · এখন ব্যবহারযোগ্য: <span className="text-emerald">{live}</span>
+          {data?.provider === "lovable" && <span className="text-amber-500"> · এখন পেইড গেটওয়ে চলছে</span>}
+        </p>
+        {isLoading ? (
+          <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+        ) : keys.length === 0 ? (
+          <p className="text-[11px] text-muted-foreground">এখনো কোনো কী যোগ করা হয়নি।</p>
+        ) : (
+          <div className="space-y-2">
+            {keys.map((k) => (
+              <div key={k.id} className="rounded-xl border border-border bg-surface-2 p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-xs font-black truncate">{k.label || "কী"} <span className="font-mono text-[10px] text-muted-foreground">{k.masked}</span></p>
+                    <p className="text-[10px] text-muted-foreground">
+                      ব্যবহার: {k.calls} বার
+                      {k.onCooldown ? " · ⏳ লিমিট শেষ (১ ঘণ্টা বিশ্রামে)" : k.active ? " · ✅ চালু" : " · ⛔ বন্ধ"}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button onClick={() => toggle.mutate({ id: k.id, active: !k.active })}
+                      className="rounded-lg border border-border px-2 py-1 text-[10px] font-black">
+                      {k.active ? "বন্ধ" : "চালু"}
+                    </button>
+                    <button onClick={() => del.mutate(k.id)} className="rounded-lg border border-destructive/40 text-destructive px-2 py-1">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+                {k.lastError && <p className="text-[10px] text-destructive mt-1 truncate">{k.lastError}</p>}
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="mt-3 rounded-xl bg-cyan/10 border border-cyan/30 p-3">
+          <p className="text-[11px] font-black mb-1">১টি ফ্রি কী দিয়ে কতগুলো উত্তর যায়?</p>
+          <p className="text-[10.5px] text-muted-foreground leading-snug">
+            গুগলের ফ্রি লিমিট অনুযায়ী প্রতি কীতে সাধারণত <b>দিনে প্রায় ২০০–২৫০টি উত্তর</b> (মিনিটে ১০–১৫টি)।
+            ছবি/স্ক্রিনশট পড়াতে একটু বেশি খরচ হয়, তাই ছবিসহ প্রশ্ন হলে দিনে কম যাবে। লিমিট প্রতিদিন
+            আবার শূন্য থেকে শুরু হয়। একই প্রশ্ন আগে একবার উত্তর দেওয়া থাকলে সেটি <b>মেমোরি থেকে</b> যায় —
+            কোনো কী খরচ হয় না। তাই ৩–৪টি কী দিলে দিনে <b>৮০০–১০০০+</b> উত্তর নিশ্চিন্তে হয়ে যায়।
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

@@ -18,11 +18,12 @@ const GEMINI_DEFAULT_MODEL = "gemini-3.6-flash";
 const GEMINI_FALLBACK_MODEL = "gemini-3.1-flash-lite";
 
 /**
- * All free Gemini keys: GEMINI_API_KEY plus GEMINI_API_KEY_2..GEMINI_API_KEY_9,
- * or a comma-separated GEMINI_API_KEYS. More keys = more free quota per day;
- * when one key hits its limit the next one is used automatically.
+ * All free Gemini keys: the ones the admin saved in the admin panel (unlimited
+ * many, DB-backed) plus GEMINI_API_KEY / GEMINI_API_KEY_2..9 / GEMINI_API_KEYS
+ * from the environment. More keys = more free quota per day; when one key hits
+ * its limit the next one is used automatically.
  */
-function geminiKeys(): string[] {
+function envKeys(): string[] {
   const out: string[] = [];
   const push = (v?: string | null) => {
     for (const part of String(v ?? "").split(",")) {
@@ -36,16 +37,34 @@ function geminiKeys(): string[] {
   return out;
 }
 
-export function freeAiKeyCount(): number {
-  return geminiKeys().length;
+type PoolKey = { id: string | null; key: string };
+
+async function allKeys(): Promise<PoolKey[]> {
+  const out: PoolKey[] = [];
+  try {
+    const { usableDbKeys } = await import("./ai-keys.server");
+    for (const k of await usableDbKeys()) {
+      if (!out.some((o) => o.key === k.key)) out.push({ id: k.id, key: k.key });
+    }
+  } catch {
+    /* DB unavailable → env keys only */
+  }
+  for (const k of envKeys()) {
+    if (!out.some((o) => o.key === k)) out.push({ id: null, key: k });
+  }
+  return out;
 }
 
-export function hasFreeAi(): boolean {
-  return geminiKeys().length > 0;
+export async function freeAiKeyCount(): Promise<number> {
+  return (await allKeys()).length;
 }
 
-export function freeAiProvider(): "gemini" | "lovable" | "none" {
-  if (geminiKeys().length) return "gemini";
+export async function hasFreeAi(): Promise<boolean> {
+  return (await allKeys()).length > 0;
+}
+
+export async function freeAiProvider(): Promise<"gemini" | "lovable" | "none"> {
+  if ((await allKeys()).length) return "gemini";
   if (process.env.LOVABLE_API_KEY) return "lovable";
   return "none";
 }
@@ -55,7 +74,7 @@ export function freeAiProvider(): "gemini" | "lovable" | "none" {
  * Tries every free key × free model before ever touching the paid gateway.
  */
 export async function aiFetch(url: string, init: RequestInit): Promise<Response> {
-  const keys = geminiKeys();
+  const keys = await allKeys();
   if (!keys.length) {
     // Paid fallback — keep the original request as-is.
     return fetch(url, init);
@@ -94,21 +113,34 @@ export async function aiFetch(url: string, init: RequestInit): Promise<Response>
   let lastText = "";
 
   // Rotate: for each free model, walk through every key. A 429/403 means that
-  // key's free quota is used up right now, so we simply move to the next one.
+  // key's free quota is used up right now, so it goes on cool-down and we move
+  // straight to the next key.
   for (const model of models) {
-    for (const key of keys) {
+    for (const k of keys) {
       let res: Response;
       try {
-        res = await send(key, model);
+        res = await send(k.key, model);
       } catch (e) {
         lastStatus = 0;
         lastText = String(e);
         continue;
       }
-      if (res.ok) return res;
+      if (res.ok) {
+        if (k.id) {
+          const { markKeyUsed } = await import("./ai-keys.server");
+          void markKeyUsed(k.id);
+        }
+        return res;
+      }
       lastStatus = res.status;
       lastText = await res.text().catch(() => "");
-      if (res.status === 429 || res.status === 403) continue; // quota → next key
+      if (res.status === 429 || res.status === 403) {
+        if (k.id) {
+          const { markKeyExhausted } = await import("./ai-keys.server");
+          void markKeyExhausted(k.id, `${res.status}: ${lastText.slice(0, 200)}`);
+        }
+        continue; // quota → next key
+      }
       break; // real request error — another key won't help
     }
   }
@@ -118,5 +150,6 @@ export async function aiFetch(url: string, init: RequestInit): Promise<Response>
   if (process.env.LOVABLE_API_KEY) return fetch(url, init);
   return new Response(lastText || "gemini error", { status: lastStatus || 502 });
 }
+
 
 

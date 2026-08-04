@@ -542,3 +542,40 @@ export const tgListLinkedProfiles = createServerFn({ method: "GET" }).handler(as
     rows: rows.map((r) => ({ ...r, duplicate: (seen.get(String(r.telegram_user_id)) ?? 0) > 1 })),
   };
 });
+
+/* ── AI কী ম্যানেজার (ফ্রি Gemini কী — যত ইচ্ছা যোগ করা যায়) ───────────── */
+
+export const tgListAiKeys = createServerFn({ method: "GET" }).handler(async () => {
+  await guard();
+  const { listKeysForAdmin } = await import("@/lib/ai-keys.server");
+  const { freeAiProvider } = await import("@/lib/ai-free.server");
+  return { keys: await listKeysForAdmin(), provider: await freeAiProvider() };
+});
+
+export const tgAddAiKey = createServerFn({ method: "POST" })
+  .inputValidator((d: { key: string; label?: string }) =>
+    z.object({ key: z.string().min(20), label: z.string().max(60).optional() }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    await guard();
+    const { addKey } = await import("@/lib/ai-keys.server");
+    return addKey(data.key, data.label);
+  });
+
+export const tgSetAiKeyActive = createServerFn({ method: "POST" })
+  .inputValidator((d: { id: string; active: boolean }) =>
+    z.object({ id: z.string().uuid(), active: z.boolean() }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    await guard();
+    const { setKeyActive } = await import("@/lib/ai-keys.server");
+    return setKeyActive(data.id, data.active);
+  });
+
+export const tgDeleteAiKey = createServerFn({ method: "POST" })
+  .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data }) => {
+    await guard();
+    const { deleteKey } = await import("@/lib/ai-keys.server");
+    return deleteKey(data.id);
+  });
