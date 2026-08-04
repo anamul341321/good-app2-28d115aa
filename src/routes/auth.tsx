@@ -460,7 +460,7 @@ export function AuthPage() {
             {mode === "login" ? (
               <div data-voice="auth.phone">
                 <label className="text-[11px] font-black text-cyan uppercase tracking-wider">
-                  মোবাইল নম্বর অথবা Gmail
+                  {otpEnabled ? "মোবাইল নম্বর অথবা Gmail" : "মোবাইল নম্বর"}
                 </label>
                 <input
                   required value={loginId}
@@ -468,12 +468,14 @@ export function AuthPage() {
                   autoComplete="username"
                   autoCapitalize="none"
                   spellCheck={false}
-                  placeholder="01XXXXXXXXX অথবা yourname@gmail.com"
+                  placeholder={otpEnabled ? "01XXXXXXXXX অথবা yourname@gmail.com" : "01XXXXXXXXX"}
                   className="w-full mt-1 px-4 py-3 bg-white border-2 border-border rounded-xl text-sm outline-none focus:border-cyan text-navy transition"
                 />
-                <p className="text-[10px] text-muted-foreground mt-1">
-                  যেটা সহজ সেটাই দিন — লগইনের সময় আপনার Gmail-এ ৬ ডিজিটের কোড যাবে।
-                </p>
+                {otpEnabled && (
+                  <p className="text-[10px] text-muted-foreground mt-1">
+                    যেটা সহজ সেটাই দিন — লগইনের সময় আপনার Gmail-এ ৬ ডিজিটের কোড যাবে।
+                  </p>
+                )}
               </div>
             ) : (
               <div data-voice="auth.phone">
