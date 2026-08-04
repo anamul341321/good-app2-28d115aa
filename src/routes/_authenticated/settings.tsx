@@ -102,6 +102,12 @@ function SettingsPage() {
       const { error: signErr } = await supabase.auth.signInWithPassword({ email, password: curPw });
       if (signErr) throw new Error("বর্তমান পাসওয়ার্ড ভুল");
       const res: any = await sendPwOtp();
+      if (res?.skipOtp) {
+        await confirmPwOtp({ data: { code: "000000", newPassword: newPw } });
+        setCurPw(""); setNewPw(""); setPwCode(""); setPwStep("form");
+        toast.success("পাসওয়ার্ড পরিবর্তন হয়েছে");
+        return;
+      }
       setPwDest(res?.destination ?? null);
       setPwStep("code");
       toast.success("Gmail-এ ৬ ডিজিটের কোড পাঠানো হয়েছে");
