@@ -1822,21 +1822,43 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         if (!photoBase64 && settings.auto_reply_enabled && text.trim() && (faqRows ?? []).length) {
           try {
             const hay = ` ${text.toLowerCase()} `;
+            // Generic words that appear in almost every Bengali/Banglish question.
+            // Matching one of these alone must NEVER pick an FAQ row (that is how
+            // "Gmail add korbo kemne" used to get the "apps link" answer).
+            const STOP = new Set([
+              "korbo", "korbo?", "kivabe", "kemne", "kore", "korte", "koro", "den", "dan", "dio",
+              "dibo", "ki", "kib", "koi", "kothay", "please", "plz", "vai", "bhai", "apps", "app",
+              "amar", "ami", "eta", "eita", "hoi", "hoy", "na", "the", "and", "for",
+              "করবো", "কিভাবে", "কেমনে", "করতে", "দেন", "দিন", "কোথায়", "আমার", "আমি", "কি",
+            ]);
             const scoredAdmin = (faqRows ?? [])
               .map((f: any) => {
                 const raw: string[] = Array.isArray(f.keywords)
                   ? f.keywords
                   : String(f.keywords ?? "").split(/[,\n]/);
-                const keys = [...raw, ...String(f.topic ?? "").split(/[\s,/|—-]+/)]
+                const phrases = raw
                   .map((k) => String(k).trim().toLowerCase())
                   .filter((k) => k.length > 2);
-                const score = keys.filter((k) => hay.includes(k)).length;
+                const topicTokens = String(f.topic ?? "")
+                  .split(/[\s,/|—-]+/)
+                  .map((k) => k.trim().toLowerCase())
+                  .filter((k) => k.length > 2 && !STOP.has(k));
+                let score = 0;
+                for (const p of phrases) {
+                  if (!hay.includes(p)) continue;
+                  // Full multi-word phrase = strong signal; single word = medium,
+                  // but a generic single word counts for nothing.
+                  score += p.includes(" ") ? 3 : STOP.has(p) ? 0 : 2;
+                }
+                for (const t of new Set(topicTokens)) if (hay.includes(t)) score += 1;
                 return { f, score };
               })
               .sort((a, b) => b.score - a.score)[0];
-            const adminAnswer = scoredAdmin && scoredAdmin.score >= 1
+            // Need at least a real phrase hit or two distinct meaningful words.
+            const adminAnswer = scoredAdmin && scoredAdmin.score >= 2
               ? await faqAnswerFor(scoredAdmin.f, text)
               : null;
+
             if (adminAnswer) {
               const { humanizeReply } = await import("@/lib/telegram-bot.server");
               const base = adminAnswer.trim();
