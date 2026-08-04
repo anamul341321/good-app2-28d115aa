@@ -31,11 +31,21 @@ const PROMPT =
   "If the audio is truly empty or has no speech at all, output exactly: EMPTY";
 
 /** Transcribe a Telegram voice clip using the free Gemini key pool. */
-export async function hearBengali(base64: string, ext: string): Promise<string | null> {
+export async function hearBengali(
+  base64: string,
+  ext: string,
+  hint?: string,
+): Promise<string | null> {
   if (!base64 || base64.length < 400) return null;
   const { freeKeyPool } = await import("./ai-free.server");
   const keys = await freeKeyPool();
   if (!keys.length) return null;
+
+  const hintBlock = hint?.trim()
+    ? "\nContext of the conversation (use it ONLY to resolve unclear words, never to invent content):\n" +
+      hint.trim().slice(0, 700)
+    : "";
+
 
   const body = {
     contents: [
