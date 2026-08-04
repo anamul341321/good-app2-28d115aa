@@ -6,7 +6,8 @@ import {
 } from "@/lib/announcements.functions";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Loader2, Megaphone, Trash2, Power } from "lucide-react";
+import { Loader2, Megaphone, Trash2, Power, Send } from "lucide-react";
+import { adminListUserNotices, adminSendUserNotice, adminDeleteUserNotice } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/admin/announcements")({ component: AnnouncementsAdmin });
 
@@ -135,7 +136,7 @@ function PersonalNotice() {
         <div className="py-4 flex justify-center"><Loader2 className="w-4 h-4 animate-spin text-rose" /></div>
       ) : (
         <div className="space-y-2">
-          {(data ?? []).map((n) => (
+          {(data ?? []).map((n: any) => (
             <div key={n.id} className="rounded-xl border border-border p-2.5">
               <p className="text-[11px] font-black">
                 UID {n.uid} • {n.name ?? "—"} {n.read ? <span className="text-emerald">• পড়েছে</span> : <span className="text-amber">• অপঠিত</span>}
