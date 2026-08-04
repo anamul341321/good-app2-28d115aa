@@ -1,4 +1,5 @@
 import { aiFetch } from "./ai-free.server";
+import { cachedAnswer, rememberAnswer } from "./ai-cache.server";
 // Server-only helpers for the Good-App Telegram moderation/support bot.
 // Uses TG_MOD_BOT_TOKEN when present, otherwise falls back to TELEGRAM_BOT_TOKEN.
 import { createHash } from "node:crypto";
@@ -1138,6 +1139,12 @@ export async function smartAnswer(opts: {
   if (!key) return null;
   const q = (opts.question || "").trim();
   if (!q) return null;
+  // একই প্রশ্ন আগে ভালোভাবে উত্তর দেওয়া থাকলে সেটাই দেবে — AI কল লাগবে না
+  // (ফলো-আপ প্রশ্নে কনটেক্সট লাগে, তাই history থাকলে ক্যাশ ব্যবহার করি না)।
+  if (!opts.history?.length) {
+    const hit = await cachedAnswer(q);
+    if (hit) return hit;
+  }
   // Two passes: a natural/creative pass, then — if the model bailed with
   // NO_ANSWER or the call failed — one calm low-temperature retry before we
   // hand off to the admin. Without this, the same question randomly gets
@@ -1218,7 +1225,9 @@ export async function smartAnswer(opts: {
     const data: any = await res.json();
     const out = String(data.choices?.[0]?.message?.content ?? "").trim();
     if (!out || /NO[_\s-]?ANSWER/i.test(out)) continue;
-    return stripAdminFiller(out);
+    const final = stripAdminFiller(out);
+    if (!opts.history?.length) void rememberAnswer(q, final);
+    return final;
   } catch {
     // network/timeout — try the calmer pass, then give up
   }
