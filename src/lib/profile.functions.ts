@@ -111,7 +111,7 @@ export const getPublicCardDetails = createServerFn({ method: "GET" })
     if (!raw) throw new Error("UID লাগবে");
 
     let profileRow: any = null;
-    const cardColumns = "id,uid_seq,display_name,referral_code,avatar_url,created_at,nid_number,date_of_birth,father_name,mother_name,village_area,post_office,thana_upazila,district,full_address,kyc_verified,kyc_verified_at";
+    const cardColumns = "id,uid_seq,display_name,referral_code,avatar_url,created_at,kyc_verified,kyc_verified_at";
     if (/^\d+$/.test(raw)) {
       const { data: p } = await supabaseAdmin
         .from("profiles")
@@ -126,15 +126,6 @@ export const getPublicCardDetails = createServerFn({ method: "GET" })
         .eq("id", raw)
         .maybeSingle();
       profileRow = p;
-    } else {
-      const compact = raw.replace(/[^0-9a-f]/gi, "").toLowerCase();
-      const { data: rows } = await supabaseAdmin
-        .from("profiles")
-        .select(cardColumns)
-        .limit(500);
-      profileRow = (rows ?? []).find((r: any) =>
-        String(r.id).replace(/-/g, "").toLowerCase().startsWith(compact),
-      );
     }
     if (!profileRow) throw new Error("কার্ড খুঁজে পাওয়া যায়নি");
 
@@ -163,15 +154,6 @@ export const getPublicCardDetails = createServerFn({ method: "GET" })
         display_name: profileRow.display_name,
         referral_code: profileRow.referral_code,
         created_at: profileRow.created_at,
-        nid_number: profileRow.nid_number,
-        date_of_birth: profileRow.date_of_birth,
-        father_name: profileRow.father_name,
-        mother_name: profileRow.mother_name,
-        village_area: profileRow.village_area,
-        post_office: profileRow.post_office,
-        district: profileRow.district,
-        thana_upazila: profileRow.thana_upazila,
-        full_address: profileRow.full_address,
         kyc_verified: profileRow.kyc_verified,
         kyc_verified_at: profileRow.kyc_verified_at,
       },
