@@ -112,8 +112,9 @@ function AuthedLayout() {
           <div className="flex items-center gap-1.5">
             <LanguageToggle />
             <Link to="/settings" aria-label="সেটিংস"
-              className="btn-press p-2 rounded-lg bg-surface-2 border border-border text-muted-foreground hover:text-cyan">
-              <Settings className="w-4 h-4" />
+              className="btn-press flex items-center gap-1.5 px-3 py-2 rounded-xl gradient-navy text-gold border border-gold/40 shadow-lg">
+              <Settings className="w-5 h-5" />
+              <span className="text-[11px] font-black">{t("সেটিংস", "Settings")}</span>
             </Link>
             <button onClick={logout} data-voice="common.logout"
               className="btn-press p-2 rounded-lg bg-surface-2 border border-border text-muted-foreground hover:text-rose">
