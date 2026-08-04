@@ -93,6 +93,8 @@ function SettingsPage() {
   const [emailStep, setEmailStep] = useState<"email" | "code">("email");
   const [emailCode, setEmailCode] = useState("");
   const [emailBusy, setEmailBusy] = useState(false);
+  const [showEmailForm, setShowEmailForm] = useState(true);
+
 
   // phone change
   const [newPhone, setNewPhone] = useState("");
