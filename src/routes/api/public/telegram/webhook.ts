@@ -1632,6 +1632,41 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             console.error("[tg] screenshot ocr match failed", e);
           }
 
+          // ---- deterministic built-in match straight from the OCR text -------
+          // "You must be 18 years or older", "Something went wrong", "We found
+          // your twin" ইত্যাদি এররে বট যেন কখনোই চুপ না থাকে।
+          try {
+            const { readScreenshotText, humanizeReply } = await import("@/lib/telegram-bot.server");
+            const { BUILTIN_FAQS } = await import("@/lib/telegram-builtin-faq.server");
+            shotText = shotText || (await readScreenshotText(photoBase64)) || "";
+            const hay = shotText.toLowerCase();
+            const rules: { re: RegExp; topic: string }[] = [
+              { re: /(found your twin|your twin|duplicate|already (been )?verified|same face)/i, topic: "twin" },
+              { re: /(18 years or older|must be 18|under 18|under age|underage|years of age)/i, topic: "18+" },
+              { re: /(something went wrong|oops|try again later|unexpected error)/i, topic: "something went wrong" },
+              { re: /(access your camera|camera permission|allow camera)/i, topic: "ক্যামেরা" },
+              { re: /(no longer valid|link is|expired|session)/i, topic: "এক্সপায়ার" },
+            ];
+            let hit: { topic: string; answer: string } | null = null;
+            if (hay) {
+              for (const r of rules) {
+                if (!r.re.test(hay)) continue;
+                const f = BUILTIN_FAQS.find((b) =>
+                  b.topic.toLowerCase().includes(r.topic.toLowerCase()),
+                );
+                if (f) { hit = { topic: f.topic, answer: f.answer }; break; }
+              }
+            }
+            if (hit) {
+              const reply = (await humanizeReply(hit.answer, text || shotText, [])) || hit.answer;
+              await sendMessage(chatId, reply + (await offerSlotResetSuffix()), msg.message_id);
+              await logMessage("question", `faq-builtin-ocr:${hit.topic}`, reply, null);
+              return Response.json({ ok: true, flow: "faq-builtin-ocr", topic: hit.topic });
+            }
+          } catch (e) {
+            console.error("[tg] builtin ocr match failed", e);
+          }
+
           // No admin screenshot matched → try the built-in problem library
           // (e.g. GoodDollar "We found your twin" duplicate-face page).
           try {
@@ -1647,6 +1682,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             console.error("[tg] builtin faq photo match failed", e);
           }
         }
+
 
         // ---- follow-up about the screenshot they JUST sent ---------------------
         // "Eta kn ashe?" right after a screenshot must explain THAT problem,
@@ -2747,6 +2783,22 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           await logMessage(decision.verdict, actions.join(","), reply, matchedUid);
           return Response.json({ ok: true, flow: smart ? "smart-answer" : "escalated", actions });
         }
+
+        // ---- স্ক্রিনশট এলো কিন্তু কিছুই ম্যাচ করলো না → তবুও উত্তর দিতে হবে ----
+        // (AI কোটা শেষ/OCR ফেল হলেও বট যেন কখনো চুপ না থাকে)
+        if (settings.auto_reply_enabled && photoBase64 && !decision.should_delete) {
+          const reply =
+            `ভাইয়া, স্ক্রিনশটটা দেখলাম 🙂 GoodDollar-এ সাধারণত এই ৩টা এররই আসে — যেটা আপনার স্ক্রিনে আছে সেটা মিলিয়ে নিন:\n\n` +
+            `1️⃣ <b>You must be 18 years or older</b> — সিস্টেম মুখ দেখে বয়স আন্দাজ করে; দেখতে কম বয়সী লাগলে ২০+ হলেও আটকায়। ভালো আলোতে, চশমা/ক্যাপ ছাড়া আবার ট্রাই করুন; না হলে আরও পরিণত (২৫+) ফেস দিয়ে করুন।\n` +
+            `2️⃣ <b>Something went wrong / Oops, try again later</b> — সার্ভারের সাময়িক সমস্যা। ব্রাউজার ক্যাশ ক্লিয়ার করে বা Chrome-এ নতুন করে লিংকে ঢুকে ১০–১৫ মিনিট পর আবার ট্রাই করুন, সাধারণত হয়ে যায়।\n` +
+            `3️⃣ <b>We found your twin</b> — ঐ ফেস দিয়ে আগেই ভেরিফিকেশন হয়েছে। একই ফেস ৬ মাসের আগে আর চলবে না, নতুন ফেস দিয়ে করুন।\n\n` +
+            `কোনটা আসছে বললে আমি ঐটার সমাধান বিস্তারিত বলে দিচ্ছি ভাইয়া 💙`;
+          await sendMessage(chatId, reply + (await offerSlotResetSuffix()), msg.message_id);
+          actions.push("photo-fallback");
+          await logMessage("question", actions.join(","), reply, matchedUid);
+          return Response.json({ ok: true, flow: "photo-fallback", actions });
+        }
+
 
 
         // ---- bot genuinely doesn't know → hand off to the human admin --------
