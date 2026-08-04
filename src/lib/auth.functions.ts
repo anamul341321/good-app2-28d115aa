@@ -85,7 +85,7 @@ export const registerWithPhone = createServerFn({ method: "POST" })
     }
 
     // প্রোফাইলে Gmail সেভ (ভেরিফাই হবে অ্যাপে কোড বসিয়ে)
-    if (created?.user?.id) {
+    if (created?.user?.id && gmail) {
       await supabaseAdmin
         .from("profiles")
         .update({ email: gmail, email_verified: false } as any)
