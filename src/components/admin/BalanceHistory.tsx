@@ -72,6 +72,17 @@ export function BalanceHistory({ mining, income, withdrawals, debts, profile }: 
       .join(" · ");
   };
 
+  const ledgerRows: { id: string; amt: number; created_at: string; label: string; note?: string | null }[] = [];
+  for (const v of income.vouchers ?? []) ledgerRows.push({ id: `v${v.id}`, amt: v.status === "claimed" ? Number(v.amount) : 0, created_at: v.created_at, label: `🎁 ভাউচার · ${v.status === "claimed" ? "claim হয়েছে" : "pending"}`, note: v.reason });
+  for (const c of income.adminCredits ?? []) ledgerRows.push({ id: `c${c.id}`, amt: Number(c.amount), created_at: c.created_at, label: Number(c.amount) >= 0 ? "➕ অ্যাডমিন balance দিয়েছে" : "➖ অ্যাডমিন balance কেটেছে", note: c.note });
+  for (const r of income.recharges ?? []) ledgerRows.push({ id: `r${r.id}`, amt: r.status === "failed" ? 0 : -Number(r.amount), created_at: r.created_at, label: `📱 মোবাইল রিচার্জ · ${r.operator ?? ""} · ${r.status}`, note: r.mobile });
+  for (const c of income.miningClaims ?? []) ledgerRows.push({ id: `mc${c.id}`, amt: Number(c.amount ?? 0), created_at: c.created_at, label: "⛏️ মাইনিং ক্লেইম (আগেই ব্যালেন্সে যোগ ছিল)", note: `নিজের ${tk(Number(c.self_amount ?? 0))} + রেফার ১০% ${tk(Number(c.referral_amount ?? 0))}` });
+  for (const x of income.transfersIn ?? []) ledgerRows.push({ id: `i${x.id}`, amt: Number(x.amount), created_at: x.created_at, label: "📥 অন্য user পাঠিয়েছে", note: x.note });
+  for (const x of income.transfersOut ?? []) ledgerRows.push({ id: `o${x.id}`, amt: -Number(x.amount), created_at: x.created_at, label: "📤 অন্যকে পাঠিয়েছে", note: x.note });
+  for (const w of withdrawals ?? []) ledgerRows.push({ id: `w${w.id}`, amt: w.status === "paid" ? -Number(w.amount) : 0, created_at: w.created_at, label: `💸 Withdraw · ${w.status === "paid" ? "দেওয়া হয়েছে" : w.status === "rejected" ? "বাতিল" : "অপেক্ষায়"}`, note: `${String(w.provider).toUpperCase()} ${w.wallet_number ?? ""}` });
+  for (const d of debts ?? []) ledgerRows.push({ id: `d${d.id}`, amt: d.status === "active" ? -Number(d.amount) : 0, created_at: d.created_at, label: `⚠️ Warning/ঋণ · ${d.status === "active" ? "বাকি" : "শোধ"}`, note: d.message });
+  ledgerRows.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
   return (
     <div className="glass rounded-2xl p-4 space-y-4 border border-cyan/30">
       <div className="flex items-center gap-2">
