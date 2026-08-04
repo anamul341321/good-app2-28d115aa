@@ -147,6 +147,17 @@ function EarningsPage() {
         </p>
       </div>
 
+      {/* Step-by-step reconciliation */}
+      {data.breakdown && (
+        <div className="premium-panel rounded-3xl p-5 space-y-3">
+          <div className="flex items-center gap-2">
+            <ListOrdered className="w-4 h-4 text-amber" />
+            <p className="text-[10px] uppercase tracking-widest font-black text-muted-foreground">ধাপে ধাপে হিসাব — কোন টাকা কিভাবে এলো</p>
+          </div>
+          <EarningsBreakdown data={data.breakdown as any} />
+        </div>
+      )}
+
       {/* Printable statement */}
       <div className="premium-panel rounded-3xl p-5 space-y-3 print:shadow-none">
         <div className="flex items-center gap-2 print:hidden">
