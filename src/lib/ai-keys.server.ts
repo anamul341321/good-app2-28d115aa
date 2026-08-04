@@ -63,7 +63,6 @@ export async function usableDbKeys(): Promise<{ id: string; key: string }[]> {
 export async function markKeyUsed(id: string) {
   try {
     const db = await admin();
-    await db.rpc("noop_never").then(() => undefined).catch(() => undefined);
     const rows = await loadRows();
     const row = rows.find((r) => r.id === id);
     await db
