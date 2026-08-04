@@ -1991,7 +1991,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           // explicit reply/follow-up; standalone questions are self-contained.
           const isShortFollowUp = norm.length <= 90 &&
             /^(তাহলে|তাইলে|তারপর|এরপর|এটা|ওটা|ঐটা|সেটা|আর|কিন্তু|হ্যাঁ|না|কেন|কিভাবে|কীভাবে|কেমনে|then|so|but|why|how|eta|oita|seta|tarpor|erpor|taile|tahole)\b/i.test(norm);
-          const keepContext = repliedToBot || isShortFollowUp;
+          const keepContext = repliedToBot || isShortFollowUp || !!quotedRaw;
           convoHistory = keepContext ? history : [];
           convoReplies = pastReplies;
 
