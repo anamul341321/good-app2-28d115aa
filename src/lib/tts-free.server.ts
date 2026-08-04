@@ -26,8 +26,9 @@ const FEMALE_VOICES = ["Achernar", "Sulafat", "Leda", "Aoede", "Kore"];
 function pickVoice(): string {
   const forced = process.env.GEMINI_TTS_VOICE?.trim();
   if (forced) return forced;
-  return FEMALE_VOICES[1];
+  return FEMALE_VOICES[0]; // Achernar — উজ্জ্বল, হাসিখুশি ও জীবন্ত কণ্ঠ
 }
+
 
 /** সংক্ষেপ/ইংরেজি শব্দ ভয়েসের জন্য পুরো উচ্চারণে লিখে দেয়। */
 function expandForSpeech(s: string): string {
@@ -47,7 +48,7 @@ function expandForSpeech(s: string): string {
     .replace(/স্যার/g, "ভাইয়া");
 }
 
-/** Strip HTML/markdown/links so the voice reads clean Bengali sentences. */
+/** Strip HTML/markdown/links/emoji so the voice reads clean Bengali sentences. */
 export function voiceScript(html: string): string {
   return expandForSpeech(
     String(html || "")
@@ -57,11 +58,18 @@ export function voiceScript(html: string): string {
       .replace(/&amp;/g, "and")
       .replace(/&lt;|&gt;/g, " ")
       .replace(/https?:\/\/\S+/g, " লিংকটি নিচে লেখা আছে ")
+      // Emoji/pictographs make the TTS model say their names out loud
+      // ("💙" → "ভালোবাসা"), so remove them before speaking.
+      .replace(
+        /[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}\u{20E3}\u{1F1E6}-\u{1F1FF}\u2190-\u21FF\u2022\u25A0-\u25FF]/gu,
+        " ",
+      )
       .replace(/[*_`#>]+/g, " "),
   )
     .replace(/\s+/g, " ")
     .trim();
 }
+
 
 
 async function sha(text: string): Promise<string> {
@@ -156,18 +164,16 @@ export async function speakBengali(rawText: string): Promise<Uint8Array | null> 
             // The directive must be in English; a Bengali instruction makes the
             // TTS model try to answer instead of read ("should only be used for TTS").
             text:
-              "Read the following Bengali text aloud as a gentle, soft-spoken young Bangladeshi woman " +
-              "with a LOW, warm, mellow voice — calm and humble, speaking softly and a little slowly, " +
-              "as if talking kindly and respectfully to an elder brother. Keep the pitch low and the tone " +
-              "modest and caring, with a small natural smile; never high-pitched, never shrill, never " +
-              "babyish, whiny, breathy or exaggeratedly cute, no sing-song. Keep every Bengali word crisp " +
-
-              "and clear, and pronounce all names and numbers fully and distinctly. " +
+              "Read the following Bengali text aloud as a warm, cheerful, friendly young Bangladeshi woman " +
+              "helping an elder brother. Speak naturally and expressively with a clear smile in your voice — " +
+              "lively, sweet and caring, with natural ups and downs, small pauses and real emotion, like a " +
+              "helpful sister chatting happily, NOT like someone reading a script or a robot. Keep it clear " +
+              "and easy to follow at a normal comfortable pace, never flat, never monotone, never dull. " +
+              "Pronounce every Bengali word, name and number fully and distinctly. " +
+              "Do not read out symbols or emoji names. " +
               `Text: ${text}`,
-
-
-
           },
+
 
         ],
       },
