@@ -1336,7 +1336,10 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
                 await doReset(uid, remembered);
                 return Response.json({ ok: true, flow: "reset" });
               }
-              const slotsNow = pickSlots(norm.replace(uid, " "));
+              const slotsNow = (() => {
+                const f = pickSlots(norm.replace(uid, " "));
+                return f.length ? f : mentionedSlot ? [mentionedSlot] : [];
+              })();
 
               if (slotsNow.length || wantsAll) {
                 await saveSession({ step: "await_slot", uid, app_user_id: prof.id });
@@ -2369,7 +2372,10 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               return Response.json({ ok: true, flow: "slot-reset-pending" });
             }
           }
-          const slots = uid ? pickSlots(norm.replace(uid, " ")) : (mentionedSlot ? [mentionedSlot] : []);
+          const slots = (() => {
+            const f = uid ? pickSlots(norm.replace(uid, " ")) : [];
+            return f.length ? f : mentionedSlot ? [mentionedSlot] : [];
+          })();
           if (uid) {
             const { findProfileByUid } = await import("@/lib/telegram-slot.server");
             const prof = await findProfileByUid(uid);
@@ -2784,7 +2790,10 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               );
               actions.push("slot-reset:uid-notfound");
             } else {
-              const slots = pickSlots(norm.replace(uid, " "));
+              const slots = (() => {
+                const f = pickSlots(norm.replace(uid, " "));
+                return f.length ? f : mentionedSlot ? [mentionedSlot] : [];
+              })();
               await saveSession({ step: "await_slot", uid, app_user_id: prof.id });
               if (slots.length || wantsAll) {
                 await doReset(uid, wantsAll ? [] : slots);
