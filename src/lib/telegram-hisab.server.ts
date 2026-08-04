@@ -1,9 +1,44 @@
 /**
  * Server-only: "আমার সব হিসাব দেখান" — ধাপে ধাপে পূর্ণ হিসাব (বোনাস + মাইনিং)
- * টেলিগ্রামের জন্য ছোট, পরিষ্কার লেখা আকারে।
+ * টেলিগ্রামের জন্য ছোট, পরিষ্কার লেখা আকারে + হিসাবের ছবি (image) লিংক।
  */
+import { createHmac } from "node:crypto";
 
 const bdt = (n: number) => `${Number(n || 0).toFixed(2)}৳`;
+
+function signSecret(): string {
+  return (
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.TG_MOD_BOT_TOKEN ||
+    process.env.TELEGRAM_BOT_TOKEN ||
+    "good-app-hisab"
+  );
+}
+
+/** এক ঘণ্টার bucket — লিংক অল্প সময়ের জন্যই বৈধ থাকে। */
+export function currentHisabBucket(): number {
+  return Math.floor(Date.now() / 3_600_000);
+}
+
+export function signHisab(uid: string, bucket: number): string {
+  return createHmac("sha256", signSecret()).update(`hisab:${uid}:${bucket}`).digest("base64url");
+}
+
+function siteBase(): string {
+  const raw = process.env.PUBLIC_SITE_URL || "https://good-app2.lovable.app";
+  return raw.replace(/\/+$/, "");
+}
+
+/**
+ * হিসাবের ছবির URL (টেলিগ্রাম সরাসরি এই লিংক থেকে ছবি নিয়ে পাঠাতে পারে)।
+ * কার্ডের HTML পেজটি ছবি বানিয়ে দেয় একটি রেন্ডার সার্ভিস।
+ */
+export function hisabImageUrl(uid: string): string {
+  const digits = String(uid).replace(/\D/g, "");
+  const page = `${siteBase()}/api/public/hisab-card?uid=${digits}&t=${signHisab(digits, currentHisabBucket())}`;
+  return `https://image.thum.io/get/width/900/crop/1400/noanimate/${page}`;
+}
+
 
 /** ইউজার "মোট হিসাব / full details / ধাপে ধাপে" চাইছে কি না। */
 export function wantsFullHisab(text: string): boolean {

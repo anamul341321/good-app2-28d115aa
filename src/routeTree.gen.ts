@@ -46,6 +46,7 @@ import { Route as AuthenticatedEarningsRouteImport } from './routes/_authenticat
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as ApiPublicWhitelistRecheckRouteImport } from './routes/api/public/whitelist-recheck'
 import { Route as ApiPublicTourAudioRouteImport } from './routes/api/public/tour-audio'
+import { Route as ApiPublicHisabCardRouteImport } from './routes/api/public/hisab-card'
 import { Route as AdminUserUserIdRouteImport } from './routes/admin/user.$userId'
 import { Route as AuthenticatedTaskSlotRouteImport } from './routes/_authenticated/task.$slot'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
@@ -240,6 +241,11 @@ const ApiPublicTourAudioRoute = ApiPublicTourAudioRouteImport.update({
   path: '/api/public/tour-audio',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHisabCardRoute = ApiPublicHisabCardRouteImport.update({
+  id: '/api/public/hisab-card',
+  path: '/api/public/hisab-card',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminUserUserIdRoute = AdminUserUserIdRouteImport.update({
   id: '/user/$userId',
   path: '/user/$userId',
@@ -321,6 +327,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/task/$slot': typeof AuthenticatedTaskSlotRoute
   '/admin/user/$userId': typeof AdminUserUserIdRoute
+  '/api/public/hisab-card': typeof ApiPublicHisabCardRoute
   '/api/public/tour-audio': typeof ApiPublicTourAudioRoute
   '/api/public/whitelist-recheck': typeof ApiPublicWhitelistRecheckRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
@@ -366,6 +373,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/task/$slot': typeof AuthenticatedTaskSlotRoute
   '/admin/user/$userId': typeof AdminUserUserIdRoute
+  '/api/public/hisab-card': typeof ApiPublicHisabCardRoute
   '/api/public/tour-audio': typeof ApiPublicTourAudioRoute
   '/api/public/whitelist-recheck': typeof ApiPublicWhitelistRecheckRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
@@ -414,6 +422,7 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/_authenticated/task/$slot': typeof AuthenticatedTaskSlotRoute
   '/admin/user/$userId': typeof AdminUserUserIdRoute
+  '/api/public/hisab-card': typeof ApiPublicHisabCardRoute
   '/api/public/tour-audio': typeof ApiPublicTourAudioRoute
   '/api/public/whitelist-recheck': typeof ApiPublicWhitelistRecheckRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
@@ -462,6 +471,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/task/$slot'
     | '/admin/user/$userId'
+    | '/api/public/hisab-card'
     | '/api/public/tour-audio'
     | '/api/public/whitelist-recheck'
     | '/lovable/email/suppression'
@@ -507,6 +517,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/task/$slot'
     | '/admin/user/$userId'
+    | '/api/public/hisab-card'
     | '/api/public/tour-audio'
     | '/api/public/whitelist-recheck'
     | '/lovable/email/suppression'
@@ -554,6 +565,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/_authenticated/task/$slot'
     | '/admin/user/$userId'
+    | '/api/public/hisab-card'
     | '/api/public/tour-audio'
     | '/api/public/whitelist-recheck'
     | '/lovable/email/suppression'
@@ -574,6 +586,7 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   CardUidRoute: typeof CardUidRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
+  ApiPublicHisabCardRoute: typeof ApiPublicHisabCardRoute
   ApiPublicTourAudioRoute: typeof ApiPublicTourAudioRoute
   ApiPublicWhitelistRecheckRoute: typeof ApiPublicWhitelistRecheckRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
@@ -846,6 +859,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicTourAudioRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hisab-card': {
+      id: '/api/public/hisab-card'
+      path: '/api/public/hisab-card'
+      fullPath: '/api/public/hisab-card'
+      preLoaderRoute: typeof ApiPublicHisabCardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/user/$userId': {
       id: '/admin/user/$userId'
       path: '/user/$userId'
@@ -987,6 +1007,7 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   CardUidRoute: CardUidRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
+  ApiPublicHisabCardRoute: ApiPublicHisabCardRoute,
   ApiPublicTourAudioRoute: ApiPublicTourAudioRoute,
   ApiPublicWhitelistRecheckRoute: ApiPublicWhitelistRecheckRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
