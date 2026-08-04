@@ -659,10 +659,23 @@ async function transcribeAudioStt(base64: string, format: string, key: string): 
 
 /** Transcribe a Telegram voice note / audio clip to text (Bengali friendly). */
 export async function transcribeAudio(base64: string, format: string): Promise<string | null> {
+  // 1) Free Gemini native audio — accepts Telegram's OGG/Opus directly, so this
+  //    understands far more (dialect, noise, fast speech) than the old path.
+  try {
+    const { hearBengali } = await import("./stt-free.server");
+    const heard = await hearBengali(base64, format);
+    if (heard) return cleanTranscriptText(heard) ?? heard;
+  } catch (e) {
+    console.error("[tg] gemini stt error", e);
+  }
   const key = process.env.GEMINI_API_KEY || process.env.LOVABLE_API_KEY;
   if (!key) return null;
-  const stt = await transcribeAudioStt(base64, format, key);
-  if (stt) return stt;
+  // 2) Paid gateway STT only works with a Lovable key.
+  if (process.env.LOVABLE_API_KEY) {
+    const stt = await transcribeAudioStt(base64, format, process.env.LOVABLE_API_KEY);
+    if (stt) return stt;
+  }
+
   try {
     const res = await aiFetch(AI_URL, {
       method: "POST",
