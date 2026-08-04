@@ -713,8 +713,17 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         const wantsAll = /(সব|সবগুলো|সবগুলা|all|full)/i.test(norm);
         const pickSlots = (s: string): number[] => {
           const out: number[] = [];
-          const range = s.matchAll(/\b(\d{1,3})\s*(?:-|–|to|থেকে)\s*(\d{1,3})\b/g);
           let rest = s;
+          // "2number slot", "3no slot", "৫ নম্বর স্লট" — সংখ্যার সাথে শব্দ লেগে
+          // থাকলেও স্লট নম্বর ধরতে হবে (\b কাজ করে না, তাই আগে এগুলো তুলে নিই)।
+          for (const m of s.matchAll(
+            /(\d{1,3})\s*(?:no|nombor|number|নম্বর|নাম্বার|নং)?\s*(?:er|এর)?\s*(?:slot|স্লট)/gi,
+          )) {
+            const n = Number(m[1]);
+            if (n >= 1 && n <= 500) out.push(n);
+            rest = rest.replace(m[0], " ");
+          }
+          const range = rest.matchAll(/\b(\d{1,3})\s*(?:-|–|to|থেকে)\s*(\d{1,3})\b/g);
           for (const r of range) {
             const a = Number(r[1]), b = Number(r[2]);
             if (a >= 1 && b >= a && b - a < 100) for (let i = a; i <= b; i++) out.push(i);
@@ -726,6 +735,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           }
           return Array.from(new Set(out));
         };
+
         const pickSlot = (s: string): number | null => pickSlots(s)[0] ?? null;
         const isCancel = /(বাতিল|cancel|থাক|লাগবে না)/i.test(norm);
         // Is this message a plain answer to what the bot just asked, or has the
