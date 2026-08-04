@@ -85,6 +85,8 @@ export type Database = {
           first_verify_bonus: number
           first_verify_mining_mode: boolean
           id: string
+          maintenance_enabled: boolean
+          maintenance_message: string | null
           nagad_enabled: boolean
           nagad_off_message: string | null
           promo_active: boolean
@@ -113,6 +115,8 @@ export type Database = {
           first_verify_bonus?: number
           first_verify_mining_mode?: boolean
           id?: string
+          maintenance_enabled?: boolean
+          maintenance_message?: string | null
           nagad_enabled?: boolean
           nagad_off_message?: string | null
           promo_active?: boolean
@@ -141,6 +145,8 @@ export type Database = {
           first_verify_bonus?: number
           first_verify_mining_mode?: boolean
           id?: string
+          maintenance_enabled?: boolean
+          maintenance_message?: string | null
           nagad_enabled?: boolean
           nagad_off_message?: string | null
           promo_active?: boolean
@@ -1381,6 +1387,33 @@ export type Database = {
           last_seen_at?: string
           revoked_at?: string | null
           user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_notices: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          read_at: string | null
+          title: string | null
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          read_at?: string | null
+          title?: string | null
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          read_at?: string | null
+          title?: string | null
           user_id?: string
         }
         Relationships: []

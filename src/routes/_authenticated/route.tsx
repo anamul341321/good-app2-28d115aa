@@ -14,6 +14,9 @@ import { SlotResetApproval } from "@/components/SlotResetApproval";
 import { EmailVerifyGate } from "@/components/EmailVerifyGate";
 import { ProfileCompleteGate } from "@/components/ProfileCompleteGate";
 import { useDeviceGuard } from "@/hooks/useDeviceGuard";
+import { getAppStatus } from "@/lib/app-status.functions";
+import { MaintenanceScreen } from "@/components/MaintenanceGate";
+import { UserNoticeBanner } from "@/components/UserNoticeBanner";
 
 
 
@@ -70,6 +73,13 @@ function AuthedLayout() {
 
   const { t } = useLang();
 
+  const { data: appStatus } = useQuery({
+    queryKey: ["app-status"],
+    queryFn: () => getAppStatus(),
+    refetchInterval: 60_000,
+    staleTime: 30_000,
+  });
+
   if (authState === "checking") {
     return (
       <div className="min-h-screen flex items-center justify-center px-4 py-10">
@@ -95,6 +105,8 @@ function AuthedLayout() {
     );
   }
 
+  if (appStatus?.maintenance) return <MaintenanceScreen message={appStatus.message} />;
+
   return (
     <div className="min-h-screen pb-24">
 
@@ -112,8 +124,9 @@ function AuthedLayout() {
           <div className="flex items-center gap-1.5">
             <LanguageToggle />
             <Link to="/settings" aria-label="সেটিংস"
-              className="btn-press p-2 rounded-lg bg-surface-2 border border-border text-muted-foreground hover:text-cyan">
-              <Settings className="w-4 h-4" />
+              className="btn-press flex items-center gap-1.5 px-3 py-2 rounded-xl gradient-navy text-gold border border-gold/40 shadow-lg">
+              <Settings className="w-5 h-5" />
+              <span className="text-[11px] font-black">{t("সেটিংস", "Settings")}</span>
             </Link>
             <button onClick={logout} data-voice="common.logout"
               className="btn-press p-2 rounded-lg bg-surface-2 border border-border text-muted-foreground hover:text-rose">
@@ -143,6 +156,7 @@ function AuthedLayout() {
       <SlotResetApproval />
       <ProfileCompleteGate />
       <EmailVerifyGate />
+      <UserNoticeBanner />
 
 
     </div>

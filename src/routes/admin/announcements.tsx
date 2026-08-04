@@ -6,7 +6,8 @@ import {
 } from "@/lib/announcements.functions";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Loader2, Megaphone, Trash2, Power } from "lucide-react";
+import { Loader2, Megaphone, Trash2, Power, Send } from "lucide-react";
+import { adminListUserNotices, adminSendUserNotice, adminDeleteUserNotice } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/admin/announcements")({ component: AnnouncementsAdmin });
 
@@ -76,6 +77,82 @@ function AnnouncementsAdmin() {
           ))}
           {(data ?? []).length === 0 && (
             <p className="text-center text-xs text-muted-foreground py-6">এখনও কোনো ঘোষণা নেই</p>
+          )}
+        </div>
+      )}
+
+      <PersonalNotice />
+    </div>
+  );
+}
+
+function PersonalNotice() {
+  const qc = useQueryClient();
+  const [uid, setUid] = useState("");
+  const [title, setTitle] = useState("");
+  const [body, setBody] = useState("");
+
+  const { data, isLoading } = useQuery({ queryKey: ["admin-user-notices"], queryFn: () => adminListUserNotices() });
+
+  const send = useMutation({
+    mutationFn: () => adminSendUserNotice({ data: { uid: Number(uid), title: title.trim() || null, body: body.trim() } }),
+    onSuccess: (r: any) => {
+      toast.success(`✅ UID ${r.uid} ${r.name ?? ""} — মেসেজ পাঠানো হয়েছে`);
+      setBody(""); setTitle("");
+      qc.invalidateQueries({ queryKey: ["admin-user-notices"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const remove = useMutation({
+    mutationFn: (id: string) => adminDeleteUserNotice({ data: { id } }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-user-notices"] }),
+  });
+
+  return (
+    <div className="glass rounded-2xl p-4 space-y-3">
+      <div className="flex items-center gap-2">
+        <Send className="w-5 h-5 text-rose" />
+        <h2 className="font-black text-base text-rose">নির্দিষ্ট ইউজারকে মেসেজ (UID)</h2>
+      </div>
+      <p className="text-[11px] text-muted-foreground">
+        UID দিয়ে পাঠালে ওই ইউজারের অ্যাপের উপরে লাল নোটিশ হয়ে ভেসে থাকবে — সে নিজে বন্ধ না করা পর্যন্ত।
+      </p>
+      <input value={uid} onChange={(e) => setUid(e.target.value.replace(/\D/g, ""))}
+        inputMode="numeric" placeholder="UID (যেমন 1184)"
+        className="w-full px-3 py-2 rounded-xl bg-surface-2 border border-border text-sm outline-none focus:border-rose mono-num" />
+      <input value={title} onChange={(e) => setTitle(e.target.value.slice(0, 120))}
+        placeholder="শিরোনাম (ঐচ্ছিক)"
+        className="w-full px-3 py-2 rounded-xl bg-surface-2 border border-border text-sm outline-none focus:border-rose" />
+      <textarea value={body} onChange={(e) => setBody(e.target.value.slice(0, 2000))} rows={4}
+        placeholder="মেসেজ লিখুন…"
+        className="w-full px-3 py-2 rounded-xl bg-surface-2 border border-border text-sm outline-none focus:border-rose resize-y" />
+      <button onClick={() => send.mutate()} disabled={send.isPending || !uid || body.trim().length < 2}
+        className="w-full py-2.5 rounded-xl gradient-cta font-black text-sm disabled:opacity-50">
+        {send.isPending ? "পাঠানো হচ্ছে…" : "মেসেজ পাঠান"}
+      </button>
+
+      {isLoading ? (
+        <div className="py-4 flex justify-center"><Loader2 className="w-4 h-4 animate-spin text-rose" /></div>
+      ) : (
+        <div className="space-y-2">
+          {(data ?? []).map((n: any) => (
+            <div key={n.id} className="rounded-xl border border-border p-2.5">
+              <p className="text-[11px] font-black">
+                UID {n.uid} • {n.name ?? "—"} {n.read ? <span className="text-emerald">• পড়েছে</span> : <span className="text-amber">• অপঠিত</span>}
+              </p>
+              <p className="text-[11.5px] font-bold mt-0.5 whitespace-pre-wrap">{n.body}</p>
+              <div className="flex items-center justify-between mt-1.5">
+                <span className="text-[10px] text-muted-foreground">{new Date(n.createdAt).toLocaleString()}</span>
+                <button onClick={() => remove.mutate(n.id)}
+                  className="text-[11px] font-bold px-2 py-1 rounded-lg border border-rose/40 text-rose flex items-center gap-1">
+                  <Trash2 className="w-3 h-3" /> Delete
+                </button>
+              </div>
+            </div>
+          ))}
+          {(data ?? []).length === 0 && (
+            <p className="text-center text-xs text-muted-foreground py-4">এখনও কোনো ব্যক্তিগত মেসেজ পাঠানো হয়নি</p>
           )}
         </div>
       )}
