@@ -173,7 +173,7 @@ export async function sendPhotoUrl(
 
 
 /**
- * ভয়েস সেটিং: অ্যাডমিন প্যানেলের স্যুইচ (৩০ সেকেন্ড ক্যাশ)।
+ * ভয়েস সেটিং: অ্যাডমিন প্যানেলের স্যুইচ (৫ সেকেন্ড ক্যাশ)।
  * voice_reply_enabled → ভয়েস দেবে কি না। voice_text_enabled → ভয়েসের সাথে
  * লেখাও যাবে কি না (অফ করলে শুধু ভয়েস)। ENV BOT_VOICE_REPLY=off দিলে ভয়েস বন্ধ।
  */
@@ -182,7 +182,7 @@ let voicePrefCache: { at: number; voice: boolean; text: boolean } | null = null;
 export async function voicePrefs(): Promise<{ voice: boolean; text: boolean }> {
   const env = String(process.env.BOT_VOICE_REPLY ?? "").trim().toLowerCase();
   const envOff = env === "off" || env === "0" || env === "false";
-  if (voicePrefCache && Date.now() - voicePrefCache.at < 30_000) {
+  if (voicePrefCache && Date.now() - voicePrefCache.at < 5_000) {
     return { voice: !envOff && voicePrefCache.voice, text: voicePrefCache.text };
   }
   let voice = true;
