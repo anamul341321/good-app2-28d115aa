@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   Bot, Loader2, Save, Plus, Trash2, ShieldAlert, MessageSquare, Link2, CheckCircle2, XCircle,
-  Image as ImageIcon, Search, Send, Ban, ShieldCheck, HelpCircle,
+  Image as ImageIcon, Search, Send, Ban, ShieldCheck, HelpCircle, KeyRound,
 } from "lucide-react";
 import {
   tgGetSettings, tgSaveSettings, tgRegisterWebhook,
@@ -13,12 +13,13 @@ import {
   tgListBlocked, tgSetBlocked, tgListVideos, tgUpsertVideo, tgDeleteVideo,
   tgListVoices, tgUpsertVoice, tgDeleteVoice,
   tgBroadcast, tgBroadcastAudience, tgListLinkedProfiles,
+  tgListAiKeys, tgAddAiKey, tgSetAiKeyActive, tgDeleteAiKey,
 } from "@/lib/telegram-bot.functions";
 
 
 export const Route = createFileRoute("/admin/telegram")({ component: TelegramAdmin });
 
-type Tab = "settings" | "started" | "broadcast" | "faq" | "voices" | "videos" | "lookup" | "blocked" | "bans" | "log";
+type Tab = "settings" | "aikeys" | "started" | "broadcast" | "faq" | "voices" | "videos" | "lookup" | "blocked" | "bans" | "log";
 
 
 
