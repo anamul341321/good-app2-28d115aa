@@ -2496,7 +2496,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
                 console.error("[tg] full hisab failed", e);
               }
 
-              }
+
               await logMessage(decision.verdict, actions.join(","), res.card, String(uid));
               return Response.json({ ok: true, flow: "account_info", actions });
             }
