@@ -91,7 +91,7 @@ export function ForgotPasswordDialog({
             </div>
             <button
               onClick={handleSend}
-              disabled={loading || phone.trim().length < 3}
+              disabled={loading || phone.trim().length < 1}
               className="w-full py-3.5 rounded-xl gradient-cta font-black text-sm flex items-center justify-center gap-2 disabled:opacity-60 btn-press"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
