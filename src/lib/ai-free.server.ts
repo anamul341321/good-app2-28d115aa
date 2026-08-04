@@ -14,7 +14,7 @@ const GEMINI_URL =
   "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 
 /** Free-tier friendly Gemini model; override with GEMINI_MODEL. */
-const GEMINI_DEFAULT_MODEL = "gemini-2.5-flash";
+const GEMINI_DEFAULT_MODEL = "gemini-3.6-flash";
 
 export function hasFreeAi(): boolean {
   return Boolean(process.env.GEMINI_API_KEY);
@@ -48,10 +48,6 @@ export async function aiFetch(url: string, init: RequestInit): Promise<Response>
   // Gemini's OpenAI layer rejects unknown OpenAI-only knobs.
   delete payload.service_tier;
   delete payload.reasoning_effort;
-  if (payload.max_tokens != null) {
-    payload.max_completion_tokens = payload.max_tokens;
-    delete payload.max_tokens;
-  }
 
   const res = await fetch(GEMINI_URL, {
     method: "POST",
