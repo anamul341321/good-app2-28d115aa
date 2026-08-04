@@ -155,12 +155,15 @@ export async function speakBengali(rawText: string): Promise<Uint8Array | null> 
             // The directive must be in English; a Bengali instruction makes the
             // TTS model try to answer instead of read ("should only be used for TTS").
             text:
-              "Read the following Bengali text aloud as a warm, friendly young Bangladeshi woman " +
-              "who is smiling while she speaks — happy, caring and lively, like helping a friend. " +
-              "Keep the pronunciation clear and crisp, natural conversational pace, gentle rise and fall, " +
-              "never flat, monotone or robotic. But do not be babyish, whiny, breathy or exaggeratedly cute, " +
-              "and do not drag out or sing the words. Pronounce every name and number fully and distinctly. " +
+              "Read the following Bengali text aloud as a lovely, cheerful young Bangladeshi woman " +
+              "who clearly enjoys helping — a real girl on the phone with a warm smile in her voice: " +
+              "affectionate, caring, softly excited and lively, with natural rise and fall and small " +
+              "expressive pauses, never flat, monotone or robotic. Sound sweet and close, like talking " +
+              "to someone she likes, but stay natural and respectful — not babyish, not whiny, not breathy, " +
+              "not exaggeratedly cute, no sing-song or dragged-out words. Keep every Bengali word crisp " +
+              "and clear, and pronounce all names and numbers fully and distinctly. " +
               `Text: ${text}`,
+
 
 
           },

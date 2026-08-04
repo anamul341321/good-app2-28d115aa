@@ -236,19 +236,26 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             const fmt = ["wav", "mp3", "webm", "m4a", "ogg", "aac", "flac"].includes(ext)
               ? ext
               : msg.video_note ? "mp4" : "ogg";
+            // ভয়েস যদি কোনো মেসেজের রিপ্লাই হয়, ওই লেখাটা হিন্ট হিসেবে দিলে
+            // অস্পষ্ট/দ্রুত বলা কথাও অনেক ভালো বোঝে।
+            const sttHint = String(
+              msg.reply_to_message?.text ?? msg.reply_to_message?.caption ?? "",
+            ).trim();
             const hear = async () => {
               try {
-                return await transcribeAudio(file.base64, fmt);
+                return await transcribeAudio(file.base64, fmt, sttHint || undefined);
               } catch (e) {
                 console.error("[tg] transcribe failed", (e as Error)?.message);
                 return null;
               }
             };
             voiceHeard = await hear();
-            // প্রথমবার না বুঝলে আরেকবার চেষ্টা করবে (নেটওয়ার্ক/মডেল হেঁচকি এড়াতে)
-            if (!voiceHeard || voiceHeard.replace(/[^\p{L}\p{N}]/gu, "").length < 3) {
+            // প্রথমবার না বুঝলে আরও দুইবার চেষ্টা করবে (নেটওয়ার্ক/মডেল হেঁচকি এড়াতে)
+            for (let i = 0; i < 2; i++) {
+              if (voiceHeard && voiceHeard.replace(/[^\p{L}\p{N}]/gu, "").length >= 3) break;
               voiceHeard = await hear();
             }
+
             if (voiceHeard) voiceHeard = voiceHeard.trim();
             if (voiceHeard) text = captionText ? `${captionText}\n${voiceHeard}`.trim() : voiceHeard;
           }
@@ -669,6 +676,16 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           s.replace(/[০-৯]/g, (d) => String("০১২৩৪৫৬৭৮৯".indexOf(d)));
         const norm = bnDigits(text).trim();
         const replyNorm = bnDigits(String(msg.reply_to_message?.text ?? msg.reply_to_message?.caption ?? "")).trim();
+        // কেউ কোনো মেসেজ "মার্ক"/রিপ্লাই করে প্রশ্ন করলে ওই মেসেজটাই আসল প্রসঙ্গ —
+        // সেটা AI-কে না দিলে বট এলোমেলো উত্তর দেয়।
+        const quotedRaw = String(msg.reply_to_message?.text ?? msg.reply_to_message?.caption ?? "").trim();
+        const quotedIsBot = !!msg.reply_to_message?.from?.is_bot;
+        const quotedContext = quotedRaw
+          ? `\n\n[ইউজার নিচের মেসেজটি মার্ক/রিপ্লাই করে এই প্রশ্নটি করেছে — ${
+              quotedIsBot ? "এটি বটের আগের উত্তর" : "এটি অন্য একজনের মেসেজ"
+            }; এই প্রসঙ্গ ধরে সরাসরি উত্তর দাও]\n${quotedRaw.slice(0, 700)}`
+          : "";
+
         // "yes", "ok", "ji", "ধন্যবাদ" — এগুলো কখনোই UID নয়।
         const isAffirmation = (s: string) =>
           /^(yes|yeah|yep|ya|ha|haa|hae|hmm|hm|ok|okay|k|ji|jee|acha|accha|thik|thik ache|right|sure|thanks|thank you|tnx|ty|done|nice|good|👍|✅|হ্যাঁ|হা|হুম|জি|জ্বি|আচ্ছা|ঠিক|ঠিক আছে|ধন্যবাদ|ওকে)[\s.!।]*$/i.test(
@@ -1974,7 +1991,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           // explicit reply/follow-up; standalone questions are self-contained.
           const isShortFollowUp = norm.length <= 90 &&
             /^(তাহলে|তাইলে|তারপর|এরপর|এটা|ওটা|ঐটা|সেটা|আর|কিন্তু|হ্যাঁ|না|কেন|কিভাবে|কীভাবে|কেমনে|then|so|but|why|how|eta|oita|seta|tarpor|erpor|taile|tahole)\b/i.test(norm);
-          const keepContext = repliedToBot || isShortFollowUp;
+          const keepContext = repliedToBot || isShortFollowUp || !!quotedRaw;
           convoHistory = keepContext ? history : [];
           convoReplies = pastReplies;
 
@@ -2455,10 +2472,24 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             if (res.found) {
               await sendMessage(chatId, res.card, msg.message_id);
               actions.push("account-info");
+              // "মোট হিসাব / full details / ধাপে ধাপে" চাইলে পুরো হিসাবও পাঠাবে
+              try {
+                const { wantsFullHisab, fullHisabText } = await import("@/lib/telegram-hisab.server");
+                if (wantsFullHisab(norm)) {
+                  const hisab = await fullHisabText(String(uid));
+                  if (hisab) {
+                    await sendMessage(chatId, hisab, msg.message_id);
+                    actions.push("full-hisab");
+                  }
+                }
+              } catch (e) {
+                console.error("[tg] full hisab failed", e);
+              }
               await logMessage(decision.verdict, actions.join(","), res.card, String(uid));
               return Response.json({ ok: true, flow: "account_info", actions });
             }
           }
+
 
           if (msg.from?.id) {
             await saveSession({ intent: "account_info", step: "await_uid", uid: null, app_user_id: null });
@@ -2648,9 +2679,10 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           const rates = await loadRates();
           const base = {
             name: senderName,
-            question: bypassDecisionReply
+            question: (bypassDecisionReply
               ? `${text}\n\nএটা আগের কথার/ভয়েসের ফলোআপ। history দেখে আগের প্রশ্ন বা ভয়েসের বিষয়টা বুঝে সরাসরি উত্তর দাও; generic greeting দেবে না।`
-              : text,
+              : text) + quotedContext,
+
             knowledge: knowledgeText(rates),
             faqs: faqText,
             history: convoHistory,
@@ -2683,9 +2715,10 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           const rates2 = await loadRates();
           const base2 = {
             name: senderName,
-            question: bypassDecisionReply
+            question: (bypassDecisionReply
               ? `${text}\n\nএটা আগের কথার/ভয়েসের ফলোআপ। history দেখে আগের প্রশ্ন বা ভয়েসের বিষয়টা বুঝে সরাসরি উত্তর দাও; generic greeting দেবে না।`
-              : text,
+              : text) + quotedContext,
+
             knowledge: knowledgeText(rates2),
             history: convoHistory,
             pastReplies: convoReplies,
@@ -2833,9 +2866,10 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             const rates3 = await loadRates();
             const base3 = {
               name: senderName,
-              question: bypassDecisionReply
+              question: (bypassDecisionReply
                 ? `${text}\n\nএটা আগের কথার/ভয়েসের ফলোআপ। history দেখে আগের প্রশ্ন বা ভয়েসের বিষয়টা বুঝে সরাসরি উত্তর দাও; generic greeting দেবে না।`
-                : text,
+                : text) + quotedContext,
+
               knowledge: knowledgeText(rates3),
               history: convoHistory,
               pastReplies: convoReplies,
