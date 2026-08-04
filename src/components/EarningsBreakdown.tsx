@@ -33,9 +33,44 @@ export type BreakdownData = {
  * total were formed, so the user (or admin) can reconcile every taka by hand.
  */
 export function EarningsBreakdown({ data }: { data: BreakdownData }) {
+  const b = data.bonus;
+  const m = data.mining;
+  const refBonus = b.steps.find((s) => s.key === "referrer")?.amount ?? 0;
+  const selfFirst = b.steps.find((s) => s.key === "self-first")?.amount ?? 0;
+  const selfRe = b.steps.find((s) => s.key === "self-reverify")?.amount ?? 0;
+
   return (
     <div className="space-y-4">
-      {/* Bonus */}
+      {/* সংক্ষেপে — একদম সহজ ভাষায় */}
+      <div className="rounded-2xl border-2 border-emerald/30 bg-emerald/5 p-4 space-y-2">
+        <p className="text-[10px] uppercase tracking-widest font-black text-emerald">সংক্ষেপে — একদম সহজ ভাষায়</p>
+        <ul className="space-y-1.5 text-[11.5px] font-bold text-navy leading-relaxed">
+          <li>
+            🎉 <b>বোনাস {tk(b.total)}</b> = নিজের ১০ স্লট first verify <b>{selfFirst}৳</b> + ১০ স্লট re-verify{" "}
+            <b>{selfRe}৳</b>
+            {refBonus > 0 ? (
+              <> + রেফার বোনাস <b>{b.referrerPaidCount} জন × {b.rates.referrer}৳ = {refBonus}৳</b></>
+            ) : null}
+            <span className="block text-[10px] font-bold text-muted-foreground">
+              👉 এটা একবারই পাওয়া যায় (প্রথম ১০ স্লটে), প্রতি মাসে না।
+            </span>
+          </li>
+          <li>
+            ⛏️ <b>মাইনিং {tk(m.total)}</b> = নিজের <b>{m.selfSlots} স্লট × ৫০৳/মাস = {m.monthlySelf}৳</b>
+            {m.monthlyReferral > 0 ? <> + রেফারদের মাইনিং-এর ১০% = <b>{m.monthlyReferral.toFixed(2)}৳/মাস</b></> : null}
+            <span className="block text-[10px] font-bold text-muted-foreground">
+              👉 মাসে মোট <b>{m.monthlyTotal.toFixed(2)}৳</b> → প্রতিদিন <b>{m.perDay.toFixed(2)}৳</b> → এটাই সেকেন্ডে সেকেন্ডে জমা হচ্ছে
+              {m.activatedAt ? <> ({m.daysRunning.toFixed(1)} দিন ধরে চলছে)</> : <> (এখনো চালু হয়নি)</>}।
+            </span>
+          </li>
+          <li className="pt-1 border-t border-emerald/20">
+            🧮 তাই মোট এসেছে <b>{tk(b.total + m.total)}</b> — বোনাস {tk(b.total)} + মাইনিং {tk(m.total)}।
+            <span className="block text-[10px] font-bold text-muted-foreground">নিচে ধাপে ধাপে প্রতিটি টাকার হিসাব দেওয়া আছে।</span>
+          </li>
+        </ul>
+      </div>
+
+
       <div className="rounded-2xl border border-amber/30 bg-amber/5 p-4 space-y-2">
         <div className="flex items-center justify-between gap-2">
           <p className="text-[10px] uppercase tracking-widest font-black text-amber flex items-center gap-1.5">
