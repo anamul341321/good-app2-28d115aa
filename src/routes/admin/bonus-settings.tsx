@@ -17,6 +17,7 @@ function BonusSettings() {
   const [rv, setRv] = useState("");
   const [rf, setRf] = useState("");
   const [fvMode, setFvMode] = useState(false);
+  const [otpMode, setOtpMode] = useState(true);
   // Promo
   const [promoActive, setPromoActive] = useState(false);
   const [promoTitle, setPromoTitle] = useState("");
