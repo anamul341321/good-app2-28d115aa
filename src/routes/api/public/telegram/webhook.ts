@@ -2784,16 +2784,35 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return Response.json({ ok: true, flow: smart ? "smart-answer" : "escalated", actions });
         }
 
-        // ---- স্ক্রিনশট এলো কিন্তু কিছুই ম্যাচ করলো না → তবুও উত্তর দিতে হবে ----
-        // (AI কোটা শেষ/OCR ফেল হলেও বট যেন কখনো চুপ না থাকে)
+        // ---- স্ক্রিনশট এলো কিন্তু কিছুই ম্যাচ করলো না → AI নিজে দেখে উত্তর দেবে --
+        // প্রথমে AI স্ক্রিনশটটা পড়ে নিজের ভাষায় সমাধান বলবে; AI ফেল/কোটা শেষ হলেই
+        // শুধু তখন সংক্ষিপ্ত গাইড যাবে, যাতে বট কখনো চুপ না থাকে।
         if (settings.auto_reply_enabled && photoBase64 && !decision.should_delete) {
-          const reply =
-            `ভাইয়া, স্ক্রিনশটটা দেখলাম 🙂 GoodDollar-এ সাধারণত এই ৩টা এররই আসে — যেটা আপনার স্ক্রিনে আছে সেটা মিলিয়ে নিন:\n\n` +
-            `1️⃣ <b>You must be 18 years or older</b> — সিস্টেম মুখ দেখে বয়স আন্দাজ করে; দেখতে কম বয়সী লাগলে ২০+ হলেও আটকায়। ভালো আলোতে, চশমা/ক্যাপ ছাড়া আবার ট্রাই করুন; না হলে আরও পরিণত (২৫+) ফেস দিয়ে করুন।\n` +
-            `2️⃣ <b>Something went wrong / Oops, try again later</b> — সার্ভারের সাময়িক সমস্যা। ব্রাউজার ক্যাশ ক্লিয়ার করে বা Chrome-এ নতুন করে লিংকে ঢুকে ১০–১৫ মিনিট পর আবার ট্রাই করুন, সাধারণত হয়ে যায়।\n` +
-            `3️⃣ <b>We found your twin</b> — ঐ ফেস দিয়ে আগেই ভেরিফিকেশন হয়েছে। একই ফেস ৬ মাসের আগে আর চলবে না, নতুন ফেস দিয়ে করুন।\n\n` +
-            `কোনটা আসছে বললে আমি ঐটার সমাধান বিস্তারিত বলে দিচ্ছি ভাইয়া 💙`;
+          let reply: string | null = null;
+          try {
+            const { analyzeScreenshotReply } = await import("@/lib/telegram-bot.server");
+            const { loadRates, knowledgeText } = await import("@/lib/telegram-knowledge.server");
+            reply = await analyzeScreenshotReply({
+              photoBase64,
+              name: senderName,
+              text: shotText ? `${text}\n\n[স্ক্রিনশটের লেখা]\n${shotText}` : text,
+              knowledge: knowledgeText(await loadRates()),
+            });
+            if (reply) actions.push("photo-analysis");
+          } catch (e) {
+            console.error("[tg] photo fallback analysis failed", e);
+          }
+          if (!reply) {
+            reply =
+              `ভাইয়া, স্ক্রিনশটটা দেখলাম 🙂 GoodDollar-এ সাধারণত এই ৩টা এররই আসে — যেটা আপনার স্ক্রিনে আছে সেটা মিলিয়ে নিন:\n\n` +
+              `1️⃣ <b>You must be 18 years or older</b> — সিস্টেম মুখ দেখে বয়স আন্দাজ করে; দেখতে কম বয়সী লাগলে ২০+ হলেও আটকায়। ভালো আলোতে, চশমা/ক্যাপ ছাড়া আবার ট্রাই করুন; না হলে আরও পরিণত (২৫+) ফেস দিয়ে করুন।\n` +
+              `2️⃣ <b>Something went wrong / Oops, try again later</b> — সার্ভারের সাময়িক সমস্যা। ব্রাউজার ক্যাশ ক্লিয়ার করে বা Chrome-এ নতুন করে লিংকে ঢুকে ১০–১৫ মিনিট পর আবার ট্রাই করুন, সাধারণত হয়ে যায়।\n` +
+              `3️⃣ <b>We found your twin</b> — ঐ ফেস দিয়ে আগেই ভেরিফিকেশন হয়েছে। একই ফেস ৬ মাসের আগে আর চলবে না, নতুন ফেস দিয়ে করুন।\n\n` +
+              `কোনটা আসছে বললে আমি ঐটার সমাধান বিস্তারিত বলে দিচ্ছি ভাইয়া 💙`;
+            actions.push("photo-fallback");
+          }
           await sendMessage(chatId, reply + (await offerSlotResetSuffix()), msg.message_id);
+
           actions.push("photo-fallback");
           await logMessage("question", actions.join(","), reply, matchedUid);
           return Response.json({ ok: true, flow: "photo-fallback", actions });
