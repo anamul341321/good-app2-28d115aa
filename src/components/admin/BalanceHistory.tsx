@@ -1,4 +1,6 @@
-import { TrendingUp, Wallet, ArrowDownRight, ArrowUpRight, PieChart } from "lucide-react";
+import { useState } from "react";
+import { TrendingUp, Wallet, ArrowDownRight, ArrowUpRight, PieChart, FileText } from "lucide-react";
+import { EarningsStatement } from "@/components/EarningsStatement";
 
 const tk = (n: number) => `${n.toFixed(2)}৳`;
 
