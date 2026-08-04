@@ -615,7 +615,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           }
           await sendMessage(
             chatId,
-            "✅ স্যার, নির্দেশটি পেয়েছি। একটু স্পষ্ট করে বলুন কী করতে হবে — আমি সাথে সাথেই করে দিচ্ছি।",
+            "✅ ভাইয়া, নির্দেশটি পেয়েছি। একটু স্পষ্ট করে বলুন কী করতে হবে — আমি সাথে সাথেই করে দিচ্ছি।",
             replyTo,
           );
           return Response.json({ ok: true, flow: "admin-instruction-unclear" });
@@ -761,9 +761,9 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           /(withdraw|উইথড্র|উঠাব|উঠাতে|তুলতে|claim|ক্লেইম|টাকা)/i.test(norm) &&
           /(পারব|parbo|পারবো|যাবে|jabe|হবে|hobe|দিতে পারব|নিতে পারব|উঠবে|unblock|আনলক|লক|lock)/i.test(norm);
 
-        // ইউজার কোনো সমস্যার কথা বললে (যেমন "রি-ভেরিফাই করতে গেলে বলতেছে ১৮
+        // ইউজার কোনো সমভাইয়া কথা বললে (যেমন "রি-ভেরিফাই করতে গেলে বলতেছে ১৮
         // বছরের নিচে") সেটা একাউন্ট-হিসাব চাওয়া নয় — তখন UID না চেয়ে সরাসরি
-        // সমস্যার সমাধান বলতে হবে।
+        // সমভাইয়া সমাধান বলতে হবে।
         const reportsProblem =
           /(bolteche|bolteche|বলতেছে|বলছে|বলতেসে|বলে|dekhacche|দেখাচ্ছে|দেখায়|show korche|hocche na|হচ্ছে না|hoi na|হয় না|হয়না|hocche nah|hoy nai|হয় নাই|হচ্ছে নাহ|parchi na|পারছি না|পারতেছি না|partesi na|somossa|সমস্যা|problem|error|এরর|failed|ফেইল|fail|আটকে|atke|18|১৮|under ?age|বয়স)/i
             .test(norm);
@@ -995,7 +995,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           await logMessage("question", `slot-reset-pending:${p.slots.join("|")}`, "pending reset reminder", p.uid || null);
         };
 
-        // ইউজার কোনো নির্দিষ্ট স্লট নিয়ে সমস্যার কথা বললে ("৩ নম্বর স্লটে
+        // ইউজার কোনো নির্দিষ্ট স্লট নিয়ে সমভাইয়া কথা বললে ("৩ নম্বর স্লটে
         // রি-ভেরিফাই হচ্ছে না") — উত্তরের সাথে জিজ্ঞেস করব স্লটটি রিসেট করে
         // দেব কি না। রাজি হলে UID চেয়ে সাথে সাথেই রিসেট করে দেব।
         const mentionedSlot: number | null = (() => {
@@ -1007,7 +1007,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         })();
 
         /**
-         * স্ক্রিনশটটি অন্য কোনো সমস্যার (ক্যামেরা পারমিশন, লিংক এক্সপায়ার,
+         * স্ক্রিনশটটি অন্য কোনো সমভাইয়া (ক্যামেরা পারমিশন, লিংক এক্সপায়ার,
          * টুইন/ডুপ্লিকেট ফেস, নেটওয়ার্ক) হলে বয়সের কথা তোলা যাবে না — ইউজার
          * যেই স্ক্রিনশট দিয়েছে, উত্তরটাও ঠিক সেটারই হবে।
          */
@@ -1040,7 +1040,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           }
           if (!mentionedSlot) {
             return (
-              `\n\n———\n🔄 জি অবশ্যই স্যার, আমরা আপনার স্লটটি রিসেট করে দিতে পারি।\n` +
+              `\n\n———\n🔄 জি অবশ্যই ভাইয়া, আমরা আপনার স্লটটি রিসেট করে দিতে পারি।\n` +
               `রিসেট করলে ওই স্লটটি একদম খালি হয়ে যাবে, তারপর নতুন করে (১৮+ ফেস দিয়ে) আবার ভেরিফাই করতে পারবেন।\n\n` +
               (known
                 ? `👉 শুধু বলুন <b>কত নম্বর স্লটটি</b> রিসেট করতে চান (যেমন: 3, বা 2,5,7) 💙`
@@ -1375,6 +1375,23 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           }
         }
 
+        // ---- ইউজার শুধু UID লিখলে (আগেই যা চেয়েছিল সেটাই) সাথে সাথে হিসাব -----
+        // আগে আবার "কী চেক করে দেব?" জিজ্ঞেস করা হতো — সেটা বিরক্তিকর, তাই
+        // খালি নম্বর পেলেই সরাসরি পুরো একাউন্টের হিসাব পাঠিয়ে দিই।
+        if (settings.auto_reply_enabled && !photoBase64 && /^(?:uid|ইউআইডি|আইডি)?\s*[:#-]?\s*\d{1,9}\s*$/i.test(norm)) {
+          const bareUid = (norm.match(/\d{1,9}/) || [""])[0];
+          if (bareUid) {
+            const { buildUserCard } = await import("@/lib/telegram-lookup.server");
+            const res = await buildUserCard(bareUid);
+            if (res.found) {
+              await clearSession();
+              await sendMessage(chatId, res.card, msg.message_id);
+              await logMessage("question", "account-info-bare-uid", res.card, bareUid);
+              return Response.json({ ok: true, flow: "account-info-bare-uid" });
+            }
+          }
+        }
+
         // ---- "অ্যাডমিন কোথায়?" → funny reply that mentions the real admin ----
         if (
           settings.auto_reply_enabled &&
@@ -1513,7 +1530,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
 
         if (photoBase64 && settings.auto_reply_enabled) {
-          // স্ক্রিনশটে ঠিক ঐ সমস্যার লেখা থাকলেই সেভ করা ভয়েস যাবে।
+          // স্ক্রিনশটে ঠিক ঐ সমভাইয়া লেখা থাকলেই সেভ করা ভয়েস যাবে।
           // "try again" / "face verification" এর মতো সাধারণ শব্দ সব এররেই থাকে,
           // তাই ওগুলো দিয়ে ম্যাচ করা হয় না — শুধু নির্দিষ্ট বাক্যাংশ দিয়ে।
           try {
@@ -2387,7 +2404,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             if (prof) {
               await saveSession({ step: "await_slot", uid, app_user_id: prof.id });
               const ask =
-                `জি অবশ্যই স্যার 🙂 আপনার UID <code>${uid}</code> পেয়েছি।\n` +
+                `জি অবশ্যই ভাইয়া 🙂 আপনার UID <code>${uid}</code> পেয়েছি।\n` +
                 `এবার বলুন <b>কত নম্বর স্লটটি</b> রিসেট করতে চান (যেমন: 3, অথবা 2,5,7, অথবা সবগুলোর জন্য লিখুন "সব")।`;
               await sendMessage(chatId, ask, msg.message_id);
               actions.push("removal-ask-slot");
@@ -2397,7 +2414,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           }
           await saveSession({ step: "await_uid", uid: null, app_user_id: null, data: { slots } });
           const ask =
-            `জি অবশ্যই স্যার, আমরা আপনার স্লটটি রিসেট করে দিতে পারি 🙂\n` +
+            `জি অবশ্যই ভাইয়া, আমরা আপনার স্লটটি রিসেট করে দিতে পারি 🙂\n` +
             `রিসেট করলে ওই স্লটটি একদম খালি হয়ে যাবে, তারপর নতুন ফেস দিয়ে আবার ভেরিফাই করতে পারবেন।\n\n` +
             `👉 দয়া করে আপনার <b>UID</b> নম্বরটি দিন এবং বলুন <b>কত নম্বর স্লটটি</b> রিসেট করতে চান 💙`;
           await sendMessage(chatId, ask, msg.message_id);
@@ -2410,7 +2427,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         if ((asksReferralUnlock || asksFiveSlotFirstVerify) && !decision.should_delete
             && settings.auto_reply_enabled) {
           const reply = asksFiveSlotFirstVerify && !asksReferralUnlock
-            ? `হ্যাঁ স্যার ✅ প্রথমবারের ফেস ভেরিফিকেশন দিয়েই হবে — নিজের <b>৫টি স্লটে ১ম ভেরিফাই</b> সম্পন্ন হলেই আপনার রেফার লিংক আনলক হয়ে যাবে 💙`
+            ? `হ্যাঁ ভাইয়া ✅ প্রথমবারের ফেস ভেরিফিকেশন দিয়েই হবে — নিজের <b>৫টি স্লটে ১ম ভেরিফাই</b> সম্পন্ন হলেই আপনার রেফার লিংক আনলক হয়ে যাবে 💙`
             : `${senderName}, রেফার লিংক আনলক করার নিয়মটি হলো —\n\n` +
               `👉 আপনি অন্য বন্ধুদের রেফার করতে চাইলে আগে <b>নিজের ৫টি স্লট ভেরিফাই</b> করতে হবে।\n` +
               `৫টি স্লট হয়ে গেলেই আপনার রেফার লিংকটি সাথে সাথে আনলক হয়ে যাবে, তখন যত খুশি রেফার করতে পারবেন 💙\n\n` +
