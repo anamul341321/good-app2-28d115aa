@@ -17,10 +17,17 @@ export function EmailVerifyGate() {
   const sendOtp = useServerFn(requestEmailVerifyOtp);
   const confirmOtp = useServerFn(confirmEmailVerifyOtp);
 
+  const { data: mode } = useQuery({
+    queryKey: ["auth-mode"],
+    queryFn: () => getAuthMode(),
+    staleTime: 60_000,
+  });
+
   const { data } = useQuery({
     queryKey: ["email-verify-status"],
     queryFn: () => status(),
     staleTime: 60_000,
+    enabled: mode?.emailOtpEnabled !== false,
   });
 
   const [step, setStep] = useState<"email" | "code">("email");
