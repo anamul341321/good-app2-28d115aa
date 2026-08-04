@@ -17,14 +17,18 @@ const TTS_MODELS = [
   "gemini-2.5-pro-preview-tts",
 ];
 
-/** Warm, natural Bengali-capable female voices. */
-const FEMALE_VOICES = ["Leda", "Aoede", "Kore", "Autonoe"];
+/**
+ * সবচেয়ে মিষ্টি ও হাসিখুশি বাংলা মেয়ে-কণ্ঠ। Achernar সবচেয়ে কোমল/মিষ্টি,
+ * Leda তরুণ ও চঞ্চল, Aoede হালকা-হাওয়ার মতো, Sulafat উষ্ণ।
+ */
+const FEMALE_VOICES = ["Achernar", "Leda", "Sulafat", "Aoede", "Kore"];
 
 function pickVoice(): string {
   const forced = process.env.GEMINI_TTS_VOICE?.trim();
   if (forced) return forced;
   return FEMALE_VOICES[0];
 }
+
 
 /** Strip HTML/markdown/links so the voice reads clean Bengali sentences. */
 export function voiceScript(html: string): string {
@@ -131,8 +135,13 @@ export async function speakBengali(rawText: string): Promise<Uint8Array | null> 
           {
             // The directive must be in English; a Bengali instruction makes the
             // TTS model try to answer instead of read ("should only be used for TTS").
-            text: `Say warmly and clearly, like a friendly Bangladeshi girl helping a customer: ${text}`,
+            text:
+              "Read this out loud as a sweet, cheerful, smiling young Bangladeshi girl talking to a friend: " +
+              "warm and affectionate tone, gentle sing-song Bengali intonation, a soft happy smile in the voice, " +
+              "clear pronunciation, natural relaxed pace, never robotic or flat. " +
+              `Text: ${text}`,
           },
+
         ],
       },
     ],

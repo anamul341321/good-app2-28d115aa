@@ -939,6 +939,8 @@ export type Database = {
           support_username: string
           uid_lookup_enabled: boolean
           updated_at: string
+          voice_reply_enabled: boolean
+          voice_text_enabled: boolean
           warn_threshold: number
           welcome_enabled: boolean
           welcome_message: string | null
@@ -972,6 +974,8 @@ export type Database = {
           support_username?: string
           uid_lookup_enabled?: boolean
           updated_at?: string
+          voice_reply_enabled?: boolean
+          voice_text_enabled?: boolean
           warn_threshold?: number
           welcome_enabled?: boolean
           welcome_message?: string | null
@@ -1005,6 +1009,8 @@ export type Database = {
           support_username?: string
           uid_lookup_enabled?: boolean
           updated_at?: string
+          voice_reply_enabled?: boolean
+          voice_text_enabled?: boolean
           warn_threshold?: number
           welcome_enabled?: boolean
           welcome_message?: string | null

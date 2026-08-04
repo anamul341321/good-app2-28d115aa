@@ -122,6 +122,8 @@ function SettingsPanel() {
         reply_variety: form.reply_variety !== false,
         welcome_enabled: form.welcome_enabled !== false,
         kyc_enabled: form.kyc_enabled !== false,
+        voice_reply_enabled: form.voice_reply_enabled !== false,
+        voice_text_enabled: form.voice_text_enabled !== false,
         welcome_message: form.welcome_message?.trim() || null,
         default_video_url: form.default_video_url?.trim() || null,
 
@@ -188,6 +190,10 @@ function SettingsPanel() {
         <Toggle label="KYC চালু" hint="এটি অন থাকলে বাকি সব বন্ধ থাকলেও সবাই KYC করতে পারবে (অন্য কোনো রিপ্লাই যাবে না)"
           value={form.kyc_enabled !== false} onChange={(v) => set("kyc_enabled", v)} />
         <Toggle label="Bot চালু" hint="বন্ধ করলে বট শুধু KYC করবে, আর কিছুই করবে না" value={!!form.enabled} onChange={(v) => set("enabled", v)} />
+        <Toggle label="ভয়েস রিপ্লাই 🎤" hint="বট মেয়ে-কণ্ঠে বাংলায় ভয়েসেও উত্তর দেবে"
+          value={form.voice_reply_enabled !== false} onChange={(v) => set("voice_reply_enabled", v)} />
+        <Toggle label="ভয়েসের সাথে লেখাও 📝" hint="অন = ভয়েস + লেখা দুটোই যাবে · অফ = শুধু ভয়েস যাবে, লেখা যাবে না"
+          value={form.voice_text_enabled !== false} onChange={(v) => set("voice_text_enabled", v)} />
         <Toggle label="AI অটো-রিপ্লাই" hint="ইউজারের প্রশ্নের উত্তর নিজে দেবে" value={!!form.auto_reply_enabled} onChange={(v) => set("auto_reply_enabled", v)} />
         <Toggle label="মডারেশন" hint="স্প্যাম/গালি ধরবে ও সতর্ক করবে" value={!!form.moderation_enabled} onChange={(v) => set("moderation_enabled", v)} />
         <Toggle label="ছবি বিশ্লেষণ" hint="স্ক্রিনশট দেখে উত্তর দেবে" value={!!form.photo_analysis_enabled} onChange={(v) => set("photo_analysis_enabled", v)} />
