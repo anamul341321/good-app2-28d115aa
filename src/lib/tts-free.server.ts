@@ -136,48 +136,48 @@ async function cachePut(key: string, bytes: Uint8Array): Promise<void> {
   }
 }
 
-/**
- * Speak a Bengali reply. Returns WAV bytes, or null when no free key is
- * available / every key is out of quota (the bot then just sends text).
- */
-export async function speakBengali(rawText: string): Promise<Uint8Array | null> {
-  const script = voiceScript(rawText);
-  if (script.length < 4) return null;
-  // Keep clips short so generation stays fast and quota-friendly.
-  const text = script.length > 700 ? `${script.slice(0, 700)}…` : script;
+/** Split a long Bengali script into speakable chunks at sentence boundaries. */
+function chunkScript(text: string, max = 550): string[] {
+  const parts = text.match(/[^।!?\n]+[।!?\n]*\s*/g) ?? [text];
+  const out: string[] = [];
+  let cur = "";
+  const flush = () => {
+    if (cur.trim()) out.push(cur.trim());
+    cur = "";
+  };
+  for (const p of parts) {
+    if (p.length > max) {
+      flush();
+      for (let i = 0; i < p.length; i += max) out.push(p.slice(i, i + max).trim());
+      continue;
+    }
+    if (cur.length + p.length > max) flush();
+    cur += p;
+  }
+  flush();
+  return out.filter(Boolean);
+}
 
-  const voice = pickVoice();
-  const cacheKey = await sha(`${voice}|${text}`);
-  const cached = await cacheGet(cacheKey);
-  if (cached) return cached;
+const TTS_DIRECTIVE =
+  // The directive must be in English; a Bengali instruction makes the
+  // TTS model try to answer instead of read ("should only be used for TTS").
+  "Read the following Bengali text aloud as a warm, cheerful, friendly young Bangladeshi woman " +
+  "helping an elder brother. Speak naturally and expressively with a clear smile in your voice — " +
+  "lively, sweet and caring, with natural ups and downs, small pauses and real emotion, like a " +
+  "helpful sister chatting happily, NOT like someone reading a script or a robot. Keep it clear " +
+  "and easy to follow at a normal comfortable pace, never flat, never monotone, never dull. " +
+  "Read the WHOLE text to the very end, never stop early, never summarise, never skip anything. " +
+  "Pronounce every Bengali word, name and number fully and distinctly. " +
+  "Do not read out symbols or emoji names. ";
 
-  const { freeKeyPool } = await import("./ai-free.server");
-  const keys = await freeKeyPool();
-  if (!keys.length) return null;
-
+/** Generate raw PCM for one chunk. Returns null when every key/model failed. */
+async function pcmForChunk(
+  text: string,
+  voice: string,
+  keys: { id?: string | null; key: string }[],
+): Promise<Uint8Array | null> {
   const body = {
-    contents: [
-      {
-        role: "user",
-        parts: [
-          {
-            // The directive must be in English; a Bengali instruction makes the
-            // TTS model try to answer instead of read ("should only be used for TTS").
-            text:
-              "Read the following Bengali text aloud as a warm, cheerful, friendly young Bangladeshi woman " +
-              "helping an elder brother. Speak naturally and expressively with a clear smile in your voice — " +
-              "lively, sweet and caring, with natural ups and downs, small pauses and real emotion, like a " +
-              "helpful sister chatting happily, NOT like someone reading a script or a robot. Keep it clear " +
-              "and easy to follow at a normal comfortable pace, never flat, never monotone, never dull. " +
-              "Pronounce every Bengali word, name and number fully and distinctly. " +
-              "Do not read out symbols or emoji names. " +
-              `Text: ${text}`,
-          },
-
-
-        ],
-      },
-    ],
+    contents: [{ role: "user", parts: [{ text: `${TTS_DIRECTIVE}Text: ${text}` }] }],
     generationConfig: {
       responseModalities: ["AUDIO"],
       speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voice } } },
@@ -215,10 +215,51 @@ export async function speakBengali(rawText: string): Promise<Uint8Array | null> 
       const b64 = json?.candidates?.[0]?.content?.parts?.find((p: any) => p?.inlineData?.data)
         ?.inlineData?.data;
       if (!b64) break;
-      const wav = wavFromPcm(b64ToBytes(b64));
-      void cachePut(cacheKey, wav);
-      return wav;
+      return b64ToBytes(b64);
     }
   }
   return null;
 }
+
+/**
+ * Speak a Bengali reply. The script is split into sentence-sized chunks and the
+ * returned PCM is stitched together, so long replies are spoken in full instead
+ * of cutting off mid-sentence. Returns WAV bytes, or null when no free key is
+ * available / every key is out of quota (the bot then just sends text).
+ */
+export async function speakBengali(rawText: string): Promise<Uint8Array | null> {
+  const script = voiceScript(rawText);
+  if (script.length < 4) return null;
+  // Hard safety cap so one reply can never burn the whole free quota.
+  const text = script.length > 3000 ? `${script.slice(0, 3000)}…` : script;
+
+  const voice = pickVoice();
+  const cacheKey = await sha(`v2|${voice}|${text}`);
+  const cached = await cacheGet(cacheKey);
+  if (cached) return cached;
+
+  const { freeKeyPool } = await import("./ai-free.server");
+  const keys = await freeKeyPool();
+  if (!keys.length) return null;
+
+  const chunks = chunkScript(text);
+  const pcms: Uint8Array[] = [];
+  for (const chunk of chunks) {
+    const pcm = await pcmForChunk(chunk, voice, keys);
+    if (!pcm) break; // quota/model gave up — send what we already have
+    pcms.push(pcm);
+  }
+  if (!pcms.length) return null;
+
+  const total = pcms.reduce((n, p) => n + p.length, 0);
+  const joined = new Uint8Array(total);
+  let off = 0;
+  for (const p of pcms) {
+    joined.set(p, off);
+    off += p.length;
+  }
+  const wav = wavFromPcm(joined);
+  void cachePut(cacheKey, wav);
+  return wav;
+}
+
