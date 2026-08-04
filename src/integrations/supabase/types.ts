@@ -1360,6 +1360,8 @@ export type Database = {
       }
       user_devices: {
         Row: {
+          approval_requested_at: string | null
+          approval_state: string | null
           created_at: string
           device_id: string
           id: string
@@ -1370,6 +1372,8 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          approval_requested_at?: string | null
+          approval_state?: string | null
           created_at?: string
           device_id: string
           id?: string
@@ -1380,6 +1384,8 @@ export type Database = {
           user_id: string
         }
         Update: {
+          approval_requested_at?: string | null
+          approval_state?: string | null
           created_at?: string
           device_id?: string
           id?: string
