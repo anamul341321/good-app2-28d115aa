@@ -210,8 +210,10 @@ export const completeGoogleAccountLink = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ code: z.string().trim() }).parse(input))
   .handler(async ({ data, context }) => {
+    const { isEmailOtpEnabled } = await import("./auth-mode.server");
+    const otpEnabled = await isEmailOtpEnabled();
     const code = data.code.replace(/\D/g, "").slice(0, 6);
-    if (code.length !== 6) throw new Error("৬ ডিজিটের কোড দিন");
+    if (otpEnabled && code.length !== 6) throw new Error("৬ ডিজিটের কোড দিন");
 
     const g = await getGoogleIdentity(context.userId);
     if (!g.isGoogle || !g.googleEmail) throw new Error("Google একাউন্ট পাওয়া যায়নি");
