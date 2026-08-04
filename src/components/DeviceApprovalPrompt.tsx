@@ -15,9 +15,10 @@ export function DeviceApprovalPrompt() {
   const { data } = useQuery({
     queryKey: ["pending-device-approvals"],
     queryFn: () => listFn({ data: { deviceId } }),
-    refetchInterval: 10_000,
-    staleTime: 5_000,
+    refetchInterval: 3_000,
+    staleTime: 0,
   });
+
 
   const pending = (data ?? [])[0];
   if (!pending) return null;
