@@ -236,19 +236,26 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             const fmt = ["wav", "mp3", "webm", "m4a", "ogg", "aac", "flac"].includes(ext)
               ? ext
               : msg.video_note ? "mp4" : "ogg";
+            // ভয়েস যদি কোনো মেসেজের রিপ্লাই হয়, ওই লেখাটা হিন্ট হিসেবে দিলে
+            // অস্পষ্ট/দ্রুত বলা কথাও অনেক ভালো বোঝে।
+            const sttHint = String(
+              msg.reply_to_message?.text ?? msg.reply_to_message?.caption ?? "",
+            ).trim();
             const hear = async () => {
               try {
-                return await transcribeAudio(file.base64, fmt);
+                return await transcribeAudio(file.base64, fmt, sttHint || undefined);
               } catch (e) {
                 console.error("[tg] transcribe failed", (e as Error)?.message);
                 return null;
               }
             };
             voiceHeard = await hear();
-            // প্রথমবার না বুঝলে আরেকবার চেষ্টা করবে (নেটওয়ার্ক/মডেল হেঁচকি এড়াতে)
-            if (!voiceHeard || voiceHeard.replace(/[^\p{L}\p{N}]/gu, "").length < 3) {
+            // প্রথমবার না বুঝলে আরও দুইবার চেষ্টা করবে (নেটওয়ার্ক/মডেল হেঁচকি এড়াতে)
+            for (let i = 0; i < 2; i++) {
+              if (voiceHeard && voiceHeard.replace(/[^\p{L}\p{N}]/gu, "").length >= 3) break;
               voiceHeard = await hear();
             }
+
             if (voiceHeard) voiceHeard = voiceHeard.trim();
             if (voiceHeard) text = captionText ? `${captionText}\n${voiceHeard}`.trim() : voiceHeard;
           }
