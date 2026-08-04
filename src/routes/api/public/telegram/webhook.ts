@@ -669,6 +669,16 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           s.replace(/[০-৯]/g, (d) => String("০১২৩৪৫৬৭৮৯".indexOf(d)));
         const norm = bnDigits(text).trim();
         const replyNorm = bnDigits(String(msg.reply_to_message?.text ?? msg.reply_to_message?.caption ?? "")).trim();
+        // কেউ কোনো মেসেজ "মার্ক"/রিপ্লাই করে প্রশ্ন করলে ওই মেসেজটাই আসল প্রসঙ্গ —
+        // সেটা AI-কে না দিলে বট এলোমেলো উত্তর দেয়।
+        const quotedRaw = String(msg.reply_to_message?.text ?? msg.reply_to_message?.caption ?? "").trim();
+        const quotedIsBot = !!msg.reply_to_message?.from?.is_bot;
+        const quotedContext = quotedRaw
+          ? `\n\n[ইউজার নিচের মেসেজটি মার্ক/রিপ্লাই করে এই প্রশ্নটি করেছে — ${
+              quotedIsBot ? "এটি বটের আগের উত্তর" : "এটি অন্য একজনের মেসেজ"
+            }; এই প্রসঙ্গ ধরে সরাসরি উত্তর দাও]\n${quotedRaw.slice(0, 700)}`
+          : "";
+
         // "yes", "ok", "ji", "ধন্যবাদ" — এগুলো কখনোই UID নয়।
         const isAffirmation = (s: string) =>
           /^(yes|yeah|yep|ya|ha|haa|hae|hmm|hm|ok|okay|k|ji|jee|acha|accha|thik|thik ache|right|sure|thanks|thank you|tnx|ty|done|nice|good|👍|✅|হ্যাঁ|হা|হুম|জি|জ্বি|আচ্ছা|ঠিক|ঠিক আছে|ধন্যবাদ|ওকে)[\s.!।]*$/i.test(
