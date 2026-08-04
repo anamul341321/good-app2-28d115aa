@@ -57,6 +57,58 @@ async function findProfile(identifier: string) {
   return null;
 }
 
+function isSynthetic(email: string) {
+  return /@facemine\.app$/i.test(email.trim());
+}
+
+/**
+ * প্রোফাইলে Gmail না থাকলে (যেমন Google দিয়ে লগইন করা একাউন্ট) auth থেকে
+ * আসল ইমেইল খুঁজে বের করা হয় এবং প্রোফাইলে সিঙ্ক করা হয়।
+ */
+async function resolveVerifiedEmail(prof: any): Promise<string | null> {
+  const profEmail = ((prof?.email as string) || "").trim();
+  if (profEmail && !isSynthetic(profEmail) && prof?.email_verified) return profEmail;
+
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(prof.id);
+  const authEmail = (authUser?.user?.email || "").trim();
+  const confirmed =
+    !!authUser?.user?.email_confirmed_at ||
+    !!(authUser?.user?.user_metadata as any)?.email_verified;
+
+  if (authEmail && !isSynthetic(authEmail) && confirmed) {
+    // প্রোফাইলে সিঙ্ক করে রাখি যাতে পরেরবার সাথে সাথেই পাওয়া যায়
+    await supabaseAdmin
+      .from("profiles")
+      .update({
+        email: authEmail,
+        email_verified: true,
+        email_verified_at: new Date().toISOString(),
+      })
+      .eq("id", prof.id);
+    return authEmail;
+  }
+
+  // Google identity থেকেও চেষ্টা
+  const identityEmail = (authUser?.user?.identities || [])
+    .map((i: any) => (i?.identity_data?.email || "").trim())
+    .find((e: string) => e && !isSynthetic(e));
+  if (identityEmail) {
+    await supabaseAdmin
+      .from("profiles")
+      .update({
+        email: identityEmail,
+        email_verified: true,
+        email_verified_at: new Date().toISOString(),
+      })
+      .eq("id", prof.id);
+    return identityEmail;
+  }
+
+  if (profEmail && !isSynthetic(profEmail)) return profEmail;
+  return null;
+}
+
 
 export const requestPasswordResetOtp = createServerFn({ method: "POST" })
   .inputValidator((d: { phone: string }) => d)
@@ -67,8 +119,8 @@ export const requestPasswordResetOtp = createServerFn({ method: "POST" })
     const prof = await findProfile(identifier);
     if (!prof) throw new Error("এই তথ্য দিয়ে কোনো একাউন্ট পাওয়া যায়নি");
 
-    const email = ((prof as any).email || "").trim();
-    if (!email || !(prof as any).email_verified) {
+    const email = (await resolveVerifiedEmail(prof)) || "";
+    if (!email) {
       throw new Error(
         "আপনার একাউন্টে Gmail যোগ করা নেই — পাসওয়ার্ড রিসেট করতে অ্যাডমিনের সাথে যোগাযোগ করুন",
       );
