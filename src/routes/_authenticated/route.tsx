@@ -158,6 +158,8 @@ function AuthedLayout() {
       <InstallPrompt />
       <LanguagePicker />
       <SlotResetApproval />
+      <DeviceApprovalPrompt />
+
       <ProfileCompleteGate />
       <EmailVerifyGate />
       <UserNoticeBanner />
