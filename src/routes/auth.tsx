@@ -144,9 +144,41 @@ export function AuthPage() {
         try { localStorage.setItem("good-app-ref-code", ref.toUpperCase()); } catch {}
       }
     }
-    supabase.auth.getSession().then(({ data }) => {
+
+    // Google (full-page redirect) থেকে ফিরলে URL-এ আসা token দিয়ে সেশন সেট করা
+    async function consumeOAuthTokens() {
+      if (typeof window === "undefined") return false;
+      const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+      const query = new URLSearchParams(window.location.search);
+      const access = hash.get("access_token") ?? query.get("access_token");
+      const refresh = hash.get("refresh_token") ?? query.get("refresh_token");
+      const codeParam = query.get("code");
+      try {
+        if (access && refresh) {
+          const { error } = await supabase.auth.setSession({
+            access_token: access,
+            refresh_token: refresh,
+          });
+          if (error) return false;
+        } else if (codeParam) {
+          const { error } = await supabase.auth.exchangeCodeForSession(codeParam);
+          if (error) return false;
+        } else {
+          return false;
+        }
+        window.history.replaceState({}, "", window.location.pathname);
+        nav({ to: "/home" });
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
+    void (async () => {
+      if (await consumeOAuthTokens()) return;
+      const { data } = await supabase.auth.getSession();
       if (data.session) nav({ to: "/home" });
-    });
+    })();
   }, [nav]);
 
   const validateForm = () => {
