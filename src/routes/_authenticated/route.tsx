@@ -103,6 +103,9 @@ function AuthedLayout() {
     );
   }
 
+  if (deviceRevoked) return <DeviceUnlockGate />;
+
+
   if (appStatus?.maintenance) return <MaintenanceScreen message={appStatus.message} />;
 
   return (
