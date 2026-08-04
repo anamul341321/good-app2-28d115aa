@@ -3,8 +3,9 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { claimMiningEarnings, getEarnings } from "@/lib/earnings.functions";
 import { EarningsStatement } from "@/components/EarningsStatement";
+import { EarningsBreakdown } from "@/components/EarningsBreakdown";
 import { toast } from "sonner";
-import { Loader2, Coins, Gift, Users, PieChart, HandCoins, History, FileText } from "lucide-react";
+import { Loader2, Coins, Gift, Users, PieChart, HandCoins, History, FileText, ListOrdered } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/earnings")({
   ssr: false,
