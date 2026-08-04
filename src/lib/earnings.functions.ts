@@ -33,6 +33,7 @@ export const getEarnings = createServerFn({ method: "GET" })
       { data: transfersOut },
       { data: recharges },
       { data: debts },
+      { data: profile },
     ] = await Promise.all([
       supabase.from("mining_state").select("*").eq("user_id", userId).maybeSingle(),
       supabaseAdmin.from("mining_claims").select("*").eq("user_id", userId).order("created_at", { ascending: false }).limit(200),
@@ -43,6 +44,7 @@ export const getEarnings = createServerFn({ method: "GET" })
       supabaseAdmin.from("transfers").select("*").eq("sender_id", userId).order("created_at", { ascending: false }).limit(200),
       supabaseAdmin.from("recharges").select("*").eq("user_id", userId).order("created_at", { ascending: false }).limit(200),
       supabaseAdmin.from("user_debts").select("*").eq("user_id", userId).order("created_at", { ascending: false }).limit(100),
+      supabase.from("profiles").select("display_name, uid_seq, phone_number").eq("id", userId).maybeSingle(),
     ]);
 
     const accrued = Number((mining as any)?.accrued_amount ?? 0);
