@@ -123,7 +123,8 @@ export function AuthPage() {
     queryFn: () => getAuthMode(),
     staleTime: 60_000,
   });
-  const otpEnabled = authMode?.emailOtpEnabled !== false;
+  // Switch OFF হলে আগের মতো শুধু নম্বর/পাসওয়ার্ড UI; query লোড হওয়া পর্যন্ত legacy ধরে নিই।
+  const otpEnabled = authMode?.emailOtpEnabled === true;
 
 
   const resolveUid = useServerFn(resolveCardUidForLogin);
