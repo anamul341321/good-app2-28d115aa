@@ -5,6 +5,7 @@ const tk = (n: number) => `${n.toFixed(2)}৳`;
 const bn = (s: string) => new Date(s).toLocaleString("bn-BD");
 
 export type StatementRow = { id: string; label: string; note?: string | null; amount: number; created_at: string };
+export type StatementStep = { key: string; label: string; formula?: string | null; amount: number };
 export type StatementData = {
   name: string;
   uid?: string | number | null;
@@ -16,6 +17,10 @@ export type StatementData = {
   sources: { key: string; label: string; amount: number }[];
   outs: { label: string; amount: number }[];
   rows: StatementRow[];
+  bonusSteps?: StatementStep[];
+  bonusTotal?: number;
+  miningSteps?: StatementStep[];
+  miningTotal?: number;
 };
 
 /**
