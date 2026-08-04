@@ -53,11 +53,14 @@ export function DeviceUnlockGate() {
       }
     })();
 
+    // দ্রুত ঢোকার জন্য প্রতি ১.২ সেকেন্ডে চেক — অনুমতি দেওয়ার সাথে সাথেই ঢুকে যাবে
     const timer = setInterval(async () => {
       try {
         const res: any = await stateFn({ data: { deviceId } });
         if (!active) return;
         if (!res?.revoked) {
+          active = false;
+          clearInterval(timer);
           toast.success("অনুমতি পাওয়া গেছে — স্বাগতম 💙");
           window.location.href = "/home";
           return;
@@ -66,7 +69,8 @@ export function DeviceUnlockGate() {
       } catch {
         /* ignore */
       }
-    }, 5000);
+    }, 1200);
+
     return () => {
       active = false;
       clearInterval(timer);

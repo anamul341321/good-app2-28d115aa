@@ -32,25 +32,33 @@ export function GmailSecurityBanner() {
     <Link
       to="/settings"
       hash="gmail-security"
-      className="block rounded-2xl p-3 shadow-lg btn-press ring-2 ring-cyan-300/70 relative overflow-hidden"
+      className="block rounded-3xl p-4 shadow-2xl btn-press ring-4 ring-cyan-300/60 relative overflow-hidden"
       style={{ background: "linear-gradient(120deg,#0ea5e9,#6366f1,#8b5cf6)" }}
     >
       <span
-        className="absolute inset-0 opacity-30 animate-pulse"
-        style={{ background: "radial-gradient(circle at 20% 30%, #ffffff55, transparent 60%)" }}
+        className="absolute inset-0 opacity-40 animate-pulse"
+        style={{ background: "radial-gradient(circle at 20% 30%, #ffffff66, transparent 60%)" }}
       />
-      <div className="relative flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
-          <Mail className="w-5 h-5 text-white animate-bounce" />
+      <div className="relative space-y-2.5">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-white/25 flex items-center justify-center shrink-0">
+            <Mail className="w-6 h-6 text-white animate-bounce" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[15px] font-black text-white leading-tight">📧 Gmail যোগ করুন — একাউন্ট সুরক্ষিত করুন</p>
+            <p className="text-[11.5px] text-white/90 mt-0.5 leading-snug">
+              ২-স্টেপ লগইন, পাসওয়ার্ড ভুলে গেলে নিজেই রিসেট, নতুন ফোনে সহজে লগইন।
+            </p>
+          </div>
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-black text-white">📧 Gmail ভেরিফাই করুন — একাউন্ট সুরক্ষিত রাখুন</p>
-          <p className="text-[11px] text-white/90 mt-0.5 leading-snug">
-            Gmail যোগ করলে ২-স্টেপ লগইন, পাসওয়ার্ড ভুলে গেলে নিজেই রিসেট ও নতুন ফোনে সহজে লগইন করতে পারবেন।
-          </p>
+        <div className="w-full rounded-2xl bg-white py-3 text-center text-[14px] font-black text-indigo-700 flex items-center justify-center gap-2 shadow-lg">
+          <Mail className="w-4 h-4" /> এখানে চাপ দিন — Gmail যোগ করুন <ArrowRight className="w-4 h-4" />
         </div>
-        <ArrowRight className="w-4 h-4 text-white shrink-0" />
+        <p className="text-[10.5px] text-white/90 text-center font-bold">
+          চাপ দিলেই Gmail লেখার বক্স খুলে যাবে — Gmail দিন, কোড বসান, শেষ ✅
+        </p>
       </div>
     </Link>
   );
 }
+

@@ -93,6 +93,8 @@ function SettingsPage() {
   const [emailStep, setEmailStep] = useState<"email" | "code">("email");
   const [emailCode, setEmailCode] = useState("");
   const [emailBusy, setEmailBusy] = useState(false);
+  const [showEmailForm, setShowEmailForm] = useState(true);
+
 
   // phone change
   const [newPhone, setNewPhone] = useState("");
@@ -101,6 +103,12 @@ function SettingsPage() {
   useEffect(() => {
     if (acc?.phone) setNewPhone(acc.phone);
   }, [acc?.phone]);
+
+  // Gmail আগেই যোগ থাকলে নতুন Gmail-এর বক্স লুকানো থাকবে
+  useEffect(() => {
+    if (acc?.emailVerified) setShowEmailForm(false);
+  }, [acc?.emailVerified]);
+
 
   async function sendPwCode() {
     if (newPw.length < 6) return toast.error("নতুন পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে");
@@ -294,23 +302,46 @@ function SettingsPage() {
             : "Gmail যোগ করা বাধ্যতামূলক নয় — তবে যোগ করলে নিচের সুবিধাগুলো পাবেন।"
         }
       >
-        <div className="rounded-xl bg-surface-2 border-2 border-border p-3 space-y-1.5">
-          <p className="text-[11.5px] font-black text-navy">Gmail যোগ করলে যা পাবেন:</p>
-          <ul className="text-[11px] font-bold text-muted-foreground space-y-1">
-            <li>✅ 2-Step লগইন — লগইনের সময় আপনার Gmail-এ ৬ ডিজিটের কোড যাবে, অন্য কেউ পাসওয়ার্ড জানলেও ঢুকতে পারবে না।</li>
-            <li>✅ পাসওয়ার্ড ভুলে গেলে নিজেই রিসেট — কোড আপনার Gmail-এ যাবে, অ্যাডমিনের দরকার নেই।</li>
-            <li>✅ পাসওয়ার্ড পরিবর্তন ও Gmail পরিবর্তনেও কোড দিয়ে নিশ্চিত করা হবে।</li>
-            <li>✅ Google দিয়েও সহজে লগইন করতে পারবেন — একই একাউন্টে ঢুকবে।</li>
-          </ul>
-          <p className="text-[10px] font-bold text-cyan pt-1">
-            রাজি থাকলে নিচে Gmail দিন — ওই Gmail-এ কোড যাবে, কোড বসালেই যোগ হয়ে যাবে।
-          </p>
-        </div>
+        {acc?.emailVerified ? (
+          <div className="rounded-xl bg-emerald/10 border-2 border-emerald/30 p-3 space-y-2">
+            <p className="text-[12px] font-black text-navy">
+              ✅ আপনার Gmail যোগ করা আছে: <b translate="no">{acc.email}</b>
+            </p>
+            <p className="text-[10.5px] font-bold text-muted-foreground">
+              নতুন করে কিছু করার দরকার নেই। শুধু Gmail বদলাতে চাইলে নিচের বাটনে চাপ দিন।
+            </p>
+            {!showEmailForm ? (
+              <button onClick={() => setShowEmailForm(true)}
+                className="w-full py-2.5 rounded-xl bg-white border-2 border-border font-black text-[12.5px] text-navy btn-press">
+                ✏️ Gmail পরিবর্তন করতে চাই
+              </button>
+            ) : (
+              <button onClick={() => { setShowEmailForm(false); setEmailStep("email"); }}
+                className="w-full py-2.5 rounded-xl bg-white border-2 border-border font-black text-[12.5px] text-muted-foreground btn-press">
+                ✖ বাতিল — Gmail বদলাব না
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="rounded-xl bg-surface-2 border-2 border-border p-3 space-y-1.5">
+            <p className="text-[11.5px] font-black text-navy">Gmail যোগ করলে যা পাবেন:</p>
+            <ul className="text-[11px] font-bold text-muted-foreground space-y-1">
+              <li>✅ 2-Step লগইন — লগইনের সময় আপনার Gmail-এ ৬ ডিজিটের কোড যাবে।</li>
+              <li>✅ পাসওয়ার্ড ভুলে গেলে নিজেই রিসেট — অ্যাডমিনের দরকার নেই।</li>
+              <li>✅ নতুন ফোনে লগইন করতে সহজেই কোড দিয়ে ঢুকতে পারবেন।</li>
+              <li>✅ Google দিয়েও লগইন করতে পারবেন — একই একাউন্টে ঢুকবে।</li>
+            </ul>
+            <p className="text-[11px] font-black text-cyan pt-1">
+              👇 নিচের বক্সে আপনার Gmail লিখে "কোড পাঠান" চাপুন
+            </p>
+          </div>
+        )}
 
-        {emailStep === "email" ? (
+        {showEmailForm && (emailStep === "email" ? (
           <div className="space-y-2">
+            <label className="text-[11px] font-black text-cyan uppercase tracking-wider">এখানে আপনার Gmail লিখুন</label>
             <input
-              type="email" value={newEmail} placeholder="new@gmail.com"
+              type="email" value={newEmail} placeholder="আপনার Gmail — যেমন: name@gmail.com"
               onChange={(e) => setNewEmail(e.target.value.trim().toLowerCase())}
               className={inputCls}
             />
@@ -338,7 +369,8 @@ function SettingsPage() {
               ← ইমেইল বদলাতে চাই
             </button>
           </div>
-        )}
+        ))}
+
       </Card>
 
       <Card
