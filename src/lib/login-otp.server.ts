@@ -135,13 +135,13 @@ async function startLoginOtpWork(data: LoginData) {
 
   // Admin switch off → আগের মতো শুধু নম্বর/পাসওয়ার্ড দিয়েই লগইন
   if (!otpEnabled) {
-    const session = await verifyPassword(account.authEmail, data.password);
+    const session = await verifyPassword(account, data.password);
     return { ok: true as const, needOtp: false as const, session };
   }
 
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const [session, recentResult] = await Promise.all([
-    verifyPassword(account.authEmail, data.password),
+    verifyPassword(account, data.password),
     account.id
       ? supabaseAdmin.from("email_verify_otps").select("created_at").eq("user_id", account.id)
           .is("used_at", null).order("created_at", { ascending: false }).limit(1).maybeSingle()
@@ -189,7 +189,7 @@ async function completeLoginOtpWork(data: LoginData & { code: string }) {
   const [otpResult, sessionResult] = await Promise.all([
     supabaseAdmin.from("email_verify_otps").select("id, code, attempts, expires_at")
       .eq("user_id", account.id).is("used_at", null).order("created_at", { ascending: false }).limit(1).maybeSingle(),
-    verifyPassword(account.authEmail, data.password).catch((error: unknown) => error),
+    verifyPassword(account, data.password).catch((error: unknown) => error),
   ]);
   if (otpResult.error) throw new Error("কোড যাচাই করা যায়নি — আবার চেষ্টা করুন");
   const otp = otpResult.data;
