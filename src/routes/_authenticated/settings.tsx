@@ -29,9 +29,9 @@ export const Route = createFileRoute("/_authenticated/settings")({
   component: SettingsPage,
 });
 
-function Card({ icon, title, desc, children }: { icon: React.ReactNode; title: string; desc?: string; children: React.ReactNode }) {
+function Card({ id, icon, title, desc, children }: { id?: string; icon: React.ReactNode; title: string; desc?: string; children: React.ReactNode }) {
   return (
-    <section className="premium-panel rounded-2xl p-4 space-y-3">
+    <section id={id} className="premium-panel rounded-2xl p-4 space-y-3 scroll-mt-20">
       <div className="flex items-start gap-3">
         <div className="w-9 h-9 rounded-xl gradient-navy flex items-center justify-center shrink-0">{icon}</div>
         <div>
@@ -51,6 +51,16 @@ function SettingsPage() {
   const router = useRouter();
   const qc = useQueryClient();
   const deviceId = typeof window !== "undefined" ? getDeviceId() : "";
+
+  // /settings#gmail-security থেকে এলে ওই কার্ডে স্ক্রল করে হাইলাইট করবে
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (window.location.hash !== "#gmail-security") return;
+    const t = setTimeout(() => {
+      document.getElementById("gmail-security")?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 300);
+    return () => clearTimeout(t);
+  }, []);
 
   const account = useServerFn(getAccountSettings);
   const devicesFn = useServerFn(listMyDevices);
@@ -275,6 +285,7 @@ function SettingsPage() {
       </Card>
 
       <Card
+        id="gmail-security"
         icon={<ShieldCheck className="w-4 h-4 text-gold" />}
         title={acc?.emailVerified ? "Gmail সিকিউরিটি (2-Step) ✅ চালু" : "Gmail যোগ করে একাউন্ট সুরক্ষিত করুন (2-Step)"}
         desc={

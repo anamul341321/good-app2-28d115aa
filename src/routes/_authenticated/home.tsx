@@ -16,6 +16,7 @@ import { PageVoice } from "@/components/PageVoice";
 import { VideoTutorialButton } from "@/components/VideoTutorialButton";
 import { BotStartButton } from "@/components/BotStartButton";
 import { KycAlertBanner } from "@/components/KycAlertBanner";
+import { GmailSecurityBanner } from "@/components/GmailSecurityBanner";
 
 import { useLang } from "@/lib/i18n";
 
@@ -175,6 +176,7 @@ function HomePage() {
           <p className="text-[11px] text-white/90 mt-0.5">{t("মাত্র ১ ধাপ (টেলিগ্রামে START) · KYC ছাড়া উইথড্র করা যাবে না", "Just 1 step (START in Telegram) · withdraw locked without KYC")}</p>
         </Link>
       )}
+      <GmailSecurityBanner />
       <KycAlertBanner />
 
 
