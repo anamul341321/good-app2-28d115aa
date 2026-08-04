@@ -284,10 +284,12 @@ export const completeGoogleAccountLink = createServerFn({ method: "POST" })
     } as any);
     if (otpErr || !sess?.session) throw new Error("লগইন সেশন তৈরি করা যায়নি — আবার চেষ্টা করুন");
 
-    await supabaseAdmin
-      .from("email_verify_otps")
-      .update({ used_at: new Date().toISOString() })
-      .eq("id", (otp as any).id);
+    if (otp) {
+      await supabaseAdmin
+        .from("email_verify_otps")
+        .update({ used_at: new Date().toISOString() })
+        .eq("id", (otp as any).id);
+    }
 
     await supabaseAdmin
       .from("profiles")
