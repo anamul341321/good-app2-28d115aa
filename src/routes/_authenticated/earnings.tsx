@@ -187,6 +187,10 @@ function EarningsPage() {
               sources: sources.map((s) => ({ key: s.key, label: s.label, amount: s.amount })),
               outs,
               rows: data.rows.map((r) => ({ id: r.id, label: r.label, note: r.note, amount: r.amount, created_at: r.created_at })),
+              bonusSteps: (data.breakdown as any)?.bonus?.steps,
+              bonusTotal: (data.breakdown as any)?.bonus?.total,
+              miningSteps: (data.breakdown as any)?.mining?.steps,
+              miningTotal: (data.breakdown as any)?.mining?.total,
             }}
             onClose={() => setShowSheet(false)}
           />
