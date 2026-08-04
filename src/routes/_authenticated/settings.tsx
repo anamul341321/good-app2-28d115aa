@@ -52,6 +52,16 @@ function SettingsPage() {
   const qc = useQueryClient();
   const deviceId = typeof window !== "undefined" ? getDeviceId() : "";
 
+  // /settings#gmail-security থেকে এলে ওই কার্ডে স্ক্রল করে হাইলাইট করবে
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (window.location.hash !== "#gmail-security") return;
+    const t = setTimeout(() => {
+      document.getElementById("gmail-security")?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 300);
+    return () => clearTimeout(t);
+  }, []);
+
   const account = useServerFn(getAccountSettings);
   const devicesFn = useServerFn(listMyDevices);
   const killDevice = useServerFn(revokeDevice);
