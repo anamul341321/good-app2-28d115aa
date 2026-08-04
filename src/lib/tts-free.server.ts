@@ -13,9 +13,12 @@
 
 const TTS_MODELS = [
   "gemini-2.5-flash-preview-tts",
-  "gemini-3.1-flash-tts-preview",
   "gemini-2.5-pro-preview-tts",
+  "gemini-3.1-flash-tts-preview",
 ];
+
+const TTS_REQUEST_TIMEOUT_MS = 10_000;
+const CACHE_READ_TIMEOUT_MS = 700;
 
 /**
  * ভদ্র, স্পষ্ট ও হাসিমুখে বলা বাংলা মেয়ে-কণ্ঠ (অতিরিক্ত আদুরে নয়)।
@@ -137,7 +140,7 @@ async function cachePut(key: string, bytes: Uint8Array): Promise<void> {
 }
 
 /** Split a long Bengali script into speakable chunks at sentence boundaries. */
-function chunkScript(text: string, max = 550): string[] {
+function chunkScript(text: string, max = 1100): string[] {
   const parts = text.match(/[^।!?\n]+[।!?\n]*\s*/g) ?? [text];
   const out: string[] = [];
   let cur = "";
@@ -196,6 +199,7 @@ async function pcmForChunk(
             method: "POST",
             headers: { "x-goog-api-key": k.key, "Content-Type": "application/json" },
             body: JSON.stringify(body),
+            signal: AbortSignal.timeout(TTS_REQUEST_TIMEOUT_MS),
           },
         );
       } catch {
@@ -237,22 +241,32 @@ export async function speakBengali(rawText: string): Promise<Uint8Array | null> 
 
   const voice = pickVoice();
   const cacheKey = await sha(`v2|${voice}|${text}`);
-  const cached = await cacheGet(cacheKey);
+  // Storage can occasionally respond slowly. Never hold a live Telegram reply
+  // hostage for a cache lookup; generate immediately when it misses the budget.
+  const cached = await Promise.race([
+    cacheGet(cacheKey),
+    new Promise<null>((resolve) => setTimeout(() => resolve(null), CACHE_READ_TIMEOUT_MS)),
+  ]);
   if (cached) return cached;
 
   const { freeKeyPool } = await import("./ai-free.server");
   const keys = await freeKeyPool();
   if (!keys.length) return null;
 
-  // সব চাংক একসাথে (parallel) বানানো হয় — তাই লম্বা উত্তরেও ভয়েস প্রায় সাথে সাথেই আসে।
+  // Fewer, larger chunks mean fewer provider round-trips. Long replies still
+  // generate in parallel, while normal replies now need only one TTS request.
   const chunks = chunkScript(text);
+  const startedAt = Date.now();
   const results = await Promise.all(chunks.map((c) => pcmForChunk(c, voice, keys)));
   const pcms: Uint8Array[] = [];
   for (const pcm of results) {
     if (!pcm) break; // একটা চাংক ব্যর্থ হলে সেখান পর্যন্তই পাঠাই (ক্রম ঠিক রাখতে)
     pcms.push(pcm);
   }
-  if (!pcms.length) return null;
+  if (!pcms.length) {
+    console.error("[tts] no audio generated", { chunks: chunks.length, elapsedMs: Date.now() - startedAt });
+    return null;
+  }
 
 
   const total = pcms.reduce((n, p) => n + p.length, 0);
@@ -263,6 +277,7 @@ export async function speakBengali(rawText: string): Promise<Uint8Array | null> 
     off += p.length;
   }
   const wav = wavFromPcm(joined);
+  console.log("[tts] generated", { chunks: chunks.length, elapsedMs: Date.now() - startedAt });
   void cachePut(cacheKey, wav);
   return wav;
 }
