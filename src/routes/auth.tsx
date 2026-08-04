@@ -471,7 +471,7 @@ export function AuthPage() {
               </div>
             )}
 
-            {mode === "signup" && (
+            {mode === "signup" && otpEnabled && (
               <div data-voice="auth.email">
                 <label className="text-[11px] font-black text-rose uppercase tracking-wider">
                   📧 Gmail (ভেরিফিকেশন লাগবে)
