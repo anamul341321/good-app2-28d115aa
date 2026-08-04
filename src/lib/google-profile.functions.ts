@@ -238,27 +238,31 @@ export const completeGoogleAccountLink = createServerFn({ method: "POST" })
 
     const targetId = (target as any).id as string;
 
-    const { data: otp } = await supabaseAdmin
-      .from("email_verify_otps")
-      .select("id, code, attempts, expires_at")
-      .eq("user_id", targetId)
-      .ilike("email", g.googleEmail)
-      .is("used_at", null)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (!otp) throw new Error("কোড পাওয়া যায়নি — আবার কোড পাঠান");
-    if (new Date((otp as any).expires_at).getTime() < Date.now()) {
-      throw new Error("কোডের সময় শেষ — নতুন কোড নিন");
-    }
-    if (((otp as any).attempts ?? 0) >= 5) throw new Error("অনেকবার ভুল হয়েছে — নতুন কোড নিন");
-    if ((otp as any).code !== code) {
-      await supabaseAdmin
+    let otp: any = null;
+    if (otpEnabled) {
+      const { data: found } = await supabaseAdmin
         .from("email_verify_otps")
-        .update({ attempts: ((otp as any).attempts ?? 0) + 1 })
-        .eq("id", (otp as any).id);
-      throw new Error("কোড মেলেনি");
+        .select("id, code, attempts, expires_at")
+        .eq("user_id", targetId)
+        .ilike("email", g.googleEmail)
+        .is("used_at", null)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      otp = found;
+
+      if (!otp) throw new Error("কোড পাওয়া যায়নি — আবার কোড পাঠান");
+      if (new Date((otp as any).expires_at).getTime() < Date.now()) {
+        throw new Error("কোডের সময় শেষ — নতুন কোড নিন");
+      }
+      if (((otp as any).attempts ?? 0) >= 5) throw new Error("অনেকবার ভুল হয়েছে — নতুন কোড নিন");
+      if ((otp as any).code !== code) {
+        await supabaseAdmin
+          .from("email_verify_otps")
+          .update({ attempts: ((otp as any).attempts ?? 0) + 1 })
+          .eq("id", (otp as any).id);
+        throw new Error("কোড মেলেনি");
+      }
     }
 
     // পুরোনো একাউন্টের লগইন ইমেইল
