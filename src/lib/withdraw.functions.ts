@@ -132,6 +132,8 @@ export const requestWithdraw = createServerFn({ method: "POST" })
       lastCreditedAt: mining.last_credited_at,
       effectiveTaskCount: eff,
       qualifyingReferees: refs,
+      selfSlots: Number((mining as any).self_slots ?? 0),
+      referralUnits: Number((mining as any).referral_units ?? 0),
     selfQualified: (mining as any).self_qualified !== false,
       debt: debtTotal,
     });

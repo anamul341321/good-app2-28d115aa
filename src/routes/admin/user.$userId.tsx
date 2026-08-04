@@ -194,6 +194,7 @@ function UserDetail() {
     accrued: Number(m.accrued_amount), withdrawn: Number(m.withdrawn_amount),
     isActive: m.is_active, lastCreditedAt: m.last_credited_at,
     effectiveTaskCount: Number(m.effective_task_count ?? 0), qualifyingReferees: Number(m.qualifying_referees ?? 0),
+    selfSlots: Number((m as any).self_slots ?? 0), referralUnits: Number((m as any).referral_units ?? 0),
     selfQualified: (m as any).self_qualified !== false,
 
   }) : 0;
