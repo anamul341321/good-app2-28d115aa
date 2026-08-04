@@ -17,6 +17,7 @@ function BonusSettings() {
   const [rv, setRv] = useState("");
   const [rf, setRf] = useState("");
   const [fvMode, setFvMode] = useState(false);
+  const [otpMode, setOtpMode] = useState(true);
   // Promo
   const [promoActive, setPromoActive] = useState(false);
   const [promoTitle, setPromoTitle] = useState("");
@@ -45,6 +46,7 @@ function BonusSettings() {
     setRv(String(d.reverify_bonus ?? 200));
     setRf(String(d.referrer_bonus ?? 100));
     setFvMode(!!d.first_verify_mining_mode);
+    setOtpMode(d.email_otp_enabled !== false);
     setPromoActive(!!d.promo_active);
     setPromoTitle(d.promo_title ?? "");
     setPromoStart(d.promo_start_at ? d.promo_start_at.slice(0, 16) : "");
@@ -66,12 +68,13 @@ function BonusSettings() {
   }, [data]);
 
   const save = useMutation({
-    mutationFn: () => adminUpdateBonusSettings({
+    mutationFn: (override?: { email_otp_enabled?: boolean }) => adminUpdateBonusSettings({
       data: {
         first_verify_bonus: Number(fv),
         reverify_bonus: Number(rv),
         referrer_bonus: Number(rf),
         first_verify_mining_mode: fvMode,
+        email_otp_enabled: override?.email_otp_enabled ?? otpMode,
         promo_active: promoActive,
         promo_title: promoTitle || null,
         promo_start_at: promoStart ? new Date(promoStart).toISOString() : null,
@@ -185,6 +188,42 @@ function BonusSettings() {
         </p>
       </div>
 
+      {/* Gmail কোড (OTP) সিস্টেম Switch */}
+      <div className={`rounded-2xl p-4 border-2 space-y-2 ${otpMode ? "border-cyan/50 bg-cyan/5" : "border-amber/50 bg-amber/5"}`}>
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className={`text-[11px] uppercase tracking-widest font-black ${otpMode ? "text-cyan" : "text-amber"}`}>
+              📧 Gmail কোড (OTP) সিস্টেম
+            </p>
+            <p className="text-sm font-black mt-0.5">
+              {otpMode
+                ? "ON — registration/login/password change-এ Gmail কোড লাগবে"
+                : "OFF — আগের মতো শুধু নম্বর + পাসওয়ার্ড"}
+            </p>
+          </div>
+          <button
+            disabled={save.isPending}
+            onClick={() => {
+              const next = !otpMode;
+              if (!confirm(next
+                ? "SURE? ON করলে সবাইকে Gmail verification ও login কোড দিতে হবে।"
+                : "SURE? OFF করলে Gmail verification/কোড লাগবে না — সব আগের মতো নম্বর+পাসওয়ার্ডে চলবে।")) return;
+              setOtpMode(next);
+              save.mutate({ email_otp_enabled: next });
+            }}
+            className={`shrink-0 w-16 h-9 rounded-full relative transition ${otpMode ? "bg-cyan" : "bg-surface-2 border border-border"} disabled:opacity-50`}>
+            <span className={`absolute top-1 w-7 h-7 rounded-full bg-white shadow transition-all ${otpMode ? "left-8" : "left-1"}`} />
+          </button>
+        </div>
+        <p className="text-[10px] text-muted-foreground leading-snug">
+          {otpMode
+            ? "🔐 এখন Gmail ছাড়া registration হবে না, login-এ কোড যাবে, password change-এও কোড লাগবে।"
+            : "🕰️ Legacy mode: Gmail লাগবে না, কোড যাবে না, forgot-password admin থেকে reset করতে হবে।"}
+        </p>
+      </div>
+
+
+
 
       <div className="glass rounded-2xl p-4 space-y-3">
         <Field
@@ -286,7 +325,7 @@ function BonusSettings() {
         </div>
 
         <button
-          onClick={() => save.mutate()}
+          onClick={() => save.mutate(undefined)}
           disabled={save.isPending}
           className="w-full py-3 rounded-xl gradient-cta text-white font-black flex items-center justify-center gap-2 disabled:opacity-60">
           {save.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}

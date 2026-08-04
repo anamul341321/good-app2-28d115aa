@@ -51,12 +51,16 @@ export const getGoogleProfileStatus = createServerFn({ method: "GET" })
 
     const needsProfile = g.isGoogle && !conflict && !existingAccount && !(g.completed && name.trim().length >= 2);
 
+    const { isEmailOtpEnabled } = await import("./auth-mode.server");
+    const otpRequired = await isEmailOtpEnabled();
+
     return {
       isGoogle: g.isGoogle,
       needsProfile,
       conflict,
       conflictEmail,
       existingAccount,
+      otpRequired,
       emailVerified: Boolean((data as any)?.email_verified),
       email,
       suggestedName: name || g.metaName,
@@ -150,7 +154,13 @@ export const startGoogleAccountLink = createServerFn({ method: "POST" })
     const g = await getGoogleIdentity(context.userId);
     if (!g.isGoogle || !g.googleEmail) throw new Error("Google একাউন্ট পাওয়া যায়নি");
 
+    const { isEmailOtpEnabled } = await import("./auth-mode.server");
+    const otpEnabled = await isEmailOtpEnabled();
+
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    if (!otpEnabled) {
+      return { ok: true as const, skipOtp: true as const, resent: false as const, destination: null };
+    }
     const { data: otherTarget } = await supabaseAdmin
       .from("profiles")
       .select("id, display_name")
@@ -210,8 +220,10 @@ export const completeGoogleAccountLink = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ code: z.string().trim() }).parse(input))
   .handler(async ({ data, context }) => {
+    const { isEmailOtpEnabled } = await import("./auth-mode.server");
+    const otpEnabled = await isEmailOtpEnabled();
     const code = data.code.replace(/\D/g, "").slice(0, 6);
-    if (code.length !== 6) throw new Error("৬ ডিজিটের কোড দিন");
+    if (otpEnabled && code.length !== 6) throw new Error("৬ ডিজিটের কোড দিন");
 
     const g = await getGoogleIdentity(context.userId);
     if (!g.isGoogle || !g.googleEmail) throw new Error("Google একাউন্ট পাওয়া যায়নি");
@@ -236,27 +248,31 @@ export const completeGoogleAccountLink = createServerFn({ method: "POST" })
 
     const targetId = (target as any).id as string;
 
-    const { data: otp } = await supabaseAdmin
-      .from("email_verify_otps")
-      .select("id, code, attempts, expires_at")
-      .eq("user_id", targetId)
-      .ilike("email", g.googleEmail)
-      .is("used_at", null)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (!otp) throw new Error("কোড পাওয়া যায়নি — আবার কোড পাঠান");
-    if (new Date((otp as any).expires_at).getTime() < Date.now()) {
-      throw new Error("কোডের সময় শেষ — নতুন কোড নিন");
-    }
-    if (((otp as any).attempts ?? 0) >= 5) throw new Error("অনেকবার ভুল হয়েছে — নতুন কোড নিন");
-    if ((otp as any).code !== code) {
-      await supabaseAdmin
+    let otp: any = null;
+    if (otpEnabled) {
+      const { data: found } = await supabaseAdmin
         .from("email_verify_otps")
-        .update({ attempts: ((otp as any).attempts ?? 0) + 1 })
-        .eq("id", (otp as any).id);
-      throw new Error("কোড মেলেনি");
+        .select("id, code, attempts, expires_at")
+        .eq("user_id", targetId)
+        .ilike("email", g.googleEmail)
+        .is("used_at", null)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      otp = found;
+
+      if (!otp) throw new Error("কোড পাওয়া যায়নি — আবার কোড পাঠান");
+      if (new Date((otp as any).expires_at).getTime() < Date.now()) {
+        throw new Error("কোডের সময় শেষ — নতুন কোড নিন");
+      }
+      if (((otp as any).attempts ?? 0) >= 5) throw new Error("অনেকবার ভুল হয়েছে — নতুন কোড নিন");
+      if ((otp as any).code !== code) {
+        await supabaseAdmin
+          .from("email_verify_otps")
+          .update({ attempts: ((otp as any).attempts ?? 0) + 1 })
+          .eq("id", (otp as any).id);
+        throw new Error("কোড মেলেনি");
+      }
     }
 
     // পুরোনো একাউন্টের লগইন ইমেইল
@@ -278,10 +294,12 @@ export const completeGoogleAccountLink = createServerFn({ method: "POST" })
     } as any);
     if (otpErr || !sess?.session) throw new Error("লগইন সেশন তৈরি করা যায়নি — আবার চেষ্টা করুন");
 
-    await supabaseAdmin
-      .from("email_verify_otps")
-      .update({ used_at: new Date().toISOString() })
-      .eq("id", (otp as any).id);
+    if (otp) {
+      await supabaseAdmin
+        .from("email_verify_otps")
+        .update({ used_at: new Date().toISOString() })
+        .eq("id", (otp as any).id);
+    }
 
     await supabaseAdmin
       .from("profiles")

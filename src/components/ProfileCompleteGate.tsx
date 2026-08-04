@@ -82,6 +82,14 @@ export function ProfileCompleteGate() {
               setBusy(true);
               try {
                 const res: any = await linkStart({});
+                if (res?.skipOtp) {
+                  const done: any = await linkConfirm({ data: { code: "" } });
+                  if (done?.session) await supabase.auth.setSession(done.session);
+                  try { localStorage.removeItem("good-app-google-intent"); } catch {}
+                  toast.success("স্বাগতম! আপনার পুরোনো একাউন্টে ঢুকেছেন 💙");
+                  window.location.href = "/home";
+                  return;
+                }
                 setLinkDest(res?.destination ?? data.conflictEmail);
                 setLinkStep("code");
                 toast.success(
@@ -98,7 +106,7 @@ export function ProfileCompleteGate() {
             className="w-full rounded-2xl py-3 font-black text-[14px] bg-white text-indigo-700 btn-press disabled:opacity-60 flex items-center justify-center gap-2"
           >
             {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogIn className="w-4 h-4" />}
-            Gmail-এ কোড পাঠান
+            {data.otpRequired === false ? "পুরোনো একাউন্টে ঢুকুন" : "Gmail-এ কোড পাঠান"}
           </button>
         ) : (
           <div className="space-y-3">

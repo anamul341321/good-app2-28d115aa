@@ -446,8 +446,14 @@ function PasswordSelfChange() {
     if (nx !== nx2) return toast.error("পাসওয়ার্ড মিলছে না");
     setBusy(true);
     try {
-      const { requestPasswordChangeOtp } = await import("@/lib/password-change.functions");
+      const { requestPasswordChangeOtp, changePasswordWithOtp } = await import("@/lib/password-change.functions");
       const res: any = await requestPasswordChangeOtp();
+      if (res?.skipOtp) {
+        await changePasswordWithOtp({ data: { code: "000000", newPassword: nx } });
+        toast.success("পাসওয়ার্ড পরিবর্তন হয়েছে");
+        setNx(""); setNx2(""); setCode(""); setStep("form"); setOpen(false);
+        return;
+      }
       setDest(res?.destination ?? null);
       setStep("code");
       toast.success("Gmail-এ ৬ ডিজিটের কোড পাঠানো হয়েছে");

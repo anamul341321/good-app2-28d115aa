@@ -111,7 +111,16 @@ async function verifyPassword(authEmail: string, password: string) {
 }
 
 async function startLoginOtpWork(data: LoginData) {
+  const { isEmailOtpEnabled } = await import("./auth-mode.server");
+  const otpEnabled = await isEmailOtpEnabled();
   const account = await resolveAccount(data.identifier);
+
+  // Admin switch off → আগের মতো শুধু নম্বর/পাসওয়ার্ড দিয়েই লগইন
+  if (!otpEnabled) {
+    const session = await verifyPassword(account.authEmail, data.password);
+    return { ok: true as const, needOtp: false as const, session };
+  }
+
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const [session, recentResult] = await Promise.all([
     verifyPassword(account.authEmail, data.password),

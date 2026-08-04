@@ -1352,6 +1352,7 @@ export const adminUpdateBonusSettings = createServerFn({ method: "POST" })
     reverify_bonus: z.number().int().min(0).max(100000),
     referrer_bonus: z.number().int().min(0).max(100000),
     first_verify_mining_mode: z.boolean().optional(),
+    email_otp_enabled: z.boolean().optional(),
     // 2X promo window
     promo_active: z.boolean().optional(),
     promo_title: z.string().max(200).optional().nullable(),
@@ -1383,6 +1384,7 @@ export const adminUpdateBonusSettings = createServerFn({ method: "POST" })
       updated_at: new Date().toISOString(),
     };
     if (typeof data.first_verify_mining_mode === "boolean") patch.first_verify_mining_mode = data.first_verify_mining_mode;
+    if (typeof data.email_otp_enabled === "boolean") patch.email_otp_enabled = data.email_otp_enabled;
     for (const k of [
       "promo_active","promo_title","promo_start_at","promo_end_at",
       "promo_first_verify_bonus","promo_reverify_bonus","promo_referrer_bonus",
