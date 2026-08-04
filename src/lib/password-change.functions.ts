@@ -77,10 +77,22 @@ export const changePasswordWithOtp = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { isEmailOtpEnabled } = await import("./auth-mode.server");
+
+    // Gmail কোড সিস্টেম বন্ধ থাকলে কোড ছাড়াই পাসওয়ার্ড পরিবর্তন
+    if (!(await isEmailOtpEnabled())) {
+      const { error: e } = await supabaseAdmin.auth.admin.updateUserById(context.userId, {
+        password: data.newPassword,
+      });
+      if (e) throw new Error("পাসওয়ার্ড পরিবর্তন করা যায়নি, আবার চেষ্টা করুন");
+      return { ok: true as const };
+    }
+
     const code = data.code.replace(/\D/g, "").slice(0, 6);
     if (code.length !== 6) throw new Error("৬ ডিজিটের কোড দিন");
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
     const { data: otp } = await supabaseAdmin
       .from("password_reset_otps")
       .select("id, code, attempts, expires_at")
