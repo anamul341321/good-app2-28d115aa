@@ -17,14 +17,18 @@ const TTS_MODELS = [
   "gemini-2.5-pro-preview-tts",
 ];
 
-/** Warm, natural Bengali-capable female voices. */
-const FEMALE_VOICES = ["Leda", "Aoede", "Kore", "Autonoe"];
+/**
+ * সবচেয়ে মিষ্টি ও হাসিখুশি বাংলা মেয়ে-কণ্ঠ। Achernar সবচেয়ে কোমল/মিষ্টি,
+ * Leda তরুণ ও চঞ্চল, Aoede হালকা-হাওয়ার মতো, Sulafat উষ্ণ।
+ */
+const FEMALE_VOICES = ["Achernar", "Leda", "Sulafat", "Aoede", "Kore"];
 
 function pickVoice(): string {
   const forced = process.env.GEMINI_TTS_VOICE?.trim();
   if (forced) return forced;
   return FEMALE_VOICES[0];
 }
+
 
 /** Strip HTML/markdown/links so the voice reads clean Bengali sentences. */
 export function voiceScript(html: string): string {
