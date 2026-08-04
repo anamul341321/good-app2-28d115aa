@@ -1,3 +1,4 @@
+import { aiFetch } from "./ai-free.server";
 // Server-only helpers for the Good-App Telegram moderation/support bot.
 // Uses TG_MOD_BOT_TOKEN when present, otherwise falls back to TELEGRAM_BOT_TOKEN.
 import { createHash } from "node:crypto";
@@ -125,10 +126,10 @@ export async function sendMessage(chatId: string | number, text: string, _replyT
  * text lets us match the saved admin/built-in answers deterministically.
  */
 export async function readScreenshotText(photoBase64: string): Promise<string> {
-  const key = process.env.LOVABLE_API_KEY;
+  const key = process.env.GEMINI_API_KEY || process.env.LOVABLE_API_KEY;
   if (!key) return "";
   try {
-    const res = await fetch(AI_URL, {
+    const res = await aiFetch(AI_URL, {
       method: "POST",
       headers: { "Lovable-API-Key": key, "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -358,7 +359,7 @@ BE STRICT about telling similar errors apart. Different error TEXT = different p
 Answer ONLY with JSON: {"same": true|false, "confidence": 0.0-1.0}`;
 
 
-  const res = await fetch(AI_URL, {
+  const res = await aiFetch(AI_URL, {
     method: "POST",
     headers: { "Lovable-API-Key": key, "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -397,7 +398,7 @@ export async function matchFaqImage(opts: {
   photoBase64: string;
   faq: FaqItem[];
 }): Promise<FaqImageMatch | null> {
-  const key = process.env.LOVABLE_API_KEY;
+  const key = process.env.GEMINI_API_KEY || process.env.LOVABLE_API_KEY;
   if (!key) throw new Error("LOVABLE_API_KEY not configured");
 
   // উত্তর লেখা না থাকলেও ছবি থাকলে ম্যাচ করবে — উত্তর বট নিজেই বানিয়ে নেবে।
@@ -451,7 +452,7 @@ Answer ONLY JSON: {"best": <1-${refs.length} or 0 if none really matches>}`,
     content.push({ type: "image_url", image_url: { url: `data:image/jpeg;base64,${r.imageBase64}` } });
   });
 
-  const res = await fetch(AI_URL, {
+  const res = await aiFetch(AI_URL, {
     method: "POST",
     headers: { "Lovable-API-Key": key, "Content-Type": "application/json" },
     body: JSON.stringify({ model: MODEL, temperature: 0, max_tokens: 40, messages: [{ role: "user", content }] }),
@@ -487,7 +488,7 @@ function isMetaOutput(out: string, original: string): boolean {
 }
 
 export async function humanizeReply(answer: string, userText?: string, avoid?: string[]): Promise<string> {
-  const key = process.env.LOVABLE_API_KEY;
+  const key = process.env.GEMINI_API_KEY || process.env.LOVABLE_API_KEY;
   if (!key) return answer;
   const tones = [
     "বন্ধুর মতো সহজ ও আন্তরিক",
@@ -497,7 +498,7 @@ export async function humanizeReply(answer: string, userText?: string, avoid?: s
   ];
   const tone = tones[Math.floor(Math.random() * tones.length)];
   try {
-    const res = await fetch(AI_URL, {
+    const res = await aiFetch(AI_URL, {
       method: "POST",
       headers: { "Lovable-API-Key": key, "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -622,12 +623,12 @@ async function transcribeAudioStt(base64: string, format: string, key: string): 
 
 /** Transcribe a Telegram voice note / audio clip to text (Bengali friendly). */
 export async function transcribeAudio(base64: string, format: string): Promise<string | null> {
-  const key = process.env.LOVABLE_API_KEY;
+  const key = process.env.GEMINI_API_KEY || process.env.LOVABLE_API_KEY;
   if (!key) return null;
   const stt = await transcribeAudioStt(base64, format, key);
   if (stt) return stt;
   try {
-    const res = await fetch(AI_URL, {
+    const res = await aiFetch(AI_URL, {
       method: "POST",
       headers: { "Lovable-API-Key": key, "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -710,7 +711,7 @@ export async function decide(opts: {
   /** live app rules/rates knowledge block */
   knowledge?: string;
 }): Promise<BotDecision> {
-  const key = process.env.LOVABLE_API_KEY;
+  const key = process.env.GEMINI_API_KEY || process.env.LOVABLE_API_KEY;
   if (!key) throw new Error("LOVABLE_API_KEY not configured");
 
   const withImages = opts.faq.filter((f) => f.imageBase64);
@@ -834,7 +835,7 @@ ${opts.warnCount ? `এই ইউজার ইতিমধ্যে ${opts.warnC
     }
   }
 
-  const res = await fetch(AI_URL, {
+  const res = await aiFetch(AI_URL, {
     method: "POST",
     headers: { "Lovable-API-Key": key, "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -903,14 +904,14 @@ export function stripAdminFiller(reply: string): string {
  * images needed) — e.g. GoodDollar's "We found your twin" duplicate-face page.
  */
 export async function matchBuiltinFaqPhoto(photoBase64: string): Promise<string | null> {
-  const key = process.env.LOVABLE_API_KEY;
+  const key = process.env.GEMINI_API_KEY || process.env.LOVABLE_API_KEY;
   if (!key) return null;
   const { BUILTIN_FAQS } = await import("./telegram-builtin-faq.server");
   const list = BUILTIN_FAQS.map(
     (f, i) => `${i}) ${f.topic} — স্ক্রিনশটে থাকতে পারে: ${f.screenshot.join(" / ")}`,
   ).join("\n");
   try {
-    const res = await fetch(AI_URL, {
+    const res = await aiFetch(AI_URL, {
       method: "POST",
       headers: { "Lovable-API-Key": key, "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -949,10 +950,10 @@ export async function analyzeScreenshotReply(opts: {
   text: string;
   knowledge: string;
 }): Promise<string | null> {
-  const key = process.env.LOVABLE_API_KEY;
+  const key = process.env.GEMINI_API_KEY || process.env.LOVABLE_API_KEY;
   if (!key) return null;
   try {
-    const res = await fetch(AI_URL, {
+    const res = await aiFetch(AI_URL, {
       method: "POST",
       headers: { "Lovable-API-Key": key, "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -1133,7 +1134,7 @@ export async function smartAnswer(opts: {
   /** গ্রুপের পুরোনো একই ধরনের প্রশ্ন-উত্তর। */
   recall?: string;
 }): Promise<string | null> {
-  const key = process.env.LOVABLE_API_KEY;
+  const key = process.env.GEMINI_API_KEY || process.env.LOVABLE_API_KEY;
   if (!key) return null;
   const q = (opts.question || "").trim();
   if (!q) return null;
@@ -1150,7 +1151,7 @@ export async function smartAnswer(opts: {
   ];
   for (const { temperature, force } of passes) {
   try {
-    const res = await fetch(AI_URL, {
+    const res = await aiFetch(AI_URL, {
       method: "POST",
       headers: { "Lovable-API-Key": key, "Content-Type": "application/json" },
       signal: AbortSignal.timeout(25_000),
@@ -1241,7 +1242,7 @@ export async function getMe(): Promise<{ username: string; id: number } | null> 
  * সুন্দর বাংলা মেসেজে সাজিয়ে দেয়।
  */
 export async function adminCompose(instruction: string, targetName?: string | null): Promise<string | null> {
-  const key = process.env.LOVABLE_API_KEY;
+  const key = process.env.GEMINI_API_KEY || process.env.LOVABLE_API_KEY;
   if (!key) return null;
   const q = (instruction || "").trim();
   if (!q) return null;
@@ -1254,7 +1255,7 @@ export async function adminCompose(instruction: string, targetName?: string | nu
     rules = "";
   }
   try {
-    const res = await fetch(AI_URL, {
+    const res = await aiFetch(AI_URL, {
       method: "POST",
       headers: { "Lovable-API-Key": key, "Content-Type": "application/json" },
       body: JSON.stringify({
