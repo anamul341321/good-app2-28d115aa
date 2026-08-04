@@ -126,6 +126,19 @@ export function EarningsStatement({ data, onClose }: { data: StatementData; onCl
           </tbody>
         </table>
 
+        {/* Step-by-step reconciliation */}
+        {(data.bonusSteps?.length || data.miningSteps?.length) ? (
+          <>
+            <p className="text-[12px] font-black mt-4 mb-1">১ক) ধাপে ধাপে হিসাব</p>
+            {data.bonusSteps?.length ? (
+              <StepTable title={`🎉 বোনাস — মোট ${tk(data.bonusTotal ?? 0)}`} steps={data.bonusSteps} total={data.bonusTotal ?? 0} />
+            ) : null}
+            {data.miningSteps?.length ? (
+              <StepTable title={`⛏️ মাইনিং — মোট ${tk(data.miningTotal ?? 0)}`} steps={data.miningSteps} total={data.miningTotal ?? 0} />
+            ) : null}
+          </>
+        ) : null}
+
         {/* Outgoing */}
         {data.outs.length > 0 && (
           <>
