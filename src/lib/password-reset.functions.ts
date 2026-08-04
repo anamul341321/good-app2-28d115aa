@@ -10,40 +10,69 @@ function maskEmail(email: string) {
   return `${l.slice(0, 2)}***@${d}`;
 }
 
+/**
+ * identifier হতে পারে: Gmail/ইমেইল, ১১ ডিজিটের মোবাইল নম্বর, অথবা UID।
+ * Gmail ভেরিফাইড থাকলেই কোড যাবে — নাহলে অ্যাডমিনের সাথে যোগাযোগ করতে বলা হবে।
+ */
 async function findProfile(identifier: string) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const raw = (identifier || "").trim().toLowerCase();
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(raw)) return null;
+  if (!raw) return null;
+  const digits = raw.replace(/\D/g, "");
 
-  const { data } = await supabaseAdmin
-    .from("profiles")
-    .select("id, display_name, email")
-    .ilike("email", raw)
-    .maybeSingle();
-  return data;
+  const select = "id, display_name, email, email_verified";
+
+  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(raw)) {
+    const { data } = await supabaseAdmin
+      .from("profiles")
+      .select(select)
+      .ilike("email", raw)
+      .order("email_verified", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    return data;
+  }
+
+  if (/^01\d{9}$/.test(digits)) {
+    const { data } = await supabaseAdmin
+      .from("profiles")
+      .select(select)
+      .eq("phone_number", digits)
+      .order("email_verified", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    return data;
+  }
+
+  if (/^\d{1,12}$/.test(digits)) {
+    const { data } = await supabaseAdmin
+      .from("profiles")
+      .select(select)
+      .eq("uid_seq", Number(digits))
+      .limit(1)
+      .maybeSingle();
+    return data;
+  }
+
+  return null;
 }
 
 
 export const requestPasswordResetOtp = createServerFn({ method: "POST" })
   .inputValidator((d: { phone: string }) => d)
   .handler(async ({ data }) => {
-    // Gmail কোড সিস্টেম OFF থাকলে ইমেইলে কোড যায় না — তাই এই পথ বন্ধ।
-    const { isEmailOtpEnabled } = await import("./auth-mode.server");
-    if (!(await isEmailOtpEnabled())) {
-      throw new Error("এখন ইমেইল কোড সিস্টেম বন্ধ — পাসওয়ার্ড রিসেটের জন্য অ্যাডমিনের সাথে যোগাযোগ করুন");
-    }
-
     const identifier = (data.phone || "").trim().toLowerCase();
-    if (!identifier) throw new Error("আপনার Gmail/ইমেইল দিন");
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier)) {
-      throw new Error("সঠিক Gmail/ইমেইল ঠিকানা দিন");
-    }
+    if (!identifier) throw new Error("আপনার Gmail / নম্বর / UID দিন");
 
     const prof = await findProfile(identifier);
-    if (!prof) throw new Error("এই ইমেইলে কোনো একাউন্ট পাওয়া যায়নি");
+    if (!prof) throw new Error("এই তথ্য দিয়ে কোনো একাউন্ট পাওয়া যায়নি");
 
-    const email = (prof.email || "").trim();
-    if (!email) throw new Error("এই একাউন্টে ইমেইল সেভ নেই — অ্যাডমিনের সাথে যোগাযোগ করুন");
+    const email = ((prof as any).email || "").trim();
+    if (!email || !(prof as any).email_verified) {
+      throw new Error(
+        "আপনার একাউন্টে Gmail যোগ করা নেই — পাসওয়ার্ড রিসেট করতে অ্যাডমিনের সাথে যোগাযোগ করুন",
+      );
+    }
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 

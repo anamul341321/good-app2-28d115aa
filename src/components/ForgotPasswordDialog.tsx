@@ -66,7 +66,9 @@ export function ForgotPasswordDialog({
           </div>
           <h2 className="text-lg font-black text-navy">পাসওয়ার্ড ভুলে গেছেন?</h2>
           <p className="text-[11px] text-muted-foreground mt-1">
-            আপনার Gmail/ইমেইল দিন — ৬ ডিজিটের কোড ওই ইমেইলে যাবে, কোড দিয়েই নতুন পাসওয়ার্ড সেট করুন।
+            আপনার Gmail / মোবাইল নম্বর / UID দিন — একাউন্টে Gmail যোগ করা থাকলে ওই Gmail-এ ৬ ডিজিটের
+            কোড যাবে, কোড দিয়েই নতুন পাসওয়ার্ড সেট করুন। Gmail যোগ করা না থাকলে অ্যাডমিনের সাথে
+            যোগাযোগ করতে হবে।
           </p>
         </div>
 
@@ -74,28 +76,29 @@ export function ForgotPasswordDialog({
           <div className="space-y-3">
             <div>
               <label className="text-[11px] font-black text-cyan uppercase tracking-wider">
-                Gmail / ইমেইল
+                Gmail / মোবাইল নম্বর / UID
               </label>
               <input
                 value={phone}
                 onChange={(e) => setPhone(e.target.value.trim().toLowerCase())}
-                placeholder="you@gmail.com"
-                type="email"
-                inputMode="email"
-                autoComplete="email"
+                placeholder="you@gmail.com অথবা 01XXXXXXXXX অথবা UID"
+                type="text"
+                autoComplete="username"
+                autoCapitalize="none"
+                spellCheck={false}
                 className="w-full mt-1 px-4 py-3 bg-white border-2 border-border rounded-xl text-sm outline-none focus:border-cyan text-navy"
               />
             </div>
             <button
               onClick={handleSend}
-              disabled={loading || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(phone)}
+              disabled={loading || phone.trim().length < 3}
               className="w-full py-3.5 rounded-xl gradient-cta font-black text-sm flex items-center justify-center gap-2 disabled:opacity-60 btn-press"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
               কোড পাঠান
             </button>
             <p className="text-[10px] text-center text-muted-foreground">
-              ইমেইল ইনবক্সে না পেলে Spam/Promotions ফোল্ডার দেখুন।
+              Gmail ইনবক্সে না পেলে Spam/Promotions ফোল্ডার দেখুন।
             </p>
           </div>
         ) : (

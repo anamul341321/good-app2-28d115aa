@@ -461,7 +461,7 @@ export function AuthPage() {
             {mode === "login" ? (
               <div data-voice="auth.phone">
                 <label className="text-[11px] font-black text-cyan uppercase tracking-wider">
-                  {otpEnabled ? "মোবাইল নম্বর অথবা Gmail" : "মোবাইল নম্বর"}
+                  মোবাইল নম্বর অথবা Gmail
                 </label>
                 <input
                   required value={loginId}
@@ -469,14 +469,14 @@ export function AuthPage() {
                   autoComplete="username"
                   autoCapitalize="none"
                   spellCheck={false}
-                  placeholder={otpEnabled ? "01XXXXXXXXX অথবা yourname@gmail.com" : "01XXXXXXXXX"}
+                  placeholder="01XXXXXXXXX অথবা yourname@gmail.com"
                   className="w-full mt-1 px-4 py-3 bg-white border-2 border-border rounded-xl text-sm outline-none focus:border-cyan text-navy transition"
                 />
-                {otpEnabled && (
-                  <p className="text-[10px] text-muted-foreground mt-1">
-                    যেটা সহজ সেটাই দিন — লগইনের সময় আপনার Gmail-এ ৬ ডিজিটের কোড যাবে।
-                  </p>
-                )}
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  {otpEnabled
+                    ? "যেটা সহজ সেটাই দিন — লগইনের সময় আপনার Gmail-এ ৬ ডিজিটের কোড যাবে।"
+                    : "যেটা সহজ সেটাই দিন — যাদের Gmail যোগ করা আছে, তাদের লগইনে Gmail-এ ৬ ডিজিটের কোড যাবে (2-Step সিকিউরিটি)।"}
+                </p>
               </div>
             ) : (
               <div data-voice="auth.phone">
@@ -578,20 +578,14 @@ export function AuthPage() {
                 >
                   <QrCodeIcon className="w-4 h-4" /> QR কার্ড স্ক্যান করে লগইন
                 </button>
-                {/* Gmail কোড সিস্টেম OFF থাকলে ইমেইলে কোড যায় না, তাই
-                    "পাসওয়ার্ড ভুলে গেছেন?" লুকানো — অ্যাডমিন রিসেট করে দেবেন। */}
-                {otpEnabled ? (
-                  <button
-                    type="button" onClick={() => setForgotOpen(true)}
-                    className="w-full py-2 text-[12px] font-black text-cyan underline underline-offset-4"
-                  >
-                    পাসওয়ার্ড ভুলে গেছেন?
-                  </button>
-                ) : (
-                  <p className="text-[11px] text-center font-bold text-muted-foreground pt-1">
-                    পাসওয়ার্ড ভুলে গেলে অ্যাডমিনের সাথে যোগাযোগ করুন — অ্যাডমিন রিসেট করে দেবেন।
-                  </p>
-                )}
+                {/* যাদের Gmail যোগ করা আছে তারা নিজেই রিসেট করতে পারবে;
+                    Gmail না থাকলে সার্ভার থেকেই অ্যাডমিনের সাথে যোগাযোগের মেসেজ যাবে। */}
+                <button
+                  type="button" onClick={() => setForgotOpen(true)}
+                  className="w-full py-2 text-[12px] font-black text-cyan underline underline-offset-4"
+                >
+                  পাসওয়ার্ড ভুলে গেছেন?
+                </button>
               </>
             )}
           </form>
@@ -651,7 +645,7 @@ export function AuthPage() {
           </div>
         )}
 
-        {forgotOpen && otpEnabled && (
+        {forgotOpen && (
           <ForgotPasswordDialog onClose={() => setForgotOpen(false)} />
         )}
 

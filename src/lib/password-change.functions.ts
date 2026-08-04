@@ -20,20 +20,18 @@ async function loadProfile(userId: string) {
     .eq("id", userId)
     .maybeSingle();
   const email = ((data as any)?.email ?? "").toLowerCase();
-  if (!email || !(data as any)?.email_verified) {
-    throw new Error("আগে Gmail ভেরিফাই করুন — তারপর পাসওয়ার্ড পরিবর্তন করা যাবে");
-  }
-  return { email, name: ((data as any)?.display_name ?? null) as string | null };
+  const verified = !!email && !!(data as any)?.email_verified;
+  return { email, verified, name: ((data as any)?.display_name ?? null) as string | null };
 }
 
 export const requestPasswordChangeOtp = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { isEmailOtpEnabled } = await import("./auth-mode.server");
-    if (!(await isEmailOtpEnabled())) {
+    // Gmail যোগ করা থাকলে (admin switch off থাকলেও) কোড লাগবে — নাহলে কোড ছাড়াই।
+    const prof = await loadProfile(context.userId);
+    if (!prof.verified) {
       return { ok: true as const, skipOtp: true as const, destination: null };
     }
-    const prof = await loadProfile(context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
 
@@ -83,10 +81,10 @@ export const changePasswordWithOtp = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { isEmailOtpEnabled } = await import("./auth-mode.server");
 
-    // Gmail কোড সিস্টেম বন্ধ থাকলে কোড ছাড়াই পাসওয়ার্ড পরিবর্তন
-    if (!(await isEmailOtpEnabled())) {
+    // Gmail যোগ করা না থাকলে কোড ছাড়াই পাসওয়ার্ড পরিবর্তন
+    const prof = await loadProfile(context.userId);
+    if (!prof.verified) {
       const { error: e } = await supabaseAdmin.auth.admin.updateUserById(context.userId, {
         password: data.newPassword,
       });
