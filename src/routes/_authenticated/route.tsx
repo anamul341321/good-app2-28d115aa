@@ -70,6 +70,13 @@ function AuthedLayout() {
 
   const { t } = useLang();
 
+  const { data: appStatus } = useQuery({
+    queryKey: ["app-status"],
+    queryFn: () => getAppStatus(),
+    refetchInterval: 60_000,
+    staleTime: 30_000,
+  });
+
   if (authState === "checking") {
     return (
       <div className="min-h-screen flex items-center justify-center px-4 py-10">
