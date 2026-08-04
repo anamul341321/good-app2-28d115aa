@@ -121,7 +121,12 @@ function UnverifiedPage() {
         <div key={r.id} className="glass rounded-xl p-3 space-y-2">
           <div className="flex gap-3">
             {r.signed_url ? (
-              <img src={r.signed_url} className="w-16 h-16 rounded-lg object-cover border border-border" />
+              <img
+                src={r.signed_url}
+                alt={r.face_label || "face"}
+                onClick={() => setZoom(r.signed_url)}
+                className="w-16 h-16 rounded-lg object-cover border border-border cursor-zoom-in active:scale-95 transition"
+              />
             ) : (
               <div className="w-16 h-16 rounded-lg bg-surface-2 flex items-center justify-center">
                 <AlertTriangle className="w-5 h-5 text-amber" />
