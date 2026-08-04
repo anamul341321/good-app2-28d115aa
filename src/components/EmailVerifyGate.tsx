@@ -61,6 +61,7 @@ export function EmailVerifyGate() {
     else setDeferred(true);
   }, [data, oauthEmail]);
 
+  if (!mode || mode.emailOtpEnabled === false) return null;
   if (!data || data.verified) return null;
 
   async function handleSend(e: React.FormEvent) {
