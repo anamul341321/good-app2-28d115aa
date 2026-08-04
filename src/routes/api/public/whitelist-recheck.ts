@@ -10,11 +10,12 @@ const NEXT_CYCLE_DELAY_MS = 3 * 60 * 1000;
 
 export const Route = createFileRoute("/api/public/whitelist-recheck")({
   server: { handlers: { POST: async ({ request }) => {
-    const expectedApiKey = process.env.SUPABASE_PUBLISHABLE_KEY;
-    if (!expectedApiKey || request.headers.get("apikey") !== expectedApiKey) {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const suppliedSecret = request.headers.get("x-cron-secret");
+    const { data: expectedSecret, error: secretError } = await supabaseAdmin.rpc("get_whitelist_cron_secret");
+    if (secretError || !expectedSecret || !suppliedSecret || suppliedSecret !== expectedSecret) {
       return new Response("forbidden", { status: 401 });
     }
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: activeRows } = await supabaseAdmin.from("whitelist_runs").select("*")
       .eq("status", "running").order("started_at", { ascending: false }).limit(1);
     let run: any = activeRows?.[0] ?? null;

@@ -97,27 +97,16 @@ export const registerWithPhone = createServerFn({ method: "POST" })
 
 // Resolve a scanned UID (uuid) → phone number for QR login
 export const resolveCardUidForLogin = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) => z.object({ uid: z.string().min(8) }).parse(input))
+  .inputValidator((input: unknown) => z.object({
+    uid: z.string().trim().uuid("সঠিক কার্ড QR স্ক্যান করুন"),
+  }).parse(input))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const raw = data.uid.trim();
-    let query = supabaseAdmin.from("profiles").select("phone_number,id").limit(1);
-    if (/^[0-9a-f-]{32,}$/i.test(raw)) {
-      query = query.eq("id", raw);
-    } else {
-      // compact form like ABCDEF012345 — try prefix match on id text
-      const compact = raw.replace(/[^0-9a-f]/gi, "").toLowerCase();
-      const { data: rows } = await supabaseAdmin
-        .from("profiles")
-        .select("phone_number,id")
-        .limit(500);
-      const found = (rows ?? []).find((r: any) =>
-        String(r.id).replace(/-/g, "").toLowerCase().startsWith(compact),
-      );
-      if (!found?.phone_number) throw new Error("এই কার্ডের UID খুঁজে পাওয়া যায়নি");
-      return { phone: found.phone_number as string };
-    }
-    const { data: row } = await query.maybeSingle();
+    const { data: row } = await supabaseAdmin
+      .from("profiles")
+      .select("phone_number")
+      .eq("id", data.uid)
+      .maybeSingle();
     if (!row?.phone_number) throw new Error("এই কার্ডের UID খুঁজে পাওয়া যায়নি");
     return { phone: row.phone_number as string };
   });

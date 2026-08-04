@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { getPublicCardDetails } from "@/lib/profile.functions";
 import { QrCode } from "@/components/QrCode";
-import { User, Sparkles, MapPin, IdCard, BadgeCheck } from "lucide-react";
+import { User, Sparkles, BadgeCheck } from "lucide-react";
 
 export const Route = createFileRoute("/card/$uid")({ component: PublicCardPage });
 
@@ -62,7 +62,6 @@ function PublicCardPage() {
                 {(p as any).kyc_verified && <BadgeCheck className="w-3.5 h-3.5" style={{ color: "#1d9bf0" }} />}
               </p>
               <p><span className="text-slate-500">রেফার:</span> {p.referral_code}</p>
-              <p><span className="text-slate-500">জেলা:</span> {p.district ?? "-"}</p>
               <p><span className="text-slate-500">যোগদান:</span> {new Date(p.created_at).toLocaleDateString("bn-BD")}</p>
               <p className="mono-num tracking-widest text-[11px] pt-1 text-rose-700">
                  UID {uidCompact}
@@ -76,35 +75,10 @@ function PublicCardPage() {
           </div>
         </div>
 
-        <div className="rounded-3xl p-4 bg-white/80 border border-white shadow-xl space-y-3">
-          <div className="flex items-center gap-2 text-slate-950 font-black">
-            <IdCard className="w-4 h-4 text-rose-600" /> পরিচয় ও ঠিকানা
-          </div>
-          <div className="grid gap-2 text-[12px] font-bold text-slate-800">
-            <Info label="NID" value={p.nid_number ?? "-"} />
-            <Info label="পিতার নাম" value={p.father_name ?? "-"} />
-            <Info label="মাতার নাম" value={p.mother_name ?? "-"} />
-            <Info label="জন্মতারিখ" value={p.date_of_birth ? new Date(p.date_of_birth).toLocaleDateString("bn-BD") : "-"} />
-            <Info label="গ্রাম/এলাকা" value={p.village_area ?? "-"} />
-            <Info label="ডাকঘর" value={p.post_office ?? "-"} />
-            <Info label="থানা/উপজেলা" value={p.thana_upazila ?? "-"} />
-            <Info label="জেলা" value={p.district ?? "-"} />
-          </div>
-          <div className="rounded-2xl p-3 bg-rose-50 border border-rose-100">
-            <p className="text-[11px] font-black text-rose-600 flex items-center gap-1"><MapPin className="w-3.5 h-3.5" /> সম্পূর্ণ ঠিকানা</p>
-            <p className="text-[12px] font-bold text-slate-900 mt-1 leading-relaxed">{p.full_address ?? "ঠিকানা দেওয়া হয়নি"}</p>
-          </div>
-        </div>
-
-
         <div className="text-center text-slate-600 text-[11px] font-bold flex items-center justify-center gap-1">
           <Sparkles className="w-3 h-3" /> good-app · সমাজের সুবিধাবঞ্চিতদের পাশে
         </div>
       </div>
     </div>
   );
-}
-
-function Info({ label, value }: { label: string; value: string }) {
-  return <p className="grid grid-cols-[92px_1fr] gap-2"><span className="text-slate-500">{label}</span><b className="text-slate-950 break-words">{value}</b></p>;
 }
