@@ -127,19 +127,22 @@ export async function sendMessage(chatId: string | number, text: string, _replyT
 
   // ---- ভয়েস উত্তর: টেক্সট পাঠানোর পরপরই একই উত্তরটি মেয়ে-কণ্ঠে বাংলায় ----
   // অ্যাডমিন প্যানেলের স্যুইচ অনুযায়ী: ভয়েস + লেখা, নাকি শুধু ভয়েস।
-  if (voiceOn && full.replace(/<[^>]+>/g, "").trim().length >= 15) {
-    try {
-      const { speakBengali } = await import("./tts-free.server");
-      const wav = await speakBengali(full);
-      if (wav) {
-        await sendVoice(chatId, wav, "reply.wav", undefined, _replyTo);
-      } else if (!textOn) {
-        // ভয়েস বানানো গেল না — তখন অন্তত লেখাটা যাবে, নাহলে ইউজার কিছুই পাবে না।
-        await sendTextOnly(chatId, full, _replyTo);
+  if (voiceOn) {
+    const plainLen = full.replace(/<[^>]+>/g, "").trim().length;
+    // শুধু-ভয়েস মোডে ছোট মেসেজও উত্তর পাবে; ভয়েস+লেখা মোডে খুব ছোট মেসেজে শুধু লেখা।
+    const minLen = textOn ? 15 : 1;
+    if (plainLen >= minLen) {
+      try {
+        const { speakBengali } = await import("./tts-free.server");
+        const wav = await speakBengali(full);
+        if (wav) {
+          await sendVoice(chatId, wav, "reply.wav", undefined, _replyTo);
+        }
+        // ভয়েস বানানো গেল না আর "ভয়েসের সাথে লেখাও" অফ থাকলে টগলকে সম্মান করে চুপ থাকবে,
+        // নাহলে fallback হিসেবে উপরের sendTextOnly লেখাটা ইতিমধ্যে পাঠিয়ে দিয়েছে।
+      } catch (e) {
+        console.error("[tg] voice reply failed", e);
       }
-    } catch (e) {
-      console.error("[tg] voice reply failed", e);
-      if (!textOn) await sendTextOnly(chatId, full, _replyTo);
     }
   }
   return last;
@@ -170,7 +173,7 @@ export async function sendPhotoUrl(
 
 
 /**
- * ভয়েস সেটিং: অ্যাডমিন প্যানেলের স্যুইচ (৩০ সেকেন্ড ক্যাশ)।
+ * ভয়েস সেটিং: অ্যাডমিন প্যানেলের স্যুইচ (৫ সেকেন্ড ক্যাশ)।
  * voice_reply_enabled → ভয়েস দেবে কি না। voice_text_enabled → ভয়েসের সাথে
  * লেখাও যাবে কি না (অফ করলে শুধু ভয়েস)। ENV BOT_VOICE_REPLY=off দিলে ভয়েস বন্ধ।
  */
@@ -179,7 +182,7 @@ let voicePrefCache: { at: number; voice: boolean; text: boolean } | null = null;
 export async function voicePrefs(): Promise<{ voice: boolean; text: boolean }> {
   const env = String(process.env.BOT_VOICE_REPLY ?? "").trim().toLowerCase();
   const envOff = env === "off" || env === "0" || env === "false";
-  if (voicePrefCache && Date.now() - voicePrefCache.at < 30_000) {
+  if (voicePrefCache && Date.now() - voicePrefCache.at < 5_000) {
     return { voice: !envOff && voicePrefCache.voice, text: voicePrefCache.text };
   }
   let voice = true;
