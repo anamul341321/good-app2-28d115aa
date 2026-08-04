@@ -34,10 +34,15 @@ export const requestWithdraw = createServerFn({ method: "POST" })
       throw new Error("🔐 উইথড্র করতে আগে KYC করতে হবে — হোম পেজের 'KYC করুন' বাটনে চাপ দিয়ে টেলিগ্রাম বট Start করুন (১ মিনিটের কাজ)।");
     }
 
-    // পেমেন্ট নিরাপত্তার জন্য Gmail ভেরিফিকেশন দরকার
-    const emailOk = !!(kycProf as any)?.email_verified && !!(kycProf as any)?.email;
-    if (!emailOk) {
-      throw new Error("📧 উইথড্র চালু করতে আগে Gmail ভেরিফাই করুন — উপরের লাল বারে চাপ দিয়ে Gmail-এ কোড নিয়ে ভেরিফাই করে নিন (১ মিনিটের কাজ)।");
+    // Gmail ভেরিফিকেশন শুধু তখনই বাধ্যতামূলক, যখন admin panel থেকে
+    // Gmail কোড (OTP) সিস্টেম ON করা আছে। OFF থাকলে Gmail অপশনাল —
+    // KYC verified হলেই উইথড্র করা যাবে।
+    const { isEmailOtpEnabled } = await import("./auth-mode.server");
+    if (await isEmailOtpEnabled()) {
+      const emailOk = !!(kycProf as any)?.email_verified && !!(kycProf as any)?.email;
+      if (!emailOk) {
+        throw new Error("📧 উইথড্র চালু করতে আগে Gmail ভেরিফাই করুন — উপরের লাল বারে চাপ দিয়ে Gmail-এ কোড নিয়ে ভেরিফাই করে নিন (১ মিনিটের কাজ)।");
+      }
     }
 
 
