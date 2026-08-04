@@ -14,7 +14,8 @@ const GEMINI_URL =
   "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 
 /** Free-tier friendly Gemini model; override with GEMINI_MODEL. */
-const GEMINI_DEFAULT_MODEL = "gemini-2.5-flash";
+const GEMINI_DEFAULT_MODEL = "gemini-3.6-flash";
+const GEMINI_FALLBACK_MODEL = "gemini-3.1-flash-lite";
 
 export function hasFreeAi(): boolean {
   return Boolean(process.env.GEMINI_API_KEY);
@@ -43,33 +44,44 @@ export async function aiFetch(url: string, init: RequestInit): Promise<Response>
     body = {};
   }
 
-  const model = process.env.GEMINI_MODEL || GEMINI_DEFAULT_MODEL;
-  const payload: any = { ...body, model };
-  // Gemini's OpenAI layer rejects unknown OpenAI-only knobs.
-  delete payload.service_tier;
-  delete payload.reasoning_effort;
-  if (payload.max_tokens != null) {
-    payload.max_completion_tokens = payload.max_tokens;
-    delete payload.max_tokens;
-  }
+  const primary = process.env.GEMINI_MODEL || GEMINI_DEFAULT_MODEL;
 
-  const res = await fetch(GEMINI_URL, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${geminiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
+  const send = async (model: string) => {
+    const payload: any = { ...body, model };
+    // Gemini 3.x (thinking models) reject these OpenAI-only knobs with a 400.
+    delete payload.service_tier;
+    delete payload.reasoning_effort;
+    delete payload.temperature;
+    delete payload.top_p;
+    delete payload.presence_penalty;
+    delete payload.frequency_penalty;
+    return fetch(GEMINI_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${geminiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+  };
+
+  let res = await send(primary);
+
+  // Free-tier per-model rate limit → try the lighter free model before paying.
+  if (res.status === 429 && primary !== GEMINI_FALLBACK_MODEL) {
+    console.warn("[ai-free] gemini rate limited, trying", GEMINI_FALLBACK_MODEL);
+    res = await send(GEMINI_FALLBACK_MODEL);
+  }
 
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     console.error("[ai-free] gemini failed", res.status, text.slice(0, 300));
-    // Free quota exhausted / transient error → try the paid gateway so the bot
-    // still answers instead of going silent.
+    // Free quota exhausted / transient error → fall back to the paid gateway so
+    // the bot still answers instead of going silent.
     if (process.env.LOVABLE_API_KEY) return fetch(url, init);
     return new Response(text || "gemini error", { status: res.status });
   }
 
   return res;
 }
+
