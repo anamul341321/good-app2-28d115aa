@@ -74,6 +74,7 @@ function BonusSettings() {
         reverify_bonus: Number(rv),
         referrer_bonus: Number(rf),
         first_verify_mining_mode: fvMode,
+        email_otp_enabled: otpMode,
         promo_active: promoActive,
         promo_title: promoTitle || null,
         promo_start_at: promoStart ? new Date(promoStart).toISOString() : null,
