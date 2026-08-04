@@ -215,3 +215,29 @@ function Sum({ label, value, tone }: { label: string; value: string; tone: strin
     </div>
   );
 }
+
+function StepTable({ title, steps, total }: { title: string; steps: StatementStep[]; total: number }) {
+  return (
+    <div className="mt-2">
+      <p className="text-[11px] font-black mb-1">{title}</p>
+      <table className="w-full text-[10.5px] border-collapse">
+        <tbody>
+          {steps.map((s, i) => (
+            <tr key={s.key}>
+              <td className="p-1.5 border border-black/15 w-6 text-center">{i + 1}</td>
+              <td className="p-1.5 border border-black/15">
+                {s.label}
+                {s.formula ? <span className="block text-black/55">{s.formula}</span> : null}
+              </td>
+              <td className="p-1.5 border border-black/15 text-right font-bold w-24">{tk(s.amount)}</td>
+            </tr>
+          ))}
+          <tr className="bg-black/5 font-black">
+            <td className="p-1.5 border border-black/15" colSpan={2}>মোট</td>
+            <td className="p-1.5 border border-black/15 text-right">{tk(total)}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  );
+}
