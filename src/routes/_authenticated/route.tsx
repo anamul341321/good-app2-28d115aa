@@ -14,6 +14,9 @@ import { SlotResetApproval } from "@/components/SlotResetApproval";
 import { EmailVerifyGate } from "@/components/EmailVerifyGate";
 import { ProfileCompleteGate } from "@/components/ProfileCompleteGate";
 import { useDeviceGuard } from "@/hooks/useDeviceGuard";
+import { getAppStatus } from "@/lib/app-status.functions";
+import { MaintenanceScreen } from "@/components/MaintenanceGate";
+import { UserNoticeBanner } from "@/components/UserNoticeBanner";
 
 
 
@@ -102,6 +105,8 @@ function AuthedLayout() {
     );
   }
 
+  if (appStatus?.maintenance) return <MaintenanceScreen message={appStatus.message} />;
+
   return (
     <div className="min-h-screen pb-24">
 
@@ -151,6 +156,7 @@ function AuthedLayout() {
       <SlotResetApproval />
       <ProfileCompleteGate />
       <EmailVerifyGate />
+      <UserNoticeBanner />
 
 
     </div>
