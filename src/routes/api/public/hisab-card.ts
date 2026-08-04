@@ -6,25 +6,8 @@
  * short-lived, so nobody can read someone else's hisab by guessing a UID.
  */
 import { createFileRoute } from "@tanstack/react-router";
-import { createHmac, timingSafeEqual } from "node:crypto";
-
-function secret(): string {
-  return (
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    process.env.TG_MOD_BOT_TOKEN ||
-    process.env.TELEGRAM_BOT_TOKEN ||
-    "good-app-hisab"
-  );
-}
-
-/** Signature valid for the current and previous hour bucket. */
-export function signHisab(uid: string, bucket: number): string {
-  return createHmac("sha256", secret()).update(`hisab:${uid}:${bucket}`).digest("base64url");
-}
-
-export function currentHisabBucket(): number {
-  return Math.floor(Date.now() / 3_600_000);
-}
+import { timingSafeEqual } from "node:crypto";
+import { currentHisabBucket, signHisab } from "@/lib/telegram-hisab.server";
 
 function verify(uid: string, token: string): boolean {
   const now = currentHisabBucket();
@@ -34,6 +17,7 @@ function verify(uid: string, token: string): boolean {
     return want.length === got.length && timingSafeEqual(want, got);
   });
 }
+
 
 const esc = (s: unknown) =>
   String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]!));
