@@ -117,7 +117,25 @@ export async function sendMessage(chatId: string | number, text: string, _replyT
     }
     last = sent;
   }
+  // ---- ভয়েস উত্তর: টেক্সট পাঠানোর পরপরই একই উত্তরটি মেয়ে-কণ্ঠে বাংলায় ----
+  // টেক্সট আগে যায় (তাই দ্রুত মনে হয়), ভয়েসটা তার পরে যোগ হয়। ফ্রি Gemini
+  // TTS ব্যবহার করা হয়, তাই ক্রেডিট কাটে না; কী না থাকলে চুপচাপ শুধু টেক্সট।
+  if (voiceRepliesEnabled() && full.replace(/<[^>]+>/g, "").trim().length >= 15) {
+    try {
+      const { speakBengali } = await import("./tts-free.server");
+      const wav = await speakBengali(full);
+      if (wav) await sendVoice(chatId, wav, "reply.wav", undefined, _replyTo);
+    } catch (e) {
+      console.error("[tg] voice reply failed", e);
+    }
+  }
   return last;
+}
+
+/** ভয়েস উত্তর বন্ধ করতে চাইলে BOT_VOICE_REPLY=off সেট করলেই হবে। */
+function voiceRepliesEnabled(): boolean {
+  const v = String(process.env.BOT_VOICE_REPLY ?? "").trim().toLowerCase();
+  return !(v === "off" || v === "0" || v === "false");
 }
 
 
@@ -184,17 +202,34 @@ export async function sendVoice(
 ) {
   const token = getBotToken();
   const isOgg = /\.(ogg|oga|opus)$/i.test(filename);
-  const form = new FormData();
-  form.append("chat_id", String(chatId));
-  if (replyTo) { form.append("reply_to_message_id", String(replyTo)); form.append("allow_sending_without_reply", "true"); }
-  form.append("voice", new Blob([bytes as unknown as BlobPart], {
-    type: isOgg ? "audio/ogg" : "audio/mpeg",
-  }), isOgg ? filename : "voice.ogg");
-  try {
-    const res = await fetch(`https://api.telegram.org/bot${token}/sendVoice`, { method: "POST", body: form });
+  const isWav = /\.wav$/i.test(filename);
+  const mime = isOgg ? "audio/ogg" : isWav ? "audio/wav" : "audio/mpeg";
+  const name = isOgg ? filename : isWav ? "voice.wav" : "voice.ogg";
+  const build = () => {
+    const form = new FormData();
+    form.append("chat_id", String(chatId));
+    if (replyTo) {
+      form.append("reply_to_message_id", String(replyTo));
+      form.append("allow_sending_without_reply", "true");
+    }
+    return form;
+  };
+  const post = async (method: string, field: string) => {
+    const form = build();
+    form.append(field, new Blob([bytes as unknown as BlobPart], { type: mime }), name);
+    const res = await fetch(`https://api.telegram.org/bot${token}/${method}`, { method: "POST", body: form });
     const json: any = await res.json();
-    if (!json?.ok) { console.error("[tg] sendVoice failed", json?.description); return null; }
+    if (!json?.ok) {
+      console.error(`[tg] ${method} failed`, json?.description);
+      return null;
+    }
     return json.result;
+  };
+  try {
+    const voice = await post("sendVoice", "voice");
+    if (voice) return voice;
+    // WAV-এর ক্ষেত্রে Telegram মাঝে মাঝে voice নেয় না — তখন audio হিসেবে যাবে।
+    return await post("sendAudio", "audio");
   } catch (e) {
     console.error("[tg] sendVoice error", e);
     return null;

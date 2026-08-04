@@ -55,6 +55,11 @@ async function allKeys(): Promise<PoolKey[]> {
   return out;
 }
 
+/** Shared key pool (DB keys first, then env keys) — used by the voice layer too. */
+export async function freeKeyPool(): Promise<PoolKey[]> {
+  return allKeys();
+}
+
 export async function freeAiKeyCount(): Promise<number> {
   return (await allKeys()).length;
 }
