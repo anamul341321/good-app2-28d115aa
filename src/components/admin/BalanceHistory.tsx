@@ -196,7 +196,7 @@ export function BalanceHistory({ mining, income, withdrawals, debts, profile }: 
           <EarningsStatement
             data={{
               name: profile?.display_name ?? "ইউজার",
-              uid: profile?.uid_seq ?? null,
+              uid: profile?.uid ?? profile?.uid_seq ?? null,
               phone: profile?.phone_number ?? null,
               balance,
               totalIn,
