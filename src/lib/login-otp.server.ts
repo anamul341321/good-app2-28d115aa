@@ -6,10 +6,12 @@ type LoginData = { identifier: string; password: string };
 type Account = {
   id: string;
   authEmail: string;
+  authEmails: string[];
   contactEmail: string;
   emailVerified: boolean;
   displayName: string | null;
 };
+
 
 function maskEmail(email: string) {
   const [local, domain] = email.split("@");
@@ -51,6 +53,7 @@ async function resolveAccount(identifier: string): Promise<Account> {
       return {
         id: "",
         authEmail: phoneToEmail(digits),
+        authEmails: [phoneToEmail(digits)],
         contactEmail: "",
         emailVerified: false,
         displayName: null,
@@ -70,23 +73,29 @@ async function resolveAccount(identifier: string): Promise<Account> {
 
   if (!profile) throw new Error("এই নম্বর/Gmail-এ কোনো একাউন্ট পাওয়া যায়নি");
 
-  let authEmail = profile.phone_number ? phoneToEmail(profile.phone_number) : "";
-  if (!authEmail) {
-    const { data } = await supabaseAdmin.auth.admin.getUserById(profile.id);
-    authEmail = data?.user?.email ?? "";
-  }
-  if (!authEmail) throw new Error("এই একাউন্টে লগইন তথ্য পাওয়া যায়নি — অ্যাডমিনের সাথে যোগাযোগ করুন");
+  // একাউন্টে যে যে ইমেইল দিয়ে auth হতে পারে — সবগুলো চেষ্টা করব
+  const candidates: string[] = [];
+  if (profile.phone_number) candidates.push(phoneToEmail(profile.phone_number));
+  const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(profile.id);
+  const realAuthEmail = (authUser?.user?.email ?? "").toLowerCase();
+  if (realAuthEmail && !candidates.includes(realAuthEmail)) candidates.push(realAuthEmail);
+  const profileEmail = (profile.email ?? "").toLowerCase();
+  if (profileEmail && !candidates.includes(profileEmail)) candidates.push(profileEmail);
+
+  if (candidates.length === 0)
+    throw new Error("এই একাউন্টে লগইন তথ্য পাওয়া যায়নি — অ্যাডমিনের সাথে যোগাযোগ করুন");
 
   return {
     id: profile.id,
-    authEmail,
-    contactEmail: (profile.email ?? "").toLowerCase(),
+    authEmail: candidates[0]!,
+    authEmails: candidates,
+    contactEmail: profileEmail,
     emailVerified: Boolean(profile.email_verified),
     displayName: profile.display_name ?? null,
   };
 }
 
-async function verifyPassword(authEmail: string, password: string) {
+async function signInWith(authEmail: string, password: string) {
   const { createClient } = await import("@supabase/supabase-js");
   const key = process.env["SUPABASE_PUBLISHABLE_KEY"];
   const url = process.env["SUPABASE_URL"];
@@ -106,9 +115,18 @@ async function verifyPassword(authEmail: string, password: string) {
     },
   });
   const { data, error } = await client.auth.signInWithPassword({ email: authEmail, password });
-  if (error || !data.session) throw new Error("ভুল নম্বর/Gmail অথবা পাসওয়ার্ড");
+  if (error || !data.session) return null;
   return { access_token: data.session.access_token, refresh_token: data.session.refresh_token };
 }
+
+async function verifyPassword(account: Account, password: string) {
+  for (const email of account.authEmails) {
+    const session = await signInWith(email, password);
+    if (session) return session;
+  }
+  throw new Error("ভুল নম্বর/Gmail অথবা পাসওয়ার্ড");
+}
+
 
 async function startLoginOtpWork(data: LoginData) {
   const { isEmailOtpEnabled } = await import("./auth-mode.server");
@@ -117,13 +135,13 @@ async function startLoginOtpWork(data: LoginData) {
 
   // Admin switch off → আগের মতো শুধু নম্বর/পাসওয়ার্ড দিয়েই লগইন
   if (!otpEnabled) {
-    const session = await verifyPassword(account.authEmail, data.password);
+    const session = await verifyPassword(account, data.password);
     return { ok: true as const, needOtp: false as const, session };
   }
 
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const [session, recentResult] = await Promise.all([
-    verifyPassword(account.authEmail, data.password),
+    verifyPassword(account, data.password),
     account.id
       ? supabaseAdmin.from("email_verify_otps").select("created_at").eq("user_id", account.id)
           .is("used_at", null).order("created_at", { ascending: false }).limit(1).maybeSingle()
@@ -171,7 +189,7 @@ async function completeLoginOtpWork(data: LoginData & { code: string }) {
   const [otpResult, sessionResult] = await Promise.all([
     supabaseAdmin.from("email_verify_otps").select("id, code, attempts, expires_at")
       .eq("user_id", account.id).is("used_at", null).order("created_at", { ascending: false }).limit(1).maybeSingle(),
-    verifyPassword(account.authEmail, data.password).catch((error: unknown) => error),
+    verifyPassword(account, data.password).catch((error: unknown) => error),
   ]);
   if (otpResult.error) throw new Error("কোড যাচাই করা যায়নি — আবার চেষ্টা করুন");
   const otp = otpResult.data;
