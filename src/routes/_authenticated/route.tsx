@@ -17,6 +17,9 @@ import { useDeviceGuard } from "@/hooks/useDeviceGuard";
 import { getAppStatus } from "@/lib/app-status.functions";
 import { MaintenanceScreen } from "@/components/MaintenanceGate";
 import { UserNoticeBanner } from "@/components/UserNoticeBanner";
+import { DeviceUnlockGate } from "@/components/DeviceUnlockGate";
+import { DeviceApprovalPrompt } from "@/components/DeviceApprovalPrompt";
+
 
 
 
@@ -61,10 +64,8 @@ function AuthedLayout() {
   }, [router]);
 
 
-  useDeviceGuard(() => {
-    setAuthState("unauthenticated");
-    router.navigate({ to: "/auth", replace: true });
-  });
+  const deviceRevoked = useDeviceGuard();
+
 
   const logout = async () => {
     await supabase.auth.signOut();
@@ -104,6 +105,9 @@ function AuthedLayout() {
       </div>
     );
   }
+
+  if (deviceRevoked) return <DeviceUnlockGate />;
+
 
   if (appStatus?.maintenance) return <MaintenanceScreen message={appStatus.message} />;
 
@@ -154,6 +158,8 @@ function AuthedLayout() {
       <InstallPrompt />
       <LanguagePicker />
       <SlotResetApproval />
+      <DeviceApprovalPrompt />
+
       <ProfileCompleteGate />
       <EmailVerifyGate />
       <UserNoticeBanner />
