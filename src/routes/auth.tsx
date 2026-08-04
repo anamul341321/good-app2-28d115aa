@@ -291,7 +291,9 @@ export function AuthPage() {
   }
 
   async function doGoogle() {
-    setLoading(true);
+    if (googleLoading) return;
+    setGoogleLoading(true);
+    let redirecting = false;
     try {
       // "লগইন" নাকি "সাইন-আপ" — Google থেকে ফেরার পর গেট এটা দেখে সিদ্ধান্ত নেবে
       try {
@@ -304,14 +306,19 @@ export function AuthPage() {
         redirect_uri: window.location.origin,
       });
       if (res?.error) throw new Error(res.error.message ?? "Google লগইন করা যায়নি");
-      if (res?.redirected) return;
+      if (res?.redirected) {
+        // ব্রাউজার Google-এ যাচ্ছে — স্পিনার চালু রাখি
+        redirecting = true;
+        return;
+      }
       nav({ to: "/home" });
     } catch (e: any) {
       toast.error(e?.message ?? "Google লগইন করা যায়নি");
     } finally {
-      setLoading(false);
+      if (!redirecting) setGoogleLoading(false);
     }
   }
+
 
 
   async function doSignup() {
