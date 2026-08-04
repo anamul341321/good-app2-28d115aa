@@ -165,6 +165,11 @@ export const getEarnings = createServerFn({ method: "GET" })
         canClaim: pendingClaim >= 0.5 && (!nextClaimAt || new Date(nextClaimAt).getTime() <= Date.now()),
       },
       isActive: !!(mining as any)?.is_active,
+      profile: {
+        name: (profile as any)?.display_name ?? "ইউজার",
+        uid: (profile as any)?.uid_seq ?? null,
+        phone: (profile as any)?.phone_number ?? null,
+      },
       rows,
     };
   });
