@@ -266,6 +266,14 @@ export function MiningCounter({
             💰 {claimable}৳ ক্লেইম ও উইথড্র
           </button>
         )}
+
+        <button
+          onClick={() => navigate({ to: "/earnings" })}
+          className="mt-2 w-full rounded-2xl py-3 font-black text-[12px] text-white flex items-center justify-center gap-2 btn-press border border-white/25 bg-white/10 backdrop-blur-md"
+        >
+          📜 আয়ের হিসাব ও মাইনিং ক্লেইম দেখুন
+        </button>
+
       </div>
     </div>
   );
