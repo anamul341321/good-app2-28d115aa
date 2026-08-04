@@ -355,6 +355,7 @@ export const adminUserDetail = createServerFn({ method: "POST" })
         recharges: rechargesAll.data ?? [],
         transfersIn: transfersIn.data ?? [],
         transfersOut: transfersOut.data ?? [],
+        miningClaims: miningClaimsAll.data ?? [],
         totals: {
           vouchersClaimed: (vouchersAll.data ?? []).filter((v: any) => v.status === "claimed").reduce((s: number, v: any) => s + Number(v.amount), 0),
           adminCreditsPositive: (creditsAll.data ?? []).filter((c: any) => Number(c.amount) > 0).reduce((s: number, c: any) => s + Number(c.amount), 0),
@@ -363,10 +364,13 @@ export const adminUserDetail = createServerFn({ method: "POST" })
           transfersInTotal: (transfersIn.data ?? []).reduce((s: number, t: any) => s + Number(t.amount), 0),
           transfersOutTotal: (transfersOut.data ?? []).reduce((s: number, t: any) => s + Number(t.amount), 0),
           withdrawalsPaid: (withdrawals.data ?? []).filter((w: any) => w.status === "paid").reduce((s: number, w: any) => s + Number(w.amount), 0),
+          referralAccrued: Number((mining.data as any)?.referral_accrued ?? 0),
+          miningClaimedTotal: (miningClaimsAll.data ?? []).reduce((s: number, c: any) => s + Number(c.amount ?? 0), 0),
         },
       },
     };
   });
+
 
 
 export const adminAddDebt = createServerFn({ method: "POST" })
