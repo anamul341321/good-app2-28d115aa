@@ -5,6 +5,7 @@ const tk = (n: number) => `${n.toFixed(2)}৳`;
 const bn = (s: string) => new Date(s).toLocaleString("bn-BD");
 
 export type StatementRow = { id: string; label: string; note?: string | null; amount: number; created_at: string };
+export type StatementStep = { key: string; label: string; formula?: string | null; amount: number };
 export type StatementData = {
   name: string;
   uid?: string | number | null;
@@ -16,6 +17,10 @@ export type StatementData = {
   sources: { key: string; label: string; amount: number }[];
   outs: { label: string; amount: number }[];
   rows: StatementRow[];
+  bonusSteps?: StatementStep[];
+  bonusTotal?: number;
+  miningSteps?: StatementStep[];
+  miningTotal?: number;
 };
 
 /**
@@ -121,6 +126,19 @@ export function EarningsStatement({ data, onClose }: { data: StatementData; onCl
           </tbody>
         </table>
 
+        {/* Step-by-step reconciliation */}
+        {(data.bonusSteps?.length || data.miningSteps?.length) ? (
+          <>
+            <p className="text-[12px] font-black mt-4 mb-1">১ক) ধাপে ধাপে হিসাব</p>
+            {data.bonusSteps?.length ? (
+              <StepTable title={`🎉 বোনাস — মোট ${tk(data.bonusTotal ?? 0)}`} steps={data.bonusSteps} total={data.bonusTotal ?? 0} />
+            ) : null}
+            {data.miningSteps?.length ? (
+              <StepTable title={`⛏️ মাইনিং — মোট ${tk(data.miningTotal ?? 0)}`} steps={data.miningSteps} total={data.miningTotal ?? 0} />
+            ) : null}
+          </>
+        ) : null}
+
         {/* Outgoing */}
         {data.outs.length > 0 && (
           <>
@@ -194,6 +212,32 @@ function Sum({ label, value, tone }: { label: string; value: string; tone: strin
     <div className="border-2 rounded-xl px-2 py-2 text-center" style={{ borderColor: tone }}>
       <p className="text-[9px] uppercase tracking-wider text-black/55 font-bold">{label}</p>
       <p className="text-[14px] font-black" style={{ color: tone }}>{value}</p>
+    </div>
+  );
+}
+
+function StepTable({ title, steps, total }: { title: string; steps: StatementStep[]; total: number }) {
+  return (
+    <div className="mt-2">
+      <p className="text-[11px] font-black mb-1">{title}</p>
+      <table className="w-full text-[10.5px] border-collapse">
+        <tbody>
+          {steps.map((s, i) => (
+            <tr key={s.key}>
+              <td className="p-1.5 border border-black/15 w-6 text-center">{i + 1}</td>
+              <td className="p-1.5 border border-black/15">
+                {s.label}
+                {s.formula ? <span className="block text-black/55">{s.formula}</span> : null}
+              </td>
+              <td className="p-1.5 border border-black/15 text-right font-bold w-24">{tk(s.amount)}</td>
+            </tr>
+          ))}
+          <tr className="bg-black/5 font-black">
+            <td className="p-1.5 border border-black/15" colSpan={2}>মোট</td>
+            <td className="p-1.5 border border-black/15 text-right">{tk(total)}</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   );
 }

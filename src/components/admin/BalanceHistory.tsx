@@ -10,8 +10,8 @@ type Source = { key: string; label: string; amount: number; color: string };
  * Admin-facing "ব্যালেন্স হিসাব" — plain-Bengali explanation of where a user's
  * money came from, where it went, and (per withdrawal) which source funded it.
  */
-export function BalanceHistory({ mining, income, withdrawals, debts, profile }: {
-  mining: any; income: any; withdrawals: any[]; debts: any[]; profile?: any;
+export function BalanceHistory({ mining, income, withdrawals, debts, profile, breakdown }: {
+  mining: any; income: any; withdrawals: any[]; debts: any[]; profile?: any; breakdown?: any;
 }) {
   const [showSheet, setShowSheet] = useState(false);
   if (!income) return null;
@@ -205,6 +205,10 @@ export function BalanceHistory({ mining, income, withdrawals, debts, profile }: 
               sources: sources.map((s) => ({ key: s.key, label: s.label, amount: s.amount })),
               outs,
               rows: ledgerRows.map((r) => ({ id: r.id, label: r.label, note: r.note, amount: r.amt, created_at: r.created_at })),
+              bonusSteps: breakdown?.bonus?.steps,
+              bonusTotal: breakdown?.bonus?.total,
+              miningSteps: breakdown?.mining?.steps,
+              miningTotal: breakdown?.mining?.total,
             }}
             onClose={() => setShowSheet(false)}
           />

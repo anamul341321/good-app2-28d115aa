@@ -3,8 +3,9 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { claimMiningEarnings, getEarnings } from "@/lib/earnings.functions";
 import { EarningsStatement } from "@/components/EarningsStatement";
+import { EarningsBreakdown } from "@/components/EarningsBreakdown";
 import { toast } from "sonner";
-import { Loader2, Coins, Gift, Users, PieChart, HandCoins, History, FileText } from "lucide-react";
+import { Loader2, Coins, Gift, Users, PieChart, HandCoins, History, FileText, ListOrdered } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/earnings")({
   ssr: false,
@@ -147,6 +148,17 @@ function EarningsPage() {
         </p>
       </div>
 
+      {/* Step-by-step reconciliation */}
+      {data.breakdown && (
+        <div className="premium-panel rounded-3xl p-5 space-y-3">
+          <div className="flex items-center gap-2">
+            <ListOrdered className="w-4 h-4 text-amber" />
+            <p className="text-[10px] uppercase tracking-widest font-black text-muted-foreground">ধাপে ধাপে হিসাব — কোন টাকা কিভাবে এলো</p>
+          </div>
+          <EarningsBreakdown data={data.breakdown as any} />
+        </div>
+      )}
+
       {/* Printable statement */}
       <div className="premium-panel rounded-3xl p-5 space-y-3 print:shadow-none">
         <div className="flex items-center gap-2 print:hidden">
@@ -175,6 +187,10 @@ function EarningsPage() {
               sources: sources.map((s) => ({ key: s.key, label: s.label, amount: s.amount })),
               outs,
               rows: data.rows.map((r) => ({ id: r.id, label: r.label, note: r.note, amount: r.amount, created_at: r.created_at })),
+              bonusSteps: (data.breakdown as any)?.bonus?.steps,
+              bonusTotal: (data.breakdown as any)?.bonus?.total,
+              miningSteps: (data.breakdown as any)?.mining?.steps,
+              miningTotal: (data.breakdown as any)?.mining?.total,
             }}
             onClose={() => setShowSheet(false)}
           />

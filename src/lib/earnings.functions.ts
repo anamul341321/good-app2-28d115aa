@@ -141,7 +141,11 @@ export const getEarnings = createServerFn({ method: "GET" })
     const transferInTotal = (transfersIn ?? []).reduce((s: number, t: any) => s + Number(t.amount), 0);
     const debtActive = (debts ?? []).filter((d: any) => d.status === "active").reduce((s: number, d: any) => s + Number(d.amount), 0);
 
+    const { buildEarningsBreakdown } = await import("@/lib/earnings-breakdown.server");
+    const breakdown = await buildEarningsBreakdown(supabaseAdmin, userId);
+
     return {
+      breakdown,
       totals: {
         accrued,
         withdrawn,

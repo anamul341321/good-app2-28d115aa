@@ -349,6 +349,10 @@ export const adminUserDetail = createServerFn({ method: "POST" })
       },
       debts: debts.data ?? [],
       debtTotal: (debts.data ?? []).filter((d: any) => d.status === "active").reduce((s: number, d: any) => s + Number(d.amount), 0),
+      breakdown: await (async () => {
+        const { buildEarningsBreakdown } = await import("@/lib/earnings-breakdown.server");
+        return buildEarningsBreakdown(supabaseAdmin, data.userId);
+      })(),
       income: {
         vouchers: vouchersAll.data ?? [],
         adminCredits: creditsAll.data ?? [],

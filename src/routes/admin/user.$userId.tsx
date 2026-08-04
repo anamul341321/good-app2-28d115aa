@@ -6,6 +6,7 @@ import { computeLiveBalance } from "@/lib/mining";
 import { toast } from "sonner";
 import { useState } from "react";
 import { BalanceHistory } from "@/components/admin/BalanceHistory";
+import { EarningsBreakdown } from "@/components/EarningsBreakdown";
 
 
 export const Route = createFileRoute("/admin/user/$userId")({ component: UserDetail });
@@ -962,6 +963,14 @@ function UserDetail() {
         )}
       </div>
 
+      {/* Step-by-step reconciliation of bonus + mining */}
+      {(data as any).breakdown && (
+        <div className="glass rounded-2xl p-4 space-y-3 border border-amber/30">
+          <p className="text-[10px] uppercase tracking-widest text-amber font-black">ধাপে ধাপে হিসাব — বোনাস ও মাইনিং</p>
+          <EarningsBreakdown data={(data as any).breakdown} />
+        </div>
+      )}
+
       {/* Balance history — where the money came from and where it went */}
       <BalanceHistory
         mining={data.mining}
@@ -969,6 +978,7 @@ function UserDetail() {
         withdrawals={data.withdrawals ?? []}
         debts={data.debts ?? []}
         profile={data.profile}
+        breakdown={(data as any).breakdown}
       />
 
       {/* Bonus Voucher */}
