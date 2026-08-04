@@ -15,6 +15,7 @@ const GEMINI_URL =
 
 /** Free-tier friendly Gemini model; override with GEMINI_MODEL. */
 const GEMINI_DEFAULT_MODEL = "gemini-3.6-flash";
+const GEMINI_FALLBACK_MODEL = "gemini-3.1-flash-lite";
 
 export function hasFreeAi(): boolean {
   return Boolean(process.env.GEMINI_API_KEY);
