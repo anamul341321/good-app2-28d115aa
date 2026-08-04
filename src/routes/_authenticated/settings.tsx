@@ -275,10 +275,27 @@ function SettingsPage() {
       </Card>
 
       <Card
-        icon={<Mail className="w-4 h-4 text-gold" />}
-        title="ইমেইল পরিবর্তন"
-        desc={acc?.email ? `বর্তমান: ${acc.email}` : "ইমেইল পরিবর্তনে নতুন ইমেইলে ৬ ডিজিটের কোড যাবে।"}
+        icon={<ShieldCheck className="w-4 h-4 text-gold" />}
+        title={acc?.emailVerified ? "Gmail সিকিউরিটি (2-Step) ✅ চালু" : "Gmail যোগ করে একাউন্ট সুরক্ষিত করুন (2-Step)"}
+        desc={
+          acc?.emailVerified
+            ? `আপনার Gmail: ${acc.email} — লগইনের সময় এই Gmail-এ ৬ ডিজিটের কোড যাবে।`
+            : "Gmail যোগ করা বাধ্যতামূলক নয় — তবে যোগ করলে নিচের সুবিধাগুলো পাবেন।"
+        }
       >
+        <div className="rounded-xl bg-surface-2 border-2 border-border p-3 space-y-1.5">
+          <p className="text-[11.5px] font-black text-navy">Gmail যোগ করলে যা পাবেন:</p>
+          <ul className="text-[11px] font-bold text-muted-foreground space-y-1">
+            <li>✅ 2-Step লগইন — লগইনের সময় আপনার Gmail-এ ৬ ডিজিটের কোড যাবে, অন্য কেউ পাসওয়ার্ড জানলেও ঢুকতে পারবে না।</li>
+            <li>✅ পাসওয়ার্ড ভুলে গেলে নিজেই রিসেট — কোড আপনার Gmail-এ যাবে, অ্যাডমিনের দরকার নেই।</li>
+            <li>✅ পাসওয়ার্ড পরিবর্তন ও Gmail পরিবর্তনেও কোড দিয়ে নিশ্চিত করা হবে।</li>
+            <li>✅ Google দিয়েও সহজে লগইন করতে পারবেন — একই একাউন্টে ঢুকবে।</li>
+          </ul>
+          <p className="text-[10px] font-bold text-cyan pt-1">
+            রাজি থাকলে নিচে Gmail দিন — ওই Gmail-এ কোড যাবে, কোড বসালেই যোগ হয়ে যাবে।
+          </p>
+        </div>
+
         {emailStep === "email" ? (
           <div className="space-y-2">
             <input
