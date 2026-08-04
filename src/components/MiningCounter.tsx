@@ -31,7 +31,9 @@ function leagueFor(n: number): { name: string; emoji: string; from: string; to: 
 export function MiningCounter({
   accrued, withdrawn, isActive, lastCreditedAt,
   effectiveTaskCount = 0, qualifyingReferees = 0, displayTaskCount, leagueCount,
+  bonusTotal = 0, referralAccrued = 0,
 }: Props) {
+
   const [now, setNow] = useState(Date.now());
   const navigate = useNavigate();
 
