@@ -2472,18 +2472,30 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             if (res.found) {
               await sendMessage(chatId, res.card, msg.message_id);
               actions.push("account-info");
-              // "মোট হিসাব / full details / ধাপে ধাপে" চাইলে পুরো হিসাবও পাঠাবে
+              // "মোট হিসাব / full details / ধাপে ধাপে" চাইলে পুরো হিসাব + হিসাবের ছবি
               try {
-                const { wantsFullHisab, fullHisabText } = await import("@/lib/telegram-hisab.server");
+                const { wantsFullHisab, fullHisabText, hisabImageUrl } = await import(
+                  "@/lib/telegram-hisab.server"
+                );
                 if (wantsFullHisab(norm)) {
                   const hisab = await fullHisabText(String(uid));
                   if (hisab) {
                     await sendMessage(chatId, hisab, msg.message_id);
                     actions.push("full-hisab");
                   }
+                  const { sendPhotoUrl } = await import("@/lib/telegram-bot.server");
+                  const ok = await sendPhotoUrl(
+                    chatId,
+                    hisabImageUrl(String(uid)),
+                    `🧾 UID ${uid} — আপনার সম্পূর্ণ হিসাবের ছবি`,
+                    msg.message_id,
+                  );
+                  if (ok) actions.push("hisab-image");
                 }
               } catch (e) {
                 console.error("[tg] full hisab failed", e);
+              }
+
               }
               await logMessage(decision.verdict, actions.join(","), res.card, String(uid));
               return Response.json({ ok: true, flow: "account_info", actions });
