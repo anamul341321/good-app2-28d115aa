@@ -154,7 +154,13 @@ export const startGoogleAccountLink = createServerFn({ method: "POST" })
     const g = await getGoogleIdentity(context.userId);
     if (!g.isGoogle || !g.googleEmail) throw new Error("Google একাউন্ট পাওয়া যায়নি");
 
+    const { isEmailOtpEnabled } = await import("./auth-mode.server");
+    const otpEnabled = await isEmailOtpEnabled();
+
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    if (!otpEnabled) {
+      return { ok: true as const, skipOtp: true as const, resent: false as const, destination: null };
+    }
     const { data: otherTarget } = await supabaseAdmin
       .from("profiles")
       .select("id, display_name")
