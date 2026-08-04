@@ -17,22 +17,46 @@ const GEMINI_URL =
 const GEMINI_DEFAULT_MODEL = "gemini-3.6-flash";
 const GEMINI_FALLBACK_MODEL = "gemini-3.1-flash-lite";
 
+/**
+ * All free Gemini keys: GEMINI_API_KEY plus GEMINI_API_KEY_2..GEMINI_API_KEY_9,
+ * or a comma-separated GEMINI_API_KEYS. More keys = more free quota per day;
+ * when one key hits its limit the next one is used automatically.
+ */
+function geminiKeys(): string[] {
+  const out: string[] = [];
+  const push = (v?: string | null) => {
+    for (const part of String(v ?? "").split(",")) {
+      const k = part.trim();
+      if (k && !out.includes(k)) out.push(k);
+    }
+  };
+  push(process.env.GEMINI_API_KEY);
+  push(process.env.GEMINI_API_KEYS);
+  for (let i = 2; i <= 9; i++) push(process.env[`GEMINI_API_KEY_${i}`]);
+  return out;
+}
+
+export function freeAiKeyCount(): number {
+  return geminiKeys().length;
+}
+
 export function hasFreeAi(): boolean {
-  return Boolean(process.env.GEMINI_API_KEY);
+  return geminiKeys().length > 0;
 }
 
 export function freeAiProvider(): "gemini" | "lovable" | "none" {
-  if (process.env.GEMINI_API_KEY) return "gemini";
+  if (geminiKeys().length) return "gemini";
   if (process.env.LOVABLE_API_KEY) return "lovable";
   return "none";
 }
 
 /**
  * Drop-in replacement for `fetch(AI_URL, init)` on chat-completions calls.
+ * Tries every free key × free model before ever touching the paid gateway.
  */
 export async function aiFetch(url: string, init: RequestInit): Promise<Response> {
-  const geminiKey = process.env.GEMINI_API_KEY;
-  if (!geminiKey) {
+  const keys = geminiKeys();
+  if (!keys.length) {
     // Paid fallback — keep the original request as-is.
     return fetch(url, init);
   }
@@ -45,8 +69,9 @@ export async function aiFetch(url: string, init: RequestInit): Promise<Response>
   }
 
   const primary = process.env.GEMINI_MODEL || GEMINI_DEFAULT_MODEL;
+  const models = primary === GEMINI_FALLBACK_MODEL ? [primary] : [primary, GEMINI_FALLBACK_MODEL];
 
-  const send = async (model: string) => {
+  const send = async (key: string, model: string) => {
     const payload: any = { ...body, model };
     // Gemini 3.x (thinking models) reject these OpenAI-only knobs with a 400.
     delete payload.service_tier;
@@ -58,30 +83,40 @@ export async function aiFetch(url: string, init: RequestInit): Promise<Response>
     return fetch(GEMINI_URL, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${geminiKey}`,
+        Authorization: `Bearer ${key}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify(payload),
     });
   };
 
-  let res = await send(primary);
+  let lastStatus = 0;
+  let lastText = "";
 
-  // Free-tier per-model rate limit → try the lighter free model before paying.
-  if (res.status === 429 && primary !== GEMINI_FALLBACK_MODEL) {
-    console.warn("[ai-free] gemini rate limited, trying", GEMINI_FALLBACK_MODEL);
-    res = await send(GEMINI_FALLBACK_MODEL);
+  // Rotate: for each free model, walk through every key. A 429/403 means that
+  // key's free quota is used up right now, so we simply move to the next one.
+  for (const model of models) {
+    for (const key of keys) {
+      let res: Response;
+      try {
+        res = await send(key, model);
+      } catch (e) {
+        lastStatus = 0;
+        lastText = String(e);
+        continue;
+      }
+      if (res.ok) return res;
+      lastStatus = res.status;
+      lastText = await res.text().catch(() => "");
+      if (res.status === 429 || res.status === 403) continue; // quota → next key
+      break; // real request error — another key won't help
+    }
   }
 
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    console.error("[ai-free] gemini failed", res.status, text.slice(0, 300));
-    // Free quota exhausted / transient error → fall back to the paid gateway so
-    // the bot still answers instead of going silent.
-    if (process.env.LOVABLE_API_KEY) return fetch(url, init);
-    return new Response(text || "gemini error", { status: res.status });
-  }
-
-  return res;
+  console.error("[ai-free] all free keys failed", lastStatus, lastText.slice(0, 300));
+  // Every free key is exhausted → paid gateway so the bot still answers.
+  if (process.env.LOVABLE_API_KEY) return fetch(url, init);
+  return new Response(lastText || "gemini error", { status: lastStatus || 502 });
 }
+
 
