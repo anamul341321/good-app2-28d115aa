@@ -1,3 +1,4 @@
+import { aiFetch } from "./ai-free.server";
 // Server-only helpers for the Good-App Telegram moderation/support bot.
 // Uses TG_MOD_BOT_TOKEN when present, otherwise falls back to TELEGRAM_BOT_TOKEN.
 import { createHash } from "node:crypto";
@@ -125,7 +126,7 @@ export async function sendMessage(chatId: string | number, text: string, _replyT
  * text lets us match the saved admin/built-in answers deterministically.
  */
 export async function readScreenshotText(photoBase64: string): Promise<string> {
-  const key = process.env.LOVABLE_API_KEY;
+  const key = process.env.GEMINI_API_KEY || process.env.LOVABLE_API_KEY;
   if (!key) return "";
   try {
     const res = await aiFetch(AI_URL, {
@@ -397,7 +398,7 @@ export async function matchFaqImage(opts: {
   photoBase64: string;
   faq: FaqItem[];
 }): Promise<FaqImageMatch | null> {
-  const key = process.env.LOVABLE_API_KEY;
+  const key = process.env.GEMINI_API_KEY || process.env.LOVABLE_API_KEY;
   if (!key) throw new Error("LOVABLE_API_KEY not configured");
 
   // উত্তর লেখা না থাকলেও ছবি থাকলে ম্যাচ করবে — উত্তর বট নিজেই বানিয়ে নেবে।
@@ -487,7 +488,7 @@ function isMetaOutput(out: string, original: string): boolean {
 }
 
 export async function humanizeReply(answer: string, userText?: string, avoid?: string[]): Promise<string> {
-  const key = process.env.LOVABLE_API_KEY;
+  const key = process.env.GEMINI_API_KEY || process.env.LOVABLE_API_KEY;
   if (!key) return answer;
   const tones = [
     "বন্ধুর মতো সহজ ও আন্তরিক",
@@ -622,7 +623,7 @@ async function transcribeAudioStt(base64: string, format: string, key: string): 
 
 /** Transcribe a Telegram voice note / audio clip to text (Bengali friendly). */
 export async function transcribeAudio(base64: string, format: string): Promise<string | null> {
-  const key = process.env.LOVABLE_API_KEY;
+  const key = process.env.GEMINI_API_KEY || process.env.LOVABLE_API_KEY;
   if (!key) return null;
   const stt = await transcribeAudioStt(base64, format, key);
   if (stt) return stt;
@@ -710,7 +711,7 @@ export async function decide(opts: {
   /** live app rules/rates knowledge block */
   knowledge?: string;
 }): Promise<BotDecision> {
-  const key = process.env.LOVABLE_API_KEY;
+  const key = process.env.GEMINI_API_KEY || process.env.LOVABLE_API_KEY;
   if (!key) throw new Error("LOVABLE_API_KEY not configured");
 
   const withImages = opts.faq.filter((f) => f.imageBase64);
@@ -903,7 +904,7 @@ export function stripAdminFiller(reply: string): string {
  * images needed) — e.g. GoodDollar's "We found your twin" duplicate-face page.
  */
 export async function matchBuiltinFaqPhoto(photoBase64: string): Promise<string | null> {
-  const key = process.env.LOVABLE_API_KEY;
+  const key = process.env.GEMINI_API_KEY || process.env.LOVABLE_API_KEY;
   if (!key) return null;
   const { BUILTIN_FAQS } = await import("./telegram-builtin-faq.server");
   const list = BUILTIN_FAQS.map(
@@ -949,7 +950,7 @@ export async function analyzeScreenshotReply(opts: {
   text: string;
   knowledge: string;
 }): Promise<string | null> {
-  const key = process.env.LOVABLE_API_KEY;
+  const key = process.env.GEMINI_API_KEY || process.env.LOVABLE_API_KEY;
   if (!key) return null;
   try {
     const res = await aiFetch(AI_URL, {
@@ -1133,7 +1134,7 @@ export async function smartAnswer(opts: {
   /** গ্রুপের পুরোনো একই ধরনের প্রশ্ন-উত্তর। */
   recall?: string;
 }): Promise<string | null> {
-  const key = process.env.LOVABLE_API_KEY;
+  const key = process.env.GEMINI_API_KEY || process.env.LOVABLE_API_KEY;
   if (!key) return null;
   const q = (opts.question || "").trim();
   if (!q) return null;
@@ -1241,7 +1242,7 @@ export async function getMe(): Promise<{ username: string; id: number } | null> 
  * সুন্দর বাংলা মেসেজে সাজিয়ে দেয়।
  */
 export async function adminCompose(instruction: string, targetName?: string | null): Promise<string | null> {
-  const key = process.env.LOVABLE_API_KEY;
+  const key = process.env.GEMINI_API_KEY || process.env.LOVABLE_API_KEY;
   if (!key) return null;
   const q = (instruction || "").trim();
   if (!q) return null;

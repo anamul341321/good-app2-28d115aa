@@ -1,3 +1,4 @@
+import { aiFetch } from "./ai-free.server";
 // Server-only: Lovable-style reasoning agent for the Telegram bot.
 // Unlike smartAnswer (text-only), this agent can CALL TOOLS to actually look
 // into the app's database before answering — account cards, verify dates,
@@ -236,7 +237,7 @@ export async function agentAnswer(opts: {
   /** অ্যাডমিন হলে অন্য ইউজারের ডেটাও দেখানো যাবে। */
   isAdmin?: boolean;
 }): Promise<string | null> {
-  const key = process.env.LOVABLE_API_KEY;
+  const key = process.env.GEMINI_API_KEY || process.env.LOVABLE_API_KEY;
   const q = (opts.question || "").trim();
   if (!key || !q) return null;
 
