@@ -61,10 +61,8 @@ function AuthedLayout() {
   }, [router]);
 
 
-  useDeviceGuard(() => {
-    setAuthState("unauthenticated");
-    router.navigate({ to: "/auth", replace: true });
-  });
+  const deviceRevoked = useDeviceGuard();
+
 
   const logout = async () => {
     await supabase.auth.signOut();
