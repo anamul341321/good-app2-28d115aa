@@ -1352,6 +1352,7 @@ export const adminUpdateBonusSettings = createServerFn({ method: "POST" })
     reverify_bonus: z.number().int().min(0).max(100000),
     referrer_bonus: z.number().int().min(0).max(100000),
     first_verify_mining_mode: z.boolean().optional(),
+    email_otp_enabled: z.boolean().optional(),
     // 2X promo window
     promo_active: z.boolean().optional(),
     promo_title: z.string().max(200).optional().nullable(),
