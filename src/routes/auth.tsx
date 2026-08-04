@@ -117,6 +117,13 @@ export function AuthPage() {
   const [otpDest, setOtpDest] = useState<string | null>(null);
   const startOtp = useServerFn(startLoginOtp);
   const confirmOtp = useServerFn(completeLoginOtp);
+  const { data: authMode } = useQuery({
+    queryKey: ["auth-mode"],
+    queryFn: () => getAuthMode(),
+    staleTime: 60_000,
+  });
+  const otpEnabled = authMode?.emailOtpEnabled !== false;
+
 
   const resolveUid = useServerFn(resolveCardUidForLogin);
 
