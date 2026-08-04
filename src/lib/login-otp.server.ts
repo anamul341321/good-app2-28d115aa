@@ -165,16 +165,10 @@ async function verifyPassword(account: Account, password: string) {
 
 
 async function startLoginOtpWork(data: LoginData) {
-  const { isEmailOtpEnabled } = await import("./auth-mode.server");
-  const otpEnabled = await isEmailOtpEnabled();
   const account = await resolveAccount(data.identifier);
 
-  // Admin switch off → আগের মতো শুধু নম্বর/পাসওয়ার্ড দিয়েই লগইন
-  if (!otpEnabled) {
-    const session = await verifyPassword(account, data.password);
-    return { ok: true as const, needOtp: false as const, session };
-  }
-
+  // Gmail যোগ করা/ভেরিফাইড না থাকলে আগের মতোই শুধু নম্বর+পাসওয়ার্ডে লগইন।
+  // Gmail ভেরিফাইড থাকলে (admin switch off থাকলেও) লগইনে কোড যাবে — 2-Step।
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const [session, recentResult] = await Promise.all([
     verifyPassword(account, data.password),
