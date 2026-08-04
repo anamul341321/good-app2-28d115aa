@@ -10,8 +10,8 @@ type Source = { key: string; label: string; amount: number; color: string };
  * Admin-facing "ব্যালেন্স হিসাব" — plain-Bengali explanation of where a user's
  * money came from, where it went, and (per withdrawal) which source funded it.
  */
-export function BalanceHistory({ mining, income, withdrawals, debts, profile }: {
-  mining: any; income: any; withdrawals: any[]; debts: any[]; profile?: any;
+export function BalanceHistory({ mining, income, withdrawals, debts, profile, breakdown }: {
+  mining: any; income: any; withdrawals: any[]; debts: any[]; profile?: any; breakdown?: any;
 }) {
   const [showSheet, setShowSheet] = useState(false);
   if (!income) return null;
