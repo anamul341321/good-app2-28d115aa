@@ -199,35 +199,50 @@ export function MiningCounter({
         {/* Rate stat pills */}
         <div className="mt-4 grid grid-cols-2 gap-2">
           <div className="mc-stat rounded-xl p-2.5">
-            <p className="text-[9px] uppercase tracking-widest text-white/60 font-black">সক্রিয় ঘর</p>
-            <p className="mono-num text-lg font-black text-white mt-0.5">{shownSlots}<span className="text-xs text-white/50">/10</span></p>
+            <p className="text-[9px] uppercase tracking-widest text-white/60 font-black">মাইনিং ঘর</p>
+            <p className="mono-num text-lg font-black text-white mt-0.5">
+              {shownSlots}<span className="text-xs text-white/50">টি</span>
+            </p>
+            <p className="text-[8px] text-white/55 leading-tight">প্রতি ঘর {MONTHLY_PER_SLOT}৳/মাস</p>
           </div>
           <div className="mc-stat rounded-xl p-2.5">
             <p className="text-[9px] uppercase tracking-widest text-white/60 font-black">মাসিক রেট</p>
             {live ? (
-              <p className="mono-num text-lg font-black text-yellow-100 mt-0.5">{ratePerMonth.toFixed(0)}<span className="text-xs text-white/60">৳</span></p>
+              <>
+                <p className="mono-num text-lg font-black text-yellow-100 mt-0.5">{ratePerMonth.toFixed(0)}<span className="text-xs text-white/60">৳</span></p>
+                <p className="text-[8px] text-white/55 leading-tight mono-num">
+                  নিজের {selfMonth.toFixed(0)}৳ + রেফার {bonusMonth.toFixed(0)}৳
+                </p>
+              </>
             ) : (
-              <p className="text-[10px] font-black text-white/70 mt-1 leading-tight">🔒 রি-ভেরিফাই <br/>সম্পন্ন হলে দেখাবে</p>
+              <p className="text-[10px] font-black text-white/70 mt-1 leading-tight">🔒 ১০টি রি-ভেরিফাই <br/>সম্পন্ন হলে দেখাবে</p>
             )}
           </div>
         </div>
 
         {!live && (
           <p className="text-[11px] text-white/70 text-center mt-3 font-bold">
-            ১০টি ঘর রি-ভেরিফাই সম্পন্ন করলে মাইনিং ও মাসিক রেট চালু হবে
+            ১০টি ঘর রি-ভেরিফাই সম্পন্ন করলে মাইনিং চালু · এরপর প্রতিটি বাড়তি রি-ভেরিফাই ঘরে +{MONTHLY_PER_SLOT}৳/মাস
           </p>
         )}
 
-        {qualifyingReferees > 0 && (
+        {live && shownSlots > 10 && (
+          <p className="text-[10px] text-white/70 text-center mt-2 font-bold">
+            ✨ ১০ ঘরের পর আরও {shownSlots - 10}টি ঘর রি-ভেরিফাই — বাড়তি +{(MONTHLY_PER_SLOT * (shownSlots - 10)).toFixed(0)}৳/মাস
+          </p>
+        )}
+
+        {refUnits > 0 && (
           <p className="mt-3 mx-auto w-fit rounded-full px-3 py-1.5 text-[11px] font-black flex items-center gap-1.5"
              style={{
                background: "linear-gradient(90deg, rgba(52,211,153,0.35), rgba(34,211,238,0.35))",
                border: "1px solid rgba(255,255,255,0.25)",
                color: "white",
              }}>
-            🎁 {qualifyingReferees} জন রেফার · +{bonusMonth.toFixed(0)}৳/মাস
+            🎁 {qualifyingReferees} জন রেফার · তাদের আয়ের ১০% = +{bonusMonth.toFixed(0)}৳/মাস
           </p>
         )}
+
 
         {/* Withdraw window ribbon */}
         {live && (
