@@ -21,7 +21,7 @@ const TTS_MODELS = [
  * ভদ্র, স্পষ্ট ও হাসিমুখে বলা বাংলা মেয়ে-কণ্ঠ (অতিরিক্ত আদুরে নয়)।
  * Sulafat উষ্ণ ও স্পষ্ট, Kore শান্ত-পরিষ্কার, Aoede হালকা।
  */
-const FEMALE_VOICES = ["Sulafat", "Kore", "Aoede", "Achernar", "Leda"];
+const FEMALE_VOICES = ["Achernar", "Sulafat", "Leda", "Aoede", "Kore"];
 
 function pickVoice(): string {
   const forced = process.env.GEMINI_TTS_VOICE?.trim();
