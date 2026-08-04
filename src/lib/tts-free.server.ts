@@ -18,10 +18,10 @@ const TTS_MODELS = [
 ];
 
 /**
- * সবচেয়ে মিষ্টি ও হাসিখুশি বাংলা মেয়ে-কণ্ঠ। Achernar সবচেয়ে কোমল/মিষ্টি,
- * Leda তরুণ ও চঞ্চল, Aoede হালকা-হাওয়ার মতো, Sulafat উষ্ণ।
+ * ভদ্র, স্পষ্ট ও হাসিমুখে বলা বাংলা মেয়ে-কণ্ঠ (অতিরিক্ত আদুরে নয়)।
+ * Sulafat উষ্ণ ও স্পষ্ট, Kore শান্ত-পরিষ্কার, Aoede হালকা।
  */
-const FEMALE_VOICES = ["Achernar", "Leda", "Sulafat", "Aoede", "Kore"];
+const FEMALE_VOICES = ["Sulafat", "Kore", "Aoede", "Achernar", "Leda"];
 
 function pickVoice(): string {
   const forced = process.env.GEMINI_TTS_VOICE?.trim();
@@ -29,20 +29,39 @@ function pickVoice(): string {
   return FEMALE_VOICES[0];
 }
 
+/** সংক্ষেপ/ইংরেজি শব্দ ভয়েসের জন্য পুরো উচ্চারণে লিখে দেয়। */
+function expandForSpeech(s: string): string {
+  return s
+    .replace(/\bM(?:d|D)\.?\b/g, "মোহাম্মদ")
+    .replace(/\bমোঃ|\bমো\./g, "মোহাম্মদ")
+    .replace(/\bMohd\.?\b/gi, "মোহাম্মদ")
+    .replace(/\bUID\b/gi, "ইউ আই ডি")
+    .replace(/\bKYC\b/gi, "কে ওয়াই সি")
+    .replace(/\bOTP\b/gi, "ও টি পি")
+    .replace(/\bUSDT\b/gi, "ইউ এস ডি টি")
+    .replace(/\bID\b/g, "আইডি")
+    .replace(/\bTk\.?\b/gi, "টাকা")
+    .replace(/\bBDT\b/gi, "টাকা")
+    .replace(/৳/g, " টাকা ")
+    .replace(/\bAI\b/g, "এ আই");
+}
 
 /** Strip HTML/markdown/links so the voice reads clean Bengali sentences. */
 export function voiceScript(html: string): string {
-  return String(html || "")
-    .replace(/<br\s*\/?>/gi, "\n")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "and")
-    .replace(/&lt;|&gt;/g, " ")
-    .replace(/https?:\/\/\S+/g, " লিংকটি নিচে লেখা আছে ")
-    .replace(/[*_`#>]+/g, " ")
+  return expandForSpeech(
+    String(html || "")
+      .replace(/<br\s*\/?>/gi, "\n")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/&nbsp;/g, " ")
+      .replace(/&amp;/g, "and")
+      .replace(/&lt;|&gt;/g, " ")
+      .replace(/https?:\/\/\S+/g, " লিংকটি নিচে লেখা আছে ")
+      .replace(/[*_`#>]+/g, " "),
+  )
     .replace(/\s+/g, " ")
     .trim();
 }
+
 
 async function sha(text: string): Promise<string> {
   const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
@@ -136,10 +155,13 @@ export async function speakBengali(rawText: string): Promise<Uint8Array | null> 
             // The directive must be in English; a Bengali instruction makes the
             // TTS model try to answer instead of read ("should only be used for TTS").
             text:
-              "Read this out loud as a sweet, cheerful, smiling young Bangladeshi girl talking to a friend: " +
-              "warm and affectionate tone, gentle sing-song Bengali intonation, a soft happy smile in the voice, " +
-              "clear pronunciation, natural relaxed pace, never robotic or flat. " +
+              "Read the following Bengali text aloud as a polite, friendly young Bangladeshi woman " +
+              "helping a customer: clear and crisp Bengali pronunciation, calm natural pace, " +
+              "a light pleasant smile in the voice. Do NOT be babyish, whiny, breathy, giggly or " +
+              "exaggeratedly cute; no sing-song or dragged-out words. Sound like a professional, " +
+              "warm helpline agent. Pronounce every name and number fully and distinctly. " +
               `Text: ${text}`,
+
           },
 
         ],
