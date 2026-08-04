@@ -1832,3 +1832,76 @@ export const adminActiveMiningUsers = createServerFn({ method: "GET" }).handler(
     users: list,
   };
 });
+
+// ---------------- Maintenance mode + ব্যক্তিগত নোটিশ ----------------
+
+/** পুরো অ্যাপ maintenance মোডে on/off */
+export const adminSetMaintenance = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => z.object({
+    enabled: z.boolean(),
+    message: z.string().max(1000).optional().nullable(),
+  }).parse(i))
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await gate();
+    const { error } = await supabaseAdmin.from("bonus_settings").upsert({
+      id: "default",
+      maintenance_enabled: data.enabled,
+      maintenance_message: data.message ?? null,
+      updated_at: new Date().toISOString(),
+    } as any);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/** UID দিয়ে নির্দিষ্ট ইউজারকে লাল নোটিশ (মেসেজ) পাঠানো */
+export const adminSendUserNotice = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => z.object({
+    uid: z.number().int().positive(),
+    title: z.string().max(120).optional().nullable(),
+    body: z.string().trim().min(1).max(2000),
+  }).parse(i))
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await gate();
+    const { data: prof } = await supabaseAdmin
+      .from("profiles")
+      .select("id, display_name, uid_seq")
+      .eq("uid_seq", data.uid)
+      .maybeSingle();
+    if (!prof?.id) throw new Error(`UID ${data.uid} — এই ইউজার পাওয়া যায়নি`);
+    const { error } = await supabaseAdmin.from("user_notices").insert({
+      user_id: prof.id,
+      title: data.title || null,
+      body: data.body,
+    } as any);
+    if (error) throw new Error(error.message);
+    return { ok: true, name: prof.display_name ?? null, uid: prof.uid_seq ?? data.uid };
+  });
+
+/** সর্বশেষ পাঠানো নোটিশগুলো */
+export const adminListUserNotices = createServerFn({ method: "GET" }).handler(async () => {
+  const supabaseAdmin = await gate();
+  const { data } = await supabaseAdmin
+    .from("user_notices")
+    .select("id, title, body, created_at, read_at, profiles:user_id(display_name, uid_seq)")
+    .order("created_at", { ascending: false })
+    .limit(30);
+  return (data ?? []).map((r: any) => ({
+    id: r.id,
+    title: r.title as string | null,
+    body: r.body as string,
+    createdAt: r.created_at as string,
+    read: !!r.read_at,
+    uid: r.profiles?.uid_seq ?? null,
+    name: r.profiles?.display_name ?? null,
+  }));
+});
+
+/** নোটিশ মুছে দাও */
+export const adminDeleteUserNotice = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => z.object({ id: z.string().uuid() }).parse(i))
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await gate();
+    const { error } = await supabaseAdmin.from("user_notices").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
