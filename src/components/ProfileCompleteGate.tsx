@@ -25,6 +25,15 @@ export function ProfileCompleteGate() {
   const linkStart = useServerFn(startGoogleAccountLink);
   const linkConfirm = useServerFn(completeGoogleAccountLink);
 
+  const { data: mode } = useQuery({
+    queryKey: ["auth-mode"],
+    queryFn: () => getAuthMode(),
+    staleTime: 60_000,
+  });
+
+  // Gmail OTP switch OFF থাকলে Google দিয়ে সরাসরি ঢোকা যাবে — কোনো গেট/কোড ছাড়াই।
+  if (mode?.emailOtpEnabled === false) return null;
+
   const { data } = useQuery({
     queryKey: ["google-profile-status"],
     queryFn: () => statusFn(),
