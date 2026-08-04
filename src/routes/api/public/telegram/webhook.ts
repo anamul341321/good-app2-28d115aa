@@ -1781,6 +1781,25 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return Response.json({ ok: true, flow: "face-privacy" });
         }
 
+        // Gmail setup is a critical, deterministic help flow. It MUST run before
+        // admin FAQs, cached replies, and AI so a broad "app/link" FAQ can never
+        // reduce this answer to only the website URL.
+        if (!photoBase64 && settings.auto_reply_enabled && text.trim()) {
+          const gmailHelpQuery =
+            /\b(gmail|g-mail|email|e-mail)\b/i.test(text) &&
+            /(add|ad |যোগ|যুক্ত|connect|conn?act|ভেরিফ|verify|dib|দিব|kivabe|kemne|কিভাবে|কেমনে|কোথায়|kothay)/i.test(text);
+          if (gmailHelpQuery) {
+            const { builtinFaqByTopic, builtinFaqReply } = await import("@/lib/telegram-builtin-faq.server");
+            const gmailFaq = builtinFaqByTopic("Gmail যুক্ত");
+            if (gmailFaq) {
+              const reply = builtinFaqReply(senderName, gmailFaq);
+              await sendMessage(chatId, reply, msg.message_id);
+              await logMessage("question", "priority:gmail-setup", reply, null);
+              return Response.json({ ok: true, flow: "priority-gmail-setup" });
+            }
+          }
+        }
+
         // ---- "already tried, still not working" → think, don't repeat --------
         if (!photoBase64 && settings.auto_reply_enabled && text.trim() && lastBase) {
           const t = text.trim();
