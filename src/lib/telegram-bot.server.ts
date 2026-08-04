@@ -118,25 +118,58 @@ export async function sendMessage(chatId: string | number, text: string, _replyT
     last = sent;
   }
   // ---- ভয়েস উত্তর: টেক্সট পাঠানোর পরপরই একই উত্তরটি মেয়ে-কণ্ঠে বাংলায় ----
-  // টেক্সট আগে যায় (তাই দ্রুত মনে হয়), ভয়েসটা তার পরে যোগ হয়। ফ্রি Gemini
-  // TTS ব্যবহার করা হয়, তাই ক্রেডিট কাটে না; কী না থাকলে চুপচাপ শুধু টেক্সট।
-  if (voiceRepliesEnabled() && full.replace(/<[^>]+>/g, "").trim().length >= 15) {
+  // অ্যাডমিন প্যানেলের স্যুইচ অনুযায়ী: ভয়েস + লেখা, নাকি শুধু ভয়েস।
+  if (voiceOn && full.replace(/<[^>]+>/g, "").trim().length >= 15) {
     try {
       const { speakBengali } = await import("./tts-free.server");
       const wav = await speakBengali(full);
-      if (wav) await sendVoice(chatId, wav, "reply.wav", undefined, _replyTo);
+      if (wav) {
+        await sendVoice(chatId, wav, "reply.wav", undefined, _replyTo);
+      } else if (!textOn) {
+        // ভয়েস বানানো গেল না — তখন অন্তত লেখাটা যাবে, নাহলে ইউজার কিছুই পাবে না।
+        await sendTextOnly(chatId, full, _replyTo);
+      }
     } catch (e) {
       console.error("[tg] voice reply failed", e);
+      if (!textOn) await sendTextOnly(chatId, full, _replyTo);
     }
   }
   return last;
 }
 
-/** ভয়েস উত্তর বন্ধ করতে চাইলে BOT_VOICE_REPLY=off সেট করলেই হবে। */
-function voiceRepliesEnabled(): boolean {
-  const v = String(process.env.BOT_VOICE_REPLY ?? "").trim().toLowerCase();
-  return !(v === "off" || v === "0" || v === "false");
+/**
+ * ভয়েস সেটিং: অ্যাডমিন প্যানেলের স্যুইচ (৩০ সেকেন্ড ক্যাশ)।
+ * voice_reply_enabled → ভয়েস দেবে কি না। voice_text_enabled → ভয়েসের সাথে
+ * লেখাও যাবে কি না (অফ করলে শুধু ভয়েস)। ENV BOT_VOICE_REPLY=off দিলে ভয়েস বন্ধ।
+ */
+let voicePrefCache: { at: number; voice: boolean; text: boolean } | null = null;
+
+export async function voicePrefs(): Promise<{ voice: boolean; text: boolean }> {
+  const env = String(process.env.BOT_VOICE_REPLY ?? "").trim().toLowerCase();
+  const envOff = env === "off" || env === "0" || env === "false";
+  if (voicePrefCache && Date.now() - voicePrefCache.at < 30_000) {
+    return { voice: !envOff && voicePrefCache.voice, text: voicePrefCache.text };
+  }
+  let voice = true;
+  let text = true;
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data } = await supabaseAdmin
+      .from("tg_bot_settings")
+      .select("voice_reply_enabled, voice_text_enabled")
+      .eq("id", "default")
+      .maybeSingle();
+    if (data) {
+      voice = (data as any).voice_reply_enabled !== false;
+      text = (data as any).voice_text_enabled !== false;
+    }
+  } catch {
+    /* DB unavailable → default: ভয়েস + লেখা দুটোই */
+  }
+  voicePrefCache = { at: Date.now(), voice, text };
+  return { voice: !envOff && voice, text };
 }
+
 
 
 /**
