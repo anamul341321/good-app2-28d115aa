@@ -1140,7 +1140,7 @@ input, textarea, select { touch-action: manipulation; }
      animated gradients share a layer. Admin favors stable, readable paint. */
   .admin-shell .glass,
   .admin-shell .glass-strong {
-    background: var(--color-card) !important; backdrop-filter: none !important;;
+    background: var(--color-card) !important; backdrop-filter: none !important;
   }
   .admin-shell .premium-panel {
     background: var(--color-card) !important;
