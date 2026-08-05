@@ -86,7 +86,20 @@
   --violet:  oklch(0.55 0.22 300);
 }
 
-@layer base {\n  body::before {\n    content: "";\n    position: fixed;\n    inset: 0;\n    z-index: -1;\n    background: \n      radial-gradient(1000px 500px at 8% -10%, color-mix(in oklch, var(--color-violet) 18%, transparent), transparent 60%),\n      radial-gradient(900px 480px at 100% 8%,  color-mix(in oklch, var(--color-cyan) 16%, transparent),   transparent 60%),\n      radial-gradient(800px 500px at 50% 110%, color-mix(in oklch, var(--color-emerald) 14%, transparent), transparent 60%),\n      #ffffff;\n    pointer-events: none;\n    transform: translateZ(0);\n  }
+@layer base {
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background:
+      radial-gradient(1000px 500px at 8% -10%, color-mix(in oklch, var(--color-violet) 18%, transparent), transparent 60%),
+      radial-gradient(900px 480px at 100% 8%, color-mix(in oklch, var(--color-cyan) 16%, transparent), transparent 60%),
+      radial-gradient(800px 500px at 50% 110%, color-mix(in oklch, var(--color-emerald) 14%, transparent), transparent 60%),
+      var(--color-background);
+    pointer-events: none;
+    transform: translateZ(0);
+  }
   * { border-color: var(--color-border); }
   html, body {
     background: #ffffff;
@@ -189,7 +202,8 @@
       color-mix(in oklch, var(--color-cyan) 20%, var(--color-surface-2)));
     color: white;
   }
-  .gradient-cta {\n    will-change: background-position;
+  .gradient-cta {
+    will-change: background-position;
     contain: paint;
     background: linear-gradient(120deg, var(--color-violet), var(--color-cyan) 55%, var(--color-gold));
     background-size: 200% 200%;
@@ -219,7 +233,8 @@
     background: linear-gradient(135deg, var(--color-rose), var(--color-violet));
     color: white;
   }
-  .gradient-aurora {\n    will-change: background-position;
+  .gradient-aurora {
+    will-change: background-position;
     contain: paint;
     background: linear-gradient(120deg,
       color-mix(in oklch, var(--color-violet) 30%, var(--color-surface)),
