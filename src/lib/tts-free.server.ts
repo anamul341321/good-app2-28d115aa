@@ -207,20 +207,9 @@ async function pcmForChunk(
       }
       if (!res.ok) {
         const txt = await res.text().catch(() => "");
-        if (res.status === 429 || res.status === 403) {
-          if (k.id) {
-            const mod = await import("./ai-keys.server");
-            // Voice models have their own quota/permission — never park a key for
-            // text use because of a voice failure.
-            void mod.markKeyError(
-              k.id,
-              res.status === 429
-                ? "ভয়েসের লিমিট আজকের জন্য শেষ (লেখা ঠিকই চলবে)"
-                : "এই কী-তে ভয়েস মডেল চালু নেই (লেখা ঠিকই চলবে)",
-            );
-          }
-          continue; // try next key
-        }
+        // Voice quota/access is independent from text. Do not overwrite the
+        // shared AI-key status with a misleading voice-model warning.
+        if (res.status === 429 || res.status === 403) continue; // try next key
         console.error("[tts] failed", model, res.status, txt.slice(0, 200));
         break; // model/request problem → try next model
       }
