@@ -13,6 +13,7 @@
 
 const TTS_MODELS = [
   "gemini-2.5-flash-preview-tts",
+  "gemini-3.1-flash-tts-preview",
 ];
 
 const TTS_REQUEST_TIMEOUT_MS = 6_000;
@@ -187,8 +188,10 @@ async function pcmForChunk(
     },
   };
 
-  for (const model of TTS_MODELS) {
-    for (const k of keys) {
+  // Keys/models used to run one after another, so congestion could hold a
+  // Telegram webhook for 18+ seconds. Race a small group instead: the first
+  // working provider response wins and the whole operation has one timeout.
+  const attempts = TTS_MODELS.flatMap((model) => keys.slice(0, 6).map(async (k) => {
       let res: Response;
       try {
         res = await fetch(
@@ -201,24 +204,28 @@ async function pcmForChunk(
           },
         );
       } catch {
-        continue;
+        throw new Error("tts-network-failed");
       }
       if (!res.ok) {
         const txt = await res.text().catch(() => "");
         // Voice quota/access is independent from text. Do not overwrite the
         // shared AI-key status with a misleading voice-model warning.
-        if (res.status === 429 || res.status === 403) continue; // try next key
-        console.error("[tts] failed", model, res.status, txt.slice(0, 200));
-        break; // model/request problem → try next model
+        if (res.status !== 429 && res.status !== 403 && res.status !== 503) {
+          console.error("[tts] failed", model, res.status, txt.slice(0, 200));
+        }
+        throw new Error(`tts-${res.status}`);
       }
       const json: any = await res.json().catch(() => null);
       const b64 = json?.candidates?.[0]?.content?.parts?.find((p: any) => p?.inlineData?.data)
         ?.inlineData?.data;
-      if (!b64) break;
+      if (!b64) throw new Error("tts-empty-audio");
       return b64ToBytes(b64);
-    }
+    }));
+  try {
+    return await Promise.any(attempts);
+  } catch {
+    return null;
   }
-  return null;
 }
 
 /**

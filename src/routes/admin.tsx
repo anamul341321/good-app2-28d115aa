@@ -114,9 +114,9 @@ function PremiumHeader({ onLogout }: { onLogout: () => void }) {
       </div>
       <div className="relative mt-4 grid grid-cols-4 gap-2">
         <MiniStat label="Users" value={data?.users ?? "—"} accent="cyan" />
-        <MiniStat label="Pending" value={(data as any)?.reverifyQueue ?? "—"} accent="amber" pulse={!!(data as any)?.reverifyQueue} />
+        <MiniStat label="Pending" value={(data as any)?.reverifyQueue ?? "—"} accent="amber"  />
         <MiniStat label="Done today" value={(data as any)?.todayVerified ?? "—"} accent="emerald" />
-        <MiniStat label="Withdraw" value={data?.withdrawals?.pending ?? "—"} accent="violet" pulse={!!data?.withdrawals?.pending} />
+        <MiniStat label="Withdraw" value={data?.withdrawals?.pending ?? "—"} accent="violet"  />
       </div>
 
     </div>
@@ -125,7 +125,7 @@ function PremiumHeader({ onLogout }: { onLogout: () => void }) {
 
 function MiniStat({ label, value, accent, pulse }: { label: string; value: any; accent: string; pulse?: boolean }) {
   return (
-    <div className={`rounded-xl bg-background/60 border border-border p-2 text-center ${pulse ? "animate-pulse" : ""}`}>
+    <div className={`rounded-xl bg-background/60 border border-border p-2 text-center ${pulse ? "ring-1 ring-amber/30" : ""}`}>
       <p className={`mono-num font-black text-base text-${accent}`}>{value}</p>
       <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-bold">{label}</p>
     </div>

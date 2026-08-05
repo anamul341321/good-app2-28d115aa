@@ -1140,7 +1140,7 @@ input, textarea, select { touch-action: manipulation; }
      animated gradients share a layer. Admin favors stable, readable paint. */
   .admin-shell .glass,
   .admin-shell .glass-strong {
-    background: var(--color-card) !important;
+    background: var(--color-card) !important; backdrop-filter: none !important;
   }
   .admin-shell .premium-panel {
     background: var(--color-card) !important;
@@ -1148,6 +1148,26 @@ input, textarea, select { touch-action: manipulation; }
   }
   .admin-shell .premium-panel::before {
     display: none !important;
+  }
+  /* Admin is a dense work surface. Continuous gradient/shimmer/pulse effects
+     caused color flashing and text jitter on mobile Chromium. Keep the same
+     colors, but paint them once on a stable layer. */
+  .admin-shell *,
+  .admin-shell *::before,
+  .admin-shell *::after {
+    animation: none !important;
+  }
+  .admin-shell .gradient-cta,
+  .admin-shell .gradient-aurora {
+    background-position: 50% 50% !important;
+    will-change: auto !important;
+  }
+  .admin-shell .glass,
+  .admin-shell .glass-strong,
+  .admin-shell .premium-panel {
+    transform: none !important;
+    backface-visibility: visible !important;
+    contain: layout paint;
   }
 }
 
