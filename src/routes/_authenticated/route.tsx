@@ -17,8 +17,6 @@ import { useDeviceGuard } from "@/hooks/useDeviceGuard";
 import { getAppStatus } from "@/lib/app-status.functions";
 import { MaintenanceScreen } from "@/components/MaintenanceGate";
 import { UserNoticeBanner } from "@/components/UserNoticeBanner";
-import { DeviceUnlockGate } from "@/components/DeviceUnlockGate";
-import { DeviceApprovalPrompt } from "@/components/DeviceApprovalPrompt";
 import { clearSharedSession, getSharedSession } from "@/lib/auth-session";
 
 
@@ -95,7 +93,7 @@ function AuthedLayout() {
   }, [authAttempt]);
 
 
-  const deviceRevoked = useDeviceGuard(authState === "authenticated");
+  useDeviceGuard(authState === "authenticated");
 
 
   const logout = async () => {
@@ -156,7 +154,6 @@ function AuthedLayout() {
     );
   }
 
-  if (deviceRevoked) return <DeviceUnlockGate />;
 
 
   if (appStatus?.maintenance) return <MaintenanceScreen message={appStatus.message} />;
@@ -208,7 +205,6 @@ function AuthedLayout() {
       <InstallPrompt />
       <LanguagePicker />
       <SlotResetApproval />
-      <DeviceApprovalPrompt />
 
       <ProfileCompleteGate />
       <EmailVerifyGate />

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { touchDevice } from "@/lib/sessions.functions";
 import { getSharedSession } from "@/lib/auth-session";
@@ -32,13 +32,11 @@ export function deviceLabel() {
 }
 
 /**
- * প্রতি ৬০ সেকেন্ডে নিজের ডিভাইস "জীবিত" জানায়। ইউজার নিজের অন্য ফোন থেকে
- * এই ডিভাইসটি লগআউট করে দিলে এখানে `revoked` true হয় — তখন সাইন-আউট না করে
- * অনুমতি/কোড দিয়ে আবার চালু করার স্ক্রিন দেখানো হয়।
+ * প্রতি ৩০ সেকেন্ডে নিজের ডিভাইস "জীবিত" জানায় (সেটিংসে ডিভাইস লিস্টের জন্য)।
+ * ডিভাইস অনুমতি/approval সিস্টেম বন্ধ — তাই কখনো লক করা হয় না।
  */
 export function useDeviceGuard(enabled = true): boolean {
   const touch = useServerFn(touchDevice);
-  const [revoked, setRevoked] = useState(false);
 
   useEffect(() => {
     if (!enabled) return;
@@ -50,11 +48,10 @@ export function useDeviceGuard(enabled = true): boolean {
       try {
         const { data: sess } = await getSharedSession();
         if (!sess?.session?.access_token) return;
-        const res: any = await touch({
+        if (!active) return;
+        await touch({
           data: { deviceId, label: deviceLabel(), userAgent: navigator.userAgent },
         });
-        if (!active) return;
-        setRevoked(!!res?.revoked);
       } catch {
         /* নেটওয়ার্ক সমস্যা — কিছু করব না */
       }
@@ -67,10 +64,8 @@ export function useDeviceGuard(enabled = true): boolean {
       clearInterval(timer);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    // useServerFn can return a new wrapper during renders; only restart the
-    // heartbeat when authentication actually becomes enabled/disabled.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled]);
 
-  return revoked;
+  return false;
 }
+
