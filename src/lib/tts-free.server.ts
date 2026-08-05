@@ -188,11 +188,10 @@ async function pcmForChunk(
     },
   };
 
-  // Keys/models used to run one after another, so congestion could hold a
-  // Telegram webhook for 18+ seconds. Race a small group instead: the first
-  // working provider response wins and the whole operation has one timeout.
-  const makers = TTS_MODELS.flatMap((model) => keys.slice(0, 4).map(() => async () => {
-      const k = keys[0];
+  // ফ্রি TTS কোটা খুব ছোট, তাই সব কী একসাথে ছুড়ি না — একটার পর একটা ধাপে
+  // ধাপে (প্রথমটা দেরি করলে পরেরটা)। যেটা আগে অডিও দেয় সেটাই যায়।
+  const makers = TTS_MODELS.flatMap((model) =>
+    keys.slice(0, 4).map((k) => async () => {
       let res: Response;
       try {
         res = await fetch(
@@ -221,13 +220,16 @@ async function pcmForChunk(
         ?.inlineData?.data;
       if (!b64) throw new Error("tts-empty-audio");
       return b64ToBytes(b64);
-    }));
+    }),
+  );
   try {
-    return await Promise.any(attempts);
+    const { staggerAny } = await import("./ai-free.server");
+    return await staggerAny(makers, 2_500);
   } catch {
     return null;
   }
 }
+
 
 /**
  * Speak a Bengali reply. The script is split into sentence-sized chunks and the
