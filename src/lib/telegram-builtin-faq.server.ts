@@ -253,6 +253,30 @@ export const BUILTIN_FAQS: BuiltinFaq[] = [
       `ℹ️ KYC ছাড়া অ্যাপের সব কাজ চলবে, শুধু <b>টাকা তোলা যাবে না</b> 💙`,
   },
   {
+    topic: "রি-ভেরিফাই করা যাচ্ছে না / “এখনো সময় হয়নি”",
+    screenshot: [],
+    keywords: [
+      "re verify hocche na", "re verify hoi na", "reverify hocche na", "reverify hoi na",
+      "re verify kora jai na", "reverify kora jai na", "re verify korte parchi na",
+      "reverify korte parchi na", "re verify button asche na", "reverify button nai",
+      "re verify ene dao", "reverify ene dao", "re verify dao", "somoy hoy nai",
+      "somoy hoyni", "ekhono somoy", "রি ভেরিফাই হচ্ছে না", "রি-ভেরিফাই হচ্ছে না",
+      "রি ভেরিফাই করা যায় না", "রি-ভেরিফাই করা যায় না", "রি ভেরিফাই করতে পারছি না",
+      "রি ভেরিফাই এনে দাও", "রি-ভেরিফাই এনে দাও", "রি ভেরিফাই বাটন",
+      "এখনো সময় হয়নি", "সময় হয় নাই", "রি ভেরিফাই কখন", "রি-ভেরিফাই কখন",
+      "kokhon re verify", "re verify kokhon", "kobe re verify", "re verify kobe",
+    ],
+    answer:
+      `চিন্তার কিছু নেই ভাইয়া 🙂 রি-ভেরিফাই <b>জোর করে আনা যায় না</b> — সময় হলে নিজে থেকেই চলে আসে।\n\n` +
+      `⏳ <b>নিয়মটা এমন:</b>\n` +
+      `<b>১️⃣</b> ফার্স্ট ভেরিফাই করার পর ওই স্লটের জন্য <b>৩–৪ দিন</b> অপেক্ষা করতে হয়।\n` +
+      `<b>২️⃣</b> সময় হওয়ার আগে চাপ দিলে অ্যাপ বলবে <b>“এখনো সময় হয়নি”</b> — এটা কোনো সমস্যা বা এরর নয় ✅\n` +
+      `<b>৩️⃣</b> সময় হলে ঐ স্লট কার্ডেই <b>“🔁 রি-ভেরিফাই”</b> বাটন নিজে থেকেই দেখা যাবে — তখন এক ক্লিকে লাইভ ফেস স্ক্যান, ১০ সেকেন্ডের কাজ।\n\n` +
+      `🔔 তাই কালকে ভেরিফাই করলে আজই রি-ভেরিফাই হবে না — <b>৩–৪ দিন পর</b> আবার অ্যাপে ঢুকে স্লটটি দেখুন, বাটন চলে আসবে।\n` +
+      `📌 মনে রাখবেন: Good-App নিজে থেকে ফেস না চাইলে আমাদের অ্যাপও চাইবে না — এতে আপনার স্লট বা ইনকামের কোনো ক্ষতি হয় না, মাসিক মাইনিং ঠিকঠাক চলতেই থাকবে 💙`,
+  },
+  {
+
     topic: "Whitelist হচ্ছে না / pending দেখাচ্ছে",
     screenshot: ["not whitelisted", "pending", "whitelist"],
     keywords: ["whitelist", "হোয়াইটলিস্ট", "pending", "check hoy na"],
