@@ -253,7 +253,10 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             // full model/key matrix kept updates in "processing" and Telegram
             // retried them every minute. One bounded pass is enough; the user
             // receives a clear fallback when transcription is unavailable.
-            voiceHeard = await hear();
+            voiceHeard = await Promise.race([
+              hear(),
+              new Promise<null>((resolve) => setTimeout(() => resolve(null), 9_000)),
+            ]);
 
             if (voiceHeard) voiceHeard = voiceHeard.trim();
             if (voiceHeard) text = captionText ? `${captionText}\n${voiceHeard}`.trim() : voiceHeard;
@@ -262,11 +265,18 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           // guessing and sending an unrelated answer.
           if ((!voiceHeard || voiceHeard.replace(/[^\p{L}\p{N}]/gu, "").length < 3) && !captionText) {
             const who = msg.from?.first_name ? `${msg.from.first_name}, ` : "";
+            const fallbackReply =
+              `${who}দুঃখিত 🙏 আপনার ভয়েসটা ঠিকমতো বুঝতে পারিনি।\nএকটু আস্তে করে আবার বলবেন, অথবা লিখে পাঠান — আমি সাথে সাথে সাহায্য করছি 💙`;
             await sendMessage(
               chatId,
-              `${who}দুঃখিত 🙏 আপনার ভয়েসটা ঠিকমতো বুঝতে পারিনি।\nএকটু আস্তে করে আবার বলবেন, অথবা লিখে পাঠান — আমি সাথে সাথে সাহায্য করছি 💙`,
+              fallbackReply,
               msg.message_id,
             );
+            await supabaseAdmin.from("tg_messages").update({
+              verdict: "question",
+              action: "voice-unclear",
+              bot_reply: fallbackReply,
+            }).eq("update_id", update.update_id);
             return Response.json({ ok: true, flow: "voice-unclear" });
           }
         }

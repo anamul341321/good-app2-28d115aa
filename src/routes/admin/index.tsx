@@ -11,7 +11,16 @@ import { WhitelistMonitor } from "@/components/WhitelistMonitor";
 export const Route = createFileRoute("/admin/")({ component: AdminDashboard });
 
 function AdminDashboard() {
-  const { data: stats, isLoading, isError, refetch } = useQuery({ queryKey: ["admin-stats"], queryFn: () => adminStats(), refetchInterval: 60_000, staleTime: 30_000, retry: 1 });
+  const { data: stats, isLoading, isError, refetch } = useQuery({
+    queryKey: ["admin-stats"],
+    queryFn: () => Promise.race([
+      adminStats(),
+      new Promise<never>((_, reject) => window.setTimeout(() => reject(new Error("Dashboard timeout")), 12_000)),
+    ]),
+    refetchInterval: 60_000,
+    staleTime: 30_000,
+    retry: 1,
+  });
   const { data: money } = useQuery({ queryKey: ["admin-money-stats"], queryFn: () => adminMoneyStats(), refetchInterval: 60_000, staleTime: 30_000 });
   const { data: withdrawals } = useQuery({ queryKey: ["admin-withdrawals"], queryFn: () => adminListWithdrawals(), staleTime: 30_000, refetchInterval: 60_000 });
   const claimsQ = useQuery({ queryKey: ["admin-debt-claims"], queryFn: () => adminListDebtClaims(), refetchInterval: 60_000, staleTime: 30_000 });

@@ -15,7 +15,10 @@ export const tgGetSettings = createServerFn({ method: "GET" }).handler(async () 
   let tokenConfigured = false;
   try {
     const { getWebhookInfo } = await import("@/lib/telegram-bot.server");
-    webhook = await getWebhookInfo();
+    webhook = await Promise.race([
+      getWebhookInfo(),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), 5_000)),
+    ]);
     tokenConfigured = true;
   } catch {
     tokenConfigured = false;
