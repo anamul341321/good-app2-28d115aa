@@ -3204,12 +3204,8 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             const { aiOutOfQuota } = await import("@/lib/ai-free.server");
             // কোটা শেষ → অজানা প্রশ্নে চুপ, কোনো মেনশন নয়।
             if (aiOutOfQuota()) {
-              await supabaseAdmin.from("tg_messages").update({
-                text: text.slice(0, 2000),
-                verdict: decision.verdict,
-                action: "silent-no-ai",
-                matched_uid: matchedUid,
-              }).eq("update_id", update.update_id);
+              await logMessage(decision.verdict, "silent-no-ai", null, matchedUid);
+
               return Response.json({ ok: true, flow: "silent-no-ai" });
             }
             reply = `${escalateReply(senderName, mention)}\n${mention}`;
