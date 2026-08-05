@@ -161,6 +161,9 @@ export async function aiFetch(url: string, init: RequestInit): Promise<Response>
         }
         continue; // next key
       }
+      // 404 = this model id isn't available for this key → try the next model,
+      // not the next key (every key would 404 the same way).
+      if (res.status === 404) break;
       break; // real request error — another key won't help
     }
   }
