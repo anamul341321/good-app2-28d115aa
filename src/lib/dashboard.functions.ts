@@ -54,15 +54,24 @@ export const getDashboard = createServerFn({ method: "GET" })
     }
 
     const isAdmin = (roles ?? []).some((r) => r.role === "admin");
-    const tasksWithPhotos = await Promise.all(
-      (tasks ?? []).map(async (task: any) => {
-        if (!task.face_photo_url) return { ...task, signed_face_url: null };
-        const { data: signed } = await supabaseAdmin.storage
-          .from("face-photos")
-          .createSignedUrl(task.face_photo_url, 60 * 30);
-        return { ...task, signed_face_url: signed?.signedUrl ?? null };
-      }),
-    );
+    const photoPaths = (tasks ?? [])
+      .map((task: any) => task.face_photo_url as string | null)
+      .filter((path: string | null): path is string => Boolean(path));
+    const signedByPath = new Map<string, string>();
+    if (photoPaths.length > 0) {
+      const { data: signedPhotos } = await supabaseAdmin.storage
+        .from("face-photos")
+        .createSignedUrls(photoPaths, 60 * 30);
+      for (const photo of signedPhotos ?? []) {
+        if (photo.path && photo.signedUrl) signedByPath.set(photo.path, photo.signedUrl);
+      }
+    }
+    const tasksWithPhotos = (tasks ?? []).map((task: any) => ({
+      ...task,
+      signed_face_url: task.face_photo_url
+        ? signedByPath.get(task.face_photo_url) ?? null
+        : null,
+    }));
 
     const firstVerifyCount = (tasksWithPhotos ?? []).filter((t: any) => !!t.initial_verify_at).length;
     // Bonus progress is the number of distinct slots re-verified at least once,
