@@ -65,7 +65,7 @@ function HomePage() {
     queryKey: ["dashboard"],
     queryFn: () => Promise.race([
       getDashboard(),
-      new Promise<never>((_, reject) => window.setTimeout(() => reject(new Error("Dashboard timeout")), 15_000)),
+      new Promise<never>((_, reject) => window.setTimeout(() => reject(new Error("Dashboard timeout")), 8_000)),
     ]),
     refetchInterval: 60_000,
     staleTime: 20_000,

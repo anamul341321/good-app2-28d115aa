@@ -393,8 +393,8 @@
   50%      { transform: scale(1.04); box-shadow: 0 22px 50px -6px rgba(239,71,111,0.85); }
 }
 @keyframes submit-hero-glow {
-  0%,100% { box-shadow: 0 20px 55px -10px rgba(236,72,153,0.55), 0 8px 24px -6px rgba(245,158,11,0.45), inset 0 1px 0 rgba(255,255,255,0.35); }
-  50%     { box-shadow: 0 30px 75px -8px rgba(236,72,153,0.9), 0 16px 36px -6px rgba(245,158,11,0.7), inset 0 1px 0 rgba(255,255,255,0.55); }
+  0%,100% { box-shadow: 0 15px 40px -10px rgba(236,72,153,0.45); }
+  50%     { box-shadow: 0 20px 50px -5px rgba(236,72,153,0.7); }
 }
 @keyframes submit-sheen {
   0%   { transform: translateX(-140%) skewX(-18deg); }
