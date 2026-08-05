@@ -686,6 +686,44 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return Response.json({ ok: true, blocked: true });
         }
 
+        // ---- বাইরের লিংক/রেফার লিংক সাথে সাথে ডিলিট (স্প্যাম বন্ধ) ------------
+        // AI-র সিদ্ধান্তের অপেক্ষা করলে অনেক সময় লিংক থেকেই যেত — তাই এখানেই
+        // নিশ্চিতভাবে মুছে দিই। আমাদের নিজের লিংক ও সাপোর্ট আইডি ছাড় পায়।
+        if (settings.moderation_enabled && !senderIsAdmin) {
+          const linkSrc = `${text} ${msg.caption ?? ""}`;
+          const urls = linkSrc.match(/(?:https?:\/\/|www\.|t\.me\/|telegram\.me\/)[^\s]+/gi) ?? [];
+          const ownHost = /(goodapp2\.live|good-app2\.lovable\.app|youtu\.be|youtube\.com)/i;
+          const supportUser = String((settings as any).support_username || "@anamulmunni").replace(/^@/, "");
+          const badUrl = urls.find((u) => !ownHost.test(u) && !new RegExp(`t(?:elegram)?\\.me/${supportUser}`, "i").test(u));
+          const invite = /(t\.me\/(?:joinchat|\+)|chat\.whatsapp\.com|wa\.me\/)/i.test(linkSrc);
+
+          if (badUrl || invite) {
+            await deleteMessage(chatId, msg.message_id);
+            const warn =
+              `🔗 <b>${senderName}</b>, গ্রুপে বাইরের কোনো লিংক শেয়ার করা যাবে না — তাই মেসেজটি মুছে দেওয়া হলো 🙏\n` +
+              `আমাদের একটাই অফিসিয়াল লিংক: <b>https://goodapp2.live</b>\n` +
+              `কোনো প্রশ্ন থাকলে এখানেই লিখুন, আমি সাহায্য করছি 💙`;
+            await sendMessage(chatId, warn);
+            await supabaseAdmin.from("tg_messages").upsert({
+              update_id: update.update_id,
+              chat_id: msg.chat.id,
+              message_id: msg.message_id,
+              tg_user_id: msg.from?.id ?? null,
+              username: msg.from?.username ?? null,
+              full_name: senderName,
+              text: linkSrc.slice(0, 2000),
+              has_photo: !!photos?.length,
+              verdict: "spam",
+              action: "link-deleted",
+              bot_reply: warn,
+              matched_uid: null,
+            }, { onConflict: "update_id" });
+            return Response.json({ ok: true, flow: "link-deleted" });
+          }
+        }
+
+
+
 
         // ---- helpers for the guided slot-reset conversation -------------------
         const bnDigits = (s: string) =>
@@ -1128,11 +1166,14 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             sess?.step === "offer_reset"
               ? isAffirmation(norm) || looksLikeUidAnswer ||
                 /(রিসেট|reset|হ্যাঁ|হা|জি|করে দিন|kore din|kore den|chai|চাই)/i.test(norm)
+              : sess?.intent === "slot_restore"
+                ? looksLikeSlotAnswer || looksLikeUidAnswer || wantsAll
               : sess?.intent === "withdraw_status" || sess?.intent === "verification_dates" || sess?.intent === "account_info" || sess?.intent === "referral_join" || sess?.intent === "referral_history" || sess?.intent === "wallet_reset"
                 ? looksLikeUidAnswer
                 : sess?.step === "await_slot"
                   ? looksLikeSlotAnswer
                   : looksLikeUidAnswer || looksLikeSlotAnswer;
+
 
           if (aliveRaw && sess && !answering && !isCancel && questionish) {
             await clearSession();
@@ -1146,6 +1187,51 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               await logMessage("question", "slot-reset-cancel", null, sess.uid);
               return Response.json({ ok: true, flow: "cancelled" });
             }
+
+            // ---- স্লট ফিরিয়ে আনার কথাবার্তা চলছে ----------------------------
+            if (sess.intent === "slot_restore") {
+              const uid = (sess.uid as string | null) || pickUidFromCurrentOrReply() || (await linkedUid());
+              if (!uid) {
+                await sendMessage(
+                  chatId,
+                  "🆔 শুধু আপনার <b>UID</b> নম্বরটি লিখুন (অ্যাপের প্রোফাইল পেজে পাবেন) — তারপরই কোন কোন স্লট ফিরিয়ে আনা যাবে দেখিয়ে দিচ্ছি 💙",
+                  msg.message_id,
+                );
+                return Response.json({ ok: true, flow: "slot-restore-await-uid" });
+              }
+
+              const { listRestorableForUid, restoreSlotsForUid } = await import("@/lib/telegram-slot-restore.server");
+              const wanted = wantsAll ? [] : pickSlots(norm.replace(uid, " "));
+
+              if (!wanted.length && !wantsAll) {
+                const list = await listRestorableForUid(uid);
+                const reply = list.found && list.slots.length
+                  ? `🗂️ <b>${list.name}</b> (UID <code>${list.uid}</code>) — যেসব স্লট রিসেট করা হয়েছিল 👇\n\n` +
+                    list.slots.map((s) => `• <b>স্লট ${s.slot}</b> — ${new Date(s.created_at).toLocaleDateString("bn-BD")}`).join("\n") +
+                    `\n\n🔢 কোন কোন স্লট ফিরিয়ে আনবো? নম্বর লিখুন (যেমন: 4 অথবা 2,5) — সবগুলোর জন্য লিখুন <b>সব</b>।`
+                  : `🙂 এই একাউন্টে ফিরিয়ে আনার মতো কোনো রিসেট করা স্লট পাওয়া যায়নি।`;
+                await saveSession({ intent: "slot_restore", step: "await_slot", uid } as any);
+                await sendMessage(chatId, reply, msg.message_id);
+                await logMessage("question", "slot-restore-list", reply, uid);
+                return Response.json({ ok: true, flow: "slot-restore-list" });
+              }
+
+              const res = await restoreSlotsForUid(uid, wanted);
+              await clearSession();
+              const reply = !res.found
+                ? `❌ UID <code>${uid}</code> দিয়ে কোনো একাউন্ট পাওয়া যায়নি।`
+                : res.done.length
+                  ? `✅ <b>ফিরিয়ে আনা হয়েছে!</b>\n\n` +
+                    `📦 স্লট: <b>${res.done.join(", ")}</b>\n` +
+                    `🔑 আগের key, ফেস ফটো ও ভেরিফিকেশনের তারিখ হুবহু আগের মতোই ফিরে এসেছে।\n` +
+                    (res.failed.length ? `⚠️ পারা যায়নি: ${res.failed.join(", ")}\n` : "") +
+                    `\n👉 অ্যাপটি একবার রিফ্রেশ দিলেই স্লটগুলো দেখতে পাবেন 💙`
+                  : `⚠️ ঐ স্লটগুলো ফিরিয়ে আনা যায়নি।${res.available.length ? ` ফিরিয়ে আনা যাবে: <b>${res.available.join(", ")}</b>` : ""}`;
+              await sendMessage(chatId, reply, msg.message_id);
+              await logMessage("question", `slot-restore:${res.done.join("|")}`, reply, uid);
+              return Response.json({ ok: true, flow: "slot-restore" });
+            }
+
 
             if (sess.intent === "wallet_reset") {
               const rememberedProvider = (sess.data as any)?.provider as "bkash" | "nagad" | undefined;
@@ -1405,6 +1491,45 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
           }
         }
+
+        // ---- "রিসেট করা স্লটগুলো ফিরিয়ে দিন" → কোনগুলো ফেরানো যাবে দেখাই ------
+        if (
+          settings.auto_reply_enabled && msg.from?.id &&
+          /(slot|স্লট)/i.test(norm) &&
+          /(back|ব্যাক|ফিরি|ফিরে|ফেরত|ফিরায়|firay|ferot|firiye|restore|রিস্টোর|আগের অবস্থা|ফেরান|ফিরিয়ে)/i.test(norm)
+        ) {
+          const uid = pickUidFromCurrentOrReply() || (await linkedUid());
+          const { listRestorableForUid } = await import("@/lib/telegram-slot-restore.server");
+          if (!uid) {
+            await saveSession({ intent: "slot_restore", step: "await_uid" } as any);
+            const reply =
+              `🔄 <b>রিসেট করা স্লট ফিরিয়ে আনা যায়</b> — key, ফেস ফটো সব আগের মতোই ফিরে আসবে ✅\n\n` +
+              `🆔 শুধু আপনার <b>UID</b> নম্বরটি লিখুন — তারপর কোন কোন স্লট রিসেট হয়েছিল দেখিয়ে দেব 💙`;
+            await sendMessage(chatId, reply, msg.message_id);
+            await logMessage("question", "slot-restore-ask-uid", reply, null);
+            return Response.json({ ok: true, flow: "slot-restore-ask-uid" });
+          }
+
+          const list = await listRestorableForUid(uid);
+          if (list.found && list.slots.length) {
+            await saveSession({ intent: "slot_restore", step: "await_slot", uid } as any);
+            const reply =
+              `🗂️ <b>${list.name}</b> (UID <code>${list.uid}</code>) — যেসব স্লট রিসেট করা হয়েছিল 👇\n\n` +
+              list.slots.map((s) => `• <b>স্লট ${s.slot}</b> — ${new Date(s.created_at).toLocaleDateString("bn-BD")}`).join("\n") +
+              `\n\n🔢 কোন কোন স্লট ফিরিয়ে আনবো? নম্বর লিখুন (যেমন: 4 অথবা 2,5) — সবগুলোর জন্য লিখুন <b>সব</b>।`;
+            await sendMessage(chatId, reply, msg.message_id);
+            await logMessage("question", "slot-restore-list", reply, uid);
+            return Response.json({ ok: true, flow: "slot-restore-list" });
+          }
+
+          const reply = list.found
+            ? `🙂 আপনার একাউন্টে (UID <code>${list.uid}</code>) ফিরিয়ে আনার মতো কোনো রিসেট করা স্লট পাওয়া যায়নি।\nনতুন করে ফেস ভেরিফিকেশন করে স্লটটি চালু করে নিতে পারেন 💙`
+            : `❌ UID <code>${uid}</code> দিয়ে কোনো একাউন্ট পাওয়া যায়নি — সঠিক UID টি লিখুন।`;
+          await sendMessage(chatId, reply, msg.message_id);
+          await logMessage("question", "slot-restore-none", reply, uid);
+          return Response.json({ ok: true, flow: "slot-restore-none" });
+        }
+
 
         // ---- ইউজার শুধু UID লিখলে (আগেই যা চেয়েছিল সেটাই) সাথে সাথে হিসাব -----
         // আগে আবার "কী চেক করে দেব?" জিজ্ঞেস করা হতো — সেটা বিরক্তিকর, তাই

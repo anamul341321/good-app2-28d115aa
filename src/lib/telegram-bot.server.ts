@@ -119,7 +119,7 @@ async function sendTextOnly(chatId: string | number, full: string, _replyTo?: nu
 
 /**
  * প্রতি মেসেজের জন্য রিপ্লাই-মোড।
- * ডিফল্ট: শুধু লেখা। ইউজার যদি "ভয়েসে বলো" বলে তবেই শুধু ভয়েস (লেখা ছাড়া)।
+ * ডিফল্ট: লেখা + ভয়েস দুটোই। ইউজার "ভয়েসে বলো / লেখা বুঝি না" বললে শুধু ভয়েস।
  */
 let replyModeOverride: "voice" | "text" | null = null;
 
@@ -141,11 +141,11 @@ export function asksForVoiceReply(s: string): boolean {
 export async function sendMessage(chatId: string | number, text: string, _replyTo?: number) {
   const full = sanitizeTelegramHtml(text);
   const prefs = await voicePrefs();
-  // অ্যাডমিন ভয়েস বন্ধ রাখলে ভয়েস যাবে না। খোলা থাকলে: ইউজার ভয়েস চাইলে
-  // শুধু ভয়েস, নইলে শুধু লেখা।
-  const wantVoiceMode = prefs.voice && replyModeOverride === "voice";
-  const voiceOn = wantVoiceMode;
-  const textOn = !wantVoiceMode;
+  // অ্যাডমিন ভয়েস বন্ধ রাখলে ভয়েস যাবে না। খোলা থাকলে ডিফল্টে লেখা + ভয়েস
+  // দুটোই যায়; ইউজার নিজে "ভয়েসে বলো" বললে শুধু ভয়েস।
+  const voiceOnly = prefs.voice && replyModeOverride === "voice";
+  const voiceOn = prefs.voice;
+  const textOn = !voiceOnly && prefs.text !== false;
 
   const plainLen = full.replace(/<[^>]+>/g, "").trim().length;
   const wantVoice = voiceOn && plainLen >= 1;
@@ -156,7 +156,8 @@ export async function sendMessage(chatId: string | number, text: string, _replyT
   if (wantVoice) {
     void api("sendChatAction", { chat_id: chatId, action: "record_voice" });
     voicePromise = import("./tts-free.server")
-      .then((m) => m.speakBengali(full))
+      // ভয়েসে সংক্ষেপে বলা হয় — কোটা কম খরচ হয় ও শুনতেও সহজ লাগে।
+      .then((m) => m.speakBengali(m.voiceBrief(full)))
       .catch((e) => {
         console.error("[tg] voice reply failed", e);
         return null;
@@ -164,9 +165,9 @@ export async function sendMessage(chatId: string | number, text: string, _replyT
   }
 
   let last: unknown = null;
-  if (textOn || !voiceOn) last = await sendTextOnly(chatId, full, _replyTo);
+  if (textOn) last = await sendTextOnly(chatId, full, _replyTo);
 
-  // ---- ভয়েস উত্তর: একই উত্তরটি মেয়ে-কণ্ঠে বাংলায় ----
+  // ---- ভয়েস উত্তর: একই উত্তরটি মেয়ে-কণ্ঠে বাংলায় (সংক্ষেপে) ----
   if (voicePromise) {
     const wav = await voicePromise;
     if (wav) {
@@ -180,6 +181,7 @@ export async function sendMessage(chatId: string | number, text: string, _replyT
 
   return last;
 }
+
 
 /**
  * Send a photo from a URL (used for the hisab card image). Returns false when

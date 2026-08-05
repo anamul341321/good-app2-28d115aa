@@ -73,6 +73,25 @@ export function voiceScript(html: string): string {
 }
 
 
+/**
+ * ভয়েসের জন্য সংক্ষিপ্ত রূপ: বুলেট/ধাপের লম্বা তালিকা পুরোটা না পড়ে মূল
+ * কথাগুলোই বলা হয়। এতে ফ্রি TTS কোটা অনেক কম খরচ হয় (এক চাংকেই শেষ হয়)
+ * এবং শুনতেও সহজ লাগে।
+ */
+export function voiceBrief(html: string, max = 340): string {
+  const script = voiceScript(html);
+  if (script.length <= max) return script;
+  const sentences = script.match(/[^।!?]+[।!?]?\s*/g) ?? [script];
+  let out = "";
+  for (const s of sentences) {
+    if ((out + s).trim().length > max) break;
+    out += s;
+  }
+  out = out.trim();
+  if (out.length < 60) out = script.slice(0, max).trim();
+  return `${out} বিস্তারিত লেখায় দেখে নিন।`;
+}
+
 
 async function sha(text: string): Promise<string> {
   const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
