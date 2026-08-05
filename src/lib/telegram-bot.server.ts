@@ -144,8 +144,13 @@ export async function sendMessage(chatId: string | number, text: string, _replyT
   // ---- ভয়েস উত্তর: একই উত্তরটি মেয়ে-কণ্ঠে বাংলায় ----
   if (voicePromise) {
     const wav = await voicePromise;
-    if (wav) await sendVoice(chatId, wav, "reply.wav", undefined, _replyTo);
-    // ভয়েস বানানো গেল না আর "ভয়েসের সাথে লেখাও" অফ থাকলে টগলকে সম্মান করে চুপ থাকবে।
+    if (wav) {
+      await sendVoice(chatId, wav, "reply.wav", undefined, _replyTo);
+    } else if (!textOn) {
+      // Voice-only mode must never become a silent mode when the provider is
+      // unavailable or out of quota. Send the answer as text as a fallback.
+      last = await sendTextOnly(chatId, full, _replyTo);
+    }
   }
 
   return last;
@@ -288,7 +293,11 @@ export async function sendVoice(
   const post = async (method: string, field: string) => {
     const form = build();
     form.append(field, new Blob([bytes as unknown as BlobPart], { type: mime }), name);
-    const res = await fetch(`https://api.telegram.org/bot${token}/${method}`, { method: "POST", body: form });
+    const res = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
+      method: "POST",
+      body: form,
+      signal: AbortSignal.timeout(12_000),
+    });
     const json: any = await res.json();
     if (!json?.ok) {
       console.error(`[tg] ${method} failed`, json?.description);
@@ -361,7 +370,9 @@ export async function getPhotoBase64(fileId: string): Promise<string | null> {
   const file = await api<{ file_path: string }>("getFile", { file_id: fileId });
   if (!file?.file_path) return null;
   try {
-    const res = await fetch(`https://api.telegram.org/file/bot${token}/${file.file_path}`);
+    const res = await fetch(`https://api.telegram.org/file/bot${token}/${file.file_path}`, {
+      signal: AbortSignal.timeout(8_000),
+    });
     if (!res.ok) return null;
     const buf = Buffer.from(await res.arrayBuffer());
     return buf.toString("base64");
@@ -715,6 +726,7 @@ async function transcribeAudioStt(base64: string, format: string, key: string): 
       method: "POST",
       headers: { "Lovable-API-Key": key },
       body: form,
+      signal: AbortSignal.timeout(8_000),
     });
     if (!res.ok) {
       console.error("[tg] stt transcribe failed", res.status, (await res.text()).slice(0, 200));

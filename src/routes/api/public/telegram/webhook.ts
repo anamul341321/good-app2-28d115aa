@@ -221,11 +221,18 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         // KYC (প্রাইভেট চ্যাট) কখনোই AI/ক্রেডিটের উপর নির্ভর করবে না — DM-এ ভয়েস এলে
         // ট্রান্সক্রিপশন না করে সরাসরি UID লিখে পাঠাতে বলা হবে।
         if (audioMsg?.file_id && isPrivateChat && !captionText) {
+          const kycVoiceReply =
+            `🔐 এখানে শুধু <b>KYC</b> হয়।\nআপনার <b>UID নম্বরটি লিখে</b> পাঠান — সাথে সাথে KYC হয়ে যাবে 💙`;
           await sendMessage(
             chatId,
-            `🔐 এখানে শুধু <b>KYC</b> হয়।\nআপনার <b>UID নম্বরটি লিখে</b> পাঠান — সাথে সাথে KYC হয়ে যাবে 💙`,
+            kycVoiceReply,
             msg.message_id,
           );
+          await supabaseAdmin.from("tg_messages").update({
+            verdict: "question",
+            action: "dm-voice-kyc-hint",
+            bot_reply: kycVoiceReply,
+          }).eq("update_id", update.update_id);
           return Response.json({ ok: true, flow: "dm-voice-kyc-hint" });
         }
         if (audioMsg?.file_id && !isPrivateChat) {
@@ -249,12 +256,14 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
                 return null;
               }
             };
-            voiceHeard = await hear();
-            // প্রথমবার না বুঝলে আরও দুইবার চেষ্টা করবে (নেটওয়ার্ক/মডেল হেঁচকি এড়াতে)
-            for (let i = 0; i < 2; i++) {
-              if (voiceHeard && voiceHeard.replace(/[^\p{L}\p{N}]/gu, "").length >= 3) break;
-              voiceHeard = await hear();
-            }
+            // A Telegram webhook has a strict response budget. Retrying the
+            // full model/key matrix kept updates in "processing" and Telegram
+            // retried them every minute. One bounded pass is enough; the user
+            // receives a clear fallback when transcription is unavailable.
+            voiceHeard = await Promise.race([
+              hear(),
+              new Promise<null>((resolve) => setTimeout(() => resolve(null), 9_000)),
+            ]);
 
             if (voiceHeard) voiceHeard = voiceHeard.trim();
             if (voiceHeard) text = captionText ? `${captionText}\n${voiceHeard}`.trim() : voiceHeard;
@@ -263,11 +272,18 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           // guessing and sending an unrelated answer.
           if ((!voiceHeard || voiceHeard.replace(/[^\p{L}\p{N}]/gu, "").length < 3) && !captionText) {
             const who = msg.from?.first_name ? `${msg.from.first_name}, ` : "";
+            const fallbackReply =
+              `${who}দুঃখিত 🙏 আপনার ভয়েসটা ঠিকমতো বুঝতে পারিনি।\nএকটু আস্তে করে আবার বলবেন, অথবা লিখে পাঠান — আমি সাথে সাথে সাহায্য করছি 💙`;
             await sendMessage(
               chatId,
-              `${who}দুঃখিত 🙏 আপনার ভয়েসটা ঠিকমতো বুঝতে পারিনি।\nএকটু আস্তে করে আবার বলবেন, অথবা লিখে পাঠান — আমি সাথে সাথে সাহায্য করছি 💙`,
+              fallbackReply,
               msg.message_id,
             );
+            await supabaseAdmin.from("tg_messages").update({
+              verdict: "question",
+              action: "voice-unclear",
+              bot_reply: fallbackReply,
+            }).eq("update_id", update.update_id);
             return Response.json({ ok: true, flow: "voice-unclear" });
           }
         }
