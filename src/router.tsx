@@ -13,7 +13,7 @@ export const getRouter = () => {
         retryDelay: (attempt) => Math.min(1200 * 2 ** attempt, 4000),
         refetchOnWindowFocus: false,
         refetchOnReconnect: true,
-        refetchOnMount: false,
+        refetchOnMount: true,
         refetchIntervalInBackground: false,
         networkMode: "online",
       },
