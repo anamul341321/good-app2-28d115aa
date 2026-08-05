@@ -129,9 +129,16 @@ export async function aiFetch(url: string, init: RequestInit): Promise<Response>
     ? AbortSignal.any([init.signal, requestDeadline])
     : requestDeadline;
   if (!keys.length) {
-    // Paid fallback — keep the original request as-is.
-    return fetch(url, { ...init, signal: requestSignal });
+    // অ্যাডমিন প্যানেলে কোনো ফ্রি কী না থাকলে ক্রেডিট খরচ করে পেইড গেটওয়েতে
+    // যাওয়া হবে না — বট তখন শুধু সেট করা উত্তরগুলোই দেবে।
+    const allow = String(process.env.BOT_ALLOW_PAID ?? "").trim().toLowerCase();
+    if (allow === "on" || allow === "1" || allow === "true") {
+      return fetch(url, { ...init, signal: requestSignal });
+    }
+    markAiOutOfQuota();
+    return new Response("no-free-ai-key", { status: 503 });
   }
+
 
   let body: any = {};
   try {
