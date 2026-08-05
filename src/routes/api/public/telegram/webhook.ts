@@ -1492,6 +1492,45 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           }
         }
 
+        // ---- "রিসেট করা স্লটগুলো ফিরিয়ে দিন" → কোনগুলো ফেরানো যাবে দেখাই ------
+        if (
+          settings.auto_reply_enabled && msg.from?.id &&
+          /(slot|স্লট)/i.test(norm) &&
+          /(back|ব্যাক|ফিরি|ফিরে|ফেরত|ফিরায়|firay|ferot|firiye|restore|রিস্টোর|আগের অবস্থা|ফেরান|ফিরিয়ে)/i.test(norm)
+        ) {
+          const uid = pickUidFromCurrentOrReply() || (await linkedUid());
+          const { listRestorableForUid } = await import("@/lib/telegram-slot-restore.server");
+          if (!uid) {
+            await saveSession({ intent: "slot_restore", step: "await_uid" } as any);
+            const reply =
+              `🔄 <b>রিসেট করা স্লট ফিরিয়ে আনা যায়</b> — key, ফেস ফটো সব আগের মতোই ফিরে আসবে ✅\n\n` +
+              `🆔 শুধু আপনার <b>UID</b> নম্বরটি লিখুন — তারপর কোন কোন স্লট রিসেট হয়েছিল দেখিয়ে দেব 💙`;
+            await sendMessage(chatId, reply, msg.message_id);
+            await logMessage("question", "slot-restore-ask-uid", reply, null);
+            return Response.json({ ok: true, flow: "slot-restore-ask-uid" });
+          }
+
+          const list = await listRestorableForUid(uid);
+          if (list.found && list.slots.length) {
+            await saveSession({ intent: "slot_restore", step: "await_slot", uid } as any);
+            const reply =
+              `🗂️ <b>${list.name}</b> (UID <code>${list.uid}</code>) — যেসব স্লট রিসেট করা হয়েছিল 👇\n\n` +
+              list.slots.map((s) => `• <b>স্লট ${s.slot}</b> — ${new Date(s.created_at).toLocaleDateString("bn-BD")}`).join("\n") +
+              `\n\n🔢 কোন কোন স্লট ফিরিয়ে আনবো? নম্বর লিখুন (যেমন: 4 অথবা 2,5) — সবগুলোর জন্য লিখুন <b>সব</b>।`;
+            await sendMessage(chatId, reply, msg.message_id);
+            await logMessage("question", "slot-restore-list", reply, uid);
+            return Response.json({ ok: true, flow: "slot-restore-list" });
+          }
+
+          const reply = list.found
+            ? `🙂 আপনার একাউন্টে (UID <code>${list.uid}</code>) ফিরিয়ে আনার মতো কোনো রিসেট করা স্লট পাওয়া যায়নি।\nনতুন করে ফেস ভেরিফিকেশন করে স্লটটি চালু করে নিতে পারেন 💙`
+            : `❌ UID <code>${uid}</code> দিয়ে কোনো একাউন্ট পাওয়া যায়নি — সঠিক UID টি লিখুন।`;
+          await sendMessage(chatId, reply, msg.message_id);
+          await logMessage("question", "slot-restore-none", reply, uid);
+          return Response.json({ ok: true, flow: "slot-restore-none" });
+        }
+
+
         // ---- ইউজার শুধু UID লিখলে (আগেই যা চেয়েছিল সেটাই) সাথে সাথে হিসাব -----
         // আগে আবার "কী চেক করে দেব?" জিজ্ঞেস করা হতো — সেটা বিরক্তিকর, তাই
         // খালি নম্বর পেলেই সরাসরি পুরো একাউন্টের হিসাব পাঠিয়ে দিই।
