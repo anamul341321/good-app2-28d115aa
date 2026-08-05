@@ -55,7 +55,7 @@ function AuthedLayout() {
 
   useEffect(() => {
     let active = true;
-    setAuthState("checking");
+    if (authState !== "authenticated" || authAttempt > 0) setAuthState("checking");
     setAuthError(false);
 
     const timeoutId = window.setTimeout(() => {
