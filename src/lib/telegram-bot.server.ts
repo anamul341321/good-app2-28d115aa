@@ -293,7 +293,11 @@ export async function sendVoice(
   const post = async (method: string, field: string) => {
     const form = build();
     form.append(field, new Blob([bytes as unknown as BlobPart], { type: mime }), name);
-    const res = await fetch(`https://api.telegram.org/bot${token}/${method}`, { method: "POST", body: form });
+    const res = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
+      method: "POST",
+      body: form,
+      signal: AbortSignal.timeout(12_000),
+    });
     const json: any = await res.json();
     if (!json?.ok) {
       console.error(`[tg] ${method} failed`, json?.description);
@@ -366,7 +370,9 @@ export async function getPhotoBase64(fileId: string): Promise<string | null> {
   const file = await api<{ file_path: string }>("getFile", { file_id: fileId });
   if (!file?.file_path) return null;
   try {
-    const res = await fetch(`https://api.telegram.org/file/bot${token}/${file.file_path}`);
+    const res = await fetch(`https://api.telegram.org/file/bot${token}/${file.file_path}`, {
+      signal: AbortSignal.timeout(8_000),
+    });
     if (!res.ok) return null;
     const buf = Buffer.from(await res.arrayBuffer());
     return buf.toString("base64");

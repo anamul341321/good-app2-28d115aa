@@ -221,11 +221,18 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         // KYC (প্রাইভেট চ্যাট) কখনোই AI/ক্রেডিটের উপর নির্ভর করবে না — DM-এ ভয়েস এলে
         // ট্রান্সক্রিপশন না করে সরাসরি UID লিখে পাঠাতে বলা হবে।
         if (audioMsg?.file_id && isPrivateChat && !captionText) {
+          const kycVoiceReply =
+            `🔐 এখানে শুধু <b>KYC</b> হয়।\nআপনার <b>UID নম্বরটি লিখে</b> পাঠান — সাথে সাথে KYC হয়ে যাবে 💙`;
           await sendMessage(
             chatId,
-            `🔐 এখানে শুধু <b>KYC</b> হয়।\nআপনার <b>UID নম্বরটি লিখে</b> পাঠান — সাথে সাথে KYC হয়ে যাবে 💙`,
+            kycVoiceReply,
             msg.message_id,
           );
+          await supabaseAdmin.from("tg_messages").update({
+            verdict: "question",
+            action: "dm-voice-kyc-hint",
+            bot_reply: kycVoiceReply,
+          }).eq("update_id", update.update_id);
           return Response.json({ ok: true, flow: "dm-voice-kyc-hint" });
         }
         if (audioMsg?.file_id && !isPrivateChat) {
