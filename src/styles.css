@@ -94,7 +94,7 @@
       radial-gradient(900px 480px at 100% 8%,  color-mix(in oklch, var(--color-cyan) 16%, transparent),   transparent 60%),
       radial-gradient(800px 500px at 50% 110%, color-mix(in oklch, var(--color-emerald) 14%, transparent), transparent 60%),
       #ffffff;
-    background-attachment: fixed;
+    background-attachment: scroll;
     color: var(--color-foreground);
     font-family: "Noto Sans Bengali", "Plus Jakarta Sans", system-ui, sans-serif;
     font-size: 15.5px;
@@ -118,6 +118,9 @@
 
 @layer utilities {
   .glass {
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    transform: translateZ(0);
     background: color-mix(in oklch, white 82%, transparent);
     backdrop-filter: blur(18px) saturate(140%);
     -webkit-backdrop-filter: blur(18px) saturate(140%);
@@ -127,6 +130,9 @@
       inset 0 1px 0 0 white;
   }
   .glass-strong {
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    transform: translateZ(0);
     background: linear-gradient(160deg,
       color-mix(in oklch, white 94%, transparent),
       color-mix(in oklch, var(--color-violet) 8%, white));
