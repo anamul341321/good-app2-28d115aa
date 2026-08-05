@@ -60,10 +60,47 @@ async function allKeys(): Promise<PoolKey[]> {
   return out;
 }
 
+/**
+ * চেষ্টাগুলো একসাথে না ছুড়ে ধাপে ধাপে (stagger) চালায় — প্রথমটা দেরি করলে
+ * পরেরটা যোগ হয়, যেটা আগে সফল হয় সেটাই ফেরে। এতে ফ্রি কোটা অনেক কম খরচ হয়।
+ */
+export function staggerAny<T>(makers: (() => Promise<T>)[], stepMs: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    if (!makers.length) return reject(new Error("no-attempts"));
+    let launched = 0;
+    let pending = 0;
+    let done = false;
+    let lastErr: unknown = new Error("all-attempts-failed");
+    const launch = () => {
+      if (done || launched >= makers.length) return;
+      const maker = makers[launched++];
+      pending++;
+      if (launched < makers.length) setTimeout(() => launch(), stepMs);
+      maker().then(
+        (v) => {
+          if (!done) {
+            done = true;
+            resolve(v);
+          }
+        },
+        (e) => {
+          lastErr = e;
+          pending--;
+          if (done) return;
+          if (launched < makers.length) launch();
+          else if (pending === 0) reject(lastErr);
+        },
+      );
+    };
+    launch();
+  });
+}
+
 /** Shared key pool (DB keys first, then env keys) — used by the voice layer too. */
 export async function freeKeyPool(): Promise<PoolKey[]> {
   return allKeys();
 }
+
 
 export async function freeAiKeyCount(): Promise<number> {
   return (await allKeys()).length;
