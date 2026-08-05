@@ -21,7 +21,10 @@ function AdminLayout() {
 
   useEffect(() => {
     let active = true;
-    check().then((res) => {
+    const timeout = new Promise<never>((_, reject) => {
+      window.setTimeout(() => reject(new Error("Admin check timeout")), 10_000);
+    });
+    Promise.race([check(), timeout]).then((res) => {
       if (!active) return;
       setStatus(res.unlocked ? "unlocked" : "locked");
     }).catch(() => active && setStatus("locked"));

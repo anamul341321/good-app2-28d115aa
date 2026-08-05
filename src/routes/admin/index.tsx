@@ -11,7 +11,7 @@ import { WhitelistMonitor } from "@/components/WhitelistMonitor";
 export const Route = createFileRoute("/admin/")({ component: AdminDashboard });
 
 function AdminDashboard() {
-  const { data: stats, isLoading } = useQuery({ queryKey: ["admin-stats"], queryFn: () => adminStats(), refetchInterval: 60_000, staleTime: 30_000 });
+  const { data: stats, isLoading, isError, refetch } = useQuery({ queryKey: ["admin-stats"], queryFn: () => adminStats(), refetchInterval: 60_000, staleTime: 30_000, retry: 1 });
   const { data: money } = useQuery({ queryKey: ["admin-money-stats"], queryFn: () => adminMoneyStats(), refetchInterval: 60_000, staleTime: 30_000 });
   const { data: withdrawals } = useQuery({ queryKey: ["admin-withdrawals"], queryFn: () => adminListWithdrawals(), staleTime: 30_000, refetchInterval: 60_000 });
   const claimsQ = useQuery({ queryKey: ["admin-debt-claims"], queryFn: () => adminListDebtClaims(), refetchInterval: 60_000, staleTime: 30_000 });
@@ -22,6 +22,16 @@ function AdminDashboard() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  if (isError) {
+    return (
+      <div className="py-10 text-center space-y-3">
+        <p className="text-xs font-bold text-rose">ড্যাশবোর্ড লোড হয়নি</p>
+        <button className="gradient-cta rounded-xl px-4 py-2 text-xs font-black" onClick={() => refetch()}>
+          আবার চেষ্টা করুন
+        </button>
+      </div>
+    );
+  }
   if (isLoading || !stats) {
     return <div className="py-10 flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-cyan" /></div>;
   }

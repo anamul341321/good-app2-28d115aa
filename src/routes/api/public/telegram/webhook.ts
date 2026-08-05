@@ -249,12 +249,11 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
                 return null;
               }
             };
+            // A Telegram webhook has a strict response budget. Retrying the
+            // full model/key matrix kept updates in "processing" and Telegram
+            // retried them every minute. One bounded pass is enough; the user
+            // receives a clear fallback when transcription is unavailable.
             voiceHeard = await hear();
-            // প্রথমবার না বুঝলে আরও দুইবার চেষ্টা করবে (নেটওয়ার্ক/মডেল হেঁচকি এড়াতে)
-            for (let i = 0; i < 2; i++) {
-              if (voiceHeard && voiceHeard.replace(/[^\p{L}\p{N}]/gu, "").length >= 3) break;
-              voiceHeard = await hear();
-            }
 
             if (voiceHeard) voiceHeard = voiceHeard.trim();
             if (voiceHeard) text = captionText ? `${captionText}\n${voiceHeard}`.trim() : voiceHeard;

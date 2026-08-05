@@ -144,8 +144,13 @@ export async function sendMessage(chatId: string | number, text: string, _replyT
   // ---- ভয়েস উত্তর: একই উত্তরটি মেয়ে-কণ্ঠে বাংলায় ----
   if (voicePromise) {
     const wav = await voicePromise;
-    if (wav) await sendVoice(chatId, wav, "reply.wav", undefined, _replyTo);
-    // ভয়েস বানানো গেল না আর "ভয়েসের সাথে লেখাও" অফ থাকলে টগলকে সম্মান করে চুপ থাকবে।
+    if (wav) {
+      await sendVoice(chatId, wav, "reply.wav", undefined, _replyTo);
+    } else if (!textOn) {
+      // Voice-only mode must never become a silent mode when the provider is
+      // unavailable or out of quota. Send the answer as text as a fallback.
+      last = await sendTextOnly(chatId, full, _replyTo);
+    }
   }
 
   return last;
@@ -715,6 +720,7 @@ async function transcribeAudioStt(base64: string, format: string, key: string): 
       method: "POST",
       headers: { "Lovable-API-Key": key },
       body: form,
+      signal: AbortSignal.timeout(8_000),
     });
     if (!res.ok) {
       console.error("[tg] stt transcribe failed", res.status, (await res.text()).slice(0, 200));
