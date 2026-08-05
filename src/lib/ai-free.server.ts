@@ -129,49 +129,47 @@ export async function aiFetch(url: string, init: RequestInit): Promise<Response>
   let lastStatus = 0;
   let lastText = "";
 
-  // Race every model × key in parallel instead of walking them one by one.
-  // Serial attempts burned the whole deadline on the slowest model (flash
-  // ~3-4s) so the fast one was never reached and the bot fell back to its
-  // "I don't understand" reply.
-  const attempts: Promise<Response>[] = [];
+  // কী-র ফ্রি কোটা বাঁচাতে সব কী একসাথে ছুড়ি না (আগে ১টা প্রশ্নে ৪-৮টা কল
+  // যেত, তাই ৭ বার ব্যবহারেই লিমিট শেষ দেখাতো)। প্রথমটা দিয়েই শুরু, দেরি হলে
+  // পরেরটা যোগ হয় — যেটা আগে উত্তর দেয় সেটাই যায়।
+  const makers: (() => Promise<Response>)[] = [];
   for (const model of models) {
-    for (const k of keys.slice(0, 6)) {
-      attempts.push(
-        (async () => {
-          let res: Response;
-          try {
-            res = await send(k.key, model);
-          } catch (e) {
-            lastStatus = 0;
-            lastText = String(e);
-            throw e;
+    for (const k of keys.slice(0, 4)) {
+      makers.push(async () => {
+        let res: Response;
+        try {
+          res = await send(k.key, model);
+        } catch (e) {
+          lastStatus = 0;
+          lastText = String(e);
+          throw e;
+        }
+        if (res.ok) {
+          if (k.id) {
+            const { markKeyUsed } = await import("./ai-keys.server");
+            void markKeyUsed(k.id);
           }
-          if (res.ok) {
-            if (k.id) {
-              const { markKeyUsed } = await import("./ai-keys.server");
-              void markKeyUsed(k.id);
-            }
-            return res;
-          }
-          lastStatus = res.status;
-          lastText = await res.text().catch(() => "");
-          if (k.id && (res.status === 429 || res.status === 403)) {
-            const mod = await import("./ai-keys.server");
-            if (res.status === 429)
-              void mod.markKeyExhausted(k.id, "আজকের ফ্রি লিমিট শেষ — ১ ঘণ্টা পর আবার চেষ্টা হবে");
-            else void mod.markKeyError(k.id, "এই মডেলে এই কী-র অনুমতি নেই");
-          }
-          throw new Error(`gemini-${res.status}`);
-        })(),
-      );
+          return res;
+        }
+        lastStatus = res.status;
+        lastText = await res.text().catch(() => "");
+        if (k.id && (res.status === 429 || res.status === 403)) {
+          const mod = await import("./ai-keys.server");
+          if (res.status === 429)
+            void mod.markKeyExhausted(k.id, "আজকের ফ্রি লিমিট শেষ — ১ ঘণ্টা পর আবার চেষ্টা হবে");
+          else void mod.markKeyError(k.id, "এই মডেলে এই কী-র অনুমতি নেই");
+        }
+        throw new Error(`gemini-${res.status}`);
+      });
     }
   }
 
   try {
-    return await Promise.any(attempts);
+    return await staggerAny(makers, 2_200);
   } catch {
     /* every free attempt failed → paid gateway below */
   }
+
 
   console.error("[ai-free] all free keys failed", lastStatus, lastText.slice(0, 300));
   // Every free key is exhausted → paid gateway so the bot still answers.
