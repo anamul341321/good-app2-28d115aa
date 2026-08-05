@@ -41,8 +41,8 @@ function AdminDashboard() {
       </div>
     );
   }
-  if (isLoading || !stats) {
-    return <div className="py-10 flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-cyan" /></div>;
+  if (isLoading && !stats) {
+    
   }
 
   const pending = (withdrawals ?? []).filter((w: any) => w.status === "pending").slice(0, 3);
