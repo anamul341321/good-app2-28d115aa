@@ -21,7 +21,10 @@ function readStoredSession(): SessionResult | undefined {
       };
       if (!parsed.access_token || !parsed.refresh_token) continue;
       if (parsed.expires_at && parsed.expires_at * 1000 <= Date.now() + 30_000) continue;
-      return { data: { session: parsed as SessionResult["data"]["session"] }, error: null };
+      return {
+        data: { session: parsed as NonNullable<SessionResult["data"]["session"]> },
+        error: null,
+      } as SessionResult;
     }
   } catch {
     return undefined;
