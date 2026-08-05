@@ -274,24 +274,36 @@ export function builtinFaqKnowledge(): string {
   );
 }
 
-/** Fast deterministic match on plain text (no AI needed). */
+/**
+ * Fast deterministic match on plain text (no AI needed).
+ * শুধু `keywords` দেখে মেলানো হয় — `screenshot` লাইনগুলো ছবির জন্য, লেখার জন্য নয়
+ * (আগে "verify/ভেরিফাই" স্ক্রিনশট-শব্দের কারণে রি-ভেরিফাইয়ের প্রশ্নেও Gmail-এর উত্তর যেত)।
+ * একাধিক মিললে সবচেয়ে লম্বা (সবচেয়ে নির্দিষ্ট) কিওয়ার্ডটি জেতে।
+ */
 export function matchBuiltinFaqText(text: string): BuiltinFaq | null {
   const hay = text.toLowerCase();
   if (!hay.trim()) return null;
-  const matches = (k: string) => {
+  const hitLen = (k: string) => {
     const key = k.toLowerCase().trim();
-    if (key.length < 3) return false;
+    if (key.length < 3) return 0;
     // 3-letter keys (kyc, apk…) only count as a whole word, never inside another word.
     if (key.length === 3 && /^[a-z]+$/.test(key)) {
-      return new RegExp(`(^|[^a-z])${key}([^a-z]|$)`, "i").test(hay);
+      return new RegExp(`(^|[^a-z])${key}([^a-z]|$)`, "i").test(hay) ? key.length : 0;
     }
-    return key.length > 3 && hay.includes(key);
+    return key.length > 3 && hay.includes(key) ? key.length : 0;
   };
+  let best: BuiltinFaq | null = null;
+  let bestScore = 0;
   for (const f of BUILTIN_FAQS) {
-    if ([...f.keywords, ...f.screenshot].some(matches)) return f;
+    const score = Math.max(0, ...f.keywords.map(hitLen));
+    if (score > bestScore) {
+      bestScore = score;
+      best = f;
+    }
   }
-  return null;
+  return best;
 }
+
 
 /** Find a built-in answer by its topic label (safer than an array index). */
 export function builtinFaqByTopic(fragment: string): BuiltinFaq | null {
