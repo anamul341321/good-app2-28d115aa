@@ -1166,11 +1166,14 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             sess?.step === "offer_reset"
               ? isAffirmation(norm) || looksLikeUidAnswer ||
                 /(রিসেট|reset|হ্যাঁ|হা|জি|করে দিন|kore din|kore den|chai|চাই)/i.test(norm)
+              : sess?.intent === "slot_restore"
+                ? looksLikeSlotAnswer || looksLikeUidAnswer || wantsAll
               : sess?.intent === "withdraw_status" || sess?.intent === "verification_dates" || sess?.intent === "account_info" || sess?.intent === "referral_join" || sess?.intent === "referral_history" || sess?.intent === "wallet_reset"
                 ? looksLikeUidAnswer
                 : sess?.step === "await_slot"
                   ? looksLikeSlotAnswer
                   : looksLikeUidAnswer || looksLikeSlotAnswer;
+
 
           if (aliveRaw && sess && !answering && !isCancel && questionish) {
             await clearSession();
