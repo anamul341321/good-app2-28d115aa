@@ -143,8 +143,9 @@ export async function aiFetch(url: string, init: RequestInit): Promise<Response>
         if (k.id) {
           const mod = await import("./ai-keys.server");
           // Only real quota (429) parks a key; 403 = model/permission issue.
-          if (res.status === 429) void mod.markKeyExhausted(k.id, `429: ${lastText.slice(0, 200)}`);
-          else void mod.markKeyError(k.id, `403: ${lastText.slice(0, 200)}`);
+          if (res.status === 429)
+            void mod.markKeyExhausted(k.id, "আজকের ফ্রি লিমিট শেষ — ১ ঘণ্টা পর আবার চেষ্টা হবে");
+          else void mod.markKeyError(k.id, "এই মডেলে এই কী-র অনুমতি নেই");
         }
         continue; // next key
       }

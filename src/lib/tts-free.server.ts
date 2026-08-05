@@ -210,9 +210,14 @@ async function pcmForChunk(
         if (res.status === 429 || res.status === 403) {
           if (k.id) {
             const mod = await import("./ai-keys.server");
-            // 403 = this model isn't enabled for that key (not quota) → keep the key usable.
-            if (res.status === 429) void mod.markKeyExhausted(k.id, `tts 429: ${txt.slice(0, 160)}`);
-            else void mod.markKeyError(k.id, `tts 403: ${txt.slice(0, 160)}`);
+            // Voice models have their own quota/permission — never park a key for
+            // text use because of a voice failure.
+            void mod.markKeyError(
+              k.id,
+              res.status === 429
+                ? "ভয়েসের লিমিট আজকের জন্য শেষ (লেখা ঠিকই চলবে)"
+                : "এই কী-তে ভয়েস মডেল চালু নেই (লেখা ঠিকই চলবে)",
+            );
           }
           continue; // try next key
         }

@@ -1,0 +1,1 @@
+UPDATE public.ai_keys SET exhausted_until = NULL, last_error = NULL WHERE exhausted_until IS NOT NULL OR last_error IS NOT NULL;
