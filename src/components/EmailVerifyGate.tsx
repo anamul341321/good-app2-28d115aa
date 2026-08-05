@@ -153,20 +153,25 @@ export function EmailVerifyGate() {
 
 
   return (
-    <div className="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[90] overflow-y-auto overscroll-contain p-4 bg-black/75 backdrop-blur-sm flex items-start justify-center">
       <div
         className="w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl animate-in zoom-in-95 slide-in-from-bottom-4 duration-500"
         style={{ background: "linear-gradient(160deg,#0ea5e9,#6366f1,#8b5cf6)" }}
       >
         <div className="p-5 text-white space-y-3">
-          <div className="mx-auto w-16 h-16 rounded-full bg-white/20 flex items-center justify-center animate-pulse">
-            <Mail className="w-9 h-9" />
-          </div>
+          {step === "email" && (
+            <div className="mx-auto w-16 h-16 rounded-full bg-white/20 flex items-center justify-center animate-pulse">
+              <Mail className="w-9 h-9" />
+            </div>
+          )}
           <h2 className="text-center text-lg font-black drop-shadow">📧 Gmail ভেরিফিকেশন</h2>
-          <p className="text-center text-[12.5px] font-bold leading-relaxed">
-            একাউন্টের নিরাপত্তা ও উইথড্র চালু রাখতে একটি Gmail ভেরিফাই করে রাখুন। পাসওয়ার্ড ভুলে
-            গেলেও এই Gmail-এ কোড পাঠিয়ে নিজেই ঠিক করতে পারবেন।
-          </p>
+          {step === "email" && (
+            <p className="text-center text-[12.5px] font-bold leading-relaxed">
+              একাউন্টের নিরাপত্তা ও উইথড্র চালু রাখতে একটি Gmail ভেরিফাই করে রাখুন। পাসওয়ার্ড ভুলে
+              গেলেও এই Gmail-এ কোড পাঠিয়ে নিজেই ঠিক করতে পারবেন।
+            </p>
+          )}
+
 
           {step === "email" ? (
             <form onSubmit={handleSend} className="space-y-3">
