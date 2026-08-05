@@ -177,7 +177,7 @@ export function MiningCounter({
         {/* Balance */}
         <div className="text-center">
           <p className="text-[10px] uppercase tracking-[0.3em] text-white/60 font-black mb-1">Balance</p>
-          <div className="flex items-baseline justify-center gap-1 flex-wrap">
+          <div className="flex items-baseline justify-center gap-1 flex-nowrap whitespace-nowrap">
             <span className={`mono-num text-[3.6rem] leading-none font-black mc-num ${live ? "mc-num-live" : ""}`}>
               {intPart}
             </span>
