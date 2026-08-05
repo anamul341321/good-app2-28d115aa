@@ -14,6 +14,25 @@ const pick = (a: string[]) => a[Math.floor(Math.random() * a.length)];
 
 export const BUILTIN_FAQS: BuiltinFaq[] = [
   {
+    topic: "নির্দিষ্ট নাম্বারের স্লট ভেরিফাই হচ্ছে না",
+    screenshot: [],
+    keywords: [
+      "number verify hocche na", "nomber verify hocche na", "nambar verify hocche na",
+      "number ta verify hoi na", "slot verify hocche na", "slot verify hoi na",
+      "slot verify hocche na keno", "ei slot verify hocche na", "verify hocche na",
+      "নাম্বার ভেরিফাই হচ্ছে না", "নাম্বারের ভেরিফাই হচ্ছে না", "নম্বর ভেরিফাই হচ্ছে না",
+      "স্লট ভেরিফাই হচ্ছে না", "ভেরিফাই হচ্ছে না কেন", "স্লট ভেরিফাই হয় না",
+      "verify hocche na kn", "verify hoi na kn",
+    ],
+    answer:
+      `🙂 চিন্তার কিছু নেই ভাইয়া — কোনো একটি স্লট ভেরিফাই না হওয়ার কারণ সাধারণত এই ৩টি 👇\n\n` +
+      `<b>১️⃣ সময় হয়নি:</b> ফার্স্ট ভেরিফাইয়ের পর ঐ স্লটে <b>রি-ভেরিফাই</b> বাটন আসতে <b>৩–৪ দিন</b> লাগে। সময় হলে বাটন নিজে থেকেই চলে আসে, জোর করে আনা যায় না ⏳\n` +
+      `<b>২️⃣ Whitelist অপেক্ষায়:</b> ফেস ঠিক আছে কিন্তু GoodDollar whitelist হতে কিছু সময় লাগে — আমাদের সিস্টেম <b>প্রতি ৫ মিনিটে অটো চেক</b> করে, হয়ে গেলেই স্লটে ✅ বসে যাবে।\n` +
+      `<b>৩️⃣ ফেস/আলো সমস্যা:</b> ক্যামেরা পরিষ্কার করে, ভালো আলোতে, চশমা-টুপি খুলে সোজা তাকিয়ে আবার চেষ্টা করুন 📸\n\n` +
+      `👉 তবুও না হলে ঐ <b>স্লট নাম্বার</b> সহ লিখুন (যেমন: “৬ নাম্বার স্লট”) — আমি একাউন্ট চেক করে ঠিক কী আটকে আছে বলে দেব 💙`,
+  },
+
+  {
     topic: "বোনাস ক্যাম্পেইন শেষ হলে কী হবে (১১ তারিখের পর)",
     screenshot: [],
     keywords: [
@@ -70,7 +89,10 @@ export const BUILTIN_FAQS: BuiltinFaq[] = [
 
   {
     topic: "Gmail যুক্ত / Gmail ভেরিফিকেশন কিভাবে করবো",
-    screenshot: ["Gmail", "verify", "ভেরিফাই", "কোড"],
+    // শুধু Gmail-নির্দিষ্ট লেখা — "verify/ভেরিফাই" রাখা যাবে না, নইলে অন্য
+    // সমস্যার স্ক্রিনশটেও Gmail-এর উত্তর চলে যায়।
+    screenshot: ["Gmail যোগ করুন", "Gmail সিকিউরিটি", "কোড পাঠান", "gmail verification", "gmail verify"],
+
     keywords: [
       "gmail add", "gmail add korbo", "gmail add kemne", "gmail add kivabe",
       "gmail jukto", "gmail verify", "gmail verification", "gmail kivabe",
