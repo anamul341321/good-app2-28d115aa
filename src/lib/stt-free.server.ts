@@ -11,7 +11,7 @@
 // unavailable preview/model used to return 403 and was incorrectly shown in
 // the admin panel as a bad key, even though the same key still handled text.
 const MODELS = ["gemini-flash-latest", "gemini-flash-lite-latest"];
-const REQUEST_TIMEOUT_MS = 8_000;
+const REQUEST_TIMEOUT_MS = 13_000;
 
 function mimeFor(ext: string): string {
   const f = String(ext || "").toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -66,7 +66,7 @@ export async function hearBengali(
 
   // ধাপে ধাপে চেষ্টা — একসাথে সব কী ছুড়লে ফ্রি কোটা দ্রুত শেষ হয়ে যায়।
   const makers = MODELS.flatMap((model) =>
-    keys.slice(0, 4).map((k) => async () => {
+    keys.slice(0, 3).map((k) => async () => {
       let res: Response;
       try {
         res = await fetch(
@@ -102,7 +102,7 @@ export async function hearBengali(
   );
   try {
     const { staggerAny } = await import("./ai-free.server");
-    return await staggerAny(makers, 2_500);
+    return await staggerAny(makers, 3_500);
   } catch {
     return null;
   }
