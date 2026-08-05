@@ -37,7 +37,7 @@ export function WhitelistMonitor() {
     <div className={`glass rounded-2xl p-4 border-2 space-y-3 ${live ? "border-emerald/50 bg-emerald/5" : "border-cyan/30"}`}>
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <Radio className={`w-4 h-4 ${live ? "text-emerald animate-pulse" : "text-cyan"}`} />
+          <Radio className={`w-4 h-4 ${live ? "text-emerald " : "text-cyan"}`} />
           <p className="text-[11px] uppercase tracking-widest font-black text-cyan">Auto whitelist check</p>
         </div>
         <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${live ? "bg-emerald text-white" : "bg-surface-2 text-muted-foreground border border-border"}`}>
@@ -46,8 +46,7 @@ export function WhitelistMonitor() {
 
       </div>
 
-      {isLoading ? (
-        <div className="py-3 flex justify-center"><Loader2 className="w-4 h-4 animate-spin text-cyan" /></div>
+      {!shown ? (
       ) : !shown ? (
         <p className="text-[11px] text-muted-foreground">এখনো কোনো চেক চালু হয়নি — অটো worker শিগগিরই শুরু হবে।</p>
       ) : (

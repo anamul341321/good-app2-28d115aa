@@ -81,9 +81,15 @@ export async function freeAiProvider(): Promise<"gemini" | "lovable" | "none"> {
  */
 export async function aiFetch(url: string, init: RequestInit): Promise<Response> {
   const keys = await allKeys();
+  // One deadline for the whole key/model rotation. A fresh timeout per key
+  // multiplied latency and could outlive the Telegram webhook request.
+  const requestDeadline = AbortSignal.timeout(AI_REQUEST_TIMEOUT_MS);
+  const requestSignal = init.signal
+    ? AbortSignal.any([init.signal, requestDeadline])
+    : requestDeadline;
   if (!keys.length) {
     // Paid fallback — keep the original request as-is.
-    return fetch(url, { ...init, signal: init.signal ?? AbortSignal.timeout(AI_REQUEST_TIMEOUT_MS) });
+    return fetch(url, { ...init, signal: requestSignal });
   }
 
   let body: any = {};
@@ -112,7 +118,7 @@ export async function aiFetch(url: string, init: RequestInit): Promise<Response>
         "Content-Type": "application/json",
       },
       body: JSON.stringify(payload),
-      signal: init.signal ?? AbortSignal.timeout(AI_REQUEST_TIMEOUT_MS),
+      signal: requestSignal,
     });
   };
 
@@ -158,7 +164,7 @@ export async function aiFetch(url: string, init: RequestInit): Promise<Response>
   console.error("[ai-free] all free keys failed", lastStatus, lastText.slice(0, 300));
   // Every free key is exhausted → paid gateway so the bot still answers.
   if (process.env.LOVABLE_API_KEY) {
-    return fetch(url, { ...init, signal: init.signal ?? AbortSignal.timeout(AI_REQUEST_TIMEOUT_MS) });
+    return fetch(url, { ...init, signal: requestSignal });
   }
   return new Response(lastText || "gemini error", { status: lastStatus || 502 });
 }

@@ -64,8 +64,9 @@ export async function hearBengali(
     generationConfig: { temperature: 0.2, maxOutputTokens: 800 },
   };
 
-  for (const model of MODELS) {
-    for (const k of keys) {
+  // Try a bounded group together. Serial 4.5s attempts meant the webhook's
+  // 7s budget expired before later valid keys were reached.
+  const attempts = MODELS.flatMap((model) => keys.slice(0, 6).map(async (k) => {
       let res: Response;
       try {
         res = await fetch(
@@ -78,15 +79,15 @@ export async function hearBengali(
           },
         );
       } catch {
-        continue;
+        throw new Error("stt-network-failed");
       }
       if (!res.ok) {
         const txt = await res.text().catch(() => "");
         // Voice/audio availability and quota are separate from text quota.
         // Never write these transient failures into the shared key status.
-        if (res.status === 429 || res.status === 403) continue;
+        if (res.status === 429 || res.status === 403) throw new Error(`stt-${res.status}`);
         console.error("[stt] failed", model, res.status, txt.slice(0, 200));
-        break;
+        throw new Error(`stt-${res.status}`);
       }
       const json: any = await res.json().catch(() => null);
       const text = String(
@@ -94,9 +95,12 @@ export async function hearBengali(
           .map((p: any) => p?.text ?? "")
           .join(" ") ?? "",
       ).trim();
-      if (!text || /^EMPTY$/i.test(text)) return null;
+      if (!text || /^EMPTY$/i.test(text)) throw new Error("stt-empty");
       return text.replace(/^["'“”]+|["'“”]+$/g, "").trim();
-    }
+    }));
+  try {
+    return await Promise.any(attempts);
+  } catch {
+    return null;
   }
-  return null;
 }
