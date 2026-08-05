@@ -11,7 +11,7 @@
 // unavailable preview/model used to return 403 and was incorrectly shown in
 // the admin panel as a bad key, even though the same key still handled text.
 const MODELS = ["gemini-flash-latest", "gemini-flash-lite-latest"];
-const REQUEST_TIMEOUT_MS = 4_500;
+const REQUEST_TIMEOUT_MS = 8_000;
 
 function mimeFor(ext: string): string {
   const f = String(ext || "").toLowerCase().replace(/[^a-z0-9]/g, "");
