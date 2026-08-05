@@ -47,7 +47,7 @@ function AuthedLayout() {
 
     // নেটওয়ার্ক সমস্যা হলে যেন লগআউট না হয়ে যায়:
     // লোকাল সেশন থাকলে সেটাকেই বিশ্বাস করি, শুধু আসল sign-out হলে বের করে দিই।
-    getSharedSession({ fresh: authAttempt > 0 }).then(async ({ data }) => {
+    getSharedSession({ fresh: authAttempt > 0 }).then(({ data }) => {
       if (!active) return;
       window.clearTimeout(timeoutId);
       if (!data.session) {
@@ -55,10 +55,6 @@ function AuthedLayout() {
         return;
       }
       setAuthState("authenticated");
-      // ব্যাকগ্রাউন্ডে যাচাই — শুধু সেশন সত্যিই বাতিল হলে বের করি
-      const { data: u, error } = await supabase.auth.getUser();
-      if (!active) return;
-      if (!error && !u.user) setAuthState("unauthenticated");
     }).catch(() => {
       if (!active) return;
       window.clearTimeout(timeoutId);
