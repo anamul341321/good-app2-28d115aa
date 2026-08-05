@@ -746,22 +746,22 @@ export async function transcribeAudio(
   format: string,
   hint?: string,
 ): Promise<string | null> {
-  // 1) Free Gemini native audio — accepts Telegram's OGG/Opus directly, so this
-  //    understands far more (dialect, noise, fast speech) than the old path.
+  const key = process.env.GEMINI_API_KEY || process.env.LOVABLE_API_KEY;
+  if (!key) return null;
+  // Use the dedicated speech model first. It is faster and more accurate than
+  // sending Telegram OGG audio through a general chat model.
+  if (process.env.LOVABLE_API_KEY) {
+    const stt = await transcribeAudioStt(base64, format, process.env.LOVABLE_API_KEY);
+    if (stt) return stt;
+  }
+
+  // Free native-audio fallback for periods when gateway STT is unavailable.
   try {
     const { hearBengali } = await import("./stt-free.server");
     const heard = await hearBengali(base64, format, hint);
     if (heard) return cleanTranscriptText(heard) ?? heard;
   } catch (e) {
     console.error("[tg] gemini stt error", e);
-  }
-
-  const key = process.env.GEMINI_API_KEY || process.env.LOVABLE_API_KEY;
-  if (!key) return null;
-  // 2) Paid gateway STT only works with a Lovable key.
-  if (process.env.LOVABLE_API_KEY) {
-    const stt = await transcribeAudioStt(base64, format, process.env.LOVABLE_API_KEY);
-    if (stt) return stt;
   }
 
   try {

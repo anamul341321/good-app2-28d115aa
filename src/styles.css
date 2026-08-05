@@ -160,6 +160,7 @@
   .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
 
   .premium-panel {
+    contain: paint;
     position: relative;
     background: linear-gradient(160deg, #ffffff, color-mix(in oklch, var(--color-violet) 6%, white));
     border: 1px solid color-mix(in oklch, var(--color-violet) 18%, transparent);
@@ -179,7 +180,7 @@
       color-mix(in oklch, var(--color-gold) 55%, transparent) 50%,
       transparent 70%);
     -webkit-mask: linear-gradient(#000,#000) content-box, linear-gradient(#000,#000);
-    -webkit-mask-composite: xor; mask-composite: exclude;
+    mask-composite: source-over;
     padding: 1px;
     pointer-events: none;
     opacity: 0.45;
@@ -194,6 +195,7 @@
     color: white;
   }
   .gradient-cta {
+    contain: paint;
     background: linear-gradient(120deg, var(--color-violet), var(--color-cyan) 55%, var(--color-gold));
     background-size: 200% 200%;
     animation: aurora-shift 5s ease-in-out infinite;
@@ -223,6 +225,7 @@
     color: white;
   }
   .gradient-aurora {
+    contain: paint;
     background: linear-gradient(120deg,
       color-mix(in oklch, var(--color-violet) 30%, var(--color-surface)),
       color-mix(in oklch, var(--color-cyan) 25%, var(--color-surface)),
@@ -242,7 +245,7 @@
     background-size: 300% 300%;
     animation: aurora-shift 5s linear infinite;
     -webkit-mask: linear-gradient(#000,#000) content-box, linear-gradient(#000,#000);
-    -webkit-mask-composite: xor; mask-composite: exclude;
+    mask-composite: source-over;
     pointer-events: none;
   }
   .mono-num {
@@ -464,7 +467,7 @@
     transparent 300deg,
     transparent 360deg);
   -webkit-mask: linear-gradient(#000,#000) content-box, linear-gradient(#000,#000);
-  -webkit-mask-composite: xor; mask-composite: exclude;
+  mask-composite: source-over;
   padding: 2px;
   filter: blur(0.4px);
   animation: mining-ring-spin 6s linear infinite;
@@ -1130,6 +1133,21 @@ input, textarea, select { touch-action: manipulation; }
   .mc-ring { animation-duration: 16s; }
   .mc-holo { display: none; }
   .mining-sparkle, .mc-sparkle, .mc-coin { animation-duration: 6s; }
+  /* Mobile Chromium can corrupt large tiles when backdrop blur, masks and
+     animated gradients share a layer. Admin favors stable, readable paint. */
+  .admin-shell .glass,
+  .admin-shell .glass-strong {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: var(--color-surface) !important;
+  }
+  .admin-shell .premium-panel {
+    background: var(--color-surface) !important;
+    box-shadow: 0 8px 24px -18px var(--color-navy) !important;
+  }
+  .admin-shell .premium-panel::before {
+    display: none !important;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

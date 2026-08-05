@@ -12,6 +12,7 @@ export type AppRates = {
   referrer: number;
   promo: boolean;
   promoTitle: string | null;
+  promoEndAt: string | null;
   promoFirst: number | null;
   promoRe: number | null;
   promoRef: number | null;
@@ -46,6 +47,7 @@ export async function loadRates(): Promise<AppRates> {
     referrer: Number(b.referrer_bonus ?? 100),
     promo,
     promoTitle: promo ? (b.promo_title ?? null) : null,
+    promoEndAt: promo ? (b.promo_end_at ?? null) : null,
     promoFirst: promo ? Number(b.promo_first_verify_bonus ?? 0) || null : null,
     promoRe: promo ? Number(b.promo_reverify_bonus ?? 0) || null : null,
     promoRef: promo ? Number(b.promo_referrer_bonus ?? 0) || null : null,
@@ -62,11 +64,24 @@ export async function loadRates(): Promise<AppRates> {
 
 const tk = (n: number) => `${Math.round(n)}৳`;
 
+function promoEndLabel(value: string | null): string | null {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return new Intl.DateTimeFormat("bn-BD", {
+    timeZone: "Asia/Dhaka",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(date);
+}
+
 /** Big Bengali knowledge block used as the bot's source of truth. */
 export function knowledgeText(r: AppRates): string {
   const first = r.promoFirst ?? r.firstVerify;
   const re = r.promoRe ?? r.reVerify;
   const ref = r.promoRef ?? r.referrer;
+  const promoEnd = promoEndLabel(r.promoEndAt);
   return `📚 Good-App এর আসল নিয়ম (এই তথ্যগুলোই সত্য, এগুলো থেকেই উত্তর দেবে):
 
 💰 আয়ের ধাপ:
@@ -75,7 +90,8 @@ export function knowledgeText(r: AppRates): string {
 3) এরপর ৩–৪ দিন পর প্রতিটি স্লট আবার রি-ভেরিফাই করতে হয়। ১০টি স্লট রি-ভেরিফাই সম্পন্ন হলে ইউজার পায় ${tk(re)} এবং তার মাইনিং চালু হয়ে যায়।
 4) যিনি রেফার করেছেন তিনি পান: রেফারির ১০টি ১ম ভেরিফাই সম্পন্ন হলে এককালীন ${tk(ref)}। ঐ রেফারি ১০টি রি-ভেরিফাই করলে রেফারার প্রতি মাসে রেফারির মাইনিংয়ের ১০% কমিশন পান।
 5) রেফারি নিজে ১০টি রি-ভেরিফাই সম্পন্ন করলে ${tk(re)} পায় এবং তার মাইনিং চালু হয়।
-${r.promo && r.promoTitle ? `🎊 চলমান অফার: ${r.promoTitle}\n` : ""}
+${r.promo && r.promoTitle ? `🎊 চলমান অফার: ${r.promoTitle}${promoEnd ? ` — শেষ হবে ${promoEnd}` : ""}\n` : ""}
+${r.promo ? `- অফারের নাম, অংক ও শেষ তারিখ শুধু এই database তথ্য থেকেই বলবে। নিজের থেকে কোনো তারিখ অনুমান বা পুরোনো তারিখ ব্যবহার করবে না।\n` : ""}
 🏦 উইথড্র নিয়ম:
 - বোনাসের টাকা যেকোনো সময় উইথড্র করা যায়।
 - মাইনিংয়ের টাকা প্রতি মাসের ১ তারিখ থেকে ৩ তারিখ পর্যন্ত (৩ দিন) উইথড্র করা যায়; এই সময়ে না নিলে পরের মাসের ১ তারিখ পর্যন্ত লক থাকে।
