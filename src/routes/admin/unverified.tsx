@@ -9,10 +9,12 @@ import { useState } from "react";
 export const Route = createFileRoute("/admin/unverified")({ component: UnverifiedPage });
 
 function UnverifiedPage() {
+  const [zoom, setZoom] = useState<string | null>(null);
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["admin-unverified"],
     queryFn: () => adminListUnverified(),
   });
+
 
   const del = useMutation({
     mutationFn: (id: string) => adminমুছুনUnverified({ data: { id } }),
@@ -84,7 +86,6 @@ function UnverifiedPage() {
   }
 
   const copy = (s: string) => { navigator.clipboard.writeText(s); toast.success("Copy হয়েছে"); };
-  const [zoom, setZoom] = useState<string | null>(null);
 
   return (
     <div className="space-y-2">

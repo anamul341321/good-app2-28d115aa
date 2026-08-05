@@ -95,6 +95,25 @@ export async function markKeyExhausted(id: string, err: string) {
   }
 }
 
+/**
+ * Note a non-quota failure (e.g. a 403 "denied access" because one model isn't
+ * enabled for that key) WITHOUT parking the key. Such a key still answers text
+ * questions fine, so it must stay usable — only real quota (429) cools down.
+ */
+export async function markKeyError(id: string, err: string) {
+  try {
+    const db = await admin();
+    await db
+      .from("ai_keys")
+      .update({ last_error: err.slice(0, 300), exhausted_until: null } as never)
+      .eq("id", id);
+    invalidateKeyCache();
+  } catch {
+    /* ignore */
+  }
+}
+
+
 /** Admin panel listing — the key itself is masked, never returned in full. */
 export async function listKeysForAdmin() {
   const db = await admin();

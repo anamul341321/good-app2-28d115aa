@@ -209,10 +209,12 @@ async function pcmForChunk(
         const txt = await res.text().catch(() => "");
         if (res.status === 429 || res.status === 403) {
           if (k.id) {
-            const { markKeyExhausted } = await import("./ai-keys.server");
-            void markKeyExhausted(k.id, `tts ${res.status}: ${txt.slice(0, 160)}`);
+            const mod = await import("./ai-keys.server");
+            // 403 = this model isn't enabled for that key (not quota) → keep the key usable.
+            if (res.status === 429) void mod.markKeyExhausted(k.id, `tts 429: ${txt.slice(0, 160)}`);
+            else void mod.markKeyError(k.id, `tts 403: ${txt.slice(0, 160)}`);
           }
-          continue; // quota → next key
+          continue; // try next key
         }
         console.error("[tts] failed", model, res.status, txt.slice(0, 200));
         break; // model/request problem → try next model

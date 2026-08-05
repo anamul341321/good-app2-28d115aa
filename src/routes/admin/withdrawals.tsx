@@ -21,10 +21,24 @@ function AdminWithdrawals() {
   useEffect(() => { if (adminName) localStorage.setItem("admin-paid-by-name", adminName); }, [adminName]);
 
   const mut = useMutation({
-    mutationFn: (input: { id: string; action: "paid" | "rejected"; paidBy?: string }) => adminUpdateWithdrawal({ data: input }),
-    onSuccess: () => { toast.success("Updated"); refetch(); paidByQ.refetch(); },
+    mutationFn: (input: { id: string; action: "paid" | "rejected"; paidBy?: string; refundFee?: boolean }) => adminUpdateWithdrawal({ data: input }),
+    onSuccess: (r: any) => {
+      if (r?.feeRefunded) toast.success(`Reject — ফি ${r.fee}৳ সহ মোট ${r.refund}৳ ফেরত`);
+      else if (r?.refund != null) toast.success(`Reject — ${r.refund}৳ ফেরত (ফি ${r.fee}৳ কাটা)`);
+      else toast.success("Updated");
+      refetch(); paidByQ.refetch();
+    },
     onError: (e: any) => toast.error(e.message),
   });
+
+  // Reject: ask whether the platform fee should go back to the user too.
+  const rejectWithdrawal = (id: string) => {
+    if (!confirm("এই withdraw reject করবেন? (ব্যালেন্স ফেরত যাবে)")) return;
+    const withFee = confirm(
+      "ফি টাও ফেরত দিতে চান?\n\nOK = ফি সহ পুরো টাকা ফেরত\nCancel = ফি কাটা থাকবে, শুধু payout ফেরত",
+    );
+    mut.mutate({ id, action: "rejected", refundFee: withFee });
+  };
 
   const markPaid = (id: string) => {
     let name = adminName.trim();
@@ -376,7 +390,7 @@ function AdminWithdrawals() {
                     className="flex-1 py-2 rounded-lg bg-emerald/20 text-emerald font-bold text-xs flex items-center justify-center gap-1">
                     <Check className="w-3.5 h-3.5" /> Mark paid
                   </button>
-                  <button onClick={() => mut.mutate({ id: w.id, action: "rejected" })}
+                  <button onClick={() => rejectWithdrawal(w.id)}
                     className="flex-1 py-2 rounded-lg bg-rose/20 text-rose font-bold text-xs flex items-center justify-center gap-1">
                     <X className="w-3.5 h-3.5" /> Reject (refund)
                   </button>

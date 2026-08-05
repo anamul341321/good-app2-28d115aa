@@ -584,6 +584,8 @@ const ActionInput = z.object({
   action: z.enum(["paid", "rejected"]),
   note: z.string().optional(),
   paidBy: z.string().trim().max(80).optional().nullable(),
+  // Reject only: also give the platform fee back to the user.
+  refundFee: z.boolean().optional(),
 });
 
 export const adminUpdateWithdrawal = createServerFn({ method: "POST" })
@@ -598,9 +600,26 @@ export const adminUpdateWithdrawal = createServerFn({ method: "POST" })
       throw new Error("Admin name দিন — কে paid করছে সেটা লিখতে হবে");
     }
 
+    // Requested gross (before fee) is stored in the note as "Gross X৳"; the row
+    // amount is the net payout. Fall back to inverting the fee tiers.
+    const payout = Number(w.amount);
+    const grossFromNote = /Gross\s+([\d.]+)/.exec(String(w.admin_note ?? ""))?.[1];
+    const gross = grossFromNote
+      ? Number(grossFromNote)
+      : Math.round(payout / (payout < 90 ? 0.8 : 0.9));
+    const fee = Math.max(0, gross - payout);
+    const refundFee = data.action === "rejected" && data.refundFee === true;
+    const refund = refundFee ? payout + fee : payout;
+
+    let note = data.note ?? null;
+    if (data.action === "rejected") {
+      const feeLine = refundFee ? `ফি ${fee}৳ ফেরত দেওয়া হয়েছে` : `ফি ${fee}৳ ফেরত হয়নি`;
+      note = `${note ? note + " · " : ""}[Reject] ${feeLine} · ফেরত ${refund}৳`;
+    }
+
     const updatePayload: any = {
       status: data.action,
-      admin_note: data.note ?? null,
+      admin_note: note,
       processed_at: new Date().toISOString(),
     };
     if (data.action === "paid") updatePayload.paid_by = (data.paidBy ?? "").trim();
@@ -613,12 +632,13 @@ export const adminUpdateWithdrawal = createServerFn({ method: "POST" })
         .select("withdrawn_amount").eq("user_id", w.user_id).maybeSingle();
       if (mining) {
         await supabaseAdmin.from("mining_state")
-          .update({ withdrawn_amount: Math.max(0, Number(mining.withdrawn_amount) - Number(w.amount)) })
+          .update({ withdrawn_amount: Math.max(0, Number(mining.withdrawn_amount) - refund) })
           .eq("user_id", w.user_id);
       }
     }
-    return { ok: true };
+    return { ok: true, refund, fee, feeRefunded: refundFee };
   });
+
 
 // Aggregate paid-by admin summary: each admin name with total amount paid,
 // count, and per-user breakdown of every withdrawal they marked paid.

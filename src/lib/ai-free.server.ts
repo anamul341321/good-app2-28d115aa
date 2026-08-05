@@ -141,10 +141,12 @@ export async function aiFetch(url: string, init: RequestInit): Promise<Response>
       lastText = await res.text().catch(() => "");
       if (res.status === 429 || res.status === 403) {
         if (k.id) {
-          const { markKeyExhausted } = await import("./ai-keys.server");
-          void markKeyExhausted(k.id, `${res.status}: ${lastText.slice(0, 200)}`);
+          const mod = await import("./ai-keys.server");
+          // Only real quota (429) parks a key; 403 = model/permission issue.
+          if (res.status === 429) void mod.markKeyExhausted(k.id, `429: ${lastText.slice(0, 200)}`);
+          else void mod.markKeyError(k.id, `403: ${lastText.slice(0, 200)}`);
         }
-        continue; // quota → next key
+        continue; // next key
       }
       break; // real request error — another key won't help
     }
