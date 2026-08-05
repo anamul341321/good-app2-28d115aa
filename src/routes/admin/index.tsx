@@ -11,15 +11,11 @@ import { WhitelistMonitor } from "@/components/WhitelistMonitor";
 export const Route = createFileRoute("/admin/")({ component: AdminDashboard });
 
 function AdminDashboard() {
-  const { data: stats, isLoading, isError, refetch } = useQuery({
+  const { data: stats, isError, refetch } = useQuery({
     queryKey: ["admin-stats"],
-    queryFn: () => Promise.race([
-      adminStats(),
-      new Promise<never>((_, reject) => window.setTimeout(() => reject(new Error("Dashboard timeout")), 12_000)),
-    ]),
+    queryFn: () => adminStats(),
     refetchInterval: 60_000,
     staleTime: 30_000,
-    retry: 1,
   });
   const { data: money } = useQuery({ queryKey: ["admin-money-stats"], queryFn: () => adminMoneyStats(), refetchInterval: 60_000, staleTime: 30_000 });
   const { data: withdrawals } = useQuery({ queryKey: ["admin-withdrawals"], queryFn: () => adminListWithdrawals(), staleTime: 30_000, refetchInterval: 60_000 });
@@ -40,9 +36,6 @@ function AdminDashboard() {
         </button>
       </div>
     );
-  }
-  if (isLoading && !stats) {
-    
   }
 
   const pending = (withdrawals ?? []).filter((w: any) => w.status === "pending").slice(0, 3);
@@ -80,8 +73,8 @@ function AdminDashboard() {
           <div>
             <p className="text-[10px] uppercase tracking-widest text-amber font-bold">Pending withdrawals</p>
             <p className="mono-num font-black text-2xl mt-0.5">
-              {stats.withdrawals.pending}
-              <span className="text-xs text-muted-foreground ml-2">request{stats.withdrawals.pending === 1 ? "" : "s"}</span>
+              {stats?.withdrawals?.pending ?? "—"}
+              <span className="text-xs text-muted-foreground ml-2">request{stats?.withdrawals?.pending === 1 ? "" : "s"}</span>
             </p>
             <p className="text-[11px] text-muted-foreground mt-0.5">
               <span className="mono-num text-amber">{money ? money.pendingAmount.toFixed(2) : "…"} TK</span> waiting
@@ -149,16 +142,16 @@ function AdminDashboard() {
 
       {/* Mini quick links grid */}
       <div className="grid grid-cols-2 gap-3">
-        <QuickCard to="/admin/users" icon={<Users className="w-5 h-5" />} value={stats.users} label="Users" accent="cyan" />
-        <QuickCard to="/admin/faces" icon={<ScanFace className="w-5 h-5" />} value={stats.tasks.done + stats.tasks.verified} label="সংরক্ষিত ফেস" accent="violet" />
-        <QuickCard to="/admin/reverify" icon={<Clock className="w-5 h-5" />} value={stats.tasks.verified} label="Re-verify queue" accent="amber" />
-        <QuickCard to="/admin/unverified" icon={<AlertTriangle className="w-5 h-5" />} value={stats.unverifiedCount} label="Not whitelisted" accent="rose" />
-        <QuickCard to="/admin/wallets" icon={<Wallet className="w-5 h-5" />} value={stats.wallets} label="Wallets bound" accent="emerald" />
-        <QuickCard to="/admin/kyc" icon={<ShieldCheck className="w-5 h-5" />} value={(stats as any).kycVerified ?? 0} label="KYC verified" accent="violet" />
-        <QuickCard to="/admin/recharges" icon={<Smartphone className="w-5 h-5" />} value={(stats as any).recharges ?? 0} label="Recharge history" accent="cyan" />
+        <QuickCard to="/admin/users" icon={<Users className="w-5 h-5" />} value={stats?.users ?? "—"} label="Users" accent="cyan" />
+        <QuickCard to="/admin/faces" icon={<ScanFace className="w-5 h-5" />} value={stats ? (stats.tasks.done + stats.tasks.verified) : "—"} label="সংরক্ষিত ফেস" accent="violet" />
+        <QuickCard to="/admin/reverify" icon={<Clock className="w-5 h-5" />} value={stats?.tasks.verified ?? "—"} label="Re-verify queue" accent="amber" />
+        <QuickCard to="/admin/unverified" icon={<AlertTriangle className="w-5 h-5" />} value={stats?.unverifiedCount ?? "—"} label="Not whitelisted" accent="rose" />
+        <QuickCard to="/admin/wallets" icon={<Wallet className="w-5 h-5" />} value={stats?.wallets ?? "—"} label="Wallets bound" accent="emerald" />
+        <QuickCard to="/admin/kyc" icon={<ShieldCheck className="w-5 h-5" />} value={(stats as any)?.kycVerified ?? 0} label="KYC verified" accent="violet" />
+        <QuickCard to="/admin/recharges" icon={<Smartphone className="w-5 h-5" />} value={(stats as any)?.recharges ?? 0} label="Recharge history" accent="cyan" />
         <Link to="/admin/mining" className="glass rounded-2xl p-3 hover:border-cyan transition">
           <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Mining now</p>
-          <p className="mono-num font-black text-2xl text-cyan mt-1">{stats.mining.activeUsers}</p>
+          <p className="mono-num font-black text-2xl text-cyan mt-1">{stats?.mining.activeUsers ?? "—"}</p>
           <p className="text-[10px] text-muted-foreground">active users · নাম দেখুন →</p>
         </Link>
       </div>
@@ -167,9 +160,9 @@ function AdminDashboard() {
       <div className="glass rounded-2xl p-4">
         <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-3">Task breakdown</p>
         <div className="grid grid-cols-3 gap-2 text-center">
-          <Slice color="emerald" label="Done" v={stats.tasks.done} />
-          <Slice color="amber" label="Verified" v={stats.tasks.verified} />
-          <Slice color="cyan" label="Empty" v={stats.tasks.empty} />
+          <Slice color="emerald" label="Done" v={stats?.tasks.done ?? "—"} />
+          <Slice color="amber" label="Verified" v={stats?.tasks.verified ?? "—"} />
+          <Slice color="cyan" label="Empty" v={stats?.tasks.empty ?? "—"} />
         </div>
       </div>
 
