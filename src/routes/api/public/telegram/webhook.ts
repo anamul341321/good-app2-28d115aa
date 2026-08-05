@@ -817,7 +817,8 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         const stripped = norm.replace(/[০-৯0-9,\s.\-–#]/g, "").trim();
         // "৩ নম্বর স্লটটা কেটে দাও" — এটাও স্লটের উত্তরই, শুধু "৩" লেখা জরুরি নয়।
         const mentionsSlotWord =
-          /(slot|স্লট|নম্বর|নাম্বার|নং|nombor|number|reset|রিসেট|কেটে|kete|kate|মুছ|delete|clear|খালি|khali|বাদ)/i.test(norm);
+          new RegExp(`(${SLOT_WORD}|${NUM_WORD}|reset|রিসেট|কেটে|kete|kate|মুছ|muche|delete|clear|খালি|khali|বাদ)`, "i").test(norm);
+
         const looksLikeSlotAnswer =
           (wantsAll || pickSlots(norm).length > 0) && (stripped.length <= 10 || mentionsSlotWord);
         const looksLikeUidAnswer =
