@@ -102,7 +102,7 @@
   }
   * { border-color: var(--color-border); }
   html, body {
-    background: #ffffff;
+    background: var(--color-background);
     color: var(--color-foreground);
     font-family: "Noto Sans Bengali", "Plus Jakarta Sans", system-ui, sans-serif;
     font-size: 15.5px;
