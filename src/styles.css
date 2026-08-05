@@ -86,15 +86,10 @@
   --violet:  oklch(0.55 0.22 300);
 }
 
-@layer base {
+@layer base {\n  body::before {\n    content: "";\n    position: fixed;\n    inset: 0;\n    z-index: -1;\n    background: \n      radial-gradient(1000px 500px at 8% -10%, color-mix(in oklch, var(--color-violet) 18%, transparent), transparent 60%),\n      radial-gradient(900px 480px at 100% 8%,  color-mix(in oklch, var(--color-cyan) 16%, transparent),   transparent 60%),\n      radial-gradient(800px 500px at 50% 110%, color-mix(in oklch, var(--color-emerald) 14%, transparent), transparent 60%),\n      #ffffff;\n    pointer-events: none;\n    transform: translateZ(0);\n  }
   * { border-color: var(--color-border); }
   html, body {
-    background:
-      radial-gradient(1000px 500px at 8% -10%, color-mix(in oklch, var(--color-violet) 18%, transparent), transparent 60%),
-      radial-gradient(900px 480px at 100% 8%,  color-mix(in oklch, var(--color-cyan) 16%, transparent),   transparent 60%),
-      radial-gradient(800px 500px at 50% 110%, color-mix(in oklch, var(--color-emerald) 14%, transparent), transparent 60%),
-      #ffffff;
-    background-attachment: scroll;
+    background: #ffffff;
     color: var(--color-foreground);
     font-family: "Noto Sans Bengali", "Plus Jakarta Sans", system-ui, sans-serif;
     font-size: 15.5px;
@@ -122,8 +117,8 @@
     backface-visibility: hidden;
     transform: translateZ(0);
     background: color-mix(in oklch, white 82%, transparent);
-    backdrop-filter: blur(18px) saturate(140%);
-    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    backdrop-filter: blur(12px) saturate(140%);
+    -webkit-backdrop-filter: blur(12px) saturate(140%);
     border: 1px solid color-mix(in oklch, var(--color-violet) 22%, transparent);
     box-shadow:
       0 20px 60px -25px color-mix(in oklch, var(--color-navy) 25%, transparent),
@@ -136,7 +131,7 @@
     background: linear-gradient(160deg,
       color-mix(in oklch, white 94%, transparent),
       color-mix(in oklch, var(--color-violet) 8%, white));
-    backdrop-filter: blur(24px) saturate(160%);
+    backdrop-filter: blur(16px) saturate(160%);
     border: 1px solid color-mix(in oklch, var(--color-violet) 25%, transparent);
     box-shadow: 0 30px 80px -30px color-mix(in oklch, var(--color-violet) 30%, transparent);
   }
@@ -194,7 +189,7 @@
       color-mix(in oklch, var(--color-cyan) 20%, var(--color-surface-2)));
     color: white;
   }
-  .gradient-cta {
+  .gradient-cta {\n    will-change: background-position;
     contain: paint;
     background: linear-gradient(120deg, var(--color-violet), var(--color-cyan) 55%, var(--color-gold));
     background-size: 200% 200%;
@@ -224,7 +219,7 @@
     background: linear-gradient(135deg, var(--color-rose), var(--color-violet));
     color: white;
   }
-  .gradient-aurora {
+  .gradient-aurora {\n    will-change: background-position;
     contain: paint;
     background: linear-gradient(120deg,
       color-mix(in oklch, var(--color-violet) 30%, var(--color-surface)),
