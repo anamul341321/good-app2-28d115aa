@@ -16,6 +16,7 @@ import { PageVoice } from "@/components/PageVoice";
 import { VideoTutorialButton } from "@/components/VideoTutorialButton";
 import { QrScanner } from "@/components/QrScanner";
 import { ForgotPasswordDialog } from "@/components/ForgotPasswordDialog";
+import { getSharedSession } from "@/lib/auth-session";
 
 import { QrCode as QrCodeIcon } from "lucide-react";
 
@@ -187,7 +188,7 @@ export function AuthPage() {
 
     void (async () => {
       if (await consumeOAuthTokens()) return;
-      const { data } = await supabase.auth.getSession();
+      const { data } = await getSharedSession();
       if (data.session) nav({ to: "/home" });
     })();
   }, [nav]);
