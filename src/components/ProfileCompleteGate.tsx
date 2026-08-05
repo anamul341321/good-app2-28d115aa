@@ -31,14 +31,11 @@ export function ProfileCompleteGate() {
     staleTime: 60_000,
   });
 
-  // Gmail OTP switch OFF থাকলে Google দিয়ে সরাসরি ঢোকা যাবে — কোনো গেট/কোড ছাড়াই।
-  // mode লোড হওয়া পর্যন্ত gate দেখাব না, যাতো loading-এ অযথা modal না ওঠে।
-  if (modeLoading || mode?.emailOtpEnabled === false) return null;
-
   const { data } = useQuery({
     queryKey: ["google-profile-status"],
     queryFn: () => statusFn(),
     staleTime: 60_000,
+    enabled: !modeLoading && mode?.emailOtpEnabled !== false,
   });
 
   const [name, setName] = useState("");
@@ -60,6 +57,10 @@ export function ProfileCompleteGate() {
       if (saved) setRef(saved.toUpperCase());
     }
   }, [data?.suggestedName]);
+
+  // All hooks above must run on every render. Returning before them when the
+  // auth-mode query changed from loading to ready caused React error #310.
+  if (modeLoading || mode?.emailOtpEnabled === false) return null;
 
   const intent =
     typeof window !== "undefined" ? localStorage.getItem("good-app-google-intent") : null;
