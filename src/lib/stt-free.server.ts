@@ -80,8 +80,12 @@ export async function hearBengali(
         if (res.status === 429 || res.status === 403) {
           if (k.id) {
             const mod = await import("./ai-keys.server");
-            if (res.status === 429) void mod.markKeyExhausted(k.id, `stt 429: ${txt.slice(0, 160)}`);
-            else void mod.markKeyError(k.id, `stt 403: ${txt.slice(0, 160)}`);
+            void mod.markKeyError(
+              k.id,
+              res.status === 429
+                ? "ভয়েস শোনার লিমিট শেষ (লেখা ঠিকই চলবে)"
+                : "এই কী-তে ভয়েস মডেল চালু নেই (লেখা ঠিকই চলবে)",
+            );
           }
           continue;
         }
