@@ -1009,11 +1009,10 @@
   text-shadow: 0 4px 24px rgba(251,191,36,0.35);
   letter-spacing: -0.02em;
 }
-.mc-num-live { animation: mc-num-glow 2.4s ease-in-out infinite; }
-@keyframes mc-num-glow {
-  0%,100% { filter: drop-shadow(0 0 6px rgba(251,191,36,0.35)); }
-  50%     { filter: drop-shadow(0 0 18px rgba(251,191,36,0.75)); }
-}
+/* Static glow: animating `filter` on huge gradient text caused visible
+   shimmer/jitter on mid-range phones. */
+.mc-num-live { filter: drop-shadow(0 0 12px rgba(251,191,36,0.5)); }
+
 .mc-stat {
   background: linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.04) 100%);
   border: 1px solid rgba(255,255,255,0.16);
@@ -1110,3 +1109,27 @@
 
 html { -webkit-tap-highlight-color: transparent; }
 input, textarea, select { touch-action: manipulation; }
+
+/* ===== Low-end device / heavy-load smoothness =====
+   Decorative loops are the main source of dropped frames on mid-range phones.
+   Keep the look, cut the per-frame cost. */
+.ticker-track { transform: translate3d(0,0,0); backface-visibility: hidden; }
+@keyframes ticker-scroll {
+  0%   { transform: translate3d(0,0,0); }
+  100% { transform: translate3d(-50%,0,0); }
+}
+
+@media (max-width: 640px) {
+  .mc-orb-a, .mc-orb-b { animation-duration: 14s; }
+  .mc-ring { animation-duration: 16s; }
+  .mc-holo { display: none; }
+  .mining-sparkle, .mc-sparkle, .mc-coin { animation-duration: 6s; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mc-orb-a, .mc-orb-b, .mc-ring, .mc-sparkle, .mc-coin,
+  .mining-sparkle, .announcement-ticker, .float-anim {
+    animation: none !important;
+  }
+  .ticker-track { animation-duration: 90s !important; }
+}

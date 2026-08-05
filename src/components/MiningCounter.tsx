@@ -1,8 +1,45 @@
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { computeLiveBalance, monthlyRate, MONTHLY_PER_SLOT } from "@/lib/mining";
 import { miningWindowInfo, nextOpenLabelBn } from "@/lib/mining-window";
 import { Wallet, Sparkles } from "lucide-react";
+
+/** Decorative layers never change — memoised so the 1s balance tick doesn't repaint them. */
+const MiningDecor = memo(function MiningDecor({ live }: { live: boolean }) {
+  return (
+    <>
+      <div className="absolute inset-0 mc-base pointer-events-none" aria-hidden />
+      <div className="absolute -top-16 -left-10 w-56 h-56 rounded-full blur-3xl opacity-70 pointer-events-none mc-orb-a" aria-hidden />
+      <div className="absolute -bottom-20 -right-16 w-64 h-64 rounded-full blur-3xl opacity-60 pointer-events-none mc-orb-b" aria-hidden />
+      <div className="absolute inset-0 mc-holo opacity-50 pointer-events-none mix-blend-overlay" aria-hidden />
+      <div className="absolute -inset-1 mc-ring pointer-events-none" aria-hidden />
+      {live && (
+        <>
+          <div className="absolute inset-0 pointer-events-none" aria-hidden>
+            {[
+              { l: "12%", t: "22%", d: "0s", e: "✦" },
+              { l: "82%", t: "18%", d: "0.9s", e: "✧" },
+              { l: "50%", t: "10%", d: "1.8s", e: "✨" },
+            ].map((s, i) => (
+              <span key={i} className="mc-sparkle" style={{ left: s.l, top: s.t, animationDelay: s.d }}>
+                {s.e}
+              </span>
+            ))}
+          </div>
+          <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden>
+            {[0, 1].map((i) => (
+              <span key={i} className="mc-coin"
+                style={{ left: `${25 + i * 40}%`, animationDelay: `${i * 1.2}s`, animationDuration: "6s" }}>
+                ⛏
+              </span>
+            ))}
+          </div>
+        </>
+      )}
+    </>
+  );
+});
+
 
 type Props = {
   accrued: number;
@@ -46,9 +83,19 @@ export function MiningCounter({
 
   useEffect(() => {
     if (!isActive) return;
-    const id = setInterval(() => setNow(Date.now()), 250);
-    return () => clearInterval(id);
+    let id: any;
+    const start = () => {
+      stop();
+      // 1s tick is smooth enough and ~4x cheaper than 250ms on low-end phones.
+      id = setInterval(() => setNow(Date.now()), 1000);
+    };
+    const stop = () => { if (id) { clearInterval(id); id = undefined; } };
+    const onVis = () => (document.hidden ? stop() : (setNow(Date.now()), start()));
+    start();
+    document.addEventListener("visibilitychange", onVis);
+    return () => { stop(); document.removeEventListener("visibilitychange", onVis); };
   }, [isActive]);
+
 
   const rateArgs = {
     selfSlots: selfSlotsProp,
@@ -87,49 +134,13 @@ export function MiningCounter({
   const hoursUntilClose = Math.ceil(win.msUntilClose / (60 * 60 * 1000));
   const nextOpen = nextOpenLabelBn(now);
 
-  // Split integer/decimal for premium digit display
-  const [intPart, decPart] = balance.toFixed(6).split(".");
+  // Split integer/decimal for premium digit display (2 decimals = no jitter)
+  const [intPart, decPart] = balance.toFixed(2).split(".");
 
   return (
-    <div className="mc-premium relative rounded-[28px] p-6 overflow-hidden">
-      {/* Deep gradient base */}
-      <div className="absolute inset-0 mc-base pointer-events-none" aria-hidden />
-      {/* Mesh glow orbs */}
-      <div className="absolute -top-16 -left-10 w-56 h-56 rounded-full blur-3xl opacity-70 pointer-events-none mc-orb-a" aria-hidden />
-      <div className="absolute -bottom-20 -right-16 w-64 h-64 rounded-full blur-3xl opacity-60 pointer-events-none mc-orb-b" aria-hidden />
-      {/* Fine grain / holo lines */}
-      <div className="absolute inset-0 mc-holo opacity-50 pointer-events-none mix-blend-overlay" aria-hidden />
-      {/* Rotating ring */}
-      <div className="absolute -inset-1 mc-ring pointer-events-none" aria-hidden />
+    <div className="mc-premium relative rounded-[28px] p-6 overflow-hidden" style={{ contain: "paint" }}>
+      <MiningDecor live={live} />
 
-      {live && (
-        <>
-          {/* Sparkles */}
-          <div className="absolute inset-0 pointer-events-none" aria-hidden>
-            {[
-              { l: "12%", t: "22%", d: "0s", e: "✦" },
-              { l: "82%", t: "18%", d: "0.7s", e: "✧" },
-              { l: "68%", t: "72%", d: "1.4s", e: "💎" },
-              { l: "22%", t: "68%", d: "2.1s", e: "⭐" },
-              { l: "50%", t: "10%", d: "1.0s", e: "✨" },
-            ].map((s, i) => (
-              <span key={i} className="mc-sparkle"
-                style={{ left: s.l, top: s.t, animationDelay: s.d }}>
-                {s.e}
-              </span>
-            ))}
-          </div>
-          {/* Falling coin trail */}
-          <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden>
-            {[0, 1, 2, 3].map((i) => (
-              <span key={i} className="mc-coin"
-                style={{ left: `${15 + i * 22}%`, animationDelay: `${i * 0.8}s`, animationDuration: `${5 + (i % 2)}s` }}>
-                ⛏
-              </span>
-            ))}
-          </div>
-        </>
-      )}
 
       <div className="relative">
         {/* Header */}
@@ -166,7 +177,7 @@ export function MiningCounter({
         {/* Balance */}
         <div className="text-center">
           <p className="text-[10px] uppercase tracking-[0.3em] text-white/60 font-black mb-1">Balance</p>
-          <div className="flex items-baseline justify-center gap-1 flex-wrap">
+          <div className="flex items-baseline justify-center gap-1 flex-nowrap whitespace-nowrap">
             <span className={`mono-num text-[3.6rem] leading-none font-black mc-num ${live ? "mc-num-live" : ""}`}>
               {intPart}
             </span>
