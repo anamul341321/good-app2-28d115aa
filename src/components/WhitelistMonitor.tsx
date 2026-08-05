@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { adminWhitelistRuns } from "@/lib/admin.functions";
-import { Radio, Loader2, CheckCircle2, AlertTriangle } from "lucide-react";
+import { Radio, CheckCircle2, AlertTriangle } from "lucide-react";
 
 function ago(iso?: string | null) {
   if (!iso) return "—";
@@ -75,7 +75,7 @@ export function WhitelistMonitor() {
             {shown.status === "error" ? (
               <><AlertTriangle className="w-3 h-3 text-rose" /> সমস্যা: {shown.error_message ?? "unknown"}</>
             ) : live ? (
-              <><Loader2 className="w-3 h-3 animate-spin text-emerald" /> সর্বশেষ batch {ago(shown.heartbeat_at ?? shown.started_at)}</>
+              <><Radio className="w-3 h-3 text-emerald" /> সর্বশেষ batch {ago(shown.heartbeat_at ?? shown.started_at)}</>
             ) : (
               <><CheckCircle2 className="w-3 h-3 text-emerald" /> সব key শেষ হয়েছে {ago(shown.finished_at ?? shown.started_at)} · ৩ মিনিট পর নতুন cycle</>
             )}

@@ -1155,7 +1155,7 @@ input, textarea, select { touch-action: manipulation; }
   .admin-shell *,
   .admin-shell *::before,
   .admin-shell *::after {
-    animation-duration: 0.01ms !important;
+    animation: none !important;
   }
   .admin-shell .gradient-cta,
   .admin-shell .gradient-aurora {
