@@ -117,14 +117,39 @@ async function sendTextOnly(chatId: string | number, full: string, _replyTo?: nu
   return last;
 }
 
+/**
+ * প্রতি মেসেজের জন্য রিপ্লাই-মোড।
+ * ডিফল্ট: শুধু লেখা। ইউজার যদি "ভয়েসে বলো" বলে তবেই শুধু ভয়েস (লেখা ছাড়া)।
+ */
+let replyModeOverride: "voice" | "text" | null = null;
+
+export function setReplyMode(mode: "voice" | "text" | null) {
+  replyModeOverride = mode;
+}
+
+/** ইউজার ভয়েসে উত্তর চাইছে কি না। */
+export function asksForVoiceReply(s: string): boolean {
+  const t = String(s || "").toLowerCase();
+  return (
+    /(voice|ভয়েস|vice|vois|audio|অডিও|shune|শুনে|শুনাও|shunao|shonao|শোনাও|mukhe|মুখে)[^\n]{0,25}(bol|বল|dao|দাও|de|দে|kotha|কথা|reply|রিপ্লাই|pathao|পাঠাও|answer|utt?or|উত্তর|de[nb]|দেন|dibe|দিবে|chai|চাই)/i.test(t) ||
+    /(bol|বল|kotha bol|কথা বল)[^\n]{0,15}(voice|ভয়েস|audio|অডিও)/i.test(t) ||
+    /(lekha|লেখা|লিখা|likha|text|টেক্সট)[^\n]{0,25}(bujh?i na|বুঝি না|buji na|বুঝিনা|pori na|পড়ি না|portె|porte pari na|পড়তে পারি না)/i.test(t)
+  );
+}
+
 /** Send a Telegram message, replying to the user's exact message when provided. */
 export async function sendMessage(chatId: string | number, text: string, _replyTo?: number) {
   const full = sanitizeTelegramHtml(text);
-  const { voice: voiceOn, text: textOn } = await voicePrefs();
+  const prefs = await voicePrefs();
+  // অ্যাডমিন ভয়েস বন্ধ রাখলে ভয়েস যাবে না। খোলা থাকলে: ইউজার ভয়েস চাইলে
+  // শুধু ভয়েস, নইলে শুধু লেখা।
+  const wantVoiceMode = prefs.voice && replyModeOverride === "voice";
+  const voiceOn = wantVoiceMode;
+  const textOn = !wantVoiceMode;
 
   const plainLen = full.replace(/<[^>]+>/g, "").trim().length;
-  // শুধু-ভয়েস মোডে ছোট মেসেজও উত্তর পাবে; ভয়েস+লেখা মোডে খুব ছোট মেসেজে শুধু লেখা।
-  const wantVoice = voiceOn && plainLen >= (textOn ? 15 : 1);
+  const wantVoice = voiceOn && plainLen >= 1;
+
 
   // ভয়েস বানানো শুরু হয় লেখা পাঠানোর *আগেই* (parallel) — তাই দেরি হয় না।
   let voicePromise: Promise<Uint8Array | null> | null = null;

@@ -691,6 +691,12 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         const bnDigits = (s: string) =>
           s.replace(/[০-৯]/g, (d) => String("০১২৩৪৫৬৭৮৯".indexOf(d)));
         const norm = bnDigits(text).trim();
+        // ইউজার "ভয়েসে বলো" বললে এই উত্তরটা শুধু ভয়েসে যাবে, নইলে শুধু লেখায়।
+        {
+          const { setReplyMode, asksForVoiceReply } = await import("@/lib/telegram-bot.server");
+          setReplyMode(asksForVoiceReply(norm) ? "voice" : "text");
+        }
+
         const replyNorm = bnDigits(String(msg.reply_to_message?.text ?? msg.reply_to_message?.caption ?? "")).trim();
         // কেউ কোনো মেসেজ "মার্ক"/রিপ্লাই করে প্রশ্ন করলে ওই মেসেজটাই আসল প্রসঙ্গ —
         // সেটা AI-কে না দিলে বট এলোমেলো উত্তর দেয়।
@@ -807,10 +813,19 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           /(face|ফেস|mukh|মুখ|scan|স্ক্যান|ছবি|photo|ফটো|pic|পিক)[^\n]{0,120}(ki koren|ki koro|কী করেন|কি করেন|কি করো|কি করেন|নিয়ে.*করেন|নিয়া.*করেন|use|ব্যবহার|sell|বিক্রি|share|শেয়ার|data|ডাটা|তথ্য)/i.test(norm) ||
           /(fau fau|ফাউ ফাউ|free|ফ্রি|tk|টাকা|payment|পেমেন্ট)[^\n]{0,120}(dicche|দিচ্ছে|dei|দেয়|দেন|দেয়)[^\n]{0,160}(face|ফেস|mukh|মুখ|ছবি|photo|ফটো)/i.test(norm);
 
+        // "কত টাকা পাব / বোনাস কত" — এটা হিসাব/নিয়মের প্রশ্ন, কারো রেফারার খোঁজা নয়।
+        // ভয়েস ট্রান্সক্রিপ্ট এলোমেলো হলে আগে ভুল করে UID চেয়ে বসত।
+        const asksReferralAmount =
+          /(koto|কত|kto|how much|kotota|কতটা)[^\n]{0,40}(tk|taka|টাকা|৳|bonus|বোনাস|pabo|paabo|পাব|পাবো|income|ইনকাম|commission|কমিশন)/i.test(norm) ||
+          /(bonus|বোনাস)[^\n]{0,40}(koto|কত|pabo|পাব|পাবো|kemne|কিভাবে|kivabe)/i.test(norm) ||
+          /(pabo|paabo|পাব|পাবো|pai|পাই)\s*\??$/i.test(norm.trim());
+
         const asksReferralJoin =
+          !asksReferralAmount && (
           /(kar|কার|kaar|jar|যার|kon|কোন|which|who|ke|কে|kader|কাদের)[^\n]{0,90}(refer|reffer|refar|refr|রেফার|referral|রেফারে|রেফারার|under|আন্ডার)/i.test(norm) ||
           /(refer|reffer|refar|refr|রেফার|referral|রেফারে|রেফারার|under|আন্ডার)[^\n]{0,90}(join|জয়েন|joined|asche|আসছে|ashche|aishe|hoise|হইছে|hoyeche|হয়েছে|ache|আছে|kar|কার|কে|ke|korche|করছে|kore|করে|account|একাউন্ট|অ্যাকাউন্ট|id|আইডি)/i.test(norm) ||
-          /(ke|কে|কার)[^\n]{0,60}(eneche|এনেছে|anse|আনছে|niye asche|নিয়ে আসছে)/i.test(norm);
+          /(ke|কে|কার)[^\n]{0,60}(eneche|এনেছে|anse|আনছে|niye asche|নিয়ে আসছে)/i.test(norm));
+
 
 
         // "রেফার করেছি কিন্তু রেফার বাড়ে না / কমে গেছে" → রেফার হিস্টরি + কারণ

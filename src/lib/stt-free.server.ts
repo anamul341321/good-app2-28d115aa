@@ -11,7 +11,7 @@
 // unavailable preview/model used to return 403 and was incorrectly shown in
 // the admin panel as a bad key, even though the same key still handled text.
 const MODELS = ["gemini-flash-latest", "gemini-flash-lite-latest"];
-const REQUEST_TIMEOUT_MS = 4_500;
+const REQUEST_TIMEOUT_MS = 8_000;
 
 function mimeFor(ext: string): string {
   const f = String(ext || "").toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -64,9 +64,9 @@ export async function hearBengali(
     generationConfig: { temperature: 0.2, maxOutputTokens: 800 },
   };
 
-  // Try a bounded group together. Serial 4.5s attempts meant the webhook's
-  // 7s budget expired before later valid keys were reached.
-  const attempts = MODELS.flatMap((model) => keys.slice(0, 6).map(async (k) => {
+  // ধাপে ধাপে চেষ্টা — একসাথে সব কী ছুড়লে ফ্রি কোটা দ্রুত শেষ হয়ে যায়।
+  const makers = MODELS.flatMap((model) =>
+    keys.slice(0, 4).map((k) => async () => {
       let res: Response;
       try {
         res = await fetch(
@@ -85,8 +85,9 @@ export async function hearBengali(
         const txt = await res.text().catch(() => "");
         // Voice/audio availability and quota are separate from text quota.
         // Never write these transient failures into the shared key status.
-        if (res.status === 429 || res.status === 403) throw new Error(`stt-${res.status}`);
-        console.error("[stt] failed", model, res.status, txt.slice(0, 200));
+        if (res.status !== 429 && res.status !== 403) {
+          console.error("[stt] failed", model, res.status, txt.slice(0, 200));
+        }
         throw new Error(`stt-${res.status}`);
       }
       const json: any = await res.json().catch(() => null);
@@ -97,10 +98,13 @@ export async function hearBengali(
       ).trim();
       if (!text || /^EMPTY$/i.test(text)) throw new Error("stt-empty");
       return text.replace(/^["'“”]+|["'“”]+$/g, "").trim();
-    }));
+    }),
+  );
   try {
-    return await Promise.any(attempts);
+    const { staggerAny } = await import("./ai-free.server");
+    return await staggerAny(makers, 2_500);
   } catch {
     return null;
   }
 }
+

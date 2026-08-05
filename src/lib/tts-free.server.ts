@@ -16,7 +16,7 @@ const TTS_MODELS = [
   "gemini-3.1-flash-tts-preview",
 ];
 
-const TTS_REQUEST_TIMEOUT_MS = 6_000;
+const TTS_REQUEST_TIMEOUT_MS = 9_000;
 const CACHE_READ_TIMEOUT_MS = 700;
 
 /**
@@ -188,10 +188,10 @@ async function pcmForChunk(
     },
   };
 
-  // Keys/models used to run one after another, so congestion could hold a
-  // Telegram webhook for 18+ seconds. Race a small group instead: the first
-  // working provider response wins and the whole operation has one timeout.
-  const attempts = TTS_MODELS.flatMap((model) => keys.slice(0, 6).map(async (k) => {
+  // ফ্রি TTS কোটা খুব ছোট, তাই সব কী একসাথে ছুড়ি না — একটার পর একটা ধাপে
+  // ধাপে (প্রথমটা দেরি করলে পরেরটা)। যেটা আগে অডিও দেয় সেটাই যায়।
+  const makers = TTS_MODELS.flatMap((model) =>
+    keys.slice(0, 4).map((k) => async () => {
       let res: Response;
       try {
         res = await fetch(
@@ -220,13 +220,16 @@ async function pcmForChunk(
         ?.inlineData?.data;
       if (!b64) throw new Error("tts-empty-audio");
       return b64ToBytes(b64);
-    }));
+    }),
+  );
   try {
-    return await Promise.any(attempts);
+    const { staggerAny } = await import("./ai-free.server");
+    return await staggerAny(makers, 2_500);
   } catch {
     return null;
   }
 }
+
 
 /**
  * Speak a Bengali reply. The script is split into sentence-sized chunks and the
