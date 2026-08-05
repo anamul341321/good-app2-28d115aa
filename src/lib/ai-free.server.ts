@@ -209,9 +209,11 @@ export async function aiFetch(url: string, init: RequestInit): Promise<Response>
 
 
   console.error("[ai-free] all free keys failed", lastStatus, lastText.slice(0, 300));
-  // Every free key is exhausted → paid gateway so the bot still answers.
-  // Fresh deadline: the free-pool signal is already aborted at this point.
-  if (process.env.LOVABLE_API_KEY) {
+  // ফ্রি কোটা শেষ হলে বট আর পেইড গেটওয়েতে যাবে না (ক্রেডিট খরচ হবে না)।
+  // তখন সে শুধু সেট করা প্রশ্নগুলোর উত্তর দেবে, অজানা প্রশ্নে চুপ থাকবে।
+  // দরকার হলে BOT_ALLOW_PAID=on দিলে পেইড ফলব্যাক আবার চালু হবে।
+  const allowPaid = String(process.env.BOT_ALLOW_PAID ?? "").trim().toLowerCase();
+  if ((allowPaid === "on" || allowPaid === "1" || allowPaid === "true") && process.env.LOVABLE_API_KEY) {
     return fetch(url, {
       ...init,
       signal: AbortSignal.timeout(AI_REQUEST_TIMEOUT_MS),
@@ -219,6 +221,7 @@ export async function aiFetch(url: string, init: RequestInit): Promise<Response>
   }
   return new Response(lastText || "gemini error", { status: lastStatus || 502 });
 }
+
 
 
 
