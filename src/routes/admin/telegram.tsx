@@ -90,7 +90,11 @@ function Toggle({ label, hint, value, onChange }: {
 
 function SettingsPanel() {
   const qc = useQueryClient();
-  const { data, isLoading } = useQuery({ queryKey: ["tg-settings"], queryFn: () => tgGetSettings() });
+  const { data, isLoading, error, refetch, isFetching } = useQuery({
+    queryKey: ["tg-settings"],
+    queryFn: () => raceTimeout(tgGetSettings(), 12_000, "সেটিংস লোড হচ্ছে না — আবার চেষ্টা করুন"),
+  });
+
   const [form, setForm] = useState<any>(null);
   const [webhookUrl, setWebhookUrl] = useState("");
 
