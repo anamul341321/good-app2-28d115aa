@@ -339,6 +339,104 @@ export function builtinFaqKnowledge(): string {
 }
 
 /**
+ * ইনটেন্ট লেয়ার — হুবহু শব্দ না মিললেও প্রশ্নের "মানে" ধরে ফেলে।
+ * আগে শুধু হুবহু substring মেলানো হতো, তাই "withdraw korsi kotokkhon lagbe"
+ * টাইপ স্বাভাবিক প্রশ্নে বট "বুঝতে পারিনি" বলত। এখন দুই দল শব্দের (বিষয় + প্রশ্ন)
+ * যেকোনো একটা করে মিললেই সঠিক উত্তর যায়।
+ */
+type IntentRule = { topic: string; groups: string[][] };
+
+const TIME_WORDS = [
+  "koto somoy", "kotosomoy", "kotokkhon", "koto khon", "kotdin", "koto din",
+  "kobe", "kokhon", "koto deri", "deri", "late", "somoy lagbe", "lagbe",
+  "কত সময়", "কতো সময়", "কতক্ষণ", "কতোক্ষণ", "কত ক্ষণ", "কবে", "কখন", "দেরি", "লাগবে", "কতদিন",
+];
+
+const INTENT_RULES: IntentRule[] = [
+  {
+    topic: "পেমেন্ট করতে কত সময়",
+    groups: [
+      [
+        "withdraw", "withdrow", "withdraw request", "payment", "poyment", "taka tulsi",
+        "taka tulechi", "taka nisi", "cash out", "উইথড্র", "উইথড্রো", "পেমেন্ট", "টাকা",
+      ],
+      TIME_WORDS,
+    ],
+  },
+  {
+    topic: "রি-ভেরিফাই করা যাচ্ছে না",
+    groups: [
+      ["re verify", "re-verify", "reverify", "রি ভেরিফাই", "রি-ভেরিফাই", "রিভেরিফাই"],
+      [
+        ...TIME_WORDS, "hocche na", "hoi na", "hoy na", "asche na", "ase na", "parchi na",
+        "button", "হচ্ছে না", "হয় না", "আসছে না", "পারছি না", "বাটন",
+      ],
+    ],
+  },
+  {
+    topic: "Whitelist হচ্ছে না",
+    groups: [
+      ["whitelist", "white list", "হোয়াইটলিস্ট", "হোয়াইট লিস্ট"],
+      [
+        ...TIME_WORDS, "hocche na", "hoi na", "hoy na", "pending", "atke", "হচ্ছে না",
+        "হয় না", "পেন্ডিং", "আটকে", "check", "চেক",
+      ],
+    ],
+  },
+  {
+    topic: "Gmail যুক্ত",
+    groups: [
+      ["gmail", "g mail", "email", "e-mail", "জিমেইল", "ইমেইল", "মেইল"],
+      [
+        "add", "jukto", "kivabe", "kemne", "kemon", "korbo", "dibo", "verify", "verification",
+        "যোগ", "যুক্ত", "কিভাবে", "কেমনে", "করবো", "দিব", "দিবো", "ভেরিফাই", "ভেরিফিকেশন",
+      ],
+    ],
+  },
+  {
+    topic: "অ্যাপ ডাউনলোড",
+    groups: [
+      ["download", "install", "apk", "ডাউনলোড", "ইনস্টল"],
+      ["kivabe", "kemne", "korbo", "kothay", "koro", "কিভাবে", "কেমনে", "করবো", "কোথায়", "কোথা"],
+    ],
+  },
+  {
+    topic: "১০টার পর আরও স্লট",
+    groups: [
+      ["aro slot", "aro 10", "extra slot", "notun slot", "slot barale", "আরও স্লট", "আরো স্লট", "আরো ১০", "নতুন স্লট"],
+      ["bonus", "বোনাস", "taka pabo", "টাকা পাবো", "pabo", "পাবো"],
+    ],
+  },
+];
+
+/** Normalize once: bengali digits → ascii, punctuation → space. */
+function normText(text: string): string {
+  const bn = "০১২৩৪৫৬৭৮৯";
+  return String(text || "")
+    .toLowerCase()
+    .replace(/<[^>]+>/g, " ")
+    .replace(/[০-৯]/g, (d) => String(bn.indexOf(d)))
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function matchIntent(text: string): BuiltinFaq | null {
+  const hay = normText(text);
+  if (!hay) return null;
+  for (const rule of INTENT_RULES) {
+    const ok = rule.groups.every((group) =>
+      group.some((w) => hay.includes(normText(w))),
+    );
+    if (ok) {
+      const f = builtinFaqByTopic(rule.topic);
+      if (f) return f;
+    }
+  }
+  return null;
+}
+
+/**
  * Fast deterministic match on plain text (no AI needed).
  * শুধু `keywords` দেখে মেলানো হয় — `screenshot` লাইনগুলো ছবির জন্য, লেখার জন্য নয়
  * (আগে "verify/ভেরিফাই" স্ক্রিনশট-শব্দের কারণে রি-ভেরিফাইয়ের প্রশ্নেও Gmail-এর উত্তর যেত)।
@@ -365,8 +463,10 @@ export function matchBuiltinFaqText(text: string): BuiltinFaq | null {
       best = f;
     }
   }
-  return best;
+  // হুবহু কিওয়ার্ড না মিললে মানে ধরে (intent) মেলানোর চেষ্টা।
+  return best ?? matchIntent(text);
 }
+
 
 
 /** Find a built-in answer by its topic label (safer than an array index). */

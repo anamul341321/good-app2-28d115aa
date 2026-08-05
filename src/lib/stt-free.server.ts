@@ -25,14 +25,17 @@ function mimeFor(ext: string): string {
 }
 
 const PROMPT =
-  "You are an expert Bengali (Bangladeshi) listener for a support bot. " +
-  "Listen to this voice note very carefully and write, in Bengali, exactly what the speaker is saying or asking. " +
-  "The speaker may mumble, speak fast, use dialect (Noakhali/Sylheti/Chittagong), mix Bangla with Roman Bangla and English words, " +
-  "and there may be background noise — still do your best to reconstruct the most likely meaning instead of giving up. " +
-  "Domain words to expect: Good-App, UID, slot, face verify, re-verify, whitelist, withdraw, bKash, Nagad, recharge, mining, refer, bonus, fee, reset, password, Gmail, KYC. " +
+  "You are an expert Bengali (Bangladeshi) listener for a support bot, trained on noisy low-quality phone voice notes. " +
+  "Listen to this voice note VERY carefully, several times if needed, and write in Bengali exactly what the speaker is saying or asking. " +
+  "The audio may be muffled, low volume, clipped, fast, slurred or half-whispered; the speaker may mumble, use dialect " +
+  "(Noakhali/Sylheti/Chittagong/Barishal), mix Bangla with Roman Bangla and English words, and there may be fan/traffic/TV noise or other voices. " +
+  "Never refuse and never say you cannot hear: reconstruct the most likely full sentence from whatever sounds are audible, " +
+  "fixing obvious mishearings so the sentence makes sense for a mobile earning app support chat. " +
+  "Domain words to expect: Good-App, UID, slot, face verify, re-verify, whitelist, withdraw, payment, bKash, Nagad, recharge, mining, refer, bonus, fee, reset, password, Gmail, KYC. " +
   "Only report what is in THIS audio — never guess from older chat. " +
-  "Output just the sentence(s)/question, no explanation, no quotes. " +
-  "If the audio is truly empty or has no speech at all, output exactly: EMPTY";
+  "Output just the sentence(s)/question in Bengali, no explanation, no quotes, no timestamps. " +
+  "Output EMPTY only if there is absolutely no human voice at all (pure silence or pure noise).";
+
 
 /** Transcribe a Telegram voice clip using the free Gemini key pool. */
 export async function hearBengali(
@@ -51,60 +54,78 @@ export async function hearBengali(
     : "";
 
 
-  const body = {
+  const makeBody = (prompt: string) => ({
     contents: [
       {
         role: "user",
         parts: [
-          { text: PROMPT + hintBlock },
+          { text: prompt + hintBlock },
           { inline_data: { mime_type: mimeFor(ext), data: base64 } },
         ],
       },
     ],
-    generationConfig: { temperature: 0.2, maxOutputTokens: 800 },
+    generationConfig: { temperature: 0.1, maxOutputTokens: 800 },
+  });
+
+  const attempt = (key: string, model: string, prompt: string) => async () => {
+    let res: Response;
+    try {
+      res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+        {
+          method: "POST",
+          headers: { "x-goog-api-key": key, "Content-Type": "application/json" },
+          body: JSON.stringify(makeBody(prompt)),
+          signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+        },
+      );
+    } catch {
+      throw new Error("stt-network-failed");
+    }
+    if (!res.ok) {
+      const txt = await res.text().catch(() => "");
+      // Voice/audio availability and quota are separate from text quota.
+      // Never write these transient failures into the shared key status.
+      if (res.status !== 429 && res.status !== 403) {
+        console.error("[stt] failed", model, res.status, txt.slice(0, 200));
+      }
+      throw new Error(`stt-${res.status}`);
+    }
+    const json: any = await res.json().catch(() => null);
+    const text = String(
+      (json?.candidates?.[0]?.content?.parts ?? [])
+        .map((p: any) => p?.text ?? "")
+        .join(" ") ?? "",
+    ).trim();
+    if (!text || /^EMPTY$/i.test(text)) throw new Error("stt-empty");
+    return text.replace(/^["'“”]+|["'“”]+$/g, "").trim();
   };
 
   // ধাপে ধাপে চেষ্টা — একসাথে সব কী ছুড়লে ফ্রি কোটা দ্রুত শেষ হয়ে যায়।
   const makers = MODELS.flatMap((model) =>
-    keys.slice(0, 3).map((k) => async () => {
-      let res: Response;
-      try {
-        res = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-          {
-            method: "POST",
-            headers: { "x-goog-api-key": k.key, "Content-Type": "application/json" },
-            body: JSON.stringify(body),
-            signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-          },
-        );
-      } catch {
-        throw new Error("stt-network-failed");
-      }
-      if (!res.ok) {
-        const txt = await res.text().catch(() => "");
-        // Voice/audio availability and quota are separate from text quota.
-        // Never write these transient failures into the shared key status.
-        if (res.status !== 429 && res.status !== 403) {
-          console.error("[stt] failed", model, res.status, txt.slice(0, 200));
-        }
-        throw new Error(`stt-${res.status}`);
-      }
-      const json: any = await res.json().catch(() => null);
-      const text = String(
-        (json?.candidates?.[0]?.content?.parts ?? [])
-          .map((p: any) => p?.text ?? "")
-          .join(" ") ?? "",
-      ).trim();
-      if (!text || /^EMPTY$/i.test(text)) throw new Error("stt-empty");
-      return text.replace(/^["'“”]+|["'“”]+$/g, "").trim();
-    }),
+    keys.slice(0, 3).map((k) => attempt(k.key, model, PROMPT)),
   );
+  const { staggerAny } = await import("./ai-free.server");
   try {
-    const { staggerAny } = await import("./ai-free.server");
     return await staggerAny(makers, 3_500);
+  } catch {
+    /* প্রথম রাউন্ডে কিছু বোঝা যায়নি → নিচে "জোর করে বোঝার" শেষ চেষ্টা */
+  }
+
+  // লড়বড়া/খুব আস্তে বলা ভয়েসের জন্য শেষ চেষ্টা: হার মানা নিষেধ।
+  const RESCUE =
+    PROMPT +
+    "\nThis audio is hard to hear. Do NOT output EMPTY unless it is pure silence. " +
+    "Boost your attention on the loudest syllables, guess the most plausible Bengali support question " +
+    "(e.g. about slot verify, re-verify, withdraw timing, bonus, mining, password) and write that single sentence.";
+  try {
+    return await staggerAny(
+      keys.slice(0, 2).map((k) => attempt(k.key, MODELS[0], RESCUE)),
+      3_000,
+    );
   } catch {
     return null;
   }
 }
+
 
