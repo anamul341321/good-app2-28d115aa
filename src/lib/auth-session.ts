@@ -1,8 +1,10 @@
-import { supabase } from "@/integrations/supabase/client";
+import type { Session } from "@supabase/supabase-js";
 
-type SessionResult = Awaited<ReturnType<typeof supabase.auth.getSession>>;
+type SessionResult = {
+  data: { session: Session | null };
+  error: null;
+};
 
-let inFlight: Promise<SessionResult> | undefined;
 let cached: { value: SessionResult; expiresAt: number } | undefined;
 
 function readStoredSession(): SessionResult | undefined {
@@ -20,7 +22,7 @@ function readStoredSession(): SessionResult | undefined {
         user?: unknown;
       };
       if (!parsed.access_token || !parsed.refresh_token) continue;
-      if (parsed.expires_at && parsed.expires_at * 1000 <= Date.now() + 30_000) continue;
+       if (parsed.expires_at && parsed.expires_at * 1000 <= Date.now()) continue;
       return {
         data: { session: parsed as NonNullable<SessionResult["data"]["session"]> },
         error: null,
@@ -52,29 +54,15 @@ export function getSharedSession(options?: { fresh?: boolean }): Promise<Session
     return Promise.resolve(stored);
   }
 
-  if (inFlight) return inFlight;
-
-  let timeoutId: ReturnType<typeof setTimeout> | undefined;
-  const timeout = new Promise<SessionResult>((resolve) => {
-    timeoutId = setTimeout(() => {
-      resolve({ data: { session: null }, error: null });
-    }, 2_000);
-  });
-
-  inFlight = Promise.race([supabase.auth.getSession(), timeout])
-    .then((value) => {
-      cached = { value, expiresAt: Date.now() + 10_000 };
-      return value;
-    })
-    .finally(() => {
-      if (timeoutId) clearTimeout(timeoutId);
-      inFlight = undefined;
-    });
-
-  return inFlight;
+  // Never enter the auth SDK's browser-wide Web Lock from page rendering or
+  // server-function middleware. A stalled refresh in another tab can keep
+  // getSession() pending indefinitely. Auth state changes keep localStorage
+  // current, so a missing usable stored session is a terminal signed-out state.
+  const signedOut: SessionResult = { data: { session: null }, error: null };
+  cached = { value: signedOut, expiresAt: now + 1_000 };
+  return Promise.resolve(signedOut);
 }
 
 export function clearSharedSession() {
   cached = undefined;
-  inFlight = undefined;
 }
