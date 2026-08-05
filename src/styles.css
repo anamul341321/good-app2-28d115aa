@@ -4,11 +4,7 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* =========================================================
-   good-app — Royal Midnight premium theme
-   Dark navy base + neon gold + electric violet + cyan
-   Heavy motion, glassmorphism, iconic vibes.
-   ========================================================= */
+/* good-app — original clean white theme with soft blue backdrop */
 
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
@@ -93,10 +89,9 @@
     inset: 0;
     z-index: -1;
     background:
-      radial-gradient(1000px 500px at 8% -10%, color-mix(in oklch, var(--color-violet) 18%, transparent), transparent 60%),
-      radial-gradient(900px 480px at 100% 8%, color-mix(in oklch, var(--color-cyan) 16%, transparent), transparent 60%),
-      radial-gradient(800px 500px at 50% 110%, color-mix(in oklch, var(--color-emerald) 14%, transparent), transparent 60%),
-      var(--color-background);
+      radial-gradient(900px 500px at 8% -10%, color-mix(in oklch, var(--color-cyan) 10%, transparent), transparent 62%),
+      radial-gradient(800px 500px at 100% 100%, color-mix(in oklch, var(--color-violet) 8%, transparent), transparent 65%),
+      oklch(0.94 0.035 245);
     pointer-events: none;
     transform: translateZ(0);
   }
@@ -129,10 +124,8 @@
     -webkit-backface-visibility: hidden;
     backface-visibility: hidden;
     transform: translateZ(0);
-    background: color-mix(in oklch, white 82%, transparent);
-    backdrop-filter: blur(12px) saturate(140%);
-    -webkit-backdrop-filter: blur(12px) saturate(140%);
-    border: 1px solid color-mix(in oklch, var(--color-violet) 22%, transparent);
+    background: color-mix(in oklch, var(--color-card) 98%, var(--color-cyan));
+    border: 1px solid color-mix(in oklch, var(--color-border) 88%, var(--color-violet));
     box-shadow:
       0 20px 60px -25px color-mix(in oklch, var(--color-navy) 25%, transparent),
       inset 0 1px 0 0 white;
@@ -141,10 +134,7 @@
     -webkit-backface-visibility: hidden;
     backface-visibility: hidden;
     transform: translateZ(0);
-    background: linear-gradient(160deg,
-      color-mix(in oklch, white 94%, transparent),
-      color-mix(in oklch, var(--color-violet) 8%, white));
-    backdrop-filter: blur(16px) saturate(160%);
+    background: var(--color-card);
     border: 1px solid color-mix(in oklch, var(--color-violet) 25%, transparent);
     box-shadow: 0 30px 80px -30px color-mix(in oklch, var(--color-violet) 30%, transparent);
   }
@@ -170,7 +160,7 @@
   .premium-panel {
     contain: paint;
     position: relative;
-    background: linear-gradient(160deg, #ffffff, color-mix(in oklch, var(--color-violet) 6%, white));
+    background: var(--color-card);
     border: 1px solid color-mix(in oklch, var(--color-violet) 18%, transparent);
     border-radius: inherit;
     box-shadow:
@@ -1148,12 +1138,10 @@ input, textarea, select { touch-action: manipulation; }
      animated gradients share a layer. Admin favors stable, readable paint. */
   .admin-shell .glass,
   .admin-shell .glass-strong {
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-    background: var(--color-surface) !important;
+    background: var(--color-card) !important;
   }
   .admin-shell .premium-panel {
-    background: var(--color-surface) !important;
+    background: var(--color-card) !important;
     box-shadow: 0 8px 24px -18px var(--color-navy) !important;
   }
   .admin-shell .premium-panel::before {
