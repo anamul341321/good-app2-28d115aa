@@ -10,7 +10,7 @@
 // Use models that are broadly available to Google AI Studio keys. An
 // unavailable preview/model used to return 403 and was incorrectly shown in
 // the admin panel as a bad key, even though the same key still handled text.
-const MODELS = ["gemini-2.5-flash"];
+const MODELS = ["gemini-flash-latest", "gemini-flash-lite-latest"];
 const REQUEST_TIMEOUT_MS = 4_500;
 
 function mimeFor(ext: string): string {

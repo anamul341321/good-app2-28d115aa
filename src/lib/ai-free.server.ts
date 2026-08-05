@@ -13,9 +13,13 @@
 const GEMINI_URL =
   "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 
-/** Free-tier friendly Gemini model; override with GEMINI_MODEL. */
-const GEMINI_DEFAULT_MODEL = "gemini-2.5-flash";
-const GEMINI_FALLBACK_MODEL = "gemini-2.5-flash-lite";
+/**
+ * Free-tier friendly Gemini models; override the primary with GEMINI_MODEL.
+ * The pinned `gemini-2.5-*` ids now 404 ("no longer available to new users"),
+ * so we use the always-current aliases instead.
+ */
+const GEMINI_DEFAULT_MODEL = "gemini-flash-latest";
+const GEMINI_FALLBACK_MODEL = "gemini-flash-lite-latest";
 const AI_REQUEST_TIMEOUT_MS = 4_000;
 
 /**
