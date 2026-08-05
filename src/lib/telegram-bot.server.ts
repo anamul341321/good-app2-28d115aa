@@ -774,15 +774,10 @@ export async function transcribeAudio(
   hint?: string,
 ): Promise<string | null> {
   const key = process.env.GEMINI_API_KEY || process.env.LOVABLE_API_KEY;
-  if (!key) return null;
-  // Use the dedicated speech model first. It is faster and more accurate than
-  // sending Telegram OGG audio through a general chat model.
-  if (process.env.LOVABLE_API_KEY) {
-    const stt = await transcribeAudioStt(base64, format, process.env.LOVABLE_API_KEY);
-    if (stt) return stt;
-  }
 
-  // Free native-audio fallback for periods when gateway STT is unavailable.
+  // ফ্রি Gemini native-audio আগে — এটা OGG সোজা বোঝে, ক্রেডিটও খরচ হয় না।
+  // আগে পেইড গেটওয়ে STT আগে চলত, সেটাই webhook-এর পুরো সময় খেয়ে ফেলত, তাই
+  // প্রতিটা ভয়েসেই "বুঝতে পারিনি" যেত।
   try {
     const { hearBengali } = await import("./stt-free.server");
     const heard = await hearBengali(base64, format, hint);
@@ -790,6 +785,16 @@ export async function transcribeAudio(
   } catch (e) {
     console.error("[tg] gemini stt error", e);
   }
+
+  const allowPaid = ["on", "1", "true"].includes(
+    String(process.env.BOT_ALLOW_PAID ?? "").trim().toLowerCase(),
+  );
+  if (allowPaid && process.env.LOVABLE_API_KEY) {
+    const stt = await transcribeAudioStt(base64, format, process.env.LOVABLE_API_KEY);
+    if (stt) return stt;
+  }
+  if (!key) return null;
+
 
   try {
     const res = await aiFetch(AI_URL, {
