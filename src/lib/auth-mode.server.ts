@@ -6,18 +6,25 @@ let cache: { value: boolean; at: number } | null = null;
  */
 export async function isEmailOtpEnabled(): Promise<boolean> {
   if (cache && Date.now() - cache.at < 3_000) return cache.value;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 2_500);
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data } = await supabaseAdmin
       .from("bonus_settings")
       .select("email_otp_enabled")
       .eq("id", "default")
+      .abortSignal(controller.signal)
       .maybeSingle();
     const value = (data as any)?.email_otp_enabled !== false;
     cache = { value, at: Date.now() };
     return value;
   } catch {
-    return true;
+    // Login must remain usable even when the settings read is temporarily slow.
+    cache = { value: false, at: Date.now() };
+    return false;
+  } finally {
+    clearTimeout(timer);
   }
 }
 
