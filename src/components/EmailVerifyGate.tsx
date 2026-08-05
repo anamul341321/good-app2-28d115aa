@@ -153,20 +153,25 @@ export function EmailVerifyGate() {
 
 
   return (
-    <div className="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[90] overflow-y-auto overscroll-contain p-4 bg-black/75 backdrop-blur-sm flex items-start justify-center">
       <div
         className="w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl animate-in zoom-in-95 slide-in-from-bottom-4 duration-500"
         style={{ background: "linear-gradient(160deg,#0ea5e9,#6366f1,#8b5cf6)" }}
       >
         <div className="p-5 text-white space-y-3">
-          <div className="mx-auto w-16 h-16 rounded-full bg-white/20 flex items-center justify-center animate-pulse">
-            <Mail className="w-9 h-9" />
-          </div>
+          {step === "email" && (
+            <div className="mx-auto w-16 h-16 rounded-full bg-white/20 flex items-center justify-center animate-pulse">
+              <Mail className="w-9 h-9" />
+            </div>
+          )}
           <h2 className="text-center text-lg font-black drop-shadow">📧 Gmail ভেরিফিকেশন</h2>
-          <p className="text-center text-[12.5px] font-bold leading-relaxed">
-            একাউন্টের নিরাপত্তা ও উইথড্র চালু রাখতে একটি Gmail ভেরিফাই করে রাখুন। পাসওয়ার্ড ভুলে
-            গেলেও এই Gmail-এ কোড পাঠিয়ে নিজেই ঠিক করতে পারবেন।
-          </p>
+          {step === "email" && (
+            <p className="text-center text-[12.5px] font-bold leading-relaxed">
+              একাউন্টের নিরাপত্তা ও উইথড্র চালু রাখতে একটি Gmail ভেরিফাই করে রাখুন। পাসওয়ার্ড ভুলে
+              গেলেও এই Gmail-এ কোড পাঠিয়ে নিজেই ঠিক করতে পারবেন।
+            </p>
+          )}
+
 
           {step === "email" ? (
             <form onSubmit={handleSend} className="space-y-3">
@@ -196,6 +201,14 @@ export function EmailVerifyGate() {
             </form>
           ) : (
             <form onSubmit={handleConfirm} className="space-y-3">
+              <input
+                autoFocus
+                inputMode="numeric"
+                value={code}
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                placeholder="৬ ডিজিটের কোড"
+                className="w-full rounded-2xl px-4 py-3 text-center text-[18px] font-black tracking-[8px] text-slate-900 bg-white/95 outline-none mono-num"
+              />
               <p className="text-center text-[12px] font-bold bg-white/15 rounded-xl py-2">
                 কোড পাঠানো হয়েছে: <b translate="no">{dest}</b>
               </p>
@@ -204,13 +217,7 @@ export function EmailVerifyGate() {
                   ? `⏳ কোডের মেয়াদ শেষ হবে ${fmt(expiresIn)} মিনিটে`
                   : "⌛ কোডের সময় শেষ — আবার কোড পাঠান"}
               </p>
-              <input
-                inputMode="numeric"
-                value={code}
-                onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                placeholder="৬ ডিজিটের কোড"
-                className="w-full rounded-2xl px-4 py-3 text-center text-[18px] font-black tracking-[8px] text-slate-900 bg-white/95 outline-none mono-num"
-              />
+
               <button
                 type="submit"
                 disabled={busy || code.length !== 6}

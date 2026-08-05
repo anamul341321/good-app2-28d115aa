@@ -281,7 +281,7 @@ export function ProfileCompleteGate() {
 
 function Shell({ gradient, children }: { gradient: string; children: React.ReactNode }) {
   return (
-    <div className="fixed inset-0 z-[95] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[95] overflow-y-auto overscroll-contain p-4 bg-black/80 backdrop-blur-sm flex items-start justify-center">
       <div
         className="w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-500"
         style={{ background: gradient }}

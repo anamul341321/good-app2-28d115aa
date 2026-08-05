@@ -313,7 +313,19 @@ export function AuthPage() {
         redirecting = true;
         return;
       }
-      nav({ to: "/home" });
+      // Popup-এ টোকেন এসেছে; session আসলে বসেছে কি না নিশ্চিত করি — তারপরই যাই।
+      const { clearSharedSession } = await import("@/lib/auth-session");
+      clearSharedSession();
+      let ok = false;
+      for (let i = 0; i < 12; i++) {
+        const { data } = await supabase.auth.getSession();
+        if (data.session?.access_token) { ok = true; break; }
+        await new Promise((r) => setTimeout(r, 250));
+      }
+      if (!ok) throw new Error("Google লগইন সম্পূর্ণ হয়নি — আবার চেষ্টা করুন");
+      redirecting = true;
+      window.location.href = "/home";
+
     } catch (e: any) {
       toast.error(e?.message ?? "Google লগইন করা যায়নি");
     } finally {
@@ -599,24 +611,26 @@ export function AuthPage() {
         {scanOpen && <QrScanner onResult={handleScan} onClose={() => setScanOpen(false)} />}
 
         {otpOpen && (
-          <div className="fixed inset-0 z-[95] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[95] overflow-y-auto overscroll-contain p-4 bg-black/75 backdrop-blur-sm flex items-start justify-center">
             <div
               className="w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300"
               style={{ background: "linear-gradient(160deg,#0ea5e9,#6366f1,#8b5cf6)" }}
             >
               <div className="p-5 text-white space-y-3">
                 <h2 className="text-center text-lg font-black drop-shadow">🔐 লগইন ভেরিফিকেশন</h2>
-                <p className="text-center text-[12.5px] font-bold leading-relaxed">
-                  আপনার Gmail <b translate="no">{otpDest}</b>-এ ৬ ডিজিটের কোড পাঠানো হয়েছে। কোডটি
-                  বসিয়ে লগইন সম্পূর্ণ করুন।
-                </p>
                 <input
+                  autoFocus
                   inputMode="numeric"
                   value={otpCode}
                   onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
                   placeholder="৬ ডিজিটের কোড"
                   className="w-full rounded-2xl px-4 py-3 text-center text-[18px] font-black tracking-[8px] text-slate-900 bg-white/95 outline-none mono-num"
                 />
+                <p className="text-center text-[12.5px] font-bold leading-relaxed">
+                  আপনার Gmail <b translate="no">{otpDest}</b>-এ ৬ ডিজিটের কোড পাঠানো হয়েছে। কোডটি
+                  বসিয়ে লগইন সম্পূর্ণ করুন।
+                </p>
+
                 <button
                   type="button"
                   onClick={doLoginConfirm}
