@@ -70,7 +70,10 @@ export const BUILTIN_FAQS: BuiltinFaq[] = [
 
   {
     topic: "Gmail যুক্ত / Gmail ভেরিফিকেশন কিভাবে করবো",
-    screenshot: ["Gmail", "verify", "ভেরিফাই", "কোড"],
+    // শুধু Gmail-নির্দিষ্ট লেখা — "verify/ভেরিফাই" রাখা যাবে না, নইলে অন্য
+    // সমস্যার স্ক্রিনশটেও Gmail-এর উত্তর চলে যায়।
+    screenshot: ["Gmail যোগ করুন", "Gmail সিকিউরিটি", "কোড পাঠান", "gmail verification", "gmail verify"],
+
     keywords: [
       "gmail add", "gmail add korbo", "gmail add kemne", "gmail add kivabe",
       "gmail jukto", "gmail verify", "gmail verification", "gmail kivabe",
