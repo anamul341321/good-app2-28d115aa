@@ -3054,11 +3054,13 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           // uid 6)। তাই স্লট হিসেবে বলা নম্বরটি কখনোই UID হিসেবে নেওয়া হবে না;
           // চেনা ইউজারের KYC-লিংক করা UID-ই আগে ব্যবহার হবে।
           const slotNumbers = pickSlots(norm);
+          const wroteUidWord = /(uid|ইউআইডি|আইডি|আই ডি)/i.test(norm);
           const aiUid =
-            decision.uid && !(hasExplicitUid === false && slotNumbers.includes(Number(decision.uid)))
+            decision.uid && !(!wroteUidWord && slotNumbers.includes(Number(decision.uid)))
               ? decision.uid
               : null;
           const uid = aiUid || pickUid(norm) || (await linkedUid());
+
 
           if (!uid) {
             const already = await pendingResetInfo();
