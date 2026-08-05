@@ -8,7 +8,7 @@
  */
 
 const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
-const MODEL = "google/gemini-3.6-flash";
+const MODEL = "google/gemini-2.5-flash";
 
 export type AdminOp =
   | { action: "set_toggle"; field: ToggleField; value: boolean }

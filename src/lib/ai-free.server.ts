@@ -14,8 +14,8 @@ const GEMINI_URL =
   "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 
 /** Free-tier friendly Gemini model; override with GEMINI_MODEL. */
-const GEMINI_DEFAULT_MODEL = "gemini-3.6-flash";
-const GEMINI_FALLBACK_MODEL = "gemini-3.1-flash-lite";
+const GEMINI_DEFAULT_MODEL = "gemini-2.5-flash";
+const GEMINI_FALLBACK_MODEL = "gemini-2.5-flash-lite";
 
 /**
  * All free Gemini keys: the ones the admin saved in the admin panel (unlimited

@@ -5,7 +5,7 @@ import { aiFetch } from "./ai-free.server";
 // re-verify status, withdraw history, slot list and live app stats.
 
 const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
-const MODEL = "google/gemini-3.6-flash";
+const MODEL = "google/gemini-2.5-flash";
 
 type Msg = { role: "system" | "user" | "assistant" | "tool"; content: string; tool_calls?: any[]; tool_call_id?: string };
 
