@@ -1211,7 +1211,9 @@ function AiKeyPanel() {
                     </button>
                   </div>
                 </div>
-                {k.lastError && <p className="text-[10px] text-destructive mt-1 truncate">{k.lastError}</p>}
+                {k.lastError && !/ভয়েস|voice|tts|stt/i.test(k.lastError) && (
+                  <p className="text-[10px] text-destructive mt-1 truncate">{k.lastError}</p>
+                )}
               </div>
             ))}
           </div>

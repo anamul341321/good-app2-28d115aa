@@ -7,7 +7,11 @@
  * to the same free rotating key pool used by the text/voice layers.
  */
 
-const MODELS = ["gemini-3.6-flash", "gemini-2.5-flash", "gemini-2.5-flash-lite"];
+// Use models that are broadly available to Google AI Studio keys. An
+// unavailable preview/model used to return 403 and was incorrectly shown in
+// the admin panel as a bad key, even though the same key still handled text.
+const MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-lite"];
+const REQUEST_TIMEOUT_MS = 15_000;
 
 function mimeFor(ext: string): string {
   const f = String(ext || "").toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -70,6 +74,7 @@ export async function hearBengali(
             method: "POST",
             headers: { "x-goog-api-key": k.key, "Content-Type": "application/json" },
             body: JSON.stringify(body),
+            signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
           },
         );
       } catch {
@@ -77,18 +82,9 @@ export async function hearBengali(
       }
       if (!res.ok) {
         const txt = await res.text().catch(() => "");
-        if (res.status === 429 || res.status === 403) {
-          if (k.id) {
-            const mod = await import("./ai-keys.server");
-            void mod.markKeyError(
-              k.id,
-              res.status === 429
-                ? "ভয়েস শোনার লিমিট শেষ (লেখা ঠিকই চলবে)"
-                : "এই কী-তে ভয়েস মডেল চালু নেই (লেখা ঠিকই চলবে)",
-            );
-          }
-          continue;
-        }
+        // Voice/audio availability and quota are separate from text quota.
+        // Never write these transient failures into the shared key status.
+        if (res.status === 429 || res.status === 403) continue;
         console.error("[stt] failed", model, res.status, txt.slice(0, 200));
         break;
       }
