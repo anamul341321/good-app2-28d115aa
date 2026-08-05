@@ -67,7 +67,10 @@ export function useDeviceGuard(enabled = true): boolean {
       clearInterval(timer);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled, touch]);
+    // useServerFn can return a new wrapper during renders; only restart the
+    // heartbeat when authentication actually becomes enabled/disabled.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enabled]);
 
   return revoked;
 }
