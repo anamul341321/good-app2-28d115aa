@@ -128,5 +128,4 @@ export async function hearBengali(
   }
 }
 
-}
 
