@@ -1,7 +1,7 @@
 import { createStart, createMiddleware } from "@tanstack/react-start";
 
 import { renderErrorPage } from "./lib/error-page";
-import { attachSupabaseAuth } from "@/integrations/supabase/auth-attacher";
+import { attachSharedAuth } from "@/lib/auth-function-middleware";
 
 const errorMiddleware = createMiddleware().server(async ({ next, request }) => {
   // Email/webhook/cron routes authenticate themselves — never wrap or redirect them.
@@ -23,6 +23,6 @@ const errorMiddleware = createMiddleware().server(async ({ next, request }) => {
 });
 
 export const startInstance = createStart(() => ({
-  functionMiddleware: [attachSupabaseAuth],
+  functionMiddleware: [attachSharedAuth],
   requestMiddleware: [errorMiddleware],
 }));

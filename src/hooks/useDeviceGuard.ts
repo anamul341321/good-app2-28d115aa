@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { supabase } from "@/integrations/supabase/client";
 import { touchDevice } from "@/lib/sessions.functions";
+import { getSharedSession } from "@/lib/auth-session";
 
 const KEY = "ga_device_id";
 
@@ -36,18 +36,19 @@ export function deviceLabel() {
  * এই ডিভাইসটি লগআউট করে দিলে এখানে `revoked` true হয় — তখন সাইন-আউট না করে
  * অনুমতি/কোড দিয়ে আবার চালু করার স্ক্রিন দেখানো হয়।
  */
-export function useDeviceGuard(): boolean {
+export function useDeviceGuard(enabled = true): boolean {
   const touch = useServerFn(touchDevice);
   const [revoked, setRevoked] = useState(false);
 
   useEffect(() => {
+    if (!enabled) return;
     let active = true;
     const deviceId = getDeviceId();
     if (!deviceId) return;
 
     const ping = async () => {
       try {
-        const { data: sess } = await supabase.auth.getSession();
+        const { data: sess } = await getSharedSession();
         if (!sess?.session?.access_token) return;
         const res: any = await touch({
           data: { deviceId, label: deviceLabel(), userAgent: navigator.userAgent },
@@ -66,7 +67,7 @@ export function useDeviceGuard(): boolean {
       clearInterval(timer);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [enabled, touch]);
 
   return revoked;
 }

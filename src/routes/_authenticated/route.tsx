@@ -19,6 +19,7 @@ import { MaintenanceScreen } from "@/components/MaintenanceGate";
 import { UserNoticeBanner } from "@/components/UserNoticeBanner";
 import { DeviceUnlockGate } from "@/components/DeviceUnlockGate";
 import { DeviceApprovalPrompt } from "@/components/DeviceApprovalPrompt";
+import { clearSharedSession, getSharedSession } from "@/lib/auth-session";
 
 
 
@@ -46,7 +47,7 @@ function AuthedLayout() {
 
     // নেটওয়ার্ক সমস্যা হলে যেন লগআউট না হয়ে যায়:
     // লোকাল সেশন থাকলে সেটাকেই বিশ্বাস করি, শুধু আসল sign-out হলে বের করে দিই।
-    supabase.auth.getSession().then(async ({ data }) => {
+    getSharedSession({ fresh: authAttempt > 0 }).then(async ({ data }) => {
       if (!active) return;
       window.clearTimeout(timeoutId);
       if (!data.session) {
@@ -66,6 +67,7 @@ function AuthedLayout() {
 
     const sub = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_OUT") {
+        clearSharedSession();
         setAuthState("unauthenticated");
         return;
       }
@@ -76,14 +78,15 @@ function AuthedLayout() {
       window.clearTimeout(timeoutId);
       sub.data.subscription.unsubscribe();
     };
-  }, [router, authAttempt]);
+  }, [authAttempt]);
 
 
-  const deviceRevoked = useDeviceGuard();
+  const deviceRevoked = useDeviceGuard(authState === "authenticated");
 
 
   const logout = async () => {
     await supabase.auth.signOut();
+    clearSharedSession();
     router.navigate({ to: "/auth" });
   };
 
@@ -94,6 +97,7 @@ function AuthedLayout() {
     queryFn: () => getAppStatus(),
     refetchInterval: 60_000,
     staleTime: 30_000,
+    enabled: authState === "authenticated",
   });
 
   if (authState === "checking") {
