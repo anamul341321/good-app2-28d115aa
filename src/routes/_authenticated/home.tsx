@@ -69,7 +69,8 @@ function HomePage() {
     ]),
     refetchInterval: 60_000,
     staleTime: 20_000,
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
+    networkMode: "always",
     retry: 1,
   });
 
