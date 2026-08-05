@@ -20,7 +20,7 @@ const GEMINI_URL =
  */
 const GEMINI_DEFAULT_MODEL = "gemini-flash-latest";
 const GEMINI_FALLBACK_MODEL = "gemini-flash-lite-latest";
-const AI_REQUEST_TIMEOUT_MS = 4_000;
+const AI_REQUEST_TIMEOUT_MS = 9_000;
 
 /**
  * All free Gemini keys: the ones the admin saved in the admin panel (unlimited
