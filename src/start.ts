@@ -2,7 +2,6 @@ import { createStart, createMiddleware } from "@tanstack/react-start";
 
 import { renderErrorPage } from "./lib/error-page";
 import { attachSharedAuth } from "@/lib/auth-function-middleware";
-import { attachSupabaseAuth } from "@/integrations/supabase/auth-attacher";
 
 const errorMiddleware = createMiddleware().server(async ({ next, request }) => {
   // Email/webhook/cron routes authenticate themselves — never wrap or redirect them.
@@ -27,6 +26,6 @@ export const startInstance = createStart(() => ({
   // A single local-first bearer attacher keeps protected calls independent
   // from Supabase's browser auth lock. Never stack the generated attacher
   // here: it calls getSession() again for every request and can block the app.
-  functionMiddleware: [attachSupabaseAuth, attachSharedAuth],
+  functionMiddleware: [attachSharedAuth],
   requestMiddleware: [errorMiddleware],
 }));
