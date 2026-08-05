@@ -129,49 +129,58 @@ export async function aiFetch(url: string, init: RequestInit): Promise<Response>
   let lastStatus = 0;
   let lastText = "";
 
-  // Rotate: for each free model, walk through every key. A 429/403 means that
-  // key's free quota is used up right now, so it goes on cool-down and we move
-  // straight to the next key.
+  // Race every model × key in parallel instead of walking them one by one.
+  // Serial attempts burned the whole deadline on the slowest model (flash
+  // ~3-4s) so the fast one was never reached and the bot fell back to its
+  // "I don't understand" reply.
+  const attempts: Promise<Response>[] = [];
   for (const model of models) {
-    for (const k of keys) {
-      let res: Response;
-      try {
-        res = await send(k.key, model);
-      } catch (e) {
-        lastStatus = 0;
-        lastText = String(e);
-        continue;
-      }
-      if (res.ok) {
-        if (k.id) {
-          const { markKeyUsed } = await import("./ai-keys.server");
-          void markKeyUsed(k.id);
-        }
-        return res;
-      }
-      lastStatus = res.status;
-      lastText = await res.text().catch(() => "");
-      if (res.status === 429 || res.status === 403) {
-        if (k.id) {
-          const mod = await import("./ai-keys.server");
-          // Only real quota (429) parks a key; 403 = model/permission issue.
-          if (res.status === 429)
-            void mod.markKeyExhausted(k.id, "আজকের ফ্রি লিমিট শেষ — ১ ঘণ্টা পর আবার চেষ্টা হবে");
-          else void mod.markKeyError(k.id, "এই মডেলে এই কী-র অনুমতি নেই");
-        }
-        continue; // next key
-      }
-      // 404 = this model id isn't available for this key → try the next model,
-      // not the next key (every key would 404 the same way).
-      if (res.status === 404) break;
-      break; // real request error — another key won't help
+    for (const k of keys.slice(0, 6)) {
+      attempts.push(
+        (async () => {
+          let res: Response;
+          try {
+            res = await send(k.key, model);
+          } catch (e) {
+            lastStatus = 0;
+            lastText = String(e);
+            throw e;
+          }
+          if (res.ok) {
+            if (k.id) {
+              const { markKeyUsed } = await import("./ai-keys.server");
+              void markKeyUsed(k.id);
+            }
+            return res;
+          }
+          lastStatus = res.status;
+          lastText = await res.text().catch(() => "");
+          if (k.id && (res.status === 429 || res.status === 403)) {
+            const mod = await import("./ai-keys.server");
+            if (res.status === 429)
+              void mod.markKeyExhausted(k.id, "আজকের ফ্রি লিমিট শেষ — ১ ঘণ্টা পর আবার চেষ্টা হবে");
+            else void mod.markKeyError(k.id, "এই মডেলে এই কী-র অনুমতি নেই");
+          }
+          throw new Error(`gemini-${res.status}`);
+        })(),
+      );
     }
+  }
+
+  try {
+    return await Promise.any(attempts);
+  } catch {
+    /* every free attempt failed → paid gateway below */
   }
 
   console.error("[ai-free] all free keys failed", lastStatus, lastText.slice(0, 300));
   // Every free key is exhausted → paid gateway so the bot still answers.
+  // Fresh deadline: the free-pool signal is already aborted at this point.
   if (process.env.LOVABLE_API_KEY) {
-    return fetch(url, { ...init, signal: requestSignal });
+    return fetch(url, {
+      ...init,
+      signal: AbortSignal.timeout(AI_REQUEST_TIMEOUT_MS),
+    });
   }
   return new Response(lastText || "gemini error", { status: lastStatus || 502 });
 }
