@@ -8,7 +8,7 @@ import { getLeaderboards } from "@/lib/leaderboard.functions";
 import { MiningCounter } from "@/components/MiningCounter";
 import { ReferralCommissionCard } from "@/components/ReferralCommissionCard";
 import bonusGirl from "@/assets/bonus-girl.png";
-import { CheckCircle2, Camera, Lock, Sparkles, Loader2, X, Plus, Crown, Users, Heart, ShieldCheck, BadgeCheck, ChevronDown, MessageCircle, Gift } from "lucide-react";
+import { CheckCircle2, Camera, Lock, Sparkles, Loader2, X, Plus, Crown, Users, Heart, ShieldCheck, BadgeCheck, ChevronDown, MessageCircle, Gift, RefreshCcw } from "lucide-react";
 import { AnnouncementTicker } from "@/components/AnnouncementTicker";
 import { HeroBanner } from "@/components/HeroBanner";
 import { TourReplayButton } from "@/components/GuidedTour";
