@@ -1188,6 +1188,51 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               return Response.json({ ok: true, flow: "cancelled" });
             }
 
+            // ---- স্লট ফিরিয়ে আনার কথাবার্তা চলছে ----------------------------
+            if (sess.intent === "slot_restore") {
+              const uid = (sess.uid as string | null) || pickUidFromCurrentOrReply() || (await linkedUid());
+              if (!uid) {
+                await sendMessage(
+                  chatId,
+                  "🆔 শুধু আপনার <b>UID</b> নম্বরটি লিখুন (অ্যাপের প্রোফাইল পেজে পাবেন) — তারপরই কোন কোন স্লট ফিরিয়ে আনা যাবে দেখিয়ে দিচ্ছি 💙",
+                  msg.message_id,
+                );
+                return Response.json({ ok: true, flow: "slot-restore-await-uid" });
+              }
+
+              const { listRestorableForUid, restoreSlotsForUid } = await import("@/lib/telegram-slot-restore.server");
+              const wanted = wantsAll ? [] : pickSlots(norm.replace(uid, " "));
+
+              if (!wanted.length && !wantsAll) {
+                const list = await listRestorableForUid(uid);
+                const reply = list.found && list.slots.length
+                  ? `🗂️ <b>${list.name}</b> (UID <code>${list.uid}</code>) — যেসব স্লট রিসেট করা হয়েছিল 👇\n\n` +
+                    list.slots.map((s) => `• <b>স্লট ${s.slot}</b> — ${new Date(s.created_at).toLocaleDateString("bn-BD")}`).join("\n") +
+                    `\n\n🔢 কোন কোন স্লট ফিরিয়ে আনবো? নম্বর লিখুন (যেমন: 4 অথবা 2,5) — সবগুলোর জন্য লিখুন <b>সব</b>।`
+                  : `🙂 এই একাউন্টে ফিরিয়ে আনার মতো কোনো রিসেট করা স্লট পাওয়া যায়নি।`;
+                await saveSession({ intent: "slot_restore", step: "await_slot", uid } as any);
+                await sendMessage(chatId, reply, msg.message_id);
+                await logMessage("question", "slot-restore-list", reply, uid);
+                return Response.json({ ok: true, flow: "slot-restore-list" });
+              }
+
+              const res = await restoreSlotsForUid(uid, wanted);
+              await clearSession();
+              const reply = !res.found
+                ? `❌ UID <code>${uid}</code> দিয়ে কোনো একাউন্ট পাওয়া যায়নি।`
+                : res.done.length
+                  ? `✅ <b>ফিরিয়ে আনা হয়েছে!</b>\n\n` +
+                    `📦 স্লট: <b>${res.done.join(", ")}</b>\n` +
+                    `🔑 আগের key, ফেস ফটো ও ভেরিফিকেশনের তারিখ হুবহু আগের মতোই ফিরে এসেছে।\n` +
+                    (res.failed.length ? `⚠️ পারা যায়নি: ${res.failed.join(", ")}\n` : "") +
+                    `\n👉 অ্যাপটি একবার রিফ্রেশ দিলেই স্লটগুলো দেখতে পাবেন 💙`
+                  : `⚠️ ঐ স্লটগুলো ফিরিয়ে আনা যায়নি।${res.available.length ? ` ফিরিয়ে আনা যাবে: <b>${res.available.join(", ")}</b>` : ""}`;
+              await sendMessage(chatId, reply, msg.message_id);
+              await logMessage("question", `slot-restore:${res.done.join("|")}`, reply, uid);
+              return Response.json({ ok: true, flow: "slot-restore" });
+            }
+
+
             if (sess.intent === "wallet_reset") {
               const rememberedProvider = (sess.data as any)?.provider as "bkash" | "nagad" | undefined;
               const provider = rememberedProvider || walletResetProvider;
