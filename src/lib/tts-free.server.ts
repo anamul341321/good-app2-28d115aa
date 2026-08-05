@@ -16,7 +16,7 @@ const TTS_MODELS = [
   "gemini-3.1-flash-tts-preview",
 ];
 
-const TTS_REQUEST_TIMEOUT_MS = 6_000;
+const TTS_REQUEST_TIMEOUT_MS = 9_000;
 const CACHE_READ_TIMEOUT_MS = 700;
 
 /**
@@ -191,7 +191,8 @@ async function pcmForChunk(
   // Keys/models used to run one after another, so congestion could hold a
   // Telegram webhook for 18+ seconds. Race a small group instead: the first
   // working provider response wins and the whole operation has one timeout.
-  const attempts = TTS_MODELS.flatMap((model) => keys.slice(0, 6).map(async (k) => {
+  const makers = TTS_MODELS.flatMap((model) => keys.slice(0, 4).map(() => async () => {
+      const k = keys[0];
       let res: Response;
       try {
         res = await fetch(
