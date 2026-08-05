@@ -2950,6 +2950,14 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             ?? (await smartAnswer(base));
           const mention = (settings as any).admin_mention
             || (settings as any).support_username || "@anamulmunni";
+          // কোটা শেষ/কী নেই → অজানা প্রশ্নে চুপ থাকবে, কাউকে মেনশনও করবে না।
+          if (!smart) {
+            const { aiOutOfQuota } = await import("@/lib/ai-free.server");
+            if (aiOutOfQuota()) {
+              await logMessage(decision.verdict, "silent-no-ai", null, matchedUid);
+              return Response.json({ ok: true, flow: "silent-no-ai" });
+            }
+          }
           const reply = smart
             ? smart + videoSuffix(text)
             : `${escalateReply(senderName, mention)}\n${mention}`;
@@ -2957,6 +2965,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           actions.push(smart ? "smart-answer" : "escalated");
           await logMessage(decision.verdict, actions.join(","), reply, matchedUid);
           return Response.json({ ok: true, flow: smart ? "smart-answer" : "escalated", actions });
+
         }
 
         // ---- স্ক্রিনশট এলো কিন্তু কিছুই ম্যাচ করলো না → AI নিজে দেখে উত্তর দেবে --
