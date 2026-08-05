@@ -753,7 +753,10 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           );
         const isThanksOnly = (s: string) =>
           /^(thanks|thank you|tnx|ty|ধন্যবাদ|থ্যাংকস|শুকরিয়া|jazakallah|জাযাকাল্লাহ)[\s.!।🙏😊🙂]*$/i.test(s.trim());
-        const { stripSlotMentions } = await import("@/lib/telegram-slot.server");
+        const { stripSlotMentions, SLOT_WORD, NUM_WORD } = await import("@/lib/telegram-slot.server");
+        // "মুছে দে / কেটে দাও / রিসেট করে দেন" — স্লট মোছার কথা।
+        const removalIntent =
+          /(reset|রিসেট|muche|মুছ|mucche|delete|ডিলিট|clear|ক্লিয়ার|khali|খালি|kete|কেটে|kata|কাটা|kaita|কাইটা|bad de|বাদ দ|remove|রিমুভ|off kore|বন্ধ কর)/i;
         const pickUid = (s: string): string | null => {
           const raw = bnDigits(s).trim();
           if (isAffirmation(raw)) return null;
@@ -762,7 +765,12 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           // "৪ নম্বর স্লট" এর ৪ কখনোই UID নয় — তাই স্লটের কথা বাদ দিয়ে খুঁজি।
           const source = stripSlotMentions(raw);
           const num = source.match(/\b(\d{1,9})\b/);
-          if (num) return num[1];
+          if (num) {
+            // "আমার ৬ নাম্বার সোলট মুছে দে" — মোছার কথা থাকলে ছোট নম্বরটা
+            // স্লট নম্বর, কখনোই UID নয়। UID লিখলে সে "uid" শব্দটা লিখবে।
+            if (removalIntent.test(raw) && Number(num[1]) <= 500) return null;
+            return num[1];
+          }
           const code = source.match(/\b([A-Za-z0-9]{7})\b/);
           return code && /\d/.test(code[1]) ? code[1].toUpperCase() : null;
         };
@@ -774,11 +782,16 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         const pickSlots = (s: string): number[] => {
           const out: number[] = [];
           let rest = s;
-          // "2number slot", "3no slot", "৫ নম্বর স্লট" — সংখ্যার সাথে শব্দ লেগে
-          // থাকলেও স্লট নম্বর ধরতে হবে (\b কাজ করে না, তাই আগে এগুলো তুলে নিই)।
+          // "2number slot", "3no slot", "৫ নম্বর স্লট", "৬ নাম্ষার সোলট" — ভুল
+          // বানান/শব্দ লেগে থাকলেও স্লট নম্বর ধরতে হবে।
           for (const m of s.matchAll(
-            /(\d{1,3})\s*(?:no|nombor|number|নম্বর|নাম্বার|নং)?\s*(?:er|এর)?\s*(?:slot|স্লট)/gi,
+            new RegExp(`(\\d{1,3})\\s*${NUM_WORD}?\\s*(?:er|এর)?\\s*${SLOT_WORD}`, "gi"),
           )) {
+            const n = Number(m[1]);
+            if (n >= 1 && n <= 500) out.push(n);
+            rest = rest.replace(m[0], " ");
+          }
+          for (const m of s.matchAll(new RegExp(`(\\d{1,3})\\s*${NUM_WORD}\\s*(?:টা|টি|ta|ti)?`, "gi"))) {
             const n = Number(m[1]);
             if (n >= 1 && n <= 500) out.push(n);
             rest = rest.replace(m[0], " ");
@@ -797,6 +810,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         };
 
         const pickSlot = (s: string): number | null => pickSlots(s)[0] ?? null;
+
         const isCancel = /(বাতিল|cancel|থাক|লাগবে না)/i.test(norm);
         // Is this message a plain answer to what the bot just asked, or has the
         // user moved on to a completely new question? (never keep looping)
