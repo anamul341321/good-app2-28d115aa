@@ -21,14 +21,21 @@ function AdminLayout() {
 
   useEffect(() => {
     let active = true;
+    let timeoutId = 0;
     const timeout = new Promise<never>((_, reject) => {
-      window.setTimeout(() => reject(new Error("Network slow")), 4_000);
+      timeoutId = window.setTimeout(() => reject(new Error("Network slow")), 4_000);
     });
     Promise.race([check(), timeout]).then((res) => {
       if (!active) return;
+      window.clearTimeout(timeoutId);
       setStatus(res.unlocked ? "unlocked" : "locked");
-    }).catch(() => active && setStatus("locked"));
-    return () => { active = false; };
+    }).catch(() => {
+      if (active) setStatus("locked");
+    });
+    return () => {
+      active = false;
+      window.clearTimeout(timeoutId);
+    };
   }, [check]);
 
   async function onLogout() {
