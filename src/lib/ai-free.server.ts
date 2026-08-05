@@ -225,3 +225,17 @@ export async function aiFetch(url: string, init: RequestInit): Promise<Response>
 
 
 
+
+/**
+ * শেষ AI কলে সব ফ্রি কী ব্যর্থ/কোটা-শেষ হয়েছিল কি না। কোটা শেষ থাকলে বট
+ * অজানা প্রশ্নে অ্যাডমিনকে মেনশন না করে চুপ থাকে (শুধু সেট করা উত্তরগুলো দেয়)।
+ */
+let aiOutOfQuotaAt = 0;
+
+export function markAiOutOfQuota() {
+  aiOutOfQuotaAt = Date.now();
+}
+
+export function aiOutOfQuota(): boolean {
+  return Date.now() - aiOutOfQuotaAt < 10 * 60_000;
+}
