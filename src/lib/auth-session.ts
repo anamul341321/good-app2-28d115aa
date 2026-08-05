@@ -42,14 +42,23 @@ export function getSharedSession(options?: { fresh?: boolean }): Promise<Session
   if (!options?.fresh && cached && cached.expiresAt > now) {
     return Promise.resolve(cached.value);
   }
+
+  // The browser client has already persisted and validated this session.
+  // Return it synchronously instead of entering its global auth lock. This is
+  // the normal path for every protected page and server-function call.
+  const stored = readStoredSession();
+  if (stored) {
+    cached = { value: stored, expiresAt: now + 30_000 };
+    return Promise.resolve(stored);
+  }
+
   if (inFlight) return inFlight;
 
-  const stored = readStoredSession();
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
   const timeout = new Promise<SessionResult>((resolve) => {
     timeoutId = setTimeout(() => {
-      resolve(stored ?? { data: { session: null }, error: null });
-    }, 4_000);
+      resolve({ data: { session: null }, error: null });
+    }, 2_000);
   });
 
   inFlight = Promise.race([supabase.auth.getSession(), timeout])
