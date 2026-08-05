@@ -262,7 +262,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             // receives a clear fallback when transcription is unavailable.
             voiceHeard = await Promise.race([
               hear(),
-              new Promise<null>((resolve) => setTimeout(() => resolve(null), 7_000)),
+              new Promise<null>((resolve) => setTimeout(() => resolve(null), 16_000)),
             ]);
 
             if (voiceHeard) voiceHeard = voiceHeard.trim();
