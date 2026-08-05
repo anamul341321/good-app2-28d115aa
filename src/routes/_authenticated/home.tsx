@@ -8,7 +8,7 @@ import { getLeaderboards } from "@/lib/leaderboard.functions";
 import { MiningCounter } from "@/components/MiningCounter";
 import { ReferralCommissionCard } from "@/components/ReferralCommissionCard";
 import bonusGirl from "@/assets/bonus-girl.png";
-import { CheckCircle2, Camera, Lock, Sparkles, Loader2, X, Plus, Crown, Users, Heart, ShieldCheck, BadgeCheck, ChevronDown, MessageCircle, Gift } from "lucide-react";
+import { CheckCircle2, Camera, Lock, Sparkles, Loader2, X, Plus, Crown, Users, Heart, ShieldCheck, BadgeCheck, ChevronDown, MessageCircle, Gift, RefreshCcw } from "lucide-react";
 import { AnnouncementTicker } from "@/components/AnnouncementTicker";
 import { HeroBanner } from "@/components/HeroBanner";
 import { TourReplayButton } from "@/components/GuidedTour";
@@ -61,12 +61,16 @@ function HomePage() {
   const [lightbox, setLightbox] = useState<{ url: string; label: string; action?: { label: string; onClick: () => void; tone?: "rose" | "amber" } } | null>(null);
   const [openBox, setOpenBox] = useState<number>(0);
   const [showWelcome, setShowWelcome] = useState<boolean>(false);
-  const { data, isLoading, refetch } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["dashboard"],
-    queryFn: () => getDashboard(),
+    queryFn: () => Promise.race([
+      getDashboard(),
+      new Promise<never>((_, reject) => window.setTimeout(() => reject(new Error("Dashboard timeout")), 15_000)),
+    ]),
     refetchInterval: 60_000,
     staleTime: 20_000,
     refetchOnWindowFocus: false,
+    retry: 1,
   });
 
   const addSlots = useMutation({
@@ -103,6 +107,18 @@ function HomePage() {
     sessionStorage.setItem("welcome-bonus-seen", "1");
   }, [data]);
 
+  if (isError) {
+    return (
+      <div className="py-16 text-center space-y-3">
+        <RefreshCcw className="mx-auto h-7 w-7 text-amber" />
+        <p className="text-sm font-black">{t("তথ্য লোড হয়নি", "Data could not be loaded")}</p>
+        <p className="text-xs text-muted-foreground">{t("ইন্টারনেট চালু আছে কি না দেখে আবার চেষ্টা করুন।", "Check your connection and try again.")}</p>
+        <button type="button" className="gradient-cta rounded-xl px-4 py-2 text-xs font-black" onClick={() => refetch()}>
+          {t("আবার চেষ্টা করুন", "Try again")}
+        </button>
+      </div>
+    );
+  }
   if (isLoading || !data) {
     return <div className="py-20 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-cyan" /></div>;
   }

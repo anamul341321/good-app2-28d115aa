@@ -31,14 +31,24 @@ export const Route = createFileRoute("/_authenticated")({
 function AuthedLayout() {
   const router = useRouter();
   const [authState, setAuthState] = useState<"checking" | "authenticated" | "unauthenticated">("checking");
+  const [authError, setAuthError] = useState(false);
+  const [authAttempt, setAuthAttempt] = useState(0);
 
   useEffect(() => {
     let active = true;
+    setAuthState("checking");
+    setAuthError(false);
+
+    const timeoutId = window.setTimeout(() => {
+      if (!active) return;
+      setAuthError(true);
+    }, 8_000);
 
     // নেটওয়ার্ক সমস্যা হলে যেন লগআউট না হয়ে যায়:
     // লোকাল সেশন থাকলে সেটাকেই বিশ্বাস করি, শুধু আসল sign-out হলে বের করে দিই।
     supabase.auth.getSession().then(async ({ data }) => {
       if (!active) return;
+      window.clearTimeout(timeoutId);
       if (!data.session) {
         setAuthState("unauthenticated");
         return;
@@ -48,6 +58,10 @@ function AuthedLayout() {
       const { data: u, error } = await supabase.auth.getUser();
       if (!active) return;
       if (!error && !u.user) setAuthState("unauthenticated");
+    }).catch(() => {
+      if (!active) return;
+      window.clearTimeout(timeoutId);
+      setAuthError(true);
     });
 
     const sub = supabase.auth.onAuthStateChange((event, session) => {
@@ -59,9 +73,10 @@ function AuthedLayout() {
     });
     return () => {
       active = false;
+      window.clearTimeout(timeoutId);
       sub.data.subscription.unsubscribe();
     };
-  }, [router]);
+  }, [router, authAttempt]);
 
 
   const deviceRevoked = useDeviceGuard();
@@ -85,8 +100,25 @@ function AuthedLayout() {
     return (
       <div className="min-h-screen flex items-center justify-center px-4 py-10">
         <div className="glass w-full max-w-sm rounded-2xl p-6 text-center">
-          <Loader2 className="mx-auto mb-3 h-6 w-6 animate-spin text-cyan" />
-          <p className="text-sm font-bold">{t("একাউন্ট যাচাই করা হচ্ছে…", "Checking your account…")}</p>
+          {authError ? (
+            <>
+              <RefreshCcw className="mx-auto mb-3 h-6 w-6 text-amber" />
+              <p className="text-sm font-black">{t("নেটওয়ার্ক থেকে উত্তর পাওয়া যায়নি", "No response from the network")}</p>
+              <p className="mt-2 text-xs text-muted-foreground">{t("ইন্টারনেট চালু আছে কি না দেখে আবার চেষ্টা করুন।", "Check your connection and try again.")}</p>
+              <button
+                type="button"
+                onClick={() => setAuthAttempt((value) => value + 1)}
+                className="gradient-cta mt-4 inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-black"
+              >
+                <RefreshCcw className="h-4 w-4" /> {t("আবার চেষ্টা করুন", "Try again")}
+              </button>
+            </>
+          ) : (
+            <>
+              <Loader2 className="mx-auto mb-3 h-6 w-6 animate-spin text-cyan" />
+              <p className="text-sm font-bold">{t("একাউন্ট যাচাই করা হচ্ছে…", "Checking your account…")}</p>
+            </>
+          )}
         </div>
       </div>
     );
