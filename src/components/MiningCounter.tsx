@@ -1,8 +1,45 @@
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { computeLiveBalance, monthlyRate, MONTHLY_PER_SLOT } from "@/lib/mining";
 import { miningWindowInfo, nextOpenLabelBn } from "@/lib/mining-window";
 import { Wallet, Sparkles } from "lucide-react";
+
+/** Decorative layers never change — memoised so the 1s balance tick doesn't repaint them. */
+const MiningDecor = memo(function MiningDecor({ live }: { live: boolean }) {
+  return (
+    <>
+      <div className="absolute inset-0 mc-base pointer-events-none" aria-hidden />
+      <div className="absolute -top-16 -left-10 w-56 h-56 rounded-full blur-3xl opacity-70 pointer-events-none mc-orb-a" aria-hidden />
+      <div className="absolute -bottom-20 -right-16 w-64 h-64 rounded-full blur-3xl opacity-60 pointer-events-none mc-orb-b" aria-hidden />
+      <div className="absolute inset-0 mc-holo opacity-50 pointer-events-none mix-blend-overlay" aria-hidden />
+      <div className="absolute -inset-1 mc-ring pointer-events-none" aria-hidden />
+      {live && (
+        <>
+          <div className="absolute inset-0 pointer-events-none" aria-hidden>
+            {[
+              { l: "12%", t: "22%", d: "0s", e: "✦" },
+              { l: "82%", t: "18%", d: "0.9s", e: "✧" },
+              { l: "50%", t: "10%", d: "1.8s", e: "✨" },
+            ].map((s, i) => (
+              <span key={i} className="mc-sparkle" style={{ left: s.l, top: s.t, animationDelay: s.d }}>
+                {s.e}
+              </span>
+            ))}
+          </div>
+          <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden>
+            {[0, 1].map((i) => (
+              <span key={i} className="mc-coin"
+                style={{ left: `${25 + i * 40}%`, animationDelay: `${i * 1.2}s`, animationDuration: "6s" }}>
+                ⛏
+              </span>
+            ))}
+          </div>
+        </>
+      )}
+    </>
+  );
+});
+
 
 type Props = {
   accrued: number;
