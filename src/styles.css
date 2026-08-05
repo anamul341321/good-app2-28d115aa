@@ -86,15 +86,10 @@
   --violet:  oklch(0.55 0.22 300);
 }
 
-@layer base {
+@layer base {\n  body::before {\n    content: "";\n    position: fixed;\n    inset: 0;\n    z-index: -1;\n    background: \n      radial-gradient(1000px 500px at 8% -10%, color-mix(in oklch, var(--color-violet) 18%, transparent), transparent 60%),\n      radial-gradient(900px 480px at 100% 8%,  color-mix(in oklch, var(--color-cyan) 16%, transparent),   transparent 60%),\n      radial-gradient(800px 500px at 50% 110%, color-mix(in oklch, var(--color-emerald) 14%, transparent), transparent 60%),\n      #ffffff;\n    pointer-events: none;\n    transform: translateZ(0);\n  }
   * { border-color: var(--color-border); }
   html, body {
-    background:
-      radial-gradient(1000px 500px at 8% -10%, color-mix(in oklch, var(--color-violet) 18%, transparent), transparent 60%),
-      radial-gradient(900px 480px at 100% 8%,  color-mix(in oklch, var(--color-cyan) 16%, transparent),   transparent 60%),
-      radial-gradient(800px 500px at 50% 110%, color-mix(in oklch, var(--color-emerald) 14%, transparent), transparent 60%),
-      #ffffff;
-    background-attachment: fixed;
+    background: #ffffff;
     color: var(--color-foreground);
     font-family: "Noto Sans Bengali", "Plus Jakarta Sans", system-ui, sans-serif;
     font-size: 15.5px;
@@ -118,19 +113,25 @@
 
 @layer utilities {
   .glass {
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    transform: translateZ(0);
     background: color-mix(in oklch, white 82%, transparent);
-    backdrop-filter: blur(18px) saturate(140%);
-    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    backdrop-filter: blur(12px) saturate(140%);
+    -webkit-backdrop-filter: blur(12px) saturate(140%);
     border: 1px solid color-mix(in oklch, var(--color-violet) 22%, transparent);
     box-shadow:
       0 20px 60px -25px color-mix(in oklch, var(--color-navy) 25%, transparent),
       inset 0 1px 0 0 white;
   }
   .glass-strong {
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    transform: translateZ(0);
     background: linear-gradient(160deg,
       color-mix(in oklch, white 94%, transparent),
       color-mix(in oklch, var(--color-violet) 8%, white));
-    backdrop-filter: blur(24px) saturate(160%);
+    backdrop-filter: blur(16px) saturate(160%);
     border: 1px solid color-mix(in oklch, var(--color-violet) 25%, transparent);
     box-shadow: 0 30px 80px -30px color-mix(in oklch, var(--color-violet) 30%, transparent);
   }
@@ -154,6 +155,7 @@
   .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
 
   .premium-panel {
+    contain: paint;
     position: relative;
     background: linear-gradient(160deg, #ffffff, color-mix(in oklch, var(--color-violet) 6%, white));
     border: 1px solid color-mix(in oklch, var(--color-violet) 18%, transparent);
@@ -173,7 +175,7 @@
       color-mix(in oklch, var(--color-gold) 55%, transparent) 50%,
       transparent 70%);
     -webkit-mask: linear-gradient(#000,#000) content-box, linear-gradient(#000,#000);
-    -webkit-mask-composite: xor; mask-composite: exclude;
+    mask-composite: source-over;
     padding: 1px;
     pointer-events: none;
     opacity: 0.45;
@@ -187,7 +189,8 @@
       color-mix(in oklch, var(--color-cyan) 20%, var(--color-surface-2)));
     color: white;
   }
-  .gradient-cta {
+  .gradient-cta {\n    will-change: background-position;
+    contain: paint;
     background: linear-gradient(120deg, var(--color-violet), var(--color-cyan) 55%, var(--color-gold));
     background-size: 200% 200%;
     animation: aurora-shift 5s ease-in-out infinite;
@@ -216,7 +219,8 @@
     background: linear-gradient(135deg, var(--color-rose), var(--color-violet));
     color: white;
   }
-  .gradient-aurora {
+  .gradient-aurora {\n    will-change: background-position;
+    contain: paint;
     background: linear-gradient(120deg,
       color-mix(in oklch, var(--color-violet) 30%, var(--color-surface)),
       color-mix(in oklch, var(--color-cyan) 25%, var(--color-surface)),
@@ -236,7 +240,7 @@
     background-size: 300% 300%;
     animation: aurora-shift 5s linear infinite;
     -webkit-mask: linear-gradient(#000,#000) content-box, linear-gradient(#000,#000);
-    -webkit-mask-composite: xor; mask-composite: exclude;
+    mask-composite: source-over;
     pointer-events: none;
   }
   .mono-num {
@@ -389,8 +393,8 @@
   50%      { transform: scale(1.04); box-shadow: 0 22px 50px -6px rgba(239,71,111,0.85); }
 }
 @keyframes submit-hero-glow {
-  0%,100% { box-shadow: 0 20px 55px -10px rgba(236,72,153,0.55), 0 8px 24px -6px rgba(245,158,11,0.45), inset 0 1px 0 rgba(255,255,255,0.35); }
-  50%     { box-shadow: 0 30px 75px -8px rgba(236,72,153,0.9), 0 16px 36px -6px rgba(245,158,11,0.7), inset 0 1px 0 rgba(255,255,255,0.55); }
+  0%,100% { box-shadow: 0 15px 40px -10px rgba(236,72,153,0.45); }
+  50%     { box-shadow: 0 20px 50px -5px rgba(236,72,153,0.7); }
 }
 @keyframes submit-sheen {
   0%   { transform: translateX(-140%) skewX(-18deg); }
@@ -458,7 +462,7 @@
     transparent 300deg,
     transparent 360deg);
   -webkit-mask: linear-gradient(#000,#000) content-box, linear-gradient(#000,#000);
-  -webkit-mask-composite: xor; mask-composite: exclude;
+  mask-composite: source-over;
   padding: 2px;
   filter: blur(0.4px);
   animation: mining-ring-spin 6s linear infinite;
@@ -1124,6 +1128,21 @@ input, textarea, select { touch-action: manipulation; }
   .mc-ring { animation-duration: 16s; }
   .mc-holo { display: none; }
   .mining-sparkle, .mc-sparkle, .mc-coin { animation-duration: 6s; }
+  /* Mobile Chromium can corrupt large tiles when backdrop blur, masks and
+     animated gradients share a layer. Admin favors stable, readable paint. */
+  .admin-shell .glass,
+  .admin-shell .glass-strong {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: var(--color-surface) !important;
+  }
+  .admin-shell .premium-panel {
+    background: var(--color-surface) !important;
+    box-shadow: 0 8px 24px -18px var(--color-navy) !important;
+  }
+  .admin-shell .premium-panel::before {
+    display: none !important;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

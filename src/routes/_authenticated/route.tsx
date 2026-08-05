@@ -31,19 +31,37 @@ export const Route = createFileRoute("/_authenticated")({
 
 function AuthedLayout() {
   const router = useRouter();
-  const [authState, setAuthState] = useState<"checking" | "authenticated" | "unauthenticated">("checking");
+  const [authState, setAuthState] = useState<"checking" | "authenticated" | "unauthenticated">(() => {
+    if (typeof window === "undefined") return "checking";
+    // Quick synchronous check of localStorage to avoid splash screen flash
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key?.startsWith("sb-") && key.endsWith("-auth-token")) {
+          const raw = localStorage.getItem(key);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed.access_token && (!parsed.expires_at || parsed.expires_at * 1000 > Date.now())) {
+              return "authenticated";
+            }
+          }
+        }
+      }
+    } catch (e) {}
+    return "checking";
+  });
   const [authError, setAuthError] = useState(false);
   const [authAttempt, setAuthAttempt] = useState(0);
 
   useEffect(() => {
     let active = true;
-    setAuthState("checking");
+    if (authState !== "authenticated" || authAttempt > 0) setAuthState("checking");
     setAuthError(false);
 
     const timeoutId = window.setTimeout(() => {
       if (!active) return;
       setAuthError(true);
-    }, 8_000);
+    }, 4_000);
 
     // নেটওয়ার্ক সমস্যা হলে যেন লগআউট না হয়ে যায়:
     // লোকাল সেশন থাকলে সেটাকেই বিশ্বাস করি, শুধু আসল sign-out হলে বের করে দিই।

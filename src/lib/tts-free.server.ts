@@ -13,11 +13,9 @@
 
 const TTS_MODELS = [
   "gemini-2.5-flash-preview-tts",
-  "gemini-2.5-pro-preview-tts",
-  "gemini-3.1-flash-tts-preview",
 ];
 
-const TTS_REQUEST_TIMEOUT_MS = 10_000;
+const TTS_REQUEST_TIMEOUT_MS = 6_000;
 const CACHE_READ_TIMEOUT_MS = 700;
 
 /**

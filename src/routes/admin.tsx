@@ -22,7 +22,7 @@ function AdminLayout() {
   useEffect(() => {
     let active = true;
     const timeout = new Promise<never>((_, reject) => {
-      window.setTimeout(() => reject(new Error("Admin check timeout")), 10_000);
+      window.setTimeout(() => reject(new Error("Network slow")), 4_000);
     });
     Promise.race([check(), timeout]).then((res) => {
       if (!active) return;
@@ -63,7 +63,7 @@ function AdminLayout() {
   }
 
   return (
-    <div className="space-y-4 pt-2 pb-10">
+    <div className="admin-shell space-y-4 pt-2 pb-10">
       <PremiumHeader onLogout={onLogout} />
       <nav className="flex gap-2 overflow-x-auto -mx-4 px-4 pb-1 scrollbar-none">
         <AdminTab to="/admin" icon={<LayoutDashboard className="w-3.5 h-3.5" />} label="Dashboard" exact />
@@ -94,10 +94,6 @@ function PremiumHeader({ onLogout }: { onLogout: () => void }) {
 
   return (
     <div className="premium-panel relative overflow-hidden rounded-2xl p-4">
-      <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full opacity-30 pointer-events-none"
-           style={{ background: "radial-gradient(circle, var(--color-amber) 0%, transparent 70%)" }} />
-      <div className="absolute -bottom-12 -left-8 w-32 h-32 rounded-full opacity-20 pointer-events-none"
-           style={{ background: "radial-gradient(circle, var(--color-cyan) 0%, transparent 70%)" }} />
       <div className="relative flex items-start justify-between">
         <div>
           <p className="text-[10px] uppercase tracking-[0.2em] text-amber/80 font-bold">Master control</p>
