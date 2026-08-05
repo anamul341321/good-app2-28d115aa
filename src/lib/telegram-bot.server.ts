@@ -1281,15 +1281,10 @@ export async function smartAnswer(opts: {
     const hit = await cachedAnswer(q);
     if (hit) return hit;
   }
-  // Two passes: a natural/creative pass, then — if the model bailed with
-  // NO_ANSWER or the call failed — one calm low-temperature retry before we
-  // hand off to the admin. Without this, the same question randomly gets
-  // "আমি জানি না" even though the answer is in the rulebook.
-  // শেষ পাসে NO_ANSWER একদম নিষিদ্ধ — নইলে একই প্রশ্নে কখনো সুন্দর উত্তর,
-  // কখনো "আমি জানি না" আসে (ইউজারের কাছে বট হঠাৎ বোকা হয়ে গেছে মনে হয়)।
+  // Keep the entire AI path bounded. Three 25-second passes made Telegram
+  // replies arrive far too late during provider congestion.
   const passes: { temperature: number; force: boolean }[] = [
-    { temperature: 0.8, force: false },
-    { temperature: 0.2, force: false },
+    { temperature: 0.35, force: false },
     { temperature: 0.1, force: true },
   ];
   for (const { temperature, force } of passes) {
@@ -1297,7 +1292,7 @@ export async function smartAnswer(opts: {
     const res = await aiFetch(AI_URL, {
       method: "POST",
       headers: { "Lovable-API-Key": key, "Content-Type": "application/json" },
-      signal: AbortSignal.timeout(25_000),
+      signal: AbortSignal.timeout(4_500),
       body: JSON.stringify({
         model: MODEL,
         temperature,

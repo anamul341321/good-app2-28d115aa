@@ -125,7 +125,7 @@ function PremiumHeader({ onLogout }: { onLogout: () => void }) {
 
 function MiniStat({ label, value, accent, pulse }: { label: string; value: any; accent: string; pulse?: boolean }) {
   return (
-    <div className={`rounded-xl bg-background/60 border border-border p-2 text-center ${pulse ? "animate-pulse" : ""}`}>
+    <div className={`rounded-xl bg-background/60 border border-border p-2 text-center ${pulse ? "ring-1 ring-amber/30" : ""}`}>
       <p className={`mono-num font-black text-base text-${accent}`}>{value}</p>
       <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-bold">{label}</p>
     </div>
