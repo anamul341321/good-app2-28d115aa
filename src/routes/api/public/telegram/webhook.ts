@@ -686,6 +686,44 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return Response.json({ ok: true, blocked: true });
         }
 
+        // ---- বাইরের লিংক/রেফার লিংক সাথে সাথে ডিলিট (স্প্যাম বন্ধ) ------------
+        // AI-র সিদ্ধান্তের অপেক্ষা করলে অনেক সময় লিংক থেকেই যেত — তাই এখানেই
+        // নিশ্চিতভাবে মুছে দিই। আমাদের নিজের লিংক ও সাপোর্ট আইডি ছাড় পায়।
+        if (settings.moderation_enabled && !senderIsAdmin) {
+          const linkSrc = `${text} ${msg.caption ?? ""}`;
+          const urls = linkSrc.match(/(?:https?:\/\/|www\.|t\.me\/|telegram\.me\/)[^\s]+/gi) ?? [];
+          const ownHost = /(goodapp2\.live|good-app2\.lovable\.app|youtu\.be|youtube\.com)/i;
+          const supportUser = String((settings as any).support_username || "@anamulmunni").replace(/^@/, "");
+          const badUrl = urls.find((u) => !ownHost.test(u) && !new RegExp(`t(?:elegram)?\\.me/${supportUser}`, "i").test(u));
+          const invite = /(t\.me\/(?:joinchat|\+)|chat\.whatsapp\.com|wa\.me\/)/i.test(linkSrc);
+
+          if (badUrl || invite) {
+            await deleteMessage(chatId, msg.message_id);
+            const warn =
+              `🔗 <b>${senderName}</b>, গ্রুপে বাইরের কোনো লিংক শেয়ার করা যাবে না — তাই মেসেজটি মুছে দেওয়া হলো 🙏\n` +
+              `আমাদের একটাই অফিসিয়াল লিংক: <b>https://goodapp2.live</b>\n` +
+              `কোনো প্রশ্ন থাকলে এখানেই লিখুন, আমি সাহায্য করছি 💙`;
+            await sendMessage(chatId, warn);
+            await supabaseAdmin.from("tg_messages").upsert({
+              update_id: update.update_id,
+              chat_id: msg.chat.id,
+              message_id: msg.message_id,
+              tg_user_id: msg.from?.id ?? null,
+              username: msg.from?.username ?? null,
+              full_name: senderName,
+              text: linkSrc.slice(0, 2000),
+              has_photo: !!photos?.length,
+              verdict: "spam",
+              action: "link-deleted",
+              bot_reply: warn,
+              matched_uid: null,
+            }, { onConflict: "update_id" });
+            return Response.json({ ok: true, flow: "link-deleted" });
+          }
+        }
+
+
+
 
         // ---- helpers for the guided slot-reset conversation -------------------
         const bnDigits = (s: string) =>
