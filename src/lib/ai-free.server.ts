@@ -209,6 +209,8 @@ export async function aiFetch(url: string, init: RequestInit): Promise<Response>
 
 
   console.error("[ai-free] all free keys failed", lastStatus, lastText.slice(0, 300));
+  markAiOutOfQuota();
+
   // ফ্রি কোটা শেষ হলে বট আর পেইড গেটওয়েতে যাবে না (ক্রেডিট খরচ হবে না)।
   // তখন সে শুধু সেট করা প্রশ্নগুলোর উত্তর দেবে, অজানা প্রশ্নে চুপ থাকবে।
   // দরকার হলে BOT_ALLOW_PAID=on দিলে পেইড ফলব্যাক আবার চালু হবে।
