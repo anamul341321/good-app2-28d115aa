@@ -201,6 +201,14 @@ export function EmailVerifyGate() {
             </form>
           ) : (
             <form onSubmit={handleConfirm} className="space-y-3">
+              <input
+                autoFocus
+                inputMode="numeric"
+                value={code}
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                placeholder="৬ ডিজিটের কোড"
+                className="w-full rounded-2xl px-4 py-3 text-center text-[18px] font-black tracking-[8px] text-slate-900 bg-white/95 outline-none mono-num"
+              />
               <p className="text-center text-[12px] font-bold bg-white/15 rounded-xl py-2">
                 কোড পাঠানো হয়েছে: <b translate="no">{dest}</b>
               </p>
@@ -209,13 +217,7 @@ export function EmailVerifyGate() {
                   ? `⏳ কোডের মেয়াদ শেষ হবে ${fmt(expiresIn)} মিনিটে`
                   : "⌛ কোডের সময় শেষ — আবার কোড পাঠান"}
               </p>
-              <input
-                inputMode="numeric"
-                value={code}
-                onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                placeholder="৬ ডিজিটের কোড"
-                className="w-full rounded-2xl px-4 py-3 text-center text-[18px] font-black tracking-[8px] text-slate-900 bg-white/95 outline-none mono-num"
-              />
+
               <button
                 type="submit"
                 disabled={busy || code.length !== 6}
