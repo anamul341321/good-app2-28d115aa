@@ -253,6 +253,30 @@ export const BUILTIN_FAQS: BuiltinFaq[] = [
       `ℹ️ KYC ছাড়া অ্যাপের সব কাজ চলবে, শুধু <b>টাকা তোলা যাবে না</b> 💙`,
   },
   {
+    topic: "রি-ভেরিফাই করা যাচ্ছে না / “এখনো সময় হয়নি”",
+    screenshot: [],
+    keywords: [
+      "re verify hocche na", "re verify hoi na", "reverify hocche na", "reverify hoi na",
+      "re verify kora jai na", "reverify kora jai na", "re verify korte parchi na",
+      "reverify korte parchi na", "re verify button asche na", "reverify button nai",
+      "re verify ene dao", "reverify ene dao", "re verify dao", "somoy hoy nai",
+      "somoy hoyni", "ekhono somoy", "রি ভেরিফাই হচ্ছে না", "রি-ভেরিফাই হচ্ছে না",
+      "রি ভেরিফাই করা যায় না", "রি-ভেরিফাই করা যায় না", "রি ভেরিফাই করতে পারছি না",
+      "রি ভেরিফাই এনে দাও", "রি-ভেরিফাই এনে দাও", "রি ভেরিফাই বাটন",
+      "এখনো সময় হয়নি", "সময় হয় নাই", "রি ভেরিফাই কখন", "রি-ভেরিফাই কখন",
+      "kokhon re verify", "re verify kokhon", "kobe re verify", "re verify kobe",
+    ],
+    answer:
+      `চিন্তার কিছু নেই ভাইয়া 🙂 রি-ভেরিফাই <b>জোর করে আনা যায় না</b> — সময় হলে নিজে থেকেই চলে আসে।\n\n` +
+      `⏳ <b>নিয়মটা এমন:</b>\n` +
+      `<b>১️⃣</b> ফার্স্ট ভেরিফাই করার পর ওই স্লটের জন্য <b>৩–৪ দিন</b> অপেক্ষা করতে হয়।\n` +
+      `<b>২️⃣</b> সময় হওয়ার আগে চাপ দিলে অ্যাপ বলবে <b>“এখনো সময় হয়নি”</b> — এটা কোনো সমস্যা বা এরর নয় ✅\n` +
+      `<b>৩️⃣</b> সময় হলে ঐ স্লট কার্ডেই <b>“🔁 রি-ভেরিফাই”</b> বাটন নিজে থেকেই দেখা যাবে — তখন এক ক্লিকে লাইভ ফেস স্ক্যান, ১০ সেকেন্ডের কাজ।\n\n` +
+      `🔔 তাই কালকে ভেরিফাই করলে আজই রি-ভেরিফাই হবে না — <b>৩–৪ দিন পর</b> আবার অ্যাপে ঢুকে স্লটটি দেখুন, বাটন চলে আসবে।\n` +
+      `📌 মনে রাখবেন: Good-App নিজে থেকে ফেস না চাইলে আমাদের অ্যাপও চাইবে না — এতে আপনার স্লট বা ইনকামের কোনো ক্ষতি হয় না, মাসিক মাইনিং ঠিকঠাক চলতেই থাকবে 💙`,
+  },
+  {
+
     topic: "Whitelist হচ্ছে না / pending দেখাচ্ছে",
     screenshot: ["not whitelisted", "pending", "whitelist"],
     keywords: ["whitelist", "হোয়াইটলিস্ট", "pending", "check hoy na"],
@@ -274,24 +298,36 @@ export function builtinFaqKnowledge(): string {
   );
 }
 
-/** Fast deterministic match on plain text (no AI needed). */
+/**
+ * Fast deterministic match on plain text (no AI needed).
+ * শুধু `keywords` দেখে মেলানো হয় — `screenshot` লাইনগুলো ছবির জন্য, লেখার জন্য নয়
+ * (আগে "verify/ভেরিফাই" স্ক্রিনশট-শব্দের কারণে রি-ভেরিফাইয়ের প্রশ্নেও Gmail-এর উত্তর যেত)।
+ * একাধিক মিললে সবচেয়ে লম্বা (সবচেয়ে নির্দিষ্ট) কিওয়ার্ডটি জেতে।
+ */
 export function matchBuiltinFaqText(text: string): BuiltinFaq | null {
   const hay = text.toLowerCase();
   if (!hay.trim()) return null;
-  const matches = (k: string) => {
+  const hitLen = (k: string) => {
     const key = k.toLowerCase().trim();
-    if (key.length < 3) return false;
+    if (key.length < 3) return 0;
     // 3-letter keys (kyc, apk…) only count as a whole word, never inside another word.
     if (key.length === 3 && /^[a-z]+$/.test(key)) {
-      return new RegExp(`(^|[^a-z])${key}([^a-z]|$)`, "i").test(hay);
+      return new RegExp(`(^|[^a-z])${key}([^a-z]|$)`, "i").test(hay) ? key.length : 0;
     }
-    return key.length > 3 && hay.includes(key);
+    return key.length > 3 && hay.includes(key) ? key.length : 0;
   };
+  let best: BuiltinFaq | null = null;
+  let bestScore = 0;
   for (const f of BUILTIN_FAQS) {
-    if ([...f.keywords, ...f.screenshot].some(matches)) return f;
+    const score = Math.max(0, ...f.keywords.map(hitLen));
+    if (score > bestScore) {
+      bestScore = score;
+      best = f;
+    }
   }
-  return null;
+  return best;
 }
+
 
 /** Find a built-in answer by its topic label (safer than an array index). */
 export function builtinFaqByTopic(fragment: string): BuiltinFaq | null {
