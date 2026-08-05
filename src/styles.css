@@ -1109,3 +1109,27 @@
 
 html { -webkit-tap-highlight-color: transparent; }
 input, textarea, select { touch-action: manipulation; }
+
+/* ===== Low-end device / heavy-load smoothness =====
+   Decorative loops are the main source of dropped frames on mid-range phones.
+   Keep the look, cut the per-frame cost. */
+.ticker-track { transform: translate3d(0,0,0); backface-visibility: hidden; }
+@keyframes ticker-scroll {
+  0%   { transform: translate3d(0,0,0); }
+  100% { transform: translate3d(-50%,0,0); }
+}
+
+@media (max-width: 640px) {
+  .mc-orb-a, .mc-orb-b { animation-duration: 14s; }
+  .mc-ring { animation-duration: 16s; }
+  .mc-holo { display: none; }
+  .mining-sparkle, .mc-sparkle, .mc-coin { animation-duration: 6s; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mc-orb-a, .mc-orb-b, .mc-ring, .mc-sparkle, .mc-coin,
+  .mining-sparkle, .announcement-ticker, .float-anim {
+    animation: none !important;
+  }
+  .ticker-track { animation-duration: 90s !important; }
+}
