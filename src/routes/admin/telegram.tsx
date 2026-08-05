@@ -15,6 +15,7 @@ import {
   tgBroadcast, tgBroadcastAudience, tgListLinkedProfiles,
   tgListAiKeys, tgAddAiKey, tgSetAiKeyActive, tgDeleteAiKey,
 } from "@/lib/telegram-bot.functions";
+import { raceTimeout } from "@/lib/net";
 
 
 export const Route = createFileRoute("/admin/telegram")({ component: TelegramAdmin });
@@ -158,6 +159,18 @@ function SettingsPanel() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  if (error) {
+    return (
+      <div className="glass rounded-2xl p-5 text-center space-y-3">
+        <p className="text-xs font-black text-rose-300">{(error as any)?.message || "লোড হয়নি"}</p>
+        <button onClick={() => refetch()} disabled={isFetching}
+          className="rounded-xl gradient-cta px-4 py-2 text-xs font-black">
+          {isFetching ? "চেষ্টা হচ্ছে…" : "আবার চেষ্টা করুন"}
+        </button>
+      </div>
+    );
+  }
+
   if (isLoading || !form) {
     return <div className="py-10 flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-cyan" /></div>;
   }
@@ -267,7 +280,7 @@ function ChatIdPicker({ onPick }: { onPick: (id: string, which: "group" | "admin
   const { data, isFetching, refetch } = useQuery({
     queryKey: ["tg-chatids"],
     queryFn: () => tgRecentMessages(),
-    refetchInterval: 5000,
+    refetchInterval: 15000,
   });
 
   const chats = Object.values(
