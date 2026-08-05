@@ -188,11 +188,10 @@ async function pcmForChunk(
     },
   };
 
-  // Keys used to run one after another, so three unavailable keys could hold a
+  // Keys/models used to run one after another, so congestion could hold a
   // Telegram webhook for 18+ seconds. Race a small group instead: the first
-  // working key wins and a provider outage is bounded to one timeout/model.
-  for (const model of TTS_MODELS) {
-    const attempts = keys.slice(0, 6).map(async (k) => {
+  // working provider response wins and the whole operation has one timeout.
+  const attempts = TTS_MODELS.flatMap((model) => keys.slice(0, 6).map(async (k) => {
       let res: Response;
       try {
         res = await fetch(
@@ -205,7 +204,7 @@ async function pcmForChunk(
           },
         );
       } catch {
-        return null;
+        throw new Error("tts-network-failed");
       }
       if (!res.ok) {
         const txt = await res.text().catch(() => "");
@@ -214,18 +213,19 @@ async function pcmForChunk(
         if (res.status !== 429 && res.status !== 403 && res.status !== 503) {
           console.error("[tts] failed", model, res.status, txt.slice(0, 200));
         }
-        return null;
+        throw new Error(`tts-${res.status}`);
       }
       const json: any = await res.json().catch(() => null);
       const b64 = json?.candidates?.[0]?.content?.parts?.find((p: any) => p?.inlineData?.data)
         ?.inlineData?.data;
-      return b64 ? b64ToBytes(b64) : null;
-    });
-    const results = await Promise.all(attempts);
-    const audio = results.find((result) => result !== null);
-    if (audio) return audio;
+      if (!b64) throw new Error("tts-empty-audio");
+      return b64ToBytes(b64);
+    }));
+  try {
+    return await Promise.any(attempts);
+  } catch {
+    return null;
   }
-  return null;
 }
 
 /**
