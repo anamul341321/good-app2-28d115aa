@@ -83,9 +83,19 @@ export function MiningCounter({
 
   useEffect(() => {
     if (!isActive) return;
-    const id = setInterval(() => setNow(Date.now()), 250);
-    return () => clearInterval(id);
+    let id: any;
+    const start = () => {
+      stop();
+      // 1s tick is smooth enough and ~4x cheaper than 250ms on low-end phones.
+      id = setInterval(() => setNow(Date.now()), 1000);
+    };
+    const stop = () => { if (id) { clearInterval(id); id = undefined; } };
+    const onVis = () => (document.hidden ? stop() : (setNow(Date.now()), start()));
+    start();
+    document.addEventListener("visibilitychange", onVis);
+    return () => { stop(); document.removeEventListener("visibilitychange", onVis); };
   }, [isActive]);
+
 
   const rateArgs = {
     selfSlots: selfSlotsProp,
