@@ -1,0 +1,2 @@
+UPDATE public.ai_keys SET active = false, last_error = 'অচল কী — Google প্রজেক্টে অ্যাক্সেস বন্ধ / কোটা ০ (403/429)' WHERE id IN ('8731f6b0-a0f7-4955-a3f5-3308f3c009f0','82377ad7-36b3-4e5d-bceb-140710243b76','3e67a921-e3c6-47ac-8703-3152501808af');
+UPDATE public.ai_keys SET label = COALESCE(label,'কাজ করছে ✅') WHERE id = 'a1da156e-a8ea-42ab-ad02-090980c40fe3';
