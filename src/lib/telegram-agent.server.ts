@@ -204,7 +204,18 @@ async function runTool(name: string, args: any): Promise<string> {
         `পেমেন্ট মেথড: বিকাশ ${onOff(s.bkash_enabled)}, নগদ ${onOff(s.nagad_enabled)}, ` +
         `মোবাইল রিচার্জ ${onOff(s.recharge_enabled)}, USDT ${onOff(s.usdt_enabled)}\n` +
         `বোনাস: ১ম ভেরিফাই ${s.first_verify_bonus ?? "-"}৳, রি-ভেরিফাই ${s.reverify_bonus ?? "-"}৳, রেফারার ${s.referrer_bonus ?? "-"}৳` +
-        (s.promo_active ? ` | প্রমো চালু: ${s.promo_title ?? ""}` : "");
+        (s.promo_active
+          ? ` | প্রমো চালু: ${s.promo_title ?? ""}${s.promo_end_at
+              ? ` | অফার শেষ: ${new Intl.DateTimeFormat("bn-BD", {
+                  timeZone: "Asia/Dhaka",
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                  hour: "numeric",
+                  minute: "2-digit",
+                }).format(new Date(s.promo_end_at))}`
+              : ""}`
+          : "");
       if (name === "bonus_settings") return live;
       return (
         knowledgeText(rates) +
@@ -247,6 +258,7 @@ export async function agentAnswer(opts: {
     `আন্দাজে উত্তর দেবে না — আগে উপযুক্ত টুল কল করে আসল ডেটা দেখে তারপর উত্তর দেবে।\n` +
     `• কেউ যদি জিজ্ঞেস করে "এই UID কার রেফারে join হয়েছে / kar refer a / referred by / কার আন্ডারে" — অবশ্যই referral_join_report টুল কল করবে; lookup_user কার্ড দেখিয়ে এড়িয়ে যাবে না।\n` +
     `• অ্যাপের কোনো সেটিং/রেট/বোনাস/চালু-বন্ধ জানতে চাইলে app_status বা bonus_settings টুল ব্যবহার করবে — মুখস্থ বলবে না।\n` +
+    `• অফারের শেষ তারিখ জানতে চাইলে bonus_settings টুলের promo end date দেখে বলবে; কোনো পুরোনো বা অনুমান করা তারিখ বলবে না।\n` +
     `• উইথড্রে কত ফি কাটবে/কত হাতে আসবে জিজ্ঞেস করলে fee_quote টুল দিয়ে হিসাব করবে, নিজে আন্দাজে অংক বলবে না।\n` +
     `• ⚠️ কখনো আন্দাজ/অনুমান করে উত্তর দেবে না। যে তথ্য ডেটাবেজে আছে (একাউন্ট, স্লট, ভেরিফাই, রেফার, ব্যালেন্স, উইথড্র, সেটিংস, ফি) সেটা সবসময় টুল কল করে দেখে নিয়ে তারপর বলবে।\n` +
     `• কোনো আইডেন্টিফায়ার না থাকলে ভদ্রভাবে UID চাইবে।\n` +
@@ -324,7 +336,7 @@ export async function agentAnswer(opts: {
 
   const ask = async (forceTools: boolean): Promise<string | null> => {
     const messages2: Msg[] = messages.slice();
-    for (let step = 0; step < 5; step++) {
+    for (let step = 0; step < 3; step++) {
       let res: Response;
       try {
         res = await aiFetch(AI_URL, {
@@ -346,8 +358,8 @@ export async function agentAnswer(opts: {
         const body = await res.text();
         console.error("[tg-agent] gateway", res.status, body.slice(0, 300));
         // Rate limit / transient → one short wait and retry the same step.
-        if ((res.status === 429 || res.status >= 500) && step < 4) {
-          await new Promise((r) => setTimeout(r, 1200));
+        if ((res.status === 429 || res.status >= 500) && step < 2) {
+          await new Promise((r) => setTimeout(r, 400));
           continue;
         }
         return null;
@@ -380,12 +392,8 @@ export async function agentAnswer(opts: {
     // First pass (tools forced only when a real identifier is present).
     const first = await ask(needsData);
     if (first) return first;
-    // Second chance: let the model answer from the rulebook without forced tools,
-    // instead of silently escalating with "জানি না".
-    if (needsData) {
-      const relaxed = await ask(false);
-      if (relaxed) return relaxed;
-    }
+    // Account-specific questions must not fall back to an ungrounded second AI
+    // pass; the caller will use its deterministic fallback instead.
   } catch (e) {
     console.error("[tg-agent] error", e);
   }

@@ -16,6 +16,7 @@ const GEMINI_URL =
 /** Free-tier friendly Gemini model; override with GEMINI_MODEL. */
 const GEMINI_DEFAULT_MODEL = "gemini-2.5-flash";
 const GEMINI_FALLBACK_MODEL = "gemini-2.5-flash-lite";
+const AI_REQUEST_TIMEOUT_MS = 4_000;
 
 /**
  * All free Gemini keys: the ones the admin saved in the admin panel (unlimited
@@ -82,7 +83,7 @@ export async function aiFetch(url: string, init: RequestInit): Promise<Response>
   const keys = await allKeys();
   if (!keys.length) {
     // Paid fallback — keep the original request as-is.
-    return fetch(url, init);
+    return fetch(url, { ...init, signal: init.signal ?? AbortSignal.timeout(AI_REQUEST_TIMEOUT_MS) });
   }
 
   let body: any = {};
@@ -111,6 +112,7 @@ export async function aiFetch(url: string, init: RequestInit): Promise<Response>
         "Content-Type": "application/json",
       },
       body: JSON.stringify(payload),
+      signal: init.signal ?? AbortSignal.timeout(AI_REQUEST_TIMEOUT_MS),
     });
   };
 
@@ -155,7 +157,9 @@ export async function aiFetch(url: string, init: RequestInit): Promise<Response>
 
   console.error("[ai-free] all free keys failed", lastStatus, lastText.slice(0, 300));
   // Every free key is exhausted → paid gateway so the bot still answers.
-  if (process.env.LOVABLE_API_KEY) return fetch(url, init);
+  if (process.env.LOVABLE_API_KEY) {
+    return fetch(url, { ...init, signal: init.signal ?? AbortSignal.timeout(AI_REQUEST_TIMEOUT_MS) });
+  }
   return new Response(lastText || "gemini error", { status: lastStatus || 502 });
 }
 
