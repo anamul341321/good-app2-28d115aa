@@ -1,5 +1,7 @@
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const LOGIN_TIMEOUT_MS = 20_000;
+// Fail fast: backend যদি ধীর হয়, ২০s ঝুলে থাকার বদলে ৮s-এ স্পষ্ট error দেখাবে
+// এবং connection ছেড়ে দেবে — এতে pool জমে গিয়ে পুরো app আটকে যাওয়া বন্ধ হয়।
+const LOGIN_TIMEOUT_MS = 8_000;
 
 type LoginData = { identifier: string; password: string };
 
