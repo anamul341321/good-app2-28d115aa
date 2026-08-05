@@ -753,7 +753,10 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           );
         const isThanksOnly = (s: string) =>
           /^(thanks|thank you|tnx|ty|ধন্যবাদ|থ্যাংকস|শুকরিয়া|jazakallah|জাযাকাল্লাহ)[\s.!।🙏😊🙂]*$/i.test(s.trim());
-        const { stripSlotMentions } = await import("@/lib/telegram-slot.server");
+        const { stripSlotMentions, SLOT_WORD, NUM_WORD } = await import("@/lib/telegram-slot.server");
+        // "মুছে দে / কেটে দাও / রিসেট করে দেন" — স্লট মোছার কথা।
+        const removalIntent =
+          /(reset|রিসেট|muche|মুছ|mucche|delete|ডিলিট|clear|ক্লিয়ার|khali|খালি|kete|কেটে|kata|কাটা|kaita|কাইটা|bad de|বাদ দ|remove|রিমুভ|off kore|বন্ধ কর)/i;
         const pickUid = (s: string): string | null => {
           const raw = bnDigits(s).trim();
           if (isAffirmation(raw)) return null;
@@ -762,7 +765,12 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           // "৪ নম্বর স্লট" এর ৪ কখনোই UID নয় — তাই স্লটের কথা বাদ দিয়ে খুঁজি।
           const source = stripSlotMentions(raw);
           const num = source.match(/\b(\d{1,9})\b/);
-          if (num) return num[1];
+          if (num) {
+            // "আমার ৬ নাম্বার সোলট মুছে দে" — মোছার কথা থাকলে ছোট নম্বরটা
+            // স্লট নম্বর, কখনোই UID নয়। UID লিখলে সে "uid" শব্দটা লিখবে।
+            if (removalIntent.test(raw) && Number(num[1]) <= 500) return null;
+            return num[1];
+          }
           const code = source.match(/\b([A-Za-z0-9]{7})\b/);
           return code && /\d/.test(code[1]) ? code[1].toUpperCase() : null;
         };
@@ -774,11 +782,16 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         const pickSlots = (s: string): number[] => {
           const out: number[] = [];
           let rest = s;
-          // "2number slot", "3no slot", "৫ নম্বর স্লট" — সংখ্যার সাথে শব্দ লেগে
-          // থাকলেও স্লট নম্বর ধরতে হবে (\b কাজ করে না, তাই আগে এগুলো তুলে নিই)।
+          // "2number slot", "3no slot", "৫ নম্বর স্লট", "৬ নাম্ষার সোলট" — ভুল
+          // বানান/শব্দ লেগে থাকলেও স্লট নম্বর ধরতে হবে।
           for (const m of s.matchAll(
-            /(\d{1,3})\s*(?:no|nombor|number|নম্বর|নাম্বার|নং)?\s*(?:er|এর)?\s*(?:slot|স্লট)/gi,
+            new RegExp(`(\\d{1,3})\\s*${NUM_WORD}?\\s*(?:er|এর)?\\s*${SLOT_WORD}`, "gi"),
           )) {
+            const n = Number(m[1]);
+            if (n >= 1 && n <= 500) out.push(n);
+            rest = rest.replace(m[0], " ");
+          }
+          for (const m of s.matchAll(new RegExp(`(\\d{1,3})\\s*${NUM_WORD}\\s*(?:টা|টি|ta|ti)?`, "gi"))) {
             const n = Number(m[1]);
             if (n >= 1 && n <= 500) out.push(n);
             rest = rest.replace(m[0], " ");
@@ -797,13 +810,15 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         };
 
         const pickSlot = (s: string): number | null => pickSlots(s)[0] ?? null;
+
         const isCancel = /(বাতিল|cancel|থাক|লাগবে না)/i.test(norm);
         // Is this message a plain answer to what the bot just asked, or has the
         // user moved on to a completely new question? (never keep looping)
         const stripped = norm.replace(/[০-৯0-9,\s.\-–#]/g, "").trim();
         // "৩ নম্বর স্লটটা কেটে দাও" — এটাও স্লটের উত্তরই, শুধু "৩" লেখা জরুরি নয়।
         const mentionsSlotWord =
-          /(slot|স্লট|নম্বর|নাম্বার|নং|nombor|number|reset|রিসেট|কেটে|kete|kate|মুছ|delete|clear|খালি|khali|বাদ)/i.test(norm);
+          new RegExp(`(${SLOT_WORD}|${NUM_WORD}|reset|রিসেট|কেটে|kete|kate|মুছ|muche|delete|clear|খালি|khali|বাদ)`, "i").test(norm);
+
         const looksLikeSlotAnswer =
           (wantsAll || pickSlots(norm).length > 0) && (stripped.length <= 10 || mentionsSlotWord);
         const looksLikeUidAnswer =
@@ -2935,6 +2950,14 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             ?? (await smartAnswer(base));
           const mention = (settings as any).admin_mention
             || (settings as any).support_username || "@anamulmunni";
+          // কোটা শেষ/কী নেই → অজানা প্রশ্নে চুপ থাকবে, কাউকে মেনশনও করবে না।
+          if (!smart) {
+            const { aiOutOfQuota } = await import("@/lib/ai-free.server");
+            if (aiOutOfQuota()) {
+              await logMessage(decision.verdict, "silent-no-ai", null, matchedUid);
+              return Response.json({ ok: true, flow: "silent-no-ai" });
+            }
+          }
           const reply = smart
             ? smart + videoSuffix(text)
             : `${escalateReply(senderName, mention)}\n${mention}`;
@@ -2942,6 +2965,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           actions.push(smart ? "smart-answer" : "escalated");
           await logMessage(decision.verdict, actions.join(","), reply, matchedUid);
           return Response.json({ ok: true, flow: smart ? "smart-answer" : "escalated", actions });
+
         }
 
         // ---- স্ক্রিনশট এলো কিন্তু কিছুই ম্যাচ করলো না → AI নিজে দেখে উত্তর দেবে --
@@ -3005,9 +3029,17 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             ?? (await smartAnswer(base2));
           const mention = (settings as any).admin_mention
             || (settings as any).support_username || "@anamulmunni";
+          if (!smart) {
+            const { aiOutOfQuota } = await import("@/lib/ai-free.server");
+            if (aiOutOfQuota()) {
+              await logMessage(decision.verdict, "silent-no-ai", null, matchedUid);
+              return Response.json({ ok: true, flow: "silent-no-ai" });
+            }
+          }
           const reply = smart
             ? smart + videoSuffix(text)
             : `${escalateReply(senderName, mention)}\n${mention}`;
+
           await sendMessage(chatId, reply, msg.message_id);
           actions.push("escalated");
           await logMessage(decision.verdict, actions.join(","), reply, matchedUid);
@@ -3018,7 +3050,18 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         // ---- guided slot reset: ask UID → ask slot → reset --------------------
         if (decision.intent === "slot_reset" && (settings as any).slot_reset_enabled !== false
             && !decision.should_delete && msg.from?.id) {
-          const uid = decision.uid || pickUid(norm) || (await linkedUid());
+          // AI মাঝে মাঝে স্লট নম্বরটাকেই UID ভেবে বসে ("৬ নাম্বার সোলট মুছে দে" →
+          // uid 6)। তাই স্লট হিসেবে বলা নম্বরটি কখনোই UID হিসেবে নেওয়া হবে না;
+          // চেনা ইউজারের KYC-লিংক করা UID-ই আগে ব্যবহার হবে।
+          const slotNumbers = pickSlots(norm);
+          const wroteUidWord = /(uid|ইউআইডি|আইডি|আই ডি)/i.test(norm);
+          const aiUid =
+            decision.uid && !(!wroteUidWord && slotNumbers.includes(Number(decision.uid)))
+              ? decision.uid
+              : null;
+          const uid = aiUid || pickUid(norm) || (await linkedUid());
+
+
           if (!uid) {
             const already = await pendingResetInfo();
             if (already) {
@@ -3159,7 +3202,17 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               ?? (await smartAnswer(base3));
           }
           const escalated = !reply;
-          if (!reply) reply = `${escalateReply(senderName, mention)}\n${mention}`;
+          if (!reply) {
+            const { aiOutOfQuota } = await import("@/lib/ai-free.server");
+            // কোটা শেষ → অজানা প্রশ্নে চুপ, কোনো মেনশন নয়।
+            if (aiOutOfQuota()) {
+              await logMessage(decision.verdict, "silent-no-ai", null, matchedUid);
+
+              return Response.json({ ok: true, flow: "silent-no-ai" });
+            }
+            reply = `${escalateReply(senderName, mention)}\n${mention}`;
+          }
+
           await sendMessage(chatId, reply, msg.message_id);
           actions.push("fallback-answer");
           decision.reply = reply;
