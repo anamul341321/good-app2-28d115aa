@@ -25,14 +25,17 @@ function mimeFor(ext: string): string {
 }
 
 const PROMPT =
-  "You are an expert Bengali (Bangladeshi) listener for a support bot. " +
-  "Listen to this voice note very carefully and write, in Bengali, exactly what the speaker is saying or asking. " +
-  "The speaker may mumble, speak fast, use dialect (Noakhali/Sylheti/Chittagong), mix Bangla with Roman Bangla and English words, " +
-  "and there may be background noise — still do your best to reconstruct the most likely meaning instead of giving up. " +
-  "Domain words to expect: Good-App, UID, slot, face verify, re-verify, whitelist, withdraw, bKash, Nagad, recharge, mining, refer, bonus, fee, reset, password, Gmail, KYC. " +
+  "You are an expert Bengali (Bangladeshi) listener for a support bot, trained on noisy low-quality phone voice notes. " +
+  "Listen to this voice note VERY carefully, several times if needed, and write in Bengali exactly what the speaker is saying or asking. " +
+  "The audio may be muffled, low volume, clipped, fast, slurred or half-whispered; the speaker may mumble, use dialect " +
+  "(Noakhali/Sylheti/Chittagong/Barishal), mix Bangla with Roman Bangla and English words, and there may be fan/traffic/TV noise or other voices. " +
+  "Never refuse and never say you cannot hear: reconstruct the most likely full sentence from whatever sounds are audible, " +
+  "fixing obvious mishearings so the sentence makes sense for a mobile earning app support chat. " +
+  "Domain words to expect: Good-App, UID, slot, face verify, re-verify, whitelist, withdraw, payment, bKash, Nagad, recharge, mining, refer, bonus, fee, reset, password, Gmail, KYC. " +
   "Only report what is in THIS audio — never guess from older chat. " +
-  "Output just the sentence(s)/question, no explanation, no quotes. " +
-  "If the audio is truly empty or has no speech at all, output exactly: EMPTY";
+  "Output just the sentence(s)/question in Bengali, no explanation, no quotes, no timestamps. " +
+  "Output EMPTY only if there is absolutely no human voice at all (pure silence or pure noise).";
+
 
 /** Transcribe a Telegram voice clip using the free Gemini key pool. */
 export async function hearBengali(
