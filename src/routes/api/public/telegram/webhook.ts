@@ -691,6 +691,12 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         const bnDigits = (s: string) =>
           s.replace(/[০-৯]/g, (d) => String("০১২৩৪৫৬৭৮৯".indexOf(d)));
         const norm = bnDigits(text).trim();
+        // ইউজার "ভয়েসে বলো" বললে এই উত্তরটা শুধু ভয়েসে যাবে, নইলে শুধু লেখায়।
+        {
+          const { setReplyMode, asksForVoiceReply } = await import("@/lib/telegram-bot.server");
+          setReplyMode(asksForVoiceReply(norm) ? "voice" : "text");
+        }
+
         const replyNorm = bnDigits(String(msg.reply_to_message?.text ?? msg.reply_to_message?.caption ?? "")).trim();
         // কেউ কোনো মেসেজ "মার্ক"/রিপ্লাই করে প্রশ্ন করলে ওই মেসেজটাই আসল প্রসঙ্গ —
         // সেটা AI-কে না দিলে বট এলোমেলো উত্তর দেয়।
