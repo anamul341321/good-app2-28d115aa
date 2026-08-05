@@ -6,11 +6,19 @@ export type SlotResetResult =
   | { ok: false; error: string };
 
 /** Words like "৪ নম্বর স্লট" must never be read as a UID. */
+/** স্লট শব্দের সব ভুল বানান (সোলট, স্লোট, solt, slt …) একসাথে ধরার প্যাটার্ন। */
+export const SLOT_WORD = "(?:slot+s?|slt|solt|salt|স্লট|স্লোট|সোলট|সলট|স্লাট|স্লট্ট)";
+/** "নম্বর" শব্দের ভুল বানানগুলো (নাম্ষার, নাম্বর …)। */
+export const NUM_WORD = "(?:no|nombor|nomber|number|নম্বর|নাম্বার|নাম্ষার|নাম্বর|নম্বার|নং)";
+
 export function stripSlotMentions(s: string): string {
   return s
-    .replace(/(\d{1,3})\s*(?:no|nombor|number|নম্বর|নাম্বার|নং)?\s*(?:er|এর)?\s*(?:slot|স্লট)/gi, " ")
-    .replace(/(?:slot|স্লট)\s*(?:no|number|নম্বর|নাম্বার|নং)?\s*[:#-]?\s*(\d{1,3})/gi, " ");
+    .replace(new RegExp(`(\\d{1,3})\\s*${NUM_WORD}?\\s*(?:er|এর)?\\s*${SLOT_WORD}`, "gi"), " ")
+    .replace(new RegExp(`${SLOT_WORD}\\s*${NUM_WORD}?\\s*[:#-]?\\s*(\\d{1,3})`, "gi"), " ")
+    // "৬ নাম্বারটা মুছে দে" — স্লট শব্দ না থাকলেও এটা স্লট নম্বরই।
+    .replace(new RegExp(`(\\d{1,3})\\s*${NUM_WORD}\\s*(?:টা|টি|ta|ti)?`, "gi"), " ");
 }
+
 
 
 export async function findProfileByUid(uid: string) {
