@@ -3033,7 +3033,16 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         // ---- guided slot reset: ask UID → ask slot → reset --------------------
         if (decision.intent === "slot_reset" && (settings as any).slot_reset_enabled !== false
             && !decision.should_delete && msg.from?.id) {
-          const uid = decision.uid || pickUid(norm) || (await linkedUid());
+          // AI মাঝে মাঝে স্লট নম্বরটাকেই UID ভেবে বসে ("৬ নাম্বার সোলট মুছে দে" →
+          // uid 6)। তাই স্লট হিসেবে বলা নম্বরটি কখনোই UID হিসেবে নেওয়া হবে না;
+          // চেনা ইউজারের KYC-লিংক করা UID-ই আগে ব্যবহার হবে।
+          const slotNumbers = pickSlots(norm);
+          const aiUid =
+            decision.uid && !(hasExplicitUid === false && slotNumbers.includes(Number(decision.uid)))
+              ? decision.uid
+              : null;
+          const uid = aiUid || pickUid(norm) || (await linkedUid());
+
           if (!uid) {
             const already = await pendingResetInfo();
             if (already) {
