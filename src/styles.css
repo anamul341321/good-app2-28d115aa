@@ -169,19 +169,19 @@
       inset 0 1px 0 0 white;
     overflow: hidden;
   }
+  /* Top hairline sheen only — no full-surface tint.
+     (The old masked gold gradient broke on mobile Chromium and washed the
+     whole panel yellow.) */
   .premium-panel::before {
     content: "";
-    position: absolute; inset: -1px;
-    border-radius: inherit;
-    background: linear-gradient(120deg,
-      transparent 30%,
-      color-mix(in oklch, var(--color-gold) 55%, transparent) 50%,
-      transparent 70%);
-    -webkit-mask: linear-gradient(#000,#000) content-box, linear-gradient(#000,#000);
-    mask-composite: source-over;
-    padding: 1px;
+    position: absolute;
+    top: 0; left: 12%; right: 12%;
+    height: 1px;
+    background: linear-gradient(90deg,
+      transparent,
+      color-mix(in oklch, var(--color-violet) 35%, transparent),
+      transparent);
     pointer-events: none;
-    opacity: 0.45;
   }
 
 
