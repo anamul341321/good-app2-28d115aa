@@ -313,7 +313,19 @@ export function AuthPage() {
         redirecting = true;
         return;
       }
-      nav({ to: "/home" });
+      // Popup-এ টোকেন এসেছে; session আসলে বসেছে কি না নিশ্চিত করি — তারপরই যাই।
+      const { clearSharedSession } = await import("@/lib/auth-session");
+      clearSharedSession();
+      let ok = false;
+      for (let i = 0; i < 12; i++) {
+        const { data } = await supabase.auth.getSession();
+        if (data.session?.access_token) { ok = true; break; }
+        await new Promise((r) => setTimeout(r, 250));
+      }
+      if (!ok) throw new Error("Google লগইন সম্পূর্ণ হয়নি — আবার চেষ্টা করুন");
+      redirecting = true;
+      window.location.href = "/home";
+
     } catch (e: any) {
       toast.error(e?.message ?? "Google লগইন করা যায়নি");
     } finally {
