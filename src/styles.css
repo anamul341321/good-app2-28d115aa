@@ -227,9 +227,9 @@
     will-change: background-position;
     contain: paint;
     background: linear-gradient(120deg,
-      color-mix(in oklch, var(--color-violet) 30%, var(--color-surface)),
-      color-mix(in oklch, var(--color-cyan) 25%, var(--color-surface)),
-      color-mix(in oklch, var(--color-gold) 22%, var(--color-surface)));
+      color-mix(in oklch, var(--color-violet) 10%, var(--color-surface)),
+      color-mix(in oklch, var(--color-cyan) 9%, var(--color-surface)),
+      color-mix(in oklch, var(--color-violet) 8%, var(--color-surface)));
     background-size: 220% 220%;
     animation: aurora-shift 9s ease-in-out infinite;
   }
@@ -245,7 +245,8 @@
     background-size: 300% 300%;
     animation: aurora-shift 5s linear infinite;
     -webkit-mask: linear-gradient(#000,#000) content-box, linear-gradient(#000,#000);
-    mask-composite: source-over;
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
     pointer-events: none;
   }
   .mono-num {
@@ -467,7 +468,8 @@
     transparent 300deg,
     transparent 360deg);
   -webkit-mask: linear-gradient(#000,#000) content-box, linear-gradient(#000,#000);
-  mask-composite: source-over;
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
   padding: 2px;
   filter: blur(0.4px);
   animation: mining-ring-spin 6s linear infinite;
