@@ -195,7 +195,7 @@
   .gradient-cta {
     will-change: background-position;
     contain: paint;
-    background: linear-gradient(120deg, var(--color-violet), var(--color-cyan) 55%, var(--color-gold));
+    background: linear-gradient(120deg, var(--color-violet), var(--color-cyan) 50%, var(--color-violet));
     background-size: 200% 200%;
     animation: aurora-shift 5s ease-in-out infinite;
     color: white;
