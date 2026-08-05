@@ -1654,7 +1654,11 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             faq.push({
               topic: b.topic,
               answer: b.answer,
-              keywords: [...b.keywords, ...b.screenshot],
+              // স্ক্রিনশটের সাধারণ শব্দ (যেমন "ভেরিফাই") লেখা মেলানোর কাজে
+              // ব্যবহার করা যাবে না — এতে ভুল উত্তর চলে যেত। ছবি পাঠালেই
+              // ঐ শব্দগুলো যোগ হবে।
+              keywords: photoBase64 ? [...b.keywords, ...b.screenshot] : b.keywords,
+
               imageBase64: null,
             });
           }
