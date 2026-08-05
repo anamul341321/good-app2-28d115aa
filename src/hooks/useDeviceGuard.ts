@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { touchDevice } from "@/lib/sessions.functions";
 import { getSharedSession } from "@/lib/auth-session";
