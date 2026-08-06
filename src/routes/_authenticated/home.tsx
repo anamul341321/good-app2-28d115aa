@@ -17,6 +17,7 @@ import { VideoTutorialButton } from "@/components/VideoTutorialButton";
 import { BotStartButton } from "@/components/BotStartButton";
 import { KycAlertBanner } from "@/components/KycAlertBanner";
 import { GmailSecurityBanner } from "@/components/GmailSecurityBanner";
+import { ComplianceDisclaimer } from "@/components/ComplianceDisclaimer";
 
 import { useLang } from "@/lib/i18n";
 
