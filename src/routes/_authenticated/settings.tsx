@@ -100,6 +100,12 @@ function SettingsPage() {
   const [newPhone, setNewPhone] = useState("");
   const [phoneBusy, setPhoneBusy] = useState(false);
 
+  // account delete
+  const delAccountFn = useServerFn(deleteMyAccount);
+  const [showDelete, setShowDelete] = useState(false);
+  const [delWord, setDelWord] = useState("");
+  const [delBusy, setDelBusy] = useState(false);
+
   useEffect(() => {
     if (acc?.phone) setNewPhone(acc.phone);
   }, [acc?.phone]);
