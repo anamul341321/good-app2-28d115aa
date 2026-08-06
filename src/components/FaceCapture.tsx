@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { Camera, X, Loader2, Scan, AlertTriangle, ImagePlus } from "lucide-react";
 import type { NarrationKey } from "@/lib/narrations";
 import { playVoiceAuto } from "@/lib/voice-guide";
+import { FaceConsentModal } from "./FaceConsentModal";
 
 type FaceCaptureProps = {
   onCapture: (photoBase64: string) => void;
@@ -12,9 +13,13 @@ type FaceCaptureProps = {
   readyVoice?: NarrationKey;
   retryVoice?: NarrationKey;
   cancelVoice?: NarrationKey;
+  /** If true, skip the explicit consent modal (e.g. re-verification). */
+  skipConsent?: boolean;
 };
 
-type Mode = "choice" | "camera" | "review";
+type Mode = "consent" | "choice" | "camera" | "review";
+
+const CONSENT_KEY = "good-app-face-consent";
 
 export function FaceCapture({
   onCapture,
