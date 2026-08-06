@@ -1,6 +1,15 @@
 import { createFileRoute, Outlet, Link, useRouter } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
-import { Home, Wallet, ArrowDownToLine, LogOut, Loader2, RefreshCcw, Gift, User, Settings } from "lucide-react";
+import { Home, Wallet, ArrowDownToLine, LogOut, Loader2, RefreshCcw, Gift, User, Settings, MoreVertical, FileText, ShieldCheck, Lock, ScrollText } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
 import { useQuery } from "@tanstack/react-query";
 import { getProfileHistory } from "@/lib/profile.functions";
 import { useEffect, useState } from "react";
