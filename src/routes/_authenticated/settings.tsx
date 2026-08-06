@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import {
   Settings as SettingsIcon, ShieldCheck, KeyRound, Smartphone, Phone,
   Loader2, LogOut, MonitorSmartphone, FileText, Send, Check, Trash2,
+  Shield,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getAccountSettings, changePhoneNumber, deleteMyAccount } from "@/lib/account.functions";
@@ -401,6 +402,12 @@ function SettingsPage() {
       <Card icon={<FileText className="w-4 h-4 text-gold" />} title="নিয়ম ও শর্তাবলি" desc="Good-App ব্যবহারের সব নিয়ম বিস্তারিত পড়ুন।">
         <Link to="/terms" className="w-full py-3 rounded-xl bg-surface-2 border-2 border-border font-black text-sm flex items-center justify-center gap-2 btn-press text-navy">
           <FileText className="w-4 h-4" /> Terms & Conditions দেখুন
+        </Link>
+      </Card>
+
+      <Card icon={<Shield className="w-4 h-4 text-cyan-500" />} title="ডেটা সেফটি ও অনুমতি" desc="আমরা কী কী ডেটা সংগ্রহ করি, কেন করি এবং কতদিন রাখি — Play Store-এর জন্য সারসংক্ষেপ।">
+        <Link to="/data-safety" className="w-full py-3 rounded-xl bg-surface-2 border-2 border-border font-black text-sm flex items-center justify-center gap-2 btn-press text-navy">
+          <Shield className="w-4 h-4" /> ডেটা সেফটি দেখুন
         </Link>
       </Card>
 

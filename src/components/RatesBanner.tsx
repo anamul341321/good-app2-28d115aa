@@ -31,10 +31,10 @@ export function RatesBanner() {
             <Flame className="w-3 h-3" /> Monthly Mining Rate
           </p>
           <p className="text-[15px] font-black leading-tight mt-0.5 drop-shadow">
-            স্লট যত বেশি, প্রতি মাসের ইনকাম তত বেশি 🚀
+            স্লট যত বেশি, সম্ভাব্য মাসিক রিওয়ার্ড তত বেশি 🚀
           </p>
           <p className="text-[10px] text-white/90 mt-0.5">
-            ১০টি স্লট রি-ভেরিফাই করে সম্পন্ন করলেই মাসিক মাইনিং চালু হয়ে যাবে।
+            ১০টি স্লট রি-ভেরিফাই করে সম্পন্ন করলে মাসিক রিওয়ার্ড সুবিধা চালু হয়।
           </p>
         </div>
       </div>
@@ -55,7 +55,7 @@ export function RatesBanner() {
       </div>
 
       <p className="relative mt-2.5 text-center text-[10px] font-bold text-yellow-100">
-        📈 হিসাব সহজ — ১ স্লট = মাসে ৫০৳, সারাজীবনের ইনকাম!
+        📈 হিসাব সহজ — ১ স্লট = আনুমানিক ৫০৳/মাস। অ্যাপের নিয়ম ও তহবিলের উপর নির্ভরশীল।
       </p>
     </div>
   );

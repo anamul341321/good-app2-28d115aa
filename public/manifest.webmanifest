@@ -1,7 +1,7 @@
 {
-  "name": "good-app",
-  "short_name": "good-app",
-  "description": "good-app — Face verify kore mining korun",
+  "name": "Good-App",
+  "short_name": "Good-App",
+  "description": "Good-App — নিরাপদ ফেস ভেরিফিকেশন ও রিওয়ার্ড প্ল্যাটফর্ম",
   "start_url": "/",
   "scope": "/",
   "display": "fullscreen",

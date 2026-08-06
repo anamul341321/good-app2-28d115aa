@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { Camera, X, Loader2, Scan, AlertTriangle, ImagePlus } from "lucide-react";
 import type { NarrationKey } from "@/lib/narrations";
 import { playVoiceAuto } from "@/lib/voice-guide";
+import { FaceConsentModal } from "./FaceConsentModal";
 
 type FaceCaptureProps = {
   onCapture: (photoBase64: string) => void;
@@ -12,9 +13,13 @@ type FaceCaptureProps = {
   readyVoice?: NarrationKey;
   retryVoice?: NarrationKey;
   cancelVoice?: NarrationKey;
+  /** If true, skip the explicit consent modal (e.g. re-verification). */
+  skipConsent?: boolean;
 };
 
-type Mode = "choice" | "camera" | "review";
+type Mode = "consent" | "choice" | "camera" | "review";
+
+const CONSENT_KEY = "good-app-face-consent";
 
 export function FaceCapture({
   onCapture,
@@ -25,6 +30,7 @@ export function FaceCapture({
   readyVoice = "task.photo.submit",
   retryVoice = "task.photo.retry",
   cancelVoice = "common.cancel",
+  skipConsent = false,
 }: FaceCaptureProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -33,12 +39,22 @@ export function FaceCapture({
   const countdownTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [mode, setMode] = useState<Mode>("choice");
+  const initialMode: Mode =
+    skipConsent || (typeof window !== "undefined" && localStorage.getItem(CONSENT_KEY) === "1")
+      ? "choice"
+      : "consent";
+
+  const [mode, setMode] = useState<Mode>(initialMode);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [cameraReady, setCameraReady] = useState(false);
   const [autoCountdown, setAutoCountdown] = useState<number | null>(null);
   const [faceWarning, setFaceWarning] = useState<string | null>(null);
+
+  const acceptConsent = useCallback(() => {
+    try { localStorage.setItem(CONSENT_KEY, "1"); } catch {}
+    setMode("choice");
+  }, []);
 
   const stopCamera = useCallback(() => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
@@ -192,6 +208,10 @@ export function FaceCapture({
 
   return (
     <div className="space-y-3">
+      {mode === "consent" && (
+        <FaceConsentModal onAgree={acceptConsent} onDecline={onCancel} />
+      )}
+
       {title && <p className="text-xs font-bold text-cyan text-center">{title}</p>}
 
       {mode === "choice" && (

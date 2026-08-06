@@ -13,6 +13,7 @@ import { Toaster } from "sonner";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { LanguageProvider } from "@/lib/i18n";
+import { useNativeApp } from "@/hooks/useNativeApp";
 
 function NotFoundComponent() {
   return (
@@ -62,19 +63,19 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
-      { title: "good-app" },
-      { name: "description", content: "good-app — Face verify kore mining korun" },
+      { title: "Good-App" },
+      { name: "description", content: "Good-App — নিরাপদ ফেস ভেরিফিকেশন ও রিওয়ার্ড প্ল্যাটফর্ম" },
       { name: "theme-color", content: "#0ea5a4" },
       { name: "google", content: "notranslate" },
       { httpEquiv: "Content-Language", content: "bn" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
-      { name: "apple-mobile-web-app-title", content: "good-app" },
+      { name: "apple-mobile-web-app-title", content: "Good-App" },
       { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
       { name: "mobile-web-app-capable", content: "yes" },
-      { property: "og:title", content: "good-app" },
-      { name: "twitter:title", content: "good-app" },
-      { property: "og:description", content: "good-app — Face verify kore mining korun" },
-      { name: "twitter:description", content: "good-app — Face verify kore mining korun" },
+      { property: "og:title", content: "Good-App" },
+      { name: "twitter:title", content: "Good-App" },
+      { property: "og:description", content: "Good-App — নিরাপদ ফেস ভেরিফিকেশন ও রিওয়ার্ড প্ল্যাটফর্ম" },
+      { name: "twitter:description", content: "Good-App — নিরাপদ ফেস ভেরিফিকেশন ও রিওয়ার্ড প্ল্যাটফর্ম" },
       { name: "twitter:card", content: "summary_large_image" },
       { property: "og:type", content: "website" },
     ],
@@ -111,6 +112,7 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  useNativeApp();
   useEffect(() => {
     // After a redeploy, old chunk hashes 404. Auto-reload once so users never
     // see the raw "Failed to fetch dynamically imported module" toast.

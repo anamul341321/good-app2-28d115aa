@@ -17,6 +17,7 @@ import { VideoTutorialButton } from "@/components/VideoTutorialButton";
 import { BotStartButton } from "@/components/BotStartButton";
 import { KycAlertBanner } from "@/components/KycAlertBanner";
 import { GmailSecurityBanner } from "@/components/GmailSecurityBanner";
+import { ComplianceDisclaimer } from "@/components/ComplianceDisclaimer";
 
 import { useLang } from "@/lib/i18n";
 
@@ -151,6 +152,7 @@ function HomePage() {
         adminMessage={(data as any)?.payoutSettings?.withdrawOffMessage}
         rates={(data as any)?.bonus?.rates ?? null}
       />
+      <ComplianceDisclaimer />
       <WithdrawFeed />
 
       <VoucherPopup vouchers={(data as any).vouchers ?? []} onClaimed={() => refetch()} />
