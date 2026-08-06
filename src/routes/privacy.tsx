@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ShieldCheck, Database, Eye, Trash2, Lock, Mail, ArrowLeft, Baby, Share2, Clock, UserCheck, RefreshCw } from "lucide-react";
+import { ShieldCheck, Database, Eye, Trash2, Lock, Mail, ArrowLeft, Baby, Share2, Clock, UserCheck } from "lucide-react";
 
 export const Route = createFileRoute("/privacy")({
   head: () => ({
