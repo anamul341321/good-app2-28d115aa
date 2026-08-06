@@ -5,10 +5,10 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   Settings as SettingsIcon, ShieldCheck, KeyRound, Smartphone, Phone,
-  Loader2, LogOut, MonitorSmartphone, FileText, Send, Check,
+  Loader2, LogOut, MonitorSmartphone, FileText, Send, Check, Trash2,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { getAccountSettings, changePhoneNumber } from "@/lib/account.functions";
+import { getAccountSettings, changePhoneNumber, deleteMyAccount } from "@/lib/account.functions";
 import { listMyDevices, revokeDevice, revokeOtherDevices } from "@/lib/sessions.functions";
 import { requestEmailVerifyOtp, confirmEmailVerifyOtp } from "@/lib/email-verify.functions";
 import { requestPasswordChangeOtp, changePasswordWithOtp } from "@/lib/password-change.functions";
@@ -99,6 +99,12 @@ function SettingsPage() {
   // phone change
   const [newPhone, setNewPhone] = useState("");
   const [phoneBusy, setPhoneBusy] = useState(false);
+
+  // account delete
+  const delAccountFn = useServerFn(deleteMyAccount);
+  const [showDelete, setShowDelete] = useState(false);
+  const [delWord, setDelWord] = useState("");
+  const [delBusy, setDelBusy] = useState(false);
 
   useEffect(() => {
     if (acc?.phone) setNewPhone(acc.phone);
@@ -402,6 +408,61 @@ function SettingsPage() {
         className="w-full py-3 rounded-xl bg-rose/10 text-rose font-black text-sm flex items-center justify-center gap-2 btn-press">
         <LogOut className="w-4 h-4" /> এই ডিভাইস থেকে লগআউট
       </button>
+
+      <Card
+        icon={<Trash2 className="w-4 h-4 text-rose" />}
+        title="একাউন্ট ডিলিট করুন"
+        desc="একাউন্ট ডিলিট করলে আপনার সব তথ্য — প্রোফাইল, ফেস ছবি, স্লট, ব্যালেন্স ও হিসাব — স্থায়ীভাবে মুছে যাবে। এটি আর ফেরানো যাবে না।"
+      >
+        {!showDelete ? (
+          <button onClick={() => setShowDelete(true)}
+            className="w-full py-3 rounded-xl bg-rose/10 border-2 border-rose/30 text-rose font-black text-sm flex items-center justify-center gap-2 btn-press">
+            <Trash2 className="w-4 h-4" /> আমি একাউন্ট ডিলিট করতে চাই
+          </button>
+        ) : (
+          <div className="space-y-2">
+            <ul className="text-[11px] font-bold text-muted-foreground space-y-1">
+              <li>⚠️ ব্যালেন্স থাকলে আগে উইথড্র করে নিন — ডিলিটের পর টাকা ফেরত পাওয়া যাবে না।</li>
+              <li>⚠️ পেন্ডিং উইথড্র থাকলে ডিলিট হবে না।</li>
+              <li>⚠️ ফেস ছবি ও সব ডেটা সাথে সাথেই মুছে যাবে।</li>
+            </ul>
+            <label className="text-[11px] font-black text-rose uppercase tracking-wider block">
+              নিশ্চিত করতে বড় হাতের DELETE লিখুন
+            </label>
+            <input
+              value={delWord}
+              onChange={(e) => setDelWord(e.target.value.toUpperCase())}
+              placeholder="DELETE"
+              className={inputCls}
+            />
+            <button
+              disabled={delBusy || delWord.trim() !== "DELETE"}
+              onClick={async () => {
+                setDelBusy(true);
+                try {
+                  await delAccountFn({ data: { confirm: delWord.trim() } });
+                  toast.success("আপনার একাউন্ট স্থায়ীভাবে ডিলিট হয়েছে");
+                  await qc.cancelQueries();
+                  qc.clear();
+                  await supabase.auth.signOut();
+                  router.navigate({ to: "/auth", replace: true });
+                } catch (e: any) {
+                  toast.error(e?.message ?? "ডিলিট করা যায়নি");
+                } finally {
+                  setDelBusy(false);
+                }
+              }}
+              className="w-full py-3 rounded-xl bg-rose text-white font-black text-sm flex items-center justify-center gap-2 disabled:opacity-60 btn-press">
+              {delBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+              স্থায়ীভাবে ডিলিট করুন
+            </button>
+            <button onClick={() => { setShowDelete(false); setDelWord(""); }}
+              className="w-full py-2 text-[11px] font-bold text-muted-foreground">
+              ✖ বাতিল — ডিলিট করব না
+            </button>
+          </div>
+        )}
+      </Card>
     </div>
   );
 }

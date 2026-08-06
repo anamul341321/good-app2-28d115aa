@@ -59,3 +59,55 @@ export const changePhoneNumber = createServerFn({ method: "POST" })
 
     return { ok: true as const, phone };
   });
+
+/**
+ * সত্যিকারের একাউন্ট ডিলিট — ইউজার নিজেই করতে পারবে।
+ * ফেস ছবি, avatar, KYC ফাইল স্টোরেজ থেকে মুছে auth ইউজার ডিলিট হয় (DB rows cascade)।
+ */
+export const deleteMyAccount = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { confirm: string }) => d)
+  .handler(async ({ data, context }) => {
+    const word = String(data.confirm ?? "").trim().toUpperCase();
+    if (word !== "DELETE") throw new Error('নিশ্চিত করতে বড় হাতের DELETE লিখুন');
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const uid = context.userId;
+
+    // পেন্ডিং উইথড্র থাকলে ডিলিট আটকে দিন
+    const { data: pending } = await supabaseAdmin
+      .from("withdrawals")
+      .select("id")
+      .eq("user_id", uid)
+      .eq("status", "pending")
+      .limit(1);
+    if (pending && pending.length > 0) {
+      throw new Error("আপনার একটি উইথড্র রিকোয়েস্ট পেন্ডিং আছে — সেটি শেষ হলে ডিলিট করতে পারবেন");
+    }
+
+    // ফেস ছবি মুছুন
+    try {
+      const { data: tasks } = await supabaseAdmin
+        .from("tasks")
+        .select("face_photo_url")
+        .eq("user_id", uid);
+      const paths = (tasks ?? [])
+        .map((t: any) => t.face_photo_url)
+        .filter((p: any): p is string => !!p);
+      if (paths.length) await supabaseAdmin.storage.from("face-photos").remove(paths);
+    } catch { /* ছবি না মুছলেও ডিলিট চলবে */ }
+
+    // avatar + KYC ফাইল মুছুন
+    for (const bucket of ["avatars", "kyc"]) {
+      try {
+        const { data: files } = await supabaseAdmin.storage.from(bucket).list(uid, { limit: 200 });
+        const paths = (files ?? []).map((f: any) => `${uid}/${f.name}`);
+        if (paths.length) await supabaseAdmin.storage.from(bucket).remove(paths);
+      } catch { /* ignore */ }
+    }
+
+    const { error } = await supabaseAdmin.auth.admin.deleteUser(uid);
+    if (error) throw new Error("একাউন্ট ডিলিট করা যায়নি — সাপোর্টে জানান");
+
+    return { ok: true as const };
+  });
