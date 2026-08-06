@@ -112,6 +112,7 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  useNativeApp();
   useEffect(() => {
     // After a redeploy, old chunk hashes 404. Auto-reload once so users never
     // see the raw "Failed to fetch dynamically imported module" toast.
