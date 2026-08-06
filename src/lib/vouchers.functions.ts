@@ -31,21 +31,17 @@ export const claimVoucher = createServerFn({ method: "POST" })
     if (v.user_id !== userId) throw new Error("এই ভাউচার আপনার না");
     if (v.status !== "pending") throw new Error("ইতোমধ্যে ক্লেইম হয়ে গেছে");
 
-    // Ensure mining_state row exists
-    await supabaseAdmin
-      .from("mining_state")
-      .upsert({ user_id: userId }, { onConflict: "user_id", ignoreDuplicates: true });
+    // Atomic bonus credit (keeps voucher money in the bonus pocket).
+    const { error: uErr } = await supabaseAdmin.rpc("credit_bonus_balance", {
+      _user_id: userId,
+      _amount: Number(v.amount),
+    });
+    if (uErr) throw new Error(uErr.message);
 
     const { data: ms } = await supabaseAdmin
-      .from("mining_state").select("accrued_amount,bonus_amount").eq("user_id", userId).maybeSingle();
-    const next = Number(ms?.accrued_amount ?? 0) + Number(v.amount);
-    const nextBonus = Number((ms as any)?.bonus_amount ?? 0) + Number(v.amount);
+      .from("mining_state").select("accrued_amount").eq("user_id", userId).maybeSingle();
+    const next = Number(ms?.accrued_amount ?? 0);
 
-    const { error: uErr } = await supabaseAdmin
-      .from("mining_state")
-      .update({ accrued_amount: next, bonus_amount: nextBonus })
-      .eq("user_id", userId);
-    if (uErr) throw new Error(uErr.message);
 
     const { error: cErr } = await supabaseAdmin
       .from("bonus_vouchers")
