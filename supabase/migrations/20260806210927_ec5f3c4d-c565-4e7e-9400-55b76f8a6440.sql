@@ -1,0 +1,1 @@
+UPDATE public.bonus_settings SET email_otp_enabled = false WHERE id = 'default';
