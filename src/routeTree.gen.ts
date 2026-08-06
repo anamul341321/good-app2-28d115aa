@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as DataSafetyRouteImport } from './routes/data-safety'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdminLoginRouteImport } from './routes/admin-login'
 import { Route as AdminRouteImport } from './routes/admin'
@@ -65,6 +66,11 @@ const TermsRoute = TermsRouteImport.update({
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DataSafetyRoute = DataSafetyRouteImport.update({
+  id: '/data-safety',
+  path: '/data-safety',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -302,6 +308,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/admin-login': typeof AdminLoginRoute
   '/auth': typeof AuthRoute
+  '/data-safety': typeof DataSafetyRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
   '/earnings': typeof AuthenticatedEarningsRoute
@@ -349,6 +356,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin-login': typeof AdminLoginRoute
   '/auth': typeof AuthRoute
+  '/data-safety': typeof DataSafetyRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
   '/earnings': typeof AuthenticatedEarningsRoute
@@ -399,6 +407,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/admin-login': typeof AdminLoginRoute
   '/auth': typeof AuthRoute
+  '/data-safety': typeof DataSafetyRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
   '/_authenticated/earnings': typeof AuthenticatedEarningsRoute
@@ -449,6 +458,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/admin-login'
     | '/auth'
+    | '/data-safety'
     | '/privacy'
     | '/terms'
     | '/earnings'
@@ -496,6 +506,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin-login'
     | '/auth'
+    | '/data-safety'
     | '/privacy'
     | '/terms'
     | '/earnings'
@@ -545,6 +556,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/admin-login'
     | '/auth'
+    | '/data-safety'
     | '/privacy'
     | '/terms'
     | '/_authenticated/earnings'
@@ -595,6 +607,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRouteWithChildren
   AdminLoginRoute: typeof AdminLoginRoute
   AuthRoute: typeof AuthRoute
+  DataSafetyRoute: typeof DataSafetyRoute
   PrivacyRoute: typeof PrivacyRoute
   TermsRoute: typeof TermsRoute
   CardUidRoute: typeof CardUidRoute
@@ -625,6 +638,13 @@ declare module '@tanstack/react-router' {
       path: '/privacy'
       fullPath: '/privacy'
       preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/data-safety': {
+      id: '/data-safety'
+      path: '/data-safety'
+      fullPath: '/data-safety'
+      preLoaderRoute: typeof DataSafetyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -1024,6 +1044,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRouteWithChildren,
   AdminLoginRoute: AdminLoginRoute,
   AuthRoute: AuthRoute,
+  DataSafetyRoute: DataSafetyRoute,
   PrivacyRoute: PrivacyRoute,
   TermsRoute: TermsRoute,
   CardUidRoute: CardUidRoute,
