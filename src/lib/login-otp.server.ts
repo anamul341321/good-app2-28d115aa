@@ -169,22 +169,31 @@ async function verifyPassword(account: Account, password: string) {
 async function startLoginOtpWork(data: LoginData) {
   const account = await resolveAccount(data.identifier);
 
-  // Gmail যোগ করা/ভেরিফাইড না থাকলে আগের মতোই শুধু নম্বর+পাসওয়ার্ডে লগইন।
-  // Gmail ভেরিফাইড থাকলে (admin switch off থাকলেও) লগইনে কোড যাবে — 2-Step।
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const [session, recentResult] = await Promise.all([
+  const { isEmailOtpEnabled } = await import("./auth-mode.server");
+  const [session, otpEnabled] = await Promise.all([
     verifyPassword(account, data.password),
-    account.id
-      ? supabaseAdmin.from("email_verify_otps").select("created_at").eq("user_id", account.id)
-          .is("used_at", null).order("created_at", { ascending: false }).limit(1).maybeSingle()
-      : Promise.resolve({ data: null }),
+    isEmailOtpEnabled(),
   ]);
+
+  // Admin switch OFF থাকলে কোনো account-এই Gmail code পাঠানো বা চাওয়া হবে না।
+  if (!otpEnabled) {
+    return { ok: true as const, needOtp: false as const, session };
+  }
 
   if (!account.id || !account.contactEmail || !account.emailVerified) {
     return { ok: true as const, needOtp: false as const, session };
   }
 
-  const recent = recentResult.data as { created_at?: string } | null;
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: recent } = await supabaseAdmin
+    .from("email_verify_otps")
+    .select("created_at")
+    .eq("user_id", account.id)
+    .is("used_at", null)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
   if (recent?.created_at && Date.now() - new Date(recent.created_at).getTime() < 60_000) {
     return { ok: true as const, needOtp: true as const, resent: false as const, destination: maskEmail(account.contactEmail) };
   }
