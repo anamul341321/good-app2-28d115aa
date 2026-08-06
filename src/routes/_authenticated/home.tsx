@@ -152,6 +152,7 @@ function HomePage() {
         adminMessage={(data as any)?.payoutSettings?.withdrawOffMessage}
         rates={(data as any)?.bonus?.rates ?? null}
       />
+      <ComplianceDisclaimer />
       <WithdrawFeed />
 
       <VoucherPopup vouchers={(data as any).vouchers ?? []} onClaimed={() => refetch()} />
