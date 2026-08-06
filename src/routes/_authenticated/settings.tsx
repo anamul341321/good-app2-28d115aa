@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import {
   Settings as SettingsIcon, ShieldCheck, KeyRound, Smartphone, Phone,
   Loader2, LogOut, MonitorSmartphone, FileText, Send, Check, Trash2,
+  Shield,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getAccountSettings, changePhoneNumber, deleteMyAccount } from "@/lib/account.functions";
