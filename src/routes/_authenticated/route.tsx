@@ -1,6 +1,15 @@
 import { createFileRoute, Outlet, Link, useRouter } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
-import { Home, Wallet, ArrowDownToLine, LogOut, Loader2, RefreshCcw, Gift, User, Settings } from "lucide-react";
+import { Home, Wallet, ArrowDownToLine, LogOut, Loader2, RefreshCcw, Gift, User, Settings, MoreVertical, FileText, ShieldCheck, Lock, ScrollText } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
 import { useQuery } from "@tanstack/react-query";
 import { getProfileHistory } from "@/lib/profile.functions";
 import { useEffect, useState } from "react";
@@ -174,16 +183,57 @@ function AuthedLayout() {
           </div>
           <div className="flex items-center gap-1.5">
             <LanguageToggle />
-            <Link to="/settings" aria-label="সেটিংস"
-              className="btn-press flex items-center gap-1.5 px-3 py-2 rounded-xl gradient-navy text-gold border border-gold/40 shadow-lg">
-              <Settings className="w-5 h-5" />
-              <span className="text-[11px] font-black">{t("সেটিংস", "Settings")}</span>
-            </Link>
-            <button onClick={logout} data-voice="common.logout"
-              className="btn-press p-2 rounded-lg bg-surface-2 border border-border text-muted-foreground hover:text-rose">
-              <LogOut className="w-4 h-4" />
-            </button>
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                aria-label={t("মেনু", "Menu")}
+                className="btn-press flex items-center gap-1.5 rounded-xl gradient-navy px-3 py-2 text-gold border border-gold/40 shadow-lg outline-none">
+                <MoreVertical className="w-5 h-5" />
+                <span className="text-[11px] font-black">{t("মেনু", "Menu")}</span>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52 glass border-violet/30">
+                <DropdownMenuLabel className="text-[11px] font-black text-muted-foreground">
+                  {t("যাবতীয় কাজ", "Everything else")}
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link to="/settings" className="flex items-center gap-2 text-xs font-bold">
+                    <Settings className="w-4 h-4 text-gold" /> {t("সেটিংস", "Settings")}
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/profile" className="flex items-center gap-2 text-xs font-bold">
+                    <User className="w-4 h-4 text-cyan" /> {t("প্রোফাইল", "Profile")}
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/earnings" className="flex items-center gap-2 text-xs font-bold">
+                    <FileText className="w-4 h-4 text-emerald-400" /> {t("আয়ের হিসাব", "Earnings")}
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/kyc" className="flex items-center gap-2 text-xs font-bold">
+                    <ShieldCheck className="w-4 h-4 text-violet-400" /> {t("কেওয়াইসি", "KYC")}
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link to="/privacy" className="flex items-center gap-2 text-xs font-bold">
+                    <Lock className="w-4 h-4 text-cyan" /> {t("প্রাইভেসি পলিসি", "Privacy policy")}
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/terms" className="flex items-center gap-2 text-xs font-bold">
+                    <ScrollText className="w-4 h-4 text-amber" /> {t("শর্তাবলি", "Terms")}
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={() => logout()} className="flex items-center gap-2 text-xs font-black text-rose">
+                  <LogOut className="w-4 h-4" /> {t("লগআউট", "Log out")}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
+
         </div>
       </header>
 

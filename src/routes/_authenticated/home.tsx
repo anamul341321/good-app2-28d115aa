@@ -552,6 +552,22 @@ function HomePage() {
         <TourReplayButton />
       </div>
 
+      <div className="glass rounded-2xl p-3 mb-2">
+        <p className="text-[10px] font-black text-muted-foreground mb-2 text-center">আইন ও নিরাপত্তা</p>
+        <div className="grid grid-cols-3 gap-2">
+          <Link to="/privacy" className="btn-press flex flex-col items-center gap-1 rounded-xl bg-surface-2 border border-border py-2.5 text-[10px] font-black">
+            <Lock className="w-4 h-4 text-cyan" /> প্রাইভেসি
+          </Link>
+          <Link to="/terms" className="btn-press flex flex-col items-center gap-1 rounded-xl bg-surface-2 border border-border py-2.5 text-[10px] font-black">
+            <ShieldCheck className="w-4 h-4 text-amber" /> শর্তাবলি
+          </Link>
+          <Link to="/settings" className="btn-press flex flex-col items-center gap-1 rounded-xl bg-surface-2 border border-border py-2.5 text-[10px] font-black">
+            <Sparkles className="w-4 h-4 text-violet-400" /> সেটিংস
+          </Link>
+        </div>
+      </div>
+
+
       {lightbox && (
         <div onClick={() => setLightbox(null)}
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-in fade-in">
