@@ -438,7 +438,10 @@ export function AuthPage() {
             <p className="text-xs text-muted-foreground mt-1.5 font-bold">
               <span className="text-cyan">১০টি টাস্ক</span>
               <span className="mx-1.5 text-muted-foreground">→</span>
-              <span className="text-violet">মাসে ৫০০৳ মাইনিং</span>
+              <span className="text-violet">মাসিক রিওয়ার্ড সুবিধা</span>
+            </p>
+            <p className="text-[10px] text-muted-foreground mt-1 px-2">
+              রিওয়ার্ড অ্যাপের নিয়ম, তহবিল ও সক্রিয় স্লটের উপর নির্ভরশীল — কোনো "গ্যারান্টিড ইনকাম" নয়।
             </p>
             <div className="gold-divider mt-3" />
             <div className="mt-4">
