@@ -208,6 +208,10 @@ export function FaceCapture({
 
   return (
     <div className="space-y-3">
+      {mode === "consent" && (
+        <FaceConsentModal onAgree={acceptConsent} onDecline={onCancel} />
+      )}
+
       {title && <p className="text-xs font-bold text-cyan text-center">{title}</p>}
 
       {mode === "choice" && (
