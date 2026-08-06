@@ -405,6 +405,12 @@ function SettingsPage() {
         </Link>
       </Card>
 
+      <Card icon={<Shield className="w-4 h-4 text-cyan-500" />} title="ডেটা সেফটি ও অনুমতি" desc="আমরা কী কী ডেটা সংগ্রহ করি, কেন করি এবং কতদিন রাখি — Play Store-এর জন্য সারসংক্ষেপ।">
+        <Link to="/data-safety" className="w-full py-3 rounded-xl bg-surface-2 border-2 border-border font-black text-sm flex items-center justify-center gap-2 btn-press text-navy">
+          <Shield className="w-4 h-4" /> ডেটা সেফটি দেখুন
+        </Link>
+      </Card>
+
       <button onClick={logoutThis}
         className="w-full py-3 rounded-xl bg-rose/10 text-rose font-black text-sm flex items-center justify-center gap-2 btn-press">
         <LogOut className="w-4 h-4" /> এই ডিভাইস থেকে লগআউট
