@@ -79,7 +79,7 @@ export const deleteMyAccount = createServerFn({ method: "POST" })
       .from("withdrawals")
       .select("id")
       .eq("user_id", uid)
-      .in("status", ["pending", "processing"])
+      .eq("status", "pending")
       .limit(1);
     if (pending && pending.length > 0) {
       throw new Error("আপনার একটি উইথড্র রিকোয়েস্ট পেন্ডিং আছে — সেটি শেষ হলে ডিলিট করতে পারবেন");

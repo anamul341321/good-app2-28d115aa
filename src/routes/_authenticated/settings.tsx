@@ -5,10 +5,10 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   Settings as SettingsIcon, ShieldCheck, KeyRound, Smartphone, Phone,
-  Loader2, LogOut, MonitorSmartphone, FileText, Send, Check,
+  Loader2, LogOut, MonitorSmartphone, FileText, Send, Check, Trash2,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { getAccountSettings, changePhoneNumber } from "@/lib/account.functions";
+import { getAccountSettings, changePhoneNumber, deleteMyAccount } from "@/lib/account.functions";
 import { listMyDevices, revokeDevice, revokeOtherDevices } from "@/lib/sessions.functions";
 import { requestEmailVerifyOtp, confirmEmailVerifyOtp } from "@/lib/email-verify.functions";
 import { requestPasswordChangeOtp, changePasswordWithOtp } from "@/lib/password-change.functions";
