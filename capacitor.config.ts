@@ -13,13 +13,18 @@ const config: CapacitorConfig = {
   },
   android: {
     buildOptions: {
-      keystorePath: undefined,
-      keystoreAlias: undefined,
+      // Release signing is handled by CI secrets; leave these undefined for debug builds.
     },
   },
   plugins: {
     SplashScreen: {
-      launchShowDuration: 0,
+      launchShowDuration: 2500,
+      launchAutoHide: true,
+      backgroundColor: '#ffffff',
+      androidSplashResourceName: 'splash',
+      showSpinner: true,
+      androidSpinnerStyle: 'large',
+      spinnerColor: '#0ea5a4',
     },
   },
 };
