@@ -1689,6 +1689,10 @@ export type Database = {
         }
         Returns: Json
       }
+      credit_bonus_balance: {
+        Args: { _amount: number; _user_id: string }
+        Returns: undefined
+      }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
