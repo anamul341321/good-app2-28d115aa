@@ -1,34 +1,40 @@
-# Good-app
+# Good-App
 
-Amke ekta apps baniye diba jeitai 10 ta ghor thakbe ei 10 ta ghor mane 10 ta task complete korte hobe task gula hocche gooddollar er face verification gooddollar er fv code ekhane ache dekhe nio na paile 
+Good-App একটি নিরাপদ ফেস ভেরিফিকেশন ও রিওয়ার্ড প্ল্যাটফর্ম — যেখানে ইউজার ধাপে ধাপে ভেরিফিকেশন টাস্ক সম্পন্ন করে মাইনিং, বোনাস ও রেফার কমিশন উপার্জন করতে পারেন।
 
-https://github.com/mdanamulhsgs87-gif/love-import-sync-ee288c3d
+**Live app:** https://goodapp2.live
 
-Mane 10 ta task j thakbe 1 ta face verification complete kore abr 3din por re verify korle task complete hobe evabe 10 ta task complete korte parle per month a 500 tk pabe taile protidin and proti secound a koto ashe sei hisabe miming hobe live barte thakbe 
+## মূল ফিচার
 
-And eita jekono somoy withdraw korte parbe bkash nagad er maddhome wallet number jeita ekbar dibe seta ar change korte parbe na sob somoy oi number ei payment nite parbe mane sompurno apps ta sumdor kore banao ar re verify and admin penel a jevqbe face save hoi same ei apps eo hobe mane same okhwne jei logic ache ekhaneo thakbe but ekhane sudhu 10 ta thakbe task hisebe
+- **১০টি ভেরিফিকেশন স্লট** — ফার্স্ট ভেরিফিকেশন ও নির্দিষ্ট সময় পর রি-ভেরিফিকেশন
+- **অটোমেটেড ফেস ভেরিফিকেশন** — সম্পূর্ণ অটোমেটেড, কোনো মানুষ ছবি দেখেন না
+- **লাইভ মাইনিং** — প্রতি সেকেন্ডে ব্যালেন্স বাড়ে, ড্যাশবোর্ডে লাইভ দেখা যায়
+- **বোনাস ও রেফার কমিশন** — রেফার করা ইউজারের মাইনিংয়ের উপর কমিশন
+- **উইথড্র** — বিকাশ / নগদ / মোবাইল রিচার্জ / USDT
+- **KYC ও Gmail সিকিউরিটি** — OTP ভেরিফিকেশন সাপোর্ট
+- **টেলিগ্রাম সাপোর্ট বট** — ভয়েস ও টেক্সটে ইউজার সাপোর্ট
+- **অ্যাডমিন প্যানেল** — ইউজার, ভেরিফিকেশন, উইথড্র, মাইনিং ও হিসাব ম্যানেজমেন্ট
 
-Ar baki gula oi repo jeita disi oi apps er motoi 1st veyfy and re verify jemne jemne kaj kore tar por pic khuja name diye scan kore mane face er bepar ta oi code a jemne ache emnei thakbe
+## টেক স্ট্যাক
 
-This project was built with [Lovable](https://lovable.dev).
+TanStack Start (React 19) · Vite · Tailwind CSS · Lovable Cloud (ডাটাবেস, অথ, স্টোরেজ) · Capacitor (Android)
 
-**Live app**: https://good-app2.lovable.app
-
-## Build with Lovable
-
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/9faa7771-af86-4101-8cf2-0ed6dd381713).
-
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
-
-## Development
-
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
+## ডেভেলপমেন্ট
 
 ```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
+npm install
 npm run dev
 ```
+
+## Android বিল্ড
+
+Play Store-এ আপলোডের সম্পূর্ণ গাইড আছে [`PLAYSTORE_SETUP.md`](./PLAYSTORE_SETUP.md) ফাইলে।
+
+## আইনি পেজ
+
+- [গোপনীয়তা নীতি](https://goodapp2.live/privacy)
+- [শর্তাবলি](https://goodapp2.live/terms)
+
+---
+
+Built with [Lovable](https://lovable.dev).
