@@ -30,6 +30,7 @@ export function FaceCapture({
   readyVoice = "task.photo.submit",
   retryVoice = "task.photo.retry",
   cancelVoice = "common.cancel",
+  skipConsent = false,
 }: FaceCaptureProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -38,12 +39,22 @@ export function FaceCapture({
   const countdownTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [mode, setMode] = useState<Mode>("choice");
+  const initialMode: Mode =
+    skipConsent || (typeof window !== "undefined" && localStorage.getItem(CONSENT_KEY) === "1")
+      ? "choice"
+      : "consent";
+
+  const [mode, setMode] = useState<Mode>(initialMode);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [cameraReady, setCameraReady] = useState(false);
   const [autoCountdown, setAutoCountdown] = useState<number | null>(null);
   const [faceWarning, setFaceWarning] = useState<string | null>(null);
+
+  const acceptConsent = useCallback(() => {
+    try { localStorage.setItem(CONSENT_KEY, "1"); } catch {}
+    setMode("choice");
+  }, []);
 
   const stopCamera = useCallback(() => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
