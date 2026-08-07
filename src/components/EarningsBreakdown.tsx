@@ -27,12 +27,13 @@ export type BreakdownData = {
     isActive: boolean;
     activatedAt: string | null;
     daysRunning: number;
+    legacyUnclassified?: number;
     referees: { uid: number | null; name: string; slots: number; monthly: number }[];
     steps: BreakdownStep[];
   };
 };
 
-export type BreakdownTotals = { withdrawn?: number; balance?: number; debtActive?: number };
+export type BreakdownTotals = { withdrawn?: number; paidWithdrawals?: number; balance?: number; debtActive?: number };
 
 /**
  * "ধাপে ধাপে হিসাব" — explains exactly how the bonus total and the mining
@@ -45,7 +46,8 @@ export function EarningsBreakdown({ data, totals }: { data: BreakdownData; total
   const selfFirst = b.selfFirst ?? b.steps.find((s) => s.key === "self-first")?.amount ?? 0;
   const selfRe = b.selfReverify ?? b.steps.find((s) => s.key === "self-reverify")?.amount ?? 0;
   const other = b.otherTotal ?? 0;
-  const lifetimeIn = b.total + m.total;
+  const legacyUnclassified = m.legacyUnclassified ?? 0;
+  const lifetimeIn = b.total + m.total + legacyUnclassified;
   const withdrawn = totals?.withdrawn ?? 0;
 
   return (
@@ -60,10 +62,16 @@ export function EarningsBreakdown({ data, totals }: { data: BreakdownData; total
         </div>
         <p className="text-[11px] font-bold text-navy leading-relaxed">
           🧮 <b>{tk(b.total)}</b> বোনাস + <b>{tk(m.selfTotal)}</b> নিজের মাইনিং + <b>{tk(m.referralTotal)}</b> রেফার ১০% কমিশন
+          {legacyUnclassified > 0 ? <> + <b className="text-amber">{tk(legacyUnclassified)}</b> পুরোনো অশ্রেণিবদ্ধ ক্রেডিট</> : null}
           = <b>{tk(lifetimeIn)}</b> মোট আয়। এর মধ্যে <b>{tk(withdrawn)}</b> তোলা/খরচ হয়েছে
           {(totals?.debtActive ?? 0) > 0 ? <> এবং <b>{tk(totals?.debtActive ?? 0)}</b> warning বাকি আছে</> : null}, তাই এখন হাতে{" "}
           <b>{tk(totals?.balance ?? lifetimeIn - withdrawn)}</b>।
         </p>
+        {totals?.paidWithdrawals !== undefined && totals.paidWithdrawals !== withdrawn && (
+          <p className="rounded-lg bg-surface-2 p-2 text-[10px] font-bold text-muted-foreground">
+            হাতে paid হয়েছে <b className="text-emerald">{tk(totals.paidWithdrawals)}</b>; ফি/সমন্বয়সহ ব্যালেন্স থেকে মোট কাটা <b className="text-rose">{tk(withdrawn)}</b>।
+          </p>
+        )}
       </div>
 
       {/* সংক্ষেপে — একদম সহজ ভাষায় */}
@@ -93,6 +101,11 @@ export function EarningsBreakdown({ data, totals }: { data: BreakdownData; total
             🧮 তাই মোট এসেছে <b>{tk(lifetimeIn)}</b> — বোনাস {tk(b.total)} + মাইনিং {tk(m.total)}।
             <span className="block text-[10px] font-bold text-muted-foreground">নিচে ধাপে ধাপে প্রতিটি টাকার হিসাব দেওয়া আছে।</span>
           </li>
+          {legacyUnclassified > 0 && (
+            <li className="rounded-lg border border-amber/40 bg-amber/10 p-2 text-amber">
+              ⚠️ <b>{tk(legacyUnclassified)}</b> পুরোনো ক্রেডিটের নির্ভরযোগ্য উৎস পাওয়া যায়নি—এটি মাইনিং বা রেফার কমিশন হিসেবে দেখানো হচ্ছে না।
+            </li>
+          )}
         </ul>
       </div>
 

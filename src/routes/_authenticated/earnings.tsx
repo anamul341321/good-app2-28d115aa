@@ -65,6 +65,7 @@ function EarningsPage() {
     { label: "📤 অন্যকে পাঠিয়েছেন", amount: data.rows.filter((r) => r.kind === "transfer_out").reduce((s, r) => s + Math.abs(Math.min(0, r.amount)), 0) },
     { label: "➖ অ্যাডমিন কেটেছে", amount: data.rows.filter((r) => r.kind === "admin_out").reduce((s, r) => s + Math.abs(Math.min(0, r.amount)), 0) },
     { label: "⚠️ ভুল পেমেন্ট ফেরত বাকি", amount: t.debtActive },
+    { label: "🧾 উইথড্র ফি/পুরোনো সমন্বয়", amount: t.feeOrAdjustmentOut },
   ].filter((o) => o.amount > 0.004);
   const totalOut = outs.reduce((s, x) => s + x.amount, 0);
 
@@ -82,7 +83,7 @@ function EarningsPage() {
         <div className="mt-4 grid grid-cols-3 gap-2">
           <HeroBox label="এখন ব্যালেন্স" value={tk(t.balance)} />
           <HeroBox label="মোট মাইনিং" value={tk(t.miningTotal)} />
-          <HeroBox label="মোট তোলা" value={tk(t.withdrawn)} />
+          <HeroBox label="ব্যালেন্স থেকে কাটা" value={tk(t.withdrawn)} />
         </div>
       </div>
 
@@ -115,6 +116,10 @@ function EarningsPage() {
           ℹ️ ক্লেইম করলে ব্যালেন্স কমে না — শুধু এতদিনের মাইনিং আয় তারিখসহ নিচের হিসাবে লেখা হয়। প্রতিদিন বা প্রতি মাসে যখন চান ক্লেইম করতে পারবেন (প্রতি ৬ ঘণ্টায় একবার)।
           {c.lastClaimAt && <> শেষ ক্লেইম: {new Date(c.lastClaimAt).toLocaleString("bn-BD")}।</>}
         </p>
+        <div className="grid grid-cols-2 gap-2 rounded-2xl border border-border bg-surface-2 p-3 text-center">
+          <div><p className="text-[9px] text-muted-foreground">হাতে paid</p><p className="mono-num font-black text-emerald">{tk(t.paidWithdrawals)}</p></div>
+          <div><p className="text-[9px] text-muted-foreground">ফি/সমন্বয়সহ কাটা</p><p className="mono-num font-black text-rose">{tk(t.withdrawn)}</p></div>
+        </div>
       </div>
 
       {/* Source split */}

@@ -1009,6 +1009,7 @@ function UserDetail() {
             data={(data as any).breakdown}
             totals={{
               withdrawn: Number((data as any).mining?.withdrawn_amount ?? 0),
+              paidWithdrawals: ((data as any).withdrawals ?? []).filter((w: any) => w.status === "paid").reduce((sum: number, w: any) => sum + Number(w.amount), 0),
               balance:
                 Number((data as any).mining?.accrued_amount ?? 0) -
                 Number((data as any).mining?.withdrawn_amount ?? 0),

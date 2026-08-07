@@ -34,11 +34,13 @@ export function BalanceHistory({ mining, income, withdrawals, debts, profile, br
     .filter((d) => d.status === "active").reduce((s, d) => s + Number(d.amount), 0);
 
   // Mining part of accrued = everything credited that wasn't a bonus/gift.
-  const miningPart = Math.max(0, accrued - bonusTotal - transferIn);
+  const trackedSelfMining = Number(breakdown?.mining?.selfTotal ?? mining?.self_mining_accrued ?? 0);
+  const trackedReferral = Number(breakdown?.mining?.referralTotal ?? mining?.referral_accrued ?? 0);
+  const miningPart = Math.max(0, trackedSelfMining + trackedReferral);
   const bonusPart = Math.max(0, bonusTotal - voucher - adminPlus);
   // Referral 10% commission is credited *inside* mining — split it out so it is
   // obvious how much of the mining income came from the user's referrals.
-  const referralPart = Math.min(miningPart, Math.max(0, Number(t.referralAccrued ?? mining?.referral_accrued ?? 0)));
+  const referralPart = Math.min(miningPart, Math.max(0, trackedReferral));
   const selfMiningPart = Math.max(0, miningPart - referralPart);
 
   const sources: Source[] = [
@@ -59,7 +61,10 @@ export function BalanceHistory({ mining, income, withdrawals, debts, profile, br
     { label: "📤 অন্যকে পাঠিয়েছে", amount: transferOut },
     { label: "➖ অ্যাডমিন কেটেছে", amount: adminMinus },
   ].filter((o) => o.amount > 0.004);
-  const totalOut = outs.reduce((s, x) => s + x.amount, 0);
+  const accountedOut = withdrawPaid + rechargeOut + transferOut + adminMinus;
+  const feeOrAdjustmentOut = Math.max(0, withdrawnTotal - accountedOut);
+  if (feeOrAdjustmentOut > 0.004) outs.push({ label: "🧾 Withdraw fee / পুরোনো সমন্বয়", amount: feeOrAdjustmentOut });
+  const reconciledTotalOut = outs.reduce((s, x) => s + x.amount, 0);
   const balance = accrued - withdrawnTotal - debtActive;
 
   /** Approximate funding mix of a withdrawal, using the user's overall income mix. */
@@ -93,11 +98,11 @@ export function BalanceHistory({ mining, income, withdrawals, debts, profile, br
       {/* Simple summary line */}
       <div className="grid grid-cols-3 gap-2">
         <Box label="মোট আয়" value={tk(totalIn)} color="text-emerald" icon={<ArrowDownRight className="w-3 h-3" />} />
-        <Box label="মোট খরচ/তোলা" value={tk(totalOut)} color="text-rose" icon={<ArrowUpRight className="w-3 h-3" />} />
+        <Box label="ব্যালেন্স থেকে কাটা" value={tk(reconciledTotalOut)} color="text-rose" icon={<ArrowUpRight className="w-3 h-3" />} />
         <Box label="এখন ব্যালেন্স" value={tk(balance)} color={balance < 0 ? "text-rose" : "text-cyan"} icon={<Wallet className="w-3 h-3" />} />
       </div>
       <p className="text-[10px] text-muted-foreground leading-relaxed">
-        সহজ কথায়: এই user মোট <b className="text-emerald">{tk(totalIn)}</b> আয় করেছে, তার মধ্যে <b className="text-rose">{tk(totalOut)}</b> তুলে/খরচ করে ফেলেছে
+        সহজ কথায়: এই user মোট <b className="text-emerald">{tk(totalIn)}</b> আয় করেছে, তার মধ্যে হাতে paid হয়েছে <b className="text-rose">{tk(withdrawPaid)}</b> এবং ফি/রিচার্জ/ট্রান্সফারসহ ব্যালেন্স থেকে মোট <b className="text-rose">{tk(reconciledTotalOut)}</b> কাটা হয়েছে
         {debtActive > 0 ? <> এবং <b className="text-rose">{tk(debtActive)}</b> warning/ঋণ বাকি আছে</> : null}, তাই এখন হাতে আছে <b className="text-cyan">{tk(balance)}</b>।
       </p>
 
@@ -200,7 +205,7 @@ export function BalanceHistory({ mining, income, withdrawals, debts, profile, br
               phone: profile?.phone_number ?? null,
               balance,
               totalIn,
-              totalOut,
+              totalOut: reconciledTotalOut,
               debt: debtActive,
               sources: sources.map((s) => ({ key: s.key, label: s.label, amount: s.amount })),
               outs,
