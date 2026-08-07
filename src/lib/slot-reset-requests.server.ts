@@ -20,8 +20,9 @@ export async function createSlotResetRequest(opts: {
   const profile = await findProfileByUid(opts.uid);
   if (!profile) return { ok: false, error: "এই UID দিয়ে কোনো একাউন্ট পাওয়া যায়নি।" };
 
-  const slots = (opts.slots.length ? opts.slots : await listSlotNumbers(opts.uid))
-    .filter((n) => Number.isInteger(n) && n >= 1 && n <= 500);
+  const slots = (opts.slots.length ? opts.slots : await listSlotNumbers(opts.uid)).filter(
+    (n) => Number.isInteger(n) && n >= 1 && n <= 500,
+  );
   if (!slots.length) return { ok: false, error: "কোন স্লটটি রিসেট করতে হবে সেটা বুঝতে পারিনি।" };
 
   // একই স্লটের পুরোনো pending অনুরোধ থাকলে সেটাই বাতিল করে নতুনটা রাখব।
@@ -36,7 +37,10 @@ export async function createSlotResetRequest(opts: {
       code: cancelError.code,
       message: cancelError.message,
     });
-    return { ok: false, error: "আগের অনুরোধটি বন্ধ করা যায়নি, একটু পরে চেষ্টা করুন।" };
+    return {
+      ok: false,
+      error: "আগের অনুরোধটি বন্ধ করা যায়নি, একটু পরে চেষ্টা করুন।",
+    };
   }
 
   const { data, error } = await supabaseAdmin
@@ -76,7 +80,10 @@ export async function applyApprovedReset(requestId: string, userId: string) {
   if (req.status !== "pending") throw new Error("এই অনুরোধটি আগেই সম্পন্ন হয়েছে");
 
   const { data: profile } = await supabaseAdmin
-    .from("profiles").select("uid_seq, display_name").eq("id", userId).maybeSingle();
+    .from("profiles")
+    .select("uid_seq, display_name")
+    .eq("id", userId)
+    .maybeSingle();
   const uid = String(profile?.uid_seq ?? "");
 
   const { resetSlotsForUid } = await import("@/lib/telegram-slot.server");

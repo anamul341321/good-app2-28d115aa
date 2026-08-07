@@ -23,10 +23,14 @@ export const getPendingSlotResets = createServerFn({ method: "GET" })
 
 export const respondSlotReset = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i: unknown) => z.object({
-    requestId: z.string().uuid(),
-    approve: z.boolean(),
-  }).parse(i))
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        requestId: z.string().uuid(),
+        approve: z.boolean(),
+      })
+      .parse(i),
+  )
   .handler(async ({ data, context }) => {
     const mod = await import("@/lib/slot-reset-requests.server");
     if (!data.approve) {

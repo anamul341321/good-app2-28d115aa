@@ -18,19 +18,23 @@ export function SlotResetApproval() {
 
   const respond = useMutation({
     mutationFn: (v: { requestId: string; approve: boolean }) => respondSlotReset({ data: v }),
-    onSuccess: async (res: any, variables) => {
-      qc.setQueryData<any[]>(["pending-slot-resets"], (requests) =>
-        requests?.filter((request) => request.id !== variables.requestId) ?? [],
+    onSuccess: async (res, variables) => {
+      qc.setQueryData<Array<{ id: string }>>(
+        ["pending-slot-resets"],
+        (requests) => requests?.filter((request) => request.id !== variables.requestId) ?? [],
       );
       await qc.invalidateQueries({ queryKey: ["pending-slot-resets"] });
       qc.invalidateQueries({ queryKey: ["dashboard"] });
       if (res?.approved) {
-        toast.success(`স্লট রিসেট সম্পন্ন হয়েছে${res.done?.length ? `: ${res.done.join(", ")}` : ""}`);
+        toast.success(
+          `স্লট রিসেট সম্পন্ন হয়েছে${res.done?.length ? `: ${res.done.join(", ")}` : ""}`,
+        );
       } else {
         toast.success("অনুরোধটি বাতিল করা হয়েছে — কোনো স্লট রিসেট হয়নি।");
       }
     },
-    onError: (e: any) => toast.error(e?.message ?? "কাজটি করা যায়নি"),
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : "কাজটি করা যায়নি"),
   });
 
   const req = data?.[0];
