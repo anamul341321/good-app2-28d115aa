@@ -374,8 +374,8 @@ export function AuthPage() {
 
           <div className="space-y-2.5 max-h-[55vh] overflow-y-auto pr-1">
             {RULES.map((r, i) => {
-              const tones = ["cyan","emerald","amber","violet","rose","cyan","emerald"] as const;
-              const t = toneClass[tones[i]];
+              const tones = ["cyan","emerald","amber","violet","rose"] as const;
+              const t = toneClass[tones[i % tones.length]] ?? toneClass.cyan;
               return (
                 <div key={i} className={`rounded-2xl p-3 flex gap-3 bg-linear-to-br ${t.bg} border border-border`}>
                   <div className={`shrink-0 w-7 h-7 rounded-full ${t.chip} text-white flex items-center justify-center font-black text-xs`}>
