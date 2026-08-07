@@ -1234,15 +1234,13 @@ export const adminCreateVoucher = createServerFn({ method: "POST" })
     amount: z.number().positive().max(100000),
     reason: z.string().trim().min(1).max(500),
   }).parse(i))
-  .handler(async ({ data }) => {
-    const supabaseAdmin = await gate();
-    const { data: row, error } = await supabaseAdmin
-      .from("bonus_vouchers")
-      .insert({ user_id: data.userId, amount: data.amount, reason: data.reason, status: "pending" })
-      .select().maybeSingle();
-    if (error) throw new Error(error.message);
-    return { ok: true, voucher: row };
+  .handler(async () => {
+    // 🔒 বন্ধ করা হয়েছে: ভাউচারও ব্যালেন্স যোগ করে, তাই অ্যাডমিন প্যানেল থেকে
+    // আর কোনো ভাউচার/বোনাস পাঠানো যাবে না।
+    await gate();
+    throw new Error("ভাউচার/বোনাস পাঠানো বন্ধ করা হয়েছে");
   });
+
 
 export const adminListVouchersForUser = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => z.object({ userId: z.string().uuid() }).parse(i))
