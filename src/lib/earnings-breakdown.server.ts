@@ -104,12 +104,12 @@ export async function buildEarningsBreakdown(admin: any, userId: string): Promis
         parts.push(label);
       }
     };
-    tryTake(rates.reverify_bonus, `১০ স্লট re-verify ${rates.reverify_bonus}৳ (মাইনিং চালু)`);
     tryTake(rates.first_verify_bonus, `১০ স্লট first verify ${rates.first_verify_bonus}৳`);
     while (rates.referrer_bonus > 0 && left >= rates.referrer_bonus) {
       left -= rates.referrer_bonus;
       parts.push(`রেফার বোনাস ${rates.referrer_bonus}৳`);
     }
+    tryTake(rates.reverify_bonus, `১০ স্লট re-verify ${rates.reverify_bonus}৳ (মাইনিং চালু)`);
     if (left > 0) parts.push(`অন্যান্য ${left}৳`);
     return parts.length ? parts.join(" + ") : "বোনাস";
   };
@@ -269,8 +269,8 @@ export async function buildEarningsBreakdown(admin: any, userId: string): Promis
     return got;
   };
   const selfFirst = take(prof.bonus_first_verify_self_claimed ? rates.first_verify_bonus : 0);
-  const selfReverify = take(prof.bonus_reverify_claimed ? rates.reverify_bonus : 0);
   const referrerTotal = take(referrerPaidCount * rates.referrer_bonus);
+  const selfReverify = take(prof.bonus_reverify_claimed ? rates.reverify_bonus : 0);
   const otherTotal = Number(left.toFixed(2));
 
   return {
