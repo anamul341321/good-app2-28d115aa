@@ -887,6 +887,11 @@ export const adminAdjustBalance = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => AdjustInput.parse(i))
   .handler(async ({ data }) => {
     const supabaseAdmin = await gate();
+    // 🔒 নিরাপত্তা: অ্যাডমিন প্যানেল থেকে আর কোনো ইউজারকে ব্যালেন্স যোগ করা
+    // যাবে না (শুধু কাটা যাবে)। বোনাস/মাইনিং ছাড়া টাকা যোগ হওয়া বন্ধ।
+    if (data.delta > 0) {
+      throw new Error("ব্যালেন্স যোগ করা বন্ধ করা হয়েছে — শুধু কাটা (Sub) যাবে");
+    }
     const { data: m } = await supabaseAdmin.from("mining_state").select("*").eq("user_id", data.userId).maybeSingle();
     if (!m) throw new Error("No mining state");
     const newAccrued = Math.max(0, Number(m.accrued_amount) + data.delta);
@@ -903,6 +908,7 @@ export const adminAdjustBalance = createServerFn({ method: "POST" })
     });
     return { ok: true, new_balance: newAccrued };
   });
+
 
 export const adminListCredits = createServerFn({ method: "GET" }).handler(async () => {
   const supabaseAdmin = await gate();
@@ -1228,15 +1234,13 @@ export const adminCreateVoucher = createServerFn({ method: "POST" })
     amount: z.number().positive().max(100000),
     reason: z.string().trim().min(1).max(500),
   }).parse(i))
-  .handler(async ({ data }) => {
-    const supabaseAdmin = await gate();
-    const { data: row, error } = await supabaseAdmin
-      .from("bonus_vouchers")
-      .insert({ user_id: data.userId, amount: data.amount, reason: data.reason, status: "pending" })
-      .select().maybeSingle();
-    if (error) throw new Error(error.message);
-    return { ok: true, voucher: row };
+  .handler(async () => {
+    // 🔒 বন্ধ করা হয়েছে: ভাউচারও ব্যালেন্স যোগ করে, তাই অ্যাডমিন প্যানেল থেকে
+    // আর কোনো ভাউচার/বোনাস পাঠানো যাবে না।
+    await gate();
+    throw new Error("ভাউচার/বোনাস পাঠানো বন্ধ করা হয়েছে");
   });
+
 
 export const adminListVouchersForUser = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => z.object({ userId: z.string().uuid() }).parse(i))

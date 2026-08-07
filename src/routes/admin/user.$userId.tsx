@@ -483,21 +483,18 @@ function UserDetail() {
               placeholder="Amount (TK)"
               className="flex-1 px-3 py-2 rounded-xl bg-surface-2 border border-border text-sm focus:outline-none focus:border-cyan"
             />
-            <button onClick={() => adjust.mutate(Number(delta))} disabled={!delta}
-              className="px-3 py-2 rounded-xl bg-emerald/20 text-emerald font-bold text-xs flex items-center gap-1 disabled:opacity-50">
-              <Plus className="w-3 h-3" /> Add
-            </button>
             <button onClick={() => adjust.mutate(-Number(delta))} disabled={!delta}
               className="px-3 py-2 rounded-xl bg-rose/20 text-rose font-bold text-xs flex items-center gap-1 disabled:opacity-50">
               <Minus className="w-3 h-3" /> Sub
             </button>
+
           </div>
           <input
             type="text" value={deltaNote} onChange={(e) => setDeltaNote(e.target.value)}
             placeholder="Reason / note (optional)"
             className="w-full px-3 py-2 rounded-xl bg-surface-2 border border-border text-xs focus:outline-none focus:border-cyan"
           />
-          <p className="text-[10px] text-muted-foreground">💡 Add = balance ক্রেডিট (Admin Payout history-তে দেখাবে)</p>
+          <p className="text-[10px] text-rose font-bold">🔒 ব্যালেন্স যোগ করা বন্ধ — শুধু Sub (কাটা) যাবে।</p>
         </div>
       </div>
 
@@ -987,34 +984,11 @@ function UserDetail() {
           <Gift className="w-4 h-4 text-amber" />
           <p className="text-[10px] uppercase tracking-widest text-amber font-black">Bonus Voucher পাঠান</p>
         </div>
-        <p className="text-[10px] text-muted-foreground">
-          User এর হোমে popup আসবে · Claim করলে balance এ যোগ হবে · withdraw করা যাবে।
+        <p className="text-[10px] text-rose font-bold">
+          🔒 ভাউচার/বোনাস পাঠানো বন্ধ করা হয়েছে — অ্যাডমিন প্যানেল থেকে আর কোনো ইউজারকে টাকা দেওয়া যাবে না।
+          শুধু নিচের history দেখা যাবে।
         </p>
-        <div className="flex gap-2">
-          <input
-            type="number" inputMode="decimal" value={voucherAmt}
-            onChange={(e) => setVoucherAmt(e.target.value)}
-            placeholder="Amount (৳)"
-            className="w-28 px-3 py-2 rounded-xl bg-surface-2 border border-border text-sm mono-num focus:outline-none focus:border-amber"
-          />
-          <input
-            type="text" value={voucherReason}
-            onChange={(e) => setVoucherReason(e.target.value)}
-            placeholder="উদ্দেশ্য (কেন দিচ্ছেন) …"
-            maxLength={500}
-            className="flex-1 px-3 py-2 rounded-xl bg-surface-2 border border-border text-sm focus:outline-none focus:border-amber"
-          />
-        </div>
-        <button
-          disabled={sendVoucher.isPending || !voucherAmt || !voucherReason.trim() || Number(voucherAmt) <= 0}
-          onClick={() => {
-            if (!confirm(`${voucherAmt}৳ voucher পাঠাবেন?\nকারণ: ${voucherReason}`)) return;
-            sendVoucher.mutate();
-          }}
-          className="w-full py-2 rounded-xl bg-amber text-background font-black text-xs flex items-center justify-center gap-1.5 disabled:opacity-50">
-          {sendVoucher.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Gift className="w-3.5 h-3.5" />}
-          Voucher পাঠান
-        </button>
+
 
         {(vouchersQ.data ?? []).length > 0 && (
           <div className="pt-2 border-t border-border space-y-1.5">
