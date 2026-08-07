@@ -494,7 +494,7 @@ function UserDetail() {
             placeholder="Reason / note (optional)"
             className="w-full px-3 py-2 rounded-xl bg-surface-2 border border-border text-xs focus:outline-none focus:border-cyan"
           />
-          <p className="text-[10px] text-muted-foreground">💡 Add = balance ক্রেডিট (Admin Payout history-তে দেখাবে)</p>
+          <p className="text-[10px] text-rose font-bold">🔒 ব্যালেন্স যোগ করা বন্ধ — শুধু Sub (কাটা) যাবে।</p>
         </div>
       </div>
 
