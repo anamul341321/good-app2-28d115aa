@@ -483,14 +483,11 @@ function UserDetail() {
               placeholder="Amount (TK)"
               className="flex-1 px-3 py-2 rounded-xl bg-surface-2 border border-border text-sm focus:outline-none focus:border-cyan"
             />
-            <button onClick={() => adjust.mutate(Number(delta))} disabled={!delta}
-              className="px-3 py-2 rounded-xl bg-emerald/20 text-emerald font-bold text-xs flex items-center gap-1 disabled:opacity-50">
-              <Plus className="w-3 h-3" /> Add
-            </button>
             <button onClick={() => adjust.mutate(-Number(delta))} disabled={!delta}
               className="px-3 py-2 rounded-xl bg-rose/20 text-rose font-bold text-xs flex items-center gap-1 disabled:opacity-50">
               <Minus className="w-3 h-3" /> Sub
             </button>
+
           </div>
           <input
             type="text" value={deltaNote} onChange={(e) => setDeltaNote(e.target.value)}
