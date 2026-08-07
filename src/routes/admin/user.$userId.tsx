@@ -39,6 +39,11 @@ function UserDetail() {
     queryFn: () => adminListVouchersForUser({ data: { userId } }),
   });
 
+  const auditQ = useQuery({
+    queryKey: ["admin-user-balance-audit", userId],
+    queryFn: () => adminBalanceAudit({ data: { userId } }),
+  });
+
   const sendVoucher = useMutation({
     mutationFn: () => adminCreateVoucher({ data: {
       userId, amount: Number(voucherAmt), reason: voucherReason.trim(),
