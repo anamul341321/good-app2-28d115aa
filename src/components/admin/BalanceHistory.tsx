@@ -63,7 +63,7 @@ export function BalanceHistory({ mining, income, withdrawals, debts, profile, br
   ].filter((o) => o.amount > 0.004);
   const accountedOut = withdrawPaid + rechargeOut + transferOut + adminMinus;
   const feeOrAdjustmentOut = Math.max(0, withdrawnTotal - accountedOut);
-  if (feeOrAdjustmentOut > 0.004) outs.push({ label: "🧾 Withdraw fee / পুরোনো সমন্বয়", amount: feeOrAdjustmentOut });
+  if (feeOrAdjustmentOut > 0.004) outs.push({ label: "🧾 উইথড্র ফি (Gross-এর ১০–২০%, platform রেখেছে)", amount: feeOrAdjustmentOut });
   const reconciledTotalOut = outs.reduce((s, x) => s + x.amount, 0);
   const balance = accrued - withdrawnTotal - debtActive;
 
