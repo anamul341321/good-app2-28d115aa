@@ -142,6 +142,8 @@ export type Database = {
       }
       bonus_settings: {
         Row: {
+          apk_url: string | null
+          apk_version: string | null
           bkash_enabled: boolean
           bkash_off_message: string | null
           email_otp_enabled: boolean
@@ -172,6 +174,8 @@ export type Database = {
           withdraw_off_until: string | null
         }
         Insert: {
+          apk_url?: string | null
+          apk_version?: string | null
           bkash_enabled?: boolean
           bkash_off_message?: string | null
           email_otp_enabled?: boolean
@@ -202,6 +206,8 @@ export type Database = {
           withdraw_off_until?: string | null
         }
         Update: {
+          apk_url?: string | null
+          apk_version?: string | null
           bkash_enabled?: boolean
           bkash_off_message?: string | null
           email_otp_enabled?: boolean

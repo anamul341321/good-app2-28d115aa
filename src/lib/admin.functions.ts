@@ -1404,6 +1404,9 @@ export const adminUpdateBonusSettings = createServerFn({ method: "POST" })
     withdraw_enabled: z.boolean().optional(),
     withdraw_off_message: z.string().max(300).optional().nullable(),
     withdraw_off_until: z.string().optional().nullable(),
+    // Android APK download link
+    apk_url: z.string().max(500).optional().nullable(),
+    apk_version: z.string().max(50).optional().nullable(),
   }).parse(i))
   .handler(async ({ data }) => {
     const supabaseAdmin = await gate();
@@ -1423,6 +1426,7 @@ export const adminUpdateBonusSettings = createServerFn({ method: "POST" })
       "recharge_enabled","recharge_off_message",
       "usdt_enabled","usdt_off_message",
       "withdraw_enabled","withdraw_off_message","withdraw_off_until",
+      "apk_url","apk_version",
     ] as const) {
       if ((data as any)[k] !== undefined) patch[k] = (data as any)[k];
     }

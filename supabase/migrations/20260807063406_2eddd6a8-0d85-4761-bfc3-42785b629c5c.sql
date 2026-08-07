@@ -1,0 +1,1 @@
+ALTER TABLE public.bonus_settings ADD COLUMN IF NOT EXISTS apk_url TEXT, ADD COLUMN IF NOT EXISTS apk_version TEXT;
