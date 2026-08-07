@@ -1946,18 +1946,18 @@ export const adminSetMaintenance = createServerFn({ method: "POST" })
 /** UID দিয়ে নির্দিষ্ট ইউজারকে লাল নোটিশ (মেসেজ) পাঠানো */
 export const adminSendUserNotice = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => z.object({
-    uid: z.number().int().positive(),
+    uid: z.number().int().positive().optional().nullable(),
+    userId: z.string().uuid().optional().nullable(),
     title: z.string().max(120).optional().nullable(),
     body: z.string().trim().min(1).max(2000),
   }).parse(i))
   .handler(async ({ data }) => {
     const supabaseAdmin = await gate();
-    const { data: prof } = await supabaseAdmin
-      .from("profiles")
-      .select("id, display_name, uid_seq")
-      .eq("uid_seq", data.uid)
-      .maybeSingle();
-    if (!prof?.id) throw new Error(`UID ${data.uid} — এই ইউজার পাওয়া যায়নি`);
+    if (!data.uid && !data.userId) throw new Error("UID অথবা user নির্বাচন করুন");
+    let q = supabaseAdmin.from("profiles").select("id, display_name, uid_seq");
+    q = data.userId ? q.eq("id", data.userId) : q.eq("uid_seq", data.uid as number);
+    const { data: prof } = await q.maybeSingle();
+    if (!prof?.id) throw new Error(`${data.uid ?? data.userId} — এই ইউজার পাওয়া যায়নি`);
     const { error } = await supabaseAdmin.from("user_notices").insert({
       user_id: prof.id,
       title: data.title || null,
