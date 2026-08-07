@@ -33,7 +33,7 @@ export type BreakdownData = {
   };
 };
 
-export type BreakdownTotals = { withdrawn?: number; balance?: number; debtActive?: number };
+export type BreakdownTotals = { withdrawn?: number; paidWithdrawals?: number; balance?: number; debtActive?: number };
 
 /**
  * "ধাপে ধাপে হিসাব" — explains exactly how the bonus total and the mining
@@ -67,6 +67,11 @@ export function EarningsBreakdown({ data, totals }: { data: BreakdownData; total
           {(totals?.debtActive ?? 0) > 0 ? <> এবং <b>{tk(totals?.debtActive ?? 0)}</b> warning বাকি আছে</> : null}, তাই এখন হাতে{" "}
           <b>{tk(totals?.balance ?? lifetimeIn - withdrawn)}</b>।
         </p>
+        {totals?.paidWithdrawals !== undefined && totals.paidWithdrawals !== withdrawn && (
+          <p className="rounded-lg bg-surface-2 p-2 text-[10px] font-bold text-muted-foreground">
+            হাতে paid হয়েছে <b className="text-emerald">{tk(totals.paidWithdrawals)}</b>; ফি/সমন্বয়সহ ব্যালেন্স থেকে মোট কাটা <b className="text-rose">{tk(withdrawn)}</b>।
+          </p>
+        )}
       </div>
 
       {/* সংক্ষেপে — একদম সহজ ভাষায় */}

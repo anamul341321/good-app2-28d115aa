@@ -140,6 +140,11 @@ export const getEarnings = createServerFn({ method: "GET" })
     const voucherClaimed = (vouchers ?? []).filter((v: any) => v.status === "claimed").reduce((s: number, v: any) => s + Number(v.amount), 0);
     const adminIn = (credits ?? []).filter((c: any) => Number(c.amount) > 0).reduce((s: number, c: any) => s + Number(c.amount), 0);
     const transferInTotal = (transfersIn ?? []).reduce((s: number, t: any) => s + Number(t.amount), 0);
+    const paidWithdrawals = (withdrawals ?? []).filter((w: any) => w.status === "paid").reduce((s: number, w: any) => s + Number(w.amount), 0);
+    const successfulRecharges = (recharges ?? []).filter((r: any) => r.status === "success").reduce((s: number, r: any) => s + Number(r.amount), 0);
+    const transfersOutTotal = (transfersOut ?? []).reduce((s: number, t: any) => s + Number(t.amount), 0);
+    const accountedOut = paidWithdrawals + successfulRecharges + transfersOutTotal;
+    const feeOrAdjustmentOut = Math.max(0, withdrawn - accountedOut);
     const debtActive = (debts ?? []).filter((d: any) => d.status === "active").reduce((s: number, d: any) => s + Number(d.amount), 0);
 
     const { buildEarningsBreakdown } = await import("@/lib/earnings-breakdown.server");
@@ -159,6 +164,10 @@ export const getEarnings = createServerFn({ method: "GET" })
         adminIn,
         transferInTotal,
         unclassifiedCredit,
+        paidWithdrawals,
+        successfulRecharges,
+        transfersOutTotal,
+        feeOrAdjustmentOut,
         debtActive,
       },
       claim: {
