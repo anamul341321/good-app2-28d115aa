@@ -168,3 +168,12 @@ function StepList({ steps, total, totalLabel }: { steps: BreakdownStep[]; total:
     </div>
   );
 }
+
+function Cell({ label, value, tone }: { label: string; value: string; tone: string }) {
+  return (
+    <div className="rounded-xl bg-background/70 border border-border px-2 py-2 text-center">
+      <p className="text-[9px] uppercase tracking-wider font-black text-muted-foreground">{label}</p>
+      <p className={`mono-num text-[12.5px] font-black ${tone}`}>{value}</p>
+    </div>
+  );
+}
