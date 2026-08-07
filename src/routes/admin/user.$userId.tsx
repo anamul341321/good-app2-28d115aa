@@ -482,31 +482,42 @@ function UserDetail() {
         )}
 
         <div className="space-y-2">
+          <input
+            type="text" value={deltaNote} onChange={(e) => setDeltaNote(e.target.value)}
+            placeholder="কারণ / note লিখুন (যোগ করতে বাধ্যতামূলক)"
+            className="w-full px-3 py-2 rounded-xl bg-surface-2 border border-border text-xs focus:outline-none focus:border-cyan"
+          />
           <div className="flex gap-2">
             <input
               type="number" inputMode="decimal" value={delta} onChange={(e) => setDelta(e.target.value)}
               placeholder="Amount (TK)"
               className="flex-1 px-3 py-2 rounded-xl bg-surface-2 border border-border text-sm focus:outline-none focus:border-cyan"
             />
-            <button onClick={() => adjust.mutate(Number(delta))} disabled={!delta || adjust.isPending || deltaNote.trim().length < 3}
+            <button
+              onClick={() => {
+                if (!delta || Number(delta) <= 0) { toast.error("আগে টাকার পরিমাণ লিখুন"); return; }
+                if (deltaNote.trim().length < 3) { toast.error("যোগ করতে কারণ (note) লিখতে হবে — কমপক্ষে ৩ অক্ষর"); return; }
+                adjust.mutate(Number(delta));
+              }}
+              disabled={adjust.isPending}
               className="px-3 py-2 rounded-xl bg-emerald/20 text-emerald font-bold text-xs flex items-center gap-1 disabled:opacity-50">
               <Plus className="w-3 h-3" /> Add
             </button>
-            <button onClick={() => adjust.mutate(-Number(delta))} disabled={!delta || adjust.isPending}
+            <button
+              onClick={() => {
+                if (!delta || Number(delta) <= 0) { toast.error("আগে টাকার পরিমাণ লিখুন"); return; }
+                adjust.mutate(-Number(delta));
+              }}
+              disabled={adjust.isPending}
               className="px-3 py-2 rounded-xl bg-rose/20 text-rose font-bold text-xs flex items-center gap-1 disabled:opacity-50">
               <Minus className="w-3 h-3" /> Sub
             </button>
-
           </div>
-          <input
-            type="text" value={deltaNote} onChange={(e) => setDeltaNote(e.target.value)}
-            placeholder="কারণ / note (যোগ করতে বাধ্যতামূলক)"
-            className="w-full px-3 py-2 rounded-xl bg-surface-2 border border-border text-xs focus:outline-none focus:border-cyan"
-          />
           <p className="text-[10px] text-muted-foreground font-bold">
             ➕ যোগ করতে কারণ লিখতেই হবে — প্রতিটি পরিবর্তন নিচের <b>ব্যালেন্স হিস্ট্রি</b>-তে আগের ও পরের ব্যালেন্স সহ জমা থাকে।
           </p>
         </div>
+
 
         {/* Balance change history — before/after, কে করেছে, কেন */}
         <div className="pt-3 border-t border-border space-y-1.5">
