@@ -701,7 +701,7 @@ export function AuthPage() {
 
           <div className="space-y-2.5">
             {FAQS.map((f, i) => {
-              const t = toneClass[f.tone];
+              const t = toneClass[f.tone] ?? toneClass.cyan;
               const Icon = f.icon;
               const open = openFaq === i;
               return (
