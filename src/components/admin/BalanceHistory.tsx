@@ -61,7 +61,6 @@ export function BalanceHistory({ mining, income, withdrawals, debts, profile, br
     { label: "📤 অন্যকে পাঠিয়েছে", amount: transferOut },
     { label: "➖ অ্যাডমিন কেটেছে", amount: adminMinus },
   ].filter((o) => o.amount > 0.004);
-  const totalOut = outs.reduce((s, x) => s + x.amount, 0);
   const accountedOut = withdrawPaid + rechargeOut + transferOut + adminMinus;
   const feeOrAdjustmentOut = Math.max(0, withdrawnTotal - accountedOut);
   if (feeOrAdjustmentOut > 0.004) outs.push({ label: "🧾 Withdraw fee / পুরোনো সমন্বয়", amount: feeOrAdjustmentOut });
