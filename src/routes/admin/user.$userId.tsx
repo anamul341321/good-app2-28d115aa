@@ -1005,7 +1005,16 @@ function UserDetail() {
       {(data as any).breakdown && (
         <div className="glass rounded-2xl p-4 space-y-3 border border-amber/30">
           <p className="text-[10px] uppercase tracking-widest text-amber font-black">ধাপে ধাপে হিসাব — বোনাস ও মাইনিং</p>
-          <EarningsBreakdown data={(data as any).breakdown} />
+          <EarningsBreakdown
+            data={(data as any).breakdown}
+            totals={{
+              withdrawn: Number((data as any).mining?.withdrawn_amount ?? 0),
+              balance:
+                Number((data as any).mining?.accrued_amount ?? 0) -
+                Number((data as any).mining?.withdrawn_amount ?? 0),
+            }}
+          />
+
         </div>
       )}
 
