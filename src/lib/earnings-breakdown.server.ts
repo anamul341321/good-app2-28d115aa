@@ -35,6 +35,7 @@ export type EarningsBreakdown = {
     isActive: boolean;
     activatedAt: string | null;
     daysRunning: number;
+    legacyUnclassified: number;
     referees: { uid: number | null; name: string; slots: number; monthly: number }[];
     steps: BreakdownStep[];
   };
@@ -85,8 +86,9 @@ export async function buildEarningsBreakdown(admin: any, userId: string): Promis
   const bonusTotal = Number(ms.bonus_amount ?? 0);
   const accrued = Number(ms.accrued_amount ?? 0);
   const referralAccrued = Number(ms.referral_accrued ?? 0);
-  const miningTotal = Math.max(0, accrued - bonusTotal);
-  const selfTotal = Math.max(0, miningTotal - referralAccrued);
+  const selfTotal = Number(ms.self_mining_accrued ?? 0);
+  const miningTotal = selfTotal + referralAccrued;
+  const legacyUnclassified = Math.max(0, accrued - bonusTotal - miningTotal);
 
   // ---- Bonus steps -------------------------------------------------------
   // Built from the real audit trail (কবে কত যোগ হলো) so every taka has a date
@@ -303,6 +305,7 @@ export async function buildEarningsBreakdown(admin: any, userId: string): Promis
       isActive: !!ms.is_active,
       activatedAt,
       daysRunning,
+      legacyUnclassified,
       referees: refereeList,
       steps: miningSteps,
     },

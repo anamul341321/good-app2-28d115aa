@@ -51,8 +51,9 @@ export const getEarnings = createServerFn({ method: "GET" })
     const bonusTotal = Number((mining as any)?.bonus_amount ?? 0);
     const withdrawn = Number((mining as any)?.withdrawn_amount ?? 0);
     const referralAccrued = Number((mining as any)?.referral_accrued ?? 0);
-    const miningTotal = Math.max(0, accrued - bonusTotal);
-    const selfMiningTotal = Math.max(0, miningTotal - referralAccrued);
+    const selfMiningTotal = Number((mining as any)?.self_mining_accrued ?? 0);
+    const miningTotal = selfMiningTotal + referralAccrued;
+    const unclassifiedCredit = Math.max(0, accrued - bonusTotal - miningTotal);
 
     const claimRows = claims ?? [];
     const claimedTotal = claimRows.reduce((s: number, c: any) => s + Number(c.amount ?? 0), 0);
@@ -157,6 +158,7 @@ export const getEarnings = createServerFn({ method: "GET" })
         voucherClaimed,
         adminIn,
         transferInTotal,
+        unclassifiedCredit,
         debtActive,
       },
       claim: {

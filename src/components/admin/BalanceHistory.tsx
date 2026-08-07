@@ -34,11 +34,13 @@ export function BalanceHistory({ mining, income, withdrawals, debts, profile, br
     .filter((d) => d.status === "active").reduce((s, d) => s + Number(d.amount), 0);
 
   // Mining part of accrued = everything credited that wasn't a bonus/gift.
-  const miningPart = Math.max(0, accrued - bonusTotal - transferIn);
+  const trackedSelfMining = Number(breakdown?.mining?.selfTotal ?? mining?.self_mining_accrued ?? 0);
+  const trackedReferral = Number(breakdown?.mining?.referralTotal ?? mining?.referral_accrued ?? 0);
+  const miningPart = Math.max(0, trackedSelfMining + trackedReferral);
   const bonusPart = Math.max(0, bonusTotal - voucher - adminPlus);
   // Referral 10% commission is credited *inside* mining — split it out so it is
   // obvious how much of the mining income came from the user's referrals.
-  const referralPart = Math.min(miningPart, Math.max(0, Number(t.referralAccrued ?? mining?.referral_accrued ?? 0)));
+  const referralPart = Math.min(miningPart, Math.max(0, trackedReferral));
   const selfMiningPart = Math.max(0, miningPart - referralPart);
 
   const sources: Source[] = [
