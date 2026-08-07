@@ -260,6 +260,19 @@ export async function buildEarningsBreakdown(admin: any, userId: string): Promis
     },
   ];
 
+  // Reconciled bonus split: expected amounts, but never more than what was
+  // actually credited — so the summary line always adds up to bonus total.
+  let left = bonusTotal;
+  const take = (want: number) => {
+    const got = Math.max(0, Math.min(want, left));
+    left = Number((left - got).toFixed(2));
+    return got;
+  };
+  const selfFirst = take(prof.bonus_first_verify_self_claimed ? rates.first_verify_bonus : 0);
+  const selfReverify = take(prof.bonus_reverify_claimed ? rates.reverify_bonus : 0);
+  const referrerTotal = take(referrerPaidCount * rates.referrer_bonus);
+  const otherTotal = Number(left.toFixed(2));
+
   return {
     bonus: {
       total: bonusTotal,
@@ -269,8 +282,13 @@ export async function buildEarningsBreakdown(admin: any, userId: string): Promis
         referrer: rates.referrer_bonus,
       },
       referrerPaidCount,
+      selfFirst,
+      selfReverify,
+      referrerTotal,
+      otherTotal,
       steps: bonusSteps,
     },
+
     mining: {
       total: miningTotal,
       selfTotal,
