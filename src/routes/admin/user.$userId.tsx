@@ -488,7 +488,11 @@ function UserDetail() {
               placeholder="Amount (TK)"
               className="flex-1 px-3 py-2 rounded-xl bg-surface-2 border border-border text-sm focus:outline-none focus:border-cyan"
             />
-            <button onClick={() => adjust.mutate(-Number(delta))} disabled={!delta}
+            <button onClick={() => adjust.mutate(Number(delta))} disabled={!delta || adjust.isPending || deltaNote.trim().length < 3}
+              className="px-3 py-2 rounded-xl bg-emerald/20 text-emerald font-bold text-xs flex items-center gap-1 disabled:opacity-50">
+              <Plus className="w-3 h-3" /> Add
+            </button>
+            <button onClick={() => adjust.mutate(-Number(delta))} disabled={!delta || adjust.isPending}
               className="px-3 py-2 rounded-xl bg-rose/20 text-rose font-bold text-xs flex items-center gap-1 disabled:opacity-50">
               <Minus className="w-3 h-3" /> Sub
             </button>
@@ -496,12 +500,44 @@ function UserDetail() {
           </div>
           <input
             type="text" value={deltaNote} onChange={(e) => setDeltaNote(e.target.value)}
-            placeholder="Reason / note (optional)"
+            placeholder="কারণ / note (যোগ করতে বাধ্যতামূলক)"
             className="w-full px-3 py-2 rounded-xl bg-surface-2 border border-border text-xs focus:outline-none focus:border-cyan"
           />
-          <p className="text-[10px] text-rose font-bold">🔒 ব্যালেন্স যোগ করা বন্ধ — শুধু Sub (কাটা) যাবে।</p>
+          <p className="text-[10px] text-muted-foreground font-bold">
+            ➕ যোগ করতে কারণ লিখতেই হবে — প্রতিটি পরিবর্তন নিচের <b>ব্যালেন্স হিস্ট্রি</b>-তে আগের ও পরের ব্যালেন্স সহ জমা থাকে।
+          </p>
+        </div>
+
+        {/* Balance change history — before/after, কে করেছে, কেন */}
+        <div className="pt-3 border-t border-border space-y-1.5">
+          <p className="text-[9px] uppercase tracking-widest text-muted-foreground font-black">
+            🧾 ব্যালেন্স হিস্ট্রি (আগে কত ছিল → এখন কত)
+          </p>
+          {(auditQ.data ?? []).length === 0 && (
+            <p className="text-[10px] text-muted-foreground">এখনো কোনো রেকর্ড নেই।</p>
+          )}
+          {(auditQ.data ?? []).slice(0, 25).map((a: any) => {
+            const d = Number(a.delta ?? 0);
+            return (
+              <div key={a.id} className="bg-surface-2 rounded-lg px-2 py-1.5">
+                <div className="flex items-center justify-between gap-2">
+                  <p className={`mono-num text-[11px] font-black ${d < 0 ? "text-rose" : "text-emerald"}`}>
+                    {d > 0 ? "+" : ""}{d.toFixed(2)}৳
+                  </p>
+                  <p className="mono-num text-[10px] text-muted-foreground">
+                    {Number(a.balance_before ?? 0).toFixed(2)}৳ → {Number(a.balance_after ?? 0).toFixed(2)}৳
+                  </p>
+                </div>
+                <p className="text-[9px] text-muted-foreground truncate">
+                  {a.source} · {a.actor ?? "system"} · {new Date(a.created_at).toLocaleString("en-GB", { timeZone: "Asia/Dhaka" })}
+                </p>
+                {a.note && <p className="text-[9px] text-amber truncate">📝 {a.note}</p>}
+              </div>
+            );
+          })}
         </div>
       </div>
+
 
       {/* Wallet */}
       <div className="glass rounded-2xl p-4 space-y-2">
