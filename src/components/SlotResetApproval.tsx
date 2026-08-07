@@ -33,8 +33,7 @@ export function SlotResetApproval() {
         toast.success("অনুরোধটি বাতিল করা হয়েছে — কোনো স্লট রিসেট হয়নি।");
       }
     },
-    onError: (error) =>
-      toast.error(error instanceof Error ? error.message : "কাজটি করা যায়নি"),
+    onError: (error) => toast.error(error instanceof Error ? error.message : "কাজটি করা যায়নি"),
   });
 
   const req = data?.[0];

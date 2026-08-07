@@ -56,7 +56,8 @@ export async function createSlotResetRequest(opts: {
     .select("id")
     .maybeSingle();
 
-  if (error || !data) return { ok: false, error: "অনুরোধটি তৈরি করা যায়নি, একটু পরে চেষ্টা করুন।" };
+  if (error || !data)
+    return { ok: false, error: "অনুরোধটি তৈরি করা যায়নি, একটু পরে চেষ্টা করুন।" };
 
   return {
     ok: true,
