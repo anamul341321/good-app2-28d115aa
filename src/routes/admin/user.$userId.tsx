@@ -1025,10 +1025,29 @@ function UserDetail() {
           <Gift className="w-4 h-4 text-amber" />
           <p className="text-[10px] uppercase tracking-widest text-amber font-black">Bonus Voucher পাঠান</p>
         </div>
-        <p className="text-[10px] text-rose font-bold">
-          🔒 ভাউচার/বোনাস পাঠানো বন্ধ করা হয়েছে — অ্যাডমিন প্যানেল থেকে আর কোনো ইউজারকে টাকা দেওয়া যাবে না।
-          শুধু নিচের history দেখা যাবে।
+        <div className="flex gap-2">
+          <input
+            type="number" inputMode="decimal" value={voucherAmt} onChange={(e) => setVoucherAmt(e.target.value)}
+            placeholder="Amount (৳)"
+            className="w-28 px-3 py-2 rounded-xl bg-surface-2 border border-border text-sm focus:outline-none focus:border-amber"
+          />
+          <input
+            type="text" value={voucherReason} onChange={(e) => setVoucherReason(e.target.value)}
+            placeholder="কারণ (বাধ্যতামূলক)"
+            className="flex-1 px-3 py-2 rounded-xl bg-surface-2 border border-border text-xs focus:outline-none focus:border-amber"
+          />
+        </div>
+        <button
+          onClick={() => sendVoucher.mutate()}
+          disabled={sendVoucher.isPending || !Number(voucherAmt) || voucherReason.trim().length < 3}
+          className="w-full py-2 rounded-xl bg-amber/20 text-amber font-black text-xs disabled:opacity-50"
+        >
+          🎁 ভাউচার পাঠান
+        </button>
+        <p className="text-[10px] text-muted-foreground">
+          ইউজার claim করলে টাকা balance-এ যাবে, আর প্রতিটি ভাউচার হিস্ট্রিতে লেখা থাকবে।
         </p>
+
 
 
         {(vouchersQ.data ?? []).length > 0 && (
