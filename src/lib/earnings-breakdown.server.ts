@@ -84,45 +84,89 @@ export async function buildEarningsBreakdown(admin: any, userId: string): Promis
   const selfTotal = Math.max(0, miningTotal - referralAccrued);
 
   // ---- Bonus steps -------------------------------------------------------
+  // Built from the real audit trail (কবে কত যোগ হলো) so every taka has a date
+  // and a reason. Flag-based guessing is only a fallback for old accounts that
+  // were credited before the audit log existed.
   const referrerPaidCount = referees.filter((r: any) => r.bonus_first_verify_claimed).length;
+  const dateBn = (s: string) => new Date(s).toLocaleString("bn-BD");
+
+  const describeBonus = (delta: number): string => {
+    const parts: string[] = [];
+    let left = Math.round(delta);
+    const tryTake = (amount: number, label: string) => {
+      if (amount > 0 && left >= amount) {
+        left -= amount;
+        parts.push(label);
+      }
+    };
+    tryTake(rates.reverify_bonus, `১০ স্লট re-verify ${rates.reverify_bonus}৳ (মাইনিং চালু)`);
+    tryTake(rates.first_verify_bonus, `১০ স্লট first verify ${rates.first_verify_bonus}৳`);
+    while (rates.referrer_bonus > 0 && left >= rates.referrer_bonus) {
+      left -= rates.referrer_bonus;
+      parts.push(`রেফার বোনাস ${rates.referrer_bonus}৳`);
+    }
+    if (left > 0) parts.push(`অন্যান্য ${left}৳`);
+    return parts.length ? parts.join(" + ") : "বোনাস";
+  };
+
   const bonusSteps: BreakdownStep[] = [];
-  if (prof.bonus_first_verify_self_claimed) {
-    bonusSteps.push({
-      key: "self-first",
-      label: "১০টি স্লট first verify সম্পন্ন — নিজের বোনাস",
-      formula: `১ বার × ${rates.first_verify_bonus}৳`,
-      amount: rates.first_verify_bonus,
-    });
+  const auditBonusSum = bonusEvents.reduce((s: number, e: any) => s + e.delta, 0);
+
+  if (bonusEvents.length > 0 && Math.abs(auditBonusSum - bonusTotal) < 0.5) {
+    for (const e of bonusEvents) {
+      const isAdmin = e.source !== "db";
+      bonusSteps.push({
+        key: `ev-${e.id}`,
+        label:
+          e.delta < 0
+            ? "➖ বোনাস কেটে নেওয়া হয়েছে"
+            : isAdmin
+              ? "🎁 অ্যাডমিন বোনাস যোগ করেছে"
+              : `🎉 ${describeBonus(e.delta)}`,
+        formula: `${dateBn(e.created_at)}${e.note ? ` · ${e.note}` : ""}`,
+        amount: Number(e.delta.toFixed(2)),
+      });
+    }
+  } else {
+    if (prof.bonus_first_verify_self_claimed) {
+      bonusSteps.push({
+        key: "self-first",
+        label: "১০টি স্লট first verify সম্পন্ন — নিজের বোনাস",
+        formula: `১ বার × ${rates.first_verify_bonus}৳`,
+        amount: rates.first_verify_bonus,
+      });
+    }
+    if (prof.bonus_reverify_claimed) {
+      bonusSteps.push({
+        key: "self-reverify",
+        label: "১০টি স্লট re-verify সম্পন্ন — মাইনিং চালু বোনাস",
+        formula: `১ বার × ${rates.reverify_bonus}৳`,
+        amount: rates.reverify_bonus,
+      });
+    }
+    if (referrerPaidCount > 0) {
+      bonusSteps.push({
+        key: "referrer",
+        label: `রেফার বোনাস — ${referrerPaidCount} জন রেফার ১০টি first verify শেষ করেছে`,
+        formula: `${referrerPaidCount} জন × ${rates.referrer_bonus}৳`,
+        amount: referrerPaidCount * rates.referrer_bonus,
+      });
+    }
+    const bonusSum = bonusSteps.reduce((s, x) => s + x.amount, 0);
+    const bonusDiff = Number((bonusTotal - bonusSum).toFixed(2));
+    if (Math.abs(bonusDiff) > 0.01) {
+      bonusSteps.push({
+        key: "other",
+        label:
+          bonusDiff > 0
+            ? "অন্যান্য বোনাস / ভাউচার / অ্যাডমিন যোগ (বা পুরোনো অফারের হার)"
+            : "সমন্বয় — পুরোনো হিসাব ঠিক করা হয়েছে (তখনকার হার আলাদা ছিল)",
+        formula: "ব্যালেন্সে আসল যোগ হওয়া অংশের সাথে মিলিয়ে দেওয়া",
+        amount: bonusDiff,
+      });
+    }
   }
-  if (prof.bonus_reverify_claimed) {
-    bonusSteps.push({
-      key: "self-reverify",
-      label: "১০টি স্লট re-verify সম্পন্ন — মাইনিং চালু বোনাস",
-      formula: `১ বার × ${rates.reverify_bonus}৳`,
-      amount: rates.reverify_bonus,
-    });
-  }
-  if (referrerPaidCount > 0) {
-    bonusSteps.push({
-      key: "referrer",
-      label: `রেফার বোনাস — ${referrerPaidCount} জন রেফার ১০টি first verify শেষ করেছে`,
-      formula: `${referrerPaidCount} জন × ${rates.referrer_bonus}৳`,
-      amount: referrerPaidCount * rates.referrer_bonus,
-    });
-  }
-  const bonusSum = bonusSteps.reduce((s, x) => s + x.amount, 0);
-  const bonusDiff = Number((bonusTotal - bonusSum).toFixed(2));
-  if (Math.abs(bonusDiff) > 0.01) {
-    bonusSteps.push({
-      key: "other",
-      label:
-        bonusDiff > 0
-          ? "অন্যান্য বোনাস / ভাউচার / অ্যাডমিন যোগ (বা পুরোনো অফারের হার)"
-          : "সমন্বয় (অ্যাডমিন কেটেছে / হার পরিবর্তন)",
-      formula: "ব্যালেন্সে যোগ হওয়া বাকি অংশ",
-      amount: bonusDiff,
-    });
-  }
+
 
   // ---- Mining steps ------------------------------------------------------
   const selfSlots = Number(ms.self_slots ?? 0);
