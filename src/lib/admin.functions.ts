@@ -1623,6 +1623,7 @@ export const adminSetUserBlocked = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => z.object({
     userId: z.string().uuid(),
     blocked: z.boolean(),
+    reason: z.string().trim().max(300).optional().nullable(),
   }).parse(i))
   .handler(async ({ data }) => {
     const supabaseAdmin = await gate();
@@ -1630,8 +1631,58 @@ export const adminSetUserBlocked = createServerFn({ method: "POST" })
       ban_duration: data.blocked ? "876000h" : "none",
     } as any);
     if (error) throw new Error(error.message);
+    // Keep profiles.banned in sync so the admin panel (and app-side gates) can
+    // always tell who is blocked — auth-level bans alone were invisible in the UI.
+    const { error: pErr } = await supabaseAdmin.from("profiles").update({
+      banned: data.blocked,
+      banned_reason: data.blocked ? (data.reason || "Admin কর্তৃক block করা হয়েছে") : null,
+      banned_at: data.blocked ? new Date().toISOString() : null,
+    } as any).eq("id", data.userId);
+    if (pErr) throw new Error(pErr.message);
     return { ok: true, blocked: data.blocked };
   });
+
+/** ব্লক করা সব ইউজারের আলাদা তালিকা (কারণ, ব্যালেন্স, বকেয়া সহ) */
+export const adminListBlockedUsers = createServerFn({ method: "GET" }).handler(async () => {
+  const supabaseAdmin = await gate();
+  const { data: profiles, error } = await supabaseAdmin
+    .from("profiles")
+    .select("id, uid_seq, display_name, phone_number, email, banned, banned_reason, banned_at")
+    .eq("banned", true)
+    .order("banned_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  const ids = (profiles ?? []).map((p: any) => p.id);
+  if (!ids.length) return [];
+  const [minings, debts, wds] = await Promise.all([
+    supabaseAdmin.from("mining_state").select("user_id, accrued_amount, withdrawn_amount").in("user_id", ids),
+    supabaseAdmin.from("user_debts").select("user_id, amount, status").in("user_id", ids).eq("status", "active"),
+    supabaseAdmin.from("withdrawals").select("user_id, amount, status").in("user_id", ids),
+  ]);
+  const mMap = new Map<string, any>();
+  for (const m of minings.data ?? []) mMap.set(m.user_id, m);
+  const dMap = new Map<string, number>();
+  for (const d of debts.data ?? []) dMap.set(d.user_id, (dMap.get(d.user_id) ?? 0) + Number(d.amount || 0));
+  const pMap = new Map<string, number>();
+  for (const w of wds.data ?? []) {
+    if (w.status !== "paid") continue;
+    pMap.set(w.user_id, (pMap.get(w.user_id) ?? 0) + Number(w.amount || 0));
+  }
+  return (profiles ?? []).map((p: any) => {
+    const m = mMap.get(p.id);
+    return {
+      userId: p.id as string,
+      uid: (p.uid_seq ?? null) as number | null,
+      name: (p.display_name ?? null) as string | null,
+      phone: (p.phone_number ?? null) as string | null,
+      email: (p.email ?? null) as string | null,
+      reason: (p.banned_reason ?? null) as string | null,
+      bannedAt: (p.banned_at ?? null) as string | null,
+      balance: Number(m?.accrued_amount ?? 0) - Number(m?.withdrawn_amount ?? 0),
+      debt: dMap.get(p.id) ?? 0,
+      paid: pMap.get(p.id) ?? 0,
+    };
+  });
+});
 
 // ---------------- Daily Referral Activity Report ----------------
 // For a given referrer, returns a per-day breakdown of their referees'
