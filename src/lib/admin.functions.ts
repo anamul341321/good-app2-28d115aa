@@ -1265,13 +1265,25 @@ export const adminCreateVoucher = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => z.object({
     userId: z.string().uuid(),
     amount: z.number().positive().max(100000),
-    reason: z.string().trim().min(1).max(500),
+    reason: z.string().trim().min(3).max(500),
   }).parse(i))
-  .handler(async () => {
-    // 🔒 বন্ধ করা হয়েছে: ভাউচারও ব্যালেন্স যোগ করে, তাই অ্যাডমিন প্যানেল থেকে
-    // আর কোনো ভাউচার/বোনাস পাঠানো যাবে না।
-    await gate();
-    throw new Error("ভাউচার/বোনাস পাঠানো বন্ধ করা হয়েছে");
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await gate();
+    const { data: row, error } = await supabaseAdmin.from("bonus_vouchers").insert({
+      user_id: data.userId,
+      amount: data.amount,
+      reason: data.reason,
+      status: "pending",
+    } as any).select("id").maybeSingle();
+    if (error) throw new Error(error.message);
+    await (supabaseAdmin as any).from("balance_audit").insert({
+      user_id: data.userId,
+      actor: "admin_panel",
+      source: "admin_voucher",
+      note: `ভাউচার তৈরি: ${data.amount}৳ — ${data.reason}`,
+      delta: 0,
+    });
+    return { ok: true, id: row?.id ?? null };
   });
 
 
