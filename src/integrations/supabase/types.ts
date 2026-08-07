@@ -140,6 +140,60 @@ export type Database = {
         }
         Relationships: []
       }
+      balance_audit: {
+        Row: {
+          accrued_after: number
+          accrued_before: number
+          actor: string | null
+          balance_after: number
+          balance_before: number
+          bonus_after: number
+          bonus_before: number
+          created_at: string
+          delta: number
+          id: string
+          note: string | null
+          source: string
+          user_id: string
+          withdrawn_after: number
+          withdrawn_before: number
+        }
+        Insert: {
+          accrued_after?: number
+          accrued_before?: number
+          actor?: string | null
+          balance_after?: number
+          balance_before?: number
+          bonus_after?: number
+          bonus_before?: number
+          created_at?: string
+          delta?: number
+          id?: string
+          note?: string | null
+          source?: string
+          user_id: string
+          withdrawn_after?: number
+          withdrawn_before?: number
+        }
+        Update: {
+          accrued_after?: number
+          accrued_before?: number
+          actor?: string | null
+          balance_after?: number
+          balance_before?: number
+          bonus_after?: number
+          bonus_before?: number
+          created_at?: string
+          delta?: number
+          id?: string
+          note?: string | null
+          source?: string
+          user_id?: string
+          withdrawn_after?: number
+          withdrawn_before?: number
+        }
+        Relationships: []
+      }
       bonus_settings: {
         Row: {
           apk_url: string | null

@@ -880,7 +880,7 @@ export const adminPromoteUnverified = createServerFn({ method: "POST" })
 // ---------------- Mining adjust ----------------
 const AdjustInput = z.object({
   userId: z.string().uuid(),
-  delta: z.number(),
+  delta: z.number().refine((v) => v !== 0, "0 দেওয়া যাবে না").refine((v) => Math.abs(v) <= 100000, "সর্বোচ্চ ১,০০,০০০৳"),
   note: z.string().optional(),
 });
 
@@ -888,15 +888,20 @@ export const adminAdjustBalance = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => AdjustInput.parse(i))
   .handler(async ({ data }) => {
     const supabaseAdmin = await gate();
-    // 🔒 নিরাপত্তা: অ্যাডমিন প্যানেল থেকে আর কোনো ইউজারকে ব্যালেন্স যোগ করা
-    // যাবে না (শুধু কাটা যাবে)। বোনাস/মাইনিং ছাড়া টাকা যোগ হওয়া বন্ধ।
-    if (data.delta > 0) {
-      throw new Error("ব্যালেন্স যোগ করা বন্ধ করা হয়েছে — শুধু কাটা (Sub) যাবে");
+    // যোগ করা আবার চালু — তবে টাকা যোগ করলে অবশ্যই কারণ লিখতে হবে, এবং
+    // প্রতিটি পরিবর্তন balance_audit-এ (before/after সহ) লেখা থাকে যাতে
+    // ভবিষ্যতে "টাকা কোথা থেকে এলো / কোথায় গেলো" সবসময় প্রমাণসহ দেখা যায়।
+    const note = (data.note ?? "").trim();
+    if (data.delta > 0 && note.length < 3) {
+      throw new Error("ব্যালেন্স যোগ করতে কারণ (note) লিখতে হবে");
     }
     const { data: m } = await supabaseAdmin.from("mining_state").select("*").eq("user_id", data.userId).maybeSingle();
     if (!m) throw new Error("No mining state");
-    const newAccrued = Math.max(0, Number(m.accrued_amount) + data.delta);
-    const newBonus = Math.max(0, Number((m as any).bonus_amount ?? 0) + data.delta);
+    const prevAccrued = Number(m.accrued_amount ?? 0);
+    const prevBonus = Number((m as any).bonus_amount ?? 0);
+    const withdrawn = Number((m as any).withdrawn_amount ?? 0);
+    const newAccrued = Math.max(0, prevAccrued + data.delta);
+    const newBonus = Math.max(0, prevBonus + data.delta);
     const { error } = await supabaseAdmin.from("mining_state")
       .update({ accrued_amount: newAccrued, bonus_amount: newBonus })
       .eq("user_id", data.userId);
@@ -905,9 +910,36 @@ export const adminAdjustBalance = createServerFn({ method: "POST" })
     await supabaseAdmin.from("admin_credits").insert({
       user_id: data.userId,
       amount: data.delta,
-      note: (data as any).note ?? null,
+      note: note || null,
+    });
+    await (supabaseAdmin as any).from("balance_audit").insert({
+      user_id: data.userId,
+      actor: "admin_panel",
+      source: data.delta > 0 ? "admin_add" : "admin_sub",
+      note: note || null,
+      accrued_before: prevAccrued, accrued_after: newAccrued,
+      bonus_before: prevBonus, bonus_after: newBonus,
+      withdrawn_before: withdrawn, withdrawn_after: withdrawn,
+      balance_before: prevAccrued - withdrawn,
+      balance_after: newAccrued - withdrawn,
+      delta: newAccrued - prevAccrued,
     });
     return { ok: true, new_balance: newAccrued };
+  });
+
+/** এক ইউজারের balance পরিবর্তনের পূর্ণ history (কে/কী কারণে, আগে কত ছিল, পরে কত) */
+export const adminBalanceAudit = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => z.object({ userId: z.string().uuid() }).parse(i))
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await gate();
+    const { data: rows, error } = await (supabaseAdmin as any)
+      .from("balance_audit")
+      .select("id, actor, source, note, balance_before, balance_after, delta, accrued_before, accrued_after, withdrawn_before, withdrawn_after, created_at")
+      .eq("user_id", data.userId)
+      .order("created_at", { ascending: false })
+      .limit(200);
+    if (error) throw new Error(error.message);
+    return (rows ?? []) as any[];
   });
 
 
@@ -1233,13 +1265,25 @@ export const adminCreateVoucher = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => z.object({
     userId: z.string().uuid(),
     amount: z.number().positive().max(100000),
-    reason: z.string().trim().min(1).max(500),
+    reason: z.string().trim().min(3).max(500),
   }).parse(i))
-  .handler(async () => {
-    // 🔒 বন্ধ করা হয়েছে: ভাউচারও ব্যালেন্স যোগ করে, তাই অ্যাডমিন প্যানেল থেকে
-    // আর কোনো ভাউচার/বোনাস পাঠানো যাবে না।
-    await gate();
-    throw new Error("ভাউচার/বোনাস পাঠানো বন্ধ করা হয়েছে");
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await gate();
+    const { data: row, error } = await supabaseAdmin.from("bonus_vouchers").insert({
+      user_id: data.userId,
+      amount: data.amount,
+      reason: data.reason,
+      status: "pending",
+    } as any).select("id").maybeSingle();
+    if (error) throw new Error(error.message);
+    await (supabaseAdmin as any).from("balance_audit").insert({
+      user_id: data.userId,
+      actor: "admin_panel",
+      source: "admin_voucher",
+      note: `ভাউচার তৈরি: ${data.amount}৳ — ${data.reason}`,
+      delta: 0,
+    });
+    return { ok: true, id: row?.id ?? null };
   });
 
 
