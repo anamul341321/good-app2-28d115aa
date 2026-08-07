@@ -65,7 +65,7 @@ function EarningsPage() {
     { label: "📤 অন্যকে পাঠিয়েছেন", amount: data.rows.filter((r) => r.kind === "transfer_out").reduce((s, r) => s + Math.abs(Math.min(0, r.amount)), 0) },
     { label: "➖ অ্যাডমিন কেটেছে", amount: data.rows.filter((r) => r.kind === "admin_out").reduce((s, r) => s + Math.abs(Math.min(0, r.amount)), 0) },
     { label: "⚠️ ভুল পেমেন্ট ফেরত বাকি", amount: t.debtActive },
-    { label: "🧾 উইথড্র ফি/পুরোনো সমন্বয়", amount: t.feeOrAdjustmentOut },
+    { label: "🧾 উইথড্র ফি (১০০৳-এর কম হলে ২০%, নাহলে ১০%)", amount: t.feeOrAdjustmentOut },
   ].filter((o) => o.amount > 0.004);
   const totalOut = outs.reduce((s, x) => s + x.amount, 0);
 
