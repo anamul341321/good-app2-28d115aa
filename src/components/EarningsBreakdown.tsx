@@ -145,11 +145,30 @@ export function EarningsBreakdown({ data, totals }: { data: BreakdownData; total
             ))}
           </div>
         )}
+        {/* মাইনিং যাচাই — তারিখ ও দিন ধরে অঙ্ক মিলিয়ে দেখানো */}
+        <div className="rounded-xl border border-cyan/30 bg-white/60 p-3 space-y-1">
+          <p className="text-[10px] font-black text-cyan">🔎 মাইনিং যাচাই (তারিখ ধরে হিসাব)</p>
+          <p className="text-[10.5px] font-bold text-navy leading-relaxed">
+            {m.activatedAt ? (
+              <>
+                মাইনিং চালু হয়েছে <b>{new Date(m.activatedAt).toLocaleString("bn-BD")}</b> — আজ পর্যন্ত{" "}
+                <b>{m.daysRunning.toFixed(2)} দিন</b>। প্রতিদিন <b>{m.perDay.toFixed(2)}৳</b> × {m.daysRunning.toFixed(2)} দিন ≈{" "}
+                <b>{(m.perDay * m.daysRunning).toFixed(2)}৳</b>; আসল জমা হয়েছে <b>{tk(m.total)}</b>।
+                <span className="block text-[9.5px] text-muted-foreground mt-0.5">
+                  👉 এই দুই অঙ্ক মিলে গেলে মাইনিং ১০০% ঠিক আছে। মাইনিং শুরুর আগের টাকা মাইনিং নয় — সেটা বোনাস/অ্যাডমিন ক্রেডিট।
+                </span>
+              </>
+            ) : (
+              <>মাইনিং এখনো চালু হয়নি — ১০টি স্লট re-verify শেষ হলেই তারিখ থেকে গোনা শুরু হবে।</>
+            )}
+          </p>
+        </div>
         <p className="text-[9.5px] text-muted-foreground leading-relaxed">
           ⛏️ প্রতিটি re-verified স্লট মাসে ৫০৳ মাইন করে (১০ স্লট = ৫০০৳/মাস, ১১ স্লট = ৫৫০৳/মাস)। রেফারের মাইনিং-এর ১০% আপনার ব্যালেন্সে যোগ হয় —
           আলাদা ওয়ালেটে যায় না। টাকা প্রতি সেকেন্ডে জমা হয়, তাই সময়ের সাথে অঙ্ক বাড়তেই থাকে।
         </p>
       </div>
+
     </div>
   );
 }
