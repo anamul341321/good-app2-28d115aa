@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getPendingSlotResets, respondSlotReset } from "@/lib/slot-reset.functions";
 import { AlertTriangle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 
 /**
  * টেলিগ্রাম সাপোর্ট থেকে কেউ স্লট রিসেট চাইলে ইউজার অ্যাপে ঢুকলেই এই কার্ডটি
@@ -17,8 +18,11 @@ export function SlotResetApproval() {
 
   const respond = useMutation({
     mutationFn: (v: { requestId: string; approve: boolean }) => respondSlotReset({ data: v }),
-    onSuccess: (res: any) => {
-      qc.invalidateQueries({ queryKey: ["pending-slot-resets"] });
+    onSuccess: async (res: any, variables) => {
+      qc.setQueryData<any[]>(["pending-slot-resets"], (requests) =>
+        requests?.filter((request) => request.id !== variables.requestId) ?? [],
+      );
+      await qc.invalidateQueries({ queryKey: ["pending-slot-resets"] });
       qc.invalidateQueries({ queryKey: ["dashboard"] });
       if (res?.approved) {
         toast.success(`স্লট রিসেট সম্পন্ন হয়েছে${res.done?.length ? `: ${res.done.join(", ")}` : ""}`);
@@ -53,21 +57,24 @@ export function SlotResetApproval() {
         </p>
 
         <div className="mt-4 grid grid-cols-2 gap-2">
-          <button
+          <Button
+            type="button"
+            variant="outline"
             className="rounded-xl border border-border px-3 py-2 text-sm font-bold"
             disabled={respond.isPending}
             onClick={() => respond.mutate({ requestId: req.id, approve: false })}
           >
             না, বাতিল করুন
-          </button>
-          <button
-            className="flex items-center justify-center gap-2 rounded-xl bg-amber-500 px-3 py-2 text-sm font-extrabold text-black"
+          </Button>
+          <Button
+            type="button"
+            className="flex items-center justify-center gap-2 rounded-xl bg-amber px-3 py-2 text-sm font-extrabold text-primary-foreground"
             disabled={respond.isPending}
             onClick={() => respond.mutate({ requestId: req.id, approve: true })}
           >
             {respond.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
             হ্যাঁ, রিসেট করুন
-          </button>
+          </Button>
         </div>
       </div>
     </div>
