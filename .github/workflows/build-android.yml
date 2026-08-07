@@ -12,6 +12,10 @@ on:
           - apk-debug
           - aab-release
 
+concurrency:
+  group: android-build-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -52,19 +56,30 @@ jobs:
         if: github.event.inputs.build_type == 'aab-release'
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
-          KEYSTORE_PATH="${{ github.workspace }}/android/app/my-release-key.jks"
-          echo "$KEYSTORE_BASE64" | base64 -d > "$KEYSTORE_PATH"
-          ls -la "$KEYSTORE_PATH"
+          set -euo pipefail
+          for name in KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD; do
+            if [ -z "${!name:-}" ]; then
+              echo "::error::$name is not configured in repository Actions secrets"
+              exit 1
+            fi
+          done
+          export ANDROID_KEYSTORE_PATH="${{ github.workspace }}/android/app/my-release-key.jks"
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$ANDROID_KEYSTORE_PATH"
+          if [ ! -s "$ANDROID_KEYSTORE_PATH" ]; then
+            echo "::error::Decoded keystore is empty"
+            exit 1
+          fi
+          keytool -list \
+            -keystore "$ANDROID_KEYSTORE_PATH" \
+            -storepass "$ANDROID_KEYSTORE_PASSWORD" \
+            -alias "$ANDROID_KEY_ALIAS" >/dev/null
           cd android
-          ./gradlew bundleRelease \
-            -Pandroid.injected.signing.store.file="$KEYSTORE_PATH" \
-            -Pandroid.injected.signing.store.password="$KEYSTORE_PASSWORD" \
-            -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \
-            -Pandroid.injected.signing.key.password="$KEY_PASSWORD"
+          ./gradlew --no-daemon bundleRelease
+          rm -f "$ANDROID_KEYSTORE_PATH"
 
       - name: Upload Debug APK
         if: github.event.inputs.build_type == 'apk-debug'
