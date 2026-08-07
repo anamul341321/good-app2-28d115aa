@@ -10,6 +10,7 @@ on:
         type: choice
         options:
           - apk-debug
+          - apk-release
           - aab-release
 
 concurrency:
@@ -51,6 +52,38 @@ jobs:
         run: |
           cd android
           ./gradlew assembleDebug
+
+      - name: Build Release APK
+        if: github.event.inputs.build_type == 'apk-release'
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          for name in KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD; do
+            if [ -z "${!name:-}" ]; then
+              echo "::error::$name is not configured in repository Actions secrets"
+              exit 1
+            fi
+          done
+          export ANDROID_KEYSTORE_PATH="${{ github.workspace }}/android/app/my-release-key.jks"
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$ANDROID_KEYSTORE_PATH"
+          if [ ! -s "$ANDROID_KEYSTORE_PATH" ]; then
+            echo "::error::Decoded keystore is empty"
+            exit 1
+          fi
+          cd android
+          ./gradlew --no-daemon assembleRelease
+          rm -f "$ANDROID_KEYSTORE_PATH"
+
+      - name: Upload Release APK
+        if: github.event.inputs.build_type == 'apk-release'
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-apk
+          path: android/app/build/outputs/apk/release/app-release.apk
 
       - name: Build Release AAB
         if: github.event.inputs.build_type == 'aab-release'

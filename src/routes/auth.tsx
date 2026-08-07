@@ -14,6 +14,7 @@ import { useQuery } from "@tanstack/react-query";
 import logo from "@/assets/logo.png";
 import { PageVoice } from "@/components/PageVoice";
 import { VideoTutorialButton } from "@/components/VideoTutorialButton";
+import { ApkDownloadCard } from "@/components/ApkDownloadCard";
 import { QrScanner } from "@/components/QrScanner";
 import { ForgotPasswordDialog } from "@/components/ForgotPasswordDialog";
 import { getSharedSession } from "@/lib/auth-session";
@@ -447,6 +448,9 @@ export function AuthPage() {
             <div className="gold-divider mt-3" />
             <div className="mt-4">
               <VideoTutorialButton />
+            </div>
+            <div className="mt-3 text-left">
+              <ApkDownloadCard />
             </div>
           </div>
 

@@ -14,6 +14,7 @@ import { HeroBanner } from "@/components/HeroBanner";
 import { TourReplayButton } from "@/components/GuidedTour";
 import { PageVoice } from "@/components/PageVoice";
 import { VideoTutorialButton } from "@/components/VideoTutorialButton";
+import { ApkDownloadCard } from "@/components/ApkDownloadCard";
 import { BotStartButton } from "@/components/BotStartButton";
 import { KycAlertBanner } from "@/components/KycAlertBanner";
 import { GmailSecurityBanner } from "@/components/GmailSecurityBanner";
@@ -545,6 +546,10 @@ function HomePage() {
         <BotStartButton />
       </div>
 
+
+      <div className="px-1 pb-1">
+        <ApkDownloadCard />
+      </div>
 
       <div className="text-center py-2 space-y-3">
         <VideoTutorialButton />
