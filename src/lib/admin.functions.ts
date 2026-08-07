@@ -315,6 +315,7 @@ export const adminUserDetail = createServerFn({ method: "POST" })
       profile: profile.data,
       referrer: referrer?.data ?? null,
       blocked: (() => {
+        if ((profile.data as any)?.banned === true) return true;
         const bu = (authUserRes as any)?.data?.user?.banned_until as string | null | undefined;
         if (!bu) return false;
         return new Date(bu).getTime() > Date.now();
