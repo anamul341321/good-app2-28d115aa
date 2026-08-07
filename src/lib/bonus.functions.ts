@@ -94,53 +94,22 @@ export async function settleWelcomeBonuses(
   rates: BonusRates;
 }> {
   const rates = await readActiveRates(admin);
+  // Eligibility counting, profile-row locking, claim flags and credits all
+  // happen in one database transaction. Parallel dashboard requests can no
+  // longer read an old flag and award the same bonus more than once.
+  const { data: claim, error: claimError } = await admin.rpc("claim_welcome_bonuses", {
+    _user_id: userId,
+  });
+  if (claimError) throw new Error(claimError.message);
+  const result = (claim ?? {}) as Record<string, unknown>;
+  const selfFirstPaid = Number(result.self_first_amount ?? 0) > 0;
+  const referrerPaid = Number(result.referrer_amount ?? 0) > 0;
+  const userReverifyPaid = Number(result.reverify_amount ?? 0) > 0;
 
-  const { data: profile } = await admin
-    .from("profiles")
-    .select("bonus_first_verify_claimed, bonus_first_verify_self_claimed, bonus_reverify_claimed, referred_by")
-    .eq("id", userId)
-    .maybeSingle();
-  if (!profile) {
-    return {
-      selfFirstPaid: false, referrerPaid: false, userReverifyPaid: false,
-      selfFirstAmount: rates.first_verify_bonus,
-      referrerAmount:  rates.referrer_bonus,
-      userAmount:      rates.reverify_bonus,
-      rates,
-    };
-  }
-
-  let selfFirstPaid    = !!profile.bonus_first_verify_self_claimed;
-  let referrerPaid     = !!profile.bonus_first_verify_claimed;
-  let userReverifyPaid = !!profile.bonus_reverify_claimed;
-
-  if (!selfFirstPaid && firstVerifyCount >= 10) {
-    await creditAccrued(admin, userId, rates.first_verify_bonus);
-    await admin.from("profiles").update({ bonus_first_verify_self_claimed: true }).eq("id", userId);
-    selfFirstPaid = true;
-  }
-
-  if (!referrerPaid && firstVerifyCount >= 10) {
-    if (profile.referred_by && profile.referred_by !== userId) {
-      await creditAccrued(admin, profile.referred_by, rates.referrer_bonus);
-    }
-    await admin.from("profiles").update({ bonus_first_verify_claimed: true }).eq("id", userId);
-    referrerPaid = true;
-  }
-
-  if (!userReverifyPaid && reverifyCount >= 10) {
-    // The database recounts 10 distinct re-verified slots while holding the
-    // profile row lock, so stale client counts or concurrent dashboard loads
-    // cannot award this bonus early or more than once.
-    const { data: awarded, error: claimError } = await admin.rpc("claim_reverify_bonus", {
-      _user_id: userId,
-    });
-    if (claimError) throw new Error(claimError.message);
-    userReverifyPaid = Number(awarded ?? 0) > 0;
-    if (userReverifyPaid) {
-      await admin.rpc("settle_mining", { _user_id: userId });
-    }
-  }
+  // Retained parameters keep this helper's existing call signature stable;
+  // the database deliberately recounts the slots instead of trusting them.
+  void firstVerifyCount;
+  void reverifyCount;
 
   return {
     selfFirstPaid, referrerPaid, userReverifyPaid,
