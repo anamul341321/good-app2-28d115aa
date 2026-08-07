@@ -25,9 +25,12 @@ export const requestWithdraw = createServerFn({ method: "POST" })
     // KYC (টেলিগ্রাম বট লিংক) ছাড়া উইথড্র বন্ধ
     const { data: kycProf } = await supabase
       .from("profiles")
-      .select("kyc_verified, telegram_user_id, email, email_verified")
+      .select("kyc_verified, telegram_user_id, email, email_verified, banned")
       .eq("id", userId)
       .maybeSingle();
+    if ((kycProf as any)?.banned === true) {
+      throw new Error("আপনার account block করা আছে — admin-এর সাথে যোগাযোগ করুন");
+    }
     // টেলিগ্রাম লিংক থাকলেই KYC ধরা হবে (পুরোনো লিংক করা একাউন্টও চলবে)
     const kycOk = !!(kycProf as any)?.telegram_user_id || !!(kycProf as any)?.kyc_verified;
     if (!kycOk) {

@@ -66,19 +66,6 @@ export async function readActiveRates(admin: any): Promise<BonusRates> {
   }
 }
 
-async function creditAccrued(admin: any, userId: string, amount: number) {
-  if (amount <= 0) return;
-  // Atomic in one SQL statement: a concurrent settle_mining() can no longer
-  // overwrite the bonus_amount bump, which used to make bonus money look like
-  // mining income (and inflate the "মাইনিং ব্যালেন্স" box).
-  const { error } = await admin.rpc("credit_bonus_balance", {
-    _user_id: userId,
-    _amount: amount,
-  });
-  if (error) throw new Error(error.message);
-}
-
-
 export async function settleWelcomeBonuses(
   admin: any,
   userId: string,
