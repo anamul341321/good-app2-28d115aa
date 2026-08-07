@@ -887,6 +887,11 @@ export const adminAdjustBalance = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => AdjustInput.parse(i))
   .handler(async ({ data }) => {
     const supabaseAdmin = await gate();
+    // 🔒 নিরাপত্তা: অ্যাডমিন প্যানেল থেকে আর কোনো ইউজারকে ব্যালেন্স যোগ করা
+    // যাবে না (শুধু কাটা যাবে)। বোনাস/মাইনিং ছাড়া টাকা যোগ হওয়া বন্ধ।
+    if (data.delta > 0) {
+      throw new Error("ব্যালেন্স যোগ করা বন্ধ করা হয়েছে — শুধু কাটা (Sub) যাবে");
+    }
     const { data: m } = await supabaseAdmin.from("mining_state").select("*").eq("user_id", data.userId).maybeSingle();
     if (!m) throw new Error("No mining state");
     const newAccrued = Math.max(0, Number(m.accrued_amount) + data.delta);
@@ -903,6 +908,7 @@ export const adminAdjustBalance = createServerFn({ method: "POST" })
     });
     return { ok: true, new_balance: newAccrued };
   });
+
 
 export const adminListCredits = createServerFn({ method: "GET" }).handler(async () => {
   const supabaseAdmin = await gate();
