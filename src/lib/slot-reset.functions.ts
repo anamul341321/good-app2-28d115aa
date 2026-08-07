@@ -21,14 +21,16 @@ export const getPendingSlotResets = createServerFn({ method: "GET" })
     }));
   });
 
-const Respond = z.object({
-  requestId: z.string().uuid(),
-  approve: z.boolean(),
-});
-
 export const respondSlotReset = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i: unknown) => Respond.parse(i))
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        requestId: z.string().uuid(),
+        approve: z.boolean(),
+      })
+      .parse(i),
+  )
   .handler(async ({ data, context }) => {
     const mod = await import("@/lib/slot-reset-requests.server");
     if (!data.approve) {

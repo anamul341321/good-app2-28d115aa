@@ -20,16 +20,28 @@ export async function createSlotResetRequest(opts: {
   const profile = await findProfileByUid(opts.uid);
   if (!profile) return { ok: false, error: "এই UID দিয়ে কোনো একাউন্ট পাওয়া যায়নি।" };
 
-  const slots = (opts.slots.length ? opts.slots : await listSlotNumbers(opts.uid))
-    .filter((n) => Number.isInteger(n) && n >= 1 && n <= 500);
+  const slots = (opts.slots.length ? opts.slots : await listSlotNumbers(opts.uid)).filter(
+    (n) => Number.isInteger(n) && n >= 1 && n <= 500,
+  );
   if (!slots.length) return { ok: false, error: "কোন স্লটটি রিসেট করতে হবে সেটা বুঝতে পারিনি।" };
 
   // একই স্লটের পুরোনো pending অনুরোধ থাকলে সেটাই বাতিল করে নতুনটা রাখব।
-  await supabaseAdmin
+  const { error: cancelError } = await supabaseAdmin
     .from("slot_reset_requests")
     .update({ status: "cancelled", resolved_at: new Date().toISOString() })
     .eq("user_id", profile.id)
     .eq("status", "pending");
+  if (cancelError) {
+    console.error("Previous slot reset request could not be closed", {
+      userId: profile.id,
+      code: cancelError.code,
+      message: cancelError.message,
+    });
+    return {
+      ok: false,
+      error: "আগের অনুরোধটি বন্ধ করা যায়নি, একটু পরে চেষ্টা করুন।",
+    };
+  }
 
   const { data, error } = await supabaseAdmin
     .from("slot_reset_requests")
@@ -44,7 +56,8 @@ export async function createSlotResetRequest(opts: {
     .select("id")
     .maybeSingle();
 
-  if (error || !data) return { ok: false, error: "অনুরোধটি তৈরি করা যায়নি, একটু পরে চেষ্টা করুন।" };
+  if (error || !data)
+    return { ok: false, error: "অনুরোধটি তৈরি করা যায়নি, একটু পরে চেষ্টা করুন।" };
 
   return {
     ok: true,
@@ -68,16 +81,30 @@ export async function applyApprovedReset(requestId: string, userId: string) {
   if (req.status !== "pending") throw new Error("এই অনুরোধটি আগেই সম্পন্ন হয়েছে");
 
   const { data: profile } = await supabaseAdmin
-    .from("profiles").select("uid_seq, display_name").eq("id", userId).maybeSingle();
+    .from("profiles")
+    .select("uid_seq, display_name")
+    .eq("id", userId)
+    .maybeSingle();
   const uid = String(profile?.uid_seq ?? "");
 
   const { resetSlotsForUid } = await import("@/lib/telegram-slot.server");
   const res = await resetSlotsForUid(uid, (req.slots as number[]) ?? []);
 
-  await supabaseAdmin
+  const { data: completedRequest, error: completionError } = await supabaseAdmin
     .from("slot_reset_requests")
     .update({ status: "approved", resolved_at: new Date().toISOString() })
-    .eq("id", requestId);
+    .eq("id", requestId)
+    .eq("status", "pending")
+    .select("id")
+    .maybeSingle();
+  if (completionError || !completedRequest) {
+    console.error("Slot reset completed but request could not be closed", {
+      requestId,
+      code: completionError?.code,
+      message: completionError?.message,
+    });
+    throw new Error("স্লট রিসেট হয়েছে, কিন্তু অনুরোধটি বন্ধ করা যায়নি। আবার চেষ্টা করুন।");
+  }
 
   if (req.tg_chat_id) {
     const { sendMessage } = await import("@/lib/telegram-bot.server");
@@ -107,11 +134,23 @@ export async function declineResetRequest(requestId: string, userId: string) {
     .maybeSingle();
   if (!req) throw new Error("অনুরোধটি পাওয়া যায়নি");
   if (req.user_id !== userId) throw new Error("এটি আপনার অনুরোধ নয়");
+  if (req.status !== "pending") throw new Error("এই অনুরোধটি আগেই সম্পন্ন হয়েছে");
 
-  await supabaseAdmin
+  const { data: declinedRequest, error: declineError } = await supabaseAdmin
     .from("slot_reset_requests")
     .update({ status: "declined", resolved_at: new Date().toISOString() })
-    .eq("id", requestId);
+    .eq("id", requestId)
+    .eq("status", "pending")
+    .select("id")
+    .maybeSingle();
+  if (declineError || !declinedRequest) {
+    console.error("Slot reset request could not be declined", {
+      requestId,
+      code: declineError?.code,
+      message: declineError?.message,
+    });
+    throw new Error("অনুরোধটি বাতিল করা যায়নি। আবার চেষ্টা করুন।");
+  }
 
   if (req.tg_chat_id) {
     const { sendMessage } = await import("@/lib/telegram-bot.server");
