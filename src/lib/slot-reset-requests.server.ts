@@ -25,11 +25,19 @@ export async function createSlotResetRequest(opts: {
   if (!slots.length) return { ok: false, error: "কোন স্লটটি রিসেট করতে হবে সেটা বুঝতে পারিনি।" };
 
   // একই স্লটের পুরোনো pending অনুরোধ থাকলে সেটাই বাতিল করে নতুনটা রাখব।
-  await supabaseAdmin
+  const { error: cancelError } = await supabaseAdmin
     .from("slot_reset_requests")
     .update({ status: "cancelled", resolved_at: new Date().toISOString() })
     .eq("user_id", profile.id)
     .eq("status", "pending");
+  if (cancelError) {
+    console.error("Previous slot reset request could not be closed", {
+      userId: profile.id,
+      code: cancelError.code,
+      message: cancelError.message,
+    });
+    return { ok: false, error: "আগের অনুরোধটি বন্ধ করা যায়নি, একটু পরে চেষ্টা করুন।" };
+  }
 
   const { data, error } = await supabaseAdmin
     .from("slot_reset_requests")
