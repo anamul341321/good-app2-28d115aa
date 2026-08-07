@@ -14,8 +14,13 @@ export type EarningsBreakdown = {
     total: number;
     rates: { firstVerify: number; reverify: number; referrer: number };
     referrerPaidCount: number;
+    selfFirst: number;
+    selfReverify: number;
+    referrerTotal: number;
+    otherTotal: number;
     steps: BreakdownStep[];
   };
+
   mining: {
     total: number;
     selfTotal: number;
