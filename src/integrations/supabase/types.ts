@@ -499,6 +499,7 @@ export type Database = {
           qualifying_referees: number
           referral_accrued: number
           referral_units: number
+          self_mining_accrued: number
           self_qualified: boolean
           self_slots: number
           user_id: string
@@ -515,6 +516,7 @@ export type Database = {
           qualifying_referees?: number
           referral_accrued?: number
           referral_units?: number
+          self_mining_accrued?: number
           self_qualified?: boolean
           self_slots?: number
           user_id: string
@@ -531,6 +533,7 @@ export type Database = {
           qualifying_referees?: number
           referral_accrued?: number
           referral_units?: number
+          self_mining_accrued?: number
           self_qualified?: boolean
           self_slots?: number
           user_id?: string
