@@ -8,6 +8,10 @@ export type BreakdownData = {
     total: number;
     rates: { firstVerify: number; reverify: number; referrer: number };
     referrerPaidCount: number;
+    selfFirst?: number;
+    selfReverify?: number;
+    referrerTotal?: number;
+    otherTotal?: number;
     steps: BreakdownStep[];
   };
   mining: {
@@ -28,19 +32,40 @@ export type BreakdownData = {
   };
 };
 
+export type BreakdownTotals = { withdrawn?: number; balance?: number; debtActive?: number };
+
 /**
  * "ধাপে ধাপে হিসাব" — explains exactly how the bonus total and the mining
  * total were formed, so the user (or admin) can reconcile every taka by hand.
  */
-export function EarningsBreakdown({ data }: { data: BreakdownData }) {
+export function EarningsBreakdown({ data, totals }: { data: BreakdownData; totals?: BreakdownTotals }) {
   const b = data.bonus;
   const m = data.mining;
-  const refBonus = b.steps.find((s) => s.key === "referrer")?.amount ?? 0;
-  const selfFirst = b.steps.find((s) => s.key === "self-first")?.amount ?? 0;
-  const selfRe = b.steps.find((s) => s.key === "self-reverify")?.amount ?? 0;
+  const refBonus = b.referrerTotal ?? b.steps.find((s) => s.key === "referrer")?.amount ?? 0;
+  const selfFirst = b.selfFirst ?? b.steps.find((s) => s.key === "self-first")?.amount ?? 0;
+  const selfRe = b.selfReverify ?? b.steps.find((s) => s.key === "self-reverify")?.amount ?? 0;
+  const other = b.otherTotal ?? 0;
+  const lifetimeIn = b.total + m.total;
+  const withdrawn = totals?.withdrawn ?? 0;
 
   return (
     <div className="space-y-4">
+      {/* লাইফটাইম হিসাব — এক নজরে */}
+      <div className="rounded-2xl border-2 border-cyan/30 bg-cyan/5 p-4 space-y-2">
+        <p className="text-[10px] uppercase tracking-widest font-black text-cyan">এক নজরে পুরো হিসাব</p>
+        <div className="grid grid-cols-3 gap-2">
+          <Cell label="মোট আয়" value={tk(lifetimeIn)} tone="text-emerald" />
+          <Cell label="মোট তোলা/খরচ" value={tk(withdrawn)} tone="text-rose" />
+          <Cell label="এখন ব্যালেন্স" value={tk(totals?.balance ?? lifetimeIn - withdrawn)} tone="text-cyan" />
+        </div>
+        <p className="text-[11px] font-bold text-navy leading-relaxed">
+          🧮 <b>{tk(b.total)}</b> বোনাস + <b>{tk(m.selfTotal)}</b> নিজের মাইনিং + <b>{tk(m.referralTotal)}</b> রেফার ১০% কমিশন
+          = <b>{tk(lifetimeIn)}</b> মোট আয়। এর মধ্যে <b>{tk(withdrawn)}</b> তোলা/খরচ হয়েছে
+          {(totals?.debtActive ?? 0) > 0 ? <> এবং <b>{tk(totals?.debtActive ?? 0)}</b> warning বাকি আছে</> : null}, তাই এখন হাতে{" "}
+          <b>{tk(totals?.balance ?? lifetimeIn - withdrawn)}</b>।
+        </p>
+      </div>
+
       {/* সংক্ষেপে — একদম সহজ ভাষায় */}
       <div className="rounded-2xl border-2 border-emerald/30 bg-emerald/5 p-4 space-y-2">
         <p className="text-[10px] uppercase tracking-widest font-black text-emerald">সংক্ষেপে — একদম সহজ ভাষায়</p>
@@ -51,6 +76,7 @@ export function EarningsBreakdown({ data }: { data: BreakdownData }) {
             {refBonus > 0 ? (
               <> + রেফার বোনাস <b>{b.referrerPaidCount} জন × {b.rates.referrer}৳ = {refBonus}৳</b></>
             ) : null}
+            {other > 0 ? <> + অন্যান্য/অ্যাডমিন <b>{tk(other)}</b></> : null}
             <span className="block text-[10px] font-bold text-muted-foreground">
               👉 এটা একবারই পাওয়া যায় (প্রথম ১০ স্লটে), প্রতি মাসে না।
             </span>
@@ -64,11 +90,12 @@ export function EarningsBreakdown({ data }: { data: BreakdownData }) {
             </span>
           </li>
           <li className="pt-1 border-t border-emerald/20">
-            🧮 তাই মোট এসেছে <b>{tk(b.total + m.total)}</b> — বোনাস {tk(b.total)} + মাইনিং {tk(m.total)}।
+            🧮 তাই মোট এসেছে <b>{tk(lifetimeIn)}</b> — বোনাস {tk(b.total)} + মাইনিং {tk(m.total)}।
             <span className="block text-[10px] font-bold text-muted-foreground">নিচে ধাপে ধাপে প্রতিটি টাকার হিসাব দেওয়া আছে।</span>
           </li>
         </ul>
       </div>
+
 
 
       <div className="rounded-2xl border border-amber/30 bg-amber/5 p-4 space-y-2">
