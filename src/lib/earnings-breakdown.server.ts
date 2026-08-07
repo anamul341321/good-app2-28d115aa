@@ -40,7 +40,7 @@ const MONTHLY_PER_SLOT = 50;
 export async function buildEarningsBreakdown(admin: any, userId: string): Promise<EarningsBreakdown> {
   const { readActiveRates } = await import("@/lib/bonus.functions");
 
-  const [rates, msRes, profRes, refsRes] = await Promise.all([
+  const [rates, msRes, profRes, refsRes, auditRes] = await Promise.all([
     readActiveRates(admin),
     admin.from("mining_state").select("*").eq("user_id", userId).maybeSingle(),
     admin
@@ -53,11 +53,29 @@ export async function buildEarningsBreakdown(admin: any, userId: string): Promis
       .select("id, uid_seq, display_name, bonus_first_verify_claimed")
       .eq("referred_by", userId)
       .limit(2000),
+    // Real bonus-credit events (audit trail) — the only fully trustworthy
+    // record of "কখন কত বোনাস যোগ হলো".
+    admin
+      .from("balance_audit")
+      .select("id, source, note, bonus_before, bonus_after, created_at")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: true })
+      .limit(500),
   ]);
 
   const ms = msRes?.data ?? {};
   const prof = profRes?.data ?? {};
   const referees = refsRes?.data ?? [];
+  const bonusEvents = (auditRes?.data ?? [])
+    .map((r: any) => ({
+      id: r.id as string,
+      source: (r.source ?? "db") as string,
+      note: (r.note ?? null) as string | null,
+      created_at: r.created_at as string,
+      delta: Number(r.bonus_after ?? 0) - Number(r.bonus_before ?? 0),
+    }))
+    .filter((r: any) => Math.abs(r.delta) > 0.009);
+
 
   const bonusTotal = Number(ms.bonus_amount ?? 0);
   const accrued = Number(ms.accrued_amount ?? 0);
