@@ -15,6 +15,7 @@ import { useLang } from "@/lib/i18n";
 import { miningWindowInfo, nextOpenLabelBn } from "@/lib/mining-window";
 import { withdrawWindowInfo } from "@/lib/withdraw-window";
 import { WithdrawClosedBanner } from "@/components/WithdrawClosedBanner";
+import { WithdrawRejectDetails } from "@/components/WithdrawRejectDetails";
 
 
 
@@ -453,7 +454,7 @@ function WithdrawPage() {
                       <span className="break-all">{w.wallet_number}</span> <Copy className="w-2.5 h-2.5 shrink-0" />
                     </button>
                     {w.status === "rejected" && (w.reject_reason || w.admin_note || w.reject_proof_path) && (
-                      <RejectDetails w={w} />
+                      <WithdrawRejectDetails w={w} />
                     )}
                   </div>
                   <span translate="no" className={`text-[10px] font-black px-2 py-1 rounded-full shrink-0 ${
