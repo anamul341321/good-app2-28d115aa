@@ -111,9 +111,12 @@ export function EarningsBreakdown({ data, totals }: { data: BreakdownData; total
           </p>
         )}
       </div>
-
-
-
+      <details className="group space-y-4">
+        <summary className="cursor-pointer list-none rounded-xl border border-border bg-surface-2 px-3 py-2 text-[11px] font-black text-navy">
+          🔍 আরও বিস্তারিত হিসাব দেখুন (তারিখ ধরে প্রতিটি টাকা)
+        </summary>
+        <div className="space-y-4 pt-3">
+      <div className="rounded-2xl border border-amber/30 bg-amber/5 p-4 space-y-2">
 
       <div className="rounded-2xl border border-amber/30 bg-amber/5 p-4 space-y-2">
         <div className="flex items-center justify-between gap-2">
