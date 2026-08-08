@@ -1,6 +1,6 @@
 import { memo, useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { computeLiveBalance, monthlyRate, MONTHLY_PER_SLOT } from "@/lib/mining";
+import { computeLiveBalance, monthlyRate, MONTHLY_PER_SLOT, splitBalance } from "@/lib/mining";
 import { miningWindowInfo, nextOpenLabelBn } from "@/lib/mining-window";
 import { Wallet, Sparkles } from "lucide-react";
 

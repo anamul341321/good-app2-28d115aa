@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { getDashboard, getMyWithdrawals } from "@/lib/dashboard.functions";
 import { requestWithdraw } from "@/lib/withdraw.functions";
 import { MIN_WITHDRAW_BDT } from "@/lib/constants";
-import { computeLiveBalance } from "@/lib/mining";
+import { computeLiveBalance, splitBalance } from "@/lib/mining";
 import { useState, useEffect } from "react";
 import { ArrowDownToLine, Loader2, Lock, Copy, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";

@@ -3,7 +3,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { sendBalance, getMyTransfers, lookupTransferTarget } from "@/lib/transfer.functions";
 import { getDashboard } from "@/lib/dashboard.functions";
-import { computeLiveBalance } from "@/lib/mining";
+import { computeLiveBalance, splitBalance } from "@/lib/mining";
 import { miningWindowInfo, nextOpenLabelBn } from "@/lib/mining-window";
 import { Loader2, Send, Search, ArrowUpRight, ArrowDownLeft, User, ArrowLeft, Sparkles } from "lucide-react";
 import { toast } from "sonner";
