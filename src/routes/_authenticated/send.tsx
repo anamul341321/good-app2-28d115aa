@@ -131,8 +131,8 @@ function SendPage() {
           <p className="text-xs font-black text-amber-600">⛏️🔒 {t("মাইনিং ব্যালেন্স এখন লক", "Mining balance is locked now")}</p>
           <p className="text-[11px] text-muted-foreground font-bold mt-1 leading-relaxed">
             {t(
-              `মাইনিংয়ের টাকা শুধু প্রতি মাসের ১, ২, ৩ তারিখে অন্য কাউকে পাঠানো বা withdraw করা যাবে। পরবর্তী উইন্ডো: ${nextOpenLabelBn()} (আর ${win.daysUntilOpen} দিন)। এখন শুধু বোনাসের ${bonusAvailable}৳ পাঠাতে পারবেন।`,
-              `Mining balance can only be sent or withdrawn on the 1st–3rd of each month. Next window in ${win.daysUntilOpen} day(s). For now you can only send bonus balance: ${bonusAvailable}৳.`,
+              `মাইনিংয়ের টাকা শুধু প্রতি মাসের ১, ২, ৩ তারিখে অন্য কাউকে পাঠানো বা withdraw করা যাবে। পরবর্তী উইন্ডো: ${nextOpenLabelBn()} (আর ${win.daysUntilOpen} দিন)। এখন শুধু মেইন ব্যালেন্সের ${bonusAvailable}৳ পাঠাতে পারবেন।`,
+              `Mining balance can only be sent or withdrawn on the 1st–3rd of each month. Next window in ${win.daysUntilOpen} day(s). For now you can only send your main balance: ${bonusAvailable}৳.`,
             )}
           </p>
         </div>

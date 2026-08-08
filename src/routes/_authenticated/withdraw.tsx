@@ -181,7 +181,7 @@ function WithdrawPage() {
         <div className="rounded-2xl p-4 border border-border bg-white/70 space-y-2">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-[10px] uppercase tracking-widest text-emerald font-black">🎁 বোনাস (এখনই উইথড্র)</p>
+              <p className="text-[10px] uppercase tracking-widest text-emerald font-black">💚 মেইন ব্যালেন্স (এখনই উইথড্র)</p>
               <p className="mono-num text-2xl font-black text-emerald mt-0.5" translate="no">{bonusAvailable}৳</p>
             </div>
             <div className="text-right">
@@ -226,7 +226,7 @@ function WithdrawPage() {
               <li className="flex gap-2"><span className="text-amber shrink-0">📅</span><span>প্রতি মাসের <b className="text-rose">১, ২ ও ৩ তারিখ</b> — এই ৩ দিনই মাইনিং ব্যালেন্স withdraw করা যাবে।</span></li>
               <li className="flex gap-2"><span className="text-emerald shrink-0">✅</span><span>১ তারিখ withdraw করে ফেললে আবার <b>আগামী মাসের ১ তারিখ</b> পর্যন্ত lock হয়ে যাবে।</span></li>
               <li className="flex gap-2"><span className="text-cyan shrink-0">⏰</span><span>১ তারিখ মিস করলে ২ বা ৩ তারিখে দিতে পারবেন। <b>৩ দিনও মিস করলে</b> আবার পরের মাসের ১ তারিখ পর্যন্ত lock।</span></li>
-              <li className="flex gap-2"><span className="text-violet shrink-0">🎁</span><span><b>বোনাস ব্যালেন্স</b> এই নিয়মের বাইরে — যেকোনো সময় withdraw করা যাবে।</span></li>
+              <li className="flex gap-2"><span className="text-violet shrink-0">🎁</span><span><b>মেইন ব্যালেন্স</b> (বোনাস + রেফার বোনাস) এই নিয়মের বাইরে — যেকোনো সময় withdraw করা যাবে।</span></li>
             </ul>
           </div>
         </div>
