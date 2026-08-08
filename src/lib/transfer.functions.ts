@@ -33,6 +33,23 @@ export const sendBalance = createServerFn({ method: "POST" })
         .update({ withdrawn_amount: cur + fee })
         .eq("user_id", context.userId);
     }
+    // Notify admins (private chat + group with mention) about every transfer,
+    // since transfer-funded withdrawals are the main abuse pattern.
+    try {
+      const { alertAdminGroup } = await import("./telegram-alert.server");
+      const { data: sp } = await supabaseAdmin
+        .from("profiles").select("uid_seq, display_name").eq("id", context.userId).maybeSingle();
+      await alertAdminGroup(
+        `🔄 <b>ব্যালেন্স ট্রান্সফার</b>\n` +
+          `👤 প্রেরক: ${(sp as any)?.display_name ?? "User"} (UID ${(sp as any)?.uid_seq ?? "—"})\n` +
+          `👥 প্রাপক: ${r?.receiver_name ?? "User"}\n` +
+          `💸 ${data.amount}৳ · ফি ${fee}৳\n` +
+          `⚠️ প্রাপক এই টাকা দিয়ে withdraw দিলে অবশ্যই যাচাই করুন।`,
+      );
+    } catch {
+      // alerting must never break a valid transfer
+    }
+
     return { ...r, fee };
   });
 
