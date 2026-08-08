@@ -199,11 +199,12 @@ export function MiningCounter({
             </p>
           </div>
           <div className="rounded-2xl p-2.5 border border-white/20 bg-white/10 backdrop-blur-md">
-            <p className="text-[9px] font-black tracking-widest text-white/70">🎁 বোনাস ব্যালেন্স</p>
+            <p className="text-[9px] font-black tracking-widest text-white/70">💚 মেইন ব্যালেন্স</p>
             <p className="mono-num text-base font-black text-yellow-100 mt-0.5">{bonusPart.toFixed(2)}<span className="text-[10px] text-white/60">৳</span></p>
             <p className="text-[8px] text-white/60 leading-tight mt-0.5">
-              ফার্স্ট/রি-ভেরিফাই ও রেফার বোনাস · যেকোনো সময় তোলা যাবে
+              বোনাস + রেফার বোনাস · যেকোনো সময় তোলা যাবে
             </p>
+
           </div>
         </div>
 
