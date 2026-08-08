@@ -82,6 +82,13 @@ export function EarningsBreakdown({ data, totals }: { data: BreakdownData; total
           />
           {other > 0 && <Line ok text={`অন্যান্য / অ্যাডমিন যোগ — ${tk(other)}`} />}
           <p className="text-[10px] font-bold text-muted-foreground">👉 বোনাস একবারই পাওয়া যায়, প্রতি মাসে না।</p>
+          {b.ratesAssumed && b.currentRates && (
+            <p className="rounded-lg border border-amber/40 bg-amber/10 p-2 text-[10px] font-bold text-amber leading-relaxed">
+              ⏳ আপনি যখন verify করেছিলেন তখনকার হার অনুযায়ী হিসাব দেখানো হয়েছে (first verify {b.rates.firstVerify}৳, re-verify{" "}
+              {b.rates.reverify}৳, রেফার {b.rates.referrer}৳)। এখনকার অফার রেট আলাদা — first verify {b.currentRates.firstVerify}৳,
+              re-verify {b.currentRates.reverify}৳, রেফার {b.currentRates.referrer}৳। পুরোনো বোনাস পুরোনো হারেই থাকে।
+            </p>
+          )}
         </SimpleStep>
 
         <SimpleStep n={2} title="মাইনিং থেকে জমা হয়েছে" amount={tk(m.total)} tone="text-cyan">
@@ -102,15 +109,26 @@ export function EarningsBreakdown({ data, totals }: { data: BreakdownData; total
           <Line ok text={`বোনাস ${tk(b.total)} + মাইনিং ${tk(m.total)}${legacyUnclassified > 0 ? ` + পুরোনো ক্রেডিট ${tk(legacyUnclassified)}` : ""} = ${tk(lifetimeIn)}`} />
         </SimpleStep>
 
-        <SimpleStep n={4} title="উইথড্র / খরচ হয়েছে" amount={`− ${tk(withdrawn)}`} tone="text-rose">
+        <SimpleStep n={4} title="ব্যালেন্স থেকে কত গেছে" amount={`− ${tk(withdrawn)}`} tone="text-rose">
           {totals?.paidWithdrawals !== undefined && (
-            <Line ok text={`হাতে পেয়েছেন ${tk(totals.paidWithdrawals)}`} />
+            <Line ok text={`💸 উইথড্র করে হাতে পেয়েছেন — ${tk(totals.paidWithdrawals)}`} />
           )}
-          {totals?.paidWithdrawals !== undefined && totals.paidWithdrawals !== withdrawn && (
-            <Line ok text={`উইথড্র ফি বাবদ কাটা হয়েছে ${tk(withdrawn - totals.paidWithdrawals)} (তাই ব্যালেন্স থেকে মোট ${tk(withdrawn)} কমেছে)`} />
+          {(totals?.successfulRecharges ?? 0) > 0 && (
+            <Line ok text={`📱 মোবাইল রিচার্জ নিয়েছেন — ${tk(totals!.successfulRecharges!)}`} />
           )}
-          {(totals?.debtActive ?? 0) > 0 && <Line ok text={`warning/পাওনা বাকি ${tk(totals?.debtActive ?? 0)}`} />}
+          {(totals?.transfersOutTotal ?? 0) > 0 && (
+            <Line ok text={`🔁 অন্য ইউজারকে পাঠিয়েছেন — ${tk(totals!.transfersOutTotal!)}`} />
+          )}
+          {(totals?.feeOrAdjustmentOut ?? 0) > 0 && (
+            <Line ok text={`🧾 উইথড্র ফি (১০–২০%) কাটা হয়েছে — ${tk(totals!.feeOrAdjustmentOut!)}`} />
+          )}
+          <p className="text-[10px] font-bold text-muted-foreground">
+            👉 সব মিলিয়ে ব্যালেন্স থেকে কমেছে {tk(withdrawn)} — এর মধ্যে আপনি হাতে/রিচার্জে পেয়েছেন{" "}
+            {tk((totals?.paidWithdrawals ?? 0) + (totals?.successfulRecharges ?? 0) + (totals?.transfersOutTotal ?? 0))}, বাকিটা ফি।
+          </p>
+          {(totals?.debtActive ?? 0) > 0 && <Line ok text={`⚠️ warning/পাওনা বাকি ${tk(totals?.debtActive ?? 0)}`} />}
         </SimpleStep>
+
 
         <SimpleStep n={5} title="এখন হাতে আছে" amount={tk(balance)} tone="text-cyan">
           <Line ok text={`মোট আয় ${tk(lifetimeIn)} − তোলা/খরচ ${tk(withdrawn)}${(totals?.debtActive ?? 0) > 0 ? ` − পাওনা ${tk(totals?.debtActive ?? 0)}` : ""} = ${tk(balance)}`} />
