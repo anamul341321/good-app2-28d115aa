@@ -624,6 +624,48 @@ function UserDetail() {
         );
       })()}
 
+      {/* Balance freeze / unfreeze — block না করেই টাকা নড়াচড়া বন্ধ */}
+      {(() => {
+        const frozen = (data as any)?.profile?.balance_frozen === true;
+        const reason = (data as any)?.profile?.balance_frozen_reason as string | null;
+        return (
+          <div className={`glass rounded-2xl p-4 space-y-2 border ${frozen ? "border-sky-500/50 bg-sky-500/5" : "border-border"}`}>
+            <div className="flex items-center gap-2">
+              <ShieldOff className={`w-4 h-4 ${frozen ? "text-sky-400" : "text-cyan-400"}`} />
+              <p className={`text-[10px] uppercase tracking-widest font-bold ${frozen ? "text-sky-400" : "text-cyan-400"}`}>
+                {frozen ? "🧊 Balance Frozen" : "Balance Freeze/Unfreeze"}
+              </p>
+            </div>
+            <p className="text-[10px] text-muted-foreground">
+              {frozen
+                ? `এই user-এর ব্যালেন্স freeze — withdraw, send, recharge কিছুই করতে পারবে না।${reason ? ` কারণ: ${reason}` : ""}`
+                : "Freeze করলে user login করতে পারবে কিন্তু withdraw/send/recharge করতে পারবে না। Login বন্ধ হবে না।"}
+            </p>
+            <button
+              disabled={setFrozen.isPending}
+              onClick={() => {
+                const next = !frozen;
+                if (next) {
+                  const r = prompt("Freeze করার কারণ লিখুন (user দেখতে পাবে):", "প্রথম ১০টি slot re-verify সম্পন্ন হয়নি — বোনাস হিসাব যাচাই চলছে");
+                  if (r === null) return;
+                  setFrozen.mutate({ frozen: true, reason: r });
+                } else {
+                  if (!confirm("ব্যালেন্স আবার চালু করবেন?")) return;
+                  setFrozen.mutate({ frozen: false });
+                }
+              }}
+              className={`w-full py-2 rounded-xl font-black text-[11px] flex items-center justify-center gap-1 disabled:opacity-50 ${
+                frozen ? "bg-emerald/20 text-emerald" : "bg-sky-500/20 text-sky-400"
+              }`}>
+              {setFrozen.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : frozen ? <CheckCircle2 className="w-3.5 h-3.5" /> : <ShieldOff className="w-3.5 h-3.5" />}
+              {frozen ? "Unfreeze করুন" : "Balance Freeze করুন"}
+            </button>
+          </div>
+        );
+      })()}
+
+
+
       {/* Password reset */}
       <div className="glass rounded-2xl p-4 space-y-2">
         <div className="flex items-center gap-2">
