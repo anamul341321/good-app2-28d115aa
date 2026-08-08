@@ -222,19 +222,25 @@ export async function buildEarningsBreakdown(admin: any, userId: string): Promis
   if (bonusEvents.length > 0 && Math.abs(auditBonusSum - bonusTotal) < 0.5) {
     for (const e of bonusEvents) {
       const isAdmin = e.source !== "db";
+      const tin = e.delta > 0 ? matchTransfer(e) : undefined;
       bonusSteps.push({
         key: `ev-${e.id}`,
         label:
           e.delta < 0
             ? "➖ বোনাস কেটে নেওয়া হয়েছে"
-            : isAdmin
-              ? "🎁 অ্যাডমিন বোনাস যোগ করেছে"
-              : `🎉 ${describeBonus(e.delta)}`,
-        formula: `${dateBn(e.created_at)}${e.note ? ` · ${e.note}` : ""}`,
+            : tin
+              ? `🔁 অন্য ইউজার পাঠিয়েছে — ${tin.name} (UID ${tin.uid ?? "—"})`
+              : isAdmin
+                ? "🎁 অ্যাডমিন বোনাস যোগ করেছে"
+                : `🎉 ${describeBonus(e.delta)}`,
+        formula: tin
+          ? `${dateBn(e.created_at)} · প্রেরক UID ${tin.uid ?? "—"}${tin.phone ? ` · ${tin.phone}` : ""}${tin.note ? ` · ${tin.note}` : ""} · প্রেরকের আয়: মাইনিং ${tin.sender.miningTotal.toFixed(2)}৳ + বোনাস ${tin.sender.bonusTotal.toFixed(2)}৳${tin.sender.adminCredited > 0 ? ` · ⚠️ অ্যাডমিন ক্রেডিট ${tin.sender.adminCredited.toFixed(2)}৳` : " · ✅ legal earn"}`
+          : `${dateBn(e.created_at)}${e.note ? ` · ${e.note}` : ""}`,
         amount: Number(e.delta.toFixed(2)),
       });
     }
   } else {
+
     if (prof.bonus_first_verify_self_claimed) {
       bonusSteps.push({
         key: "self-first",
