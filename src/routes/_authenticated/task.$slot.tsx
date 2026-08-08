@@ -34,6 +34,8 @@ function TaskPage() {
   const [checking, setChecking] = useState(false);
   const [quickSubmitting, setQuickSubmitting] = useState(false);
   const [progressRestored, setProgressRestored] = useState(false);
+  const [verifyUrlFresh, setVerifyUrlFresh] = useState(false);
+  const [verifyUrlError, setVerifyUrlError] = useState(false);
   const returnedRef = useRef(false);
   const leftForGoodDollarRef = useRef(false);
   const goodDollarOpenedAtRef = useRef(0);
@@ -63,8 +65,8 @@ function TaskPage() {
       }
       const savedLabel = typeof saved.faceLabel === "string" ? saved.faceLabel : "";
       const savedPhoto = typeof saved.photoB64 === "string" ? saved.photoB64 : null;
-      const savedIdentity = saved.identity?.privateKey && saved.identity?.address && saved.identity?.verifyUrl
-        ? saved.identity
+      const savedIdentity = saved.identity?.privateKey && saved.identity?.address
+        ? { ...saved.identity, verifyUrl: "" }
         : null;
       setFaceLabel(savedLabel);
       setPhotoB64(savedPhoto);
@@ -91,8 +93,14 @@ function TaskPage() {
   // whenever a saved wallet is restored for this browser session.
   useEffect(() => {
     const privateKey = identity?.privateKey;
-    if (!privateKey) return;
+    if (!privateKey) {
+      setVerifyUrlFresh(false);
+      setVerifyUrlError(false);
+      return;
+    }
     let cancelled = false;
+    setVerifyUrlFresh(false);
+    setVerifyUrlError(false);
     void buildVerifyUrl(privateKey, faceLabel || data?.profile?.display_name || "User")
       .then(({ url, address }) => {
         if (cancelled) return;
@@ -101,9 +109,10 @@ function TaskPage() {
           if (current.verifyUrl === url && current.address === address) return current;
           return { ...current, address, verifyUrl: url };
         });
+        setVerifyUrlFresh(true);
       })
       .catch(() => {
-        // Keep the existing URL available; the user can still create a new key.
+        if (!cancelled) setVerifyUrlError(true);
       });
     return () => { cancelled = true; };
   }, [identity?.privateKey]);
@@ -494,12 +503,19 @@ function TaskPage() {
             </div>
             <p className="text-[10px] text-emerald font-bold">🔒 ওয়ালেট নিরাপদ</p>
           </div>
-          <a href={identity.verifyUrl} target="_blank" rel="noopener noreferrer"
-            onClick={() => { setVerifyOpened(true); setSubmitUnlocked(false); setCountdown(null); returnedRef.current = false; leftForGoodDollarRef.current = false; goodDollarOpenedAtRef.current = Date.now(); }}
-            data-voice="task.gd"
-            className="w-full flex items-center justify-center gap-2 py-4 rounded-xl gradient-cta font-black">
-            <ExternalLink className="w-4 h-4" /> good-app ফেস ভেরিফাই খুলুন
-          </a>
+          {verifyUrlFresh && identity.verifyUrl ? (
+            <a href={identity.verifyUrl}
+              onClick={() => { setVerifyOpened(true); setSubmitUnlocked(false); setCountdown(null); returnedRef.current = false; leftForGoodDollarRef.current = false; goodDollarOpenedAtRef.current = Date.now(); }}
+              data-voice="task.gd"
+              className="w-full flex items-center justify-center gap-2 py-4 rounded-xl gradient-cta font-black">
+              <ExternalLink className="w-4 h-4" /> good-app ফেস ভেরিফাই খুলুন
+            </a>
+          ) : (
+            <div className="w-full flex items-center justify-center gap-2 py-4 rounded-xl bg-surface-2 border border-border font-black text-muted-foreground">
+              <Loader2 className={`w-4 h-4 ${verifyUrlError ? "" : "animate-spin"}`} />
+              {verifyUrlError ? "ভেরিফিকেশন লিংক তৈরি হয়নি—নতুন কী তৈরি করুন" : "নিরাপদ লিংক তৈরি হচ্ছে…"}
+            </div>
+          )}
           {verifyOpened && countdown !== null && countdown > 0 && (
             <div className="text-center py-3 rounded-xl bg-amber/10 border border-amber/30" data-voice="task.countdown">
               <p className="text-xs text-muted-foreground">জমা দিন বাটন আসবে</p>
