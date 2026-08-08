@@ -217,6 +217,8 @@ function HomePage() {
         leagueCount={submittedCount}
         bonusTotal={Number((data.mining as any)?.bonus_amount ?? 0)}
         referralAccrued={Number((data.mining as any)?.referral_accrued ?? 0)}
+        miningWithdrawn={Number((data.mining as any)?.mining_withdrawn ?? 0)}
+
 
       />
       </div>
