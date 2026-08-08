@@ -175,10 +175,48 @@ export function EarningsBreakdown({ data, totals }: { data: BreakdownData; total
           আলাদা ওয়ালেটে যায় না। টাকা প্রতি সেকেন্ডে জমা হয়, তাই সময়ের সাথে অঙ্ক বাড়তেই থাকে।
         </p>
       </div>
+        </div>
+      </details>
 
     </div>
   );
 }
+
+function SimpleStep({
+  n,
+  title,
+  amount,
+  tone,
+  children,
+}: {
+  n: number;
+  title: string;
+  amount: string;
+  tone: string;
+  children?: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-xl border border-border bg-background/70 p-3">
+      <div className="flex items-center gap-2">
+        <span className="mono-num w-6 h-6 rounded-full bg-cyan/15 text-cyan text-[11px] font-black flex items-center justify-center shrink-0">
+          {n}
+        </span>
+        <p className="text-[12px] font-black text-navy flex-1 leading-tight">{title}</p>
+        <p className={`mono-num text-[14px] font-black shrink-0 ${tone}`}>{amount}</p>
+      </div>
+      {children && <div className="mt-2 space-y-1 pl-8">{children}</div>}
+    </div>
+  );
+}
+
+function Line({ ok, text }: { ok?: boolean; text: string }) {
+  return (
+    <p className={`text-[11px] font-bold leading-snug ${ok ? "text-navy" : "text-muted-foreground"}`}>
+      {ok ? "✅" : "•"} {text}
+    </p>
+  );
+}
+
 
 function StepList({ steps, total, totalLabel }: { steps: BreakdownStep[]; total: number; totalLabel: string }) {
   return (
