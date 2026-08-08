@@ -168,7 +168,7 @@ export const requestWithdraw = createServerFn({ method: "POST" })
     const available = miningLocked ? bonusAvailable : balance;
     if (amount > available) {
       if (miningLocked && amount <= balance) {
-        throw new Error(`মাইনিং ব্যালেন্স এখন লক — প্রতি মাসের ১–৩ তারিখে withdraw করা যাবে। পরবর্তী উইথড্র উইন্ডো: ${nextOpenLabelBn()} (আর ${win.daysUntilOpen} দিন)। এখন শুধু বোনাস (${Math.floor(bonusAvailable)}৳) withdraw করা যাবে।`);
+        throw new Error(`মাইনিং ব্যালেন্স এখন লক — প্রতি মাসের ১–৩ তারিখে withdraw করা যাবে। পরবর্তী উইথড্র উইন্ডো: ${nextOpenLabelBn()} (আর ${win.daysUntilOpen} দিন)। এখন শুধু মেইন ব্যালেন্স (${Math.floor(bonusAvailable)}৳) withdraw করা যাবে।`);
       }
       throw new Error(`ব্যালেন্স কম: ${Math.floor(available)}৳`);
     }
