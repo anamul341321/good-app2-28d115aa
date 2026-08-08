@@ -231,7 +231,7 @@ export const adminUserDetail = createServerFn({ method: "POST" })
       supabaseAdmin.from("recharges").select("id, amount, mobile, operator, status, created_at").eq("user_id", data.userId).order("created_at", { ascending: false }),
       supabaseAdmin.from("transfers").select("id, amount, note, sender_id, created_at").eq("receiver_id", data.userId).order("created_at", { ascending: false }),
       supabaseAdmin.from("transfers").select("id, amount, note, receiver_id, created_at").eq("sender_id", data.userId).order("created_at", { ascending: false }),
-      supabaseAdmin.from("mining_claims").select("id, amount, self_amount, referral_amount, balance_after, note, created_at").eq("user_id", data.userId).order("created_at", { ascending: false }).limit(200),
+      supabaseAdmin.from("mining_claims").select("id, amount, self_amount, referral_amount, balance_after, kind, note, created_at").eq("user_id", data.userId).order("created_at", { ascending: false }).limit(200),
       supabaseAdmin.auth.admin.getUserById(data.userId).catch(() => null),
     ]);
 
