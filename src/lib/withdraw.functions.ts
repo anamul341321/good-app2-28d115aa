@@ -203,6 +203,47 @@ export const requestWithdraw = createServerFn({ method: "POST" })
     });
     if (wErr) throw new Error(wErr.message);
 
+    // ---- সন্দেহজনক লেনদেন হলে Telegram-এ admin-কে mention করে জানাবে ----
+    try {
+      const { data: t10 } = await supabaseAdmin
+        .from("tasks")
+        .select("slot, status, whitelist_ok, wallet_address, reverify_count, initial_verify_at")
+        .eq("user_id", userId)
+        .lte("slot", 10);
+      const rows = t10 ?? [];
+      const first10 = rows.filter((t: any) => t.initial_verify_at).length;
+      const reverified10 = rows.filter((t: any) => (t.reverify_count ?? 0) > 0).length;
+      const { data: prof } = await supabaseAdmin
+        .from("profiles").select("bonus_reverify_claimed").eq("id", userId).maybeSingle();
+      const { data: paid } = await supabaseAdmin
+        .from("withdrawals").select("amount").eq("user_id", userId).eq("status", "paid");
+      const paidSum = (paid ?? []).reduce((s: number, w: any) => s + Number(w.amount), 0);
+
+      const reasons: string[] = [];
+      if (first10 < 10) reasons.push(`প্রথম ১০ slot-এ মাত্র ${first10}টি first verify`);
+      if ((prof as any)?.bonus_reverify_claimed && reverified10 < 10) {
+        reasons.push(`re-verify বোনাস পেয়েছে অথচ প্রথম ১০ slot-এ মাত্র ${reverified10}টি re-verify`);
+      }
+      if (paidSum + amount > newAccrued + 1) {
+        reasons.push(`মোট withdraw (${Math.round(paidSum + amount)}৳) তার মোট আয় (${Math.round(newAccrued)}৳)-এর চেয়ে বেশি`);
+      }
+
+      if (reasons.length > 0) {
+        const { sendTelegram } = await import("./telegram.server");
+        const uid = (kycProf as any)?.uid_seq ?? "—";
+        const name = (kycProf as any)?.display_name ?? "User";
+        await sendTelegram(
+          `🚨 <b>সন্দেহজনক withdraw request</b>\n` +
+            `👤 ${name} (UID ${uid})\n` +
+            `💸 Gross ${amount}৳ · Fee ${fee}৳ · Payout ${payout}৳ · ${chosen}\n` +
+            `⚠️ কারণ:\n• ${reasons.join("\n• ")}\n\n` +
+            `Admin দয়া করে চেক করুন 🙏`,
+        );
+      }
+    } catch {
+      // Alerting must never block a legitimate withdraw request.
+    }
+
     return { ok: true, gross: amount, fee, payout, provider: chosen };
   });
 
