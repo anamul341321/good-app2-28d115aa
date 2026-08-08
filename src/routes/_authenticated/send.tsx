@@ -184,7 +184,7 @@ function SendPage() {
             ))}
           </div>
           <p className="text-[11px] text-muted-foreground mt-1.5 font-bold">
-            {t("সর্বনিম্ন", "Min")} <b className="text-violet-600" translate="no">15৳</b> · {t("সর্বোচ্চ", "Max")} <b className="text-violet-600" translate="no">{balance}৳</b>
+            {t("সর্বনিম্ন", "Min")} <b className="text-violet-600" translate="no">15৳</b> · {t("সর্বোচ্চ", "Max")} <b className="text-violet-600" translate="no">{sendable}৳</b>
           </p>
           {amt >= MIN_SEND && (
             <div className="mt-2 rounded-xl border-2 border-violet-500/30 bg-violet-500/5 p-2.5 space-y-1" translate="no">
