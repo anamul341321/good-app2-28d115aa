@@ -452,11 +452,8 @@ function WithdrawPage() {
                       translate="no">
                       <span className="break-all">{w.wallet_number}</span> <Copy className="w-2.5 h-2.5 shrink-0" />
                     </button>
-                    {w.status === "rejected" && w.admin_note && (
-                      <div className="mt-2 rounded-lg bg-rose/10 border border-rose/30 p-2 text-[11px] text-rose leading-snug">
-                        <p className="font-black text-[9px] uppercase tracking-widest">{t("Admin এর কারণ", "Admin reason")}</p>
-                        <p className="mt-0.5" translate="no">{w.admin_note}</p>
-                      </div>
+                    {w.status === "rejected" && (w.reject_reason || w.admin_note || w.reject_proof_path) && (
+                      <RejectDetails w={w} />
                     )}
                   </div>
                   <span translate="no" className={`text-[10px] font-black px-2 py-1 rounded-full shrink-0 ${
