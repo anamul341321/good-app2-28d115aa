@@ -1745,6 +1745,32 @@ export const adminSetUserBlocked = createServerFn({ method: "POST" })
     return { ok: true, blocked: data.blocked };
   });
 
+/** ব্যালেন্স freeze/unfreeze — account block না করেই টাকা নড়াচড়া বন্ধ রাখা যায়। */
+export const adminSetBalanceFrozen = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => z.object({
+    userId: z.string().uuid(),
+    frozen: z.boolean(),
+    reason: z.string().trim().max(300).optional().nullable(),
+  }).parse(i))
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await gate();
+    const { error } = await supabaseAdmin.from("profiles").update({
+      balance_frozen: data.frozen,
+      balance_frozen_at: data.frozen ? new Date().toISOString() : null,
+      balance_frozen_reason: data.frozen ? (data.reason || "হিসাব যাচাইয়ের জন্য ব্যালেন্স সাময়িকভাবে freeze") : null,
+    } as any).eq("id", data.userId);
+    if (error) throw new Error(error.message);
+    await supabaseAdmin.from("user_notices").insert({
+      user_id: data.userId,
+      title: data.frozen ? "🧊 ব্যালেন্স freeze করা হয়েছে" : "✅ ব্যালেন্স আবার চালু",
+      body: data.frozen
+        ? `আপনার ব্যালেন্স সাময়িকভাবে freeze করা হয়েছে — এখন withdraw/send/recharge করা যাবে না।\nকারণ: ${data.reason || "হিসাব যাচাই চলছে"}\n\nবোনাস শুধু প্রথম ১০টি slot-এর জন্যই — প্রথম ১০টি slot re-verify সম্পন্ন করলে বিষয়টি আবার দেখা হবে।`
+        : "আপনার ব্যালেন্স আবার সক্রিয় করা হয়েছে — এখন withdraw/send/recharge করতে পারবেন।",
+    } as any);
+    return { ok: true, frozen: data.frozen };
+  });
+
+
 /** ব্লক করা সব ইউজারের আলাদা তালিকা (কারণ, ব্যালেন্স, বকেয়া সহ) */
 export const adminListBlockedUsers = createServerFn({ method: "GET" }).handler(async () => {
   const supabaseAdmin = await gate();

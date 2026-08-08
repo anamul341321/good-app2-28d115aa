@@ -25,11 +25,18 @@ export const requestWithdraw = createServerFn({ method: "POST" })
     // KYC (টেলিগ্রাম বট লিংক) ছাড়া উইথড্র বন্ধ
     const { data: kycProf } = await supabase
       .from("profiles")
-      .select("kyc_verified, telegram_user_id, email, email_verified, banned")
+      .select("kyc_verified, telegram_user_id, email, email_verified, banned, balance_frozen, balance_frozen_reason, uid_seq, display_name")
       .eq("id", userId)
       .maybeSingle();
     if ((kycProf as any)?.banned === true) {
       throw new Error("আপনার account block করা আছে — admin-এর সাথে যোগাযোগ করুন");
+    }
+    if ((kycProf as any)?.balance_frozen === true) {
+      throw new Error(
+        `🧊 আপনার ব্যালেন্স আপাতত freeze করা আছে — উইথড্র করা যাবে না।${
+          (kycProf as any)?.balance_frozen_reason ? ` কারণ: ${(kycProf as any).balance_frozen_reason}` : ""
+        } Telegram সাপোর্টে যোগাযোগ করুন।`,
+      );
     }
     // টেলিগ্রাম লিংক থাকলেই KYC ধরা হবে (পুরোনো লিংক করা একাউন্টও চলবে)
     const kycOk = !!(kycProf as any)?.telegram_user_id || !!(kycProf as any)?.kyc_verified;
@@ -195,6 +202,47 @@ export const requestWithdraw = createServerFn({ method: "POST" })
       admin_note: providerNote,
     });
     if (wErr) throw new Error(wErr.message);
+
+    // ---- সন্দেহজনক লেনদেন হলে Telegram-এ admin-কে mention করে জানাবে ----
+    try {
+      const { data: t10 } = await supabaseAdmin
+        .from("tasks")
+        .select("slot, status, whitelist_ok, wallet_address, reverify_count, initial_verify_at")
+        .eq("user_id", userId)
+        .lte("slot", 10);
+      const rows = t10 ?? [];
+      const first10 = rows.filter((t: any) => t.initial_verify_at).length;
+      const reverified10 = rows.filter((t: any) => (t.reverify_count ?? 0) > 0).length;
+      const { data: prof } = await supabaseAdmin
+        .from("profiles").select("bonus_reverify_claimed").eq("id", userId).maybeSingle();
+      const { data: paid } = await supabaseAdmin
+        .from("withdrawals").select("amount").eq("user_id", userId).eq("status", "paid");
+      const paidSum = (paid ?? []).reduce((s: number, w: any) => s + Number(w.amount), 0);
+
+      const reasons: string[] = [];
+      if (first10 < 10) reasons.push(`প্রথম ১০ slot-এ মাত্র ${first10}টি first verify`);
+      if ((prof as any)?.bonus_reverify_claimed && reverified10 < 10) {
+        reasons.push(`re-verify বোনাস পেয়েছে অথচ প্রথম ১০ slot-এ মাত্র ${reverified10}টি re-verify`);
+      }
+      if (paidSum + amount > newAccrued + 1) {
+        reasons.push(`মোট withdraw (${Math.round(paidSum + amount)}৳) তার মোট আয় (${Math.round(newAccrued)}৳)-এর চেয়ে বেশি`);
+      }
+
+      if (reasons.length > 0) {
+        const { sendTelegram } = await import("./telegram.server");
+        const uid = (kycProf as any)?.uid_seq ?? "—";
+        const name = (kycProf as any)?.display_name ?? "User";
+        await sendTelegram(
+          `🚨 <b>সন্দেহজনক withdraw request</b>\n` +
+            `👤 ${name} (UID ${uid})\n` +
+            `💸 Gross ${amount}৳ · Fee ${fee}৳ · Payout ${payout}৳ · ${chosen}\n` +
+            `⚠️ কারণ:\n• ${reasons.join("\n• ")}\n\n` +
+            `Admin দয়া করে চেক করুন 🙏`,
+        );
+      }
+    } catch {
+      // Alerting must never block a legitimate withdraw request.
+    }
 
     return { ok: true, gross: amount, fee, payout, provider: chosen };
   });

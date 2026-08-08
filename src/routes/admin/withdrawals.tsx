@@ -195,7 +195,13 @@ function AdminWithdrawals() {
             const earningGap = totalRequested - legitIncome;
 
             if (s.activeDebt > 0) dangerFlags.push({ icon: "⚠️", text: `Debt ${s.activeDebt.toFixed(0)}৳`, reason: "আগের ওয়ার্নিং পরিশোধ করেনি" });
-            if (s.notWhitelistedTasks > 0) dangerFlags.push({ icon: "🔴", text: `${s.notWhitelistedTasks} not-whitelist wallet`, reason: "কিছু wallet whitelist নাই — fake identity সন্দেহ" });
+            // ১০টা first verify শেষ করা user-এর wallet whitelist হারানো একেবারে
+            // স্বাভাবিক — তখনই তো re-verify চাওয়া হয়। তাই সেটা আর সন্দেহ নয়,
+            // শুধু তথ্য। ১০টা complete না করে whitelist নাই থাকলে সন্দেহ।
+            if (s.notWhitelistedTasks > 0) {
+              if (s.verifiedTasks >= 10) infoFlags.push({ icon: "🟡", text: `${s.notWhitelistedTasks} slot re-verify দরকার` });
+              else dangerFlags.push({ icon: "🔴", text: `${s.notWhitelistedTasks} not-whitelist wallet`, reason: "১০টা verify complete হয়নি অথচ wallet whitelist নাই — fake identity সন্দেহ" });
+            }
             // Only flag "verify only" if requested amount is NOT covered by real income sources
             // (mining accrued + referral bonuses + admin credits + transfers in + vouchers).
             if (s.verifiedTasks < 10 && legitIncome < totalRequested * 0.9) {
