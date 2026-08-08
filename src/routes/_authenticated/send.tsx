@@ -90,7 +90,7 @@ function SendPage() {
   const amt = Math.floor(Number(amount) || 0);
   const sendFee = Math.floor(amt * 0.1);
   const totalCost = amt + sendFee;
-  const canSubmit = found && amt >= MIN_SEND && totalCost <= balance && !send.isPending;
+  const canSubmit = found && amt >= MIN_SEND && totalCost <= sendable && !send.isPending;
 
   return (
     <div className="space-y-4 pt-2 pb-4">
