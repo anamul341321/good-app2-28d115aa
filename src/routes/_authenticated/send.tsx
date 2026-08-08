@@ -110,16 +110,33 @@ function SendPage() {
               <p className="text-[10px] opacity-80 mt-0.5">{t("অন্য ইউজারকে টাকা পাঠান", "Send money to another user")}</p>
             </div>
           </div>
-          <p className="text-[10px] uppercase tracking-widest opacity-90 font-black">{t("উপলব্ধ ব্যালেন্স", "Available Balance")}</p>
+          <p className="text-[10px] uppercase tracking-widest opacity-90 font-black">{t("পাঠানোর উপলব্ধ ব্যালেন্স", "Sendable Balance")}</p>
           <p className="mono-num text-5xl font-black leading-none mt-1 drop-shadow-lg" translate="no">
-            {balance}<span className="text-2xl ml-0.5">৳</span>
+            {sendable}<span className="text-2xl ml-0.5">৳</span>
           </p>
+          {miningLocked && (
+            <p className="text-[11px] font-bold mt-1 opacity-90" translate="no">
+              {t("মোট ব্যালেন্স", "Total balance")} {balance}৳ · {t("মাইনিং অংশ লক", "mining part locked")} 🔒
+            </p>
+          )}
           <p className="text-sm font-black mt-3 flex items-center gap-1.5 bg-white/15 backdrop-blur rounded-xl px-3 py-2 border border-white/20">
             <Sparkles className="w-4 h-4" />
             {t("সর্বনিম্ন", "Minimum")} <span className="mono-num text-base" translate="no">{t("১৫৳", "15৳")}</span> {t("থেকে পাঠানো যাবে", "to send")}
           </p>
         </div>
       </div>
+
+      {miningLocked && (
+        <div className="rounded-2xl p-3.5 border-2 border-amber-500/40 bg-amber-500/10">
+          <p className="text-xs font-black text-amber-600">⛏️🔒 {t("মাইনিং ব্যালেন্স এখন লক", "Mining balance is locked now")}</p>
+          <p className="text-[11px] text-muted-foreground font-bold mt-1 leading-relaxed">
+            {t(
+              `মাইনিংয়ের টাকা শুধু প্রতি মাসের ১, ২, ৩ তারিখে অন্য কাউকে পাঠানো বা withdraw করা যাবে। পরবর্তী উইন্ডো: ${nextOpenLabelBn()} (আর ${win.daysUntilOpen} দিন)। এখন শুধু বোনাসের ${bonusAvailable}৳ পাঠাতে পারবেন।`,
+              `Mining balance can only be sent or withdrawn on the 1st–3rd of each month. Next window in ${win.daysUntilOpen} day(s). For now you can only send bonus balance: ${bonusAvailable}৳.`,
+            )}
+          </p>
+        </div>
+      )}
 
       <div className="glass rounded-3xl p-4 space-y-4 border border-violet-500/20 shadow-lg">
         <div>
