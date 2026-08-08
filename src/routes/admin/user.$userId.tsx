@@ -456,7 +456,12 @@ function UserDetail() {
 
         {/* Main balance (anytime withdraw) vs mining balance (1st–3rd only) */}
         {(() => {
-          const split = splitBalance({ balance: liveBal, bonusTotal: Number((m as any)?.bonus_amount ?? 0) });
+          const split = splitBalance({
+            balance: liveBal,
+            bonusTotal: Number((m as any)?.bonus_amount ?? 0),
+            withdrawn: Number((m as any)?.withdrawn_amount ?? 0),
+            miningWithdrawn: Number((m as any)?.mining_withdrawn ?? 0),
+          });
           return (
             <div className="grid grid-cols-2 gap-2">
               <div className="rounded-xl border border-emerald/30 bg-emerald/10 px-3 py-2">

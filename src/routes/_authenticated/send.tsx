@@ -62,7 +62,12 @@ function SendPage() {
   // Mining balance can only be sent during the monthly window (1st–3rd, Asia/Dhaka).
   const win = miningWindowInfo();
   const bonusTotal = Number((mining as any)?.bonus_amount ?? 0);
-  const bonusAvailable = Math.floor(splitBalance({ balance, bonusTotal }).main);
+  const bonusAvailable = Math.floor(splitBalance({
+    balance,
+    bonusTotal,
+    withdrawn: Number((mining as any)?.withdrawn_amount ?? 0),
+    miningWithdrawn: Number((mining as any)?.mining_withdrawn ?? 0),
+  }).main);
   const sendable = win.isOpen ? balance : Math.min(balance, bonusAvailable);
 
   const miningLocked = !win.isOpen && balance > sendable;
