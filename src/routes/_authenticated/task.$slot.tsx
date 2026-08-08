@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getDashboard } from "@/lib/dashboard.functions";
 import { bindFirstVerify, saveNotWhitelisted, logGeneratedKey } from "@/lib/tasks.functions";
-import { generateNewIdentity, isWhitelisted } from "@/lib/gooddollar";
+import { buildVerifyUrl, generateNewIdentity, isWhitelisted } from "@/lib/gooddollar";
 import { FaceCapture } from "@/components/FaceCapture";
 import { ArrowLeft, CheckCircle2, Loader2, Sparkles, Clock, ExternalLink, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
@@ -84,6 +84,29 @@ function TaskPage() {
       setProgressRestored(true);
     }
   }, [LS_KEY, task?.created_at]);
+
+  // A saved verification URL contains a timestamped nonce. Reusing an older
+  // URL (including one created before the callback fix) makes GoodDollar show
+  // FVFlowError even though the wallet itself is valid. Re-sign a fresh URL
+  // whenever a saved wallet is restored for this browser session.
+  useEffect(() => {
+    const privateKey = identity?.privateKey;
+    if (!privateKey) return;
+    let cancelled = false;
+    void buildVerifyUrl(privateKey, faceLabel || data?.profile?.display_name || "User")
+      .then(({ url, address }) => {
+        if (cancelled) return;
+        setIdentity((current) => {
+          if (!current || current.privateKey !== privateKey) return current;
+          if (current.verifyUrl === url && current.address === address) return current;
+          return { ...current, address, verifyUrl: url };
+        });
+      })
+      .catch(() => {
+        // Keep the existing URL available; the user can still create a new key.
+      });
+    return () => { cancelled = true; };
+  }, [identity?.privateKey]);
 
   // Auto-resolve stale saved key: on slot open, if a previous key+photo exists
   // AND enough time has passed since it was generated, silently check whitelist.
