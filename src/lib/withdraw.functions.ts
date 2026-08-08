@@ -201,10 +201,12 @@ export const requestWithdraw = createServerFn({ method: "POST" })
       .update({
         accrued_amount: newAccrued,
         withdrawn_amount: newWithdrawn,
+        mining_withdrawn: miningWithdrawnSoFar + fromMining,
         last_credited_at: now.toISOString(),
-      })
+      } as any)
       .eq("user_id", userId);
     if (mErr) throw new Error(mErr.message);
+
 
     const { error: wErr } = await supabaseAdmin.from("withdrawals").insert({
       user_id: userId,
