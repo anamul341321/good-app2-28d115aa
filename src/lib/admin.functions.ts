@@ -524,7 +524,7 @@ export const adminListWithdrawals = createServerFn({ method: "GET" }).handler(as
       const myReferees = (refereesRes.data ?? []).filter((r: any) => r.referred_by === uid);
       const referralBonuses = myReferees.map((r: any) => {
         const first = doneByReferee.get(r.id) ?? 0;
-        const paidBonus = !!r.bonus_first_verify_claimed;
+        const paidBonus = !!r.referrer_bonus_paid_at;
         const phone: string = r.phone_number ?? "";
         const masked = phone.length >= 11 ? `${phone.slice(0, 3)}****${phone.slice(-3)}` : phone;
         return {
