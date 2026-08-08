@@ -117,8 +117,6 @@ export function EarningsBreakdown({ data, totals }: { data: BreakdownData; total
         </summary>
         <div className="space-y-4 pt-3">
       <div className="rounded-2xl border border-amber/30 bg-amber/5 p-4 space-y-2">
-
-      <div className="rounded-2xl border border-amber/30 bg-amber/5 p-4 space-y-2">
         <div className="flex items-center justify-between gap-2">
           <p className="text-[10px] uppercase tracking-widest font-black text-amber flex items-center gap-1.5">
             <Gift className="w-3.5 h-3.5" /> বোনাস কিভাবে {tk(data.bonus.total)} হলো
