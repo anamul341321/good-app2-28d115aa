@@ -417,6 +417,9 @@ export async function buildEarningsBreakdown(admin: any, userId: string): Promis
   const otherTotal = Number(left.toFixed(2));
 
   return {
+    transfersIn,
+    transfersInTotal,
+
     bonus: {
       total: bonusTotal,
       rates: usedRates,
