@@ -90,11 +90,10 @@ function WithdrawPage() {
   }) : 0;
   const claimable = debtTotal > 0 ? Math.floor(balance) : Math.floor(balance);
 
-  // Bonus (instantly withdrawable) vs mining (1st–3rd of each month window)
+  // Main balance (instantly withdrawable) vs mining (1st–3rd of each month window)
   const bonusTotal = Number((mining as any)?.bonus_amount ?? 0);
-  const withdrawnTotal = Number(mining?.withdrawn_amount ?? 0);
-  const bonusWithdrawn = Math.min(withdrawnTotal, bonusTotal);
-  const bonusAvailable = Math.max(0, Math.floor(bonusTotal - bonusWithdrawn - debtTotal));
+  const bonusAvailable = Math.floor(splitBalance({ balance, bonusTotal }).main);
+
   const win = miningWindowInfo(now);
   const miningLocked = !win.isOpen;
   const daysUntilUnlock = win.daysUntilOpen;
