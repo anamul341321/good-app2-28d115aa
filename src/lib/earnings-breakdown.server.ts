@@ -82,7 +82,7 @@ export async function buildEarningsBreakdown(admin: any, userId: string): Promis
       .maybeSingle(),
     admin
       .from("profiles")
-      .select("id, uid_seq, display_name, bonus_first_verify_claimed")
+      .select("id, uid_seq, display_name, bonus_first_verify_claimed, referrer_bonus_paid_at")
       .eq("referred_by", userId)
       .limit(2000),
     // Real bonus-credit events (audit trail) — the only fully trustworthy
