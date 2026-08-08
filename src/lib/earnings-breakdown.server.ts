@@ -237,7 +237,9 @@ export async function buildEarningsBreakdown(admin: any, userId: string): Promis
       // Transfers from other users are shown in their own card only — skipping
       // them here stops the same taka from appearing twice.
       if (transferEventIds.has(e.id)) continue;
-      const isAdmin = e.source !== "db";
+      // Only genuine admin actions are labelled as "admin added"; system
+      // sources (db trigger, bonus/referral credits, corrections) stay bonuses.
+      const isAdmin = String(e.source ?? "").startsWith("admin");
       bonusSteps.push({
         key: `ev-${e.id}`,
         label:
