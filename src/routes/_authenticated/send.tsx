@@ -4,6 +4,7 @@ import { useState } from "react";
 import { sendBalance, getMyTransfers, lookupTransferTarget } from "@/lib/transfer.functions";
 import { getDashboard } from "@/lib/dashboard.functions";
 import { computeLiveBalance } from "@/lib/mining";
+import { miningWindowInfo, nextOpenLabelBn } from "@/lib/mining-window";
 import { Loader2, Send, Search, ArrowUpRight, ArrowDownLeft, User, ArrowLeft, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { useLang } from "@/lib/i18n";
@@ -58,6 +59,14 @@ function SendPage() {
     debt: debtTotal,
   })) : 0;
 
+  // Mining balance can only be sent during the monthly window (1st–3rd, Asia/Dhaka).
+  const win = miningWindowInfo();
+  const bonusTotal = Number((mining as any)?.bonus_amount ?? 0);
+  const withdrawnTotal = Number((mining as any)?.withdrawn_amount ?? 0);
+  const bonusAvailable = Math.max(0, Math.floor(bonusTotal - Math.min(withdrawnTotal, bonusTotal) - debtTotal));
+  const sendable = win.isOpen ? balance : Math.min(balance, bonusAvailable);
+  const miningLocked = !win.isOpen && balance > sendable;
+
   const lookup = useMutation({
     mutationFn: (tg: string) => lookupTransferTarget({ data: { target: tg } }),
     onSuccess: (r: any) => {
@@ -81,7 +90,7 @@ function SendPage() {
   const amt = Math.floor(Number(amount) || 0);
   const sendFee = Math.floor(amt * 0.1);
   const totalCost = amt + sendFee;
-  const canSubmit = found && amt >= MIN_SEND && totalCost <= balance && !send.isPending;
+  const canSubmit = found && amt >= MIN_SEND && totalCost <= sendable && !send.isPending;
 
   return (
     <div className="space-y-4 pt-2 pb-4">
@@ -101,16 +110,33 @@ function SendPage() {
               <p className="text-[10px] opacity-80 mt-0.5">{t("অন্য ইউজারকে টাকা পাঠান", "Send money to another user")}</p>
             </div>
           </div>
-          <p className="text-[10px] uppercase tracking-widest opacity-90 font-black">{t("উপলব্ধ ব্যালেন্স", "Available Balance")}</p>
+          <p className="text-[10px] uppercase tracking-widest opacity-90 font-black">{t("পাঠানোর উপলব্ধ ব্যালেন্স", "Sendable Balance")}</p>
           <p className="mono-num text-5xl font-black leading-none mt-1 drop-shadow-lg" translate="no">
-            {balance}<span className="text-2xl ml-0.5">৳</span>
+            {sendable}<span className="text-2xl ml-0.5">৳</span>
           </p>
+          {miningLocked && (
+            <p className="text-[11px] font-bold mt-1 opacity-90" translate="no">
+              {t("মোট ব্যালেন্স", "Total balance")} {balance}৳ · {t("মাইনিং অংশ লক", "mining part locked")} 🔒
+            </p>
+          )}
           <p className="text-sm font-black mt-3 flex items-center gap-1.5 bg-white/15 backdrop-blur rounded-xl px-3 py-2 border border-white/20">
             <Sparkles className="w-4 h-4" />
             {t("সর্বনিম্ন", "Minimum")} <span className="mono-num text-base" translate="no">{t("১৫৳", "15৳")}</span> {t("থেকে পাঠানো যাবে", "to send")}
           </p>
         </div>
       </div>
+
+      {miningLocked && (
+        <div className="rounded-2xl p-3.5 border-2 border-amber-500/40 bg-amber-500/10">
+          <p className="text-xs font-black text-amber-600">⛏️🔒 {t("মাইনিং ব্যালেন্স এখন লক", "Mining balance is locked now")}</p>
+          <p className="text-[11px] text-muted-foreground font-bold mt-1 leading-relaxed">
+            {t(
+              `মাইনিংয়ের টাকা শুধু প্রতি মাসের ১, ২, ৩ তারিখে অন্য কাউকে পাঠানো বা withdraw করা যাবে। পরবর্তী উইন্ডো: ${nextOpenLabelBn()} (আর ${win.daysUntilOpen} দিন)। এখন শুধু বোনাসের ${bonusAvailable}৳ পাঠাতে পারবেন।`,
+              `Mining balance can only be sent or withdrawn on the 1st–3rd of each month. Next window in ${win.daysUntilOpen} day(s). For now you can only send bonus balance: ${bonusAvailable}৳.`,
+            )}
+          </p>
+        </div>
+      )}
 
       <div className="glass rounded-3xl p-4 space-y-4 border border-violet-500/20 shadow-lg">
         <div>
@@ -158,7 +184,7 @@ function SendPage() {
             ))}
           </div>
           <p className="text-[11px] text-muted-foreground mt-1.5 font-bold">
-            {t("সর্বনিম্ন", "Min")} <b className="text-violet-600" translate="no">15৳</b> · {t("সর্বোচ্চ", "Max")} <b className="text-violet-600" translate="no">{balance}৳</b>
+            {t("সর্বনিম্ন", "Min")} <b className="text-violet-600" translate="no">15৳</b> · {t("সর্বোচ্চ", "Max")} <b className="text-violet-600" translate="no">{sendable}৳</b>
           </p>
           {amt >= MIN_SEND && (
             <div className="mt-2 rounded-xl border-2 border-violet-500/30 bg-violet-500/5 p-2.5 space-y-1" translate="no">
