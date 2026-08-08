@@ -13,7 +13,10 @@ export type EarningsBreakdown = {
   bonus: {
     total: number;
     rates: { firstVerify: number; reverify: number; referrer: number };
+    currentRates: { firstVerify: number; reverify: number; referrer: number };
+    ratesAssumed: boolean;
     referrerPaidCount: number;
+
     selfFirst: number;
     selfReverify: number;
     referrerTotal: number;
