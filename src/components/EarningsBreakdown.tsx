@@ -153,8 +153,10 @@ export function EarningsBreakdown({ data, totals }: { data: BreakdownData; total
         </div>
         <StepList steps={data.bonus.steps} total={data.bonus.total} totalLabel="মোট বোনাস" />
         <p className="text-[9.5px] text-muted-foreground leading-relaxed">
-          🎯 নিয়ম: প্রথম ১০টি স্লট first verify = {data.bonus.rates.firstVerify}৳, ১০টি স্লট re-verify = {data.bonus.rates.reverify}৳ (তখনই মাইনিং চালু),
-          আর আপনার রেফার করা প্রত্যেক ইউজার ১০টি first verify শেষ করলে আপনি পান {data.bonus.rates.referrer}৳।
+          🎯 এখনকার নিয়ম: প্রথম ১০টি স্লট first verify = {(b.currentRates ?? b.rates).firstVerify}৳, ১০টি স্লট re-verify ={" "}
+          {(b.currentRates ?? b.rates).reverify}৳ (তখনই মাইনিং চালু), আর আপনার রেফার করা প্রত্যেক ইউজার ১০টি first verify শেষ করলে আপনি পান{" "}
+          {(b.currentRates ?? b.rates).referrer}৳। উপরের হিসাব আপনার সময়ের হারেই করা হয়েছে।
+
         </p>
       </div>
 
