@@ -1689,10 +1689,13 @@ export type Database = {
           admin_note: string | null
           amount: number
           created_at: string
+          fee_refunded: boolean
           id: string
           paid_by: string | null
           processed_at: string | null
           provider: Database["public"]["Enums"]["wallet_provider"]
+          reject_proof_path: string | null
+          reject_reason: string | null
           status: Database["public"]["Enums"]["withdrawal_status"]
           user_id: string
           wallet_number: string
@@ -1701,10 +1704,13 @@ export type Database = {
           admin_note?: string | null
           amount: number
           created_at?: string
+          fee_refunded?: boolean
           id?: string
           paid_by?: string | null
           processed_at?: string | null
           provider: Database["public"]["Enums"]["wallet_provider"]
+          reject_proof_path?: string | null
+          reject_reason?: string | null
           status?: Database["public"]["Enums"]["withdrawal_status"]
           user_id: string
           wallet_number: string
@@ -1713,10 +1719,13 @@ export type Database = {
           admin_note?: string | null
           amount?: number
           created_at?: string
+          fee_refunded?: boolean
           id?: string
           paid_by?: string | null
           processed_at?: string | null
           provider?: Database["public"]["Enums"]["wallet_provider"]
+          reject_proof_path?: string | null
+          reject_reason?: string | null
           status?: Database["public"]["Enums"]["withdrawal_status"]
           user_id?: string
           wallet_number?: string
