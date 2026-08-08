@@ -184,14 +184,12 @@ export async function buildEarningsBreakdown(admin: any, userId: string): Promis
   // figure — otherwise the same taka is counted twice (once as "বোনাস", once as
   // "অন্য user পাঠিয়েছে").
   const transferEventIds = new Set<string>();
-  const transferEventInfo = new Map<string, TransferInInfo>();
   let transferMatchedTotal = 0;
   for (const e of bonusEvents) {
     if (e.delta <= 0) continue;
     const t = matchTransfer(e);
     if (t) {
       transferEventIds.add(e.id);
-      transferEventInfo.set(e.id, t);
       transferMatchedTotal += e.delta;
     }
   }
