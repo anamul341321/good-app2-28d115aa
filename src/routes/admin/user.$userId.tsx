@@ -1080,7 +1080,9 @@ function UserDetail() {
             );
             return (
               <EarningsBreakdown
+                adminLinks
                 data={d.breakdown}
+
                 totals={{
                   withdrawn,
                   paidWithdrawals,
