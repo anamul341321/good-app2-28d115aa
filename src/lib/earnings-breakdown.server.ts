@@ -237,16 +237,22 @@ export async function buildEarningsBreakdown(admin: any, userId: string): Promis
       // Transfers from other users are shown in their own card only — skipping
       // them here stops the same taka from appearing twice.
       if (transferEventIds.has(e.id)) continue;
-      const isAdmin = e.source !== "db";
+      // Only genuine admin actions are labelled as "admin added"; system
+      // sources (db trigger, bonus/referral credits, corrections) stay bonuses.
+      const isAdmin = String(e.source ?? "").startsWith("admin");
+      // An explicit note is always the most accurate description of the event,
+      // so it wins over the amount-guessing helper.
       bonusSteps.push({
         key: `ev-${e.id}`,
         label:
           e.delta < 0
-            ? "➖ বোনাস কেটে নেওয়া হয়েছে"
-            : isAdmin
-              ? "🎁 অ্যাডমিন বোনাস যোগ করেছে"
-              : `🎉 ${describeBonus(e.delta)}`,
-        formula: `${dateBn(e.created_at)}${e.note ? ` · ${e.note}` : ""}`,
+            ? `➖ বোনাস কেটে নেওয়া হয়েছে${e.note ? ` — ${e.note}` : ""}`
+            : e.note
+              ? `🎉 ${e.note}`
+              : isAdmin
+                ? "🎁 অ্যাডমিন বোনাস যোগ করেছে"
+                : `🎉 ${describeBonus(e.delta)}`,
+        formula: dateBn(e.created_at),
         amount: Number(e.delta.toFixed(2)),
       });
     }
