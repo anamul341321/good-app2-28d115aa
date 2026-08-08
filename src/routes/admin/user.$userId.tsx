@@ -1016,16 +1016,37 @@ function UserDetail() {
       {(data as any).breakdown && (
         <div className="glass rounded-2xl p-4 space-y-3 border border-amber/30">
           <p className="text-[10px] uppercase tracking-widest text-amber font-black">ধাপে ধাপে হিসাব — বোনাস ও মাইনিং</p>
-          <EarningsBreakdown
-            data={(data as any).breakdown}
-            totals={{
-              withdrawn: Number((data as any).mining?.withdrawn_amount ?? 0),
-              paidWithdrawals: ((data as any).withdrawals ?? []).filter((w: any) => w.status === "paid").reduce((sum: number, w: any) => sum + Number(w.amount), 0),
-              balance:
-                Number((data as any).mining?.accrued_amount ?? 0) -
-                Number((data as any).mining?.withdrawn_amount ?? 0),
-            }}
-          />
+          {(() => {
+            const d = data as any;
+            const withdrawn = Number(d.mining?.withdrawn_amount ?? 0);
+            const paidWithdrawals = (d.withdrawals ?? [])
+              .filter((w: any) => w.status === "paid")
+              .reduce((sum: number, w: any) => sum + Number(w.amount), 0);
+            const successfulRecharges = (d.recharges ?? [])
+              .filter((r: any) => r.status === "success")
+              .reduce((sum: number, r: any) => sum + Number(r.amount), 0);
+            const transfersOutTotal = (d.transfersOut ?? []).reduce(
+              (sum: number, t: any) => sum + Number(t.amount),
+              0,
+            );
+            return (
+              <EarningsBreakdown
+                data={d.breakdown}
+                totals={{
+                  withdrawn,
+                  paidWithdrawals,
+                  successfulRecharges,
+                  transfersOutTotal,
+                  feeOrAdjustmentOut: Math.max(
+                    0,
+                    withdrawn - paidWithdrawals - successfulRecharges - transfersOutTotal,
+                  ),
+                  balance: Number(d.mining?.accrued_amount ?? 0) - withdrawn,
+                }}
+              />
+            );
+          })()}
+
 
         </div>
       )}
