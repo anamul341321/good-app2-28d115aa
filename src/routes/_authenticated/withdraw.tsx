@@ -92,7 +92,12 @@ function WithdrawPage() {
 
   // Main balance (instantly withdrawable) vs mining (1st–3rd of each month window)
   const bonusTotal = Number((mining as any)?.bonus_amount ?? 0);
-  const bonusAvailable = Math.floor(splitBalance({ balance, bonusTotal }).main);
+  const bonusAvailable = Math.floor(splitBalance({
+    balance,
+    bonusTotal,
+    withdrawn: Number((mining as any)?.withdrawn_amount ?? 0),
+    miningWithdrawn: Number((mining as any)?.mining_withdrawn ?? 0),
+  }).main);
 
   const win = miningWindowInfo(now);
   const miningLocked = !win.isOpen;

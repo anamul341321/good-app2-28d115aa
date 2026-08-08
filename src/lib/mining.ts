@@ -66,11 +66,25 @@ export function formatBdt(value: number, decimals = 6): string {
 /**
  * "Main balance" = the part of the balance that can be withdrawn/sent at any
  * time (welcome bonus, re-verify bonus, referral bonus, gifts, transfers-in).
- * Withdrawals are attributed to mining first, so a past mining withdrawal never
- * eats into the user's main balance.
+ * Mining balance is only withdrawable during the monthly window.
+ *
+ * Every withdrawal is split between the two pools at request time, and the
+ * mining part is stored in `mining_state.mining_withdrawn`. So:
+ *   main    = bonusTotal − (totalWithdrawn − miningWithdrawn)
+ *   mining  = balance − main
  */
-export function splitBalance(input: { balance: number; bonusTotal: number }): { main: number; mining: number } {
+export function splitBalance(input: {
+  balance: number;
+  bonusTotal: number;
+  withdrawn?: number;
+  miningWithdrawn?: number;
+}): { main: number; mining: number } {
   const balance = Math.max(0, input.balance);
-  const main = Math.max(0, Math.min(balance, Math.max(0, input.bonusTotal)));
+  const bonusTotal = Math.max(0, input.bonusTotal);
+  const withdrawn = Math.max(0, input.withdrawn ?? 0);
+  const miningWithdrawn = Math.max(0, Math.min(input.miningWithdrawn ?? 0, withdrawn));
+  const mainWithdrawn = Math.max(0, withdrawn - miningWithdrawn);
+  const main = Math.max(0, Math.min(balance, bonusTotal - mainWithdrawn));
   return { main, mining: Math.max(0, balance - main) };
 }
+

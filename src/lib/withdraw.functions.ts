@@ -158,8 +158,15 @@ export const requestWithdraw = createServerFn({ method: "POST" })
     // Main balance (bonus/referral/gift money) is always withdrawable.
     // Mining balance is withdrawable ONLY during 1st–3rd of every month (Asia/Dhaka).
     const bonusTotal = Number((mining as any).bonus_amount ?? 0);
+    const totalWithdrawn = Number(mining.withdrawn_amount);
+    const miningWithdrawnSoFar = Number((mining as any).mining_withdrawn ?? 0);
     const { splitBalance } = await import("./mining");
-    const bonusAvailable = splitBalance({ balance, bonusTotal }).main;
+    const bonusAvailable = splitBalance({
+      balance,
+      bonusTotal,
+      withdrawn: totalWithdrawn,
+      miningWithdrawn: miningWithdrawnSoFar,
+    }).main;
 
     const { miningWindowInfo, nextOpenLabelBn } = await import("./mining-window");
     const win = miningWindowInfo();
@@ -172,6 +179,11 @@ export const requestWithdraw = createServerFn({ method: "POST" })
       }
       throw new Error(`ব্যালেন্স কম: ${Math.floor(available)}৳`);
     }
+
+    // Charge main balance first, then mining (mining only reachable in-window).
+    const fromMain = Math.min(amount, bonusAvailable);
+    const fromMining = amount - fromMain;
+
 
     const now = new Date();
     const nowMs = now.getTime();
@@ -189,10 +201,12 @@ export const requestWithdraw = createServerFn({ method: "POST" })
       .update({
         accrued_amount: newAccrued,
         withdrawn_amount: newWithdrawn,
+        mining_withdrawn: miningWithdrawnSoFar + fromMining,
         last_credited_at: now.toISOString(),
-      })
+      } as any)
       .eq("user_id", userId);
     if (mErr) throw new Error(mErr.message);
+
 
     const { error: wErr } = await supabaseAdmin.from("withdrawals").insert({
       user_id: userId,

@@ -168,7 +168,7 @@ export async function buildUserCard(uidRaw: string): Promise<LookupResult> {
 
   const [tasksRes, miningRes, refsRes, wdRes, debtRes] = await Promise.all([
     db.from("tasks").select("slot, status, whitelist_ok, wallet_address, reverify_count").eq("user_id", profile.id),
-    db.from("mining_state").select("accrued_amount, withdrawn_amount, bonus_amount, is_active, effective_task_count").eq("user_id", profile.id).maybeSingle(),
+    db.from("mining_state").select("accrued_amount, withdrawn_amount, mining_withdrawn, bonus_amount, is_active, effective_task_count").eq("user_id", profile.id).maybeSingle(),
     db.from("profiles").select("id, display_name, uid_seq").eq("referred_by", profile.id).order("id"),
     db.from("withdrawals").select("amount, status").eq("user_id", profile.id),
     db.from("user_debts").select("amount").eq("user_id", profile.id).eq("status", "active"),
@@ -235,6 +235,8 @@ export async function buildUserCard(uidRaw: string): Promise<LookupResult> {
   const { main: mainPart, mining: miningPart } = splitBalance({
     balance: netBalance,
     bonusTotal: Number(mining?.bonus_amount ?? 0),
+    withdrawn: Number(mining?.withdrawn_amount ?? 0),
+    miningWithdrawn: Number(mining?.mining_withdrawn ?? 0),
   });
 
   const kycOk = !!profile.kyc_verified && !!profile.telegram_user_id;

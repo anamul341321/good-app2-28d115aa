@@ -496,6 +496,7 @@ export type Database = {
           effective_task_count: number
           is_active: boolean
           last_credited_at: string | null
+          mining_withdrawn: number
           qualifying_referees: number
           referral_accrued: number
           referral_units: number
@@ -513,6 +514,7 @@ export type Database = {
           effective_task_count?: number
           is_active?: boolean
           last_credited_at?: string | null
+          mining_withdrawn?: number
           qualifying_referees?: number
           referral_accrued?: number
           referral_units?: number
@@ -530,6 +532,7 @@ export type Database = {
           effective_task_count?: number
           is_active?: boolean
           last_credited_at?: string | null
+          mining_withdrawn?: number
           qualifying_referees?: number
           referral_accrued?: number
           referral_units?: number

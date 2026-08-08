@@ -56,6 +56,7 @@ type Props = {
   leagueCount?: number;
   bonusTotal?: number;
   referralAccrued?: number;
+  miningWithdrawn?: number;
 };
 
 
@@ -75,7 +76,7 @@ export function MiningCounter({
   effectiveTaskCount = 0, qualifyingReferees = 0,
   selfSlots: selfSlotsProp, referralUnits: referralUnitsProp,
   selfQualified = true, displayTaskCount, leagueCount,
-  bonusTotal = 0, referralAccrued = 0,
+  bonusTotal = 0, referralAccrued = 0, miningWithdrawn = 0,
 }: Props) {
 
   const [now, setNow] = useState(Date.now());
@@ -123,7 +124,7 @@ export function MiningCounter({
 
   // Balance split (same rule the withdraw server uses): withdrawals are taken
   // from mining first, so the main (bonus) balance stays intact.
-  const bonusPart = splitBalance({ balance, bonusTotal }).main;
+  const bonusPart = splitBalance({ balance, bonusTotal, withdrawn, miningWithdrawn }).main;
   const miningPart = Math.max(0, balance - bonusPart);
 
   const refPart = Math.min(miningPart, Math.max(0, referralAccrued));
