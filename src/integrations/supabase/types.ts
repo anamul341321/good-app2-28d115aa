@@ -617,6 +617,7 @@ export type Database = {
           referral_code: string
           referral_unlock_override: boolean
           referred_by: string | null
+          referrer_bonus_paid_at: string | null
           telegram_user_id: number | null
           tg_link_skipped: boolean
           thana_upazila: string | null
@@ -657,6 +658,7 @@ export type Database = {
           referral_code: string
           referral_unlock_override?: boolean
           referred_by?: string | null
+          referrer_bonus_paid_at?: string | null
           telegram_user_id?: number | null
           tg_link_skipped?: boolean
           thana_upazila?: string | null
@@ -697,6 +699,7 @@ export type Database = {
           referral_code?: string
           referral_unlock_override?: boolean
           referred_by?: string | null
+          referrer_bonus_paid_at?: string | null
           telegram_user_id?: number | null
           tg_link_skipped?: boolean
           thana_upazila?: string | null

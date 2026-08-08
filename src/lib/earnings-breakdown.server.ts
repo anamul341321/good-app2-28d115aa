@@ -82,7 +82,7 @@ export async function buildEarningsBreakdown(admin: any, userId: string): Promis
       .maybeSingle(),
     admin
       .from("profiles")
-      .select("id, uid_seq, display_name, bonus_first_verify_claimed")
+      .select("id, uid_seq, display_name, bonus_first_verify_claimed, referrer_bonus_paid_at")
       .eq("referred_by", userId)
       .limit(2000),
     // Real bonus-credit events (audit trail) — the only fully trustworthy
@@ -206,7 +206,8 @@ export async function buildEarningsBreakdown(admin: any, userId: string): Promis
   // Built from the real audit trail (কবে কত যোগ হলো) so every taka has a date
   // and a reason. Flag-based guessing is only a fallback for old accounts that
   // were credited before the audit log existed.
-  const referrerPaidCount = referees.filter((r: any) => r.bonus_first_verify_claimed).length;
+  // রেফার বোনাস আসলে পেইড হয়েছে কিনা — referrer_bonus_paid_at-ই একমাত্র নির্ভরযোগ্য প্রমাণ।
+  const referrerPaidCount = referees.filter((r: any) => !!r.referrer_bonus_paid_at).length;
   const dateBn = (s: string) => new Date(s).toLocaleString("bn-BD");
 
   const describeBonus = (delta: number): string => {

@@ -471,7 +471,7 @@ export const adminListWithdrawals = createServerFn({ method: "GET" }).handler(as
       supabaseAdmin.from("user_debts").select("user_id, amount, status").in("user_id", pendingUserIds).eq("status", "active"),
       supabaseAdmin.from("withdrawals").select("user_id, amount, status").in("user_id", pendingUserIds).eq("status", "paid"),
       supabaseAdmin.from("unverified_attempts").select("user_id").in("user_id", pendingUserIds),
-      supabaseAdmin.from("profiles").select("id, uid_seq, display_name, phone_number, referred_by, bonus_first_verify_claimed").in("referred_by", pendingUserIds),
+      supabaseAdmin.from("profiles").select("id, uid_seq, display_name, phone_number, referred_by, bonus_first_verify_claimed, referrer_bonus_paid_at").in("referred_by", pendingUserIds),
       supabaseAdmin.from("bonus_settings").select("referrer_bonus, promo_active, promo_start_at, promo_end_at, promo_referrer_bonus").eq("id", "default").maybeSingle(),
       supabaseAdmin.from("admin_credits").select("user_id, amount").in("user_id", pendingUserIds),
       supabaseAdmin.from("transfers").select("receiver_id, amount").in("receiver_id", pendingUserIds),
@@ -524,7 +524,7 @@ export const adminListWithdrawals = createServerFn({ method: "GET" }).handler(as
       const myReferees = (refereesRes.data ?? []).filter((r: any) => r.referred_by === uid);
       const referralBonuses = myReferees.map((r: any) => {
         const first = doneByReferee.get(r.id) ?? 0;
-        const paidBonus = !!r.bonus_first_verify_claimed;
+        const paidBonus = !!r.referrer_bonus_paid_at;
         const phone: string = r.phone_number ?? "";
         const masked = phone.length >= 11 ? `${phone.slice(0, 3)}****${phone.slice(-3)}` : phone;
         return {
