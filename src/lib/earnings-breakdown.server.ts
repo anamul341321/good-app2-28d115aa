@@ -180,15 +180,29 @@ export async function buildEarningsBreakdown(admin: any, userId: string): Promis
     return t;
   };
 
+  // Transfers land inside `bonus_amount`, so they must be removed from the bonus
+  // figure — otherwise the same taka is counted twice (once as "বোনাস", once as
+  // "অন্য user পাঠিয়েছে").
+  const transferEventIds = new Set<string>();
+  const transferEventInfo = new Map<string, TransferInInfo>();
+  let transferMatchedTotal = 0;
+  for (const e of bonusEvents) {
+    if (e.delta <= 0) continue;
+    const t = matchTransfer(e);
+    if (t) {
+      transferEventIds.add(e.id);
+      transferEventInfo.set(e.id, t);
+      transferMatchedTotal += e.delta;
+    }
+  }
 
-
-
-  const bonusTotal = Number(ms.bonus_amount ?? 0);
+  const bonusRaw = Number(ms.bonus_amount ?? 0);
+  const bonusTotal = Number(Math.max(0, bonusRaw - transferMatchedTotal).toFixed(2));
   const accrued = Number(ms.accrued_amount ?? 0);
   const referralAccrued = Number(ms.referral_accrued ?? 0);
   const selfTotal = Number(ms.self_mining_accrued ?? 0);
   const miningTotal = selfTotal + referralAccrued;
-  const legacyUnclassified = Math.max(0, accrued - bonusTotal - miningTotal);
+  const legacyUnclassified = Math.max(0, accrued - bonusRaw - miningTotal);
 
   // ---- Bonus steps -------------------------------------------------------
   // Built from the real audit trail (কবে কত যোগ হলো) so every taka has a date
