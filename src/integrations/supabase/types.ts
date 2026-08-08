@@ -585,6 +585,9 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          balance_frozen: boolean
+          balance_frozen_at: string | null
+          balance_frozen_reason: string | null
           banned: boolean
           banned_at: string | null
           banned_reason: string | null
@@ -622,6 +625,9 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          balance_frozen?: boolean
+          balance_frozen_at?: string | null
+          balance_frozen_reason?: string | null
           banned?: boolean
           banned_at?: string | null
           banned_reason?: string | null
@@ -659,6 +665,9 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          balance_frozen?: boolean
+          balance_frozen_at?: string | null
+          balance_frozen_reason?: string | null
           banned?: boolean
           banned_at?: string | null
           banned_reason?: string | null
