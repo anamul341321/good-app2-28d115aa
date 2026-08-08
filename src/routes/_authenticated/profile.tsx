@@ -255,7 +255,7 @@ function ProfilePage() {
         const noteBit = noteClean ? ` · ${noteClean}` : "";
         return { id: w.id, amount: Number(w.amount), date: w.created_at, status: w.status, meta: `${w.provider} · ${w.wallet_number}${badge}${noteBit}` };
       })} />}
-      {tab === "claim" && <HistoryList empty="এখনো কোনো মাইনিং ক্লেইম নেই" items={(data.claims ?? []).map((c: any) => ({ id: c.id, amount: Number(c.amount), date: c.created_at, status: "claim", meta: c.note ?? "Snapshot" }))} />}
+      {tab === "claim" && <HistoryList empty="এখনো কোনো ক্লেইম বা বোনাস সংশোধন নেই" items={(data.claims ?? []).map((c: any) => ({ id: c.id, amount: Number(c.amount), date: c.created_at, status: (c.kind ?? "mining") === "mining" ? "claim" : "bonus", meta: (c.kind ?? "mining") === "mining" ? (c.note ?? "মাইনিং ক্লেইম") : `প্রোমো বোনাস · ${c.note ?? "সংশোধন"}` }))} />}
     </div>
   );
 }
