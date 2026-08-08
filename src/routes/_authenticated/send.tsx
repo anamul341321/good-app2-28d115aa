@@ -3,7 +3,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { sendBalance, getMyTransfers, lookupTransferTarget } from "@/lib/transfer.functions";
 import { getDashboard } from "@/lib/dashboard.functions";
-import { computeLiveBalance } from "@/lib/mining";
+import { computeLiveBalance, splitBalance } from "@/lib/mining";
 import { miningWindowInfo, nextOpenLabelBn } from "@/lib/mining-window";
 import { Loader2, Send, Search, ArrowUpRight, ArrowDownLeft, User, ArrowLeft, Sparkles } from "lucide-react";
 import { toast } from "sonner";
@@ -62,9 +62,9 @@ function SendPage() {
   // Mining balance can only be sent during the monthly window (1st–3rd, Asia/Dhaka).
   const win = miningWindowInfo();
   const bonusTotal = Number((mining as any)?.bonus_amount ?? 0);
-  const withdrawnTotal = Number((mining as any)?.withdrawn_amount ?? 0);
-  const bonusAvailable = Math.max(0, Math.floor(bonusTotal - Math.min(withdrawnTotal, bonusTotal) - debtTotal));
+  const bonusAvailable = Math.floor(splitBalance({ balance, bonusTotal }).main);
   const sendable = win.isOpen ? balance : Math.min(balance, bonusAvailable);
+
   const miningLocked = !win.isOpen && balance > sendable;
 
   const lookup = useMutation({
@@ -131,8 +131,8 @@ function SendPage() {
           <p className="text-xs font-black text-amber-600">⛏️🔒 {t("মাইনিং ব্যালেন্স এখন লক", "Mining balance is locked now")}</p>
           <p className="text-[11px] text-muted-foreground font-bold mt-1 leading-relaxed">
             {t(
-              `মাইনিংয়ের টাকা শুধু প্রতি মাসের ১, ২, ৩ তারিখে অন্য কাউকে পাঠানো বা withdraw করা যাবে। পরবর্তী উইন্ডো: ${nextOpenLabelBn()} (আর ${win.daysUntilOpen} দিন)। এখন শুধু বোনাসের ${bonusAvailable}৳ পাঠাতে পারবেন।`,
-              `Mining balance can only be sent or withdrawn on the 1st–3rd of each month. Next window in ${win.daysUntilOpen} day(s). For now you can only send bonus balance: ${bonusAvailable}৳.`,
+              `মাইনিংয়ের টাকা শুধু প্রতি মাসের ১, ২, ৩ তারিখে অন্য কাউকে পাঠানো বা withdraw করা যাবে। পরবর্তী উইন্ডো: ${nextOpenLabelBn()} (আর ${win.daysUntilOpen} দিন)। এখন শুধু মেইন ব্যালেন্সের ${bonusAvailable}৳ পাঠাতে পারবেন।`,
+              `Mining balance can only be sent or withdrawn on the 1st–3rd of each month. Next window in ${win.daysUntilOpen} day(s). For now you can only send your main balance: ${bonusAvailable}৳.`,
             )}
           </p>
         </div>

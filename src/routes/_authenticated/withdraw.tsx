@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { getDashboard, getMyWithdrawals } from "@/lib/dashboard.functions";
 import { requestWithdraw } from "@/lib/withdraw.functions";
 import { MIN_WITHDRAW_BDT } from "@/lib/constants";
-import { computeLiveBalance } from "@/lib/mining";
+import { computeLiveBalance, splitBalance } from "@/lib/mining";
 import { useState, useEffect } from "react";
 import { ArrowDownToLine, Loader2, Lock, Copy, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
@@ -90,11 +90,10 @@ function WithdrawPage() {
   }) : 0;
   const claimable = debtTotal > 0 ? Math.floor(balance) : Math.floor(balance);
 
-  // Bonus (instantly withdrawable) vs mining (1st–3rd of each month window)
+  // Main balance (instantly withdrawable) vs mining (1st–3rd of each month window)
   const bonusTotal = Number((mining as any)?.bonus_amount ?? 0);
-  const withdrawnTotal = Number(mining?.withdrawn_amount ?? 0);
-  const bonusWithdrawn = Math.min(withdrawnTotal, bonusTotal);
-  const bonusAvailable = Math.max(0, Math.floor(bonusTotal - bonusWithdrawn - debtTotal));
+  const bonusAvailable = Math.floor(splitBalance({ balance, bonusTotal }).main);
+
   const win = miningWindowInfo(now);
   const miningLocked = !win.isOpen;
   const daysUntilUnlock = win.daysUntilOpen;
@@ -182,7 +181,7 @@ function WithdrawPage() {
         <div className="rounded-2xl p-4 border border-border bg-white/70 space-y-2">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-[10px] uppercase tracking-widest text-emerald font-black">🎁 বোনাস (এখনই উইথড্র)</p>
+              <p className="text-[10px] uppercase tracking-widest text-emerald font-black">💚 মেইন ব্যালেন্স (এখনই উইথড্র)</p>
               <p className="mono-num text-2xl font-black text-emerald mt-0.5" translate="no">{bonusAvailable}৳</p>
             </div>
             <div className="text-right">
@@ -227,7 +226,7 @@ function WithdrawPage() {
               <li className="flex gap-2"><span className="text-amber shrink-0">📅</span><span>প্রতি মাসের <b className="text-rose">১, ২ ও ৩ তারিখ</b> — এই ৩ দিনই মাইনিং ব্যালেন্স withdraw করা যাবে।</span></li>
               <li className="flex gap-2"><span className="text-emerald shrink-0">✅</span><span>১ তারিখ withdraw করে ফেললে আবার <b>আগামী মাসের ১ তারিখ</b> পর্যন্ত lock হয়ে যাবে।</span></li>
               <li className="flex gap-2"><span className="text-cyan shrink-0">⏰</span><span>১ তারিখ মিস করলে ২ বা ৩ তারিখে দিতে পারবেন। <b>৩ দিনও মিস করলে</b> আবার পরের মাসের ১ তারিখ পর্যন্ত lock।</span></li>
-              <li className="flex gap-2"><span className="text-violet shrink-0">🎁</span><span><b>বোনাস ব্যালেন্স</b> এই নিয়মের বাইরে — যেকোনো সময় withdraw করা যাবে।</span></li>
+              <li className="flex gap-2"><span className="text-violet shrink-0">🎁</span><span><b>মেইন ব্যালেন্স</b> (বোনাস + রেফার বোনাস) এই নিয়মের বাইরে — যেকোনো সময় withdraw করা যাবে।</span></li>
             </ul>
           </div>
         </div>

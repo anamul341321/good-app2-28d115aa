@@ -228,6 +228,15 @@ export async function buildUserCard(uidRaw: string): Promise<LookupResult> {
     }
   }
 
+  // মেইন ব্যালেন্স = বোনাস/রেফার বোনাসের অংশ (যেকোনো সময় তোলা যায়);
+  // বাকিটা মাইনিং ব্যালেন্স (শুধু ১–৩ তারিখে তোলা যায়)।
+  const { splitBalance } = await import("@/lib/mining");
+  const netBalance = Math.max(0, balance - debt);
+  const { main: mainPart, mining: miningPart } = splitBalance({
+    balance: netBalance,
+    bonusTotal: Number(mining?.bonus_amount ?? 0),
+  });
+
   const kycOk = !!profile.kyc_verified && !!profile.telegram_user_id;
   const card =
     `👤 <b>${profile.display_name || "ইউজার"}</b> — UID <code>${profile.uid_seq ?? "—"}</code>\n` +
@@ -249,7 +258,8 @@ export async function buildUserCard(uidRaw: string): Promise<LookupResult> {
     (lines.length ? lines.join("\n") + "\n" : "") +
     `\n<b>💰 হিসাব</b>\n` +
     `   বর্তমান ব্যালেন্স: <b>${bdt(balance - debt)}</b>\n` +
-    `   বোনাস: ${bdt(Number(mining?.bonus_amount ?? 0))}   মাইনিং: ${mining?.is_active ? "🟢 চালু" : "🔴 বন্ধ"}\n` +
+    `   💚 মেইন ব্যালেন্স (যেকোনো সময় তোলা যায়): <b>${bdt(mainPart)}</b>\n` +
+    `   ⛏️ মাইনিং ব্যালেন্স (শুধু ১–৩ তারিখে তোলা যায়): <b>${bdt(miningPart)}</b>   মাইনিং: ${mining?.is_active ? "🟢 চালু" : "🔴 বন্ধ"}\n` +
     `   পেইড উইথড্র: <b>${bdt(paid)}</b>${pending ? `   পেন্ডিং: ${bdt(pending)}` : ""}\n` +
     (debt ? `   ⚠️ বকেয়া (ফেরতযোগ্য): <b>${bdt(debt)}</b>\n` : "");
 

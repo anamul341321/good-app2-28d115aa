@@ -1,6 +1,6 @@
 import { memo, useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { computeLiveBalance, monthlyRate, MONTHLY_PER_SLOT } from "@/lib/mining";
+import { computeLiveBalance, monthlyRate, MONTHLY_PER_SLOT, splitBalance } from "@/lib/mining";
 import { miningWindowInfo, nextOpenLabelBn } from "@/lib/mining-window";
 import { Wallet, Sparkles } from "lucide-react";
 
@@ -122,9 +122,10 @@ export function MiningCounter({
 
 
   // Balance split (same rule the withdraw server uses): withdrawals are taken
-  // from bonus first, so the remaining bonus part is what's still un-withdrawn.
-  const bonusPart = Math.max(0, Math.min(bonusTotal, Math.max(0, bonusTotal - withdrawn)));
+  // from mining first, so the main (bonus) balance stays intact.
+  const bonusPart = splitBalance({ balance, bonusTotal }).main;
   const miningPart = Math.max(0, balance - bonusPart);
+
   const refPart = Math.min(miningPart, Math.max(0, referralAccrued));
   const selfPart = Math.max(0, miningPart - refPart);
 
@@ -198,11 +199,12 @@ export function MiningCounter({
             </p>
           </div>
           <div className="rounded-2xl p-2.5 border border-white/20 bg-white/10 backdrop-blur-md">
-            <p className="text-[9px] font-black tracking-widest text-white/70">🎁 বোনাস ব্যালেন্স</p>
+            <p className="text-[9px] font-black tracking-widest text-white/70">💚 মেইন ব্যালেন্স</p>
             <p className="mono-num text-base font-black text-yellow-100 mt-0.5">{bonusPart.toFixed(2)}<span className="text-[10px] text-white/60">৳</span></p>
             <p className="text-[8px] text-white/60 leading-tight mt-0.5">
-              ফার্স্ট/রি-ভেরিফাই ও রেফার বোনাস · যেকোনো সময় তোলা যাবে
+              বোনাস + রেফার বোনাস · যেকোনো সময় তোলা যাবে
             </p>
+
           </div>
         </div>
 
