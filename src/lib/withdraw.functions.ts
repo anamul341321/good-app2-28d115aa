@@ -180,11 +180,6 @@ export const requestWithdraw = createServerFn({ method: "POST" })
       throw new Error(`ব্যালেন্স কম: ${Math.floor(available)}৳`);
     }
 
-    // Charge main balance first, then mining (mining only reachable in-window).
-    const fromMain = Math.min(amount, bonusAvailable);
-    const fromMining = amount - fromMain;
-
-
     // Final balance check, debit and request creation happen under one row lock.
     // This prevents rapid/concurrent requests from spending the same balance twice.
     const { data: atomicData, error: atomicError } = await (supabaseAdmin as any).rpc(
