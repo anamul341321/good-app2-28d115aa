@@ -228,11 +228,33 @@ export const requestWithdraw = createServerFn({ method: "POST" })
         reasons.push(`মোট withdraw (${Math.round(paidSum + amount)}৳) তার মোট আয় (${Math.round(newAccrued)}৳)-এর চেয়ে বেশি`);
       }
 
+      // অন্য user-এর পাঠানো টাকা দিয়ে withdraw — খুব সন্দেহজনক
+      const { data: recvT } = await supabaseAdmin
+        .from("transfers")
+        .select("amount, created_at, sender:profiles!transfers_sender_id_fkey(uid_seq, display_name)")
+        .eq("receiver_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(10);
+      const recvList = recvT ?? [];
+      const recvSum = recvList.reduce((s: number, r: any) => s + Number(r.amount), 0);
+      if (recvSum > 0) {
+        const froms = recvList
+          .slice(0, 4)
+          .map((r: any) => `UID ${r.sender?.uid_seq ?? "—"} (${Math.round(Number(r.amount))}৳)`)
+          .join(", ");
+        reasons.push(`অন্য user-এর পাঠানো টাকা আছে — মোট ${Math.round(recvSum)}৳ · ${froms}`);
+      }
+
+      // মাইনিং লক থাকা সময়েও বড় অংশ withdraw
+      if (miningLocked && amount > bonusAvailable + 1) {
+        reasons.push(`মাইনিং লক উইন্ডোতে বোনাস (${Math.floor(bonusAvailable)}৳)-এর বেশি withdraw চেয়েছে`);
+      }
+
       if (reasons.length > 0) {
-        const { sendTelegram } = await import("./telegram.server");
+        const { alertAdminGroup } = await import("./telegram-alert.server");
         const uid = (kycProf as any)?.uid_seq ?? "—";
         const name = (kycProf as any)?.display_name ?? "User";
-        await sendTelegram(
+        await alertAdminGroup(
           `🚨 <b>সন্দেহজনক withdraw request</b>\n` +
             `👤 ${name} (UID ${uid})\n` +
             `💸 Gross ${amount}৳ · Fee ${fee}৳ · Payout ${payout}৳ · ${chosen}\n` +
