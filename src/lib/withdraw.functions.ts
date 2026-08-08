@@ -198,3 +198,23 @@ export const requestWithdraw = createServerFn({ method: "POST" })
 
     return { ok: true, gross: amount, fee, payout, provider: chosen };
   });
+
+// Rejection screenshot for one of the caller's own withdrawals.
+export const getMyRejectProofUrl = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { data: row } = await context.supabase
+      .from("withdrawals")
+      .select("reject_proof_path")
+      .eq("id", data.id)
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    const path = (row as any)?.reject_proof_path as string | null;
+    if (!path) return { url: null };
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: signed } = await supabaseAdmin.storage
+      .from("withdraw-proof")
+      .createSignedUrl(path, 60 * 30);
+    return { url: signed?.signedUrl ?? null };
+  });
