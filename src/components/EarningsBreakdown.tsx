@@ -50,64 +50,68 @@ export function EarningsBreakdown({ data, totals }: { data: BreakdownData; total
   const lifetimeIn = b.total + m.total + legacyUnclassified;
   const withdrawn = totals?.withdrawn ?? 0;
 
+  const balance = totals?.balance ?? lifetimeIn - withdrawn;
+
   return (
     <div className="space-y-4">
-      {/* লাইফটাইম হিসাব — এক নজরে */}
-      <div className="rounded-2xl border-2 border-cyan/30 bg-cyan/5 p-4 space-y-2">
-        <p className="text-[10px] uppercase tracking-widest font-black text-cyan">এক নজরে পুরো হিসাব</p>
-        <div className="grid grid-cols-3 gap-2">
-          <Cell label="মোট আয়" value={tk(lifetimeIn)} tone="text-emerald" />
-          <Cell label="মোট তোলা/খরচ" value={tk(withdrawn)} tone="text-rose" />
-          <Cell label="এখন ব্যালেন্স" value={tk(totals?.balance ?? lifetimeIn - withdrawn)} tone="text-cyan" />
-        </div>
-        <p className="text-[11px] font-bold text-navy leading-relaxed">
-          🧮 <b>{tk(b.total)}</b> বোনাস + <b>{tk(m.selfTotal)}</b> নিজের মাইনিং + <b>{tk(m.referralTotal)}</b> রেফার ১০% কমিশন
-          {legacyUnclassified > 0 ? <> + <b className="text-amber">{tk(legacyUnclassified)}</b> পুরোনো অশ্রেণিবদ্ধ ক্রেডিট</> : null}
-          = <b>{tk(lifetimeIn)}</b> মোট আয়। এর মধ্যে <b>{tk(withdrawn)}</b> তোলা/খরচ হয়েছে
-          {(totals?.debtActive ?? 0) > 0 ? <> এবং <b>{tk(totals?.debtActive ?? 0)}</b> warning বাকি আছে</> : null}, তাই এখন হাতে{" "}
-          <b>{tk(totals?.balance ?? lifetimeIn - withdrawn)}</b>।
-        </p>
-        {totals?.paidWithdrawals !== undefined && totals.paidWithdrawals !== withdrawn && (
-          <p className="rounded-lg bg-surface-2 p-2 text-[10px] font-bold text-muted-foreground">
-            হাতে paid হয়েছে <b className="text-emerald">{tk(totals.paidWithdrawals)}</b>; ফি/সমন্বয়সহ ব্যালেন্স থেকে মোট কাটা <b className="text-rose">{tk(withdrawn)}</b>।
+      {/* ====== ধাপে ধাপে একদম সহজ হিসাব ====== */}
+      <div className="rounded-2xl border-2 border-cyan/40 bg-cyan/5 p-4 space-y-3">
+        <p className="text-[11px] uppercase tracking-widest font-black text-cyan">ধাপে ধাপে আপনার হিসাব</p>
+
+        <SimpleStep n={1} title="বোনাস পেয়েছেন" amount={tk(b.total)} tone="text-amber">
+          <Line ok={selfFirst > 0} text={`১০টি স্লট first verify করার বোনাস — ${tk(selfFirst)}`} />
+          <Line ok={selfRe > 0} text={`১০টি স্লট re-verify করার বোনাস (এখানেই মাইনিং চালু) — ${tk(selfRe)}`} />
+          <Line
+            ok={refBonus > 0}
+            text={
+              refBonus > 0
+                ? `রেফার বোনাস — ${b.referrerPaidCount} জন রেফার ১০টি first verify শেষ করেছে, তাই ${b.referrerPaidCount} × ${b.rates.referrer}৳ = ${tk(refBonus)} পেয়েছেন ✅`
+                : `রেফার বোনাস — এখনো কোনো রেফার ১০টি first verify শেষ করেনি, তাই ০৳`
+            }
+          />
+          {other > 0 && <Line ok text={`অন্যান্য / অ্যাডমিন যোগ — ${tk(other)}`} />}
+          <p className="text-[10px] font-bold text-muted-foreground">👉 বোনাস একবারই পাওয়া যায়, প্রতি মাসে না।</p>
+        </SimpleStep>
+
+        <SimpleStep n={2} title="মাইনিং থেকে জমা হয়েছে" amount={tk(m.total)} tone="text-cyan">
+          <Line ok={m.selfSlots > 0} text={`নিজের ${m.selfSlots}টি re-verified স্লট × ৫০৳/মাস = ${m.monthlySelf}৳ প্রতি মাস`} />
+          <Line ok={m.monthlyReferral > 0} text={`রেফারদের মাইনিং-এর ১০% কমিশন = ${m.monthlyReferral.toFixed(2)}৳ প্রতি মাস`} />
+          <Line ok text={`মাসে মোট ${m.monthlyTotal.toFixed(2)}৳ → প্রতিদিন ${m.perDay.toFixed(2)}৳`} />
+          <Line
+            ok={!!m.activatedAt}
+            text={
+              m.activatedAt
+                ? `${new Date(m.activatedAt).toLocaleDateString("bn-BD")} থেকে ${m.daysRunning.toFixed(1)} দিন চলছে → ${m.perDay.toFixed(2)}৳ × ${m.daysRunning.toFixed(1)} দিন ≈ ${tk(m.perDay * m.daysRunning)}`
+                : "মাইনিং এখনো চালু হয়নি — ১০টি স্লট re-verify করলেই চালু হবে"
+            }
+          />
+        </SimpleStep>
+
+        <SimpleStep n={3} title="তাহলে মোট আয়" amount={tk(lifetimeIn)} tone="text-emerald">
+          <Line ok text={`বোনাস ${tk(b.total)} + মাইনিং ${tk(m.total)}${legacyUnclassified > 0 ? ` + পুরোনো ক্রেডিট ${tk(legacyUnclassified)}` : ""} = ${tk(lifetimeIn)}`} />
+        </SimpleStep>
+
+        <SimpleStep n={4} title="উইথড্র / খরচ হয়েছে" amount={`− ${tk(withdrawn)}`} tone="text-rose">
+          {totals?.paidWithdrawals !== undefined && (
+            <Line ok text={`হাতে পেয়েছেন ${tk(totals.paidWithdrawals)}`} />
+          )}
+          {totals?.paidWithdrawals !== undefined && totals.paidWithdrawals !== withdrawn && (
+            <Line ok text={`উইথড্র ফি বাবদ কাটা হয়েছে ${tk(withdrawn - totals.paidWithdrawals)} (তাই ব্যালেন্স থেকে মোট ${tk(withdrawn)} কমেছে)`} />
+          )}
+          {(totals?.debtActive ?? 0) > 0 && <Line ok text={`warning/পাওনা বাকি ${tk(totals?.debtActive ?? 0)}`} />}
+        </SimpleStep>
+
+        <SimpleStep n={5} title="এখন হাতে আছে" amount={tk(balance)} tone="text-cyan">
+          <Line ok text={`মোট আয় ${tk(lifetimeIn)} − তোলা/খরচ ${tk(withdrawn)}${(totals?.debtActive ?? 0) > 0 ? ` − পাওনা ${tk(totals?.debtActive ?? 0)}` : ""} = ${tk(balance)}`} />
+        </SimpleStep>
+
+        {legacyUnclassified > 0 && (
+          <p className="rounded-lg border border-amber/40 bg-amber/10 p-2 text-[10px] font-bold text-amber">
+            ⚠️ <b>{tk(legacyUnclassified)}</b> পুরোনো ক্রেডিটের উৎস নিশ্চিত পাওয়া যায়নি — এটি মাইনিং বা রেফার কমিশন হিসেবে গণ্য নয়।
           </p>
         )}
       </div>
 
-      {/* সংক্ষেপে — একদম সহজ ভাষায় */}
-      <div className="rounded-2xl border-2 border-emerald/30 bg-emerald/5 p-4 space-y-2">
-        <p className="text-[10px] uppercase tracking-widest font-black text-emerald">সংক্ষেপে — একদম সহজ ভাষায়</p>
-        <ul className="space-y-1.5 text-[11.5px] font-bold text-navy leading-relaxed">
-          <li>
-            🎉 <b>বোনাস {tk(b.total)}</b> = নিজের ১০ স্লট first verify <b>{selfFirst}৳</b> + ১০ স্লট re-verify{" "}
-            <b>{selfRe}৳</b>
-            {refBonus > 0 ? (
-              <> + রেফার বোনাস <b>{b.referrerPaidCount} জন × {b.rates.referrer}৳ = {refBonus}৳</b></>
-            ) : null}
-            {other > 0 ? <> + অন্যান্য/অ্যাডমিন <b>{tk(other)}</b></> : null}
-            <span className="block text-[10px] font-bold text-muted-foreground">
-              👉 এটা একবারই পাওয়া যায় (প্রথম ১০ স্লটে), প্রতি মাসে না।
-            </span>
-          </li>
-          <li>
-            ⛏️ <b>মাইনিং {tk(m.total)}</b> = নিজের <b>{m.selfSlots} স্লট × ৫০৳/মাস = {m.monthlySelf}৳</b>
-            {m.monthlyReferral > 0 ? <> + রেফারদের মাইনিং-এর ১০% = <b>{m.monthlyReferral.toFixed(2)}৳/মাস</b></> : null}
-            <span className="block text-[10px] font-bold text-muted-foreground">
-              👉 মাসে মোট <b>{m.monthlyTotal.toFixed(2)}৳</b> → প্রতিদিন <b>{m.perDay.toFixed(2)}৳</b> → এটাই সেকেন্ডে সেকেন্ডে জমা হচ্ছে
-              {m.activatedAt ? <> ({m.daysRunning.toFixed(1)} দিন ধরে চলছে)</> : <> (এখনো চালু হয়নি)</>}।
-            </span>
-          </li>
-          <li className="pt-1 border-t border-emerald/20">
-            🧮 তাই মোট এসেছে <b>{tk(lifetimeIn)}</b> — বোনাস {tk(b.total)} + মাইনিং {tk(m.total)}।
-            <span className="block text-[10px] font-bold text-muted-foreground">নিচে ধাপে ধাপে প্রতিটি টাকার হিসাব দেওয়া আছে।</span>
-          </li>
-          {legacyUnclassified > 0 && (
-            <li className="rounded-lg border border-amber/40 bg-amber/10 p-2 text-amber">
-              ⚠️ <b>{tk(legacyUnclassified)}</b> পুরোনো ক্রেডিটের নির্ভরযোগ্য উৎস পাওয়া যায়নি—এটি মাইনিং বা রেফার কমিশন হিসেবে দেখানো হচ্ছে না।
-            </li>
-          )}
-        </ul>
-      </div>
 
 
 
