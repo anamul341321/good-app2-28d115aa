@@ -180,15 +180,27 @@ export async function buildEarningsBreakdown(admin: any, userId: string): Promis
     return t;
   };
 
+  // Transfers land inside `bonus_amount`, so they must be removed from the bonus
+  // figure — otherwise the same taka is counted twice (once as "বোনাস", once as
+  // "অন্য user পাঠিয়েছে").
+  const transferEventIds = new Set<string>();
+  let transferMatchedTotal = 0;
+  for (const e of bonusEvents) {
+    if (e.delta <= 0) continue;
+    const t = matchTransfer(e);
+    if (t) {
+      transferEventIds.add(e.id);
+      transferMatchedTotal += e.delta;
+    }
+  }
 
-
-
-  const bonusTotal = Number(ms.bonus_amount ?? 0);
+  const bonusRaw = Number(ms.bonus_amount ?? 0);
+  const bonusTotal = Number(Math.max(0, bonusRaw - transferMatchedTotal).toFixed(2));
   const accrued = Number(ms.accrued_amount ?? 0);
   const referralAccrued = Number(ms.referral_accrued ?? 0);
   const selfTotal = Number(ms.self_mining_accrued ?? 0);
   const miningTotal = selfTotal + referralAccrued;
-  const legacyUnclassified = Math.max(0, accrued - bonusTotal - miningTotal);
+  const legacyUnclassified = Math.max(0, accrued - bonusRaw - miningTotal);
 
   // ---- Bonus steps -------------------------------------------------------
   // Built from the real audit trail (কবে কত যোগ হলো) so every taka has a date
@@ -219,23 +231,21 @@ export async function buildEarningsBreakdown(admin: any, userId: string): Promis
   const bonusSteps: BreakdownStep[] = [];
   const auditBonusSum = bonusEvents.reduce((s: number, e: any) => s + e.delta, 0);
 
-  if (bonusEvents.length > 0 && Math.abs(auditBonusSum - bonusTotal) < 0.5) {
+  if (bonusEvents.length > 0 && Math.abs(auditBonusSum - bonusRaw) < 0.5) {
     for (const e of bonusEvents) {
+      // Transfers from other users are shown in their own card only — skipping
+      // them here stops the same taka from appearing twice.
+      if (transferEventIds.has(e.id)) continue;
       const isAdmin = e.source !== "db";
-      const tin = e.delta > 0 ? matchTransfer(e) : undefined;
       bonusSteps.push({
         key: `ev-${e.id}`,
         label:
           e.delta < 0
             ? "➖ বোনাস কেটে নেওয়া হয়েছে"
-            : tin
-              ? `🔁 অন্য ইউজার পাঠিয়েছে — ${tin.name} (UID ${tin.uid ?? "—"})`
-              : isAdmin
-                ? "🎁 অ্যাডমিন বোনাস যোগ করেছে"
-                : `🎉 ${describeBonus(e.delta)}`,
-        formula: tin
-          ? `${dateBn(e.created_at)} · প্রেরক UID ${tin.uid ?? "—"}${tin.phone ? ` · ${tin.phone}` : ""}${tin.note ? ` · ${tin.note}` : ""} · প্রেরকের আয়: মাইনিং ${tin.sender.miningTotal.toFixed(2)}৳ + বোনাস ${tin.sender.bonusTotal.toFixed(2)}৳${tin.sender.adminCredited > 0 ? ` · ⚠️ অ্যাডমিন ক্রেডিট ${tin.sender.adminCredited.toFixed(2)}৳` : " · ✅ legal earn"}`
-          : `${dateBn(e.created_at)}${e.note ? ` · ${e.note}` : ""}`,
+            : isAdmin
+              ? "🎁 অ্যাডমিন বোনাস যোগ করেছে"
+              : `🎉 ${describeBonus(e.delta)}`,
+        formula: `${dateBn(e.created_at)}${e.note ? ` · ${e.note}` : ""}`,
         amount: Number(e.delta.toFixed(2)),
       });
     }

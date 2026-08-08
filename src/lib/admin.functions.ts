@@ -662,6 +662,25 @@ export const adminUpdateWithdrawal = createServerFn({ method: "POST" })
     const { error } = await supabaseAdmin.from("withdrawals").update(updatePayload).eq("id", data.id);
     if (error) throw new Error(error.message);
 
+    if (data.action === "paid") {
+      // Clear any still-unread "উইথড্র বাতিল" notice — otherwise the old reject
+      // message keeps showing at the top even after a new payout succeeded.
+      await supabaseAdmin
+        .from("user_notices")
+        .update({ read_at: new Date().toISOString() })
+        .eq("user_id", w.user_id)
+        .is("read_at", null)
+        .ilike("title", "%উইথড্র রিকোয়েস্ট বাতিল%");
+
+      await supabaseAdmin.from("user_notices").insert({
+        user_id: w.user_id,
+        title: "✅ উইথড্র পেমেন্ট সম্পন্ন",
+        body:
+          `${Math.floor(payout)}৳ আপনার ${String(w.provider).toUpperCase()} ${w.wallet_number ?? ""} নম্বরে পাঠানো হয়েছে।` +
+          `\nটাকা রিকোয়েস্টের সময়েই ব্যালেন্স থেকে কাটা হয়েছিল, তাই paid হওয়ার পর ব্যালেন্স আর কমবে না।`,
+      });
+    }
+
     if (data.action === "rejected") {
       const { data: mining } = await supabaseAdmin.from("mining_state")
         .select("withdrawn_amount").eq("user_id", w.user_id).maybeSingle();
