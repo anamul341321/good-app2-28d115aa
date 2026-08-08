@@ -7,6 +7,8 @@ export type BreakdownData = {
   bonus: {
     total: number;
     rates: { firstVerify: number; reverify: number; referrer: number };
+    currentRates?: { firstVerify: number; reverify: number; referrer: number };
+    ratesAssumed?: boolean;
     referrerPaidCount: number;
     selfFirst?: number;
     selfReverify?: number;
@@ -33,7 +35,16 @@ export type BreakdownData = {
   };
 };
 
-export type BreakdownTotals = { withdrawn?: number; paidWithdrawals?: number; balance?: number; debtActive?: number };
+export type BreakdownTotals = {
+  withdrawn?: number;
+  paidWithdrawals?: number;
+  balance?: number;
+  debtActive?: number;
+  successfulRecharges?: number;
+  transfersOutTotal?: number;
+  feeOrAdjustmentOut?: number;
+};
+
 
 /**
  * "ধাপে ধাপে হিসাব" — explains exactly how the bonus total and the mining
