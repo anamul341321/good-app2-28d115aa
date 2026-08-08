@@ -122,9 +122,10 @@ export function MiningCounter({
 
 
   // Balance split (same rule the withdraw server uses): withdrawals are taken
-  // from bonus first, so the remaining bonus part is what's still un-withdrawn.
-  const bonusPart = Math.max(0, Math.min(bonusTotal, Math.max(0, bonusTotal - withdrawn)));
+  // from mining first, so the main (bonus) balance stays intact.
+  const bonusPart = splitBalance({ balance, bonusTotal }).main;
   const miningPart = Math.max(0, balance - bonusPart);
+
   const refPart = Math.min(miningPart, Math.max(0, referralAccrued));
   const selfPart = Math.max(0, miningPart - refPart);
 
