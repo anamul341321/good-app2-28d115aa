@@ -56,24 +56,28 @@ export const getEarnings = createServerFn({ method: "GET" })
     const unclassifiedCredit = Math.max(0, accrued - bonusTotal - miningTotal);
 
     const claimRows = claims ?? [];
-    const claimedTotal = claimRows.reduce((s: number, c: any) => s + Number(c.amount ?? 0), 0);
-    const claimedReferral = claimRows.reduce((s: number, c: any) => s + Number(c.referral_amount ?? 0), 0);
+    const miningClaimRows = claimRows.filter((c: any) => (c.kind ?? "mining") === "mining");
+    const claimedTotal = miningClaimRows.reduce((s: number, c: any) => s + Number(c.amount ?? 0), 0);
+    const claimedReferral = miningClaimRows.reduce((s: number, c: any) => s + Number(c.referral_amount ?? 0), 0);
     const pendingClaim = Math.max(0, miningTotal - claimedTotal);
     const pendingReferral = Math.min(pendingClaim, Math.max(0, referralAccrued - claimedReferral));
-    const lastClaimAt = claimRows[0]?.created_at ?? null;
+    const lastClaimAt = miningClaimRows[0]?.created_at ?? null;
     const nextClaimAt = lastClaimAt
       ? new Date(new Date(lastClaimAt).getTime() + 6 * 60 * 60 * 1000).toISOString()
       : null;
 
     const rows: EarningRow[] = [];
     for (const c of claimRows) {
+      const isMiningClaim = (c.kind ?? "mining") === "mining";
       const self = Number(c.self_amount ?? 0);
       const ref = Number(c.referral_amount ?? 0);
       rows.push({
         id: `claim-${c.id}`,
-        kind: "mining",
-        label: "⛏️ মাইনিং ক্লেইম",
-        note: `নিজের স্লট ${self.toFixed(2)}৳ + রেফার ১০% কমিশন ${ref.toFixed(2)}৳`,
+        kind: isMiningClaim ? "mining" : "bonus",
+        label: isMiningClaim ? "⛏️ মাইনিং ক্লেইম" : "🎉 প্রোমো বোনাস সংশোধন",
+        note: isMiningClaim
+          ? `নিজের স্লট ${self.toFixed(2)}৳ + রেফার ১০% কমিশন ${ref.toFixed(2)}৳`
+          : c.note ?? "প্রোমো বোনাস",
         amount: Number(c.amount ?? 0),
         created_at: c.created_at,
       });

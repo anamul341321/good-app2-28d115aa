@@ -180,42 +180,24 @@ export const requestWithdraw = createServerFn({ method: "POST" })
       throw new Error(`ব্যালেন্স কম: ${Math.floor(available)}৳`);
     }
 
-    // Charge main balance first, then mining (mining only reachable in-window).
-    const fromMain = Math.min(amount, bonusAvailable);
-    const fromMining = amount - fromMain;
+    // Final balance check, debit and request creation happen under one row lock.
+    // This prevents rapid/concurrent requests from spending the same balance twice.
+    const { data: atomicData, error: atomicError } = await (supabaseAdmin as any).rpc(
+      "create_withdrawal_request_atomic",
+      {
+        _user_id: userId,
+        _gross: amount,
+        _payout: payout,
+        _provider: chosen,
+        _wallet_number: walletNumber,
+        _admin_note: providerNote,
+      },
+    );
+    if (atomicError) throw new Error(atomicError.message);
+    const atomicResult = (atomicData ?? {}) as { ok?: boolean; error?: string };
+    if (!atomicResult.ok) throw new Error(atomicResult.error || "উইথড্র রিকোয়েস্ট করা যায়নি");
 
-
-    const now = new Date();
-    const nowMs = now.getTime();
-    const lastMs = mining.last_credited_at ? new Date(mining.last_credited_at).getTime() : nowMs;
-    const elapsedSec = Math.max(0, (nowMs - lastMs) / 1000);
-    const { MINING_RATE_BDT_PER_SEC, TOTAL_TASKS } = await import("./constants");
-    const activeRate = mining.is_active
-      ? MINING_RATE_BDT_PER_SEC * (eff / TOTAL_TASKS + 0.10 * refs)
-      : 0;
-    const newAccrued = Number(mining.accrued_amount) + elapsedSec * activeRate;
-    const newWithdrawn = Number(mining.withdrawn_amount) + amount;
-
-    const { error: mErr } = await supabaseAdmin
-      .from("mining_state")
-      .update({
-        accrued_amount: newAccrued,
-        withdrawn_amount: newWithdrawn,
-        mining_withdrawn: miningWithdrawnSoFar + fromMining,
-        last_credited_at: now.toISOString(),
-      } as any)
-      .eq("user_id", userId);
-    if (mErr) throw new Error(mErr.message);
-
-
-    const { error: wErr } = await supabaseAdmin.from("withdrawals").insert({
-      user_id: userId,
-      amount: payout,
-      provider: chosen as any,
-      wallet_number: walletNumber,
-      admin_note: providerNote,
-    });
-    if (wErr) throw new Error(wErr.message);
+    const newAccrued = Number(mining.accrued_amount);
 
     // ---- সন্দেহজনক লেনদেন হলে Telegram-এ admin-কে mention করে জানাবে ----
     try {
