@@ -129,6 +129,13 @@ function UserDetail() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const setFrozen = useMutation({
+    mutationFn: (v: { frozen: boolean; reason?: string }) =>
+      adminSetBalanceFrozen({ data: { userId, frozen: v.frozen, reason: v.reason ?? null } }),
+    onSuccess: (_r, v) => { toast.success(v.frozen ? "🧊 ব্যালেন্স freeze করা হলো" : "✅ ব্যালেন্স আবার চালু"); refetch(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const setUnlock = useMutation({
     mutationFn: (unlocked: boolean) => adminSetReferralUnlock({ data: { userId, unlocked } }),
     onSuccess: (_r, unlocked) => { toast.success(unlocked ? "🔓 Referral link unlock করা হলো" : "🔒 Referral link lock করা হলো"); refetch(); },
