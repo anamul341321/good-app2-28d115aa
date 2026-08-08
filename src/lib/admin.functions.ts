@@ -587,7 +587,22 @@ const ActionInput = z.object({
   paidBy: z.string().trim().max(80).optional().nullable(),
   // Reject only: also give the platform fee back to the user.
   refundFee: z.boolean().optional(),
+  // Reject only: reason shown to the user + optional screenshot (data URL).
+  rejectReason: z.string().trim().max(1000).optional().nullable(),
+  proofDataUrl: z.string().max(8_000_000).optional().nullable(),
 });
+
+function dataUrlToBytes(dataUrl: string): { bytes: Uint8Array; contentType: string; ext: string } {
+  const m = /^data:([^;,]+);base64,(.+)$/s.exec(dataUrl.trim());
+  if (!m) throw new Error("Screenshot format ঠিক নেই");
+  const contentType = m[1];
+  if (!contentType.startsWith("image/")) throw new Error("শুধু ছবি আপলোড করা যাবে");
+  const bin = atob(m[2]);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  const ext = contentType === "image/png" ? "png" : contentType === "image/webp" ? "webp" : "jpg";
+  return { bytes, contentType, ext };
+}
 
 export const adminUpdateWithdrawal = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => ActionInput.parse(input))
@@ -612,10 +627,24 @@ export const adminUpdateWithdrawal = createServerFn({ method: "POST" })
     const refundFee = data.action === "rejected" && data.refundFee === true;
     const refund = refundFee ? payout + fee : payout;
 
+    const reason = (data.rejectReason ?? "").trim();
     let note = data.note ?? null;
     if (data.action === "rejected") {
       const feeLine = refundFee ? `ফি ${fee}৳ ফেরত দেওয়া হয়েছে` : `ফি ${fee}৳ ফেরত হয়নি`;
       note = `${note ? note + " · " : ""}[Reject] ${feeLine} · ফেরত ${refund}৳`;
+    }
+
+    // Optional proof screenshot for a rejection — stored privately, the user
+    // sees it through a short-lived signed URL.
+    let proofPath: string | null = null;
+    if (data.action === "rejected" && data.proofDataUrl) {
+      const { bytes, contentType, ext } = dataUrlToBytes(data.proofDataUrl);
+      const path = `${w.user_id}/${data.id}-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabaseAdmin.storage
+        .from("withdraw-proof")
+        .upload(path, bytes, { contentType, upsert: true });
+      if (upErr) throw new Error(`Screenshot upload হয়নি: ${upErr.message}`);
+      proofPath = path;
     }
 
     const updatePayload: any = {
@@ -624,6 +653,11 @@ export const adminUpdateWithdrawal = createServerFn({ method: "POST" })
       processed_at: new Date().toISOString(),
     };
     if (data.action === "paid") updatePayload.paid_by = (data.paidBy ?? "").trim();
+    if (data.action === "rejected") {
+      updatePayload.reject_reason = reason || null;
+      updatePayload.fee_refunded = refundFee;
+      if (proofPath) updatePayload.reject_proof_path = proofPath;
+    }
 
     const { error } = await supabaseAdmin.from("withdrawals").update(updatePayload).eq("id", data.id);
     if (error) throw new Error(error.message);
@@ -632,12 +666,36 @@ export const adminUpdateWithdrawal = createServerFn({ method: "POST" })
       const { data: mining } = await supabaseAdmin.from("mining_state")
         .select("withdrawn_amount").eq("user_id", w.user_id).maybeSingle();
       if (mining) {
+        // A reject (fee included or not) only *un-spends* money the user had
+        // already earned — it never touches bonus_amount, so it is never
+        // counted as "admin added balance" anywhere in the earnings history.
         await supabaseAdmin.from("mining_state")
           .update({ withdrawn_amount: Math.max(0, Number(mining.withdrawn_amount) - refund) })
           .eq("user_id", w.user_id);
       }
+
+      // Tell the user why, right inside the app notice box.
+      await supabaseAdmin.from("user_notices").insert({
+        user_id: w.user_id,
+        title: "❌ উইথড্র রিকোয়েস্ট বাতিল",
+        body:
+          `${Math.floor(payout)}৳ উইথড্র বাতিল করা হয়েছে · ${refund}৳ ব্যালেন্সে ফেরত দেওয়া হয়েছে` +
+          (reason ? `\nকারণ: ${reason}` : "") +
+          (proofPath ? `\n📷 স্ক্রিনশট দেওয়া হয়েছে — উইথড্র পেজের হিস্ট্রিতে দেখুন।` : ""),
+      });
     }
     return { ok: true, refund, fee, feeRefunded: refundFee };
+  });
+
+// Short-lived signed URL for a rejection screenshot (admin side).
+export const adminGetRejectProofUrl = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => z.object({ path: z.string().min(1) }).parse(input))
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await gate();
+    const { data: signed } = await supabaseAdmin.storage
+      .from("withdraw-proof")
+      .createSignedUrl(data.path, 60 * 30);
+    return { url: signed?.signedUrl ?? null };
   });
 
 
