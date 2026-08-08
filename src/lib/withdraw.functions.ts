@@ -155,12 +155,12 @@ export const requestWithdraw = createServerFn({ method: "POST" })
 
     if (debtTotal > 0) throw new Error(`⚠ আপনার অ্যাকাউন্টে ${Math.ceil(debtTotal)}৳ ওয়ার্নিং আছে — আগে সেটা পরিশোধ করুন`);
 
-    // Bonus balance is always withdrawable.
+    // Main balance (bonus/referral/gift money) is always withdrawable.
     // Mining balance is withdrawable ONLY during 1st–3rd of every month (Asia/Dhaka).
     const bonusTotal = Number((mining as any).bonus_amount ?? 0);
-    const withdrawnTotal = Number(mining.withdrawn_amount);
-    const bonusWithdrawn = Math.min(withdrawnTotal, bonusTotal);
-    const bonusAvailable = Math.max(0, bonusTotal - bonusWithdrawn - debtTotal);
+    const { splitBalance } = await import("./mining");
+    const bonusAvailable = splitBalance({ balance, bonusTotal }).main;
+
     const { miningWindowInfo, nextOpenLabelBn } = await import("./mining-window");
     const win = miningWindowInfo();
     const miningLocked = !win.isOpen;
