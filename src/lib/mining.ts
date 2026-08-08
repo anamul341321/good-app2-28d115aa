@@ -62,3 +62,15 @@ export function computeLiveBalance(input: {
 export function formatBdt(value: number, decimals = 6): string {
   return value.toFixed(decimals);
 }
+
+/**
+ * "Main balance" = the part of the balance that can be withdrawn/sent at any
+ * time (welcome bonus, re-verify bonus, referral bonus, gifts, transfers-in).
+ * Withdrawals are attributed to mining first, so a past mining withdrawal never
+ * eats into the user's main balance.
+ */
+export function splitBalance(input: { balance: number; bonusTotal: number }): { main: number; mining: number } {
+  const balance = Math.max(0, input.balance);
+  const main = Math.max(0, Math.min(balance, Math.max(0, input.bonusTotal)));
+  return { main, mining: Math.max(0, balance - main) };
+}
