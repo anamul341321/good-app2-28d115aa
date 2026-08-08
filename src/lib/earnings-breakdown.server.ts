@@ -108,6 +108,80 @@ export async function buildEarningsBreakdown(admin: any, userId: string): Promis
     }))
     .filter((r: any) => Math.abs(r.delta) > 0.009);
 
+  // ---- Money received from other users (transfers in) --------------------
+  // These credits land in `bonus_amount` via credit_bonus_balance(), so without
+  // this join they look like "admin added" — we resolve the real sender here.
+  const { data: transferRows } = await admin
+    .from("transfers")
+    .select("id, sender_id, amount, note, created_at")
+    .eq("receiver_id", userId)
+    .order("created_at", { ascending: true })
+    .limit(300);
+
+  const senderIds = Array.from(new Set((transferRows ?? []).map((t: any) => t.sender_id)));
+  const senderProfiles = new Map<string, any>();
+  const senderMining = new Map<string, any>();
+  const senderAdminCredit = new Map<string, number>();
+  if (senderIds.length) {
+    const [pRes, mRes, acRes] = await Promise.all([
+      admin
+        .from("profiles")
+        .select("id, uid_seq, display_name, phone_number, banned, balance_frozen")
+        .in("id", senderIds),
+      admin
+        .from("mining_state")
+        .select("user_id, bonus_amount, self_mining_accrued, referral_accrued, self_slots")
+        .in("user_id", senderIds),
+      admin.from("admin_credits").select("user_id, amount").in("user_id", senderIds),
+    ]);
+    for (const p of pRes?.data ?? []) senderProfiles.set(p.id, p);
+    for (const m of mRes?.data ?? []) senderMining.set(m.user_id, m);
+    for (const c of acRes?.data ?? [])
+      senderAdminCredit.set(c.user_id, (senderAdminCredit.get(c.user_id) ?? 0) + Number(c.amount ?? 0));
+  }
+
+  const transfersIn: TransferInInfo[] = (transferRows ?? []).map((t: any) => {
+    const p = senderProfiles.get(t.sender_id) ?? {};
+    const m = senderMining.get(t.sender_id) ?? {};
+    const adminCredited = senderAdminCredit.get(t.sender_id) ?? 0;
+    const miningTot = Number(m.self_mining_accrued ?? 0) + Number(m.referral_accrued ?? 0);
+    return {
+      id: t.id as string,
+      senderId: t.sender_id as string,
+      uid: p.uid_seq ?? null,
+      name: p.display_name ?? "ইউজার",
+      phone: p.phone_number ?? null,
+      amount: Number(t.amount ?? 0),
+      note: t.note ?? null,
+      createdAt: t.created_at as string,
+      sender: {
+        bonusTotal: Number(m.bonus_amount ?? 0),
+        miningTotal: miningTot,
+        adminCredited,
+        selfSlots: Number(m.self_slots ?? 0),
+        legal: adminCredited <= 0.01 && !p.banned,
+        banned: !!p.banned,
+        frozen: !!p.balance_frozen,
+      },
+    };
+  });
+  const transfersInTotal = transfersIn.reduce((s, t) => s + t.amount, 0);
+
+  // Match audit bonus events to transfers (same amount, within 2 minutes).
+  const usedTransfers = new Set<string>();
+  const matchTransfer = (e: { created_at: string; delta: number }) => {
+    const t = transfersIn.find(
+      (x) =>
+        !usedTransfers.has(x.id) &&
+        Math.abs(x.amount - e.delta) < 0.01 &&
+        Math.abs(new Date(x.createdAt).getTime() - new Date(e.created_at).getTime()) < 120000,
+    );
+    if (t) usedTransfers.add(t.id);
+    return t;
+  };
+
+
+
 
   const bonusTotal = Number(ms.bonus_amount ?? 0);
   const accrued = Number(ms.accrued_amount ?? 0);
