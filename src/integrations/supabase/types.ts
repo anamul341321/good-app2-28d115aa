@@ -1777,6 +1777,17 @@ export type Database = {
         }
         Returns: Json
       }
+      create_withdrawal_request_atomic: {
+        Args: {
+          _admin_note: string
+          _gross: number
+          _payout: number
+          _provider: Database["public"]["Enums"]["wallet_provider"]
+          _user_id: string
+          _wallet_number: string
+        }
+        Returns: Json
+      }
       credit_bonus_balance: {
         Args: { _amount: number; _user_id: string }
         Returns: undefined
