@@ -72,7 +72,15 @@ export type BreakdownTotals = {
  * "ধাপে ধাপে হিসাব" — explains exactly how the bonus total and the mining
  * total were formed, so the user (or admin) can reconcile every taka by hand.
  */
-export function EarningsBreakdown({ data, totals }: { data: BreakdownData; totals?: BreakdownTotals }) {
+export function EarningsBreakdown({
+  data,
+  totals,
+  adminLinks,
+}: {
+  data: BreakdownData;
+  totals?: BreakdownTotals;
+  adminLinks?: boolean;
+}) {
   const b = data.bonus;
   const m = data.mining;
   const refBonus = b.referrerTotal ?? b.steps.find((s) => s.key === "referrer")?.amount ?? 0;
@@ -82,13 +90,67 @@ export function EarningsBreakdown({ data, totals }: { data: BreakdownData; total
   const legacyUnclassified = m.legacyUnclassified ?? 0;
   const lifetimeIn = b.total + m.total + legacyUnclassified;
   const withdrawn = totals?.withdrawn ?? 0;
+  const transfersIn = data.transfersIn ?? [];
+  const transfersInTotal = data.transfersInTotal ?? transfersIn.reduce((s, t) => s + t.amount, 0);
 
   const balance = totals?.balance ?? lifetimeIn - withdrawn;
 
   return (
     <div className="space-y-4">
+      {/* ====== অন্য ইউজার থেকে আসা টাকা ====== */}
+      {transfersIn.length > 0 && (
+        <div className="rounded-2xl border-2 border-violet-400/50 bg-violet-500/5 p-4 space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-[11px] uppercase tracking-widest font-black text-violet-600 flex items-center gap-1.5">
+              <ArrowLeftRight className="w-3.5 h-3.5" /> অন্য ইউজার থেকে পাওয়া টাকা
+            </p>
+            <p className="mono-num text-[13px] font-black text-violet-600">{tk(transfersInTotal)}</p>
+          </div>
+          <p className="text-[10px] font-bold text-muted-foreground">
+            👉 এই টাকা অ্যাডমিন দেয়নি — নিচের ইউজাররা পাঠিয়েছে। প্রেরকের আয় legal কি না তাও দেখানো হলো।
+          </p>
+          {transfersIn.map((t) => (
+            <div key={t.id} className="rounded-xl border border-border bg-background/70 p-2.5 space-y-1">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[12px] font-black text-navy truncate">
+                  {t.name} <span className="text-muted-foreground font-bold">· UID {t.uid ?? "—"}</span>
+                </p>
+                <p className="mono-num text-[13px] font-black text-emerald shrink-0">+{tk(t.amount)}</p>
+              </div>
+              <p className="text-[9.5px] font-bold text-muted-foreground">
+                {new Date(t.createdAt).toLocaleString("bn-BD")}
+                {t.phone ? ` · ${t.phone}` : ""}
+                {t.note ? ` · ${t.note}` : ""}
+              </p>
+              <p className="text-[10.5px] font-bold leading-snug">
+                {t.sender.legal ? (
+                  <span className="text-emerald">
+                    ✅ প্রেরকের আয় legal — মাইনিং {tk(t.sender.miningTotal)} + বোনাস {tk(t.sender.bonusTotal)} ({t.sender.selfSlots} স্লট)
+                  </span>
+                ) : (
+                  <span className="text-rose">
+                    ⚠️ সন্দেহজনক — {t.sender.adminCredited > 0 ? `অ্যাডমিন ক্রেডিট ${tk(t.sender.adminCredited)}` : ""}
+                    {t.sender.banned ? " · account blocked" : ""}
+                    {t.sender.frozen ? " · balance frozen" : ""}
+                  </span>
+                )}
+              </p>
+              {adminLinks && (
+                <a
+                  href={`/admin/user/${t.senderId}`}
+                  className="inline-flex items-center gap-1 text-[10.5px] font-black text-cyan underline"
+                >
+                  <ExternalLink className="w-3 h-3" /> প্রেরকের প্রোফাইল ও তার আয়ের হিসাব দেখুন
+                </a>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* ====== ধাপে ধাপে একদম সহজ হিসাব ====== */}
       <div className="rounded-2xl border-2 border-cyan/40 bg-cyan/5 p-4 space-y-3">
+
         <p className="text-[11px] uppercase tracking-widest font-black text-cyan">ধাপে ধাপে আপনার হিসাব</p>
 
         <SimpleStep n={1} title="বোনাস পেয়েছেন" amount={tk(b.total)} tone="text-amber">
