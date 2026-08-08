@@ -25,11 +25,18 @@ export const requestWithdraw = createServerFn({ method: "POST" })
     // KYC (টেলিগ্রাম বট লিংক) ছাড়া উইথড্র বন্ধ
     const { data: kycProf } = await supabase
       .from("profiles")
-      .select("kyc_verified, telegram_user_id, email, email_verified, banned")
+      .select("kyc_verified, telegram_user_id, email, email_verified, banned, balance_frozen, balance_frozen_reason, uid_seq, display_name")
       .eq("id", userId)
       .maybeSingle();
     if ((kycProf as any)?.banned === true) {
       throw new Error("আপনার account block করা আছে — admin-এর সাথে যোগাযোগ করুন");
+    }
+    if ((kycProf as any)?.balance_frozen === true) {
+      throw new Error(
+        `🧊 আপনার ব্যালেন্স আপাতত freeze করা আছে — উইথড্র করা যাবে না।${
+          (kycProf as any)?.balance_frozen_reason ? ` কারণ: ${(kycProf as any).balance_frozen_reason}` : ""
+        } Telegram সাপোর্টে যোগাযোগ করুন।`,
+      );
     }
     // টেলিগ্রাম লিংক থাকলেই KYC ধরা হবে (পুরোনো লিংক করা একাউন্টও চলবে)
     const kycOk = !!(kycProf as any)?.telegram_user_id || !!(kycProf as any)?.kyc_verified;
