@@ -160,7 +160,19 @@ function EarningsPage() {
             <ListOrdered className="w-4 h-4 text-amber" />
             <p className="text-[10px] uppercase tracking-widest font-black text-muted-foreground">ধাপে ধাপে হিসাব — কোন টাকা কিভাবে এলো</p>
           </div>
-          <EarningsBreakdown data={data.breakdown as any} totals={{ withdrawn: t.withdrawn, balance: t.balance, debtActive: t.debtActive }} />
+          <EarningsBreakdown
+            data={data.breakdown as any}
+            totals={{
+              withdrawn: t.withdrawn,
+              balance: t.balance,
+              debtActive: t.debtActive,
+              paidWithdrawals: t.paidWithdrawals,
+              successfulRecharges: t.successfulRecharges,
+              transfersOutTotal: t.transfersOutTotal,
+              feeOrAdjustmentOut: t.feeOrAdjustmentOut,
+            }}
+          />
+
         </div>
       )}
 
