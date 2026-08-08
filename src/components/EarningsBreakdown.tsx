@@ -1,9 +1,31 @@
-import { Gift, Pickaxe, ListOrdered } from "lucide-react";
+import { Gift, Pickaxe, ListOrdered, ArrowLeftRight, ExternalLink } from "lucide-react";
 
 const tk = (n: number) => `${n.toFixed(2)}৳`;
 
 export type BreakdownStep = { key: string; label: string; formula?: string | null; amount: number };
+export type TransferIn = {
+  id: string;
+  senderId: string;
+  uid: number | null;
+  name: string;
+  phone?: string | null;
+  amount: number;
+  note?: string | null;
+  createdAt: string;
+  sender: {
+    bonusTotal: number;
+    miningTotal: number;
+    adminCredited: number;
+    selfSlots: number;
+    legal: boolean;
+    banned: boolean;
+    frozen: boolean;
+  };
+};
 export type BreakdownData = {
+  transfersIn?: TransferIn[];
+  transfersInTotal?: number;
+
   bonus: {
     total: number;
     rates: { firstVerify: number; reverify: number; referrer: number };
