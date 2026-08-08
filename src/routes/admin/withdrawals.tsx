@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { adminListWithdrawals, adminUpdateWithdrawal, adminListCredits, adminListPaidByAdmins } from "@/lib/admin.functions";
+import { adminListWithdrawals, adminUpdateWithdrawal, adminListCredits, adminListPaidByAdmins, adminGetRejectProofUrl } from "@/lib/admin.functions";
 import { Loader2, Check, X, Copy, AlertTriangle, ShieldCheck, Gift, ExternalLink, Plus, Minus, UserCheck, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { useMemo, useState, useEffect } from "react";
@@ -21,7 +21,7 @@ function AdminWithdrawals() {
   useEffect(() => { if (adminName) localStorage.setItem("admin-paid-by-name", adminName); }, [adminName]);
 
   const mut = useMutation({
-    mutationFn: (input: { id: string; action: "paid" | "rejected"; paidBy?: string; refundFee?: boolean }) => adminUpdateWithdrawal({ data: input }),
+    mutationFn: (input: { id: string; action: "paid" | "rejected"; paidBy?: string; refundFee?: boolean; rejectReason?: string; proofDataUrl?: string | null }) => adminUpdateWithdrawal({ data: input }),
     onSuccess: (r: any) => {
       if (r?.feeRefunded) toast.success(`Reject — ফি ${r.fee}৳ সহ মোট ${r.refund}৳ ফেরত`);
       else if (r?.refund != null) toast.success(`Reject — ${r.refund}৳ ফেরত (ফি ${r.fee}৳ কাটা)`);
@@ -31,14 +31,9 @@ function AdminWithdrawals() {
     onError: (e: any) => toast.error(e.message),
   });
 
-  // Reject: ask whether the platform fee should go back to the user too.
-  const rejectWithdrawal = (id: string) => {
-    if (!confirm("এই withdraw reject করবেন? (ব্যালেন্স ফেরত যাবে)")) return;
-    const withFee = confirm(
-      "ফি টাও ফেরত দিতে চান?\n\nOK = ফি সহ পুরো টাকা ফেরত\nCancel = ফি কাটা থাকবে, শুধু payout ফেরত",
-    );
-    mut.mutate({ id, action: "rejected", refundFee: withFee });
-  };
+  // Reject: reason + optional screenshot so the user understands why.
+  const [rejectTarget, setRejectTarget] = useState<any | null>(null);
+  const rejectWithdrawal = (w: any) => setRejectTarget(w);
 
   const markPaid = (id: string) => {
     let name = adminName.trim();
@@ -384,13 +379,17 @@ function AdminWithdrawals() {
                 </p>
               )}
 
+              {w.status === "rejected" && (w.reject_reason || w.reject_proof_path) && (
+                <AdminRejectInfo w={w} />
+              )}
+
               {w.status === "pending" && (
                 <div className="flex gap-2">
                   <button onClick={() => markPaid(w.id)}
                     className="flex-1 py-2 rounded-lg bg-emerald/20 text-emerald font-bold text-xs flex items-center justify-center gap-1">
                     <Check className="w-3.5 h-3.5" /> Mark paid
                   </button>
-                  <button onClick={() => rejectWithdrawal(w.id)}
+                  <button onClick={() => rejectWithdrawal(w)}
                     className="flex-1 py-2 rounded-lg bg-rose/20 text-rose font-bold text-xs flex items-center justify-center gap-1">
                     <X className="w-3.5 h-3.5" /> Reject (refund)
                   </button>
@@ -401,6 +400,99 @@ function AdminWithdrawals() {
         })}
       </div>
       )}
+
+      {rejectTarget && (
+        <RejectDialog
+          w={rejectTarget}
+          busy={mut.isPending}
+          onClose={() => setRejectTarget(null)}
+          onSubmit={(payload) => {
+            mut.mutate(
+              { id: rejectTarget.id, action: "rejected", ...payload },
+              { onSuccess: () => setRejectTarget(null) },
+            );
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+// ---------- Reject dialog: reason + screenshot ----------
+function RejectDialog({ w, busy, onClose, onSubmit }: {
+  w: any;
+  busy: boolean;
+  onClose: () => void;
+  onSubmit: (p: { rejectReason: string; refundFee: boolean; proofDataUrl?: string | null }) => void;
+}) {
+  const [reason, setReason] = useState("");
+  const [refundFee, setRefundFee] = useState(true);
+  const [proof, setProof] = useState<string | null>(null);
+
+  const pickFile = (f: File | null) => {
+    if (!f) { setProof(null); return; }
+    if (f.size > 5 * 1024 * 1024) { toast.error("ছবি ৫MB এর কম হতে হবে"); return; }
+    const reader = new FileReader();
+    reader.onload = () => setProof(String(reader.result));
+    reader.readAsDataURL(f);
+  };
+
+  return (
+    <div className="fixed inset-0 z-[100] bg-black/80 flex items-end sm:items-center justify-center p-3" onClick={onClose}>
+      <div className="w-full max-w-md glass rounded-2xl p-4 space-y-3" onClick={(e) => e.stopPropagation()}>
+        <p className="font-black text-sm text-rose">❌ Withdraw reject — {Math.floor(Number(w.amount))}৳</p>
+        <p className="text-[11px] text-muted-foreground">
+          কারণটা user তার withdraw history-তে দেখতে পাবে। চাইলে screenshot দিন।
+        </p>
+
+        <textarea
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          rows={4}
+          placeholder="যেমন: আপনার নগদ নম্বরটি ভুল / নম্বর বন্ধ — সঠিক নম্বর দিয়ে আবার request দিন"
+          className="w-full px-3 py-2 bg-surface-2 border border-border rounded-xl text-xs outline-none focus:border-rose"
+        />
+
+        <label className="block text-[11px] font-bold">
+          📷 Screenshot (optional)
+          <input type="file" accept="image/*" onChange={(e) => pickFile(e.target.files?.[0] ?? null)}
+            className="mt-1 block w-full text-[11px]" />
+        </label>
+        {proof && <img src={proof} alt="proof" className="max-h-40 rounded-lg border border-border object-contain" />}
+
+        <label className="flex items-center gap-2 text-[11px] font-bold">
+          <input type="checkbox" checked={refundFee} onChange={(e) => setRefundFee(e.target.checked)} />
+          ফি টাও ফেরত দিন (ফেরত টাকা legal earn হিসেবেই থাকবে, admin-add নয়)
+        </label>
+
+        <div className="flex gap-2 pt-1">
+          <button onClick={onClose} className="flex-1 py-2.5 rounded-xl bg-surface-2 font-bold text-xs">বাতিল</button>
+          <button
+            disabled={busy || reason.trim().length < 3}
+            onClick={() => onSubmit({ rejectReason: reason.trim(), refundFee, proofDataUrl: proof })}
+            className="flex-1 py-2.5 rounded-xl bg-rose text-white font-black text-xs disabled:opacity-50 flex items-center justify-center gap-1">
+            {busy && <Loader2 className="w-3.5 h-3.5 animate-spin" />} Reject + refund
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Rejection reason + screenshot shown back to the admin.
+function AdminRejectInfo({ w }: { w: any }) {
+  const proofQ = useQuery({
+    queryKey: ["admin-reject-proof", w.id],
+    queryFn: () => adminGetRejectProofUrl({ data: { path: w.reject_proof_path } }),
+    enabled: !!w.reject_proof_path,
+    staleTime: 10 * 60 * 1000,
+  });
+  const url = (proofQ.data as any)?.url ?? null;
+  return (
+    <div className="rounded-lg bg-rose/10 border border-rose/30 p-2 text-[11px] text-rose space-y-1">
+      {w.reject_reason && <p className="whitespace-pre-wrap">🗒 {w.reject_reason}</p>}
+      {w.fee_refunded && <p className="text-[10px] text-emerald font-bold">✅ ফি সহ ফেরত</p>}
+      {url && <img src={url} alt="reject proof" className="max-h-32 rounded-lg object-contain border border-rose/40" />}
     </div>
   );
 }
