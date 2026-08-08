@@ -454,6 +454,26 @@ function UserDetail() {
           </button>
         </div>
 
+        {/* Main balance (anytime withdraw) vs mining balance (1st–3rd only) */}
+        {(() => {
+          const split = splitBalance({ balance: liveBal, bonusTotal: Number((m as any)?.bonus_amount ?? 0) });
+          return (
+            <div className="grid grid-cols-2 gap-2">
+              <div className="rounded-xl border border-emerald/30 bg-emerald/10 px-3 py-2">
+                <p className="text-[9px] uppercase tracking-widest font-black text-emerald">💚 Main balance</p>
+                <p className="mono-num text-lg font-black text-emerald">{split.main.toFixed(2)}৳</p>
+                <p className="text-[9px] text-muted-foreground leading-tight">বোনাস + রেফার বোনাস · যেকোনো সময় withdraw</p>
+              </div>
+              <div className="rounded-xl border border-cyan/30 bg-cyan/10 px-3 py-2">
+                <p className="text-[9px] uppercase tracking-widest font-black text-cyan">⛏️ Mining balance</p>
+                <p className="mono-num text-lg font-black text-cyan">{split.mining.toFixed(2)}৳</p>
+                <p className="text-[9px] text-muted-foreground leading-tight">শুধু ১–৩ তারিখে withdraw · নিজের {Number((m as any)?.self_mining_accrued ?? 0).toFixed(2)}৳ + রেফার ১০% {Number((m as any)?.referral_accrued ?? 0).toFixed(2)}৳</p>
+              </div>
+            </div>
+          );
+        })()}
+
+
         {/* Why is mining ON — 2 parts */}
         {(() => {
           const selfRe = Number(data.faceSummary?.reverifies ?? 0);
