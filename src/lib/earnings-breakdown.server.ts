@@ -9,7 +9,29 @@ export type BreakdownStep = {
   amount: number;
 };
 
+export type TransferInInfo = {
+  id: string;
+  senderId: string;
+  uid: number | null;
+  name: string;
+  phone: string | null;
+  amount: number;
+  note: string | null;
+  createdAt: string;
+  sender: {
+    bonusTotal: number;
+    miningTotal: number;
+    adminCredited: number;
+    selfSlots: number;
+    legal: boolean;
+    banned: boolean;
+    frozen: boolean;
+  };
+};
+
 export type EarningsBreakdown = {
+  transfersIn: TransferInInfo[];
+  transfersInTotal: number;
   bonus: {
     total: number;
     rates: { firstVerify: number; reverify: number; referrer: number };
@@ -23,6 +45,7 @@ export type EarningsBreakdown = {
     otherTotal: number;
     steps: BreakdownStep[];
   };
+
 
   mining: {
     total: number;
