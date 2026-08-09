@@ -66,7 +66,10 @@ export function SlotPausedModal({ message }: { message?: string | null }) {
               <Clock className="h-4 w-4" /> আপাতত যা বন্ধ
             </p>
             <p className="mt-1 text-[13px] font-bold leading-relaxed text-foreground">
-              শুধু নতুন স্লট ভেরিফাই ও রি-ভেরিফাই বন্ধ। রেজিস্ট্রেশন ও লগইন আগের মতোই চালু আছে।
+              • First Verify সাময়িকভাবে বন্ধ<br />
+              • Re-verify সাময়িকভাবে বন্ধ<br />
+              • তাই নতুন বোনাস অফারও আপাতত দেখানো হচ্ছে না<br />
+              • রেজিস্ট্রেশন ও লগইন আগের মতোই চালু আছে
             </p>
           </div>
 
