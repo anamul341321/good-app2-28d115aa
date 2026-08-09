@@ -109,13 +109,14 @@ function HomePage() {
   // Show welcome bonus popup once per session while bonuses are pending
   useEffect(() => {
     if (!data) return;
+    if (appStatus?.faceVerifyEnabled === false) { setShowWelcome(false); return; }
     const b = (data as any).bonus;
     if (!b) return;
     if (b.selfFirstPaid && b.referrerPaid && b.userReverifyPaid) return;
     if (sessionStorage.getItem("welcome-bonus-seen")) return;
     setShowWelcome(true);
     sessionStorage.setItem("welcome-bonus-seen", "1");
-  }, [data]);
+  }, [data, appStatus?.faceVerifyEnabled]);
 
   if (isError) {
     return (
