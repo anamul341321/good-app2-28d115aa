@@ -17,8 +17,6 @@ export const registerWithPhone = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => PhoneSignupInput.parse(input))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { assertFaceVerifyEnabled } = await import("./face-verify-gate.server");
-    await assertFaceVerifyEnabled("signup");
     const { isEmailOtpEnabled } = await import("./auth-mode.server");
     const otpEnabled = await isEmailOtpEnabled();
     const email = phoneToEmail(data.phone);
