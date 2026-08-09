@@ -11,6 +11,7 @@ import { registerWithPhone, resolveCardUidForLogin } from "@/lib/auth.functions"
 import { startLoginOtp, completeLoginOtp } from "@/lib/login-otp.functions";
 import { getAuthMode } from "@/lib/auth-mode.functions";
 import { useQuery } from "@tanstack/react-query";
+import { getAppStatus } from "@/lib/app-status.functions";
 import logo from "@/assets/logo.png";
 import { PageVoice } from "@/components/PageVoice";
 import { VideoTutorialButton } from "@/components/VideoTutorialButton";
@@ -129,6 +130,12 @@ export function AuthPage() {
   });
   // Switch OFF হলে আগের মতো শুধু নম্বর/পাসওয়ার্ড UI; query লোড হওয়া পর্যন্ত legacy ধরে নিই।
   const otpEnabled = authMode?.emailOtpEnabled === true;
+  const { data: appStatus } = useQuery({
+    queryKey: ["app-status"],
+    queryFn: () => getAppStatus(),
+    staleTime: 30_000,
+  });
+  const signupPaused = appStatus?.faceVerifyEnabled === false;
 
 
   const resolveUid = useServerFn(resolveCardUidForLogin);
@@ -201,6 +208,10 @@ export function AuthPage() {
     if (!/^01\d{9}$/.test(cleanPhone)) {
       toast.error("১১ ডিজিটের সঠিক মোবাইল নম্বর দিন (০১ দিয়ে শুরু)");
       return null;
+    }
+    if (mode === "signup" && signupPaused) {
+      toast.error("আপাতত নতুন রেজিস্ট্রেশন বন্ধ — সার্ভারে কাজ চলছে");
+      return;
     }
     if (mode === "signup" && name.trim().length < 2) {
       toast.error("আপনার নাম লিখুন");
@@ -454,6 +465,23 @@ export function AuthPage() {
               <ApkDownloadCard />
             </div>
           </div>
+
+          {signupPaused && (
+            <div className="relative overflow-hidden rounded-2xl border-2 border-amber/60 bg-gradient-to-br from-amber/20 via-white to-rose/10 p-4 mb-4 shadow-lg pop-in">
+              <div className="absolute -right-6 -top-6 w-24 h-24 rounded-full bg-amber/30 blur-2xl animate-pulse" />
+              <div className="relative space-y-1.5 text-left">
+                <p className="text-sm font-black text-amber flex items-center gap-1.5">
+                  <span className="animate-pulse">🔧</span> আপাতত নতুন রেজিস্ট্রেশন বন্ধ
+                </p>
+                <p className="text-[11px] text-navy/80 font-bold leading-relaxed">
+                  {appStatus?.signupMessage}
+                </p>
+                <p className="text-[11px] font-black text-emerald">
+                  ✅ পুরোনো ইউজাররা আগের মতোই লগইন করে সব কাজ করতে পারবেন — মাইনিং, বোনাস ও ব্যালেন্স ঠিক থাকবে।
+                </p>
+              </div>
+            </div>
+          )}
 
           <div className="flex bg-surface-2 rounded-xl p-1 mb-5 border border-border">
             {(["login", "signup"] as const).map((m) => (
