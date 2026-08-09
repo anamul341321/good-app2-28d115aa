@@ -61,6 +61,8 @@ export async function loadRates(): Promise<AppRates> {
     bkashOn: b.bkash_enabled !== false,
     nagadOn: b.nagad_enabled !== false,
     usdtOn: b.usdt_enabled !== false,
+    faceVerifyOn: b.face_verify_enabled !== false,
+    faceVerifyOffMsg: b.face_verify_enabled === false ? (b.face_verify_off_message ?? null) : null,
   };
 }
 
