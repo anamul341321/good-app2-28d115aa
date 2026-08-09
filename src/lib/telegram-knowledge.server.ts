@@ -23,6 +23,9 @@ export type AppRates = {
   bkashOn: boolean;
   nagadOn: boolean;
   usdtOn: boolean;
+  /** স্লট ফেস ভেরিফিকেশন (First verify + Re-verify) এখন চালু আছে কি না। */
+  faceVerifyOn: boolean;
+  faceVerifyOffMsg: string | null;
 };
 
 export async function loadRates(): Promise<AppRates> {
