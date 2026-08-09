@@ -125,6 +125,18 @@ ${r.rechargeOn ? "- মোবাইল রিচার্জ চালু আছ
 - কেউ Gmail যোগ করার নিয়ম চাইলে শুধু ওয়েবসাইটের লিংক দিয়ে থামবে না; উপরের প্রতিটি ধাপ স্পষ্টভাবে বলবে।${appRulebook(r)}${builtinFaqKnowledge()}`;
 }
 
+/** স্লট ভেরিফিকেশন বন্ধ থাকলে দেখানো নোটিশ (ইউজারকে ভুল নির্দেশ দেওয়া বন্ধ করে)। */
+export function faceVerifyPausedReply(name: string, r: AppRates): string {
+  return (
+    `${name}, একটা গুরুত্বপূর্ণ কথা আগে জানিয়ে রাখি 🙏\n\n` +
+    `🔧 <b>এই মুহূর্তে স্লট ফেস ভেরিফিকেশন সাময়িকভাবে বন্ধ</b> — <b>First verify</b> ও <b>Re-verify</b> দুটোই আপাতত করা যাচ্ছে না, তাই নতুন বোনাস অফারও এখন বন্ধ।\n` +
+    (r.faceVerifyOffMsg ? `${r.faceVerifyOffMsg}\n` : `অ্যাপের সার্ভারে কাজ চলছে, ঠিক হলেই আবার স্বাভাবিকভাবে চালু হয়ে যাবে ইনশাআল্লাহ।\n`) +
+    `\n✅ <b>চিন্তার কিছু নেই:</b> আগের ভেরিফাই করা স্লট, <b>মাইনিং</b>, ব্যালেন্স, বোনাস ও রেফার কমিশন আগের মতোই ঠিক থাকবে — কিছুই কমবে না।\n` +
+    `📝 রেজিস্ট্রেশন ও লগইন আগের মতোই চালু আছে।\n\n` +
+    `চালু হলেই গ্রুপে জানিয়ে দেওয়া হবে 💙`
+  );
+}
+
 /** Ready-made, well formatted answer for "কিভাবে টাকা পাবো" type questions. */
 export function earningGuideReply(name: string, r: AppRates): string {
   const first = r.promoFirst ?? r.firstVerify;
@@ -136,6 +148,15 @@ export function earningGuideReply(name: string, r: AppRates): string {
     `${name} ভাই, বুঝিয়ে বলছি 😊 এইভাবেই টাকা পাবেন 👇`,
   ];
   const pick = (a: string[]) => a[Math.floor(Math.random() * a.length)];
+  if (!r.faceVerifyOn) {
+    return (
+      `${faceVerifyPausedReply(name, r)}\n\n` +
+      `নিয়মটা জেনে রাখুন — চালু হলেই কাজে লাগবে 👇\n` +
+      `<b>১️⃣</b> ১০টি স্লট ফেস ভেরিফাই → <b>${tk(first)}</b>\n` +
+      `<b>২️⃣</b> সেই ১০টি স্লট রি-ভেরিফাই → <b>${tk(re)}</b> + মাইনিং চালু ⛏️\n` +
+      `<b>৩️⃣</b> রেফার সফল হলে এককালীন <b>${tk(ref)}</b> + মাইনিংয়ের ১০% মাসিক কমিশন 💵`
+    );
+  }
   return (
     `${pick(openers)}\n\n` +
     `<b>১️⃣ প্রথম ধাপ:</b> ১০টি স্লটে ফেস ভেরিফিকেশন করুন → আপনি পাবেন <b>${tk(first)}</b>\n` +
