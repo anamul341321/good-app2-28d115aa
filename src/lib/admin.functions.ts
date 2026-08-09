@@ -2090,6 +2090,26 @@ export const adminSetMaintenance = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+/** ফেস ভেরিফিকেশন সিস্টেম চালু/বন্ধ (বন্ধ থাকলে নতুন slot verify + নতুন signup বন্ধ) */
+export const adminSetFaceVerify = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => z.object({
+    enabled: z.boolean(),
+    faceMessage: z.string().max(1500).optional().nullable(),
+    signupMessage: z.string().max(1500).optional().nullable(),
+  }).parse(i))
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await gate();
+    const { error } = await supabaseAdmin.from("bonus_settings").upsert({
+      id: "default",
+      face_verify_enabled: data.enabled,
+      face_verify_off_message: data.faceMessage ?? null,
+      signup_off_message: data.signupMessage ?? null,
+      updated_at: new Date().toISOString(),
+    } as any);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 /** UID দিয়ে নির্দিষ্ট ইউজারকে লাল নোটিশ (মেসেজ) পাঠানো */
 export const adminSendUserNotice = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => z.object({
