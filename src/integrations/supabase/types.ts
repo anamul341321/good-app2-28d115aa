@@ -201,6 +201,8 @@ export type Database = {
           bkash_enabled: boolean
           bkash_off_message: string | null
           email_otp_enabled: boolean
+          face_verify_enabled: boolean
+          face_verify_off_message: string | null
           first_verify_bonus: number
           first_verify_mining_mode: boolean
           id: string
@@ -219,6 +221,7 @@ export type Database = {
           recharge_off_message: string | null
           referrer_bonus: number
           reverify_bonus: number
+          signup_off_message: string | null
           updated_at: string
           usdt_enabled: boolean
           usdt_off_message: string | null
@@ -233,6 +236,8 @@ export type Database = {
           bkash_enabled?: boolean
           bkash_off_message?: string | null
           email_otp_enabled?: boolean
+          face_verify_enabled?: boolean
+          face_verify_off_message?: string | null
           first_verify_bonus?: number
           first_verify_mining_mode?: boolean
           id?: string
@@ -251,6 +256,7 @@ export type Database = {
           recharge_off_message?: string | null
           referrer_bonus?: number
           reverify_bonus?: number
+          signup_off_message?: string | null
           updated_at?: string
           usdt_enabled?: boolean
           usdt_off_message?: string | null
@@ -265,6 +271,8 @@ export type Database = {
           bkash_enabled?: boolean
           bkash_off_message?: string | null
           email_otp_enabled?: boolean
+          face_verify_enabled?: boolean
+          face_verify_off_message?: string | null
           first_verify_bonus?: number
           first_verify_mining_mode?: boolean
           id?: string
@@ -283,6 +291,7 @@ export type Database = {
           recharge_off_message?: string | null
           referrer_bonus?: number
           reverify_bonus?: number
+          signup_off_message?: string | null
           updated_at?: string
           usdt_enabled?: boolean
           usdt_off_message?: string | null
