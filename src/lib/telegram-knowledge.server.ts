@@ -185,13 +185,14 @@ export function withdrawEligibilityReply(name: string): string {
 }
 
 /** Rules answer for "account/verify hoy na" questions. */
-export function verifyTipsReply(name: string): string {
+export function verifyTipsReply(name: string, r?: AppRates): string {
   const openers = [
     `${name}, এটা খুব common 🙂 নিচের নিয়মে করলেই হয়ে যাবে 👇`,
     `আচ্ছা ${name}, এভাবে চেষ্টা করুন — বেশিরভাগ সময় কাজ হয়ে যায় 👇`,
     `${name} ভাই, চিন্তা করবেন না 😊 নিচের ধাপগুলো ফলো করুন 👇`,
   ];
   const pick = (a: string[]) => a[Math.floor(Math.random() * a.length)];
+  if (r && !r.faceVerifyOn) return faceVerifyPausedReply(name, r);
   return (
     `${pick(openers)}\n\n` +
     `<b>১️⃣</b> একটি ব্রাউজার দিয়ে <b>২টির বেশি একাউন্ট করবেন না</b> — প্রতি ব্রাউজারে সর্বোচ্চ ২টি।\n` +
