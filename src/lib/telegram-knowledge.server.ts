@@ -23,6 +23,9 @@ export type AppRates = {
   bkashOn: boolean;
   nagadOn: boolean;
   usdtOn: boolean;
+  /** স্লট ফেস ভেরিফিকেশন (First verify + Re-verify) এখন চালু আছে কি না। */
+  faceVerifyOn: boolean;
+  faceVerifyOffMsg: string | null;
 };
 
 export async function loadRates(): Promise<AppRates> {
@@ -58,6 +61,8 @@ export async function loadRates(): Promise<AppRates> {
     bkashOn: b.bkash_enabled !== false,
     nagadOn: b.nagad_enabled !== false,
     usdtOn: b.usdt_enabled !== false,
+    faceVerifyOn: b.face_verify_enabled !== false,
+    faceVerifyOffMsg: b.face_verify_enabled === false ? (b.face_verify_off_message ?? null) : null,
   };
 }
 
@@ -120,6 +125,18 @@ ${r.rechargeOn ? "- মোবাইল রিচার্জ চালু আছ
 - কেউ Gmail যোগ করার নিয়ম চাইলে শুধু ওয়েবসাইটের লিংক দিয়ে থামবে না; উপরের প্রতিটি ধাপ স্পষ্টভাবে বলবে।${appRulebook(r)}${builtinFaqKnowledge()}`;
 }
 
+/** স্লট ভেরিফিকেশন বন্ধ থাকলে দেখানো নোটিশ (ইউজারকে ভুল নির্দেশ দেওয়া বন্ধ করে)। */
+export function faceVerifyPausedReply(name: string, r: AppRates): string {
+  return (
+    `${name}, একটা গুরুত্বপূর্ণ কথা আগে জানিয়ে রাখি 🙏\n\n` +
+    `🔧 <b>এই মুহূর্তে স্লট ফেস ভেরিফিকেশন সাময়িকভাবে বন্ধ</b> — <b>First verify</b> ও <b>Re-verify</b> দুটোই আপাতত করা যাচ্ছে না, তাই নতুন বোনাস অফারও এখন বন্ধ।\n` +
+    (r.faceVerifyOffMsg ? `${r.faceVerifyOffMsg}\n` : `অ্যাপের সার্ভারে কাজ চলছে, ঠিক হলেই আবার স্বাভাবিকভাবে চালু হয়ে যাবে ইনশাআল্লাহ।\n`) +
+    `\n✅ <b>চিন্তার কিছু নেই:</b> আগের ভেরিফাই করা স্লট, <b>মাইনিং</b>, ব্যালেন্স, বোনাস ও রেফার কমিশন আগের মতোই ঠিক থাকবে — কিছুই কমবে না।\n` +
+    `📝 রেজিস্ট্রেশন ও লগইন আগের মতোই চালু আছে।\n\n` +
+    `চালু হলেই গ্রুপে জানিয়ে দেওয়া হবে 💙`
+  );
+}
+
 /** Ready-made, well formatted answer for "কিভাবে টাকা পাবো" type questions. */
 export function earningGuideReply(name: string, r: AppRates): string {
   const first = r.promoFirst ?? r.firstVerify;
@@ -131,6 +148,15 @@ export function earningGuideReply(name: string, r: AppRates): string {
     `${name} ভাই, বুঝিয়ে বলছি 😊 এইভাবেই টাকা পাবেন 👇`,
   ];
   const pick = (a: string[]) => a[Math.floor(Math.random() * a.length)];
+  if (!r.faceVerifyOn) {
+    return (
+      `${faceVerifyPausedReply(name, r)}\n\n` +
+      `নিয়মটা জেনে রাখুন — চালু হলেই কাজে লাগবে 👇\n` +
+      `<b>১️⃣</b> ১০টি স্লট ফেস ভেরিফাই → <b>${tk(first)}</b>\n` +
+      `<b>২️⃣</b> সেই ১০টি স্লট রি-ভেরিফাই → <b>${tk(re)}</b> + মাইনিং চালু ⛏️\n` +
+      `<b>৩️⃣</b> রেফার সফল হলে এককালীন <b>${tk(ref)}</b> + মাইনিংয়ের ১০% মাসিক কমিশন 💵`
+    );
+  }
   return (
     `${pick(openers)}\n\n` +
     `<b>১️⃣ প্রথম ধাপ:</b> ১০টি স্লটে ফেস ভেরিফিকেশন করুন → আপনি পাবেন <b>${tk(first)}</b>\n` +
@@ -159,13 +185,14 @@ export function withdrawEligibilityReply(name: string): string {
 }
 
 /** Rules answer for "account/verify hoy na" questions. */
-export function verifyTipsReply(name: string): string {
+export function verifyTipsReply(name: string, r?: AppRates): string {
   const openers = [
     `${name}, এটা খুব common 🙂 নিচের নিয়মে করলেই হয়ে যাবে 👇`,
     `আচ্ছা ${name}, এভাবে চেষ্টা করুন — বেশিরভাগ সময় কাজ হয়ে যায় 👇`,
     `${name} ভাই, চিন্তা করবেন না 😊 নিচের ধাপগুলো ফলো করুন 👇`,
   ];
   const pick = (a: string[]) => a[Math.floor(Math.random() * a.length)];
+  if (r && !r.faceVerifyOn) return faceVerifyPausedReply(name, r);
   return (
     `${pick(openers)}\n\n` +
     `<b>১️⃣</b> একটি ব্রাউজার দিয়ে <b>২টির বেশি একাউন্ট করবেন না</b> — প্রতি ব্রাউজারে সর্বোচ্চ ২টি।\n` +
@@ -350,7 +377,7 @@ export function referralEarningReply(name: string, r: AppRates): string {
   const monthlyFull = 10 * MONTHLY_PER_SLOT; // ১০ স্লট = ৫০০৳/মাস
   const commission = Math.round(monthlyFull * 0.10); // ১০% = ৫০৳/মাস
   const selfRe = r.promoRe ?? r.reVerify;
-  const promo = (r as any).promo && (r as any).promoTitle
+  const promo = r.faceVerifyOn && (r as any).promo && (r as any).promoTitle
     ? `🎊 <b>এখন অফার চলছে: ${(r as any).promoTitle}</b> — অফার শেষ হওয়ার আগেই ১০টি স্লট রি-ভেরিফাই সম্পন্ন করে ফেলুন ভাইয়া 💙\n\n`
     : "";
   return (
@@ -359,7 +386,9 @@ export function referralEarningReply(name: string, r: AppRates): string {
     `⛏️ <b>২) প্রতি মাসে ১০% কমিশন</b> — রেফারি ১০টি স্লট রি-ভেরিফাই করলে তার মাইনিং চালু হয় (${bn(monthlyFull)}৳/মাস), আর আপনি পাবেন <b>১০% = ${bn(commission)}৳ প্রতি মাসে</b> — এটা প্রতি মাসেই চলতে থাকবে। রেফারি যত বেশি স্লট করবে, আপনার কমিশনও তত বাড়বে।\n\n` +
     `💙 আর রি-ভেরিফাইয়ের <b>${tk(selfRe)}</b> বোনাসটা রেফারি নিজে পায় — অর্থাৎ আপনি আর সে, দুইজনেই লাভবান হচ্ছেন।\n\n` +
     promo +
-    `⏳ তাই দেরি না করে রেফারিকে বলুন তাড়াতাড়ি ১০টি স্লট রি-ভেরিফাই শেষ করতে — তাহলে তার বোনাস + মাইনিং, আর আপনার মাসিক কমিশন সবই চালু হয়ে যাবে 🙂`
+    (r.faceVerifyOn
+      ? `⏳ তাই দেরি না করে রেফারিকে বলুন তাড়াতাড়ি ১০টি স্লট রি-ভেরিফাই শেষ করতে — তাহলে তার বোনাস + মাইনিং, আর আপনার মাসিক কমিশন সবই চালু হয়ে যাবে 🙂`
+      : `🔧 তবে এখন <b>স্লট ভেরিফিকেশন সাময়িকভাবে বন্ধ</b> (First verify ও Re-verify দুটোই), তাই এখনই নতুন করে ভেরিফাই করা যাবে না। চালু হলেই এই নিয়মে সব আবার স্বাভাবিকভাবে কাজ করবে ইনশাআল্লাহ 💙`)
   );
 }
 

@@ -2819,8 +2819,10 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             .test(norm);
         if (decision.intent === "verify_help" && reportsVerifyFailure && !decision.should_delete
             && settings.auto_reply_enabled) {
-          const { verifyTipsReply } = await import("@/lib/telegram-knowledge.server");
-          const reply = verifyTipsReply(senderName) + videoSuffix(text);
+          const { verifyTipsReply, loadRates } = await import("@/lib/telegram-knowledge.server");
+          const vRates = await loadRates();
+          const reply = verifyTipsReply(senderName, vRates)
+            + (vRates.faceVerifyOn ? videoSuffix(text) : "");
           await sendMessage(chatId, reply, msg.message_id);
           actions.push("verify-help");
           await logMessage(decision.verdict, actions.join(","), reply, matchedUid);
