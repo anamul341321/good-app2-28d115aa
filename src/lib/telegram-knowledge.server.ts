@@ -377,7 +377,7 @@ export function referralEarningReply(name: string, r: AppRates): string {
   const monthlyFull = 10 * MONTHLY_PER_SLOT; // ১০ স্লট = ৫০০৳/মাস
   const commission = Math.round(monthlyFull * 0.10); // ১০% = ৫০৳/মাস
   const selfRe = r.promoRe ?? r.reVerify;
-  const promo = (r as any).promo && (r as any).promoTitle
+  const promo = r.faceVerifyOn && (r as any).promo && (r as any).promoTitle
     ? `🎊 <b>এখন অফার চলছে: ${(r as any).promoTitle}</b> — অফার শেষ হওয়ার আগেই ১০টি স্লট রি-ভেরিফাই সম্পন্ন করে ফেলুন ভাইয়া 💙\n\n`
     : "";
   return (
@@ -386,7 +386,9 @@ export function referralEarningReply(name: string, r: AppRates): string {
     `⛏️ <b>২) প্রতি মাসে ১০% কমিশন</b> — রেফারি ১০টি স্লট রি-ভেরিফাই করলে তার মাইনিং চালু হয় (${bn(monthlyFull)}৳/মাস), আর আপনি পাবেন <b>১০% = ${bn(commission)}৳ প্রতি মাসে</b> — এটা প্রতি মাসেই চলতে থাকবে। রেফারি যত বেশি স্লট করবে, আপনার কমিশনও তত বাড়বে।\n\n` +
     `💙 আর রি-ভেরিফাইয়ের <b>${tk(selfRe)}</b> বোনাসটা রেফারি নিজে পায় — অর্থাৎ আপনি আর সে, দুইজনেই লাভবান হচ্ছেন।\n\n` +
     promo +
-    `⏳ তাই দেরি না করে রেফারিকে বলুন তাড়াতাড়ি ১০টি স্লট রি-ভেরিফাই শেষ করতে — তাহলে তার বোনাস + মাইনিং, আর আপনার মাসিক কমিশন সবই চালু হয়ে যাবে 🙂`
+    (r.faceVerifyOn
+      ? `⏳ তাই দেরি না করে রেফারিকে বলুন তাড়াতাড়ি ১০টি স্লট রি-ভেরিফাই শেষ করতে — তাহলে তার বোনাস + মাইনিং, আর আপনার মাসিক কমিশন সবই চালু হয়ে যাবে 🙂`
+      : `🔧 তবে এখন <b>স্লট ভেরিফিকেশন সাময়িকভাবে বন্ধ</b> (First verify ও Re-verify দুটোই), তাই এখনই নতুন করে ভেরিফাই করা যাবে না। চালু হলেই এই নিয়মে সব আবার স্বাভাবিকভাবে কাজ করবে ইনশাআল্লাহ 💙`)
   );
 }
 
