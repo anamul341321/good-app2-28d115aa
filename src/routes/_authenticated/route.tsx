@@ -170,6 +170,9 @@ function AuthedLayout() {
 
   return (
     <div className="min-h-screen pb-24">
+      {appStatus?.faceVerifyEnabled === false && (
+        <SlotPausedModal message={appStatus?.faceVerifyMessage} />
+      )}
 
       <header className="sticky top-0 z-30 glass">
         <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
