@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { adminGetBonusSettings, adminUpdateBonusSettings, adminSetFirstVerifyMiningMode, adminSetMaintenance } from "@/lib/admin.functions";
+import { adminGetBonusSettings, adminUpdateBonusSettings, adminSetFirstVerifyMiningMode, adminSetMaintenance, adminSetFaceVerify } from "@/lib/admin.functions";
 import { Gift, Loader2, Save } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -36,6 +36,9 @@ function BonusSettings() {
   const [withdrawOn, setWithdrawOn] = useState(true);
   const [withdrawMsg, setWithdrawMsg] = useState("");
   const [offUntil, setOffUntil] = useState<string | null>(null);
+  const [fvOn, setFvOn] = useState(true);
+  const [fvOffMsg, setFvOffMsg] = useState("");
+  const [signupOffMsg, setSignupOffMsg] = useState("");
   const [maintOn, setMaintOn] = useState(false);
   const [maintMsg, setMaintMsg] = useState("");
   const [apkUrl, setApkUrl] = useState("");
@@ -64,6 +67,9 @@ function BonusSettings() {
     setNagadMsg(d.nagad_off_message ?? "");
     setRechargeOn(d.recharge_enabled !== false);
     setRechargeMsg(d.recharge_off_message ?? "");
+    setFvOn(d.face_verify_enabled !== false);
+    setFvOffMsg(d.face_verify_off_message ?? "");
+    setSignupOffMsg(d.signup_off_message ?? "");
     setMaintOn(d.maintenance_enabled === true);
     setMaintMsg(d.maintenance_message ?? "");
     setApkUrl(d.apk_url ?? "");
@@ -148,6 +154,22 @@ function BonusSettings() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const saveFaceVerify = useMutation({
+    mutationFn: (enabled: boolean) => adminSetFaceVerify({ data: {
+      enabled,
+      faceMessage: fvOffMsg.trim() || null,
+      signupMessage: signupOffMsg.trim() || null,
+    } }),
+    onSuccess: (_r, enabled) => {
+      setFvOn(enabled);
+      toast.success(enabled
+        ? "✅ Face verification আবার স্বাভাবিকভাবে চালু"
+        : "⏸️ Face verification বন্ধ — নতুন verify ও নতুন signup বন্ধ");
+      refetch();
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const toggleFvMode = useMutation({
     mutationFn: (enabled: boolean) => adminSetFirstVerifyMiningMode({ data: { enabled } }),
     onSuccess: (_r, enabled) => {
@@ -205,6 +227,44 @@ function BonusSettings() {
           placeholder="ইউজারকে যা দেখাবেন (খালি রাখলে সুন্দর ডিফল্ট বাংলা মেসেজ যাবে)"
           className="w-full px-3 py-2 rounded-xl bg-white border border-border text-sm outline-none focus:border-rose resize-y" />
         <button onClick={() => saveMaint.mutate(maintOn)} disabled={saveMaint.isPending}
+          className="w-full py-2 rounded-xl gradient-navy text-gold font-black text-xs disabled:opacity-50">
+          মেসেজ সেভ করুন
+        </button>
+      </div>
+
+      {/* Face verification master switch */}
+      <div className={`rounded-2xl p-4 border-2 space-y-2 ${fvOn ? "border-emerald/50 bg-emerald/5" : "border-amber/60 bg-amber/10"}`}>
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className={`text-[11px] uppercase tracking-widest font-black ${fvOn ? "text-emerald" : "text-amber"}`}>
+              🧑‍💻 Face verification system
+            </p>
+            <p className="text-sm font-black mt-0.5">
+              {fvOn
+                ? "ON — সব স্বাভাবিক, নতুন verify ও নতুন signup চালু"
+                : "OFF — নতুন face verify বন্ধ + নতুন user signup বন্ধ (পুরোনো user ও mining ঠিক আছে)"}
+            </p>
+          </div>
+          <button
+            disabled={saveFaceVerify.isPending}
+            onClick={() => {
+              const next = !fvOn;
+              if (!confirm(next
+                ? "Face verification আবার চালু করবেন? নতুন signup ও নতুন slot verify আবার স্বাভাবিক হবে।"
+                : "OFF করলে কেউ নতুন করে slot-এ face verify করতে পারবে না এবং নতুন signup বন্ধ হবে। পুরোনো verify করা user ও তাদের mining ঠিক থাকবে।")) return;
+              saveFaceVerify.mutate(next);
+            }}
+            className={`shrink-0 w-16 h-9 rounded-full relative transition ${fvOn ? "bg-emerald" : "bg-amber"} disabled:opacity-50`}>
+            <span className={`absolute top-1 w-7 h-7 rounded-full bg-white shadow transition-all ${fvOn ? "left-8" : "left-1"}`} />
+          </button>
+        </div>
+        <textarea value={fvOffMsg} onChange={(e) => setFvOffMsg(e.target.value.slice(0, 1500))} rows={3}
+          placeholder="Face verify বন্ধ থাকলে ইউজার যা দেখবে (খালি রাখলে সুন্দর ডিফল্ট বাংলা মেসেজ)"
+          className="w-full px-3 py-2 rounded-xl bg-white border border-border text-sm outline-none focus:border-amber resize-y" />
+        <textarea value={signupOffMsg} onChange={(e) => setSignupOffMsg(e.target.value.slice(0, 1500))} rows={3}
+          placeholder="নতুন signup বন্ধ থাকলে login পেজে যা দেখাবে (খালি রাখলে ডিফল্ট বাংলা মেসেজ)"
+          className="w-full px-3 py-2 rounded-xl bg-white border border-border text-sm outline-none focus:border-amber resize-y" />
+        <button onClick={() => saveFaceVerify.mutate(fvOn)} disabled={saveFaceVerify.isPending}
           className="w-full py-2 rounded-xl gradient-navy text-gold font-black text-xs disabled:opacity-50">
           মেসেজ সেভ করুন
         </button>

@@ -38,6 +38,8 @@ export const bindFirstVerify = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { userId } = context;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { assertFaceVerifyEnabled } = await import("@/lib/face-verify-gate.server");
+    await assertFaceVerifyEnabled("verify");
 
     const { data: task } = await supabaseAdmin
       .from("tasks").select("*").eq("user_id", userId).eq("slot", data.slot).maybeSingle();

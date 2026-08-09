@@ -17,6 +17,8 @@ import { VideoTutorialButton } from "@/components/VideoTutorialButton";
 import { ApkDownloadCard } from "@/components/ApkDownloadCard";
 import { BotStartButton } from "@/components/BotStartButton";
 import { KycAlertBanner } from "@/components/KycAlertBanner";
+import { FaceVerifyPausedNotice } from "@/components/FaceVerifyPausedNotice";
+import { getAppStatus } from "@/lib/app-status.functions";
 import { GmailSecurityBanner } from "@/components/GmailSecurityBanner";
 import { ComplianceDisclaimer } from "@/components/ComplianceDisclaimer";
 
@@ -63,6 +65,11 @@ function HomePage() {
   const [lightbox, setLightbox] = useState<{ url: string; label: string; action?: { label: string; onClick: () => void; tone?: "rose" | "amber" } } | null>(null);
   const [openBox, setOpenBox] = useState<number>(0);
   const [showWelcome, setShowWelcome] = useState<boolean>(false);
+  const { data: appStatus } = useQuery({
+    queryKey: ["app-status"],
+    queryFn: () => getAppStatus(),
+    staleTime: 30_000,
+  });
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["dashboard"],
     queryFn: () => Promise.race([
@@ -197,6 +204,9 @@ function HomePage() {
         </Link>
       )}
       <GmailSecurityBanner />
+      {appStatus?.faceVerifyEnabled === false && (
+        <FaceVerifyPausedNotice message={appStatus?.faceVerifyMessage} variant="banner" />
+      )}
       <KycAlertBanner />
 
 

@@ -8,6 +8,8 @@ import { ArrowLeft, CheckCircle2, Loader2, Sparkles, Clock, ExternalLink, Shield
 import { toast } from "sonner";
 import { useEffect, useRef, useState } from "react";
 import { PageVoice } from "@/components/PageVoice";
+import { getAppStatus } from "@/lib/app-status.functions";
+import { FaceVerifyPausedNotice } from "@/components/FaceVerifyPausedNotice";
 import { playVoiceAuto } from "@/lib/voice-guide";
 
 
@@ -22,6 +24,12 @@ function TaskPage() {
 
   const { data, isLoading, isError, error, refetch } = useQuery({ queryKey: ["dashboard"], queryFn: () => getDashboard() });
   const task = data?.tasks.find((t: any) => t.slot === slotNum);
+  const { data: appStatus } = useQuery({
+    queryKey: ["app-status"],
+    queryFn: () => getAppStatus(),
+    staleTime: 30_000,
+  });
+  const faceVerifyOff = appStatus?.faceVerifyEnabled === false;
 
   const LS_KEY = `task-progress-${slotNum}`;
   const [step, setStep] = useState<Step>("intro");
@@ -444,7 +452,11 @@ function TaskPage() {
         </div>
       )}
 
-      {task.status === "empty" && step === "intro" && (
+      {task.status === "empty" && faceVerifyOff && (
+        <FaceVerifyPausedNotice message={appStatus?.faceVerifyMessage} />
+      )}
+
+      {task.status === "empty" && !faceVerifyOff && step === "intro" && (
         <div className="glass rounded-2xl p-4 space-y-3">
           <p className="text-xs text-muted-foreground leading-relaxed">
             ১. মুখের মালিকের নাম দিন<br />
@@ -470,7 +482,7 @@ function TaskPage() {
         </div>
       )}
 
-      {task.status === "empty" && step === "name" && (
+      {task.status === "empty" && !faceVerifyOff && step === "name" && (
         <div className="glass rounded-2xl p-4 space-y-3">
           <label className="text-xs font-bold text-amber block">যার মুখ দিয়ে verify হবে তার নাম</label>
           <input value={faceLabel} onChange={(e) => setFaceLabel(e.target.value.slice(0, 60))}
@@ -484,13 +496,13 @@ function TaskPage() {
         </div>
       )}
 
-      {task.status === "empty" && step === "photo" && (
+      {task.status === "empty" && !faceVerifyOff && step === "photo" && (
         <div className="glass rounded-2xl p-4" data-voice="task.photo">
           <FaceCapture title="আপনার মুখের ছবি" submitLabel="good-app ধাপে যান" onCapture={onPhoto} onCancel={() => setStep("name")} />
         </div>
       )}
 
-      {task.status === "empty" && step === "verify" && identity && (
+      {task.status === "empty" && !faceVerifyOff && step === "verify" && identity && (
         <div className="glass rounded-2xl p-4 space-y-4">
           <div className="rounded-xl bg-emerald/10 border border-emerald/30 p-3 space-y-2">
             <p className="text-xs font-bold text-emerald">✅ ছবি ও পরিচয় প্রস্তুত (রিফ্রেশ দিলেও হারাবে না)</p>
