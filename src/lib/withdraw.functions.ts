@@ -202,6 +202,30 @@ export const requestWithdraw = createServerFn({ method: "POST" })
 
     const newAccrued = Number(mining.accrued_amount);
 
+    // ---- অটো পেমেন্ট (iPayBD) — admin switch on থাকলে সাথে সাথেই পাঠাবে ----
+    try {
+      const newId =
+        (atomicResult as any).withdrawal_id ??
+        (atomicResult as any).id ??
+        (
+          await supabaseAdmin
+            .from("withdrawals")
+            .select("id")
+            .eq("user_id", userId)
+            .eq("status", "pending")
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle()
+        ).data?.id;
+      if (newId) {
+        const { maybeAutoPay } = await import("@/lib/payout.server");
+        await maybeAutoPay(String(newId));
+      }
+    } catch {
+      // অটো পেমেন্ট ফেল করলেও রিকোয়েস্ট থেকে যাবে (admin ম্যানুয়ালি দিবে)
+    }
+
+
     // ---- সন্দেহজনক লেনদেন হলে Telegram-এ admin-কে mention করে জানাবে ----
     try {
       const { data: t10 } = await supabaseAdmin
