@@ -8,6 +8,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { PageVoice } from "@/components/PageVoice";
 import { playVoiceAuto } from "@/lib/voice-guide";
+import { getAppStatus } from "@/lib/app-status.functions";
+import { FaceVerifyPausedNotice } from "@/components/FaceVerifyPausedNotice";
 
 
 export const Route = createFileRoute("/_authenticated/reverify")({
@@ -43,6 +45,13 @@ function ReverifyPage() {
   const leftForGoodDollarRef = useRef(false);
   const goodDollarOpenedAtRef = useRef(0);
   const submitReadySpokenRef = useRef(false);
+
+  const { data: appStatus } = useQuery({
+    queryKey: ["app-status"],
+    queryFn: () => getAppStatus(),
+    staleTime: 60_000,
+  });
+  const faceVerifyOff = appStatus?.faceVerifyEnabled === false;
 
   const { data: candidates, isFetching, refetch } = useQuery({
     queryKey: ["reverify-candidates", query],
@@ -136,6 +145,10 @@ function ReverifyPage() {
   }, [step]);
 
   const onSelect = async (cand: any) => {
+    if (faceVerifyOff) {
+      toast.error("রি-ভেরিফাই আপাতত সাময়িকভাবে বন্ধ আছে — সার্ভারে কাজ চলছে।", { duration: 5000 });
+      return;
+    }
     // Pre-check: if the key is still whitelisted on Good-App, block —
     // re-verify won't do anything. This prevents users burning the same
     // face verify twice in a row.
@@ -236,6 +249,10 @@ function ReverifyPage() {
         <ArrowLeft className="w-4 h-4" /> পিছনে যান
       </Link>
 
+      {faceVerifyOff ? (
+        <FaceVerifyPausedNotice message={appStatus?.faceVerifyMessage} />
+      ) : (
+      <>
       <div className="glass rounded-2xl p-4 flex items-center gap-3">
         <RefreshCcw className="w-5 h-5 text-amber shrink-0" />
         <div className="min-w-0">
