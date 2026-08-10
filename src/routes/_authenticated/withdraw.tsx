@@ -666,9 +666,10 @@ function UsdtWithdrawCard(props: {
   const CELO_RE = /^0x[a-fA-F0-9]{40}$/;
   const addrValid = CELO_RE.test(usdtAddress.trim());
   const gross = Math.floor(Number(amount) || 0);
-  const feeRate = gross < 100 ? 0.2 : 0.1;
-  const fee = Math.floor(gross * feeRate);
+  const feeRate = withdrawFeeRate(gross);
+  const fee = withdrawFee(gross);
   const payoutBdt = gross - fee;
+
   const grossUsd = gross / usdtRate;
   const feeUsd = fee / usdtRate;
   const payoutUsd = payoutBdt / usdtRate;
