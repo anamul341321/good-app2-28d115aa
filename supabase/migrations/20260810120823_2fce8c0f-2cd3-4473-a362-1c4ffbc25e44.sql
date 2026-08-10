@@ -1,0 +1,1 @@
+update public.bonus_settings set promo_first_verify_bonus = 63, promo_referrer_bonus = 63 where id = 'default';
