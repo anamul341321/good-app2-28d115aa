@@ -88,6 +88,34 @@ function AdminWithdrawals() {
   const selectAll = () => setSelected(new Set(pendingRows.map((w: any) => w.id)));
   const clearSelection = () => setSelected(new Set());
 
+  // ⚡ Fast Pay queue — একটার পর একটা, শুধু PIN দিলেই হবে (personal/agent নম্বর দিয়েই চলবে)
+  const [fastMode, setFastMode] = useState(false);
+  const fastQueue = useMemo(
+    () => pendingRows.filter((w: any) => w.provider !== "usdt"),
+    [pendingRows],
+  );
+  const [fastIdx, setFastIdx] = useState(0);
+  const fastRow: any = fastQueue[Math.min(fastIdx, Math.max(fastQueue.length - 1, 0))];
+  const ussdFor = (w: any) => {
+    const amt = Math.round(Number(w.amount));
+    return w.provider === "bkash"
+      ? `tel:${encodeURIComponent(`*247*1*${w.wallet_number}*${amt}#`)}`
+      : `tel:${encodeURIComponent(`*167*1*1*${w.wallet_number}*${amt}#`)}`;
+  };
+  const fastPaidNext = () => {
+    let name = adminName.trim();
+    if (!name) {
+      const input = window.prompt("আপনার নাম লিখুন (কে paid করছে):", "");
+      if (!input || !input.trim()) { toast.error("আগে আপনার নাম লিখুন"); return; }
+      name = input.trim();
+      setAdminName(name);
+    }
+    if (!fastRow) return;
+    mut.mutate({ id: fastRow.id, action: "paid", paidBy: name });
+    setFastIdx((i) => i + 1);
+  };
+
+
   const downloadBulkCsv = () => {
     const header = "wallet_number,amount,provider,remarks";
     const lines = selectedRows.map((w: any) => {
@@ -185,8 +213,95 @@ function AdminWithdrawals() {
         <Tab id="all" label="All" count={counts.all} tone="bg-cyan/20 text-cyan" />
       </div>
 
-      {/* Bulk payout panel — only on pending tab */}
+      {/* ⚡ Fast Pay — personal/agent নম্বর দিয়েই এক এক করে PIN দিয়ে পেমেন্ট */}
+      {filter === "pending" && fastQueue.length > 0 && (
+        <div className="glass rounded-xl p-3 border-2 border-emerald/40 bg-emerald/5 space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <div className="min-w-0">
+              <p className="text-xs font-black text-emerald">⚡ ফাস্ট পে (শুধু PIN দিলেই হবে)</p>
+              <p className="text-[10px] text-muted-foreground">
+                Personal বা Agent নম্বর দিয়েই চলবে · বাকি {Math.max(fastQueue.length - fastIdx, 0)}টি
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => { setFastMode((v) => !v); setFastIdx(0); }}
+              className={`px-3 py-1.5 rounded-lg text-[11px] font-black shrink-0 ${fastMode ? "bg-white/10" : "bg-emerald text-background"}`}
+            >
+              {fastMode ? "বন্ধ করুন" : "শুরু করুন"}
+            </button>
+          </div>
+
+          {fastMode && (
+            fastIdx >= fastQueue.length || !fastRow ? (
+              <p className="text-center text-[11px] font-black text-emerald py-3">🎉 সব পেমেন্ট শেষ!</p>
+            ) : (
+              <div className="rounded-xl bg-background/60 border border-emerald/30 p-3 space-y-2">
+                <p className="text-[10px] text-muted-foreground">
+                  {fastIdx + 1} / {fastQueue.length} ·{" "}
+                  {fastRow.profiles?.display_name ?? fastRow.profiles?.email}
+                  {fastRow.profiles?.uid_seq != null && ` · #${fastRow.profiles.uid_seq}`}
+                </p>
+                <div className="flex items-center justify-between gap-2">
+                  <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${fastRow.provider === "bkash" ? "bg-rose text-white" : "bg-amber text-background"}`}>
+                    {fastRow.provider === "bkash" ? "বিকাশ" : "নগদ"}
+                  </span>
+                  <span className="mono-num font-black text-lg">{fastRow.wallet_number}</span>
+                  <span className="mono-num font-black text-lg text-emerald">{Math.round(Number(fastRow.amount))}৳</span>
+                </div>
+                <a
+                  href={ussdFor(fastRow)}
+                  className="block py-3 rounded-xl bg-emerald text-background text-center font-black text-sm"
+                >
+                  📞 ডায়াল করুন → শুধু PIN দিন
+                </a>
+                <div className="grid grid-cols-2 gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => copy(fastRow.wallet_number, "নম্বর")}
+                    className="py-2 rounded-lg bg-white/10 text-[10px] font-bold"
+                  >
+                    নম্বর কপি
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => copy(String(Math.round(Number(fastRow.amount))), "অ্যামাউন্ট")}
+                    className="py-2 rounded-lg bg-white/10 text-[10px] font-bold"
+                  >
+                    অ্যামাউন্ট কপি
+                  </button>
+                </div>
+                <div className="grid grid-cols-3 gap-1.5">
+                  <button
+                    type="button"
+                    onClick={fastPaidNext}
+                    disabled={mut.isPending}
+                    className="col-span-2 py-2.5 rounded-xl bg-cyan/20 text-cyan font-black text-[12px] flex items-center justify-center gap-1"
+                  >
+                    {mut.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                    ✅ Paid — পরেরটা
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFastIdx((i) => i + 1)}
+                    className="py-2.5 rounded-xl bg-white/10 font-black text-[11px]"
+                  >
+                    স্কিপ ▶
+                  </button>
+                </div>
+              </div>
+            )
+          )}
+
+          <p className="text-[9px] text-muted-foreground leading-relaxed">
+            💡 ডায়াল বাটনে চাপলে নম্বর ও টাকা নিজে থেকেই বসে যাবে — আপনি শুধু PIN দিবেন, ফিরে এসে "Paid — পরেরটা" চাপবেন। CSV/merchant portal লাগবে না।
+          </p>
+        </div>
+      )}
+
+      {/* Bulk payout panel (ঐচ্ছিক) — only on pending tab */}
       {filter === "pending" && pendingRows.length > 0 && (
+
         <div className="glass rounded-xl p-3 border-2 border-cyan/30 bg-cyan/5 space-y-2">
           <div className="flex items-center justify-between gap-2">
             <div className="min-w-0 flex-1">
@@ -244,8 +359,9 @@ function AdminWithdrawals() {
           )}
 
           <p className="text-[9px] text-muted-foreground leading-relaxed">
-            💡 <b>দ্রুত করতে:</b> উপরে সব সিলেক্ট করে CSV ডাউনলোড করুন → bKash/Nagad merchant portal-এ bulk disbursement-এ আপলোড করুন → একবার PIN দিয়ে সব পেমেন্ট করুন → ফিরে এসে "Paid Mark" চাপুন।
+            💡 CSV শুধু merchant portal থাকলে দরকার — না থাকলে উপরের ⚡ ফাস্ট পে ব্যবহার করুন।
           </p>
+
         </div>
       )}
 
