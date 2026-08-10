@@ -2217,7 +2217,10 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           // for finding the UID they gave earlier when they start misbehaving.
           let history: string[] = [];
           let pastReplies: string[] = [];
-          let knownUid: string | null = (offender as any)?.known_uid ?? null;
+          // ⚠️ সবার আগে KYC-লিংক করা UID — এটাই এই টেলিগ্রাম একাউন্টের আসল
+          // পরিচয়। আগে অন্য কারো UID দেখা হয়েছিল বলে সেটাই মনে রেখে "আমার
+          // হিসাব" চাইলে অন্যের হিসাব দেখিয়ে দিত — তাই লিংক করা UID-ই আগে।
+          let knownUid: string | null = msg.from?.id ? await linkedUid() : null;
           if (msg.from?.id) {
             const { data: past } = await supabaseAdmin
               .from("tg_messages").select("text, bot_reply, matched_uid, created_at")
@@ -2225,8 +2228,10 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               .order("created_at", { ascending: false }).limit(12);
             history = (past ?? []).map((p: any) => p.text).filter(Boolean).reverse().slice(-8);
             pastReplies = (past ?? []).map((p: any) => p.bot_reply).filter(Boolean).slice(0, 4);
+            if (!knownUid) knownUid = (offender as any)?.known_uid ?? null;
             if (!knownUid) knownUid = (past ?? []).find((p: any) => p.matched_uid)?.matched_uid ?? null;
           }
+
           // A full unrelated history makes the model answer the previous topic
           // instead of the user's current question. Only carry context for an
           // explicit reply/follow-up; standalone questions are self-contained.
@@ -2439,7 +2444,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         // ---- "উইথড্র দিয়েছি টাকা আসে নাই" → show pending requests with time ---
         if ((decision.intent === "withdraw_status" || pendingWithdrawQuestion) && !decision.should_delete
             && settings.auto_reply_enabled) {
-          const uid = explicitOrBareUid() || previousKnownUid;
+          const uid = explicitOrBareUid() || (await linkedUid()) || previousKnownUid;
           if (uid) {
             const { buildWithdrawStatusCard } = await import("@/lib/telegram-withdraw.server");
             const res = await buildWithdrawStatusCard(uid);
@@ -2480,7 +2485,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
         // ---- "১ম verify কবে/কত তারিখে হয়েছে?" → ask UID, then report dates --
         if (asksReverifyStatus && !decision.should_delete && settings.auto_reply_enabled) {
-          const query = pickVerificationQuery(norm) || explicitOrBareUid() || previousKnownUid;
+          const query = pickVerificationQuery(norm) || explicitOrBareUid() || (await linkedUid()) || previousKnownUid;
           if (query) {
             const { buildReverifyStatusReport } = await import("@/lib/telegram-lookup.server");
             const res = await buildReverifyStatusReport(query);
@@ -2513,7 +2518,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
         const dateKind = verificationDateKind(norm);
         if (dateKind && !decision.should_delete && settings.auto_reply_enabled) {
-          const query = pickVerificationQuery(norm) || explicitOrBareUid() || previousKnownUid;
+          const query = pickVerificationQuery(norm) || explicitOrBareUid() || (await linkedUid()) || previousKnownUid;
           if (query) {
             const { buildVerificationDateReport } = await import("@/lib/telegram-lookup.server");
             const res = await buildVerificationDateReport(query, dateKind);
@@ -2668,7 +2673,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         // ---- "রেফার করেছি কিন্তু রেফার বাড়ে না" → রেফার হিস্টরি + কারণ --------
 
         if (complainsReferralCount && !decision.should_delete && settings.auto_reply_enabled) {
-          let uid: string | null = explicitOrBareUid() || previousKnownUid;
+          let uid: string | null = explicitOrBareUid() || (await linkedUid()) || previousKnownUid;
           if (!uid && msg.from?.id) {
             const { data: linked } = await supabaseAdmin
               .from("profiles").select("uid_seq").eq("telegram_user_id", msg.from.id).maybeSingle();
@@ -2702,14 +2707,13 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         if (asksOwnAccount && !decision.should_delete
             && settings.auto_reply_enabled) {
           // ⚠️ কখনোই অনুমান করে অন্য কারো UID দেখানো যাবে না।
-          // শুধু (ক) এই মেসেজেই স্পষ্ট UID লেখা থাকলে, অথবা
-          // (খ) এই টেলিগ্রাম একাউন্টটি নিজেই কোনো প্রোফাইলের সাথে লিংক করা থাকলে।
-          let uid: string | null = explicitOrBareUid() || previousKnownUid;
-          if (!uid && msg.from?.id) {
-            const { data: linked } = await supabaseAdmin
-              .from("profiles").select("uid_seq").eq("telegram_user_id", msg.from.id).maybeSingle();
-            if (linked?.uid_seq != null) uid = String(linked.uid_seq);
-          }
+          // শুধু (ক) এই টেলিগ্রাম একাউন্টের KYC-লিংক করা UID, অথবা
+          // (খ) এই মেসেজেই স্পষ্ট UID লেখা থাকলে।
+          // আগের মেসেজে দেখা UID (previousKnownUid) এখানে ব্যবহার করা হয় না —
+          // ওটার কারণেই একজন অন্যজনের হিসাব দেখে ফেলছিল।
+          const myUid = msg.from?.id ? await linkedUid() : null;
+          const uid: string | null = myUid || explicitOrBareUid();
+
           if (uid) {
             const { buildUserCard } = await import("@/lib/telegram-lookup.server");
             const res = await buildUserCard(String(uid));
@@ -2752,8 +2756,10 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           }
           const ask =
             `🆔 ${senderName}, আপনার হিসাবটা এখনই দেখে দিচ্ছি।\n\n` +
-            `দয়া করে আপনার <b>UID</b> নম্বরটি লিখুন (অ্যাপের প্রোফাইল পেজে পাবেন, যেমন: 4100)।\n` +
-            `UID পেলেই আপনার মোট রেফার, ১ম ভেরিফাই, রি-ভেরিফাই, ব্যালেন্স ও উইথড্র — সব একসাথে জানিয়ে দেব 💙`;
+            `আপনার এই টেলিগ্রাম একাউন্টের সাথে কোনো UID <b>KYC দিয়ে লিংক করা নেই</b>, তাই অনুমান করে কারো হিসাব দেখাতে পারছি না 🙏\n\n` +
+            `👉 একবার <b>KYC</b> করে নিন (অ্যাপের হোম পেজে “KYC করুন” → টেলিগ্রাম → START) — তারপর শুধু “আমার হিসাব” লিখলেই আপনার UID মনে রেখে সব হিসাব দিয়ে দেব 💙\n\n` +
+            `এখনই দেখতে চাইলে আপনার <b>UID</b> নম্বরটি লিখুন (অ্যাপের প্রোফাইল পেজে পাবেন, যেমন: 4100)।`;
+
           await sendMessage(chatId, ask, msg.message_id);
           actions.push("account-info-ask-uid");
           await logMessage(decision.verdict, actions.join(","), ask, null);
