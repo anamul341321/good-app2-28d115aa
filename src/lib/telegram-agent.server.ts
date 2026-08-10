@@ -185,9 +185,11 @@ async function runTool(name: string, args: any): Promise<string> {
         return "নিয়ম: ১০০৳ বা বেশি হলে ফি ১০%, ১০০৳ এর কম হলে ২০%।";
       }
       // Same rule as withdraw.functions.ts (single source of truth).
-      const feeRate = amount < 100 ? 0.2 : 0.1;
-      const fee = Math.floor(amount * feeRate);
-      return `উইথড্র ${amount}৳ → ফি ${fee}৳ (${Math.round(feeRate * 100)}%) → হাতে আসবে ${amount - fee}৳।`;
+      const { withdrawFee, withdrawFeeRate } = await import("./constants");
+      const feeRate = withdrawFeeRate(amount);
+      const fee = withdrawFee(amount);
+      return `উইথড্র ${Math.floor(amount)}৳ → ফি ${fee}৳ (${Math.round(feeRate * 100)}%) → হাতে আসবে ${Math.floor(amount) - fee}৳। (পয়সা withdraw হয় না — পূর্ণ টাকাই যাবে, বাকি পয়সা মেইন ব্যালেন্সে থাকবে)`;
+
     }
     if (name === "bonus_settings" || name === "app_status") {
       const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");

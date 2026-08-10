@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { MIN_WITHDRAW_BDT, MIN_PAYOUT_BDT, withdrawPayout } from "./constants";
+import { MIN_WITHDRAW_BDT, MIN_PAYOUT_BDT, withdrawPayout, withdrawFee, withdrawFeeRate } from "./constants";
 import { computeLiveBalance } from "./mining";
 
 const CELO_ADDR_RE = /^0x[a-fA-F0-9]{40}$/;
@@ -67,10 +67,11 @@ export const requestWithdraw = createServerFn({ method: "POST" })
       throw new Error("দৈনিক সর্বোচ্চ ৩টি withdraw রিকোয়েস্ট করা যাবে — ২৪ ঘণ্টা পর আবার চেষ্টা করুন");
     }
 
-    // Tiered platform fee: <100৳ → 20%, ≥100৳ → 10%
-    const feeRate = amount < 100 ? 0.2 : 0.1;
-    const fee = Math.floor(amount * feeRate);
+    // Tiered platform fee: <100৳ → 20%, ≥100৳ → 10%, capped so payout ≥ 50৳
+    const feeRate = withdrawFeeRate(amount);
+    const fee = withdrawFee(amount);
     const payout = amount - fee;
+
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: settings } = await supabaseAdmin

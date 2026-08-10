@@ -17,30 +17,30 @@ export const TOTAL_TASKS = 10;
 // before their referral link unlocks. Lowered from 10 → 5 per admin request.
 export const REFERRAL_UNLOCK_THRESHOLD = 5;
 
-// Withdraw fee: <100৳ → 20%, ≥100৳ → 10%
-export function withdrawFeeRate(gross: number): number {
-  return gross < 100 ? 0.2 : 0.1;
-}
-export function withdrawFee(gross: number): number {
-  return Math.floor(gross * withdrawFeeRate(gross));
-}
-export function withdrawPayout(gross: number): number {
-  return gross - withdrawFee(gross);
-}
-
 // Agent-friendly minimum: the amount that actually lands in the user's wallet
 // (after fee) must be at least 50৳ — bKash agents can't send less.
 export const MIN_PAYOUT_BDT = 50;
 
-function computeMinGross(minPayout: number): number {
-  for (let g = minPayout; g <= minPayout * 3; g++) {
-    if (withdrawPayout(g) >= minPayout) return g;
-  }
-  return minPayout * 2;
+// Minimum request amount. Kept at 60৳ so a user who earns exactly one 60৳
+// bonus can still withdraw and receive the full 50৳ in hand.
+export const MIN_WITHDRAW_BDT = 60;
+
+// Withdraw fee: <100৳ → 20%, ≥100৳ → 10%.
+export function withdrawFeeRate(gross: number): number {
+  return gross < 100 ? 0.2 : 0.1;
+}
+// Fee is always capped so the payout never falls below MIN_PAYOUT_BDT —
+// e.g. 60৳ request → fee 10৳ → 50৳ in hand.
+export function withdrawFee(gross: number): number {
+  const g = Math.floor(gross);
+  const raw = Math.floor(g * withdrawFeeRate(g));
+  const maxFee = Math.max(0, g - MIN_PAYOUT_BDT);
+  return Math.min(raw, maxFee);
+}
+export function withdrawPayout(gross: number): number {
+  return Math.floor(gross) - withdrawFee(gross);
 }
 
-// Minimum request amount so that payout (after fee) >= MIN_PAYOUT_BDT → 62৳.
-export const MIN_WITHDRAW_BDT = computeMinGross(MIN_PAYOUT_BDT);
 
 export type WalletProvider = "bkash" | "nagad";
 export type TaskStatus = "empty" | "verified" | "done";

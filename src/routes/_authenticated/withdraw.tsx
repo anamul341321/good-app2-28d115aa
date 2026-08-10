@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getDashboard, getMyWithdrawals } from "@/lib/dashboard.functions";
 import { requestWithdraw } from "@/lib/withdraw.functions";
-import { MIN_WITHDRAW_BDT } from "@/lib/constants";
+import { MIN_WITHDRAW_BDT, withdrawFee, withdrawFeeRate } from "@/lib/constants";
 import { computeLiveBalance, splitBalance } from "@/lib/mining";
 import { useState, useEffect } from "react";
 import { ArrowDownToLine, Loader2, Lock, Copy, ShieldAlert } from "lucide-react";
@@ -355,7 +355,9 @@ function WithdrawPage() {
                   placeholder={t(`সর্বনিম্ন ${MIN_WITHDRAW_BDT}`, `Minimum ${MIN_WITHDRAW_BDT}`)}
                   className="w-full mt-2 px-4 py-3 mono-num bg-surface-2 border border-border rounded-xl text-lg font-black outline-none focus:border-rose" />
                 <p className="text-[10px] text-muted-foreground mt-1" translate="no">{t("সর্বনিম্ন", "Min")}: {MIN_WITHDRAW_BDT}৳ · {t("সর্বোচ্চ", "Max")}: {claimable}৳</p>
-                <p className="text-[10px] text-amber mt-1 font-bold" translate="no">{t(`ফি কাটার পর হাতে কমপক্ষে ৫০৳ আসতে হবে — তাই সর্বনিম্ন রিকোয়েস্ট ${MIN_WITHDRAW_BDT}৳`, `After fee you must receive at least 50৳ — so minimum request is ${MIN_WITHDRAW_BDT}৳`)}</p>
+                <p className="text-[10px] text-amber mt-1 font-bold" translate="no">{t(`ফি কাটার পর হাতে কমপক্ষে ৫০৳ আসবে — তাই সর্বনিম্ন রিকোয়েস্ট ${MIN_WITHDRAW_BDT}৳ (৬০৳ দিলে ফি ১০৳, হাতে ৫০৳)`, `After fee you always receive at least 50৳ — minimum request ${MIN_WITHDRAW_BDT}৳ (60৳ → 10৳ fee → 50৳ in hand)`)}</p>
+                <p className="text-[10px] text-muted-foreground mt-1" translate="no">{t("পয়সা (দশমিক) উইথড্র হয় না — শুধু পূর্ণ টাকা যাবে, বাকি পয়সা মেইন ব্যালেন্সেই থাকবে", "Paisa (decimals) can't be withdrawn — only whole taka; the rest stays in your main balance")}</p>
+
               </div>
 
               <FeeBreakdown amount={amount} t={t} />
@@ -623,14 +625,15 @@ function DebtCard({ d, t, onClaimed }: { d: any; t: (bn: string, en: string) => 
 function FeeBreakdown({ amount, t }: { amount: string; t: (bn: string, en: string) => string }) {
   const gross = Math.floor(Number(amount) || 0);
   if (gross < MIN_WITHDRAW_BDT) return null;
-  const feeRate = gross < 100 ? 0.2 : 0.1;
+  const feeRate = withdrawFeeRate(gross);
   const feePct = Math.round(feeRate * 100);
-  const fee = Math.floor(gross * feeRate);
+  const fee = withdrawFee(gross);
   const payout = gross - fee;
   return (
     <div className="rounded-xl border-2 border-amber/40 bg-amber/10 p-3 space-y-1.5" translate="no">
       <p className="text-[10px] uppercase tracking-widest font-black text-amber">{t(`ফি হিসাব (${feePct}%)`, `Fee breakdown (${feePct}%)`)}</p>
-      <p className="text-[10px] text-muted-foreground">{t("১০০৳-এর নিচে ২০%, ১০০৳ ও তার উপরে ১০%", "Under 100৳: 20%, 100৳ or more: 10%")}</p>
+      <p className="text-[10px] text-muted-foreground">{t("১০০৳-এর নিচে ২০%, ১০০৳ ও তার উপরে ১০% — তবে হাতে সবসময় কমপক্ষে ৫০৳ আসবে", "Under 100৳: 20%, 100৳+: 10% — but you always receive at least 50৳")}</p>
+
       <div className="flex justify-between text-[12px]">
         <span className="text-muted-foreground">{t("মোট কাটবে", "Deducted")}</span>
         <span className="mono-num font-bold">{gross}৳</span>
@@ -665,9 +668,10 @@ function UsdtWithdrawCard(props: {
   const CELO_RE = /^0x[a-fA-F0-9]{40}$/;
   const addrValid = CELO_RE.test(usdtAddress.trim());
   const gross = Math.floor(Number(amount) || 0);
-  const feeRate = gross < 100 ? 0.2 : 0.1;
-  const fee = Math.floor(gross * feeRate);
+  const feeRate = withdrawFeeRate(gross);
+  const fee = withdrawFee(gross);
   const payoutBdt = gross - fee;
+
   const grossUsd = gross / usdtRate;
   const feeUsd = fee / usdtRate;
   const payoutUsd = payoutBdt / usdtRate;
