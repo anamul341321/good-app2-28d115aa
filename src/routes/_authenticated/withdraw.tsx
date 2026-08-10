@@ -623,14 +623,15 @@ function DebtCard({ d, t, onClaimed }: { d: any; t: (bn: string, en: string) => 
 function FeeBreakdown({ amount, t }: { amount: string; t: (bn: string, en: string) => string }) {
   const gross = Math.floor(Number(amount) || 0);
   if (gross < MIN_WITHDRAW_BDT) return null;
-  const feeRate = gross < 100 ? 0.2 : 0.1;
+  const feeRate = withdrawFeeRate(gross);
   const feePct = Math.round(feeRate * 100);
-  const fee = Math.floor(gross * feeRate);
+  const fee = withdrawFee(gross);
   const payout = gross - fee;
   return (
     <div className="rounded-xl border-2 border-amber/40 bg-amber/10 p-3 space-y-1.5" translate="no">
       <p className="text-[10px] uppercase tracking-widest font-black text-amber">{t(`ফি হিসাব (${feePct}%)`, `Fee breakdown (${feePct}%)`)}</p>
-      <p className="text-[10px] text-muted-foreground">{t("১০০৳-এর নিচে ২০%, ১০০৳ ও তার উপরে ১০%", "Under 100৳: 20%, 100৳ or more: 10%")}</p>
+      <p className="text-[10px] text-muted-foreground">{t("১০০৳-এর নিচে ২০%, ১০০৳ ও তার উপরে ১০% — তবে হাতে সবসময় কমপক্ষে ৫০৳ আসবে", "Under 100৳: 20%, 100৳+: 10% — but you always receive at least 50৳")}</p>
+
       <div className="flex justify-between text-[12px]">
         <span className="text-muted-foreground">{t("মোট কাটবে", "Deducted")}</span>
         <span className="mono-num font-bold">{gross}৳</span>
