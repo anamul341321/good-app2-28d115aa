@@ -21,20 +21,22 @@ export const REFERRAL_UNLOCK_THRESHOLD = 5;
 // (after fee) must be at least 50৳ — bKash agents can't send less.
 export const MIN_PAYOUT_BDT = 50;
 
-// Minimum request amount. Kept at 60৳ so a user who earns exactly one 60৳
-// bonus can still withdraw and receive the full 50৳ in hand.
-export const MIN_WITHDRAW_BDT = 60;
+// Minimum request amount. 63৳ so a user who earns exactly one 63৳ bonus can
+// withdraw: 63৳ − 20% (12.6৳) = 50.4৳ → 50৳ in hand, 0.4৳ stays in balance.
+export const MIN_WITHDRAW_BDT = 63;
 
-// Percentage withdraw fee: 15% below 100৳, 10% for 100৳ and above.
-export const WITHDRAW_FEE_RATE_SMALL = 0.15;
+// Percentage withdraw fee: 20% below 100৳, 10% for 100৳ and above.
+export const WITHDRAW_FEE_RATE_SMALL = 0.2;
 export const WITHDRAW_FEE_RATE_LARGE = 0.1;
 export const WITHDRAW_FEE_THRESHOLD_BDT = 100;
 
+// Fee keeps its paisa (not rounded up) so the leftover paisa can stay in the
+// user's main balance instead of being eaten by rounding.
 export function withdrawFee(gross: number): number {
   const g = Math.floor(gross);
   if (g <= 0) return 0;
   const rate = g < WITHDRAW_FEE_THRESHOLD_BDT ? WITHDRAW_FEE_RATE_SMALL : WITHDRAW_FEE_RATE_LARGE;
-  const raw = Math.ceil(g * rate);
+  const raw = Math.round(g * rate * 100) / 100;
   // Never let the in-hand amount drop below the agent minimum.
   return Math.min(raw, Math.max(0, g - MIN_PAYOUT_BDT));
 }
@@ -44,9 +46,17 @@ export function withdrawFeeRate(gross: number): number {
   return g > 0 ? withdrawFee(g) / g : 0;
 }
 
+// Whole taka the user actually receives (paisa is never sent out).
 export function withdrawPayout(gross: number): number {
-  return Math.floor(gross) - withdrawFee(gross);
+  return Math.floor(Math.floor(gross) - withdrawFee(gross));
 }
+
+// Amount actually debited from the balance = payout + fee. Any leftover paisa
+// stays in the user's main balance.
+export function withdrawDebit(gross: number): number {
+  return Math.round((withdrawPayout(gross) + withdrawFee(gross)) * 100) / 100;
+}
+
 
 
 
