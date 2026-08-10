@@ -309,8 +309,9 @@ function AdminWithdrawals() {
           )}
 
           <p className="text-[9px] text-muted-foreground leading-relaxed">
-            💡 ডায়াল বাটনে চাপলে নম্বর ও টাকা নিজে থেকেই বসে যাবে — আপনি শুধু PIN দিবেন, ফিরে এসে "Paid — পরেরটা" চাপবেন। CSV/merchant portal লাগবে না।
+            💡 Personal/Agent নম্বরে USSD-তে নম্বর+টাকা একসাথে দিলে "Session timeout" আসে — তাই এখন অ্যাপ খুলবে আর নম্বর clipboard-এ কপি হয়ে যাবে, Send Money-তে paste করে টাকা লিখে PIN দিন। ফিরে এসে "Paid — পরেরটা" চাপুন।
           </p>
+
         </div>
       )}
 
