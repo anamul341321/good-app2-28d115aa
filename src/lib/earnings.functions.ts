@@ -174,6 +174,7 @@ export const getEarnings = createServerFn({ method: "GET" })
         paidWithdrawals,
         successfulRecharges,
         transfersOutTotal,
+        pendingWithdrawals,
         feeOrAdjustmentOut,
         debtActive,
       },
