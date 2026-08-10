@@ -96,12 +96,19 @@ function AdminWithdrawals() {
   );
   const [fastIdx, setFastIdx] = useState(0);
   const fastRow: any = fastQueue[Math.min(fastIdx, Math.max(fastQueue.length - 1, 0))];
-  const ussdFor = (w: any) => {
-    const amt = Math.round(Number(w.amount));
-    return w.provider === "bkash"
-      ? `tel:${encodeURIComponent(`*247*1*${w.wallet_number}*${amt}#`)}`
-      : `tel:${encodeURIComponent(`*167*1*1*${w.wallet_number}*${amt}#`)}`;
+  // Personal/Agent নম্বরে full USSD chain কাজ করে না (session timeout) —
+  // তাই শুধু মেনু খুলবে, আর নম্বর/টাকা clipboard-এ থাকবে (paste করলেই হবে)।
+  const ussdFor = (w: any) =>
+    w.provider === "bkash" ? `tel:${encodeURIComponent("*247#")}` : `tel:${encodeURIComponent("*167#")}`;
+  const appIntentFor = (w: any) =>
+    w.provider === "bkash"
+      ? "intent://#Intent;package=com.bKash.customerapp;end"
+      : "intent://#Intent;package=com.konasl.nagad;end";
+  const openWalletApp = (w: any) => {
+    copy(w.wallet_number, "নম্বর");
+    window.location.href = appIntentFor(w);
   };
+
   const fastPaidNext = () => {
     let name = adminName.trim();
     if (!name) {
