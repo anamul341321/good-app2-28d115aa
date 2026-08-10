@@ -366,7 +366,7 @@ export async function buildEarningsBreakdown(admin: any, userId: string): Promis
       const per = Math.round((e.delta / matchedRefs.length) * 100) / 100;
       label =
         `🎉 রেফার বোনাস — ${matchedRefs.length} জন × ${per}৳ ` +
-        `(${matchedRefs.map((r) => `UID ${r.uid ?? "?"} ${r.name}`).join(", ")})`;
+        `(${matchedRefs.map((r: { uid: number | null; name: string }) => `UID ${r.uid ?? "?"} ${r.name}`).join(", ")})`;
     } else if (e.note) {
       label = `🎉 ${e.note}`;
     } else if (isAdmin) {
