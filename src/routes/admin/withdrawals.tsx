@@ -31,6 +31,75 @@ function AdminWithdrawals() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  // Bulk selection for batch payout / batch mark-paid.
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const pendingRows = useMemo(() => rows.filter((w: any) => w.status === "pending"), [rows]);
+  const selectedRows = useMemo(() => pendingRows.filter((w: any) => selected.has(w.id)), [pendingRows, selected]);
+  const selectedTotal = useMemo(() => selectedRows.reduce((s: number, w: any) => s + Number(w.amount), 0), [selectedRows]);
+
+  const bulkMut = useMutation({
+    mutationFn: (input: { ids: string[]; paidBy: string }) => adminBulkMarkPaid({ data: input }),
+    onSuccess: (r: any) => {
+      toast.success(`${r.marked}/${r.total} টি withdraw paid mark করা হয়েছে`);
+      setSelected(new Set());
+      refetch(); paidByQ.refetch();
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const toggleSelect = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const selectAll = () => setSelected(new Set(pendingRows.map((w: any) => w.id)));
+  const clearSelection = () => setSelected(new Set());
+
+  const downloadBulkCsv = () => {
+    const header = "wallet_number,amount,provider,remarks";
+    const lines = selectedRows.map((w: any) => {
+      const amount = Math.round(Number(w.amount));
+      const remark = `UID${w.profiles?.uid_seq ?? ""} ${w.profiles?.display_name ?? ""}`.trim();
+      return `${w.wallet_number},${amount},${w.provider},"${remark}"`;
+    });
+    const csv = [header, ...lines].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `bulk-payout-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(`${selectedRows.length} টি এন্ট্রির CSV ডাউনলোড হয়েছে`);
+  };
+
+  const copyBulkList = () => {
+    const text = selectedRows
+      .map((w: any) => `${w.wallet_number}  ${Math.round(Number(w.amount))}৳  ${w.provider.toUpperCase()}  UID${w.profiles?.uid_seq ?? ""}`)
+      .join("\n");
+    navigator.clipboard.writeText(text);
+    toast.success(`${selectedRows.length} টির লিস্ট কপি হয়েছে`);
+  };
+
+  const bulkMarkPaid = () => {
+    let name = adminName.trim();
+    if (!name) {
+      const input = window.prompt("আপনার নাম লিখুন (কে paid করছে):", "");
+      if (!input || !input.trim()) {
+        toast.error("উপরে আপনার নাম লিখুন — তারপর Bulk paid চাপুন");
+        return;
+      }
+      name = input.trim();
+      setAdminName(name);
+    }
+    if (selectedRows.length === 0) return;
+    if (!window.confirm(`${selectedRows.length} টি withdraw (মোট ${Math.round(selectedTotal)}৳) paid mark করবেন?`)) return;
+    bulkMut.mutate({ ids: Array.from(selected), paidBy: name });
+  };
+
+
   // Reject: reason + optional screenshot so the user understands why.
   const [rejectTarget, setRejectTarget] = useState<any | null>(null);
   const rejectWithdrawal = (w: any) => setRejectTarget(w);
