@@ -509,7 +509,10 @@ export const adminListWithdrawals = createServerFn({ method: "GET" }).handler(as
 
     for (const uid of pendingUserIds) {
       const uTasks = (tasksRes.data ?? []).filter((t: any) => t.user_id === uid);
-      const verified = uTasks.filter((t: any) => (t.status === "done" || t.status === "verified") && t.whitelist_ok && t.wallet_address).length;
+      // "verified" for fraud checks = first verify completed (slot has a wallet and
+      // was verified once). Losing whitelist later is normal — that's exactly when
+      // re-verify is asked for — so it must not make a legit user look fake.
+      const verified = uTasks.filter((t: any) => t.wallet_address && (t.initial_verify_at || t.status === "done" || t.status === "verified")).length;
       const notWhitelisted = uTasks.filter((t: any) => t.wallet_address && !t.whitelist_ok).length;
       const totalReverify = uTasks.reduce((a: number, t: any) => a + (t.reverify_count ?? 0), 0);
       const m = (miningRes.data ?? []).find((x: any) => x.user_id === uid);
