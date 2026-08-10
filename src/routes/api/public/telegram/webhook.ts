@@ -1976,10 +1976,12 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             const m = bnDigits.match(/(\d{2,6})\s*(tk|টাকা|taka|৳)?/);
 
             const amt = m ? Number(m[1]) : null;
+            const { withdrawFee } = await import("@/lib/constants");
             const line =
               amt && amt >= 10 && amt <= 100000
-                ? `আপনি <b>${amt}৳</b> চেয়েছেন → ফি <b>${Math.floor(amt * (amt < 100 ? 0.2 : 0.1))}৳</b> (${amt < 100 ? "২০" : "১০"}%) → হাতে <b>${amt - Math.floor(amt * (amt < 100 ? 0.2 : 0.1))}৳</b>।`
-                : `১০০৳ বা বেশি তুললে ফি ১০%, ১০০৳ এর কম হলে ২০%।`;
+                ? `আপনি <b>${amt}৳</b> চেয়েছেন → ফি <b>${withdrawFee(amt)}৳</b> (${amt < 100 ? "২০" : "১০"}%) → হাতে <b>${amt - withdrawFee(amt)}৳</b>।`
+                : `১০০৳ বা বেশি তুললে ফি ১০%, ১০০৳ এর কম হলে ২০% — তবে হাতে সবসময় কমপক্ষে ৫০৳ আসবে।`;
+
             const reply =
               `${senderName} ভাই, এটা কোনো ভুল নয় 🙂\n` +
               `প্রতিটি উইথড্রে অ্যাপের সার্ভিস ফি কাটা হয়।\n` +
