@@ -67,7 +67,7 @@ export const requestWithdraw = createServerFn({ method: "POST" })
       throw new Error("দৈনিক সর্বোচ্চ ৩টি withdraw রিকোয়েস্ট করা যাবে — ২৪ ঘণ্টা পর আবার চেষ্টা করুন");
     }
 
-    // Flat platform fee: 10৳ for every withdraw, whatever the amount.
+    // Percentage platform fee: 15% below 100৳, 10% for 100৳ and above.
     const fee = withdrawFee(amount);
     const payout = amount - fee;
 
@@ -128,7 +128,7 @@ export const requestWithdraw = createServerFn({ method: "POST" })
       const wallet = chosen === "bkash" ? walletBkash : walletNagad;
       if (!wallet) throw new Error(chosen === "bkash" ? "প্রথমে বিকাশ নম্বর সেট করুন" : "প্রথমে নগদ নম্বর সেট করুন");
       walletNumber = wallet.number;
-      providerNote = `[Fee ${fee}৳ flat] Gross ${amount}৳ − Fee ${fee}৳ = Payout ${payout}৳`;
+      providerNote = `[Fee ${fee}৳] Gross ${amount}৳ − Fee ${fee}৳ = Payout ${payout}৳`;
     }
 
     const { data: mining } = await supabase.from("mining_state").select("*").eq("user_id", userId).maybeSingle();
