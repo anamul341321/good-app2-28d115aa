@@ -401,18 +401,47 @@ function BonusSettings() {
 
 
       <div className="glass rounded-2xl p-4 space-y-3">
+        {/* ধাপ ১ — মেইন ON/OFF */}
+        <div className={`rounded-xl border-2 p-3 ${bonusOn ? "border-emerald/60 bg-emerald/10" : "border-rose/60 bg-rose/10"}`}>
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[11px] font-black text-navy">ধাপ ১ — 🎁 বোনাস সিস্টেম (মেইন সুইচ)</p>
+              <p className={`text-sm font-black mt-0.5 ${bonusOn ? "text-emerald" : "text-rose"}`}>
+                {bonusOn
+                  ? "চালু আছে — নিচের রেট অনুযায়ী সবাই বোনাস পাচ্ছে"
+                  : "বন্ধ আছে — কেউ বোনাস পাবে না (অফার সেট থাকলেও কাজ করবে না)"}
+              </p>
+            </div>
+            <button
+              disabled={saveBonusEnabled.isPending}
+              onClick={() => {
+                const next = !bonusOn;
+                if (!confirm(next
+                  ? "বোনাস সিস্টেম চালু করবেন? নিচের রেট অনুযায়ী সবাই বোনাস পাবে।"
+                  : "বন্ধ করলে কেউ আর First verify / Re-verify / Refer বোনাস পাবে না। আগে যারা পেয়েছে তাদের ব্যালেন্স ঠিক থাকবে।")) return;
+                saveBonusEnabled.mutate(next);
+              }}
+              className={`shrink-0 w-16 h-9 rounded-full relative transition ${bonusOn ? "bg-emerald" : "bg-rose"} disabled:opacity-50`}>
+              <span className={`absolute top-1 w-7 h-7 rounded-full bg-white shadow transition-all ${bonusOn ? "left-8" : "left-1"}`} />
+            </button>
+          </div>
+          <p className="text-[9px] text-muted-foreground mt-1">এই সুইচটা সাথে সাথেই কাজ করে — Save লাগবে না।</p>
+        </div>
+
+        <p className="text-[11px] font-black text-navy">ধাপ ২ — সাধারণ রেট (অফার না থাকলে এটাই চলবে)</p>
         <Field
           label="১) First-verify বোনাস (ইউজারের নিজের)"
-          hint="১০ জন first verify complete হলে ইউজার নিজে এই টাকা পাবে (default 50৳)"
+          hint="১০টি স্লট first verify complete হলে ইউজার নিজে এই টাকা পাবে"
           value={fv} onChange={setFv} color="cyan" />
         <Field
           label="২) Re-verify বোনাস (ইউজারের নিজের)"
-          hint="১০ জন re-verify complete + mining চালু (default 200৳)"
+          hint="১০টি স্লট re-verify complete + mining চালু"
           value={rv} onChange={setRv} color="amber" />
         <Field
           label="৩) Referrer বোনাস"
-          hint="যাকে refer করা হয়েছে সে ১০ first verify complete করলে referrer এই টাকা পাবে (default 100৳)"
+          hint="যাকে refer করা হয়েছে সে ১০টি first verify complete করলে referrer এই টাকা পাবে"
           value={rf} onChange={setRf} color="violet" />
+
 
         <div className="rounded-xl bg-gradient-to-r from-amber/20 to-rose/20 border border-amber/40 p-3">
           <p className="text-[10px] uppercase tracking-widest font-bold text-amber">Total banner amount</p>
