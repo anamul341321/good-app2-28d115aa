@@ -56,6 +56,7 @@ export async function readActiveRates(admin: any): Promise<BonusRates> {
       base_first_verify_bonus: base.first_verify_bonus,
       base_reverify_bonus:     base.reverify_bonus,
       base_referrer_bonus:     base.referrer_bonus,
+      bonus_enabled: (data as any)?.bonus_enabled !== false,
     };
   } catch {
     return {
@@ -64,8 +65,10 @@ export async function readActiveRates(admin: any): Promise<BonusRates> {
       base_first_verify_bonus: DEFAULTS.first_verify_bonus,
       base_reverify_bonus:     DEFAULTS.reverify_bonus,
       base_referrer_bonus:     DEFAULTS.referrer_bonus,
+      bonus_enabled: true,
     };
   }
+
 }
 
 export async function settleWelcomeBonuses(
