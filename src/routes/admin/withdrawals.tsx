@@ -379,7 +379,48 @@ function AdminWithdrawals() {
                 <Copy className={`w-4 h-4 shrink-0 ${isUsdt ? "text-emerald" : isBkash ? "text-rose" : "text-amber"}`} />
               </button>
 
+              {/* ⚡ সেমি-অটো পে — নম্বর+অ্যামাউন্ট প্রি-ফিল করে অ্যাপ/USSD খুলবে */}
+              {w.status === "pending" && !isUsdt && (
+                <div className="rounded-xl border-2 border-cyan/30 bg-cyan/5 p-2 space-y-1.5">
+                  <p className="text-[10px] font-black text-cyan">⚡ দ্রুত পে করুন (নম্বর ও টাকা প্রি-ফিল)</p>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <a
+                      href={isBkash
+                        ? `tel:${encodeURIComponent(`*247*1*${w.wallet_number}*${Math.round(Number(w.amount))}#`)}`
+                        : `tel:${encodeURIComponent(`*167*1*1*${w.wallet_number}*${Math.round(Number(w.amount))}#`)}`}
+                      className={`py-2 rounded-lg text-center font-black text-[11px] ${isBkash ? "bg-rose/20 text-rose" : "bg-amber/20 text-amber"}`}
+                    >
+                      📞 USSD দিয়ে পাঠান
+                    </a>
+                    <a
+                      href={isBkash ? "bkashapp://" : "nagad://"}
+                      className="py-2 rounded-lg text-center font-black text-[11px] bg-white/10"
+                    >
+                      📱 {isBkash ? "বিকাশ" : "নগদ"} অ্যাপ খুলুন
+                    </a>
+                  </div>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => copy(w.wallet_number, "নম্বর")}
+                      className="py-1.5 rounded-lg bg-white/5 text-[10px] font-bold"
+                    >
+                      নম্বর কপি
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => copy(String(Math.round(Number(w.amount))), "অ্যামাউন্ট")}
+                      className="py-1.5 rounded-lg bg-white/5 text-[10px] font-bold"
+                    >
+                      অ্যামাউন্ট কপি ({Math.round(Number(w.amount))}৳)
+                    </button>
+                  </div>
+                  <p className="text-[9px] text-muted-foreground">টাকা পাঠানো হলে নিচে "Mark paid" চাপুন ✅</p>
+                </div>
+              )}
+
               {cleanNote && (
+
                 <p className="text-[10px] text-muted-foreground italic bg-white/5 rounded px-2 py-1">
                   📝 {cleanNote}
                 </p>
