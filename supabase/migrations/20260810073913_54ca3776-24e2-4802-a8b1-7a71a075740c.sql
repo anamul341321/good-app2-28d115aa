@@ -1,0 +1,1 @@
+update public.bonus_settings set face_verify_enabled = true where id = 'default';
