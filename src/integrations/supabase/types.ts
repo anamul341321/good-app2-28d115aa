@@ -198,6 +198,9 @@ export type Database = {
         Row: {
           apk_url: string | null
           apk_version: string | null
+          auto_payout_enabled: boolean
+          auto_payout_kyc_only: boolean
+          auto_payout_max: number
           bkash_enabled: boolean
           bkash_off_message: string | null
           bonus_enabled: boolean
@@ -234,6 +237,9 @@ export type Database = {
         Insert: {
           apk_url?: string | null
           apk_version?: string | null
+          auto_payout_enabled?: boolean
+          auto_payout_kyc_only?: boolean
+          auto_payout_max?: number
           bkash_enabled?: boolean
           bkash_off_message?: string | null
           bonus_enabled?: boolean
@@ -270,6 +276,9 @@ export type Database = {
         Update: {
           apk_url?: string | null
           apk_version?: string | null
+          auto_payout_enabled?: boolean
+          auto_payout_kyc_only?: boolean
+          auto_payout_max?: number
           bkash_enabled?: boolean
           bkash_off_message?: string | null
           bonus_enabled?: boolean
@@ -1719,6 +1728,11 @@ export type Database = {
           fee_refunded: boolean
           id: string
           paid_by: string | null
+          payout_message: string | null
+          payout_provider: string | null
+          payout_requested_at: string | null
+          payout_status: string | null
+          payout_trxid: string | null
           processed_at: string | null
           provider: Database["public"]["Enums"]["wallet_provider"]
           reject_proof_path: string | null
@@ -1734,6 +1748,11 @@ export type Database = {
           fee_refunded?: boolean
           id?: string
           paid_by?: string | null
+          payout_message?: string | null
+          payout_provider?: string | null
+          payout_requested_at?: string | null
+          payout_status?: string | null
+          payout_trxid?: string | null
           processed_at?: string | null
           provider: Database["public"]["Enums"]["wallet_provider"]
           reject_proof_path?: string | null
@@ -1749,6 +1768,11 @@ export type Database = {
           fee_refunded?: boolean
           id?: string
           paid_by?: string | null
+          payout_message?: string | null
+          payout_provider?: string | null
+          payout_requested_at?: string | null
+          payout_status?: string | null
+          payout_trxid?: string | null
           processed_at?: string | null
           provider?: Database["public"]["Enums"]["wallet_provider"]
           reject_proof_path?: string | null

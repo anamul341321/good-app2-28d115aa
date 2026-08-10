@@ -1,9 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { adminListWithdrawals, adminUpdateWithdrawal, adminBulkMarkPaid, adminListCredits, adminListPaidByAdmins, adminGetRejectProofUrl } from "@/lib/admin.functions";
-import { Loader2, Check, X, Copy, AlertTriangle, ShieldCheck, Gift, ExternalLink, Plus, Minus, UserCheck, ChevronDown, Download, FileSpreadsheet } from "lucide-react";
+import { adminGetPayoutSettings, adminSetPayoutSettings, adminSendPayout, adminRefreshPayout } from "@/lib/payout.functions";
+import { Loader2, Check, X, Copy, AlertTriangle, ShieldCheck, Gift, ExternalLink, Plus, Minus, UserCheck, ChevronDown, Download, FileSpreadsheet, Zap, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { useMemo, useState, useEffect } from "react";
+
 
 export const Route = createFileRoute("/admin/withdrawals")({ component: AdminWithdrawals });
 
@@ -30,6 +32,25 @@ function AdminWithdrawals() {
     },
     onError: (e: any) => toast.error(e.message),
   });
+
+  // ---- অটো পেমেন্ট (iPayBD) ----
+  const payoutQ = useQuery({ queryKey: ["admin-payout-settings"], queryFn: () => adminGetPayoutSettings() });
+  const payoutSetMut = useMutation({
+    mutationFn: (input: { enabled?: boolean; max?: number; kycOnly?: boolean }) => adminSetPayoutSettings({ data: input }),
+    onSuccess: () => { toast.success("সেভ হয়েছে"); payoutQ.refetch(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+  const sendPayoutMut = useMutation({
+    mutationFn: (id: string) => adminSendPayout({ data: { id } }),
+    onSuccess: (r: any) => { r?.ok ? toast.success(r.message) : toast.error(r?.message ?? "ব্যর্থ"); refetch(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+  const refreshPayoutMut = useMutation({
+    mutationFn: (id: string) => adminRefreshPayout({ data: { id } }),
+    onSuccess: (r: any) => { toast.message(r?.message ?? "—"); refetch(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
 
   // Reject: reason + optional screenshot so the user understands why.
   const [rejectTarget, setRejectTarget] = useState<any | null>(null);
@@ -219,6 +240,49 @@ function AdminWithdrawals() {
         <Tab id="rejected" label="❌ Rejected" count={counts.rejected} tone="bg-rose/20 text-rose" />
         <Tab id="all" label="All" count={counts.all} tone="bg-cyan/20 text-cyan" />
       </div>
+
+      {/* 🤖 অটো পেমেন্ট (iPayBD) সেটিংস */}
+      <div className="glass rounded-xl p-3 border border-cyan/25 bg-cyan/5 space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <p className="text-xs font-black text-cyan flex items-center gap-1"><Zap className="w-3.5 h-3.5" /> অটো পেমেন্ট (iPayBD)</p>
+            <p className="text-[10px] text-muted-foreground">
+              {payoutQ.data?.configured ? "API key সেট আছে ✅" : "API key সেট নেই ❌"} · রিকোয়েস্ট এলে নিজেই bKash/Nagad-এ টাকা পাঠাবে
+            </p>
+          </div>
+          <button
+            onClick={() => payoutSetMut.mutate({ enabled: !(payoutQ.data?.enabled ?? false) })}
+            disabled={payoutSetMut.isPending}
+            className={`px-3 py-1.5 rounded-lg text-[11px] font-black shrink-0 ${payoutQ.data?.enabled ? "bg-emerald/25 text-emerald" : "bg-white/10 text-muted-foreground"}`}>
+            {payoutQ.data?.enabled ? "ON" : "OFF"}
+          </button>
+        </div>
+        <div className="flex gap-2 items-end">
+          <label className="flex-1">
+            <span className="text-[10px] font-bold text-muted-foreground">অটো পে সর্বোচ্চ (৳)</span>
+            <input
+              type="number"
+              defaultValue={payoutQ.data?.max ?? 300}
+              key={payoutQ.data?.max}
+              onBlur={(e) => {
+                const v = Number(e.target.value);
+                if (Number.isFinite(v) && v !== payoutQ.data?.max) payoutSetMut.mutate({ max: v });
+              }}
+              className="w-full mt-0.5 px-2 py-1 rounded bg-background/60 border border-white/10 text-xs outline-none focus:border-cyan mono-num"
+            />
+          </label>
+          <button
+            onClick={() => payoutSetMut.mutate({ kycOnly: !(payoutQ.data?.kycOnly ?? true) })}
+            className={`px-3 py-1.5 rounded-lg text-[11px] font-black ${payoutQ.data?.kycOnly ? "bg-cyan/20 text-cyan" : "bg-white/10 text-muted-foreground"}`}>
+            শুধু KYC verified: {payoutQ.data?.kycOnly ? "হ্যাঁ" : "না"}
+          </button>
+        </div>
+        <p className="text-[10px] text-muted-foreground">
+          এর বেশি অ্যামাউন্ট বা USDT হলে আপনি ম্যানুয়ালি দিবেন। Webhook URL: <span className="mono-num break-all">{payoutQ.data?.webhookUrl}</span>
+        </p>
+      </div>
+
+
 
       {/* ⚡ Fast Pay — personal/agent নম্বর দিয়েই এক এক করে PIN দিয়ে পেমেন্ট */}
       {filter === "pending" && fastQueue.length > 0 && (
@@ -706,18 +770,49 @@ function AdminWithdrawals() {
                 <AdminRejectInfo w={w} />
               )}
 
-              {w.status === "pending" && (
-                <div className="flex gap-2">
-                  <button onClick={() => markPaid(w.id)}
-                    className="flex-1 py-2 rounded-lg bg-emerald/20 text-emerald font-bold text-xs flex items-center justify-center gap-1">
-                    <Check className="w-3.5 h-3.5" /> Mark paid
-                  </button>
-                  <button onClick={() => rejectWithdrawal(w)}
-                    className="flex-1 py-2 rounded-lg bg-rose/20 text-rose font-bold text-xs flex items-center justify-center gap-1">
-                    <X className="w-3.5 h-3.5" /> Reject (refund)
-                  </button>
+              {(w.payout_status || w.payout_trxid) && (
+                <div className="rounded-lg border border-cyan/25 bg-cyan/5 p-2 text-[10px] space-y-0.5">
+                  <p className="font-black text-cyan">
+                    🤖 অটো পেমেন্ট: {w.payout_status === "success" ? "✅ সফল" : w.payout_status === "sent" ? "⏳ পাঠানো হয়েছে" : w.payout_status === "sending" ? "⏳ পাঠানো হচ্ছে" : w.payout_status === "rejected" ? "❌ ফেল" : w.payout_status}
+                  </p>
+                  {w.payout_trxid && <p className="mono-num">TrxID: {w.payout_trxid}</p>}
+                  {w.payout_message && <p className="text-muted-foreground">{w.payout_message}</p>}
                 </div>
               )}
+
+              {w.status === "pending" && (
+                <div className="space-y-2">
+                  {w.provider !== "usdt" && payoutQ.data?.configured && (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => sendPayoutMut.mutate(w.id)}
+                        disabled={sendPayoutMut.isPending}
+                        className="flex-1 py-2 rounded-lg bg-cyan/20 text-cyan font-bold text-xs flex items-center justify-center gap-1 disabled:opacity-50">
+                        <Zap className="w-3.5 h-3.5" /> অটো পে (iPayBD)
+                      </button>
+                      {w.payout_trxid && (
+                        <button
+                          onClick={() => refreshPayoutMut.mutate(w.id)}
+                          disabled={refreshPayoutMut.isPending}
+                          className="px-3 py-2 rounded-lg bg-white/10 text-xs font-bold flex items-center gap-1 disabled:opacity-50">
+                          <RefreshCw className="w-3.5 h-3.5" /> স্ট্যাটাস
+                        </button>
+                      )}
+                    </div>
+                  )}
+                  <div className="flex gap-2">
+                    <button onClick={() => markPaid(w.id)}
+                      className="flex-1 py-2 rounded-lg bg-emerald/20 text-emerald font-bold text-xs flex items-center justify-center gap-1">
+                      <Check className="w-3.5 h-3.5" /> Mark paid
+                    </button>
+                    <button onClick={() => rejectWithdrawal(w)}
+                      className="flex-1 py-2 rounded-lg bg-rose/20 text-rose font-bold text-xs flex items-center justify-center gap-1">
+                      <X className="w-3.5 h-3.5" /> Reject (refund)
+                    </button>
+                  </div>
+                </div>
+              )}
+
             </div>
           );
         })}

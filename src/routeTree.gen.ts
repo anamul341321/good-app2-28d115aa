@@ -48,6 +48,7 @@ import { Route as AuthenticatedEarningsRouteImport } from './routes/_authenticat
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as ApiPublicWhitelistRecheckRouteImport } from './routes/api/public/whitelist-recheck'
 import { Route as ApiPublicTourAudioRouteImport } from './routes/api/public/tour-audio'
+import { Route as ApiPublicIpaybdWebhookRouteImport } from './routes/api/public/ipaybd-webhook'
 import { Route as ApiPublicHisabCardRouteImport } from './routes/api/public/hisab-card'
 import { Route as AdminUserUserIdRouteImport } from './routes/admin/user.$userId'
 import { Route as AuthenticatedTaskSlotRouteImport } from './routes/_authenticated/task.$slot'
@@ -253,6 +254,11 @@ const ApiPublicTourAudioRoute = ApiPublicTourAudioRouteImport.update({
   path: '/api/public/tour-audio',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicIpaybdWebhookRoute = ApiPublicIpaybdWebhookRouteImport.update({
+  id: '/api/public/ipaybd-webhook',
+  path: '/api/public/ipaybd-webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHisabCardRoute = ApiPublicHisabCardRouteImport.update({
   id: '/api/public/hisab-card',
   path: '/api/public/hisab-card',
@@ -342,6 +348,7 @@ export interface FileRoutesByFullPath {
   '/task/$slot': typeof AuthenticatedTaskSlotRoute
   '/admin/user/$userId': typeof AdminUserUserIdRoute
   '/api/public/hisab-card': typeof ApiPublicHisabCardRoute
+  '/api/public/ipaybd-webhook': typeof ApiPublicIpaybdWebhookRoute
   '/api/public/tour-audio': typeof ApiPublicTourAudioRoute
   '/api/public/whitelist-recheck': typeof ApiPublicWhitelistRecheckRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
@@ -390,6 +397,7 @@ export interface FileRoutesByTo {
   '/task/$slot': typeof AuthenticatedTaskSlotRoute
   '/admin/user/$userId': typeof AdminUserUserIdRoute
   '/api/public/hisab-card': typeof ApiPublicHisabCardRoute
+  '/api/public/ipaybd-webhook': typeof ApiPublicIpaybdWebhookRoute
   '/api/public/tour-audio': typeof ApiPublicTourAudioRoute
   '/api/public/whitelist-recheck': typeof ApiPublicWhitelistRecheckRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
@@ -441,6 +449,7 @@ export interface FileRoutesById {
   '/_authenticated/task/$slot': typeof AuthenticatedTaskSlotRoute
   '/admin/user/$userId': typeof AdminUserUserIdRoute
   '/api/public/hisab-card': typeof ApiPublicHisabCardRoute
+  '/api/public/ipaybd-webhook': typeof ApiPublicIpaybdWebhookRoute
   '/api/public/tour-audio': typeof ApiPublicTourAudioRoute
   '/api/public/whitelist-recheck': typeof ApiPublicWhitelistRecheckRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
@@ -492,6 +501,7 @@ export interface FileRouteTypes {
     | '/task/$slot'
     | '/admin/user/$userId'
     | '/api/public/hisab-card'
+    | '/api/public/ipaybd-webhook'
     | '/api/public/tour-audio'
     | '/api/public/whitelist-recheck'
     | '/lovable/email/suppression'
@@ -540,6 +550,7 @@ export interface FileRouteTypes {
     | '/task/$slot'
     | '/admin/user/$userId'
     | '/api/public/hisab-card'
+    | '/api/public/ipaybd-webhook'
     | '/api/public/tour-audio'
     | '/api/public/whitelist-recheck'
     | '/lovable/email/suppression'
@@ -590,6 +601,7 @@ export interface FileRouteTypes {
     | '/_authenticated/task/$slot'
     | '/admin/user/$userId'
     | '/api/public/hisab-card'
+    | '/api/public/ipaybd-webhook'
     | '/api/public/tour-audio'
     | '/api/public/whitelist-recheck'
     | '/lovable/email/suppression'
@@ -613,6 +625,7 @@ export interface RootRouteChildren {
   CardUidRoute: typeof CardUidRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   ApiPublicHisabCardRoute: typeof ApiPublicHisabCardRoute
+  ApiPublicIpaybdWebhookRoute: typeof ApiPublicIpaybdWebhookRoute
   ApiPublicTourAudioRoute: typeof ApiPublicTourAudioRoute
   ApiPublicWhitelistRecheckRoute: typeof ApiPublicWhitelistRecheckRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
@@ -899,6 +912,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicTourAudioRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/ipaybd-webhook': {
+      id: '/api/public/ipaybd-webhook'
+      path: '/api/public/ipaybd-webhook'
+      fullPath: '/api/public/ipaybd-webhook'
+      preLoaderRoute: typeof ApiPublicIpaybdWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hisab-card': {
       id: '/api/public/hisab-card'
       path: '/api/public/hisab-card'
@@ -1050,6 +1070,7 @@ const rootRouteChildren: RootRouteChildren = {
   CardUidRoute: CardUidRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   ApiPublicHisabCardRoute: ApiPublicHisabCardRoute,
+  ApiPublicIpaybdWebhookRoute: ApiPublicIpaybdWebhookRoute,
   ApiPublicTourAudioRoute: ApiPublicTourAudioRoute,
   ApiPublicWhitelistRecheckRoute: ApiPublicWhitelistRecheckRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
@@ -1063,13 +1084,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
