@@ -33,6 +33,25 @@ function AdminWithdrawals() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  // ---- অটো পেমেন্ট (iPayBD) ----
+  const payoutQ = useQuery({ queryKey: ["admin-payout-settings"], queryFn: () => adminGetPayoutSettings() });
+  const payoutSetMut = useMutation({
+    mutationFn: (input: { enabled?: boolean; max?: number; kycOnly?: boolean }) => adminSetPayoutSettings({ data: input }),
+    onSuccess: () => { toast.success("সেভ হয়েছে"); payoutQ.refetch(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+  const sendPayoutMut = useMutation({
+    mutationFn: (id: string) => adminSendPayout({ data: { id } }),
+    onSuccess: (r: any) => { r?.ok ? toast.success(r.message) : toast.error(r?.message ?? "ব্যর্থ"); refetch(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+  const refreshPayoutMut = useMutation({
+    mutationFn: (id: string) => adminRefreshPayout({ data: { id } }),
+    onSuccess: (r: any) => { toast.message(r?.message ?? "—"); refetch(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+
   // Reject: reason + optional screenshot so the user understands why.
   const [rejectTarget, setRejectTarget] = useState<any | null>(null);
   const rejectWithdrawal = (w: any) => setRejectTarget(w);
