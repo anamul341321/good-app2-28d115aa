@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { adminGetBonusSettings, adminUpdateBonusSettings, adminSetFirstVerifyMiningMode, adminSetMaintenance, adminSetFaceVerify } from "@/lib/admin.functions";
+import { adminGetBonusSettings, adminUpdateBonusSettings, adminSetFirstVerifyMiningMode, adminSetMaintenance, adminSetFaceVerify, adminSetBonusEnabled } from "@/lib/admin.functions";
 import { Gift, Loader2, Save } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -37,6 +37,7 @@ function BonusSettings() {
   const [withdrawMsg, setWithdrawMsg] = useState("");
   const [offUntil, setOffUntil] = useState<string | null>(null);
   const [fvOn, setFvOn] = useState(true);
+  const [bonusOn, setBonusOn] = useState(true);
   const [fvOffMsg, setFvOffMsg] = useState("");
   const [signupOffMsg, setSignupOffMsg] = useState("");
   const [maintOn, setMaintOn] = useState(false);
@@ -68,6 +69,7 @@ function BonusSettings() {
     setRechargeOn(d.recharge_enabled !== false);
     setRechargeMsg(d.recharge_off_message ?? "");
     setFvOn(d.face_verify_enabled !== false);
+    setBonusOn(d.bonus_enabled !== false);
     setFvOffMsg(d.face_verify_off_message ?? "");
     setSignupOffMsg(d.signup_off_message ?? "");
     setMaintOn(d.maintenance_enabled === true);
@@ -165,6 +167,18 @@ function BonusSettings() {
       toast.success(enabled
         ? "✅ Face verification আবার স্বাভাবিকভাবে চালু"
         : "⏸️ Face verification বন্ধ — নতুন verify ও নতুন signup বন্ধ");
+      refetch();
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const saveBonusEnabled = useMutation({
+    mutationFn: (enabled: boolean) => adminSetBonusEnabled({ data: { enabled } }),
+    onSuccess: (_r, enabled) => {
+      setBonusOn(enabled);
+      toast.success(enabled
+        ? "✅ বোনাস অফার চালু — নিচের রেট অনুযায়ী সবাই বোনাস পাবে"
+        : "⏸️ বোনাস অফার বন্ধ — কেউ আর বোনাস পাবে না");
       refetch();
     },
     onError: (e: any) => toast.error(e.message),
@@ -268,6 +282,34 @@ function BonusSettings() {
           className="w-full py-2 rounded-xl gradient-navy text-gold font-black text-xs disabled:opacity-50">
           মেসেজ সেভ করুন
         </button>
+      </div>
+
+      {/* Welcome bonus offer master switch */}
+      <div className={`rounded-2xl p-4 border-2 space-y-2 ${bonusOn ? "border-emerald/50 bg-emerald/5" : "border-rose/60 bg-rose/10"}`}>
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className={`text-[11px] uppercase tracking-widest font-black ${bonusOn ? "text-emerald" : "text-rose"}`}>
+              🎁 Bonus offer master switch
+            </p>
+            <p className="text-sm font-black mt-0.5">
+              {bonusOn
+                ? "ON — First verify / Re-verify / Refer বোনাস নিচের রেট অনুযায়ী চালু"
+                : "OFF — কোনো user বোনাস পাবে না (অ্যাপে বোনাস ব্যানারও দেখাবে না)"}
+            </p>
+          </div>
+          <button
+            disabled={saveBonusEnabled.isPending}
+            onClick={() => {
+              const next = !bonusOn;
+              if (!confirm(next
+                ? "বোনাস অফার আবার চালু করবেন? নিচের রেট অনুযায়ী সবাই বোনাস পাবে।"
+                : "OFF করলে কেউ আর First verify / Re-verify / Refer বোনাস পাবে না। আগে যারা পেয়েছে তাদের ব্যালেন্স ঠিক থাকবে।")) return;
+              saveBonusEnabled.mutate(next);
+            }}
+            className={`shrink-0 w-16 h-9 rounded-full relative transition ${bonusOn ? "bg-emerald" : "bg-rose"} disabled:opacity-50`}>
+            <span className={`absolute top-1 w-7 h-7 rounded-full bg-white shadow transition-all ${bonusOn ? "left-8" : "left-1"}`} />
+          </button>
+        </div>
       </div>
 
       {/* Global Mining Mode Switch */}
