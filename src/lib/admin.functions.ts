@@ -708,7 +708,59 @@ export const adminUpdateWithdrawal = createServerFn({ method: "POST" })
           (proofPath ? `\n📷 স্ক্রিনশট দেওয়া হয়েছে — উইথড্র পেজের হিস্ট্রিতে দেখুন।` : ""),
       });
     }
-    return { ok: true, refund, fee, feeRefunded: refundFee };
+  return { ok: true, refund, fee, feeRefunded: refundFee };
+  });
+
+// Bulk mark selected pending withdrawals as paid (useful after a batch
+// disbursement through bKash/Nagad merchant portal or PSP bulk payout).
+const BulkPaidInput = z.object({
+  ids: z.array(z.string().uuid()).min(1).max(200),
+  paidBy: z.string().min(1),
+});
+export const adminBulkMarkPaid = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => BulkPaidInput.parse(input))
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await gate();
+    const { data: rows } = await supabaseAdmin
+      .from("withdrawals")
+      .select("id, user_id, amount, provider, wallet_number, admin_note, status")
+      .in("id", data.ids)
+      .eq("status", "pending");
+
+    const pending = (rows ?? []).filter((w: any) => w.status === "pending");
+    if (pending.length === 0) throw new Error("কোনো pending withdraw পাওয়া যায়নি");
+
+    const now = new Date().toISOString();
+    const paidBy = data.paidBy.trim();
+    let marked = 0;
+
+    for (const w of pending) {
+      const payout = Number(w.amount);
+      const { error } = await supabaseAdmin
+        .from("withdrawals")
+        .update({ status: "paid", processed_at: now, paid_by: paidBy })
+        .eq("id", w.id)
+        .eq("status", "pending");
+      if (error) continue;
+
+      await supabaseAdmin
+        .from("user_notices")
+        .update({ read_at: now })
+        .eq("user_id", w.user_id)
+        .is("read_at", null)
+        .ilike("title", "%উইথড্র রিকোয়েস্ট বাতিল%");
+
+      await supabaseAdmin.from("user_notices").insert({
+        user_id: w.user_id,
+        title: "✅ উইথড্র পেমেন্ট সম্পন্ন",
+        body:
+          `${Math.floor(payout)}৳ আপনার ${String(w.provider).toUpperCase()} ${w.wallet_number ?? ""} নম্বরে পাঠানো হয়েছে।` +
+          `\nটাকা রিকোয়েস্টের সময়েই ব্যালেন্স থেকে কাটা হয়েছিল, তাই paid হওয়ার পর ব্যালেন্স আর কমবে না।`,
+      });
+      marked++;
+    }
+
+    return { ok: true, marked, total: pending.length };
   });
 
 // Short-lived signed URL for a rejection screenshot (admin side).

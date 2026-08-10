@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { adminListWithdrawals, adminUpdateWithdrawal, adminListCredits, adminListPaidByAdmins, adminGetRejectProofUrl } from "@/lib/admin.functions";
-import { Loader2, Check, X, Copy, AlertTriangle, ShieldCheck, Gift, ExternalLink, Plus, Minus, UserCheck, ChevronDown } from "lucide-react";
+import { adminListWithdrawals, adminUpdateWithdrawal, adminBulkMarkPaid, adminListCredits, adminListPaidByAdmins, adminGetRejectProofUrl } from "@/lib/admin.functions";
+import { Loader2, Check, X, Copy, AlertTriangle, ShieldCheck, Gift, ExternalLink, Plus, Minus, UserCheck, ChevronDown, Download, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
 import { useMemo, useState, useEffect } from "react";
 
@@ -61,6 +61,75 @@ function AdminWithdrawals() {
 
   const rows = data ?? [];
   const credits = creditsQ.data ?? [];
+
+  // Bulk selection for batch payout / batch mark-paid.
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const pendingRows = useMemo(() => rows.filter((w: any) => w.status === "pending"), [rows]);
+  const selectedRows = useMemo(() => pendingRows.filter((w: any) => selected.has(w.id)), [pendingRows, selected]);
+  const selectedTotal = useMemo(() => selectedRows.reduce((s: number, w: any) => s + Number(w.amount), 0), [selectedRows]);
+
+  const bulkMut = useMutation({
+    mutationFn: (input: { ids: string[]; paidBy: string }) => adminBulkMarkPaid({ data: input }),
+    onSuccess: (r: any) => {
+      toast.success(`${r.marked}/${r.total} টি withdraw paid mark করা হয়েছে`);
+      setSelected(new Set());
+      refetch(); paidByQ.refetch();
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const toggleSelect = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const selectAll = () => setSelected(new Set(pendingRows.map((w: any) => w.id)));
+  const clearSelection = () => setSelected(new Set());
+
+  const downloadBulkCsv = () => {
+    const header = "wallet_number,amount,provider,remarks";
+    const lines = selectedRows.map((w: any) => {
+      const amount = Math.round(Number(w.amount));
+      const remark = `UID${w.profiles?.uid_seq ?? ""} ${w.profiles?.display_name ?? ""}`.trim();
+      return `${w.wallet_number},${amount},${w.provider},"${remark}"`;
+    });
+    const csv = [header, ...lines].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `bulk-payout-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(`${selectedRows.length} টি এন্ট্রির CSV ডাউনলোড হয়েছে`);
+  };
+
+  const copyBulkList = () => {
+    const text = selectedRows
+      .map((w: any) => `${w.wallet_number}  ${Math.round(Number(w.amount))}৳  ${w.provider.toUpperCase()}  UID${w.profiles?.uid_seq ?? ""}`)
+      .join("\n");
+    navigator.clipboard.writeText(text);
+    toast.success(`${selectedRows.length} টির লিস্ট কপি হয়েছে`);
+  };
+
+  const bulkMarkPaid = () => {
+    let name = adminName.trim();
+    if (!name) {
+      const input = window.prompt("আপনার নাম লিখুন (কে paid করছে):", "");
+      if (!input || !input.trim()) {
+        toast.error("উপরে আপনার নাম লিখুন — তারপর Bulk paid চাপুন");
+        return;
+      }
+      name = input.trim();
+      setAdminName(name);
+    }
+    if (selectedRows.length === 0) return;
+    if (!window.confirm(`${selectedRows.length} টি withdraw (মোট ${Math.round(selectedTotal)}৳) paid mark করবেন?`)) return;
+    bulkMut.mutate({ ids: Array.from(selected), paidBy: name });
+  };
+
   const counts = useMemo(() => ({
     pending: rows.filter((w: any) => w.status === "pending").length,
     paid: rows.filter((w: any) => w.status === "paid").length,
@@ -115,6 +184,70 @@ function AdminWithdrawals() {
         <Tab id="rejected" label="❌ Rejected" count={counts.rejected} tone="bg-rose/20 text-rose" />
         <Tab id="all" label="All" count={counts.all} tone="bg-cyan/20 text-cyan" />
       </div>
+
+      {/* Bulk payout panel — only on pending tab */}
+      {filter === "pending" && pendingRows.length > 0 && (
+        <div className="glass rounded-xl p-3 border-2 border-cyan/30 bg-cyan/5 space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <div className="min-w-0 flex-1">
+              <p className="text-[11px] font-black text-cyan">⚡ বাল্ক পেমেন্ট / Bulk payout</p>
+              <p className="text-[10px] text-muted-foreground">
+                {selectedRows.length} টি সিলেক্ট · মোট{" "}
+                <span className="mono-num font-bold text-cyan">{Math.round(selectedTotal)}৳</span>
+                {" "}(Pending মোট {pendingRows.length}টি · {Math.round(pendingRows.reduce((s: number, w: any) => s + Number(w.amount), 0))}৳)
+              </p>
+            </div>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={selectAll}
+                className="px-2 py-1 rounded-lg bg-white/10 text-[10px] font-bold"
+              >
+                সব সিলেক্ট
+              </button>
+              <button
+                type="button"
+                onClick={clearSelection}
+                className="px-2 py-1 rounded-lg bg-white/10 text-[10px] font-bold"
+              >
+                ক্লিয়ার
+              </button>
+            </div>
+          </div>
+
+          {selectedRows.length > 0 && (
+            <div className="grid grid-cols-2 gap-1.5">
+              <button
+                type="button"
+                onClick={downloadBulkCsv}
+                className="py-2 rounded-lg bg-emerald/15 text-emerald font-black text-[11px] flex items-center justify-center gap-1"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5" /> CSV ডাউনলোড
+              </button>
+              <button
+                type="button"
+                onClick={copyBulkList}
+                className="py-2 rounded-lg bg-white/10 font-black text-[11px] flex items-center justify-center gap-1"
+              >
+                <Copy className="w-3.5 h-3.5" /> লিস্ট কপি
+              </button>
+              <button
+                type="button"
+                onClick={bulkMarkPaid}
+                disabled={bulkMut.isPending}
+                className="col-span-2 py-2 rounded-lg bg-cyan/20 text-cyan font-black text-[11px] flex items-center justify-center gap-1"
+              >
+                {bulkMut.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                সিলেক্ট করা {selectedRows.length}টি Paid Mark করুন
+              </button>
+            </div>
+          )}
+
+          <p className="text-[9px] text-muted-foreground leading-relaxed">
+            💡 <b>দ্রুত করতে:</b> উপরে সব সিলেক্ট করে CSV ডাউনলোড করুন → bKash/Nagad merchant portal-এ bulk disbursement-এ আপলোড করুন → একবার PIN দিয়ে সব পেমেন্ট করুন → ফিরে এসে "Paid Mark" চাপুন।
+          </p>
+        </div>
+      )}
 
       {filter === "paid-by" && <PaidByPanel data={paidByQ.data ?? []} loading={paidByQ.isLoading} />}
 
@@ -249,6 +382,17 @@ function AdminWithdrawals() {
                   <p className="text-[10px] text-muted-foreground mt-0.5">{new Date(w.created_at).toLocaleString()}</p>
                 </div>
                 <div className="flex flex-col items-end gap-1 shrink-0">
+                  {w.status === "pending" && (
+                    <label className="flex items-center gap-1 text-[10px] font-bold text-cyan cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={selected.has(w.id)}
+                        onChange={() => toggleSelect(w.id)}
+                        className="w-4 h-4 accent-cyan rounded"
+                      />
+                      সিলেক্ট
+                    </label>
+                  )}
                   {isAdminPayout && (
                     <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-fuchsia-500 text-white">🎁 ADMIN</span>
                   )}
