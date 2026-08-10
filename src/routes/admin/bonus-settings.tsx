@@ -284,33 +284,6 @@ function BonusSettings() {
         </button>
       </div>
 
-      {/* Welcome bonus offer master switch */}
-      <div className={`rounded-2xl p-4 border-2 space-y-2 ${bonusOn ? "border-emerald/50 bg-emerald/5" : "border-rose/60 bg-rose/10"}`}>
-        <div className="flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <p className={`text-[11px] uppercase tracking-widest font-black ${bonusOn ? "text-emerald" : "text-rose"}`}>
-              🎁 Bonus offer master switch
-            </p>
-            <p className="text-sm font-black mt-0.5">
-              {bonusOn
-                ? "ON — First verify / Re-verify / Refer বোনাস নিচের রেট অনুযায়ী চালু"
-                : "OFF — কোনো user বোনাস পাবে না (অ্যাপে বোনাস ব্যানারও দেখাবে না)"}
-            </p>
-          </div>
-          <button
-            disabled={saveBonusEnabled.isPending}
-            onClick={() => {
-              const next = !bonusOn;
-              if (!confirm(next
-                ? "বোনাস অফার আবার চালু করবেন? নিচের রেট অনুযায়ী সবাই বোনাস পাবে।"
-                : "OFF করলে কেউ আর First verify / Re-verify / Refer বোনাস পাবে না। আগে যারা পেয়েছে তাদের ব্যালেন্স ঠিক থাকবে।")) return;
-              saveBonusEnabled.mutate(next);
-            }}
-            className={`shrink-0 w-16 h-9 rounded-full relative transition ${bonusOn ? "bg-emerald" : "bg-rose"} disabled:opacity-50`}>
-            <span className={`absolute top-1 w-7 h-7 rounded-full bg-white shadow transition-all ${bonusOn ? "left-8" : "left-1"}`} />
-          </button>
-        </div>
-      </div>
 
       {/* Global Mining Mode Switch */}
       <div className={`rounded-2xl p-4 border-2 space-y-2 ${fvMode ? "border-emerald/50 bg-emerald/5" : "border-amber/50 bg-amber/5"}`}>
@@ -401,18 +374,47 @@ function BonusSettings() {
 
 
       <div className="glass rounded-2xl p-4 space-y-3">
+        {/* ধাপ ১ — মেইন ON/OFF */}
+        <div className={`rounded-xl border-2 p-3 ${bonusOn ? "border-emerald/60 bg-emerald/10" : "border-rose/60 bg-rose/10"}`}>
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[11px] font-black text-navy">ধাপ ১ — 🎁 বোনাস সিস্টেম (মেইন সুইচ)</p>
+              <p className={`text-sm font-black mt-0.5 ${bonusOn ? "text-emerald" : "text-rose"}`}>
+                {bonusOn
+                  ? "চালু আছে — নিচের রেট অনুযায়ী সবাই বোনাস পাচ্ছে"
+                  : "বন্ধ আছে — কেউ বোনাস পাবে না (অফার সেট থাকলেও কাজ করবে না)"}
+              </p>
+            </div>
+            <button
+              disabled={saveBonusEnabled.isPending}
+              onClick={() => {
+                const next = !bonusOn;
+                if (!confirm(next
+                  ? "বোনাস সিস্টেম চালু করবেন? নিচের রেট অনুযায়ী সবাই বোনাস পাবে।"
+                  : "বন্ধ করলে কেউ আর First verify / Re-verify / Refer বোনাস পাবে না। আগে যারা পেয়েছে তাদের ব্যালেন্স ঠিক থাকবে।")) return;
+                saveBonusEnabled.mutate(next);
+              }}
+              className={`shrink-0 w-16 h-9 rounded-full relative transition ${bonusOn ? "bg-emerald" : "bg-rose"} disabled:opacity-50`}>
+              <span className={`absolute top-1 w-7 h-7 rounded-full bg-white shadow transition-all ${bonusOn ? "left-8" : "left-1"}`} />
+            </button>
+          </div>
+          <p className="text-[9px] text-muted-foreground mt-1">এই সুইচটা সাথে সাথেই কাজ করে — Save লাগবে না।</p>
+        </div>
+
+        <p className="text-[11px] font-black text-navy">ধাপ ২ — সাধারণ রেট (অফার না থাকলে এটাই চলবে)</p>
         <Field
           label="১) First-verify বোনাস (ইউজারের নিজের)"
-          hint="১০ জন first verify complete হলে ইউজার নিজে এই টাকা পাবে (default 50৳)"
+          hint="১০টি স্লট first verify complete হলে ইউজার নিজে এই টাকা পাবে"
           value={fv} onChange={setFv} color="cyan" />
         <Field
           label="২) Re-verify বোনাস (ইউজারের নিজের)"
-          hint="১০ জন re-verify complete + mining চালু (default 200৳)"
+          hint="১০টি স্লট re-verify complete + mining চালু"
           value={rv} onChange={setRv} color="amber" />
         <Field
           label="৩) Referrer বোনাস"
-          hint="যাকে refer করা হয়েছে সে ১০ first verify complete করলে referrer এই টাকা পাবে (default 100৳)"
+          hint="যাকে refer করা হয়েছে সে ১০টি first verify complete করলে referrer এই টাকা পাবে"
           value={rf} onChange={setRf} color="violet" />
+
 
         <div className="rounded-xl bg-gradient-to-r from-amber/20 to-rose/20 border border-amber/40 p-3">
           <p className="text-[10px] uppercase tracking-widest font-bold text-amber">Total banner amount</p>
@@ -420,41 +422,63 @@ function BonusSettings() {
           <p className="text-[10px] text-muted-foreground mt-1">Home banner এ এই টাকা দেখাবে</p>
         </div>
 
-        {/* 2X Promo window */}
+        {/* ধাপ ৩ — সীমিত সময়ের স্পেশাল অফার */}
         <div className={`rounded-xl border-2 p-3 space-y-2 ${promoActive ? "border-rose bg-rose/5" : "border-border bg-surface-2"}`}>
           <div className="flex items-center justify-between gap-2">
-            <p className="text-[11px] font-black text-rose">🔥 2X Bonus Promo</p>
+            <div className="min-w-0">
+              <p className="text-[11px] font-black text-rose">ধাপ ৩ — 🔥 স্পেশাল অফার (নির্দিষ্ট সময়ের জন্য)</p>
+              <p className="text-[10px] font-bold mt-0.5">
+                {promoActive
+                  ? "চালু — নিচের Start–End সময়ের মধ্যে নিচের অফার রেট কাজ করবে"
+                  : "বন্ধ — শুধু উপরের সাধারণ রেট কাজ করবে"}
+              </p>
+            </div>
             <button
               type="button"
               onClick={() => setPromoActive(!promoActive)}
-              className={`w-14 h-7 rounded-full relative transition ${promoActive ? "bg-rose" : "bg-surface-2 border border-border"}`}>
+              className={`shrink-0 w-14 h-7 rounded-full relative transition ${promoActive ? "bg-rose" : "bg-surface-2 border border-border"}`}>
               <span className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow transition-all ${promoActive ? "left-8" : "left-1"}`} />
             </button>
           </div>
           <input value={promoTitle} onChange={(e) => setPromoTitle(e.target.value)}
-            placeholder="Banner title (e.g. 🎊 2X বোনাস অফার!)"
+            placeholder="ব্যানারের টাইটেল (যেমন 🎊 স্পেশাল বোনাস অফার!)"
             className="w-full px-3 py-2 rounded-lg bg-background border border-border text-xs outline-none focus:border-rose" />
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="text-[9px] text-muted-foreground font-bold">Start</label>
+              <label className="text-[9px] text-muted-foreground font-bold">শুরু (Start)</label>
               <input type="datetime-local" value={promoStart} onChange={(e) => setPromoStart(e.target.value)}
                 className="w-full px-2 py-1.5 rounded-lg bg-background border border-border text-xs outline-none" />
             </div>
             <div>
-              <label className="text-[9px] text-muted-foreground font-bold">End</label>
+              <label className="text-[9px] text-muted-foreground font-bold">শেষ (End)</label>
               <input type="datetime-local" value={promoEnd} onChange={(e) => setPromoEnd(e.target.value)}
                 className="w-full px-2 py-1.5 rounded-lg bg-background border border-border text-xs outline-none" />
             </div>
           </div>
+          <button
+            type="button"
+            onClick={() => {
+              const pad = (n: number) => String(n).padStart(2, "0");
+              const fmt = (d: Date) =>
+                `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+              const now = new Date();
+              setPromoStart(fmt(now));
+              setPromoEnd(fmt(new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000)));
+              setPromoActive(true);
+            }}
+            className="w-full py-2 rounded-lg bg-rose/15 border border-rose/40 text-[11px] font-black text-rose">
+            ⚡ এখন থেকে ২ দিনের অফার সেট করুন
+          </button>
           <div className="grid grid-cols-3 gap-2">
-            <PromoNum label="First" value={pFv} onChange={setPFv} />
-            <PromoNum label="Re-vf"  value={pRv} onChange={setPRv} />
+            <PromoNum label="First verify" value={pFv} onChange={setPFv} />
+            <PromoNum label="Re-verify"  value={pRv} onChange={setPRv} />
             <PromoNum label="Refer" value={pRf} onChange={setPRf} />
           </div>
           <p className="text-[9px] text-muted-foreground leading-snug">
-            Active থাকলে Start–End সময়ের মধ্যে এই টাকা কাজ করবে, বাকি সময়ে base rate চালু।
+            ⚠️ এই সেকশনের পরিবর্তন নিচের <b>Save</b> বাটনে চাপলেই কাজ করবে। অফার শেষ হলে অটো সাধারণ রেটে ফিরে যাবে।
           </p>
         </div>
+
 
         {/* Payout methods */}
         <div className="rounded-xl border-2 border-emerald/40 bg-emerald/5 p-3 space-y-2">
