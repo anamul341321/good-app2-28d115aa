@@ -25,7 +25,9 @@ export type BonusRates = {
   base_first_verify_bonus: number;
   base_reverify_bonus: number;
   base_referrer_bonus: number;
+  bonus_enabled: boolean;
 };
+
 
 export async function readActiveRates(admin: any): Promise<BonusRates> {
   try {
