@@ -1979,8 +1979,8 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             const { withdrawFee } = await import("@/lib/constants");
             const line =
               amt && amt >= 10 && amt <= 100000
-                ? `আপনি <b>${amt}৳</b> চেয়েছেন → ফি <b>${withdrawFee(amt)}৳</b> (${amt < 100 ? "১৫" : "১০"}%) → হাতে <b>${amt - withdrawFee(amt)}৳</b>।`
-                : `উইথড্র ফি: ১০০৳ এর কম হলে ১৫%, ১০০৳ বা তার বেশি হলে ১০%। সর্বনিম্ন ৬০৳ (ফি ৯৳, হাতে ৫১৳)।`;
+                ? `আপনি <b>${amt}৳</b> চেয়েছেন → ফি <b>${withdrawFee(amt)}৳</b> (${amt < 100 ? "২০" : "১০"}%) → হাতে <b>${amt - withdrawFee(amt)}৳</b>।`
+                : `উইথড্র ফি: ১০০৳ এর কম হলে ২০%, ১০০৳ বা তার বেশি হলে ১০%। সর্বনিম্ন ৬৩৳ (হাতে ৫০৳)।`;
 
             const reply =
               `${senderName} ভাই, এটা কোনো ভুল নয় 🙂\n` +

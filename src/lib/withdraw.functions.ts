@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { MIN_WITHDRAW_BDT, MIN_PAYOUT_BDT, withdrawPayout, withdrawFee } from "./constants";
+import { MIN_WITHDRAW_BDT, MIN_PAYOUT_BDT, withdrawPayout, withdrawFee, withdrawDebit } from "./constants";
 import { computeLiveBalance } from "./mining";
 
 const CELO_ADDR_RE = /^0x[a-fA-F0-9]{40}$/;
@@ -67,9 +67,12 @@ export const requestWithdraw = createServerFn({ method: "POST" })
       throw new Error("দৈনিক সর্বোচ্চ ৩টি withdraw রিকোয়েস্ট করা যাবে — ২৪ ঘণ্টা পর আবার চেষ্টা করুন");
     }
 
-    // Percentage platform fee: 15% below 100৳, 10% for 100৳ and above.
+    // Percentage platform fee: 20% below 100৳, 10% for 100৳ and above.
+    // Only whole taka is paid out; leftover paisa stays in the user's balance,
+    // so we debit payout + fee instead of the full requested amount.
     const fee = withdrawFee(amount);
-    const payout = amount - fee;
+    const payout = withdrawPayout(amount);
+    const debit = withdrawDebit(amount);
 
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -123,12 +126,12 @@ export const requestWithdraw = createServerFn({ method: "POST" })
       }
       walletNumber = addr;
       const usdAmount = (payout / usdtRate).toFixed(2);
-      providerNote = `[USDT · Celo · Rate ${usdtRate}৳/$] Gross ${amount}৳ − Fee ${fee}৳ = ${payout}৳ ≈ ${usdAmount}$`;
+      providerNote = `[USDT · Celo · Rate ${usdtRate}৳/$] Debit ${debit}৳ − Fee ${fee}৳ = ${payout}৳ ≈ ${usdAmount}$`;
     } else {
       const wallet = chosen === "bkash" ? walletBkash : walletNagad;
       if (!wallet) throw new Error(chosen === "bkash" ? "প্রথমে বিকাশ নম্বর সেট করুন" : "প্রথমে নগদ নম্বর সেট করুন");
       walletNumber = wallet.number;
-      providerNote = `[Fee ${fee}৳] Gross ${amount}৳ − Fee ${fee}৳ = Payout ${payout}৳`;
+      providerNote = `[Fee ${fee}৳] Debit ${debit}৳ − Fee ${fee}৳ = Payout ${payout}৳`;
     }
 
     const { data: mining } = await supabase.from("mining_state").select("*").eq("user_id", userId).maybeSingle();
@@ -186,7 +189,7 @@ export const requestWithdraw = createServerFn({ method: "POST" })
       "create_withdrawal_request_atomic",
       {
         _user_id: userId,
-        _gross: amount,
+        _gross: debit,
         _payout: payout,
         _provider: chosen,
         _wallet_number: walletNumber,
