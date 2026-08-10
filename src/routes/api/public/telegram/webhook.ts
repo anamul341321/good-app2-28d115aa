@@ -1980,7 +1980,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             const line =
               amt && amt >= 10 && amt <= 100000
                 ? `আপনি <b>${amt}৳</b> চেয়েছেন → ফি <b>${withdrawFee(amt)}৳</b> (${amt < 100 ? "২০" : "১০"}%) → হাতে <b>${amt - withdrawFee(amt)}৳</b>।`
-                : `১০০৳ বা বেশি তুললে ফি ১০%, ১০০৳ এর কম হলে ২০% — তবে হাতে সবসময় কমপক্ষে ৫০৳ আসবে।`;
+                : `উইথড্র ফি ফিক্সড ১০৳ — যত টাকাই তুলুন ফি একই ১০৳। সর্বনিম্ন ৬০৳ দিলে হাতে ৫০৳।`;
 
             const reply =
               `${senderName} ভাই, এটা কোনো ভুল নয় 🙂\n` +
