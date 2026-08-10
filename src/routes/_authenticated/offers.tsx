@@ -44,7 +44,7 @@ function OffersPage() {
       <PromoBanner rates={(data as any)?.bonus?.rates ?? null} />
 
       {/* Premium referral-bonus */}
-      {b && !(b.selfFirstPaid && b.referrerPaid && b.userReverifyPaid) && (
+      {b && b.rates?.bonus_enabled !== false && !(b.selfFirstPaid && b.referrerPaid && b.userReverifyPaid) && (
         <div className="referral-bonus-banner rounded-3xl p-4 relative overflow-hidden text-white shadow-[0_20px_50px_-15px_rgba(139,92,246,0.6)]">
           <div className="referral-bonus-shimmer" />
           <div className="referral-bonus-sparkle" />
