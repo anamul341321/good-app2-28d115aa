@@ -27,6 +27,8 @@ import { getAppStatus } from "@/lib/app-status.functions";
 import { MaintenanceScreen } from "@/components/MaintenanceGate";
 import { UserNoticeBanner } from "@/components/UserNoticeBanner";
 import { SlotPausedModal } from "@/components/SlotPausedModal";
+import { ServerBackModal } from "@/components/ServerBackModal";
+
 import { clearSharedSession, getSharedSession } from "@/lib/auth-session";
 
 
@@ -170,9 +172,12 @@ function AuthedLayout() {
 
   return (
     <div className="min-h-screen pb-24">
-      {appStatus?.faceVerifyEnabled === false && (
+      {appStatus?.faceVerifyEnabled === false ? (
         <SlotPausedModal message={appStatus?.faceVerifyMessage} />
+      ) : (
+        <ServerBackModal />
       )}
+
 
       <header className="sticky top-0 z-30 glass">
         <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
