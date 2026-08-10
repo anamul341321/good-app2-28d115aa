@@ -655,26 +655,26 @@ function AdminWithdrawals() {
                 <Copy className={`w-4 h-4 shrink-0 ${isUsdt ? "text-emerald" : isBkash ? "text-rose" : "text-amber"}`} />
               </button>
 
-              {/* ⚡ সেমি-অটো পে — নম্বর+অ্যামাউন্ট প্রি-ফিল করে অ্যাপ/USSD খুলবে */}
+              {/* ⚡ সেমি-অটো পে — অ্যাপ খুলবে, নম্বর clipboard-এ কপি হবে */}
               {w.status === "pending" && !isUsdt && (
                 <div className="rounded-xl border-2 border-cyan/30 bg-cyan/5 p-2 space-y-1.5">
-                  <p className="text-[10px] font-black text-cyan">⚡ দ্রুত পে করুন (নম্বর ও টাকা প্রি-ফিল)</p>
+                  <p className="text-[10px] font-black text-cyan">⚡ দ্রুত পে করুন (নম্বর কপি + অ্যাপ)</p>
                   <div className="grid grid-cols-2 gap-1.5">
-                    <a
-                      href={isBkash
-                        ? `tel:${encodeURIComponent(`*247*1*${w.wallet_number}*${Math.round(Number(w.amount))}#`)}`
-                        : `tel:${encodeURIComponent(`*167*1*1*${w.wallet_number}*${Math.round(Number(w.amount))}#`)}`}
+                    <button
+                      type="button"
+                      onClick={() => openWalletApp(w)}
                       className={`py-2 rounded-lg text-center font-black text-[11px] ${isBkash ? "bg-rose/20 text-rose" : "bg-amber/20 text-amber"}`}
                     >
-                      📞 USSD দিয়ে পাঠান
-                    </a>
+                      📲 {isBkash ? "বিকাশ" : "নগদ"} অ্যাপ + নম্বর কপি
+                    </button>
                     <a
-                      href={isBkash ? "bkashapp://" : "nagad://"}
+                      href={isBkash ? `tel:${encodeURIComponent("*247#")}` : `tel:${encodeURIComponent("*167#")}`}
                       className="py-2 rounded-lg text-center font-black text-[11px] bg-white/10"
                     >
-                      📱 {isBkash ? "বিকাশ" : "নগদ"} অ্যাপ খুলুন
+                      📞 {isBkash ? "*247#" : "*167#"} মেনু
                     </a>
                   </div>
+
                   <div className="grid grid-cols-2 gap-1.5">
                     <button
                       type="button"
