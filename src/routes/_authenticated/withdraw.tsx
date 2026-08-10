@@ -794,7 +794,7 @@ function UsdtWithdrawCard(props: {
             <span className="mono-num font-bold">{grossUsd.toFixed(2)} USDT</span>
           </div>
           <div className="flex justify-between text-[12px]">
-            <span className="text-muted-foreground">{t(`উইথড্র ফি (${Math.round(feeRate * 100)}%)`, `Withdraw fee (${Math.round(feeRate * 100)}%)`)}</span>
+            <span className="text-muted-foreground">{t("উইথড্র ফি (ফিক্সড ১০৳)", "Withdraw fee (flat 10৳)")}</span>
             <span className="mono-num font-bold text-rose">− {feeUsd.toFixed(2)} USDT</span>
           </div>
           <div className="flex justify-between text-base border-t border-emerald/30 pt-1.5">
