@@ -284,33 +284,6 @@ function BonusSettings() {
         </button>
       </div>
 
-      {/* Welcome bonus offer master switch */}
-      <div className={`rounded-2xl p-4 border-2 space-y-2 ${bonusOn ? "border-emerald/50 bg-emerald/5" : "border-rose/60 bg-rose/10"}`}>
-        <div className="flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <p className={`text-[11px] uppercase tracking-widest font-black ${bonusOn ? "text-emerald" : "text-rose"}`}>
-              🎁 Bonus offer master switch
-            </p>
-            <p className="text-sm font-black mt-0.5">
-              {bonusOn
-                ? "ON — First verify / Re-verify / Refer বোনাস নিচের রেট অনুযায়ী চালু"
-                : "OFF — কোনো user বোনাস পাবে না (অ্যাপে বোনাস ব্যানারও দেখাবে না)"}
-            </p>
-          </div>
-          <button
-            disabled={saveBonusEnabled.isPending}
-            onClick={() => {
-              const next = !bonusOn;
-              if (!confirm(next
-                ? "বোনাস অফার আবার চালু করবেন? নিচের রেট অনুযায়ী সবাই বোনাস পাবে।"
-                : "OFF করলে কেউ আর First verify / Re-verify / Refer বোনাস পাবে না। আগে যারা পেয়েছে তাদের ব্যালেন্স ঠিক থাকবে।")) return;
-              saveBonusEnabled.mutate(next);
-            }}
-            className={`shrink-0 w-16 h-9 rounded-full relative transition ${bonusOn ? "bg-emerald" : "bg-rose"} disabled:opacity-50`}>
-            <span className={`absolute top-1 w-7 h-7 rounded-full bg-white shadow transition-all ${bonusOn ? "left-8" : "left-1"}`} />
-          </button>
-        </div>
-      </div>
 
       {/* Global Mining Mode Switch */}
       <div className={`rounded-2xl p-4 border-2 space-y-2 ${fvMode ? "border-emerald/50 bg-emerald/5" : "border-amber/50 bg-amber/5"}`}>
