@@ -200,6 +200,7 @@ export type Database = {
           apk_version: string | null
           bkash_enabled: boolean
           bkash_off_message: string | null
+          bonus_enabled: boolean
           email_otp_enabled: boolean
           face_verify_enabled: boolean
           face_verify_off_message: string | null
@@ -235,6 +236,7 @@ export type Database = {
           apk_version?: string | null
           bkash_enabled?: boolean
           bkash_off_message?: string | null
+          bonus_enabled?: boolean
           email_otp_enabled?: boolean
           face_verify_enabled?: boolean
           face_verify_off_message?: string | null
@@ -270,6 +272,7 @@ export type Database = {
           apk_version?: string | null
           bkash_enabled?: boolean
           bkash_off_message?: string | null
+          bonus_enabled?: boolean
           email_otp_enabled?: boolean
           face_verify_enabled?: boolean
           face_verify_off_message?: string | null
