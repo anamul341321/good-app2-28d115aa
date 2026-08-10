@@ -210,6 +210,42 @@ export async function buildEarningsBreakdown(admin: any, userId: string): Promis
   const referrerPaidCount = referees.filter((r: any) => !!r.referrer_bonus_paid_at).length;
   const dateBn = (s: string) => new Date(s).toLocaleString("bn-BD");
 
+  // Rates changed over time (আগে ৫০৳/২০০৳/১০০৳ ছিল, এখন অফার রেট আলাদা), so we
+  // never assume the *current* rate applies to an old credit. We test every
+  // historical rate combination and pick the one that actually adds up to the
+  // bonus that was really credited to this account — তাই হিসাব মিলে যায়।
+  const FIRST_RATES = [rates.first_verify_bonus, 100, 60, 50];
+  const REVERIFY_RATES = [rates.reverify_bonus, 400, 300, 200];
+  const REFERRER_RATES = [rates.referrer_bonus, 150, 100, 60];
+  const gotFirst = !!prof.bonus_first_verify_self_claimed;
+  const gotRe = !!prof.bonus_reverify_claimed;
+
+  let best = {
+    first: rates.first_verify_bonus,
+    re: rates.reverify_bonus,
+    ref: rates.referrer_bonus,
+    diff: Number.POSITIVE_INFINITY,
+  };
+  for (const f of FIRST_RATES) {
+    for (const rv of REVERIFY_RATES) {
+      for (const rf of REFERRER_RATES) {
+        const sum = (gotFirst ? f : 0) + (gotRe ? rv : 0) + referrerPaidCount * rf;
+        // Prefer combinations that don't exceed what was actually credited.
+        const diff = sum > bonusTotal + 0.5 ? (sum - bonusTotal) * 100 : bonusTotal - sum;
+        if (diff < best.diff) best = { first: f, re: rv, ref: rf, diff };
+      }
+    }
+  }
+  const usedRates = {
+    firstVerify: best.first,
+    reverify: best.re,
+    referrer: best.ref,
+  };
+  const ratesAssumed =
+    best.first !== rates.first_verify_bonus ||
+    best.re !== rates.reverify_bonus ||
+    best.ref !== rates.referrer_bonus;
+
   const describeBonus = (delta: number): string => {
     const parts: string[] = [];
     let left = Math.round(delta);
@@ -219,12 +255,12 @@ export async function buildEarningsBreakdown(admin: any, userId: string): Promis
         parts.push(label);
       }
     };
-    tryTake(rates.first_verify_bonus, `১০ স্লট first verify ${rates.first_verify_bonus}৳`);
-    while (rates.referrer_bonus > 0 && left >= rates.referrer_bonus) {
-      left -= rates.referrer_bonus;
-      parts.push(`রেফার বোনাস ${rates.referrer_bonus}৳`);
+    tryTake(usedRates.firstVerify, `১০ স্লট first verify ${usedRates.firstVerify}৳`);
+    while (usedRates.referrer > 0 && left >= usedRates.referrer) {
+      left -= usedRates.referrer;
+      parts.push(`রেফার বোনাস ${usedRates.referrer}৳`);
     }
-    tryTake(rates.reverify_bonus, `১০ স্লট re-verify ${rates.reverify_bonus}৳ (মাইনিং চালু)`);
+    tryTake(usedRates.reverify, `১০ স্লট re-verify ${usedRates.reverify}৳ (মাইনিং চালু)`);
     if (left > 0) parts.push(`অন্যান্য ${left}৳`);
     return parts.length ? parts.join(" + ") : "বোনাস";
   };
