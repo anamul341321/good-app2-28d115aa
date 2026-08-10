@@ -61,6 +61,7 @@ function EarningsPage() {
   const totalIn = sources.reduce((s, x) => s + x.amount, 0);
   const outs = [
     { label: "💸 উইথড্র হয়েছে", amount: data.rows.filter((r) => r.kind === "withdraw").reduce((s, r) => s + Math.abs(Math.min(0, r.amount)), 0) },
+    { label: "⏳ উইথড্র অপেক্ষায় (হাতে যাবে)", amount: (t as any).pendingWithdrawals ?? 0 },
     { label: "📱 মোবাইল রিচার্জ", amount: data.rows.filter((r) => r.kind === "recharge").reduce((s, r) => s + Math.abs(Math.min(0, r.amount)), 0) },
     { label: "📤 অন্যকে পাঠিয়েছেন", amount: data.rows.filter((r) => r.kind === "transfer_out").reduce((s, r) => s + Math.abs(Math.min(0, r.amount)), 0) },
     { label: "➖ অ্যাডমিন কেটেছে", amount: data.rows.filter((r) => r.kind === "admin_out").reduce((s, r) => s + Math.abs(Math.min(0, r.amount)), 0) },
