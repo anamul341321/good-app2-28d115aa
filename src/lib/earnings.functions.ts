@@ -147,7 +147,10 @@ export const getEarnings = createServerFn({ method: "GET" })
     const paidWithdrawals = (withdrawals ?? []).filter((w: any) => w.status === "paid").reduce((s: number, w: any) => s + Number(w.amount), 0);
     const successfulRecharges = (recharges ?? []).filter((r: any) => r.status === "success").reduce((s: number, r: any) => s + Number(r.amount), 0);
     const transfersOutTotal = (transfersOut ?? []).reduce((s: number, t: any) => s + Number(t.amount), 0);
-    const accountedOut = paidWithdrawals + successfulRecharges + transfersOutTotal;
+    const pendingWithdrawals = (withdrawals ?? []).filter((w: any) => w.status === "pending").reduce((s: number, w: any) => s + Number(w.amount), 0);
+    // Pending requests already reserved balance, so they count as accounted-out;
+    // otherwise the leftover would be mislabelled as a huge withdraw "fee".
+    const accountedOut = paidWithdrawals + pendingWithdrawals + successfulRecharges + transfersOutTotal;
     const feeOrAdjustmentOut = Math.max(0, withdrawn - accountedOut);
     const debtActive = (debts ?? []).filter((d: any) => d.status === "active").reduce((s: number, d: any) => s + Number(d.amount), 0);
 
@@ -171,6 +174,7 @@ export const getEarnings = createServerFn({ method: "GET" })
         paidWithdrawals,
         successfulRecharges,
         transfersOutTotal,
+        pendingWithdrawals,
         feeOrAdjustmentOut,
         debtActive,
       },

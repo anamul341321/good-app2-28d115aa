@@ -61,7 +61,9 @@ export function BalanceHistory({ mining, income, withdrawals, debts, profile, br
     { label: "📤 অন্যকে পাঠিয়েছে", amount: transferOut },
     { label: "➖ অ্যাডমিন কেটেছে", amount: adminMinus },
   ].filter((o) => o.amount > 0.004);
-  const accountedOut = withdrawPaid + rechargeOut + transferOut + adminMinus;
+  // Pending withdrawals already reserved money from the balance, so they must
+  // count as accounted-out — otherwise the leftover shows up as a fake "fee".
+  const accountedOut = withdrawPaid + withdrawPending + rechargeOut + transferOut + adminMinus;
   const feeOrAdjustmentOut = Math.max(0, withdrawnTotal - accountedOut);
   if (feeOrAdjustmentOut > 0.004) outs.push({ label: "🧾 উইথড্র ফি (Gross-এর ১০–২০%, platform রেখেছে)", amount: feeOrAdjustmentOut });
   const reconciledTotalOut = outs.reduce((s, x) => s + x.amount, 0);
