@@ -630,7 +630,7 @@ function FeeBreakdown({ amount, t }: { amount: string; t: (bn: string, en: strin
   return (
     <div className="rounded-xl border-2 border-amber/40 bg-amber/10 p-3 space-y-1.5" translate="no">
       <p className="text-[10px] uppercase tracking-widest font-black text-amber">{t("ফি হিসাব", "Fee breakdown")}</p>
-      <p className="text-[10px] text-muted-foreground">{t("যত টাকাই উইথড্র দিন — ফি সবসময় মাত্র ১০৳", "Any amount — the fee is always just 10৳")}</p>
+      <p className="text-[10px] text-muted-foreground">{t("১০০৳ এর কম উইথড্রে ফি ১৫%, ১০০৳ বা তার বেশি হলে ফি ১০%", "Fee is 15% below 100৳ and 10% for 100৳ or more")}</p>
 
       <div className="flex justify-between text-[12px]">
         <span className="text-muted-foreground">{t("মোট কাটবে", "Deducted")}</span>
