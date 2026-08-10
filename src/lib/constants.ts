@@ -25,18 +25,25 @@ export const MIN_PAYOUT_BDT = 50;
 // bonus can still withdraw and receive the full 50৳ in hand.
 export const MIN_WITHDRAW_BDT = 60;
 
-// Flat withdraw fee: every withdraw costs exactly 10৳, no matter the amount.
-export const WITHDRAW_FEE_BDT = 10;
+// Percentage withdraw fee: 15% below 100৳, 10% for 100৳ and above.
+export const WITHDRAW_FEE_RATE_SMALL = 0.15;
+export const WITHDRAW_FEE_RATE_LARGE = 0.1;
+export const WITHDRAW_FEE_THRESHOLD_BDT = 100;
 
 export function withdrawFee(gross: number): number {
   const g = Math.floor(gross);
-  return Math.min(WITHDRAW_FEE_BDT, Math.max(0, g - MIN_PAYOUT_BDT));
+  if (g <= 0) return 0;
+  const rate = g < WITHDRAW_FEE_THRESHOLD_BDT ? WITHDRAW_FEE_RATE_SMALL : WITHDRAW_FEE_RATE_LARGE;
+  const raw = Math.ceil(g * rate);
+  // Never let the in-hand amount drop below the agent minimum.
+  return Math.min(raw, Math.max(0, g - MIN_PAYOUT_BDT));
 }
 // Effective percentage — only used for display.
 export function withdrawFeeRate(gross: number): number {
   const g = Math.floor(gross);
   return g > 0 ? withdrawFee(g) / g : 0;
 }
+
 export function withdrawPayout(gross: number): number {
   return Math.floor(gross) - withdrawFee(gross);
 }
