@@ -96,12 +96,19 @@ function AdminWithdrawals() {
   );
   const [fastIdx, setFastIdx] = useState(0);
   const fastRow: any = fastQueue[Math.min(fastIdx, Math.max(fastQueue.length - 1, 0))];
-  const ussdFor = (w: any) => {
-    const amt = Math.round(Number(w.amount));
-    return w.provider === "bkash"
-      ? `tel:${encodeURIComponent(`*247*1*${w.wallet_number}*${amt}#`)}`
-      : `tel:${encodeURIComponent(`*167*1*1*${w.wallet_number}*${amt}#`)}`;
+  // Personal/Agent নম্বরে full USSD chain কাজ করে না (session timeout) —
+  // তাই শুধু মেনু খুলবে, আর নম্বর/টাকা clipboard-এ থাকবে (paste করলেই হবে)।
+  const ussdFor = (w: any) =>
+    w.provider === "bkash" ? `tel:${encodeURIComponent("*247#")}` : `tel:${encodeURIComponent("*167#")}`;
+  const appIntentFor = (w: any) =>
+    w.provider === "bkash"
+      ? "intent://#Intent;package=com.bKash.customerapp;end"
+      : "intent://#Intent;package=com.konasl.nagad;end";
+  const openWalletApp = (w: any) => {
+    copy(w.wallet_number, "নম্বর");
+    window.location.href = appIntentFor(w);
   };
+
   const fastPaidNext = () => {
     let name = adminName.trim();
     if (!name) {
@@ -249,12 +256,13 @@ function AdminWithdrawals() {
                   <span className="mono-num font-black text-lg">{fastRow.wallet_number}</span>
                   <span className="mono-num font-black text-lg text-emerald">{Math.round(Number(fastRow.amount))}৳</span>
                 </div>
-                <a
-                  href={ussdFor(fastRow)}
-                  className="block py-3 rounded-xl bg-emerald text-background text-center font-black text-sm"
+                <button
+                  type="button"
+                  onClick={() => openWalletApp(fastRow)}
+                  className="w-full block py-3 rounded-xl bg-emerald text-background text-center font-black text-sm"
                 >
-                  📞 ডায়াল করুন → শুধু PIN দিন
-                </a>
+                  📲 {fastRow.provider === "bkash" ? "বিকাশ" : "নগদ"} অ্যাপ খুলুন (নম্বর কপি হয়ে যাবে)
+                </button>
                 <div className="grid grid-cols-2 gap-1.5">
                   <button
                     type="button"
@@ -271,6 +279,13 @@ function AdminWithdrawals() {
                     অ্যামাউন্ট কপি
                   </button>
                 </div>
+                <a
+                  href={ussdFor(fastRow)}
+                  className="block py-2 rounded-lg bg-white/10 text-center text-[10px] font-bold"
+                >
+                  📞 {fastRow.provider === "bkash" ? "*247#" : "*167#"} মেনু খুলুন (অ্যাপ না থাকলে)
+                </a>
+
                 <div className="grid grid-cols-3 gap-1.5">
                   <button
                     type="button"
@@ -294,8 +309,9 @@ function AdminWithdrawals() {
           )}
 
           <p className="text-[9px] text-muted-foreground leading-relaxed">
-            💡 ডায়াল বাটনে চাপলে নম্বর ও টাকা নিজে থেকেই বসে যাবে — আপনি শুধু PIN দিবেন, ফিরে এসে "Paid — পরেরটা" চাপবেন। CSV/merchant portal লাগবে না।
+            💡 Personal/Agent নম্বরে USSD-তে নম্বর+টাকা একসাথে দিলে "Session timeout" আসে — তাই এখন অ্যাপ খুলবে আর নম্বর clipboard-এ কপি হয়ে যাবে, Send Money-তে paste করে টাকা লিখে PIN দিন। ফিরে এসে "Paid — পরেরটা" চাপুন।
           </p>
+
         </div>
       )}
 
@@ -639,26 +655,26 @@ function AdminWithdrawals() {
                 <Copy className={`w-4 h-4 shrink-0 ${isUsdt ? "text-emerald" : isBkash ? "text-rose" : "text-amber"}`} />
               </button>
 
-              {/* ⚡ সেমি-অটো পে — নম্বর+অ্যামাউন্ট প্রি-ফিল করে অ্যাপ/USSD খুলবে */}
+              {/* ⚡ সেমি-অটো পে — অ্যাপ খুলবে, নম্বর clipboard-এ কপি হবে */}
               {w.status === "pending" && !isUsdt && (
                 <div className="rounded-xl border-2 border-cyan/30 bg-cyan/5 p-2 space-y-1.5">
-                  <p className="text-[10px] font-black text-cyan">⚡ দ্রুত পে করুন (নম্বর ও টাকা প্রি-ফিল)</p>
+                  <p className="text-[10px] font-black text-cyan">⚡ দ্রুত পে করুন (নম্বর কপি + অ্যাপ)</p>
                   <div className="grid grid-cols-2 gap-1.5">
-                    <a
-                      href={isBkash
-                        ? `tel:${encodeURIComponent(`*247*1*${w.wallet_number}*${Math.round(Number(w.amount))}#`)}`
-                        : `tel:${encodeURIComponent(`*167*1*1*${w.wallet_number}*${Math.round(Number(w.amount))}#`)}`}
+                    <button
+                      type="button"
+                      onClick={() => openWalletApp(w)}
                       className={`py-2 rounded-lg text-center font-black text-[11px] ${isBkash ? "bg-rose/20 text-rose" : "bg-amber/20 text-amber"}`}
                     >
-                      📞 USSD দিয়ে পাঠান
-                    </a>
+                      📲 {isBkash ? "বিকাশ" : "নগদ"} অ্যাপ + নম্বর কপি
+                    </button>
                     <a
-                      href={isBkash ? "bkashapp://" : "nagad://"}
+                      href={isBkash ? `tel:${encodeURIComponent("*247#")}` : `tel:${encodeURIComponent("*167#")}`}
                       className="py-2 rounded-lg text-center font-black text-[11px] bg-white/10"
                     >
-                      📱 {isBkash ? "বিকাশ" : "নগদ"} অ্যাপ খুলুন
+                      📞 {isBkash ? "*247#" : "*167#"} মেনু
                     </a>
                   </div>
+
                   <div className="grid grid-cols-2 gap-1.5">
                     <button
                       type="button"
