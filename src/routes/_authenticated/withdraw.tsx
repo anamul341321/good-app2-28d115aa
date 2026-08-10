@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getDashboard, getMyWithdrawals } from "@/lib/dashboard.functions";
 import { requestWithdraw } from "@/lib/withdraw.functions";
-import { MIN_WITHDRAW_BDT, withdrawFee } from "@/lib/constants";
+import { withdrawPayout, MIN_WITHDRAW_BDT, withdrawFee } from "@/lib/constants";
 import { computeLiveBalance, splitBalance } from "@/lib/mining";
 import { useState, useEffect } from "react";
 import { ArrowDownToLine, Loader2, Lock, Copy, ShieldAlert } from "lucide-react";
@@ -355,7 +355,7 @@ function WithdrawPage() {
                   placeholder={t(`সর্বনিম্ন ${MIN_WITHDRAW_BDT}`, `Minimum ${MIN_WITHDRAW_BDT}`)}
                   className="w-full mt-2 px-4 py-3 mono-num bg-surface-2 border border-border rounded-xl text-lg font-black outline-none focus:border-rose" />
                 <p className="text-[10px] text-muted-foreground mt-1" translate="no">{t("সর্বনিম্ন", "Min")}: {MIN_WITHDRAW_BDT}৳ · {t("সর্বোচ্চ", "Max")}: {claimable}৳</p>
-                <p className="text-[10px] text-amber mt-1 font-bold" translate="no">{t(`ফি: ১০০৳ এর কম উইথড্রে ১৫%, ১০০৳ বা তার বেশি হলে ১০% — সর্বনিম্ন রিকোয়েস্ট ${MIN_WITHDRAW_BDT}৳ (৬০৳ দিলে ফি ৯৳, হাতে ৫১৳)`, `Fee: 15% under 100৳, 10% for 100৳ and above — minimum request ${MIN_WITHDRAW_BDT}৳ (60৳ → 9৳ fee → 51৳ in hand)`)}</p>
+                <p className="text-[10px] text-amber mt-1 font-bold" translate="no">{t(`ফি: ১০০৳ এর কম উইথড্রে ২০%, ১০০৳ বা তার বেশি হলে ১০% — সর্বনিম্ন রিকোয়েস্ট ${MIN_WITHDRAW_BDT}৳ (৬৩৳ দিলে ফি ১২.৬০৳, হাতে ৫০৳, বাকি ০.৪০৳ মেইন ব্যালেন্সে থাকবে)`, `Fee: 20% under 100৳, 10% for 100৳ and above — minimum request ${MIN_WITHDRAW_BDT}৳ (63৳ → 12.60৳ fee → 50৳ in hand, 0.40৳ stays in balance)`)}</p>
                 <p className="text-[10px] text-muted-foreground mt-1" translate="no">{t("পয়সা (দশমিক) উইথড্র হয় না — শুধু পূর্ণ টাকা যাবে, বাকি পয়সা মেইন ব্যালেন্সেই থাকবে", "Paisa (decimals) can't be withdrawn — only whole taka; the rest stays in your main balance")}</p>
 
               </div>
@@ -626,18 +626,18 @@ function FeeBreakdown({ amount, t }: { amount: string; t: (bn: string, en: strin
   const gross = Math.floor(Number(amount) || 0);
   if (gross < MIN_WITHDRAW_BDT) return null;
   const fee = withdrawFee(gross);
-  const payout = gross - fee;
+  const payout = withdrawPayout(gross);
   return (
     <div className="rounded-xl border-2 border-amber/40 bg-amber/10 p-3 space-y-1.5" translate="no">
       <p className="text-[10px] uppercase tracking-widest font-black text-amber">{t("ফি হিসাব", "Fee breakdown")}</p>
-      <p className="text-[10px] text-muted-foreground">{t("১০০৳ এর কম উইথড্রে ফি ১৫%, ১০০৳ বা তার বেশি হলে ফি ১০%", "Fee is 15% below 100৳ and 10% for 100৳ or more")}</p>
+      <p className="text-[10px] text-muted-foreground">{t("১০০৳ এর কম উইথড্রে ফি ২০%, ১০০৳ বা তার বেশি হলে ফি ১০%", "Fee is 20% below 100৳ and 10% for 100৳ or more")}</p>
 
       <div className="flex justify-between text-[12px]">
         <span className="text-muted-foreground">{t("মোট কাটবে", "Deducted")}</span>
         <span className="mono-num font-bold">{gross}৳</span>
       </div>
       <div className="flex justify-between text-[12px]">
-        <span className="text-muted-foreground">{t(`প্ল্যাটফর্ম ফি (${gross < 100 ? "১৫%" : "১০%"})`, `Platform fee (${gross < 100 ? "15%" : "10%"})`)}</span>
+        <span className="text-muted-foreground">{t(`প্ল্যাটফর্ম ফি (${gross < 100 ? "২০%" : "১০%"})`, `Platform fee (${gross < 100 ? "20%" : "10%"})`)}</span>
         <span className="mono-num font-bold text-rose">− {fee}৳</span>
       </div>
 
@@ -668,7 +668,7 @@ function UsdtWithdrawCard(props: {
   const addrValid = CELO_RE.test(usdtAddress.trim());
   const gross = Math.floor(Number(amount) || 0);
   const fee = withdrawFee(gross);
-  const payoutBdt = gross - fee;
+  const payoutBdt = withdrawPayout(gross);
 
   const grossUsd = gross / usdtRate;
   const feeUsd = fee / usdtRate;
@@ -793,7 +793,7 @@ function UsdtWithdrawCard(props: {
             <span className="mono-num font-bold">{grossUsd.toFixed(2)} USDT</span>
           </div>
           <div className="flex justify-between text-[12px]">
-            <span className="text-muted-foreground">{t("উইথড্র ফি (১০০৳ এর কম ১৫%, বেশি হলে ১০%)", "Withdraw fee (15% under 100৳, 10% above)")}</span>
+            <span className="text-muted-foreground">{t("উইথড্র ফি (১০০৳ এর কম ২০%, বেশি হলে ১০%)", "Withdraw fee (20% under 100৳, 10% above)")}</span>
             <span className="mono-num font-bold text-rose">− {feeUsd.toFixed(2)} USDT</span>
           </div>
           <div className="flex justify-between text-base border-t border-emerald/30 pt-1.5">
