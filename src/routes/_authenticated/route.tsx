@@ -27,6 +27,8 @@ import { getAppStatus } from "@/lib/app-status.functions";
 import { MaintenanceScreen } from "@/components/MaintenanceGate";
 import { UserNoticeBanner } from "@/components/UserNoticeBanner";
 import { SlotPausedModal } from "@/components/SlotPausedModal";
+import { ServerBackModal } from "@/components/ServerBackModal";
+
 import { clearSharedSession, getSharedSession } from "@/lib/auth-session";
 
 
