@@ -386,42 +386,7 @@ export async function buildEarningsBreakdown(admin: any, userId: string): Promis
   ];
 
   // ---- Reconciled bonus split -------------------------------------------
-  // Rates changed over time (আগে ৫০৳/২০০৳/১০০৳ ছিল, এখন অফার রেট আলাদা), so we
-  // never assume the *current* rate applies to an old credit. Instead we test
-  // every historical rate combination and pick the one that actually adds up to
-  // the bonus that was really credited to this account.
-  const FIRST_RATES = [rates.first_verify_bonus, 100, 50];
-  const REVERIFY_RATES = [rates.reverify_bonus, 400, 200];
-  const REFERRER_RATES = [rates.referrer_bonus, 150, 100];
-  const gotFirst = !!prof.bonus_first_verify_self_claimed;
-  const gotRe = !!prof.bonus_reverify_claimed;
-
-  let best = {
-    first: rates.first_verify_bonus,
-    re: rates.reverify_bonus,
-    ref: rates.referrer_bonus,
-    diff: Number.POSITIVE_INFINITY,
-  };
-  for (const f of FIRST_RATES) {
-    for (const rv of REVERIFY_RATES) {
-      for (const rf of REFERRER_RATES) {
-        const sum = (gotFirst ? f : 0) + (gotRe ? rv : 0) + referrerPaidCount * rf;
-        // Prefer combinations that don't exceed what was actually credited.
-        const diff = sum > bonusTotal + 0.5 ? (sum - bonusTotal) * 100 : bonusTotal - sum;
-        if (diff < best.diff) best = { first: f, re: rv, ref: rf, diff };
-      }
-    }
-  }
-  const usedRates = {
-    firstVerify: best.first,
-    reverify: best.re,
-    referrer: best.ref,
-  };
-  const ratesAssumed =
-    best.first !== rates.first_verify_bonus ||
-    best.re !== rates.reverify_bonus ||
-    best.ref !== rates.referrer_bonus;
-
+  // (rate reconciliation happens earlier, before the bonus steps are built)
   let left = bonusTotal;
   const take = (want: number) => {
     const got = Math.max(0, Math.min(want, left));
