@@ -359,8 +359,9 @@ function AdminWithdrawals() {
           )}
 
           <p className="text-[9px] text-muted-foreground leading-relaxed">
-            💡 <b>দ্রুত করতে:</b> উপরে সব সিলেক্ট করে CSV ডাউনলোড করুন → bKash/Nagad merchant portal-এ bulk disbursement-এ আপলোড করুন → একবার PIN দিয়ে সব পেমেন্ট করুন → ফিরে এসে "Paid Mark" চাপুন।
+            💡 CSV শুধু merchant portal থাকলে দরকার — না থাকলে উপরের ⚡ ফাস্ট পে ব্যবহার করুন।
           </p>
+
         </div>
       )}
 
