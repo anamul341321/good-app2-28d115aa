@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getDashboard, getMyWithdrawals } from "@/lib/dashboard.functions";
 import { requestWithdraw } from "@/lib/withdraw.functions";
-import { MIN_WITHDRAW_BDT, withdrawFee, withdrawFeeRate } from "@/lib/constants";
+import { MIN_WITHDRAW_BDT, withdrawFee } from "@/lib/constants";
 import { computeLiveBalance, splitBalance } from "@/lib/mining";
 import { useState, useEffect } from "react";
 import { ArrowDownToLine, Loader2, Lock, Copy, ShieldAlert } from "lucide-react";
@@ -667,7 +667,6 @@ function UsdtWithdrawCard(props: {
   const CELO_RE = /^0x[a-fA-F0-9]{40}$/;
   const addrValid = CELO_RE.test(usdtAddress.trim());
   const gross = Math.floor(Number(amount) || 0);
-  const feeRate = withdrawFeeRate(gross);
   const fee = withdrawFee(gross);
   const payoutBdt = gross - fee;
 
