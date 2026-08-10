@@ -88,6 +88,34 @@ function AdminWithdrawals() {
   const selectAll = () => setSelected(new Set(pendingRows.map((w: any) => w.id)));
   const clearSelection = () => setSelected(new Set());
 
+  // ⚡ Fast Pay queue — একটার পর একটা, শুধু PIN দিলেই হবে (personal/agent নম্বর দিয়েই চলবে)
+  const [fastMode, setFastMode] = useState(false);
+  const fastQueue = useMemo(
+    () => pendingRows.filter((w: any) => w.provider !== "usdt"),
+    [pendingRows],
+  );
+  const [fastIdx, setFastIdx] = useState(0);
+  const fastRow: any = fastQueue[Math.min(fastIdx, Math.max(fastQueue.length - 1, 0))];
+  const ussdFor = (w: any) => {
+    const amt = Math.round(Number(w.amount));
+    return w.provider === "bkash"
+      ? `tel:${encodeURIComponent(`*247*1*${w.wallet_number}*${amt}#`)}`
+      : `tel:${encodeURIComponent(`*167*1*1*${w.wallet_number}*${amt}#`)}`;
+  };
+  const fastPaidNext = () => {
+    let name = adminName.trim();
+    if (!name) {
+      const input = window.prompt("আপনার নাম লিখুন (কে paid করছে):", "");
+      if (!input || !input.trim()) { toast.error("আগে আপনার নাম লিখুন"); return; }
+      name = input.trim();
+      setAdminName(name);
+    }
+    if (!fastRow) return;
+    mut.mutate({ id: fastRow.id, action: "paid", paidBy: name });
+    setFastIdx((i) => i + 1);
+  };
+
+
   const downloadBulkCsv = () => {
     const header = "wallet_number,amount,provider,remarks";
     const lines = selectedRows.map((w: any) => {
