@@ -298,24 +298,24 @@ export async function buildEarningsBreakdown(admin: any, userId: string): Promis
       bonusSteps.push({
         key: "self-first",
         label: "১০টি স্লট first verify সম্পন্ন — নিজের বোনাস",
-        formula: `১ বার × ${rates.first_verify_bonus}৳`,
-        amount: rates.first_verify_bonus,
+        formula: `১ বার × ${usedRates.firstVerify}৳ (তখনকার হার)`,
+        amount: usedRates.firstVerify,
       });
     }
     if (prof.bonus_reverify_claimed) {
       bonusSteps.push({
         key: "self-reverify",
         label: "১০টি স্লট re-verify সম্পন্ন — মাইনিং চালু বোনাস",
-        formula: `১ বার × ${rates.reverify_bonus}৳`,
-        amount: rates.reverify_bonus,
+        formula: `১ বার × ${usedRates.reverify}৳ (তখনকার হার)`,
+        amount: usedRates.reverify,
       });
     }
     if (referrerPaidCount > 0) {
       bonusSteps.push({
         key: "referrer",
         label: `রেফার বোনাস — ${referrerPaidCount} জন রেফার ১০টি first verify শেষ করেছে`,
-        formula: `${referrerPaidCount} জন × ${rates.referrer_bonus}৳`,
-        amount: referrerPaidCount * rates.referrer_bonus,
+        formula: `${referrerPaidCount} জন × ${usedRates.referrer}৳ (তখনকার হার)`,
+        amount: referrerPaidCount * usedRates.referrer,
       });
     }
     const bonusSum = bonusSteps.reduce((s, x) => s + x.amount, 0);
