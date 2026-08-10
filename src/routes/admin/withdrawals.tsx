@@ -382,6 +382,17 @@ function AdminWithdrawals() {
                   <p className="text-[10px] text-muted-foreground mt-0.5">{new Date(w.created_at).toLocaleString()}</p>
                 </div>
                 <div className="flex flex-col items-end gap-1 shrink-0">
+                  {w.status === "pending" && (
+                    <label className="flex items-center gap-1 text-[10px] font-bold text-cyan cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={selected.has(w.id)}
+                        onChange={() => toggleSelect(w.id)}
+                        className="w-4 h-4 accent-cyan rounded"
+                      />
+                      সিলেক্ট
+                    </label>
+                  )}
                   {isAdminPayout && (
                     <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-fuchsia-500 text-white">🎁 ADMIN</span>
                   )}
