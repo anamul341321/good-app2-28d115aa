@@ -420,41 +420,63 @@ function BonusSettings() {
           <p className="text-[10px] text-muted-foreground mt-1">Home banner এ এই টাকা দেখাবে</p>
         </div>
 
-        {/* 2X Promo window */}
+        {/* ধাপ ৩ — সীমিত সময়ের স্পেশাল অফার */}
         <div className={`rounded-xl border-2 p-3 space-y-2 ${promoActive ? "border-rose bg-rose/5" : "border-border bg-surface-2"}`}>
           <div className="flex items-center justify-between gap-2">
-            <p className="text-[11px] font-black text-rose">🔥 2X Bonus Promo</p>
+            <div className="min-w-0">
+              <p className="text-[11px] font-black text-rose">ধাপ ৩ — 🔥 স্পেশাল অফার (নির্দিষ্ট সময়ের জন্য)</p>
+              <p className="text-[10px] font-bold mt-0.5">
+                {promoActive
+                  ? "চালু — নিচের Start–End সময়ের মধ্যে নিচের অফার রেট কাজ করবে"
+                  : "বন্ধ — শুধু উপরের সাধারণ রেট কাজ করবে"}
+              </p>
+            </div>
             <button
               type="button"
               onClick={() => setPromoActive(!promoActive)}
-              className={`w-14 h-7 rounded-full relative transition ${promoActive ? "bg-rose" : "bg-surface-2 border border-border"}`}>
+              className={`shrink-0 w-14 h-7 rounded-full relative transition ${promoActive ? "bg-rose" : "bg-surface-2 border border-border"}`}>
               <span className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow transition-all ${promoActive ? "left-8" : "left-1"}`} />
             </button>
           </div>
           <input value={promoTitle} onChange={(e) => setPromoTitle(e.target.value)}
-            placeholder="Banner title (e.g. 🎊 2X বোনাস অফার!)"
+            placeholder="ব্যানারের টাইটেল (যেমন 🎊 স্পেশাল বোনাস অফার!)"
             className="w-full px-3 py-2 rounded-lg bg-background border border-border text-xs outline-none focus:border-rose" />
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="text-[9px] text-muted-foreground font-bold">Start</label>
+              <label className="text-[9px] text-muted-foreground font-bold">শুরু (Start)</label>
               <input type="datetime-local" value={promoStart} onChange={(e) => setPromoStart(e.target.value)}
                 className="w-full px-2 py-1.5 rounded-lg bg-background border border-border text-xs outline-none" />
             </div>
             <div>
-              <label className="text-[9px] text-muted-foreground font-bold">End</label>
+              <label className="text-[9px] text-muted-foreground font-bold">শেষ (End)</label>
               <input type="datetime-local" value={promoEnd} onChange={(e) => setPromoEnd(e.target.value)}
                 className="w-full px-2 py-1.5 rounded-lg bg-background border border-border text-xs outline-none" />
             </div>
           </div>
+          <button
+            type="button"
+            onClick={() => {
+              const pad = (n: number) => String(n).padStart(2, "0");
+              const fmt = (d: Date) =>
+                `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+              const now = new Date();
+              setPromoStart(fmt(now));
+              setPromoEnd(fmt(new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000)));
+              setPromoActive(true);
+            }}
+            className="w-full py-2 rounded-lg bg-rose/15 border border-rose/40 text-[11px] font-black text-rose">
+            ⚡ এখন থেকে ২ দিনের অফার সেট করুন
+          </button>
           <div className="grid grid-cols-3 gap-2">
-            <PromoNum label="First" value={pFv} onChange={setPFv} />
-            <PromoNum label="Re-vf"  value={pRv} onChange={setPRv} />
+            <PromoNum label="First verify" value={pFv} onChange={setPFv} />
+            <PromoNum label="Re-verify"  value={pRv} onChange={setPRv} />
             <PromoNum label="Refer" value={pRf} onChange={setPRf} />
           </div>
           <p className="text-[9px] text-muted-foreground leading-snug">
-            Active থাকলে Start–End সময়ের মধ্যে এই টাকা কাজ করবে, বাকি সময়ে base rate চালু।
+            ⚠️ এই সেকশনের পরিবর্তন নিচের <b>Save</b> বাটনে চাপলেই কাজ করবে। অফার শেষ হলে অটো সাধারণ রেটে ফিরে যাবে।
           </p>
         </div>
+
 
         {/* Payout methods */}
         <div className="rounded-xl border-2 border-emerald/40 bg-emerald/5 p-3 space-y-2">
