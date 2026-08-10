@@ -256,12 +256,13 @@ function AdminWithdrawals() {
                   <span className="mono-num font-black text-lg">{fastRow.wallet_number}</span>
                   <span className="mono-num font-black text-lg text-emerald">{Math.round(Number(fastRow.amount))}৳</span>
                 </div>
-                <a
-                  href={ussdFor(fastRow)}
-                  className="block py-3 rounded-xl bg-emerald text-background text-center font-black text-sm"
+                <button
+                  type="button"
+                  onClick={() => openWalletApp(fastRow)}
+                  className="w-full block py-3 rounded-xl bg-emerald text-background text-center font-black text-sm"
                 >
-                  📞 ডায়াল করুন → শুধু PIN দিন
-                </a>
+                  📲 {fastRow.provider === "bkash" ? "বিকাশ" : "নগদ"} অ্যাপ খুলুন (নম্বর কপি হয়ে যাবে)
+                </button>
                 <div className="grid grid-cols-2 gap-1.5">
                   <button
                     type="button"
@@ -278,6 +279,13 @@ function AdminWithdrawals() {
                     অ্যামাউন্ট কপি
                   </button>
                 </div>
+                <a
+                  href={ussdFor(fastRow)}
+                  className="block py-2 rounded-lg bg-white/10 text-center text-[10px] font-bold"
+                >
+                  📞 {fastRow.provider === "bkash" ? "*247#" : "*167#"} মেনু খুলুন (অ্যাপ না থাকলে)
+                </a>
+
                 <div className="grid grid-cols-3 gap-1.5">
                   <button
                     type="button"
