@@ -185,6 +185,70 @@ function AdminWithdrawals() {
         <Tab id="all" label="All" count={counts.all} tone="bg-cyan/20 text-cyan" />
       </div>
 
+      {/* Bulk payout panel — only on pending tab */}
+      {filter === "pending" && pendingRows.length > 0 && (
+        <div className="glass rounded-xl p-3 border-2 border-cyan/30 bg-cyan/5 space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <div className="min-w-0 flex-1">
+              <p className="text-[11px] font-black text-cyan">⚡ বাল্ক পেমেন্ট / Bulk payout</p>
+              <p className="text-[10px] text-muted-foreground">
+                {selectedRows.length} টি সিলেক্ট · মোট{" "}
+                <span className="mono-num font-bold text-cyan">{Math.round(selectedTotal)}৳</span>
+                {" "}(Pending মোট {pendingRows.length}টি · {Math.round(pendingRows.reduce((s: number, w: any) => s + Number(w.amount), 0))}৳)
+              </p>
+            </div>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={selectAll}
+                className="px-2 py-1 rounded-lg bg-white/10 text-[10px] font-bold"
+              >
+                সব সিলেক্ট
+              </button>
+              <button
+                type="button"
+                onClick={clearSelection}
+                className="px-2 py-1 rounded-lg bg-white/10 text-[10px] font-bold"
+              >
+                ক্লিয়ার
+              </button>
+            </div>
+          </div>
+
+          {selectedRows.length > 0 && (
+            <div className="grid grid-cols-2 gap-1.5">
+              <button
+                type="button"
+                onClick={downloadBulkCsv}
+                className="py-2 rounded-lg bg-emerald/15 text-emerald font-black text-[11px] flex items-center justify-center gap-1"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5" /> CSV ডাউনলোড
+              </button>
+              <button
+                type="button"
+                onClick={copyBulkList}
+                className="py-2 rounded-lg bg-white/10 font-black text-[11px] flex items-center justify-center gap-1"
+              >
+                <Copy className="w-3.5 h-3.5" /> লিস্ট কপি
+              </button>
+              <button
+                type="button"
+                onClick={bulkMarkPaid}
+                disabled={bulkMut.isPending}
+                className="col-span-2 py-2 rounded-lg bg-cyan/20 text-cyan font-black text-[11px] flex items-center justify-center gap-1"
+              >
+                {bulkMut.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                সিলেক্ট করা {selectedRows.length}টি Paid Mark করুন
+              </button>
+            </div>
+          )}
+
+          <p className="text-[9px] text-muted-foreground leading-relaxed">
+            💡 <b>দ্রুত করতে:</b> উপরে সব সিলেক্ট করে CSV ডাউনলোড করুন → bKash/Nagad merchant portal-এ bulk disbursement-এ আপলোড করুন → একবার PIN দিয়ে সব পেমেন্ট করুন → ফিরে এসে "Paid Mark" চাপুন।
+          </p>
+        </div>
+      )}
+
       {filter === "paid-by" && <PaidByPanel data={paidByQ.data ?? []} loading={paidByQ.isLoading} />}
 
 
