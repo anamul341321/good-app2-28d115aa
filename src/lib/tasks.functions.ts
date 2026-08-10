@@ -293,6 +293,8 @@ export const completeReverify = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => CompleteInput.parse(input))
   .handler(async ({ data, context }) => {
     const { userId } = context;
+    const { assertFaceVerifyEnabled } = await import("@/lib/face-verify-gate.server");
+    await assertFaceVerifyEnabled("verify");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const { data: task } = await supabaseAdmin

@@ -356,6 +356,8 @@ function ReverifyPage() {
           <p className="font-black text-emerald">রি-ভেরিফাই সফল হয়েছে</p>
         </div>
       )}
+      </>
+      )}
     </div>
   );
 }
