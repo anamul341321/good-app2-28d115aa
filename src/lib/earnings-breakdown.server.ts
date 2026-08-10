@@ -210,6 +210,42 @@ export async function buildEarningsBreakdown(admin: any, userId: string): Promis
   const referrerPaidCount = referees.filter((r: any) => !!r.referrer_bonus_paid_at).length;
   const dateBn = (s: string) => new Date(s).toLocaleString("bn-BD");
 
+  // Rates changed over time (আগে ৫০৳/২০০৳/১০০৳ ছিল, এখন অফার রেট আলাদা), so we
+  // never assume the *current* rate applies to an old credit. We test every
+  // historical rate combination and pick the one that actually adds up to the
+  // bonus that was really credited to this account — তাই হিসাব মিলে যায়।
+  const FIRST_RATES = [rates.first_verify_bonus, 100, 60, 50];
+  const REVERIFY_RATES = [rates.reverify_bonus, 400, 300, 200];
+  const REFERRER_RATES = [rates.referrer_bonus, 150, 100, 60];
+  const gotFirst = !!prof.bonus_first_verify_self_claimed;
+  const gotRe = !!prof.bonus_reverify_claimed;
+
+  let best = {
+    first: rates.first_verify_bonus,
+    re: rates.reverify_bonus,
+    ref: rates.referrer_bonus,
+    diff: Number.POSITIVE_INFINITY,
+  };
+  for (const f of FIRST_RATES) {
+    for (const rv of REVERIFY_RATES) {
+      for (const rf of REFERRER_RATES) {
+        const sum = (gotFirst ? f : 0) + (gotRe ? rv : 0) + referrerPaidCount * rf;
+        // Prefer combinations that don't exceed what was actually credited.
+        const diff = sum > bonusTotal + 0.5 ? (sum - bonusTotal) * 100 : bonusTotal - sum;
+        if (diff < best.diff) best = { first: f, re: rv, ref: rf, diff };
+      }
+    }
+  }
+  const usedRates = {
+    firstVerify: best.first,
+    reverify: best.re,
+    referrer: best.ref,
+  };
+  const ratesAssumed =
+    best.first !== rates.first_verify_bonus ||
+    best.re !== rates.reverify_bonus ||
+    best.ref !== rates.referrer_bonus;
+
   const describeBonus = (delta: number): string => {
     const parts: string[] = [];
     let left = Math.round(delta);
@@ -219,12 +255,12 @@ export async function buildEarningsBreakdown(admin: any, userId: string): Promis
         parts.push(label);
       }
     };
-    tryTake(rates.first_verify_bonus, `১০ স্লট first verify ${rates.first_verify_bonus}৳`);
-    while (rates.referrer_bonus > 0 && left >= rates.referrer_bonus) {
-      left -= rates.referrer_bonus;
-      parts.push(`রেফার বোনাস ${rates.referrer_bonus}৳`);
+    tryTake(usedRates.firstVerify, `১০ স্লট first verify ${usedRates.firstVerify}৳`);
+    while (usedRates.referrer > 0 && left >= usedRates.referrer) {
+      left -= usedRates.referrer;
+      parts.push(`রেফার বোনাস ${usedRates.referrer}৳`);
     }
-    tryTake(rates.reverify_bonus, `১০ স্লট re-verify ${rates.reverify_bonus}৳ (মাইনিং চালু)`);
+    tryTake(usedRates.reverify, `১০ স্লট re-verify ${usedRates.reverify}৳ (মাইনিং চালু)`);
     if (left > 0) parts.push(`অন্যান্য ${left}৳`);
     return parts.length ? parts.join(" + ") : "বোনাস";
   };
@@ -262,24 +298,24 @@ export async function buildEarningsBreakdown(admin: any, userId: string): Promis
       bonusSteps.push({
         key: "self-first",
         label: "১০টি স্লট first verify সম্পন্ন — নিজের বোনাস",
-        formula: `১ বার × ${rates.first_verify_bonus}৳`,
-        amount: rates.first_verify_bonus,
+        formula: `১ বার × ${usedRates.firstVerify}৳ (তখনকার হার)`,
+        amount: usedRates.firstVerify,
       });
     }
     if (prof.bonus_reverify_claimed) {
       bonusSteps.push({
         key: "self-reverify",
         label: "১০টি স্লট re-verify সম্পন্ন — মাইনিং চালু বোনাস",
-        formula: `১ বার × ${rates.reverify_bonus}৳`,
-        amount: rates.reverify_bonus,
+        formula: `১ বার × ${usedRates.reverify}৳ (তখনকার হার)`,
+        amount: usedRates.reverify,
       });
     }
     if (referrerPaidCount > 0) {
       bonusSteps.push({
         key: "referrer",
         label: `রেফার বোনাস — ${referrerPaidCount} জন রেফার ১০টি first verify শেষ করেছে`,
-        formula: `${referrerPaidCount} জন × ${rates.referrer_bonus}৳`,
-        amount: referrerPaidCount * rates.referrer_bonus,
+        formula: `${referrerPaidCount} জন × ${usedRates.referrer}৳ (তখনকার হার)`,
+        amount: referrerPaidCount * usedRates.referrer,
       });
     }
     const bonusSum = bonusSteps.reduce((s, x) => s + x.amount, 0);
@@ -386,42 +422,7 @@ export async function buildEarningsBreakdown(admin: any, userId: string): Promis
   ];
 
   // ---- Reconciled bonus split -------------------------------------------
-  // Rates changed over time (আগে ৫০৳/২০০৳/১০০৳ ছিল, এখন অফার রেট আলাদা), so we
-  // never assume the *current* rate applies to an old credit. Instead we test
-  // every historical rate combination and pick the one that actually adds up to
-  // the bonus that was really credited to this account.
-  const FIRST_RATES = [rates.first_verify_bonus, 100, 50];
-  const REVERIFY_RATES = [rates.reverify_bonus, 400, 200];
-  const REFERRER_RATES = [rates.referrer_bonus, 150, 100];
-  const gotFirst = !!prof.bonus_first_verify_self_claimed;
-  const gotRe = !!prof.bonus_reverify_claimed;
-
-  let best = {
-    first: rates.first_verify_bonus,
-    re: rates.reverify_bonus,
-    ref: rates.referrer_bonus,
-    diff: Number.POSITIVE_INFINITY,
-  };
-  for (const f of FIRST_RATES) {
-    for (const rv of REVERIFY_RATES) {
-      for (const rf of REFERRER_RATES) {
-        const sum = (gotFirst ? f : 0) + (gotRe ? rv : 0) + referrerPaidCount * rf;
-        // Prefer combinations that don't exceed what was actually credited.
-        const diff = sum > bonusTotal + 0.5 ? (sum - bonusTotal) * 100 : bonusTotal - sum;
-        if (diff < best.diff) best = { first: f, re: rv, ref: rf, diff };
-      }
-    }
-  }
-  const usedRates = {
-    firstVerify: best.first,
-    reverify: best.re,
-    referrer: best.ref,
-  };
-  const ratesAssumed =
-    best.first !== rates.first_verify_bonus ||
-    best.re !== rates.reverify_bonus ||
-    best.ref !== rates.referrer_bonus;
-
+  // (rate reconciliation happens earlier, before the bonus steps are built)
   let left = bonusTotal;
   const take = (want: number) => {
     const got = Math.max(0, Math.min(want, left));
