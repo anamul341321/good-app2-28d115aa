@@ -60,13 +60,18 @@ export const adminStats = createServerFn({ method: "GET" }).handler(async () => 
 
 export const adminMoneyStats = createServerFn({ method: "GET" }).handler(async () => {
   const supabaseAdmin = await gate();
-  const sumPaged = async (table: string, column: string, filter?: (query: any) => any) => {
+  const sumPaged = async (
+    table: string,
+    column: string,
+    orderColumn = "id",
+    filter?: (query: any) => any,
+  ) => {
     let total = 0;
     for (let from = 0; ; from += 1000) {
-      let query: any = supabaseAdmin.from(table as any).select(column).order("id").range(from, from + 999);
+      let query: any = supabaseAdmin.from(table as any).select(column).order(orderColumn).range(from, from + 999);
       if (filter) query = filter(query);
       const { data, error } = await query;
-      if (error) throw new Error(error.message);
+      if (error) throw new Error(`${table}.${column}: ${error.message}`);
       const rows = (data as any[]) ?? [];
       total += rows.reduce((sum, row) => sum + Number(row[column] ?? 0), 0);
       if (rows.length < 1000) break;
@@ -74,11 +79,11 @@ export const adminMoneyStats = createServerFn({ method: "GET" }).handler(async (
     return total;
   };
   const [pendingAmount, paidWithdraw, paidRecharge, adminCredits, totalAccrued] = await Promise.all([
-    sumPaged("withdrawals", "amount", (query) => query.eq("status", "pending")),
-    sumPaged("withdrawals", "amount", (query) => query.eq("status", "paid")),
-    sumPaged("recharges", "amount", (query) => query.eq("status", "success")),
-    sumPaged("admin_credits", "amount"),
-    sumPaged("mining_state", "accrued_amount"),
+    sumPaged("withdrawals", "amount", "id", (query) => query.eq("status", "pending")),
+    sumPaged("withdrawals", "amount", "id", (query) => query.eq("status", "paid")),
+    sumPaged("recharges", "amount", "id", (query) => query.eq("status", "success")),
+    sumPaged("admin_credits", "amount", "id"),
+    sumPaged("mining_state", "accrued_amount", "user_id"),
   ]);
   return {
     pendingAmount,
