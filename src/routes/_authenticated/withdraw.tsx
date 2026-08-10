@@ -625,23 +625,22 @@ function DebtCard({ d, t, onClaimed }: { d: any; t: (bn: string, en: string) => 
 function FeeBreakdown({ amount, t }: { amount: string; t: (bn: string, en: string) => string }) {
   const gross = Math.floor(Number(amount) || 0);
   if (gross < MIN_WITHDRAW_BDT) return null;
-  const feeRate = withdrawFeeRate(gross);
-  const feePct = Math.round(feeRate * 100);
   const fee = withdrawFee(gross);
   const payout = gross - fee;
   return (
     <div className="rounded-xl border-2 border-amber/40 bg-amber/10 p-3 space-y-1.5" translate="no">
-      <p className="text-[10px] uppercase tracking-widest font-black text-amber">{t(`ফি হিসাব (${feePct}%)`, `Fee breakdown (${feePct}%)`)}</p>
-      <p className="text-[10px] text-muted-foreground">{t("১০০৳-এর নিচে ২০%, ১০০৳ ও তার উপরে ১০% — তবে হাতে সবসময় কমপক্ষে ৫০৳ আসবে", "Under 100৳: 20%, 100৳+: 10% — but you always receive at least 50৳")}</p>
+      <p className="text-[10px] uppercase tracking-widest font-black text-amber">{t("ফি হিসাব", "Fee breakdown")}</p>
+      <p className="text-[10px] text-muted-foreground">{t("যত টাকাই উইথড্র দিন — ফি সবসময় মাত্র ১০৳", "Any amount — the fee is always just 10৳")}</p>
 
       <div className="flex justify-between text-[12px]">
         <span className="text-muted-foreground">{t("মোট কাটবে", "Deducted")}</span>
         <span className="mono-num font-bold">{gross}৳</span>
       </div>
       <div className="flex justify-between text-[12px]">
-        <span className="text-muted-foreground">{t(`প্ল্যাটফর্ম ফি (${feePct}%)`, `Platform fee (${feePct}%)`)}</span>
+        <span className="text-muted-foreground">{t("প্ল্যাটফর্ম ফি (ফিক্সড)", "Platform fee (flat)")}</span>
         <span className="mono-num font-bold text-rose">− {fee}৳</span>
       </div>
+
       <div className="flex justify-between text-sm border-t border-amber/30 pt-1.5">
         <span className="font-black">{t("আপনি পাবেন", "You will receive")}</span>
         <span className="mono-num font-black text-emerald">{payout}৳</span>
