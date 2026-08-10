@@ -265,7 +265,7 @@ function HomePage() {
                     <Sparkles className="w-3 h-3" /> Special Offers
                   </p>
                   <p className="text-lg font-black leading-tight drop-shadow mt-0.5">{t("সকল বোনাস অফার", "All Bonus Offers")}</p>
-                  <p className="text-[11px] opacity-95 font-bold mt-0.5">{t("2X প্রোমো · রেফার · রি-ভেরিফাই", "2X Promo · Refer · Re-verify")}</p>
+                  <p className="text-[11px] opacity-95 font-bold mt-0.5">{t("স্পেশাল প্রোমো · রেফার · রি-ভেরিফাই", "Special Promo · Refer · Re-verify")}</p>
                 </div>
                 <span className="text-3xl opacity-90 font-black">›</span>
               </div>

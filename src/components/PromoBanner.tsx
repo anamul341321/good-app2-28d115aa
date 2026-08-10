@@ -67,13 +67,13 @@ export function PromoBanner({ rates }: { rates?: PromoRates | null }) {
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-[9px] uppercase tracking-[0.25em] font-black flex items-center gap-1 text-yellow-100">
-            <Sparkles className="w-3 h-3" /> Limited Time · 2X BONUS
+            <Sparkles className="w-3 h-3" /> Limited Time · SPECIAL BONUS
           </p>
           <p className="text-[15px] font-black leading-tight mt-0.5 drop-shadow">
-            {rates.promo_title || "🎊 2X বোনাস অফার!"}
+            {rates.promo_title || "🎊 স্পেশাল বোনাস অফার!"}
           </p>
           <p className="text-[10px] text-white/90 mt-0.5">
-            এই সময়ের মধ্যে নতুন অ্যাকাউন্টে ডাবল বোনাস। নিচের সব রেট ২X!
+            এই সময়ের মধ্যে নিচের স্পেশাল রেটে বোনাস পাবেন।
           </p>
         </div>
       </div>
@@ -116,10 +116,10 @@ export function PromoBanner({ rates }: { rates?: PromoRates | null }) {
 
       <div className="promo-urgent relative mt-2 rounded-2xl border border-yellow-200/60 bg-black/30 px-3 py-2 text-center">
         <p className="text-[11px] font-black text-yellow-100 leading-snug">
-          🔥 সময় শেষ হওয়ার আগেই ২X বোনাসটা নিয়ে নিন 🔥
+          🔥 সময় শেষ হওয়ার আগেই স্পেশাল বোনাসটা নিয়ে নিন 🔥
         </p>
         <p className="text-[9px] text-white/85 mt-0.5">
-          {d > 0 ? `আর মাত্র ${d} দিন বাকি` : `আর মাত্র ${h} ঘণ্টা বাকি`} — ১০টি স্লট verify করে ডাবল বোনাস পেতে পারেন।
+          {d > 0 ? `আর মাত্র ${d} দিন বাকি` : `আর মাত্র ${h} ঘণ্টা বাকি`} — ১০টি স্লট verify করে স্পেশাল বোনাস পেতে পারেন।
         </p>
       </div>
     </div>
