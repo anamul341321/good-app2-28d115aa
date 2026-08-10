@@ -188,13 +188,15 @@ export async function maybeAutoPay(withdrawalId: string) {
     if (!toMfsOperator((w as any).provider)) return;
 
     if ((s as any)?.auto_payout_kyc_only !== false) {
-      const { data: link } = await supabaseAdmin
-        .from("telegram_links")
-        .select("user_id")
-        .eq("user_id", w.user_id)
+      const { data: prof } = await supabaseAdmin
+        .from("profiles")
+        .select("kyc_verified, telegram_user_id")
+        .eq("id", w.user_id)
         .maybeSingle();
-      if (!link) return;
+      const kycOk = !!(prof as any)?.kyc_verified || !!(prof as any)?.telegram_user_id;
+      if (!kycOk) return;
     }
+
 
     await sendPayout(withdrawalId, { auto: true });
   } catch {
