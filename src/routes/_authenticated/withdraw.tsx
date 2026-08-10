@@ -637,7 +637,7 @@ function FeeBreakdown({ amount, t }: { amount: string; t: (bn: string, en: strin
         <span className="mono-num font-bold">{gross}৳</span>
       </div>
       <div className="flex justify-between text-[12px]">
-        <span className="text-muted-foreground">{t("প্ল্যাটফর্ম ফি (ফিক্সড)", "Platform fee (flat)")}</span>
+        <span className="text-muted-foreground">{t(`প্ল্যাটফর্ম ফি (${gross < 100 ? "১৫%" : "১০%"})`, `Platform fee (${gross < 100 ? "15%" : "10%"})`)}</span>
         <span className="mono-num font-bold text-rose">− {fee}৳</span>
       </div>
 
