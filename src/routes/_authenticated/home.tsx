@@ -112,6 +112,7 @@ function HomePage() {
     if (appStatus?.faceVerifyEnabled === false) { setShowWelcome(false); return; }
     const b = (data as any).bonus;
     if (!b) return;
+    if (b.rates?.bonus_enabled === false) { setShowWelcome(false); return; }
     if (b.selfFirstPaid && b.referrerPaid && b.userReverifyPaid) return;
     if (sessionStorage.getItem("welcome-bonus-seen")) return;
     setShowWelcome(true);
@@ -243,7 +244,8 @@ function HomePage() {
       {(() => {
         const b = (data as any).bonus;
         const total = b ? Number(b.totalAmount ?? (b.selfFirstAmount + b.referrerAmount + b.userAmount)) : 0;
-        const hasUnclaimed = b && !(b.selfFirstPaid && b.referrerPaid && b.userReverifyPaid);
+        const bonusOn = b?.rates?.bonus_enabled !== false;
+        const hasUnclaimed = bonusOn && b && !(b.selfFirstPaid && b.referrerPaid && b.userReverifyPaid);
         const rechargeOn = (data as any).payoutSettings?.rechargeEnabled !== false;
         return (
           <div className="space-y-3">

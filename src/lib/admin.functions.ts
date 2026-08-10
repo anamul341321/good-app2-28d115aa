@@ -2110,6 +2110,22 @@ export const adminSetFaceVerify = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+/** Welcome bonus offer master switch (first verify / re-verify / referral bonus) */
+export const adminSetBonusEnabled = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => z.object({ enabled: z.boolean() }).parse(i))
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await gate();
+    const { error } = await supabaseAdmin.from("bonus_settings").upsert({
+      id: "default",
+      bonus_enabled: data.enabled,
+      updated_at: new Date().toISOString(),
+    } as any);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+
+
 /** UID দিয়ে নির্দিষ্ট ইউজারকে লাল নোটিশ (মেসেজ) পাঠানো */
 export const adminSendUserNotice = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => z.object({
