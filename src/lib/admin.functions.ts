@@ -471,7 +471,7 @@ export const adminListWithdrawals = createServerFn({ method: "GET" }).handler(as
   const signalsMap = new Map<string, any>();
   if (pendingUserIds.length > 0) {
     const [tasksRes, miningRes, debtsRes, prevPaidRes, unverifiedRes, refereesRes, settingsRes, creditsRes, transfersInRes, vouchersRes] = await Promise.all([
-      supabaseAdmin.from("tasks").select("user_id, status, whitelist_ok, wallet_address, reverify_count").in("user_id", pendingUserIds),
+      supabaseAdmin.from("tasks").select("user_id, status, whitelist_ok, wallet_address, reverify_count, initial_verify_at").in("user_id", pendingUserIds),
       supabaseAdmin.from("mining_state").select("user_id, accrued_amount, withdrawn_amount, bonus_amount, is_active").in("user_id", pendingUserIds),
       supabaseAdmin.from("user_debts").select("user_id, amount, status").in("user_id", pendingUserIds).eq("status", "active"),
       supabaseAdmin.from("withdrawals").select("user_id, amount, status").in("user_id", pendingUserIds).eq("status", "paid"),
