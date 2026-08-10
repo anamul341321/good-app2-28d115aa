@@ -2217,7 +2217,10 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           // for finding the UID they gave earlier when they start misbehaving.
           let history: string[] = [];
           let pastReplies: string[] = [];
-          let knownUid: string | null = (offender as any)?.known_uid ?? null;
+          // ⚠️ সবার আগে KYC-লিংক করা UID — এটাই এই টেলিগ্রাম একাউন্টের আসল
+          // পরিচয়। আগে অন্য কারো UID দেখা হয়েছিল বলে সেটাই মনে রেখে "আমার
+          // হিসাব" চাইলে অন্যের হিসাব দেখিয়ে দিত — তাই লিংক করা UID-ই আগে।
+          let knownUid: string | null = msg.from?.id ? await linkedUid() : null;
           if (msg.from?.id) {
             const { data: past } = await supabaseAdmin
               .from("tg_messages").select("text, bot_reply, matched_uid, created_at")
@@ -2225,8 +2228,10 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               .order("created_at", { ascending: false }).limit(12);
             history = (past ?? []).map((p: any) => p.text).filter(Boolean).reverse().slice(-8);
             pastReplies = (past ?? []).map((p: any) => p.bot_reply).filter(Boolean).slice(0, 4);
+            if (!knownUid) knownUid = (offender as any)?.known_uid ?? null;
             if (!knownUid) knownUid = (past ?? []).find((p: any) => p.matched_uid)?.matched_uid ?? null;
           }
+
           // A full unrelated history makes the model answer the previous topic
           // instead of the user's current question. Only carry context for an
           // explicit reply/follow-up; standalone questions are self-contained.
