@@ -241,6 +241,49 @@ function AdminWithdrawals() {
         <Tab id="all" label="All" count={counts.all} tone="bg-cyan/20 text-cyan" />
       </div>
 
+      {/* 🤖 অটো পেমেন্ট (iPayBD) সেটিংস */}
+      <div className="glass rounded-xl p-3 border border-cyan/25 bg-cyan/5 space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <p className="text-xs font-black text-cyan flex items-center gap-1"><Zap className="w-3.5 h-3.5" /> অটো পেমেন্ট (iPayBD)</p>
+            <p className="text-[10px] text-muted-foreground">
+              {payoutQ.data?.configured ? "API key সেট আছে ✅" : "API key সেট নেই ❌"} · রিকোয়েস্ট এলে নিজেই bKash/Nagad-এ টাকা পাঠাবে
+            </p>
+          </div>
+          <button
+            onClick={() => payoutSetMut.mutate({ enabled: !(payoutQ.data?.enabled ?? false) })}
+            disabled={payoutSetMut.isPending}
+            className={`px-3 py-1.5 rounded-lg text-[11px] font-black shrink-0 ${payoutQ.data?.enabled ? "bg-emerald/25 text-emerald" : "bg-white/10 text-muted-foreground"}`}>
+            {payoutQ.data?.enabled ? "ON" : "OFF"}
+          </button>
+        </div>
+        <div className="flex gap-2 items-end">
+          <label className="flex-1">
+            <span className="text-[10px] font-bold text-muted-foreground">অটো পে সর্বোচ্চ (৳)</span>
+            <input
+              type="number"
+              defaultValue={payoutQ.data?.max ?? 300}
+              key={payoutQ.data?.max}
+              onBlur={(e) => {
+                const v = Number(e.target.value);
+                if (Number.isFinite(v) && v !== payoutQ.data?.max) payoutSetMut.mutate({ max: v });
+              }}
+              className="w-full mt-0.5 px-2 py-1 rounded bg-background/60 border border-white/10 text-xs outline-none focus:border-cyan mono-num"
+            />
+          </label>
+          <button
+            onClick={() => payoutSetMut.mutate({ kycOnly: !(payoutQ.data?.kycOnly ?? true) })}
+            className={`px-3 py-1.5 rounded-lg text-[11px] font-black ${payoutQ.data?.kycOnly ? "bg-cyan/20 text-cyan" : "bg-white/10 text-muted-foreground"}`}>
+            শুধু KYC verified: {payoutQ.data?.kycOnly ? "হ্যাঁ" : "না"}
+          </button>
+        </div>
+        <p className="text-[10px] text-muted-foreground">
+          এর বেশি অ্যামাউন্ট বা USDT হলে আপনি ম্যানুয়ালি দিবেন। Webhook URL: <span className="mono-num break-all">{payoutQ.data?.webhookUrl}</span>
+        </p>
+      </div>
+
+
+
       {/* ⚡ Fast Pay — personal/agent নম্বর দিয়েই এক এক করে PIN দিয়ে পেমেন্ট */}
       {filter === "pending" && fastQueue.length > 0 && (
         <div className="glass rounded-xl p-3 border-2 border-emerald/40 bg-emerald/5 space-y-2">
