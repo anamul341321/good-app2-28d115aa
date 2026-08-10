@@ -2756,8 +2756,10 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           }
           const ask =
             `🆔 ${senderName}, আপনার হিসাবটা এখনই দেখে দিচ্ছি।\n\n` +
-            `দয়া করে আপনার <b>UID</b> নম্বরটি লিখুন (অ্যাপের প্রোফাইল পেজে পাবেন, যেমন: 4100)।\n` +
-            `UID পেলেই আপনার মোট রেফার, ১ম ভেরিফাই, রি-ভেরিফাই, ব্যালেন্স ও উইথড্র — সব একসাথে জানিয়ে দেব 💙`;
+            `আপনার এই টেলিগ্রাম একাউন্টের সাথে কোনো UID <b>KYC দিয়ে লিংক করা নেই</b>, তাই অনুমান করে কারো হিসাব দেখাতে পারছি না 🙏\n\n` +
+            `👉 একবার <b>KYC</b> করে নিন (অ্যাপের হোম পেজে “KYC করুন” → টেলিগ্রাম → START) — তারপর শুধু “আমার হিসাব” লিখলেই আপনার UID মনে রেখে সব হিসাব দিয়ে দেব 💙\n\n` +
+            `এখনই দেখতে চাইলে আপনার <b>UID</b> নম্বরটি লিখুন (অ্যাপের প্রোফাইল পেজে পাবেন, যেমন: 4100)।`;
+
           await sendMessage(chatId, ask, msg.message_id);
           actions.push("account-info-ask-uid");
           await logMessage(decision.verdict, actions.join(","), ask, null);
