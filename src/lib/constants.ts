@@ -25,21 +25,22 @@ export const MIN_PAYOUT_BDT = 50;
 // bonus can still withdraw and receive the full 50৳ in hand.
 export const MIN_WITHDRAW_BDT = 60;
 
-// Withdraw fee: <100৳ → 20%, ≥100৳ → 10%.
-export function withdrawFeeRate(gross: number): number {
-  return gross < 100 ? 0.2 : 0.1;
-}
-// Fee is always capped so the payout never falls below MIN_PAYOUT_BDT —
-// e.g. 60৳ request → fee 10৳ → 50৳ in hand.
+// Flat withdraw fee: every withdraw costs exactly 10৳, no matter the amount.
+export const WITHDRAW_FEE_BDT = 10;
+
 export function withdrawFee(gross: number): number {
   const g = Math.floor(gross);
-  const raw = Math.floor(g * withdrawFeeRate(g));
-  const maxFee = Math.max(0, g - MIN_PAYOUT_BDT);
-  return Math.min(raw, maxFee);
+  return Math.min(WITHDRAW_FEE_BDT, Math.max(0, g - MIN_PAYOUT_BDT));
+}
+// Effective percentage — only used for display.
+export function withdrawFeeRate(gross: number): number {
+  const g = Math.floor(gross);
+  return g > 0 ? withdrawFee(g) / g : 0;
 }
 export function withdrawPayout(gross: number): number {
   return Math.floor(gross) - withdrawFee(gross);
 }
+
 
 
 export type WalletProvider = "bkash" | "nagad";
