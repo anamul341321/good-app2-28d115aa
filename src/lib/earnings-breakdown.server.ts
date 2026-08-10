@@ -210,15 +210,47 @@ export async function buildEarningsBreakdown(admin: any, userId: string): Promis
   const referrerPaidCount = referees.filter((r: any) => !!r.referrer_bonus_paid_at).length;
   const dateBn = (s: string) => new Date(s).toLocaleString("bn-BD");
 
-  // Rates changed over time (আগে ৫০৳/২০০৳/১০০৳ ছিল, এখন অফার রেট আলাদা), so we
-  // never assume the *current* rate applies to an old credit. We test every
-  // historical rate combination and pick the one that actually adds up to the
-  // bonus that was really credited to this account — তাই হিসাব মিলে যায়।
-  const FIRST_RATES = [rates.first_verify_bonus, 100, 60, 50];
+  // Rates changed over time (আগে ৫০৳/২০০৳/১০০৳/১৫০৳ ছিল, এখন অফার রেট আলাদা), so we
+  // never assume the *current* rate applies to an old credit.
+  const FIRST_RATES = [rates.first_verify_bonus, 100, 63, 60, 50];
   const REVERIFY_RATES = [rates.reverify_bonus, 400, 300, 200];
-  const REFERRER_RATES = [rates.referrer_bonus, 150, 100, 60];
+  const REFERRER_RATES = [rates.referrer_bonus, 150, 100, 63, 60, 50];
   const gotFirst = !!prof.bonus_first_verify_self_claimed;
   const gotRe = !!prof.bonus_reverify_claimed;
+
+  // ---- Which bonus credits are already proven by the audit log? -----------
+  const auditBonusSum = Number(bonusEvents.reduce((s: number, e: any) => s + e.delta, 0).toFixed(2));
+  const positiveEvents = bonusEvents.filter((e: any) => e.delta > 0 && !transferEventIds.has(e.id));
+
+  // referrer_bonus_paid_at is an exact timestamp, so a referral payout can be
+  // tied to the audit event that credited it — no guessing needed.
+  const paidRefs = referees
+    .filter((r: any) => !!r.referrer_bonus_paid_at)
+    .map((r: any) => ({
+      uid: r.uid_seq ?? null,
+      name: r.display_name ?? "ইউজার",
+      at: new Date(r.referrer_bonus_paid_at).getTime(),
+    }));
+  const refsByEvent = new Map<string, typeof paidRefs>();
+  let refsExplainedByAudit = 0;
+  for (const r of paidRefs) {
+    const ev = positiveEvents.find((e: any) => Math.abs(new Date(e.created_at).getTime() - r.at) < 180000);
+    if (!ev) continue;
+    const list = refsByEvent.get(ev.id) ?? [];
+    list.push(r);
+    refsByEvent.set(ev.id, list);
+    refsExplainedByAudit += 1;
+  }
+
+  // Everything credited before the audit log existed (or by an event we cannot
+  // attribute) is the "legacy" part — that part is reconstructed by fitting the
+  // historical rates to the amount that was ACTUALLY credited.
+  const legacyBonus = Number(Math.max(0, bonusRaw - auditBonusSum).toFixed(2));
+  const legacyRefCount = Math.max(0, referrerPaidCount - refsExplainedByAudit);
+  // first/re-verify bonuses only belong to the legacy part when there is money
+  // there to cover them; otherwise they were credited inside the audit window.
+  const legacyHasFirst = gotFirst && legacyBonus > 0.5;
+  const legacyHasRe = gotRe && legacyBonus > 0.5;
 
   let best = {
     first: rates.first_verify_bonus,
@@ -229,9 +261,9 @@ export async function buildEarningsBreakdown(admin: any, userId: string): Promis
   for (const f of FIRST_RATES) {
     for (const rv of REVERIFY_RATES) {
       for (const rf of REFERRER_RATES) {
-        const sum = (gotFirst ? f : 0) + (gotRe ? rv : 0) + referrerPaidCount * rf;
+        const sum = (legacyHasFirst ? f : 0) + (legacyHasRe ? rv : 0) + legacyRefCount * rf;
         // Prefer combinations that don't exceed what was actually credited.
-        const diff = sum > bonusTotal + 0.5 ? (sum - bonusTotal) * 100 : bonusTotal - sum;
+        const diff = sum > legacyBonus + 0.5 ? (sum - legacyBonus) * 100 : legacyBonus - sum;
         if (diff < best.diff) best = { first: f, re: rv, ref: rf, diff };
       }
     }
@@ -242,96 +274,114 @@ export async function buildEarningsBreakdown(admin: any, userId: string): Promis
     referrer: best.ref,
   };
   const ratesAssumed =
-    best.first !== rates.first_verify_bonus ||
-    best.re !== rates.reverify_bonus ||
-    best.ref !== rates.referrer_bonus;
+    legacyBonus > 0.5 &&
+    (best.first !== rates.first_verify_bonus ||
+      best.re !== rates.reverify_bonus ||
+      best.ref !== rates.referrer_bonus);
 
-  const describeBonus = (delta: number): string => {
+  const describeBonus = (delta: number, opts: { allowFirst: boolean; allowRe: boolean }): string => {
     const parts: string[] = [];
     let left = Math.round(delta);
-    const tryTake = (amount: number, label: string) => {
-      if (amount > 0 && left >= amount) {
-        left -= amount;
-        parts.push(label);
+    // Referral first: a plain refer-bonus credit must never be mislabelled as a
+    // first-verify bonus just because the two rates happen to be equal.
+    for (const rf of [usedRates.referrer, rates.referrer_bonus, 150, 100, 63, 60, 50]) {
+      if (rf > 0 && left % rf === 0 && left / rf >= 1 && left / rf <= 20) {
+        const n = left / rf;
+        left = 0;
+        parts.push(`রেফার বোনাস ${n} জন × ${rf}৳`);
+        break;
       }
-    };
-    tryTake(usedRates.firstVerify, `১০ স্লট first verify ${usedRates.firstVerify}৳`);
-    while (usedRates.referrer > 0 && left >= usedRates.referrer) {
-      left -= usedRates.referrer;
-      parts.push(`রেফার বোনাস ${usedRates.referrer}৳`);
     }
-    tryTake(usedRates.reverify, `১০ স্লট re-verify ${usedRates.reverify}৳ (মাইনিং চালু)`);
+    if (opts.allowFirst && usedRates.firstVerify > 0 && left >= usedRates.firstVerify) {
+      left -= usedRates.firstVerify;
+      parts.push(`১০ স্লট first verify ${usedRates.firstVerify}৳`);
+    }
+    if (opts.allowRe && usedRates.reverify > 0 && left >= usedRates.reverify) {
+      left -= usedRates.reverify;
+      parts.push(`১০ স্লট re-verify ${usedRates.reverify}৳ (মাইনিং চালু)`);
+    }
     if (left > 0) parts.push(`অন্যান্য ${left}৳`);
     return parts.length ? parts.join(" + ") : "বোনাস";
   };
 
   const bonusSteps: BreakdownStep[] = [];
-  const auditBonusSum = bonusEvents.reduce((s: number, e: any) => s + e.delta, 0);
 
-  if (bonusEvents.length > 0 && Math.abs(auditBonusSum - bonusRaw) < 0.5) {
-    for (const e of bonusEvents) {
-      // Transfers from other users are shown in their own card only — skipping
-      // them here stops the same taka from appearing twice.
-      if (transferEventIds.has(e.id)) continue;
-      // Only genuine admin actions are labelled as "admin added"; system
-      // sources (db trigger, bonus/referral credits, corrections) stay bonuses.
-      const isAdmin = String(e.source ?? "").startsWith("admin");
-      // An explicit note is always the most accurate description of the event,
-      // so it wins over the amount-guessing helper.
-      bonusSteps.push({
-        key: `ev-${e.id}`,
-        label:
-          e.delta < 0
-            ? `➖ বোনাস কেটে নেওয়া হয়েছে${e.note ? ` — ${e.note}` : ""}`
-            : e.note
-              ? `🎉 ${e.note}`
-              : isAdmin
-                ? "🎁 অ্যাডমিন বোনাস যোগ করেছে"
-                : `🎉 ${describeBonus(e.delta)}`,
-        formula: dateBn(e.created_at),
-        amount: Number(e.delta.toFixed(2)),
-      });
-    }
-  } else {
-
-    if (prof.bonus_first_verify_self_claimed) {
+  // 1) Legacy (pre-audit) part — reconstructed with the rates of that time.
+  if (legacyBonus > 0.5) {
+    let left = legacyBonus;
+    if (legacyHasFirst) {
       bonusSteps.push({
         key: "self-first",
         label: "১০টি স্লট first verify সম্পন্ন — নিজের বোনাস",
         formula: `১ বার × ${usedRates.firstVerify}৳ (তখনকার হার)`,
         amount: usedRates.firstVerify,
       });
+      left -= usedRates.firstVerify;
     }
-    if (prof.bonus_reverify_claimed) {
+    if (legacyHasRe) {
       bonusSteps.push({
         key: "self-reverify",
         label: "১০টি স্লট re-verify সম্পন্ন — মাইনিং চালু বোনাস",
         formula: `১ বার × ${usedRates.reverify}৳ (তখনকার হার)`,
         amount: usedRates.reverify,
       });
+      left -= usedRates.reverify;
     }
-    if (referrerPaidCount > 0) {
+    if (legacyRefCount > 0) {
       bonusSteps.push({
-        key: "referrer",
-        label: `রেফার বোনাস — ${referrerPaidCount} জন রেফার ১০টি first verify শেষ করেছে`,
-        formula: `${referrerPaidCount} জন × ${usedRates.referrer}৳ (তখনকার হার)`,
-        amount: referrerPaidCount * usedRates.referrer,
+        key: "referrer-legacy",
+        label: `রেফার বোনাস — ${legacyRefCount} জন রেফার ১০টি first verify শেষ করেছে`,
+        formula: `${legacyRefCount} জন × ${usedRates.referrer}৳ (তখনকার হার)`,
+        amount: legacyRefCount * usedRates.referrer,
       });
+      left -= legacyRefCount * usedRates.referrer;
     }
-    const bonusSum = bonusSteps.reduce((s, x) => s + x.amount, 0);
-    const bonusDiff = Number((bonusTotal - bonusSum).toFixed(2));
-    if (Math.abs(bonusDiff) > 0.01) {
+    const leftRounded = Number(left.toFixed(2));
+    if (Math.abs(leftRounded) > 0.01) {
       bonusSteps.push({
-        key: "other",
+        key: "other-legacy",
         label:
-          bonusDiff > 0
-            ? "অন্যান্য বোনাস / ভাউচার / অ্যাডমিন যোগ (বা পুরোনো অফারের হার)"
-            : "সমন্বয় — পুরোনো হিসাব ঠিক করা হয়েছে (তখনকার হার আলাদা ছিল)",
+          leftRounded > 0
+            ? "অন্যান্য পুরোনো বোনাস / ভাউচার / অ্যাডমিন যোগ"
+            : "সমন্বয় — পুরোনো হিসাব ঠিক করা হয়েছে",
         formula: "ব্যালেন্সে আসল যোগ হওয়া অংশের সাথে মিলিয়ে দেওয়া",
-        amount: bonusDiff,
+        amount: leftRounded,
       });
     }
   }
+
+  // 2) Everything the audit log can prove — date + reason for each taka.
+  const firstShownInLegacy = legacyHasFirst;
+  const reShownInLegacy = legacyHasRe;
+  for (const e of bonusEvents) {
+    // Transfers from other users are shown in their own card only — skipping
+    // them here stops the same taka from appearing twice.
+    if (transferEventIds.has(e.id)) continue;
+    const matchedRefs = refsByEvent.get(e.id) ?? [];
+    const isAdmin = String(e.source ?? "").startsWith("admin");
+    let label: string;
+    if (e.delta < 0) {
+      label = `➖ বোনাস কেটে নেওয়া হয়েছে${e.note ? ` — ${e.note}` : ""}`;
+    } else if (matchedRefs.length) {
+      const per = Math.round((e.delta / matchedRefs.length) * 100) / 100;
+      label =
+        `🎉 রেফার বোনাস — ${matchedRefs.length} জন × ${per}৳ ` +
+        `(${matchedRefs.map((r: { uid: number | null; name: string }) => `UID ${r.uid ?? "?"} ${r.name}`).join(", ")})`;
+    } else if (e.note) {
+      label = `🎉 ${e.note}`;
+    } else if (isAdmin) {
+      label = "🎁 অ্যাডমিন বোনাস যোগ করেছে";
+    } else {
+      label = `🎉 ${describeBonus(e.delta, { allowFirst: !firstShownInLegacy, allowRe: !reShownInLegacy })}`;
+    }
+    bonusSteps.push({
+      key: `ev-${e.id}`,
+      label,
+      formula: dateBn(e.created_at),
+      amount: Number(e.delta.toFixed(2)),
+    });
+  }
+
 
 
   // ---- Mining steps ------------------------------------------------------
