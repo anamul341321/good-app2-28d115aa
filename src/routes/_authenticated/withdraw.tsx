@@ -355,7 +355,9 @@ function WithdrawPage() {
                   placeholder={t(`সর্বনিম্ন ${MIN_WITHDRAW_BDT}`, `Minimum ${MIN_WITHDRAW_BDT}`)}
                   className="w-full mt-2 px-4 py-3 mono-num bg-surface-2 border border-border rounded-xl text-lg font-black outline-none focus:border-rose" />
                 <p className="text-[10px] text-muted-foreground mt-1" translate="no">{t("সর্বনিম্ন", "Min")}: {MIN_WITHDRAW_BDT}৳ · {t("সর্বোচ্চ", "Max")}: {claimable}৳</p>
-                <p className="text-[10px] text-amber mt-1 font-bold" translate="no">{t(`ফি কাটার পর হাতে কমপক্ষে ৫০৳ আসতে হবে — তাই সর্বনিম্ন রিকোয়েস্ট ${MIN_WITHDRAW_BDT}৳`, `After fee you must receive at least 50৳ — so minimum request is ${MIN_WITHDRAW_BDT}৳`)}</p>
+                <p className="text-[10px] text-amber mt-1 font-bold" translate="no">{t(`ফি কাটার পর হাতে কমপক্ষে ৫০৳ আসবে — তাই সর্বনিম্ন রিকোয়েস্ট ${MIN_WITHDRAW_BDT}৳ (৬০৳ দিলে ফি ১০৳, হাতে ৫০৳)`, `After fee you always receive at least 50৳ — minimum request ${MIN_WITHDRAW_BDT}৳ (60৳ → 10৳ fee → 50৳ in hand)`)}</p>
+                <p className="text-[10px] text-muted-foreground mt-1" translate="no">{t("পয়সা (দশমিক) উইথড্র হয় না — শুধু পূর্ণ টাকা যাবে, বাকি পয়সা মেইন ব্যালেন্সেই থাকবে", "Paisa (decimals) can't be withdrawn — only whole taka; the rest stays in your main balance")}</p>
+
               </div>
 
               <FeeBreakdown amount={amount} t={t} />
