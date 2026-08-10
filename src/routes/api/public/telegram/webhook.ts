@@ -2707,14 +2707,13 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         if (asksOwnAccount && !decision.should_delete
             && settings.auto_reply_enabled) {
           // ⚠️ কখনোই অনুমান করে অন্য কারো UID দেখানো যাবে না।
-          // শুধু (ক) এই মেসেজেই স্পষ্ট UID লেখা থাকলে, অথবা
-          // (খ) এই টেলিগ্রাম একাউন্টটি নিজেই কোনো প্রোফাইলের সাথে লিংক করা থাকলে।
-          let uid: string | null = explicitOrBareUid() || (await linkedUid()) || previousKnownUid;
-          if (!uid && msg.from?.id) {
-            const { data: linked } = await supabaseAdmin
-              .from("profiles").select("uid_seq").eq("telegram_user_id", msg.from.id).maybeSingle();
-            if (linked?.uid_seq != null) uid = String(linked.uid_seq);
-          }
+          // শুধু (ক) এই টেলিগ্রাম একাউন্টের KYC-লিংক করা UID, অথবা
+          // (খ) এই মেসেজেই স্পষ্ট UID লেখা থাকলে।
+          // আগের মেসেজে দেখা UID (previousKnownUid) এখানে ব্যবহার করা হয় না —
+          // ওটার কারণেই একজন অন্যজনের হিসাব দেখে ফেলছিল।
+          const myUid = msg.from?.id ? await linkedUid() : null;
+          const uid: string | null = myUid || explicitOrBareUid();
+
           if (uid) {
             const { buildUserCard } = await import("@/lib/telegram-lookup.server");
             const res = await buildUserCard(String(uid));
