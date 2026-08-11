@@ -1285,21 +1285,38 @@ export const adminRecheckAllAttempts = createServerFn({ method: "POST" })
 // ---------------- Re-verify queue ----------------
 export const adminReverifyQueue = createServerFn({ method: "GET" }).handler(async () => {
   const supabaseAdmin = await gate();
-  const { data } = await supabaseAdmin
+  const { data, error } = await supabaseAdmin
     .from("tasks")
     .select("id, user_id, slot, face_label, face_photo_url, reverify_due_at, profiles:user_id(display_name, phone_number, email)")
     .eq("status", "verified")
-    .order("reverify_due_at", { ascending: true });
+    .order("reverify_due_at", { ascending: true })
+    .limit(300);
+  if (error) throw new Error(error.message);
 
-  const withUrls = await Promise.all((data ?? []).map(async (t: any) => {
-    let signed: string | null = null;
-    if (t.face_photo_url) {
-      const { data: s } = await supabaseAdmin.storage.from("face-photos").createSignedUrl(t.face_photo_url, 60 * 30);
-      signed = s?.signedUrl ?? null;
-    }
-    return { ...t, signed_url: signed };
-  }));
-  return withUrls;
+  const rows = (data ?? []) as any[];
+  const CHUNK = 10;
+  const signedMap = new Map<string, string | null>();
+  for (let i = 0; i < rows.length; i += CHUNK) {
+    const chunk = rows.slice(i, i + CHUNK);
+    await Promise.all(
+      chunk.map(async (t) => {
+        if (!t.face_photo_url) {
+          signedMap.set(t.id, null);
+          return;
+        }
+        try {
+          const { data: s } = await supabaseAdmin.storage
+            .from("face-photos")
+            .createSignedUrl(t.face_photo_url, 60 * 30);
+          signedMap.set(t.id, s?.signedUrl ?? null);
+        } catch {
+          signedMap.set(t.id, null);
+        }
+      }),
+    );
+  }
+
+  return rows.map((t) => ({ ...t, signed_url: signedMap.get(t.id) ?? null }));
 });
 
 // ---------------- Wallets ----------------
