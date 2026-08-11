@@ -41,7 +41,7 @@ export function PromoBanner({ rates }: { rates?: PromoRates | null }) {
     { label: "প্রথম ১০ স্লট verify", icon: "✅", old: rates.base_first_verify_bonus, nu: rates.first_verify_bonus },
     { label: "১০ স্লট Re-verify",   icon: "🔄", old: rates.base_reverify_bonus,     nu: rates.reverify_bonus },
     { label: "প্রতি সফল Refer",     icon: "👥", old: rates.base_referrer_bonus,    nu: rates.referrer_bonus },
-  ];
+  ].filter((r) => r.nu > 0);
 
   return (
     <div className="promo-banner relative overflow-hidden rounded-3xl p-4 text-white shadow-2xl">
