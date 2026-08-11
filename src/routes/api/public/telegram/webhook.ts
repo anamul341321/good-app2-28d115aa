@@ -427,9 +427,11 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               !!handle && handle.toLowerCase() !== (meInfo?.username ?? "").toLowerCase();
             const explicitUid = order.match(/(?:uid|ইউআইডি)\s*[:#-]?\s*(\d{2,9})/i)?.[1] ?? null;
 
+            // মালিক মেনশন/রিপ্লাই করে যেকোনোভাবে তথ্য চাইলেই বট দেবে —
+            // শব্দ মিলানোর কড়াকড়ি নেই, শুধু তথ্য-জাতীয় ইঙ্গিত থাকলেই হবে।
             const asksUidOrInfo =
-              /(uid|ইউআইডি|আইডি|আই\s*ডি|info|information|details|তথ্য|ডিটেইলস|হিসাব|hisab|balance|ব্যালেন্স)/i.test(order) &&
-              /(koto|kt|kx|কত|কতো|ki|কি|কী|ber|বের|dekha|দেখা|dao|দাও|daw|janao|জানাও|what|show|check|চেক)/i.test(order);
+              /(uid|ইউআইডি|আইডি|আই\s*ডি|info|information|details|detail|তথ্য|ডিটেইলস|ডিটেইল|হিসাব|hisab|balance|ব্যালেন্স|earn|আয়|slot|স্লট|withdraw|উইথড্র|mining|মাইনিং|kyc|কেওয়াইসি|profile|প্রোফাইল|number|নম্বর|ke|কে|who)/i.test(order)
+              || /(koto|kt|kx|কত|কতো|\?|ber|বের|dekha|দেখা|dekhao|dao|দাও|daw|janao|জানাও|what|show|check|চেক)/i.test(order);
 
             if (asksUidOrInfo && (explicitUid || textMention || repliedUser || handleIsOther)) {
               const targetLabel =
