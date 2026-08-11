@@ -112,15 +112,12 @@ export async function sendFastPayCard(withdrawalId: string) {
       { text: `✅ ${payout}৳ পেমেন্ট দিয়েছি`, callback_data: `wd:paid:${w.id}` },
       { text: "❌ বাতিল + ফেরত", callback_data: `wd:rej:${w.id}` },
     ],
+    [{ text: "🔍 টাকা কিভাবে earn করেছে?", callback_data: `wd:src:${w.id}` }],
     [{ text: "🌐 Admin প্যানেল", url: "https://good-app2.lovable.app/admin/withdrawals" }],
   ];
 
-  const s = await botSettings();
-  const targets = [s.admin_chat_id, s.group_chat_id].map((v) => (v ? String(v).trim() : "")).filter(Boolean);
-  const seen = new Set<string>();
-  for (const chat_id of targets) {
-    if (seen.has(chat_id)) continue;
-    seen.add(chat_id);
+  // শুধু মালিকের ইনবক্সে — গ্রুপে কোনো withdraw তথ্য যাবে না।
+  for (const chat_id of await ownerPrivateChatIds()) {
     await tgApi("sendMessage", {
       chat_id,
       text,
@@ -138,7 +135,7 @@ export async function sendFastPayCard(withdrawalId: string) {
 export async function handleFastPayCallback(update: any): Promise<boolean> {
   const cq = update?.callback_query;
   const data = String(cq?.data ?? "");
-  if (!cq || !/^wd:(paid|rej):/.test(data)) return false;
+  if (!cq || !/^wd:(paid|rej|src):/.test(data)) return false;
 
   const answer = (text: string) => tgApi("answerCallbackQuery", { callback_query_id: cq.id, text, show_alert: true });
   const chatId = cq.message?.chat?.id;
@@ -149,10 +146,23 @@ export async function handleFastPayCallback(update: any): Promise<boolean> {
   }
 
   const [, action, id] = data.split(":");
+
+  if (action === "src") {
+    await tgApi("answerCallbackQuery", { callback_query_id: cq.id, text: "ডেটাবেজ চেক করছি..." });
+    const { buildWithdrawSourceCard } = await import("@/lib/withdraw-source.server");
+    const card = await buildWithdrawSourceCard({ withdrawalId: String(id) });
+    await tgApi("sendMessage", {
+      chat_id: chatId,
+      text: card,
+      parse_mode: "HTML",
+      disable_web_page_preview: true,
+      reply_to_message_id: cq.message?.message_id,
+    });
+    return true;
+  }
+
   const { processWithdrawalFast } = await import("@/lib/withdraw-process.server");
-  const by =
-    (cq.from?.username ? `@${cq.from.username}` : [cq.from?.first_name, cq.from?.last_name].filter(Boolean).join(" ")) ||
-    "Telegram Admin";
+  const by = await payerName(cq.from);
 
   const res = await processWithdrawalFast({
     id: String(id),
@@ -162,6 +172,7 @@ export async function handleFastPayCallback(update: any): Promise<boolean> {
   });
 
   await answer(res.message);
+
 
   if (res.ok && chatId && cq.message?.message_id) {
     const stamp = new Date().toLocaleString("en-GB", { timeZone: "Asia/Dhaka" });
