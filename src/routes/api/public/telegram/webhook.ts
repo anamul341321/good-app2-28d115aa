@@ -989,6 +989,89 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return (_linkedUid = uid != null ? String(uid) : null);
         };
 
+        // ---- "এই user এর UID কত?" — কাউকে mention/reply করে জিজ্ঞেস করলে -----
+        // আগে বট @handle-টাকে "নাম" ধরে ডেটাবেজে খুঁজত, তাই কিছুই পেত না।
+        // এখন mention/reply করা ইউজারের Telegram ID থেকেই আসল UID বের করি।
+        {
+          const ents: any[] = [...((msg as any).entities ?? []), ...((msg as any).caption_entities ?? [])];
+          const textMention = ents.find((e) => e?.type === "text_mention" && e?.user?.id);
+          const repliedUser =
+            msg.reply_to_message?.from?.id && !msg.reply_to_message.from?.is_bot
+              ? msg.reply_to_message.from
+              : null;
+          const handle = text.match(/@([A-Za-z0-9_]{4,32})/)?.[1] ?? null;
+          const handleIsOther =
+            !!handle && handle.toLowerCase() !== (meInfo?.username ?? "").toLowerCase();
+
+          const targetTgId: number | null = textMention
+            ? Number(textMention.user.id)
+            : repliedUser
+              ? Number(repliedUser.id)
+              : null;
+          const targetLabel =
+            (textMention
+              ? [textMention.user.first_name, textMention.user.last_name].filter(Boolean).join(" ")
+              : repliedUser
+                ? [repliedUser.first_name, repliedUser.last_name].filter(Boolean).join(" ")
+                : handleIsOther
+                  ? `@${handle}`
+                  : "") || (handleIsOther ? `@${handle}` : "ইউজার");
+
+          const asksUid =
+            /(uid|ইউআইডি|আইডি|আই\s*ডি)/i.test(norm) &&
+            /(koto|kot|kt|kx|ki|কত|কতো|কী|কি|ber|বের|dekha|দেখা|janao|জানাও|what)/i.test(norm);
+
+          if (
+            settings.auto_reply_enabled &&
+            asksUid &&
+            !pickUid(norm) &&
+            (targetTgId || handleIsOther)
+          ) {
+            let uidSeq: number | null = null;
+            let name: string | null = null;
+            let tgId = targetTgId;
+
+            if (!tgId && handleIsOther) {
+              const { data: seen } = await supabaseAdmin
+                .from("tg_messages").select("tg_user_id")
+                .ilike("username", handle!)
+                .not("tg_user_id", "is", null)
+                .order("created_at", { ascending: false })
+                .limit(1);
+              const found = (seen ?? [])[0] as { tg_user_id?: number | null } | undefined;
+              if (found?.tg_user_id) tgId = Number(found.tg_user_id);
+            }
+
+            if (tgId) {
+              const { data: prof } = await supabaseAdmin
+                .from("profiles").select("uid_seq, display_name")
+                .eq("telegram_user_id", tgId).maybeSingle();
+              uidSeq = (prof as any)?.uid_seq ?? null;
+              name = (prof as any)?.display_name ?? null;
+            }
+
+            if (uidSeq != null) {
+              const { buildUserCard } = await import("@/lib/telegram-lookup.server");
+              const res = await buildUserCard(String(uidSeq));
+              const reply = res.found
+                ? `🆔 <b>${name || targetLabel}</b> এর UID: <code>${uidSeq}</code>\n\n${res.card}`
+                : `🆔 <b>${name || targetLabel}</b> এর UID: <code>${uidSeq}</code>`;
+              await sendMessage(chatId, reply, msg.message_id);
+              await logMessage("question", "mention-uid", reply, String(uidSeq));
+              return Response.json({ ok: true, flow: "mention-uid" });
+            }
+
+            const reply =
+              `🆔 <b>${targetLabel}</b> এর টেলিগ্রাম একাউন্টটি এখনো Good-App এর সাথে <b>লিংক করা নেই</b>, ` +
+              `তাই আমি তার UID বের করতে পারছি না 🙂\n\n` +
+              `👉 তাকে বলুন অ্যাপের হোম পেজে লাল <b>“KYC করুন”</b> বাটনে চাপ দিয়ে টেলিগ্রামে <b>START</b> চাপতে — ` +
+              `তখন থেকেই তার UID আমি সাথে সাথে বলে দিতে পারবো।\n` +
+              `অথবা তার <b>ফোন নম্বর / রেফার কোড / UID</b> লিখে দিন, আমি সাথে সাথে হিসাব দেখিয়ে দেব 💙`;
+            await sendMessage(chatId, reply, msg.message_id);
+            await logMessage("question", "mention-uid-unlinked", reply, null);
+            return Response.json({ ok: true, flow: "mention-uid-unlinked" });
+          }
+        }
 
 
         if (settings.auto_reply_enabled && isThanksOnly(norm)) {
