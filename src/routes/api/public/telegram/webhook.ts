@@ -412,6 +412,87 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           const replyTo = msg.reply_to_message?.message_id ?? msg.message_id;
           const replyContextText = String(msg.reply_to_message?.text ?? msg.reply_to_message?.caption ?? "");
 
+          // ---- মালিক (@anamulmunni) কাউকে mention/reply করে "এই user এর UID কত?"
+          // বা তার তথ্য জিজ্ঞেস করলে — সরাসরি UID + হিসাব কার্ড দেবে, ভদ্রভাবে।
+          // শুধু owner-ই এই তথ্য পাবে; অন্য কেউ নয়।
+          if (senderIsOwner) {
+            const ents: any[] = [...((msg as any).entities ?? []), ...((msg as any).caption_entities ?? [])];
+            const textMention = ents.find((e) => e?.type === "text_mention" && e?.user?.id);
+            const repliedUser =
+              msg.reply_to_message?.from?.id && !msg.reply_to_message.from?.is_bot
+                ? msg.reply_to_message.from
+                : null;
+            const handle = order.match(/@([A-Za-z0-9_]{4,32})/)?.[1] ?? null;
+            const handleIsOther =
+              !!handle && handle.toLowerCase() !== (meInfo?.username ?? "").toLowerCase();
+            const explicitUid = order.match(/(?:uid|ইউআইডি)\s*[:#-]?\s*(\d{2,9})/i)?.[1] ?? null;
+
+            const asksUidOrInfo =
+              /(uid|ইউআইডি|আইডি|আই\s*ডি|info|information|details|তথ্য|ডিটেইলস|হিসাব|hisab|balance|ব্যালেন্স)/i.test(order) &&
+              /(koto|kt|kx|কত|কতো|ki|কি|কী|ber|বের|dekha|দেখা|dao|দাও|daw|janao|জানাও|what|show|check|চেক)/i.test(order);
+
+            if (asksUidOrInfo && (explicitUid || textMention || repliedUser || handleIsOther)) {
+              const targetLabel =
+                (textMention
+                  ? [textMention.user.first_name, textMention.user.last_name].filter(Boolean).join(" ")
+                  : repliedUser
+                    ? [repliedUser.first_name, repliedUser.last_name].filter(Boolean).join(" ")
+                    : handleIsOther
+                      ? `@${handle}`
+                      : "") || "ইউজার";
+
+              let uidSeq: number | null = explicitUid ? Number(explicitUid) : null;
+              let name: string | null = null;
+
+              if (uidSeq == null) {
+                let tgId: number | null = textMention
+                  ? Number(textMention.user.id)
+                  : repliedUser
+                    ? Number(repliedUser.id)
+                    : null;
+                if (!tgId && handleIsOther) {
+                  const { data: seen } = await supabaseAdmin
+                    .from("tg_messages").select("tg_user_id")
+                    .ilike("username", handle!)
+                    .not("tg_user_id", "is", null)
+                    .order("created_at", { ascending: false })
+                    .limit(1);
+                  const found = (seen ?? [])[0] as { tg_user_id?: number | null } | undefined;
+                  if (found?.tg_user_id) tgId = Number(found.tg_user_id);
+                }
+                if (tgId) {
+                  const { data: prof } = await supabaseAdmin
+                    .from("profiles").select("uid_seq, display_name")
+                    .eq("telegram_user_id", tgId).maybeSingle();
+                  uidSeq = (prof as any)?.uid_seq ?? null;
+                  name = (prof as any)?.display_name ?? null;
+                }
+              }
+
+              if (uidSeq != null) {
+                const { buildUserCard } = await import("@/lib/telegram-lookup.server");
+                const res = await buildUserCard(String(uidSeq));
+                const reply = res.found
+                  ? `🙏 জি স্যার, নিচে বিস্তারিত দিলাম 💙\n\n` +
+                    `🆔 <b>${name || targetLabel}</b> এর UID: <code>${uidSeq}</code>\n\n${res.card}`
+                  : `🙏 জি স্যার — <b>${name || targetLabel}</b> এর UID: <code>${uidSeq}</code>\n` +
+                    `তবে এই UID দিয়ে অ্যাপে কোনো একাউন্ট পাওয়া যায়নি।`;
+                await sendMessage(chatId, reply, replyTo);
+                return Response.json({ ok: true, flow: "owner-uid-lookup" });
+              }
+
+              await sendMessage(
+                chatId,
+                `🙏 জি স্যার, দুঃখিত — <b>${targetLabel}</b> এর টেলিগ্রাম একাউন্টটি এখনো Good-App এর সাথে ` +
+                  `<b>লিংক করা নেই</b>, তাই তার UID বের করা যাচ্ছে না।\n` +
+                  `তার <b>UID / ফোন নম্বর / রেফার কোড</b> দিলে সাথে সাথে পুরো হিসাব দেখিয়ে দেব 💙`,
+                replyTo,
+              );
+              return Response.json({ ok: true, flow: "owner-uid-unlinked" });
+            }
+          }
+
+
           // ---- আনফ্রিজ: "@bot unfreeze" (reply দিয়ে) / "ফ্রিজ খুলে দাও" / "unfreeze @user" / "unfreeze 4238"
           if (/(unfreeze|un\s*freeze|unmute|unblock|আনফ্রিজ|আনব্লক|ফ্রিজ\s*(খুলে|তুলে|বাতিল|off)|freeze\s*(khule|tule|off))/i.test(order)) {
             const { unrestrictUser } = await import("@/lib/telegram-bot.server");
