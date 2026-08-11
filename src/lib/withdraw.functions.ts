@@ -220,6 +220,13 @@ export const requestWithdraw = createServerFn({ method: "POST" })
       if (newId) {
         const { maybeAutoPay } = await import("@/lib/payout.server");
         await maybeAutoPay(String(newId));
+        // ⚡ এখনও pending থাকলে Telegram-এ fast-pay কার্ড পাঠাই (এক ট্যাপে paid/বাতিল)।
+        try {
+          const { sendFastPayCard } = await import("@/lib/withdraw-fastpay.server");
+          await sendFastPayCard(String(newId));
+        } catch {
+          /* ignore */
+        }
       }
     } catch {
       // অটো পেমেন্ট ফেল করলেও রিকোয়েস্ট থেকে যাবে (admin ম্যানুয়ালি দিবে)
