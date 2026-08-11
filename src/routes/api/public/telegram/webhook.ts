@@ -2617,8 +2617,31 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return Response.json({ ok: true, flow: "referral_join_ask_uid", actions });
         }
 
+        // ---- মালিক জিজ্ঞেস করলে: এই withdraw-এর টাকা কিভাবে earn করেছে? ----
+        if (
+          senderIsOwner &&
+          /(withdraw|উইথড্র|balance|ব্যালেন্স|taka|টাকা)/i.test(text) &&
+          /(kivabe|kivbe|kibhabe|কিভাবে|কীভাবে|kotha theke|kothe theke|kothay theke|কোথা\s*থেকে|কোথায়\s*থেকে|source|উৎস|earn|ইনকাম|income)/i.test(text)
+        ) {
+          const uid = explicitOrBareUid() || previousKnownUid;
+          if (uid) {
+            const { buildWithdrawSourceCard } = await import("@/lib/withdraw-source.server");
+            const card = await buildWithdrawSourceCard({ uid: String(uid) });
+            await sendMessage(chatId, card, msg.message_id);
+            actions.push("withdraw-source");
+            await logMessage(decision.verdict, actions.join(","), card, String(uid));
+            return Response.json({ ok: true, flow: "withdraw_source", actions });
+          }
+          const ask = `জি স্যার 🙂 কোন ইউজারের হিসাব দেখব? তার <b>UID</b> নম্বরটি দিন।`;
+          await sendMessage(chatId, ask, msg.message_id);
+          actions.push("withdraw-source-ask-uid");
+          await logMessage(decision.verdict, actions.join(","), ask, null);
+          return Response.json({ ok: true, flow: "withdraw_source_ask_uid", actions });
+        }
+
         // ---- "উইথড্র দিয়েছি টাকা আসে নাই" → show pending requests with time ---
         if ((decision.intent === "withdraw_status" || pendingWithdrawQuestion) && !decision.should_delete
+
             && settings.auto_reply_enabled) {
           const uid = explicitOrBareUid() || (await linkedUid()) || previousKnownUid;
           if (uid) {
