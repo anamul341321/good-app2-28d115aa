@@ -7,6 +7,24 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/bonus-settings")({ component: BonusSettings });
 
+// Promo dates are stored in UTC but admins type Dhaka (UTC+6) time. Without an
+// explicit conversion the value shifted by 6 hours on every save/reload cycle.
+const DHAKA_OFFSET_MS = 6 * 60 * 60 * 1000;
+
+function utcToDhakaInput(iso?: string | null): string {
+  if (!iso) return "";
+  const ms = new Date(iso).getTime();
+  if (!Number.isFinite(ms)) return "";
+  return new Date(ms + DHAKA_OFFSET_MS).toISOString().slice(0, 16);
+}
+
+function dhakaInputToUtc(local: string): string | null {
+  if (!local) return null;
+  const ms = Date.parse(`${local}:00Z`);
+  if (!Number.isFinite(ms)) return null;
+  return new Date(ms - DHAKA_OFFSET_MS).toISOString();
+}
+
 function BonusSettings() {
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["admin-bonus-settings"],
