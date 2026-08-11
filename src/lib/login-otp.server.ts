@@ -169,20 +169,20 @@ async function verifyPassword(account: Account, password: string) {
 async function startLoginOtpWork(data: LoginData) {
   const account = await resolveAccount(data.identifier);
 
-  const { isEmailOtpEnabled } = await import("./auth-mode.server");
-  const [session, otpEnabled] = await Promise.all([
-    verifyPassword(account, data.password),
-    isEmailOtpEnabled(),
-  ]);
+  const session = await verifyPassword(account, data.password);
 
-  // Admin switch OFF থাকলে কোনো account-এই Gmail code পাঠানো বা চাওয়া হবে না।
-  if (!otpEnabled) {
+  // যাদের Gmail যোগ করা আছে (verified) — তাদের লগইনে সবসময় ৬ ডিজিটের কোড লাগবে,
+  // অ্যাডমিন সুইচ যা-ই থাকুক। Gmail না থাকলে আগের মতোই শুধু নম্বর+পাসওয়ার্ড।
+  const hasGmail =
+    !!account.id &&
+    !!account.contactEmail &&
+    !/@facemine\.app$/i.test(account.contactEmail) &&
+    account.emailVerified;
+
+  if (!hasGmail) {
     return { ok: true as const, needOtp: false as const, session };
   }
 
-  if (!account.id || !account.contactEmail || !account.emailVerified) {
-    return { ok: true as const, needOtp: false as const, session };
-  }
 
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data: recent } = await supabaseAdmin
