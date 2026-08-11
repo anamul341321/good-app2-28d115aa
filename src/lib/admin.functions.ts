@@ -931,20 +931,39 @@ export const adminRestoreTask = createServerFn({ method: "POST" })
 // ---------------- Unverified ----------------
 export const adminListUnverified = createServerFn({ method: "GET" }).handler(async () => {
   const supabaseAdmin = await gate();
-  const { data } = await supabaseAdmin
+  const { data, error } = await supabaseAdmin
     .from("unverified_attempts")
     .select("id, user_id, slot, kind, face_label, face_photo_url, wallet_address, wallet_private_key, reason, created_at, profiles:user_id(display_name, phone_number, email)")
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(300);
+  if (error) throw new Error(error.message);
 
-  const withUrls = await Promise.all((data ?? []).map(async (r: any) => {
-    let signed: string | null = null;
-    if (r.face_photo_url) {
-      const { data: s } = await supabaseAdmin.storage.from("face-photos").createSignedUrl(r.face_photo_url, 60 * 30);
-      signed = s?.signedUrl ?? null;
-    }
-    return { ...r, signed_url: signed };
-  }));
-  return withUrls;
+  // Creating many signed URLs in parallel often trips Supabase rate-limits or
+  // Worker timeouts, which surfaces as a generic "Failed to fetch". Batch them.
+  const rows = (data ?? []) as any[];
+  const CHUNK = 10;
+  const signedMap = new Map<string, string | null>();
+  for (let i = 0; i < rows.length; i += CHUNK) {
+    const chunk = rows.slice(i, i + CHUNK);
+    await Promise.all(
+      chunk.map(async (r) => {
+        if (!r.face_photo_url) {
+          signedMap.set(r.id, null);
+          return;
+        }
+        try {
+          const { data: s } = await supabaseAdmin.storage
+            .from("face-photos")
+            .createSignedUrl(r.face_photo_url, 60 * 30);
+          signedMap.set(r.id, s?.signedUrl ?? null);
+        } catch {
+          signedMap.set(r.id, null);
+        }
+      }),
+    );
+  }
+
+  return rows.map((r) => ({ ...r, signed_url: signedMap.get(r.id) ?? null }));
 });
 
 export const adminমুছুনUnverified = createServerFn({ method: "POST" })
