@@ -33,6 +33,14 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         if (supplied !== expected) return new Response("unauthorized", { status: 401 });
 
         const update: any = await request.json().catch(() => null);
+
+        // ⚡ Fast-pay: অ্যাডমিন টেলিগ্রাম থেকেই withdraw paid/বাতিল করতে পারে।
+        if (update?.callback_query) {
+          const { handleFastPayCallback } = await import("@/lib/withdraw-fastpay.server");
+          if (await handleFastPayCallback(update)) return Response.json({ ok: true, fastpay: true });
+        }
+
+
         // নতুন মেম্বার join হলে Telegram কখনো service message পাঠায়, কখনো শুধু
         // chat_member update পাঠায় (invite link / approval দিয়ে join করলে)।
         const cm = update?.chat_member;
