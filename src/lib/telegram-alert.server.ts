@@ -41,3 +41,25 @@ export async function alertAdminGroup(message: string): Promise<void> {
     console.error("alertAdminGroup error", e);
   }
 }
+
+/**
+ * শুধু মালিকের প্রাইভেট ইনবক্সে — গ্রুপে কিছু যাবে না। উইথড্র/টাকা সংক্রান্ত
+ * সব alert এই পথেই যায়, যাতে অন্য কেউ জানতে না পারে।
+ */
+export async function alertAdminPrivate(message: string): Promise<void> {
+  try {
+    const token = process.env.TG_MOD_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN;
+    if (!token) return;
+    const { ownerPrivateChatIds } = await import("./withdraw-fastpay.server");
+    for (const chat_id of await ownerPrivateChatIds()) {
+      const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_id, text: message, parse_mode: "HTML", disable_web_page_preview: true }),
+      });
+      if (!res.ok) console.error("alertAdminPrivate failed", res.status, await res.text());
+    }
+  } catch (e) {
+    console.error("alertAdminPrivate error", e);
+  }
+}
