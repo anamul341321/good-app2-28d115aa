@@ -57,8 +57,8 @@ function BonusSettings() {
     setOtpMode(d.email_otp_enabled !== false);
     setPromoActive(!!d.promo_active);
     setPromoTitle(d.promo_title ?? "");
-    setPromoStart(d.promo_start_at ? d.promo_start_at.slice(0, 16) : "");
-    setPromoEnd(d.promo_end_at ? d.promo_end_at.slice(0, 16) : "");
+    setPromoStart(utcToDhakaInput(d.promo_start_at));
+    setPromoEnd(utcToDhakaInput(d.promo_end_at));
     setPFv(String(d.promo_first_verify_bonus ?? 100));
     setPRv(String(d.promo_reverify_bonus ?? 400));
     setPRf(String(d.promo_referrer_bonus ?? 150));
@@ -93,8 +93,8 @@ function BonusSettings() {
         email_otp_enabled: override?.email_otp_enabled ?? otpMode,
         promo_active: promoActive,
         promo_title: promoTitle || null,
-        promo_start_at: promoStart ? new Date(promoStart).toISOString() : null,
-        promo_end_at:   promoEnd   ? new Date(promoEnd).toISOString()   : null,
+        promo_start_at: dhakaInputToUtc(promoStart),
+        promo_end_at:   dhakaInputToUtc(promoEnd),
         promo_first_verify_bonus: Number(pFv) || 0,
         promo_reverify_bonus:     Number(pRv) || 0,
         promo_referrer_bonus:     Number(pRf) || 0,
