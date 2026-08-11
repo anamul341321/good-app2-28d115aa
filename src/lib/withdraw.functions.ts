@@ -281,10 +281,11 @@ export const requestWithdraw = createServerFn({ method: "POST" })
       }
 
       if (reasons.length > 0) {
-        const { alertAdminGroup } = await import("./telegram-alert.server");
+        const { alertAdminPrivate } = await import("./telegram-alert.server");
         const uid = (kycProf as any)?.uid_seq ?? "—";
         const name = (kycProf as any)?.display_name ?? "User";
-        await alertAdminGroup(
+        await alertAdminPrivate(
+
           `🚨 <b>সন্দেহজনক withdraw request</b>\n` +
             `👤 ${name} (UID ${uid})\n` +
             `💸 Gross ${amount}৳ · Fee ${fee}৳ · Payout ${payout}৳ · ${chosen}\n` +
