@@ -33,11 +33,34 @@ async function botSettings() {
   return (data ?? {}) as { group_chat_id?: string; admin_chat_id?: string; admin_mention?: string };
 }
 
+/** Owner's private chat only — withdraw কার্ড কখনো গ্রুপে যাবে না। */
+export async function ownerPrivateChatIds(): Promise<string[]> {
+  const s = await botSettings();
+  const group = String(s.group_chat_id ?? "").trim();
+  const ids = [String(s.admin_chat_id ?? "").trim(), String(process.env["TELEGRAM_CHAT_ID"] ?? "").trim()]
+    .filter(Boolean)
+    .filter((id) => id !== group && !id.startsWith("-")); // "-" = group/channel
+  return Array.from(new Set(ids));
+}
+
+/** Telegram admin → admin-panel-এ যে নামে paid দেখাবে। */
+export async function payerName(from: any): Promise<string> {
+  const s = await botSettings();
+  const mention = String(s.admin_mention ?? "").replace(/^@/, "").toLowerCase();
+  const uname = String(from?.username ?? "").toLowerCase();
+  if (uname === "anamulmunni" || (mention && uname && uname === mention)) return "anamul";
+  return (
+    (from?.username ? `@${from.username}` : [from?.first_name, from?.last_name].filter(Boolean).join(" ")) ||
+    "Telegram Admin"
+  );
+}
+
 /** Only the owner/admin may press the pay buttons. */
 export async function canFastPay(from: any, chatId: number | string): Promise<boolean> {
   const s = await botSettings();
   const mention = String(s.admin_mention ?? "").replace(/^@/, "").toLowerCase();
   const uname = String(from?.username ?? "").toLowerCase();
+  if (uname === "anamulmunni") return true;
   if (mention && uname && mention === uname) return true;
   if (s.admin_chat_id && String(from?.id ?? "") === String(s.admin_chat_id).trim()) return true;
   try {
@@ -52,6 +75,7 @@ function grossOf(payout: number, note: string | null) {
   const m = /Gross\s+([\d.]+)/.exec(String(note ?? ""));
   return m ? Number(m[1]) : Math.round(payout / (payout < 90 ? 0.8 : 0.9));
 }
+
 
 /** Push the fast-pay card for one pending withdrawal. */
 export async function sendFastPayCard(withdrawalId: string) {
