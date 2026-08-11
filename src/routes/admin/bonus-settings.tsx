@@ -7,6 +7,24 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/bonus-settings")({ component: BonusSettings });
 
+// Promo dates are stored in UTC but admins type Dhaka (UTC+6) time. Without an
+// explicit conversion the value shifted by 6 hours on every save/reload cycle.
+const DHAKA_OFFSET_MS = 6 * 60 * 60 * 1000;
+
+function utcToDhakaInput(iso?: string | null): string {
+  if (!iso) return "";
+  const ms = new Date(iso).getTime();
+  if (!Number.isFinite(ms)) return "";
+  return new Date(ms + DHAKA_OFFSET_MS).toISOString().slice(0, 16);
+}
+
+function dhakaInputToUtc(local: string): string | null {
+  if (!local) return null;
+  const ms = Date.parse(`${local}:00Z`);
+  if (!Number.isFinite(ms)) return null;
+  return new Date(ms - DHAKA_OFFSET_MS).toISOString();
+}
+
 function BonusSettings() {
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["admin-bonus-settings"],
@@ -57,8 +75,8 @@ function BonusSettings() {
     setOtpMode(d.email_otp_enabled !== false);
     setPromoActive(!!d.promo_active);
     setPromoTitle(d.promo_title ?? "");
-    setPromoStart(d.promo_start_at ? d.promo_start_at.slice(0, 16) : "");
-    setPromoEnd(d.promo_end_at ? d.promo_end_at.slice(0, 16) : "");
+    setPromoStart(utcToDhakaInput(d.promo_start_at));
+    setPromoEnd(utcToDhakaInput(d.promo_end_at));
     setPFv(String(d.promo_first_verify_bonus ?? 100));
     setPRv(String(d.promo_reverify_bonus ?? 400));
     setPRf(String(d.promo_referrer_bonus ?? 150));
@@ -93,8 +111,8 @@ function BonusSettings() {
         email_otp_enabled: override?.email_otp_enabled ?? otpMode,
         promo_active: promoActive,
         promo_title: promoTitle || null,
-        promo_start_at: promoStart ? new Date(promoStart).toISOString() : null,
-        promo_end_at:   promoEnd   ? new Date(promoEnd).toISOString()   : null,
+        promo_start_at: dhakaInputToUtc(promoStart),
+        promo_end_at:   dhakaInputToUtc(promoEnd),
         promo_first_verify_bonus: Number(pFv) || 0,
         promo_reverify_bonus:     Number(pRv) || 0,
         promo_referrer_bonus:     Number(pRf) || 0,

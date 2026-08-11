@@ -41,7 +41,7 @@ export function PromoBanner({ rates }: { rates?: PromoRates | null }) {
     { label: "প্রথম ১০ স্লট verify", icon: "✅", old: rates.base_first_verify_bonus, nu: rates.first_verify_bonus },
     { label: "১০ স্লট Re-verify",   icon: "🔄", old: rates.base_reverify_bonus,     nu: rates.reverify_bonus },
     { label: "প্রতি সফল Refer",     icon: "👥", old: rates.base_referrer_bonus,    nu: rates.referrer_bonus },
-  ];
+  ].filter((r) => r.nu > 0);
 
   return (
     <div className="promo-banner relative overflow-hidden rounded-3xl p-4 text-white shadow-2xl">
@@ -99,10 +99,14 @@ export function PromoBanner({ rates }: { rates?: PromoRates | null }) {
           <div key={i} className="rounded-xl bg-white/15 backdrop-blur border border-white/25 px-3 py-2 flex items-center gap-2">
             <span className="text-lg shrink-0">{r.icon}</span>
             <span className="flex-1 text-[11px] font-bold text-white/95 truncate">{r.label}</span>
-            <span className="text-[11px] font-black mono-num text-white/70 line-through">
-              {r.old}৳
-            </span>
-            <span className="text-[11px] font-black">→</span>
+            {r.old > r.nu && (
+              <>
+                <span className="text-[11px] font-black mono-num text-white/70 line-through">
+                  {r.old}৳
+                </span>
+                <span className="text-[11px] font-black">→</span>
+              </>
+            )}
             <span className="text-[14px] font-black mono-num text-yellow-100 drop-shadow">
               {r.nu}৳
             </span>
@@ -122,6 +126,10 @@ export function PromoBanner({ rates }: { rates?: PromoRates | null }) {
           {d > 0 ? `আর মাত্র ${d} দিন বাকি` : `আর মাত্র ${h} ঘণ্টা বাকি`} — ১০টি স্লট verify করে স্পেশাল বোনাস পেতে পারেন।
         </p>
       </div>
+
+      <p className="relative mt-2 rounded-2xl bg-black/25 border border-white/25 px-3 py-2 text-[10px] font-bold text-white/95 leading-relaxed">
+        ⚠️ মনে রাখবেন: <b className="text-yellow-100">বোনাস স্থায়ী নয়</b> — এটি শুধু নির্দিষ্ট সময়ের (limited time) অফার, সময় শেষ হলে বোনাস বন্ধ হয়ে যাবে। শুধু <b className="text-yellow-100">মাইনিং</b> স্থায়ীভাবে চলতে থাকবে।
+      </p>
     </div>
   );
 }
