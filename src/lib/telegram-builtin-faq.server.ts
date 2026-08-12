@@ -102,14 +102,22 @@ export const BUILTIN_FAQS: BuiltinFaq[] = [
   {
 
     topic: "অ্যাপ ডাউনলোড / ইনস্টল করার নিয়ম",
-    screenshot: [],
+    screenshot: [
+      "Download App", "অ্যাপ ডাউনলোড করুন", "goodapp2-release.apk",
+      "Downloads", "Open", "Install", "ইনস্টল",
+    ],
     keywords: [
       "apps download", "app download", "download korbo", "download kivabe",
       "apps kivabe download", "install korbo", "install kivabe", "apps install",
       "app install", "apk", "play store", "playstore", "home screen",
+      "install bujhi na", "install buji na", "install bujtasi na", "download bujhi na",
+      "download buji na", "kivabe install", "kemne install", "kemne download",
+      "install kore dite parben", "install hocche na", "install hoi na",
       "অ্যাপ ডাউনলোড", "অ্যাপস ডাউনলোড", "ডাউনলোড করবো", "ডাউনলোড কিভাবে",
       "ইনস্টল করবো", "ইনস্টল কিভাবে", "অ্যাপ ইনস্টল", "এপস ডাউনলোড",
+      "ইনস্টল বুঝি না", "ইনস্টল বুঝতে পারছি না", "ইনস্টল হচ্ছে না",
     ],
+
     answer:
       `📲 <b>নতুন সিস্টেমে অ্যাপ ডাউনলোড / ইনস্টল</b> (খুব সহজ, ১ মিনিটের কাজ) 👇\n\n` +
       `<b>১️⃣</b> Chrome দিয়ে আমাদের অফিসিয়াল ওয়েবসাইট <b>https://goodapp2.live</b> ওপেন করুন।\n` +
