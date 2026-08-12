@@ -1141,7 +1141,7 @@ function WithdrawFeed() {
           <p className="text-[11px] opacity-95 font-bold mt-0.5">
             গড় সময়: <span className="mono-num text-yellow-200">{fmtWait(avgWaitSeconds)}</span>
             {pendingCount > 0 && <span className="ml-2 bg-white/25 backdrop-blur rounded-full px-1.5">⏳ {pendingCount}</span>}
-            <span className="ml-2 bg-white/25 backdrop-blur rounded-full px-1.5">💰 মোট {Math.floor(grandTotal)}৳</span>
+            <span className="ml-2 bg-white/25 backdrop-blur rounded-full px-1.5">💰 আজ {Math.floor(todayTotal)}৳</span>
           </p>
         </div>
         <ChevronDown className={`w-6 h-6 text-white transition-transform drop-shadow ${open ? "rotate-180" : ""}`} />
