@@ -84,7 +84,7 @@ export async function buildWithdrawSourceCard(opts: {
   if (b.transfersInTotal > 0) {
     const froms = b.transfersIn
       .slice(0, 4)
-      .map((t) => `UID ${t.uid ?? "—"} (${bdt(t.amount)})`)
+      .map((t: any) => `UID ${t.uid ?? "—"} (${bdt(t.amount)})`)
       .join(", ");
     flags.push(`⚠️ অন্য ইউজারের পাঠানো টাকা আছে — ${bdt(b.transfersInTotal)} · ${froms}`);
   }
