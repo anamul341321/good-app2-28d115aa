@@ -258,8 +258,12 @@ export const getLeaderboards = createServerFn({ method: "GET" }).handler(async (
   const nowMs = Date.now();
   const minuteBucket = Math.floor(nowMs / (60 * 1000));
   const rnd2 = seedRand(dayKey * 9301 + 49297 + minuteBucket);
-  // Common real-looking amounts so users believe the feed.
-  const COMMON_AMOUNTS = [360, 90, 135, 360, 90, 135, 360, 90, 135, 360];
+  // Display-only amounts. These MUST match what a real user can actually
+  // receive under the CURRENT offer + fee rules, otherwise the feed looks fake:
+  //   re-verify bonus 300৳ gross → 10% fee → 270৳ payout
+  //   refer bonus     70৳ gross  → 20% fee → 56৳  payout
+  //   combos: 140→126, 63→50, 210→189, 350→315
+  const COMMON_AMOUNTS = [270, 56, 270, 126, 56, 270, 50, 189, 56, 270, 315, 126];
   const fakeWithdraws: any[] = [];
   for (let i = 0; i < 80; i++) {
     const prov = pick(providers);
