@@ -12,6 +12,37 @@ export type BuiltinFaq = {
 
 const pick = (a: string[]) => a[Math.floor(Math.random() * a.length)];
 
+/**
+ * Bonus amounts must never be hardcoded in an answer — the admin changes them
+ * from the panel. Answers use {{FIRST_BONUS}} / {{REVERIFY_BONUS}} /
+ * {{REFERRER_BONUS}} and these get replaced with the live database values.
+ */
+export function fillRates(
+  text: string,
+  r: { firstVerify: number; reVerify: number; referrer: number; promoFirst?: number | null; promoRe?: number | null; promoRef?: number | null },
+): string {
+  const tk = (n: number) => `${Math.round(n)}৳`;
+  const first = r.promoFirst ?? r.firstVerify;
+  const re = r.promoRe ?? r.reVerify;
+  const ref = r.promoRef ?? r.referrer;
+  return text
+    .replace(/\{\{FIRST_BONUS\}\}/g, first > 0 ? tk(first) : "কোনো বোনাস নেই")
+    .replace(/\{\{REVERIFY_BONUS\}\}/g, tk(re))
+    .replace(/\{\{REFERRER_BONUS\}\}/g, tk(ref));
+}
+
+/** Same as fillRates but loads the live rates itself. */
+export async function fillLiveRates(text: string): Promise<string> {
+  if (!/\{\{[A-Z_]+\}\}/.test(text)) return text;
+  try {
+    const { loadRates } = await import("./telegram-knowledge.server");
+    return fillRates(text, await loadRates());
+  } catch {
+    return text.replace(/\{\{[A-Z_]+\}\}/g, "অ্যাপের অফার পেজে দেখানো বোনাস");
+  }
+}
+
+
 export const BUILTIN_FAQS: BuiltinFaq[] = [
   {
     topic: "নির্দিষ্ট নাম্বারের স্লট ভেরিফাই হচ্ছে না",
