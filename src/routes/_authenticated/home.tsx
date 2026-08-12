@@ -1039,6 +1039,14 @@ function VoucherPopup({ vouchers, onClaimed }: { vouchers: any[]; onClaimed: () 
   );
 }
 
+function useLeaderboardsData() {
+  return useQuery({
+    queryKey: ["leaderboards", "v2"],
+    queryFn: () => getLeaderboards(),
+    staleTime: 120_000,
+    retry: 1,
+  });
+}
 
 function fmtWait(sec: number) {
   if (!sec || sec < 0) return "—";
