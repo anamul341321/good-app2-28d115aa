@@ -254,9 +254,10 @@ function AuthedLayout() {
         <div className="max-w-md mx-auto px-2 py-2 grid grid-cols-5 gap-1">
           <NavItem to="/home" icon={<Home className="w-5 h-5" />} label={t("হোম", "Home")} tint="cyan" voice="home.welcome" />
           <div data-tour="nav-reverify"><NavItem to="/reverify" icon={<RefreshCcw className="w-5 h-5" />} label={t("রি-ভেরিফাই", "Re-verify")} tint="violet" voice="reverify.intro" /></div>
-          <div data-tour="nav-referral"><NavItem to="/referral" icon={<Gift className="w-5 h-5" />} label={t("রেফার", "Refer")} tint="emerald" voice="referral.intro" /></div>
+          <NavItem to="/menu" icon={<LayoutGrid className="w-5 h-5" />} label={t("মেনু", "Menu")} tint="emerald" />
           <div data-tour="nav-wallet"><NavItem to="/wallet" icon={<Wallet className="w-5 h-5" />} label={t("ওয়ালেট", "Wallet")} tint="amber" voice="wallet.intro" /></div>
           <div data-tour="nav-withdraw"><NavItem to="/withdraw" icon={<ArrowDownToLine className="w-5 h-5" />} label={t("উইথড্র", "Withdraw")} tint="rose" voice="withdraw.intro" /></div>
+
         </div>
       </nav>
 
