@@ -701,38 +701,53 @@ function TaskCell({ task, onStart, onReverify, onOpenPhoto }: { task: any; onSta
     boxShadow: `0 8px 22px -6px rgba(${theme.glow},0.55), 0 0 0 1px rgba(${theme.glow},0.25) inset`,
   } as const;
 
+  // Name under every slot so the user instantly knows whose face is inside,
+  // without tapping each photo to recognise it.
+  const nameText: string = task.face_label || (task.status === "empty" ? "খালি ঘর" : `সাক্ষী #${task.slot}`);
+  const nameTag = (
+    <p className="mt-1 text-[9px] font-black text-navy text-center truncate leading-none px-0.5" title={nameText}>
+      {nameText}
+    </p>
+  );
+
   if (isVerified && !readyToReverify) {
     const anchor = task.last_reverified_at || task.done_at || task.verified_at;
     const days = anchor ? (Date.now() - new Date(anchor).getTime()) / 86400000 : null;
     const remain = days != null ? Math.max(0, 4 - days) : null;
-    const hint = remain == null ? null : remain > 0 ? `~${remain.toFixed(1)}d` : "any";
+    const due = remain != null && remain <= 0;
     return (
+      <div className="flex flex-col">
       <button onClick={() => faceUrl && onOpenPhoto(faceUrl)}
         className="relative aspect-square rounded-2xl overflow-hidden border-2 active:scale-95 transition-transform"
-        style={{ borderColor: "#10b981", background: "linear-gradient(135deg, #10b981, #059669)", boxShadow: "0 8px 22px -6px rgba(16,185,129,0.55)" }}>
+        style={{
+          borderColor: due ? "#f59e0b" : "#22c55e",
+          background: due
+            ? "linear-gradient(135deg,#f59e0b,#ef4444)"
+            : "linear-gradient(135deg,#0ea5e9,#6366f1)",
+          boxShadow: `0 8px 22px -6px ${due ? "rgba(245,158,11,0.6)" : "rgba(99,102,241,0.55)"}`,
+        }}>
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.4),transparent_55%)]" />
         <span className="absolute top-1 left-1 text-[9px] font-black text-white mono-num leading-none px-1 py-0.5 rounded bg-black/45">#{task.slot}</span>
-        <span className="absolute top-1 right-1 flex items-center gap-0.5 rounded-md px-1 py-0.5 bg-white text-emerald-700 text-[8px] font-black shadow">
-          <ShieldCheck className="w-2.5 h-2.5" /> ✓
+        <span className="absolute top-1 right-1 rounded-md px-1 py-0.5 bg-white/90 text-[8px] font-black shadow"
+              style={{ color: due ? "#b45309" : "#4338ca" }}>
+          {due ? "⏰" : "⏳"}
         </span>
         <span className="absolute inset-0 flex items-center justify-center">
-          <ShieldCheck className="w-8 h-8 text-white/95 drop-shadow-lg" />
+          <RefreshCcw className={`w-7 h-7 text-white/95 drop-shadow-lg ${due ? "animate-spin-slow" : ""}`} />
         </span>
-        {hint && (
-          <span className="absolute bottom-4 left-1 right-1 text-[8px] font-black text-white text-center mono-num leading-none py-0.5 rounded bg-black/45">
-            {hint}
-          </span>
-        )}
-        <p className="absolute bottom-1 left-0 right-0 text-[9px] font-black text-white text-center drop-shadow leading-none tracking-wide">
-          ভেরিফাইড ✓
+        <p className="absolute bottom-1 left-0.5 right-0.5 text-[8px] font-black text-white text-center drop-shadow leading-tight">
+          {due ? "রি-ভেরিফাই সময় হয়েছে" : `${Math.ceil(remain ?? 4)} দিন পর রি-ভেরিফাই`}
         </p>
       </button>
+      {nameTag}
+      </div>
     );
   }
 
 
   if (isVerified && readyToReverify) {
     return (
+      <div className="flex flex-col">
       <button onClick={onReverify}
         className="relative aspect-square rounded-2xl overflow-hidden border-2 border-rose shadow-[0_12px_28px_-8px_rgba(239,71,111,0.85)] active:scale-95 transition-transform"
         style={{ background: "linear-gradient(135deg, #f43f5e, #ec4899)" }}>
@@ -748,6 +763,8 @@ function TaskCell({ task, onStart, onReverify, onOpenPhoto }: { task: any; onSta
           </p>
         </div>
       </button>
+      {nameTag}
+      </div>
     );
   }
 
@@ -755,12 +772,13 @@ function TaskCell({ task, onStart, onReverify, onOpenPhoto }: { task: any; onSta
   const icon = isDone
     ? <CheckCircle2 className="w-5 h-5 text-white drop-shadow" />
     : <Camera className="w-5 h-5 text-white drop-shadow" />;
-  const label = isDone ? "সম্পন্ন" : "শুরু";
+  const label = isDone ? "৩–৪ দিন পর রি-ভেরিফাই" : "শুরু";
   const bg = isDone
     ? `linear-gradient(135deg, ${theme.from}, ${theme.to})`
     : `linear-gradient(135deg, ${theme.from}22, ${theme.to}22)`;
 
   return (
+    <div className="flex flex-col">
     <button onClick={onStart}
       className="relative aspect-square rounded-2xl flex flex-col items-center justify-center gap-0.5 btn-press overflow-hidden border-2 transition-transform active:scale-95"
       style={{
@@ -776,11 +794,14 @@ function TaskCell({ task, onStart, onReverify, onOpenPhoto }: { task: any; onSta
         style={{ background: isDone ? "rgba(0,0,0,0.25)" : `linear-gradient(135deg, ${theme.from}, ${theme.to})` }}>
         {icon}
       </span>
-      <span className="text-[9px] font-black drop-shadow leading-none mt-0.5"
+      <span className="text-[8px] font-black drop-shadow leading-tight mt-0.5 text-center px-1"
         style={{ color: isDone ? "#fff" : theme.from }}>{label}</span>
     </button>
+    {nameTag}
+    </div>
   );
 }
+
 
 
 function s(totalSec: number) { return totalSec % 60; }
