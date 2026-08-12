@@ -413,7 +413,7 @@ export async function setWebhook(url: string) {
   return api("setWebhook", {
     url,
     secret_token: webhookSecretFor(token),
-    allowed_updates: ["message", "edited_message"],
+    allowed_updates: ["message", "edited_message", "callback_query", "chat_member"],
     drop_pending_updates: true,
   });
 }
