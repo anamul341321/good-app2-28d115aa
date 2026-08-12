@@ -561,6 +561,61 @@ function useTick() {
   return useContext(NowContext);
 }
 
+/** Two long inspire-bars: how many first-verify and re-verify are left of 10. */
+function VerifyProgressLines({ firstVerify, reverify, target }: { firstVerify: number; reverify: number; target: number }) {
+  const rows = [
+    {
+      key: "first",
+      icon: "📸",
+      label: "First Verify",
+      done: Math.min(firstVerify, target),
+      grad: "linear-gradient(90deg,#06b6d4,#3b82f6,#8b5cf6)",
+    },
+    {
+      key: "re",
+      icon: "🔄",
+      label: "Re-verify",
+      done: Math.min(reverify, target),
+      grad: "linear-gradient(90deg,#f59e0b,#ef4444,#ec4899)",
+    },
+  ];
+  return (
+    <div className="premium-panel rounded-2xl p-3 space-y-2.5">
+      {rows.map((r) => {
+        const pct = Math.round((r.done / target) * 100);
+        const left = Math.max(0, target - r.done);
+        const full = r.done >= target;
+        return (
+          <div key={r.key}>
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-[11px] font-black text-navy flex items-center gap-1">
+                <span>{r.icon}</span> {r.label}
+                <span className="mono-num text-muted-foreground">{r.done}/{target}</span>
+              </p>
+              <p className={`text-[10px] font-black ${full ? "text-emerald" : "text-rose"}`}>
+                {full ? "✅ সম্পূর্ণ" : `আরও ${left} টি বাকি`}
+              </p>
+            </div>
+            <div className="h-3 rounded-full bg-surface-2 overflow-hidden border border-border relative">
+              <div className="h-full rounded-full transition-all duration-700 relative overflow-hidden"
+                   style={{ width: `${pct}%`, background: r.grad }}>
+                <span className="absolute inset-0 vp-shine" />
+              </div>
+              <span className="absolute inset-0 flex items-center justify-center text-[8px] font-black text-navy/80 mono-num">
+                {pct}%
+              </span>
+            </div>
+          </div>
+        );
+      })}
+      <p className="text-[10px] text-muted-foreground font-bold leading-snug">
+        ১০টি স্লট Re-verify সম্পূর্ণ হলেই ⛏️ মাইনিং চালু + ২০০৳ বোনাস
+      </p>
+    </div>
+  );
+}
+
+
 
 function MainIdentityCell({ task, onStart, onReverify, onOpenPhoto }: { task: any; onStart: () => void; onReverify: () => void; onOpenPhoto: (url: string) => void }) {
   const isVerified = task.status === "verified";
