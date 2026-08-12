@@ -149,15 +149,25 @@ export async function handleFastPayCallback(update: any): Promise<boolean> {
 
   if (action === "src") {
     await tgApi("answerCallbackQuery", { callback_query_id: cq.id, text: "ডেটাবেজ চেক করছি..." });
-    const { buildWithdrawSourceCard } = await import("@/lib/withdraw-source.server");
-    const card = await buildWithdrawSourceCard({ withdrawalId: String(id) });
-    await tgApi("sendMessage", {
+    let card = "";
+    try {
+      const { buildWithdrawSourceCard } = await import("@/lib/withdraw-source.server");
+      card = await buildWithdrawSourceCard({ withdrawalId: String(id) });
+    } catch (e: any) {
+      console.error("withdraw source card failed", e);
+      card = `⚠️ টাকার উৎস বের করতে সমস্যা হয়েছে:\n<code>${String(e?.message ?? e).slice(0, 300)}</code>`;
+    }
+    if (!card.trim()) card = "⚠️ কোনো তথ্য পাওয়া যায়নি।";
+    const sent = await tgApi("sendMessage", {
       chat_id: chatId,
       text: card,
       parse_mode: "HTML",
       disable_web_page_preview: true,
-      reply_to_message_id: cq.message?.message_id,
     });
+    if (!sent?.ok) {
+      console.error("source card send failed", JSON.stringify(sent));
+      await tgApi("sendMessage", { chat_id: chatId, text: card.replace(/<[^>]+>/g, "") });
+    }
     return true;
   }
 
