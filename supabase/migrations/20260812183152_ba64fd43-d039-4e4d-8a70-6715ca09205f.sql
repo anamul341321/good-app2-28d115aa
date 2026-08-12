@@ -1,0 +1,1 @@
+update public.bonus_settings set apk_url='good-app-v1.0-1786559228268.apk', apk_version='1.0' where id='default';
