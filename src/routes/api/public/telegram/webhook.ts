@@ -2007,7 +2007,9 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               }
             }
             if (hit) {
-              const reply = (await humanizeReply(hit.answer, text || shotText, [])) || hit.answer;
+              const { fillLiveRates } = await import("@/lib/telegram-builtin-faq.server");
+              const grounded = await fillLiveRates(hit.answer);
+              const reply = (await humanizeReply(grounded, text || shotText, [])) || grounded;
               await sendMessage(chatId, reply + (await offerSlotResetSuffix()), msg.message_id);
               await logMessage("question", `faq-builtin-ocr:${hit.topic}`, reply, null);
               return Response.json({ ok: true, flow: "faq-builtin-ocr", topic: hit.topic });
