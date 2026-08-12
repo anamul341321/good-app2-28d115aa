@@ -6,6 +6,9 @@ import { DashSection } from "@/components/DashSection";
 import { AllOptionsGrid } from "@/components/AllOptionsGrid";
 import { Leaderboards } from "@/components/Leaderboards";
 import { ReferralCommissionCard } from "@/components/ReferralCommissionCard";
+import { PaymentHistoryCard } from "@/components/PaymentHistoryCard";
+import { ComplianceDisclaimer } from "@/components/ComplianceDisclaimer";
+
 import { ApkDownloadCard } from "@/components/ApkDownloadCard";
 import { BotStartButton } from "@/components/BotStartButton";
 import { VideoTutorialButton } from "@/components/VideoTutorialButton";
@@ -130,6 +133,17 @@ function MenuPage() {
       >
         <Leaderboards />
       </DashSection>
+
+      <DashSection
+        icon={<Sparkles className="w-4 h-4" />}
+        tint="rose"
+        title={t("পেমেন্ট হিস্টরি", "Payment History")}
+        subtitle={t("কে কত টাকা পেয়েছেন — লাইভ", "Who got paid, live")}
+      >
+        <PaymentHistoryCard />
+        <ComplianceDisclaimer />
+      </DashSection>
+
 
       <DashSection
         icon={<MessageCircle className="w-4 h-4" />}

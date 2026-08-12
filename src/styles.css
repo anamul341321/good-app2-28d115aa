@@ -1212,3 +1212,41 @@ input, textarea, select { touch-action: manipulation; }
 @media (prefers-reduced-motion: reduce) {
   .mc-roll, .mc-dec { animation: none; }
 }
+
+/* ---- Verify progress lines ---- */
+@keyframes vp-shine-move {
+  0% { transform: translateX(-120%); }
+  100% { transform: translateX(220%); }
+}
+.vp-shine {
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.55), transparent);
+  animation: vp-shine-move 2.2s linear infinite;
+}
+@keyframes spin-slow { to { transform: rotate(360deg); } }
+.animate-spin-slow { animation: spin-slow 3.5s linear infinite; }
+
+/* ---- Mining card: extra premium shine + aurora sweep ---- */
+@keyframes mc-aurora {
+  0%   { transform: translate3d(-12%, -6%, 0) rotate(0deg); }
+  50%  { transform: translate3d(10%, 6%, 0) rotate(180deg); }
+  100% { transform: translate3d(-12%, -6%, 0) rotate(360deg); }
+}
+.mc-aurora {
+  background:
+    radial-gradient(circle at 20% 20%, rgba(56,189,248,0.35), transparent 55%),
+    radial-gradient(circle at 80% 70%, rgba(244,114,182,0.3), transparent 55%),
+    radial-gradient(circle at 50% 90%, rgba(250,204,21,0.25), transparent 55%);
+  animation: mc-aurora 16s ease-in-out infinite;
+  filter: blur(18px);
+}
+@keyframes mc-sheen {
+  0%   { transform: translateX(-140%) skewX(-18deg); opacity: 0; }
+  35%  { opacity: 0.85; }
+  100% { transform: translateX(240%) skewX(-18deg); opacity: 0; }
+}
+.mc-sheen {
+  position: absolute; inset: -30% -60%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
+  animation: mc-sheen 5.5s ease-in-out infinite;
+}
+.mc-num-live { text-shadow: 0 0 22px rgba(255,255,255,0.45), 0 0 46px rgba(56,189,248,0.35); }

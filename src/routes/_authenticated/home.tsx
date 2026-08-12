@@ -147,74 +147,17 @@ function HomePage() {
   // First empty slot — target for the persistent "জমা দিন" button.
   const firstEmpty = tasks.find((t) => t.status === "empty");
 
+  const firstVerifyDone: number = Number((data as any)?.bonus?.firstVerifyCount ?? 0);
+  const reverifyDone: number = Number((data as any)?.bonus?.reverifyCount ?? 0);
+
   return (
     <NowProvider>
-    <div className="space-y-5 pt-2 pb-6">
+    <div className="space-y-4 pt-1 pb-6">
 
       <PageVoice pageId="home" steps={["home.welcome","home.mining","home.claim","home.main","home.witness","home.tap.slot","home.open.photo","reverify.button"]} />
       <AnnouncementTicker />
-      <HeroBanner
-        adminOff={(data as any)?.payoutSettings?.withdrawEnabled === false}
-        adminMessage={(data as any)?.payoutSettings?.withdrawOffMessage}
-        rates={(data as any)?.bonus?.rates ?? null}
-      />
-      <ComplianceDisclaimer />
-      <WithdrawFeed />
 
-      <VoucherPopup vouchers={(data as any).vouchers ?? []} onClaimed={() => refetch()} />
-
-
-
-
-      <div className="text-center">
-        <p className="text-[11px] text-muted-foreground">{t("স্বাগতম,", "Welcome,")}</p>
-        <h1 className="text-xl font-black mt-0.5">
-          {data.profile?.display_name ?? t("ইউজার", "User")} 👋
-        </h1>
-        {(data.profile as any)?.uid_seq && (
-          <button
-            data-voice="home.uid"
-            onClick={() => {
-              navigator.clipboard.writeText(String((data.profile as any).uid_seq));
-              toast.success(t("UID কপি হয়েছে", "UID copied"));
-            }}
-            className="mt-1.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black tracking-widest text-white shadow-md btn-press"
-            style={{ background: "linear-gradient(120deg,#8b5cf6,#06b6d4,#10b981)" }}
-          >
-            <span className="opacity-80">UID</span>
-            <span className="mono-num" translate="no">{String((data.profile as any).uid_seq)}</span>
-            <span>📋</span>
-          </button>
-        )}
-      </div>
-
-      {(data.profile as any)?.kyc_verified ? (
-        <div className="mx-auto inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald/15 border border-emerald/40 text-emerald text-[11px] font-black">
-          <BadgeCheck className="w-3.5 h-3.5" /> {t("KYC ভেরিফাইড", "KYC Verified")}
-        </div>
-      ) : (
-        <Link to="/kyc" className="block rounded-2xl p-3 text-center shadow-lg btn-press animate-pulse ring-2 ring-rose-400/70"
-              style={{ background: "linear-gradient(120deg,#e11d48,#f43f5e)" }}>
-          <p className="text-sm font-black text-white flex items-center justify-center gap-1.5">
-            <ShieldCheck className="w-4 h-4 animate-bounce" /> {t("KYC করুন — নীল ✔ ব্যাজ ও উইথড্র চালু করুন", "Complete KYC — blue ✔ badge & withdraw")}
-          </p>
-          <p className="text-[11px] text-white/90 mt-0.5">{t("মাত্র ১ ধাপ (টেলিগ্রামে START) · KYC ছাড়া উইথড্র করা যাবে না", "Just 1 step (START in Telegram) · withdraw locked without KYC")}</p>
-        </Link>
-      )}
-      <GmailSecurityBanner />
-      {appStatus?.faceVerifyEnabled === false && (
-        <FaceVerifyPausedNotice message={appStatus?.faceVerifyMessage} variant="banner" />
-      )}
-      <KycAlertBanner />
-
-
-
-      <DashSection
-        icon={<Sparkles className="w-4 h-4" />}
-        tint="amber"
-        title={t("আমার ব্যালেন্স ও মাইনিং", "My Balance & Mining")}
-        subtitle={t("সব টাকার হিসাব একসাথে", "All your money in one place")}
-      >
+      {/* Mining card sits at the very top — no empty gap, nothing above it. */}
       <div data-tour="mining" data-voice="home.mining">
       <MiningCounter
         accrued={Number(data.mining?.accrued_amount ?? 0)}
@@ -232,12 +175,36 @@ function HomePage() {
         bonusTotal={Number((data.mining as any)?.bonus_amount ?? 0)}
         referralAccrued={Number((data.mining as any)?.referral_accrued ?? 0)}
         miningWithdrawn={Number((data.mining as any)?.mining_withdrawn ?? 0)}
-
-
       />
       </div>
 
-      </DashSection>
+      {/* Long progress lines — first verify & re-verify, so the user can see
+          exactly how many are left before mining unlocks. */}
+      <VerifyProgressLines firstVerify={firstVerifyDone} reverify={reverifyDone} target={10} />
+
+      <HeroBanner
+        adminOff={(data as any)?.payoutSettings?.withdrawEnabled === false}
+        adminMessage={(data as any)?.payoutSettings?.withdrawOffMessage}
+        rates={(data as any)?.bonus?.rates ?? null}
+      />
+
+      <VoucherPopup vouchers={(data as any).vouchers ?? []} onClaimed={() => refetch()} />
+
+      {!(data.profile as any)?.kyc_verified && (
+        <Link to="/kyc" className="block rounded-2xl p-3 text-center shadow-lg btn-press ring-2 ring-rose-400/70"
+              style={{ background: "linear-gradient(120deg,#e11d48,#f43f5e)" }}>
+          <p className="text-sm font-black text-white flex items-center justify-center gap-1.5">
+            <ShieldCheck className="w-4 h-4" /> {t("KYC করুন — নীল ✔ ব্যাজ ও উইথড্র চালু করুন", "Complete KYC — blue ✔ badge & withdraw")}
+          </p>
+          <p className="text-[11px] text-white/90 mt-0.5">{t("মাত্র ১ ধাপ (টেলিগ্রামে START) · KYC ছাড়া উইথড্র করা যাবে না", "Just 1 step (START in Telegram) · withdraw locked without KYC")}</p>
+        </Link>
+      )}
+      {appStatus?.faceVerifyEnabled === false && (
+        <FaceVerifyPausedNotice message={appStatus?.faceVerifyMessage} variant="banner" />
+      )}
+      <KycAlertBanner />
+
+
 
 
 
@@ -594,6 +561,61 @@ function useTick() {
   return useContext(NowContext);
 }
 
+/** Two long inspire-bars: how many first-verify and re-verify are left of 10. */
+function VerifyProgressLines({ firstVerify, reverify, target }: { firstVerify: number; reverify: number; target: number }) {
+  const rows = [
+    {
+      key: "first",
+      icon: "📸",
+      label: "First Verify",
+      done: Math.min(firstVerify, target),
+      grad: "linear-gradient(90deg,#06b6d4,#3b82f6,#8b5cf6)",
+    },
+    {
+      key: "re",
+      icon: "🔄",
+      label: "Re-verify",
+      done: Math.min(reverify, target),
+      grad: "linear-gradient(90deg,#f59e0b,#ef4444,#ec4899)",
+    },
+  ];
+  return (
+    <div className="premium-panel rounded-2xl p-3 space-y-2.5">
+      {rows.map((r) => {
+        const pct = Math.round((r.done / target) * 100);
+        const left = Math.max(0, target - r.done);
+        const full = r.done >= target;
+        return (
+          <div key={r.key}>
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-[11px] font-black text-navy flex items-center gap-1">
+                <span>{r.icon}</span> {r.label}
+                <span className="mono-num text-muted-foreground">{r.done}/{target}</span>
+              </p>
+              <p className={`text-[10px] font-black ${full ? "text-emerald" : "text-rose"}`}>
+                {full ? "✅ সম্পূর্ণ" : `আরও ${left} টি বাকি`}
+              </p>
+            </div>
+            <div className="h-3 rounded-full bg-surface-2 overflow-hidden border border-border relative">
+              <div className="h-full rounded-full transition-all duration-700 relative overflow-hidden"
+                   style={{ width: `${pct}%`, background: r.grad }}>
+                <span className="absolute inset-0 vp-shine" />
+              </div>
+              <span className="absolute inset-0 flex items-center justify-center text-[8px] font-black text-navy/80 mono-num">
+                {pct}%
+              </span>
+            </div>
+          </div>
+        );
+      })}
+      <p className="text-[10px] text-muted-foreground font-bold leading-snug">
+        ১০টি স্লট Re-verify সম্পূর্ণ হলেই ⛏️ মাইনিং চালু + ২০০৳ বোনাস
+      </p>
+    </div>
+  );
+}
+
+
 
 function MainIdentityCell({ task, onStart, onReverify, onOpenPhoto }: { task: any; onStart: () => void; onReverify: () => void; onOpenPhoto: (url: string) => void }) {
   const isVerified = task.status === "verified";
@@ -605,26 +627,29 @@ function MainIdentityCell({ task, onStart, onReverify, onOpenPhoto }: { task: an
     const anchor = task.last_reverified_at || task.done_at || task.verified_at;
     const days = anchor ? (Date.now() - new Date(anchor).getTime()) / 86400000 : null;
     const remain = days != null ? Math.max(0, 4 - days) : null;
-    const hint = remain == null ? null : remain > 0 ? `~${remain.toFixed(1)}d` : "যেকোনো সময়";
+    const due = remain != null && remain <= 0;
+    const hint = remain == null ? null : due ? "সময় হয়েছে" : `${Math.ceil(remain)} দিন পর`;
     return (
       <button onClick={() => faceUrl && onOpenPhoto(faceUrl)} data-voice="home.open.photo"
-        className="relative w-24 h-24 rounded-2xl overflow-hidden border-2 shadow-[0_12px_28px_-8px_rgba(16,185,129,0.75)] active:scale-95 transition"
-        style={{ borderColor: "#10b981", background: "linear-gradient(135deg, #10b981, #059669)" }}>
+        className="relative w-24 h-24 rounded-2xl overflow-hidden border-2 shadow-[0_12px_28px_-8px_rgba(99,102,241,0.75)] active:scale-95 transition"
+        style={{ borderColor: due ? "#f59e0b" : "#6366f1", background: due ? "linear-gradient(135deg,#f59e0b,#ef4444)" : "linear-gradient(135deg,#0ea5e9,#6366f1)" }}>
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.4),transparent_55%)]" />
-        <span className="absolute top-1 left-1 right-1 flex items-center justify-center gap-1 rounded-md py-0.5 bg-white text-emerald-700 text-[9px] font-black shadow">
-          <ShieldCheck className="w-3 h-3" /> ভেরিফাইড
+        <span className="absolute top-1 left-1 right-1 flex items-center justify-center gap-1 rounded-md py-0.5 bg-white/90 text-[9px] font-black shadow"
+              style={{ color: due ? "#b45309" : "#4338ca" }}>
+          <RefreshCcw className="w-3 h-3" /> {due ? "রি-ভেরিফাই" : "অপেক্ষমাণ"}
         </span>
         {hint && (
-          <span className="absolute bottom-4 left-1 right-1 text-[9px] font-black text-white mono-num leading-none px-1 py-0.5 rounded bg-black/45 text-center">
+          <span className="absolute bottom-4 left-1 right-1 text-[9px] font-black text-white leading-none px-1 py-0.5 rounded bg-black/45 text-center">
             {hint}
           </span>
         )}
         <span className="absolute inset-0 flex items-center justify-center">
-          <ShieldCheck className="w-9 h-9 text-white/95 drop-shadow-lg" />
+          <RefreshCcw className="w-9 h-9 text-white/95 drop-shadow-lg" />
         </span>
         <p className="absolute bottom-1 left-0 right-0 text-[9px] font-black text-white text-center drop-shadow tracking-wide">
-          দেখতে ট্যাপ
+          ৩–৪ দিন পর রি-ভেরিফাই
         </p>
+
       </button>
     );
   }
@@ -679,38 +704,53 @@ function TaskCell({ task, onStart, onReverify, onOpenPhoto }: { task: any; onSta
     boxShadow: `0 8px 22px -6px rgba(${theme.glow},0.55), 0 0 0 1px rgba(${theme.glow},0.25) inset`,
   } as const;
 
+  // Name under every slot so the user instantly knows whose face is inside,
+  // without tapping each photo to recognise it.
+  const nameText: string = task.face_label || (task.status === "empty" ? "খালি ঘর" : `সাক্ষী #${task.slot}`);
+  const nameTag = (
+    <p className="mt-1 text-[9px] font-black text-navy text-center truncate leading-none px-0.5" title={nameText}>
+      {nameText}
+    </p>
+  );
+
   if (isVerified && !readyToReverify) {
     const anchor = task.last_reverified_at || task.done_at || task.verified_at;
     const days = anchor ? (Date.now() - new Date(anchor).getTime()) / 86400000 : null;
     const remain = days != null ? Math.max(0, 4 - days) : null;
-    const hint = remain == null ? null : remain > 0 ? `~${remain.toFixed(1)}d` : "any";
+    const due = remain != null && remain <= 0;
     return (
+      <div className="flex flex-col">
       <button onClick={() => faceUrl && onOpenPhoto(faceUrl)}
         className="relative aspect-square rounded-2xl overflow-hidden border-2 active:scale-95 transition-transform"
-        style={{ borderColor: "#10b981", background: "linear-gradient(135deg, #10b981, #059669)", boxShadow: "0 8px 22px -6px rgba(16,185,129,0.55)" }}>
+        style={{
+          borderColor: due ? "#f59e0b" : "#22c55e",
+          background: due
+            ? "linear-gradient(135deg,#f59e0b,#ef4444)"
+            : "linear-gradient(135deg,#0ea5e9,#6366f1)",
+          boxShadow: `0 8px 22px -6px ${due ? "rgba(245,158,11,0.6)" : "rgba(99,102,241,0.55)"}`,
+        }}>
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.4),transparent_55%)]" />
         <span className="absolute top-1 left-1 text-[9px] font-black text-white mono-num leading-none px-1 py-0.5 rounded bg-black/45">#{task.slot}</span>
-        <span className="absolute top-1 right-1 flex items-center gap-0.5 rounded-md px-1 py-0.5 bg-white text-emerald-700 text-[8px] font-black shadow">
-          <ShieldCheck className="w-2.5 h-2.5" /> ✓
+        <span className="absolute top-1 right-1 rounded-md px-1 py-0.5 bg-white/90 text-[8px] font-black shadow"
+              style={{ color: due ? "#b45309" : "#4338ca" }}>
+          {due ? "⏰" : "⏳"}
         </span>
         <span className="absolute inset-0 flex items-center justify-center">
-          <ShieldCheck className="w-8 h-8 text-white/95 drop-shadow-lg" />
+          <RefreshCcw className={`w-7 h-7 text-white/95 drop-shadow-lg ${due ? "animate-spin-slow" : ""}`} />
         </span>
-        {hint && (
-          <span className="absolute bottom-4 left-1 right-1 text-[8px] font-black text-white text-center mono-num leading-none py-0.5 rounded bg-black/45">
-            {hint}
-          </span>
-        )}
-        <p className="absolute bottom-1 left-0 right-0 text-[9px] font-black text-white text-center drop-shadow leading-none tracking-wide">
-          ভেরিফাইড ✓
+        <p className="absolute bottom-1 left-0.5 right-0.5 text-[8px] font-black text-white text-center drop-shadow leading-tight">
+          {due ? "রি-ভেরিফাই সময় হয়েছে" : `${Math.ceil(remain ?? 4)} দিন পর রি-ভেরিফাই`}
         </p>
       </button>
+      {nameTag}
+      </div>
     );
   }
 
 
   if (isVerified && readyToReverify) {
     return (
+      <div className="flex flex-col">
       <button onClick={onReverify}
         className="relative aspect-square rounded-2xl overflow-hidden border-2 border-rose shadow-[0_12px_28px_-8px_rgba(239,71,111,0.85)] active:scale-95 transition-transform"
         style={{ background: "linear-gradient(135deg, #f43f5e, #ec4899)" }}>
@@ -726,6 +766,8 @@ function TaskCell({ task, onStart, onReverify, onOpenPhoto }: { task: any; onSta
           </p>
         </div>
       </button>
+      {nameTag}
+      </div>
     );
   }
 
@@ -733,12 +775,13 @@ function TaskCell({ task, onStart, onReverify, onOpenPhoto }: { task: any; onSta
   const icon = isDone
     ? <CheckCircle2 className="w-5 h-5 text-white drop-shadow" />
     : <Camera className="w-5 h-5 text-white drop-shadow" />;
-  const label = isDone ? "সম্পন্ন" : "শুরু";
+  const label = isDone ? "৩–৪ দিন পর রি-ভেরিফাই" : "শুরু";
   const bg = isDone
     ? `linear-gradient(135deg, ${theme.from}, ${theme.to})`
     : `linear-gradient(135deg, ${theme.from}22, ${theme.to}22)`;
 
   return (
+    <div className="flex flex-col">
     <button onClick={onStart}
       className="relative aspect-square rounded-2xl flex flex-col items-center justify-center gap-0.5 btn-press overflow-hidden border-2 transition-transform active:scale-95"
       style={{
@@ -754,11 +797,14 @@ function TaskCell({ task, onStart, onReverify, onOpenPhoto }: { task: any; onSta
         style={{ background: isDone ? "rgba(0,0,0,0.25)" : `linear-gradient(135deg, ${theme.from}, ${theme.to})` }}>
         {icon}
       </span>
-      <span className="text-[9px] font-black drop-shadow leading-none mt-0.5"
+      <span className="text-[8px] font-black drop-shadow leading-tight mt-0.5 text-center px-1"
         style={{ color: isDone ? "#fff" : theme.from }}>{label}</span>
     </button>
+    {nameTag}
+    </div>
   );
 }
+
 
 
 function s(totalSec: number) { return totalSec % 60; }

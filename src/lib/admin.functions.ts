@@ -21,6 +21,7 @@ export const adminStats = createServerFn({ method: "GET" }).handler(async () => 
     usersC, walletsC, unverifiedC, todayVerifiedC, todayDoneC, activeMiningC, kycC, rechargesC,
     doneC, verifiedC, emptyC,
     pendingC, paidC, rejectedC,
+    todayFirstC, todayReverifyC,
   ] = await Promise.all([
     supabaseAdmin.from("profiles").select("id", { count: "exact", head: true }),
     supabaseAdmin.from("wallets").select("user_id", { count: "exact", head: true }),
@@ -36,7 +37,32 @@ export const adminStats = createServerFn({ method: "GET" }).handler(async () => 
     supabaseAdmin.from("withdrawals").select("id", { count: "exact", head: true }).eq("status", "pending"),
     supabaseAdmin.from("withdrawals").select("id", { count: "exact", head: true }).eq("status", "paid"),
     supabaseAdmin.from("withdrawals").select("id", { count: "exact", head: true }).eq("status", "rejected"),
+    supabaseAdmin.from("tasks").select("id", { count: "exact", head: true }).gte("initial_verify_at", todayIso),
+    supabaseAdmin.from("tasks").select("id", { count: "exact", head: true }).gte("last_reverified_at", todayIso),
   ]);
+
+  // Per-day (last 7 days) first-verify + re-verify counts so admin can read
+  // the daily rhythm at a glance instead of only "today".
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const from = new Date(startOfToday);
+    from.setDate(from.getDate() - i);
+    const to = new Date(from);
+    to.setDate(to.getDate() + 1);
+    return { from, to };
+  });
+  const dailyRaw = await Promise.all(
+    days.flatMap(({ from, to }) => [
+      supabaseAdmin.from("tasks").select("id", { count: "exact", head: true })
+        .gte("initial_verify_at", from.toISOString()).lt("initial_verify_at", to.toISOString()),
+      supabaseAdmin.from("tasks").select("id", { count: "exact", head: true })
+        .gte("last_reverified_at", from.toISOString()).lt("last_reverified_at", to.toISOString()),
+    ]),
+  );
+  const daily = days.map(({ from }, i) => ({
+    date: from.toISOString().slice(0, 10),
+    firstVerify: dailyRaw[i * 2]?.count ?? 0,
+    reverify: dailyRaw[i * 2 + 1]?.count ?? 0,
+  }));
 
   return {
     users: usersC.count ?? 0,
@@ -46,6 +72,9 @@ export const adminStats = createServerFn({ method: "GET" }).handler(async () => 
     unverifiedCount: unverifiedC.count ?? 0,
     reverifyQueue: verifiedC.count ?? 0,
     todayVerified: (todayVerifiedC.count ?? 0) + (todayDoneC.count ?? 0),
+    todayFirstVerify: todayFirstC.count ?? 0,
+    todayReverify: todayReverifyC.count ?? 0,
+    daily,
     tasks: { done: doneC.count ?? 0, verified: verifiedC.count ?? 0, empty: emptyC.count ?? 0 },
     mining: {
       activeUsers: activeMiningC.count ?? 0,
@@ -57,6 +86,7 @@ export const adminStats = createServerFn({ method: "GET" }).handler(async () => 
     },
   };
 });
+
 
 export const adminMoneyStats = createServerFn({ method: "GET" }).handler(async () => {
   const supabaseAdmin = await gate();

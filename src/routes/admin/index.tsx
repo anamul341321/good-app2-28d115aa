@@ -43,7 +43,38 @@ function AdminDashboard() {
 
   return (
     <div className="space-y-4">
+      {/* আজকের হিসাব — first verify vs re-verify */}
+      <div className="rounded-2xl p-4 border border-white/15 relative overflow-hidden"
+           style={{ background: "linear-gradient(135deg,#0f172a 0%,#1e293b 55%,#0f766e 100%)" }}>
+        <p className="text-[10px] uppercase tracking-[0.25em] font-black text-white/70">আজকের হিসাব</p>
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          <div className="rounded-xl p-3 bg-white/10 border border-white/15">
+            <p className="text-[10px] font-black text-cyan-200">📸 আজ First Verify</p>
+            <p className="mono-num text-3xl font-black text-white leading-none mt-1">{stats?.todayFirstVerify ?? "…"}</p>
+          </div>
+          <div className="rounded-xl p-3 bg-white/10 border border-white/15">
+            <p className="text-[10px] font-black text-amber-200">🔄 আজ Re-verify</p>
+            <p className="mono-num text-3xl font-black text-white leading-none mt-1">{stats?.todayReverify ?? "…"}</p>
+          </div>
+        </div>
+        {(stats as any)?.daily?.length > 0 && (
+          <div className="mt-3 space-y-1">
+            <p className="text-[10px] font-black text-white/60">গত ৭ দিনের হিসাব (প্রতিদিন)</p>
+            {(stats as any).daily.map((d: any, i: number) => (
+              <div key={d.date} className="flex items-center justify-between rounded-lg px-2.5 py-1.5 bg-white/8 border border-white/10">
+                <span className="text-[11px] font-black text-white/85 mono-num">
+                  {i === 0 ? "আজ" : i === 1 ? "গতকাল" : d.date}
+                </span>
+                <span className="text-[11px] font-black mono-num text-cyan-200">📸 {d.firstVerify}</span>
+                <span className="text-[11px] font-black mono-num text-amber-200">🔄 {d.reverify}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       <WhitelistMonitor />
+
 
       {/* Money panel */}
 
