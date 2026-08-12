@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Download, Trash2, ShieldCheck, X } from "lucide-react";
+import { Download, Trash2, X, Zap, BellRing, ShieldCheck } from "lucide-react";
 import { getAppStatus } from "@/lib/app-status.functions";
 
 function isStandalone() {
@@ -20,15 +20,13 @@ function isNativeApp() {
 }
 
 /**
- * ইউজারকে নেটিভ অ্যাপ (APK / Play Store) ডাউনলোড করতে বলে।
- * - APK লিংক থাকলে: এক ট্যাপে ডাউনলোড ব্যানার + নিরাপদে ইনস্টল করার গাইড (Play Protect সহ)
- * - আগে "Add to Home Screen" দিয়ে ইনস্টল করা থাকলে: পুরোনোটা ডিলিট করে নতুন ভার্সন নিতে বলে
- * - APK না থাকলে: কিছুই দেখানো হয় না
+ * ওয়েবসাইটে ঢুকলেই (নেটিভ অ্যাপ না হলে) প্রতিবার অ্যাপ ডাউনলোডের সুন্দর পপআপ।
+ * - ক্রস চেপে বন্ধ করা যায়, কিন্তু পরের বার আবার আসবে (কোনো "আর দেখাবে না" সেভ নেই)
+ * - ডাউনলোডে ট্যাপ করলেই সোজা ডাউনলোড শুরু — কোনো লম্বা নোটিশ নেই
  */
 export function InstallPrompt() {
   const [installed, setInstalled] = useState(false);
-  const [showSafety, setShowSafety] = useState(false);
-  const [hidden, setHidden] = useState(false);
+  const [open, setOpen] = useState(true);
   const native = typeof window !== "undefined" && isNativeApp();
 
   const { data } = useQuery({
@@ -44,139 +42,102 @@ export function InstallPrompt() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     setInstalled(isStandalone());
-
     const mq = window.matchMedia?.("(display-mode: standalone)");
     const onMq = () => setInstalled(isStandalone());
     mq?.addEventListener?.("change", onMq);
-
-    return () => {
-      mq?.removeEventListener?.("change", onMq);
-    };
+    return () => mq?.removeEventListener?.("change", onMq);
   }, []);
 
-  // নেটিভ অ্যাপে থাকলে কিছুই দেখাবো না
-  if (native) return null;
+  const path = typeof window !== "undefined" ? window.location.pathname : "";
+  if (native || !apkUrl || !open || path.startsWith("/admin")) return null;
 
-  // ── নতুন নেটিভ অ্যাপ আছে → সবাইকে সেটাই ডাউনলোড করতে বলি ──
-  if (apkUrl) {
-    return (
-      <>
-        {!hidden && (
-          <div className="fixed top-14 inset-x-0 z-40 px-3 pointer-events-none">
-            <div className="max-w-md mx-auto pointer-events-auto space-y-2">
-              {/* পুরোনো Add-to-Home-Screen ইউজারদের জন্য সতর্কতা */}
-              {installed && (
-                <div className="rounded-2xl p-3 bg-rose-600 text-white shadow-2xl border border-white/20">
-                  <div className="flex items-start gap-2">
-                    <Trash2 className="w-4 h-4 mt-0.5 shrink-0" />
-                    <p className="text-[11px] font-bold leading-snug flex-1">
-                      আপনি আগে <b>"Add to Home Screen"</b> দিয়ে যেটা ইনস্টল করেছিলেন সেটি
-                      <b> ডিলিট (Uninstall)</b> করে দিন — এখন নিচের বাটনে চাপ দিয়ে
-                      <b> নতুন অফিসিয়াল অ্যাপ</b> ইনস্টল করুন ✅
-                    </p>
-                  </div>
-                </div>
-              )}
+  return (
+    <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/70 backdrop-blur-sm px-3 pb-4 animate-in fade-in duration-300">
+      <div
+        className="relative w-full max-w-md overflow-hidden rounded-[28px] border border-white/15 shadow-2xl animate-in slide-in-from-bottom-6 duration-400"
+        style={{ background: "linear-gradient(160deg,#0b1224 0%,#131a3a 55%,#1b1040 100%)" }}
+      >
+        {/* গ্লো */}
+        <div className="pointer-events-none absolute -top-16 -right-10 h-48 w-48 rounded-full blur-3xl opacity-40" style={{ background: "radial-gradient(circle,#06b6d4,transparent 70%)" }} />
+        <div className="pointer-events-none absolute -bottom-20 -left-12 h-52 w-52 rounded-full blur-3xl opacity-40" style={{ background: "radial-gradient(circle,#a855f7,transparent 70%)" }} />
 
-              <div
-                className="rounded-2xl p-3 flex items-center gap-3 shadow-2xl border border-white/20"
-                style={{ background: "linear-gradient(135deg,#059669 0%,#06b6d4 55%,#7c3aed 100%)" }}
-              >
-                <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center shrink-0">
-                  <Download className="w-5 h-5 text-white animate-bounce" />
-                </div>
-                <div className="min-w-0 flex-1 text-white">
-                  <p className="font-black text-sm leading-tight">
-                    {isStore ? "Play Store থেকে অ্যাপ নিন 📲" : "অফিসিয়াল অ্যাপ ডাউনলোড করুন 📲"}
-                  </p>
-                  <p className="text-[10px] opacity-90 leading-tight mt-0.5">
-                    ওয়েবসাইটের বদলে অ্যাপে কাজ করুন — এক ট্যাপেই ডাউনলোড
-                    {apkVersion && !isStore ? ` • v${apkVersion}` : ""}
-                  </p>
-                </div>
-                <a
-                  href={apkUrl}
-                  {...(isStore
-                    ? { target: "_blank", rel: "noopener noreferrer" }
-                    : { download: "Good-App.apk" })}
-                  onClick={() => {
-                    if (!isStore) setShowSafety(true);
-                  }}
-                  className="shrink-0 px-3 py-2 rounded-xl bg-white text-emerald-700 font-black text-xs flex items-center gap-1 btn-press shadow-md"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  ডাউনলোড
-                </a>
-                <button
-                  onClick={() => setHidden(true)}
-                  aria-label="বন্ধ"
-                  className="shrink-0 w-6 h-6 rounded-full bg-white/20 text-white grid place-items-center"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        <button
+          onClick={() => setOpen(false)}
+          aria-label="বন্ধ করুন"
+          className="absolute right-3 top-3 z-10 grid h-9 w-9 place-items-center rounded-full bg-white/10 text-white btn-press"
+        >
+          <X className="h-4 w-4" />
+        </button>
 
-        {/* নিরাপদে ইনস্টল করার গাইড (Play Protect / security scan) */}
-        {showSafety && (
-          <div
-            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center px-4"
-            onClick={() => setShowSafety(false)}
-          >
+        <div className="relative p-5 pt-7 text-white">
+          <div className="flex items-center gap-3">
             <div
-              className="w-full max-w-md rounded-3xl bg-surface border border-border p-5 space-y-4 shadow-2xl animate-in slide-in-from-bottom-4"
-              onClick={(e) => e.stopPropagation()}
+              className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl shadow-lg"
+              style={{ background: "linear-gradient(135deg,#22c55e,#06b6d4)" }}
             >
-              <div className="text-center">
-                <div
-                  className="inline-flex w-14 h-14 rounded-2xl items-center justify-center mb-2"
-                  style={{ background: "linear-gradient(135deg,#059669,#06b6d4)" }}
-                >
-                  <ShieldCheck className="w-7 h-7 text-white" />
-                </div>
-                <h3 className="text-lg font-black">অ্যাপটি নিরাপদ ✅ — ইনস্টল করার নিয়ম</h3>
-                <p className="text-xs text-muted-foreground mt-1">
-                  ডাউনলোড শুরু হয়েছে। নিচের ধাপগুলো ফলো করুন
-                </p>
-              </div>
-
-              <ol className="space-y-3 text-sm">
-                {[
-                  <>ডাউনলোড শেষ হলে <b>Notification</b> বা <b>Files → Downloads</b> থেকে <b>Good-App.apk</b> ওপেন করুন</>,
-                  <>"Install unknown apps" চাইলে <b>Settings → Allow</b> দিন (শুধু এই একবার)</>,
-                  <>Play Protect যদি বলে <b>"Unsafe app blocked"</b> বা <b>"scan করতে দিন"</b> — <b>"More details" → "Install anyway"</b> চাপুন। অ্যাপটি আমাদের নিজের, তাই কোনো ক্ষতি নেই।</>,
-                  <>Play Protect-এ <b>Send for scanning</b> দিলেও সমস্যা নেই — স্ক্যান শেষে ইনস্টল হয়ে যাবে</>,
-                  <>ইনস্টল শেষে হোম স্ক্রিনের <b>Good-App</b> আইকন থেকে লগইন করুন</>,
-                ].map((step, i) => (
-                  <li key={i} className="flex gap-3 items-start">
-                    <span className="w-6 h-6 rounded-full bg-emerald-500 text-white font-black text-xs flex items-center justify-center shrink-0">
-                      {["১", "২", "৩", "৪", "৫"][i]}
-                    </span>
-                    <span className="flex-1">{step}</span>
-                  </li>
-                ))}
-              </ol>
-
-              <p className="text-[10px] text-muted-foreground leading-snug">
-                🔒 অ্যাপটি অফিসিয়াল signing key দিয়ে সাইন করা ও শুধু আমাদের নিজের সার্ভার থেকেই ডাউনলোড হয় — কোনো
-                বিজ্ঞাপন, ট্র্যাকার বা ক্ষতিকর কোড নেই।
+              <Download className="h-7 w-7 animate-bounce text-white" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-300">
+                {isStore ? "Google Play" : "Official Android App"}
               </p>
-
-              <button
-                onClick={() => setShowSafety(false)}
-                className="w-full py-3 rounded-xl gradient-cta font-black text-sm btn-press"
-              >
-                বুঝেছি
-              </button>
+              <h3 className="text-lg font-black leading-tight">
+                Good-App {isStore ? "ইনস্টল করুন" : "অ্যাপটি ডাউনলোড করুন"}
+              </h3>
+              <p className="text-[11px] text-white/70">
+                ওয়েবসাইটের চেয়ে অনেক দ্রুত{apkVersion && !isStore ? ` • v${apkVersion}` : ""}
+              </p>
             </div>
           </div>
-        )}
-      </>
-    );
-  }
 
-  // ── APK/Store লিংক না থাকলে কিছু দেখাবো না ──
-  return null;
+          {installed && (
+            <div className="mt-4 flex items-start gap-2 rounded-2xl bg-rose-600/90 p-3">
+              <Trash2 className="mt-0.5 h-4 w-4 shrink-0" />
+              <p className="text-[11px] font-bold leading-snug">
+                আগে <b>"Add to Home Screen"</b> দিয়ে যেটা রেখেছিলেন সেটি <b>ডিলিট</b> করে
+                নিচের বাটন থেকে <b>নতুন অফিসিয়াল অ্যাপ</b> নিন ✅
+              </p>
+            </div>
+          )}
+
+          <div className="mt-4 grid grid-cols-3 gap-2">
+            {[
+              { icon: <Zap className="h-4 w-4 text-amber-300" />, t: "সুপার ফাস্ট" },
+              { icon: <BellRing className="h-4 w-4 text-cyan-300" />, t: "নোটিফিকেশন" },
+              { icon: <ShieldCheck className="h-4 w-4 text-emerald-300" />, t: "১০০% নিরাপদ" },
+            ].map((f) => (
+              <div key={f.t} className="rounded-xl bg-white/10 p-2 text-center">
+                <div className="flex justify-center">{f.icon}</div>
+                <p className="mt-1 text-[10px] font-black text-white/85">{f.t}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* বড় ইউনিক ডাউনলোড বাটন — নিচে */}
+          <a
+            href={apkUrl}
+            {...(isStore
+              ? { target: "_blank", rel: "noopener noreferrer" }
+              : { download: "Good-App.apk" })}
+            onClick={() => setOpen(false)}
+            className="group relative mt-5 flex w-full items-center justify-center gap-2 overflow-hidden rounded-2xl py-4 text-base font-black text-white btn-press"
+            style={{ background: "linear-gradient(100deg,#f59e0b 0%,#ef4444 40%,#a855f7 75%,#06b6d4 100%)" }}
+          >
+            <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 to-transparent animate-[shimmer_2.2s_linear_infinite]" />
+            <Download className="relative h-5 w-5" />
+            <span className="relative">
+              {isStore ? "Play Store থেকে ইনস্টল করুন" : "এখনই অ্যাপ ডাউনলোড করুন"}
+            </span>
+          </a>
+
+          <button
+            onClick={() => setOpen(false)}
+            className="mt-2 w-full py-2 text-[11px] font-bold text-white/60"
+          >
+            পরে করব — ওয়েবসাইটেই চালিয়ে যাই
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }

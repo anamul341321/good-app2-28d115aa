@@ -1250,3 +1250,9 @@ input, textarea, select { touch-action: manipulation; }
   animation: mc-sheen 5.5s ease-in-out infinite;
 }
 .mc-num-live { text-shadow: 0 0 22px rgba(255,255,255,0.45), 0 0 46px rgba(56,189,248,0.35); }
+
+/* বড় ডাউনলোড বাটনের চকচকে আলো */
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
