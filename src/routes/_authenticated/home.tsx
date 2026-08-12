@@ -1117,6 +1117,12 @@ function WithdrawFeed() {
 
   const pendingCount = (withdraws as any[]).filter((w) => w.status === "pending").length;
   const grandTotal = (topPayees as any[]).reduce((s, p) => s + Number(p.total), 0);
+  // আজকের লেনদেন — শুধু আজ (লোকাল দিন) paid/pending হওয়া রিকোয়েস্টের যোগফল
+  const startOfToday = new Date(); startOfToday.setHours(0, 0, 0, 0);
+  const todayTotal = (withdraws as any[]).reduce((s, w) => {
+    const ts = new Date(w.processed_at ?? w.created_at).getTime();
+    return ts >= startOfToday.getTime() ? s + Number(w.amount) : s;
+  }, 0);
   const medal = (i: number) => (i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `#${i + 1}`);
 
   return (
@@ -1135,7 +1141,7 @@ function WithdrawFeed() {
           <p className="text-[11px] opacity-95 font-bold mt-0.5">
             গড় সময়: <span className="mono-num text-yellow-200">{fmtWait(avgWaitSeconds)}</span>
             {pendingCount > 0 && <span className="ml-2 bg-white/25 backdrop-blur rounded-full px-1.5">⏳ {pendingCount}</span>}
-            <span className="ml-2 bg-white/25 backdrop-blur rounded-full px-1.5">💰 মোট {Math.floor(grandTotal)}৳</span>
+            <span className="ml-2 bg-white/25 backdrop-blur rounded-full px-1.5">💰 আজ {Math.floor(todayTotal)}৳</span>
           </p>
         </div>
         <ChevronDown className={`w-6 h-6 text-white transition-transform drop-shadow ${open ? "rotate-180" : ""}`} />
@@ -1172,9 +1178,15 @@ function WithdrawFeed() {
 
           {tab === "top" ? (
             <>
-              <div className="rounded-xl bg-white/15 backdrop-blur border border-white/30 p-2.5 mb-2 flex items-center justify-between">
-                <p className="text-[11px] font-black text-white">💰 সর্বমোট withdraw payment</p>
-                <p className="mono-num font-black text-white text-lg">{Math.floor(grandTotal)}৳</p>
+              <div className="rounded-xl bg-white/15 backdrop-blur border border-white/30 p-2.5 mb-2 space-y-1">
+                <div className="flex items-center justify-between">
+                  <p className="text-[11px] font-black text-white">📅 আজকের লেনদেন হয়েছে</p>
+                  <p className="mono-num font-black text-yellow-200 text-lg">{Math.floor(todayTotal)}৳</p>
+                </div>
+                <div className="flex items-center justify-between">
+                  <p className="text-[10px] font-bold text-white/85">💰 সর্বমোট withdraw payment</p>
+                  <p className="mono-num font-black text-white text-sm">{Math.floor(grandTotal)}৳</p>
+                </div>
               </div>
               <ol className="space-y-1.5 max-h-[420px] overflow-y-auto pr-1">
                 {filteredPayees.slice(0, 20).map((p: any, i: number) => (
