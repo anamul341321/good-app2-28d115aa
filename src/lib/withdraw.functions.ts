@@ -233,6 +233,20 @@ export const requestWithdraw = createServerFn({ method: "POST" })
     }
 
 
+    // ---- নতুন withdraw request → অ্যাডমিনের ফোনে push notification ----
+    try {
+      const { sendPushToAdmins } = await import("@/lib/push.server");
+      const uidA = (kycProf as any)?.uid_seq ?? "—";
+      const nameA = (kycProf as any)?.display_name ?? "User";
+      await sendPushToAdmins({
+        title: `💸 নতুন Withdraw ${payout}৳`,
+        body: `${nameA} (UID ${uidA}) · ${chosen} · ${walletNumber}`,
+        url: "/admin/withdrawals",
+      });
+    } catch {
+      /* push ফেল করলেও রিকোয়েস্ট ঠিক থাকবে */
+    }
+
     // ---- সন্দেহজনক লেনদেন হলে Telegram-এ admin-কে mention করে জানাবে ----
     try {
       const { data: t10 } = await supabaseAdmin
