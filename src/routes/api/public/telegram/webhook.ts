@@ -420,6 +420,90 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           const replyTo = msg.reply_to_message?.message_id ?? msg.message_id;
           const replyContextText = String(msg.reply_to_message?.text ?? msg.reply_to_message?.caption ?? "");
 
+          // ---- অ্যাডমিন মেনশন দিয়ে "এই UID এর ৪ নম্বর স্লট রিসেট করে দাও" বা
+          // "ওয়ালেট নম্বর রিসেট করো" বললে বট সাথে সাথেই কাজটা করবে। এটা UID
+          // লুকআপের আগেই চলে, নইলে শুধু হিসাব কার্ড দিয়ে থেমে যেত।
+          {
+            const bnNum = (s: string) => s.replace(/[০-৯]/g, (d) => String("০১২৩৪৫৬৭৮৯".indexOf(d)));
+            const cmd = bnNum(`${order} ${replyContextText}`);
+            const resetIntent =
+              /(reset|রিসেট|রিসেট|muche|মুছে|মুছ|delete|ডিলিট|khali|খালি|clear|ক্লিয়ার|বাদ\s*দা|সরিয়ে|off\s*kore)/i.test(cmd);
+            if (resetIntent) {
+              const slotMod = await import("@/lib/telegram-slot.server");
+              const { SLOT_WORD, NUM_WORD, stripSlotMentions } = slotMod;
+              const hasSlotWord = new RegExp(SLOT_WORD, "i").test(cmd);
+              const walletIntent =
+                !hasSlotWord &&
+                /(wallet|ওয়ালেট|payment|পেমেন্ট|bkash|বিকাশ|nagad|নগদ|number|নম্বর|নাম্বার)/i.test(cmd);
+              const uid =
+                cmd.match(/(?:uid|ইউআইডি|আইডি|\bid\b)\s*[:#-]?\s*(\d{2,9})/i)?.[1] ??
+                stripSlotMentions(cmd).match(/(?<![\d@])(\d{3,9})(?![\d])/)?.[1] ??
+                null;
+
+              if (!uid) {
+                await sendMessage(
+                  chatId,
+                  `🙏 জি স্যার — কাজটি করতে <b>UID</b> লাগবে।\n` +
+                    `যেমন লিখুন: <code>@${meInfo?.username ?? "bot"} uid 4100 এর ৪ নম্বর স্লট রিসেট করে দাও</code>`,
+                  replyTo,
+                );
+                return Response.json({ ok: true, flow: "admin-reset-need-uid" });
+              }
+
+              if (walletIntent) {
+                const { resetPaymentNumbersForUid, walletResetReply } = await import(
+                  "@/lib/telegram-wallet.server"
+                );
+                const provider = /(bkash|বিকাশ)/i.test(cmd)
+                  ? "bkash"
+                  : /(nagad|নগদ)/i.test(cmd)
+                    ? "nagad"
+                    : /(usdt|ইউএসডিটি)/i.test(cmd)
+                      ? "usdt"
+                      : null;
+                const res = await resetPaymentNumbersForUid(uid, provider);
+                await sendMessage(chatId, walletResetReply(res), replyTo);
+                return Response.json({ ok: true, flow: "admin-wallet-reset" });
+              }
+
+              const found: number[] = [];
+              for (const m of cmd.matchAll(
+                new RegExp(`(\\d{1,3})\\s*${NUM_WORD}?\\s*(?:er|এর)?\\s*${SLOT_WORD}`, "gi"),
+              ))
+                found.push(Number(m[1]));
+              for (const m of cmd.matchAll(
+                new RegExp(`${SLOT_WORD}\\s*${NUM_WORD}?\\s*[:#-]?\\s*(\\d{1,3})`, "gi"),
+              ))
+                found.push(Number(m[1]));
+              const uniq = Array.from(new Set(found.filter((n) => n >= 1 && n <= 500)));
+              const wantsAllSlots = /(সব|সবগুলো|সবগুলা|all|full)/i.test(cmd);
+              const target =
+                uniq.length > 0 ? uniq : wantsAllSlots ? await slotMod.listSlotNumbers(uid) : [];
+
+              if (!target.length) {
+                await sendMessage(
+                  chatId,
+                  `🙏 জি স্যার — UID <code>${uid}</code> এর <b>কোন স্লট</b> রিসেট করব সেটি লিখে দিন ` +
+                    `(যেমন: <code>৪ নম্বর স্লট</code> বা <code>সব স্লট</code>)।`,
+                  replyTo,
+                );
+                return Response.json({ ok: true, flow: "admin-reset-need-slot" });
+              }
+
+              const res = await slotMod.resetSlotsForUid(uid, target);
+              const reply = !res.found
+                ? `❌ UID <code>${uid}</code> দিয়ে কোনো একাউন্ট পাওয়া যায়নি স্যার।`
+                : `✅ <b>${res.name}</b> (UID <code>${res.uid ?? uid}</code>) —\n` +
+                  (res.done.length ? `🔄 রিসেট হয়েছে: <b>স্লট ${res.done.join(", ")}</b>\n` : "") +
+                  (res.failed.length
+                    ? res.failed.map((f) => `⚠️ স্লট ${f.slot}: ${f.error}`).join("\n") + "\n"
+                    : "") +
+                  `এখন নতুন ফেস দিয়ে আবার ভেরিফাই করা যাবে 💙`;
+              await sendMessage(chatId, reply, replyTo);
+              return Response.json({ ok: true, flow: "admin-slot-reset", done: res.done });
+            }
+          }
+
           // ---- মালিক (@anamulmunni) কাউকে mention/reply করে "এই user এর UID কত?"
           // বা তার তথ্য জিজ্ঞেস করলে — সরাসরি UID + হিসাব কার্ড দেবে, ভদ্রভাবে।
           // শুধু owner-ই এই তথ্য পাবে; অন্য কেউ নয়।
