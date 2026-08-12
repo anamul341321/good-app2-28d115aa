@@ -3,11 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { Download, Trash2, ShieldCheck, X } from "lucide-react";
 import { getAppStatus } from "@/lib/app-status.functions";
 
-type BIPEvent = Event & {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
-};
-
 function isStandalone() {
   if (typeof window === "undefined") return false;
   return (
@@ -16,12 +11,6 @@ function isStandalone() {
     // @ts-ignore
     window.navigator.standalone === true
   );
-}
-
-function isIOS() {
-  if (typeof window === "undefined") return false;
-  const ua = window.navigator.userAgent;
-  return /iPad|iPhone|iPod/.test(ua) && !(window as any).MSStream;
 }
 
 function isNativeApp() {
@@ -34,12 +23,10 @@ function isNativeApp() {
  * ইউজারকে নেটিভ অ্যাপ (APK / Play Store) ডাউনলোড করতে বলে।
  * - APK লিংক থাকলে: এক ট্যাপে ডাউনলোড ব্যানার + নিরাপদে ইনস্টল করার গাইড (Play Protect সহ)
  * - আগে "Add to Home Screen" দিয়ে ইনস্টল করা থাকলে: পুরোনোটা ডিলিট করে নতুন ভার্সন নিতে বলে
- * - APK না থাকলে: আগের মতো PWA ইনস্টল প্রম্পট
+ * - APK না থাকলে: কিছুই দেখানো হয় না
  */
 export function InstallPrompt() {
-  const [deferred, setDeferred] = useState<BIPEvent | null>(null);
   const [installed, setInstalled] = useState(false);
-  const [showHelp, setShowHelp] = useState(false);
   const [showSafety, setShowSafety] = useState(false);
   const [hidden, setHidden] = useState(false);
   const native = typeof window !== "undefined" && isNativeApp();
@@ -58,42 +45,14 @@ export function InstallPrompt() {
     if (typeof window === "undefined") return;
     setInstalled(isStandalone());
 
-    const onBip = (e: Event) => {
-      e.preventDefault();
-      setDeferred(e as BIPEvent);
-    };
-    const onInstalled = () => {
-      setInstalled(true);
-      setDeferred(null);
-    };
-    window.addEventListener("beforeinstallprompt", onBip);
-    window.addEventListener("appinstalled", onInstalled);
-
     const mq = window.matchMedia?.("(display-mode: standalone)");
     const onMq = () => setInstalled(isStandalone());
     mq?.addEventListener?.("change", onMq);
 
     return () => {
-      window.removeEventListener("beforeinstallprompt", onBip);
-      window.removeEventListener("appinstalled", onInstalled);
       mq?.removeEventListener?.("change", onMq);
     };
   }, []);
-
-  const install = async () => {
-    if (deferred) {
-      try {
-        await deferred.prompt();
-        const res = await deferred.userChoice;
-        if (res.outcome === "accepted") setInstalled(true);
-        setDeferred(null);
-      } catch {
-        setShowHelp(true);
-      }
-      return;
-    }
-    setShowHelp(true);
-  };
 
   // নেটিভ অ্যাপে থাকলে কিছুই দেখাবো না
   if (native) return null;
