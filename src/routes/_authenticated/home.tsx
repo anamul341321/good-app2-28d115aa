@@ -21,6 +21,8 @@ import { FaceVerifyPausedNotice } from "@/components/FaceVerifyPausedNotice";
 import { getAppStatus } from "@/lib/app-status.functions";
 import { GmailSecurityBanner } from "@/components/GmailSecurityBanner";
 import { ComplianceDisclaimer } from "@/components/ComplianceDisclaimer";
+import { DashSection } from "@/components/DashSection";
+import { AllOptionsGrid } from "@/components/AllOptionsGrid";
 
 import { useLang } from "@/lib/i18n";
 
@@ -153,7 +155,7 @@ function HomePage() {
 
   return (
     <NowProvider>
-    <div className="space-y-3 pt-2 pb-6">
+    <div className="space-y-5 pt-2 pb-6">
 
       <PageVoice pageId="home" steps={["home.welcome","home.mining","home.claim","home.main","home.witness","home.tap.slot","home.open.photo","reverify.button"]} />
       <AnnouncementTicker />
@@ -213,6 +215,12 @@ function HomePage() {
 
 
 
+      <DashSection
+        icon={<Sparkles className="w-4 h-4" />}
+        tint="amber"
+        title={t("আমার ব্যালেন্স ও মাইনিং", "My Balance & Mining")}
+        subtitle={t("সব টাকার হিসাব একসাথে", "All your money in one place")}
+      >
       <div data-tour="mining" data-voice="home.mining">
       <MiningCounter
         accrued={Number(data.mining?.accrued_amount ?? 0)}
@@ -236,11 +244,18 @@ function HomePage() {
       </div>
 
       <ReferralCommissionCard />
+      </DashSection>
 
       
 
 
       {/* Compact quick-actions row: Special Offers + Send + Recharge */}
+      <DashSection
+        icon={<Gift className="w-4 h-4" />}
+        tint="rose"
+        title={t("অফার ও দ্রুত কাজ", "Offers & Quick Actions")}
+        subtitle={t("বোনাস · সেন্ড ব্যালেন্স · মোবাইল রিচার্জ", "Bonus · Send balance · Mobile recharge")}
+      >
       {(() => {
         const b = (data as any).bonus;
         const total = b ? Number(b.totalAmount ?? (b.selfFirstAmount + b.referrerAmount + b.userAmount)) : 0;
@@ -307,9 +322,16 @@ function HomePage() {
           </div>
         );
       })()}
+      </DashSection>
 
 
 
+      <DashSection
+        icon={<Camera className="w-4 h-4" />}
+        tint="cyan"
+        title={t("ভেরিফিকেশন সেন্টার", "Verification Center")}
+        subtitle={t("আপনার পরিচয় ও ১০ জন সাক্ষী", "Your identity & 10 witnesses")}
+      >
       {/* Premium hero submit button — batch-submits all pending keys, or opens next empty slot. */}
       {(pendingSubmits > 0 || firstEmpty || allSubmitted) && (
         <button
@@ -509,8 +531,25 @@ function HomePage() {
           </button>
         )}
       </div>
+      </DashSection>
 
-      <Leaderboards />
+      <DashSection
+        icon={<Users className="w-4 h-4" />}
+        tint="violet"
+        title={t("সব অপশন", "All Options")}
+        subtitle={t("এক জায়গা থেকে সব সেকশনে যান", "Jump to any section from here")}
+      >
+        <AllOptionsGrid />
+      </DashSection>
+
+      <DashSection
+        icon={<Crown className="w-4 h-4" />}
+        tint="emerald"
+        title={t("লিডারবোর্ড", "Leaderboard")}
+        subtitle={t("সেরা ইউজারদের তালিকা", "Top performing users")}
+      >
+        <Leaderboards />
+      </DashSection>
 
       {!data.wallet && (
         <Link to="/wallet" className="block premium-panel rounded-2xl p-3 border-l-4" style={{ borderLeftColor: "var(--color-amber)" }}>
@@ -522,6 +561,12 @@ function HomePage() {
         </Link>
       )}
 
+      <DashSection
+        icon={<MessageCircle className="w-4 h-4" />}
+        tint="cyan"
+        title={t("তথ্য, সাপোর্ট ও অ্যাপ", "Info, Support & App")}
+        subtitle={t("সাহায্য · টিউটোরিয়াল · নিয়ম-কানুন", "Help · Tutorial · Policies")}
+      >
       {/* Motivational filler */}
       <div className="grid grid-cols-2 gap-2">
         <div className="premium-panel rounded-2xl p-3 text-center"
@@ -588,6 +633,7 @@ function HomePage() {
           </Link>
         </div>
       </div>
+      </DashSection>
 
 
       {lightbox && (
