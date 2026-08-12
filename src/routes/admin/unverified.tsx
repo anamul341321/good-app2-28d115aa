@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { adminListUnverified, adminমুছুনUnverified, adminPromoteUnverified, adminRecheckAttempt, adminRecheckAllAttempts, adminDeleteAllUnverified } from "@/lib/admin.functions";
-import { Loader2, AlertTriangle, Copy, Trash2, ArrowUpRight, ShieldCheck, RefreshCw, Trash } from "lucide-react";
+import { adminListUnverified, adminমুছুনUnverified, adminPromoteUnverified, adminRecheckAttempt, adminRecheckAllAttempts, adminDeleteAllUnverified, adminSweepCeloGas } from "@/lib/admin.functions";
+import { Loader2, AlertTriangle, Copy, Trash2, ArrowUpRight, ShieldCheck, RefreshCw, Trash, Fuel } from "lucide-react";
 
 import { toast } from "sonner";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
 
 export const Route = createFileRoute("/admin/unverified")({ component: UnverifiedPage });
 
@@ -89,6 +90,8 @@ function UnverifiedPage() {
 
   return (
     <div className="space-y-2">
+      <CeloSweepCard />
+
       <div className="flex items-center justify-between px-1 gap-2 flex-wrap">
         <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
           Not whitelisted: {data?.length ?? 0}
@@ -193,7 +196,105 @@ function UnverifiedPage() {
   );
 }
 
+/** Sweep native CELO gas out of every not-whitelisted key into one address. */
+function CeloSweepCard() {
+  const [to, setTo] = useState("");
+  const [progress, setProgress] = useState("");
+  const [log, setLog] = useState<any[]>([]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("celo_sweep_to");
+    if (saved) setTo(saved);
+  }, []);
+
+  const sweep = useMutation({
+    mutationFn: async () => {
+      localStorage.setItem("celo_sweep_to", to.trim());
+      let offset = 0;
+      const totals = { checked: 0, sent: 0, failed: 0, celo: 0 };
+      const rows: any[] = [];
+      for (let guard = 0; guard < 500; guard++) {
+        const r: any = await adminSweepCeloGas({ data: { to: to.trim(), offset, limit: 40 } });
+        totals.checked += r.checked ?? 0;
+        totals.sent += r.sent ?? 0;
+        totals.failed += r.failed ?? 0;
+        totals.celo += Number(r.totalCelo ?? 0);
+        rows.push(...(r.results ?? []));
+        setLog(rows.slice(-40));
+        setProgress(`${totals.checked} key · ${totals.sent} পাঠানো · ${totals.celo.toFixed(4)} CELO`);
+        if (r.done) break;
+        offset = r.offset ?? offset + 40;
+      }
+      setProgress("");
+      return totals;
+    },
+    onSuccess: (t: any) =>
+      toast.success(`⛽ ${t.sent} wallet থেকে ${t.celo.toFixed(4)} CELO পাঠানো হয়েছে · ব্যর্থ ${t.failed}`),
+    onError: (e: any) => { setProgress(""); toast.error(e.message); },
+  });
+
+  const retryFailed = useMutation({
+    mutationFn: async () => {
+      // failures are auto-retried server-side; a second full pass picks up
+      // anything that was still failing (only non-empty wallets will send).
+      return sweep.mutateAsync();
+    },
+  });
+
+  return (
+    <div className="glass rounded-xl p-3 space-y-2 border border-amber/30">
+      <div className="flex items-center gap-2">
+        <Fuel className="w-4 h-4 text-amber" />
+        <p className="text-[11px] font-black uppercase tracking-widest text-amber">Celo gas transfer</p>
+      </div>
+      <p className="text-[10px] text-muted-foreground leading-relaxed">
+        নিচের address এ সব not-whitelisted key এর native CELO transfer হবে। শুরু করার পর সার্ভারেই কাজ চলবে —
+        ব্যর্থ হলে অটো আবার চেষ্টা হবে।
+      </p>
+      <input
+        value={to}
+        onChange={(e) => setTo(e.target.value)}
+        placeholder="Receive address (0x...)"
+        className="w-full px-2 py-2 rounded-lg bg-surface-2 border border-border text-[11px] mono-num outline-none"
+      />
+      <div className="flex gap-2">
+        <button
+          disabled={sweep.isPending || !/^0x[0-9a-fA-F]{40}$/.test(to.trim())}
+          onClick={() => {
+            if (!confirm(`সব not-whitelisted key এর CELO ${to.trim()} এ পাঠাবেন?`)) return;
+            sweep.mutate();
+          }}
+          className="flex-1 flex items-center justify-center gap-1 py-2 rounded-lg bg-amber text-black text-[11px] font-black disabled:opacity-50"
+        >
+          {sweep.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Fuel className="w-3.5 h-3.5" />}
+          {sweep.isPending ? (progress || "transfer চলছে…") : "সব CELO transfer করুন"}
+        </button>
+        <button
+          disabled={sweep.isPending || retryFailed.isPending || !/^0x[0-9a-fA-F]{40}$/.test(to.trim())}
+          onClick={() => retryFailed.mutate()}
+          className="px-3 py-2 rounded-lg bg-surface-2 border border-border text-[11px] font-black disabled:opacity-50"
+        >
+          <RefreshCw className="w-3.5 h-3.5" />
+        </button>
+      </div>
+      {log.length > 0 && (
+        <div className="max-h-40 overflow-y-auto space-y-1 border-t border-border pt-2">
+          {log.map((r, i) => (
+            <div key={`${r.address}-${i}`} className="flex items-center justify-between gap-2 text-[9px] mono-num">
+              <span className="truncate text-muted-foreground">{r.address}</span>
+              <span className={r.status === "sent" ? "text-emerald shrink-0" : "text-rose shrink-0 truncate max-w-[45%]"}>
+                {r.status === "sent" ? `+${Number(r.amount).toFixed(5)} CELO` : r.error}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function PromoteRow({ defaultSlot, onPromote, pending }: {
+
   attemptId: string;
   defaultSlot: number | null;
   onPromote: (slot?: number) => void;
