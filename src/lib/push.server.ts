@@ -167,3 +167,46 @@ export async function sendPushToUser(
   const tokens = (data ?? []).map((r: any) => r.token as string);
   return sendPushToTokens(tokens, payload);
 }
+
+/** অ্যাডমিন ডিভাইসগুলোতে push (admin_push_targets টেবিলে যাদের রাখা আছে) */
+export async function sendPushToAdmins(payload: { title: string; body: string; url?: string }) {
+  if (!process.env.FIREBASE_SERVICE_ACCOUNT_JSON) return { sent: 0, failed: 0 };
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: targets } = await supabaseAdmin.from("admin_push_targets").select("user_id");
+    const ids = (targets ?? []).map((r: any) => r.user_id as string);
+    if (ids.length === 0) return { sent: 0, failed: 0 };
+    const { data } = await supabaseAdmin.from("push_tokens").select("token").in("user_id", ids);
+    const tokens = [...new Set((data ?? []).map((r: any) => r.token as string))];
+    return sendPushToTokens(tokens, payload);
+  } catch (e) {
+    console.error("[push] admin push failed", e);
+    return { sent: 0, failed: 0 };
+  }
+}
+
+/** সব ইউজারের ফোনে push (ব্রডকাস্ট) */
+export async function sendPushToAllTokens(payload: { title: string; body: string; url?: string }) {
+  if (!process.env.FIREBASE_SERVICE_ACCOUNT_JSON) return { sent: 0, failed: 0, devices: 0 };
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const all: string[] = [];
+  const page = 1000;
+  for (let from = 0; from < 50_000; from += page) {
+    const { data } = await supabaseAdmin
+      .from("push_tokens")
+      .select("token")
+      .range(from, from + page - 1);
+    const rows = data ?? [];
+    all.push(...rows.map((r: any) => r.token as string));
+    if (rows.length < page) break;
+  }
+  const tokens = [...new Set(all)];
+  let sent = 0;
+  let failed = 0;
+  for (let i = 0; i < tokens.length; i += 200) {
+    const res = await sendPushToTokens(tokens.slice(i, i + 200), payload);
+    sent += res.sent;
+    failed += res.failed;
+  }
+  return { sent, failed, devices: tokens.length };
+}
