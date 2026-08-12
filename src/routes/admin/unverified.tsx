@@ -90,6 +90,8 @@ function UnverifiedPage() {
 
   return (
     <div className="space-y-2">
+      <CeloSweepCard />
+
       <div className="flex items-center justify-between px-1 gap-2 flex-wrap">
         <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
           Not whitelisted: {data?.length ?? 0}
