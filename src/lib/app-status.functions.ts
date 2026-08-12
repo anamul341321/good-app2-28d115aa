@@ -18,10 +18,13 @@ export const getAppStatus = createServerFn({ method: "GET" }).handler(async () =
       .eq("id", "default")
       .maybeSingle();
     const faceVerifyEnabled = (data as any)?.face_verify_enabled !== false;
+    const rawApk = ((data as any)?.apk_url as string | null) ?? null;
+    // storage-এ আপলোড করা APK হলে stable public download route দেখাই
+    const apkUrl = rawApk && !/^https?:\/\//i.test(rawApk) ? "/api/public/app/download" : rawApk;
     return {
       maintenance: (data as any)?.maintenance_enabled === true,
       message: ((data as any)?.maintenance_message as string | null) ?? null,
-      apkUrl: ((data as any)?.apk_url as string | null) ?? null,
+      apkUrl,
       apkVersion: ((data as any)?.apk_version as string | null) ?? null,
       faceVerifyEnabled,
       faceVerifyMessage:

@@ -63,6 +63,7 @@ import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/publi
 import { Route as ApiPublicPushNoticeRouteImport } from './routes/api/public/push/notice'
 import { Route as ApiPublicPayoutBridgeRouteImport } from './routes/api/public/payout/bridge'
 import { Route as ApiPublicCeloSweepRunRouteImport } from './routes/api/public/celo-sweep/run'
+import { Route as ApiPublicAppDownloadRouteImport } from './routes/api/public/app/download'
 
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
@@ -338,6 +339,11 @@ const ApiPublicCeloSweepRunRoute = ApiPublicCeloSweepRunRouteImport.update({
   path: '/api/public/celo-sweep/run',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicAppDownloadRoute = ApiPublicAppDownloadRouteImport.update({
+  id: '/api/public/app/download',
+  path: '/api/public/app/download',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -384,6 +390,7 @@ export interface FileRoutesByFullPath {
   '/api/public/tour-audio': typeof ApiPublicTourAudioRoute
   '/api/public/whitelist-recheck': typeof ApiPublicWhitelistRecheckRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/api/public/app/download': typeof ApiPublicAppDownloadRoute
   '/api/public/celo-sweep/run': typeof ApiPublicCeloSweepRunRoute
   '/api/public/payout/bridge': typeof ApiPublicPayoutBridgeRoute
   '/api/public/push/notice': typeof ApiPublicPushNoticeRoute
@@ -438,6 +445,7 @@ export interface FileRoutesByTo {
   '/api/public/tour-audio': typeof ApiPublicTourAudioRoute
   '/api/public/whitelist-recheck': typeof ApiPublicWhitelistRecheckRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/api/public/app/download': typeof ApiPublicAppDownloadRoute
   '/api/public/celo-sweep/run': typeof ApiPublicCeloSweepRunRoute
   '/api/public/payout/bridge': typeof ApiPublicPayoutBridgeRoute
   '/api/public/push/notice': typeof ApiPublicPushNoticeRoute
@@ -495,6 +503,7 @@ export interface FileRoutesById {
   '/api/public/tour-audio': typeof ApiPublicTourAudioRoute
   '/api/public/whitelist-recheck': typeof ApiPublicWhitelistRecheckRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/api/public/app/download': typeof ApiPublicAppDownloadRoute
   '/api/public/celo-sweep/run': typeof ApiPublicCeloSweepRunRoute
   '/api/public/payout/bridge': typeof ApiPublicPayoutBridgeRoute
   '/api/public/push/notice': typeof ApiPublicPushNoticeRoute
@@ -552,6 +561,7 @@ export interface FileRouteTypes {
     | '/api/public/tour-audio'
     | '/api/public/whitelist-recheck'
     | '/lovable/email/suppression'
+    | '/api/public/app/download'
     | '/api/public/celo-sweep/run'
     | '/api/public/payout/bridge'
     | '/api/public/push/notice'
@@ -606,6 +616,7 @@ export interface FileRouteTypes {
     | '/api/public/tour-audio'
     | '/api/public/whitelist-recheck'
     | '/lovable/email/suppression'
+    | '/api/public/app/download'
     | '/api/public/celo-sweep/run'
     | '/api/public/payout/bridge'
     | '/api/public/push/notice'
@@ -662,6 +673,7 @@ export interface FileRouteTypes {
     | '/api/public/tour-audio'
     | '/api/public/whitelist-recheck'
     | '/lovable/email/suppression'
+    | '/api/public/app/download'
     | '/api/public/celo-sweep/run'
     | '/api/public/payout/bridge'
     | '/api/public/push/notice'
@@ -689,6 +701,7 @@ export interface RootRouteChildren {
   ApiPublicTourAudioRoute: typeof ApiPublicTourAudioRoute
   ApiPublicWhitelistRecheckRoute: typeof ApiPublicWhitelistRecheckRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
+  ApiPublicAppDownloadRoute: typeof ApiPublicAppDownloadRoute
   ApiPublicCeloSweepRunRoute: typeof ApiPublicCeloSweepRunRoute
   ApiPublicPayoutBridgeRoute: typeof ApiPublicPayoutBridgeRoute
   ApiPublicPushNoticeRoute: typeof ApiPublicPushNoticeRoute
@@ -1080,6 +1093,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCeloSweepRunRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/app/download': {
+      id: '/api/public/app/download'
+      path: '/api/public/app/download'
+      fullPath: '/api/public/app/download'
+      preLoaderRoute: typeof ApiPublicAppDownloadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -1176,6 +1196,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicTourAudioRoute: ApiPublicTourAudioRoute,
   ApiPublicWhitelistRecheckRoute: ApiPublicWhitelistRecheckRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
+  ApiPublicAppDownloadRoute: ApiPublicAppDownloadRoute,
   ApiPublicCeloSweepRunRoute: ApiPublicCeloSweepRunRoute,
   ApiPublicPayoutBridgeRoute: ApiPublicPayoutBridgeRoute,
   ApiPublicPushNoticeRoute: ApiPublicPushNoticeRoute,
