@@ -145,10 +145,17 @@ function CeloGasTransferPage() {
           {log.map((r, i) => (
             <div key={`${r.address}-${i}`} className="flex items-center justify-between gap-2 text-[9px] mono-num">
               <span className="truncate text-muted-foreground">{r.address}</span>
-              <span className={r.status === "sent" ? "text-emerald shrink-0" : "text-rose shrink-0 truncate max-w-[45%]"}>
-                {r.status === "sent" ? `+${Number(r.amount).toFixed(5)} CELO` : r.status === "empty" ? "empty" : r.error}
+              <span className={r.status === "sent" ? "text-emerald shrink-0" : r.status === "empty" ? "text-muted-foreground shrink-0" : "text-rose shrink-0 truncate max-w-[55%]"}>
+                {r.status === "sent"
+                  ? `+${Number(r.amount).toFixed(5)} CELO`
+                  : r.status === "empty"
+                    ? "0 CELO"
+                    : r.status === "dust"
+                      ? `dust ${Number(r.balance ?? 0).toFixed(6)} — gas বেশি`
+                      : r.error}
               </span>
             </div>
+
           ))}
         </div>
       )}
