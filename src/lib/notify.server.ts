@@ -8,7 +8,6 @@ export async function notifyUser(
   try {
     if (!opts?.skipNotice) {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      await supabaseAdmin.from("push_tokens").select("id").limit(0); // keep client warm
       await supabaseAdmin.from("user_notices").insert({ user_id: userId, title, body } as any);
     }
   } catch (e) {
