@@ -6,23 +6,17 @@ import { addMoreSlots, batchSubmitPending } from "@/lib/tasks.functions";
 import { claimVoucher } from "@/lib/vouchers.functions";
 import { getLeaderboards } from "@/lib/leaderboard.functions";
 import { MiningCounter } from "@/components/MiningCounter";
-import { ReferralCommissionCard } from "@/components/ReferralCommissionCard";
 import bonusGirl from "@/assets/bonus-girl.png";
-import { CheckCircle2, Camera, Lock, Sparkles, Loader2, X, Plus, Crown, Users, Heart, ShieldCheck, BadgeCheck, ChevronDown, MessageCircle, Gift, RefreshCcw } from "lucide-react";
+import { CheckCircle2, Camera, Lock, Sparkles, Loader2, X, Plus, Crown, Users, ShieldCheck, BadgeCheck, ChevronDown, Gift, RefreshCcw } from "lucide-react";
 import { AnnouncementTicker } from "@/components/AnnouncementTicker";
 import { HeroBanner } from "@/components/HeroBanner";
-import { TourReplayButton } from "@/components/GuidedTour";
 import { PageVoice } from "@/components/PageVoice";
-import { VideoTutorialButton } from "@/components/VideoTutorialButton";
-import { ApkDownloadCard } from "@/components/ApkDownloadCard";
-import { BotStartButton } from "@/components/BotStartButton";
 import { KycAlertBanner } from "@/components/KycAlertBanner";
 import { FaceVerifyPausedNotice } from "@/components/FaceVerifyPausedNotice";
 import { getAppStatus } from "@/lib/app-status.functions";
 import { GmailSecurityBanner } from "@/components/GmailSecurityBanner";
 import { ComplianceDisclaimer } from "@/components/ComplianceDisclaimer";
 import { DashSection } from "@/components/DashSection";
-import { AllOptionsGrid } from "@/components/AllOptionsGrid";
 
 import { useLang } from "@/lib/i18n";
 
