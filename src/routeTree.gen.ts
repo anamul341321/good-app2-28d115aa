@@ -58,6 +58,7 @@ import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/e
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
+import { Route as ApiPublicPayoutBridgeRouteImport } from './routes/api/public/payout/bridge'
 
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
@@ -308,6 +309,11 @@ const ApiPublicTelegramWebhookRoute =
     path: '/api/public/telegram/webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicPayoutBridgeRoute = ApiPublicPayoutBridgeRouteImport.update({
+  id: '/api/public/payout/bridge',
+  path: '/api/public/payout/bridge',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -352,6 +358,7 @@ export interface FileRoutesByFullPath {
   '/api/public/tour-audio': typeof ApiPublicTourAudioRoute
   '/api/public/whitelist-recheck': typeof ApiPublicWhitelistRecheckRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/api/public/payout/bridge': typeof ApiPublicPayoutBridgeRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -401,6 +408,7 @@ export interface FileRoutesByTo {
   '/api/public/tour-audio': typeof ApiPublicTourAudioRoute
   '/api/public/whitelist-recheck': typeof ApiPublicWhitelistRecheckRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/api/public/payout/bridge': typeof ApiPublicPayoutBridgeRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -453,6 +461,7 @@ export interface FileRoutesById {
   '/api/public/tour-audio': typeof ApiPublicTourAudioRoute
   '/api/public/whitelist-recheck': typeof ApiPublicWhitelistRecheckRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/api/public/payout/bridge': typeof ApiPublicPayoutBridgeRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -505,6 +514,7 @@ export interface FileRouteTypes {
     | '/api/public/tour-audio'
     | '/api/public/whitelist-recheck'
     | '/lovable/email/suppression'
+    | '/api/public/payout/bridge'
     | '/api/public/telegram/webhook'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -554,6 +564,7 @@ export interface FileRouteTypes {
     | '/api/public/tour-audio'
     | '/api/public/whitelist-recheck'
     | '/lovable/email/suppression'
+    | '/api/public/payout/bridge'
     | '/api/public/telegram/webhook'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -605,6 +616,7 @@ export interface FileRouteTypes {
     | '/api/public/tour-audio'
     | '/api/public/whitelist-recheck'
     | '/lovable/email/suppression'
+    | '/api/public/payout/bridge'
     | '/api/public/telegram/webhook'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -629,6 +641,7 @@ export interface RootRouteChildren {
   ApiPublicTourAudioRoute: typeof ApiPublicTourAudioRoute
   ApiPublicWhitelistRecheckRoute: typeof ApiPublicWhitelistRecheckRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
+  ApiPublicPayoutBridgeRoute: typeof ApiPublicPayoutBridgeRoute
   ApiPublicTelegramWebhookRoute: typeof ApiPublicTelegramWebhookRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
@@ -982,6 +995,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicTelegramWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/payout/bridge': {
+      id: '/api/public/payout/bridge'
+      path: '/api/public/payout/bridge'
+      fullPath: '/api/public/payout/bridge'
+      preLoaderRoute: typeof ApiPublicPayoutBridgeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -1074,6 +1094,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicTourAudioRoute: ApiPublicTourAudioRoute,
   ApiPublicWhitelistRecheckRoute: ApiPublicWhitelistRecheckRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
+  ApiPublicPayoutBridgeRoute: ApiPublicPayoutBridgeRoute,
   ApiPublicTelegramWebhookRoute: ApiPublicTelegramWebhookRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
@@ -1084,13 +1105,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
