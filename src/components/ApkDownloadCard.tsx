@@ -51,7 +51,9 @@ export function ApkDownloadCard({ compact = false }: { compact?: boolean }) {
       </div>
       {!isStore && (
         <p className="text-[9px] text-muted-foreground mt-2 leading-snug">
-          ইনস্টল না হলে: Settings → Security → "Install unknown apps" চালু করুন।
+          ইনস্টল না হলে: Settings → Security → "Install unknown apps" চালু করুন। Play Protect
+          "Unsafe app blocked" বললে → More details → <b>Install anyway</b> চাপুন (অ্যাপটি আমাদের নিজের,
+          সম্পূর্ণ নিরাপদ ✅)।
         </p>
       )}
     </a>

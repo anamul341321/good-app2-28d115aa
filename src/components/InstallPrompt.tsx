@@ -124,11 +124,6 @@ export function InstallPrompt() {
                 className="rounded-2xl p-3 flex items-center gap-3 shadow-2xl border border-white/20"
                 style={{ background: "linear-gradient(135deg,#059669 0%,#06b6d4 55%,#7c3aed 100%)" }}
               >
-                <button
-                  onClick={() => setHidden(true)}
-                  aria-label="বন্ধ করুন"
-                  className="absolute -mt-8 ml-auto hidden"
-                />
                 <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center shrink-0">
                   <Download className="w-5 h-5 text-white animate-bounce" />
                 </div>
