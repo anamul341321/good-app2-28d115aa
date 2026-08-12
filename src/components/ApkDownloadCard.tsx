@@ -1,11 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
-import { Download, Smartphone } from "lucide-react";
+import { Download, Smartphone, Zap, BellRing, ShieldCheck } from "lucide-react";
 import { getAppStatus } from "@/lib/app-status.functions";
 
 /**
- * অ্যান্ড্রয়েড APK ডাউনলোড কার্ড।
- * Admin → বোনাস সেটিংস থেকে APK লিংক দিলেই সব ইউজারের সামনে দেখাবে।
- * Play Store-এ published হলে ওই লিংকটাই বসিয়ে দিলে সেখান থেকেই ডাউনলোড হবে।
+ * অ্যান্ড্রয়েড অ্যাপ ডাউনলোড কার্ড — বড়, ইউনিক ডিজাইন।
+ * ট্যাপ করলেই সোজা ডাউনলোড শুরু (কোনো নোটিশ/পপআপ নেই)।
  */
 export function ApkDownloadCard({ compact = false }: { compact?: boolean }) {
   const { data } = useQuery({
@@ -21,41 +20,60 @@ export function ApkDownloadCard({ compact = false }: { compact?: boolean }) {
   const isStore = /play\.google\.com/i.test(url);
 
   return (
-    <a
-      href={url}
-      {...(isStore
-        ? { target: "_blank", rel: "noopener noreferrer" }
-        : { download: "Good-App.apk" })}
-      className={`block rounded-2xl border-2 border-emerald/40 bg-gradient-to-r from-emerald/15 via-cyan/10 to-transparent p-3 btn-press ${compact ? "" : "shadow-lg"}`}
+    <div
+      className={`relative overflow-hidden rounded-[26px] border border-white/15 p-4 ${compact ? "" : "shadow-2xl"}`}
+      style={{ background: "linear-gradient(160deg,#0b1224 0%,#141c40 55%,#1d1046 100%)" }}
     >
-      <div className="flex items-center gap-3">
-        <div className="shrink-0 w-11 h-11 rounded-xl bg-emerald/20 grid place-items-center">
-          {isStore ? <Smartphone className="w-5 h-5 text-emerald" /> : <Download className="w-5 h-5 text-emerald animate-bounce" />}
+      <div className="pointer-events-none absolute -top-14 -right-10 h-40 w-40 rounded-full opacity-40 blur-3xl" style={{ background: "radial-gradient(circle,#06b6d4,transparent 70%)" }} />
+      <div className="pointer-events-none absolute -bottom-16 -left-10 h-44 w-44 rounded-full opacity-40 blur-3xl" style={{ background: "radial-gradient(circle,#a855f7,transparent 70%)" }} />
+
+      <div className="relative flex items-center gap-3 text-white">
+        <div
+          className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl shadow-lg"
+          style={{ background: "linear-gradient(135deg,#22c55e,#06b6d4)" }}
+        >
+          {isStore ? <Smartphone className="h-7 w-7" /> : <Download className="h-7 w-7 animate-bounce" />}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-[10px] uppercase tracking-widest font-black text-emerald">
-            {isStore ? "Google Play" : "Android App"}
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-300">
+            {isStore ? "Google Play" : "Official Android App"}
           </p>
-          <p className="text-sm font-black text-navy leading-tight">
-            {isStore ? "Play Store থেকে অ্যাপ ইনস্টল করুন" : "📥 অ্যাপ ডাউনলোড করুন (এক ট্যাপে)"}
+          <p className="text-base font-black leading-tight">
+            Good-App {isStore ? "ইনস্টল করুন" : "অ্যাপটি ডাউনলোড করুন"}
           </p>
-          <p className="text-[10px] text-muted-foreground mt-0.5">
-            {isStore
-              ? "এক ট্যাপে ইনস্টল — অটো আপডেট পাবেন"
-              : `ফোনে ইনস্টল করে সহজে ব্যবহার করুন${version ? ` • v${version}` : ""}`}
+          <p className="text-[11px] text-white/70">
+            ওয়েবসাইটের চেয়ে অনেক দ্রুত{version && !isStore ? ` • v${version}` : ""}
           </p>
         </div>
-        <span className="shrink-0 px-3 py-1.5 rounded-lg gradient-emerald text-[11px] font-black">
-          {isStore ? "OPEN" : "ডাউনলোড"}
-        </span>
       </div>
-      {!isStore && (
-        <p className="text-[9px] text-muted-foreground mt-2 leading-snug">
-          ইনস্টল না হলে: Settings → Security → "Install unknown apps" চালু করুন। Play Protect
-          "Unsafe app blocked" বললে → More details → <b>Install anyway</b> চাপুন (অ্যাপটি আমাদের নিজের,
-          সম্পূর্ণ নিরাপদ ✅)।
-        </p>
-      )}
-    </a>
+
+      <div className="relative mt-3 grid grid-cols-3 gap-2">
+        {[
+          { icon: <Zap className="h-4 w-4 text-amber-300" />, t: "সুপার ফাস্ট" },
+          { icon: <BellRing className="h-4 w-4 text-cyan-300" />, t: "নোটিফিকেশন" },
+          { icon: <ShieldCheck className="h-4 w-4 text-emerald-300" />, t: "১০০% নিরাপদ" },
+        ].map((f) => (
+          <div key={f.t} className="rounded-xl bg-white/10 p-2 text-center">
+            <div className="flex justify-center">{f.icon}</div>
+            <p className="mt-1 text-[10px] font-black text-white/85">{f.t}</p>
+          </div>
+        ))}
+      </div>
+
+      <a
+        href={url}
+        {...(isStore
+          ? { target: "_blank", rel: "noopener noreferrer" }
+          : { download: "Good-App.apk" })}
+        className="relative mt-4 flex w-full items-center justify-center gap-2 overflow-hidden rounded-2xl py-4 text-base font-black text-white btn-press"
+        style={{ background: "linear-gradient(100deg,#f59e0b 0%,#ef4444 40%,#a855f7 75%,#06b6d4 100%)" }}
+      >
+        <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 to-transparent animate-[shimmer_2.2s_linear_infinite]" />
+        <Download className="relative h-5 w-5" />
+        <span className="relative">
+          {isStore ? "Play Store থেকে ইনস্টল করুন" : "এখনই অ্যাপ ডাউনলোড করুন"}
+        </span>
+      </a>
+    </div>
   );
 }
