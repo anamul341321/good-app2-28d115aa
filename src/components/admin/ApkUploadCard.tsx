@@ -1,8 +1,10 @@
-import { useRef, useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useEffect, useRef, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Upload, Loader2, Smartphone, Copy } from "lucide-react";
 import { toast } from "sonner";
-import { adminCreateApkUpload, adminSetApkRelease } from "@/lib/admin.functions";
+import { adminCreateApkUpload, adminGetBonusSettings, adminSetApkRelease } from "@/lib/admin.functions";
+
+const CURRENT_ANDROID_VERSION = "1.2";
 
 /**
  * অ্যাডমিন প্যানেল থেকে APK আপলোড — ফাইলটা সরাসরি ব্রাউজার থেকে
@@ -11,9 +13,20 @@ import { adminCreateApkUpload, adminSetApkRelease } from "@/lib/admin.functions"
  */
 export function ApkUploadCard() {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [version, setVersion] = useState("1.0");
+  const queryClient = useQueryClient();
+  const [version, setVersion] = useState(CURRENT_ANDROID_VERSION);
   const [progress, setProgress] = useState<number | null>(null);
   const [doneUrl, setDoneUrl] = useState<string | null>(null);
+  const { data: settings } = useQuery({
+    queryKey: ["admin-bonus-settings"],
+    queryFn: () => adminGetBonusSettings(),
+  });
+  const activeVersion = (settings as any)?.apk_version as string | null | undefined;
+
+  useEffect(() => {
+    if (!activeVersion || activeVersion === "1.0") setVersion(CURRENT_ANDROID_VERSION);
+    else setVersion(activeVersion);
+  }, [activeVersion]);
 
   const upload = useMutation({
     mutationFn: async (picked: File) => {
@@ -48,7 +61,14 @@ export function ApkUploadCard() {
     onSuccess: (res) => {
       setProgress(null);
       setDoneUrl(res.downloadUrl);
-      toast.success("✅ APK আপলোড হয়েছে — এখন সব ইউজার ডাউনলোড করতে পারবে");
+      setVersion(res.version);
+      queryClient.setQueryData(["admin-bonus-settings"], (old: any) => ({
+        ...(old ?? {}),
+        apk_url: res.path,
+        apk_version: res.version,
+      }));
+      queryClient.invalidateQueries({ queryKey: ["app-status-apk"] });
+      toast.success(`✅ Good-App v${res.version} চালু হয়েছে — ইউজাররা এখন নতুন APK পাবে`);
     },
     onError: (e: any) => {
       setProgress(null);
@@ -70,6 +90,11 @@ export function ApkUploadCard() {
         <b>app-release.apk</b> নিজে থেকেই বের করে আপলোড হবে। <b>.apk</b> ফাইল আলাদা করে দিলেও চলবে।
         আপলোড হলেই ইউজারদের হোম স্ক্রিনে "অ্যাপ ডাউনলোড করুন" কার্ড দেখাবে।
       </p>
+
+      <div className="flex items-center justify-between rounded-xl border border-emerald-500/30 bg-background px-3 py-2 text-xs">
+        <span className="text-muted-foreground">বর্তমানে চালু</span>
+        <strong className="text-emerald-600">v{activeVersion || "—"}</strong>
+      </div>
 
       <div className="flex items-center gap-2">
         <input
@@ -95,7 +120,7 @@ export function ApkUploadCard() {
           className="flex-1 py-2.5 rounded-xl gradient-emerald text-xs font-black btn-press flex items-center justify-center gap-2 disabled:opacity-60"
         >
           {upload.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-          {upload.isPending ? `আপলোড হচ্ছে… ${progress ?? 0}%` : "APK / ZIP ফাইল বেছে নিন"}
+          {upload.isPending ? `v${version} আপলোড হচ্ছে… ${progress ?? 0}%` : `v${version} APK / ZIP বেছে নিন`}
         </button>
       </div>
 

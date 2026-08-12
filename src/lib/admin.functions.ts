@@ -2465,12 +2465,27 @@ export const adminSetApkRelease = createServerFn({ method: "POST" })
   }).parse(i))
   .handler(async ({ data }) => {
     const supabaseAdmin = await gate();
-    const { error } = await supabaseAdmin
+    const cleanVersion = data.version.replace(/^v/i, "");
+    const { data: saved, error } = await supabaseAdmin
       .from("bonus_settings")
-      .update({ apk_url: data.path, apk_version: data.version } as any)
-      .eq("id", "default");
+      .upsert({
+        id: "default",
+        apk_url: data.path,
+        apk_version: cleanVersion,
+        updated_at: new Date().toISOString(),
+      } as any)
+      .select("apk_url, apk_version")
+      .single();
     if (error) throw new Error(error.message);
-    return { ok: true, downloadUrl: "/api/public/app/download" };
+    if (!saved || (saved as any).apk_url !== data.path || (saved as any).apk_version !== cleanVersion) {
+      throw new Error("APK আপলোড হয়েছে, কিন্তু নতুন version চালু করা যায়নি—আবার চেষ্টা করুন");
+    }
+    return {
+      ok: true,
+      path: data.path,
+      version: cleanVersion,
+      downloadUrl: `/api/public/app/download?v=${encodeURIComponent(cleanVersion)}`,
+    };
   });
 
 // ---------------- Push notification (ব্রডকাস্ট + অ্যাডমিন ডিভাইস) ----------------
