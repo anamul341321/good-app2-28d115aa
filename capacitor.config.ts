@@ -7,9 +7,19 @@ const config: CapacitorConfig = {
   // Primary mode: load the live deployed app so all server functions work.
   // To bundle locally (offline), comment out server.url and run `bun run cap:build`.
   server: {
-    url: 'https://good-app2.lovable.app',
+    // Must be the FINAL domain (lovable.app 302-redirects here). A cross-host
+    // redirect makes the WebView hand the URL to Chrome instead of staying in-app.
+    url: 'https://www.goodapp2.live',
     androidScheme: 'https',
     cleartext: false,
+    allowNavigation: [
+      'www.goodapp2.live',
+      'goodapp2.live',
+      'good-app2.lovable.app',
+      '*.lovable.app',
+      '*.supabase.co',
+      'accounts.google.com',
+    ],
   },
   android: {
     buildOptions: {
