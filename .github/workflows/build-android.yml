@@ -47,6 +47,17 @@ jobs:
       - name: Sync Capacitor
         run: bun run cap:sync
 
+      - name: Prefetch Gradle distribution (with retries)
+        run: |
+          cd android
+          for i in 1 2 3 4 5; do
+            if ./gradlew --no-daemon -version; then exit 0; fi
+            echo "Gradle download failed (attempt $i) - retrying in 20s"
+            sleep 20
+          done
+          echo "::error::Could not download Gradle distribution"
+          exit 1
+
       - name: Build Debug APK
         if: github.event.inputs.build_type == 'apk-debug'
         run: |
