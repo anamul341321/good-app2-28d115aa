@@ -12,7 +12,10 @@ const MiningDecor = memo(function MiningDecor({ live }: { live: boolean }) {
       <div className="absolute -top-14 -left-10 w-48 h-48 rounded-full blur-3xl opacity-70 pointer-events-none mc-orb-a" aria-hidden />
       <div className="absolute -bottom-16 -right-14 w-56 h-56 rounded-full blur-3xl opacity-60 pointer-events-none mc-orb-b" aria-hidden />
       <div className="absolute inset-0 mc-holo opacity-50 pointer-events-none mix-blend-overlay" aria-hidden />
+      <div className="absolute inset-0 mc-aurora opacity-60 pointer-events-none" aria-hidden />
+      {live && <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden><span className="mc-sheen" /></div>}
       <div className="absolute -inset-1 mc-ring pointer-events-none" aria-hidden />
+
       {live && (
         <div className="absolute inset-0 pointer-events-none" aria-hidden>
           {[
