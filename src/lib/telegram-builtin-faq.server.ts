@@ -360,15 +360,18 @@ export const BUILTIN_FAQS: BuiltinFaq[] = [
 
 
 /** Compact text block so the AI (and screenshot analyzer) knows these answers. */
-export function builtinFaqKnowledge(): string {
-  return (
+export function builtinFaqKnowledge(
+  rates?: { firstVerify: number; reVerify: number; referrer: number; promoFirst?: number | null; promoRe?: number | null; promoRef?: number | null },
+): string {
+  const body =
     `\n\n🧠 সাধারণ সমভাইয়া নির্ধারিত উত্তর (স্ক্রিনশট বা প্রশ্ন মিললে হুবহু এই তথ্য দিয়ে উত্তর দেবে):\n` +
     BUILTIN_FAQS.map(
       (f) =>
         `• [${f.topic}] স্ক্রিনশটে থাকতে পারে: ${f.screenshot.join(" / ")}\n  উত্তর: ${f.answer.replace(/<[^>]+>/g, "")}`,
-    ).join("\n")
-  );
+    ).join("\n");
+  return rates ? fillRates(body, rates) : body;
 }
+
 
 /**
  * ইনটেন্ট লেয়ার — হুবহু শব্দ না মিললেও প্রশ্নের "মানে" ধরে ফেলে।
