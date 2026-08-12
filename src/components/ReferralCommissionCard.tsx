@@ -35,10 +35,13 @@ export function ReferralCommissionCard() {
   const miningReferees = (data.referees ?? []).filter((r: any) => r.mining);
 
   return (
-    <div className="relative rounded-[28px] p-5 overflow-hidden border border-white/15 shadow-[0_24px_50px_-24px_rgba(16,185,129,0.55)]"
-         style={{ background: "linear-gradient(140deg,#052e26 0%,#065f46 45%,#0f766e 100%)" }}>
+    <div className="relative rounded-[28px] p-5 overflow-hidden border border-white/15 shadow-[0_28px_60px_-24px_rgba(16,185,129,0.65)]"
+         style={{ background: "linear-gradient(140deg,#04122e 0%,#0b3b5e 35%,#065f46 70%,#0f766e 100%)" }}>
+      <div className="absolute inset-0 mc-aurora opacity-70 pointer-events-none" aria-hidden />
+      <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden><span className="mc-sheen" /></div>
       <div className="absolute -top-14 -right-10 w-52 h-52 rounded-full blur-3xl opacity-60 pointer-events-none"
            style={{ background: "radial-gradient(circle,#34d399,transparent 70%)" }} aria-hidden />
+
 
       <div className="relative">
         <div className="flex items-center justify-between mb-3">
