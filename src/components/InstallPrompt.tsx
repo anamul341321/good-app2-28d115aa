@@ -48,7 +48,8 @@ export function InstallPrompt() {
     return () => mq?.removeEventListener?.("change", onMq);
   }, []);
 
-  if (native || !apkUrl || !open) return null;
+  const path = typeof window !== "undefined" ? window.location.pathname : "";
+  if (native || !apkUrl || !open || path.startsWith("/admin")) return null;
 
   return (
     <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/70 backdrop-blur-sm px-3 pb-4 animate-in fade-in duration-300">
