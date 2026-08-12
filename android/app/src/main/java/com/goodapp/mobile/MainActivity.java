@@ -1,6 +1,5 @@
 package com.goodapp.mobile;
 
-import android.net.Uri;
 import android.os.Bundle;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebView;
@@ -9,31 +8,41 @@ import com.getcapacitor.BridgeActivity;
 import com.getcapacitor.BridgeWebViewClient;
 
 public class MainActivity extends BridgeActivity {
+    private static final String APP_URL = "https://www.goodapp2.live";
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Keep every Good-App page inside the native WebView. This is a native
-        // fallback in addition to Capacitor's allowNavigation configuration,
-        // so redirects between our canonical and legacy domains cannot launch Chrome.
-        bridge.getWebView().setWebViewClient(new BridgeWebViewClient(bridge) {
+        WebView appWebView = bridge.getWebView();
+        appWebView.getSettings().setDomStorageEnabled(true);
+        appWebView.setWebViewClient(new BridgeWebViewClient(bridge) {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-                Uri uri = request.getUrl();
-                String host = uri.getHost();
-                boolean isGoodAppHost = host != null && (
-                    host.equals("www.goodapp2.live") ||
-                    host.equals("goodapp2.live") ||
-                    host.equals("good-app2.lovable.app")
-                );
-
-                if (isGoodAppHost && ("https".equals(uri.getScheme()) || "http".equals(uri.getScheme()))) {
-                    view.loadUrl(uri.toString());
+                String scheme = request.getUrl().getScheme();
+                // Main-frame web navigation must stay in the native app. This also
+                // catches redirects before Capacitor can hand them to Chrome.
+                if (request.isForMainFrame() && ("https".equals(scheme) || "http".equals(scheme))) {
+                    view.loadUrl(request.getUrl().toString());
                     return true;
                 }
-
                 return super.shouldOverrideUrlLoading(view, request);
             }
+
+            @Override
+            @SuppressWarnings("deprecation")
+            public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                if (url != null && (url.startsWith("https://") || url.startsWith("http://"))) {
+                    view.loadUrl(url);
+                    return true;
+                }
+                return super.shouldOverrideUrlLoading(view, url);
+            }
         });
+
+        // Explicitly start the website only after our WebView client is attached.
+        // Previously Capacitor could begin loading first and an early redirect could
+        // reach Android before the custom client existed, opening Chrome.
+        appWebView.loadUrl(APP_URL);
     }
 }
