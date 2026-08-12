@@ -2402,6 +2402,15 @@ export const adminSendUserNotice = createServerFn({ method: "POST" })
       body: data.body,
     } as any);
     if (error) throw new Error(error.message);
+    // ফোনেও notification যাবে (native অ্যাপ ইনস্টল থাকলে, অ্যাপ বন্ধ থাকলেও)
+    try {
+      const { sendPushToUser } = await import("@/lib/push.server");
+      await sendPushToUser(String(prof.id), {
+        title: data.title || "📢 Good App নোটিশ",
+        body: data.body.slice(0, 200),
+        url: "/home",
+      });
+    } catch { /* push ফেল করলেও নোটিশ থেকে যাবে */ }
     return { ok: true, name: prof.display_name ?? null, uid: prof.uid_seq ?? data.uid };
   });
 
