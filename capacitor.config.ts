@@ -13,11 +13,14 @@ const config: CapacitorConfig = {
     androidScheme: 'https',
     cleartext: false,
     allowNavigation: [
+      '*.goodapp2.live',
       'www.goodapp2.live',
       'goodapp2.live',
       'good-app2.lovable.app',
+      '*.lovable.app',
       '*.supabase.co',
       'accounts.google.com',
+      'oauth2.googleapis.com',
     ],
   },
   android: {
