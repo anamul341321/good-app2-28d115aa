@@ -43,10 +43,21 @@ export async function buildWithdrawSourceCard(opts: {
     .maybeSingle();
 
   const { buildEarningsBreakdown } = await import("@/lib/earnings-breakdown.server");
-  const b = await buildEarningsBreakdown(db, userId);
+  let b: any;
+  try {
+    b = await buildEarningsBreakdown(db, userId);
+  } catch (e: any) {
+    console.error("earnings breakdown failed", e);
+    b = null;
+  }
 
-  const { data: creditRows } = await db.from("admin_credits").select("amount").eq("user_id", userId);
-  const adminCredited = (creditRows ?? []).reduce((s: number, r: any) => s + Number(r.amount || 0), 0);
+  let adminCredited = 0;
+  try {
+    const { data: creditRows } = await db.from("admin_credits").select("amount").eq("user_id", userId);
+    adminCredited = (creditRows ?? []).reduce((s: number, r: any) => s + Number(r.amount || 0), 0);
+  } catch {
+    adminCredited = 0;
+  }
 
   const { data: paidRows } = await db
     .from("withdrawals")
@@ -54,6 +65,20 @@ export async function buildWithdrawSourceCard(opts: {
     .eq("user_id", userId)
     .eq("status", "paid");
   const paidSum = (paidRows ?? []).reduce((s: number, r: any) => s + Number(r.amount || 0), 0);
+
+  const headBase =
+    `🔍 <b>টাকার উৎস</b> — ${(prof as any)?.display_name ?? "User"} · UID <code>${(prof as any)?.uid_seq ?? opts.uid ?? "—"}</code>\n` +
+    (amount !== null ? `💸 এই রিকোয়েস্ট: <b>${bdt(amount)}</b>\n` : "");
+
+  if (!b) {
+    return (
+      headBase +
+      `\n🧾 আগে পেইড হয়েছে: <b>${bdt(paidSum)}</b>\n` +
+      (adminCredited > 0 ? `⚠️ অ্যাডমিন ম্যানুয়ালি দিয়েছে: <b>${bdt(adminCredited)}</b>\n` : "") +
+      `\n⚠️ বিস্তারিত হিসাব এই মুহূর্তে বের করা যায়নি — Admin প্যানেলে ইউজারের Details দেখুন।`
+    );
+  }
+
 
   const flags: string[] = [];
   if (b.transfersInTotal > 0) {
