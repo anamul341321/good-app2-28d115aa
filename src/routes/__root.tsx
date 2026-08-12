@@ -141,6 +141,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <LanguageProvider>
         <Outlet />
+        <InstallPrompt />
         <Toaster theme="dark" position="top-center" richColors />
       </LanguageProvider>
     </QueryClientProvider>
