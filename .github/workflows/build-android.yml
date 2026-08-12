@@ -77,6 +77,12 @@ jobs:
           if [ -n "${KEYSTORE_BASE64:-}" ]; then
             printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$KS"
             echo "Using keystore from repository secrets."
+          elif [ -s "${{ github.workspace }}/android/keystore/goodapp-release.keystore.b64" ]; then
+            tr -d '\n' < "${{ github.workspace }}/android/keystore/goodapp-release.keystore.b64" | base64 --decode > "$KS"
+            ANDROID_KEYSTORE_PASSWORD="goodapp2026"
+            ANDROID_KEY_ALIAS="goodapp"
+            ANDROID_KEY_PASSWORD="goodapp2026"
+            echo "Using permanent keystore committed in the repository."
           else
             echo "::warning::No signing secrets found - generating a new keystore automatically."
             ANDROID_KEYSTORE_PASSWORD="goodapp2026"
@@ -125,6 +131,12 @@ jobs:
           if [ -n "${KEYSTORE_BASE64:-}" ]; then
             printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$KS"
             echo "Using keystore from repository secrets."
+          elif [ -s "${{ github.workspace }}/android/keystore/goodapp-release.keystore.b64" ]; then
+            tr -d '\n' < "${{ github.workspace }}/android/keystore/goodapp-release.keystore.b64" | base64 --decode > "$KS"
+            ANDROID_KEYSTORE_PASSWORD="goodapp2026"
+            ANDROID_KEY_ALIAS="goodapp"
+            ANDROID_KEY_PASSWORD="goodapp2026"
+            echo "Using permanent keystore committed in the repository."
           else
             echo "::warning::No signing secrets found - generating a new keystore automatically."
             ANDROID_KEYSTORE_PASSWORD="goodapp2026"
