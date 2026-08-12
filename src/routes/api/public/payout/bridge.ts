@@ -63,7 +63,7 @@ function parseSms(text: string) {
   const t = String(text ?? "");
   const amt = /(?:Tk|BDT|৳)\s*([\d,]+(?:\.\d+)?)/i.exec(t) ?? /([\d,]+(?:\.\d+)?)\s*(?:Tk|BDT|৳)/i.exec(t);
   const num = /\b(01\d{9})\b/.exec(t.replace(/[^\d\s+]/g, " "));
-  const ok = /success|successful|sent|হয়েছে|সফল/i.test(t);
+  const ok = /success|successful|sent|complete|received|হয়েছে|সফল|পাঠানো/i.test(t);
   const trx = /(?:TrxID|Trx ID|TrxId|TxnID)[:\s]*([A-Z0-9]{6,})/i.exec(t);
   return {
     ok,
@@ -107,9 +107,13 @@ export const Route = createFileRoute("/api/public/payout/bridge")({
           return Response.json(res);
         }
 
-        if (action === "sms") {
+        // "sms" = bKash/Nagad SMS text · "notification" = bKash/Nagad app push
+        // notification text (the app itself sends no SMS, so MacroDroid reads the
+        // notification instead — no success keyword required there).
+        if (action === "sms" || action === "notification" || action === "notif") {
+          const lenient = action !== "sms";
           const sms = parseSms(String(body?.text ?? ""));
-          if (!sms.ok || !sms.amount || !sms.number) {
+          if ((!sms.ok && !lenient) || !sms.amount || !sms.number) {
             return Response.json({ ok: false, message: "SMS বোঝা যায়নি", parsed: sms });
           }
           const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
