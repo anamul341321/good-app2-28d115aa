@@ -16,7 +16,6 @@ const config: CapacitorConfig = {
       'www.goodapp2.live',
       'goodapp2.live',
       'good-app2.lovable.app',
-      '*.lovable.app',
       '*.supabase.co',
       'accounts.google.com',
     ],
