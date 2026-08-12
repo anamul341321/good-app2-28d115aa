@@ -2231,10 +2231,10 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             /\b(gmail|g-mail|email|e-mail)\b/i.test(text) &&
             /(add|ad |যোগ|যুক্ত|connect|conn?act|ভেরিফ|verify|dib|দিব|kivabe|kemne|কিভাবে|কেমনে|কোথায়|kothay)/i.test(text);
           if (gmailHelpQuery) {
-            const { builtinFaqByTopic, builtinFaqReply } = await import("@/lib/telegram-builtin-faq.server");
+            const { builtinFaqByTopic, builtinFaqReply, fillLiveRates } = await import("@/lib/telegram-builtin-faq.server");
             const gmailFaq = builtinFaqByTopic("Gmail যুক্ত");
             if (gmailFaq) {
-              const reply = builtinFaqReply(senderName, gmailFaq);
+              const reply = await fillLiveRates(builtinFaqReply(senderName, gmailFaq));
               await sendMessage(chatId, reply, msg.message_id);
               await logMessage("question", "priority:gmail-setup", reply, null);
               return Response.json({ ok: true, flow: "priority-gmail-setup" });
@@ -2338,10 +2338,10 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         // keeps credit usage at zero for common questions.
         if (!photoBase64 && settings.auto_reply_enabled && text.trim()) {
           try {
-            const { matchBuiltinFaqText, builtinFaqReply } = await import("@/lib/telegram-builtin-faq.server");
+            const { matchBuiltinFaqText, builtinFaqReply, fillLiveRates } = await import("@/lib/telegram-builtin-faq.server");
             const hit = matchBuiltinFaqText(text);
             if (hit) {
-              const reply = builtinFaqReply(senderName, hit);
+              const reply = await fillLiveRates(builtinFaqReply(senderName, hit));
               await sendMessage(chatId, reply + videoSuffix(text) + (await offerSlotResetSuffix()), msg.message_id);
               await logMessage("question", `faq-builtin:${hit.topic}`, reply, null);
               return Response.json({ ok: true, flow: "faq-builtin-text" });
@@ -2749,8 +2749,10 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
         // ---- "আরও ১০টা স্লট করলে কি আবার বোনাস পাবো?" → না, বোনাস শুধু ১ম ১০টায় --
         if (asksExtraSlotBonus && !decision.should_delete && settings.auto_reply_enabled) {
-          const { builtinFaqByTopic, BUILTIN_FAQS } = await import("@/lib/telegram-builtin-faq.server");
-          const reply = (builtinFaqByTopic("আরও স্লট") ?? builtinFaqByTopic("বোনাস") ?? BUILTIN_FAQS[0]).answer;
+          const { builtinFaqByTopic, BUILTIN_FAQS, fillLiveRates } = await import("@/lib/telegram-builtin-faq.server");
+          const reply = await fillLiveRates(
+            (builtinFaqByTopic("আরও স্লট") ?? builtinFaqByTopic("বোনাস") ?? BUILTIN_FAQS[0]).answer,
+          );
 
           await sendMessage(chatId, reply, msg.message_id);
           actions.push("extra-slot-bonus");
