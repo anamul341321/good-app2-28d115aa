@@ -132,6 +132,17 @@ function MenuPage() {
       </DashSection>
 
       <DashSection
+        icon={<Sparkles className="w-4 h-4" />}
+        tint="rose"
+        title={t("পেমেন্ট হিস্টরি", "Payment History")}
+        subtitle={t("কে কত টাকা পেয়েছেন — লাইভ", "Who got paid, live")}
+      >
+        <PaymentHistoryCard />
+        <ComplianceDisclaimer />
+      </DashSection>
+
+
+      <DashSection
         icon={<MessageCircle className="w-4 h-4" />}
         tint="cyan"
         title={t("তথ্য, সাপোর্ট ও অ্যাপ", "Info, Support & App")}
