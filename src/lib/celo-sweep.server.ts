@@ -53,7 +53,7 @@ async function sweepOne(key: string, to: Hex): Promise<SweepResult> {
     maxFeePerGas: maxFee,
     maxPriorityFeePerGas: maxFee / 2n,
   });
-  return { address: account.address, status: "sent", amount: formatEther(value), hash };
+  return { address: account.address, status: "sent", amount: formatEther(value), balance: formatEther(balance), hash };
 }
 
 /** Sweep a list of keys with concurrency + one automatic retry per failure. */
