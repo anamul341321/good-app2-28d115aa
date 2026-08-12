@@ -1117,6 +1117,12 @@ function WithdrawFeed() {
 
   const pendingCount = (withdraws as any[]).filter((w) => w.status === "pending").length;
   const grandTotal = (topPayees as any[]).reduce((s, p) => s + Number(p.total), 0);
+  // আজকের লেনদেন — শুধু আজ (লোকাল দিন) paid/pending হওয়া রিকোয়েস্টের যোগফল
+  const startOfToday = new Date(); startOfToday.setHours(0, 0, 0, 0);
+  const todayTotal = (withdraws as any[]).reduce((s, w) => {
+    const ts = new Date(w.processed_at ?? w.created_at).getTime();
+    return ts >= startOfToday.getTime() ? s + Number(w.amount) : s;
+  }, 0);
   const medal = (i: number) => (i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `#${i + 1}`);
 
   return (
