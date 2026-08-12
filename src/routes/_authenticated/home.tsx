@@ -377,7 +377,7 @@ function HomePage() {
                       <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${isOpen ? "rotate-180" : ""}`} />
                     </button>
                     {isOpen && (
-                      <div className="p-3 pt-0 grid gap-2 grid-cols-3 sm:grid-cols-4 animate-in fade-in slide-in-from-top-1">
+                      <div className="p-3 pt-0 grid gap-2.5 grid-cols-2 sm:grid-cols-3 animate-in fade-in slide-in-from-top-1">
                         {items.map((task) => (
                           <TaskCell key={task.slot} task={task}
                             onStart={() => router.navigate({ to: "/task/$slot", params: { slot: String(task.slot) } })}
