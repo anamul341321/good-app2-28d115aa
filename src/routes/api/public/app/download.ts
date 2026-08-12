@@ -11,11 +11,10 @@ export const Route = createFileRoute("/api/public/app/download")({
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { data: settings } = await supabaseAdmin
           .from("bonus_settings")
-          .select("apk_url, apk_version")
+          .select("apk_url")
           .eq("id", "default")
           .maybeSingle();
         const path = (settings as any)?.apk_url as string | null;
-        const version = ((settings as any)?.apk_version as string | null)?.replace(/[^0-9A-Za-z._-]/g, "") || "latest";
         if (!path) return new Response("APK এখনো আপলোড করা হয়নি", { status: 404 });
 
         // Full URL saved by admin (e.g. Play Store link) → just redirect.
@@ -25,18 +24,13 @@ export const Route = createFileRoute("/api/public/app/download")({
 
         const { data, error } = await supabaseAdmin.storage
           .from("app-releases")
-          .createSignedUrl(path, 60 * 30, { download: `Good-App-v${version}.apk` });
+          .createSignedUrl(path, 60 * 30, { download: "Good-App.apk" });
         if (error || !data?.signedUrl) {
           return new Response("ডাউনলোড লিংক তৈরি করা যায়নি", { status: 500 });
         }
         return new Response(null, {
           status: 302,
-          headers: {
-            location: data.signedUrl,
-            "cache-control": "no-store, no-cache, must-revalidate, max-age=0",
-            pragma: "no-cache",
-            expires: "0",
-          },
+          headers: { location: data.signedUrl, "cache-control": "no-store" },
         });
       },
     },
