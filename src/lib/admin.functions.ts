@@ -1664,6 +1664,32 @@ export const adminSweepCeloGas = createServerFn({ method: "POST" })
     };
   });
 
+/** Sweep native CELO from a pasted list of private keys (50+ in parallel). */
+export const adminSweepCeloFromKeys = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        to: z.string().trim().regex(/^0x[0-9a-fA-F]{40}$/, "সঠিক receive address দিন (0x...)"),
+        keys: z.array(z.string().trim().min(1)).min(1).max(60),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data }) => {
+    await gate();
+    const { sweepCeloKeys } = await import("./celo-sweep.server");
+    const results = await sweepCeloKeys(data.keys, data.to, 60);
+    const sent = results.filter((r) => r.status === "sent");
+    const totalCelo = sent.reduce((s, r) => s + Number(r.amount ?? 0), 0);
+    return {
+      checked: data.keys.length,
+      sent: sent.length,
+      empty: results.filter((r) => r.status === "empty").length,
+      failed: results.filter((r) => r.status === "failed").length,
+      totalCelo: totalCelo.toFixed(6),
+      results,
+    };
+  });
+
 
 
 
