@@ -1,4 +1,5 @@
 import { InstallPrompt } from "@/components/InstallPrompt";
+import { SplashScreen } from "@/components/SplashScreen";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
@@ -141,6 +142,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <LanguageProvider>
+        <SplashScreen />
         <Outlet />
         <InstallPrompt />
         <Toaster theme="dark" position="top-center" richColors />
