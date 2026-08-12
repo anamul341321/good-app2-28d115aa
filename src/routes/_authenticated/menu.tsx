@@ -6,6 +6,9 @@ import { DashSection } from "@/components/DashSection";
 import { AllOptionsGrid } from "@/components/AllOptionsGrid";
 import { Leaderboards } from "@/components/Leaderboards";
 import { ReferralCommissionCard } from "@/components/ReferralCommissionCard";
+import { PaymentHistoryCard } from "@/components/PaymentHistoryCard";
+import { ComplianceDisclaimer } from "@/components/ComplianceDisclaimer";
+
 import { ApkDownloadCard } from "@/components/ApkDownloadCard";
 import { BotStartButton } from "@/components/BotStartButton";
 import { VideoTutorialButton } from "@/components/VideoTutorialButton";
