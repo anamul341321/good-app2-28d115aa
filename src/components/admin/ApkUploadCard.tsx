@@ -11,7 +11,7 @@ import { adminCreateApkUpload, adminSetApkRelease } from "@/lib/admin.functions"
  */
 export function ApkUploadCard() {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [version, setVersion] = useState("1.0");
+  const [version, setVersion] = useState("1.2");
   const [progress, setProgress] = useState<number | null>(null);
   const [doneUrl, setDoneUrl] = useState<string | null>(null);
 
@@ -66,7 +66,7 @@ export function ApkUploadCard() {
         <p className="font-black text-sm">অ্যাপ (APK) আপলোড</p>
       </div>
       <p className="text-[11px] text-muted-foreground leading-snug">
-        GitHub Actions থেকে নামানো <b>release-apk.zip</b> সোজা এখানে দিলেই হবে — ভিতরের
+        শুধু সর্বশেষ সফল build-এর <b>release-apk.zip</b> সোজা এখানে দিন — ভিতরের
         <b>app-release.apk</b> নিজে থেকেই বের করে আপলোড হবে। <b>.apk</b> ফাইল আলাদা করে দিলেও চলবে।
         আপলোড হলেই ইউজারদের হোম স্ক্রিনে "অ্যাপ ডাউনলোড করুন" কার্ড দেখাবে।
       </p>
