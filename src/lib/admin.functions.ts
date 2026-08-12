@@ -2433,3 +2433,33 @@ export const adminDeleteUserNotice = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+
+/** APK আপলোডের জন্য signed upload URL (ফাইল সরাসরি ব্রাউজার থেকে storage-এ যায়) */
+export const adminCreateApkUpload = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => z.object({ version: z.string().trim().min(1).max(20) }).parse(i))
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await gate();
+    const path = `good-app-v${data.version.replace(/[^0-9a-zA-Z._-]/g, "")}-${Date.now()}.apk`;
+    const { data: signed, error } = await supabaseAdmin.storage
+      .from("app-releases")
+      .createSignedUploadUrl(path);
+    if (error || !signed) throw new Error(error?.message || "upload URL তৈরি করা যায়নি");
+    return { path, token: signed.token, signedUrl: signed.signedUrl };
+  });
+
+/** আপলোড শেষে APK লিংক/ভার্সন সেভ করো */
+export const adminSetApkRelease = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => z.object({
+    path: z.string().trim().min(1).max(300),
+    version: z.string().trim().min(1).max(20),
+  }).parse(i))
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await gate();
+    const { error } = await supabaseAdmin
+      .from("bonus_settings")
+      .update({ apk_url: data.path, apk_version: data.version } as any)
+      .eq("id", "default");
+    if (error) throw new Error(error.message);
+    return { ok: true, downloadUrl: "/api/public/app/download" };
+  });

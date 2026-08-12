@@ -4,6 +4,7 @@ import { adminGetBonusSettings, adminUpdateBonusSettings, adminSetFirstVerifyMin
 import { Gift, Loader2, Save } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { ApkUploadCard } from "@/components/admin/ApkUploadCard";
 
 export const Route = createFileRoute("/admin/bonus-settings")({ component: BonusSettings });
 
@@ -333,6 +334,8 @@ function BonusSettings() {
             : "🔒 Default rule: প্রথম verify complete হলে mining চালু হবে না। ১০টা face re-verify complete করতে হবে, তবেই mining শুরু। (individual user er জন্য admin manual override use করা যাবে)"}
         </p>
       </div>
+
+      <ApkUploadCard />
 
       {/* Android APK ডাউনলোড লিংক */}
       <div className="rounded-2xl p-4 border-2 border-emerald/40 bg-emerald/5 space-y-2">
