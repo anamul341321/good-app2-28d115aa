@@ -95,8 +95,8 @@ function PremiumHeader({ onLogout }: { onLogout: () => void }) {
     // requested once instead of twice when /admin opens.
     queryKey: ["admin-stats"],
     queryFn: () => adminStats(),
-    staleTime: 30_000,
-    refetchInterval: 60_000,
+    staleTime: 120_000,
+    refetchInterval: 180_000,
   });
 
   return (

@@ -6,23 +6,17 @@ import { addMoreSlots, batchSubmitPending } from "@/lib/tasks.functions";
 import { claimVoucher } from "@/lib/vouchers.functions";
 import { getLeaderboards } from "@/lib/leaderboard.functions";
 import { MiningCounter } from "@/components/MiningCounter";
-import { ReferralCommissionCard } from "@/components/ReferralCommissionCard";
 import bonusGirl from "@/assets/bonus-girl.png";
-import { CheckCircle2, Camera, Lock, Sparkles, Loader2, X, Plus, Crown, Users, Heart, ShieldCheck, BadgeCheck, ChevronDown, MessageCircle, Gift, RefreshCcw } from "lucide-react";
+import { CheckCircle2, Camera, Lock, Sparkles, Loader2, X, Plus, Crown, Users, ShieldCheck, BadgeCheck, ChevronDown, Gift, RefreshCcw } from "lucide-react";
 import { AnnouncementTicker } from "@/components/AnnouncementTicker";
 import { HeroBanner } from "@/components/HeroBanner";
-import { TourReplayButton } from "@/components/GuidedTour";
 import { PageVoice } from "@/components/PageVoice";
-import { VideoTutorialButton } from "@/components/VideoTutorialButton";
-import { ApkDownloadCard } from "@/components/ApkDownloadCard";
-import { BotStartButton } from "@/components/BotStartButton";
 import { KycAlertBanner } from "@/components/KycAlertBanner";
 import { FaceVerifyPausedNotice } from "@/components/FaceVerifyPausedNotice";
 import { getAppStatus } from "@/lib/app-status.functions";
 import { GmailSecurityBanner } from "@/components/GmailSecurityBanner";
 import { ComplianceDisclaimer } from "@/components/ComplianceDisclaimer";
 import { DashSection } from "@/components/DashSection";
-import { AllOptionsGrid } from "@/components/AllOptionsGrid";
 
 import { useLang } from "@/lib/i18n";
 
@@ -243,86 +237,8 @@ function HomePage() {
       />
       </div>
 
-      <ReferralCommissionCard />
       </DashSection>
 
-      
-
-
-      {/* Compact quick-actions row: Special Offers + Send + Recharge */}
-      <DashSection
-        icon={<Gift className="w-4 h-4" />}
-        tint="rose"
-        title={t("অফার ও দ্রুত কাজ", "Offers & Quick Actions")}
-        subtitle={t("বোনাস · সেন্ড ব্যালেন্স · মোবাইল রিচার্জ", "Bonus · Send balance · Mobile recharge")}
-      >
-      {(() => {
-        const b = (data as any).bonus;
-        const total = b ? Number(b.totalAmount ?? (b.selfFirstAmount + b.referrerAmount + b.userAmount)) : 0;
-        const bonusOn = b?.rates?.bonus_enabled !== false;
-        const hasUnclaimed = bonusOn && b && !(b.selfFirstPaid && b.referrerPaid && b.userReverifyPaid);
-        const rechargeOn = (data as any).payoutSettings?.rechargeEnabled !== false;
-        return (
-          <div className="space-y-3">
-            <Link to="/offers"
-              className="block rounded-3xl p-4 relative overflow-hidden shadow-[0_20px_45px_-20px_rgba(236,72,153,0.6)] btn-press border border-white/20"
-              style={{ background: "linear-gradient(135deg,#7c3aed 0%,#ec4899 55%,#f59e0b 100%)" }}>
-              {hasUnclaimed && (
-                <span className="absolute top-2.5 right-2.5 text-[10px] font-black bg-white text-rose px-2.5 py-1 rounded-full shadow-lg animate-pulse" translate="no">
-                  🎯 {total}৳ {t("পেন্ডিং", "pending")}
-                </span>
-              )}
-              <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/10 blur-2xl" />
-              <div className="flex items-center gap-3 text-white relative">
-                <div className="w-14 h-14 rounded-2xl bg-white/25 backdrop-blur border border-white/40 flex items-center justify-center text-3xl shadow-lg shrink-0">🎁</div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[10px] uppercase tracking-[0.25em] font-black opacity-95 flex items-center gap-1">
-                    <Sparkles className="w-3 h-3" /> Special Offers
-                  </p>
-                  <p className="text-lg font-black leading-tight drop-shadow mt-0.5">{t("সকল বোনাস অফার", "All Bonus Offers")}</p>
-                  <p className="text-[11px] opacity-95 font-bold mt-0.5">{t("স্পেশাল প্রোমো · রেফার · রি-ভেরিফাই", "Special Promo · Refer · Re-verify")}</p>
-                </div>
-                <span className="text-3xl opacity-90 font-black">›</span>
-              </div>
-            </Link>
-
-            <div className="grid grid-cols-2 gap-3">
-              <Link to="/send"
-                className="rounded-3xl p-4 btn-press flex flex-col items-start gap-2 relative overflow-hidden shadow-[0_15px_35px_-15px_rgba(124,58,237,0.55)] text-white border border-white/20"
-                style={{ background: "linear-gradient(135deg,#7c3aed,#ec4899)" }}>
-                <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-white/15 blur-xl" />
-                <div className="w-12 h-12 rounded-2xl bg-white/25 backdrop-blur flex items-center justify-center text-2xl shrink-0 relative">💸</div>
-                <div className="min-w-0 relative">
-                  <p className="text-base font-black leading-tight">{t("সেন্ড ব্যালেন্স", "Send Balance")}</p>
-                  <p className="text-[11px] opacity-95 font-bold mt-0.5" translate="no">{t("সর্বনিম্ন ১৫৳", "Min 15৳")}</p>
-                </div>
-              </Link>
-
-              {rechargeOn ? (
-                <Link to="/recharge"
-                  className="rounded-3xl p-4 btn-press flex flex-col items-start gap-2 relative overflow-hidden shadow-[0_15px_35px_-15px_rgba(6,182,212,0.55)] text-white border border-white/20"
-                  style={{ background: "linear-gradient(135deg,#06b6d4,#10b981)" }}>
-                  <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-white/15 blur-xl" />
-                  <div className="w-12 h-12 rounded-2xl bg-white/25 backdrop-blur flex items-center justify-center text-2xl shrink-0 relative">📱</div>
-                  <div className="min-w-0 relative">
-                    <p className="text-base font-black leading-tight">{t("মোবাইল রিচার্জ", "Mobile Recharge")}</p>
-                    <p className="text-[11px] opacity-95 font-bold mt-0.5" translate="no">{t("সর্বনিম্ন ২০৳", "Min 20৳")}</p>
-                  </div>
-                </Link>
-              ) : (
-                <div className="rounded-3xl p-4 bg-surface-2 border-2 border-dashed border-border opacity-70 flex flex-col items-start gap-2">
-                  <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center"><Lock className="w-5 h-5" /></div>
-                  <div className="min-w-0">
-                    <p className="text-base font-black leading-tight">{t("রিচার্জ বন্ধ", "Recharge off")}</p>
-                    <p className="text-[11px] text-muted-foreground font-bold">{t("সাময়িক", "Temporary")}</p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        );
-      })()}
-      </DashSection>
 
 
 
@@ -533,23 +449,23 @@ function HomePage() {
       </div>
       </DashSection>
 
-      <DashSection
-        icon={<Users className="w-4 h-4" />}
-        tint="violet"
-        title={t("সব অপশন", "All Options")}
-        subtitle={t("এক জায়গা থেকে সব সেকশনে যান", "Jump to any section from here")}
-      >
-        <AllOptionsGrid />
-      </DashSection>
+      <Link to="/menu"
+        className="block rounded-3xl p-4 relative overflow-hidden btn-press border border-white/20 shadow-[0_18px_40px_-18px_rgba(99,102,241,0.6)]"
+        style={{ background: "linear-gradient(135deg,#4f46e5 0%,#8b5cf6 50%,#06b6d4 100%)" }}>
+        <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/10 blur-2xl" />
+        <div className="relative flex items-center gap-3 text-white">
+          <div className="w-13 h-13 p-3.5 rounded-2xl bg-white/25 backdrop-blur border border-white/40 text-2xl shrink-0">☰</div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] uppercase tracking-[0.25em] font-black opacity-95">Menu</p>
+            <p className="text-lg font-black leading-tight drop-shadow">{t("সব অপশন ও ফিচার", "All options & features")}</p>
+            <p className="text-[11px] opacity-95 font-bold mt-0.5">
+              {t("অফার · সেন্ড · রিচার্জ · রেফার · লিডারবোর্ড · সাপোর্ট", "Offers · Send · Recharge · Refer · Leaderboard · Support")}
+            </p>
+          </div>
+          <span className="text-3xl opacity-90 font-black">›</span>
+        </div>
+      </Link>
 
-      <DashSection
-        icon={<Crown className="w-4 h-4" />}
-        tint="emerald"
-        title={t("লিডারবোর্ড", "Leaderboard")}
-        subtitle={t("সেরা ইউজারদের তালিকা", "Top performing users")}
-      >
-        <Leaderboards />
-      </DashSection>
 
       {!data.wallet && (
         <Link to="/wallet" className="block premium-panel rounded-2xl p-3 border-l-4" style={{ borderLeftColor: "var(--color-amber)" }}>
@@ -561,79 +477,6 @@ function HomePage() {
         </Link>
       )}
 
-      <DashSection
-        icon={<MessageCircle className="w-4 h-4" />}
-        tint="cyan"
-        title={t("তথ্য, সাপোর্ট ও অ্যাপ", "Info, Support & App")}
-        subtitle={t("সাহায্য · টিউটোরিয়াল · নিয়ম-কানুন", "Help · Tutorial · Policies")}
-      >
-      {/* Motivational filler */}
-      <div className="grid grid-cols-2 gap-2">
-        <div className="premium-panel rounded-2xl p-3 text-center"
-             style={{ background: "linear-gradient(135deg, rgba(6,182,212,0.10), rgba(139,92,246,0.08))" }}>
-          <Heart className="w-5 h-5 mx-auto text-rose" />
-          <p className="text-[11px] font-black text-navy mt-1 leading-tight">{t(<>যত বেশি সাক্ষী,<br/>তত বেশি আয়</>, <>More witnesses,<br/>more earnings</>)}</p>
-        </div>
-        <div className="premium-panel rounded-2xl p-3 text-center"
-             style={{ background: "linear-gradient(135deg, rgba(16,185,129,0.10), rgba(255,209,102,0.10))" }}>
-          <ShieldCheck className="w-5 h-5 mx-auto text-emerald" />
-          <p className="text-[11px] font-black text-navy mt-1 leading-tight">{t(<>সাক্ষী = আপনার<br/>সততার প্রমাণ</>, <>Witnesses = proof<br/>of your honesty</>)}</p>
-        </div>
-      </div>
-
-      <div className="premium-panel rounded-2xl p-4 relative overflow-hidden"
-           style={{ background: "linear-gradient(135deg, rgba(139,92,246,0.10), rgba(6,182,212,0.08))" }}>
-        <p className="text-[10px] uppercase tracking-[0.15em] font-bold text-violet">💡 {t("কেন সাক্ষী?", "Why witnesses?")}</p>
-        <p className="text-[12px] text-navy mt-2 leading-relaxed font-medium">
-          {t(<>স্কুলে উপবৃত্তি পেতে যেমন বাবা-মায়ের NID, প্রমাণপত্র লাগে — আমাদের এই আর্থিক সহায়ক প্ল্যাটফর্মেও তেমনই <span className="font-black text-violet">১০ জন সাক্ষীর মুখ</span> লাগে। প্রত্যেক সাক্ষী প্রমাণ করছেন যে আপনি সত্যিই সাহায্যের যোগ্য।</>,
-             <>Just as a school stipend needs parents' NID and proof, our financial support platform needs <span className="font-black text-violet">10 witness faces</span>. Each witness proves you truly deserve support.</>)}
-        </p>
-        <p className="text-[12px] text-navy mt-2 leading-relaxed font-medium">
-          {t(<><span className="font-black text-rose">যত বেশি সাক্ষী যোগ করবেন, তত বেশি মাসিক আয় হবে।</span> ১০ জন সম্পন্ন হলে আরও ১০ জন যোগ করার সুযোগ পাবেন।</>,
-             <><span className="font-black text-rose">The more witnesses you add, the higher your monthly income.</span> After 10 you can add 10 more.</>)}
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 gap-2">
-        <a href="https://t.me/goodappbuy" target="_blank" rel="noopener noreferrer"
-           className="block rounded-2xl p-3.5 text-center shadow-md btn-press"
-           style={{ background: "linear-gradient(120deg,#0088cc,#06b6d4)" }}>
-          <p className="text-sm font-black text-white flex items-center justify-center gap-1.5">
-            <MessageCircle className="w-4 h-4" /> {t("টেলিগ্রাম সাপোর্ট", "Telegram Support")}
-          </p>
-          <p className="text-[11px] text-white/90 mt-0.5">{t("গ্রুপে মেসেজ দিন — দ্রুত সাহায্য পাবেন", "Message the group — quick help")}</p>
-        </a>
-        <BotStartButton />
-      </div>
-
-
-      <div className="px-1 pb-1">
-        <ApkDownloadCard />
-      </div>
-
-      <div className="text-center py-2 space-y-3">
-        <VideoTutorialButton />
-        <p className="text-[11px] text-muted-foreground italic">
-          🌸 "হাজার জনের সহযোগিতা, একজনের হাসি" 🌸
-        </p>
-        <TourReplayButton />
-      </div>
-
-      <div className="glass rounded-2xl p-3 mb-2">
-        <p className="text-[10px] font-black text-muted-foreground mb-2 text-center">আইন ও নিরাপত্তা</p>
-        <div className="grid grid-cols-3 gap-2">
-          <Link to="/privacy" className="btn-press flex flex-col items-center gap-1 rounded-xl bg-surface-2 border border-border py-2.5 text-[10px] font-black">
-            <Lock className="w-4 h-4 text-cyan" /> প্রাইভেসি
-          </Link>
-          <Link to="/terms" className="btn-press flex flex-col items-center gap-1 rounded-xl bg-surface-2 border border-border py-2.5 text-[10px] font-black">
-            <ShieldCheck className="w-4 h-4 text-amber" /> শর্তাবলি
-          </Link>
-          <Link to="/settings" className="btn-press flex flex-col items-center gap-1 rounded-xl bg-surface-2 border border-border py-2.5 text-[10px] font-black">
-            <Sparkles className="w-4 h-4 text-violet-400" /> সেটিংস
-          </Link>
-        </div>
-      </div>
-      </DashSection>
 
 
       {lightbox && (
@@ -1043,79 +886,9 @@ function useLeaderboardsData() {
   return useQuery({
     queryKey: ["leaderboards", "v2"],
     queryFn: () => getLeaderboards(),
-    staleTime: 60_000,
-    refetchInterval: 60_000,
+    staleTime: 120_000,
     retry: 1,
   });
-}
-
-function Leaderboards() {
-  const { data } = useLeaderboardsData();
-  const [open, setOpen] = useState(false);
-  const [tab, setTab] = useState<"ref" | "ver">("ref");
-
-  if (!data) return null;
-  const { topReferrers = [], topVerified = [] } = data as any;
-  if (topReferrers.length === 0 && topVerified.length === 0) return null;
-
-  const medal = (i: number) => (i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `#${i + 1}`);
-  const rows = tab === "ref" ? topReferrers : topVerified;
-
-  return (
-    <div className="rounded-3xl overflow-hidden shadow-xl border border-white/10"
-         style={{ background: tab === "ref"
-           ? "linear-gradient(135deg,#f59e0b 0%,#ef4444 55%,#8b5cf6 100%)"
-           : "linear-gradient(135deg,#0ea5e9 0%,#22d3ee 50%,#10b981 100%)" }}>
-      <button onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center gap-3 p-4 text-white btn-press">
-        <div className="w-11 h-11 rounded-2xl bg-white/25 backdrop-blur border border-white/40 flex items-center justify-center text-2xl shadow-lg shrink-0">🏆</div>
-        <div className="flex-1 text-left min-w-0">
-          <p className="text-[10px] uppercase tracking-[0.25em] font-black opacity-95 flex items-center gap-1">
-            <Crown className="w-3 h-3" /> লিডারবোর্ড
-          </p>
-          <p className="text-base font-black leading-tight drop-shadow">টপ ১০ রেফারার · টপ ১০ ভেরিফায়ার</p>
-          <p className="text-[11px] opacity-95 font-bold mt-0.5">দেখতে ক্লিক করুন</p>
-        </div>
-        <ChevronDown className={`w-5 h-5 text-white transition-transform ${open ? "rotate-180" : ""}`} />
-      </button>
-
-      {open && (
-        <div className="px-4 pb-4 animate-in fade-in slide-in-from-top-1">
-          <div className="flex gap-2 mb-3">
-            <button onClick={() => setTab("ref")}
-              className={`flex-1 py-1.5 rounded-xl text-[11px] font-black border transition ${
-                tab === "ref" ? "bg-white text-navy border-white" : "bg-white/10 text-white border-white/30"
-              }`}>
-              <Crown className="w-3 h-3 inline mr-1" /> টপ রেফারার
-            </button>
-            <button onClick={() => setTab("ver")}
-              className={`flex-1 py-1.5 rounded-xl text-[11px] font-black border transition ${
-                tab === "ver" ? "bg-white text-navy border-white" : "bg-white/10 text-white border-white/30"
-              }`}>
-              <BadgeCheck className="w-3 h-3 inline mr-1" /> টপ ভেরিফায়ার
-            </button>
-          </div>
-          <ol className="space-y-1.5">
-            {rows.slice(0, 10).map((r: any, i: number) => (
-              <li key={r.id} className="flex items-center justify-between rounded-xl bg-white/15 backdrop-blur border border-white/20 px-2.5 py-1.5 text-white">
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="text-sm font-black w-7 shrink-0">{medal(i)}</span>
-                  <span className="text-sm font-black truncate">{r.name}</span>
-                  <span className="text-[10px] opacity-80 mono-num shrink-0">UID {r.uid}</span>
-                </div>
-                <span className="mono-num text-sm font-black shrink-0">{r.count}</span>
-              </li>
-            ))}
-          </ol>
-          <p className="text-[10px] mt-2 opacity-90 text-white">
-            {tab === "ref"
-              ? "রেফারদের কাছ থেকে সবচেয়ে বেশি ভেরিফিকেশন এসেছে যাদের"
-              : "সবচেয়ে বেশি ফেস ভেরিফাই করা ইউজার"}
-          </p>
-        </div>
-      )}
-    </div>
-  );
 }
 
 function fmtWait(sec: number) {

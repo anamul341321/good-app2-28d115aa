@@ -1,4 +1,4 @@
-import { memo, useEffect, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { computeLiveBalance, monthlyRate, MONTHLY_PER_SLOT, splitBalance } from "@/lib/mining";
 import { miningWindowInfo, nextOpenLabelBn } from "@/lib/mining-window";
@@ -9,37 +9,48 @@ const MiningDecor = memo(function MiningDecor({ live }: { live: boolean }) {
   return (
     <>
       <div className="absolute inset-0 mc-base pointer-events-none" aria-hidden />
-      <div className="absolute -top-16 -left-10 w-56 h-56 rounded-full blur-3xl opacity-70 pointer-events-none mc-orb-a" aria-hidden />
-      <div className="absolute -bottom-20 -right-16 w-64 h-64 rounded-full blur-3xl opacity-60 pointer-events-none mc-orb-b" aria-hidden />
+      <div className="absolute -top-14 -left-10 w-48 h-48 rounded-full blur-3xl opacity-70 pointer-events-none mc-orb-a" aria-hidden />
+      <div className="absolute -bottom-16 -right-14 w-56 h-56 rounded-full blur-3xl opacity-60 pointer-events-none mc-orb-b" aria-hidden />
       <div className="absolute inset-0 mc-holo opacity-50 pointer-events-none mix-blend-overlay" aria-hidden />
       <div className="absolute -inset-1 mc-ring pointer-events-none" aria-hidden />
       {live && (
-        <>
-          <div className="absolute inset-0 pointer-events-none" aria-hidden>
-            {[
-              { l: "12%", t: "22%", d: "0s", e: "✦" },
-              { l: "82%", t: "18%", d: "0.9s", e: "✧" },
-              { l: "50%", t: "10%", d: "1.8s", e: "✨" },
-            ].map((s, i) => (
-              <span key={i} className="mc-sparkle" style={{ left: s.l, top: s.t, animationDelay: s.d }}>
-                {s.e}
-              </span>
-            ))}
-          </div>
-          <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden>
-            {[0, 1].map((i) => (
-              <span key={i} className="mc-coin"
-                style={{ left: `${25 + i * 40}%`, animationDelay: `${i * 1.2}s`, animationDuration: "6s" }}>
-                ⛏
-              </span>
-            ))}
-          </div>
-        </>
+        <div className="absolute inset-0 pointer-events-none" aria-hidden>
+          {[
+            { l: "12%", t: "20%", d: "0s", e: "✦" },
+            { l: "84%", t: "16%", d: "1.1s", e: "✧" },
+          ].map((s, i) => (
+            <span key={i} className="mc-sparkle" style={{ left: s.l, top: s.t, animationDelay: s.d }}>
+              {s.e}
+            </span>
+          ))}
+        </div>
       )}
     </>
   );
 });
 
+/** Money that visibly counts up — each digit change gets a soft roll + glow. */
+function AnimatedMoney({ value, live }: { value: number; live: boolean }) {
+  const [intPart, decPart] = value.toFixed(2).split(".");
+  const prev = useRef(intPart);
+  const [bump, setBump] = useState(0);
+  useEffect(() => {
+    if (prev.current !== intPart) {
+      prev.current = intPart;
+      setBump((b) => b + 1);
+    }
+  }, [intPart]);
+  return (
+    <div className="flex items-baseline justify-center gap-1 flex-nowrap whitespace-nowrap">
+      <span key={bump}
+        className={`mono-num text-[2.7rem] leading-none font-black mc-num mc-roll ${live ? "mc-num-live" : ""}`}>
+        {intPart}
+      </span>
+      <span className="mono-num text-base leading-none font-black text-white/60 mc-dec">.{decPart}</span>
+      <span className="text-sm font-black text-yellow-100 ml-1 drop-shadow">৳</span>
+    </div>
+  );
+}
 
 type Props = {
   accrued: number;
@@ -58,8 +69,6 @@ type Props = {
   referralAccrued?: number;
   miningWithdrawn?: number;
 };
-
-
 
 // League tiers based on total submitted slots.
 function leagueFor(n: number): { name: string; emoji: string; from: string; to: string } | null {
@@ -87,7 +96,6 @@ export function MiningCounter({
     let id: any;
     const start = () => {
       stop();
-      // 1s tick is smooth enough and ~4x cheaper than 250ms on low-end phones.
       id = setInterval(() => setNow(Date.now()), 1000);
     };
     const stop = () => { if (id) { clearInterval(id); id = undefined; } };
@@ -96,7 +104,6 @@ export function MiningCounter({
     document.addEventListener("visibilitychange", onVis);
     return () => { stop(); document.removeEventListener("visibilitychange", onVis); };
   }, [isActive]);
-
 
   const rateArgs = {
     selfSlots: selfSlotsProp,
@@ -108,7 +115,6 @@ export function MiningCounter({
   const balance = computeLiveBalance({
     accrued, withdrawn, isActive, lastCreditedAt, ...rateArgs, now,
   });
-  // Self mining only counts after the user's own 10 re-verifies are done.
   const rawSelfSlots = selfSlotsProp ?? effectiveTaskCount;
   const selfSlots = selfQualified ? rawSelfSlots : 0;
   const refUnits = referralUnitsProp ?? qualifyingReferees;
@@ -120,173 +126,149 @@ export function MiningCounter({
   const claimable = Math.floor(balance);
   const league = leagueFor(leagueCount ?? Math.max(effectiveTaskCount, displayTaskCount ?? 0));
 
-
-
-  // Balance split (same rule the withdraw server uses): withdrawals are taken
-  // from mining first, so the main (bonus) balance stays intact.
   const bonusPart = splitBalance({ balance, bonusTotal, withdrawn, miningWithdrawn }).main;
   const miningPart = Math.max(0, balance - bonusPart);
-
   const refPart = Math.min(miningPart, Math.max(0, referralAccrued));
   const selfPart = Math.max(0, miningPart - refPart);
-
 
   const win = miningWindowInfo(now);
   const withdrawOpen = win.isOpen;
   const hoursUntilClose = Math.ceil(win.msUntilClose / (60 * 60 * 1000));
   const nextOpen = nextOpenLabelBn(now);
 
-  // Split integer/decimal for premium digit display (2 decimals = no jitter)
-  const [intPart, decPart] = balance.toFixed(2).split(".");
-
   return (
-    <div className="mc-premium relative rounded-[28px] p-6 overflow-hidden" style={{ contain: "paint" }}>
+    <div className="mc-premium relative rounded-[24px] p-4 overflow-hidden" style={{ contain: "paint" }}>
       <MiningDecor live={live} />
-
 
       <div className="relative">
         {/* Header */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full mc-chip">
+        <div className="flex items-center justify-between mb-2">
+          <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full mc-chip">
             {live ? (
               <>
-                <span className="relative flex h-2 w-2">
+                <span className="relative flex h-1.5 w-1.5">
                   <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-300 animate-ping opacity-80" />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-300" />
+                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-300" />
                 </span>
-                <span className="text-[10px] font-black tracking-[0.15em] text-white/95">লাইভ মাইনিং</span>
+                <span className="text-[9px] font-black tracking-[0.15em] text-white/95">লাইভ মাইনিং</span>
               </>
             ) : (
               <>
-                <Sparkles className="w-3 h-3 text-white/80" />
-                <span className="text-[10px] font-black tracking-[0.15em] text-white/85">মাইনিং লক</span>
+                <Sparkles className="w-2.5 h-2.5 text-white/80" />
+                <span className="text-[9px] font-black tracking-[0.15em] text-white/85">মাইনিং লক</span>
               </>
             )}
           </div>
           {league ? (
-            <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full backdrop-blur-md border border-white/25 shadow"
+            <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full backdrop-blur-md border border-white/25 shadow"
                  style={{ background: `linear-gradient(135deg, ${league.from}, ${league.to})` }}>
-              <span className="text-[11px]">{league.emoji}</span>
-              <span className="text-[9px] font-black tracking-widest text-white drop-shadow">{league.name} লিগ</span>
+              <span className="text-[10px]">{league.emoji}</span>
+              <span className="text-[8px] font-black tracking-widest text-white drop-shadow">{league.name} লিগ</span>
             </div>
           ) : (
-            <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-white/10 border border-white/15 backdrop-blur-md">
-              <span className="text-[9px] font-black tracking-widest text-white/70">লিগ · লক</span>
+            <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/10 border border-white/15 backdrop-blur-md">
+              <span className="text-[8px] font-black tracking-widest text-white/70">লিগ · লক</span>
             </div>
           )}
         </div>
 
-        {/* Balance */}
+        {/* Balance — animated */}
         <div className="text-center">
-          <p className="text-[10px] uppercase tracking-[0.3em] text-white/60 font-black mb-1">Balance</p>
-          <div className="flex items-baseline justify-center gap-1 flex-nowrap whitespace-nowrap">
-            <span className={`mono-num text-[3.6rem] leading-none font-black mc-num ${live ? "mc-num-live" : ""}`}>
-              {intPart}
-            </span>
-            <span className="mono-num text-lg leading-none font-black text-white/60">
-              .{decPart}
-            </span>
-          </div>
-          <p className="text-sm font-black text-yellow-100 mt-2 drop-shadow tracking-wide">৳ টাকা</p>
+          <p className="text-[9px] uppercase tracking-[0.3em] text-white/60 font-black">Total Balance</p>
+          <AnimatedMoney value={balance} live={live} />
         </div>
 
-        {/* Balance split — mining vs bonus, in plain Bengali */}
-        <div className="mt-4 grid grid-cols-2 gap-2">
-          <div className="rounded-2xl p-2.5 border border-white/20 bg-white/10 backdrop-blur-md">
-            <p className="text-[9px] font-black tracking-widest text-white/70">⛏️ মাইনিং ব্যালেন্স</p>
-            <p className="mono-num text-base font-black text-cyan-100 mt-0.5">{miningPart.toFixed(2)}<span className="text-[10px] text-white/60">৳</span></p>
-            <p className="text-[8px] text-white/60 leading-tight mt-0.5">
-              নিজের {selfPart.toFixed(2)}৳ + রেফার ১০% {refPart.toFixed(2)}৳ · ১–৩ তারিখে তোলা যাবে
-            </p>
-          </div>
-          <div className="rounded-2xl p-2.5 border border-white/20 bg-white/10 backdrop-blur-md">
-            <p className="text-[9px] font-black tracking-widest text-white/70">💚 মেইন ব্যালেন্স</p>
-            <p className="mono-num text-base font-black text-yellow-100 mt-0.5">{bonusPart.toFixed(2)}<span className="text-[10px] text-white/60">৳</span></p>
-            <p className="text-[8px] text-white/60 leading-tight mt-0.5">
-              বোনাস + রেফার বোনাস · যেকোনো সময় তোলা যাবে
-            </p>
-
-          </div>
+        {/* Withdraw window notice — always visible */}
+        <div className={`mt-2.5 rounded-xl px-2.5 py-1.5 text-[10px] font-black flex items-center justify-between gap-2 border ${withdrawOpen ? "mc-ribbon-open" : "mc-ribbon-closed"}`}>
+          <span className="flex items-center gap-1.5 min-w-0">
+            <span>{withdrawOpen ? "🔓" : "⏳"}</span>
+            <span className="text-white/95 truncate">
+              সবাইকে ১–৩ তারিখের মধ্যে উইথড্র করুন
+            </span>
+          </span>
+          <span className="text-[8px] text-white/80 uppercase tracking-widest shrink-0">
+            {withdrawOpen ? `আর ${hoursUntilClose}ঘ` : nextOpen}
+          </span>
         </div>
 
+        {/* Two compact balance cards side by side */}
+        <div className="mt-2.5 grid grid-cols-2 gap-2">
+          <div className="mc-mini rounded-2xl p-2">
+            <p className="text-[8px] font-black tracking-widest text-white/70">⛏️ মাইনিং</p>
+            <p className="mono-num text-[15px] font-black text-cyan-100 leading-none mt-0.5 mc-mini-num">
+              {miningPart.toFixed(2)}<span className="text-[9px] text-white/60">৳</span>
+            </p>
+            <p className="text-[7.5px] text-white/60 leading-tight mt-0.5">
+              নিজের {selfPart.toFixed(0)}৳ + রেফার {refPart.toFixed(0)}৳ · ১–৩ তারিখে
+            </p>
+          </div>
+          <div className="mc-mini rounded-2xl p-2">
+            <p className="text-[8px] font-black tracking-widest text-white/70">💚 মেইন</p>
+            <p className="mono-num text-[15px] font-black text-yellow-100 leading-none mt-0.5 mc-mini-num">
+              {bonusPart.toFixed(2)}<span className="text-[9px] text-white/60">৳</span>
+            </p>
+            <p className="text-[7.5px] text-white/60 leading-tight mt-0.5">
+              বোনাস + রেফার বোনাস · যেকোনো সময়
+            </p>
+          </div>
+        </div>
 
         {/* Rate stat pills */}
-        <div className="mt-4 grid grid-cols-2 gap-2">
-          <div className="mc-stat rounded-xl p-2.5">
-            <p className="text-[9px] uppercase tracking-widest text-white/60 font-black">মাইনিং ঘর</p>
-            <p className="mono-num text-lg font-black text-white mt-0.5">
-              {shownSlots}<span className="text-xs text-white/50">টি</span>
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          <div className="mc-stat rounded-2xl p-2">
+            <p className="text-[8px] uppercase tracking-widest text-white/60 font-black">মাইনিং ঘর</p>
+            <p className="mono-num text-[15px] font-black text-white leading-none mt-0.5">
+              {shownSlots}<span className="text-[10px] text-white/50">টি</span>
             </p>
-            <p className="text-[8px] text-white/55 leading-tight">প্রতি ঘর {MONTHLY_PER_SLOT}৳/মাস</p>
+            <p className="text-[7.5px] text-white/55 leading-tight">প্রতি ঘর {MONTHLY_PER_SLOT}৳/মাস</p>
           </div>
-          <div className="mc-stat rounded-xl p-2.5">
-            <p className="text-[9px] uppercase tracking-widest text-white/60 font-black">মাসিক রেট</p>
+          <div className="mc-stat rounded-2xl p-2">
+            <p className="text-[8px] uppercase tracking-widest text-white/60 font-black">মাসিক রেট</p>
             {live ? (
               <>
-                <p className="mono-num text-lg font-black text-yellow-100 mt-0.5">{ratePerMonth.toFixed(0)}<span className="text-xs text-white/60">৳</span></p>
-                <p className="text-[8px] text-white/55 leading-tight mono-num">
+                <p className="mono-num text-[15px] font-black text-yellow-100 leading-none mt-0.5">{ratePerMonth.toFixed(0)}<span className="text-[10px] text-white/60">৳</span></p>
+                <p className="text-[7.5px] text-white/55 leading-tight mono-num">
                   নিজের {selfMonth.toFixed(0)}৳ + রেফার {bonusMonth.toFixed(0)}৳
                 </p>
               </>
             ) : (
-              <p className="text-[10px] font-black text-white/70 mt-1 leading-tight">🔒 ১০টি রি-ভেরিফাই <br/>সম্পন্ন হলে দেখাবে</p>
+              <p className="text-[9px] font-black text-white/70 mt-0.5 leading-tight">🔒 ১০টি রি-ভেরিফাই হলে</p>
             )}
           </div>
         </div>
 
         {!live && (
-          <p className="text-[11px] text-white/70 text-center mt-3 font-bold">
-            ১০টি ঘর রি-ভেরিফাই সম্পন্ন করলে মাইনিং চালু · এরপর প্রতিটি বাড়তি রি-ভেরিফাই ঘরে +{MONTHLY_PER_SLOT}৳/মাস
-          </p>
-        )}
-
-        {live && shownSlots > 10 && (
-          <p className="text-[10px] text-white/70 text-center mt-2 font-bold">
-            ✨ ১০ ঘরের পর আরও {shownSlots - 10}টি ঘর রি-ভেরিফাই — বাড়তি +{(MONTHLY_PER_SLOT * (shownSlots - 10)).toFixed(0)}৳/মাস
+          <p className="text-[10px] text-white/70 text-center mt-2 font-bold leading-snug">
+            ১০টি ঘর রি-ভেরিফাই করলেই মাইনিং চালু · প্রতিটি বাড়তি ঘরে +{MONTHLY_PER_SLOT}৳/মাস
           </p>
         )}
 
         {refUnits > 0 && (
-          <p className="mt-3 mx-auto w-fit rounded-full px-3 py-1.5 text-[11px] font-black flex items-center gap-1.5"
+          <p className="mt-2 mx-auto w-fit rounded-full px-2.5 py-1 text-[10px] font-black flex items-center gap-1.5"
              style={{
                background: "linear-gradient(90deg, rgba(52,211,153,0.35), rgba(34,211,238,0.35))",
                border: "1px solid rgba(255,255,255,0.25)",
                color: "white",
              }}>
-            🎁 {qualifyingReferees} জন রেফার · তাদের আয়ের ১০% = +{bonusMonth.toFixed(0)}৳/মাস
+            🎁 {qualifyingReferees} জন রেফার · ১০% = +{bonusMonth.toFixed(0)}৳/মাস
           </p>
         )}
 
-
-        {/* Withdraw window ribbon */}
-        {live && (
-          <div className={`mt-3 rounded-xl px-3 py-2 text-[11px] font-black flex items-center justify-between gap-2 border ${withdrawOpen ? "mc-ribbon-open" : "mc-ribbon-closed"}`}>
-            <span className="flex items-center gap-1.5">
-              {withdrawOpen ? "🔓" : "🔒"}
-              <span className="text-white/95">
-                {withdrawOpen ? `উইথড্র উইন্ডো খোলা · আর ${hoursUntilClose}ঘ` : `${nextOpen} উইথড্র`}
-              </span>
-            </span>
-            <span className="text-[9px] text-white/75 uppercase tracking-widest">১–৩ তারিখ</span>
-          </div>
-        )}
-
-        {live && claimable > 0 && (
+        <div className="mt-2.5 grid grid-cols-2 gap-2">
           <button
             onClick={() => navigate({ to: "/withdraw" })}
-            className="mt-3 w-full rounded-2xl py-3.5 font-black text-sm flex items-center justify-center gap-2 btn-press mc-cta"
+            className="rounded-2xl py-2.5 font-black text-[12px] flex items-center justify-center gap-1.5 btn-press mc-cta"
           >
-            <Wallet className="w-4 h-4" />
-            💰 {claimable}৳ ক্লেইম ও উইথড্র
+            <Wallet className="w-3.5 h-3.5" />
+            {live && claimable > 0 ? `${claimable}৳ উইথড্র` : "উইথড্র"}
           </button>
-        )}
-
-        <button
-          onClick={() => navigate({ to: "/earnings" })}
-          className="mt-2 w-full rounded-2xl py-3 font-black text-[12px] text-white flex items-center justify-center gap-2 btn-press border border-white/25 bg-white/10 backdrop-blur-md"
-        >
-          📜 আয়ের হিসাব ও মাইনিং ক্লেইম দেখুন
-        </button>
+          <button
+            onClick={() => navigate({ to: "/earnings" })}
+            className="rounded-2xl py-2.5 font-black text-[12px] text-white flex items-center justify-center gap-1.5 btn-press border border-white/25 bg-white/10 backdrop-blur-md"
+          >
+            📜 আয়ের হিসাব
+          </button>
+        </div>
 
       </div>
     </div>
