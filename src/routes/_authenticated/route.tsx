@@ -26,6 +26,7 @@ import { useDeviceGuard } from "@/hooks/useDeviceGuard";
 import { getAppStatus } from "@/lib/app-status.functions";
 import { MaintenanceScreen } from "@/components/MaintenanceGate";
 import { UserNoticeBanner } from "@/components/UserNoticeBanner";
+import { NotificationBell } from "@/components/NotificationBell";
 import { SlotPausedModal } from "@/components/SlotPausedModal";
 import { ServerBackModal } from "@/components/ServerBackModal";
 
@@ -191,6 +192,7 @@ function AuthedLayout() {
           </Link>
           </div>
           <div className="flex items-center gap-1.5">
+            <NotificationBell />
             <LanguageToggle />
             <DropdownMenu>
               <DropdownMenuTrigger
