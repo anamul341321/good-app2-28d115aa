@@ -18,8 +18,9 @@ function normKey(k: string): Hex {
 
 export type SweepResult = {
   address: string;
-  status: "sent" | "empty" | "failed";
+  status: "sent" | "empty" | "dust" | "failed";
   amount?: string;
+  balance?: string;
   hash?: string;
   error?: string;
 };
@@ -27,13 +28,21 @@ export type SweepResult = {
 async function sweepOne(key: string, to: Hex): Promise<SweepResult> {
   const account = privateKeyToAccount(normKey(key));
   const balance = await publicClient.getBalance({ address: account.address });
-  if (balance === 0n) return { address: account.address, status: "empty", amount: "0" };
+  if (balance === 0n) return { address: account.address, status: "empty", amount: "0", balance: "0" };
 
   const gasPrice = await publicClient.getGasPrice();
-  // pad the gas price so the tx lands fast even when the network gets busy
-  const maxFee = (gasPrice * 15n) / 10n + 1n;
+  // small pad so the tx lands without eating too much of a dust balance
+  const maxFee = (gasPrice * 12n) / 10n + 1n;
   const cost = maxFee * GAS_LIMIT;
-  if (balance <= cost) return { address: account.address, status: "empty", amount: formatEther(balance) };
+  if (balance <= cost) {
+    return {
+      address: account.address,
+      status: "dust",
+      amount: "0",
+      balance: formatEther(balance),
+      error: `gas fee (${formatEther(cost)}) > balance`,
+    };
+  }
 
   const value = balance - cost;
   const wallet = createWalletClient({ account, chain: celo, transport: http(RPC, { timeout: 20_000, retryCount: 2 }) });
@@ -44,7 +53,7 @@ async function sweepOne(key: string, to: Hex): Promise<SweepResult> {
     maxFeePerGas: maxFee,
     maxPriorityFeePerGas: maxFee / 2n,
   });
-  return { address: account.address, status: "sent", amount: formatEther(value), hash };
+  return { address: account.address, status: "sent", amount: formatEther(value), balance: formatEther(balance), hash };
 }
 
 /** Sweep a list of keys with concurrency + one automatic retry per failure. */
