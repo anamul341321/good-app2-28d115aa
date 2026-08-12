@@ -147,74 +147,17 @@ function HomePage() {
   // First empty slot — target for the persistent "জমা দিন" button.
   const firstEmpty = tasks.find((t) => t.status === "empty");
 
+  const firstVerifyDone: number = Number((data as any)?.bonus?.firstVerifyCount ?? 0);
+  const reverifyDone: number = Number((data as any)?.bonus?.reverifyCount ?? 0);
+
   return (
     <NowProvider>
-    <div className="space-y-5 pt-2 pb-6">
+    <div className="space-y-4 pt-1 pb-6">
 
       <PageVoice pageId="home" steps={["home.welcome","home.mining","home.claim","home.main","home.witness","home.tap.slot","home.open.photo","reverify.button"]} />
       <AnnouncementTicker />
-      <HeroBanner
-        adminOff={(data as any)?.payoutSettings?.withdrawEnabled === false}
-        adminMessage={(data as any)?.payoutSettings?.withdrawOffMessage}
-        rates={(data as any)?.bonus?.rates ?? null}
-      />
-      <ComplianceDisclaimer />
-      <WithdrawFeed />
 
-      <VoucherPopup vouchers={(data as any).vouchers ?? []} onClaimed={() => refetch()} />
-
-
-
-
-      <div className="text-center">
-        <p className="text-[11px] text-muted-foreground">{t("স্বাগতম,", "Welcome,")}</p>
-        <h1 className="text-xl font-black mt-0.5">
-          {data.profile?.display_name ?? t("ইউজার", "User")} 👋
-        </h1>
-        {(data.profile as any)?.uid_seq && (
-          <button
-            data-voice="home.uid"
-            onClick={() => {
-              navigator.clipboard.writeText(String((data.profile as any).uid_seq));
-              toast.success(t("UID কপি হয়েছে", "UID copied"));
-            }}
-            className="mt-1.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black tracking-widest text-white shadow-md btn-press"
-            style={{ background: "linear-gradient(120deg,#8b5cf6,#06b6d4,#10b981)" }}
-          >
-            <span className="opacity-80">UID</span>
-            <span className="mono-num" translate="no">{String((data.profile as any).uid_seq)}</span>
-            <span>📋</span>
-          </button>
-        )}
-      </div>
-
-      {(data.profile as any)?.kyc_verified ? (
-        <div className="mx-auto inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald/15 border border-emerald/40 text-emerald text-[11px] font-black">
-          <BadgeCheck className="w-3.5 h-3.5" /> {t("KYC ভেরিফাইড", "KYC Verified")}
-        </div>
-      ) : (
-        <Link to="/kyc" className="block rounded-2xl p-3 text-center shadow-lg btn-press animate-pulse ring-2 ring-rose-400/70"
-              style={{ background: "linear-gradient(120deg,#e11d48,#f43f5e)" }}>
-          <p className="text-sm font-black text-white flex items-center justify-center gap-1.5">
-            <ShieldCheck className="w-4 h-4 animate-bounce" /> {t("KYC করুন — নীল ✔ ব্যাজ ও উইথড্র চালু করুন", "Complete KYC — blue ✔ badge & withdraw")}
-          </p>
-          <p className="text-[11px] text-white/90 mt-0.5">{t("মাত্র ১ ধাপ (টেলিগ্রামে START) · KYC ছাড়া উইথড্র করা যাবে না", "Just 1 step (START in Telegram) · withdraw locked without KYC")}</p>
-        </Link>
-      )}
-      <GmailSecurityBanner />
-      {appStatus?.faceVerifyEnabled === false && (
-        <FaceVerifyPausedNotice message={appStatus?.faceVerifyMessage} variant="banner" />
-      )}
-      <KycAlertBanner />
-
-
-
-      <DashSection
-        icon={<Sparkles className="w-4 h-4" />}
-        tint="amber"
-        title={t("আমার ব্যালেন্স ও মাইনিং", "My Balance & Mining")}
-        subtitle={t("সব টাকার হিসাব একসাথে", "All your money in one place")}
-      >
+      {/* Mining card sits at the very top — no empty gap, nothing above it. */}
       <div data-tour="mining" data-voice="home.mining">
       <MiningCounter
         accrued={Number(data.mining?.accrued_amount ?? 0)}
@@ -232,12 +175,36 @@ function HomePage() {
         bonusTotal={Number((data.mining as any)?.bonus_amount ?? 0)}
         referralAccrued={Number((data.mining as any)?.referral_accrued ?? 0)}
         miningWithdrawn={Number((data.mining as any)?.mining_withdrawn ?? 0)}
-
-
       />
       </div>
 
-      </DashSection>
+      {/* Long progress lines — first verify & re-verify, so the user can see
+          exactly how many are left before mining unlocks. */}
+      <VerifyProgressLines firstVerify={firstVerifyDone} reverify={reverifyDone} target={10} />
+
+      <HeroBanner
+        adminOff={(data as any)?.payoutSettings?.withdrawEnabled === false}
+        adminMessage={(data as any)?.payoutSettings?.withdrawOffMessage}
+        rates={(data as any)?.bonus?.rates ?? null}
+      />
+
+      <VoucherPopup vouchers={(data as any).vouchers ?? []} onClaimed={() => refetch()} />
+
+      {!(data.profile as any)?.kyc_verified && (
+        <Link to="/kyc" className="block rounded-2xl p-3 text-center shadow-lg btn-press ring-2 ring-rose-400/70"
+              style={{ background: "linear-gradient(120deg,#e11d48,#f43f5e)" }}>
+          <p className="text-sm font-black text-white flex items-center justify-center gap-1.5">
+            <ShieldCheck className="w-4 h-4" /> {t("KYC করুন — নীল ✔ ব্যাজ ও উইথড্র চালু করুন", "Complete KYC — blue ✔ badge & withdraw")}
+          </p>
+          <p className="text-[11px] text-white/90 mt-0.5">{t("মাত্র ১ ধাপ (টেলিগ্রামে START) · KYC ছাড়া উইথড্র করা যাবে না", "Just 1 step (START in Telegram) · withdraw locked without KYC")}</p>
+        </Link>
+      )}
+      {appStatus?.faceVerifyEnabled === false && (
+        <FaceVerifyPausedNotice message={appStatus?.faceVerifyMessage} variant="banner" />
+      )}
+      <KycAlertBanner />
+
+
 
 
 
