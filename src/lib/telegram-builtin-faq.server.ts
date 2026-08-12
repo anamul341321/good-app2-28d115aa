@@ -102,14 +102,22 @@ export const BUILTIN_FAQS: BuiltinFaq[] = [
   {
 
     topic: "অ্যাপ ডাউনলোড / ইনস্টল করার নিয়ম",
-    screenshot: [],
+    screenshot: [
+      "Download App", "অ্যাপ ডাউনলোড করুন", "goodapp2-release.apk",
+      "Downloads", "Open", "Install", "ইনস্টল",
+    ],
     keywords: [
       "apps download", "app download", "download korbo", "download kivabe",
       "apps kivabe download", "install korbo", "install kivabe", "apps install",
       "app install", "apk", "play store", "playstore", "home screen",
+      "install bujhi na", "install buji na", "install bujtasi na", "download bujhi na",
+      "download buji na", "kivabe install", "kemne install", "kemne download",
+      "install kore dite parben", "install hocche na", "install hoi na",
       "অ্যাপ ডাউনলোড", "অ্যাপস ডাউনলোড", "ডাউনলোড করবো", "ডাউনলোড কিভাবে",
       "ইনস্টল করবো", "ইনস্টল কিভাবে", "অ্যাপ ইনস্টল", "এপস ডাউনলোড",
+      "ইনস্টল বুঝি না", "ইনস্টল বুঝতে পারছি না", "ইনস্টল হচ্ছে না",
     ],
+
     answer:
       `📲 <b>নতুন সিস্টেমে অ্যাপ ডাউনলোড / ইনস্টল</b> (খুব সহজ, ১ মিনিটের কাজ) 👇\n\n` +
       `<b>১️⃣</b> Chrome দিয়ে আমাদের অফিসিয়াল ওয়েবসাইট <b>https://goodapp2.live</b> ওপেন করুন।\n` +
@@ -119,6 +127,63 @@ export const BUILTIN_FAQS: BuiltinFaq[] = [
       `<b>৫️⃣</b> Google Play Protect কিছু বললে <b>"Install anyway"</b> / <b>"তবুও ইনস্টল করুন"</b> চাপুন — এটা আমাদের নিজস্ব অ্যাপ, কোনো ভাইরাস নেই ✅\n\n` +
       `📌 ওয়েবসাইটে ঢুকলেই বারবার এই বাটনটি দেখাবে, যাতে নতুন ইউজাররা সহজেই বুঝতে পারে।`,
   },
+
+  {
+    topic: "Play Protect / harmful app warning দেখাচ্ছে (স্ক্রিনশট)",
+    screenshot: [
+      "Play Protect", "harmful", "Unsafe app blocked", "This app may be unsafe",
+      "Blocked by Play Protect", "More details", "Install anyway",
+      "Don't install", "Send app for scanning", "unsafe app",
+    ],
+    keywords: [
+      "play protect", "harmful", "harmful apps bole", "unsafe", "virus bole",
+      "blocked", "block kore dey", "install anyway", "scan kore",
+      "প্লে প্রোটেক্ট", "ক্ষতিকর", "ভাইরাস বলে", "ব্লক করে",
+    ],
+    answer:
+      `😊 ভয়ের কিছু নেই — এই মেসেজটা <b>ভাইরাসের কারণে আসেনি</b>। যেসব অ্যাপ Play Store-এর বাইরে থেকে ইনস্টল হয়, Google সব সময় এমন একটা সতর্কবার্তা দেখায় (এটা তাদের নিয়ম) ✅\n\n` +
+      `👉 <b>যা করবেন:</b>\n` +
+      `<b>১️⃣</b> স্ক্রিনে <b>"More details" / "আরও বিস্তারিত"</b> এ ট্যাপ করুন।\n` +
+      `<b>২️⃣</b> নিচে আসা <b>"Install anyway" / "তবুও ইনস্টল করুন"</b> চাপুন।\n` +
+      `<b>৩️⃣</b> "Send app for scanning" চাইলে <b>"Don't send" / স্কিপ</b> দিন।\n\n` +
+      `📌 অ্যাপটি আমাদের নিজের, একই signing key দিয়ে বানানো — সম্পূর্ণ নিরাপদ 💙 ইনস্টল হয়ে গেলে অ্যাপ ওপেন করে লগইন করুন।`,
+  },
+
+  {
+    topic: "App not installed / ইনস্টল ফেইল হচ্ছে (স্ক্রিনশট)",
+    screenshot: [
+      "App not installed", "Package appears to be invalid", "There was a problem parsing the package",
+      "App not installed as package conflicts", "install failed", "Try again",
+    ],
+    keywords: [
+      "app not installed", "package invalid", "parsing the package", "install failed",
+      "install hoy na", "install hocche na", "install fail",
+      "ইনস্টল হয় না", "ইনস্টল ফেইল",
+    ],
+    answer:
+      `🙂 এটা ছোট সমস্যা, সহজে ঠিক হয় 👇\n\n` +
+      `<b>১️⃣</b> ফোনে <b>আগের পুরোনো Good-App</b> (বা Home screen-এ যোগ করা শর্টকাট অ্যাপ) থাকলে সেটা <b>Uninstall</b> করে দিন।\n` +
+      `<b>২️⃣</b> Downloads থেকে পুরোনো apk ফাইলটি মুছে দিয়ে ওয়েবসাইট থেকে <b>আবার নতুন করে ডাউনলোড</b> করুন (ফাইল অর্ধেক নামলে এই এরর আসে)।\n` +
+      `<b>৩️⃣</b> ফোনে জায়গা (storage) কম থাকলে কিছু খালি করুন, তারপর apk-তে ট্যাপ করুন।\n` +
+      `<b>৪️⃣</b> Settings → Apps → Chrome → <b>Install unknown apps</b> → <b>Allow</b> করে দিন।\n\n` +
+      `এরপরও না হলে স্ক্রিনশট দিন, আমি দেখে বলে দেব 💙`,
+  },
+
+  {
+    topic: "ডাউনলোড করা ফাইলটা zip / কোথায় পাবো (স্ক্রিনশট)",
+    screenshot: ["release-apk.zip", ".zip", "Downloads", "My files", "goodapp2-release.apk"],
+    keywords: [
+      "zip", "zip file", "file kothay", "download kothay gelo", "downloads folder",
+      "file paitesi na", "জিপ", "ফাইল কোথায়",
+    ],
+    answer:
+      `📁 আপনি ঠিক জায়গাতেই আছেন 👇\n\n` +
+      `👉 ইনস্টল করার ফাইলটির নাম <b>goodapp2-release.apk</b> — এটা <b>Downloads / My Files → Download</b> ফোল্ডারে থাকে। ওটাতে ট্যাপ করলেই ইনস্টল শুরু হবে ✅\n` +
+      `⚠️ যদি ফাইলটা <b>.zip</b> দেখায়, তাহলে ওটা ভুল ফাইল — ওয়েবসাইট <b>https://goodapp2.live</b> এ গিয়ে নীচের <b>"Download App"</b> বাটন থেকে আবার নামান, ওখান থেকে সরাসরি apk আসে।\n\n` +
+      `ফাইল খুঁজে না পেলে ফোনের <b>Notification বার</b> নামিয়ে "Download complete" এ ট্যাপ করুন 🙂`,
+  },
+
+
 
 
   {

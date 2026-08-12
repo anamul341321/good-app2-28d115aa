@@ -1141,8 +1141,10 @@ export async function analyzeScreenshotReply(opts: {
                   `HTML <b> ট্যাগ ব্যবহার করতে পারো। "অ্যাডমিন উত্তর দেবেন" জাতীয় কথা লিখবে না, নিজেই সমাধান দেবে। ` +
                   `যদি স্ক্রিনশটে withdraw/balance দেখা যায়: Bonus/বোনাস, Mining/মাইনিং, locked/unlock date আলাদা করে পড়বে। বোনাস ০৳ কিন্তু মাইনিং ব্যালেন্স থাকলে বলবে—এখন বোনাস নেই, টাকাটা মাইনিং; মাইনিং প্রতি মাসের ১-৩ তারিখ unlock হলে withdraw করা যাবে। ` +
                   `ফেস ভেরিফিকেশন এরর হলে: ব্রাউজার বদলানো, ফোন রিস্টার্ট, Airplane mode on/off, মোবাইল ডেটা, ১৮+ ফেস, ভালো আলো — এসব পরামর্শ দেবে।\n` +
+                  `📲 স্ক্রিনশটে যদি অ্যাপ ডাউনলোড/ইনস্টল সংক্রান্ত কিছু থাকে (Download App বাটন, Downloads ফোল্ডার, apk বা zip ফাইল, "Install", "App not installed", Play Protect/"harmful"/"unsafe app blocked", Install unknown apps পারমিশন) — তাহলে NO_ANSWER দেবে না, বরং ধাপে ধাপে খুব সহজ ভাষায় বুঝিয়ে দেবে ঠিক কোন বোতামে চাপতে হবে। Play Protect সতর্কবার্তা এলে বলবে এটা স্বাভাবিক, More details → Install anyway চাপলেই হবে, অ্যাপ নিরাপদ। "App not installed" হলে পুরোনো অ্যাপ uninstall + apk আবার ডাউনলোড করতে বলবে।\n` +
                   `🚫 খুব জরুরি: স্ক্রিনশটটি যদি Good-App এর না হয় (অন্য কোনো অ্যাপ/সাইট/গেম/ওয়ালেট), অথবা নিচের knowledge দিয়ে ` +
                   `নিশ্চিতভাবে বোঝা না যায় — তাহলে আন্দাজে কিছু লিখবে না, শুধু ঠিক এই শব্দটি লিখবে: NO_ANSWER\n\n` +
+
                   `${opts.knowledge}\n\nইউজারের সাথের লেখা: ${opts.text || "(কিছু লেখেনি)"}`,
               },
               { type: "image_url", image_url: { url: `data:image/jpeg;base64,${opts.photoBase64}` } },
