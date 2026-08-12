@@ -6,8 +6,12 @@ import {
 } from "@/lib/announcements.functions";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Loader2, Megaphone, Trash2, Power, Send } from "lucide-react";
-import { adminListUserNotices, adminSendUserNotice, adminDeleteUserNotice } from "@/lib/admin.functions";
+import { Loader2, Megaphone, Trash2, Power, Send, Bell, BellRing, Smartphone } from "lucide-react";
+import {
+  adminListUserNotices, adminSendUserNotice, adminDeleteUserNotice,
+  adminBroadcastPush, adminListPushTargets, adminAddPushTarget,
+  adminRemovePushTarget, adminTestAdminPush,
+} from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/admin/announcements")({ component: AnnouncementsAdmin });
 
@@ -81,6 +85,8 @@ function AnnouncementsAdmin() {
         </div>
       )}
 
+      <PushBroadcast />
+      <AdminDevices />
       <PersonalNotice />
     </div>
   );
@@ -153,6 +159,130 @@ function PersonalNotice() {
           ))}
           {(data ?? []).length === 0 && (
             <p className="text-center text-xs text-muted-foreground py-4">এখনও কোনো ব্যক্তিগত মেসেজ পাঠানো হয়নি</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** সব ইউজারের ফোনে notification পাঠানো (অ্যাপ বন্ধ থাকলেও যাবে) */
+function PushBroadcast() {
+  const [title, setTitle] = useState("");
+  const [body, setBody] = useState("");
+  const [alsoInApp, setAlsoInApp] = useState(true);
+
+  const send = useMutation({
+    mutationFn: () =>
+      adminBroadcastPush({ data: { title: title.trim(), body: body.trim(), alsoInApp } }),
+    onSuccess: (r: any) => {
+      toast.success(`✅ ${r.sent}টি ফোনে notification গেছে (মোট ডিভাইস ${r.devices})`);
+      setTitle(""); setBody("");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  return (
+    <div className="glass rounded-2xl p-4 space-y-3">
+      <div className="flex items-center gap-2">
+        <BellRing className="w-5 h-5 text-cyan" />
+        <h2 className="font-black text-base text-cyan">সব ইউজারকে Notification</h2>
+      </div>
+      <p className="text-[11px] text-muted-foreground leading-snug">
+        নেটিভ অ্যাপ ইনস্টল করা সব ফোনের উপরে notification আসবে — ইউজার অ্যাপের ভেতরে না থাকলেও।
+      </p>
+      <input value={title} onChange={(e) => setTitle(e.target.value.slice(0, 120))}
+        placeholder="শিরোনাম (যেমন: 🎁 নতুন বোনাস অফার)"
+        className="w-full px-3 py-2 rounded-xl bg-surface-2 border border-border text-sm outline-none focus:border-cyan" />
+      <textarea value={body} onChange={(e) => setBody(e.target.value.slice(0, 500))} rows={3}
+        placeholder="মেসেজ লিখুন…"
+        className="w-full px-3 py-2 rounded-xl bg-surface-2 border border-border text-sm outline-none focus:border-cyan resize-y" />
+      <label className="flex items-center gap-2 text-[11px] font-bold">
+        <input type="checkbox" checked={alsoInApp} onChange={(e) => setAlsoInApp(e.target.checked)} />
+        অ্যাপের ভেতরের নোটিফিকেশন বেল-এও দেখাবে
+      </label>
+      <button onClick={() => send.mutate()}
+        disabled={send.isPending || title.trim().length < 2 || body.trim().length < 2}
+        className="w-full py-2.5 rounded-xl gradient-cta font-black text-sm disabled:opacity-50">
+        {send.isPending ? "পাঠানো হচ্ছে…" : "🔔 সবাইকে পাঠান"}
+      </button>
+    </div>
+  );
+}
+
+/** কোন কোন ফোনে অ্যাডমিন alert (নতুন withdraw ইত্যাদি) যাবে */
+function AdminDevices() {
+  const qc = useQueryClient();
+  const [uid, setUid] = useState("");
+  const [label, setLabel] = useState("");
+  const { data, isLoading } = useQuery({ queryKey: ["admin-push-targets"], queryFn: () => adminListPushTargets() });
+
+  const add = useMutation({
+    mutationFn: () => adminAddPushTarget({ data: { uid: Number(uid), label: label.trim() || null } }),
+    onSuccess: () => { toast.success("যোগ হয়েছে"); setUid(""); setLabel(""); qc.invalidateQueries({ queryKey: ["admin-push-targets"] }); },
+    onError: (e: any) => toast.error(e.message),
+  });
+  const remove = useMutation({
+    mutationFn: (userId: string) => adminRemovePushTarget({ data: { userId } }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-push-targets"] }),
+  });
+  const test = useMutation({
+    mutationFn: () => adminTestAdminPush(),
+    onSuccess: (r: any) => toast.success(`টেস্ট পাঠানো হয়েছে — ${r.sent}টি ফোনে গেছে`),
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  return (
+    <div className="glass rounded-2xl p-4 space-y-3">
+      <div className="flex items-center gap-2">
+        <Bell className="w-5 h-5 text-amber" />
+        <h2 className="font-black text-base text-amber">অ্যাডমিন Notification ফোন</h2>
+      </div>
+      <p className="text-[11px] text-muted-foreground leading-snug">
+        এখানে নিজের অ্যাকাউন্টের UID যোগ করুন। ওই অ্যাকাউন্টে নেটিভ অ্যাপ (APK) দিয়ে লগইন করা
+        থাকলে — নতুন withdraw রিকোয়েস্ট এলে আপনার ফোনে সাথে সাথেই notification আসবে,
+        অ্যাডমিন প্যানেল খোলা না থাকলেও।
+      </p>
+      <div className="flex gap-2">
+        <input value={uid} onChange={(e) => setUid(e.target.value.replace(/\D/g, ""))} inputMode="numeric"
+          placeholder="আপনার UID" className="flex-1 px-3 py-2 rounded-xl bg-surface-2 border border-border text-sm outline-none focus:border-amber mono-num" />
+        <input value={label} onChange={(e) => setLabel(e.target.value.slice(0, 60))}
+          placeholder="নাম (ঐচ্ছিক)" className="flex-1 px-3 py-2 rounded-xl bg-surface-2 border border-border text-sm outline-none focus:border-amber" />
+      </div>
+      <div className="flex gap-2">
+        <button onClick={() => add.mutate()} disabled={add.isPending || !uid}
+          className="flex-1 py-2.5 rounded-xl gradient-cta font-black text-sm disabled:opacity-50">
+          {add.isPending ? "যোগ হচ্ছে…" : "যোগ করুন"}
+        </button>
+        <button onClick={() => test.mutate()} disabled={test.isPending}
+          className="px-3 py-2.5 rounded-xl border border-amber/40 text-amber font-black text-[12px] disabled:opacity-50">
+          {test.isPending ? "…" : "টেস্ট"}
+        </button>
+      </div>
+
+      {isLoading ? (
+        <div className="py-3 flex justify-center"><Loader2 className="w-4 h-4 animate-spin text-amber" /></div>
+      ) : (
+        <div className="space-y-2">
+          {(data ?? []).map((t: any) => (
+            <div key={t.userId} className="rounded-xl border border-border p-2.5 flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-[11.5px] font-black truncate">
+                  UID {t.uid ?? "—"} • {t.name ?? "—"} {t.label ? `(${t.label})` : ""}
+                </p>
+                <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                  <Smartphone className="w-3 h-3" /> {t.devices}টি ফোন রেজিস্টার্ড
+                  {t.devices === 0 ? " — নেটিভ অ্যাপে লগইন করুন" : ""}
+                </p>
+              </div>
+              <button onClick={() => remove.mutate(t.userId)}
+                className="text-[11px] font-bold px-2 py-1 rounded-lg border border-rose/40 text-rose flex items-center gap-1 shrink-0">
+                <Trash2 className="w-3 h-3" /> সরান
+              </button>
+            </div>
+          ))}
+          {(data ?? []).length === 0 && (
+            <p className="text-center text-xs text-muted-foreground py-3">এখনও কোনো অ্যাডমিন ফোন যোগ করা হয়নি</p>
           )}
         </div>
       )}
