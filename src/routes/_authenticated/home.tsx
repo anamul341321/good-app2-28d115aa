@@ -1178,9 +1178,15 @@ function WithdrawFeed() {
 
           {tab === "top" ? (
             <>
-              <div className="rounded-xl bg-white/15 backdrop-blur border border-white/30 p-2.5 mb-2 flex items-center justify-between">
-                <p className="text-[11px] font-black text-white">💰 সর্বমোট withdraw payment</p>
-                <p className="mono-num font-black text-white text-lg">{Math.floor(grandTotal)}৳</p>
+              <div className="rounded-xl bg-white/15 backdrop-blur border border-white/30 p-2.5 mb-2 space-y-1">
+                <div className="flex items-center justify-between">
+                  <p className="text-[11px] font-black text-white">📅 আজকের লেনদেন হয়েছে</p>
+                  <p className="mono-num font-black text-yellow-200 text-lg">{Math.floor(todayTotal)}৳</p>
+                </div>
+                <div className="flex items-center justify-between">
+                  <p className="text-[10px] font-bold text-white/85">💰 সর্বমোট withdraw payment</p>
+                  <p className="mono-num font-black text-white text-sm">{Math.floor(grandTotal)}৳</p>
+                </div>
               </div>
               <ol className="space-y-1.5 max-h-[420px] overflow-y-auto pr-1">
                 {filteredPayees.slice(0, 20).map((p: any, i: number) => (
