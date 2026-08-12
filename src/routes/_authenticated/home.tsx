@@ -533,23 +533,23 @@ function HomePage() {
       </div>
       </DashSection>
 
-      <DashSection
-        icon={<Users className="w-4 h-4" />}
-        tint="violet"
-        title={t("সব অপশন", "All Options")}
-        subtitle={t("এক জায়গা থেকে সব সেকশনে যান", "Jump to any section from here")}
-      >
-        <AllOptionsGrid />
-      </DashSection>
+      <Link to="/menu"
+        className="block rounded-3xl p-4 relative overflow-hidden btn-press border border-white/20 shadow-[0_18px_40px_-18px_rgba(99,102,241,0.6)]"
+        style={{ background: "linear-gradient(135deg,#4f46e5 0%,#8b5cf6 50%,#06b6d4 100%)" }}>
+        <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/10 blur-2xl" />
+        <div className="relative flex items-center gap-3 text-white">
+          <div className="w-13 h-13 p-3.5 rounded-2xl bg-white/25 backdrop-blur border border-white/40 text-2xl shrink-0">☰</div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] uppercase tracking-[0.25em] font-black opacity-95">Menu</p>
+            <p className="text-lg font-black leading-tight drop-shadow">{t("সব অপশন ও ফিচার", "All options & features")}</p>
+            <p className="text-[11px] opacity-95 font-bold mt-0.5">
+              {t("অফার · সেন্ড · রিচার্জ · রেফার · লিডারবোর্ড · সাপোর্ট", "Offers · Send · Recharge · Refer · Leaderboard · Support")}
+            </p>
+          </div>
+          <span className="text-3xl opacity-90 font-black">›</span>
+        </div>
+      </Link>
 
-      <DashSection
-        icon={<Crown className="w-4 h-4" />}
-        tint="emerald"
-        title={t("লিডারবোর্ড", "Leaderboard")}
-        subtitle={t("সেরা ইউজারদের তালিকা", "Top performing users")}
-      >
-        <Leaderboards />
-      </DashSection>
 
       {!data.wallet && (
         <Link to="/wallet" className="block premium-panel rounded-2xl p-3 border-l-4" style={{ borderLeftColor: "var(--color-amber)" }}>
