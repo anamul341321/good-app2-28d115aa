@@ -42,7 +42,6 @@ export function InstallPrompt() {
   const [showHelp, setShowHelp] = useState(false);
   const [showSafety, setShowSafety] = useState(false);
   const [hidden, setHidden] = useState(false);
-  const iosDevice = typeof window !== "undefined" && isIOS();
   const native = typeof window !== "undefined" && isNativeApp();
 
   const { data } = useQuery({
