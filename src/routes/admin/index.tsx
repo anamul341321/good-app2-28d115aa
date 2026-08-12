@@ -14,12 +14,11 @@ function AdminDashboard() {
   const { data: stats, isError, refetch } = useQuery({
     queryKey: ["admin-stats"],
     queryFn: () => adminStats(),
-    refetchInterval: 60_000,
-    staleTime: 30_000,
+    staleTime: 120_000,
   });
-  const { data: money } = useQuery({ queryKey: ["admin-money-stats"], queryFn: () => adminMoneyStats(), refetchInterval: 60_000, staleTime: 30_000 });
-  const { data: withdrawals } = useQuery({ queryKey: ["admin-withdrawals"], queryFn: () => adminListWithdrawals(), staleTime: 30_000, refetchInterval: 60_000 });
-  const claimsQ = useQuery({ queryKey: ["admin-debt-claims"], queryFn: () => adminListDebtClaims(), refetchInterval: 60_000, staleTime: 30_000 });
+  const { data: money } = useQuery({ queryKey: ["admin-money-stats"], queryFn: () => adminMoneyStats(), staleTime: 120_000 });
+  const { data: withdrawals } = useQuery({ queryKey: ["admin-withdrawals"], queryFn: () => adminListWithdrawals(), staleTime: 120_000 });
+  const claimsQ = useQuery({ queryKey: ["admin-debt-claims"], queryFn: () => adminListDebtClaims(), staleTime: 120_000 });
 
   const resolveClaim = useMutation({
     mutationFn: (debtId: string) => adminResolveDebt({ data: { debtId } }),
