@@ -1,3 +1,4 @@
+import { InstallPrompt } from "@/components/InstallPrompt";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,

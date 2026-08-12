@@ -15,7 +15,6 @@ import { getProfileHistory } from "@/lib/profile.functions";
 import { useEffect, useState } from "react";
 import logo from "@/assets/logo.png";
 import { GuidedTour } from "@/components/GuidedTour";
-import { InstallPrompt } from "@/components/InstallPrompt";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { LanguagePicker } from "@/components/LanguagePicker";
 import { useLang } from "@/lib/i18n";
@@ -265,7 +264,7 @@ function AuthedLayout() {
       </nav>
 
       <GuidedTour />
-      <InstallPrompt />
+
       <LanguagePicker />
       <SlotResetApproval />
 
