@@ -697,20 +697,39 @@ function TaskCell({ task, onStart, onReverify, onOpenPhoto }: { task: any; onSta
   const whitelistLost = task.whitelist_ok === false;
   const readyToReverify = isVerified && whitelistLost && !!task.wallet_address;
   const faceUrl: string | undefined = task.signed_face_url;
+  const reverified = Number(task.reverify_count ?? 0) > 0;
 
   const theme = slotTheme(task.slot);
-  const themeStyle = {
-    borderColor: theme.from,
-    boxShadow: `0 8px 22px -6px rgba(${theme.glow},0.55), 0 0 0 1px rgba(${theme.glow},0.25) inset`,
-  } as const;
 
   // Name under every slot so the user instantly knows whose face is inside,
   // without tapping each photo to recognise it.
   const nameText: string = task.face_label || (task.status === "empty" ? "খালি ঘর" : `সাক্ষী #${task.slot}`);
   const nameTag = (
-    <p className="mt-1 text-[9px] font-black text-navy text-center truncate leading-none px-0.5" title={nameText}>
+    <p
+      className="mt-1.5 text-[12px] font-black text-navy text-center truncate leading-tight px-1.5 py-1 rounded-lg border"
+      style={{ borderColor: `${theme.from}55`, background: `${theme.from}12` }}
+      title={nameText}
+    >
       {nameText}
     </p>
+  );
+
+  // Every re-verified slot earns a fixed 50৳ per month — show it on the tile so
+  // the reward is obvious at a glance.
+  const earnBadge = reverified ? (
+    <span className="absolute bottom-1 right-1 rounded-md bg-black/55 px-1.5 py-0.5 text-[9px] font-black text-white shadow" translate="no">
+      ৫০৳/মাস
+    </span>
+  ) : null;
+
+  // Sharp four-cornered premium slab, one colour per slot.
+  const cornerFrame = (
+    <>
+      <span className="pointer-events-none absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-white/70 rounded-tl-sm" />
+      <span className="pointer-events-none absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-white/70 rounded-tr-sm" />
+      <span className="pointer-events-none absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-white/70 rounded-bl-sm" />
+      <span className="pointer-events-none absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-white/70 rounded-br-sm" />
+    </>
   );
 
   if (isVerified && !readyToReverify) {
@@ -721,26 +740,28 @@ function TaskCell({ task, onStart, onReverify, onOpenPhoto }: { task: any; onSta
     return (
       <div className="flex flex-col">
       <button onClick={() => faceUrl && onOpenPhoto(faceUrl)}
-        className="relative aspect-square rounded-2xl overflow-hidden border-2 active:scale-95 transition-transform"
+        className="relative aspect-square rounded-lg overflow-hidden border-[3px] active:scale-95 transition-transform"
         style={{
-          borderColor: due ? "#f59e0b" : "#22c55e",
+          borderColor: due ? "#f59e0b" : theme.to,
           background: due
             ? "linear-gradient(135deg,#f59e0b,#ef4444)"
-            : "linear-gradient(135deg,#0ea5e9,#6366f1)",
-          boxShadow: `0 8px 22px -6px ${due ? "rgba(245,158,11,0.6)" : "rgba(99,102,241,0.55)"}`,
+            : `linear-gradient(135deg,${theme.from},${theme.to})`,
+          boxShadow: `0 12px 26px -8px rgba(${theme.glow},0.6)`,
         }}>
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.4),transparent_55%)]" />
-        <span className="absolute top-1 left-1 text-[9px] font-black text-white mono-num leading-none px-1 py-0.5 rounded bg-black/45">#{task.slot}</span>
-        <span className="absolute top-1 right-1 rounded-md px-1 py-0.5 bg-white/90 text-[8px] font-black shadow"
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.42),transparent_58%)]" />
+        {cornerFrame}
+        <span className="absolute top-1 left-1 text-[11px] font-black text-white mono-num leading-none px-1.5 py-0.5 rounded bg-black/45">#{task.slot}</span>
+        <span className="absolute top-1 right-1 rounded-md px-1 py-0.5 bg-white/90 text-[9px] font-black shadow"
               style={{ color: due ? "#b45309" : "#4338ca" }}>
           {due ? "⏰" : "⏳"}
         </span>
         <span className="absolute inset-0 flex items-center justify-center">
-          <RefreshCcw className={`w-7 h-7 text-white/95 drop-shadow-lg ${due ? "animate-spin-slow" : ""}`} />
+          <RefreshCcw className={`w-9 h-9 text-white/95 drop-shadow-lg ${due ? "animate-spin-slow" : ""}`} />
         </span>
-        <p className="absolute bottom-1 left-0.5 right-0.5 text-[8px] font-black text-white text-center drop-shadow leading-tight">
+        <p className="absolute bottom-1 left-1 right-1 text-[9.5px] font-black text-white text-center drop-shadow leading-tight">
           {due ? "রি-ভেরিফাই সময় হয়েছে" : `${Math.ceil(remain ?? 4)} দিন পর রি-ভেরিফাই`}
         </p>
+        {!due && earnBadge}
       </button>
       {nameTag}
       </div>
@@ -752,16 +773,17 @@ function TaskCell({ task, onStart, onReverify, onOpenPhoto }: { task: any; onSta
     return (
       <div className="flex flex-col">
       <button onClick={onReverify}
-        className="relative aspect-square rounded-2xl overflow-hidden border-2 border-rose shadow-[0_12px_28px_-8px_rgba(239,71,111,0.85)] active:scale-95 transition-transform"
+        className="relative aspect-square rounded-lg overflow-hidden border-[3px] border-rose shadow-[0_14px_30px_-8px_rgba(239,71,111,0.85)] active:scale-95 transition-transform"
         style={{ background: "linear-gradient(135deg, #f43f5e, #ec4899)" }}>
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_30%,rgba(255,255,255,0.35),transparent_60%)] animate-pulse" />
-        <span className="absolute top-1 left-1 text-[10px] font-black text-white mono-num leading-none px-1.5 py-0.5 rounded-md bg-black/45">#{task.slot}</span>
-        <span className="absolute top-1 right-1 rounded-full bg-white/25 backdrop-blur-sm p-0.5 shadow animate-pulse">
-          <Sparkles className="w-2.5 h-2.5 text-white" />
+        {cornerFrame}
+        <span className="absolute top-1 left-1 text-[11px] font-black text-white mono-num leading-none px-1.5 py-0.5 rounded-md bg-black/45">#{task.slot}</span>
+        <span className="absolute top-1 right-1 rounded-full bg-white/25 backdrop-blur-sm p-1 shadow animate-pulse">
+          <Sparkles className="w-3 h-3 text-white" />
         </span>
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-0.5 px-1">
-          <Sparkles className="w-5 h-5 text-white drop-shadow animate-pulse" />
-          <p className="text-[10px] font-black text-white text-center leading-tight drop-shadow">
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 px-1">
+          <Sparkles className="w-7 h-7 text-white drop-shadow animate-pulse" />
+          <p className="text-[12px] font-black text-white text-center leading-tight drop-shadow">
             রি-ভেরিফাই<br/>করুন
           </p>
         </div>
@@ -773,9 +795,9 @@ function TaskCell({ task, onStart, onReverify, onOpenPhoto }: { task: any; onSta
 
   const isEmpty = !isDone;
   const icon = isDone
-    ? <CheckCircle2 className="w-5 h-5 text-white drop-shadow" />
-    : <Camera className="w-5 h-5 text-white drop-shadow" />;
-  const label = isDone ? "৩–৪ দিন পর রি-ভেরিফাই" : "শুরু";
+    ? <CheckCircle2 className="w-7 h-7 text-white drop-shadow" />
+    : <Camera className="w-7 h-7 text-white drop-shadow" />;
+  const label = isDone ? "৩–৪ দিন পর রি-ভেরিফাই" : "শুরু করুন";
   const bg = isDone
     ? `linear-gradient(135deg, ${theme.from}, ${theme.to})`
     : `linear-gradient(135deg, ${theme.from}22, ${theme.to}22)`;
@@ -783,27 +805,30 @@ function TaskCell({ task, onStart, onReverify, onOpenPhoto }: { task: any; onSta
   return (
     <div className="flex flex-col">
     <button onClick={onStart}
-      className="relative aspect-square rounded-2xl flex flex-col items-center justify-center gap-0.5 btn-press overflow-hidden border-2 transition-transform active:scale-95"
+      className="relative aspect-square rounded-lg flex flex-col items-center justify-center gap-1 btn-press overflow-hidden border-[3px] transition-transform active:scale-95"
       style={{
         background: bg,
-        borderColor: isDone ? theme.to : `${theme.from}55`,
+        borderColor: isDone ? theme.to : `${theme.from}66`,
         boxShadow: isDone
-          ? `0 10px 22px -8px rgba(${theme.glow},0.65)`
-          : `0 4px 14px -6px rgba(${theme.glow},0.35)`,
+          ? `0 12px 26px -8px rgba(${theme.glow},0.65)`
+          : `0 6px 16px -6px rgba(${theme.glow},0.35)`,
       }}>
-      <span className="absolute top-1 left-1 text-[10px] font-black text-white mono-num leading-none px-1.5 py-0.5 rounded-md"
+      {isDone && cornerFrame}
+      <span className="absolute top-1 left-1 text-[11px] font-black text-white mono-num leading-none px-1.5 py-0.5 rounded-md"
         style={{ background: `linear-gradient(135deg, ${theme.from}, ${theme.to})` }}>#{task.slot}</span>
-      <span className={`relative z-10 grid place-items-center w-9 h-9 rounded-full ${isEmpty ? "" : ""}`}
+      <span className="relative z-10 grid place-items-center w-12 h-12 rounded-xl"
         style={{ background: isDone ? "rgba(0,0,0,0.25)" : `linear-gradient(135deg, ${theme.from}, ${theme.to})` }}>
         {icon}
       </span>
-      <span className="text-[8px] font-black drop-shadow leading-tight mt-0.5 text-center px-1"
+      <span className="text-[10px] font-black drop-shadow leading-tight mt-0.5 text-center px-1"
         style={{ color: isDone ? "#fff" : theme.from }}>{label}</span>
+      {earnBadge}
     </button>
     {nameTag}
     </div>
   );
 }
+
 
 
 
