@@ -9,6 +9,7 @@ import { MiningCounter } from "@/components/MiningCounter";
 import bonusGirl from "@/assets/bonus-girl.png";
 import { CheckCircle2, Camera, Lock, Sparkles, Loader2, X, Plus, Crown, Users, ShieldCheck, BadgeCheck, ChevronDown, Gift, RefreshCcw } from "lucide-react";
 import { AnnouncementTicker } from "@/components/AnnouncementTicker";
+import { ApkDownloadCard } from "@/components/ApkDownloadCard";
 import { HeroBanner } from "@/components/HeroBanner";
 import { PageVoice } from "@/components/PageVoice";
 import { KycAlertBanner } from "@/components/KycAlertBanner";
@@ -187,6 +188,9 @@ function HomePage() {
         adminMessage={(data as any)?.payoutSettings?.withdrawOffMessage}
         rates={(data as any)?.bonus?.rates ?? null}
       />
+
+      {/* নেটিভ অ্যাপ ডাউনলোড — এক ট্যাপে APK নামবে */}
+      <ApkDownloadCard />
 
       <VoucherPopup vouchers={(data as any).vouchers ?? []} onClaimed={() => refetch()} />
 

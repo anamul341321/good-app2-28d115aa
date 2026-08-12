@@ -23,8 +23,9 @@ export function ApkDownloadCard({ compact = false }: { compact?: boolean }) {
   return (
     <a
       href={url}
-      target="_blank"
-      rel="noopener noreferrer"
+      {...(isStore
+        ? { target: "_blank", rel: "noopener noreferrer" }
+        : { download: "Good-App.apk" })}
       className={`block rounded-2xl border-2 border-emerald/40 bg-gradient-to-r from-emerald/15 via-cyan/10 to-transparent p-3 btn-press ${compact ? "" : "shadow-lg"}`}
     >
       <div className="flex items-center gap-3">
@@ -36,7 +37,7 @@ export function ApkDownloadCard({ compact = false }: { compact?: boolean }) {
             {isStore ? "Google Play" : "Android App"}
           </p>
           <p className="text-sm font-black text-navy leading-tight">
-            {isStore ? "Play Store থেকে অ্যাপ ইনস্টল করুন" : "অ্যাপ (APK) ডাউনলোড করুন"}
+            {isStore ? "Play Store থেকে অ্যাপ ইনস্টল করুন" : "📥 অ্যাপ ডাউনলোড করুন (এক ট্যাপে)"}
           </p>
           <p className="text-[10px] text-muted-foreground mt-0.5">
             {isStore
@@ -45,7 +46,7 @@ export function ApkDownloadCard({ compact = false }: { compact?: boolean }) {
           </p>
         </div>
         <span className="shrink-0 px-3 py-1.5 rounded-lg gradient-emerald text-[11px] font-black">
-          {isStore ? "OPEN" : "GET"}
+          {isStore ? "OPEN" : "ডাউনলোড"}
         </span>
       </div>
       {!isStore && (
