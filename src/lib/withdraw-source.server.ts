@@ -100,9 +100,7 @@ export async function buildWithdrawSourceCard(opts: {
     );
   }
 
-  const head =
-    `🔍 <b>টাকার উৎস</b> — ${(prof as any)?.display_name ?? "User"} · UID <code>${(prof as any)?.uid_seq ?? opts.uid ?? "—"}</code>\n` +
-    (amount !== null ? `💸 এই রিকোয়েস্ট: <b>${bdt(amount)}</b>\n` : "");
+  const head = headBase;
 
   const body =
     `\n<b>নিজের আয়ের হিসাব</b>\n` +
