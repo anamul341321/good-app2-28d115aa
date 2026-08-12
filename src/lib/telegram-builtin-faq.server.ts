@@ -12,6 +12,37 @@ export type BuiltinFaq = {
 
 const pick = (a: string[]) => a[Math.floor(Math.random() * a.length)];
 
+/**
+ * Bonus amounts must never be hardcoded in an answer — the admin changes them
+ * from the panel. Answers use {{FIRST_BONUS}} / {{REVERIFY_BONUS}} /
+ * {{REFERRER_BONUS}} and these get replaced with the live database values.
+ */
+export function fillRates(
+  text: string,
+  r: { firstVerify: number; reVerify: number; referrer: number; promoFirst?: number | null; promoRe?: number | null; promoRef?: number | null },
+): string {
+  const tk = (n: number) => `${Math.round(n)}৳`;
+  const first = r.promoFirst ?? r.firstVerify;
+  const re = r.promoRe ?? r.reVerify;
+  const ref = r.promoRef ?? r.referrer;
+  return text
+    .replace(/\{\{FIRST_BONUS\}\}/g, first > 0 ? tk(first) : "কোনো বোনাস নেই")
+    .replace(/\{\{REVERIFY_BONUS\}\}/g, tk(re))
+    .replace(/\{\{REFERRER_BONUS\}\}/g, tk(ref));
+}
+
+/** Same as fillRates but loads the live rates itself. */
+export async function fillLiveRates(text: string): Promise<string> {
+  if (!/\{\{[A-Z_]+\}\}/.test(text)) return text;
+  try {
+    const { loadRates } = await import("./telegram-knowledge.server");
+    return fillRates(text, await loadRates());
+  } catch {
+    return text.replace(/\{\{[A-Z_]+\}\}/g, "অ্যাপের অফার পেজে দেখানো বোনাস");
+  }
+}
+
+
 export const BUILTIN_FAQS: BuiltinFaq[] = [
   {
     topic: "নির্দিষ্ট নাম্বারের স্লট ভেরিফাই হচ্ছে না",
@@ -141,8 +172,9 @@ export const BUILTIN_FAQS: BuiltinFaq[] = [
     answer:
       `খুব ভালো প্রশ্ন ভাইয়া 👏 পরিষ্কার করে বলি —\n\n` +
       `🎁 <b>বোনাস শুধু প্রথম ১০টি স্লটের জন্যই</b>\n` +
-      `• প্রথম ১০টি স্লট <b>ফার্স্ট ভেরিফাই</b> সম্পন্ন হলে → <b>১০০৳ বোনাস</b>\n` +
-      `• সেই ১০টি স্লট <b>রি-ভেরিফাই</b> সম্পন্ন হলে → <b>৪০০৳ বোনাস</b> + আপনার <b>মাসিক মাইনিং চালু</b> ✅\n\n` +
+      `• প্রথম ১০টি স্লট <b>ফার্স্ট ভেরিফাই</b> সম্পন্ন হলে → <b>{{FIRST_BONUS}}</b>\n` +
+      `• সেই ১০টি স্লট <b>রি-ভেরিফাই</b> সম্পন্ন হলে → <b>{{REVERIFY_BONUS}} বোনাস</b> + আপনার <b>মাসিক মাইনিং চালু</b> ✅\n\n` +
+
       `➕ <b>এরপর আরও ১০টি স্লট যোগ করলে?</b>\n` +
       `• সেগুলোও ফার্স্ট ভেরিফাই + রি-ভেরিফাই করতেই হবে (নিয়ম একই)\n` +
       `• কিন্তু বাকি স্লটগুলোর জন্য <b>আলাদা কোনো বোনাস পাবেন না</b>\n` +
@@ -328,15 +360,18 @@ export const BUILTIN_FAQS: BuiltinFaq[] = [
 
 
 /** Compact text block so the AI (and screenshot analyzer) knows these answers. */
-export function builtinFaqKnowledge(): string {
-  return (
+export function builtinFaqKnowledge(
+  rates?: { firstVerify: number; reVerify: number; referrer: number; promoFirst?: number | null; promoRe?: number | null; promoRef?: number | null },
+): string {
+  const body =
     `\n\n🧠 সাধারণ সমভাইয়া নির্ধারিত উত্তর (স্ক্রিনশট বা প্রশ্ন মিললে হুবহু এই তথ্য দিয়ে উত্তর দেবে):\n` +
     BUILTIN_FAQS.map(
       (f) =>
         `• [${f.topic}] স্ক্রিনশটে থাকতে পারে: ${f.screenshot.join(" / ")}\n  উত্তর: ${f.answer.replace(/<[^>]+>/g, "")}`,
-    ).join("\n")
-  );
+    ).join("\n");
+  return rates ? fillRates(body, rates) : body;
 }
+
 
 /**
  * ইনটেন্ট লেয়ার — হুবহু শব্দ না মিললেও প্রশ্নের "মানে" ধরে ফেলে।

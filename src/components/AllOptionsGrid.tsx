@@ -1,51 +1,75 @@
 import { Link } from "@tanstack/react-router";
 import { useLang } from "@/lib/i18n";
+import {
+  Wallet,
+  ArrowDownToLine,
+  BarChart3,
+  RefreshCcw,
+  Smartphone,
+  Send,
+  Gift,
+  ShieldCheck,
+  User,
+  Settings,
+  Camera,
+  ChevronRight,
+  type LucideIcon,
+} from "lucide-react";
 
 type Tile = {
   to: string;
-  emoji: string;
+  Icon: LucideIcon;
   bn: string;
   en: string;
+  hintBn: string;
+  hintEn: string;
   from: string;
   to2: string;
 };
 
+// Referral lives in its own dedicated nav button now, so it is intentionally
+// not part of this grid.
 const TILES: Tile[] = [
-  { to: "/wallet", emoji: "👛", bn: "ওয়ালেট", en: "Wallet", from: "#f59e0b", to2: "#ef4444" },
-  { to: "/withdraw", emoji: "🏧", bn: "উইথড্র", en: "Withdraw", from: "#f43f5e", to2: "#ec4899" },
-  { to: "/earnings", emoji: "📊", bn: "আয়ের হিসাব", en: "Earnings", from: "#10b981", to2: "#06b6d4" },
-  { to: "/referral", emoji: "🎯", bn: "রেফার", en: "Refer", from: "#8b5cf6", to2: "#6366f1" },
-  { to: "/reverify", emoji: "🔄", bn: "রি-ভেরিফাই", en: "Re-verify", from: "#06b6d4", to2: "#3b82f6" },
-  { to: "/recharge", emoji: "📱", bn: "রিচার্জ", en: "Recharge", from: "#22c55e", to2: "#14b8a6" },
-  { to: "/send", emoji: "💸", bn: "সেন্ড", en: "Send", from: "#a855f7", to2: "#ec4899" },
-  { to: "/offers", emoji: "🎁", bn: "অফার", en: "Offers", from: "#ec4899", to2: "#f59e0b" },
-  { to: "/kyc", emoji: "🛡️", bn: "কেওয়াইসি", en: "KYC", from: "#6366f1", to2: "#8b5cf6" },
-  { to: "/profile", emoji: "👤", bn: "প্রোফাইল", en: "Profile", from: "#0ea5e9", to2: "#14b8a6" },
-  { to: "/settings", emoji: "⚙️", bn: "সেটিংস", en: "Settings", from: "#64748b", to2: "#334155" },
-  { to: "/task/1", emoji: "📷", bn: "ভেরিফাই", en: "Verify", from: "#f97316", to2: "#facc15" },
+  { to: "/wallet", Icon: Wallet, bn: "ওয়ালেট", en: "Wallet", hintBn: "bKash · Nagad নম্বর", hintEn: "bKash · Nagad number", from: "#f59e0b", to2: "#ef4444" },
+  { to: "/withdraw", Icon: ArrowDownToLine, bn: "উইথড্র", en: "Withdraw", hintBn: "টাকা তুলুন", hintEn: "Cash out", from: "#f43f5e", to2: "#ec4899" },
+  { to: "/earnings", Icon: BarChart3, bn: "আয়ের হিসাব", en: "Earnings", hintBn: "সম্পূর্ণ হিসাব", hintEn: "Full statement", from: "#10b981", to2: "#06b6d4" },
+  { to: "/reverify", Icon: RefreshCcw, bn: "রি-ভেরিফাই", en: "Re-verify", hintBn: "৪ দিন পর", hintEn: "Every 4 days", from: "#06b6d4", to2: "#3b82f6" },
+  { to: "/recharge", Icon: Smartphone, bn: "রিচার্জ", en: "Recharge", hintBn: "মোবাইল রিচার্জ", hintEn: "Mobile top-up", from: "#22c55e", to2: "#14b8a6" },
+  { to: "/send", Icon: Send, bn: "সেন্ড", en: "Send", hintBn: "ব্যালেন্স পাঠান", hintEn: "Send balance", from: "#a855f7", to2: "#ec4899" },
+  { to: "/offers", Icon: Gift, bn: "অফার", en: "Offers", hintBn: "বোনাস অফার", hintEn: "Bonus offers", from: "#ec4899", to2: "#f59e0b" },
+  { to: "/task/1", Icon: Camera, bn: "ভেরিফাই", en: "Verify", hintBn: "নতুন স্লট", hintEn: "New slot", from: "#f97316", to2: "#facc15" },
+  { to: "/kyc", Icon: ShieldCheck, bn: "কেওয়াইসি", en: "KYC", hintBn: "পরিচয় যাচাই", hintEn: "Identity check", from: "#6366f1", to2: "#8b5cf6" },
+  { to: "/profile", Icon: User, bn: "প্রোফাইল", en: "Profile", hintBn: "আপনার তথ্য", hintEn: "Your details", from: "#0ea5e9", to2: "#14b8a6" },
+  { to: "/settings", Icon: Settings, bn: "সেটিংস", en: "Settings", hintBn: "ভাষা · নিরাপত্তা", hintEn: "Language · security", from: "#64748b", to2: "#334155" },
 ];
 
 /**
- * All-options launcher grid — every feature of the app gets its own tile so
- * users can find each section from one place instead of hunting the feed.
+ * All-options launcher — real, tappable rows with clear icons, titles and a
+ * one-line hint so users know exactly what each option does.
  */
 export function AllOptionsGrid() {
   const { t } = useLang();
   return (
-    <div className="grid grid-cols-4 gap-2.5">
-      {TILES.map((tile) => (
+    <div className="grid grid-cols-2 gap-2.5">
+      {TILES.map(({ to, Icon, bn, en, hintBn, hintEn, from, to2 }) => (
         <Link
-          key={tile.to}
-          to={tile.to as any}
-          className="btn-press group flex flex-col items-center gap-1.5 rounded-2xl bg-surface-2/70 border border-border p-2 pt-2.5 text-center"
+          key={to}
+          to={to as any}
+          className="btn-press group flex items-center gap-2.5 rounded-2xl border border-border bg-surface-2/70 p-2.5 shadow-sm active:scale-[0.97] transition"
         >
           <span
-            className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl text-white shadow-lg"
-            style={{ background: `linear-gradient(135deg,${tile.from},${tile.to2})` }}
+            className="w-10 h-10 shrink-0 rounded-xl flex items-center justify-center text-white shadow-lg"
+            style={{ background: `linear-gradient(135deg,${from},${to2})` }}
           >
-            {tile.emoji}
+            <Icon className="w-5 h-5" />
           </span>
-          <span className="text-[9.5px] font-black text-navy leading-tight">{t(tile.bn, tile.en)}</span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[12px] font-black text-navy leading-tight truncate">{t(bn, en)}</span>
+            <span className="block text-[9.5px] font-bold text-muted-foreground leading-tight truncate">
+              {t(hintBn, hintEn)}
+            </span>
+          </span>
+          <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
         </Link>
       ))}
     </div>
