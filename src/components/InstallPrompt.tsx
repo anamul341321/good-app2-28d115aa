@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Download, Share, Plus, Smartphone, ShieldCheck, Trash2, X } from "lucide-react";
+import { Download, Trash2, ShieldCheck, X } from "lucide-react";
 import { getAppStatus } from "@/lib/app-status.functions";
 
 type BIPEvent = Event & {
