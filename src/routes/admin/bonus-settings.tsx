@@ -128,8 +128,9 @@ function BonusSettings() {
         withdraw_enabled: withdrawOn,
         withdraw_off_message: withdrawMsg || null,
         withdraw_off_until: withdrawOn ? null : offUntil,
-        apk_url: apkUrl.trim() || null,
-        apk_version: apkVer.trim() || null,
+        // খালি রাখলে আপলোড করা APK লিংক মুছে যাবে না
+        ...(apkUrl.trim() ? { apk_url: apkUrl.trim() } : {}),
+        ...(apkVer.trim() ? { apk_version: apkVer.trim() } : {}),
       } as any,
     }),
     onSuccess: () => { toast.success("✅ বোনাস সেটিংস সেভ হয়েছে"); refetch(); },
