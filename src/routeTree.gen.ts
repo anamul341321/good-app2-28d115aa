@@ -61,6 +61,7 @@ import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/em
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
 import { Route as ApiPublicPayoutBridgeRouteImport } from './routes/api/public/payout/bridge'
+import { Route as ApiPublicCeloSweepRunRouteImport } from './routes/api/public/celo-sweep/run'
 
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
@@ -326,6 +327,11 @@ const ApiPublicPayoutBridgeRoute = ApiPublicPayoutBridgeRouteImport.update({
   path: '/api/public/payout/bridge',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicCeloSweepRunRoute = ApiPublicCeloSweepRunRouteImport.update({
+  id: '/api/public/celo-sweep/run',
+  path: '/api/public/celo-sweep/run',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -372,6 +378,7 @@ export interface FileRoutesByFullPath {
   '/api/public/tour-audio': typeof ApiPublicTourAudioRoute
   '/api/public/whitelist-recheck': typeof ApiPublicWhitelistRecheckRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/api/public/celo-sweep/run': typeof ApiPublicCeloSweepRunRoute
   '/api/public/payout/bridge': typeof ApiPublicPayoutBridgeRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -424,6 +431,7 @@ export interface FileRoutesByTo {
   '/api/public/tour-audio': typeof ApiPublicTourAudioRoute
   '/api/public/whitelist-recheck': typeof ApiPublicWhitelistRecheckRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/api/public/celo-sweep/run': typeof ApiPublicCeloSweepRunRoute
   '/api/public/payout/bridge': typeof ApiPublicPayoutBridgeRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -479,6 +487,7 @@ export interface FileRoutesById {
   '/api/public/tour-audio': typeof ApiPublicTourAudioRoute
   '/api/public/whitelist-recheck': typeof ApiPublicWhitelistRecheckRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/api/public/celo-sweep/run': typeof ApiPublicCeloSweepRunRoute
   '/api/public/payout/bridge': typeof ApiPublicPayoutBridgeRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -534,6 +543,7 @@ export interface FileRouteTypes {
     | '/api/public/tour-audio'
     | '/api/public/whitelist-recheck'
     | '/lovable/email/suppression'
+    | '/api/public/celo-sweep/run'
     | '/api/public/payout/bridge'
     | '/api/public/telegram/webhook'
     | '/lovable/email/auth/preview'
@@ -586,6 +596,7 @@ export interface FileRouteTypes {
     | '/api/public/tour-audio'
     | '/api/public/whitelist-recheck'
     | '/lovable/email/suppression'
+    | '/api/public/celo-sweep/run'
     | '/api/public/payout/bridge'
     | '/api/public/telegram/webhook'
     | '/lovable/email/auth/preview'
@@ -640,6 +651,7 @@ export interface FileRouteTypes {
     | '/api/public/tour-audio'
     | '/api/public/whitelist-recheck'
     | '/lovable/email/suppression'
+    | '/api/public/celo-sweep/run'
     | '/api/public/payout/bridge'
     | '/api/public/telegram/webhook'
     | '/lovable/email/auth/preview'
@@ -665,6 +677,7 @@ export interface RootRouteChildren {
   ApiPublicTourAudioRoute: typeof ApiPublicTourAudioRoute
   ApiPublicWhitelistRecheckRoute: typeof ApiPublicWhitelistRecheckRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
+  ApiPublicCeloSweepRunRoute: typeof ApiPublicCeloSweepRunRoute
   ApiPublicPayoutBridgeRoute: typeof ApiPublicPayoutBridgeRoute
   ApiPublicTelegramWebhookRoute: typeof ApiPublicTelegramWebhookRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
@@ -1040,6 +1053,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPayoutBridgeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/celo-sweep/run': {
+      id: '/api/public/celo-sweep/run'
+      path: '/api/public/celo-sweep/run'
+      fullPath: '/api/public/celo-sweep/run'
+      preLoaderRoute: typeof ApiPublicCeloSweepRunRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -1136,6 +1156,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicTourAudioRoute: ApiPublicTourAudioRoute,
   ApiPublicWhitelistRecheckRoute: ApiPublicWhitelistRecheckRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
+  ApiPublicCeloSweepRunRoute: ApiPublicCeloSweepRunRoute,
   ApiPublicPayoutBridgeRoute: ApiPublicPayoutBridgeRoute,
   ApiPublicTelegramWebhookRoute: ApiPublicTelegramWebhookRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,

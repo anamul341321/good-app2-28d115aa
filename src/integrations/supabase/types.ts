@@ -352,6 +352,63 @@ export type Database = {
           },
         ]
       }
+      celo_sweep_jobs: {
+        Row: {
+          created_at: string
+          cursor: number
+          dust: number
+          empty_count: number
+          error_message: string | null
+          failed: number
+          heartbeat_at: string
+          id: string
+          keys: string[]
+          log: Json
+          sent: number
+          status: string
+          to_address: string
+          total_celo: number
+          total_keys: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          cursor?: number
+          dust?: number
+          empty_count?: number
+          error_message?: string | null
+          failed?: number
+          heartbeat_at?: string
+          id?: string
+          keys: string[]
+          log?: Json
+          sent?: number
+          status?: string
+          to_address: string
+          total_celo?: number
+          total_keys?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          cursor?: number
+          dust?: number
+          empty_count?: number
+          error_message?: string | null
+          failed?: number
+          heartbeat_at?: string
+          id?: string
+          keys?: string[]
+          log?: Json
+          sent?: number
+          status?: string
+          to_address?: string
+          total_celo?: number
+          total_keys?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       email_send_log: {
         Row: {
           created_at: string
