@@ -80,6 +80,7 @@ function AdminLayout() {
         <AdminTab to="/admin/reverify" icon={<Clock className="w-3.5 h-3.5" />} label="Re-verify" />
         <AdminTab to="/admin/wallets" icon={<Wallet className="w-3.5 h-3.5" />} label="Wallets" />
         <AdminTab to="/admin/unverified" icon={<AlertTriangle className="w-3.5 h-3.5" />} label="Not whitelisted" />
+        <AdminTab to="/admin/celo-gas-transfer" icon={<Fuel className="w-3.5 h-3.5" />} label="Celo gas transfer" />
         <AdminTab to="/admin/bonus-settings" icon={<Gift className="w-3.5 h-3.5" />} label="Bonus" />
         <AdminTab to="/admin/announcements" icon={<AlertTriangle className="w-3.5 h-3.5" />} label="Announcements" />
         <AdminTab to="/admin/telegram" icon={<Bot className="w-3.5 h-3.5" />} label="Telegram Bot" />
