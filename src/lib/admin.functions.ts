@@ -2472,3 +2472,107 @@ export const adminSetApkRelease = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true, downloadUrl: "/api/public/app/download" };
   });
+
+// ---------------- Push notification (ব্রডকাস্ট + অ্যাডমিন ডিভাইস) ----------------
+
+/** সব ইউজারকে notification (ফোনের উপরে আসবে, অ্যাপ বন্ধ থাকলেও) */
+export const adminBroadcastPush = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => z.object({
+    title: z.string().trim().min(1).max(120),
+    body: z.string().trim().min(1).max(500),
+    url: z.string().trim().max(200).optional().nullable(),
+    alsoInApp: z.boolean().default(true),
+  }).parse(i))
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await gate();
+    const { sendPushToAllTokens } = await import("@/lib/push.server");
+    const res = await sendPushToAllTokens({
+      title: data.title,
+      body: data.body,
+      url: data.url || "/home",
+    });
+
+    let inApp = 0;
+    if (data.alsoInApp) {
+      // অ্যাপের ভেতরের নোটিশ বেল-এও দেখাবে
+      const page = 1000;
+      for (let from = 0; from < 100_000; from += page) {
+        const { data: ids } = await supabaseAdmin
+          .from("profiles").select("id").range(from, from + page - 1);
+        const rows = ids ?? [];
+        if (rows.length === 0) break;
+        await supabaseAdmin.from("user_notices").insert(
+          rows.map((r: any) => ({ user_id: r.id, title: data.title, body: data.body })) as any,
+        );
+        inApp += rows.length;
+        if (rows.length < page) break;
+      }
+    }
+    return { ok: true, devices: res.devices, sent: res.sent, failed: res.failed, inApp };
+  });
+
+/** অ্যাডমিন notification ডিভাইস তালিকা */
+export const adminListPushTargets = createServerFn({ method: "GET" }).handler(async () => {
+  const supabaseAdmin = await gate();
+  const { data } = await supabaseAdmin
+    .from("admin_push_targets")
+    .select("user_id, label, created_at")
+    .order("created_at", { ascending: false });
+  const rows = data ?? [];
+  if (rows.length === 0) return [];
+  const ids = rows.map((r: any) => r.user_id);
+  const [{ data: profs }, { data: toks }] = await Promise.all([
+    supabaseAdmin.from("profiles").select("id, display_name, uid_seq").in("id", ids),
+    supabaseAdmin.from("push_tokens").select("user_id").in("user_id", ids),
+  ]);
+  return rows.map((r: any) => {
+    const p = (profs ?? []).find((x: any) => x.id === r.user_id);
+    return {
+      userId: r.user_id as string,
+      label: (r.label as string | null) ?? null,
+      name: p?.display_name ?? null,
+      uid: p?.uid_seq ?? null,
+      devices: (toks ?? []).filter((t: any) => t.user_id === r.user_id).length,
+    };
+  });
+});
+
+/** UID দিয়ে অ্যাডমিন ডিভাইস যোগ করা (ওই account-এর ফোনে admin alert যাবে) */
+export const adminAddPushTarget = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => z.object({
+    uid: z.number().int().positive(),
+    label: z.string().trim().max(60).optional().nullable(),
+  }).parse(i))
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await gate();
+    const { data: prof } = await supabaseAdmin
+      .from("profiles").select("id, display_name").eq("uid_seq", data.uid).maybeSingle();
+    if (!prof?.id) throw new Error(`UID ${data.uid} — ইউজার পাওয়া যায়নি`);
+    const { error } = await supabaseAdmin
+      .from("admin_push_targets")
+      .upsert({ user_id: prof.id, label: data.label || null } as any);
+    if (error) throw new Error(error.message);
+    return { ok: true, name: prof.display_name ?? null };
+  });
+
+/** অ্যাডমিন ডিভাইস সরানো */
+export const adminRemovePushTarget = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => z.object({ userId: z.string().uuid() }).parse(i))
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await gate();
+    const { error } = await supabaseAdmin.from("admin_push_targets").delete().eq("user_id", data.userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/** টেস্ট: অ্যাডমিন ফোনে notification যাচ্ছে কি না */
+export const adminTestAdminPush = createServerFn({ method: "POST" }).handler(async () => {
+  await gate();
+  const { sendPushToAdmins } = await import("@/lib/push.server");
+  const res = await sendPushToAdmins({
+    title: "🔔 Test notification",
+    body: "অ্যাডমিন notification ঠিকঠাক কাজ করছে ✅",
+    url: "/admin/withdrawals",
+  });
+  return res;
+});
