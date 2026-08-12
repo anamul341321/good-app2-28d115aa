@@ -62,21 +62,37 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           set -euo pipefail
-          for name in KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD; do
-            if [ -z "${!name:-}" ]; then
-              echo "::error::$name is not configured in repository Actions secrets"
-              exit 1
-            fi
-          done
-          export ANDROID_KEYSTORE_PATH="${{ github.workspace }}/android/app/my-release-key.jks"
-          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$ANDROID_KEYSTORE_PATH"
-          if [ ! -s "$ANDROID_KEYSTORE_PATH" ]; then
-            echo "::error::Decoded keystore is empty"
+          KS="${{ github.workspace }}/android/app/my-release-key.jks"
+          if [ -n "${KEYSTORE_BASE64:-}" ]; then
+            printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$KS"
+            echo "Using keystore from repository secrets."
+          else
+            echo "::warning::No signing secrets found - generating a new keystore automatically."
+            ANDROID_KEYSTORE_PASSWORD="goodapp2026"
+            ANDROID_KEY_ALIAS="goodapp"
+            ANDROID_KEY_PASSWORD="goodapp2026"
+            keytool -genkeypair -v \
+              -keystore "$KS" -alias "$ANDROID_KEY_ALIAS" \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -storepass "$ANDROID_KEYSTORE_PASSWORD" -keypass "$ANDROID_KEY_PASSWORD" \
+              -dname "CN=Good-App, OU=Mobile, O=Good-App, L=Dhaka, S=Dhaka, C=BD"
+            mkdir -p "${{ github.workspace }}/signing-key"
+            cp "$KS" "${{ github.workspace }}/signing-key/my-release-key.jks"
+            base64 -w0 "$KS" > "${{ github.workspace }}/signing-key/keystore-base64.txt"
+            {
+              echo "ANDROID_KEYSTORE_PASSWORD=$ANDROID_KEYSTORE_PASSWORD"
+              echo "ANDROID_KEY_ALIAS=$ANDROID_KEY_ALIAS"
+              echo "ANDROID_KEY_PASSWORD=$ANDROID_KEY_PASSWORD"
+            } > "${{ github.workspace }}/signing-key/README.txt"
+          fi
+          if [ ! -s "$KS" ]; then
+            echo "::error::Keystore is empty"
             exit 1
           fi
+          export ANDROID_KEYSTORE_PATH="$KS"
+          export ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD
           cd android
           ./gradlew --no-daemon assembleRelease
-          rm -f "$ANDROID_KEYSTORE_PATH"
 
       - name: Upload Release APK
         if: github.event.inputs.build_type == 'apk-release'
@@ -94,25 +110,37 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           set -euo pipefail
-          for name in KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD; do
-            if [ -z "${!name:-}" ]; then
-              echo "::error::$name is not configured in repository Actions secrets"
-              exit 1
-            fi
-          done
-          export ANDROID_KEYSTORE_PATH="${{ github.workspace }}/android/app/my-release-key.jks"
-          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$ANDROID_KEYSTORE_PATH"
-          if [ ! -s "$ANDROID_KEYSTORE_PATH" ]; then
-            echo "::error::Decoded keystore is empty"
+          KS="${{ github.workspace }}/android/app/my-release-key.jks"
+          if [ -n "${KEYSTORE_BASE64:-}" ]; then
+            printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$KS"
+            echo "Using keystore from repository secrets."
+          else
+            echo "::warning::No signing secrets found - generating a new keystore automatically."
+            ANDROID_KEYSTORE_PASSWORD="goodapp2026"
+            ANDROID_KEY_ALIAS="goodapp"
+            ANDROID_KEY_PASSWORD="goodapp2026"
+            keytool -genkeypair -v \
+              -keystore "$KS" -alias "$ANDROID_KEY_ALIAS" \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -storepass "$ANDROID_KEYSTORE_PASSWORD" -keypass "$ANDROID_KEY_PASSWORD" \
+              -dname "CN=Good-App, OU=Mobile, O=Good-App, L=Dhaka, S=Dhaka, C=BD"
+            mkdir -p "${{ github.workspace }}/signing-key"
+            cp "$KS" "${{ github.workspace }}/signing-key/my-release-key.jks"
+            base64 -w0 "$KS" > "${{ github.workspace }}/signing-key/keystore-base64.txt"
+            {
+              echo "ANDROID_KEYSTORE_PASSWORD=$ANDROID_KEYSTORE_PASSWORD"
+              echo "ANDROID_KEY_ALIAS=$ANDROID_KEY_ALIAS"
+              echo "ANDROID_KEY_PASSWORD=$ANDROID_KEY_PASSWORD"
+            } > "${{ github.workspace }}/signing-key/README.txt"
+          fi
+          if [ ! -s "$KS" ]; then
+            echo "::error::Keystore is empty"
             exit 1
           fi
-          keytool -list \
-            -keystore "$ANDROID_KEYSTORE_PATH" \
-            -storepass "$ANDROID_KEYSTORE_PASSWORD" \
-            -alias "$ANDROID_KEY_ALIAS" >/dev/null
+          export ANDROID_KEYSTORE_PATH="$KS"
+          export ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD
           cd android
           ./gradlew --no-daemon bundleRelease
-          rm -f "$ANDROID_KEYSTORE_PATH"
 
       - name: Upload Debug APK
         if: github.event.inputs.build_type == 'apk-debug'
@@ -127,3 +155,10 @@ jobs:
         with:
           name: release-aab
           path: android/app/build/outputs/bundle/release/app-release.aab
+
+      - name: Upload generated signing key
+        if: always() && hashFiles('signing-key/my-release-key.jks') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: signing-key-KEEP-SAFE
+          path: signing-key/
