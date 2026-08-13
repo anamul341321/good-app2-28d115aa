@@ -1,7 +1,16 @@
 import { useEffect, useState } from "react";
 import { savePushToken } from "@/lib/push.functions";
+import { supabase } from "@/integrations/supabase/client";
 
 let initDone = false;
+let latestPushToken: string | null = null;
+
+async function persistPushToken() {
+  if (!latestPushToken) return;
+  const { data } = await supabase.auth.getSession();
+  if (!data.session) return;
+  await savePushToken({ data: { token: latestPushToken, platform: "android" } });
+}
 
 /**
  * Initialize native Capacitor plugins only when running inside the Android/iOS shell.
@@ -19,6 +28,14 @@ export function useNativeApp() {
     if (!cap?.isNativePlatform()) return;
     setIsNative(true);
 
+    // The native token can arrive before login finishes. Save it again as soon
+    // as a session exists, otherwise the protected save call is lost forever.
+    const { data: authListener } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+        window.setTimeout(() => persistPushToken().catch(() => {}), 0);
+      }
+    });
+
     // Dynamic imports so the browser bundle never tries to load Capacitor modules.
     Promise.all([
       import("@capacitor/splash-screen").then((m) => m.SplashScreen.hide({ fadeOutDuration: 450 })),
@@ -35,7 +52,8 @@ export function useNativeApp() {
       import("@capacitor/push-notifications").then(async (m) => {
         const { PushNotifications } = m;
         PushNotifications.addListener("registration", (t) => {
-          savePushToken({ data: { token: t.value, platform: "android" } }).catch(() => {});
+          latestPushToken = t.value;
+          persistPushToken().catch(() => {});
         });
         PushNotifications.addListener("registrationError", (e) => {
           // eslint-disable-next-line no-console
@@ -54,6 +72,8 @@ export function useNativeApp() {
     ]).catch(() => {
       // Native APIs are best-effort; the web app must keep working regardless.
     });
+
+    return () => authListener.subscription.unsubscribe();
   }, []);
 
   return { isNative };

@@ -202,21 +202,37 @@ export const requestWithdraw = createServerFn({ method: "POST" })
 
     const newAccrued = Number(mining.accrued_amount);
 
+    const newId =
+      (atomicResult as any).withdrawal_id ??
+      (atomicResult as any).id ??
+      (
+        await supabaseAdmin
+          .from("withdrawals")
+          .select("id")
+          .eq("user_id", userId)
+          .eq("status", "pending")
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle()
+      ).data?.id;
+
+    // ---- নতুন withdraw request → অ্যাডমিনের ফোনে push notification ----
+    // Auto-pay/Telegram কাজের আগে পাঠাই, যাতে ওই service ধীর হলেও alert দেরি না হয়।
+    try {
+      const { sendPushToAdmins } = await import("@/lib/push.server");
+      const uidA = (kycProf as any)?.uid_seq ?? "—";
+      const nameA = (kycProf as any)?.display_name ?? "User";
+      await sendPushToAdmins({
+        title: `💸 নতুন Withdraw ${payout}৳`,
+        body: `${nameA} (UID ${uidA}) · ${chosen} · ${walletNumber}`,
+        url: "/admin/withdrawals",
+      });
+    } catch (error) {
+      console.error("[withdraw] admin push failed", error);
+    }
+
     // ---- অটো পেমেন্ট (iPayBD) — admin switch on থাকলে সাথে সাথেই পাঠাবে ----
     try {
-      const newId =
-        (atomicResult as any).withdrawal_id ??
-        (atomicResult as any).id ??
-        (
-          await supabaseAdmin
-            .from("withdrawals")
-            .select("id")
-            .eq("user_id", userId)
-            .eq("status", "pending")
-            .order("created_at", { ascending: false })
-            .limit(1)
-            .maybeSingle()
-        ).data?.id;
       if (newId) {
         const { maybeAutoPay } = await import("@/lib/payout.server");
         await maybeAutoPay(String(newId));
@@ -230,21 +246,6 @@ export const requestWithdraw = createServerFn({ method: "POST" })
       }
     } catch {
       // অটো পেমেন্ট ফেল করলেও রিকোয়েস্ট থেকে যাবে (admin ম্যানুয়ালি দিবে)
-    }
-
-
-    // ---- নতুন withdraw request → অ্যাডমিনের ফোনে push notification ----
-    try {
-      const { sendPushToAdmins } = await import("@/lib/push.server");
-      const uidA = (kycProf as any)?.uid_seq ?? "—";
-      const nameA = (kycProf as any)?.display_name ?? "User";
-      await sendPushToAdmins({
-        title: `💸 নতুন Withdraw ${payout}৳`,
-        body: `${nameA} (UID ${uidA}) · ${chosen} · ${walletNumber}`,
-        url: "/admin/withdrawals",
-      });
-    } catch {
-      /* push ফেল করলেও রিকোয়েস্ট ঠিক থাকবে */
     }
 
     // ---- সন্দেহজনক লেনদেন হলে Telegram-এ admin-কে mention করে জানাবে ----
