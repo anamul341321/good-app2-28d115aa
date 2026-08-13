@@ -1,74 +1,111 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-type MsgRow = {
-  id: string;
-  sender_id: string;
-  receiver_id: string;
-  body: string;
-  read_at: string | null;
-  created_at: string;
-};
-
-/** নিজের সব চ্যাটের সারসংক্ষেপ — শেষ মেসেজ ও না-পড়া সংখ্যা */
+/** নিজের সব চ্যাট — বন্ধুর চ্যাট, মেসেজ রিকোয়েস্ট ও গ্রুপ */
 export const listChats = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const me = context.userId;
-    const { data: rows } = await (context.supabase as any)
-      .from("friend_messages")
-      .select("id, sender_id, receiver_id, body, read_at, created_at")
-      .order("created_at", { ascending: false })
-      .limit(400);
+    const sb = context.supabase as any;
+    const { MSG_COLS, peopleMap, previewOf } = await import("./chat.server");
 
-    const msgs = (rows ?? []) as MsgRow[];
-    const byPeer = new Map<
-      string,
-      { peerId: string; lastBody: string; lastAt: string; mine: boolean; unread: number }
-    >();
+    const [{ data: msgRows }, { data: linkRows }, { data: memberRows }] = await Promise.all([
+      sb.from("friend_messages").select(MSG_COLS).order("created_at", { ascending: false }).limit(600),
+      sb.from("friend_links").select("id, requester_id, addressee_id, status"),
+      sb.from("chat_group_members").select("group_id, last_read_at").eq("user_id", me),
+    ]);
+
+    const msgs = (msgRows ?? []) as any[];
+    const links = (linkRows ?? []) as any[];
+    const myGroups = (memberRows ?? []) as any[];
+    const groupRead = new Map<string, string>(myGroups.map((g) => [g.group_id, g.last_read_at]));
+
+    const friendIds = new Set<string>();
+    for (const l of links) {
+      if (l.status !== "accepted") continue;
+      friendIds.add(l.requester_id === me ? l.addressee_id : l.requester_id);
+    }
+
+    type Conv = {
+      peerId: string;
+      lastBody: string;
+      lastAt: string;
+      mine: boolean;
+      unread: number;
+    };
+    const byPeer = new Map<string, Conv>();
+    const byGroup = new Map<string, { groupId: string; lastBody: string; lastAt: string; unread: number }>();
+
     for (const m of msgs) {
+      if (m.group_id) {
+        if (!groupRead.has(m.group_id)) continue;
+        const cur = byGroup.get(m.group_id);
+        const lastRead = groupRead.get(m.group_id) ?? "";
+        const isUnread = m.sender_id !== me && m.created_at > lastRead ? 1 : 0;
+        if (!cur) {
+          byGroup.set(m.group_id, {
+            groupId: m.group_id,
+            lastBody: previewOf(m),
+            lastAt: m.created_at,
+            unread: isUnread,
+          });
+        } else cur.unread += isUnread;
+        continue;
+      }
       const peerId = m.sender_id === me ? m.receiver_id : m.sender_id;
+      if (!peerId) continue;
       const cur = byPeer.get(peerId);
       const unreadHit = m.receiver_id === me && !m.read_at ? 1 : 0;
       if (!cur) {
         byPeer.set(peerId, {
           peerId,
-          lastBody: m.body,
+          lastBody: previewOf(m),
           lastAt: m.created_at,
           mine: m.sender_id === me,
           unread: unreadHit,
         });
-      } else {
-        cur.unread += unreadHit;
-      }
+      } else cur.unread += unreadHit;
     }
 
-    const ids = Array.from(byPeer.keys());
-    let names = new Map<string, { display_name: string | null; uid_seq: number | null }>();
-    if (ids.length) {
-      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      const { data: profiles } = await supabaseAdmin
-        .from("profiles")
-        .select("id, display_name, uid_seq")
-        .in("id", ids);
-      names = new Map(
-        ((profiles ?? []) as any[]).map((p) => [p.id, { display_name: p.display_name, uid_seq: p.uid_seq }]),
-      );
-    }
-
-    const chats = Array.from(byPeer.values())
+    const names = await peopleMap(Array.from(byPeer.keys()));
+    const all = Array.from(byPeer.values())
       .map((c) => ({
         ...c,
         name: names.get(c.peerId)?.display_name ?? "ইউজার",
         uid: names.get(c.peerId)?.uid_seq ?? null,
+        isFriend: friendIds.has(c.peerId),
       }))
       .sort((a, b) => (a.lastAt < b.lastAt ? 1 : -1));
 
-    const unreadTotal = chats.reduce((s, c) => s + c.unread, 0);
-    return { chats, unreadTotal };
+    let groups: Array<{ groupId: string; name: string; lastBody: string; lastAt: string; unread: number }> = [];
+    if (byGroup.size) {
+      const { data: gRows } = await sb
+        .from("chat_groups")
+        .select("id, name")
+        .in("id", Array.from(byGroup.keys()));
+      const gNames = new Map<string, string>(((gRows ?? []) as any[]).map((g) => [g.id, g.name]));
+      groups = Array.from(byGroup.values())
+        .map((g) => ({ ...g, name: gNames.get(g.groupId) ?? "গ্রুপ" }))
+        .sort((a, b) => (a.lastAt < b.lastAt ? 1 : -1));
+    }
+    // মেসেজ নেই এমন গ্রুপগুলোও দেখাই
+    const shown = new Set(groups.map((g) => g.groupId));
+    const missing = myGroups.filter((g) => !shown.has(g.group_id)).map((g) => g.group_id);
+    if (missing.length) {
+      const { data: gRows } = await sb.from("chat_groups").select("id, name, created_at").in("id", missing);
+      for (const g of (gRows ?? []) as any[]) {
+        groups.push({ groupId: g.id, name: g.name, lastBody: "নতুন গ্রুপ", lastAt: g.created_at, unread: 0 });
+      }
+    }
+
+    const chats = all.filter((c) => c.isFriend);
+    const requests = all.filter((c) => !c.isFriend);
+    const unreadTotal =
+      all.reduce((s, c) => s + c.unread, 0) + groups.reduce((s, g) => s + g.unread, 0);
+    return { chats, requests, groups, unreadTotal };
   });
 
-/** শুধু না-পড়া মেসেজের সংখ্যা — ব্যাজের জন্য হালকা কুয়েরি */
+/** শুধু না-পড়া সংখ্যা — ব্যাজের জন্য হালকা কুয়েরি */
 export const getUnreadMessageCount = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -80,78 +117,156 @@ export const getUnreadMessageCount = createServerFn({ method: "GET" })
     return { unread: count ?? 0 };
   });
 
-/** একজন বন্ধুর সাথে কথাবার্তা */
+/** একজনের সাথে কথাবার্তা (বন্ধু না হলেও — মেসেজ রিকোয়েস্ট) */
 export const getThread = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { peerId: string }) => ({ peerId: String(input?.peerId ?? "") }))
   .handler(async ({ data, context }) => {
     const me = context.userId;
-    if (!data.peerId) return { messages: [] as MsgRow[], peer: null };
+    const sb = context.supabase as any;
+    if (!data.peerId) return { messages: [], peer: null, me, friendStatus: "none", linkId: null };
+    const { MSG_COLS, shapeMessages, peopleMap } = await import("./chat.server");
 
-    const { data: rows } = await (context.supabase as any)
-      .from("friend_messages")
-      .select("id, sender_id, receiver_id, body, read_at, created_at")
-      .or(
-        `and(sender_id.eq.${me},receiver_id.eq.${data.peerId}),and(sender_id.eq.${data.peerId},receiver_id.eq.${me})`,
-      )
-      .order("created_at", { ascending: true })
-      .limit(300);
+    const [{ data: rows }, { data: link }] = await Promise.all([
+      sb
+        .from("friend_messages")
+        .select(MSG_COLS)
+        .is("group_id", null)
+        .or(
+          `and(sender_id.eq.${me},receiver_id.eq.${data.peerId}),and(sender_id.eq.${data.peerId},receiver_id.eq.${me})`,
+        )
+        .order("created_at", { ascending: true })
+        .limit(300),
+      sb
+        .from("friend_links")
+        .select("id, status, requester_id")
+        .or(
+          `and(requester_id.eq.${me},addressee_id.eq.${data.peerId}),and(requester_id.eq.${data.peerId},addressee_id.eq.${me})`,
+        )
+        .maybeSingle(),
+    ]);
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: prof } = await supabaseAdmin
-      .from("profiles")
-      .select("id, display_name, uid_seq")
-      .eq("id", data.peerId)
-      .maybeSingle();
-
+    const names = await peopleMap([data.peerId]);
+    const p = names.get(data.peerId);
     return {
-      messages: (rows ?? []) as MsgRow[],
+      messages: await shapeMessages((rows ?? []) as any[]),
       peer: {
         userId: data.peerId,
-        name: ((prof as any)?.display_name as string | null) ?? "ইউজার",
-        uid: ((prof as any)?.uid_seq as number | null) ?? null,
+        name: p?.display_name ?? "ইউজার",
+        uid: p?.uid_seq ?? null,
       },
       me,
+      friendStatus: (link?.status as string | undefined) ?? "none",
+      incomingRequest: !!link && link.status === "pending" && link.requester_id !== me,
+      linkId: (link?.id as string | undefined) ?? null,
     };
   });
 
-/** মেসেজ পাঠানো + অন্যপাশে push নোটিফিকেশন */
+/** মেসেজ পাঠানো — টেক্সট, ছবি, ভিডিও বা ভয়েস (DM অথবা গ্রুপ) */
 export const sendMessage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { peerId: string; body: string }) => ({
-    peerId: String(input?.peerId ?? ""),
-    body: String(input?.body ?? "").trim().slice(0, 2000),
-  }))
+  .inputValidator(
+    (input: {
+      peerId?: string;
+      groupId?: string;
+      body?: string;
+      kind?: string;
+      mediaPath?: string;
+      mediaMeta?: Record<string, any>;
+    }) => ({
+      peerId: input?.peerId ? String(input.peerId) : null,
+      groupId: input?.groupId ? String(input.groupId) : null,
+      body: String(input?.body ?? "").trim().slice(0, 4000),
+      kind: ["text", "image", "video", "voice"].includes(String(input?.kind ?? "text"))
+        ? String(input?.kind ?? "text")
+        : "text",
+      mediaPath: input?.mediaPath ? String(input.mediaPath).slice(0, 400) : null,
+      mediaMeta: (input?.mediaMeta ?? null) as Record<string, any> | null,
+    }),
+  )
   .handler(async ({ data, context }) => {
-    if (!data.peerId || !data.body) throw new Error("মেসেজ খালি");
-    const { data: inserted, error } = await (context.supabase as any)
+    const sb = context.supabase as any;
+    if (!data.peerId && !data.groupId) throw new Error("কাকে পাঠাবেন?");
+    if (data.kind === "text" && !data.body) throw new Error("মেসেজ খালি");
+    if (data.kind !== "text" && !data.mediaPath) throw new Error("ফাইল পাওয়া যায়নি");
+    const { MSG_COLS, shapeMessages, previewOf } = await import("./chat.server");
+
+    const { data: inserted, error } = await sb
       .from("friend_messages")
-      .insert({ sender_id: context.userId, receiver_id: data.peerId, body: data.body })
-      .select("id, sender_id, receiver_id, body, read_at, created_at")
+      .insert({
+        sender_id: context.userId,
+        receiver_id: data.peerId,
+        group_id: data.groupId,
+        body: data.body,
+        kind: data.kind,
+        media_url: data.mediaPath,
+        media_meta: data.mediaMeta,
+      })
+      .select(MSG_COLS)
       .maybeSingle();
-    if (error) throw new Error("মেসেজ পাঠানো যায়নি — বন্ধু তালিকায় আছে কি?");
+    if (error) throw new Error("মেসেজ পাঠানো যায়নি");
 
     try {
-      const { data: prof } = await (context.supabase as any)
+      const { data: prof } = await sb
         .from("profiles")
         .select("display_name")
         .eq("id", context.userId)
         .maybeSingle();
-      const name = ((prof as any)?.display_name as string | null) ?? "একজন বন্ধু";
+      const name = (prof?.display_name as string | null) ?? "একজন বন্ধু";
+      const preview = previewOf({ kind: data.kind, body: data.body });
       const { sendPushToUser } = await import("./push.server");
-      await sendPushToUser(data.peerId, {
-        title: `💬 ${name}`,
-        body: data.body.slice(0, 120),
-        url: "/chat",
-      });
+      if (data.peerId) {
+        await sendPushToUser(data.peerId, {
+          title: `💬 ${name}`,
+          body: preview.slice(0, 120),
+          url: `/chat/${context.userId}`,
+        });
+      } else if (data.groupId) {
+        const { data: members } = await sb
+          .from("chat_group_members")
+          .select("user_id")
+          .eq("group_id", data.groupId);
+        const { data: g } = await sb
+          .from("chat_groups")
+          .select("name")
+          .eq("id", data.groupId)
+          .maybeSingle();
+        await Promise.all(
+          ((members ?? []) as any[])
+            .filter((m) => m.user_id !== context.userId)
+            .map((m) =>
+              sendPushToUser(m.user_id, {
+                title: `👥 ${g?.name ?? "গ্রুপ"}`,
+                body: `${name}: ${preview.slice(0, 100)}`,
+                url: `/chat/group/${data.groupId}`,
+              }),
+            ),
+        );
+      }
     } catch {
       /* push ব্যর্থ হলেও মেসেজ যাবে */
     }
 
-    return { ok: true, message: inserted as MsgRow };
+    const [shaped] = await shapeMessages([inserted as any]);
+    return { ok: true, message: shaped };
   });
 
-/** চ্যাট খুললে সব মেসেজ "seen" হয়ে যাবে */
+/** নিজের পাঠানো মেসেজ মুছে ফেলা (সবার জন্য) */
+export const deleteMessage = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { id: string }) => ({ id: String(input?.id ?? "") }))
+  .handler(async ({ data, context }) => {
+    if (!data.id) return { ok: false };
+    const { error } = await (context.supabase as any)
+      .from("friend_messages")
+      .update({ deleted_at: new Date().toISOString(), body: "" })
+      .eq("id", data.id)
+      .eq("sender_id", context.userId);
+    if (error) throw new Error("মেসেজ মোছা যায়নি");
+    return { ok: true };
+  });
+
+/** চ্যাট খুললে সব মেসেজ "সিন" */
 export const markChatRead = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { peerId: string }) => ({ peerId: String(input?.peerId ?? "") }))
@@ -163,5 +278,121 @@ export const markChatRead = createServerFn({ method: "POST" })
       .eq("receiver_id", context.userId)
       .eq("sender_id", data.peerId)
       .is("read_at", null);
+    return { ok: true };
+  });
+
+/** গ্রুপ খুললে "সিন" */
+export const markGroupRead = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { groupId: string }) => ({ groupId: String(input?.groupId ?? "") }))
+  .handler(async ({ data, context }) => {
+    if (!data.groupId) return { ok: false };
+    await (context.supabase as any)
+      .from("chat_group_members")
+      .update({ last_read_at: new Date().toISOString() })
+      .eq("group_id", data.groupId)
+      .eq("user_id", context.userId);
+    return { ok: true };
+  });
+
+/** নতুন গ্রুপ বানানো */
+export const createGroup = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { name: string; memberIds?: string[] }) => ({
+    name: String(input?.name ?? "").trim().slice(0, 60),
+    memberIds: Array.isArray(input?.memberIds) ? input!.memberIds.map(String).slice(0, 100) : [],
+  }))
+  .handler(async ({ data, context }) => {
+    if (!data.name) throw new Error("গ্রুপের নাম দিন");
+    const sb = context.supabase as any;
+    const { data: g, error } = await sb
+      .from("chat_groups")
+      .insert({ name: data.name, created_by: context.userId })
+      .select("id, name")
+      .maybeSingle();
+    if (error || !g) throw new Error("গ্রুপ তৈরি হয়নি");
+
+    const rows = [
+      { group_id: g.id, user_id: context.userId, role: "admin" },
+      ...Array.from(new Set(data.memberIds.filter((m) => m !== context.userId))).map((m) => ({
+        group_id: g.id,
+        user_id: m,
+        role: "member",
+      })),
+    ];
+    await sb.from("chat_group_members").insert(rows);
+    return { ok: true, groupId: g.id as string };
+  });
+
+/** গ্রুপের কথাবার্তা + সদস্য তালিকা */
+export const getGroupThread = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { groupId: string }) => ({ groupId: String(input?.groupId ?? "") }))
+  .handler(async ({ data, context }) => {
+    const sb = context.supabase as any;
+    const me = context.userId;
+    if (!data.groupId) return { group: null, messages: [], members: [], me, isAdmin: false };
+    const { MSG_COLS, shapeMessages, peopleMap } = await import("./chat.server");
+
+    const [{ data: g }, { data: rows }, { data: mem }] = await Promise.all([
+      sb.from("chat_groups").select("id, name, created_by, created_at").eq("id", data.groupId).maybeSingle(),
+      sb
+        .from("friend_messages")
+        .select(MSG_COLS)
+        .eq("group_id", data.groupId)
+        .order("created_at", { ascending: true })
+        .limit(300),
+      sb.from("chat_group_members").select("user_id, role").eq("group_id", data.groupId),
+    ]);
+    if (!g) return { group: null, messages: [], members: [], me, isAdmin: false };
+
+    const members = (mem ?? []) as any[];
+    const names = await peopleMap([...members.map((m) => m.user_id), ...((rows ?? []) as any[]).map((r) => r.sender_id)]);
+    const shaped = await shapeMessages((rows ?? []) as any[]);
+    return {
+      group: { id: g.id as string, name: g.name as string },
+      messages: shaped.map((m) => ({
+        ...m,
+        senderName: names.get(m.senderId)?.display_name ?? "ইউজার",
+      })),
+      members: members.map((m) => ({
+        userId: m.user_id as string,
+        role: m.role as string,
+        name: names.get(m.user_id)?.display_name ?? "ইউজার",
+        uid: names.get(m.user_id)?.uid_seq ?? null,
+      })),
+      me,
+      isAdmin: members.some((m) => m.user_id === me && m.role === "admin") || g.created_by === me,
+    };
+  });
+
+/** গ্রুপে সদস্য যোগ */
+export const addGroupMembers = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { groupId: string; memberIds: string[] }) => ({
+    groupId: String(input?.groupId ?? ""),
+    memberIds: Array.isArray(input?.memberIds) ? input!.memberIds.map(String).slice(0, 50) : [],
+  }))
+  .handler(async ({ data, context }) => {
+    if (!data.groupId || !data.memberIds.length) return { ok: false };
+    await (context.supabase as any)
+      .from("chat_group_members")
+      .upsert(
+        data.memberIds.map((m) => ({ group_id: data.groupId, user_id: m, role: "member" })),
+        { onConflict: "group_id,user_id" },
+      );
+    return { ok: true };
+  });
+
+/** গ্রুপ ছেড়ে দেওয়া */
+export const leaveGroup = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { groupId: string }) => ({ groupId: String(input?.groupId ?? "") }))
+  .handler(async ({ data, context }) => {
+    await (context.supabase as any)
+      .from("chat_group_members")
+      .delete()
+      .eq("group_id", data.groupId)
+      .eq("user_id", context.userId);
     return { ok: true };
   });
