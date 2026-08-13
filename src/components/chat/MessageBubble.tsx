@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Play, Trash2, Ban } from "lucide-react";
+import { Play, Trash2, Ban, PhoneMissed, PhoneIncoming, Video } from "lucide-react";
 
 export type ChatMsg = {
   id: string;
@@ -65,6 +65,22 @@ export function MessageBubble({
             <p className="flex items-center gap-1.5 text-xs font-bold italic opacity-80">
               <Ban className="h-3.5 w-3.5" /> মেসেজ মুছে ফেলা হয়েছে
             </p>
+          ) : m.kind === "call" ? (
+            <div className="flex min-w-52 items-center gap-3 py-1">
+              <span className={`grid h-10 w-10 place-items-center rounded-full ${
+                m.mediaMeta?.status === "ended" ? "bg-emerald-500/20" : "bg-rose-500/20"
+              }`}>
+                {m.mediaMeta?.status === "ended" ? (
+                  m.mediaMeta?.video ? <Video className="h-5 w-5" /> : <PhoneIncoming className="h-5 w-5" />
+                ) : (
+                  <PhoneMissed className="h-5 w-5" />
+                )}
+              </span>
+              <div>
+                <p className="text-sm font-black">{m.body}</p>
+                <p className="text-[10px] font-bold opacity-75">{m.mediaMeta?.video ? "ভিডিও কল" : "অডিও কল"}</p>
+              </div>
+            </div>
           ) : m.kind === "image" && m.mediaUrl ? (
             <img
               src={m.mediaUrl}

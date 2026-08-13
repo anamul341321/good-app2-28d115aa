@@ -89,7 +89,7 @@ async function getAccessToken(sa: ServiceAccount): Promise<string> {
 /** এক বা একাধিক device token-এ push পাঠায়। token invalid হলে DB থেকে মুছে দেয়। */
 export async function sendPushToTokens(
   tokens: string[],
-  payload: { title: string; body: string; url?: string },
+  payload: { title: string; body: string; url?: string; data?: Record<string, string>; call?: boolean },
 ): Promise<{ sent: number; failed: number }> {
   const sa = readServiceAccount();
   if (!sa || tokens.length === 0) return { sent: 0, failed: 0 };
@@ -118,11 +118,14 @@ export async function sendPushToTokens(
             body: JSON.stringify({
               message: {
                 token,
-                notification: { title: payload.title, body: payload.body },
-                data: payload.url ? { url: payload.url } : undefined,
+                notification: payload.call ? undefined : { title: payload.title, body: payload.body },
+                data: { ...(payload.data ?? {}), ...(payload.url ? { url: payload.url } : {}) },
                 android: {
                   priority: "HIGH",
-                  notification: { sound: "default", default_vibrate_timings: true },
+                  ttl: payload.call ? "45s" : undefined,
+                  notification: payload.call
+                    ? undefined
+                    : { sound: "default", default_vibrate_timings: true },
                 },
               },
             }),
@@ -151,6 +154,30 @@ export async function sendPushToTokens(
   }
 
   return { sent, failed: tokens.length - sent };
+}
+
+/** Android native incoming-call screen ও ringtone চালানোর জন্য data-only high-priority push। */
+export async function sendIncomingCallPush(
+  userId: string,
+  call: { callId: string; callerId: string; callerName: string; video: boolean },
+) {
+  if (!process.env.FIREBASE_SERVICE_ACCOUNT_JSON) return { sent: 0, failed: 0 };
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data } = await supabaseAdmin.from("push_tokens").select("token").eq("user_id", userId);
+  const tokens = [...new Set((data ?? []).map((row: any) => row.token as string))];
+  return sendPushToTokens(tokens, {
+    title: call.video ? "ভিডিও কল আসছে" : "কল আসছে",
+    body: call.callerName,
+    call: true,
+    data: {
+      type: "incoming_call",
+      call_id: call.callId,
+      caller_id: call.callerId,
+      caller_name: call.callerName,
+      video: String(call.video),
+      url: `/chat/${call.callerId}?call=${call.callId}`,
+    },
+  });
 }
 
 /** নির্দিষ্ট ইউজারের সব ফোনে push পাঠাও */

@@ -125,9 +125,9 @@ export const getThread = createServerFn({ method: "POST" })
     const me = context.userId;
     const sb = context.supabase as any;
     if (!data.peerId) return { messages: [], peer: null, me, friendStatus: "none", linkId: null };
-    const { MSG_COLS, shapeMessages, peopleMap } = await import("./chat.server");
+    const { MSG_COLS, shapeMessages, shapeCallMessages, peopleMap } = await import("./chat.server");
 
-    const [{ data: rows }, { data: link }] = await Promise.all([
+    const [{ data: rows }, { data: link }, { data: calls }] = await Promise.all([
       sb
         .from("friend_messages")
         .select(MSG_COLS)
@@ -144,12 +144,24 @@ export const getThread = createServerFn({ method: "POST" })
           `and(requester_id.eq.${me},addressee_id.eq.${data.peerId}),and(requester_id.eq.${data.peerId},addressee_id.eq.${me})`,
         )
         .maybeSingle(),
+      sb
+        .from("call_sessions")
+        .select("id, caller_id, callee_id, call_type, status, accepted_at, ended_at, created_at")
+        .or(
+          `and(caller_id.eq.${me},callee_id.eq.${data.peerId}),and(caller_id.eq.${data.peerId},callee_id.eq.${me})`,
+        )
+        .not("status", "in", "(calling,ringing,accepted)")
+        .order("created_at", { ascending: true })
+        .limit(100),
     ]);
 
     const names = await peopleMap([data.peerId]);
     const p = names.get(data.peerId);
     return {
-      messages: await shapeMessages((rows ?? []) as any[]),
+      messages: [
+        ...(await shapeMessages((rows ?? []) as any[])),
+        ...shapeCallMessages((calls ?? []) as any[]),
+      ].sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
       peer: {
         userId: data.peerId,
         name: p?.display_name ?? "ইউজার",
