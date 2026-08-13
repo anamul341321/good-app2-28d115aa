@@ -329,6 +329,8 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     if (!peer || !pendingOffer.current || !myId) return;
     try {
       setState("connecting");
+      isCaller.current = false;
+      peerIdRef.current = peer.id;
       const pc = await buildPeer(peer.id, withVideo);
       await pc.setRemoteDescription(new RTCSessionDescription(pendingOffer.current));
       for (const c of pendingIce.current) {
