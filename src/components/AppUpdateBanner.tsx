@@ -4,6 +4,7 @@ import { Download, Rocket } from "lucide-react";
 import { toast } from "sonner";
 import { getAppStatus } from "@/lib/app-status.functions";
 import { isNativeApp } from "@/lib/native-google";
+import { Button } from "@/components/ui/button";
 
 /**
  * নেটিভ অ্যাপে নতুন ভার্সন এলে উপরে আপডেট ব্যানার দেখায়।
@@ -65,25 +66,27 @@ export function AppUpdateBanner() {
   const startUpdate = async () => {
     toast.info("ডাউনলোড শুরু হচ্ছে…");
 
-    // খুব পুরোনো APK-তে Browser plugin ছিল না। Android intent সরাসরি Chrome/
-    // system browser-এ পাঠায়, তাই WebView binary download চুপচাপ আটকে দেয় না।
-    const parsed = new URL(absolute);
-    const intentUrl = `intent://${parsed.host}${parsed.pathname}${parsed.search}#Intent;scheme=${parsed.protocol.replace(":", "")};action=android.intent.action.VIEW;end`;
+    // Capacitor Browser is the reliable way to escape the app WebView. The
+    // previous window.open fallback returned a truthy WebView object even when
+    // Android opened nothing, so the remaining fallbacks never ran.
     try {
-      window.location.assign(intentUrl);
+      const { Browser } = await import("@capacitor/browser");
+      await Browser.open({ url: absolute, presentationStyle: "popover" });
       return;
     } catch {
-      /* ignore, try next */
+      /* Older builds may not contain the native Browser plugin. */
     }
 
-    // Non-Android/native fallback.
+    const parsed = new URL(absolute);
+    const intentUrl = `intent://${parsed.host}${parsed.pathname}${parsed.search}#Intent;scheme=${parsed.protocol.replace(":", "")};package=com.android.chrome;S.browser_fallback_url=${encodeURIComponent(absolute)};end`;
     try {
-      const opened = window.open(absolute, "_system");
-      if (opened) return;
+      window.location.href = intentUrl;
+      window.setTimeout(() => {
+        window.location.href = absolute;
+      }, 800);
     } catch {
-      /* ignore */
+      window.location.href = absolute;
     }
-    window.location.href = absolute;
   };
 
   return (
@@ -106,15 +109,16 @@ export function AppUpdateBanner() {
               v{installed} → <span className="font-bold text-cyan-300">v{latest}</span> • আপডেট করুন
             </p>
           </div>
-          <button
+          <Button
+            type="button"
             onClick={startUpdate}
-            className="shrink-0 rounded-xl px-4 py-2 text-xs font-black text-white btn-press"
+            className="h-auto shrink-0 rounded-xl px-4 py-2 text-xs font-black text-white btn-press"
             style={{ background: "linear-gradient(100deg,#f59e0b,#ef4444 55%,#a855f7)" }}
           >
             <span className="flex items-center gap-1">
               <Download className="h-4 w-4" /> আপডেট
             </span>
-          </button>
+          </Button>
         </div>
       </div>
     </div>
