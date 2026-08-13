@@ -11,6 +11,24 @@ import com.getcapacitor.BridgeWebViewClient;
 
 public class MainActivity extends BridgeActivity {
     private static final String APP_URL = "https://www.goodapp2.live";
+    private static final String APK_DOWNLOAD_PATH = "/api/public/app/download";
+
+    private boolean openApkDownload(Uri uri) {
+        if (uri == null || !APK_DOWNLOAD_PATH.equals(uri.getPath())) return false;
+        try {
+            Intent downloadIntent = new Intent(Intent.ACTION_VIEW, uri);
+            downloadIntent.addCategory(Intent.CATEGORY_BROWSABLE);
+            // The app owns goodapp2.live deep links, so explicitly use Chrome
+            // when available to prevent the download URL reopening this app.
+            downloadIntent.setPackage("com.android.chrome");
+            startActivity(downloadIntent);
+        } catch (Exception chromeUnavailable) {
+            Intent chooserIntent = new Intent(Intent.ACTION_VIEW, uri);
+            chooserIntent.addCategory(Intent.CATEGORY_BROWSABLE);
+            startActivity(Intent.createChooser(chooserIntent, "Good-App আপডেট ডাউনলোড করুন"));
+        }
+        return true;
+    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -32,6 +50,7 @@ public class MainActivity extends BridgeActivity {
         appWebView.setWebViewClient(new BridgeWebViewClient(bridge) {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                if (request.isForMainFrame() && openApkDownload(request.getUrl())) return true;
                 String scheme = request.getUrl().getScheme();
                 // Main-frame web navigation must stay in the native app. This also
                 // catches redirects before Capacitor can hand them to Chrome.
@@ -45,6 +64,7 @@ public class MainActivity extends BridgeActivity {
             @Override
             @SuppressWarnings("deprecation")
             public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                if (url != null && openApkDownload(Uri.parse(url))) return true;
                 if (url != null && (url.startsWith("https://") || url.startsWith("http://"))) {
                     view.loadUrl(url);
                     return true;

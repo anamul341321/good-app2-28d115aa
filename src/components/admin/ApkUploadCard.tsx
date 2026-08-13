@@ -4,7 +4,12 @@ import { Upload, Loader2, Smartphone, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { adminCreateApkUpload, adminGetBonusSettings, adminSetApkRelease } from "@/lib/admin.functions";
 
-const CURRENT_ANDROID_VERSION = "1.4";
+const CURRENT_ANDROID_VERSION = "1.5";
+
+function normalizeAndroidVersion(value: string): string {
+  const match = value.trim().match(/\d+(?:\.\d+){1,2}/);
+  return match?.[0] ?? "";
+}
 
 /**
  * অ্যাডমিন প্যানেল থেকে APK আপলোড — ফাইলটা সরাসরি ব্রাউজার থেকে
@@ -41,6 +46,8 @@ export function ApkUploadCard() {
 
   const upload = useMutation({
     mutationFn: async (picked: File) => {
+      const releaseVersion = normalizeAndroidVersion(version);
+      if (!releaseVersion) throw new Error("সঠিক ভার্সন দিন—যেমন 1.5");
       let file = picked;
       // GitHub Actions থেকে নামানো artifact একটা .zip — ভিতরের .apk বের করে নিই
       if (/\.zip$/i.test(picked.name) || picked.type === "application/zip") {
@@ -55,7 +62,7 @@ export function ApkUploadCard() {
         });
       }
       if (!/\.apk$/i.test(file.name)) throw new Error("শুধু .apk বা .zip ফাইল দিন");
-      const { path, signedUrl } = await adminCreateApkUpload({ data: { version } });
+      const { path, signedUrl } = await adminCreateApkUpload({ data: { version: releaseVersion } });
       await new Promise<void>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.open("PUT", signedUrl);
@@ -67,7 +74,7 @@ export function ApkUploadCard() {
         xhr.onerror = () => reject(new Error("নেটওয়ার্ক সমস্যা — আবার চেষ্টা করুন"));
         xhr.send(file);
       });
-      return adminSetApkRelease({ data: { path, version } });
+      return adminSetApkRelease({ data: { path, version: releaseVersion } });
     },
     onSuccess: (res) => {
       setProgress(null);

@@ -2491,7 +2491,9 @@ export const adminDeleteUserNotice = createServerFn({ method: "POST" })
 
 /** APK আপলোডের জন্য signed upload URL (ফাইল সরাসরি ব্রাউজার থেকে storage-এ যায়) */
 export const adminCreateApkUpload = createServerFn({ method: "POST" })
-  .inputValidator((i: unknown) => z.object({ version: z.string().trim().min(1).max(20) }).parse(i))
+  .inputValidator((i: unknown) => z.object({
+    version: z.string().trim().regex(/^\d+\.\d+(?:\.\d+)?$/, "সঠিক APK version দিন—যেমন 1.5"),
+  }).parse(i))
   .handler(async ({ data }) => {
     const supabaseAdmin = await gate();
     const path = `good-app-v${data.version.replace(/[^0-9a-zA-Z._-]/g, "")}-${Date.now()}.apk`;
@@ -2506,11 +2508,11 @@ export const adminCreateApkUpload = createServerFn({ method: "POST" })
 export const adminSetApkRelease = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => z.object({
     path: z.string().trim().min(1).max(300),
-    version: z.string().trim().min(1).max(20),
+    version: z.string().trim().regex(/^\d+\.\d+(?:\.\d+)?$/, "সঠিক APK version দিন—যেমন 1.5"),
   }).parse(i))
   .handler(async ({ data }) => {
     const supabaseAdmin = await gate();
-    const cleanVersion = data.version.replace(/^v/i, "");
+    const cleanVersion = data.version;
     const { data: saved, error } = await supabaseAdmin
       .from("bonus_settings")
       .upsert({
