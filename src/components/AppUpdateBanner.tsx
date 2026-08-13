@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Download, Rocket } from "lucide-react";
+import { Download, Rocket, X } from "lucide-react";
 import { toast } from "sonner";
 import { getAppStatus } from "@/lib/app-status.functions";
 import { isNativeApp } from "@/lib/native-google";
@@ -37,14 +37,31 @@ function isNewer(latest: string | null | undefined, installed: string | null): b
 export function AppUpdateBanner() {
   const native = typeof window !== "undefined" && isNativeApp();
   const [installed, setInstalled] = useState<string | null>(null);
+  const [started, setStarted] = useState(false);
+  const [hidden, setHidden] = useState(false);
 
-  useEffect(() => {
-    if (!native) return;
+  const readVersion = () =>
     import("@capacitor/app")
       .then((m) => m.App.getInfo())
       .then((info) => setInstalled(info?.version ?? null))
       .catch(() => setInstalled(null));
+
+  useEffect(() => {
+    if (!native) return;
+    void readVersion();
+    // অ্যাপ আবার সামনে এলে ভার্সন আবার পড়ে — আপডেট হয়ে গেলে ব্যানার নিজেই চলে যাবে
+    let remove: (() => void) | undefined;
+    import("@capacitor/app")
+      .then(async (m) => {
+        const handle = await m.App.addListener("appStateChange", ({ isActive }) => {
+          if (isActive) void readVersion();
+        });
+        remove = () => handle.remove();
+      })
+      .catch(() => {});
+    return () => remove?.();
   }, [native]);
+
 
   const { data } = useQuery({
     queryKey: ["app-status-apk"],
@@ -59,13 +76,17 @@ export function AppUpdateBanner() {
 
   if (!native || !url || !installed || !isNewer(latest, installed)) return null;
   if (/play\.google\.com/i.test(url)) return null;
+  if (hidden) return null;
 
   const absolute = /^https?:\/\//i.test(url)
     ? url
     : `https://www.goodapp2.live${url.startsWith("/") ? url : `/${url}`}`;
 
   const startUpdate = async () => {
-    toast.info("ডাউনলোড শুরু হচ্ছে…");
+    setStarted(true);
+    toast.success("ডাউনলোড শুরু হয়েছে — উপরের Notification bar-এ প্রগ্রেস দেখুন", {
+      duration: 6000,
+    });
 
     // New builds contain the native Browser plugin, which reliably hands the
     // HTTPS download to Android. Never construct an intent:// URL here: older
@@ -117,11 +138,32 @@ export function AppUpdateBanner() {
             style={{ background: "linear-gradient(100deg,#f59e0b,#ef4444 55%,#a855f7)" }}
           >
             <span className="flex items-center gap-1">
-              <Download className="h-4 w-4" /> আপডেট
+              <Download className="h-4 w-4" /> {started ? "আবার" : "আপডেট"}
             </span>
           </Button>
+          <button
+            type="button"
+            onClick={() => setHidden(true)}
+            aria-label="বন্ধ করুন"
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white/10 text-white btn-press"
+          >
+            <X className="h-4 w-4" />
+          </button>
         </div>
+
+        {started && (
+          <div className="relative mt-3 rounded-xl bg-white/10 p-2.5 text-[11px] leading-snug text-white/85">
+            <p className="font-black text-cyan-300">📥 ডাউনলোড চলছে — এরপর কী করবেন</p>
+            <p className="mt-1">
+              ১) ফোনের <b>Notification bar</b> নামিয়ে ডাউনলোড প্রগ্রেস দেখুন।
+              <br />২) শেষ হলে ফাইলটিতে <b>ট্যাপ</b> করুন (অথবা <b>Files → Downloads</b> ফোল্ডার থেকে
+              <b> Good-App-v{latest}.apk</b>)।
+              <br />৩) <b>Install / Update</b> চাপুন — ইনস্টল হয়ে গেলে এই ব্যানার নিজেই চলে যাবে ✅
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
+
 }
