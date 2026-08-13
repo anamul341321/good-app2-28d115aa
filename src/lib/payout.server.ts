@@ -139,6 +139,13 @@ export async function applyPayoutResult(input: {
           `${payout}৳ আপনার ${String((w as any).provider).toUpperCase()} ${(w as any).wallet_number ?? ""} নম্বরে স্বয়ংক্রিয়ভাবে পাঠানো হয়েছে।` +
           `\nTrxID: ${input.detail}`,
       });
+
+      try {
+        const { markFastPayCardDone } = await import("@/lib/withdraw-fastpay.server");
+        await markFastPayCardDone({ withdrawalId: String(w.id), action: "paid", by: "Auto (iPayBD)" });
+      } catch {
+        /* ignore */
+      }
     } else {
       await supabaseAdmin
         .from("withdrawals")
