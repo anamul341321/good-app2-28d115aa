@@ -313,10 +313,13 @@ export function AuthPage() {
           20_000,
         ),
       );
-      const res: any = await Promise.race([startOtp({ data: { identifier, password } }), timeout]);
+      const res: any = await Promise.race([
+        startOtp({ data: { identifier, password, deviceId: getDeviceId() } }),
+        timeout,
+      ]);
       if (!res.needOtp && res.session) {
         await applySession(res.session);
-        toast.success("স্বাগতম!");
+        toast.success(res.trustedDevice ? "স্বাগতম! এই ডিভাইসে ২৪ ঘণ্টা OTP লাগবে না" : "স্বাগতম!");
         nav({ to: "/home" });
         return;
       }
