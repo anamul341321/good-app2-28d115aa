@@ -306,6 +306,20 @@ export function AuthPage() {
         if (referralCode.trim())
           localStorage.setItem("good-app-ref-code", referralCode.trim().toUpperCase());
       } catch {}
+
+      // নেটিভ অ্যাপ: ফোনে যুক্ত সব Gmail account সরাসরি দেখাবে
+      const { nativeGoogleAvailable, signInWithNativeGoogle } = await import("@/lib/native-google");
+      if (nativeGoogleAvailable()) {
+        const ok = await signInWithNativeGoogle();
+        if (ok) {
+          const { clearSharedSession } = await import("@/lib/auth-session");
+          clearSharedSession();
+          redirecting = true;
+          window.location.href = "/home";
+          return;
+        }
+      }
+
       const { lovable } = await import("@/integrations/lovable/index");
       const res: any = await lovable.auth.signInWithOAuth("google", {
         redirect_uri: window.location.origin,
