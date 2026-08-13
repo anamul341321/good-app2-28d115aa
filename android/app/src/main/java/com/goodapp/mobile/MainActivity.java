@@ -289,6 +289,16 @@ public class MainActivity extends BridgeActivity {
             || "good-app2.lovable.app".equals(host);
     }
 
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        Uri uri = intent != null ? intent.getData() : null;
+        if (uri != null && isAppDomain(uri) && bridge != null) {
+            bridge.getWebView().loadUrl(uri.toString());
+        }
+    }
+
 
     @Override
     public void onDestroy() {

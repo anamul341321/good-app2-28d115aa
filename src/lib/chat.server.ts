@@ -70,11 +70,47 @@ export async function shapeMessages(rows: DbMsg[]) {
   }));
 }
 
+export function shapeCallMessages(
+  rows: Array<{
+    id: string;
+    caller_id: string;
+    callee_id: string;
+    call_type: string;
+    status: string;
+    accepted_at: string | null;
+    ended_at: string | null;
+    created_at: string;
+  }>,
+) {
+  return rows.map((call) => {
+    const completed = call.status === "ended" && !!call.accepted_at;
+    const label = completed
+      ? call.call_type === "video" ? "ভিডিও কল শেষ হয়েছে" : "অডিও কল শেষ হয়েছে"
+      : call.status === "declined"
+        ? "কলটি কেটে দেওয়া হয়েছে"
+        : call.status === "cancelled"
+          ? "কলটি বাতিল করা হয়েছে"
+          : "মিসড কল";
+    return {
+      id: `call:${call.id}`,
+      senderId: call.caller_id,
+      body: label,
+      kind: "call",
+      mediaUrl: null,
+      mediaMeta: { callId: call.id, video: call.call_type === "video", status: call.status },
+      readAt: call.ended_at,
+      createdAt: call.created_at,
+      deleted: false,
+    };
+  });
+}
+
 /** শেষ মেসেজের সংক্ষিপ্ত টেক্সট */
 export function previewOf(m: { kind: string; body: string; deleted_at?: string | null }) {
   if (m.deleted_at) return "মেসেজ মুছে ফেলা হয়েছে";
   if (m.kind === "image") return "📷 ছবি";
   if (m.kind === "video") return "🎥 ভিডিও";
   if (m.kind === "voice") return "🎤 ভয়েস মেসেজ";
+  if (m.kind === "call") return m.body;
   return m.body;
 }
