@@ -14,18 +14,22 @@ export const searchPeople = createServerFn({ method: "POST" })
     query: String(input?.query ?? "").trim().slice(0, 60),
   }))
   .handler(async ({ data, context }) => {
-    if (data.query.length < 2) return { people: [] as PersonRow[] };
+    const digits = data.query.replace(/\D/g, "");
+    const isUid = digits.length > 0 && /^\D*\d+\D*$/.test(data.query);
+    // UID হলে ১ ডিজিটেও খুঁজবে; নাম হলে অন্তত ২ অক্ষর
+    if (!isUid && data.query.length < 2) return { people: [] as PersonRow[] };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const numeric = Number(data.query.replace(/\D/g, ""));
+    const numeric = Number(digits);
     let builder = supabaseAdmin.from("profiles").select("id, display_name, uid_seq").limit(15);
     builder =
-      Number.isFinite(numeric) && numeric > 0 && /^\D*\d+\D*$/.test(data.query)
+      isUid && Number.isFinite(numeric) && numeric > 0
         ? builder.eq("uid_seq", numeric)
         : builder.ilike("display_name", `%${data.query}%`);
     const { data: rows } = await builder;
     const people = ((rows ?? []) as PersonRow[]).filter((p) => p.id !== context.userId);
     return { people };
   });
+
 
 /** নিজের বন্ধু তালিকা + পেন্ডিং রিকোয়েস্ট */
 export const listFriends = createServerFn({ method: "GET" })

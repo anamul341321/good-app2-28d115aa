@@ -87,14 +87,15 @@ function FriendsPage() {
               value={q}
               onChange={(e) => setQ(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && q.trim().length >= 2) search.mutate(q.trim());
+                if (e.key === "Enter" && q.trim()) search.mutate(q.trim());
               }}
               placeholder="UID নম্বর বা নাম লিখুন"
               className="w-full bg-transparent text-sm font-bold outline-none"
             />
           </div>
           <button
-            onClick={() => q.trim().length >= 2 && search.mutate(q.trim())}
+            onClick={() => q.trim() && search.mutate(q.trim())}
+
             className="gradient-cta btn-press rounded-xl px-4 py-2.5 text-xs font-black text-white"
           >
             খুঁজুন

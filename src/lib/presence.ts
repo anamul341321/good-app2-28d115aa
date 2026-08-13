@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 let channel: any = null;
+let joining: Promise<void> | null = null;
 let refCount = 0;
 let online = new Set<string>();
 const listeners = new Set<(ids: Set<string>) => void>();
@@ -15,6 +16,15 @@ function emit() {
 }
 
 async function join() {
+  if (channel) return;
+  if (joining) return joining;
+  joining = doJoin().finally(() => {
+    joining = null;
+  });
+  return joining;
+}
+
+async function doJoin() {
   if (channel) return;
   const { data } = await supabase.auth.getSession();
   const me = data.session?.user?.id;
