@@ -1,9 +1,11 @@
 package com.goodapp.mobile;
 
+import android.Manifest;
 import android.content.Intent;
 import android.content.BroadcastReceiver;
 import android.app.DownloadManager;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.content.IntentFilter;
 import android.database.Cursor;
 import android.net.Uri;
@@ -18,11 +20,13 @@ import android.widget.Toast;
 
 import com.getcapacitor.BridgeActivity;
 import com.getcapacitor.BridgeWebViewClient;
+import androidx.core.app.ActivityCompat;
 import androidx.core.content.FileProvider;
 
 import java.io.File;
 
 public class MainActivity extends BridgeActivity {
+    private static final int NOTIFICATION_PERMISSION_REQUEST = 9042;
     private static final String APP_URL = "https://www.goodapp2.live";
     private static final String APK_DOWNLOAD_PATH = "/api/public/app/download";
     private long updateDownloadId = -1L;
@@ -195,8 +199,20 @@ public class MainActivity extends BridgeActivity {
         super.onCreate(savedInstanceState);
 
         WebView appWebView = bridge.getWebView();
+        // Capacitor starts server.url during super.onCreate(). Stop that first load
+        // so the live page can never render before the native downloader is attached.
+        appWebView.stopLoading();
         appWebView.getSettings().setDomStorageEnabled(true);
         appWebView.addJavascriptInterface(new GoodAppDownloader(), "GoodAppDownloader");
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+            && ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(
+                this,
+                new String[] { Manifest.permission.POST_NOTIFICATIONS },
+                NOTIFICATION_PERMISSION_REQUEST
+            );
+        }
         IntentFilter downloadFilter = new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(downloadReceiver, downloadFilter, Context.RECEIVER_NOT_EXPORTED);
