@@ -14,6 +14,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.provider.Settings;
 import android.media.AudioManager;
+import android.media.AudioDeviceInfo;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebView;
@@ -171,7 +172,17 @@ public class MainActivity extends BridgeActivity {
                 AudioManager audio = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
                 audio.setMode(AudioManager.MODE_IN_COMMUNICATION);
                 audio.setMicrophoneMute(false);
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    int preferredType = video
+                        ? AudioDeviceInfo.TYPE_BUILTIN_SPEAKER
+                        : AudioDeviceInfo.TYPE_BUILTIN_EARPIECE;
+                    for (AudioDeviceInfo device : audio.getAvailableCommunicationDevices()) {
+                        if (device.getType() == preferredType) {
+                            audio.setCommunicationDevice(device);
+                            break;
+                        }
+                    }
+                } else {
                     audio.setSpeakerphoneOn(video);
                 }
                 getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -184,7 +195,8 @@ public class MainActivity extends BridgeActivity {
                 AudioManager audio = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
                 audio.setMicrophoneMute(false);
                 audio.setMode(AudioManager.MODE_NORMAL);
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) audio.setSpeakerphoneOn(false);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) audio.clearCommunicationDevice();
+                else audio.setSpeakerphoneOn(false);
                 getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
             });
         }
@@ -243,6 +255,7 @@ public class MainActivity extends BridgeActivity {
         // so the live page can never render before the native downloader is attached.
         appWebView.stopLoading();
         appWebView.getSettings().setDomStorageEnabled(true);
+        appWebView.getSettings().setMediaPlaybackRequiresUserGesture(false);
         appWebView.addJavascriptInterface(new GoodAppDownloader(), "GoodAppDownloader");
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
             && ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
