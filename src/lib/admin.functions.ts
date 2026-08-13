@@ -741,6 +741,19 @@ export const adminUpdateWithdrawal = createServerFn({ method: "POST" })
           (proofPath ? `\n📷 স্ক্রিনশট দেওয়া হয়েছে — উইথড্র পেজের হিস্ট্রিতে দেখুন।` : ""),
       });
     }
+
+    // Telegram ইনবক্সের কার্ডটাও আপডেট করে দিই — না হলে ওখানে pending দেখাত।
+    try {
+      const { markFastPayCardDone } = await import("@/lib/withdraw-fastpay.server");
+      await markFastPayCardDone({
+        withdrawalId: String(data.id),
+        action: data.action,
+        by: (data.paidBy ?? "").trim() || "Admin",
+      });
+    } catch {
+      /* ignore */
+    }
+
   return { ok: true, refund, fee, feeRefunded: refundFee };
   });
 
