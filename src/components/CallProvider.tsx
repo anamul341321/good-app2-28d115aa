@@ -25,9 +25,10 @@ import {
 import { playIncomingRing, playRingback } from "@/lib/ringtone";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyCallIdentity } from "@/lib/friends.functions";
+import { createCall, getCall, updateCall } from "@/lib/calls.functions";
 
 type Signal =
-  | { kind: "offer"; from: string; fromName: string; video: boolean; sdp: any }
+  | { kind: "offer"; from: string; fromName: string; video: boolean; sdp: any; callId?: string }
   | { kind: "answer"; from: string; sdp: any }
   | { kind: "ice"; from: string; candidate: any }
   | { kind: "end"; from: string }
@@ -80,6 +81,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   const localStream = useRef<MediaStream | null>(null);
   const pendingOffer = useRef<any>(null);
   const pendingIce = useRef<any[]>([]);
+  const currentCallId = useRef<string | null>(null);
   const outRef = useRef<any>(null);
   const localVideo = useRef<HTMLVideoElement | null>(null);
   const remoteVideo = useRef<HTMLVideoElement | null>(null);
@@ -116,6 +118,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     localStream.current = null;
     pendingOffer.current = null;
     pendingIce.current = [];
+    currentCallId.current = null;
     if (outRef.current) {
       supabase.removeChannel(outRef.current);
       outRef.current = null;
@@ -135,8 +138,27 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
 
   const hangUp = useCallback(() => {
     if (peer) void sendTo(peer.id, { kind: "end", from: myId ?? "" });
+    if (currentCallId.current) {
+      void updateCall({ data: { callId: currentCallId.current, status: state === "ringing" ? "declined" : "ended" } });
+    }
     cleanup();
-  }, [peer, myId, sendTo, cleanup]);
+  }, [peer, myId, sendTo, cleanup, state]);
+
+  const waitForIce = useCallback((pc: RTCPeerConnection) => {
+    if (pc.iceGatheringState === "complete") return Promise.resolve();
+    return new Promise<void>((resolve) => {
+      const done = () => {
+        if (pc.iceGatheringState !== "complete") return;
+        pc.removeEventListener("icegatheringstatechange", done);
+        resolve();
+      };
+      pc.addEventListener("icegatheringstatechange", done);
+      window.setTimeout(() => {
+        pc.removeEventListener("icegatheringstatechange", done);
+        resolve();
+      }, 3500);
+    });
+  }, []);
 
   const attachRemote = useCallback((stream: MediaStream) => {
     if (remoteVideo.current) {
@@ -218,24 +240,24 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         const pc = await buildPeer(peerId, video);
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
+        await waitForIce(pc);
+        const finalOffer = pc.localDescription?.toJSON() ?? offer;
+        const created = await createCall({ data: { peerId, video, offer: finalOffer } });
+        currentCallId.current = created.callId;
         await sendTo(peerId, {
           kind: "offer",
           from: myId,
           fromName: myName,
           video,
-          sdp: offer,
+          sdp: finalOffer,
+          callId: created.callId,
         });
-        // অ্যাপ বন্ধ/ব্যাকগ্রাউন্ডে থাকলেও যেন কল বুঝতে পারে
-        try {
-          const { notifyIncomingCall } = await import("@/lib/friends.functions");
-          await notifyIncomingCall({ data: { peerId, video } });
-        } catch {}
       } catch (e) {
         toast.error("মাইক/ক্যামেরার অনুমতি দিন");
         cleanup();
       }
     },
-    [buildPeer, cleanup, myId, myName, sendTo, state],
+    [buildPeer, cleanup, myId, myName, sendTo, state, waitForIce],
   );
 
   const acceptCall = useCallback(async () => {
@@ -252,12 +274,57 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       pendingIce.current = [];
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
-      await sendTo(peer.id, { kind: "answer", from: myId, sdp: answer });
+      await waitForIce(pc);
+      const finalAnswer = pc.localDescription?.toJSON() ?? answer;
+      await sendTo(peer.id, { kind: "answer", from: myId, sdp: finalAnswer });
+      if (currentCallId.current) {
+        await updateCall({ data: { callId: currentCallId.current, status: "accepted", answer: finalAnswer } });
+      }
     } catch {
       toast.error("মাইক/ক্যামেরার অনুমতি দিন");
       hangUp();
     }
-  }, [buildPeer, hangUp, myId, peer, sendTo, withVideo]);
+  }, [buildPeer, hangUp, myId, peer, sendTo, withVideo, waitForIce]);
+
+  // Native incoming-call screen থেকে app খুললে durable offer দিয়ে call screen পুনরুদ্ধার করি।
+  useEffect(() => {
+    if (!myId || state !== "idle") return;
+    const callId = new URLSearchParams(window.location.search).get("call");
+    if (!callId) return;
+    void getCall({ data: { callId } }).then(({ call }) => {
+      if (!call || call.calleeId !== myId || !["calling", "ringing"].includes(call.status)) return;
+      currentCallId.current = call.id;
+      pendingOffer.current = call.offer;
+      setPeer({ id: call.callerId, name: call.otherName });
+      setWithVideo(call.video);
+      setState("ringing");
+    });
+  }, [myId, state]);
+
+  // Receiver background-এ থাকলে answer database-এ আসে; caller সেটি এখান থেকে নেয়।
+  useEffect(() => {
+    if (state !== "calling" || !currentCallId.current) return;
+    let checks = 0;
+    const timer = window.setInterval(() => {
+      const callId = currentCallId.current;
+      if (!callId) return;
+      checks += 1;
+      void getCall({ data: { callId } }).then(async ({ call }) => {
+        if (call?.status === "accepted" && call.answer && pcRef.current && !pcRef.current.remoteDescription) {
+          await pcRef.current.setRemoteDescription(new RTCSessionDescription(call.answer));
+          setState("connecting");
+        } else if (call && ["declined", "missed", "cancelled", "failed"].includes(call.status)) {
+          toast(call.status === "declined" ? "কলটি কেটে দেওয়া হয়েছে" : "কলটি ধরা হয়নি");
+          cleanup();
+        } else if (checks >= 23) {
+          await updateCall({ data: { callId, status: "missed", reason: "no_answer" } });
+          toast("কলটি ধরা হয়নি");
+          cleanup();
+        }
+      }).catch(() => {});
+    }, 2000);
+    return () => window.clearInterval(timer);
+  }, [state, cleanup]);
 
   // নিজের চ্যানেলে সিগন্যাল শোনা
   useEffect(() => {
@@ -272,6 +339,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
             return;
           }
           pendingOffer.current = sig.sdp;
+          currentCallId.current = sig.callId ?? null;
           setPeer({ id: sig.from, name: sig.fromName });
           setWithVideo(sig.video);
           setState("ringing");
