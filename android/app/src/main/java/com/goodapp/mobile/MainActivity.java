@@ -2,7 +2,6 @@ package com.goodapp.mobile;
 
 import android.content.Intent;
 import android.content.BroadcastReceiver;
-import android.content.ContentResolver;
 import android.app.DownloadManager;
 import android.content.Context;
 import android.content.IntentFilter;
@@ -27,6 +26,7 @@ public class MainActivity extends BridgeActivity {
     private static final String APK_DOWNLOAD_PATH = "/api/public/app/download";
     private long updateDownloadId = -1L;
     private String updateFileName = "Good-App-latest.apk";
+    private boolean waitingForInstallPermission = false;
 
     private final BroadcastReceiver downloadReceiver = new BroadcastReceiver() {
         @Override
@@ -42,6 +42,7 @@ public class MainActivity extends BridgeActivity {
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
                 && !getPackageManager().canRequestPackageInstalls()) {
+                waitingForInstallPermission = true;
                 Intent permissionIntent = new Intent(
                     Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
                     Uri.parse("package:" + getPackageName())
@@ -50,6 +51,7 @@ public class MainActivity extends BridgeActivity {
                 Toast.makeText(this, "Good-App থেকে Install অনুমতি দিন, তারপর Downloads-এর APK চাপুন", Toast.LENGTH_LONG).show();
                 return;
             }
+            waitingForInstallPermission = false;
             File apk = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), updateFileName);
             Uri apkUri = FileProvider.getUriForFile(this, getPackageName() + ".fileprovider", apk);
             Intent installIntent = new Intent(Intent.ACTION_VIEW);
@@ -179,5 +181,15 @@ public class MainActivity extends BridgeActivity {
             unregisterReceiver(downloadReceiver);
         } catch (Exception ignored) {}
         super.onDestroy();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (waitingForInstallPermission
+            && (Build.VERSION.SDK_INT < Build.VERSION_CODES.O
+                || getPackageManager().canRequestPackageInstalls())) {
+            openDownloadedApk();
+        }
     }
 }
