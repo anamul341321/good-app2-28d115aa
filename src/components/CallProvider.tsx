@@ -29,6 +29,7 @@ import { createCall, getCall, updateCall } from "@/lib/calls.functions";
 
 type Signal =
   | { kind: "offer"; from: string; fromName: string; video: boolean; sdp: any; callId?: string }
+  | { kind: "reoffer"; from: string; sdp: any }
   | { kind: "answer"; from: string; sdp: any }
   | { kind: "ice"; from: string; candidate: any }
   | { kind: "end"; from: string }
