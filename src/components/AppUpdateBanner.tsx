@@ -196,7 +196,7 @@ export function AppUpdateBanner() {
                 : downloadStatus === "failed"
                   ? "❌ ডাউনলোড ব্যর্থ — আবার Update চাপুন"
                   : downloadStatus === "fallback"
-                    ? "📥 Chrome-এ ডাউনলোড হচ্ছে (পুরনো ভার্সন)"
+                    ? "📥 Chrome-এ ডাউনলোড শুরু হয়েছে"
                     : `📥 অ্যাপের ভেতরেই ডাউনলোড হচ্ছে… ${percent}%`}
             </p>
             {downloadStatus !== "fallback" && (
@@ -212,10 +212,10 @@ export function AppUpdateBanner() {
             )}
             {downloadStatus === "fallback" ? (
               <p className="mt-2">
-                আপনার ইনস্টল করা ভার্সনে ইন-অ্যাপ ডাউনলোডার নেই, তাই <b>Chrome</b>-এ ডাউনলোড হচ্ছে।
-                <br />১) <b>Notification bar</b> নামিয়ে ডাউনলোড শেষ হওয়া পর্যন্ত দেখুন।
+                <b>Chrome</b> খুলে ডাউনলোড নিজে থেকেই শুরু হয়েছে।
+                <br />১) <b>Notification bar</b> নামিয়ে ডাউনলোড শেষ হওয়া পর্যন্ত অপেক্ষা করুন।
                 <br />২) <b>Good-App-v{latest}.apk</b> ফাইলে ট্যাপ করে <b>Install / Update</b> চাপুন।
-                <br />এই আপডেটের পর থেকে সব আপডেট অ্যাপের ভেতরেই অটো হবে ✅
+                <br />প্রথমবার হলে <b>“Allow from this source”</b> অন করে আবার Install চাপুন ✅
               </p>
             ) : (
               <p className="mt-2">
