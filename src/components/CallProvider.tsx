@@ -422,10 +422,23 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
           setState("ringing");
           return;
         }
+        if (sig.kind === "reoffer") {
+          // সংযোগ ফিরে পাওয়ার জন্য ICE-restart offer — কল না কেটে নতুন করে জোড়া লাগাই
+          const pc = pcRef.current;
+          if (!pc) return;
+          try {
+            await pc.setRemoteDescription(new RTCSessionDescription(sig.sdp));
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+            await waitForIce(pc);
+            await sendTo(sig.from, { kind: "answer", from: myId, sdp: pc.localDescription?.toJSON() ?? answer });
+          } catch {}
+          return;
+        }
         if (sig.kind === "answer") {
           try {
             await pcRef.current?.setRemoteDescription(new RTCSessionDescription(sig.sdp));
-            setState("connecting");
+            if (state !== "active") setState("connecting");
           } catch {}
           return;
         }
