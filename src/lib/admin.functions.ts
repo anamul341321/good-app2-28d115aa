@@ -803,6 +803,13 @@ export const adminBulkMarkPaid = createServerFn({ method: "POST" })
           `${Math.floor(payout)}৳ আপনার ${String(w.provider).toUpperCase()} ${w.wallet_number ?? ""} নম্বরে পাঠানো হয়েছে।` +
           `\nটাকা রিকোয়েস্টের সময়েই ব্যালেন্স থেকে কাটা হয়েছিল, তাই paid হওয়ার পর ব্যালেন্স আর কমবে না।`,
       });
+
+      try {
+        const { markFastPayCardDone } = await import("@/lib/withdraw-fastpay.server");
+        await markFastPayCardDone({ withdrawalId: String(w.id), action: "paid", by: paidBy });
+      } catch {
+        /* ignore */
+      }
       marked++;
     }
 
