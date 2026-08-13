@@ -124,6 +124,13 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const cleanup = useCallback(() => {
+    if (reconnectTimer.current) {
+      window.clearTimeout(reconnectTimer.current);
+      reconnectTimer.current = null;
+    }
+    reconnecting.current = false;
+    isCaller.current = false;
+    peerIdRef.current = null;
     pcRef.current?.getSenders().forEach((s) => {
       try {
         s.track?.stop();
