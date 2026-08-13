@@ -298,6 +298,8 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       }
       try {
         setPeer({ id: peerId, name: peerName });
+        isCaller.current = true;
+        peerIdRef.current = peerId;
         setWithVideo(video);
         setState("calling");
         const pc = await buildPeer(peerId, video);
