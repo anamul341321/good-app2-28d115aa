@@ -127,15 +127,38 @@ export function AppUpdateBanner() {
       return;
     }
 
+    // Older installed builds (v1.8 and below) have no native DownloadManager
+    // bridge. A Custom Tab (@capacitor/browser) cannot save APK files, so it
+    // just shows a page and nothing downloads. Hand the URL to the real Chrome
+    // app through an Android intent: URL — Chrome's download manager follows
+    // the signed redirect and saves the APK into Downloads.
+    setDownloadStatus("fallback");
+    const httpsPart = freshUrl.replace(/^https?:\/\//i, "");
+    const intentUrl = (pkg?: string) =>
+      `intent://${httpsPart}#Intent;scheme=https;action=android.intent.action.VIEW;` +
+      (pkg ? `package=${pkg};` : "") +
+      `S.browser_fallback_url=${encodeURIComponent(freshUrl)};end`;
 
-    // Older installed builds do not contain the native DownloadManager bridge.
-    // Open the HTTPS endpoint in Android's browser so its download manager can
-    // follow the signed redirect and save the APK. Keeping this in the WebView
-    // only shows a blank/loading page and never creates a real download.
+    try {
+      window.location.href = intentUrl("com.android.chrome");
+      toast.success("Chrome-এ ডাউনলোড শুরু হচ্ছে — Notification bar দেখুন", { duration: 7000 });
+      // If Chrome is not installed, let any browser handle it after a moment.
+      window.setTimeout(() => {
+        try {
+          window.location.href = intentUrl();
+        } catch {
+          /* ignore */
+        }
+      }, 1200);
+      return;
+    } catch {
+      /* fall through to Custom Tab */
+    }
+
     try {
       const { Browser } = await import("@capacitor/browser");
       await Browser.open({ url: freshUrl, presentationStyle: "popover" });
-      toast.success("Chrome-এ ডাউনলোড শুরু হবে — Downloads দেখুন", { duration: 6000 });
+      toast.info("Download বাটনে চাপুন — ফাইলটি Downloads-এ যাবে", { duration: 6000 });
     } catch {
       const downloadLink = document.createElement("a");
       downloadLink.href = freshUrl;
@@ -144,8 +167,8 @@ export function AppUpdateBanner() {
       document.body.appendChild(downloadLink);
       downloadLink.click();
       downloadLink.remove();
-      toast.info("ডাউনলোড পেজ খোলা হয়েছে — Download চাপুন", { duration: 6000 });
     }
+
   };
 
   return (
@@ -196,23 +219,35 @@ export function AppUpdateBanner() {
                 : downloadStatus === "failed"
                   ? "❌ ডাউনলোড ব্যর্থ — আবার Update চাপুন"
                   : downloadStatus === "fallback"
-                    ? "📥 Download পেজ খোলা হয়েছে"
+                    ? "📥 Chrome-এ ডাউনলোড হচ্ছে (পুরনো ভার্সন)"
                     : `📥 অ্যাপের ভেতরেই ডাউনলোড হচ্ছে… ${percent}%`}
             </p>
-            <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-white/15">
-              <div
-                className="h-full rounded-full transition-all duration-500"
-                style={{
-                  width: `${downloadStatus === "complete" ? 100 : Math.max(percent, 4)}%`,
-                  background: "linear-gradient(90deg,#22c55e,#06b6d4,#a855f7)",
-                }}
-              />
-            </div>
-            <p className="mt-2">
-              ডাউনলোড শেষ হলে <b>Install স্ক্রিন নিজেই খুলবে</b> — শুধু <b>Update / Install</b> চাপুন।
-              <br />প্রথমবার হলে <b>“Allow from this source”</b> অন করে দিন, তারপর আবার Install চাপুন।
-              <br />ইনস্টল হয়ে গেলে এই ব্যানার নিজে থেকেই চলে যাবে ✅
-            </p>
+            {downloadStatus !== "fallback" && (
+              <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-white/15">
+                <div
+                  className="h-full rounded-full transition-all duration-500"
+                  style={{
+                    width: `${downloadStatus === "complete" ? 100 : Math.max(percent, 4)}%`,
+                    background: "linear-gradient(90deg,#22c55e,#06b6d4,#a855f7)",
+                  }}
+                />
+              </div>
+            )}
+            {downloadStatus === "fallback" ? (
+              <p className="mt-2">
+                আপনার ইনস্টল করা ভার্সনে ইন-অ্যাপ ডাউনলোডার নেই, তাই <b>Chrome</b>-এ ডাউনলোড হচ্ছে।
+                <br />১) <b>Notification bar</b> নামিয়ে ডাউনলোড শেষ হওয়া পর্যন্ত দেখুন।
+                <br />২) <b>Good-App-v{latest}.apk</b> ফাইলে ট্যাপ করে <b>Install / Update</b> চাপুন।
+                <br />এই আপডেটের পর থেকে সব আপডেট অ্যাপের ভেতরেই অটো হবে ✅
+              </p>
+            ) : (
+              <p className="mt-2">
+                ডাউনলোড শেষ হলে <b>Install স্ক্রিন নিজেই খুলবে</b> — শুধু <b>Update / Install</b> চাপুন।
+                <br />প্রথমবার হলে <b>“Allow from this source”</b> অন করে দিন, তারপর আবার Install চাপুন।
+                <br />ইনস্টল হয়ে গেলে এই ব্যানার নিজে থেকেই চলে যাবে ✅
+              </p>
+            )}
+
           </div>
         )}
 
