@@ -17,6 +17,7 @@ import android.media.AudioManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebView;
+import android.view.WindowManager;
 import android.widget.Toast;
 
 import com.getcapacitor.BridgeActivity;

@@ -86,6 +86,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   const [camOff, setCamOff] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [seconds, setSeconds] = useState(0);
+  const [callSessionId, setCallSessionId] = useState<string | null>(null);
   const facing = useRef<"user" | "environment">("user");
   const camTrack = useRef<MediaStreamTrack | null>(null);
   const shareStream = useRef<MediaStream | null>(null);
@@ -150,6 +151,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     pendingOffer.current = null;
     pendingIce.current = [];
     currentCallId.current = null;
+    setCallSessionId(null);
     if (outRef.current) {
       supabase.removeChannel(outRef.current);
       outRef.current = null;
@@ -329,6 +331,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         const finalOffer = pc.localDescription?.toJSON() ?? offer;
         const created = await createCall({ data: { peerId, video, offer: finalOffer } });
         currentCallId.current = created.callId;
+        setCallSessionId(created.callId);
         await sendTo(peerId, {
           kind: "offer",
           from: myId,
@@ -376,6 +379,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     void getCall({ data: { callId } }).then(({ call }) => {
       if (!call || call.calleeId !== myId || !["calling", "ringing"].includes(call.status)) return;
       currentCallId.current = call.id;
+      setCallSessionId(call.id);
       pendingOffer.current = call.offer;
       setPeer({ id: call.callerId, name: call.otherName });
       setWithVideo(call.video);
@@ -406,11 +410,10 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
 
   // Database call state is durable: realtime signal হারালেও answer/end দুই ফোনেই পৌঁছায়।
   useEffect(() => {
-    if (state === "idle" || !currentCallId.current) return;
+    if (state === "idle" || !callSessionId) return;
     let checks = 0;
     const timer = window.setInterval(() => {
-      const callId = currentCallId.current;
-      if (!callId) return;
+      const callId = callSessionId;
       checks += 1;
       void getCall({ data: { callId } }).then(async ({ call }) => {
         if (call?.status === "accepted" && call.answer && pcRef.current && !pcRef.current.remoteDescription) {
@@ -428,7 +431,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       }).catch(() => {});
     }, 2000);
     return () => window.clearInterval(timer);
-  }, [state, cleanup, flushPendingIce]);
+  }, [state, callSessionId, cleanup, flushPendingIce]);
 
   // নিজের চ্যানেলে সিগন্যাল শোনা
   useEffect(() => {
@@ -444,6 +447,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
           }
           pendingOffer.current = sig.sdp;
           currentCallId.current = sig.callId ?? null;
+          setCallSessionId(sig.callId ?? null);
           setPeer({ id: sig.from, name: sig.fromName });
           setWithVideo(sig.video);
           setState("ringing");
