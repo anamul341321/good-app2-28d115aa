@@ -756,16 +756,18 @@ function TaskCell({ task, onStart, onReverify, onOpenPhoto }: { task: any; onSta
         {cornerFrame}
         <span className="absolute top-1 left-1 text-[11px] font-black text-white mono-num leading-none px-1.5 py-0.5 rounded bg-black/45">#{task.slot}</span>
         <span className="absolute top-1 right-1 rounded-md px-1 py-0.5 bg-white/90 text-[9px] font-black shadow"
-              style={{ color: due ? "#b45309" : "#4338ca" }}>
-          {due ? "⏰" : "⏳"}
+              style={{ color: reverified ? "#047857" : due ? "#b45309" : "#4338ca" }}>
+          {reverified ? "✅" : due ? "⏰" : "⏳"}
         </span>
         <span className="absolute inset-0 flex items-center justify-center">
-          <RefreshCcw className={`w-9 h-9 text-white/95 drop-shadow-lg ${due ? "animate-spin-slow" : ""}`} />
+          {reverified
+            ? <CheckCircle2 className="w-9 h-9 text-white/95 drop-shadow-lg" />
+            : <RefreshCcw className={`w-9 h-9 text-white/95 drop-shadow-lg ${due ? "animate-spin-slow" : ""}`} />}
         </span>
         <p className="absolute bottom-1 left-1 right-1 text-[9.5px] font-black text-white text-center drop-shadow leading-tight">
-          {due ? "রি-ভেরিফাই সময় হয়েছে" : `${Math.ceil(remain ?? 4)} দিন পর রি-ভেরিফাই`}
+          {reverified ? "✅ রি-ভেরিফাই সম্পন্ন" : due ? "রি-ভেরিফাই সময় হয়েছে" : `${Math.ceil(remain ?? 4)} দিন পর রি-ভেরিফাই`}
         </p>
-        {!due && earnBadge}
+        {(reverified || !due) && earnBadge}
       </button>
       {nameTag}
       </div>
