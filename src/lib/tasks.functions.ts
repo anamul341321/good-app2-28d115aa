@@ -376,6 +376,18 @@ export const completeReverify = createServerFn({ method: "POST" })
     }
 
 
+    // ইউজারের ফোনে + অ্যাপে রি-ভেরিফাই সাকসেস নোটিশ পাঠাও
+    try {
+      await notifyUser(
+        userId,
+        "✅ রি-ভেরিফাই সম্পন্ন",
+        `আপনার #${task.slot} নং ঘরের রি-ভেরিফাই সফলভাবে সম্পন্ন হয়েছে।`,
+        { url: "/home" },
+      );
+    } catch {
+      // ignore
+    }
+
     await supabaseAdmin.rpc("settle_mining", { _user_id: userId });
 
     const { data: m } = await supabaseAdmin
