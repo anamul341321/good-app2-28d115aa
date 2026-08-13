@@ -128,46 +128,31 @@ export function AppUpdateBanner() {
     }
 
     // Older installed builds (v1.8 and below) have no native DownloadManager
-    // bridge. A Custom Tab (@capacitor/browser) cannot save APK files, so it
-    // just shows a page and nothing downloads. Hand the URL to the real Chrome
-    // app through an Android intent: URL — Chrome's download manager follows
-    // the signed redirect and saves the APK into Downloads.
+    // bridge. An intent:// URL fails inside that WebView (ERR_UNKNOWN_URL_SCHEME),
+    // so use a plain https link with the download attribute — the WebView's
+    // DownloadListener hands it to Android's download manager instead.
     setDownloadStatus("fallback");
-    const httpsPart = freshUrl.replace(/^https?:\/\//i, "");
-    const intentUrl = (pkg?: string) =>
-      `intent://${httpsPart}#Intent;scheme=https;action=android.intent.action.VIEW;` +
-      (pkg ? `package=${pkg};` : "") +
-      `S.browser_fallback_url=${encodeURIComponent(freshUrl)};end`;
-
     try {
-      window.location.href = intentUrl("com.android.chrome");
-      toast.success("Chrome-এ ডাউনলোড শুরু হচ্ছে — Notification bar দেখুন", { duration: 7000 });
-      // If Chrome is not installed, let any browser handle it after a moment.
-      window.setTimeout(() => {
-        try {
-          window.location.href = intentUrl();
-        } catch {
-          /* ignore */
-        }
-      }, 1200);
-      return;
-    } catch {
-      /* fall through to Custom Tab */
-    }
-
-    try {
-      const { Browser } = await import("@capacitor/browser");
-      await Browser.open({ url: freshUrl, presentationStyle: "popover" });
-      toast.info("Download বাটনে চাপুন — ফাইলটি Downloads-এ যাবে", { duration: 6000 });
-    } catch {
       const downloadLink = document.createElement("a");
       downloadLink.href = freshUrl;
-      downloadLink.target = "_blank";
-      downloadLink.rel = "external noopener";
+      downloadLink.setAttribute("download", `Good-App-v${latest ?? "latest"}.apk`);
+      downloadLink.rel = "noopener";
       document.body.appendChild(downloadLink);
       downloadLink.click();
       downloadLink.remove();
+      toast.success("ডাউনলোড শুরু হচ্ছে — Notification bar দেখুন", { duration: 7000 });
+      // Some old WebViews ignore anchor clicks; navigate directly as a backup.
+      window.setTimeout(() => {
+        try {
+          window.location.href = freshUrl;
+        } catch {
+          /* ignore */
+        }
+      }, 1500);
+    } catch {
+      window.location.href = freshUrl;
     }
+
 
   };
 
