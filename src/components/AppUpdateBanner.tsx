@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Download, Rocket } from "lucide-react";
+import { toast } from "sonner";
 import { getAppStatus } from "@/lib/app-status.functions";
 import { isNativeApp } from "@/lib/native-google";
 
@@ -62,16 +63,22 @@ export function AppUpdateBanner() {
     : `https://www.goodapp2.live${url.startsWith("/") ? url : `/${url}`}`;
 
   const startUpdate = async () => {
-    // পুরোনো বিল্ডে @capacitor/browser নাও থাকতে পারে — তাই কয়েক ধাপ fallback
+    toast.info("ডাউনলোড শুরু হচ্ছে…");
+
+    // খুব পুরোনো APK-তে Browser plugin ছিল না। Android intent সরাসরি Chrome/
+    // system browser-এ পাঠায়, তাই WebView binary download চুপচাপ আটকে দেয় না।
+    const parsed = new URL(absolute);
+    const intentUrl = `intent://${parsed.host}${parsed.pathname}${parsed.search}#Intent;scheme=${parsed.protocol.replace(":", "")};action=android.intent.action.VIEW;end`;
     try {
-      const { Browser } = await import("@capacitor/browser");
-      await Browser.open({ url: absolute });
+      window.location.assign(intentUrl);
       return;
     } catch {
       /* ignore, try next */
     }
+
+    // Non-Android/native fallback.
     try {
-      const opened = window.open(absolute, "_blank");
+      const opened = window.open(absolute, "_system");
       if (opened) return;
     } catch {
       /* ignore */
