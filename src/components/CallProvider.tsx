@@ -64,7 +64,6 @@ const ICE = {
   iceCandidatePoolSize: 4,
 };
 
-
 /**
  * পুরো অ্যাপে অডিও/ভিডিও কল। সিগন্যালিং হয় Supabase Realtime broadcast দিয়ে
  * (প্রতি ইউজারের নিজের চ্যানেল), মিডিয়া যায় সরাসরি WebRTC পিয়ার-টু-পিয়ার।
@@ -109,8 +108,6 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     stateRef.current = state;
   }, [state]);
-
-
 
   const sendTo = useCallback(async (peerId: string, payload: Signal) => {
     let ch = outRef.current;
@@ -252,7 +249,8 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         attachRemote(e.streams[0] ?? remote);
       };
       pc.onicecandidate = (e) => {
-        if (e.candidate) void sendTo(peerId, { kind: "ice", from: myId ?? "", candidate: e.candidate });
+        if (e.candidate)
+          void sendTo(peerId, { kind: "ice", from: myId ?? "", candidate: e.candidate });
       };
       pc.onconnectionstatechange = () => {
         if (pc.connectionState === "connected") {
@@ -372,7 +370,9 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       const finalAnswer = pc.localDescription?.toJSON() ?? answer;
       await sendTo(peer.id, { kind: "answer", from: myId, sdp: finalAnswer });
       if (currentCallId.current) {
-        await updateCall({ data: { callId: currentCallId.current, status: "accepted", answer: finalAnswer } });
+        await updateCall({
+          data: { callId: currentCallId.current, status: "accepted", answer: finalAnswer },
+        });
       }
     } catch {
       toast.error("মাইক/ক্যামেরার অনুমতি দিন");
@@ -413,7 +413,11 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     if (!callId || params.get("decline") !== "1") return;
     params.delete("call");
     params.delete("decline");
-    window.history.replaceState({}, "", `${window.location.pathname}${params.size ? `?${params}` : ""}`);
+    window.history.replaceState(
+      {},
+      "",
+      `${window.location.pathname}${params.size ? `?${params}` : ""}`,
+    );
     void updateCall({ data: { callId, status: "declined" } });
   }, [myId, state]);
 
@@ -424,20 +428,30 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     const timer = window.setInterval(() => {
       const callId = callSessionId;
       checks += 1;
-      void getCall({ data: { callId } }).then(async ({ call }) => {
-        if (call?.status === "accepted" && call.answer && pcRef.current && !pcRef.current.remoteDescription) {
-          await pcRef.current.setRemoteDescription(new RTCSessionDescription(call.answer));
-          await flushPendingIce(pcRef.current);
-          setState("connecting");
-        } else if (call && ["declined", "missed", "cancelled", "failed", "ended"].includes(call.status)) {
-          toast(call.status === "declined" ? "কলটি কেটে দেওয়া হয়েছে" : "কলটি ধরা হয়নি");
-          cleanup();
-        } else if (stateRef.current === "calling" && checks >= 23) {
-          await updateCall({ data: { callId, status: "missed", reason: "no_answer" } });
-          toast("কলটি ধরা হয়নি");
-          cleanup();
-        }
-      }).catch(() => {});
+      void getCall({ data: { callId } })
+        .then(async ({ call }) => {
+          if (
+            call?.status === "accepted" &&
+            call.answer &&
+            pcRef.current &&
+            !pcRef.current.remoteDescription
+          ) {
+            await pcRef.current.setRemoteDescription(new RTCSessionDescription(call.answer));
+            await flushPendingIce(pcRef.current);
+            setState("connecting");
+          } else if (
+            call &&
+            ["declined", "missed", "cancelled", "failed", "ended"].includes(call.status)
+          ) {
+            toast(call.status === "declined" ? "কলটি কেটে দেওয়া হয়েছে" : "কলটি ধরা হয়নি");
+            cleanup();
+          } else if (stateRef.current === "calling" && checks >= 23) {
+            await updateCall({ data: { callId, status: "missed", reason: "no_answer" } });
+            toast("কলটি ধরা হয়নি");
+            cleanup();
+          }
+        })
+        .catch(() => {});
     }, 2000);
     return () => window.clearInterval(timer);
   }, [state, callSessionId, cleanup, flushPendingIce]);
@@ -471,7 +485,11 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
             const answer = await pc.createAnswer();
             await pc.setLocalDescription(answer);
             await waitForIce(pc);
-            await sendTo(sig.from, { kind: "answer", from: myId, sdp: pc.localDescription?.toJSON() ?? answer });
+            await sendTo(sig.from, {
+              kind: "answer",
+              from: myId,
+              sdp: pc.localDescription?.toJSON() ?? answer,
+            });
           } catch {}
           return;
         }
@@ -584,8 +602,8 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       const ns = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: facing.current, width: { ideal: 1280 }, height: { ideal: 720 } },
       });
-        const track = ns.getVideoTracks()[0];
-        if (!track) throw new Error("camera-unavailable");
+      const track = ns.getVideoTracks()[0];
+      if (!track) throw new Error("camera-unavailable");
       camTrack.current?.stop();
       camTrack.current = track;
       if (!sharing) await replaceVideoTrack(track);
@@ -596,7 +614,10 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
 
   const clock = `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
 
-  const value = useMemo<Ctx>(() => ({ startCall: (a, b, c) => void startCall(a, b, c), state }), [startCall, state]);
+  const value = useMemo<Ctx>(
+    () => ({ startCall: (a, b, c) => void startCall(a, b, c), state }),
+    [startCall, state],
+  );
 
   return (
     <CallContext.Provider value={value}>
@@ -607,7 +628,9 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       {state === "ringing" && peer && (
         <div
           className="fixed inset-0 z-[95] flex flex-col items-center justify-between px-6 pb-12 pt-20 text-white"
-          style={{ background: "radial-gradient(120% 80% at 50% 0%,#1b2a6b 0%,#0b1024 55%,#05060f 100%)" }}
+          style={{
+            background: "radial-gradient(120% 80% at 50% 0%,#1b2a6b 0%,#0b1024 55%,#05060f 100%)",
+          }}
         >
           <div className="flex flex-col items-center">
             <p className="text-[11px] font-black uppercase tracking-[0.3em] text-cyan-300">
@@ -663,7 +686,10 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
             {!withVideo && (
               <div
                 className="absolute inset-0 grid place-items-center"
-                style={{ background: "radial-gradient(120% 80% at 50% 0%,#1b2a6b 0%,#0b1024 60%,#05060f 100%)" }}
+                style={{
+                  background:
+                    "radial-gradient(120% 80% at 50% 0%,#1b2a6b 0%,#0b1024 60%,#05060f 100%)",
+                }}
               >
                 <div className="text-center text-white">
                   <div className="relative mx-auto grid h-28 w-28 place-items-center">
@@ -677,7 +703,11 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
                   <p className="mt-5 text-xl font-black">{peer.name}</p>
                   <p className="mt-1 inline-flex items-center gap-1 text-xs font-bold text-cyan-300">
                     <Volume2 className="h-3.5 w-3.5" />
-                    {state === "active" ? clock : state === "calling" ? "রিং হচ্ছে…" : "সংযোগ হচ্ছে…"}
+                    {state === "active"
+                      ? clock
+                      : state === "calling"
+                        ? "রিং হচ্ছে…"
+                        : "সংযোগ হচ্ছে…"}
                   </p>
                 </div>
               </div>
@@ -771,7 +801,11 @@ function CallCtl({
   children: React.ReactNode;
 }) {
   return (
-    <button onClick={onClick} className="btn-press flex flex-col items-center gap-1.5" aria-label={label}>
+    <button
+      onClick={onClick}
+      className="btn-press flex flex-col items-center gap-1.5"
+      aria-label={label}
+    >
       <span
         className={`grid h-14 w-14 place-items-center rounded-full border text-white transition ${
           active ? "border-white/40 bg-white/85 text-[#0b1024]" : "border-white/15 bg-white/10"
