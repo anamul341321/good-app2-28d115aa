@@ -11,6 +11,8 @@ import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.Gravity;
 import android.view.View;
 import android.view.WindowManager;
@@ -22,6 +24,8 @@ public class IncomingCallActivity extends Activity {
     private Ringtone ringtone;
     private String callId;
     private String callerId;
+    private final Handler timeoutHandler = new Handler(Looper.getMainLooper());
+    private final Runnable timeout = this::closeCall;
 
     @Override
     protected void onCreate(Bundle state) {
@@ -79,6 +83,7 @@ public class IncomingCallActivity extends Activity {
         decline.setOnClickListener(v -> closeCall());
         accept.setOnClickListener(v -> openCall());
         startRinging();
+        timeoutHandler.postDelayed(timeout, 50_000L);
     }
 
     private TextView text(String value, int size, int color) {
@@ -111,7 +116,7 @@ public class IncomingCallActivity extends Activity {
     private void openCall() {
         stopRinging();
         String url = "https://www.goodapp2.live/chat/" + Uri.encode(callerId == null ? "" : callerId)
-            + "?call=" + Uri.encode(callId == null ? "" : callId);
+            + "?call=" + Uri.encode(callId == null ? "" : callId) + "&accept=1";
         Intent app = new Intent(this, MainActivity.class);
         app.setAction(Intent.ACTION_VIEW);
         app.setData(Uri.parse(url));
@@ -126,6 +131,7 @@ public class IncomingCallActivity extends Activity {
     }
 
     private void stopRinging() {
+        timeoutHandler.removeCallbacks(timeout);
         try {
             if (ringtone != null && ringtone.isPlaying()) ringtone.stop();
         } catch (Exception ignored) {}

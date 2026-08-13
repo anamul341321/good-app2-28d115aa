@@ -301,6 +301,16 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     });
   }, [myId, state]);
 
+  useEffect(() => {
+    if (state !== "ringing") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("accept") !== "1") return;
+    params.delete("accept");
+    const next = `${window.location.pathname}${params.size ? `?${params.toString()}` : ""}`;
+    window.history.replaceState({}, "", next);
+    void acceptCall();
+  }, [state, acceptCall]);
+
   // Receiver background-এ থাকলে answer database-এ আসে; caller সেটি এখান থেকে নেয়।
   useEffect(() => {
     if (state !== "calling" || !currentCallId.current) return;
