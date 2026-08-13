@@ -400,38 +400,55 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       {children}
       <audio ref={remoteAudio} autoPlay playsInline className="hidden" />
 
+      {/* ইনকামিং কল — মেসেঞ্জারের মতো ফুল স্ক্রিন */}
       {state === "ringing" && peer && (
-        <div className="fixed inset-0 z-[95] grid place-items-center bg-black/80 px-4 backdrop-blur-sm">
-          <div className="glass w-full max-w-sm rounded-3xl border border-cyan-400/30 p-6 text-center">
-            <div className="mx-auto grid h-20 w-20 animate-pulse place-items-center rounded-full bg-gradient-to-br from-cyan-500 to-violet-600 text-2xl font-black text-white">
-              {peer.name.slice(0, 1)}
-            </div>
-            <p className="mt-4 text-sm font-black">{peer.name}</p>
-            <p className="text-[11px] font-bold text-muted-foreground">
-              {withVideo ? "ভিডিও কল আসছে…" : "অডিও কল আসছে…"}
+        <div
+          className="fixed inset-0 z-[95] flex flex-col items-center justify-between px-6 pb-12 pt-20 text-white"
+          style={{ background: "radial-gradient(120% 80% at 50% 0%,#1b2a6b 0%,#0b1024 55%,#05060f 100%)" }}
+        >
+          <div className="flex flex-col items-center">
+            <p className="text-[11px] font-black uppercase tracking-[0.3em] text-cyan-300">
+              {withVideo ? "ভিডিও কল আসছে" : "অডিও কল আসছে"}
             </p>
-            <div className="mt-6 flex items-center justify-center gap-6">
-              <button
-                onClick={hangUp}
-                className="btn-press grid h-14 w-14 place-items-center rounded-full bg-rose-600 text-white"
-                aria-label="কল কাটুন"
-              >
-                <PhoneOff className="h-6 w-6" />
-              </button>
-              <button
-                onClick={() => void acceptCall()}
-                className="btn-press grid h-14 w-14 animate-bounce place-items-center rounded-full bg-emerald-600 text-white"
-                aria-label="কল ধরুন"
-              >
-                <PhoneIncoming className="h-6 w-6" />
-              </button>
+            <div className="relative mt-10 grid place-items-center">
+              <span className="absolute h-40 w-40 animate-ping rounded-full bg-cyan-400/20" />
+              <span className="absolute h-52 w-52 animate-pulse rounded-full bg-violet-500/10" />
+              <div className="relative grid h-32 w-32 place-items-center rounded-full bg-gradient-to-br from-cyan-500 to-violet-600 text-5xl font-black shadow-2xl">
+                {peer.name.slice(0, 1)}
+              </div>
             </div>
+            <p className="mt-8 text-2xl font-black">{peer.name}</p>
+            <p className="mt-1 text-xs font-bold text-white/60">good-app কল</p>
+          </div>
+
+          <div className="flex w-full items-end justify-around">
+            <button
+              onClick={hangUp}
+              className="btn-press flex flex-col items-center gap-2"
+              aria-label="কল কাটুন"
+            >
+              <span className="grid h-18 w-18 h-[72px] w-[72px] place-items-center rounded-full bg-rose-600 shadow-[0_10px_30px_-8px_rgba(244,63,94,0.9)]">
+                <PhoneOff className="h-7 w-7" />
+              </span>
+              <span className="text-[11px] font-black text-white/80">কেটে দিন</span>
+            </button>
+            <button
+              onClick={() => void acceptCall()}
+              className="btn-press flex flex-col items-center gap-2"
+              aria-label="কল ধরুন"
+            >
+              <span className="grid h-[72px] w-[72px] animate-bounce place-items-center rounded-full bg-emerald-500 shadow-[0_10px_30px_-8px_rgba(16,185,129,0.9)]">
+                <PhoneIncoming className="h-7 w-7" />
+              </span>
+              <span className="text-[11px] font-black text-white/80">রিসিভ করুন</span>
+            </button>
           </div>
         </div>
       )}
 
+      {/* চলমান কল */}
       {(state === "calling" || state === "connecting" || state === "active") && peer && (
-        <div className="fixed inset-0 z-[95] flex flex-col bg-[#07091a]">
+        <div className="fixed inset-0 z-[95] flex flex-col bg-[#05060f]">
           <div className="relative flex-1 overflow-hidden">
             <video
               ref={remoteVideo}
@@ -440,12 +457,24 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
               className={`h-full w-full object-cover ${withVideo ? "" : "opacity-0"}`}
             />
             {!withVideo && (
-              <div className="absolute inset-0 grid place-items-center">
+              <div
+                className="absolute inset-0 grid place-items-center"
+                style={{ background: "radial-gradient(120% 80% at 50% 0%,#1b2a6b 0%,#0b1024 60%,#05060f 100%)" }}
+              >
                 <div className="text-center text-white">
-                  <div className="mx-auto grid h-24 w-24 place-items-center rounded-full bg-gradient-to-br from-cyan-500 to-violet-600 text-3xl font-black">
-                    {peer.name.slice(0, 1)}
+                  <div className="relative mx-auto grid h-28 w-28 place-items-center">
+                    {state === "active" && (
+                      <span className="absolute h-32 w-32 animate-ping rounded-full bg-cyan-400/15" />
+                    )}
+                    <div className="relative grid h-28 w-28 place-items-center rounded-full bg-gradient-to-br from-cyan-500 to-violet-600 text-4xl font-black">
+                      {peer.name.slice(0, 1)}
+                    </div>
                   </div>
-                  <p className="mt-4 text-lg font-black">{peer.name}</p>
+                  <p className="mt-5 text-xl font-black">{peer.name}</p>
+                  <p className="mt-1 inline-flex items-center gap-1 text-xs font-bold text-cyan-300">
+                    <Volume2 className="h-3.5 w-3.5" />
+                    {state === "active" ? clock : state === "calling" ? "রিং হচ্ছে…" : "সংযোগ হচ্ছে…"}
+                  </p>
                 </div>
               </div>
             )}
@@ -455,40 +484,46 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
                 autoPlay
                 playsInline
                 muted
-                className="absolute bottom-4 right-4 h-40 w-28 rounded-2xl border border-white/30 object-cover shadow-xl"
+                className="absolute bottom-5 right-4 h-44 w-32 rounded-2xl border border-white/25 object-cover shadow-2xl"
               />
             )}
-            <div className="absolute left-0 right-0 top-0 p-4 text-center text-white">
-              <p className="text-sm font-black drop-shadow">{peer.name}</p>
-              <p className="text-[11px] font-bold text-white/70">
-                {state === "active" ? "সংযুক্ত • কথা বলুন" : "সংযোগ হচ্ছে…"}
+            <div className="absolute left-0 right-0 top-0 flex flex-col items-center gap-1 bg-gradient-to-b from-black/60 to-transparent p-5 text-white">
+              <p className="text-base font-black drop-shadow">{peer.name}</p>
+              <p className="rounded-full bg-white/10 px-3 py-0.5 text-[11px] font-black text-white/85">
+                {state === "active" ? clock : state === "calling" ? "রিং হচ্ছে…" : "সংযোগ হচ্ছে…"}
+                {sharing ? " • স্ক্রিন শেয়ার" : ""}
               </p>
             </div>
           </div>
-          <div className="flex items-center justify-center gap-5 bg-black/60 px-4 py-6">
-            <button
-              onClick={toggleMute}
-              className={`btn-press grid h-14 w-14 place-items-center rounded-full text-white ${muted ? "bg-white/25" : "bg-white/10"}`}
-              aria-label="মাইক"
-            >
-              {muted ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
-            </button>
-            <button
-              onClick={hangUp}
-              className="btn-press grid h-16 w-16 place-items-center rounded-full bg-rose-600 text-white shadow-lg"
-              aria-label="কল কাটুন"
-            >
-              <PhoneOff className="h-7 w-7" />
-            </button>
-            {withVideo && (
+
+          <div className="border-t border-white/10 bg-black/70 px-4 pb-8 pt-5 backdrop-blur">
+            <div className="flex items-center justify-center gap-4">
+              <CallCtl active={muted} onClick={toggleMute} label={muted ? "আনমিউট" : "মিউট"}>
+                {muted ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
+              </CallCtl>
+              {withVideo && (
+                <CallCtl active={camOff} onClick={toggleCam} label="ক্যামেরা">
+                  {camOff ? <VideoOff className="h-6 w-6" /> : <Video className="h-6 w-6" />}
+                </CallCtl>
+              )}
+              <CallCtl active={sharing} onClick={() => void toggleShare()} label="স্ক্রিন">
+                {sharing ? <MonitorOff className="h-6 w-6" /> : <MonitorUp className="h-6 w-6" />}
+              </CallCtl>
+              {withVideo && (
+                <CallCtl active={false} onClick={() => void switchCamera()} label="ক্যাম বদল">
+                  <SwitchCamera className="h-6 w-6" />
+                </CallCtl>
+              )}
+            </div>
+            <div className="mt-5 flex justify-center">
               <button
-                onClick={toggleCam}
-                className={`btn-press grid h-14 w-14 place-items-center rounded-full text-white ${camOff ? "bg-white/25" : "bg-white/10"}`}
-                aria-label="ক্যামেরা"
+                onClick={hangUp}
+                className="btn-press grid h-[68px] w-[68px] place-items-center rounded-full bg-rose-600 text-white shadow-[0_12px_30px_-8px_rgba(244,63,94,0.9)]"
+                aria-label="কল কাটুন"
               >
-                {camOff ? <VideoOff className="h-6 w-6" /> : <Video className="h-6 w-6" />}
+                <PhoneOff className="h-7 w-7" />
               </button>
-            )}
+            </div>
           </div>
         </div>
       )}
