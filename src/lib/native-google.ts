@@ -41,21 +41,33 @@ export async function signInWithNativeGoogle(): Promise<boolean> {
     google: { webClientId: WEB_CLIENT_ID, mode: "online" },
   });
 
-  const res: any = await SocialLogin.login({
-    provider: "google",
-    // Do not pass `scopes` here. The Android plugin already requests the
-    // standard profile/email scopes; explicitly passing them requires a
-    // specially modified Activity and caused the red native error message.
-    options: {
-      forcePrompt: true,
-      filterByAuthorizedAccounts: false,
-      autoSelectEnabled: false,
-    },
-  });
+  // Credential Manager কখনো "authorized accounts only" মোডে খালি ফেরত দেয়,
+  // তখন দ্বিতীয়বার সব একাউন্ট দেখিয়ে চেষ্টা করি — এতে বার বার লুপ হয় না।
+  const attempts = [
+    { forcePrompt: true, filterByAuthorizedAccounts: false, autoSelectEnabled: false },
+    { forcePrompt: true, filterByAuthorizedAccounts: true, autoSelectEnabled: false },
+  ];
 
-  const idToken: string | undefined =
-    res?.result?.idToken ?? res?.result?.authentication?.idToken ?? res?.idToken;
-  if (!idToken) throw new Error("Google থেকে টোকেন পাওয়া যায়নি");
+  let idToken: string | undefined;
+  let lastError: unknown;
+  for (const options of attempts) {
+    try {
+      const res: any = await SocialLogin.login({ provider: "google", options });
+      idToken =
+        res?.result?.idToken ?? res?.result?.authentication?.idToken ?? res?.idToken;
+      if (idToken) break;
+    } catch (e) {
+      lastError = e;
+    }
+  }
+  if (!idToken) {
+    const msg = (lastError as any)?.message ?? "";
+    throw new Error(
+      msg
+        ? `Google Sign-In: ${msg}`
+        : "ফোনের Google একাউন্ট থেকে টোকেন পাওয়া যায়নি — একবার Settings → Google একাউন্ট চেক করুন",
+    );
+  }
 
   const { error } = await supabase.auth.signInWithIdToken({
     provider: "google",
