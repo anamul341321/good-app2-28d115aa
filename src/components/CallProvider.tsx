@@ -286,7 +286,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       }
       return pc;
     },
-    [attachRemote, cleanup, myId, sendTo],
+    [attachRemote, cleanup, myId, sendTo, waitForIce],
   );
 
   const startCall = useCallback(
