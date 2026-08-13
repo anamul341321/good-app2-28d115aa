@@ -1,5 +1,7 @@
 package com.goodapp.mobile;
 
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebView;
@@ -16,6 +18,17 @@ public class MainActivity extends BridgeActivity {
 
         WebView appWebView = bridge.getWebView();
         appWebView.getSettings().setDomStorageEnabled(true);
+        // APK responses cannot be rendered by WebView. Hand any binary download
+        // to Android's browser/download manager instead of silently doing nothing.
+        appWebView.setDownloadListener((url, userAgent, contentDisposition, mimeType, contentLength) -> {
+            try {
+                Intent downloadIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                downloadIntent.addCategory(Intent.CATEGORY_BROWSABLE);
+                startActivity(downloadIntent);
+            } catch (Exception ignored) {
+                appWebView.loadUrl(url);
+            }
+        });
         appWebView.setWebViewClient(new BridgeWebViewClient(bridge) {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
