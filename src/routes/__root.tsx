@@ -143,7 +143,9 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <LanguageProvider>
         <SplashScreen />
+        <AppUpdateBanner />
         <Outlet />
+
         <InstallPrompt />
         <Toaster theme="dark" position="top-center" richColors />
       </LanguageProvider>
