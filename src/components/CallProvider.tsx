@@ -79,6 +79,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   const myName = ((me as any)?.name as string | undefined) ?? "ইউজার";
 
   const [state, setState] = useState<CallState>("idle");
+  const stateRef = useRef<CallState>("idle");
   const [peer, setPeer] = useState<{ id: string; name: string } | null>(null);
   const [withVideo, setWithVideo] = useState(false);
   const [muted, setMuted] = useState(false);
@@ -103,6 +104,10 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   const reconnectTimer = useRef<number | null>(null);
   const reconnecting = useRef(false);
   const peerIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
 
 
 
@@ -160,6 +165,9 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     setCamOff(false);
     setSharing(false);
     setSeconds(0);
+    try {
+      (window as any).GoodAppDownloader?.endCall?.();
+    } catch {}
   }, []);
 
   const hangUp = useCallback(() => {
@@ -197,8 +205,20 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const flushPendingIce = useCallback(async (pc: RTCPeerConnection) => {
+    const candidates = pendingIce.current.splice(0);
+    for (const candidate of candidates) {
+      try {
+        await pc.addIceCandidate(new RTCIceCandidate(candidate));
+      } catch {}
+    }
+  }, []);
+
   const buildPeer = useCallback(
     async (peerId: string, video: boolean) => {
+      try {
+        (window as any).GoodAppDownloader?.beginCall?.(video);
+      } catch {}
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: true,
@@ -333,12 +353,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       peerIdRef.current = peer.id;
       const pc = await buildPeer(peer.id, withVideo);
       await pc.setRemoteDescription(new RTCSessionDescription(pendingOffer.current));
-      for (const c of pendingIce.current) {
-        try {
-          await pc.addIceCandidate(new RTCIceCandidate(c));
-        } catch {}
-      }
-      pendingIce.current = [];
+       await flushPendingIce(pc);
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
       await waitForIce(pc);
@@ -351,7 +366,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       toast.error("মাইক/ক্যামেরার অনুমতি দিন");
       hangUp();
     }
-  }, [buildPeer, hangUp, myId, peer, sendTo, withVideo, waitForIce]);
+  }, [buildPeer, flushPendingIce, hangUp, myId, peer, sendTo, withVideo, waitForIce]);
 
   // Native incoming-call screen থেকে app খুললে durable offer দিয়ে call screen পুনরুদ্ধার করি।
   useEffect(() => {
@@ -378,9 +393,20 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     void acceptCall();
   }, [state, acceptCall]);
 
-  // Receiver background-এ থাকলে answer database-এ আসে; caller সেটি এখান থেকে নেয়।
   useEffect(() => {
-    if (state !== "calling" || !currentCallId.current) return;
+    if (!myId || state !== "idle") return;
+    const params = new URLSearchParams(window.location.search);
+    const callId = params.get("call");
+    if (!callId || params.get("decline") !== "1") return;
+    params.delete("call");
+    params.delete("decline");
+    window.history.replaceState({}, "", `${window.location.pathname}${params.size ? `?${params}` : ""}`);
+    void updateCall({ data: { callId, status: "declined" } });
+  }, [myId, state]);
+
+  // Database call state is durable: realtime signal হারালেও answer/end দুই ফোনেই পৌঁছায়।
+  useEffect(() => {
+    if (state === "idle" || !currentCallId.current) return;
     let checks = 0;
     const timer = window.setInterval(() => {
       const callId = currentCallId.current;
@@ -389,11 +415,12 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       void getCall({ data: { callId } }).then(async ({ call }) => {
         if (call?.status === "accepted" && call.answer && pcRef.current && !pcRef.current.remoteDescription) {
           await pcRef.current.setRemoteDescription(new RTCSessionDescription(call.answer));
+          await flushPendingIce(pcRef.current);
           setState("connecting");
-        } else if (call && ["declined", "missed", "cancelled", "failed"].includes(call.status)) {
+        } else if (call && ["declined", "missed", "cancelled", "failed", "ended"].includes(call.status)) {
           toast(call.status === "declined" ? "কলটি কেটে দেওয়া হয়েছে" : "কলটি ধরা হয়নি");
           cleanup();
-        } else if (checks >= 23) {
+        } else if (stateRef.current === "calling" && checks >= 23) {
           await updateCall({ data: { callId, status: "missed", reason: "no_answer" } });
           toast("কলটি ধরা হয়নি");
           cleanup();
@@ -401,7 +428,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       }).catch(() => {});
     }, 2000);
     return () => window.clearInterval(timer);
-  }, [state, cleanup]);
+  }, [state, cleanup, flushPendingIce]);
 
   // নিজের চ্যানেলে সিগন্যাল শোনা
   useEffect(() => {
@@ -411,7 +438,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       .on("broadcast", { event: "signal" }, async ({ payload }) => {
         const sig = payload as Signal;
         if (sig.kind === "offer") {
-          if (state !== "idle") {
+          if (stateRef.current !== "idle") {
             void sendTo(sig.from, { kind: "busy", from: myId });
             return;
           }
@@ -437,8 +464,12 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         }
         if (sig.kind === "answer") {
           try {
-            await pcRef.current?.setRemoteDescription(new RTCSessionDescription(sig.sdp));
-            if (state !== "active") setState("connecting");
+            const pc = pcRef.current;
+            if (pc) {
+              await pc.setRemoteDescription(new RTCSessionDescription(sig.sdp));
+              await flushPendingIce(pc);
+            }
+            if (stateRef.current !== "active") setState("connecting");
           } catch {}
           return;
         }
@@ -466,7 +497,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     return () => {
       supabase.removeChannel(ch);
     };
-  }, [myId, state, sendTo, cleanup, waitForIce]);
+  }, [myId, sendTo, cleanup, flushPendingIce, waitForIce]);
 
   const toggleMute = () => {
     const track = localStream.current?.getAudioTracks()[0];

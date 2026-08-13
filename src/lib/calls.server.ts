@@ -106,8 +106,11 @@ export async function updateCallSession(
     .from("call_sessions")
     .update(patch)
     .eq("id", input.callId);
-  if (!error && existing.caller_id === context.userId && ["ended", "cancelled", "missed"].includes(input.status)) {
-    await sendCancelCallPush(existing.callee_id, input.callId);
+  if (!error && ["declined", "ended", "cancelled", "missed", "failed"].includes(input.status)) {
+    const otherUserId = existing.caller_id === context.userId
+      ? existing.callee_id
+      : existing.caller_id;
+    await sendCancelCallPush(otherUserId, input.callId);
   }
   return { ok: !error };
 }

@@ -90,11 +90,6 @@ public class GoodAppMessagingService extends FirebaseMessagingService {
             .setContentText(callerName)
             .setColor(Color.rgb(22, 163, 74))
             .setCategory(NotificationCompat.CATEGORY_CALL)
-            .setStyle(NotificationCompat.CallStyle.forIncomingCall(
-                new androidx.core.app.Person.Builder().setName(callerName).setImportant(true).build(),
-                pending,
-                pending
-            ))
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setOngoing(true)
