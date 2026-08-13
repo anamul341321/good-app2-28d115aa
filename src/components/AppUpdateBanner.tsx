@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Download, Rocket } from "lucide-react";
+import { Download, Rocket, X } from "lucide-react";
 import { toast } from "sonner";
 import { getAppStatus } from "@/lib/app-status.functions";
 import { isNativeApp } from "@/lib/native-google";
