@@ -26,6 +26,12 @@ export const Route = createFileRoute("/api/public/app/download")({
 
         // Full URL saved by admin (e.g. Play Store link) → just redirect.
         if (/^https?:\/\//i.test(path)) {
+          if (requestedUrl.searchParams.get("resolve") === "1") {
+            return Response.json(
+              { downloadUrl: path, fileName: `Good-App-v${version}.apk` },
+              { headers: { "cache-control": "no-store" } },
+            );
+          }
           return new Response(null, {
             status: 302,
             headers: {
@@ -42,6 +48,12 @@ export const Route = createFileRoute("/api/public/app/download")({
           .createSignedUrl(path, 60 * 10, { download: `Good-App-v${version}.apk` });
         if (error || !data?.signedUrl) {
           return new Response("ডাউনলোড লিংক তৈরি করা যায়নি", { status: 500 });
+        }
+        if (requestedUrl.searchParams.get("resolve") === "1") {
+          return Response.json(
+            { downloadUrl: data.signedUrl, fileName: `Good-App-v${version}.apk` },
+            { headers: { "cache-control": "no-store" } },
+          );
         }
         return new Response(null, {
           status: 302,

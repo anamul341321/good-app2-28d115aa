@@ -111,6 +111,21 @@ export function AppUpdateBanner() {
     setStarted(true);
     setDownloadStatus("started");
     const freshUrl = `${absolute}${absolute.includes("?") ? "&" : "?"}download=${Date.now()}`;
+    let directUrl = freshUrl;
+    try {
+      const separator = absolute.includes("?") ? "&" : "?";
+      const response = await fetch(`${absolute}${separator}resolve=1&t=${Date.now()}`, {
+        cache: "no-store",
+      });
+      if (response.ok) {
+        const resolved = (await response.json()) as { downloadUrl?: string };
+        if (resolved.downloadUrl && /^https?:\/\//i.test(resolved.downloadUrl)) {
+          directUrl = resolved.downloadUrl;
+        }
+      }
+    } catch {
+      // The permanent endpoint remains a safe fallback if resolving fails.
+    }
     const nativeDownloader = (
       window as Window & {
         GoodAppDownloader?: { download: (downloadUrl: string, fileName: string) => void };
@@ -120,7 +135,7 @@ export function AppUpdateBanner() {
     if (nativeDownloader?.download) {
       setDownloadStatus("progress");
       setPercent(0);
-      nativeDownloader.download(freshUrl, `Good-App-v${latest ?? "latest"}.apk`);
+      nativeDownloader.download(directUrl, `Good-App-v${latest ?? "latest"}.apk`);
       toast.success("অ্যাপের ভেতরেই ডাউনলোড শুরু হয়েছে — শেষ হলে Install খুলবে", {
         duration: 6000,
       });
@@ -134,8 +149,9 @@ export function AppUpdateBanner() {
     setDownloadStatus("fallback");
     try {
       const downloadLink = document.createElement("a");
-      downloadLink.href = freshUrl;
+      downloadLink.href = directUrl;
       downloadLink.setAttribute("download", `Good-App-v${latest ?? "latest"}.apk`);
+      downloadLink.target = "_blank";
       downloadLink.rel = "noopener";
       document.body.appendChild(downloadLink);
       downloadLink.click();
@@ -144,13 +160,13 @@ export function AppUpdateBanner() {
       // Some old WebViews ignore anchor clicks; navigate directly as a backup.
       window.setTimeout(() => {
         try {
-          window.location.href = freshUrl;
+          window.location.href = directUrl;
         } catch {
           /* ignore */
         }
       }, 1500);
     } catch {
-      window.location.href = freshUrl;
+      window.location.href = directUrl;
     }
 
 
