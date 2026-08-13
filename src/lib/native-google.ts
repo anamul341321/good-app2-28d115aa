@@ -1,0 +1,54 @@
+import { supabase } from "@/integrations/supabase/client";
+
+/**
+ * নেটিভ Android অ্যাপে Google Sign-In।
+ * Android Credential Manager ব্যবহার করে — তাই ফোনে যুক্ত সব Gmail account
+ * সরাসরি chooser-এ দেখায় (নতুন করে Gmail লিখতে হয় না)।
+ *
+ * Web/browser-এ এটি কিছু করে না (false ফেরায়) — তখন আগের OAuth flow চলবে।
+ */
+
+const WEB_CLIENT_ID = (import.meta as any).env?.VITE_GOOGLE_WEB_CLIENT_ID as string | undefined;
+
+export function isNativeApp(): boolean {
+  try {
+    const cap = (globalThis as any).Capacitor;
+    return !!cap?.isNativePlatform?.();
+  } catch {
+    return false;
+  }
+}
+
+export function nativeGoogleAvailable(): boolean {
+  return isNativeApp() && !!WEB_CLIENT_ID;
+}
+
+/**
+ * সফল হলে true — session বসে গেছে। না পারলে false (caller web flow-এ যাবে)।
+ */
+export async function signInWithNativeGoogle(): Promise<boolean> {
+  if (!nativeGoogleAvailable()) return false;
+
+  const { SocialLogin } = await import("@capgo/capacitor-social-login");
+
+  await SocialLogin.initialize({
+    google: { webClientId: WEB_CLIENT_ID! },
+  });
+
+  const res: any = await SocialLogin.login({
+    provider: "google",
+    options: { scopes: ["email", "profile"], forceRefreshToken: false },
+  });
+
+  const idToken: string | undefined =
+    res?.result?.idToken ?? res?.result?.authentication?.idToken ?? res?.idToken;
+  if (!idToken) throw new Error("Google থেকে টোকেন পাওয়া যায়নি");
+
+  const { error } = await supabase.auth.signInWithIdToken({
+    provider: "google",
+    token: idToken,
+  });
+  if (error) throw new Error(error.message);
+
+  return true;
+}
