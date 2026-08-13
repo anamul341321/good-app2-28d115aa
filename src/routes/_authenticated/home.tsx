@@ -746,8 +746,10 @@ function TaskCell({ task, onStart, onReverify, onOpenPhoto }: { task: any; onSta
       <button onClick={() => faceUrl && onOpenPhoto(faceUrl)}
         className="relative aspect-square rounded-lg overflow-hidden border-[3px] active:scale-95 transition-transform"
         style={{
-          borderColor: due ? "#f59e0b" : theme.to,
-          background: due
+          borderColor: reverified ? "#10b981" : due ? "#f59e0b" : theme.to,
+          background: reverified
+            ? "linear-gradient(135deg,#10b981,#0ea5e9)"
+            : due
             ? "linear-gradient(135deg,#f59e0b,#ef4444)"
             : `linear-gradient(135deg,${theme.from},${theme.to})`,
           boxShadow: `0 12px 26px -8px rgba(${theme.glow},0.6)`,
