@@ -99,6 +99,12 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   const localVideo = useRef<HTMLVideoElement | null>(null);
   const remoteVideo = useRef<HTMLVideoElement | null>(null);
   const remoteAudio = useRef<HTMLAudioElement | null>(null);
+  const isCaller = useRef(false);
+  const reconnectTimer = useRef<number | null>(null);
+  const reconnecting = useRef(false);
+  const peerIdRef = useRef<string | null>(null);
+
+
 
   const sendTo = useCallback(async (peerId: string, payload: Signal) => {
     let ch = outRef.current;
