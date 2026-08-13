@@ -1,11 +1,16 @@
 package com.goodapp.mobile;
 
 import android.content.Intent;
+import android.content.BroadcastReceiver;
 import android.app.DownloadManager;
 import android.content.Context;
+import android.content.IntentFilter;
+import android.database.Cursor;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.provider.Settings;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebView;
@@ -13,10 +18,70 @@ import android.widget.Toast;
 
 import com.getcapacitor.BridgeActivity;
 import com.getcapacitor.BridgeWebViewClient;
+import androidx.core.content.FileProvider;
+
+import java.io.File;
 
 public class MainActivity extends BridgeActivity {
     private static final String APP_URL = "https://www.goodapp2.live";
     private static final String APK_DOWNLOAD_PATH = "/api/public/app/download";
+    private long updateDownloadId = -1L;
+    private String updateFileName = "Good-App-latest.apk";
+    private boolean waitingForInstallPermission = false;
+
+    private final BroadcastReceiver downloadReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (!DownloadManager.ACTION_DOWNLOAD_COMPLETE.equals(intent.getAction())) return;
+            long completedId = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1L);
+            if (completedId != updateDownloadId) return;
+            DownloadManager manager = (DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE);
+            try (Cursor cursor = manager.query(new DownloadManager.Query().setFilterById(completedId))) {
+                if (cursor != null && cursor.moveToFirst()) {
+                    int statusIndex = cursor.getColumnIndex(DownloadManager.COLUMN_STATUS);
+                    int status = statusIndex >= 0 ? cursor.getInt(statusIndex) : DownloadManager.STATUS_FAILED;
+                    if (status == DownloadManager.STATUS_SUCCESSFUL) {
+                        bridge.getWebView().post(() -> bridge.getWebView().evaluateJavascript(
+                            "window.dispatchEvent(new CustomEvent('goodapp-download-status',{detail:{status:'complete'}}))",
+                            null
+                        ));
+                        openDownloadedApk();
+                        return;
+                    }
+                }
+            } catch (Exception ignored) {}
+            bridge.getWebView().post(() -> bridge.getWebView().evaluateJavascript(
+                "window.dispatchEvent(new CustomEvent('goodapp-download-status',{detail:{status:'failed'}}))",
+                null
+            ));
+            Toast.makeText(MainActivity.this, "আপডেট ডাউনলোড ব্যর্থ হয়েছে—আবার চেষ্টা করুন", Toast.LENGTH_LONG).show();
+        }
+    };
+
+    private void openDownloadedApk() {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+                && !getPackageManager().canRequestPackageInstalls()) {
+                waitingForInstallPermission = true;
+                Intent permissionIntent = new Intent(
+                    Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                    Uri.parse("package:" + getPackageName())
+                );
+                startActivity(permissionIntent);
+                Toast.makeText(this, "Good-App থেকে Install অনুমতি দিন, তারপর Downloads-এর APK চাপুন", Toast.LENGTH_LONG).show();
+                return;
+            }
+            waitingForInstallPermission = false;
+            File apk = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), updateFileName);
+            Uri apkUri = FileProvider.getUriForFile(this, getPackageName() + ".fileprovider", apk);
+            Intent installIntent = new Intent(Intent.ACTION_VIEW);
+            installIntent.setDataAndType(apkUri, "application/vnd.android.package-archive");
+            installIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(installIntent);
+        } catch (Exception error) {
+            Toast.makeText(this, "ডাউনলোড শেষ—Files → Downloads থেকে Good-App APK চাপুন", Toast.LENGTH_LONG).show();
+        }
+    }
 
     private boolean openApkDownload(Uri uri) {
         if (uri == null || !APK_DOWNLOAD_PATH.equals(uri.getPath())) return false;
@@ -40,6 +105,12 @@ public class MainActivity extends BridgeActivity {
         public void download(String url, String fileName) {
             runOnUiThread(() -> {
                 try {
+                    updateFileName = fileName == null || fileName.isEmpty() ? "Good-App-latest.apk" : fileName;
+                    File previous = new File(
+                        Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
+                        updateFileName
+                    );
+                    if (previous.exists()) previous.delete();
                     DownloadManager.Request request = new DownloadManager.Request(Uri.parse(url));
                     request.setTitle("Good-App আপডেট");
                     request.setDescription("নতুন ভার্সন ডাউনলোড হচ্ছে");
@@ -51,17 +122,25 @@ public class MainActivity extends BridgeActivity {
                     request.setAllowedOverRoaming(true);
                     request.setDestinationInExternalPublicDir(
                         Environment.DIRECTORY_DOWNLOADS,
-                        fileName == null || fileName.isEmpty() ? "Good-App-latest.apk" : fileName
+                        updateFileName
                     );
                     DownloadManager manager =
                         (DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE);
-                    manager.enqueue(request);
+                    updateDownloadId = manager.enqueue(request);
+                    bridge.getWebView().evaluateJavascript(
+                        "window.dispatchEvent(new CustomEvent('goodapp-download-status',{detail:{status:'started'}}))",
+                        null
+                    );
                     Toast.makeText(
                         MainActivity.this,
                         "ডাউনলোড শুরু হয়েছে — Notification দেখুন",
                         Toast.LENGTH_LONG
                     ).show();
                 } catch (Exception error) {
+                    bridge.getWebView().evaluateJavascript(
+                        "window.dispatchEvent(new CustomEvent('goodapp-download-status',{detail:{status:'fallback'}}))",
+                        null
+                    );
                     openApkDownload(Uri.parse(url));
                 }
             });
@@ -75,6 +154,12 @@ public class MainActivity extends BridgeActivity {
         WebView appWebView = bridge.getWebView();
         appWebView.getSettings().setDomStorageEnabled(true);
         appWebView.addJavascriptInterface(new GoodAppDownloader(), "GoodAppDownloader");
+        IntentFilter downloadFilter = new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(downloadReceiver, downloadFilter, Context.RECEIVER_NOT_EXPORTED);
+        } else {
+            registerReceiver(downloadReceiver, downloadFilter);
+        }
         // APK responses cannot be rendered by WebView. Hand any binary download
         // to Android's browser/download manager instead of silently doing nothing.
         appWebView.setDownloadListener((url, userAgent, contentDisposition, mimeType, contentLength) -> {
@@ -116,5 +201,23 @@ public class MainActivity extends BridgeActivity {
         // Previously Capacitor could begin loading first and an early redirect could
         // reach Android before the custom client existed, opening Chrome.
         appWebView.loadUrl(APP_URL);
+    }
+
+    @Override
+    protected void onDestroy() {
+        try {
+            unregisterReceiver(downloadReceiver);
+        } catch (Exception ignored) {}
+        super.onDestroy();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (waitingForInstallPermission
+            && (Build.VERSION.SDK_INT < Build.VERSION_CODES.O
+                || getPackageManager().canRequestPackageInstalls())) {
+            openDownloadedApk();
+        }
     }
 }
