@@ -99,11 +99,24 @@ export function AppUpdateBanner() {
       return;
     }
 
-    // Already-installed builds do not yet have the downloader bridge. A
-    // same-frame HTTPS navigation is deliberately used here: MainActivity's
-    // existing URL interceptor then hands it to Chrome/Android Downloads.
-    toast.info("ডাউনলোড পেজ খোলা হচ্ছে…", { duration: 4000 });
-    window.location.assign(freshUrl);
+    // Older installed builds do not contain the native DownloadManager bridge.
+    // Open the HTTPS endpoint in Android's browser so its download manager can
+    // follow the signed redirect and save the APK. Keeping this in the WebView
+    // only shows a blank/loading page and never creates a real download.
+    try {
+      const { Browser } = await import("@capacitor/browser");
+      await Browser.open({ url: freshUrl, presentationStyle: "popover" });
+      toast.success("Chrome-এ ডাউনলোড শুরু হবে — Downloads দেখুন", { duration: 6000 });
+    } catch {
+      const downloadLink = document.createElement("a");
+      downloadLink.href = freshUrl;
+      downloadLink.target = "_blank";
+      downloadLink.rel = "external noopener";
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      downloadLink.remove();
+      toast.info("ডাউনলোড পেজ খোলা হয়েছে — Download চাপুন", { duration: 6000 });
+    }
   };
 
   return (
