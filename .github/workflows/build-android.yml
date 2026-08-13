@@ -51,7 +51,7 @@ jobs:
         id: android_version
         shell: bash
         run: |
-          VERSION_NAME=$(sed -n 's/.*versionName[[:space:]]*["'\'']\([^"'\'']*\)["'\''].*/\1/p' android/app/build.gradle | head -1)
+          VERSION_NAME=$(awk -F'"' '/versionName/{print $2; exit}' android/app/build.gradle)
           VERSION_CODE=$(sed -n 's/.*versionCode[[:space:]]*\([0-9]*\).*/\1/p' android/app/build.gradle | head -1)
           test -n "$VERSION_NAME" && test -n "$VERSION_CODE"
           echo "name=$VERSION_NAME" >> "$GITHUB_OUTPUT"

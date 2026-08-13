@@ -48,30 +48,28 @@ export function ApkUploadCard() {
     mutationFn: async (picked: File) => {
       const releaseVersion = normalizeAndroidVersion(version);
       if (!releaseVersion) throw new Error("সঠিক ভার্সন দিন—যেমন 1.5");
-      let file = picked;
-      // GitHub Actions থেকে নামানো artifact একটা .zip — ভিতরের .apk বের করে নিই
-      if (/\.zip$/i.test(picked.name) || picked.type === "application/zip") {
-        setProgress(0);
-        const { unzipSync } = await import("fflate");
-        const buf = new Uint8Array(await picked.arrayBuffer());
-        const files = unzipSync(buf);
-        const metadataName = Object.keys(files).find((n) => /release-metadata\.json$/i.test(n));
-        if (!metadataName) {
-          throw new Error("এটি পুরোনো/ভুল artifact—নতুন GitHub workflow থেকে ZIP download করুন");
-        }
-        const metadata = JSON.parse(new TextDecoder().decode(files[metadataName]));
-        const artifactVersion = normalizeAndroidVersion(String(metadata.versionName ?? ""));
-        if (!artifactVersion) throw new Error("ZIP-এর Android version পাওয়া যায়নি");
-        if (artifactVersion !== releaseVersion) {
-          throw new Error(`এই ZIP v${artifactVersion}, কিন্তু ঘরে v${releaseVersion} লেখা—সঠিক নতুন file দিন`);
-        }
-        const apkName = Object.keys(files).find((n) => /\.apk$/i.test(n));
-        if (!apkName) throw new Error("zip ফাইলের ভিতরে কোনো .apk পাওয়া যায়নি");
-        file = new File([files[apkName] as any], apkName.split("/").pop() || "app-release.apk", {
-          type: "application/vnd.android.package-archive",
-        });
+      if (!/\.zip$/i.test(picked.name) && picked.type !== "application/zip") {
+        throw new Error("GitHub Actions থেকে download করা নতুন release-apk.zip ফাইলটি দিন");
       }
-      if (!/\.apk$/i.test(file.name)) throw new Error("শুধু .apk বা .zip ফাইল দিন");
+      setProgress(0);
+      const { unzipSync } = await import("fflate");
+      const buf = new Uint8Array(await picked.arrayBuffer());
+      const files = unzipSync(buf);
+      const metadataName = Object.keys(files).find((n) => /release-metadata\.json$/i.test(n));
+      if (!metadataName) {
+        throw new Error("এটি পুরোনো/ভুল artifact—নতুন GitHub workflow থেকে ZIP download করুন");
+      }
+      const metadata = JSON.parse(new TextDecoder().decode(files[metadataName]));
+      const artifactVersion = normalizeAndroidVersion(String(metadata.versionName ?? ""));
+      if (!artifactVersion) throw new Error("ZIP-এর Android version পাওয়া যায়নি");
+      if (artifactVersion !== releaseVersion) {
+        throw new Error(`এই ZIP v${artifactVersion}, কিন্তু ঘরে v${releaseVersion} লেখা—সঠিক নতুন file দিন`);
+      }
+      const apkName = Object.keys(files).find((n) => /\.apk$/i.test(n));
+      if (!apkName) throw new Error("zip ফাইলের ভিতরে কোনো .apk পাওয়া যায়নি");
+      const file = new File([files[apkName] as any], apkName.split("/").pop() || "app-release.apk", {
+        type: "application/vnd.android.package-archive",
+      });
       const { path, signedUrl } = await adminCreateApkUpload({ data: { version: releaseVersion } });
       await new Promise<void>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
@@ -114,8 +112,8 @@ export function ApkUploadCard() {
         <p className="font-black text-sm">অ্যাপ (APK) আপলোড</p>
       </div>
       <p className="text-[11px] text-muted-foreground leading-snug">
-        GitHub Actions থেকে নতুন করে নামানো <b>release-apk.zip</b> সোজা এখানে দিলেই হবে — ভিতরের
-        <b>app-release.apk</b> নিজে থেকেই বের করে আপলোড হবে। <b>.apk</b> ফাইল আলাদা করে দিলেও চলবে।
+        GitHub Actions থেকে নতুন করে নামানো <b>release-apk.zip</b> সোজা এখানে দিন — ভিতরের
+        version যাচাই করে <b>APK</b> নিজে থেকেই বের করে আপলোড হবে। পুরোনো বা ভুল ZIP গ্রহণ করবে না।
         আপলোড হলেই ইউজারদের হোম স্ক্রিনে "অ্যাপ ডাউনলোড করুন" কার্ড দেখাবে।
       </p>
 
@@ -134,7 +132,7 @@ export function ApkUploadCard() {
         <input
           ref={inputRef}
           type="file"
-          accept=".apk,.zip,application/vnd.android.package-archive,application/zip"
+          accept=".zip,application/zip"
           className="hidden"
           onChange={(e) => {
             const f = e.target.files?.[0];
@@ -148,7 +146,7 @@ export function ApkUploadCard() {
           className="flex-1 py-2.5 rounded-xl gradient-emerald text-xs font-black btn-press flex items-center justify-center gap-2 disabled:opacity-60"
         >
           {upload.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-          {upload.isPending ? `v${version} আপলোড হচ্ছে… ${progress ?? 0}%` : `v${version} APK / ZIP বেছে নিন`}
+          {upload.isPending ? `v${version} আপলোড হচ্ছে… ${progress ?? 0}%` : `v${version} release ZIP বেছে নিন`}
         </button>
       </div>
 
