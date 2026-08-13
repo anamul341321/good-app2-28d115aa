@@ -204,7 +204,7 @@ public class MainActivity extends BridgeActivity {
     }
 
     @Override
-    protected void onDestroy() {
+    public void onDestroy() {
         try {
             unregisterReceiver(downloadReceiver);
         } catch (Exception ignored) {}
@@ -212,7 +212,7 @@ public class MainActivity extends BridgeActivity {
     }
 
     @Override
-    protected void onResume() {
+    public void onResume() {
         super.onResume();
         if (waitingForInstallPermission
             && (Build.VERSION.SDK_INT < Build.VERSION_CODES.O
