@@ -466,7 +466,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     return () => {
       supabase.removeChannel(ch);
     };
-  }, [myId, state, sendTo, cleanup]);
+  }, [myId, state, sendTo, cleanup, waitForIce]);
 
   const toggleMute = () => {
     const track = localStream.current?.getAudioTracks()[0];
