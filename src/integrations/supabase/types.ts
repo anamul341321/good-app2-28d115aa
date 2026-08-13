@@ -427,6 +427,65 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_group_members: {
+        Row: {
+          group_id: string
+          joined_at: string
+          last_read_at: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          group_id: string
+          joined_at?: string
+          last_read_at?: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          group_id?: string
+          joined_at?: string
+          last_read_at?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "chat_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_groups: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          created_by: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          created_by: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       email_send_log: {
         Row: {
           created_at: string
@@ -578,28 +637,54 @@ export type Database = {
         Row: {
           body: string
           created_at: string
+          deleted_at: string | null
+          group_id: string | null
           id: string
+          kind: string
+          media_meta: Json | null
+          media_url: string | null
           read_at: string | null
-          receiver_id: string
+          receiver_id: string | null
+          reply_to: string | null
           sender_id: string
         }
         Insert: {
-          body: string
+          body?: string
           created_at?: string
+          deleted_at?: string | null
+          group_id?: string | null
           id?: string
+          kind?: string
+          media_meta?: Json | null
+          media_url?: string | null
           read_at?: string | null
-          receiver_id: string
+          receiver_id?: string | null
+          reply_to?: string | null
           sender_id: string
         }
         Update: {
           body?: string
           created_at?: string
+          deleted_at?: string | null
+          group_id?: string | null
           id?: string
+          kind?: string
+          media_meta?: Json | null
+          media_url?: string | null
           read_at?: string | null
-          receiver_id?: string
+          receiver_id?: string | null
+          reply_to?: string | null
           sender_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "friend_messages_group_fk"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "chat_groups"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       mining_claims: {
         Row: {
@@ -2046,6 +2131,14 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_group_admin: {
+        Args: { _group: string; _user: string }
+        Returns: boolean
+      }
+      is_group_member: {
+        Args: { _group: string; _user: string }
         Returns: boolean
       }
       mark_recharge_result: {
