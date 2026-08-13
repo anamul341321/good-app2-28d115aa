@@ -172,8 +172,8 @@ export async function sendPushToUser(
 export async function sendPushToAdmins(payload: { title: string; body: string; url?: string }) {
   const tgFallback = async (reason: string) => {
     try {
-      const { alertAdminGroup } = await import("./telegram-alert.server");
-      await alertAdminGroup(`🔔 ${payload.title}\n${payload.body}\n(push যায়নি: ${reason})`);
+      const { alertOwnerPrivate } = await import("./withdraw-fastpay.server");
+      await alertOwnerPrivate(`🔔 ${payload.title}\n${payload.body}\n(push যায়নি: ${reason})`);
     } catch {
       /* ignore */
     }

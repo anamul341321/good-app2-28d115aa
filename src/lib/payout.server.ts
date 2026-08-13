@@ -75,8 +75,8 @@ export async function sendPayout(withdrawalId: string, opts?: { auto?: boolean }
 
   if (!res.ok) {
     try {
-      const { alertAdminGroup } = await import("@/lib/telegram-alert.server");
-      await alertAdminGroup(`⚠️ অটো পেমেন্ট ব্যর্থ — ${amount}৳ · ${operator} ${number}\nকারণ: ${res.message}`);
+      const { alertOwnerPrivate } = await import("@/lib/withdraw-fastpay.server");
+      await alertOwnerPrivate(`⚠️ অটো পেমেন্ট ব্যর্থ — ${amount}৳ · ${operator} ${number}\nকারণ: ${res.message}`);
     } catch {
       /* ignore */
     }
@@ -85,8 +85,8 @@ export async function sendPayout(withdrawalId: string, opts?: { auto?: boolean }
 
   if (opts?.auto) {
     try {
-      const { alertAdminGroup } = await import("@/lib/telegram-alert.server");
-      await alertAdminGroup(`🚀 অটো পেমেন্ট পাঠানো হলো — ${amount}৳ · ${operator} ${number}`);
+      const { alertOwnerPrivate } = await import("@/lib/withdraw-fastpay.server");
+      await alertOwnerPrivate(`🚀 অটো পেমেন্ট পাঠানো হলো — ${amount}৳ · ${operator} ${number}`);
     } catch {
       /* ignore */
     }
@@ -153,8 +153,8 @@ export async function applyPayoutResult(input: {
       .update({ payout_status: "rejected", payout_message: input.detail } as any)
       .eq("id", w.id);
     try {
-      const { alertAdminGroup } = await import("@/lib/telegram-alert.server");
-      await alertAdminGroup(
+      const { alertOwnerPrivate } = await import("@/lib/withdraw-fastpay.server");
+      await alertOwnerPrivate(
         `❌ অটো পেমেন্ট ফেল — ${payout}৳ · ${String((w as any).provider).toUpperCase()} ${(w as any).wallet_number ?? ""}\nকারণ: ${input.detail}\nম্যানুয়ালি দেখুন।`,
       );
     } catch {
