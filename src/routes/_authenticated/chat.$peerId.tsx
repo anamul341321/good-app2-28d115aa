@@ -1,34 +1,35 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Send, Loader2 } from "lucide-react";
-import { getThread, markChatRead, sendMessage } from "@/lib/chat.functions";
+import { toast } from "sonner";
+import { ArrowLeft, Check, Loader2, UserPlus, X } from "lucide-react";
+import { deleteMessage, getThread, markChatRead, sendMessage } from "@/lib/chat.functions";
+import { respondFriendRequest, sendFriendRequest } from "@/lib/friends.functions";
 import { CallButtons } from "@/components/CallProvider";
 import { playSentTone } from "@/lib/msg-sound";
+import { MessageBubble } from "@/components/chat/MessageBubble";
+import { Composer, type SendPayload } from "@/components/chat/Composer";
+import { useIsOnline } from "@/lib/presence";
 
 export const Route = createFileRoute("/_authenticated/chat/$peerId")({
   component: ThreadPage,
   head: () => ({
     meta: [
       { title: "চ্যাট — good-app" },
-      { name: "description", content: "বন্ধুর সাথে ফ্রি মেসেজ, অডিও ও ভিডিও কল — good-app চ্যাট।" },
+      { name: "description", content: "বন্ধুর সাথে ফ্রি মেসেজ, ছবি, ভিডিও, ভয়েস ও কল — good-app চ্যাট।" },
       { property: "og:title", content: "চ্যাট — good-app" },
-      { property: "og:description", content: "বন্ধুর সাথে ফ্রি মেসেজ ও কল।" },
+      { property: "og:description", content: "ছবি, ভিডিও, ভয়েস মেসেজ ও ফ্রি কল।" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
   }),
 });
 
-function timeOf(iso: string) {
-  return new Date(iso).toLocaleTimeString("bn-BD", { hour: "2-digit", minute: "2-digit" });
-}
-
 function ThreadPage() {
   const { peerId } = useParams({ from: "/_authenticated/chat/$peerId" });
   const qc = useQueryClient();
-  const [text, setText] = useState("");
   const endRef = useRef<HTMLDivElement | null>(null);
+  const online = useIsOnline(peerId);
 
   const { data, isLoading } = useQuery({
     queryKey: ["thread", peerId],
@@ -52,31 +53,114 @@ function ThreadPage() {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [data?.messages?.length]);
 
+  const refresh = () => {
+    void qc.invalidateQueries({ queryKey: ["thread", peerId] });
+    void qc.invalidateQueries({ queryKey: ["chats"] });
+  };
+
   const send = useMutation({
-    mutationFn: (body: string) => sendMessage({ data: { peerId, body } }),
+    mutationFn: (p: SendPayload) => sendMessage({ data: { peerId, ...p } }),
     onSuccess: () => {
       playSentTone();
-      setText("");
-      void qc.invalidateQueries({ queryKey: ["thread", peerId] });
-      void qc.invalidateQueries({ queryKey: ["chats"] });
+      refresh();
+    },
+    onError: (e: any) => toast.error(e?.message ?? "মেসেজ পাঠানো যায়নি"),
+  });
+
+  const del = useMutation({
+    mutationFn: (id: string) => deleteMessage({ data: { id } }),
+    onSuccess: refresh,
+  });
+
+  const addFriend = useMutation({
+    mutationFn: () => sendFriendRequest({ data: { userId: peerId } }),
+    onSuccess: () => {
+      toast.success("ফ্রেন্ড রিকোয়েস্ট পাঠানো হয়েছে");
+      refresh();
     },
   });
 
-  const me = (data as any)?.me as string | undefined;
+  const respond = useMutation({
+    mutationFn: (accept: boolean) =>
+      respondFriendRequest({ data: { linkId: (data as any)?.linkId ?? "", accept } }),
+    onSuccess: () => {
+      toast.success("হয়ে গেছে");
+      refresh();
+      void qc.invalidateQueries({ queryKey: ["friends"] });
+    },
+  });
+
+  const me = data?.me as string | undefined;
   const messages = data?.messages ?? [];
+  const status = (data as any)?.friendStatus as string | undefined;
 
   return (
     <div className="flex min-h-[70vh] flex-col pb-6">
       <div className="glass sticky top-0 z-10 -mx-1 mb-3 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-2xl px-3 py-2.5">
-        <Link to="/chat" className="btn-press grid h-10 w-10 place-items-center rounded-xl bg-surface-2" aria-label="ফিরে যান">
+        <Link
+          to="/chat"
+          className="btn-press grid h-10 w-10 place-items-center rounded-xl bg-surface-2"
+          aria-label="ফিরে যান"
+        >
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div className="min-w-0">
           <p className="truncate text-sm font-black">{data?.peer?.name ?? "চ্যাট"}</p>
-          <p className="text-[11px] font-bold text-muted-foreground">UID {data?.peer?.uid ?? "-"}</p>
+          <p
+            className={`flex items-center gap-1.5 text-[11px] font-bold ${
+              online ? "text-emerald-500" : "text-muted-foreground"
+            }`}
+          >
+            <span
+              className={`h-2 w-2 rounded-full ${online ? "bg-emerald-500" : "bg-muted-foreground/50"}`}
+            />
+            {online ? "এখন অ্যাকটিভ" : `UID ${data?.peer?.uid ?? "-"}`}
+          </p>
         </div>
         {data?.peer ? <CallButtons userId={data.peer.userId} name={data.peer.name} /> : <span />}
       </div>
+
+      {status !== "accepted" && data?.peer && (
+        <div className="glass mb-3 rounded-2xl p-3">
+          {(data as any)?.incomingRequest ? (
+            <>
+              <p className="text-xs font-black">
+                {data.peer.name} আপনাকে ফ্রেন্ড রিকোয়েস্ট পাঠিয়েছে
+              </p>
+              <div className="mt-2 flex gap-2">
+                <button
+                  onClick={() => respond.mutate(true)}
+                  className="btn-press flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-emerald-500/15 py-2 text-[11px] font-black text-emerald-500"
+                >
+                  <Check className="h-3.5 w-3.5" /> অ্যাকসেপ্ট
+                </button>
+                <button
+                  onClick={() => respond.mutate(false)}
+                  className="btn-press flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-rose-500/15 py-2 text-[11px] font-black text-rose-500"
+                >
+                  <X className="h-3.5 w-3.5" /> মুছুন
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="flex items-center gap-3">
+              <p className="min-w-0 flex-1 text-[11px] font-bold text-muted-foreground">
+                {status === "pending"
+                  ? "রিকোয়েস্ট পাঠানো হয়েছে — অ্যাকসেপ্ট করলে কল করতে পারবেন"
+                  : "এটি মেসেজ রিকোয়েস্ট — বন্ধু হলে কল করাও যাবে"}
+              </p>
+              {status !== "pending" && (
+                <button
+                  onClick={() => addFriend.mutate()}
+                  className="btn-press flex shrink-0 items-center gap-1.5 rounded-xl bg-violet-500/15 px-3 py-2 text-[11px] font-black text-violet-500"
+                >
+                  <UserPlus className="h-3.5 w-3.5" /> বন্ধু বানান
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="flex-1 space-y-2">
         {isLoading ? (
@@ -88,48 +172,19 @@ function ThreadPage() {
             এখনো কোনো মেসেজ নেই — নিচে লিখে পাঠান 👋
           </div>
         ) : (
-          messages.map((m) => {
-            const mine = m.sender_id === me;
-            return (
-              <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-                <div
-                  className={`max-w-[78%] rounded-2xl px-3.5 py-2.5 text-sm font-bold shadow-lg ${
-                    mine
-                      ? "gradient-cta rounded-br-md text-white"
-                      : "rounded-bl-md bg-surface-2 text-foreground"
-                  }`}
-                >
-                  <p className="whitespace-pre-wrap break-words">{m.body}</p>
-                  <p className={`mt-1 text-[10px] font-black ${mine ? "text-white/75" : "text-muted-foreground"}`}>
-                    {timeOf(m.created_at)} {mine ? (m.read_at ? "✓✓ সিন" : "✓ পাঠানো") : ""}
-                  </p>
-                </div>
-              </div>
-            );
-          })
+          messages.map((m) => (
+            <MessageBubble
+              key={m.id}
+              m={m}
+              mine={m.senderId === me}
+              onDelete={(id) => del.mutate(id)}
+            />
+          ))
         )}
         <div ref={endRef} />
       </div>
 
-      <div className="glass sticky bottom-20 mt-3 flex items-center gap-2 rounded-2xl p-2">
-        <input
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && text.trim()) send.mutate(text.trim());
-          }}
-          placeholder="মেসেজ লিখুন…"
-          className="min-w-0 flex-1 rounded-xl bg-surface-2 px-3 py-3 text-sm font-bold outline-none"
-        />
-        <button
-          onClick={() => text.trim() && send.mutate(text.trim())}
-          disabled={send.isPending || !text.trim()}
-          className="gradient-cta btn-press grid h-12 w-12 place-items-center rounded-xl text-white disabled:opacity-50"
-          aria-label="পাঠান"
-        >
-          {send.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
-        </button>
-      </div>
+      <Composer onSend={(p) => send.mutate(p)} sending={send.isPending} />
     </div>
   );
 }

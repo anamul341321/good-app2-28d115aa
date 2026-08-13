@@ -68,6 +68,7 @@ import { Route as ApiPublicPushNoticeRouteImport } from './routes/api/public/pus
 import { Route as ApiPublicPayoutBridgeRouteImport } from './routes/api/public/payout/bridge'
 import { Route as ApiPublicCeloSweepRunRouteImport } from './routes/api/public/celo-sweep/run'
 import { Route as ApiPublicAppDownloadRouteImport } from './routes/api/public/app/download'
+import { Route as AuthenticatedChatGroupGroupIdRouteImport } from './routes/_authenticated/chat.group.$groupId'
 
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
@@ -369,6 +370,12 @@ const ApiPublicAppDownloadRoute = ApiPublicAppDownloadRouteImport.update({
   path: '/api/public/app/download',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedChatGroupGroupIdRoute =
+  AuthenticatedChatGroupGroupIdRouteImport.update({
+    id: '/chat/group/$groupId',
+    path: '/chat/group/$groupId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -419,6 +426,7 @@ export interface FileRoutesByFullPath {
   '/api/public/whitelist-recheck': typeof ApiPublicWhitelistRecheckRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/chat/': typeof AuthenticatedChatIndexRoute
+  '/chat/group/$groupId': typeof AuthenticatedChatGroupGroupIdRoute
   '/api/public/app/download': typeof ApiPublicAppDownloadRoute
   '/api/public/celo-sweep/run': typeof ApiPublicCeloSweepRunRoute
   '/api/public/payout/bridge': typeof ApiPublicPayoutBridgeRoute
@@ -478,6 +486,7 @@ export interface FileRoutesByTo {
   '/api/public/whitelist-recheck': typeof ApiPublicWhitelistRecheckRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/chat': typeof AuthenticatedChatIndexRoute
+  '/chat/group/$groupId': typeof AuthenticatedChatGroupGroupIdRoute
   '/api/public/app/download': typeof ApiPublicAppDownloadRoute
   '/api/public/celo-sweep/run': typeof ApiPublicCeloSweepRunRoute
   '/api/public/payout/bridge': typeof ApiPublicPayoutBridgeRoute
@@ -540,6 +549,7 @@ export interface FileRoutesById {
   '/api/public/whitelist-recheck': typeof ApiPublicWhitelistRecheckRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/_authenticated/chat/': typeof AuthenticatedChatIndexRoute
+  '/_authenticated/chat/group/$groupId': typeof AuthenticatedChatGroupGroupIdRoute
   '/api/public/app/download': typeof ApiPublicAppDownloadRoute
   '/api/public/celo-sweep/run': typeof ApiPublicCeloSweepRunRoute
   '/api/public/payout/bridge': typeof ApiPublicPayoutBridgeRoute
@@ -602,6 +612,7 @@ export interface FileRouteTypes {
     | '/api/public/whitelist-recheck'
     | '/lovable/email/suppression'
     | '/chat/'
+    | '/chat/group/$groupId'
     | '/api/public/app/download'
     | '/api/public/celo-sweep/run'
     | '/api/public/payout/bridge'
@@ -661,6 +672,7 @@ export interface FileRouteTypes {
     | '/api/public/whitelist-recheck'
     | '/lovable/email/suppression'
     | '/chat'
+    | '/chat/group/$groupId'
     | '/api/public/app/download'
     | '/api/public/celo-sweep/run'
     | '/api/public/payout/bridge'
@@ -722,6 +734,7 @@ export interface FileRouteTypes {
     | '/api/public/whitelist-recheck'
     | '/lovable/email/suppression'
     | '/_authenticated/chat/'
+    | '/_authenticated/chat/group/$groupId'
     | '/api/public/app/download'
     | '/api/public/celo-sweep/run'
     | '/api/public/payout/bridge'
@@ -1178,6 +1191,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAppDownloadRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/chat/group/$groupId': {
+      id: '/_authenticated/chat/group/$groupId'
+      path: '/chat/group/$groupId'
+      fullPath: '/chat/group/$groupId'
+      preLoaderRoute: typeof AuthenticatedChatGroupGroupIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -1199,6 +1219,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedChatPeerIdRoute: typeof AuthenticatedChatPeerIdRoute
   AuthenticatedTaskSlotRoute: typeof AuthenticatedTaskSlotRoute
   AuthenticatedChatIndexRoute: typeof AuthenticatedChatIndexRoute
+  AuthenticatedChatGroupGroupIdRoute: typeof AuthenticatedChatGroupGroupIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -1219,6 +1240,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedChatPeerIdRoute: AuthenticatedChatPeerIdRoute,
   AuthenticatedTaskSlotRoute: AuthenticatedTaskSlotRoute,
   AuthenticatedChatIndexRoute: AuthenticatedChatIndexRoute,
+  AuthenticatedChatGroupGroupIdRoute: AuthenticatedChatGroupGroupIdRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

@@ -1,0 +1,80 @@
+/**
+ * চ্যাটের সার্ভার-সাইড হেল্পার — নাম বের করা, মিডিয়ার সাইনড লিংক বানানো
+ * ইত্যাদি। (server-only: শুধু server function-এর handler থেকে ইমপোর্ট হয়)
+ */
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
+export type Person = { id: string; display_name: string | null; uid_seq: number | null };
+
+export type DbMsg = {
+  id: string;
+  sender_id: string;
+  receiver_id: string | null;
+  group_id: string | null;
+  body: string;
+  kind: string;
+  media_url: string | null;
+  media_meta: any;
+  deleted_at: string | null;
+  read_at: string | null;
+  created_at: string;
+};
+
+export const MSG_COLS =
+  "id, sender_id, receiver_id, group_id, body, kind, media_url, media_meta, deleted_at, read_at, created_at";
+
+export async function peopleMap(ids: string[]) {
+  const map = new Map<string, Person>();
+  const clean = Array.from(new Set(ids.filter(Boolean)));
+  if (!clean.length) return map;
+  const { data } = await supabaseAdmin
+    .from("profiles")
+    .select("id, display_name, uid_seq")
+    .in("id", clean);
+  for (const p of (data ?? []) as Person[]) map.set(p.id, p);
+  return map;
+}
+
+/** স্টোরেজ পাথ → সাময়িক (২ ঘণ্টা) সাইনড লিংক */
+export async function signMedia(paths: string[]) {
+  const out = new Map<string, string>();
+  const clean = Array.from(new Set(paths.filter(Boolean)));
+  await Promise.all(
+    clean.map(async (p) => {
+      try {
+        const { data } = await supabaseAdmin.storage
+          .from("chat-media")
+          .createSignedUrl(p, 60 * 120);
+        if (data?.signedUrl) out.set(p, data.signedUrl);
+      } catch {
+        /* ignore */
+      }
+    }),
+  );
+  return out;
+}
+
+/** মেসেজ সারিকে ক্লায়েন্টের জন্য প্রস্তুত করা (ডিলিট + সাইনড লিংক) */
+export async function shapeMessages(rows: DbMsg[]) {
+  const signed = await signMedia(rows.map((r) => r.media_url ?? "").filter(Boolean));
+  return rows.map((m) => ({
+    id: m.id,
+    senderId: m.sender_id,
+    body: m.deleted_at ? "" : m.body,
+    kind: m.deleted_at ? "deleted" : m.kind,
+    mediaUrl: m.deleted_at ? null : m.media_url ? (signed.get(m.media_url) ?? null) : null,
+    mediaMeta: m.deleted_at ? null : (m.media_meta ?? null),
+    readAt: m.read_at,
+    createdAt: m.created_at,
+    deleted: !!m.deleted_at,
+  }));
+}
+
+/** শেষ মেসেজের সংক্ষিপ্ত টেক্সট */
+export function previewOf(m: { kind: string; body: string; deleted_at?: string | null }) {
+  if (m.deleted_at) return "মেসেজ মুছে ফেলা হয়েছে";
+  if (m.kind === "image") return "📷 ছবি";
+  if (m.kind === "video") return "🎥 ভিডিও";
+  if (m.kind === "voice") return "🎤 ভয়েস মেসেজ";
+  return m.body;
+}
