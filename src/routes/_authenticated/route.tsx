@@ -259,12 +259,29 @@ function AuthedLayout() {
       <ProfileCompleteGate />
       <EmailVerifyGate />
       <UserNoticeBanner />
+      <ChatNotifier />
 
 
     </div>
     </CallProvider>
   );
 }
+
+/** মেনুর বড় বড় সুন্দর টাইল — সহজে ট্যাপ করা যায় */
+function BigMenuLink({ to, icon, label, tone }: { to: string; icon: React.ReactNode; label: string; tone: string }) {
+  return (
+    <DropdownMenuItem asChild className="p-0 focus:bg-transparent">
+      <Link
+        to={to}
+        className="btn-press flex h-[5.5rem] w-full flex-col items-center justify-center gap-1.5 rounded-2xl bg-surface-2/80 border border-white/10 px-2 text-center active:scale-95">
+        <span className={`grid h-11 w-11 place-items-center rounded-xl bg-white/10 ${tone}`}>{icon}</span>
+        <span className="text-[12px] font-black leading-tight">{label}</span>
+      </Link>
+    </DropdownMenuItem>
+  );
+}
+
+
 
 
 function ProfileButton() {
