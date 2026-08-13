@@ -309,7 +309,10 @@ export function AuthPage() {
       const { lovable } = await import("@/integrations/lovable/index");
       const res: any = await lovable.auth.signInWithOAuth("google", {
         redirect_uri: window.location.origin,
+        // ফোনে লগইন করা সব Gmail একাউন্ট দেখাবে — ইউজার বেছে নিতে পারবে
+        extraParams: { prompt: "select_account", access_type: "offline" },
       });
+
       if (res?.error) throw new Error(res.error.message ?? "Google লগইন করা যায়নি");
       if (res?.redirected) {
         // ব্রাউজার Google-এ যাচ্ছে — স্পিনার চালু রাখি
