@@ -35,9 +35,13 @@ export function NotificationBell() {
       <button
         aria-label="নোটিফিকেশন"
         onClick={() => setOpen(true)}
-        className="btn-press relative rounded-xl gradient-navy px-2.5 py-2 text-gold border border-gold/40 shadow-lg"
+        className={`btn-press relative grid h-12 w-12 place-items-center rounded-2xl border shadow-lg active:scale-95 ${
+          unread > 0
+            ? "border-rose-300/60 bg-gradient-to-br from-rose-500 to-rose-700 text-white"
+            : "border-gold/50 gradient-navy text-gold"
+        }`}
       >
-        <Bell className={`w-5 h-5 ${unread > 0 ? "animate-bounce" : ""}`} />
+        <Bell className={`w-6 h-6 ${unread > 0 ? "animate-bounce" : ""}`} />
         {unread > 0 && (
           <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[10px] font-black grid place-items-center border border-white/60">
             {unread > 9 ? "9+" : unread}

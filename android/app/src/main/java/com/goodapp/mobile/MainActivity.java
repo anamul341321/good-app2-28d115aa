@@ -150,6 +150,11 @@ public class MainActivity extends BridgeActivity {
 
     public final class GoodAppDownloader {
         @JavascriptInterface
+        public void openExternal(String url) {
+            runOnUiThread(() -> openApkDownload(Uri.parse(url)));
+        }
+
+        @JavascriptInterface
         public void download(String url, String fileName) {
             runOnUiThread(() -> {
                 try {
