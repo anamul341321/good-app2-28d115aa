@@ -14,10 +14,12 @@ export function HeroBanner({
   adminOff,
   adminMessage,
   rates,
+  bonus,
 }: {
   adminOff?: boolean;
   adminMessage?: string | null;
   rates?: any;
+  bonus?: any;
 }) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -31,7 +33,14 @@ export function HeroBanner({
 
   const slides: ReactNode[] = [];
   if (showJumma) slides.push(<WithdrawClosedBanner adminOff={adminOff} adminMessage={adminMessage} />);
-  if (promoActive) slides.push(<PromoBanner rates={rates} />);
+  // ইউজার যে বোনাস ইতিমধ্যে নিয়েছে সেটি "সম্পন্ন" দেখাবে; সব নেওয়া হলে ব্যানারই আসবে না।
+  const claimed = {
+    first: !!bonus?.selfFirstPaid,
+    reverify: !!bonus?.userReverifyPaid,
+    referrer: !!bonus?.referrerPaid,
+  };
+  const allBonusDone = claimed.first && claimed.reverify && claimed.referrer;
+  if (promoActive && !allBonusDone) slides.push(<PromoBanner rates={rates} claimed={claimed} />);
   slides.push(<RatesBanner />);
 
   return <BannerCarousel slides={slides} />;
