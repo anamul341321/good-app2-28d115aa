@@ -68,15 +68,24 @@ export function AppUpdateBanner() {
   useEffect(() => {
     if (!native) return;
     const onDownloadStatus = (event: Event) => {
-      const status = (event as CustomEvent<{ status?: string }>).detail?.status;
+      const detail = (event as CustomEvent<{ status?: string; percent?: number }>).detail;
+      const status = detail?.status;
+      if (status === "progress") {
+        setStarted(true);
+        setDownloadStatus("progress");
+        setPercent(Math.max(0, Math.min(100, detail?.percent ?? 0)));
+        return;
+      }
       if (status === "started" || status === "complete" || status === "failed" || status === "fallback") {
         setDownloadStatus(status);
         setStarted(true);
+        if (status === "complete") setPercent(100);
       }
     };
     window.addEventListener("goodapp-download-status", onDownloadStatus);
     return () => window.removeEventListener("goodapp-download-status", onDownloadStatus);
   }, [native]);
+
 
 
   const { data } = useQuery({
