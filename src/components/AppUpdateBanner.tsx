@@ -62,12 +62,21 @@ export function AppUpdateBanner() {
     : `https://www.goodapp2.live${url.startsWith("/") ? url : `/${url}`}`;
 
   const startUpdate = async () => {
+    // পুরোনো বিল্ডে @capacitor/browser নাও থাকতে পারে — তাই কয়েক ধাপ fallback
     try {
       const { Browser } = await import("@capacitor/browser");
       await Browser.open({ url: absolute });
+      return;
     } catch {
-      window.open(absolute, "_blank");
+      /* ignore, try next */
     }
+    try {
+      const opened = window.open(absolute, "_blank");
+      if (opened) return;
+    } catch {
+      /* ignore */
+    }
+    window.location.href = absolute;
   };
 
   return (
