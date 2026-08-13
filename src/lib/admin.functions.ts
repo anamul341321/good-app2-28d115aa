@@ -1791,6 +1791,11 @@ export const adminUpdateBonusSettings = createServerFn({ method: "POST" })
   }).parse(i))
   .handler(async ({ data }) => {
     const supabaseAdmin = await gate();
+    const { data: prev } = await supabaseAdmin
+      .from("bonus_settings")
+      .select("bkash_enabled,nagad_enabled,usdt_enabled,recharge_enabled,withdraw_enabled")
+      .eq("id", "default")
+      .maybeSingle();
     const patch: any = {
       id: "default",
       first_verify_bonus: data.first_verify_bonus,
@@ -1814,8 +1819,48 @@ export const adminUpdateBonusSettings = createServerFn({ method: "POST" })
     const { error } = await supabaseAdmin.from("bonus_settings").upsert(patch);
     if (error) throw new Error(error.message);
     resetEmailOtpCache();
-    return { ok: true };
+
+    // পেমেন্ট মেথড on/off হলে সব ইউজারকে জানিয়ে দাও (push + in-app notice)
+    const labels: Record<string, string> = {
+      bkash_enabled: "বিকাশ উইথড্র",
+      nagad_enabled: "নগদ উইথড্র",
+      usdt_enabled: "USDT উইথড্র",
+      recharge_enabled: "মোবাইল রিচার্জ",
+      withdraw_enabled: "উইথড্র সিস্টেম",
+    };
+    const changes: string[] = [];
+    for (const key of Object.keys(labels)) {
+      const next = (patch as any)[key];
+      if (typeof next !== "boolean") continue;
+      const before = (prev as any)?.[key];
+      const beforeBool = before === false ? false : true;
+      if (beforeBool === next) continue;
+      changes.push(`${next ? "✅" : "⛔"} ${labels[key]} এখন ${next ? "চালু" : "বন্ধ"}`);
+    }
+    if (changes.length > 0) {
+      const title = "💳 পেমেন্ট মেথড আপডেট";
+      const body = changes.join("\n");
+      try {
+        const { sendPushToAllTokens } = await import("@/lib/push.server");
+        await sendPushToAllTokens({ title, body, url: "/withdraw" });
+      } catch { /* push ব্যর্থ হলেও settings সেভ থাকবে */ }
+      try {
+        const page = 1000;
+        for (let from = 0; from < 200_000; from += page) {
+          const { data: ids } = await supabaseAdmin
+            .from("profiles").select("id").range(from, from + page - 1);
+          const rows = ids ?? [];
+          if (rows.length === 0) break;
+          await supabaseAdmin.from("user_notices").insert(
+            rows.map((r: any) => ({ user_id: r.id, title, body })) as any,
+          );
+          if (rows.length < page) break;
+        }
+      } catch { /* ignore */ }
+    }
+    return { ok: true, notified: changes.length > 0 ? changes : null };
   });
+
 
 // Toggle just the global "first-verify mining mode" switch. When ON, mining
 // starts as soon as user has 10 first-verifies (no re-verify needed).
