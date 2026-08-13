@@ -805,7 +805,9 @@ function TaskCell({ task, onStart, onReverify, onOpenPhoto }: { task: any; onSta
   const icon = isDone
     ? <CheckCircle2 className="w-7 h-7 text-white drop-shadow" />
     : <Camera className="w-7 h-7 text-white drop-shadow" />;
-  const label = isDone ? "৩–৪ দিন পর রি-ভেরিফাই" : "শুরু করুন";
+  const label = isDone
+    ? (reverified ? "✅ রি-ভেরিফাই সম্পন্ন" : "৩–৪ দিন পর রি-ভেরিফাই")
+    : "শুরু করুন";
   const bg = isDone
     ? `linear-gradient(135deg, ${theme.from}, ${theme.to})`
     : `linear-gradient(135deg, ${theme.from}22, ${theme.to}22)`;
