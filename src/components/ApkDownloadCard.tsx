@@ -1,20 +1,23 @@
 import { useQuery } from "@tanstack/react-query";
 import { Download, Smartphone, Zap, BellRing, ShieldCheck } from "lucide-react";
 import { getAppStatus } from "@/lib/app-status.functions";
+import { isNativeApp } from "@/lib/native-google";
 
 /**
  * অ্যান্ড্রয়েড অ্যাপ ডাউনলোড কার্ড — বড়, ইউনিক ডিজাইন।
  * ট্যাপ করলেই সোজা ডাউনলোড শুরু (কোনো নোটিশ/পপআপ নেই)।
+ * নেটিভ অ্যাপের ভিতরে থাকলে দেখানো হয় না।
  */
 export function ApkDownloadCard({ compact = false }: { compact?: boolean }) {
   const { data } = useQuery({
     queryKey: ["app-status-apk"],
     queryFn: () => getAppStatus(),
     staleTime: 5 * 60 * 1000,
+    enabled: typeof window !== "undefined" && !isNativeApp(),
   });
 
   const url = (data as any)?.apkUrl as string | null | undefined;
-  if (!url) return null;
+  if (!url || isNativeApp()) return null;
 
   const version = (data as any)?.apkVersion as string | null | undefined;
   const isStore = /play\.google\.com/i.test(url);
