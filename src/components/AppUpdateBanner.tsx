@@ -189,21 +189,30 @@ export function AppUpdateBanner() {
           <div className="relative mt-3 rounded-xl bg-white/10 p-2.5 text-[11px] leading-snug text-white/85">
             <p className="font-black text-cyan-300">
               {downloadStatus === "complete"
-                ? "✅ ডাউনলোড সম্পন্ন — Install করুন"
+                ? "✅ ডাউনলোড সম্পন্ন — Install স্ক্রিন খুলছে"
                 : downloadStatus === "failed"
                   ? "❌ ডাউনলোড ব্যর্থ — আবার Update চাপুন"
                   : downloadStatus === "fallback"
                     ? "📥 Download পেজ খোলা হয়েছে"
-                    : "📥 ডাউনলোড চলছে — এরপর কী করবেন"}
+                    : `📥 অ্যাপের ভেতরেই ডাউনলোড হচ্ছে… ${percent}%`}
             </p>
-            <p className="mt-1">
-              ১) ফোনের <b>Notification bar</b> নামিয়ে ডাউনলোড প্রগ্রেস দেখুন।
-              <br />২) শেষ হলে ফাইলটিতে <b>ট্যাপ</b> করুন (অথবা <b>Files → Downloads</b> ফোল্ডার থেকে
-              <b> Good-App-v{latest}.apk</b>)।
-              <br />৩) <b>Install / Update</b> চাপুন — ইনস্টল হয়ে গেলে এই ব্যানার নিজেই চলে যাবে ✅
+            <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-white/15">
+              <div
+                className="h-full rounded-full transition-all duration-500"
+                style={{
+                  width: `${downloadStatus === "complete" ? 100 : Math.max(percent, 4)}%`,
+                  background: "linear-gradient(90deg,#22c55e,#06b6d4,#a855f7)",
+                }}
+              />
+            </div>
+            <p className="mt-2">
+              ডাউনলোড শেষ হলে <b>Install স্ক্রিন নিজেই খুলবে</b> — শুধু <b>Update / Install</b> চাপুন।
+              <br />প্রথমবার হলে <b>“Allow from this source”</b> অন করে দিন, তারপর আবার Install চাপুন।
+              <br />ইনস্টল হয়ে গেলে এই ব্যানার নিজে থেকেই চলে যাবে ✅
             </p>
           </div>
         )}
+
       </div>
     </div>
   );
