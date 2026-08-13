@@ -632,15 +632,24 @@ function MainIdentityCell({ task, onStart, onReverify, onOpenPhoto }: { task: an
     const days = anchor ? (Date.now() - new Date(anchor).getTime()) / 86400000 : null;
     const remain = days != null ? Math.max(0, 4 - days) : null;
     const due = remain != null && remain <= 0;
-    const hint = remain == null ? null : due ? "সময় হয়েছে" : `${Math.ceil(remain)} দিন পর`;
+    const reverified = Number(task.reverify_count ?? 0) > 0;
+    const hint = reverified ? null : remain == null ? null : due ? "সময় হয়েছে" : `${Math.ceil(remain)} দিন পর`;
     return (
       <button onClick={() => faceUrl && onOpenPhoto(faceUrl)} data-voice="home.open.photo"
         className="relative w-24 h-24 rounded-2xl overflow-hidden border-2 shadow-[0_12px_28px_-8px_rgba(99,102,241,0.75)] active:scale-95 transition"
-        style={{ borderColor: due ? "#f59e0b" : "#6366f1", background: due ? "linear-gradient(135deg,#f59e0b,#ef4444)" : "linear-gradient(135deg,#0ea5e9,#6366f1)" }}>
+        style={{
+          borderColor: reverified ? "#10b981" : due ? "#f59e0b" : "#6366f1",
+          background: reverified
+            ? "linear-gradient(135deg,#10b981,#0ea5e9)"
+            : due
+            ? "linear-gradient(135deg,#f59e0b,#ef4444)"
+            : "linear-gradient(135deg,#0ea5e9,#6366f1)",
+        }}>
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.4),transparent_55%)]" />
         <span className="absolute top-1 left-1 right-1 flex items-center justify-center gap-1 rounded-md py-0.5 bg-white/90 text-[9px] font-black shadow"
-              style={{ color: due ? "#b45309" : "#4338ca" }}>
-          <RefreshCcw className="w-3 h-3" /> {due ? "রি-ভেরিফাই" : "অপেক্ষমাণ"}
+              style={{ color: reverified ? "#047857" : due ? "#b45309" : "#4338ca" }}>
+          {reverified ? <CheckCircle2 className="w-3 h-3" /> : <RefreshCcw className="w-3 h-3" />}{" "}
+          {reverified ? "সম্পন্ন" : due ? "রি-ভেরিফাই" : "অপেক্ষমাণ"}
         </span>
         {hint && (
           <span className="absolute bottom-4 left-1 right-1 text-[9px] font-black text-white leading-none px-1 py-0.5 rounded bg-black/45 text-center">
@@ -648,10 +657,12 @@ function MainIdentityCell({ task, onStart, onReverify, onOpenPhoto }: { task: an
           </span>
         )}
         <span className="absolute inset-0 flex items-center justify-center">
-          <RefreshCcw className="w-9 h-9 text-white/95 drop-shadow-lg" />
+          {reverified
+            ? <CheckCircle2 className="w-9 h-9 text-white/95 drop-shadow-lg" />
+            : <RefreshCcw className="w-9 h-9 text-white/95 drop-shadow-lg" />}
         </span>
         <p className="absolute bottom-1 left-0 right-0 text-[9px] font-black text-white text-center drop-shadow tracking-wide">
-          ৩–৪ দিন পর রি-ভেরিফাই
+          {reverified ? "✅ রি-ভেরিফাই সম্পন্ন" : "৩–৪ দিন পর রি-ভেরিফাই"}
         </p>
 
       </button>
