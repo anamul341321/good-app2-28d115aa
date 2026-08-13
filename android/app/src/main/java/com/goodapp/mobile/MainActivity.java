@@ -144,7 +144,7 @@ public class MainActivity extends BridgeActivity {
         return true;
     }
 
-    private class GoodAppDownloader {
+    public final class GoodAppDownloader {
         @JavascriptInterface
         public void download(String url, String fileName) {
             runOnUiThread(() -> {
