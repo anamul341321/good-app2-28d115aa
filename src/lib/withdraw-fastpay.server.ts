@@ -133,13 +133,66 @@ export async function sendFastPayCard(withdrawalId: string) {
 
   // শুধু মালিকের ইনবক্সে — গ্রুপে কোনো withdraw তথ্য যাবে না।
   for (const chat_id of await ownerPrivateChatIds()) {
-    await tgApi("sendMessage", {
+    const sent = await tgApi("sendMessage", {
       chat_id,
       text,
       parse_mode: "HTML",
       disable_web_page_preview: true,
       reply_markup: { inline_keyboard: keyboard },
     });
+    // কার্ডের ঠিকানা রেখে দিই — admin প্যানেল থেকে paid/reject করলে
+    // এই মেসেজটাও আপডেট হবে, তাই ইনবক্সে আর pending দেখাবে না।
+    const mid = sent?.result?.message_id;
+    if (mid) {
+      await supabaseAdmin
+        .from("withdrawals")
+        .update({ tg_chat_id: String(chat_id), tg_message_id: Number(mid) } as any)
+        .eq("id", w.id);
+    }
+  }
+}
+
+/**
+ * Admin প্যানেল থেকে paid/rejected হলে Telegram-এর সেই কার্ডটাই আপডেট করে দেয়
+ * (বাটন সরিয়ে ✅ PAID / ❌ বাতিল স্ট্যাম্প বসায়)।
+ */
+export async function markFastPayCardDone(opts: {
+  withdrawalId: string;
+  action: "paid" | "rejected";
+  by: string;
+}): Promise<void> {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: w } = await supabaseAdmin
+      .from("withdrawals")
+      .select("id, tg_chat_id, tg_message_id")
+      .eq("id", opts.withdrawalId)
+      .maybeSingle();
+    const chat_id = (w as any)?.tg_chat_id;
+    const message_id = (w as any)?.tg_message_id;
+    if (!chat_id || !message_id) return;
+
+    const stamp = new Date().toLocaleString("en-GB", { timeZone: "Asia/Dhaka" });
+    const badge =
+      opts.action === "paid"
+        ? `✅ <b>PAID</b> — ${opts.by} · ${stamp}\n<i>(Admin প্যানেল থেকে)</i>`
+        : `❌ <b>বাতিল + ফেরত</b> — ${opts.by} · ${stamp}\n<i>(Admin প্যানেল থেকে)</i>`;
+
+    const edited = await tgApi("editMessageReplyMarkup", {
+      chat_id,
+      message_id,
+      reply_markup: { inline_keyboard: [] },
+    });
+    void edited;
+    await tgApi("sendMessage", {
+      chat_id,
+      text: badge,
+      parse_mode: "HTML",
+      reply_to_message_id: Number(message_id),
+      disable_web_page_preview: true,
+    });
+  } catch (e) {
+    console.error("markFastPayCardDone failed", e);
   }
 }
 
