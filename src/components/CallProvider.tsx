@@ -226,12 +226,49 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         if (e.candidate) void sendTo(peerId, { kind: "ice", from: myId ?? "", candidate: e.candidate });
       };
       pc.onconnectionstatechange = () => {
-        if (pc.connectionState === "connected") setState("active");
-        if (pc.connectionState === "failed" || pc.connectionState === "disconnected") {
-          toast.error("কল কেটে গেছে");
-          cleanup();
+        if (pc.connectionState === "connected") {
+          if (reconnectTimer.current) {
+            window.clearTimeout(reconnectTimer.current);
+            reconnectTimer.current = null;
+          }
+          reconnecting.current = false;
+          setState("active");
+          return;
+        }
+        // নেটওয়ার্ক একটু কেটে গেলে সাথে সাথে কল বন্ধ না করে ৩০ সেকেন্ড পর্যন্ত
+        // নিজে থেকে আবার জোড়া লাগানোর চেষ্টা করি (Messenger-এর মতো)।
+        if (pc.connectionState === "disconnected" || pc.connectionState === "failed") {
+          if (reconnectTimer.current || reconnecting.current) return;
+          reconnecting.current = true;
+          toast("সংযোগ দুর্বল — আবার জোড়া লাগানো হচ্ছে…");
+          try {
+            pc.restartIce();
+          } catch {}
+          if (isCaller.current && peerIdRef.current) {
+            void (async () => {
+              try {
+                const offer = await pc.createOffer({ iceRestart: true });
+                await pc.setLocalDescription(offer);
+                await waitForIce(pc);
+                await sendTo(peerIdRef.current!, {
+                  kind: "reoffer",
+                  from: myId ?? "",
+                  sdp: pc.localDescription?.toJSON() ?? offer,
+                });
+              } catch {}
+            })();
+          }
+          reconnectTimer.current = window.setTimeout(() => {
+            reconnectTimer.current = null;
+            reconnecting.current = false;
+            if (pcRef.current !== pc) return;
+            if (pc.connectionState === "connected") return;
+            toast.error("কল কেটে গেছে");
+            cleanup();
+          }, 30000);
         }
       };
+
       pcRef.current = pc;
       camTrack.current = stream.getVideoTracks()[0] ?? null;
       // ভিডিও যেন ক্লিয়ার দেখা যায় — বিটরেট বাড়িয়ে দিই
