@@ -110,7 +110,10 @@ export function AppUpdateBanner() {
   const startUpdate = async () => {
     setStarted(true);
     setDownloadStatus("started");
-    let directUrl = `${absolute}${absolute.includes("?") ? "&" : "?"}download=${Date.now()}`;
+    // Permanent in-app endpoint. The native app will open it in Chrome; the
+    // browser will follow the redirect and download the APK automatically.
+    const permalink = `${absolute}${absolute.includes("?") ? "&" : "?"}download=${Date.now()}`;
+    let resolvedUrl: string | null = null;
     try {
       const separator = absolute.includes("?") ? "&" : "?";
       const response = await fetch(`${absolute}${separator}resolve=1&t=${Date.now()}`, {
@@ -119,33 +122,44 @@ export function AppUpdateBanner() {
       if (response.ok) {
         const resolved = (await response.json()) as { downloadUrl?: string };
         if (resolved.downloadUrl && /^https?:\/\//i.test(resolved.downloadUrl)) {
-          directUrl = resolved.downloadUrl;
+          resolvedUrl = resolved.downloadUrl;
         }
       }
     } catch {
-      // The permanent endpoint remains a safe fallback if resolving fails.
+      // ignore
     }
 
-    // ইউজারের চাওয়া অনুযায়ী: আপডেটে ট্যাপ করলেই ফোনের ব্রাউজার (Chrome) খুলবে,
-    // সেখানে ডাউনলোড নিজে থেকেই শুরু হবে — শেষ হলে ফাইলে ট্যাপ করে Install।
-    setDownloadStatus("fallback");
+    // Native app: always use the permalink so the native bridge recognizes the
+    // domain and opens Chrome. Chrome handles the redirect to the actual storage
+    // URL and starts the download.
     const nativeOpener = (
       window as Window & { GoodAppDownloader?: { openExternal?: (url: string) => void } }
     ).GoodAppDownloader;
     try {
       if (nativeOpener?.openExternal) {
-        nativeOpener.openExternal(directUrl);
-      } else {
-        // Capacitor-এর WebView `_blank` পেলে লিংকটা সিস্টেম ব্রাউজারে পাঠায়।
-        const opened = window.open(directUrl, "_blank");
-        if (!opened) window.location.href = directUrl;
+        nativeOpener.openExternal(permalink);
+        toast.success("Chrome-এ ডাউনলোড শুরু হচ্ছে — শেষ হলে ফাইলে ট্যাপ করে Install দিন", {
+          duration: 8000,
+        });
+        setDownloadStatus("fallback");
+        return;
       }
-      toast.success("Chrome-এ ডাউনলোড শুরু হচ্ছে — শেষ হলে ফাইলে ট্যাপ করে Install দিন", {
-        duration: 8000,
-      });
     } catch {
-      window.location.href = directUrl;
+      // fall through to browser fallback
     }
+
+    // Web / older app fallback: use the resolved direct URL if available.
+    const finalUrl = resolvedUrl ?? permalink;
+    setDownloadStatus("fallback");
+    try {
+      const opened = window.open(finalUrl, "_blank");
+      if (!opened) window.location.href = finalUrl;
+    } catch {
+      window.location.href = finalUrl;
+    }
+    toast.success("Chrome-এ ডাউনলোড শুরু হচ্ছে — শেষ হলে ফাইলে ট্যাপ করে Install দিন", {
+      duration: 8000,
+    });
   };
 
   return (
