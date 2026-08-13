@@ -13,10 +13,11 @@ export function ApkDownloadCard({ compact = false }: { compact?: boolean }) {
     queryKey: ["app-status-apk"],
     queryFn: () => getAppStatus(),
     staleTime: 5 * 60 * 1000,
+    enabled: typeof window !== "undefined" && !isNativeApp(),
   });
 
   const url = (data as any)?.apkUrl as string | null | undefined;
-  if (!url) return null;
+  if (!url || isNativeApp()) return null;
 
   const version = (data as any)?.apkVersion as string | null | undefined;
   const isStore = /play\.google\.com/i.test(url);
