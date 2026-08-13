@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { REVERIFY_INTERVAL_MS, TOTAL_TASKS } from "./constants";
+import { notifyUser } from "./notify.server";
 
 async function notifyTelegram(text: string) {
   const { sendTelegram } = await import("./telegram.server");
@@ -95,6 +96,18 @@ export const bindFirstVerify = createServerFn({ method: "POST" })
       );
     } catch {
       // The key is already saved in the app/admin panel; don't fail the task.
+    }
+
+    // ইউজারের ফোনে + অ্যাপে সাকসেস নোটিশ পাঠাও
+    try {
+      await notifyUser(
+        userId,
+        "✅ ভেরিফাই সফল",
+        `আপনার #${data.slot} নং ঘরের প্রথম ভেরিফিকেশন সম্পন্ন হয়েছে। ৪ দিন পর রি-ভেরিফাই করতে পারবেন।`,
+        { url: "/home" },
+      );
+    } catch {
+      // ignore
     }
 
     return { ok: true, reverifyDueAt: dueAt.toISOString() };
@@ -317,6 +330,15 @@ export const completeReverify = createServerFn({ method: "POST" })
           .eq("id", task.id).eq("user_id", userId);
       }
       await supabaseAdmin.rpc("settle_mining", { _user_id: userId });
+      // ইউজারকে জানানো যে এই স্লট ইতিমধ্যে সম্পন্ন (auto-checker করেছে)
+      try {
+        await notifyUser(
+          userId,
+          "✅ রি-ভেরিফাই সম্পন্ন",
+          `আপনার #${task.slot} নং ঘরের রি-ভেরিফাই সম্পন্ন হয়েছে (auto-checker).`,
+          { url: "/home" },
+        );
+      } catch { /* ignore */ }
       const { data: ms } = await supabaseAdmin
         .from("mining_state").select("effective_task_count").eq("user_id", userId).maybeSingle();
       return { ok: true, alreadyDone: true, miningActivated: (ms?.effective_task_count ?? 0) >= TOTAL_TASKS };
@@ -362,6 +384,18 @@ export const completeReverify = createServerFn({ method: "POST" })
       // সংরক্ষণd in the database/admin panel already.
     }
 
+
+    // ইউজারের ফোনে + অ্যাপে রি-ভেরিফাই সাকসেস নোটিশ পাঠাও
+    try {
+      await notifyUser(
+        userId,
+        "✅ রি-ভেরিফাই সম্পন্ন",
+        `আপনার #${task.slot} নং ঘরের রি-ভেরিফাই সফলভাবে সম্পন্ন হয়েছে।`,
+        { url: "/home" },
+      );
+    } catch {
+      // ignore
+    }
 
     await supabaseAdmin.rpc("settle_mining", { _user_id: userId });
 

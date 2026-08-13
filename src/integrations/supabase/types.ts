@@ -895,6 +895,44 @@ export type Database = {
           },
         ]
       }
+      reverify_reminders: {
+        Row: {
+          due_at: string
+          id: string
+          sent_at: string
+          slot: number
+          task_id: string
+          user_id: string
+          window_label: string
+        }
+        Insert: {
+          due_at: string
+          id?: string
+          sent_at?: string
+          slot: number
+          task_id: string
+          user_id: string
+          window_label: string
+        }
+        Update: {
+          due_at?: string
+          id?: string
+          sent_at?: string
+          slot?: number
+          task_id?: string
+          user_id?: string
+          window_label?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reverify_reminders_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       slot_reset_requests: {
         Row: {
           created_at: string

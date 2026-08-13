@@ -50,6 +50,7 @@ import { Route as AuthenticatedEarningsRouteImport } from './routes/_authenticat
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as ApiPublicWhitelistRecheckRouteImport } from './routes/api/public/whitelist-recheck'
 import { Route as ApiPublicTourAudioRouteImport } from './routes/api/public/tour-audio'
+import { Route as ApiPublicReverifyRemindersRouteImport } from './routes/api/public/reverify-reminders'
 import { Route as ApiPublicIpaybdWebhookRouteImport } from './routes/api/public/ipaybd-webhook'
 import { Route as ApiPublicHisabCardRouteImport } from './routes/api/public/hisab-card'
 import { Route as AdminUserUserIdRouteImport } from './routes/admin/user.$userId'
@@ -270,6 +271,12 @@ const ApiPublicTourAudioRoute = ApiPublicTourAudioRouteImport.update({
   path: '/api/public/tour-audio',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicReverifyRemindersRoute =
+  ApiPublicReverifyRemindersRouteImport.update({
+    id: '/api/public/reverify-reminders',
+    path: '/api/public/reverify-reminders',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicIpaybdWebhookRoute = ApiPublicIpaybdWebhookRouteImport.update({
   id: '/api/public/ipaybd-webhook',
   path: '/api/public/ipaybd-webhook',
@@ -387,6 +394,7 @@ export interface FileRoutesByFullPath {
   '/admin/user/$userId': typeof AdminUserUserIdRoute
   '/api/public/hisab-card': typeof ApiPublicHisabCardRoute
   '/api/public/ipaybd-webhook': typeof ApiPublicIpaybdWebhookRoute
+  '/api/public/reverify-reminders': typeof ApiPublicReverifyRemindersRoute
   '/api/public/tour-audio': typeof ApiPublicTourAudioRoute
   '/api/public/whitelist-recheck': typeof ApiPublicWhitelistRecheckRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
@@ -442,6 +450,7 @@ export interface FileRoutesByTo {
   '/admin/user/$userId': typeof AdminUserUserIdRoute
   '/api/public/hisab-card': typeof ApiPublicHisabCardRoute
   '/api/public/ipaybd-webhook': typeof ApiPublicIpaybdWebhookRoute
+  '/api/public/reverify-reminders': typeof ApiPublicReverifyRemindersRoute
   '/api/public/tour-audio': typeof ApiPublicTourAudioRoute
   '/api/public/whitelist-recheck': typeof ApiPublicWhitelistRecheckRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
@@ -500,6 +509,7 @@ export interface FileRoutesById {
   '/admin/user/$userId': typeof AdminUserUserIdRoute
   '/api/public/hisab-card': typeof ApiPublicHisabCardRoute
   '/api/public/ipaybd-webhook': typeof ApiPublicIpaybdWebhookRoute
+  '/api/public/reverify-reminders': typeof ApiPublicReverifyRemindersRoute
   '/api/public/tour-audio': typeof ApiPublicTourAudioRoute
   '/api/public/whitelist-recheck': typeof ApiPublicWhitelistRecheckRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
@@ -558,6 +568,7 @@ export interface FileRouteTypes {
     | '/admin/user/$userId'
     | '/api/public/hisab-card'
     | '/api/public/ipaybd-webhook'
+    | '/api/public/reverify-reminders'
     | '/api/public/tour-audio'
     | '/api/public/whitelist-recheck'
     | '/lovable/email/suppression'
@@ -613,6 +624,7 @@ export interface FileRouteTypes {
     | '/admin/user/$userId'
     | '/api/public/hisab-card'
     | '/api/public/ipaybd-webhook'
+    | '/api/public/reverify-reminders'
     | '/api/public/tour-audio'
     | '/api/public/whitelist-recheck'
     | '/lovable/email/suppression'
@@ -670,6 +682,7 @@ export interface FileRouteTypes {
     | '/admin/user/$userId'
     | '/api/public/hisab-card'
     | '/api/public/ipaybd-webhook'
+    | '/api/public/reverify-reminders'
     | '/api/public/tour-audio'
     | '/api/public/whitelist-recheck'
     | '/lovable/email/suppression'
@@ -698,6 +711,7 @@ export interface RootRouteChildren {
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   ApiPublicHisabCardRoute: typeof ApiPublicHisabCardRoute
   ApiPublicIpaybdWebhookRoute: typeof ApiPublicIpaybdWebhookRoute
+  ApiPublicReverifyRemindersRoute: typeof ApiPublicReverifyRemindersRoute
   ApiPublicTourAudioRoute: typeof ApiPublicTourAudioRoute
   ApiPublicWhitelistRecheckRoute: typeof ApiPublicWhitelistRecheckRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
@@ -1002,6 +1016,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicTourAudioRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/reverify-reminders': {
+      id: '/api/public/reverify-reminders'
+      path: '/api/public/reverify-reminders'
+      fullPath: '/api/public/reverify-reminders'
+      preLoaderRoute: typeof ApiPublicReverifyRemindersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/ipaybd-webhook': {
       id: '/api/public/ipaybd-webhook'
       path: '/api/public/ipaybd-webhook'
@@ -1193,6 +1214,7 @@ const rootRouteChildren: RootRouteChildren = {
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   ApiPublicHisabCardRoute: ApiPublicHisabCardRoute,
   ApiPublicIpaybdWebhookRoute: ApiPublicIpaybdWebhookRoute,
+  ApiPublicReverifyRemindersRoute: ApiPublicReverifyRemindersRoute,
   ApiPublicTourAudioRoute: ApiPublicTourAudioRoute,
   ApiPublicWhitelistRecheckRoute: ApiPublicWhitelistRecheckRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
