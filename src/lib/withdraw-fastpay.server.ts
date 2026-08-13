@@ -43,6 +43,21 @@ export async function ownerPrivateChatIds(): Promise<string[]> {
   return Array.from(new Set(ids));
 }
 
+/**
+ * Owner-only alert — কখনোই গ্রুপে যাবে না।
+ * অটো পেমেন্ট/টেকনিক্যাল মেসেজ গ্রুপে গেলে ইউজাররা ভুল বোঝে, তাই শুধু ইনবক্সে।
+ */
+export async function alertOwnerPrivate(message: string): Promise<void> {
+  for (const chat_id of await ownerPrivateChatIds()) {
+    await tgApi("sendMessage", {
+      chat_id,
+      text: message,
+      parse_mode: "HTML",
+      disable_web_page_preview: true,
+    });
+  }
+}
+
 /** Telegram admin → admin-panel-এ যে নামে paid দেখাবে। */
 export async function payerName(from: any): Promise<string> {
   const s = await botSettings();
