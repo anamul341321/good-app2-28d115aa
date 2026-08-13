@@ -30,7 +30,12 @@ export const Route = createFileRoute("/api/public/app/download")({
         }
         return new Response(null, {
           status: 302,
-          headers: { location: data.signedUrl, "cache-control": "no-store" },
+          headers: {
+            location: data.signedUrl,
+            "cache-control": "no-store, no-cache, must-revalidate",
+            pragma: "no-cache",
+            expires: "0",
+          },
         });
       },
     },
