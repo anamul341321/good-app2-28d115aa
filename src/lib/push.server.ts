@@ -170,17 +170,40 @@ export async function sendPushToUser(
 
 /** অ্যাডমিন ডিভাইসগুলোতে push (admin_push_targets টেবিলে যাদের রাখা আছে) */
 export async function sendPushToAdmins(payload: { title: string; body: string; url?: string }) {
-  if (!process.env.FIREBASE_SERVICE_ACCOUNT_JSON) return { sent: 0, failed: 0 };
+  const tgFallback = async (reason: string) => {
+    try {
+      const { alertAdminGroup } = await import("./telegram-alert.server");
+      await alertAdminGroup(`🔔 ${payload.title}\n${payload.body}\n(push যায়নি: ${reason})`);
+    } catch {
+      /* ignore */
+    }
+  };
+
+  if (!process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
+    await tgFallback("FIREBASE_SERVICE_ACCOUNT_JSON নেই");
+    return { sent: 0, failed: 0 };
+  }
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: targets } = await supabaseAdmin.from("admin_push_targets").select("user_id");
     const ids = (targets ?? []).map((r: any) => r.user_id as string);
-    if (ids.length === 0) return { sent: 0, failed: 0 };
+    if (ids.length === 0) {
+      await tgFallback("কোনো অ্যাডমিন ডিভাইস সেট করা নেই");
+      return { sent: 0, failed: 0 };
+    }
     const { data } = await supabaseAdmin.from("push_tokens").select("token").in("user_id", ids);
     const tokens = [...new Set((data ?? []).map((r: any) => r.token as string))];
-    return sendPushToTokens(tokens, payload);
+    if (tokens.length === 0) {
+      await tgFallback("অ্যাডমিন ফোনে token রেজিস্টার হয়নি");
+      return { sent: 0, failed: 0 };
+    }
+    const res = await sendPushToTokens(tokens, payload);
+    console.log("[push] admin push", { devices: tokens.length, ...res });
+    if (res.sent === 0) await tgFallback(`সব ডিভাইসে ফেল (${res.failed})`);
+    return res;
   } catch (e) {
     console.error("[push] admin push failed", e);
+    await tgFallback("সার্ভার এরর");
     return { sent: 0, failed: 0 };
   }
 }
