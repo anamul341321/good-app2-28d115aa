@@ -1,4 +1,5 @@
 import type { Session } from "@supabase/supabase-js";
+import { supabase } from "@/integrations/supabase/client";
 
 type SessionResult = {
   data: { session: Session | null };
@@ -6,8 +7,15 @@ type SessionResult = {
 };
 
 let cached: { value: SessionResult; expiresAt: number } | undefined;
+let refreshing: Promise<SessionResult> | undefined;
 
-function readStoredSession(): SessionResult | undefined {
+type Stored = {
+  session: Session;
+  expired: boolean;
+  refreshToken?: string;
+};
+
+function readStoredSession(): Stored | undefined {
   if (typeof window === "undefined") return undefined;
   try {
     for (let index = 0; index < localStorage.length; index += 1) {
@@ -22,16 +30,44 @@ function readStoredSession(): SessionResult | undefined {
         user?: unknown;
       };
       if (!parsed.access_token || !parsed.refresh_token) continue;
-       if (parsed.expires_at && parsed.expires_at * 1000 <= Date.now()) continue;
+      const expired = Boolean(parsed.expires_at && parsed.expires_at * 1000 <= Date.now());
       return {
-        data: { session: parsed as NonNullable<SessionResult["data"]["session"]> },
-        error: null,
-      } as SessionResult;
+        session: parsed as unknown as Session,
+        expired,
+        refreshToken: parsed.refresh_token,
+      };
     }
   } catch {
     return undefined;
   }
   return undefined;
+}
+
+/**
+ * টোকেনের সময় শেষ হলে সাথে সাথে লগআউট করি না — refresh_token দিয়ে
+ * নতুন টোকেন আনার চেষ্টা করি। নেটওয়ার্ক সমস্যা হলে পুরোনো সেশনই রেখে দিই,
+ * শুধু সার্ভার সত্যিই "invalid refresh token" বললে লগআউট হবে।
+ */
+async function refreshWithStored(stored: Stored): Promise<SessionResult> {
+  try {
+    const { data, error } = await supabase.auth.refreshSession({
+      refresh_token: stored.refreshToken!,
+    });
+    if (data?.session) {
+      return { data: { session: data.session }, error: null };
+    }
+    const message = (error?.message ?? "").toLowerCase();
+    const terminal =
+      message.includes("invalid refresh token") ||
+      message.includes("refresh token not found") ||
+      message.includes("already used") ||
+      message.includes("revoked");
+    if (terminal) return { data: { session: null }, error: null };
+    // অন্য যেকোনো ব্যর্থতা (নেটওয়ার্ক/সার্ভার) — পুরোনো সেশন রেখে দিই
+    return { data: { session: stored.session }, error: null };
+  } catch {
+    return { data: { session: stored.session }, error: null };
+  }
 }
 
 /**
@@ -45,19 +81,29 @@ export function getSharedSession(options?: { fresh?: boolean }): Promise<Session
     return Promise.resolve(cached.value);
   }
 
-  // The browser client has already persisted and validated this session.
-  // Return it synchronously instead of entering its global auth lock. This is
-  // the normal path for every protected page and server-function call.
   const stored = readStoredSession();
-  if (stored) {
-    cached = { value: stored, expiresAt: now + 30_000 };
-    return Promise.resolve(stored);
+
+  if (stored && !stored.expired) {
+    const value: SessionResult = { data: { session: stored.session }, error: null };
+    cached = { value, expiresAt: now + 30_000 };
+    return Promise.resolve(value);
   }
 
-  // Never enter the auth SDK's browser-wide Web Lock from page rendering or
-  // server-function middleware. A stalled refresh in another tab can keep
-  // getSession() pending indefinitely. Auth state changes keep localStorage
-  // current, so a missing usable stored session is a terminal signed-out state.
+  if (stored?.refreshToken) {
+    if (!refreshing) {
+      refreshing = refreshWithStored(stored).then((value) => {
+        cached = {
+          value,
+          expiresAt: Date.now() + (value.data.session ? 30_000 : 1_000),
+        };
+        refreshing = undefined;
+        return value;
+      });
+    }
+    return refreshing;
+  }
+
+  // কোনো সেশনই নেই — সত্যিকারের সাইনড-আউট অবস্থা।
   const signedOut: SessionResult = { data: { session: null }, error: null };
   cached = { value: signedOut, expiresAt: now + 1_000 };
   return Promise.resolve(signedOut);
@@ -65,4 +111,5 @@ export function getSharedSession(options?: { fresh?: boolean }): Promise<Session
 
 export function clearSharedSession() {
   cached = undefined;
+  refreshing = undefined;
 }
