@@ -110,8 +110,7 @@ export function AppUpdateBanner() {
   const startUpdate = async () => {
     setStarted(true);
     setDownloadStatus("started");
-    const freshUrl = `${absolute}${absolute.includes("?") ? "&" : "?"}download=${Date.now()}`;
-    let directUrl = freshUrl;
+    let directUrl = `${absolute}${absolute.includes("?") ? "&" : "?"}download=${Date.now()}`;
     try {
       const separator = absolute.includes("?") ? "&" : "?";
       const response = await fetch(`${absolute}${separator}resolve=1&t=${Date.now()}`, {
@@ -126,50 +125,27 @@ export function AppUpdateBanner() {
     } catch {
       // The permanent endpoint remains a safe fallback if resolving fails.
     }
-    const nativeDownloader = (
-      window as Window & {
-        GoodAppDownloader?: { download: (downloadUrl: string, fileName: string) => void };
-      }
-    ).GoodAppDownloader;
 
-    if (nativeDownloader?.download) {
-      setDownloadStatus("progress");
-      setPercent(0);
-      nativeDownloader.download(directUrl, `Good-App-v${latest ?? "latest"}.apk`);
-      toast.success("অ্যাপের ভেতরেই ডাউনলোড শুরু হয়েছে — শেষ হলে Install খুলবে", {
-        duration: 6000,
-      });
-      return;
-    }
-
-    // Older installed builds (v1.8 and below) have no native DownloadManager
-    // bridge. An intent:// URL fails inside that WebView (ERR_UNKNOWN_URL_SCHEME),
-    // so use a plain https link with the download attribute — the WebView's
-    // DownloadListener hands it to Android's download manager instead.
+    // ইউজারের চাওয়া অনুযায়ী: আপডেটে ট্যাপ করলেই ফোনের ব্রাউজার (Chrome) খুলবে,
+    // সেখানে ডাউনলোড নিজে থেকেই শুরু হবে — শেষ হলে ফাইলে ট্যাপ করে Install।
     setDownloadStatus("fallback");
+    const nativeOpener = (
+      window as Window & { GoodAppDownloader?: { openExternal?: (url: string) => void } }
+    ).GoodAppDownloader;
     try {
-      const downloadLink = document.createElement("a");
-      downloadLink.href = directUrl;
-      downloadLink.setAttribute("download", `Good-App-v${latest ?? "latest"}.apk`);
-      downloadLink.target = "_blank";
-      downloadLink.rel = "noopener";
-      document.body.appendChild(downloadLink);
-      downloadLink.click();
-      downloadLink.remove();
-      toast.success("ডাউনলোড শুরু হচ্ছে — Notification bar দেখুন", { duration: 7000 });
-      // Some old WebViews ignore anchor clicks; navigate directly as a backup.
-      window.setTimeout(() => {
-        try {
-          window.location.href = directUrl;
-        } catch {
-          /* ignore */
-        }
-      }, 1500);
+      if (nativeOpener?.openExternal) {
+        nativeOpener.openExternal(directUrl);
+      } else {
+        // Capacitor-এর WebView `_blank` পেলে লিংকটা সিস্টেম ব্রাউজারে পাঠায়।
+        const opened = window.open(directUrl, "_blank");
+        if (!opened) window.location.href = directUrl;
+      }
+      toast.success("Chrome-এ ডাউনলোড শুরু হচ্ছে — শেষ হলে ফাইলে ট্যাপ করে Install দিন", {
+        duration: 8000,
+      });
     } catch {
       window.location.href = directUrl;
     }
-
-
   };
 
   return (
