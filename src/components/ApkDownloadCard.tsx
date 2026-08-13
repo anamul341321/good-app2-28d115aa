@@ -1,10 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { Download, Smartphone, Zap, BellRing, ShieldCheck } from "lucide-react";
 import { getAppStatus } from "@/lib/app-status.functions";
+import { isNativeApp } from "@/lib/native-google";
 
 /**
  * অ্যান্ড্রয়েড অ্যাপ ডাউনলোড কার্ড — বড়, ইউনিক ডিজাইন।
  * ট্যাপ করলেই সোজা ডাউনলোড শুরু (কোনো নোটিশ/পপআপ নেই)।
+ * নেটিভ অ্যাপের ভিতরে থাকলে দেখানো হয় না।
  */
 export function ApkDownloadCard({ compact = false }: { compact?: boolean }) {
   const { data } = useQuery({
