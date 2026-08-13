@@ -180,6 +180,19 @@ export async function sendIncomingCallPush(
   });
 }
 
+export async function sendCancelCallPush(userId: string, callId: string) {
+  if (!process.env.FIREBASE_SERVICE_ACCOUNT_JSON) return { sent: 0, failed: 0 };
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data } = await supabaseAdmin.from("push_tokens").select("token").eq("user_id", userId);
+  const tokens = [...new Set((data ?? []).map((row: any) => row.token as string))];
+  return sendPushToTokens(tokens, {
+    title: "কল শেষ",
+    body: "কলটি আর সক্রিয় নেই",
+    call: true,
+    data: { type: "cancel_call", call_id: callId },
+  });
+}
+
 /** নির্দিষ্ট ইউজারের সব ফোনে push পাঠাও */
 export async function sendPushToUser(
   userId: string,

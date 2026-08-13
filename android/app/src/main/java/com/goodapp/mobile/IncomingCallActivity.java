@@ -4,6 +4,8 @@ import android.app.Activity;
 import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.BroadcastReceiver;
+import android.content.IntentFilter;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.media.Ringtone;
@@ -26,6 +28,13 @@ public class IncomingCallActivity extends Activity {
     private String callerId;
     private final Handler timeoutHandler = new Handler(Looper.getMainLooper());
     private final Runnable timeout = this::closeCall;
+    private final BroadcastReceiver cancelReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String cancelledId = intent.getStringExtra("call_id");
+            if (callId != null && callId.equals(cancelledId)) closeCall();
+        }
+    };
 
     @Override
     protected void onCreate(Bundle state) {
@@ -84,6 +93,12 @@ public class IncomingCallActivity extends Activity {
         accept.setOnClickListener(v -> openCall());
         startRinging();
         timeoutHandler.postDelayed(timeout, 50_000L);
+        IntentFilter cancelFilter = new IntentFilter("com.goodapp.mobile.CANCEL_CALL");
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(cancelReceiver, cancelFilter, Context.RECEIVER_NOT_EXPORTED);
+        } else {
+            registerReceiver(cancelReceiver, cancelFilter);
+        }
     }
 
     private TextView text(String value, int size, int color) {
@@ -143,6 +158,9 @@ public class IncomingCallActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        try {
+            unregisterReceiver(cancelReceiver);
+        } catch (Exception ignored) {}
         stopRinging();
         super.onDestroy();
     }

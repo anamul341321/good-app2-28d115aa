@@ -1,4 +1,4 @@
-import { sendIncomingCallPush } from "./push.server";
+import { sendCancelCallPush, sendIncomingCallPush } from "./push.server";
 
 type AuthContext = {
   userId: string;
@@ -89,6 +89,12 @@ export async function updateCallSession(
 ) {
   const allowed = ["accepted", "declined", "missed", "ended", "failed", "cancelled"];
   if (!input.callId || !allowed.includes(input.status)) return { ok: false };
+  const { data: existing } = await context.supabase
+    .from("call_sessions")
+    .select("caller_id, callee_id, status")
+    .eq("id", input.callId)
+    .maybeSingle();
+  if (!existing) return { ok: false };
   const patch: Record<string, unknown> = { status: input.status };
   if (input.answer) patch.answer = input.answer;
   if (input.reason) patch.ended_reason = input.reason;
@@ -100,5 +106,8 @@ export async function updateCallSession(
     .from("call_sessions")
     .update(patch)
     .eq("id", input.callId);
+  if (!error && existing.caller_id === context.userId && ["ended", "cancelled", "missed"].includes(input.status)) {
+    await sendCancelCallPush(existing.callee_id, input.callId);
+  }
   return { ok: !error };
 }

@@ -28,6 +28,16 @@ public class GoodAppMessagingService extends FirebaseMessagingService {
     @Override
     public void onMessageReceived(@NonNull RemoteMessage message) {
         Map<String, String> data = message.getData();
+        if ("cancel_call".equals(data.get("type"))) {
+            String callId = value(data, "call_id", "call");
+            NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            manager.cancel(callId.hashCode());
+            Intent cancel = new Intent("com.goodapp.mobile.CANCEL_CALL");
+            cancel.setPackage(getPackageName());
+            cancel.putExtra("call_id", callId);
+            sendBroadcast(cancel);
+            return;
+        }
         if ("incoming_call".equals(data.get("type"))) {
             showIncomingCall(data);
             return;
