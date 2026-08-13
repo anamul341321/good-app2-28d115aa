@@ -1,9 +1,9 @@
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-// Fail fast: backend যদি ধীর হয়, ২০s ঝুলে থাকার বদলে ৮s-এ স্পষ্ট error দেখাবে
+// Fail fast: backend ধীর হলে, ২০s ঝুলে থাকার বদলে ৮s-এ স্পষ্ট error দেখাবে
 // এবং connection ছেড়ে দেবে — এতে pool জমে গিয়ে পুরো app আটকে যাওয়া বন্ধ হয়।
 const LOGIN_TIMEOUT_MS = 8_000;
 
-type LoginData = { identifier: string; password: string };
+type LoginData = { identifier: string; password: string; deviceId?: string };
 
 type Account = {
   id: string;
@@ -165,13 +165,45 @@ async function verifyPassword(account: Account, password: string) {
   throw new Error("ভুল নম্বর/Gmail অথবা পাসওয়ার্ড");
 }
 
+/** এই ডিভাইসটির ওপর ২৪ ঘণ্টার OTP-trust আছে কি না */
+async function isDeviceTrusted(userId: string, deviceId?: string): Promise<boolean> {
+  if (!deviceId || !userId) return false;
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data } = await supabaseAdmin
+    .from("user_devices")
+    .select("otp_trust_expires_at")
+    .eq("user_id", userId)
+    .eq("device_id", deviceId)
+    .gt("otp_trust_expires_at", new Date().toISOString())
+    .maybeSingle();
+  return !!data;
+}
+
+/** সফল OTP লগইনের পর এই ডিভাইসকে ২৪ ঘণ্টার জন্য trusted মার্ক করুন */
+async function markDeviceTrusted(userId: string, deviceId?: string) {
+  if (!deviceId || !userId) return;
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const expiresAt = new Date(Date.now() + 24 * 60 * 60_000).toISOString();
+  await supabaseAdmin
+    .from("user_devices")
+    .upsert(
+      {
+        user_id: userId,
+        device_id: deviceId,
+        otp_trust_expires_at: expiresAt,
+        last_seen_at: new Date().toISOString(),
+      } as any,
+      { onConflict: "user_id,device_id" }
+    );
+}
+
 
 async function startLoginOtpWork(data: LoginData) {
   const account = await resolveAccount(data.identifier);
 
   const session = await verifyPassword(account, data.password);
 
-  // যাদের Gmail যোগ করা আছে (verified) — তাদের লগইনে সবসময় ৬ ডিজিটের কোড লাগবে,
+  // যাদের Gmail যোগ করা আছে (verified) — তাদের লগইনে ৬ ডিজিটের কোড লাগবে,
   // অ্যাডমিন সুইচ যা-ই থাকুক। Gmail না থাকলে আগের মতোই শুধু নম্বর+পাসওয়ার্ড।
   const hasGmail =
     !!account.id &&
@@ -181,6 +213,11 @@ async function startLoginOtpWork(data: LoginData) {
 
   if (!hasGmail) {
     return { ok: true as const, needOtp: false as const, session };
+  }
+
+  // নিজের ফোনে ২৪ ঘণ্টার মধ্যে একবার কোড দিলেই আর কোড লাগবে না
+  if (await isDeviceTrusted(account.id, data.deviceId)) {
+    return { ok: true as const, needOtp: false as const, session, trustedDevice: true as const };
   }
 
 
@@ -243,6 +280,10 @@ async function completeLoginOtpWork(data: LoginData & { code: string }) {
   }
   if (sessionResult instanceof Error) throw sessionResult;
   await supabaseAdmin.from("email_verify_otps").update({ used_at: new Date().toISOString() }).eq("id", otp.id);
+
+  // এই ডিভাইস এখন ২৪ ঘণ্টার জন্য trusted — পরের লগইনে কোড লাগবে না
+  await markDeviceTrusted(account.id, data.deviceId);
+
   return { ok: true as const, session: sessionResult as { access_token: string; refresh_token: string } };
 }
 

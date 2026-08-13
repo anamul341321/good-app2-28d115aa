@@ -28,6 +28,7 @@ import { ApkDownloadCard } from "@/components/ApkDownloadCard";
 import { QrScanner } from "@/components/QrScanner";
 import { ForgotPasswordDialog } from "@/components/ForgotPasswordDialog";
 import { getSharedSession } from "@/lib/auth-session";
+import { getDeviceId } from "@/hooks/useDeviceGuard";
 
 import { QrCode as QrCodeIcon } from "lucide-react";
 
@@ -312,10 +313,13 @@ export function AuthPage() {
           20_000,
         ),
       );
-      const res: any = await Promise.race([startOtp({ data: { identifier, password } }), timeout]);
+      const res: any = await Promise.race([
+        startOtp({ data: { identifier, password, deviceId: getDeviceId() } }),
+        timeout,
+      ]);
       if (!res.needOtp && res.session) {
         await applySession(res.session);
-        toast.success("স্বাগতম!");
+        toast.success(res.trustedDevice ? "স্বাগতম! এই ডিভাইসে ২৪ ঘণ্টা OTP লাগবে না" : "স্বাগতম!");
         nav({ to: "/home" });
         return;
       }
@@ -338,10 +342,12 @@ export function AuthPage() {
   async function doLoginConfirm() {
     setLoading(true);
     try {
-      const res: any = await confirmOtp({ data: { identifier: otpId, password, code: otpCode } });
+      const res: any = await confirmOtp({
+        data: { identifier: otpId, password, code: otpCode, deviceId: getDeviceId() },
+      });
       await applySession(res.session);
       setOtpOpen(false);
-      toast.success("স্বাগতম!");
+      toast.success("স্বাগতম! এই ডিভাইসে ২৪ ঘণ্টা OTP লাগবে না");
       nav({ to: "/home" });
     } catch (e: any) {
       toast.error(e?.message ?? "কোড মেলেনি");
