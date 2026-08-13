@@ -8,7 +8,7 @@ import {
   adminSetApkRelease,
 } from "@/lib/admin.functions";
 
-const CURRENT_ANDROID_VERSION = "1.6";
+const CURRENT_ANDROID_VERSION = "1.7";
 
 function normalizeAndroidVersion(value: string): string {
   const match = value.trim().match(/\d+(?:\.\d+){1,2}/);
@@ -138,7 +138,7 @@ export function ApkUploadCard() {
         <input
           value={version}
           onChange={(e) => setVersion(e.target.value)}
-          placeholder="ভার্সন (যেমন 1.6)"
+          placeholder="ভার্সন (যেমন 1.7)"
           className="w-28 rounded-xl bg-background border border-border px-3 py-2 text-xs font-bold"
         />
         <input
