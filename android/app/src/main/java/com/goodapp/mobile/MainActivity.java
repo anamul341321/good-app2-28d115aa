@@ -58,6 +58,50 @@ public class MainActivity extends BridgeActivity {
         }
     };
 
+    private File updateApkFile() {
+        File dir = getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS);
+        return new File(dir, updateFileName);
+    }
+
+    private void emit(String script) {
+        try {
+            bridge.getWebView().post(() -> bridge.getWebView().evaluateJavascript(script, null));
+        } catch (Exception ignored) {}
+    }
+
+    /** Reports live download percentage into the WebView so the in-app banner can show progress. */
+    private void trackProgress(final long downloadId) {
+        new Thread(() -> {
+            DownloadManager manager = (DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE);
+            for (int i = 0; i < 1800; i++) {
+                if (downloadId != updateDownloadId) return;
+                int status = -1;
+                long soFar = 0L;
+                long total = 0L;
+                try (Cursor cursor = manager.query(new DownloadManager.Query().setFilterById(downloadId))) {
+                    if (cursor == null || !cursor.moveToFirst()) return;
+                    int si = cursor.getColumnIndex(DownloadManager.COLUMN_STATUS);
+                    int bi = cursor.getColumnIndex(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR);
+                    int ti = cursor.getColumnIndex(DownloadManager.COLUMN_TOTAL_SIZE_BYTES);
+                    status = si >= 0 ? cursor.getInt(si) : -1;
+                    soFar = bi >= 0 ? cursor.getLong(bi) : 0L;
+                    total = ti >= 0 ? cursor.getLong(ti) : 0L;
+                } catch (Exception ignored) {
+                    return;
+                }
+                int percent = total > 0 ? (int) (soFar * 100 / total) : 0;
+                emit("window.dispatchEvent(new CustomEvent('goodapp-download-status',{detail:{status:'progress',percent:"
+                    + percent + "}}))");
+                if (status == DownloadManager.STATUS_SUCCESSFUL || status == DownloadManager.STATUS_FAILED) return;
+                try {
+                    Thread.sleep(700);
+                } catch (InterruptedException interrupted) {
+                    return;
+                }
+            }
+        }).start();
+    }
+
     private void openDownloadedApk() {
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
@@ -72,7 +116,7 @@ public class MainActivity extends BridgeActivity {
                 return;
             }
             waitingForInstallPermission = false;
-            File apk = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), updateFileName);
+            File apk = updateApkFile();
             Uri apkUri = FileProvider.getUriForFile(this, getPackageName() + ".fileprovider", apk);
             Intent installIntent = new Intent(Intent.ACTION_VIEW);
             installIntent.setDataAndType(apkUri, "application/vnd.android.package-archive");
@@ -106,10 +150,7 @@ public class MainActivity extends BridgeActivity {
             runOnUiThread(() -> {
                 try {
                     updateFileName = fileName == null || fileName.isEmpty() ? "Good-App-latest.apk" : fileName;
-                    File previous = new File(
-                        Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-                        updateFileName
-                    );
+                    File previous = updateApkFile();
                     if (previous.exists()) previous.delete();
                     DownloadManager.Request request = new DownloadManager.Request(Uri.parse(url));
                     request.setTitle("Good-App আপডেট");
@@ -120,13 +161,15 @@ public class MainActivity extends BridgeActivity {
                     );
                     request.setAllowedOverMetered(true);
                     request.setAllowedOverRoaming(true);
-                    request.setDestinationInExternalPublicDir(
+                    request.setDestinationInExternalFilesDir(
+                        MainActivity.this,
                         Environment.DIRECTORY_DOWNLOADS,
                         updateFileName
                     );
                     DownloadManager manager =
                         (DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE);
                     updateDownloadId = manager.enqueue(request);
+                    trackProgress(updateDownloadId);
                     bridge.getWebView().evaluateJavascript(
                         "window.dispatchEvent(new CustomEvent('goodapp-download-status',{detail:{status:'started'}}))",
                         null

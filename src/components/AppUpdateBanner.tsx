@@ -38,8 +38,10 @@ export function AppUpdateBanner() {
   const native = typeof window !== "undefined" && isNativeApp();
   const [installed, setInstalled] = useState<string | null>(null);
   const [started, setStarted] = useState(false);
-  const [downloadStatus, setDownloadStatus] = useState<"idle" | "started" | "complete" | "failed" | "fallback">("idle");
+  const [downloadStatus, setDownloadStatus] = useState<"idle" | "started" | "progress" | "complete" | "failed" | "fallback">("idle");
+  const [percent, setPercent] = useState(0);
   const [hidden, setHidden] = useState(false);
+
 
   const readVersion = () =>
     import("@capacitor/app")
@@ -66,15 +68,24 @@ export function AppUpdateBanner() {
   useEffect(() => {
     if (!native) return;
     const onDownloadStatus = (event: Event) => {
-      const status = (event as CustomEvent<{ status?: string }>).detail?.status;
+      const detail = (event as CustomEvent<{ status?: string; percent?: number }>).detail;
+      const status = detail?.status;
+      if (status === "progress") {
+        setStarted(true);
+        setDownloadStatus("progress");
+        setPercent(Math.max(0, Math.min(100, detail?.percent ?? 0)));
+        return;
+      }
       if (status === "started" || status === "complete" || status === "failed" || status === "fallback") {
         setDownloadStatus(status);
         setStarted(true);
+        if (status === "complete") setPercent(100);
       }
     };
     window.addEventListener("goodapp-download-status", onDownloadStatus);
     return () => window.removeEventListener("goodapp-download-status", onDownloadStatus);
   }, [native]);
+
 
 
   const { data } = useQuery({
@@ -107,12 +118,15 @@ export function AppUpdateBanner() {
     ).GoodAppDownloader;
 
     if (nativeDownloader?.download) {
+      setDownloadStatus("progress");
+      setPercent(0);
       nativeDownloader.download(freshUrl, `Good-App-v${latest ?? "latest"}.apk`);
-      toast.success("ডাউনলোড শুরু হয়েছে — Notification bar-এ প্রগ্রেস দেখুন", {
+      toast.success("অ্যাপের ভেতরেই ডাউনলোড শুরু হয়েছে — শেষ হলে Install খুলবে", {
         duration: 6000,
       });
       return;
     }
+
 
     // Older installed builds do not contain the native DownloadManager bridge.
     // Open the HTTPS endpoint in Android's browser so its download manager can
@@ -178,21 +192,30 @@ export function AppUpdateBanner() {
           <div className="relative mt-3 rounded-xl bg-white/10 p-2.5 text-[11px] leading-snug text-white/85">
             <p className="font-black text-cyan-300">
               {downloadStatus === "complete"
-                ? "✅ ডাউনলোড সম্পন্ন — Install করুন"
+                ? "✅ ডাউনলোড সম্পন্ন — Install স্ক্রিন খুলছে"
                 : downloadStatus === "failed"
                   ? "❌ ডাউনলোড ব্যর্থ — আবার Update চাপুন"
                   : downloadStatus === "fallback"
                     ? "📥 Download পেজ খোলা হয়েছে"
-                    : "📥 ডাউনলোড চলছে — এরপর কী করবেন"}
+                    : `📥 অ্যাপের ভেতরেই ডাউনলোড হচ্ছে… ${percent}%`}
             </p>
-            <p className="mt-1">
-              ১) ফোনের <b>Notification bar</b> নামিয়ে ডাউনলোড প্রগ্রেস দেখুন।
-              <br />২) শেষ হলে ফাইলটিতে <b>ট্যাপ</b> করুন (অথবা <b>Files → Downloads</b> ফোল্ডার থেকে
-              <b> Good-App-v{latest}.apk</b>)।
-              <br />৩) <b>Install / Update</b> চাপুন — ইনস্টল হয়ে গেলে এই ব্যানার নিজেই চলে যাবে ✅
+            <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-white/15">
+              <div
+                className="h-full rounded-full transition-all duration-500"
+                style={{
+                  width: `${downloadStatus === "complete" ? 100 : Math.max(percent, 4)}%`,
+                  background: "linear-gradient(90deg,#22c55e,#06b6d4,#a855f7)",
+                }}
+              />
+            </div>
+            <p className="mt-2">
+              ডাউনলোড শেষ হলে <b>Install স্ক্রিন নিজেই খুলবে</b> — শুধু <b>Update / Install</b> চাপুন।
+              <br />প্রথমবার হলে <b>“Allow from this source”</b> অন করে দিন, তারপর আবার Install চাপুন।
+              <br />ইনস্টল হয়ে গেলে এই ব্যানার নিজে থেকেই চলে যাবে ✅
             </p>
           </div>
         )}
+
       </div>
     </div>
   );
