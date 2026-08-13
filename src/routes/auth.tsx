@@ -368,34 +368,15 @@ export function AuthPage() {
           localStorage.setItem("good-app-ref-code", referralCode.trim().toUpperCase());
       } catch {}
 
-      // নেটিভ অ্যাপ: ফোনে যুক্ত সব Gmail account সরাসরি দেখাবে
-      const { nativeGoogleAvailable, signInWithNativeGoogle } = await import("@/lib/native-google");
-      if (nativeGoogleAvailable()) {
-        try {
-          const ok = await signInWithNativeGoogle();
-          if (ok) {
-            const { clearSharedSession } = await import("@/lib/auth-session");
-            clearSharedSession();
-            redirecting = true;
-            window.location.href = "/home";
-            return;
-          }
-        } catch (err: any) {
-          // নেটিভ chooser ফেল করলে ব্রাউজারে আবার "Gmail লিখুন" স্ক্রিন আসে —
-          // সেই লুপে না ঢুকে আসল সমস্যাটা দেখাই, ইউজার ইমেইল/পাসওয়ার্ডে ঢুকতে পারবে।
-          toast.error(
-            err?.message ??
-              "Google লগইন হচ্ছে না — ইমেইল ও পাসওয়ার্ড দিয়ে লগইন করুন",
-          );
-          return;
-        }
-      }
-
+      // আগে নেটিভ Google chooser দিয়ে চেষ্টা করা হতো, কিন্তু সেটার জন্য
+      // Google Console-এ আলাদা Android OAuth client (SHA-1) দরকার — না থাকলে
+      // chooser দেখিয়ে খালি ফিরে আসত, তাই লগইন লুপে পড়ত। এখন সরাসরি
+      // Lovable-managed Google OAuth ব্যবহার করি — এটি সব ডিভাইসে কাজ করে।
       const { lovable } = await import("@/integrations/lovable/index");
       const res: any = await lovable.auth.signInWithOAuth("google", {
         redirect_uri: `${window.location.origin}/auth`,
         // ফোনে লগইন করা সব Gmail একাউন্ট দেখাবে — ইউজার বেছে নিতে পারবে
-        extraParams: { prompt: "select_account", access_type: "offline" },
+        extraParams: { prompt: "select_account" },
       });
 
       if (res?.error) throw new Error(res.error.message ?? "Google লগইন করা যায়নি");
