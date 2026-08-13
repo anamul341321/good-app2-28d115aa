@@ -235,17 +235,19 @@ public class MainActivity extends BridgeActivity {
                 appWebView.loadUrl(url);
             }
         });
+
+        // Do NOT intercept every https:// link. Capacitor's BridgeWebViewClient already
+        // respects allowNavigation in capacitor.config.ts, which lists the app domain,
+        // Google OAuth endpoints (accounts.google.com, oauth2.googleapis.com), and Supabase.
+        // Intercepting all https:// loads here broke Google OAuth: it forced the WebView to
+        // reload every redirect step, which caused the account chooser to loop endlessly
+        // and eventually show the "Add Gmail" screen again. We only need to handle the
+        // APK download endpoint ourselves; everything else should follow Capacitor's normal
+        // navigation rules so OAuth redirects and third-party cookie handling work correctly.
         appWebView.setWebViewClient(new BridgeWebViewClient(bridge) {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 if (request.isForMainFrame() && openApkDownload(request.getUrl())) return true;
-                String scheme = request.getUrl().getScheme();
-                // Main-frame web navigation must stay in the native app. This also
-                // catches redirects before Capacitor can hand them to Chrome.
-                if (request.isForMainFrame() && ("https".equals(scheme) || "http".equals(scheme))) {
-                    view.loadUrl(request.getUrl().toString());
-                    return true;
-                }
                 return super.shouldOverrideUrlLoading(view, request);
             }
 
@@ -253,19 +255,31 @@ public class MainActivity extends BridgeActivity {
             @SuppressWarnings("deprecation")
             public boolean shouldOverrideUrlLoading(WebView view, String url) {
                 if (url != null && openApkDownload(Uri.parse(url))) return true;
-                if (url != null && (url.startsWith("https://") || url.startsWith("http://"))) {
-                    view.loadUrl(url);
-                    return true;
-                }
                 return super.shouldOverrideUrlLoading(view, url);
             }
         });
 
-        // Explicitly start the website only after our WebView client is attached.
-        // Previously Capacitor could begin loading first and an early redirect could
-        // reach Android before the custom client existed, opening Chrome.
-        appWebView.loadUrl(APP_URL);
+        // If the app was opened from a deep link (e.g. an OAuth redirect), load that URL.
+        // Otherwise load the canonical app URL.
+        Intent launchIntent = getIntent();
+        Uri launchUri = launchIntent != null ? launchIntent.getData() : null;
+        if (launchUri != null && isAppDomain(launchUri)) {
+            appWebView.loadUrl(launchUri.toString());
+        } else {
+            appWebView.loadUrl(APP_URL);
+        }
     }
+
+    private boolean isAppDomain(Uri uri) {
+        if (uri == null) return false;
+        String scheme = uri.getScheme();
+        if (!"https".equals(scheme) && !"http".equals(scheme)) return false;
+        String host = uri.getHost();
+        return "www.goodapp2.live".equals(host)
+            || "goodapp2.live".equals(host)
+            || "good-app2.lovable.app".equals(host);
+    }
+
 
     @Override
     public void onDestroy() {
