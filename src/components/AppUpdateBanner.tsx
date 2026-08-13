@@ -118,12 +118,15 @@ export function AppUpdateBanner() {
     ).GoodAppDownloader;
 
     if (nativeDownloader?.download) {
+      setDownloadStatus("progress");
+      setPercent(0);
       nativeDownloader.download(freshUrl, `Good-App-v${latest ?? "latest"}.apk`);
-      toast.success("ডাউনলোড শুরু হয়েছে — Notification bar-এ প্রগ্রেস দেখুন", {
+      toast.success("অ্যাপের ভেতরেই ডাউনলোড শুরু হয়েছে — শেষ হলে Install খুলবে", {
         duration: 6000,
       });
       return;
     }
+
 
     // Older installed builds do not contain the native DownloadManager bridge.
     // Open the HTTPS endpoint in Android's browser so its download manager can
