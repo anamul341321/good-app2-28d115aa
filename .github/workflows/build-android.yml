@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       build_type:
-        description: 'Build type'
+        description: "Build type"
         required: true
-        default: 'apk-debug'
+        default: "apk-debug"
         type: choice
         options:
           - apk-debug
@@ -32,8 +32,8 @@ jobs:
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
-          java-version: '21'
+          distribution: "temurin"
+          java-version: "21"
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
@@ -46,6 +46,16 @@ jobs:
 
       - name: Sync Capacitor
         run: bun run cap:sync
+
+      - name: Read Android version
+        id: android_version
+        shell: bash
+        run: |
+          VERSION_NAME=$(awk -F'"' '/versionName/{print $2; exit}' android/app/build.gradle)
+          VERSION_CODE=$(sed -n 's/.*versionCode[[:space:]]*\([0-9]*\).*/\1/p' android/app/build.gradle | head -1)
+          test -n "$VERSION_NAME" && test -n "$VERSION_CODE"
+          echo "name=$VERSION_NAME" >> "$GITHUB_OUTPUT"
+          echo "code=$VERSION_CODE" >> "$GITHUB_OUTPUT"
 
       - name: Prefetch Gradle distribution (with retries)
         run: |
@@ -113,10 +123,20 @@ jobs:
 
       - name: Upload Release APK
         if: github.event.inputs.build_type == 'apk-release'
+        run: |
+          mkdir -p android-release
+          cp android/app/build/outputs/apk/release/app-release.apk android-release/Good-App-v${{ steps.android_version.outputs.name }}.apk
+          printf '{"versionName":"%s","versionCode":%s,"commit":"%s"}\n' \
+            '${{ steps.android_version.outputs.name }}' \
+            '${{ steps.android_version.outputs.code }}' \
+            '${{ github.sha }}' > android-release/release-metadata.json
+
+      - name: Publish Release APK artifact
+        if: github.event.inputs.build_type == 'apk-release'
         uses: actions/upload-artifact@v4
         with:
-          name: Good-App-v1.5-release-apk
-          path: android/app/build/outputs/apk/release/app-release.apk
+          name: Good-App-v${{ steps.android_version.outputs.name }}-release-apk
+          path: android-release/
 
       - name: Build Release AAB
         if: github.event.inputs.build_type == 'aab-release'

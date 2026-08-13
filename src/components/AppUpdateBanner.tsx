@@ -47,9 +47,10 @@ export function AppUpdateBanner() {
   }, [native]);
 
   const { data } = useQuery({
-    queryKey: ["app-status-update"],
+    queryKey: ["app-status-apk"],
     queryFn: () => getAppStatus(),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 30 * 1000,
+    refetchOnMount: "always",
     enabled: native,
   });
 

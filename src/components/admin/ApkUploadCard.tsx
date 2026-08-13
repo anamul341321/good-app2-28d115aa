@@ -2,9 +2,13 @@ import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Upload, Loader2, Smartphone, Copy } from "lucide-react";
 import { toast } from "sonner";
-import { adminCreateApkUpload, adminGetBonusSettings, adminSetApkRelease } from "@/lib/admin.functions";
+import {
+  adminCreateApkUpload,
+  adminGetBonusSettings,
+  adminSetApkRelease,
+} from "@/lib/admin.functions";
 
-const CURRENT_ANDROID_VERSION = "1.5";
+const CURRENT_ANDROID_VERSION = "1.6";
 
 function normalizeAndroidVersion(value: string): string {
   const match = value.trim().match(/\d+(?:\.\d+){1,2}/);
@@ -33,7 +37,8 @@ export function ApkUploadCard() {
     // চালু ভার্সন সমান/পুরোনো হলে সেটির বদলে নতুনটাই বসে।
     const num = (v: string) => (v.match(/\d+/g) ?? []).map(Number);
     const older = (a: string, b: string) => {
-      const x = num(a), y = num(b);
+      const x = num(a),
+        y = num(b);
       for (let i = 0; i < Math.max(x.length, y.length); i++) {
         if ((x[i] ?? 0) !== (y[i] ?? 0)) return (x[i] ?? 0) < (y[i] ?? 0);
       }
@@ -48,20 +53,34 @@ export function ApkUploadCard() {
     mutationFn: async (picked: File) => {
       const releaseVersion = normalizeAndroidVersion(version);
       if (!releaseVersion) throw new Error("সঠিক ভার্সন দিন—যেমন 1.5");
-      let file = picked;
-      // GitHub Actions থেকে নামানো artifact একটা .zip — ভিতরের .apk বের করে নিই
-      if (/\.zip$/i.test(picked.name) || picked.type === "application/zip") {
-        setProgress(0);
-        const { unzipSync } = await import("fflate");
-        const buf = new Uint8Array(await picked.arrayBuffer());
-        const files = unzipSync(buf);
-        const apkName = Object.keys(files).find((n) => /\.apk$/i.test(n));
-        if (!apkName) throw new Error("zip ফাইলের ভিতরে কোনো .apk পাওয়া যায়নি");
-        file = new File([files[apkName] as any], apkName.split("/").pop() || "app-release.apk", {
-          type: "application/vnd.android.package-archive",
-        });
+      if (!/\.zip$/i.test(picked.name) && picked.type !== "application/zip") {
+        throw new Error("GitHub Actions থেকে download করা নতুন release-apk.zip ফাইলটি দিন");
       }
-      if (!/\.apk$/i.test(file.name)) throw new Error("শুধু .apk বা .zip ফাইল দিন");
+      setProgress(0);
+      const { unzipSync } = await import("fflate");
+      const buf = new Uint8Array(await picked.arrayBuffer());
+      const files = unzipSync(buf);
+      const metadataName = Object.keys(files).find((n) => /release-metadata\.json$/i.test(n));
+      if (!metadataName) {
+        throw new Error("এটি পুরোনো/ভুল artifact—নতুন GitHub workflow থেকে ZIP download করুন");
+      }
+      const metadata = JSON.parse(new TextDecoder().decode(files[metadataName]));
+      const artifactVersion = normalizeAndroidVersion(String(metadata.versionName ?? ""));
+      if (!artifactVersion) throw new Error("ZIP-এর Android version পাওয়া যায়নি");
+      if (artifactVersion !== releaseVersion) {
+        throw new Error(
+          `এই ZIP v${artifactVersion}, কিন্তু ঘরে v${releaseVersion} লেখা—সঠিক নতুন file দিন`,
+        );
+      }
+      const apkName = Object.keys(files).find((n) => /\.apk$/i.test(n));
+      if (!apkName) throw new Error("zip ফাইলের ভিতরে কোনো .apk পাওয়া যায়নি");
+      const file = new File(
+        [files[apkName] as any],
+        apkName.split("/").pop() || "app-release.apk",
+        {
+          type: "application/vnd.android.package-archive",
+        },
+      );
       const { path, signedUrl } = await adminCreateApkUpload({ data: { version: releaseVersion } });
       await new Promise<void>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
@@ -70,7 +89,8 @@ export function ApkUploadCard() {
         xhr.upload.onprogress = (e) => {
           if (e.lengthComputable) setProgress(Math.round((e.loaded / e.total) * 100));
         };
-        xhr.onload = () => (xhr.status < 300 ? resolve() : reject(new Error(`আপলোড ব্যর্থ (${xhr.status})`)));
+        xhr.onload = () =>
+          xhr.status < 300 ? resolve() : reject(new Error(`আপলোড ব্যর্থ (${xhr.status})`));
         xhr.onerror = () => reject(new Error("নেটওয়ার্ক সমস্যা — আবার চেষ্টা করুন"));
         xhr.send(file);
       });
@@ -104,9 +124,9 @@ export function ApkUploadCard() {
         <p className="font-black text-sm">অ্যাপ (APK) আপলোড</p>
       </div>
       <p className="text-[11px] text-muted-foreground leading-snug">
-        GitHub Actions থেকে নামানো <b>release-apk.zip</b> সোজা এখানে দিলেই হবে — ভিতরের
-        <b>app-release.apk</b> নিজে থেকেই বের করে আপলোড হবে। <b>.apk</b> ফাইল আলাদা করে দিলেও চলবে।
-        আপলোড হলেই ইউজারদের হোম স্ক্রিনে "অ্যাপ ডাউনলোড করুন" কার্ড দেখাবে।
+        GitHub Actions থেকে নতুন করে নামানো <b>release-apk.zip</b> সোজা এখানে দিন — ভিতরের version
+        যাচাই করে <b>APK</b> নিজে থেকেই বের করে আপলোড হবে। পুরোনো বা ভুল ZIP গ্রহণ করবে না। আপলোড
+        হলেই ইউজারদের হোম স্ক্রিনে "অ্যাপ ডাউনলোড করুন" কার্ড দেখাবে।
       </p>
 
       <div className="flex items-center justify-between rounded-xl border border-emerald-500/30 bg-background px-3 py-2 text-xs">
@@ -118,13 +138,13 @@ export function ApkUploadCard() {
         <input
           value={version}
           onChange={(e) => setVersion(e.target.value)}
-          placeholder="ভার্সন (যেমন 1.2)"
+          placeholder="ভার্সন (যেমন 1.6)"
           className="w-28 rounded-xl bg-background border border-border px-3 py-2 text-xs font-bold"
         />
         <input
           ref={inputRef}
           type="file"
-          accept=".apk,.zip,application/vnd.android.package-archive,application/zip"
+          accept=".zip,application/zip"
           className="hidden"
           onChange={(e) => {
             const f = e.target.files?.[0];
@@ -137,14 +157,23 @@ export function ApkUploadCard() {
           disabled={upload.isPending}
           className="flex-1 py-2.5 rounded-xl gradient-emerald text-xs font-black btn-press flex items-center justify-center gap-2 disabled:opacity-60"
         >
-          {upload.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-          {upload.isPending ? `v${version} আপলোড হচ্ছে… ${progress ?? 0}%` : `v${version} APK / ZIP বেছে নিন`}
+          {upload.isPending ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Upload className="w-4 h-4" />
+          )}
+          {upload.isPending
+            ? `v${version} আপলোড হচ্ছে… ${progress ?? 0}%`
+            : `v${version} release ZIP বেছে নিন`}
         </button>
       </div>
 
       {progress !== null && (
         <div className="h-2 rounded-full bg-border overflow-hidden">
-          <div className="h-full gradient-emerald transition-all" style={{ width: `${progress}%` }} />
+          <div
+            className="h-full gradient-emerald transition-all"
+            style={{ width: `${progress}%` }}
+          />
         </div>
       )}
 

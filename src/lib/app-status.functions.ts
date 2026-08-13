@@ -19,18 +19,21 @@ export const getAppStatus = createServerFn({ method: "GET" }).handler(async () =
       .maybeSingle();
     const faceVerifyEnabled = (data as any)?.face_verify_enabled !== false;
     const rawApk = ((data as any)?.apk_url as string | null) ?? null;
+    const apkVersion = ((data as any)?.apk_version as string | null) ?? null;
     // storage-এ আপলোড করা APK হলে stable public download route দেখাই
-    const apkUrl = rawApk && !/^https?:\/\//i.test(rawApk) ? "/api/public/app/download" : rawApk;
+    const apkUrl =
+      rawApk && !/^https?:\/\//i.test(rawApk)
+        ? `/api/public/app/download?v=${encodeURIComponent(apkVersion ?? "latest")}&file=${encodeURIComponent(rawApk)}`
+        : rawApk;
     return {
       maintenance: (data as any)?.maintenance_enabled === true,
       message: ((data as any)?.maintenance_message as string | null) ?? null,
       apkUrl,
-      apkVersion: ((data as any)?.apk_version as string | null) ?? null,
+      apkVersion,
       faceVerifyEnabled,
       faceVerifyMessage:
         ((data as any)?.face_verify_off_message as string | null) || FACE_VERIFY_OFF_DEFAULT,
-      signupMessage:
-        ((data as any)?.signup_off_message as string | null) || SIGNUP_OFF_DEFAULT,
+      signupMessage: ((data as any)?.signup_off_message as string | null) || SIGNUP_OFF_DEFAULT,
     };
   } catch {
     return {
