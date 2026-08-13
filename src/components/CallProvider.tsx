@@ -29,6 +29,7 @@ import { createCall, getCall, updateCall } from "@/lib/calls.functions";
 
 type Signal =
   | { kind: "offer"; from: string; fromName: string; video: boolean; sdp: any; callId?: string }
+  | { kind: "reoffer"; from: string; sdp: any }
   | { kind: "answer"; from: string; sdp: any }
   | { kind: "ice"; from: string; candidate: any }
   | { kind: "end"; from: string }
@@ -49,8 +50,20 @@ const ICE = {
     { urls: "stun:stun.l.google.com:19302" },
     { urls: "stun:stun1.l.google.com:19302" },
     { urls: "stun:global.stun.twilio.com:3478" },
+    // মোবাইল ডাটা/NAT-এ কথা মাঝপথে কেটে না যাওয়ার জন্য relay (TURN)
+    {
+      urls: [
+        "turn:openrelay.metered.ca:80",
+        "turn:openrelay.metered.ca:443",
+        "turn:openrelay.metered.ca:443?transport=tcp",
+      ],
+      username: "openrelayproject",
+      credential: "openrelayproject",
+    },
   ],
+  iceCandidatePoolSize: 4,
 };
+
 
 /**
  * পুরো অ্যাপে অডিও/ভিডিও কল। সিগন্যালিং হয় Supabase Realtime broadcast দিয়ে
@@ -86,6 +99,12 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   const localVideo = useRef<HTMLVideoElement | null>(null);
   const remoteVideo = useRef<HTMLVideoElement | null>(null);
   const remoteAudio = useRef<HTMLAudioElement | null>(null);
+  const isCaller = useRef(false);
+  const reconnectTimer = useRef<number | null>(null);
+  const reconnecting = useRef(false);
+  const peerIdRef = useRef<string | null>(null);
+
+
 
   const sendTo = useCallback(async (peerId: string, payload: Signal) => {
     let ch = outRef.current;
@@ -105,6 +124,13 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const cleanup = useCallback(() => {
+    if (reconnectTimer.current) {
+      window.clearTimeout(reconnectTimer.current);
+      reconnectTimer.current = null;
+    }
+    reconnecting.current = false;
+    isCaller.current = false;
+    peerIdRef.current = null;
     pcRef.current?.getSenders().forEach((s) => {
       try {
         s.track?.stop();
@@ -200,12 +226,49 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         if (e.candidate) void sendTo(peerId, { kind: "ice", from: myId ?? "", candidate: e.candidate });
       };
       pc.onconnectionstatechange = () => {
-        if (pc.connectionState === "connected") setState("active");
-        if (pc.connectionState === "failed" || pc.connectionState === "disconnected") {
-          toast.error("কল কেটে গেছে");
-          cleanup();
+        if (pc.connectionState === "connected") {
+          if (reconnectTimer.current) {
+            window.clearTimeout(reconnectTimer.current);
+            reconnectTimer.current = null;
+          }
+          reconnecting.current = false;
+          setState("active");
+          return;
+        }
+        // নেটওয়ার্ক একটু কেটে গেলে সাথে সাথে কল বন্ধ না করে ৩০ সেকেন্ড পর্যন্ত
+        // নিজে থেকে আবার জোড়া লাগানোর চেষ্টা করি (Messenger-এর মতো)।
+        if (pc.connectionState === "disconnected" || pc.connectionState === "failed") {
+          if (reconnectTimer.current || reconnecting.current) return;
+          reconnecting.current = true;
+          toast("সংযোগ দুর্বল — আবার জোড়া লাগানো হচ্ছে…");
+          try {
+            pc.restartIce();
+          } catch {}
+          if (isCaller.current && peerIdRef.current) {
+            void (async () => {
+              try {
+                const offer = await pc.createOffer({ iceRestart: true });
+                await pc.setLocalDescription(offer);
+                await waitForIce(pc);
+                await sendTo(peerIdRef.current!, {
+                  kind: "reoffer",
+                  from: myId ?? "",
+                  sdp: pc.localDescription?.toJSON() ?? offer,
+                });
+              } catch {}
+            })();
+          }
+          reconnectTimer.current = window.setTimeout(() => {
+            reconnectTimer.current = null;
+            reconnecting.current = false;
+            if (pcRef.current !== pc) return;
+            if (pc.connectionState === "connected") return;
+            toast.error("কল কেটে গেছে");
+            cleanup();
+          }, 30000);
         }
       };
+
       pcRef.current = pc;
       camTrack.current = stream.getVideoTracks()[0] ?? null;
       // ভিডিও যেন ক্লিয়ার দেখা যায় — বিটরেট বাড়িয়ে দিই
@@ -223,7 +286,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       }
       return pc;
     },
-    [attachRemote, cleanup, myId, sendTo],
+    [attachRemote, cleanup, myId, sendTo, waitForIce],
   );
 
   const startCall = useCallback(
@@ -235,6 +298,8 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       }
       try {
         setPeer({ id: peerId, name: peerName });
+        isCaller.current = true;
+        peerIdRef.current = peerId;
         setWithVideo(video);
         setState("calling");
         const pc = await buildPeer(peerId, video);
@@ -264,6 +329,8 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     if (!peer || !pendingOffer.current || !myId) return;
     try {
       setState("connecting");
+      isCaller.current = false;
+      peerIdRef.current = peer.id;
       const pc = await buildPeer(peer.id, withVideo);
       await pc.setRemoteDescription(new RTCSessionDescription(pendingOffer.current));
       for (const c of pendingIce.current) {
@@ -355,10 +422,23 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
           setState("ringing");
           return;
         }
+        if (sig.kind === "reoffer") {
+          // সংযোগ ফিরে পাওয়ার জন্য ICE-restart offer — কল না কেটে নতুন করে জোড়া লাগাই
+          const pc = pcRef.current;
+          if (!pc) return;
+          try {
+            await pc.setRemoteDescription(new RTCSessionDescription(sig.sdp));
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+            await waitForIce(pc);
+            await sendTo(sig.from, { kind: "answer", from: myId, sdp: pc.localDescription?.toJSON() ?? answer });
+          } catch {}
+          return;
+        }
         if (sig.kind === "answer") {
           try {
             await pcRef.current?.setRemoteDescription(new RTCSessionDescription(sig.sdp));
-            setState("connecting");
+            if (state !== "active") setState("connecting");
           } catch {}
           return;
         }
@@ -386,7 +466,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     return () => {
       supabase.removeChannel(ch);
     };
-  }, [myId, state, sendTo, cleanup]);
+  }, [myId, state, sendTo, cleanup, waitForIce]);
 
   const toggleMute = () => {
     const track = localStream.current?.getAudioTracks()[0];
