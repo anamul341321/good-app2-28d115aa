@@ -310,19 +310,24 @@ export function AuthPage() {
       // নেটিভ অ্যাপ: ফোনে যুক্ত সব Gmail account সরাসরি দেখাবে
       const { nativeGoogleAvailable, signInWithNativeGoogle } = await import("@/lib/native-google");
       if (nativeGoogleAvailable()) {
-        const ok = await signInWithNativeGoogle();
-        if (ok) {
-          const { clearSharedSession } = await import("@/lib/auth-session");
-          clearSharedSession();
-          redirecting = true;
-          window.location.href = "/home";
-          return;
+        try {
+          const ok = await signInWithNativeGoogle();
+          if (ok) {
+            const { clearSharedSession } = await import("@/lib/auth-session");
+            clearSharedSession();
+            redirecting = true;
+            window.location.href = "/home";
+            return;
+          }
+        } catch {
+          // If Android Credential Manager is unavailable/misconfigured on an
+          // older build, continue with the reliable browser account chooser.
         }
       }
 
       const { lovable } = await import("@/integrations/lovable/index");
       const res: any = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin,
+        redirect_uri: `${window.location.origin}/auth`,
         // ফোনে লগইন করা সব Gmail একাউন্ট দেখাবে — ইউজার বেছে নিতে পারবে
         extraParams: { prompt: "select_account", access_type: "offline" },
       });
