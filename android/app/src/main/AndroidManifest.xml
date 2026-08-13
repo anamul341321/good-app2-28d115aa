@@ -4,6 +4,10 @@
     <!-- Network -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- Android 9 and older need this when DownloadManager saves an APK in Downloads. -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
+    <!-- Allows Android to show the package installer after an APK download finishes. -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
     <!-- Camera for face verification (users may also use gallery) -->
     <uses-permission android:name="android.permission.CAMERA" />
