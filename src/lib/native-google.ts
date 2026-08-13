@@ -8,7 +8,13 @@ import { supabase } from "@/integrations/supabase/client";
  * Web/browser-এ এটি কিছু করে না (false ফেরায়) — তখন আগের OAuth flow চলবে।
  */
 
-const WEB_CLIENT_ID = (import.meta as any).env?.VITE_GOOGLE_WEB_CLIENT_ID as string | undefined;
+// Google OAuth Web Client ID (publishable — safe in client code).
+const DEFAULT_WEB_CLIENT_ID =
+  "563284519487-uegat97otset76iem1fhdnm5jpvluqph.apps.googleusercontent.com";
+
+const WEB_CLIENT_ID =
+  ((import.meta as any).env?.VITE_GOOGLE_WEB_CLIENT_ID as string | undefined) ||
+  DEFAULT_WEB_CLIENT_ID;
 
 export function isNativeApp(): boolean {
   try {
