@@ -59,8 +59,14 @@ export function InstallPrompt() {
         style={{ background: "linear-gradient(160deg,#0b1224 0%,#131a3a 55%,#1b1040 100%)" }}
       >
         {/* গ্লো */}
-        <div className="pointer-events-none absolute -top-16 -right-10 h-48 w-48 rounded-full blur-3xl opacity-40" style={{ background: "radial-gradient(circle,#06b6d4,transparent 70%)" }} />
-        <div className="pointer-events-none absolute -bottom-20 -left-12 h-52 w-52 rounded-full blur-3xl opacity-40" style={{ background: "radial-gradient(circle,#a855f7,transparent 70%)" }} />
+        <div
+          className="pointer-events-none absolute -top-16 -right-10 h-48 w-48 rounded-full blur-3xl opacity-40"
+          style={{ background: "radial-gradient(circle,#06b6d4,transparent 70%)" }}
+        />
+        <div
+          className="pointer-events-none absolute -bottom-20 -left-12 h-52 w-52 rounded-full blur-3xl opacity-40"
+          style={{ background: "radial-gradient(circle,#a855f7,transparent 70%)" }}
+        />
 
         <button
           onClick={() => setOpen(false)}
@@ -95,8 +101,8 @@ export function InstallPrompt() {
             <div className="mt-4 flex items-start gap-2 rounded-2xl bg-rose-600/90 p-3">
               <Trash2 className="mt-0.5 h-4 w-4 shrink-0" />
               <p className="text-[11px] font-bold leading-snug">
-                আগে <b>"Add to Home Screen"</b> দিয়ে যেটা রেখেছিলেন সেটি <b>ডিলিট</b> করে
-                নিচের বাটন থেকে <b>নতুন অফিসিয়াল অ্যাপ</b> নিন ✅
+                আগে <b>"Add to Home Screen"</b> দিয়ে যেটা রেখেছিলেন সেটি <b>ডিলিট</b> করে নিচের
+                বাটন থেকে <b>নতুন অফিসিয়াল অ্যাপ</b> নিন ✅
               </p>
             </div>
           )}
@@ -122,7 +128,9 @@ export function InstallPrompt() {
               : { download: "Good-App.apk" })}
             onClick={() => setOpen(false)}
             className="group relative mt-5 flex w-full items-center justify-center gap-2 overflow-hidden rounded-2xl py-4 text-base font-black text-white btn-press"
-            style={{ background: "linear-gradient(100deg,#f59e0b 0%,#ef4444 40%,#a855f7 75%,#06b6d4 100%)" }}
+            style={{
+              background: "linear-gradient(100deg,#f59e0b 0%,#ef4444 40%,#a855f7 75%,#06b6d4 100%)",
+            }}
           >
             <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 to-transparent animate-[shimmer_2.2s_linear_infinite]" />
             <Download className="relative h-5 w-5" />
