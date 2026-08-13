@@ -38,8 +38,10 @@ export function AppUpdateBanner() {
   const native = typeof window !== "undefined" && isNativeApp();
   const [installed, setInstalled] = useState<string | null>(null);
   const [started, setStarted] = useState(false);
-  const [downloadStatus, setDownloadStatus] = useState<"idle" | "started" | "complete" | "failed" | "fallback">("idle");
+  const [downloadStatus, setDownloadStatus] = useState<"idle" | "started" | "progress" | "complete" | "failed" | "fallback">("idle");
+  const [percent, setPercent] = useState(0);
   const [hidden, setHidden] = useState(false);
+
 
   const readVersion = () =>
     import("@capacitor/app")
