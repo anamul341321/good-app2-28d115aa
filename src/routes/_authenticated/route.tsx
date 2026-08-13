@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet, Link, useRouter } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
-import { Home, Wallet, ArrowDownToLine, LogOut, Loader2, RefreshCcw, User, Users, Settings, MoreVertical, FileText, ShieldCheck, Lock, ScrollText, LayoutGrid } from "lucide-react";
+import { Home, Wallet, ArrowDownToLine, LogOut, Loader2, RefreshCcw, User, Users, Settings, MoreVertical, PhoneCall, FileText, ShieldCheck, Lock, ScrollText, LayoutGrid } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,6 +28,7 @@ import { UserNoticeBanner } from "@/components/UserNoticeBanner";
 import { NotificationBell } from "@/components/NotificationBell";
 import { SlotPausedModal } from "@/components/SlotPausedModal";
 import { ServerBackModal } from "@/components/ServerBackModal";
+import { CallProvider } from "@/components/CallProvider";
 
 import { clearSharedSession, getSharedSession } from "@/lib/auth-session";
 
@@ -171,6 +172,7 @@ function AuthedLayout() {
   if (appStatus?.maintenance) return <MaintenanceScreen message={appStatus.message} />;
 
   return (
+    <CallProvider>
     <div className="min-h-screen pb-24">
       {appStatus?.faceVerifyEnabled === false ? (
         <SlotPausedModal message={appStatus?.faceVerifyMessage} />
@@ -213,6 +215,11 @@ function AuthedLayout() {
                 <DropdownMenuItem asChild>
                   <Link to="/profile" className="flex items-center gap-2 text-xs font-bold">
                     <User className="w-4 h-4 text-cyan" /> {t("প্রোফাইল", "Profile")}
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/friends" className="flex items-center gap-2 text-xs font-bold">
+                    <PhoneCall className="w-4 h-4 text-emerald-400" /> {t("বন্ধু ও কল", "Friends & calls")}
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
@@ -274,6 +281,7 @@ function AuthedLayout() {
 
 
     </div>
+    </CallProvider>
   );
 }
 
@@ -281,10 +289,10 @@ function AuthedLayout() {
 function ProfileButton() {
   const { data } = useQuery({ queryKey: ["profile-history"], queryFn: () => getProfileHistory(), staleTime: 60_000 });
   return (
-    <Link to="/profile" data-voice="profile.intro" className="btn-press w-9 h-9 rounded-full overflow-hidden border-2 border-gold/60 glow-gold bg-surface-2 flex items-center justify-center">
+    <Link to="/profile" data-voice="profile.intro" className="btn-press w-12 h-12 rounded-2xl overflow-hidden border-2 border-gold/60 glow-gold bg-surface-2 flex items-center justify-center active:scale-95">
       {data?.avatar_signed
         ? <img src={data.avatar_signed} className="w-full h-full object-cover" alt="me" />
-        : <User className="w-4 h-4 text-gold" />}
+        : <User className="w-5 h-5 text-gold" />}
     </Link>
   );
 }
