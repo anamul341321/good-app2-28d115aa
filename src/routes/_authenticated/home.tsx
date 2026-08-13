@@ -10,6 +10,7 @@ import bonusGirl from "@/assets/bonus-girl.png";
 import { CheckCircle2, Camera, Lock, Sparkles, Loader2, X, Plus, Crown, Users, ShieldCheck, BadgeCheck, ChevronDown, Gift, RefreshCcw } from "lucide-react";
 import { AnnouncementTicker } from "@/components/AnnouncementTicker";
 import { ApkDownloadCard } from "@/components/ApkDownloadCard";
+import { ChatCallCard } from "@/components/ChatCallCard";
 import { HeroBanner } from "@/components/HeroBanner";
 import { PageVoice } from "@/components/PageVoice";
 import { KycAlertBanner } from "@/components/KycAlertBanner";
