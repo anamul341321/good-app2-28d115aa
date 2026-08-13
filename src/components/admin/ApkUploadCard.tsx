@@ -4,7 +4,7 @@ import { Upload, Loader2, Smartphone, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { adminCreateApkUpload, adminGetBonusSettings, adminSetApkRelease } from "@/lib/admin.functions";
 
-const CURRENT_ANDROID_VERSION = "1.2";
+const CURRENT_ANDROID_VERSION = "1.4";
 
 /**
  * অ্যাডমিন প্যানেল থেকে APK আপলোড — ফাইলটা সরাসরি ব্রাউজার থেকে
@@ -24,8 +24,19 @@ export function ApkUploadCard() {
   const activeVersion = (settings as any)?.apk_version as string | null | undefined;
 
   useEffect(() => {
-    if (!activeVersion || activeVersion === "1.0") setVersion(CURRENT_ANDROID_VERSION);
-    else setVersion(activeVersion);
+    // আপলোড বক্সে সবসময় সোর্স কোডের সর্বশেষ ভার্সনই দেখাবে, তাই আগের
+    // চালু ভার্সন সমান/পুরোনো হলে সেটির বদলে নতুনটাই বসে।
+    const num = (v: string) => (v.match(/\d+/g) ?? []).map(Number);
+    const older = (a: string, b: string) => {
+      const x = num(a), y = num(b);
+      for (let i = 0; i < Math.max(x.length, y.length); i++) {
+        if ((x[i] ?? 0) !== (y[i] ?? 0)) return (x[i] ?? 0) < (y[i] ?? 0);
+      }
+      return true; // equal → treat as older so we suggest the new build
+    };
+    if (!activeVersion || older(activeVersion, CURRENT_ANDROID_VERSION)) {
+      setVersion(CURRENT_ANDROID_VERSION);
+    } else setVersion(activeVersion);
   }, [activeVersion]);
 
   const upload = useMutation({
