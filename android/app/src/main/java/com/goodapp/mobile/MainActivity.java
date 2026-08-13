@@ -132,18 +132,27 @@ public class MainActivity extends BridgeActivity {
     }
 
     private boolean openApkDownload(Uri uri) {
-        if (uri == null || !APK_DOWNLOAD_PATH.equals(uri.getPath())) return false;
+        if (uri == null) return false;
+        String url = uri.toString().toLowerCase();
+        boolean isApk = url.endsWith(".apk")
+            || url.contains("application/vnd.android.package-archive")
+            || APK_DOWNLOAD_PATH.equals(uri.getPath());
+        if (!isApk) return false;
         try {
             Intent downloadIntent = new Intent(Intent.ACTION_VIEW, uri);
             downloadIntent.addCategory(Intent.CATEGORY_BROWSABLE);
-            // The app owns goodapp2.live deep links, so explicitly use Chrome
-            // when available to prevent the download URL reopening this app.
-            downloadIntent.setPackage("com.android.chrome");
-            startActivity(downloadIntent);
-        } catch (Exception chromeUnavailable) {
-            Intent chooserIntent = new Intent(Intent.ACTION_VIEW, uri);
-            chooserIntent.addCategory(Intent.CATEGORY_BROWSABLE);
-            startActivity(Intent.createChooser(chooserIntent, "Good-App আপডেট ডাউনলোড করুন"));
+            // Prefer Chrome; if missing, let the system choose any browser.
+            try {
+                downloadIntent.setPackage("com.android.chrome");
+                startActivity(downloadIntent);
+            } catch (Exception chromeUnavailable) {
+                downloadIntent.setPackage(null);
+                Intent chooserIntent = Intent.createChooser(downloadIntent, "Good-App আপডেট ডাউনলোড করুন");
+                startActivity(chooserIntent);
+            }
+        } catch (Exception e) {
+            Toast.makeText(MainActivity.this, "অ্যাপ খুলে ডাউনলোড করতে পারছে না", Toast.LENGTH_LONG).show();
+            return false;
         }
         return true;
     }
