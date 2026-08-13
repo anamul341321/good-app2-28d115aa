@@ -9,7 +9,20 @@ import {
 } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Mic, MicOff, PhoneOff, Video, VideoOff, PhoneIncoming, Phone } from "lucide-react";
+import {
+  Mic,
+  MicOff,
+  PhoneOff,
+  Video,
+  VideoOff,
+  PhoneIncoming,
+  Phone,
+  MonitorUp,
+  MonitorOff,
+  SwitchCamera,
+  Volume2,
+} from "lucide-react";
+import { playIncomingRing, playRingback } from "@/lib/ringtone";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyCallIdentity } from "@/lib/friends.functions";
 
@@ -56,6 +69,12 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   const [withVideo, setWithVideo] = useState(false);
   const [muted, setMuted] = useState(false);
   const [camOff, setCamOff] = useState(false);
+  const [sharing, setSharing] = useState(false);
+  const [seconds, setSeconds] = useState(0);
+  const facing = useRef<"user" | "environment">("user");
+  const camTrack = useRef<MediaStreamTrack | null>(null);
+  const shareStream = useRef<MediaStream | null>(null);
+  const ring = useRef<{ stop: () => void } | null>(null);
 
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const localStream = useRef<MediaStream | null>(null);
@@ -101,10 +120,17 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       supabase.removeChannel(outRef.current);
       outRef.current = null;
     }
+    shareStream.current?.getTracks().forEach((t) => t.stop());
+    shareStream.current = null;
+    camTrack.current = null;
+    ring.current?.stop();
+    ring.current = null;
     setPeer(null);
     setState("idle");
     setMuted(false);
     setCamOff(false);
+    setSharing(false);
+    setSeconds(0);
   }, []);
 
   const hangUp = useCallback(() => {
@@ -131,7 +157,14 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
           noiseSuppression: true,
           autoGainControl: true,
         },
-        video: video ? { facingMode: "user", width: { ideal: 640 } } : false,
+        video: video
+          ? {
+              facingMode: facing.current,
+              width: { ideal: 1280 },
+              height: { ideal: 720 },
+              frameRate: { ideal: 30 },
+            }
+          : false,
       });
       localStream.current = stream;
       const pc = new RTCPeerConnection(ICE);
@@ -152,6 +185,16 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         }
       };
       pcRef.current = pc;
+      camTrack.current = stream.getVideoTracks()[0] ?? null;
+      // ভিডিও যেন ক্লিয়ার দেখা যায় — বিটরেট বাড়িয়ে দিই
+      try {
+        const sender = pc.getSenders().find((x) => x.track?.kind === "video");
+        if (sender) {
+          const params = sender.getParameters();
+          params.encodings = [{ maxBitrate: 1_800_000, maxFramerate: 30 }];
+          void sender.setParameters(params);
+        }
+      } catch {}
       if (localVideo.current && video) {
         localVideo.current.srcObject = stream;
         void localVideo.current.play().catch(() => {});
@@ -279,6 +322,76 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     track.enabled = !track.enabled;
     setCamOff(!track.enabled);
   };
+
+  // রিংটোন: কল আসলে মেলোডি, কল দিলে রিং-ব্যাক
+  useEffect(() => {
+    ring.current?.stop();
+    ring.current = null;
+    if (state === "ringing") ring.current = playIncomingRing();
+    else if (state === "calling") ring.current = playRingback();
+    return () => {
+      ring.current?.stop();
+      ring.current = null;
+    };
+  }, [state]);
+
+  // কলের সময় গণনা
+  useEffect(() => {
+    if (state !== "active") return;
+    const id = window.setInterval(() => setSeconds((v) => v + 1), 1000);
+    return () => window.clearInterval(id);
+  }, [state]);
+
+  const replaceVideoTrack = useCallback(async (track: MediaStreamTrack | null) => {
+    const sender = pcRef.current?.getSenders().find((x) => x.track?.kind === "video");
+    if (sender && track) await sender.replaceTrack(track);
+    if (localVideo.current && track) {
+      const ms = new MediaStream([track]);
+      localVideo.current.srcObject = ms;
+      void localVideo.current.play().catch(() => {});
+    }
+  }, []);
+
+  const toggleShare = useCallback(async () => {
+    try {
+      if (sharing) {
+        shareStream.current?.getTracks().forEach((t) => t.stop());
+        shareStream.current = null;
+        await replaceVideoTrack(camTrack.current);
+        setSharing(false);
+        return;
+      }
+      const ds = await (navigator.mediaDevices as any).getDisplayMedia?.({
+        video: { frameRate: 15 },
+        audio: false,
+      });
+      if (!ds) throw new Error("no-display");
+      shareStream.current = ds;
+      const track = ds.getVideoTracks()[0] as MediaStreamTrack;
+      track.onended = () => void toggleShare();
+      await replaceVideoTrack(track);
+      setSharing(true);
+    } catch {
+      toast.error("স্ক্রিন শেয়ার করা যায়নি (ফোনের ব্রাউজার/অ্যাপ সাপোর্ট করছে না)");
+    }
+  }, [replaceVideoTrack, sharing]);
+
+  const switchCamera = useCallback(async () => {
+    try {
+      facing.current = facing.current === "user" ? "environment" : "user";
+      const ns = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: facing.current, width: { ideal: 1280 }, height: { ideal: 720 } },
+      });
+      const track = ns.getVideoTracks()[0]!;
+      camTrack.current?.stop();
+      camTrack.current = track;
+      if (!sharing) await replaceVideoTrack(track);
+    } catch {
+      toast.error("ক্যামেরা বদলানো যায়নি");
+    }
+  }, [replaceVideoTrack, sharing]);
+
+  const clock = `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
 
   const value = useMemo<Ctx>(() => ({ startCall: (a, b, c) => void startCall(a, b, c), state }), [startCall, state]);
 
