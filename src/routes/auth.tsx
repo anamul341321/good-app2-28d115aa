@@ -28,6 +28,7 @@ import { ApkDownloadCard } from "@/components/ApkDownloadCard";
 import { QrScanner } from "@/components/QrScanner";
 import { ForgotPasswordDialog } from "@/components/ForgotPasswordDialog";
 import { getSharedSession } from "@/lib/auth-session";
+import { getDeviceId } from "@/hooks/useDeviceGuard";
 
 import { QrCode as QrCodeIcon } from "lucide-react";
 
