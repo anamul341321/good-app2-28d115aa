@@ -179,26 +179,26 @@ function AuthedLayout() {
       )}
 
 
-      <header className="sticky top-0 z-30 glass">
-        <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+      <header className="sticky top-0 z-30 glass pt-[env(safe-area-inset-top)]">
+        <div className="max-w-md mx-auto px-3 pt-4 pb-3 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2.5">
             <div data-tour="profile"><ProfileButton /></div>
           <Link to="/home" className="flex items-center gap-2 btn-press">
-            <img src={logo} alt="good-app logo" className="w-8 h-8 rounded-lg shadow-lg" />
+            <img src={logo} alt="good-app logo" className="w-9 h-9 rounded-xl shadow-lg" />
             <span className="font-black text-lg tracking-tight bg-gradient-to-r from-violet-500 via-cyan-500 to-amber-500 bg-clip-text text-transparent">
               good-app
             </span>
           </Link>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             <NotificationBell />
             <LanguageToggle />
             <DropdownMenu>
               <DropdownMenuTrigger
                 aria-label={t("মেনু", "Menu")}
-                className="btn-press flex items-center gap-1.5 rounded-xl gradient-navy px-3 py-2 text-gold border border-gold/40 shadow-lg outline-none">
-                <MoreVertical className="w-5 h-5" />
-                <span className="text-[11px] font-black">{t("মেনু", "Menu")}</span>
+                className="btn-press relative flex h-12 min-w-[52px] items-center justify-center gap-1 rounded-2xl gradient-navy px-3 text-gold border border-gold/50 shadow-[0_6px_18px_-6px_rgba(0,0,0,0.6)] outline-none active:scale-95">
+                <MoreVertical className="w-6 h-6" />
+                <span className="text-[10px] font-black leading-none">{t("মেনু", "Menu")}</span>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-52 glass border-violet/30">
                 <DropdownMenuLabel className="text-[11px] font-black text-muted-foreground">
