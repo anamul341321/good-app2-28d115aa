@@ -84,31 +84,26 @@ export function AppUpdateBanner() {
 
   const startUpdate = async () => {
     setStarted(true);
-    toast.success("ডাউনলোড শুরু হয়েছে — উপরের Notification bar-এ প্রগ্রেস দেখুন", {
-      duration: 6000,
-    });
+    const freshUrl = `${absolute}${absolute.includes("?") ? "&" : "?"}download=${Date.now()}`;
+    const nativeDownloader = (
+      window as Window & {
+        GoodAppDownloader?: { download: (downloadUrl: string, fileName: string) => void };
+      }
+    ).GoodAppDownloader;
 
-    // New builds contain the native Browser plugin, which reliably hands the
-    // HTTPS download to Android. Never construct an intent:// URL here: older
-    // WebViews try to render it and show ERR_UNKNOWN_URL_SCHEME.
-    try {
-      const { Browser } = await import("@capacitor/browser");
-      await Browser.open({ url: absolute, presentationStyle: "popover" });
+    if (nativeDownloader?.download) {
+      nativeDownloader.download(freshUrl, `Good-App-v${latest ?? "latest"}.apk`);
+      toast.success("ডাউনলোড শুরু হয়েছে — Notification bar-এ প্রগ্রেস দেখুন", {
+        duration: 6000,
+      });
       return;
-    } catch {
-      /* Older builds may not contain the native Browser plugin. */
     }
 
-    // Compatibility path for already-installed old APKs. A real HTTPS anchor
-    // lets Android/WebView's download handling process the APK response.
-    const link = document.createElement("a");
-    link.href = absolute;
-    link.target = "_blank";
-    link.rel = "noopener noreferrer external";
-    link.download = "Good-App-latest.apk";
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
+    // Already-installed builds do not yet have the downloader bridge. A
+    // same-frame HTTPS navigation is deliberately used here: MainActivity's
+    // existing URL interceptor then hands it to Chrome/Android Downloads.
+    toast.info("ডাউনলোড পেজ খোলা হচ্ছে…", { duration: 4000 });
+    window.location.assign(freshUrl);
   };
 
   return (

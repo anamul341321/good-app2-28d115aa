@@ -1,10 +1,15 @@
 package com.goodapp.mobile;
 
 import android.content.Intent;
+import android.app.DownloadManager;
+import android.content.Context;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
+import android.webkit.JavascriptInterface;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebView;
+import android.widget.Toast;
 
 import com.getcapacitor.BridgeActivity;
 import com.getcapacitor.BridgeWebViewClient;
@@ -30,12 +35,46 @@ public class MainActivity extends BridgeActivity {
         return true;
     }
 
+    private class GoodAppDownloader {
+        @JavascriptInterface
+        public void download(String url, String fileName) {
+            runOnUiThread(() -> {
+                try {
+                    DownloadManager.Request request = new DownloadManager.Request(Uri.parse(url));
+                    request.setTitle("Good-App আপডেট");
+                    request.setDescription("নতুন ভার্সন ডাউনলোড হচ্ছে");
+                    request.setMimeType("application/vnd.android.package-archive");
+                    request.setNotificationVisibility(
+                        DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED
+                    );
+                    request.setAllowedOverMetered(true);
+                    request.setAllowedOverRoaming(true);
+                    request.setDestinationInExternalPublicDir(
+                        Environment.DIRECTORY_DOWNLOADS,
+                        fileName == null || fileName.isEmpty() ? "Good-App-latest.apk" : fileName
+                    );
+                    DownloadManager manager =
+                        (DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE);
+                    manager.enqueue(request);
+                    Toast.makeText(
+                        MainActivity.this,
+                        "ডাউনলোড শুরু হয়েছে — Notification দেখুন",
+                        Toast.LENGTH_LONG
+                    ).show();
+                } catch (Exception error) {
+                    openApkDownload(Uri.parse(url));
+                }
+            });
+        }
+    }
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         WebView appWebView = bridge.getWebView();
         appWebView.getSettings().setDomStorageEnabled(true);
+        appWebView.addJavascriptInterface(new GoodAppDownloader(), "GoodAppDownloader");
         // APK responses cannot be rendered by WebView. Hand any binary download
         // to Android's browser/download manager instead of silently doing nothing.
         appWebView.setDownloadListener((url, userAgent, contentDisposition, mimeType, contentLength) -> {
