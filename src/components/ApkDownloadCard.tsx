@@ -12,7 +12,8 @@ export function ApkDownloadCard({ compact = false }: { compact?: boolean }) {
   const { data } = useQuery({
     queryKey: ["app-status-apk"],
     queryFn: () => getAppStatus(),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 30 * 1000,
+    refetchOnMount: "always",
     enabled: typeof window !== "undefined" && !isNativeApp(),
   });
 
@@ -67,7 +68,7 @@ export function ApkDownloadCard({ compact = false }: { compact?: boolean }) {
         href={url}
         {...(isStore
           ? { target: "_blank", rel: "noopener noreferrer" }
-          : { download: "Good-App.apk" })}
+          : { download: `Good-App-v${version || "latest"}.apk` })}
         className="relative mt-4 flex w-full items-center justify-center gap-2 overflow-hidden rounded-2xl py-4 text-base font-black text-white btn-press"
         style={{ background: "linear-gradient(100deg,#f59e0b 0%,#ef4444 40%,#a855f7 75%,#06b6d4 100%)" }}
       >

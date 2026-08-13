@@ -1785,9 +1785,6 @@ export const adminUpdateBonusSettings = createServerFn({ method: "POST" })
     withdraw_enabled: z.boolean().optional(),
     withdraw_off_message: z.string().max(300).optional().nullable(),
     withdraw_off_until: z.string().optional().nullable(),
-    // Android APK download link
-    apk_url: z.string().max(500).optional().nullable(),
-    apk_version: z.string().max(50).optional().nullable(),
   }).parse(i))
   .handler(async ({ data }) => {
     const supabaseAdmin = await gate();
@@ -1812,7 +1809,6 @@ export const adminUpdateBonusSettings = createServerFn({ method: "POST" })
       "recharge_enabled","recharge_off_message",
       "usdt_enabled","usdt_off_message",
       "withdraw_enabled","withdraw_off_message","withdraw_off_until",
-      "apk_url","apk_version",
     ] as const) {
       if ((data as any)[k] !== undefined) patch[k] = (data as any)[k];
     }
@@ -2513,6 +2509,13 @@ export const adminSetApkRelease = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const supabaseAdmin = await gate();
     const cleanVersion = data.version;
+    const { data: uploaded, error: uploadedError } = await supabaseAdmin.storage
+      .from("app-releases")
+      .list("", { search: data.path, limit: 2 });
+    const uploadedFile = uploaded?.find((file) => file.name === data.path);
+    if (uploadedError || !uploadedFile || Number(uploadedFile.metadata?.size ?? 0) < 1_000_000) {
+      throw new Error("APK ফাইলটি সম্পূর্ণ আপলোড হয়নি—আবার আপলোড করুন");
+    }
     const { data: saved, error } = await supabaseAdmin
       .from("bonus_settings")
       .upsert({
@@ -2531,7 +2534,7 @@ export const adminSetApkRelease = createServerFn({ method: "POST" })
       ok: true,
       path: data.path,
       version: cleanVersion,
-      downloadUrl: `/api/public/app/download?v=${encodeURIComponent(cleanVersion)}`,
+      downloadUrl: `/api/public/app/download?v=${encodeURIComponent(cleanVersion)}&file=${encodeURIComponent(data.path)}`,
     };
   });
 

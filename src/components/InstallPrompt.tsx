@@ -32,7 +32,8 @@ export function InstallPrompt() {
   const { data } = useQuery({
     queryKey: ["app-status-apk"],
     queryFn: () => getAppStatus(),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 30 * 1000,
+    refetchOnMount: "always",
     enabled: !native,
   });
   const apkUrl = (data as any)?.apkUrl as string | null | undefined;

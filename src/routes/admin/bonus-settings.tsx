@@ -61,8 +61,6 @@ function BonusSettings() {
   const [signupOffMsg, setSignupOffMsg] = useState("");
   const [maintOn, setMaintOn] = useState(false);
   const [maintMsg, setMaintMsg] = useState("");
-  const [apkUrl, setApkUrl] = useState("");
-  const [apkVer, setApkVer] = useState("");
   const [usdtOn, setUsdtOn] = useState(true);
   const [usdtMsg, setUsdtMsg] = useState("");
 
@@ -93,8 +91,6 @@ function BonusSettings() {
     setSignupOffMsg(d.signup_off_message ?? "");
     setMaintOn(d.maintenance_enabled === true);
     setMaintMsg(d.maintenance_message ?? "");
-    setApkUrl(d.apk_url ?? "");
-    setApkVer(d.apk_version ?? "");
     setUsdtOn(d.usdt_enabled !== false);
     setUsdtMsg(d.usdt_off_message ?? "");
     setWithdrawOn(d.withdraw_enabled !== false);
@@ -128,9 +124,6 @@ function BonusSettings() {
         withdraw_enabled: withdrawOn,
         withdraw_off_message: withdrawMsg || null,
         withdraw_off_until: withdrawOn ? null : offUntil,
-        // খালি রাখলে আপলোড করা APK লিংক মুছে যাবে না
-        ...(apkUrl.trim() ? { apk_url: apkUrl.trim() } : {}),
-        ...(apkVer.trim() ? { apk_version: apkVer.trim() } : {}),
       } as any,
     }),
     onSuccess: () => { toast.success("✅ বোনাস সেটিংস সেভ হয়েছে"); refetch(); },
@@ -337,26 +330,6 @@ function BonusSettings() {
       </div>
 
       <ApkUploadCard />
-
-      {/* Android APK ডাউনলোড লিংক */}
-      <div className="rounded-2xl p-4 border-2 border-emerald/40 bg-emerald/5 space-y-2">
-        <p className="text-[11px] uppercase tracking-widest font-black text-emerald">📲 Android অ্যাপ ডাউনলোড লিংক</p>
-        <input
-          value={apkUrl}
-          onChange={(e) => setApkUrl(e.target.value)}
-          placeholder="https://... (APK file link অথবা Play Store link)"
-          className="w-full px-3 py-2.5 rounded-xl bg-surface-2 border border-border text-xs font-bold" />
-        <input
-          value={apkVer}
-          onChange={(e) => setApkVer(e.target.value)}
-          placeholder="ভার্সন (যেমন 1.0.0) — optional"
-          className="w-full px-3 py-2.5 rounded-xl bg-surface-2 border border-border text-xs font-bold" />
-        <p className="text-[10px] text-muted-foreground leading-snug">
-          লিংক দিলেই লগইন পেজ ও হোম পেজে সব ইউজার "অ্যাপ ডাউনলোড" কার্ড দেখবে। খালি রাখলে কার্ড দেখাবে না।
-          Play Store-এ published হলে এখানে Play Store লিংক বসিয়ে দিন — কার্ডটা তখন Play Store-এ নিয়ে যাবে।
-          নিচের Save বাটনে চাপুন।
-        </p>
-      </div>
 
       {/* Gmail কোড (OTP) সিস্টেম Switch */}
       <div className={`rounded-2xl p-4 border-2 space-y-2 ${otpMode ? "border-cyan/50 bg-cyan/5" : "border-amber/50 bg-amber/5"}`}>
