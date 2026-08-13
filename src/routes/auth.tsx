@@ -380,9 +380,14 @@ export function AuthPage() {
             window.location.href = "/home";
             return;
           }
-        } catch {
-          // If Android Credential Manager is unavailable/misconfigured on an
-          // older build, continue with the reliable browser account chooser.
+        } catch (err: any) {
+          // নেটিভ chooser ফেল করলে ব্রাউজারে আবার "Gmail লিখুন" স্ক্রিন আসে —
+          // সেই লুপে না ঢুকে আসল সমস্যাটা দেখাই, ইউজার ইমেইল/পাসওয়ার্ডে ঢুকতে পারবে।
+          toast.error(
+            err?.message ??
+              "Google লগইন হচ্ছে না — ইমেইল ও পাসওয়ার্ড দিয়ে লগইন করুন",
+          );
+          return;
         }
       }
 

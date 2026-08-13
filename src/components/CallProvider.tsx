@@ -182,6 +182,11 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
           video,
           sdp: offer,
         });
+        // অ্যাপ বন্ধ/ব্যাকগ্রাউন্ডে থাকলেও যেন কল বুঝতে পারে
+        try {
+          const { notifyIncomingCall } = await import("@/lib/friends.functions");
+          await notifyIncomingCall({ data: { peerId, video } });
+        } catch {}
       } catch (e) {
         toast.error("মাইক/ক্যামেরার অনুমতি দিন");
         cleanup();
