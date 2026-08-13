@@ -16,6 +16,9 @@ import androidx.core.app.NotificationCompat;
 
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
+import com.capacitorjs.plugins.pushnotifications.PushNotificationsPlugin;
+
+import androidx.annotation.NonNull;
 
 import java.util.Map;
 
@@ -23,13 +26,19 @@ public class GoodAppMessagingService extends FirebaseMessagingService {
     public static final String CALL_CHANNEL = "goodapp_incoming_calls_v1";
 
     @Override
-    public void onMessageReceived(RemoteMessage message) {
+    public void onMessageReceived(@NonNull RemoteMessage message) {
         Map<String, String> data = message.getData();
         if ("incoming_call".equals(data.get("type"))) {
             showIncomingCall(data);
             return;
         }
-        super.onMessageReceived(message);
+        PushNotificationsPlugin.sendRemoteMessage(message);
+    }
+
+    @Override
+    public void onNewToken(@NonNull String token) {
+        super.onNewToken(token);
+        PushNotificationsPlugin.onNewToken(token);
     }
 
     private void showIncomingCall(Map<String, String> data) {
