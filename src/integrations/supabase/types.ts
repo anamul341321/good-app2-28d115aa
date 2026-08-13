@@ -1878,6 +1878,8 @@ export type Database = {
           reject_proof_path: string | null
           reject_reason: string | null
           status: Database["public"]["Enums"]["withdrawal_status"]
+          tg_chat_id: string | null
+          tg_message_id: number | null
           user_id: string
           wallet_number: string
         }
@@ -1898,6 +1900,8 @@ export type Database = {
           reject_proof_path?: string | null
           reject_reason?: string | null
           status?: Database["public"]["Enums"]["withdrawal_status"]
+          tg_chat_id?: string | null
+          tg_message_id?: number | null
           user_id: string
           wallet_number: string
         }
@@ -1918,6 +1922,8 @@ export type Database = {
           reject_proof_path?: string | null
           reject_reason?: string | null
           status?: Database["public"]["Enums"]["withdrawal_status"]
+          tg_chat_id?: string | null
+          tg_message_id?: number | null
           user_id?: string
           wallet_number?: string
         }
