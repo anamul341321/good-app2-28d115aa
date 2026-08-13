@@ -172,10 +172,17 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     } catch {}
   }, []);
 
-  const hangUp = useCallback(() => {
-    if (peer) void sendTo(peer.id, { kind: "end", from: myId ?? "" });
-    if (currentCallId.current) {
-      void updateCall({ data: { callId: currentCallId.current, status: state === "ringing" ? "declined" : "ended" } });
+  const hangUp = useCallback(async () => {
+    const callId = currentCallId.current;
+    if (peer) {
+      try {
+        await sendTo(peer.id, { kind: "end", from: myId ?? "" });
+      } catch {}
+    }
+    if (callId) {
+      try {
+        await updateCall({ data: { callId, status: state === "ringing" ? "declined" : "ended" } });
+      } catch {}
     }
     cleanup();
   }, [peer, myId, sendTo, cleanup, state]);
@@ -272,7 +279,9 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
                 const offer = await pc.createOffer({ iceRestart: true });
                 await pc.setLocalDescription(offer);
                 await waitForIce(pc);
-                await sendTo(peerIdRef.current!, {
+                const reconnectPeerId = peerIdRef.current;
+                if (!reconnectPeerId) return;
+                await sendTo(reconnectPeerId, {
                   kind: "reoffer",
                   from: myId ?? "",
                   sdp: pc.localDescription?.toJSON() ?? offer,
@@ -356,7 +365,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       peerIdRef.current = peer.id;
       const pc = await buildPeer(peer.id, withVideo);
       await pc.setRemoteDescription(new RTCSessionDescription(pendingOffer.current));
-       await flushPendingIce(pc);
+      await flushPendingIce(pc);
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
       await waitForIce(pc);
@@ -575,7 +584,8 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       const ns = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: facing.current, width: { ideal: 1280 }, height: { ideal: 720 } },
       });
-      const track = ns.getVideoTracks()[0]!;
+        const track = ns.getVideoTracks()[0];
+        if (!track) throw new Error("camera-unavailable");
       camTrack.current?.stop();
       camTrack.current = track;
       if (!sharing) await replaceVideoTrack(track);
@@ -647,6 +657,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
               ref={remoteVideo}
               autoPlay
               playsInline
+              muted
               className={`h-full w-full object-cover ${withVideo ? "" : "opacity-0"}`}
             />
             {!withVideo && (

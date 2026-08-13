@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.Intent;
 import android.content.BroadcastReceiver;
 import android.app.DownloadManager;
+import android.app.NotificationManager;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.content.IntentFilter;
@@ -265,6 +266,24 @@ public class MainActivity extends BridgeActivity {
                 new String[] { Manifest.permission.POST_NOTIFICATIONS },
                 NOTIFICATION_PERMISSION_REQUEST
             );
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            NotificationManager notificationManager =
+                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            if (!notificationManager.canUseFullScreenIntent()) {
+                try {
+                    Intent fullScreenPermission = new Intent(
+                        Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT,
+                        Uri.parse("package:" + getPackageName())
+                    );
+                    startActivity(fullScreenPermission);
+                    Toast.makeText(
+                        this,
+                        "Screen বন্ধ থাকলেও কল পেতে Full-screen call অনুমতি চালু করুন",
+                        Toast.LENGTH_LONG
+                    ).show();
+                } catch (Exception ignored) {}
+            }
         }
         IntentFilter downloadFilter = new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
