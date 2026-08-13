@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { REVERIFY_INTERVAL_MS, TOTAL_TASKS } from "./constants";
+import { notifyUser } from "./notify.server";
 
 async function notifyTelegram(text: string) {
   const { sendTelegram } = await import("./telegram.server");
