@@ -427,7 +427,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
               className="btn-press flex flex-col items-center gap-2"
               aria-label="কল কাটুন"
             >
-              <span className="grid h-18 w-18 h-[72px] w-[72px] place-items-center rounded-full bg-rose-600 shadow-[0_10px_30px_-8px_rgba(244,63,94,0.9)]">
+              <span className="grid h-[72px] w-[72px] place-items-center rounded-full bg-rose-600 shadow-[0_10px_30px_-8px_rgba(244,63,94,0.9)]">
                 <PhoneOff className="h-7 w-7" />
               </span>
               <span className="text-[11px] font-black text-white/80">কেটে দিন</span>
@@ -551,5 +551,31 @@ export function CallButtons({ userId, name }: { userId: string; name: string }) 
         <Video className="h-4 w-4" />
       </button>
     </div>
+  );
+}
+
+/** কল কন্ট্রোল বাটন (মিউট/ক্যামেরা/স্ক্রিন শেয়ার) */
+function CallCtl({
+  active,
+  onClick,
+  label,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <button onClick={onClick} className="btn-press flex flex-col items-center gap-1.5" aria-label={label}>
+      <span
+        className={`grid h-14 w-14 place-items-center rounded-full border text-white transition ${
+          active ? "border-white/40 bg-white/85 text-[#0b1024]" : "border-white/15 bg-white/10"
+        }`}
+      >
+        {children}
+      </span>
+      <span className="text-[10px] font-black text-white/70">{label}</span>
+    </button>
   );
 }
