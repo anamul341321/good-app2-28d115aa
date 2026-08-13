@@ -1,8 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Check, Search, UserPlus, Users, X, Loader2, PhoneCall } from "lucide-react";
+import { Check, Search, UserPlus, Users, X, Loader2, PhoneCall, MessageCircle } from "lucide-react";
 import {
   listFriends,
   respondFriendRequest,
