@@ -181,12 +181,18 @@ function HomePage() {
 
       {/* Long progress lines — first verify & re-verify, so the user can see
           exactly how many are left before mining unlocks. */}
-      <VerifyProgressLines firstVerify={firstVerifyDone} reverify={reverifyDone} target={10} />
+      <VerifyProgressLines
+        firstVerify={firstVerifyDone}
+        reverify={reverifyDone}
+        firstTarget={Math.max(total, firstVerifyDone, 10)}
+        reverifyTarget={Math.max(firstVerifyDone, 1)}
+      />
 
       <HeroBanner
         adminOff={(data as any)?.payoutSettings?.withdrawEnabled === false}
         adminMessage={(data as any)?.payoutSettings?.withdrawOffMessage}
         rates={(data as any)?.bonus?.rates ?? null}
+        bonus={(data as any)?.bonus ?? null}
       />
 
       {/* নেটিভ অ্যাপ ডাউনলোড — এক ট্যাপে APK নামবে */}
@@ -508,6 +514,7 @@ function HomePage() {
                 <div className="rounded-2xl p-3 border-2 border-cyan/30 bg-cyan/5">
                   <p className="text-sm font-black text-cyan flex items-center gap-1.5">
                     <Gift className="w-4 h-4" /> {b.selfFirstAmount}৳ — First-verify বোনাস (আপনার)
+                    {b.selfFirstPaid && <span className="ml-auto text-[9px] font-black rounded-full bg-emerald text-white px-2 py-0.5">✅ নেওয়া হয়েছে</span>}
                   </p>
                   <p className="text-[11px] text-navy mt-1 font-medium leading-snug">
                     ১০ জন সাক্ষীর <b>First Verify</b> শেষ করলেই সাথে সাথে <b>{b.selfFirstAmount}৳</b> আপনার balance-এ জমা।
@@ -516,14 +523,18 @@ function HomePage() {
                 <div className="rounded-2xl p-3 border-2 border-amber/40 bg-amber/5">
                   <p className="text-sm font-black text-amber flex items-center gap-1.5">
                     <Gift className="w-4 h-4" /> {b.userAmount}৳ — রি-ভেরিফাই বোনাস (আপনার)
+                    {b.userReverifyPaid && <span className="ml-auto text-[9px] font-black rounded-full bg-emerald text-white px-2 py-0.5">✅ নেওয়া হয়েছে</span>}
                   </p>
                   <p className="text-[11px] text-navy mt-1 font-medium leading-snug">
-                    ১০ জনের <b>রি-ভেরিফাই</b> সম্পন্ন করলেই সাথে সাথে <b>{b.userAmount}৳ balance-এ</b> + <b>মাইনিং চালু</b>।
+                    {b.userReverifyPaid
+                      ? <>এই বোনাসটি আপনি <b>ইতিমধ্যে পেয়ে গেছেন</b> ✅ — এটি শুধু <b>প্রথম ১০টি</b> স্লটের জন্য একবারই। পরের Re-verify-এ বোনাস নেই, তবে <b>মাইনিং বাড়বে</b>।</>
+                      : <>১০ জনের <b>রি-ভেরিফাই</b> সম্পন্ন করলেই সাথে সাথে <b>{b.userAmount}৳ balance-এ</b> + <b>মাইনিং চালু</b>।</>}
                   </p>
                 </div>
                 <div className="rounded-2xl p-3 border-2 border-violet/30 bg-violet/5">
                   <p className="text-sm font-black text-violet flex items-center gap-1.5">
                     <Gift className="w-4 h-4" /> {b.referrerAmount}৳ — Referrer বোনাস (বন্ধু আনলে)
+                    {b.referrerPaid && <span className="ml-auto text-[9px] font-black rounded-full bg-emerald text-white px-2 py-0.5">✅ নেওয়া হয়েছে</span>}
                   </p>
                   <p className="text-[11px] text-navy mt-1 font-medium leading-snug">
                     আপনি যাকে refer করবেন সে ১০ verify complete করলে <b>আপনি {b.referrerAmount}৳</b> পাবেন।
@@ -566,35 +577,41 @@ function useTick() {
 }
 
 /** Two long inspire-bars: how many first-verify and re-verify are left of 10. */
-function VerifyProgressLines({ firstVerify, reverify, target }: { firstVerify: number; reverify: number; target: number }) {
+function VerifyProgressLines({
+  firstVerify, reverify, firstTarget, reverifyTarget,
+}: { firstVerify: number; reverify: number; firstTarget: number; reverifyTarget: number }) {
+  // Re-verify লাইন তখনই ১০০% হবে যখন ইউজারের **সব** first-verify স্লট
+  // re-verify হয়ে যাবে — ১৮টা first verify হলে ১৮টাই লাগবে।
   const rows = [
     {
       key: "first",
       icon: "📸",
       label: "First Verify",
-      done: Math.min(firstVerify, target),
+      done: Math.min(firstVerify, firstTarget),
+      target: firstTarget,
       grad: "linear-gradient(90deg,#06b6d4,#3b82f6,#8b5cf6)",
     },
     {
       key: "re",
       icon: "🔄",
       label: "Re-verify",
-      done: Math.min(reverify, target),
+      done: Math.min(reverify, reverifyTarget),
+      target: reverifyTarget,
       grad: "linear-gradient(90deg,#f59e0b,#ef4444,#ec4899)",
     },
   ];
   return (
     <div className="premium-panel rounded-2xl p-3 space-y-2.5">
       {rows.map((r) => {
-        const pct = Math.round((r.done / target) * 100);
-        const left = Math.max(0, target - r.done);
-        const full = r.done >= target;
+        const pct = r.target > 0 ? Math.round((r.done / r.target) * 100) : 0;
+        const left = Math.max(0, r.target - r.done);
+        const full = r.done >= r.target;
         return (
           <div key={r.key}>
             <div className="flex items-center justify-between mb-1">
               <p className="text-[11px] font-black text-navy flex items-center gap-1">
                 <span>{r.icon}</span> {r.label}
-                <span className="mono-num text-muted-foreground">{r.done}/{target}</span>
+                <span className="mono-num text-muted-foreground">{r.done}/{r.target}</span>
               </p>
               <p className={`text-[10px] font-black ${full ? "text-emerald" : "text-rose"}`}>
                 {full ? "✅ সম্পূর্ণ" : `আরও ${left} টি বাকি`}
@@ -613,13 +630,11 @@ function VerifyProgressLines({ firstVerify, reverify, target }: { firstVerify: n
         );
       })}
       <p className="text-[10px] text-muted-foreground font-bold leading-snug">
-        ১০টি স্লট Re-verify সম্পূর্ণ হলেই ⛏️ মাইনিং চালু + ২০০৳ বোনাস
+        আপনার সব স্লট ({reverifyTarget}টি) Re-verify সম্পূর্ণ হলেই লাইন ১০০% হবে ⛏️ — বোনাস শুধু প্রথম ১০টির জন্য, পরেরগুলোতে মাইনিং বাড়বে।
       </p>
     </div>
   );
 }
-
-
 
 function MainIdentityCell({ task, onStart, onReverify, onOpenPhoto }: { task: any; onStart: () => void; onReverify: () => void; onOpenPhoto: (url: string) => void }) {
   const isVerified = task.status === "verified";
