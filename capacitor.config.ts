@@ -29,6 +29,15 @@ const config: CapacitorConfig = {
     },
   },
   plugins: {
+    SocialLogin: {
+      providers: {
+        google: true,
+        facebook: false,
+        apple: false,
+        twitter: false,
+      },
+      logLevel: 1,
+    },
     SplashScreen: {
       launchShowDuration: 2500,
       launchAutoHide: true,

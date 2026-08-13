@@ -4,7 +4,7 @@ import { Upload, Loader2, Smartphone, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { adminCreateApkUpload, adminGetBonusSettings, adminSetApkRelease } from "@/lib/admin.functions";
 
-const CURRENT_ANDROID_VERSION = "1.4";
+const CURRENT_ANDROID_VERSION = "1.5";
 
 /**
  * অ্যাডমিন প্যানেল থেকে APK আপলোড — ফাইলটা সরাসরি ব্রাউজার থেকে

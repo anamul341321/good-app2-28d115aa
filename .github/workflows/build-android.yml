@@ -115,7 +115,7 @@ jobs:
         if: github.event.inputs.build_type == 'apk-release'
         uses: actions/upload-artifact@v4
         with:
-          name: release-apk
+          name: Good-App-v1.5-release-apk
           path: android/app/build/outputs/apk/release/app-release.apk
 
       - name: Build Release AAB

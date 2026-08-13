@@ -38,12 +38,19 @@ export async function signInWithNativeGoogle(): Promise<boolean> {
   const { SocialLogin } = await import("@capgo/capacitor-social-login");
 
   await SocialLogin.initialize({
-    google: { webClientId: WEB_CLIENT_ID! },
+    google: { webClientId: WEB_CLIENT_ID, mode: "online" },
   });
 
   const res: any = await SocialLogin.login({
     provider: "google",
-    options: { scopes: ["email", "profile"], forceRefreshToken: false },
+    // Do not pass `scopes` here. The Android plugin already requests the
+    // standard profile/email scopes; explicitly passing them requires a
+    // specially modified Activity and caused the red native error message.
+    options: {
+      forcePrompt: true,
+      filterByAuthorizedAccounts: false,
+      autoSelectEnabled: false,
+    },
   });
 
   const idToken: string | undefined =

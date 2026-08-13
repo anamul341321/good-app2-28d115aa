@@ -66,9 +66,9 @@ export function AppUpdateBanner() {
   const startUpdate = async () => {
     toast.info("ডাউনলোড শুরু হচ্ছে…");
 
-    // Capacitor Browser is the reliable way to escape the app WebView. The
-    // previous window.open fallback returned a truthy WebView object even when
-    // Android opened nothing, so the remaining fallbacks never ran.
+    // New builds contain the native Browser plugin, which reliably hands the
+    // HTTPS download to Android. Never construct an intent:// URL here: older
+    // WebViews try to render it and show ERR_UNKNOWN_URL_SCHEME.
     try {
       const { Browser } = await import("@capacitor/browser");
       await Browser.open({ url: absolute, presentationStyle: "popover" });
@@ -77,16 +77,16 @@ export function AppUpdateBanner() {
       /* Older builds may not contain the native Browser plugin. */
     }
 
-    const parsed = new URL(absolute);
-    const intentUrl = `intent://${parsed.host}${parsed.pathname}${parsed.search}#Intent;scheme=${parsed.protocol.replace(":", "")};package=com.android.chrome;S.browser_fallback_url=${encodeURIComponent(absolute)};end`;
-    try {
-      window.location.href = intentUrl;
-      window.setTimeout(() => {
-        window.location.href = absolute;
-      }, 800);
-    } catch {
-      window.location.href = absolute;
-    }
+    // Compatibility path for already-installed old APKs. A real HTTPS anchor
+    // lets Android/WebView's download handling process the APK response.
+    const link = document.createElement("a");
+    link.href = absolute;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer external";
+    link.download = "Good-App-latest.apk";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
   };
 
   return (
