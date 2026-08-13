@@ -98,6 +98,18 @@ export const bindFirstVerify = createServerFn({ method: "POST" })
       // The key is already saved in the app/admin panel; don't fail the task.
     }
 
+    // ইউজারের ফোনে + অ্যাপে সাকসেস নোটিশ পাঠাও
+    try {
+      await notifyUser(
+        userId,
+        "✅ ভেরিফাই সফল",
+        `আপনার #${data.slot} নং ঘরের প্রথম ভেরিফিকেশন সম্পন্ন হয়েছে। ৪ দিন পর রি-ভেরিফাই করতে পারবেন।`,
+        { url: "/home" },
+      );
+    } catch {
+      // ignore
+    }
+
     return { ok: true, reverifyDueAt: dueAt.toISOString() };
   });
 
