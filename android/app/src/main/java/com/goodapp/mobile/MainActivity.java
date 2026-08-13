@@ -13,6 +13,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.Settings;
+import android.media.AudioManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebView;
@@ -161,6 +162,30 @@ public class MainActivity extends BridgeActivity {
         @JavascriptInterface
         public void openExternal(String url) {
             runOnUiThread(() -> openApkDownload(Uri.parse(url)));
+        }
+
+        @JavascriptInterface
+        public void beginCall(boolean video) {
+            runOnUiThread(() -> {
+                AudioManager audio = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+                audio.setMode(AudioManager.MODE_IN_COMMUNICATION);
+                audio.setMicrophoneMute(false);
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+                    audio.setSpeakerphoneOn(video);
+                }
+                getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            });
+        }
+
+        @JavascriptInterface
+        public void endCall() {
+            runOnUiThread(() -> {
+                AudioManager audio = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+                audio.setMicrophoneMute(false);
+                audio.setMode(AudioManager.MODE_NORMAL);
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) audio.setSpeakerphoneOn(false);
+                getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            });
         }
 
         @JavascriptInterface

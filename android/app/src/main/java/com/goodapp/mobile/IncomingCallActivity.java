@@ -10,6 +10,8 @@ import android.graphics.Color;
 import android.graphics.Typeface;
 import android.media.Ringtone;
 import android.media.RingtoneManager;
+import android.media.AudioAttributes;
+import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -48,7 +50,11 @@ public class IncomingCallActivity extends Activity {
                     | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
             );
         }
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        getWindow().addFlags(
+            WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+                | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
+                | WindowManager.LayoutParams.FLAG_ALLOW_LOCK_WHILE_SCREEN_ON
+        );
 
         callId = getIntent().getStringExtra("call_id");
         callerId = getIntent().getStringExtra("caller_id");
@@ -123,7 +129,20 @@ public class IncomingCallActivity extends Activity {
     private void startRinging() {
         try {
             ringtone = RingtoneManager.getRingtone(this, RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE));
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                ringtone.setAudioAttributes(new AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .build());
+            }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) ringtone.setLooping(true);
+            AudioManager audio = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+            int ringVolume = audio.getStreamVolume(AudioManager.STREAM_RING);
+            if (ringVolume == 0) audio.setStreamVolume(
+                AudioManager.STREAM_RING,
+                Math.max(1, audio.getStreamMaxVolume(AudioManager.STREAM_RING) / 2),
+                0
+            );
             ringtone.play();
         } catch (Exception ignored) {}
     }
