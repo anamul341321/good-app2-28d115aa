@@ -370,6 +370,54 @@ export type Database = {
           },
         ]
       }
+      call_sessions: {
+        Row: {
+          accepted_at: string | null
+          answer: Json | null
+          call_type: string
+          callee_id: string
+          caller_id: string
+          created_at: string
+          ended_at: string | null
+          ended_reason: string | null
+          id: string
+          offer: Json | null
+          ringing_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          answer?: Json | null
+          call_type: string
+          callee_id: string
+          caller_id: string
+          created_at?: string
+          ended_at?: string | null
+          ended_reason?: string | null
+          id?: string
+          offer?: Json | null
+          ringing_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          answer?: Json | null
+          call_type?: string
+          callee_id?: string
+          caller_id?: string
+          created_at?: string
+          ended_at?: string | null
+          ended_reason?: string | null
+          id?: string
+          offer?: Json | null
+          ringing_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       celo_sweep_jobs: {
         Row: {
           created_at: string
