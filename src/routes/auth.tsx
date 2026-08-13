@@ -342,10 +342,12 @@ export function AuthPage() {
   async function doLoginConfirm() {
     setLoading(true);
     try {
-      const res: any = await confirmOtp({ data: { identifier: otpId, password, code: otpCode } });
+      const res: any = await confirmOtp({
+        data: { identifier: otpId, password, code: otpCode, deviceId: getDeviceId() },
+      });
       await applySession(res.session);
       setOtpOpen(false);
-      toast.success("স্বাগতম!");
+      toast.success("স্বাগতম! এই ডিভাইসে ২৪ ঘণ্টা OTP লাগবে না");
       nav({ to: "/home" });
     } catch (e: any) {
       toast.error(e?.message ?? "কোড মেলেনি");
