@@ -219,23 +219,35 @@ export function AppUpdateBanner() {
                 : downloadStatus === "failed"
                   ? "❌ ডাউনলোড ব্যর্থ — আবার Update চাপুন"
                   : downloadStatus === "fallback"
-                    ? "📥 Download পেজ খোলা হয়েছে"
+                    ? "📥 Chrome-এ ডাউনলোড হচ্ছে (পুরনো ভার্সন)"
                     : `📥 অ্যাপের ভেতরেই ডাউনলোড হচ্ছে… ${percent}%`}
             </p>
-            <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-white/15">
-              <div
-                className="h-full rounded-full transition-all duration-500"
-                style={{
-                  width: `${downloadStatus === "complete" ? 100 : Math.max(percent, 4)}%`,
-                  background: "linear-gradient(90deg,#22c55e,#06b6d4,#a855f7)",
-                }}
-              />
-            </div>
-            <p className="mt-2">
-              ডাউনলোড শেষ হলে <b>Install স্ক্রিন নিজেই খুলবে</b> — শুধু <b>Update / Install</b> চাপুন।
-              <br />প্রথমবার হলে <b>“Allow from this source”</b> অন করে দিন, তারপর আবার Install চাপুন।
-              <br />ইনস্টল হয়ে গেলে এই ব্যানার নিজে থেকেই চলে যাবে ✅
-            </p>
+            {downloadStatus !== "fallback" && (
+              <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-white/15">
+                <div
+                  className="h-full rounded-full transition-all duration-500"
+                  style={{
+                    width: `${downloadStatus === "complete" ? 100 : Math.max(percent, 4)}%`,
+                    background: "linear-gradient(90deg,#22c55e,#06b6d4,#a855f7)",
+                  }}
+                />
+              </div>
+            )}
+            {downloadStatus === "fallback" ? (
+              <p className="mt-2">
+                আপনার ইনস্টল করা ভার্সনে ইন-অ্যাপ ডাউনলোডার নেই, তাই <b>Chrome</b>-এ ডাউনলোড হচ্ছে।
+                <br />১) <b>Notification bar</b> নামিয়ে ডাউনলোড শেষ হওয়া পর্যন্ত দেখুন।
+                <br />২) <b>Good-App-v{latest}.apk</b> ফাইলে ট্যাপ করে <b>Install / Update</b> চাপুন।
+                <br />এই আপডেটের পর থেকে সব আপডেট অ্যাপের ভেতরেই অটো হবে ✅
+              </p>
+            ) : (
+              <p className="mt-2">
+                ডাউনলোড শেষ হলে <b>Install স্ক্রিন নিজেই খুলবে</b> — শুধু <b>Update / Install</b> চাপুন।
+                <br />প্রথমবার হলে <b>“Allow from this source”</b> অন করে দিন, তারপর আবার Install চাপুন।
+                <br />ইনস্টল হয়ে গেলে এই ব্যানার নিজে থেকেই চলে যাবে ✅
+              </p>
+            )}
+
           </div>
         )}
 
