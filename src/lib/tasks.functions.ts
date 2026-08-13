@@ -330,6 +330,15 @@ export const completeReverify = createServerFn({ method: "POST" })
           .eq("id", task.id).eq("user_id", userId);
       }
       await supabaseAdmin.rpc("settle_mining", { _user_id: userId });
+      // ইউজারকে জানানো যে এই স্লট ইতিমধ্যে সম্পন্ন (auto-checker করেছে)
+      try {
+        await notifyUser(
+          userId,
+          "✅ রি-ভেরিফাই সম্পন্ন",
+          `আপনার #${task.slot} নং ঘরের রি-ভেরিফাই সম্পন্ন হয়েছে (auto-checker).`,
+          { url: "/home" },
+        );
+      } catch { /* ignore */ }
       const { data: ms } = await supabaseAdmin
         .from("mining_state").select("effective_task_count").eq("user_id", userId).maybeSingle();
       return { ok: true, alreadyDone: true, miningActivated: (ms?.effective_task_count ?? 0) >= TOTAL_TASKS };
