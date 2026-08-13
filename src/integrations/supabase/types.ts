@@ -2173,6 +2173,7 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: number
       }
+      expire_unanswered_calls: { Args: never; Returns: number }
       get_whitelist_cron_secret: { Args: never; Returns: string }
       has_role: {
         Args: {
