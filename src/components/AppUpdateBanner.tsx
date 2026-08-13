@@ -37,14 +37,31 @@ function isNewer(latest: string | null | undefined, installed: string | null): b
 export function AppUpdateBanner() {
   const native = typeof window !== "undefined" && isNativeApp();
   const [installed, setInstalled] = useState<string | null>(null);
+  const [started, setStarted] = useState(false);
+  const [hidden, setHidden] = useState(false);
 
-  useEffect(() => {
-    if (!native) return;
+  const readVersion = () =>
     import("@capacitor/app")
       .then((m) => m.App.getInfo())
       .then((info) => setInstalled(info?.version ?? null))
       .catch(() => setInstalled(null));
+
+  useEffect(() => {
+    if (!native) return;
+    void readVersion();
+    // অ্যাপ আবার সামনে এলে ভার্সন আবার পড়ে — আপডেট হয়ে গেলে ব্যানার নিজেই চলে যাবে
+    let remove: (() => void) | undefined;
+    import("@capacitor/app")
+      .then(async (m) => {
+        const handle = await m.App.addListener("appStateChange", ({ isActive }) => {
+          if (isActive) void readVersion();
+        });
+        remove = () => handle.remove();
+      })
+      .catch(() => {});
+    return () => remove?.();
   }, [native]);
+
 
   const { data } = useQuery({
     queryKey: ["app-status-apk"],
