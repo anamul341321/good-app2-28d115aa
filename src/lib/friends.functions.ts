@@ -152,3 +152,42 @@ export const getMyCallIdentity = createServerFn({ method: "GET" })
       uid: (data as any)?.uid_seq ?? null,
     };
   });
+
+/**
+ * কল দিলে অন্যপাশের ফোনে push নোটিফিকেশন — অ্যাপ বন্ধ/ব্যাকগ্রাউন্ডে থাকলেও
+ * "কল আসছে" দেখাবে, ট্যাপ করলে অ্যাপ খুলে কল স্ক্রিনে যাবে।
+ */
+export const notifyIncomingCall = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { peerId: string; video?: boolean }) => ({
+    peerId: String(input?.peerId ?? ""),
+    video: !!input?.video,
+  }))
+  .handler(async ({ data, context }) => {
+    if (!data.peerId) return { ok: false };
+    // শুধু বন্ধু হলেই push যাবে
+    const { data: link } = await (context.supabase as any)
+      .from("friend_links")
+      .select("id")
+      .eq("status", "accepted")
+      .or(
+        `and(requester_id.eq.${context.userId},addressee_id.eq.${data.peerId}),and(requester_id.eq.${data.peerId},addressee_id.eq.${context.userId})`,
+      )
+      .maybeSingle();
+    if (!link) return { ok: false };
+
+    const { data: prof } = await (context.supabase as any)
+      .from("profiles")
+      .select("display_name")
+      .eq("id", context.userId)
+      .maybeSingle();
+    const name = ((prof as any)?.display_name as string | null) ?? "একজন বন্ধু";
+
+    const { sendPushToUser } = await import("./push.server");
+    await sendPushToUser(data.peerId, {
+      title: data.video ? "📹 ভিডিও কল আসছে" : "📞 কল আসছে",
+      body: `${name} আপনাকে কল করছে — ট্যাপ করে রিসিভ করুন`,
+      url: "/friends",
+    });
+    return { ok: true };
+  });
