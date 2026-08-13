@@ -195,6 +195,9 @@ function HomePage() {
         bonus={(data as any)?.bonus ?? null}
       />
 
+      {/* মেসেজ ও কল — নতুন মেসেজ থাকলে লাল হয়ে জ্বলবে */}
+      <ChatCallCard />
+
       {/* নেটিভ অ্যাপ ডাউনলোড — এক ট্যাপে APK নামবে */}
       <ApkDownloadCard />
 
