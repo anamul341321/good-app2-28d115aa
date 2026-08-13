@@ -25,6 +25,7 @@ import { useDeviceGuard } from "@/hooks/useDeviceGuard";
 import { getAppStatus } from "@/lib/app-status.functions";
 import { MaintenanceScreen } from "@/components/MaintenanceGate";
 import { UserNoticeBanner } from "@/components/UserNoticeBanner";
+import { ChatNotifier } from "@/components/ChatNotifier";
 import { NotificationBell } from "@/components/NotificationBell";
 import { SlotPausedModal } from "@/components/SlotPausedModal";
 import { ServerBackModal } from "@/components/ServerBackModal";
@@ -202,50 +203,31 @@ function AuthedLayout() {
                 <MoreVertical className="w-6 h-6" />
                 <span className="text-[10px] font-black leading-none">{t("মেনু", "Menu")}</span>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-52 glass border-violet/30">
-                <DropdownMenuLabel className="text-[11px] font-black text-muted-foreground">
+              <DropdownMenuContent
+                align="end"
+                sideOffset={10}
+                className="w-[19rem] max-w-[calc(100vw-1.5rem)] rounded-3xl glass border-2 border-gold/30 p-2 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.8)]">
+                <DropdownMenuLabel className="px-2 pb-2 pt-1 text-sm font-black text-gold">
                   {t("যাবতীয় কাজ", "Everything else")}
                 </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link to="/settings" className="flex items-center gap-2 text-xs font-bold">
-                    <Settings className="w-4 h-4 text-gold" /> {t("সেটিংস", "Settings")}
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/profile" className="flex items-center gap-2 text-xs font-bold">
-                    <User className="w-4 h-4 text-cyan" /> {t("প্রোফাইল", "Profile")}
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/friends" className="flex items-center gap-2 text-xs font-bold">
-                    <PhoneCall className="w-4 h-4 text-emerald-400" /> {t("বন্ধু ও কল", "Friends & calls")}
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/earnings" className="flex items-center gap-2 text-xs font-bold">
-                    <FileText className="w-4 h-4 text-emerald-400" /> {t("আয়ের হিসাব", "Earnings")}
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/kyc" className="flex items-center gap-2 text-xs font-bold">
-                    <ShieldCheck className="w-4 h-4 text-violet-400" /> {t("কেওয়াইসি", "KYC")}
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link to="/privacy" className="flex items-center gap-2 text-xs font-bold">
-                    <Lock className="w-4 h-4 text-cyan" /> {t("প্রাইভেসি পলিসি", "Privacy policy")}
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/terms" className="flex items-center gap-2 text-xs font-bold">
-                    <ScrollText className="w-4 h-4 text-amber" /> {t("শর্তাবলি", "Terms")}
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onSelect={() => logout()} className="flex items-center gap-2 text-xs font-black text-rose">
-                  <LogOut className="w-4 h-4" /> {t("লগআউট", "Log out")}
+                <DropdownMenuSeparator className="bg-gold/20" />
+
+                <div className="grid grid-cols-2 gap-2 py-2">
+                  <BigMenuLink to="/settings" icon={<Settings className="h-6 w-6" />} label={t("সেটিংস", "Settings")} tone="text-gold" />
+                  <BigMenuLink to="/profile" icon={<User className="h-6 w-6" />} label={t("প্রোফাইল", "Profile")} tone="text-cyan" />
+                  <BigMenuLink to="/chat" icon={<PhoneCall className="h-6 w-6" />} label={t("মেসেজ ও কল", "Chat & calls")} tone="text-emerald-400" />
+                  <BigMenuLink to="/earnings" icon={<FileText className="h-6 w-6" />} label={t("আয়ের হিসাব", "Earnings")} tone="text-emerald-400" />
+                  <BigMenuLink to="/kyc" icon={<ShieldCheck className="h-6 w-6" />} label={t("কেওয়াইসি", "KYC")} tone="text-violet-400" />
+                  <BigMenuLink to="/friends" icon={<Users className="h-6 w-6" />} label={t("বন্ধু", "Friends")} tone="text-cyan" />
+                  <BigMenuLink to="/privacy" icon={<Lock className="h-6 w-6" />} label={t("প্রাইভেসি", "Privacy")} tone="text-cyan" />
+                  <BigMenuLink to="/terms" icon={<ScrollText className="h-6 w-6" />} label={t("শর্তাবলি", "Terms")} tone="text-amber" />
+                </div>
+
+                <DropdownMenuSeparator className="bg-gold/20" />
+                <DropdownMenuItem
+                  onSelect={() => logout()}
+                  className="mt-1 flex items-center justify-center gap-2 rounded-2xl bg-rose-500/15 px-3 py-3.5 text-sm font-black text-rose focus:bg-rose-500/25">
+                  <LogOut className="h-5 w-5" /> {t("লগআউট", "Log out")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -278,12 +260,29 @@ function AuthedLayout() {
       <ProfileCompleteGate />
       <EmailVerifyGate />
       <UserNoticeBanner />
+      <ChatNotifier />
 
 
     </div>
     </CallProvider>
   );
 }
+
+/** মেনুর বড় বড় সুন্দর টাইল — সহজে ট্যাপ করা যায় */
+function BigMenuLink({ to, icon, label, tone }: { to: string; icon: React.ReactNode; label: string; tone: string }) {
+  return (
+    <DropdownMenuItem asChild className="p-0 focus:bg-transparent">
+      <Link
+        to={to}
+        className="btn-press flex h-[5.5rem] w-full flex-col items-center justify-center gap-1.5 rounded-2xl bg-surface-2/80 border border-white/10 px-2 text-center active:scale-95">
+        <span className={`grid h-11 w-11 place-items-center rounded-xl bg-white/10 ${tone}`}>{icon}</span>
+        <span className="text-[12px] font-black leading-tight">{label}</span>
+      </Link>
+    </DropdownMenuItem>
+  );
+}
+
+
 
 
 function ProfileButton() {

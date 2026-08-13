@@ -10,6 +10,7 @@ import bonusGirl from "@/assets/bonus-girl.png";
 import { CheckCircle2, Camera, Lock, Sparkles, Loader2, X, Plus, Crown, Users, ShieldCheck, BadgeCheck, ChevronDown, Gift, RefreshCcw } from "lucide-react";
 import { AnnouncementTicker } from "@/components/AnnouncementTicker";
 import { ApkDownloadCard } from "@/components/ApkDownloadCard";
+import { ChatCallCard } from "@/components/ChatCallCard";
 import { HeroBanner } from "@/components/HeroBanner";
 import { PageVoice } from "@/components/PageVoice";
 import { KycAlertBanner } from "@/components/KycAlertBanner";
@@ -194,6 +195,9 @@ function HomePage() {
         rates={(data as any)?.bonus?.rates ?? null}
         bonus={(data as any)?.bonus ?? null}
       />
+
+      {/* মেসেজ ও কল — নতুন মেসেজ থাকলে লাল হয়ে জ্বলবে */}
+      <ChatCallCard />
 
       {/* নেটিভ অ্যাপ ডাউনলোড — এক ট্যাপে APK নামবে */}
       <ApkDownloadCard />

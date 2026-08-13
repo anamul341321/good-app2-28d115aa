@@ -48,6 +48,7 @@ import { Route as AuthenticatedKycRouteImport } from './routes/_authenticated/ky
 import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
 import { Route as AuthenticatedFriendsRouteImport } from './routes/_authenticated/friends'
 import { Route as AuthenticatedEarningsRouteImport } from './routes/_authenticated/earnings'
+import { Route as AuthenticatedChatIndexRouteImport } from './routes/_authenticated/chat.index'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as ApiPublicWhitelistRecheckRouteImport } from './routes/api/public/whitelist-recheck'
 import { Route as ApiPublicTourAudioRouteImport } from './routes/api/public/tour-audio'
@@ -56,6 +57,7 @@ import { Route as ApiPublicIpaybdWebhookRouteImport } from './routes/api/public/
 import { Route as ApiPublicHisabCardRouteImport } from './routes/api/public/hisab-card'
 import { Route as AdminUserUserIdRouteImport } from './routes/admin/user.$userId'
 import { Route as AuthenticatedTaskSlotRouteImport } from './routes/_authenticated/task.$slot'
+import { Route as AuthenticatedChatPeerIdRouteImport } from './routes/_authenticated/chat.$peerId'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
@@ -261,6 +263,11 @@ const AuthenticatedEarningsRoute = AuthenticatedEarningsRouteImport.update({
   path: '/earnings',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedChatIndexRoute = AuthenticatedChatIndexRouteImport.update({
+  id: '/chat/',
+  path: '/chat/',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
   id: '/lovable/email/suppression',
   path: '/lovable/email/suppression',
@@ -301,6 +308,11 @@ const AdminUserUserIdRoute = AdminUserUserIdRouteImport.update({
 const AuthenticatedTaskSlotRoute = AuthenticatedTaskSlotRouteImport.update({
   id: '/task/$slot',
   path: '/task/$slot',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedChatPeerIdRoute = AuthenticatedChatPeerIdRouteImport.update({
+  id: '/chat/$peerId',
+  path: '/chat/$peerId',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const LovableEmailTransactionalSendRoute =
@@ -397,6 +409,7 @@ export interface FileRoutesByFullPath {
   '/card/$uid': typeof CardUidRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/admin/': typeof AdminIndexRoute
+  '/chat/$peerId': typeof AuthenticatedChatPeerIdRoute
   '/task/$slot': typeof AuthenticatedTaskSlotRoute
   '/admin/user/$userId': typeof AdminUserUserIdRoute
   '/api/public/hisab-card': typeof ApiPublicHisabCardRoute
@@ -405,6 +418,7 @@ export interface FileRoutesByFullPath {
   '/api/public/tour-audio': typeof ApiPublicTourAudioRoute
   '/api/public/whitelist-recheck': typeof ApiPublicWhitelistRecheckRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/chat/': typeof AuthenticatedChatIndexRoute
   '/api/public/app/download': typeof ApiPublicAppDownloadRoute
   '/api/public/celo-sweep/run': typeof ApiPublicCeloSweepRunRoute
   '/api/public/payout/bridge': typeof ApiPublicPayoutBridgeRoute
@@ -454,6 +468,7 @@ export interface FileRoutesByTo {
   '/card/$uid': typeof CardUidRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/admin': typeof AdminIndexRoute
+  '/chat/$peerId': typeof AuthenticatedChatPeerIdRoute
   '/task/$slot': typeof AuthenticatedTaskSlotRoute
   '/admin/user/$userId': typeof AdminUserUserIdRoute
   '/api/public/hisab-card': typeof ApiPublicHisabCardRoute
@@ -462,6 +477,7 @@ export interface FileRoutesByTo {
   '/api/public/tour-audio': typeof ApiPublicTourAudioRoute
   '/api/public/whitelist-recheck': typeof ApiPublicWhitelistRecheckRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/chat': typeof AuthenticatedChatIndexRoute
   '/api/public/app/download': typeof ApiPublicAppDownloadRoute
   '/api/public/celo-sweep/run': typeof ApiPublicCeloSweepRunRoute
   '/api/public/payout/bridge': typeof ApiPublicPayoutBridgeRoute
@@ -514,6 +530,7 @@ export interface FileRoutesById {
   '/card/$uid': typeof CardUidRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/admin/': typeof AdminIndexRoute
+  '/_authenticated/chat/$peerId': typeof AuthenticatedChatPeerIdRoute
   '/_authenticated/task/$slot': typeof AuthenticatedTaskSlotRoute
   '/admin/user/$userId': typeof AdminUserUserIdRoute
   '/api/public/hisab-card': typeof ApiPublicHisabCardRoute
@@ -522,6 +539,7 @@ export interface FileRoutesById {
   '/api/public/tour-audio': typeof ApiPublicTourAudioRoute
   '/api/public/whitelist-recheck': typeof ApiPublicWhitelistRecheckRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/_authenticated/chat/': typeof AuthenticatedChatIndexRoute
   '/api/public/app/download': typeof ApiPublicAppDownloadRoute
   '/api/public/celo-sweep/run': typeof ApiPublicCeloSweepRunRoute
   '/api/public/payout/bridge': typeof ApiPublicPayoutBridgeRoute
@@ -574,6 +592,7 @@ export interface FileRouteTypes {
     | '/card/$uid'
     | '/email/unsubscribe'
     | '/admin/'
+    | '/chat/$peerId'
     | '/task/$slot'
     | '/admin/user/$userId'
     | '/api/public/hisab-card'
@@ -582,6 +601,7 @@ export interface FileRouteTypes {
     | '/api/public/tour-audio'
     | '/api/public/whitelist-recheck'
     | '/lovable/email/suppression'
+    | '/chat/'
     | '/api/public/app/download'
     | '/api/public/celo-sweep/run'
     | '/api/public/payout/bridge'
@@ -631,6 +651,7 @@ export interface FileRouteTypes {
     | '/card/$uid'
     | '/email/unsubscribe'
     | '/admin'
+    | '/chat/$peerId'
     | '/task/$slot'
     | '/admin/user/$userId'
     | '/api/public/hisab-card'
@@ -639,6 +660,7 @@ export interface FileRouteTypes {
     | '/api/public/tour-audio'
     | '/api/public/whitelist-recheck'
     | '/lovable/email/suppression'
+    | '/chat'
     | '/api/public/app/download'
     | '/api/public/celo-sweep/run'
     | '/api/public/payout/bridge'
@@ -690,6 +712,7 @@ export interface FileRouteTypes {
     | '/card/$uid'
     | '/email/unsubscribe'
     | '/admin/'
+    | '/_authenticated/chat/$peerId'
     | '/_authenticated/task/$slot'
     | '/admin/user/$userId'
     | '/api/public/hisab-card'
@@ -698,6 +721,7 @@ export interface FileRouteTypes {
     | '/api/public/tour-audio'
     | '/api/public/whitelist-recheck'
     | '/lovable/email/suppression'
+    | '/_authenticated/chat/'
     | '/api/public/app/download'
     | '/api/public/celo-sweep/run'
     | '/api/public/payout/bridge'
@@ -1014,6 +1038,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEarningsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/chat/': {
+      id: '/_authenticated/chat/'
+      path: '/chat'
+      fullPath: '/chat/'
+      preLoaderRoute: typeof AuthenticatedChatIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/lovable/email/suppression': {
       id: '/lovable/email/suppression'
       path: '/lovable/email/suppression'
@@ -1068,6 +1099,13 @@ declare module '@tanstack/react-router' {
       path: '/task/$slot'
       fullPath: '/task/$slot'
       preLoaderRoute: typeof AuthenticatedTaskSlotRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/chat/$peerId': {
+      id: '/_authenticated/chat/$peerId'
+      path: '/chat/$peerId'
+      fullPath: '/chat/$peerId'
+      preLoaderRoute: typeof AuthenticatedChatPeerIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/lovable/email/transactional/send': {
@@ -1158,7 +1196,9 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedWalletRoute: typeof AuthenticatedWalletRoute
   AuthenticatedWithdrawRoute: typeof AuthenticatedWithdrawRoute
+  AuthenticatedChatPeerIdRoute: typeof AuthenticatedChatPeerIdRoute
   AuthenticatedTaskSlotRoute: typeof AuthenticatedTaskSlotRoute
+  AuthenticatedChatIndexRoute: typeof AuthenticatedChatIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -1176,7 +1216,9 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedWalletRoute: AuthenticatedWalletRoute,
   AuthenticatedWithdrawRoute: AuthenticatedWithdrawRoute,
+  AuthenticatedChatPeerIdRoute: AuthenticatedChatPeerIdRoute,
   AuthenticatedTaskSlotRoute: AuthenticatedTaskSlotRoute,
+  AuthenticatedChatIndexRoute: AuthenticatedChatIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

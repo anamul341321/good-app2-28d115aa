@@ -1,8 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Check, Search, UserPlus, Users, X, Loader2, PhoneCall } from "lucide-react";
+import { Check, Search, UserPlus, Users, X, Loader2, PhoneCall, MessageCircle } from "lucide-react";
 import {
   listFriends,
   respondFriendRequest,
@@ -183,6 +183,14 @@ function FriendsPage() {
                   <p className="truncate text-sm font-black">{f.name}</p>
                   <p className="text-[11px] font-bold text-muted-foreground">UID {f.uid ?? "-"}</p>
                 </div>
+                <Link
+                  to="/chat/$peerId"
+                  params={{ peerId: f.userId }}
+                  aria-label="মেসেজ"
+                  className="btn-press grid h-10 w-10 place-items-center rounded-xl bg-cyan-500/15 text-cyan-500"
+                >
+                  <MessageCircle className="h-4 w-4" />
+                </Link>
                 <CallButtons userId={f.userId} name={f.name} />
                 <button
                   onClick={() => drop.mutate(f.linkId)}
