@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.Intent;
 import android.content.BroadcastReceiver;
 import android.app.DownloadManager;
+import android.app.NotificationManager;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.content.IntentFilter;
@@ -13,9 +14,12 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.Settings;
+import android.media.AudioManager;
+import android.media.AudioDeviceInfo;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebView;
+import android.view.WindowManager;
 import android.widget.Toast;
 
 import com.getcapacitor.BridgeActivity;
@@ -164,6 +168,41 @@ public class MainActivity extends BridgeActivity {
         }
 
         @JavascriptInterface
+        public void beginCall(boolean video) {
+            runOnUiThread(() -> {
+                AudioManager audio = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+                audio.setMode(AudioManager.MODE_IN_COMMUNICATION);
+                audio.setMicrophoneMute(false);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    int preferredType = video
+                        ? AudioDeviceInfo.TYPE_BUILTIN_SPEAKER
+                        : AudioDeviceInfo.TYPE_BUILTIN_EARPIECE;
+                    for (AudioDeviceInfo device : audio.getAvailableCommunicationDevices()) {
+                        if (device.getType() == preferredType) {
+                            audio.setCommunicationDevice(device);
+                            break;
+                        }
+                    }
+                } else {
+                    audio.setSpeakerphoneOn(video);
+                }
+                getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            });
+        }
+
+        @JavascriptInterface
+        public void endCall() {
+            runOnUiThread(() -> {
+                AudioManager audio = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+                audio.setMicrophoneMute(false);
+                audio.setMode(AudioManager.MODE_NORMAL);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) audio.clearCommunicationDevice();
+                else audio.setSpeakerphoneOn(false);
+                getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            });
+        }
+
+        @JavascriptInterface
         public void download(String url, String fileName) {
             runOnUiThread(() -> {
                 try {
@@ -217,6 +256,7 @@ public class MainActivity extends BridgeActivity {
         // so the live page can never render before the native downloader is attached.
         appWebView.stopLoading();
         appWebView.getSettings().setDomStorageEnabled(true);
+        appWebView.getSettings().setMediaPlaybackRequiresUserGesture(false);
         appWebView.addJavascriptInterface(new GoodAppDownloader(), "GoodAppDownloader");
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
             && ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
@@ -226,6 +266,24 @@ public class MainActivity extends BridgeActivity {
                 new String[] { Manifest.permission.POST_NOTIFICATIONS },
                 NOTIFICATION_PERMISSION_REQUEST
             );
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            NotificationManager notificationManager =
+                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            if (!notificationManager.canUseFullScreenIntent()) {
+                try {
+                    Intent fullScreenPermission = new Intent(
+                        Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT,
+                        Uri.parse("package:" + getPackageName())
+                    );
+                    startActivity(fullScreenPermission);
+                    Toast.makeText(
+                        this,
+                        "Screen বন্ধ থাকলেও কল পেতে Full-screen call অনুমতি চালু করুন",
+                        Toast.LENGTH_LONG
+                    ).show();
+                } catch (Exception ignored) {}
+            }
         }
         IntentFilter downloadFilter = new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {

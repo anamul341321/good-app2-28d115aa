@@ -64,7 +64,6 @@ const ICE = {
   iceCandidatePoolSize: 4,
 };
 
-
 /**
  * পুরো অ্যাপে অডিও/ভিডিও কল। সিগন্যালিং হয় Supabase Realtime broadcast দিয়ে
  * (প্রতি ইউজারের নিজের চ্যানেল), মিডিয়া যায় সরাসরি WebRTC পিয়ার-টু-পিয়ার।
@@ -79,12 +78,14 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   const myName = ((me as any)?.name as string | undefined) ?? "ইউজার";
 
   const [state, setState] = useState<CallState>("idle");
+  const stateRef = useRef<CallState>("idle");
   const [peer, setPeer] = useState<{ id: string; name: string } | null>(null);
   const [withVideo, setWithVideo] = useState(false);
   const [muted, setMuted] = useState(false);
   const [camOff, setCamOff] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [seconds, setSeconds] = useState(0);
+  const [callSessionId, setCallSessionId] = useState<string | null>(null);
   const facing = useRef<"user" | "environment">("user");
   const camTrack = useRef<MediaStreamTrack | null>(null);
   const shareStream = useRef<MediaStream | null>(null);
@@ -104,7 +105,9 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   const reconnecting = useRef(false);
   const peerIdRef = useRef<string | null>(null);
 
-
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
 
   const sendTo = useCallback(async (peerId: string, payload: Signal) => {
     let ch = outRef.current;
@@ -145,6 +148,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     pendingOffer.current = null;
     pendingIce.current = [];
     currentCallId.current = null;
+    setCallSessionId(null);
     if (outRef.current) {
       supabase.removeChannel(outRef.current);
       outRef.current = null;
@@ -160,12 +164,22 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     setCamOff(false);
     setSharing(false);
     setSeconds(0);
+    try {
+      (window as any).GoodAppDownloader?.endCall?.();
+    } catch {}
   }, []);
 
-  const hangUp = useCallback(() => {
-    if (peer) void sendTo(peer.id, { kind: "end", from: myId ?? "" });
-    if (currentCallId.current) {
-      void updateCall({ data: { callId: currentCallId.current, status: state === "ringing" ? "declined" : "ended" } });
+  const hangUp = useCallback(async () => {
+    const callId = currentCallId.current;
+    if (peer) {
+      try {
+        await sendTo(peer.id, { kind: "end", from: myId ?? "" });
+      } catch {}
+    }
+    if (callId) {
+      try {
+        await updateCall({ data: { callId, status: state === "ringing" ? "declined" : "ended" } });
+      } catch {}
     }
     cleanup();
   }, [peer, myId, sendTo, cleanup, state]);
@@ -197,8 +211,20 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const flushPendingIce = useCallback(async (pc: RTCPeerConnection) => {
+    const candidates = pendingIce.current.splice(0);
+    for (const candidate of candidates) {
+      try {
+        await pc.addIceCandidate(new RTCIceCandidate(candidate));
+      } catch {}
+    }
+  }, []);
+
   const buildPeer = useCallback(
     async (peerId: string, video: boolean) => {
+      try {
+        (window as any).GoodAppDownloader?.beginCall?.(video);
+      } catch {}
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: true,
@@ -223,7 +249,8 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         attachRemote(e.streams[0] ?? remote);
       };
       pc.onicecandidate = (e) => {
-        if (e.candidate) void sendTo(peerId, { kind: "ice", from: myId ?? "", candidate: e.candidate });
+        if (e.candidate)
+          void sendTo(peerId, { kind: "ice", from: myId ?? "", candidate: e.candidate });
       };
       pc.onconnectionstatechange = () => {
         if (pc.connectionState === "connected") {
@@ -250,7 +277,9 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
                 const offer = await pc.createOffer({ iceRestart: true });
                 await pc.setLocalDescription(offer);
                 await waitForIce(pc);
-                await sendTo(peerIdRef.current!, {
+                const reconnectPeerId = peerIdRef.current;
+                if (!reconnectPeerId) return;
+                await sendTo(reconnectPeerId, {
                   kind: "reoffer",
                   from: myId ?? "",
                   sdp: pc.localDescription?.toJSON() ?? offer,
@@ -309,6 +338,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         const finalOffer = pc.localDescription?.toJSON() ?? offer;
         const created = await createCall({ data: { peerId, video, offer: finalOffer } });
         currentCallId.current = created.callId;
+        setCallSessionId(created.callId);
         await sendTo(peerId, {
           kind: "offer",
           from: myId,
@@ -333,25 +363,22 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       peerIdRef.current = peer.id;
       const pc = await buildPeer(peer.id, withVideo);
       await pc.setRemoteDescription(new RTCSessionDescription(pendingOffer.current));
-      for (const c of pendingIce.current) {
-        try {
-          await pc.addIceCandidate(new RTCIceCandidate(c));
-        } catch {}
-      }
-      pendingIce.current = [];
+      await flushPendingIce(pc);
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
       await waitForIce(pc);
       const finalAnswer = pc.localDescription?.toJSON() ?? answer;
       await sendTo(peer.id, { kind: "answer", from: myId, sdp: finalAnswer });
       if (currentCallId.current) {
-        await updateCall({ data: { callId: currentCallId.current, status: "accepted", answer: finalAnswer } });
+        await updateCall({
+          data: { callId: currentCallId.current, status: "accepted", answer: finalAnswer },
+        });
       }
     } catch {
       toast.error("মাইক/ক্যামেরার অনুমতি দিন");
       hangUp();
     }
-  }, [buildPeer, hangUp, myId, peer, sendTo, withVideo, waitForIce]);
+  }, [buildPeer, flushPendingIce, hangUp, myId, peer, sendTo, withVideo, waitForIce]);
 
   // Native incoming-call screen থেকে app খুললে durable offer দিয়ে call screen পুনরুদ্ধার করি।
   useEffect(() => {
@@ -361,6 +388,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     void getCall({ data: { callId } }).then(({ call }) => {
       if (!call || call.calleeId !== myId || !["calling", "ringing"].includes(call.status)) return;
       currentCallId.current = call.id;
+      setCallSessionId(call.id);
       pendingOffer.current = call.offer;
       setPeer({ id: call.callerId, name: call.otherName });
       setWithVideo(call.video);
@@ -378,30 +406,55 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     void acceptCall();
   }, [state, acceptCall]);
 
-  // Receiver background-এ থাকলে answer database-এ আসে; caller সেটি এখান থেকে নেয়।
   useEffect(() => {
-    if (state !== "calling" || !currentCallId.current) return;
+    if (!myId || state !== "idle") return;
+    const params = new URLSearchParams(window.location.search);
+    const callId = params.get("call");
+    if (!callId || params.get("decline") !== "1") return;
+    params.delete("call");
+    params.delete("decline");
+    window.history.replaceState(
+      {},
+      "",
+      `${window.location.pathname}${params.size ? `?${params}` : ""}`,
+    );
+    void updateCall({ data: { callId, status: "declined" } });
+  }, [myId, state]);
+
+  // Database call state is durable: realtime signal হারালেও answer/end দুই ফোনেই পৌঁছায়।
+  useEffect(() => {
+    if (state === "idle" || !callSessionId) return;
     let checks = 0;
     const timer = window.setInterval(() => {
-      const callId = currentCallId.current;
-      if (!callId) return;
+      const callId = callSessionId;
       checks += 1;
-      void getCall({ data: { callId } }).then(async ({ call }) => {
-        if (call?.status === "accepted" && call.answer && pcRef.current && !pcRef.current.remoteDescription) {
-          await pcRef.current.setRemoteDescription(new RTCSessionDescription(call.answer));
-          setState("connecting");
-        } else if (call && ["declined", "missed", "cancelled", "failed"].includes(call.status)) {
-          toast(call.status === "declined" ? "কলটি কেটে দেওয়া হয়েছে" : "কলটি ধরা হয়নি");
-          cleanup();
-        } else if (checks >= 23) {
-          await updateCall({ data: { callId, status: "missed", reason: "no_answer" } });
-          toast("কলটি ধরা হয়নি");
-          cleanup();
-        }
-      }).catch(() => {});
+      void getCall({ data: { callId } })
+        .then(async ({ call }) => {
+          if (
+            call?.status === "accepted" &&
+            call.answer &&
+            pcRef.current &&
+            !pcRef.current.remoteDescription
+          ) {
+            await pcRef.current.setRemoteDescription(new RTCSessionDescription(call.answer));
+            await flushPendingIce(pcRef.current);
+            setState("connecting");
+          } else if (
+            call &&
+            ["declined", "missed", "cancelled", "failed", "ended"].includes(call.status)
+          ) {
+            toast(call.status === "declined" ? "কলটি কেটে দেওয়া হয়েছে" : "কলটি ধরা হয়নি");
+            cleanup();
+          } else if (stateRef.current === "calling" && checks >= 23) {
+            await updateCall({ data: { callId, status: "missed", reason: "no_answer" } });
+            toast("কলটি ধরা হয়নি");
+            cleanup();
+          }
+        })
+        .catch(() => {});
     }, 2000);
     return () => window.clearInterval(timer);
-  }, [state, cleanup]);
+  }, [state, callSessionId, cleanup, flushPendingIce]);
 
   // নিজের চ্যানেলে সিগন্যাল শোনা
   useEffect(() => {
@@ -411,12 +464,13 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       .on("broadcast", { event: "signal" }, async ({ payload }) => {
         const sig = payload as Signal;
         if (sig.kind === "offer") {
-          if (state !== "idle") {
+          if (stateRef.current !== "idle") {
             void sendTo(sig.from, { kind: "busy", from: myId });
             return;
           }
           pendingOffer.current = sig.sdp;
           currentCallId.current = sig.callId ?? null;
+          setCallSessionId(sig.callId ?? null);
           setPeer({ id: sig.from, name: sig.fromName });
           setWithVideo(sig.video);
           setState("ringing");
@@ -431,14 +485,22 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
             const answer = await pc.createAnswer();
             await pc.setLocalDescription(answer);
             await waitForIce(pc);
-            await sendTo(sig.from, { kind: "answer", from: myId, sdp: pc.localDescription?.toJSON() ?? answer });
+            await sendTo(sig.from, {
+              kind: "answer",
+              from: myId,
+              sdp: pc.localDescription?.toJSON() ?? answer,
+            });
           } catch {}
           return;
         }
         if (sig.kind === "answer") {
           try {
-            await pcRef.current?.setRemoteDescription(new RTCSessionDescription(sig.sdp));
-            if (state !== "active") setState("connecting");
+            const pc = pcRef.current;
+            if (pc) {
+              await pc.setRemoteDescription(new RTCSessionDescription(sig.sdp));
+              await flushPendingIce(pc);
+            }
+            if (stateRef.current !== "active") setState("connecting");
           } catch {}
           return;
         }
@@ -466,7 +528,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     return () => {
       supabase.removeChannel(ch);
     };
-  }, [myId, state, sendTo, cleanup, waitForIce]);
+  }, [myId, sendTo, cleanup, flushPendingIce, waitForIce]);
 
   const toggleMute = () => {
     const track = localStream.current?.getAudioTracks()[0];
@@ -540,7 +602,8 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       const ns = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: facing.current, width: { ideal: 1280 }, height: { ideal: 720 } },
       });
-      const track = ns.getVideoTracks()[0]!;
+      const track = ns.getVideoTracks()[0];
+      if (!track) throw new Error("camera-unavailable");
       camTrack.current?.stop();
       camTrack.current = track;
       if (!sharing) await replaceVideoTrack(track);
@@ -551,7 +614,10 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
 
   const clock = `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
 
-  const value = useMemo<Ctx>(() => ({ startCall: (a, b, c) => void startCall(a, b, c), state }), [startCall, state]);
+  const value = useMemo<Ctx>(
+    () => ({ startCall: (a, b, c) => void startCall(a, b, c), state }),
+    [startCall, state],
+  );
 
   return (
     <CallContext.Provider value={value}>
@@ -562,7 +628,9 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       {state === "ringing" && peer && (
         <div
           className="fixed inset-0 z-[95] flex flex-col items-center justify-between px-6 pb-12 pt-20 text-white"
-          style={{ background: "radial-gradient(120% 80% at 50% 0%,#1b2a6b 0%,#0b1024 55%,#05060f 100%)" }}
+          style={{
+            background: "radial-gradient(120% 80% at 50% 0%,#1b2a6b 0%,#0b1024 55%,#05060f 100%)",
+          }}
         >
           <div className="flex flex-col items-center">
             <p className="text-[11px] font-black uppercase tracking-[0.3em] text-cyan-300">
@@ -612,12 +680,16 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
               ref={remoteVideo}
               autoPlay
               playsInline
+              muted
               className={`h-full w-full object-cover ${withVideo ? "" : "opacity-0"}`}
             />
             {!withVideo && (
               <div
                 className="absolute inset-0 grid place-items-center"
-                style={{ background: "radial-gradient(120% 80% at 50% 0%,#1b2a6b 0%,#0b1024 60%,#05060f 100%)" }}
+                style={{
+                  background:
+                    "radial-gradient(120% 80% at 50% 0%,#1b2a6b 0%,#0b1024 60%,#05060f 100%)",
+                }}
               >
                 <div className="text-center text-white">
                   <div className="relative mx-auto grid h-28 w-28 place-items-center">
@@ -631,7 +703,11 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
                   <p className="mt-5 text-xl font-black">{peer.name}</p>
                   <p className="mt-1 inline-flex items-center gap-1 text-xs font-bold text-cyan-300">
                     <Volume2 className="h-3.5 w-3.5" />
-                    {state === "active" ? clock : state === "calling" ? "রিং হচ্ছে…" : "সংযোগ হচ্ছে…"}
+                    {state === "active"
+                      ? clock
+                      : state === "calling"
+                        ? "রিং হচ্ছে…"
+                        : "সংযোগ হচ্ছে…"}
                   </p>
                 </div>
               </div>
@@ -725,7 +801,11 @@ function CallCtl({
   children: React.ReactNode;
 }) {
   return (
-    <button onClick={onClick} className="btn-press flex flex-col items-center gap-1.5" aria-label={label}>
+    <button
+      onClick={onClick}
+      className="btn-press flex flex-col items-center gap-1.5"
+      aria-label={label}
+    >
       <span
         className={`grid h-14 w-14 place-items-center rounded-full border text-white transition ${
           active ? "border-white/40 bg-white/85 text-[#0b1024]" : "border-white/15 bg-white/10"

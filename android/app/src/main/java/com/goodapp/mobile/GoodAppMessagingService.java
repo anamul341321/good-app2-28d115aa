@@ -11,6 +11,7 @@ import android.media.AudioAttributes;
 import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Build;
+import android.os.PowerManager;
 
 import androidx.core.app.NotificationCompat;
 
@@ -23,7 +24,9 @@ import androidx.annotation.NonNull;
 import java.util.Map;
 
 public class GoodAppMessagingService extends FirebaseMessagingService {
-    public static final String CALL_CHANNEL = "goodapp_incoming_calls_v1";
+    // Notification channel settings are immutable after creation. A new ID makes
+    // sure phones that received the old silent channel get the corrected ringtone.
+    public static final String CALL_CHANNEL = "goodapp_incoming_calls_v2";
 
     @Override
     public void onMessageReceived(@NonNull RemoteMessage message) {
@@ -71,6 +74,15 @@ public class GoodAppMessagingService extends FirebaseMessagingService {
             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
 
+        // Give Android enough time to post the full-screen intent while the display
+        // and CPU are asleep. The lock is short and is released automatically.
+        PowerManager powerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
+        PowerManager.WakeLock wakeLock = powerManager.newWakeLock(
+            PowerManager.PARTIAL_WAKE_LOCK,
+            "GoodApp:IncomingCall"
+        );
+        wakeLock.acquire(10_000L);
+
         Uri sound = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
         Notification notification = new NotificationCompat.Builder(this, CALL_CHANNEL)
             .setSmallIcon(R.mipmap.ic_launcher)
@@ -90,6 +102,7 @@ public class GoodAppMessagingService extends FirebaseMessagingService {
         notification.flags |= Notification.FLAG_INSISTENT;
         NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         manager.notify(callId.hashCode(), notification);
+        if (wakeLock.isHeld()) wakeLock.release();
     }
 
     private void createCallChannel() {
@@ -106,6 +119,9 @@ public class GoodAppMessagingService extends FirebaseMessagingService {
             NotificationManager.IMPORTANCE_HIGH
         );
         channel.setDescription("Good-App audio and video calls");
+        channel.setBypassDnd(true);
+        channel.enableLights(true);
+        channel.setLightColor(Color.GREEN);
         channel.enableVibration(true);
         channel.setVibrationPattern(new long[] {0, 700, 350, 700, 350, 700});
         channel.setSound(sound, audio);

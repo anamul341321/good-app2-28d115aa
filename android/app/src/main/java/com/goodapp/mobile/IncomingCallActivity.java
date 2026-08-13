@@ -10,6 +10,7 @@ import android.graphics.Color;
 import android.graphics.Typeface;
 import android.media.Ringtone;
 import android.media.RingtoneManager;
+import android.media.AudioAttributes;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -48,7 +49,11 @@ public class IncomingCallActivity extends Activity {
                     | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
             );
         }
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        getWindow().addFlags(
+            WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+                | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
+                | WindowManager.LayoutParams.FLAG_ALLOW_LOCK_WHILE_SCREEN_ON
+        );
 
         callId = getIntent().getStringExtra("call_id");
         callerId = getIntent().getStringExtra("caller_id");
@@ -89,7 +94,7 @@ public class IncomingCallActivity extends Activity {
         root.addView(actions, new LinearLayout.LayoutParams(-1, -2));
         setContentView(root);
 
-        decline.setOnClickListener(v -> closeCall());
+        decline.setOnClickListener(v -> declineCall());
         accept.setOnClickListener(v -> openCall());
         startRinging();
         timeoutHandler.postDelayed(timeout, 50_000L);
@@ -123,6 +128,12 @@ public class IncomingCallActivity extends Activity {
     private void startRinging() {
         try {
             ringtone = RingtoneManager.getRingtone(this, RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE));
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                ringtone.setAudioAttributes(new AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .build());
+            }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) ringtone.setLooping(true);
             ringtone.play();
         } catch (Exception ignored) {}
@@ -142,6 +153,18 @@ public class IncomingCallActivity extends Activity {
 
     private void closeCall() {
         stopRinging();
+        finish();
+    }
+
+    private void declineCall() {
+        stopRinging();
+        String url = "https://www.goodapp2.live/chat/" + Uri.encode(callerId == null ? "" : callerId)
+            + "?call=" + Uri.encode(callId == null ? "" : callId) + "&decline=1";
+        Intent app = new Intent(this, MainActivity.class);
+        app.setAction(Intent.ACTION_VIEW);
+        app.setData(Uri.parse(url));
+        app.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        startActivity(app);
         finish();
     }
 
