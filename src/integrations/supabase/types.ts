@@ -1684,6 +1684,7 @@ export type Database = {
           id: string
           label: string | null
           last_seen_at: string
+          otp_trust_expires_at: string | null
           revoked_at: string | null
           user_agent: string | null
           user_id: string
@@ -1696,6 +1697,7 @@ export type Database = {
           id?: string
           label?: string | null
           last_seen_at?: string
+          otp_trust_expires_at?: string | null
           revoked_at?: string | null
           user_agent?: string | null
           user_id: string
@@ -1708,6 +1710,7 @@ export type Database = {
           id?: string
           label?: string | null
           last_seen_at?: string
+          otp_trust_expires_at?: string | null
           revoked_at?: string | null
           user_agent?: string | null
           user_id?: string
