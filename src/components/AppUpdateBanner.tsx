@@ -38,6 +38,7 @@ export function AppUpdateBanner() {
   const native = typeof window !== "undefined" && isNativeApp();
   const [installed, setInstalled] = useState<string | null>(null);
   const [started, setStarted] = useState(false);
+  const [downloadStatus, setDownloadStatus] = useState<"idle" | "started" | "complete" | "failed" | "fallback">("idle");
   const [hidden, setHidden] = useState(false);
 
   const readVersion = () =>
@@ -62,6 +63,19 @@ export function AppUpdateBanner() {
     return () => remove?.();
   }, [native]);
 
+  useEffect(() => {
+    if (!native) return;
+    const onDownloadStatus = (event: Event) => {
+      const status = (event as CustomEvent<{ status?: string }>).detail?.status;
+      if (status === "started" || status === "complete" || status === "failed" || status === "fallback") {
+        setDownloadStatus(status);
+        setStarted(true);
+      }
+    };
+    window.addEventListener("goodapp-download-status", onDownloadStatus);
+    return () => window.removeEventListener("goodapp-download-status", onDownloadStatus);
+  }, [native]);
+
 
   const { data } = useQuery({
     queryKey: ["app-status-apk"],
@@ -84,6 +98,7 @@ export function AppUpdateBanner() {
 
   const startUpdate = async () => {
     setStarted(true);
+    setDownloadStatus("started");
     const freshUrl = `${absolute}${absolute.includes("?") ? "&" : "?"}download=${Date.now()}`;
     const nativeDownloader = (
       window as Window & {
@@ -161,7 +176,15 @@ export function AppUpdateBanner() {
 
         {started && (
           <div className="relative mt-3 rounded-xl bg-white/10 p-2.5 text-[11px] leading-snug text-white/85">
-            <p className="font-black text-cyan-300">📥 ডাউনলোড চলছে — এরপর কী করবেন</p>
+            <p className="font-black text-cyan-300">
+              {downloadStatus === "complete"
+                ? "✅ ডাউনলোড সম্পন্ন — Install করুন"
+                : downloadStatus === "failed"
+                  ? "❌ ডাউনলোড ব্যর্থ — আবার Update চাপুন"
+                  : downloadStatus === "fallback"
+                    ? "📥 Download পেজ খোলা হয়েছে"
+                    : "📥 ডাউনলোড চলছে — এরপর কী করবেন"}
+            </p>
             <p className="mt-1">
               ১) ফোনের <b>Notification bar</b> নামিয়ে ডাউনলোড প্রগ্রেস দেখুন।
               <br />২) শেষ হলে ফাইলটিতে <b>ট্যাপ</b> করুন (অথবা <b>Files → Downloads</b> ফোল্ডার থেকে

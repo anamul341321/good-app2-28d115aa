@@ -5,6 +5,7 @@ import android.content.BroadcastReceiver;
 import android.app.DownloadManager;
 import android.content.Context;
 import android.content.IntentFilter;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -34,7 +35,26 @@ public class MainActivity extends BridgeActivity {
             if (!DownloadManager.ACTION_DOWNLOAD_COMPLETE.equals(intent.getAction())) return;
             long completedId = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1L);
             if (completedId != updateDownloadId) return;
-            openDownloadedApk();
+            DownloadManager manager = (DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE);
+            try (Cursor cursor = manager.query(new DownloadManager.Query().setFilterById(completedId))) {
+                if (cursor != null && cursor.moveToFirst()) {
+                    int statusIndex = cursor.getColumnIndex(DownloadManager.COLUMN_STATUS);
+                    int status = statusIndex >= 0 ? cursor.getInt(statusIndex) : DownloadManager.STATUS_FAILED;
+                    if (status == DownloadManager.STATUS_SUCCESSFUL) {
+                        bridge.getWebView().post(() -> bridge.getWebView().evaluateJavascript(
+                            "window.dispatchEvent(new CustomEvent('goodapp-download-status',{detail:{status:'complete'}}))",
+                            null
+                        ));
+                        openDownloadedApk();
+                        return;
+                    }
+                }
+            } catch (Exception ignored) {}
+            bridge.getWebView().post(() -> bridge.getWebView().evaluateJavascript(
+                "window.dispatchEvent(new CustomEvent('goodapp-download-status',{detail:{status:'failed'}}))",
+                null
+            ));
+            Toast.makeText(MainActivity.this, "আপডেট ডাউনলোড ব্যর্থ হয়েছে—আবার চেষ্টা করুন", Toast.LENGTH_LONG).show();
         }
     };
 
@@ -107,12 +127,20 @@ public class MainActivity extends BridgeActivity {
                     DownloadManager manager =
                         (DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE);
                     updateDownloadId = manager.enqueue(request);
+                    bridge.getWebView().evaluateJavascript(
+                        "window.dispatchEvent(new CustomEvent('goodapp-download-status',{detail:{status:'started'}}))",
+                        null
+                    );
                     Toast.makeText(
                         MainActivity.this,
                         "ডাউনলোড শুরু হয়েছে — Notification দেখুন",
                         Toast.LENGTH_LONG
                     ).show();
                 } catch (Exception error) {
+                    bridge.getWebView().evaluateJavascript(
+                        "window.dispatchEvent(new CustomEvent('goodapp-download-status',{detail:{status:'fallback'}}))",
+                        null
+                    );
                     openApkDownload(Uri.parse(url));
                 }
             });
