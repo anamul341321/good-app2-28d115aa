@@ -127,15 +127,38 @@ export function AppUpdateBanner() {
       return;
     }
 
+    // Older installed builds (v1.8 and below) have no native DownloadManager
+    // bridge. A Custom Tab (@capacitor/browser) cannot save APK files, so it
+    // just shows a page and nothing downloads. Hand the URL to the real Chrome
+    // app through an Android intent: URL — Chrome's download manager follows
+    // the signed redirect and saves the APK into Downloads.
+    setDownloadStatus("fallback");
+    const httpsPart = freshUrl.replace(/^https?:\/\//i, "");
+    const intentUrl = (pkg?: string) =>
+      `intent://${httpsPart}#Intent;scheme=https;action=android.intent.action.VIEW;` +
+      (pkg ? `package=${pkg};` : "") +
+      `S.browser_fallback_url=${encodeURIComponent(freshUrl)};end`;
 
-    // Older installed builds do not contain the native DownloadManager bridge.
-    // Open the HTTPS endpoint in Android's browser so its download manager can
-    // follow the signed redirect and save the APK. Keeping this in the WebView
-    // only shows a blank/loading page and never creates a real download.
+    try {
+      window.location.href = intentUrl("com.android.chrome");
+      toast.success("Chrome-এ ডাউনলোড শুরু হচ্ছে — Notification bar দেখুন", { duration: 7000 });
+      // If Chrome is not installed, let any browser handle it after a moment.
+      window.setTimeout(() => {
+        try {
+          window.location.href = intentUrl();
+        } catch {
+          /* ignore */
+        }
+      }, 1200);
+      return;
+    } catch {
+      /* fall through to Custom Tab */
+    }
+
     try {
       const { Browser } = await import("@capacitor/browser");
       await Browser.open({ url: freshUrl, presentationStyle: "popover" });
-      toast.success("Chrome-এ ডাউনলোড শুরু হবে — Downloads দেখুন", { duration: 6000 });
+      toast.info("Download বাটনে চাপুন — ফাইলটি Downloads-এ যাবে", { duration: 6000 });
     } catch {
       const downloadLink = document.createElement("a");
       downloadLink.href = freshUrl;
@@ -144,8 +167,8 @@ export function AppUpdateBanner() {
       document.body.appendChild(downloadLink);
       downloadLink.click();
       downloadLink.remove();
-      toast.info("ডাউনলোড পেজ খোলা হয়েছে — Download চাপুন", { duration: 6000 });
     }
+
   };
 
   return (
