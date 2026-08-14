@@ -178,17 +178,15 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
 
   const hangUp = useCallback(async () => {
     const callId = currentCallId.current;
-    if (peer) {
-      try {
-        await sendTo(peer.id, { kind: "end", from: myId ?? "" });
-      } catch {}
-    }
-    if (callId) {
-      try {
-        await updateCall({ data: { callId, status: state === "ringing" ? "declined" : "ended" } });
-      } catch {}
-    }
+    const peerId = peer?.id;
+    const finalStatus = state === "ringing" ? "declined" : state === "calling" ? "cancelled" : "ended";
+    // Close locally first, then notify through both realtime and the durable database.
+    // A slow network path must never leave the ringtone or call screen hanging locally.
     cleanup();
+    await Promise.allSettled([
+      peerId ? sendTo(peerId, { kind: "end", from: myId ?? "" }) : Promise.resolve(),
+      callId ? updateCall({ data: { callId, status: finalStatus } }) : Promise.resolve(),
+    ]);
   }, [peer, myId, sendTo, cleanup, state]);
 
   const waitForIce = useCallback((pc: RTCPeerConnection) => {
@@ -515,6 +513,42 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         .catch(() => {});
     }, 2000);
     return () => window.clearInterval(timer);
+  }, [state, callSessionId, cleanup, flushPendingIce]);
+
+  // End/decline updates arrive instantly through database realtime. The two-second
+  // poller above remains as a fallback when a phone briefly loses its socket.
+  useEffect(() => {
+    if (state === "idle" || !callSessionId) return;
+    const channel = supabase
+      .channel(`call-state-${callSessionId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "call_sessions",
+          filter: `id=eq.${callSessionId}`,
+        },
+        async ({ new: next }: any) => {
+          const status = String(next?.status ?? "");
+          if (status === "accepted" && next?.answer && pcRef.current && !pcRef.current.remoteDescription) {
+            try {
+              await pcRef.current.setRemoteDescription(new RTCSessionDescription(next.answer));
+              await flushPendingIce(pcRef.current);
+              setState("connecting");
+            } catch {}
+            return;
+          }
+          if (["declined", "missed", "cancelled", "failed", "ended"].includes(status)) {
+            toast(status === "declined" ? "কলটি কেটে দেওয়া হয়েছে" : "কল শেষ হয়েছে");
+            cleanup();
+          }
+        },
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
   }, [state, callSessionId, cleanup, flushPendingIce]);
 
   // নিজের চ্যানেলে সিগন্যাল শোনা
