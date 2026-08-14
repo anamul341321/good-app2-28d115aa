@@ -25,7 +25,7 @@ import {
 import { playIncomingRing, playRingback } from "@/lib/ringtone";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyCallIdentity } from "@/lib/friends.functions";
-import { createCall, getCall, ringCall, updateCall } from "@/lib/calls.functions";
+import { createCall, getCall, ringCall, saveCallOffer, updateCall } from "@/lib/calls.functions";
 
 type Signal =
   | { kind: "offer"; from: string; fromName: string; video: boolean; sdp: any; callId?: string }
@@ -376,9 +376,6 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         const offer = await pc.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: video });
         await pc.setLocalDescription(offer);
         makingOffer.current = false;
-         // Keep the durable database offer self-contained for a native cold start.
-         // The cap is short, so this no longer waits on push delivery or slow TURN paths.
-         await waitForIce(pc);
         const finalOffer = pc.localDescription?.toJSON() ?? offer;
         const created = await createCall({ data: { peerId, video, offer: finalOffer } });
         currentCallId.current = created.callId;
@@ -394,6 +391,14 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
          // Realtime starts the call immediately; FCM independently wakes the native
          // Android full-screen receiver when the app is backgrounded or closed.
          void ringCall({ data: { callId: created.callId } }).catch(() => {});
+         // Do not delay ringing for ICE gathering. Persist the completed SDP in the
+         // background so a cold-started native receiver still gets every candidate.
+         void waitForIce(pc).then(() => {
+           const gatheredOffer = pc.localDescription?.toJSON();
+           if (gatheredOffer) {
+             void saveCallOffer({ data: { callId: created.callId, offer: gatheredOffer } }).catch(() => {});
+           }
+         });
       } catch (e) {
         makingOffer.current = false;
         toast.error("মাইক/ক্যামেরার অনুমতি দিন");

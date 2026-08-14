@@ -66,6 +66,20 @@ export async function notifyIncomingCall(
   });
 }
 
+export async function persistCallOffer(
+  context: AuthContext,
+  input: { callId: string; offer: unknown },
+) {
+  if (!input.callId || !input.offer) return { ok: false };
+  const { error } = await context.supabase
+    .from("call_sessions")
+    .update({ offer: input.offer })
+    .eq("id", input.callId)
+    .eq("caller_id", context.userId)
+    .eq("status", "ringing");
+  return { ok: !error };
+}
+
 export async function getCallSession(context: AuthContext, callId: string) {
   if (!callId) return { call: null };
   const { data: call } = await context.supabase
