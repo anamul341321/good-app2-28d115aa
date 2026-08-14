@@ -215,12 +215,12 @@ function AuthedLayout() {
                 <div className="grid grid-cols-2 gap-2 py-2">
                   <BigMenuLink to="/settings" icon={<Settings className="h-6 w-6" />} label={t("সেটিংস", "Settings")} tone="text-gold" />
                   <BigMenuLink to="/profile" icon={<User className="h-6 w-6" />} label={t("প্রোফাইল", "Profile")} tone="text-cyan" />
+                  <BigMenuLink to="/home" icon={<ScrollText className="h-6 w-6" />} label={t("নিউজ ফিড", "News Feed")} tone="text-blue-500" />
                   <BigMenuLink to="/chat" icon={<PhoneCall className="h-6 w-6" />} label={t("মেসেজ ও কল", "Chat & calls")} tone="text-emerald-400" />
                   <BigMenuLink to="/earnings" icon={<FileText className="h-6 w-6" />} label={t("আয়ের হিসাব", "Earnings")} tone="text-emerald-400" />
                   <BigMenuLink to="/kyc" icon={<ShieldCheck className="h-6 w-6" />} label={t("কেওয়াইসি", "KYC")} tone="text-violet-400" />
                   <BigMenuLink to="/friends" icon={<Users className="h-6 w-6" />} label={t("বন্ধু", "Friends")} tone="text-cyan" />
                   <BigMenuLink to="/privacy" icon={<Lock className="h-6 w-6" />} label={t("প্রাইভেসি", "Privacy")} tone="text-cyan" />
-                  <BigMenuLink to="/terms" icon={<ScrollText className="h-6 w-6" />} label={t("শর্তাবলি", "Terms")} tone="text-amber" />
                 </div>
 
                 <DropdownMenuSeparator className="bg-gold/20" />
@@ -243,7 +243,6 @@ function AuthedLayout() {
       <nav className="fixed bottom-0 inset-x-0 z-30 glass border-t border-violet/20">
         <div className="max-w-md mx-auto px-1.5 py-2 grid grid-cols-6 gap-0.5">
           <NavItem to="/home" icon={<Home className="w-5 h-5" />} label={t("হোম", "Home")} tint="cyan" voice="home.welcome" />
-          <NavItem to="/home" icon={<ScrollText className="w-5 h-5" />} label={t("ফিড", "Feed")} tint="violet" />
           <div data-tour="nav-reverify"><NavItem to="/reverify" icon={<RefreshCcw className="w-5 h-5" />} label={t("রি-ভেরিফাই", "Re-verify")} tint="violet" voice="reverify.intro" /></div>
           <NavItem to="/referral" icon={<Users className="w-5 h-5" />} label={t("রেফার", "Refer")} tint="violet" />
           <NavItem to="/menu" icon={<LayoutGrid className="w-5 h-5" />} label={t("মেনু", "Menu")} tint="emerald" />

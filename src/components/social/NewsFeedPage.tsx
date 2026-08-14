@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Search, Plus, Bell, Image as ImageIcon, Share2, MoreHorizontal, Heart, Smile, MessageSquare, Video, Globe, Users, Clock } from "lucide-react";
+import { Search, Plus, Bell, Image as ImageIcon, Share2, MoreHorizontal, Heart, Smile, MessageSquare, Video, Globe, Users, Clock, Camera } from "lucide-react";
 import { listPosts, createPost, reactToPost } from "@/lib/news-feed.functions";
 import { useLang } from "@/lib/i18n";
 import { toast } from "sonner";
