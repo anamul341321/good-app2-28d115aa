@@ -225,21 +225,29 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       try {
         (window as any).GoodAppDownloader?.beginCall?.(video);
       } catch {}
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        },
-        video: video
-          ? {
-              facingMode: facing.current,
-              width: { ideal: 1280 },
-              height: { ideal: 720 },
-              frameRate: { ideal: 30 },
-            }
-          : false,
-      });
+      const audioOnly = {
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+        video: false as const,
+      };
+      let stream: MediaStream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: audioOnly.audio,
+          video: video
+            ? {
+                facingMode: facing.current,
+                width: { ideal: 1280 },
+                height: { ideal: 720 },
+                frameRate: { ideal: 30 },
+              }
+            : false,
+        });
+      } catch (err) {
+        // ক্যামেরা ব্যস্ত/না থাকলে ভিডিও কল অডিও কল হিসেবে চালু থাকবে, কল ভেঙে যাবে না।
+        if (!video) throw err;
+        stream = await navigator.mediaDevices.getUserMedia(audioOnly);
+        toast("ক্যামেরা পাওয়া যায়নি — অডিও কল চালু হলো");
+      }
       localStream.current = stream;
       const pc = new RTCPeerConnection(ICE);
       stream.getTracks().forEach((t) => pc.addTrack(t, stream));
@@ -349,6 +357,11 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         });
       } catch (e) {
         toast.error("মাইক/ক্যামেরার অনুমতি দিন");
+        if (currentCallId.current) {
+          await updateCall({
+            data: { callId: currentCallId.current, status: "failed", reason: "media_error" },
+          }).catch(() => {});
+        }
         cleanup();
       }
     },
