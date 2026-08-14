@@ -67,6 +67,18 @@ public class IncomingCallActivity extends Activity {
             closeCall();
             return;
         }
+        // The full-screen activity is the single incoming-call UI. Remove the
+        // heads-up notification before starting the activity-owned ringtone.
+        if (callId != null) {
+            NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            manager.cancel(callId.hashCode());
+        }
+        IntentFilter cancelFilter = new IntentFilter("com.goodapp.mobile.CANCEL_CALL");
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(cancelReceiver, cancelFilter, Context.RECEIVER_NOT_EXPORTED);
+        } else {
+            registerReceiver(cancelReceiver, cancelFilter);
+        }
         String callAction = getIntent().getStringExtra("call_action");
         if ("answer".equals(callAction)) {
             openCall();
@@ -112,15 +124,8 @@ public class IncomingCallActivity extends Activity {
 
         decline.setOnClickListener(v -> declineCall());
         accept.setOnClickListener(v -> openCall());
-        // The ongoing call notification owns ringtone/vibration. Starting a second
-        // Ringtone here caused overlapping, distorted audio on several Android skins.
+        startRinging();
         timeoutHandler.postDelayed(timeout, 50_000L);
-        IntentFilter cancelFilter = new IntentFilter("com.goodapp.mobile.CANCEL_CALL");
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(cancelReceiver, cancelFilter, Context.RECEIVER_NOT_EXPORTED);
-        } else {
-            registerReceiver(cancelReceiver, cancelFilter);
-        }
     }
 
     private TextView text(String value, int size, int color) {

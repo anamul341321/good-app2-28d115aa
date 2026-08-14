@@ -89,7 +89,7 @@ async function getAccessToken(sa: ServiceAccount): Promise<string> {
 /** এক বা একাধিক device token-এ push পাঠায়। token invalid হলে DB থেকে মুছে দেয়। */
 export async function sendPushToTokens(
   tokens: string[],
-  payload: { title: string; body: string; url?: string; data?: Record<string, string>; call?: boolean },
+  payload: { title: string; body: string; url?: string; data?: Record<string, string>; call?: boolean; collapseKey?: string },
 ): Promise<{ sent: number; failed: number }> {
   const sa = readServiceAccount();
   if (!sa || tokens.length === 0) return { sent: 0, failed: 0 };
@@ -123,6 +123,7 @@ export async function sendPushToTokens(
                 android: {
                   priority: "HIGH",
                   ttl: payload.call ? "45s" : undefined,
+                  collapse_key: payload.collapseKey,
                   notification: payload.call
                     ? undefined
                     : { sound: "default", default_vibrate_timings: true },
@@ -169,6 +170,7 @@ export async function sendIncomingCallPush(
     title: call.video ? "ভিডিও কল আসছে" : "কল আসছে",
     body: call.callerName,
     call: true,
+    collapseKey: call.callId,
     data: {
       type: "incoming_call",
       call_id: call.callId,
@@ -189,6 +191,7 @@ export async function sendCancelCallPush(userId: string, callId: string) {
     title: "কল শেষ",
     body: "কলটি আর সক্রিয় নেই",
     call: true,
+    collapseKey: callId,
     data: { type: "cancel_call", call_id: callId },
   });
 }
