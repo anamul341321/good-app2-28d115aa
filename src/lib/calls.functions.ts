@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { createCallSession, getCallSession, notifyIncomingCall, updateCallSession } from "./calls.server";
+import { createCallSession, getCallSession, notifyIncomingCall, persistCallOffer, updateCallSession } from "./calls.server";
 
 export const createCall = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -20,6 +20,14 @@ export const ringCall = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { callId: string }) => ({ callId: String(input?.callId ?? "") }))
   .handler(({ data, context }) => notifyIncomingCall(context, data));
+
+export const saveCallOffer = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { callId: string; offer: unknown }) => ({
+    callId: String(input?.callId ?? ""),
+    offer: input?.offer ?? null,
+  }))
+  .handler(({ data, context }) => persistCallOffer(context, data));
 
 export const updateCall = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

@@ -69,10 +69,13 @@ public class GoodAppMessagingService extends FirebaseMessagingService {
         boolean video = "true".equals(data.get("video"));
 
         // FCM can retry a high-priority data message. Never post the same call twice.
+        SharedPreferences callState = getSharedPreferences("goodapp_calls", Context.MODE_PRIVATE);
+        if (callId.equals(callState.getString("cancelled_" + callId, null))
+            || callState.getBoolean("answered_" + callId, false)
+            || callState.getBoolean("declined_" + callId, false)) return;
         String shownKey = "shown_" + callId;
-        if (getSharedPreferences("goodapp_calls", Context.MODE_PRIVATE).getBoolean(shownKey, false)) return;
-        getSharedPreferences("goodapp_calls", Context.MODE_PRIVATE)
-            .edit().putBoolean(shownKey, true).apply();
+        if (callState.getBoolean(shownKey, false)) return;
+        callState.edit().putBoolean(shownKey, true).apply();
 
         Intent fullScreen = new Intent(this, IncomingCallActivity.class);
         fullScreen.putExtra("call_id", callId);

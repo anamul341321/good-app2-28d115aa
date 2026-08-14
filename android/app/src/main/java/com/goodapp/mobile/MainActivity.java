@@ -36,6 +36,7 @@ public class MainActivity extends BridgeActivity {
     private long updateDownloadId = -1L;
     private String updateFileName = "Good-App-latest.apk";
     private boolean waitingForInstallPermission = false;
+    private final AudioManager.OnAudioFocusChangeListener callAudioFocus = focusChange -> {};
 
     private final BroadcastReceiver downloadReceiver = new BroadcastReceiver() {
         @Override
@@ -171,6 +172,11 @@ public class MainActivity extends BridgeActivity {
         public void beginCall(boolean video) {
             runOnUiThread(() -> {
                 AudioManager audio = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+                audio.requestAudioFocus(
+                    callAudioFocus,
+                    AudioManager.STREAM_VOICE_CALL,
+                    AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE
+                );
                 audio.setMode(AudioManager.MODE_IN_COMMUNICATION);
                 audio.setMicrophoneMute(false);
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -194,6 +200,7 @@ public class MainActivity extends BridgeActivity {
         public void endCall() {
             runOnUiThread(() -> {
                 AudioManager audio = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+                audio.abandonAudioFocus(callAudioFocus);
                 audio.setMicrophoneMute(false);
                 audio.setMode(AudioManager.MODE_NORMAL);
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) audio.clearCommunicationDevice();
