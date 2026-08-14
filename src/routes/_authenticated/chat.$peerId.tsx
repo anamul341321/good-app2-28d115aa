@@ -34,7 +34,7 @@ function ThreadPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["thread", peerId],
     queryFn: () => getThread({ data: { peerId } }),
-    refetchInterval: 8_000,
+    refetchInterval: 3_000,
   });
 
   const read = useMutation({ mutationFn: () => markChatRead({ data: { peerId } }) });
@@ -99,7 +99,7 @@ function ThreadPage() {
       {/* মেসেঞ্জারের মতো — স্ক্রল করলেও কল বাটন সবসময় উপরে আটকে থাকবে */}
       <div
         className="glass sticky z-20 -mx-1 mb-3 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 rounded-2xl px-2.5 py-2 shadow-lg"
-        style={{ top: "calc(env(safe-area-inset-top,0px) + 4px)" }}
+        style={{ top: "calc(env(safe-area-inset-top,0px) + 68px)" }}
       >
         <Link
           to="/chat"
