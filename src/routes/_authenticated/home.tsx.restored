@@ -15,6 +15,8 @@ import { TourReplayButton } from "@/components/GuidedTour";
 import { PageVoice } from "@/components/PageVoice";
 import { VideoTutorialButton } from "@/components/VideoTutorialButton";
 import { BotStartButton } from "@/components/BotStartButton";
+import { KycAlertBanner } from "@/components/KycAlertBanner";
+
 import { useLang } from "@/lib/i18n";
 
 import { toast } from "sonner";
@@ -165,14 +167,17 @@ function HomePage() {
           <BadgeCheck className="w-3.5 h-3.5" /> {t("KYC ভেরিফাইড", "KYC Verified")}
         </div>
       ) : (
-        <Link to="/kyc" className="block rounded-2xl p-3 text-center shadow-md btn-press"
-              style={{ background: "linear-gradient(120deg,#8b5cf6,#06b6d4)" }}>
+        <Link to="/kyc" className="block rounded-2xl p-3 text-center shadow-lg btn-press animate-pulse ring-2 ring-rose-400/70"
+              style={{ background: "linear-gradient(120deg,#e11d48,#f43f5e)" }}>
           <p className="text-sm font-black text-white flex items-center justify-center gap-1.5">
-            <ShieldCheck className="w-4 h-4" /> {t("KYC (ঐচ্ছিক) — নীল ✔ ব্যাজ চাইলে করুন", "KYC (optional) — get the blue ✔ badge")}
+            <ShieldCheck className="w-4 h-4 animate-bounce" /> {t("KYC করুন — নীল ✔ ব্যাজ ও উইথড্র চালু করুন", "Complete KYC — blue ✔ badge & withdraw")}
           </p>
-          <p className="text-[11px] text-white/90 mt-0.5">{t("KYC ছাড়াও সব কাজ চলবে · উইথড্রও করা যাবে", "Everything works without KYC · withdraws too")}</p>
+          <p className="text-[11px] text-white/90 mt-0.5">{t("মাত্র ১ ধাপ (টেলিগ্রামে START) · KYC ছাড়া উইথড্র করা যাবে না", "Just 1 step (START in Telegram) · withdraw locked without KYC")}</p>
         </Link>
       )}
+      <KycAlertBanner />
+
+
 
       <div data-tour="mining" data-voice="home.mining">
       <MiningCounter
@@ -182,8 +187,13 @@ function HomePage() {
         lastCreditedAt={data.mining?.last_credited_at ?? null}
         effectiveTaskCount={Number(data.mining?.effective_task_count ?? 0)}
         qualifyingReferees={Number(data.mining?.qualifying_referees ?? 0)}
+        selfQualified={(data.mining as any)?.self_qualified !== false}
+
         displayTaskCount={submittedCount}
         leagueCount={submittedCount}
+        bonusTotal={Number((data.mining as any)?.bonus_amount ?? 0)}
+        referralAccrued={Number((data.mining as any)?.referral_accrued ?? 0)}
+
       />
       </div>
 
@@ -509,6 +519,7 @@ function HomePage() {
           </p>
           <p className="text-[11px] text-white/90 mt-0.5">{t("গ্রুপে মেসেজ দিন — দ্রুত সাহায্য পাবেন", "Message the group — quick help")}</p>
         </a>
+        <BotStartButton />
       </div>
 
 
