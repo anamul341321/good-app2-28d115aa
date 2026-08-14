@@ -123,7 +123,7 @@ export async function sendPushToTokens(
                 android: {
                   priority: "HIGH",
                   ttl: payload.call ? "45s" : undefined,
-                  collapse_key: payload.collapseKey,
+                  collapseKey: payload.collapseKey,
                   notification: payload.call
                     ? undefined
                     : { sound: "default", default_vibrate_timings: true },
