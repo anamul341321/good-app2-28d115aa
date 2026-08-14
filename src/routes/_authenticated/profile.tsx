@@ -184,6 +184,29 @@ function ProfilePage() {
         </div>
       </div>
 
+      {/* Monthly Mining Info */}
+      <div className="glass rounded-2xl p-4 border border-emerald/20 bg-emerald/5 no-print">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-emerald/20 flex items-center justify-center text-emerald">
+              <Sparkles className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-[11px] font-black text-emerald uppercase tracking-wider">মাসিক মাইনিং রেট</p>
+              <p className="text-lg font-black text-navy">
+                ৳{((data.mining as any)?.monthly_rate ?? 500)} / মাস
+              </p>
+            </div>
+          </div>
+          <div className="text-right">
+            <p className="text-[10px] font-bold text-muted-foreground">স্ট্যাটাস</p>
+            <p className={`text-xs font-black ${mining?.is_active ? "text-emerald" : "text-rose"}`}>
+              {mining?.is_active ? "সক্রিয়" : "নিষ্ক্রিয়"}
+            </p>
+          </div>
+        </div>
+      </div>
+
       <PasswordSelfChange />
 
 
