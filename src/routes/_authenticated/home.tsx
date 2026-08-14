@@ -1,13 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
-export const Route = createFileRoute("/_authenticated/home")({
-  component: HomePage,
-});
-
 import { NewsFeedPage } from "@/components/social/NewsFeedPage";
 import { useQuery } from "@tanstack/react-query";
 import { getAppStatus } from "@/lib/app-status.functions";
 import { MaintenanceScreen } from "@/components/MaintenanceGate";
 
+export const Route = createFileRoute("/_authenticated/home")({
+  component: HomePage,
+});
 
 function HomePage() {
   const { data: appStatus } = useQuery({
@@ -20,4 +19,5 @@ function HomePage() {
 
   return <NewsFeedPage />;
 }
+
 
