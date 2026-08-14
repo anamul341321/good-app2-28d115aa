@@ -194,7 +194,7 @@ export async function sendCancelCallPush(userId: string, callId: string) {
     title: "কল শেষ",
     body: "কলটি আর সক্রিয় নেই",
     call: true,
-    collapseKey: callId,
+    collapseKey: `cancel-${callId}`,
     data: { type: "cancel_call", call_id: callId },
   });
 }

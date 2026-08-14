@@ -48,6 +48,15 @@ export function ChatNotifier() {
             }
           },
         )
+        .on(
+          "postgres_changes",
+          { event: "UPDATE", schema: "public", table: "friend_messages", filter: `sender_id=eq.${me}` },
+          (payload: any) => {
+            const peerId = String(payload?.new?.receiver_id ?? "");
+            if (peerId) void qc.invalidateQueries({ queryKey: ["thread", peerId] });
+            void qc.invalidateQueries({ queryKey: ["chats"] });
+          },
+        )
         .subscribe();
     })();
 

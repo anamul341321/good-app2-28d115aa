@@ -62,11 +62,6 @@ public class IncomingCallActivity extends Activity {
         boolean video = getIntent().getBooleanExtra("video", false);
         if (callerName == null || callerName.isEmpty()) callerName = "Good-App user";
         SharedPreferences callState = getSharedPreferences("goodapp_calls", Context.MODE_PRIVATE);
-        if (callId != null && callId.equals(callState.getString("cancelled_" + callId, null))) {
-            callState.edit().remove("cancelled_" + callId).apply();
-            closeCall();
-            return;
-        }
         // The full-screen activity is the single incoming-call UI. Remove the
         // heads-up notification before starting the activity-owned ringtone.
         if (callId != null) {
@@ -78,6 +73,13 @@ public class IncomingCallActivity extends Activity {
             registerReceiver(cancelReceiver, cancelFilter, Context.RECEIVER_NOT_EXPORTED);
         } else {
             registerReceiver(cancelReceiver, cancelFilter);
+        }
+        // Register first, then synchronously re-check durable cancellation state.
+        // This closes the race where cancel FCM arrives between activity creation and
+        // dynamic receiver registration.
+        if (callId != null && callId.equals(callState.getString("cancelled_" + callId, null))) {
+            closeCall();
+            return;
         }
         String callAction = getIntent().getStringExtra("call_action");
         if ("answer".equals(callAction)) {
@@ -124,8 +126,12 @@ public class IncomingCallActivity extends Activity {
 
         decline.setOnClickListener(v -> declineCall());
         accept.setOnClickListener(v -> openCall());
+        if (callId != null && callId.equals(callState.getString("cancelled_" + callId, null))) {
+            closeCall();
+            return;
+        }
         startRinging();
-        timeoutHandler.postDelayed(timeout, 50_000L);
+        timeoutHandler.postDelayed(timeout, 35_000L);
     }
 
     private TextView text(String value, int size, int color) {
