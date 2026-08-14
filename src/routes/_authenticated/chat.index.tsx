@@ -58,7 +58,7 @@ function ChatListPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["chats"],
     queryFn: () => listChats(),
-    refetchInterval: 15_000,
+    refetchInterval: 6_000,
   });
   const friends = useQuery({ queryKey: ["friends"], queryFn: () => listFriends(), staleTime: 30_000 });
 
