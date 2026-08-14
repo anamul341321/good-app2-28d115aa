@@ -6,8 +6,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { listPosts } from "@/lib/news-feed.functions";
 import { MessengerNav } from "@/components/messenger/MessengerNav";
 import { MessengerAvatar } from "@/components/messenger/MessengerAvatar";
-import { Home, MessageSquare, Video, Settings, Camera, Sparkles } from "lucide-react";
-import { PostCard } from "@/components/social/PostCard";
+import { Home, MessageSquare, Video, Settings, Camera, Sparkles, Image as ImageIcon, Plus, Loader2 } from "lucide-react";
+import { PostCard } from "@/components/social/NewsFeedPage";
 import { Link } from "@tanstack/react-router";
 import { useLang } from "@/lib/i18n";
 import { getDashboard } from "@/lib/dashboard.functions";
@@ -40,8 +40,8 @@ function SocialProfilePage() {
     staleTime: 60_000,
   });
 
-  const { data: posts, isLoading: postsLoading } = useQuery({
-    queryKey: ["social-profile-posts", user?.id],
+  const { data: postsData, isLoading: postsLoading } = useQuery({
+    queryKey: ["posts"],
     queryFn: () => listPosts(),
     enabled: !!user,
   });
@@ -50,7 +50,8 @@ function SocialProfilePage() {
   if (!user) return null;
 
   // Filter posts for this user only
-  const myPosts = posts?.filter((p: any) => p.user_id === user.id) ?? [];
+  const posts = (postsData as any)?.posts ?? [];
+  const myPosts = posts.filter((p: any) => p.user_id === user.id) ?? [];
   const monthlyRate = (dashData?.mining as any)?.monthly_rate ?? 500;
 
   return (
@@ -78,7 +79,7 @@ function SocialProfilePage() {
             <div className="p-1 bg-white rounded-full shadow-xl">
               <MessengerAvatar 
                 name={user.user_metadata?.display_name || user.email?.split("@")[0] || "User"} 
-                size="2xl" 
+                size="xl" 
                 className="w-32 h-32 border-4 border-white"
               />
             </div>
@@ -155,6 +156,3 @@ function SocialProfilePage() {
     </div>
   );
 }
-
-// Re-using icons and missing imports
-import { Image as ImageIcon, Plus, Loader2 } from "lucide-react";
