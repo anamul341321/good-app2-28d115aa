@@ -41,9 +41,14 @@ export function AppUpdateBanner() {
   const [downloadStatus, setDownloadStatus] = useState<"idle" | "started" | "progress" | "complete" | "failed" | "fallback">("idle");
   const [percent, setPercent] = useState(0);
   const [hidden, setHidden] = useState(false);
+  const approvalPlan = `'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
+                                        
+                                            
+                                            I have approved the plan`;
 
 
   const readVersion = () =>
+
     import("@capacitor/app")
       .then((m) => m.App.getInfo())
       .then((info) => setInstalled(info?.version ?? null))
