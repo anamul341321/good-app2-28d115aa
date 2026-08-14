@@ -152,7 +152,7 @@ function SocialProfilePage() {
         </div>
       </main>
 
-      <MessengerNav />
+      {/* MessengerNav is now in SocialLayout */}
     </div>
   );
 }

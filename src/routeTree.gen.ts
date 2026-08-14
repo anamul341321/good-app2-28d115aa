@@ -36,6 +36,7 @@ import { Route as AdminBonusSettingsRouteImport } from './routes/admin/bonus-set
 import { Route as AdminAnnouncementsRouteImport } from './routes/admin/announcements'
 import { Route as AuthenticatedWithdrawRouteImport } from './routes/_authenticated/withdraw'
 import { Route as AuthenticatedWalletRouteImport } from './routes/_authenticated/wallet'
+import { Route as AuthenticatedSocialRouteImport } from './routes/_authenticated/social'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedSendRouteImport } from './routes/_authenticated/send'
 import { Route as AuthenticatedReverifyRouteImport } from './routes/_authenticated/reverify'
@@ -207,6 +208,11 @@ const AuthenticatedWalletRoute = AuthenticatedWalletRouteImport.update({
   path: '/wallet',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedSocialRoute = AuthenticatedSocialRouteImport.update({
+  id: '/social',
+  path: '/social',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -269,9 +275,9 @@ const AuthenticatedEarningsRoute = AuthenticatedEarningsRouteImport.update({
 } as any)
 const AuthenticatedSocialIndexRoute =
   AuthenticatedSocialIndexRouteImport.update({
-    id: '/social/',
-    path: '/social/',
-    getParentRoute: () => AuthenticatedRouteRoute,
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedSocialRoute,
   } as any)
 const AuthenticatedChatIndexRoute = AuthenticatedChatIndexRouteImport.update({
   id: '/chat/',
@@ -322,15 +328,15 @@ const AuthenticatedTaskSlotRoute = AuthenticatedTaskSlotRouteImport.update({
 } as any)
 const AuthenticatedSocialProfileRoute =
   AuthenticatedSocialProfileRouteImport.update({
-    id: '/social/profile',
-    path: '/social/profile',
-    getParentRoute: () => AuthenticatedRouteRoute,
+    id: '/profile',
+    path: '/profile',
+    getParentRoute: () => AuthenticatedSocialRoute,
   } as any)
 const AuthenticatedSocialMessengerRoute =
   AuthenticatedSocialMessengerRouteImport.update({
-    id: '/social/messenger',
-    path: '/social/messenger',
-    getParentRoute: () => AuthenticatedRouteRoute,
+    id: '/messenger',
+    path: '/messenger',
+    getParentRoute: () => AuthenticatedSocialRoute,
   } as any)
 const AuthenticatedChatPeerIdRoute = AuthenticatedChatPeerIdRouteImport.update({
   id: '/chat/$peerId',
@@ -418,6 +424,7 @@ export interface FileRoutesByFullPath {
   '/reverify': typeof AuthenticatedReverifyRoute
   '/send': typeof AuthenticatedSendRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/social': typeof AuthenticatedSocialRouteWithChildren
   '/wallet': typeof AuthenticatedWalletRoute
   '/withdraw': typeof AuthenticatedWithdrawRoute
   '/admin/announcements': typeof AdminAnnouncementsRoute
@@ -547,6 +554,7 @@ export interface FileRoutesById {
   '/_authenticated/reverify': typeof AuthenticatedReverifyRoute
   '/_authenticated/send': typeof AuthenticatedSendRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/social': typeof AuthenticatedSocialRouteWithChildren
   '/_authenticated/wallet': typeof AuthenticatedWalletRoute
   '/_authenticated/withdraw': typeof AuthenticatedWithdrawRoute
   '/admin/announcements': typeof AdminAnnouncementsRoute
@@ -613,6 +621,7 @@ export interface FileRouteTypes {
     | '/reverify'
     | '/send'
     | '/settings'
+    | '/social'
     | '/wallet'
     | '/withdraw'
     | '/admin/announcements'
@@ -741,6 +750,7 @@ export interface FileRouteTypes {
     | '/_authenticated/reverify'
     | '/_authenticated/send'
     | '/_authenticated/settings'
+    | '/_authenticated/social'
     | '/_authenticated/wallet'
     | '/_authenticated/withdraw'
     | '/admin/announcements'
@@ -1006,6 +1016,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWalletRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/social': {
+      id: '/_authenticated/social'
+      path: '/social'
+      fullPath: '/social'
+      preLoaderRoute: typeof AuthenticatedSocialRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/settings': {
       id: '/_authenticated/settings'
       path: '/settings'
@@ -1092,10 +1109,10 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/social/': {
       id: '/_authenticated/social/'
-      path: '/social'
+      path: '/'
       fullPath: '/social/'
       preLoaderRoute: typeof AuthenticatedSocialIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      parentRoute: typeof AuthenticatedSocialRoute
     }
     '/_authenticated/chat/': {
       id: '/_authenticated/chat/'
@@ -1162,17 +1179,17 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/social/profile': {
       id: '/_authenticated/social/profile'
-      path: '/social/profile'
+      path: '/profile'
       fullPath: '/social/profile'
       preLoaderRoute: typeof AuthenticatedSocialProfileRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      parentRoute: typeof AuthenticatedSocialRoute
     }
     '/_authenticated/social/messenger': {
       id: '/_authenticated/social/messenger'
-      path: '/social/messenger'
+      path: '/messenger'
       fullPath: '/social/messenger'
       preLoaderRoute: typeof AuthenticatedSocialMessengerRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      parentRoute: typeof AuthenticatedSocialRoute
     }
     '/_authenticated/chat/$peerId': {
       id: '/_authenticated/chat/$peerId'
@@ -1261,6 +1278,21 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedSocialRouteChildren {
+  AuthenticatedSocialMessengerRoute: typeof AuthenticatedSocialMessengerRoute
+  AuthenticatedSocialProfileRoute: typeof AuthenticatedSocialProfileRoute
+  AuthenticatedSocialIndexRoute: typeof AuthenticatedSocialIndexRoute
+}
+
+const AuthenticatedSocialRouteChildren: AuthenticatedSocialRouteChildren = {
+  AuthenticatedSocialMessengerRoute: AuthenticatedSocialMessengerRoute,
+  AuthenticatedSocialProfileRoute: AuthenticatedSocialProfileRoute,
+  AuthenticatedSocialIndexRoute: AuthenticatedSocialIndexRoute,
+}
+
+const AuthenticatedSocialRouteWithChildren =
+  AuthenticatedSocialRoute._addFileChildren(AuthenticatedSocialRouteChildren)
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedEarningsRoute: typeof AuthenticatedEarningsRoute
   AuthenticatedFriendsRoute: typeof AuthenticatedFriendsRoute
@@ -1274,14 +1306,12 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedReverifyRoute: typeof AuthenticatedReverifyRoute
   AuthenticatedSendRoute: typeof AuthenticatedSendRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedSocialRoute: typeof AuthenticatedSocialRouteWithChildren
   AuthenticatedWalletRoute: typeof AuthenticatedWalletRoute
   AuthenticatedWithdrawRoute: typeof AuthenticatedWithdrawRoute
   AuthenticatedChatPeerIdRoute: typeof AuthenticatedChatPeerIdRoute
-  AuthenticatedSocialMessengerRoute: typeof AuthenticatedSocialMessengerRoute
-  AuthenticatedSocialProfileRoute: typeof AuthenticatedSocialProfileRoute
   AuthenticatedTaskSlotRoute: typeof AuthenticatedTaskSlotRoute
   AuthenticatedChatIndexRoute: typeof AuthenticatedChatIndexRoute
-  AuthenticatedSocialIndexRoute: typeof AuthenticatedSocialIndexRoute
   AuthenticatedChatGroupGroupIdRoute: typeof AuthenticatedChatGroupGroupIdRoute
 }
 
@@ -1298,14 +1328,12 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedReverifyRoute: AuthenticatedReverifyRoute,
   AuthenticatedSendRoute: AuthenticatedSendRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedSocialRoute: AuthenticatedSocialRouteWithChildren,
   AuthenticatedWalletRoute: AuthenticatedWalletRoute,
   AuthenticatedWithdrawRoute: AuthenticatedWithdrawRoute,
   AuthenticatedChatPeerIdRoute: AuthenticatedChatPeerIdRoute,
-  AuthenticatedSocialMessengerRoute: AuthenticatedSocialMessengerRoute,
-  AuthenticatedSocialProfileRoute: AuthenticatedSocialProfileRoute,
   AuthenticatedTaskSlotRoute: AuthenticatedTaskSlotRoute,
   AuthenticatedChatIndexRoute: AuthenticatedChatIndexRoute,
-  AuthenticatedSocialIndexRoute: AuthenticatedSocialIndexRoute,
   AuthenticatedChatGroupGroupIdRoute: AuthenticatedChatGroupGroupIdRoute,
 }
 

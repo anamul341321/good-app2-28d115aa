@@ -145,8 +145,5 @@ export function ChatListPage() {
         )}
       </main>
 
-      {/* Messenger Navigation */}
-      <MessengerNav unreadCount={data?.unreadTotal} />
-    </div>
   );
 }
