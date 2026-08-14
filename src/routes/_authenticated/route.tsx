@@ -215,12 +215,13 @@ function AuthedLayout() {
                 <div className="grid grid-cols-2 gap-2 py-2">
                   <BigMenuLink to="/settings" icon={<Settings className="h-6 w-6" />} label={t("সেটিংস", "Settings")} tone="text-gold" />
                   <BigMenuLink to="/profile" icon={<User className="h-6 w-6" />} label={t("প্রোফাইল", "Profile")} tone="text-cyan" />
+                  <BigMenuLink to="/home" icon={<ScrollText className="h-6 w-6" />} label={t("নিউজ ফিড", "News Feed")} tone="text-blue-500" />
                   <BigMenuLink to="/chat" icon={<PhoneCall className="h-6 w-6" />} label={t("মেসেজ ও কল", "Chat & calls")} tone="text-emerald-400" />
                   <BigMenuLink to="/earnings" icon={<FileText className="h-6 w-6" />} label={t("আয়ের হিসাব", "Earnings")} tone="text-emerald-400" />
                   <BigMenuLink to="/kyc" icon={<ShieldCheck className="h-6 w-6" />} label={t("কেওয়াইসি", "KYC")} tone="text-violet-400" />
                   <BigMenuLink to="/friends" icon={<Users className="h-6 w-6" />} label={t("বন্ধু", "Friends")} tone="text-cyan" />
                   <BigMenuLink to="/privacy" icon={<Lock className="h-6 w-6" />} label={t("প্রাইভেসি", "Privacy")} tone="text-cyan" />
-                  <BigMenuLink to="/terms" icon={<ScrollText className="h-6 w-6" />} label={t("শর্তাবলি", "Terms")} tone="text-amber" />
+                  <BigMenuLink to="/reverify" search={{ taskId: undefined }} icon={<RefreshCcw className="h-6 w-6" />} label={t("রি-ভেরিফাই", "Re-verify")} tone="text-violet-400" />
                 </div>
 
                 <DropdownMenuSeparator className="bg-gold/20" />
@@ -243,7 +244,7 @@ function AuthedLayout() {
       <nav className="fixed bottom-0 inset-x-0 z-30 glass border-t border-violet/20">
         <div className="max-w-md mx-auto px-1.5 py-2 grid grid-cols-6 gap-0.5">
           <NavItem to="/home" icon={<Home className="w-5 h-5" />} label={t("হোম", "Home")} tint="cyan" voice="home.welcome" />
-          <div data-tour="nav-reverify"><NavItem to="/reverify" icon={<RefreshCcw className="w-5 h-5" />} label={t("রি-ভেরিফাই", "Re-verify")} tint="violet" voice="reverify.intro" /></div>
+          <div data-tour="nav-reverify"><NavItem to="/reverify" search={{ taskId: undefined }} icon={<RefreshCcw className="w-5 h-5" />} label={t("রি-ভেরিফাই", "Re-verify")} tint="violet" voice="reverify.intro" /></div>
           <NavItem to="/referral" icon={<Users className="w-5 h-5" />} label={t("রেফার", "Refer")} tint="violet" />
           <NavItem to="/menu" icon={<LayoutGrid className="w-5 h-5" />} label={t("মেনু", "Menu")} tint="emerald" />
           <div data-tour="nav-wallet"><NavItem to="/wallet" icon={<Wallet className="w-5 h-5" />} label={t("ওয়ালেট", "Wallet")} tint="amber" voice="wallet.intro" /></div>
@@ -269,11 +270,13 @@ function AuthedLayout() {
 }
 
 /** মেনুর বড় বড় সুন্দর টাইল — সহজে ট্যাপ করা যায় */
-function BigMenuLink({ to, icon, label, tone }: { to: string; icon: React.ReactNode; label: string; tone: string }) {
+function BigMenuLink({ to, icon, label, tone, search }: { to: string; icon: React.ReactNode; label: string; tone: string; search?: any }) {
   return (
     <DropdownMenuItem asChild className="p-0 focus:bg-transparent">
       <Link
-        to={to}
+        to={to as any}
+        search={search}
+
         className="btn-press flex h-[5.5rem] w-full flex-col items-center justify-center gap-1.5 rounded-2xl bg-surface-2/80 border border-white/10 px-2 text-center active:scale-95">
         <span className={`grid h-11 w-11 place-items-center rounded-xl bg-white/10 ${tone}`}>{icon}</span>
         <span className="text-[12px] font-black leading-tight">{label}</span>
@@ -296,9 +299,9 @@ function ProfileButton() {
   );
 }
 
-function NavItem({ to, icon, label, tint, voice }: { to: string; icon: React.ReactNode; label: string; tint: "cyan"|"violet"|"emerald"|"amber"|"rose"; voice?: string }) {
+function NavItem({ to, icon, label, tint, voice, search }: { to: string; icon: React.ReactNode; label: string; tint: "cyan"|"violet"|"emerald"|"amber"|"rose"; voice?: string; search?: any }) {
   return (
-    <Link to={to as any} data-voice={voice}
+    <Link to={to as any} data-voice={voice} search={search}
       activeProps={{ className: `nav-item-active nav-tint-${tint}` }}
       inactiveProps={{ className: `nav-tint-${tint} opacity-70` }}
       className="nav-item relative flex flex-col items-center gap-0.5 py-2 rounded-xl text-[10px] font-black">

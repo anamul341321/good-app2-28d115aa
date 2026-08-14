@@ -19,7 +19,6 @@ export const listPosts = createServerFn({ method: "GET" })
 
     if (error) throw new Error(error.message);
 
-    // Map counts and signed URLs would happen here or in a helper
     return { posts: data ?? [] };
   });
 
@@ -97,6 +96,5 @@ export const addComment = createServerFn({ method: "POST" })
 
     if (error) throw new Error(error.message);
 
-    // Notify post owner or parent comment owner
     return { ok: true };
   });
