@@ -145,5 +145,6 @@ export function ChatListPage() {
         )}
       </main>
 
+    </div>
   );
 }
