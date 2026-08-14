@@ -940,16 +940,14 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
                   <SwitchCamera className="h-5 w-5" />
                 </CallCtl>
               )}
-              <CallCtl active={sharing} onClick={() => void toggleShare()} label="স্ক্রিন">
-                {sharing ? <MonitorOff className="h-5 w-5" /> : <MonitorUp className="h-5 w-5" />}
-              </CallCtl>
-              <button
-                onClick={hangUp}
-                className="btn-press grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[#ff3b30] text-white shadow-[0_10px_24px_-10px_rgba(255,59,48,0.95)]"
-                aria-label="কল কাটুন"
-              >
+              {withVideo && (
+                <CallCtl active={sharing} onClick={() => void toggleShare()} label="শেয়ার">
+                  {sharing ? <MonitorOff className="h-5 w-5 text-emerald-400" /> : <MonitorUp className="h-5 w-5" />}
+                </CallCtl>
+              )}
+              <CallCtl active={false} onClick={hangUp} label="কেটে দিন" className="bg-[#ff3b30] hover:bg-[#ff3b30]/90">
                 <PhoneOff className="h-5 w-5" />
-              </button>
+              </CallCtl>
             </div>
           </div>
         </div>
