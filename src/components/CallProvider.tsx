@@ -87,10 +87,12 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   const [muted, setMuted] = useState(false);
   const [camOff, setCamOff] = useState(false);
   const [sharing, setSharing] = useState(false);
+  const [quality, setQuality] = useState<"good" | "poor" | "reconnecting">("good");
   const [seconds, setSeconds] = useState(0);
   const [callSessionId, setCallSessionId] = useState<string | null>(null);
   const facing = useRef<"user" | "environment">("user");
   const camTrack = useRef<MediaStreamTrack | null>(null);
+  const shareTrack = useRef<MediaStreamTrack | null>(null);
   const shareStream = useRef<MediaStream | null>(null);
   const ring = useRef<{ stop: () => void } | null>(null);
 
@@ -170,6 +172,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     setMuted(false);
     setCamOff(false);
     setSharing(false);
+    setQuality("good");
     setSeconds(0);
     try {
       (window as any).GoodAppDownloader?.endCall?.();
@@ -299,6 +302,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         if (pc.connectionState === "disconnected" || pc.connectionState === "failed") {
           if (reconnectTimer.current || reconnecting.current) return;
           reconnecting.current = true;
+          setQuality("reconnecting");
           toast("সংযোগ দুর্বল — আবার জোড়া লাগানো হচ্ছে…");
           try {
             pc.restartIce();
@@ -332,6 +336,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       pc.oniceconnectionstatechange = () => {
         if (pc.iceConnectionState === "connected" || pc.iceConnectionState === "completed") {
           reconnecting.current = false;
+          setQuality("good");
         }
       };
 
@@ -454,6 +459,68 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       setState("ringing");
     });
   }, [myId, state]);
+
+  // Screen share bridge events
+  useEffect(() => {
+    const onReady = async () => {
+      if (!pcRef.current || sharing) return;
+      try {
+        const stream = await navigator.mediaDevices.getDisplayMedia({
+          video: true,
+          audio: true,
+        });
+        shareStream.current = stream;
+        const track = stream.getVideoTracks()[0];
+        shareTrack.current = track;
+        
+        const sender = pcRef.current.getSenders().find(s => s.track?.kind === "video");
+        if (sender) {
+          await sender.replaceTrack(track);
+        }
+        
+        setSharing(true);
+        track.onended = () => stopSharing();
+      } catch (err) {
+        toast.error("স্ক্রিন শেয়ার শুরু করা যায়নি");
+      }
+    };
+    
+    const onSwitch = () => {
+      facing.current = facing.current === "user" ? "environment" : "user";
+      if (camTrack.current && !sharing) {
+        const constraints = {
+          facingMode: facing.current,
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        };
+        camTrack.current.applyConstraints(constraints).catch(() => {});
+      }
+    };
+
+    window.addEventListener("goodapp-screen-share-ready", onReady);
+    window.addEventListener("goodapp-switch-camera", onSwitch);
+    return () => {
+      window.removeEventListener("goodapp-screen-share-ready", onReady);
+      window.removeEventListener("goodapp-switch-camera", onSwitch);
+    };
+  }, [sharing]);
+
+  const stopSharing = useCallback(async () => {
+    if (!pcRef.current || !sharing) return;
+    try {
+      shareTrack.current?.stop();
+      shareStream.current?.getTracks().forEach(t => t.stop());
+      
+      const sender = pcRef.current.getSenders().find(s => s.track?.kind === "video");
+      if (sender && camTrack.current) {
+        await sender.replaceTrack(camTrack.current);
+      }
+      
+      setSharing(false);
+      shareTrack.current = null;
+      shareStream.current = null;
+    } catch {}
+  }, [sharing]);
 
   useEffect(() => {
     if (state !== "ringing") return;
