@@ -25,7 +25,7 @@ import {
 import { playIncomingRing, playRingback } from "@/lib/ringtone";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyCallIdentity } from "@/lib/friends.functions";
-import { createCall, getCall, updateCall } from "@/lib/calls.functions";
+import { createCall, getCall, ringCall, updateCall } from "@/lib/calls.functions";
 
 type Signal =
   | { kind: "offer"; from: string; fromName: string; video: boolean; sdp: any; callId?: string }
@@ -381,7 +381,6 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         const offer = await pc.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: video });
         await pc.setLocalDescription(offer);
         makingOffer.current = false;
-        await waitForIce(pc);
         const finalOffer = pc.localDescription?.toJSON() ?? offer;
         const created = await createCall({ data: { peerId, video, offer: finalOffer } });
         currentCallId.current = created.callId;
@@ -394,6 +393,9 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
           sdp: finalOffer,
           callId: created.callId,
         });
+         // Realtime starts the call immediately; FCM independently wakes the native
+         // Android full-screen receiver when the app is backgrounded or closed.
+         void ringCall({ data: { callId: created.callId } }).catch(() => {});
       } catch (e) {
         makingOffer.current = false;
         toast.error("মাইক/ক্যামেরার অনুমতি দিন");
@@ -405,7 +407,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         cleanup();
       }
     },
-    [buildPeer, cleanup, myId, myName, sendTo, state, waitForIce],
+    [buildPeer, cleanup, myId, myName, sendTo, state],
   );
 
   const acceptCall = useCallback(async () => {
