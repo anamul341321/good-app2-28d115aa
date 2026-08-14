@@ -272,12 +272,19 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       stream.getTracks().forEach((t) => pc.addTrack(t, stream));
       const remote = new MediaStream();
       pc.ontrack = (e) => {
-        e.streams[0]?.getTracks().forEach((t) => remote.addTrack(t));
-        attachRemote(e.streams[0] ?? remote);
+        const tracks = e.streams[0]?.getTracks() ?? [e.track];
+        tracks.forEach((track) => {
+          if (!remote.getTracks().some((existing) => existing.id === track.id)) remote.addTrack(track);
+        });
+        attachRemote(remote);
       };
       pc.onicecandidate = (e) => {
         if (e.candidate)
-          void sendTo(peerId, { kind: "ice", from: myId ?? "", candidate: e.candidate });
+          void sendTo(peerId, {
+            kind: "ice",
+            from: myId ?? "",
+            candidate: e.candidate.toJSON(),
+          });
       };
       pc.onconnectionstatechange = () => {
         if (pc.connectionState === "connected") {
