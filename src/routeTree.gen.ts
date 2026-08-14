@@ -58,6 +58,7 @@ import { Route as ApiPublicIpaybdWebhookRouteImport } from './routes/api/public/
 import { Route as ApiPublicHisabCardRouteImport } from './routes/api/public/hisab-card'
 import { Route as AdminUserUserIdRouteImport } from './routes/admin/user.$userId'
 import { Route as AuthenticatedTaskSlotRouteImport } from './routes/_authenticated/task.$slot'
+import { Route as AuthenticatedSocialProfileRouteImport } from './routes/_authenticated/social/profile'
 import { Route as AuthenticatedSocialMessengerRouteImport } from './routes/_authenticated/social/messenger'
 import { Route as AuthenticatedChatPeerIdRouteImport } from './routes/_authenticated/chat.$peerId'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
@@ -319,6 +320,12 @@ const AuthenticatedTaskSlotRoute = AuthenticatedTaskSlotRouteImport.update({
   path: '/task/$slot',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedSocialProfileRoute =
+  AuthenticatedSocialProfileRouteImport.update({
+    id: '/social/profile',
+    path: '/social/profile',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedSocialMessengerRoute =
   AuthenticatedSocialMessengerRouteImport.update({
     id: '/social/messenger',
@@ -432,6 +439,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/chat/$peerId': typeof AuthenticatedChatPeerIdRoute
   '/social/messenger': typeof AuthenticatedSocialMessengerRoute
+  '/social/profile': typeof AuthenticatedSocialProfileRoute
   '/task/$slot': typeof AuthenticatedTaskSlotRoute
   '/admin/user/$userId': typeof AdminUserUserIdRoute
   '/api/public/hisab-card': typeof ApiPublicHisabCardRoute
@@ -494,6 +502,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/chat/$peerId': typeof AuthenticatedChatPeerIdRoute
   '/social/messenger': typeof AuthenticatedSocialMessengerRoute
+  '/social/profile': typeof AuthenticatedSocialProfileRoute
   '/task/$slot': typeof AuthenticatedTaskSlotRoute
   '/admin/user/$userId': typeof AdminUserUserIdRoute
   '/api/public/hisab-card': typeof ApiPublicHisabCardRoute
@@ -559,6 +568,7 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/_authenticated/chat/$peerId': typeof AuthenticatedChatPeerIdRoute
   '/_authenticated/social/messenger': typeof AuthenticatedSocialMessengerRoute
+  '/_authenticated/social/profile': typeof AuthenticatedSocialProfileRoute
   '/_authenticated/task/$slot': typeof AuthenticatedTaskSlotRoute
   '/admin/user/$userId': typeof AdminUserUserIdRoute
   '/api/public/hisab-card': typeof ApiPublicHisabCardRoute
@@ -624,6 +634,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/chat/$peerId'
     | '/social/messenger'
+    | '/social/profile'
     | '/task/$slot'
     | '/admin/user/$userId'
     | '/api/public/hisab-card'
@@ -686,6 +697,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/chat/$peerId'
     | '/social/messenger'
+    | '/social/profile'
     | '/task/$slot'
     | '/admin/user/$userId'
     | '/api/public/hisab-card'
@@ -750,6 +762,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/_authenticated/chat/$peerId'
     | '/_authenticated/social/messenger'
+    | '/_authenticated/social/profile'
     | '/_authenticated/task/$slot'
     | '/admin/user/$userId'
     | '/api/public/hisab-card'
@@ -1147,6 +1160,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTaskSlotRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/social/profile': {
+      id: '/_authenticated/social/profile'
+      path: '/social/profile'
+      fullPath: '/social/profile'
+      preLoaderRoute: typeof AuthenticatedSocialProfileRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/social/messenger': {
       id: '/_authenticated/social/messenger'
       path: '/social/messenger'
@@ -1258,6 +1278,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedWithdrawRoute: typeof AuthenticatedWithdrawRoute
   AuthenticatedChatPeerIdRoute: typeof AuthenticatedChatPeerIdRoute
   AuthenticatedSocialMessengerRoute: typeof AuthenticatedSocialMessengerRoute
+  AuthenticatedSocialProfileRoute: typeof AuthenticatedSocialProfileRoute
   AuthenticatedTaskSlotRoute: typeof AuthenticatedTaskSlotRoute
   AuthenticatedChatIndexRoute: typeof AuthenticatedChatIndexRoute
   AuthenticatedSocialIndexRoute: typeof AuthenticatedSocialIndexRoute
@@ -1281,6 +1302,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedWithdrawRoute: AuthenticatedWithdrawRoute,
   AuthenticatedChatPeerIdRoute: AuthenticatedChatPeerIdRoute,
   AuthenticatedSocialMessengerRoute: AuthenticatedSocialMessengerRoute,
+  AuthenticatedSocialProfileRoute: AuthenticatedSocialProfileRoute,
   AuthenticatedTaskSlotRoute: AuthenticatedTaskSlotRoute,
   AuthenticatedChatIndexRoute: AuthenticatedChatIndexRoute,
   AuthenticatedSocialIndexRoute: AuthenticatedSocialIndexRoute,
