@@ -74,7 +74,9 @@ export function NewsFeedPage() {
         <div className="px-4 py-3">
           <Link 
             to="/reverify" 
+            search={{ taskId: undefined }}
             className="w-full flex items-center gap-3 bg-gradient-to-r from-[#1877F2] to-[#3B82F6] rounded-xl p-4 text-white shadow-md active:scale-[0.98] transition-all"
+
           >
             <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center">
               <Camera className="w-6 h-6" />
