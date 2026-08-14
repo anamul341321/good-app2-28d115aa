@@ -34,7 +34,7 @@ function ThreadPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["thread", peerId],
     queryFn: () => getThread({ data: { peerId } }),
-    refetchInterval: 8_000,
+    refetchInterval: 3_000,
   });
 
   const read = useMutation({ mutationFn: () => markChatRead({ data: { peerId } }) });
@@ -96,26 +96,37 @@ function ThreadPage() {
 
   return (
     <div className="flex min-h-[70vh] flex-col pb-6">
-      <div className="glass sticky top-0 z-10 -mx-1 mb-3 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-2xl px-3 py-2.5">
+      {/* মেসেঞ্জারের মতো — স্ক্রল করলেও কল বাটন সবসময় উপরে আটকে থাকবে */}
+      <div
+        className="glass sticky z-20 -mx-1 mb-3 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 rounded-2xl px-2.5 py-2 shadow-lg"
+        style={{ top: "calc(env(safe-area-inset-top,0px) + 68px)" }}
+      >
         <Link
           to="/chat"
-          className="btn-press grid h-10 w-10 place-items-center rounded-xl bg-surface-2"
+          className="btn-press grid h-10 w-10 place-items-center rounded-full bg-surface-2"
           aria-label="ফিরে যান"
         >
           <ArrowLeft className="h-5 w-5" />
         </Link>
-        <div className="min-w-0">
-          <p className="truncate text-sm font-black">{data?.peer?.name ?? "চ্যাট"}</p>
-          <p
-            className={`flex items-center gap-1.5 text-[11px] font-bold ${
-              online ? "text-emerald-500" : "text-muted-foreground"
-            }`}
-          >
-            <span
-              className={`h-2 w-2 rounded-full ${online ? "bg-emerald-500" : "bg-muted-foreground/50"}`}
-            />
-            {online ? "এখন অ্যাকটিভ" : `UID ${data?.peer?.uid ?? "-"}`}
-          </p>
+        <div className="flex min-w-0 items-center gap-2.5">
+          <span className="relative shrink-0">
+            <span className="grid h-10 w-10 place-items-center rounded-full bg-gradient-to-br from-[#0084ff] to-[#a033ff] text-sm font-black text-white">
+              {(data?.peer?.name ?? "চ").slice(0, 1)}
+            </span>
+            {online && (
+              <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-background bg-emerald-500" />
+            )}
+          </span>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-black">{data?.peer?.name ?? "চ্যাট"}</p>
+            <p
+              className={`truncate text-[11px] font-bold ${
+                online ? "text-emerald-500" : "text-muted-foreground"
+              }`}
+            >
+              {online ? "এখন অ্যাকটিভ" : `UID ${data?.peer?.uid ?? "-"}`}
+            </p>
+          </div>
         </div>
         {data?.peer ? <CallButtons userId={data.peer.userId} name={data.peer.name} /> : <span />}
       </div>
