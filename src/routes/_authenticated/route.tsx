@@ -270,11 +270,13 @@ function AuthedLayout() {
 }
 
 /** মেনুর বড় বড় সুন্দর টাইল — সহজে ট্যাপ করা যায় */
-function BigMenuLink({ to, icon, label, tone }: { to: string; icon: React.ReactNode; label: string; tone: string }) {
+function BigMenuLink({ to, icon, label, tone, search }: { to: string; icon: React.ReactNode; label: string; tone: string; search?: any }) {
   return (
     <DropdownMenuItem asChild className="p-0 focus:bg-transparent">
       <Link
-        to={to}
+        to={to as any}
+        search={search}
+
         className="btn-press flex h-[5.5rem] w-full flex-col items-center justify-center gap-1.5 rounded-2xl bg-surface-2/80 border border-white/10 px-2 text-center active:scale-95">
         <span className={`grid h-11 w-11 place-items-center rounded-xl bg-white/10 ${tone}`}>{icon}</span>
         <span className="text-[12px] font-black leading-tight">{label}</span>
@@ -297,9 +299,9 @@ function ProfileButton() {
   );
 }
 
-function NavItem({ to, icon, label, tint, voice }: { to: string; icon: React.ReactNode; label: string; tint: "cyan"|"violet"|"emerald"|"amber"|"rose"; voice?: string }) {
+function NavItem({ to, icon, label, tint, voice, search }: { to: string; icon: React.ReactNode; label: string; tint: "cyan"|"violet"|"emerald"|"amber"|"rose"; voice?: string; search?: any }) {
   return (
-    <Link to={to as any} data-voice={voice}
+    <Link to={to as any} data-voice={voice} search={search}
       activeProps={{ className: `nav-item-active nav-tint-${tint}` }}
       inactiveProps={{ className: `nav-tint-${tint} opacity-70` }}
       className="nav-item relative flex flex-col items-center gap-0.5 py-2 rounded-xl text-[10px] font-black">
