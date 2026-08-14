@@ -11,37 +11,28 @@ import {
   removeFriend,
 } from "@/lib/friends.functions";
 import { CallButtons } from "@/components/CallProvider";
+import { MessengerAvatar } from "@/components/messenger/MessengerAvatar";
+import { MessengerNav } from "@/components/messenger/MessengerNav";
+import { usePresence } from "@/lib/presence";
 
 export const Route = createFileRoute("/_authenticated/friends")({
   component: FriendsPage,
   head: () => ({
     meta: [
-      { title: "বন্ধু ও কল — good-app" },
+      { title: "People — good-app" },
       {
         name: "description",
-        content: "good-app-এ বন্ধু যোগ করুন এবং অ্যাপের ভেতরেই ফ্রি অডিও ও ভিডিও কলে কথা বলুন।",
+        content: "Messenger-style People section.",
       },
-      { property: "og:title", content: "বন্ধু ও কল — good-app" },
-      {
-        property: "og:description",
-        content: "ফ্রেন্ড রিকোয়েস্ট পাঠান, অ্যাকসেপ্ট হলেই ফ্রি অডিও/ভিডিও কল।",
-      },
+      { property: "og:title", content: "People — good-app" },
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
     ],
   }),
 });
 
-function Avatar({ name }: { name: string }) {
-  return (
-    <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-gradient-to-br from-cyan-500 to-violet-600 text-sm font-black text-white">
-      {name.slice(0, 1)}
-    </div>
-  );
-}
-
 function FriendsPage() {
   const [q, setQ] = useState("");
+  const onlineIds = usePresence();
   const { data, refetch, isLoading } = useQuery({
     queryKey: ["friends"],
     queryFn: () => listFriends(),
@@ -71,163 +62,128 @@ function FriendsPage() {
   const found = (search.data as any)?.people ?? [];
 
   return (
-    <div className="space-y-4 pb-8 pt-1">
-      <div className="text-center">
-        <h1 className="text-lg font-black text-navy">বন্ধু ও কল</h1>
-        <p className="text-[11px] font-bold text-muted-foreground">
-          বন্ধু যোগ করুন — অ্যাকসেপ্ট হলেই ফ্রি অডিও/ভিডিও কল
-        </p>
-      </div>
-
-      <div className="glass rounded-2xl p-3">
-        <div className="flex items-center gap-2">
-          <div className="flex flex-1 items-center gap-2 rounded-xl bg-surface-2 px-3 py-2.5">
-            <Search className="h-4 w-4 text-muted-foreground" />
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && q.trim()) search.mutate(q.trim());
-              }}
-              placeholder="UID নম্বর বা নাম লিখুন"
-              className="w-full bg-transparent text-sm font-bold outline-none"
-            />
-          </div>
-          <button
-            onClick={() => q.trim() && search.mutate(q.trim())}
-
-            className="gradient-cta btn-press rounded-xl px-4 py-2.5 text-xs font-black text-white"
-          >
-            খুঁজুন
-          </button>
+    <div className="flex flex-col min-h-screen bg-background pb-20">
+      {/* Messenger-style Header */}
+      <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md px-4 py-3 flex flex-col gap-3">
+        <h1 className="text-2xl font-black text-foreground tracking-tight">People</h1>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && q.trim()) search.mutate(q.trim());
+            }}
+            placeholder="Search by UID or Name"
+            className="w-full h-10 bg-surface-2 rounded-full pl-10 pr-4 text-sm font-bold focus:outline-none transition-shadow"
+          />
         </div>
+      </header>
 
+      <main className="flex-1 px-4 py-2 space-y-6">
+        {/* Search Results */}
         {search.isPending && (
-          <p className="mt-3 flex items-center gap-2 text-xs font-bold text-muted-foreground">
-            <Loader2 className="h-3.5 w-3.5 animate-spin" /> খোঁজা হচ্ছে…
-          </p>
-        )}
-        {!search.isPending && search.isSuccess && found.length === 0 && (
-          <p className="mt-3 text-xs font-bold text-muted-foreground">কাউকে পাওয়া যায়নি</p>
+          <div className="flex justify-center py-4">
+            <Loader2 className="h-5 w-5 animate-spin text-primary" />
+          </div>
         )}
         {found.length > 0 && (
-          <div className="mt-3 space-y-2">
-            {found.map((p: any) => (
-              <div key={p.id} className="flex items-center gap-3 rounded-xl bg-surface-2 p-2.5">
-                <Avatar name={p.display_name ?? "ইউজার"} />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-black">{p.display_name ?? "ইউজার"}</p>
-                  <p className="text-[11px] font-bold text-muted-foreground">UID {p.uid_seq ?? "-"}</p>
+          <div className="space-y-4">
+            <h2 className="text-xs font-black uppercase text-muted-foreground tracking-wider pl-1">Search Results</h2>
+            <div className="space-y-1">
+              {found.map((p: any) => (
+                <div key={p.id} className="flex items-center gap-3 py-2">
+                  <MessengerAvatar name={p.display_name ?? "User"} online={onlineIds.has(p.id)} size="lg" />
+                  <div className="flex-1 min-w-0">
+                    <p className="truncate text-sm font-black">{p.display_name ?? "User"}</p>
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase">UID {p.uid_seq ?? "-"}</p>
+                  </div>
+                  <button
+                    onClick={() => add.mutate(p.id)}
+                    className="btn-press flex items-center gap-1.5 rounded-full bg-surface-2 px-4 py-2 text-[11px] font-black text-foreground"
+                  >
+                    <UserPlus className="h-3.5 w-3.5" /> Add
+                  </button>
                 </div>
-                <button
-                  onClick={() => add.mutate(p.id)}
-                  className="btn-press flex items-center gap-1.5 rounded-xl bg-violet-500/15 px-3 py-2 text-[11px] font-black text-violet-500"
-                >
-                  <UserPlus className="h-3.5 w-3.5" /> যোগ করুন
-                </button>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         )}
-      </div>
 
-      {(data?.incoming?.length ?? 0) > 0 && (
-        <div className="glass rounded-2xl p-3">
-          <p className="mb-2 text-xs font-black text-amber">আসা রিকোয়েস্ট</p>
-          <div className="space-y-2">
-            {data!.incoming.map((r) => (
-              <div key={r.linkId} className="flex items-center gap-3 rounded-xl bg-surface-2 p-2.5">
-                <Avatar name={r.name} />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-black">{r.name}</p>
-                  <p className="text-[11px] font-bold text-muted-foreground">UID {r.uid ?? "-"}</p>
+        {/* Incoming Requests */}
+        {(data?.incoming?.length ?? 0) > 0 && (
+          <div className="space-y-4">
+            <h2 className="text-xs font-black uppercase text-muted-foreground tracking-wider pl-1">Friend Requests</h2>
+            <div className="space-y-3">
+              {data!.incoming.map((r) => (
+                <div key={r.linkId} className="flex items-center gap-3">
+                  <MessengerAvatar name={r.name} size="lg" />
+                  <div className="flex-1 min-w-0">
+                    <p className="truncate text-sm font-black">{r.name}</p>
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase">Wants to be friends</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => respond.mutate({ linkId: r.linkId, accept: true })}
+                      className="btn-press px-4 py-2 rounded-full bg-primary text-white text-[11px] font-black"
+                    >
+                      Confirm
+                    </button>
+                    <button
+                      onClick={() => respond.mutate({ linkId: r.linkId, accept: false })}
+                      className="btn-press px-4 py-2 rounded-full bg-surface-2 text-foreground text-[11px] font-black"
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </div>
-                <button
-                  onClick={() => respond.mutate({ linkId: r.linkId, accept: true })}
-                  className="btn-press grid h-10 w-10 place-items-center rounded-xl bg-emerald-500/15 text-emerald-500"
-                  aria-label="গ্রহণ"
-                >
-                  <Check className="h-4 w-4" />
-                </button>
-                <button
-                  onClick={() => respond.mutate({ linkId: r.linkId, accept: false })}
-                  className="btn-press grid h-10 w-10 place-items-center rounded-xl bg-rose-500/15 text-rose-500"
-                  aria-label="বাতিল"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div className="glass rounded-2xl p-3">
-        <p className="mb-2 flex items-center gap-1.5 text-xs font-black text-cyan">
-          <Users className="h-4 w-4" /> আমার বন্ধু ({data?.friends?.length ?? 0})
-        </p>
-        {isLoading ? (
-          <p className="text-xs font-bold text-muted-foreground">লোড হচ্ছে…</p>
-        ) : (data?.friends?.length ?? 0) === 0 ? (
-          <div className="rounded-xl bg-surface-2 p-4 text-center">
-            <PhoneCall className="mx-auto mb-2 h-5 w-5 text-muted-foreground" />
-            <p className="text-xs font-bold text-muted-foreground">
-              এখনো কোনো বন্ধু নেই — উপরে UID/নাম দিয়ে খুঁজে রিকোয়েস্ট পাঠান
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {data!.friends.map((f) => (
-              <div key={f.linkId} className="flex items-center gap-3 rounded-xl bg-surface-2 p-2.5">
-                <Avatar name={f.name} />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-black">{f.name}</p>
-                  <p className="text-[11px] font-bold text-muted-foreground">UID {f.uid ?? "-"}</p>
-                </div>
-                <Link
-                  to="/chat/$peerId"
-                  params={{ peerId: f.userId }}
-                  aria-label="মেসেজ"
-                  className="btn-press grid h-10 w-10 place-items-center rounded-xl bg-cyan-500/15 text-cyan-500"
-                >
-                  <MessageCircle className="h-4 w-4" />
-                </Link>
-                <CallButtons userId={f.userId} name={f.name} />
-                <button
-                  onClick={() => drop.mutate(f.linkId)}
-                  className="btn-press grid h-10 w-10 place-items-center rounded-xl bg-white/5 text-muted-foreground"
-                  aria-label="সরান"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         )}
-      </div>
 
-      {(data?.outgoing?.length ?? 0) > 0 && (
-        <div className="glass rounded-2xl p-3">
-          <p className="mb-2 text-xs font-black text-muted-foreground">পাঠানো রিকোয়েস্ট</p>
-          <div className="space-y-2">
-            {data!.outgoing.map((r) => (
-              <div key={r.linkId} className="flex items-center gap-3 rounded-xl bg-surface-2 p-2.5">
-                <Avatar name={r.name} />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-black">{r.name}</p>
-                  <p className="text-[11px] font-bold text-muted-foreground">অপেক্ষায় আছে…</p>
-                </div>
-                <button
-                  onClick={() => drop.mutate(r.linkId)}
-                  className="btn-press rounded-xl bg-white/5 px-3 py-2 text-[11px] font-black text-muted-foreground"
-                >
-                  বাতিল
-                </button>
-              </div>
-            ))}
+        {/* Friends List */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between pl-1">
+            <h2 className="text-xs font-black uppercase text-muted-foreground tracking-wider">Active Friends</h2>
+            <Link to="/friends" className="text-[11px] font-black text-primary">SEE ALL</Link>
           </div>
+          {isLoading ? (
+            <div className="flex justify-center py-4">
+              <Loader2 className="h-5 w-5 animate-spin text-primary" />
+            </div>
+          ) : (data?.friends?.length ?? 0) === 0 ? (
+            <div className="py-10 text-center">
+              <Users className="mx-auto mb-2 h-8 w-8 text-muted-foreground/30" />
+              <p className="text-xs font-bold text-muted-foreground">No friends yet</p>
+            </div>
+          ) : (
+            <div className="space-y-1">
+              {data!.friends.map((f) => (
+                <div key={f.linkId} className="flex items-center gap-3 py-2">
+                  <MessengerAvatar name={f.name} online={onlineIds.has(f.userId)} size="lg" />
+                  <div className="flex-1 min-w-0">
+                    <p className="truncate text-sm font-black">{f.name}</p>
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase">{onlineIds.has(f.userId) ? "Active Now" : `UID ${f.uid ?? "-"}`}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Link
+                      to="/chat/$peerId"
+                      params={{ peerId: f.userId }}
+                      className="btn-press h-9 w-9 flex items-center justify-center rounded-full bg-surface-2 text-foreground"
+                    >
+                      <MessageCircle className="h-4 w-4" />
+                    </Link>
+                    <CallButtons userId={f.userId} name={f.name} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-      )}
+      </main>
+
+      <MessengerNav />
     </div>
   );
 }
