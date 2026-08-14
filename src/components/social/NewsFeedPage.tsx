@@ -42,7 +42,7 @@ export function NewsFeedPage() {
               <MessageSquare className="h-5 w-5 text-gray-600" />
             </button>
             <button className="h-9 w-9 flex items-center justify-center rounded-full bg-gray-100 btn-press">
-              <Menu className="h-5 w-5 text-gray-600" />
+              <MenuIcon className="h-5 w-5 text-gray-600" />
             </button>
           </div>
         </div>
