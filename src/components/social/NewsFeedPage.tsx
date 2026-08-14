@@ -89,7 +89,7 @@ function PostCard({ post }: { post: any }) {
   const queryClient = useQueryClient();
 
   const reactMut = useMutation({
-    mutationFn: (type: string) => reactToPost({ postId: post.id, reactionType: type }),
+    mutationFn: (type: string) => reactToPost({ data: { postId: post.id, reactionType: type } }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["posts"] }),
   });
 
