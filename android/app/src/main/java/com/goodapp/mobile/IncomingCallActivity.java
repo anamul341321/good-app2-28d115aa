@@ -60,6 +60,15 @@ public class IncomingCallActivity extends Activity {
         String callerName = getIntent().getStringExtra("caller_name");
         boolean video = getIntent().getBooleanExtra("video", false);
         if (callerName == null || callerName.isEmpty()) callerName = "Good-App user";
+        String callAction = getIntent().getStringExtra("call_action");
+        if ("answer".equals(callAction)) {
+            openCall();
+            return;
+        }
+        if ("decline".equals(callAction)) {
+            declineCall();
+            return;
+        }
 
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
@@ -135,6 +144,7 @@ public class IncomingCallActivity extends Activity {
                     .build());
             }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) ringtone.setLooping(true);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) ringtone.setVolume(1.0f);
             ringtone.play();
         } catch (Exception ignored) {}
     }

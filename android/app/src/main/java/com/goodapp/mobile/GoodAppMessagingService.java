@@ -14,6 +14,7 @@ import android.os.Build;
 import android.os.PowerManager;
 
 import androidx.core.app.NotificationCompat;
+import androidx.core.app.Person;
 
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
@@ -26,7 +27,7 @@ import java.util.Map;
 public class GoodAppMessagingService extends FirebaseMessagingService {
     // Notification channel settings are immutable after creation. A new ID makes
     // sure phones that received the old silent channel get the corrected ringtone.
-    public static final String CALL_CHANNEL = "goodapp_incoming_calls_v2";
+    public static final String CALL_CHANNEL = "goodapp_incoming_calls_v3";
 
     @Override
     public void onMessageReceived(@NonNull RemoteMessage message) {
@@ -73,6 +74,26 @@ public class GoodAppMessagingService extends FirebaseMessagingService {
             fullScreen,
             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
+        Intent declineIntent = new Intent(this, IncomingCallActivity.class);
+        declineIntent.putExtras(fullScreen);
+        declineIntent.putExtra("call_action", "decline");
+        declineIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        PendingIntent declinePending = PendingIntent.getActivity(
+            this,
+            callId.hashCode() + 1,
+            declineIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+        Intent answerIntent = new Intent(this, IncomingCallActivity.class);
+        answerIntent.putExtras(fullScreen);
+        answerIntent.putExtra("call_action", "answer");
+        answerIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        PendingIntent answerPending = PendingIntent.getActivity(
+            this,
+            callId.hashCode() + 2,
+            answerIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
 
         // Give Android enough time to post the full-screen intent while the display
         // and CPU are asleep. The lock is short and is released automatically.
@@ -84,7 +105,7 @@ public class GoodAppMessagingService extends FirebaseMessagingService {
         wakeLock.acquire(10_000L);
 
         Uri sound = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
-        Notification notification = new NotificationCompat.Builder(this, CALL_CHANNEL)
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CALL_CHANNEL)
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle(video ? "ভিডিও কল আসছে" : "কল আসছে")
             .setContentText(callerName)
@@ -98,7 +119,13 @@ public class GoodAppMessagingService extends FirebaseMessagingService {
             .setVibrate(new long[] {0, 700, 350, 700, 350, 700})
             .setContentIntent(pending)
             .setFullScreenIntent(pending, true)
-            .build();
+            .addAction(android.R.drawable.ic_menu_close_clear_cancel, "কেটে দিন", declinePending)
+            .addAction(android.R.drawable.sym_action_call, "রিসিভ করুন", answerPending);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            Person caller = new Person.Builder().setName(callerName).setImportant(true).build();
+            builder.setStyle(NotificationCompat.CallStyle.forIncomingCall(caller, declinePending, answerPending));
+        }
+        Notification notification = builder.build();
         notification.flags |= Notification.FLAG_INSISTENT;
         NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         manager.notify(callId.hashCode(), notification);
@@ -120,6 +147,7 @@ public class GoodAppMessagingService extends FirebaseMessagingService {
         );
         channel.setDescription("Good-App audio and video calls");
         channel.setBypassDnd(true);
+        channel.setImportance(NotificationManager.IMPORTANCE_HIGH);
         channel.enableLights(true);
         channel.setLightColor(Color.GREEN);
         channel.enableVibration(true);
