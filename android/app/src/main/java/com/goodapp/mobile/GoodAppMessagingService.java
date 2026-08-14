@@ -15,6 +15,7 @@ import android.os.PowerManager;
 
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.Person;
+import androidx.core.graphics.drawable.IconCompat;
 
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
@@ -50,6 +51,10 @@ public class GoodAppMessagingService extends FirebaseMessagingService {
         }
         if ("incoming_call".equals(data.get("type"))) {
             showIncomingCall(data);
+            return;
+        }
+        if ("chat_message".equals(data.get("type"))) {
+            showChatMessage(data, message.getNotification());
             return;
         }
         PushNotificationsPlugin.sendRemoteMessage(message);
@@ -170,6 +175,77 @@ public class GoodAppMessagingService extends FirebaseMessagingService {
         channel.setSound(sound, audio);
         channel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
         manager.createNotificationChannel(channel);
+    }
+
+    private void showChatMessage(Map<String, String> data, RemoteMessage.Notification remoteNotification) {
+        final String channelId = "goodapp_messages_v2";
+        NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(
+                channelId,
+                "Messages",
+                NotificationManager.IMPORTANCE_HIGH
+            );
+            channel.setDescription("Good-App chat messages");
+            channel.enableVibration(true);
+            channel.setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION), null);
+            manager.createNotificationChannel(channel);
+        }
+
+        String senderId = value(data, "sender_id", "chat");
+        String senderName = value(
+            data,
+            "sender_name",
+            remoteNotification == null || remoteNotification.getTitle() == null
+                ? "নতুন মেসেজ"
+                : remoteNotification.getTitle()
+        );
+        String body = value(
+            data,
+            "body",
+            remoteNotification == null || remoteNotification.getBody() == null
+                ? "নতুন মেসেজ"
+                : remoteNotification.getBody()
+        );
+        Intent chat = new Intent(this, MainActivity.class);
+        chat.setAction(Intent.ACTION_VIEW);
+        chat.setData(Uri.parse("https://www.goodapp2.live/chat/" + Uri.encode(senderId)));
+        chat.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        PendingIntent openChat = PendingIntent.getActivity(
+            this,
+            senderId.hashCode(),
+            chat,
+            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+
+        Person person = new Person.Builder().setName(senderName).setImportant(true).build();
+        NotificationCompat.MessagingStyle style = new NotificationCompat.MessagingStyle(person)
+            .setConversationTitle(senderName)
+            .addMessage(body, System.currentTimeMillis(), person);
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, channelId)
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setContentTitle(senderName)
+            .setContentText(body)
+            .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setAutoCancel(true)
+            .setContentIntent(openChat)
+            .setStyle(style)
+            .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
+            .setVibrate(new long[] {0, 180, 100, 180});
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            NotificationCompat.BubbleMetadata bubble = new NotificationCompat.BubbleMetadata.Builder(
+                openChat,
+                IconCompat.createWithResource(this, R.mipmap.ic_launcher)
+            )
+                .setDesiredHeight(640)
+                .setAutoExpandBubble(false)
+                .setSuppressNotification(false)
+                .build();
+            builder.setBubbleMetadata(bubble);
+        }
+        manager.notify(("chat-" + senderId).hashCode(), builder.build());
     }
 
     private String value(Map<String, String> data, String key, String fallback) {

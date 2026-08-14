@@ -137,7 +137,10 @@ export async function updateCallSession(
   if (!error && ["declined", "ended", "cancelled", "missed", "failed"].includes(input.status)) {
     const otherUserId =
       existing.caller_id === context.userId ? existing.callee_id : existing.caller_id;
-    await sendCancelCallPush(otherUserId, input.callId);
+    const delivery = await sendCancelCallPush(otherUserId, input.callId);
+    if (delivery.sent === 0 && delivery.failed > 0) {
+      await sendCancelCallPush(otherUserId, input.callId);
+    }
   }
   return { ok: !error };
 }

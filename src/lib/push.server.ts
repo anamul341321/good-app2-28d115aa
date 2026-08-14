@@ -118,7 +118,10 @@ export async function sendPushToTokens(
             body: JSON.stringify({
               message: {
                 token,
-                notification: payload.call ? undefined : { title: payload.title, body: payload.body },
+                notification:
+                  payload.call || payload.data?.type === "chat_message"
+                    ? undefined
+                    : { title: payload.title, body: payload.body },
                 data: { ...(payload.data ?? {}), ...(payload.url ? { url: payload.url } : {}) },
                 android: {
                   priority: "HIGH",
@@ -191,7 +194,7 @@ export async function sendCancelCallPush(userId: string, callId: string) {
     title: "কল শেষ",
     body: "কলটি আর সক্রিয় নেই",
     call: true,
-    collapseKey: callId,
+    collapseKey: `cancel-${callId}`,
     data: { type: "cancel_call", call_id: callId },
   });
 }
@@ -199,7 +202,13 @@ export async function sendCancelCallPush(userId: string, callId: string) {
 /** নির্দিষ্ট ইউজারের সব ফোনে push পাঠাও */
 export async function sendPushToUser(
   userId: string,
-  payload: { title: string; body: string; url?: string },
+  payload: {
+    title: string;
+    body: string;
+    url?: string;
+    data?: Record<string, string>;
+    collapseKey?: string;
+  },
 ) {
   if (!process.env.FIREBASE_SERVICE_ACCOUNT_JSON) return { sent: 0, failed: 0 };
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
