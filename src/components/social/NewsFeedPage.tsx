@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Search, Plus, Bell, Image as ImageIcon, Share2, MoreHorizontal, Heart, Smile, MessageSquare, Video, Globe, Users, Clock, Camera } from "lucide-react";
+import { Search, Plus, Bell, Image as ImageIcon, Share2, MoreHorizontal, Heart, Smile, MessageSquare, Video, Globe, Users, Clock, Camera, Menu, Home } from "lucide-react";
 import { listPosts, createPost, reactToPost } from "@/lib/news-feed.functions";
 import { useLang } from "@/lib/i18n";
 import { toast } from "sonner";
@@ -25,7 +25,12 @@ export function NewsFeedPage() {
       {/* Top Header - Facebook Lite Style */}
       <header className="sticky top-0 z-40 bg-white border-b shadow-sm">
         <div className="max-w-md mx-auto px-4 py-2 flex items-center justify-between">
-          <h1 className="text-2xl font-black text-[#1877F2] tracking-tighter">good-app</h1>
+          <div className="flex items-center gap-3">
+            <Link to="/home" className="h-9 w-9 flex items-center justify-center rounded-full bg-gray-100 btn-press text-gray-600">
+              <Home className="h-5 w-5" />
+            </Link>
+            <h1 className="text-2xl font-black text-[#1877F2] tracking-tighter">social</h1>
+          </div>
           <div className="flex items-center gap-1">
             <button className="h-9 w-9 flex items-center justify-center rounded-full bg-gray-100 btn-press">
               <Search className="h-5 w-5 text-gray-600" />
