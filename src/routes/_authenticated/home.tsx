@@ -213,6 +213,23 @@ function HomePage() {
 
 
 
+      {/* Social Entry Button */}
+      <div className="px-4 py-1">
+        <Link 
+          to="/social" 
+          className="w-full flex items-center gap-3 bg-gradient-to-r from-[#1877F2] to-[#3B82F6] rounded-2xl p-4 text-white shadow-lg active:scale-[0.98] transition-all hover:brightness-110"
+        >
+          <div className="h-12 w-12 rounded-xl bg-white/20 flex items-center justify-center border border-white/30 backdrop-blur-sm">
+            <MessageSquare className="w-7 h-7" />
+          </div>
+          <div className="flex-1 text-left">
+            <p className="text-lg font-black leading-tight tracking-tight">{t("Good-App Social", "Good-App Social")}</p>
+            <p className="text-[11px] opacity-90 font-bold">{t("বন্ধু, পোস্ট ও মেসেঞ্জার", "Friends, Posts & Messenger")}</p>
+          </div>
+          <Plus className="w-6 h-6" />
+        </Link>
+      </div>
+
       <DashSection
         icon={<Camera className="w-4 h-4" />}
         tint="cyan"
