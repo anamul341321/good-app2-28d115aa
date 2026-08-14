@@ -1,4 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
+export const Route = createFileRoute("/_authenticated/home")({
+  component: HomePage,
+});
+
 import { NewsFeedPage } from "@/components/social/NewsFeedPage";
 import { useQuery } from "@tanstack/react-query";
 import { getAppStatus } from "@/lib/app-status.functions";
