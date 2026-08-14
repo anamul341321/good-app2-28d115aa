@@ -741,12 +741,23 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const toggleShare = useCallback(async () => {
+    if (isNativeApp) {
+      if (sharing) {
+        try {
+          (window as any).GoodAppDownloader?.stopScreenShare?.();
+        } catch {}
+        await stopSharing();
+      } else {
+        try {
+          (window as any).GoodAppDownloader?.startScreenShare?.();
+        } catch {}
+      }
+      return;
+    }
+
     try {
       if (sharing) {
-        shareStream.current?.getTracks().forEach((t) => t.stop());
-        shareStream.current = null;
-        await replaceVideoTrack(camTrack.current);
-        setSharing(false);
+        await stopSharing();
         return;
       }
       const ds = await (navigator.mediaDevices as any).getDisplayMedia?.({
@@ -762,9 +773,16 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     } catch {
       toast.error("স্ক্রিন শেয়ার করা যায়নি (ফোনের ব্রাউজার/অ্যাপ সাপোর্ট করছে না)");
     }
-  }, [replaceVideoTrack, sharing]);
+  }, [replaceVideoTrack, sharing, isNativeApp, stopSharing]);
 
-  const switchCamera = useCallback(async () => {
+  const triggerSwitchCamera = useCallback(async () => {
+    if (isNativeApp) {
+      try {
+        (window as any).GoodAppDownloader?.switchCamera?.();
+      } catch {}
+      return;
+    }
+    
     try {
       facing.current = facing.current === "user" ? "environment" : "user";
       const ns = await navigator.mediaDevices.getUserMedia({
@@ -778,7 +796,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     } catch {
       toast.error("ক্যামেরা বদলানো যায়নি");
     }
-  }, [replaceVideoTrack, sharing]);
+  }, [replaceVideoTrack, sharing, isNativeApp]);
 
   const clock = `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
 
@@ -867,7 +885,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
                 <p className="mt-1.5 inline-flex items-center gap-1.5 text-sm font-semibold text-white/60">
                   <Volume2 className="h-4 w-4" />
                   {state === "active"
-                    ? clock
+                    ? (quality === "poor" ? "সংযোগ দুর্বল…" : quality === "reconnecting" ? "পুনরায় সংযোগ…" : clock)
                     : state === "calling"
                       ? "রিং হচ্ছে…"
                       : "সংযোগ হচ্ছে…"}
@@ -895,7 +913,9 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
             >
               <p className="text-[15px] font-bold drop-shadow">{peer.name}</p>
               <p className="text-[12px] font-semibold text-white/70">
-                {state === "active" ? clock : state === "calling" ? "রিং হচ্ছে…" : "সংযোগ হচ্ছে…"}
+                {state === "active" 
+                  ? (quality === "poor" ? "সংযোগ দুর্বল…" : quality === "reconnecting" ? "পুনরায় সংযোগ…" : clock)
+                  : state === "calling" ? "রিং হচ্ছে…" : "সংযোগ হচ্ছে…"}
                 {sharing ? " • স্ক্রিন শেয়ার" : ""}
               </p>
             </div>
@@ -916,7 +936,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
                 </CallCtl>
               )}
               {withVideo && (
-                <CallCtl active={false} onClick={() => void switchCamera()} label="বদল">
+                <CallCtl active={false} onClick={() => void triggerSwitchCamera()} label="বদল">
                   <SwitchCamera className="h-5 w-5" />
                 </CallCtl>
               )}
