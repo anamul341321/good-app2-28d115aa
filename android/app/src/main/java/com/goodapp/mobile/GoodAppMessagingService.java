@@ -34,6 +34,10 @@ public class GoodAppMessagingService extends FirebaseMessagingService {
         Map<String, String> data = message.getData();
         if ("cancel_call".equals(data.get("type"))) {
             String callId = value(data, "call_id", "call");
+            getSharedPreferences("goodapp_calls", Context.MODE_PRIVATE)
+                .edit()
+                .putString("cancelled_" + callId, callId)
+                .apply();
             NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
             manager.cancel(callId.hashCode());
             Intent cancel = new Intent("com.goodapp.mobile.CANCEL_CALL");
@@ -129,7 +133,8 @@ public class GoodAppMessagingService extends FirebaseMessagingService {
         notification.flags |= Notification.FLAG_INSISTENT;
         NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         manager.notify(callId.hashCode(), notification);
-        if (wakeLock.isHeld()) wakeLock.release();
+        // Do not release immediately: notify() queues the full-screen intent asynchronously.
+        // The timed lock releases itself and keeps cold-start calls reliable in deep sleep.
     }
 
     private void createCallChannel() {

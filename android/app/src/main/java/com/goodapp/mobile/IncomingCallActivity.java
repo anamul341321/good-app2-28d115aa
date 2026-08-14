@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.BroadcastReceiver;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.media.Ringtone;
@@ -60,6 +61,12 @@ public class IncomingCallActivity extends Activity {
         String callerName = getIntent().getStringExtra("caller_name");
         boolean video = getIntent().getBooleanExtra("video", false);
         if (callerName == null || callerName.isEmpty()) callerName = "Good-App user";
+        SharedPreferences callState = getSharedPreferences("goodapp_calls", Context.MODE_PRIVATE);
+        if (callId != null && callId.equals(callState.getString("cancelled_" + callId, null))) {
+            callState.edit().remove("cancelled_" + callId).apply();
+            closeCall();
+            return;
+        }
         String callAction = getIntent().getStringExtra("call_action");
         if ("answer".equals(callAction)) {
             openCall();
@@ -105,7 +112,8 @@ public class IncomingCallActivity extends Activity {
 
         decline.setOnClickListener(v -> declineCall());
         accept.setOnClickListener(v -> openCall());
-        startRinging();
+        // The ongoing call notification owns ringtone/vibration. Starting a second
+        // Ringtone here caused overlapping, distorted audio on several Android skins.
         timeoutHandler.postDelayed(timeout, 50_000L);
         IntentFilter cancelFilter = new IntentFilter("com.goodapp.mobile.CANCEL_CALL");
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -147,6 +155,15 @@ public class IncomingCallActivity extends Activity {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) ringtone.setVolume(1.0f);
             ringtone.play();
         } catch (Exception ignored) {}
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        String action = intent.getStringExtra("call_action");
+        if ("answer".equals(action)) openCall();
+        else if ("decline".equals(action)) declineCall();
     }
 
     private void openCall() {
