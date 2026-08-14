@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Search, Plus, Bell, Image as ImageIcon, Share2, MoreHorizontal, Heart, Smile, MessageSquare, Video, Globe, Users, Clock, Camera, Menu, Home } from "lucide-react";
+import { Search, Plus, Bell, Image as ImageIcon, Share2, MoreHorizontal, Heart, Smile, MessageSquare, Video, Globe, Users, Clock, Camera, Home, Menu as MenuIcon } from "lucide-react";
 import { listPosts, createPost, reactToPost } from "@/lib/news-feed.functions";
 import { useLang } from "@/lib/i18n";
 import { toast } from "sonner";
@@ -194,16 +194,6 @@ function PostCard({ post }: { post: any }) {
         </button>
       </div>
     </div>
-  );
-}
-
-function Menu({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <line x1="3" y1="12" x2="21" y2="12"></line>
-      <line x1="3" y1="6" x2="21" y2="6"></line>
-      <line x1="3" y1="18" x2="21" y2="18"></line>
-    </svg>
   );
 }
 
