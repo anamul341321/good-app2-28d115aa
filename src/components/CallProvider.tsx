@@ -62,6 +62,9 @@ const ICE = {
     },
   ],
   iceCandidatePoolSize: 4,
+  iceTransportPolicy: "all" as RTCIceTransportPolicy,
+  bundlePolicy: "max-bundle" as RTCBundlePolicy,
+  rtcpMuxPolicy: "require" as RTCRtcpMuxPolicy,
 };
 
 /**
@@ -104,6 +107,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   const reconnectTimer = useRef<number | null>(null);
   const reconnecting = useRef(false);
   const peerIdRef = useRef<string | null>(null);
+  const makingOffer = useRef(false);
 
   useEffect(() => {
     stateRef.current = state;
@@ -132,6 +136,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       reconnectTimer.current = null;
     }
     reconnecting.current = false;
+    makingOffer.current = false;
     isCaller.current = false;
     peerIdRef.current = null;
     pcRef.current?.getSenders().forEach((s) => {
@@ -226,7 +231,14 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         (window as any).GoodAppDownloader?.beginCall?.(video);
       } catch {}
       const audioOnly = {
-        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          channelCount: 1,
+          sampleRate: 48000,
+          sampleSize: 16,
+        },
         video: false as const,
       };
       let stream: MediaStream;
@@ -246,19 +258,33 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         // ক্যামেরা ব্যস্ত/না থাকলে ভিডিও কল অডিও কল হিসেবে চালু থাকবে, কল ভেঙে যাবে না।
         if (!video) throw err;
         stream = await navigator.mediaDevices.getUserMedia(audioOnly);
+        setWithVideo(false);
         toast("ক্যামেরা পাওয়া যায়নি — অডিও কল চালু হলো");
       }
+      stream.getAudioTracks().forEach((track) => {
+        track.contentHint = "speech";
+      });
+      stream.getVideoTracks().forEach((track) => {
+        track.contentHint = "motion";
+      });
       localStream.current = stream;
       const pc = new RTCPeerConnection(ICE);
       stream.getTracks().forEach((t) => pc.addTrack(t, stream));
       const remote = new MediaStream();
       pc.ontrack = (e) => {
-        e.streams[0]?.getTracks().forEach((t) => remote.addTrack(t));
-        attachRemote(e.streams[0] ?? remote);
+        const tracks = e.streams[0]?.getTracks() ?? [e.track];
+        tracks.forEach((track) => {
+          if (!remote.getTracks().some((existing) => existing.id === track.id)) remote.addTrack(track);
+        });
+        attachRemote(remote);
       };
       pc.onicecandidate = (e) => {
         if (e.candidate)
-          void sendTo(peerId, { kind: "ice", from: myId ?? "", candidate: e.candidate });
+          void sendTo(peerId, {
+            kind: "ice",
+            from: myId ?? "",
+            candidate: e.candidate.toJSON(),
+          });
       };
       pc.onconnectionstatechange = () => {
         if (pc.connectionState === "connected") {
@@ -305,6 +331,11 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
           }, 30000);
         }
       };
+      pc.oniceconnectionstatechange = () => {
+        if (pc.iceConnectionState === "connected" || pc.iceConnectionState === "completed") {
+          reconnecting.current = false;
+        }
+      };
 
       pcRef.current = pc;
       camTrack.current = stream.getVideoTracks()[0] ?? null;
@@ -313,7 +344,8 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         const sender = pc.getSenders().find((x) => x.track?.kind === "video");
         if (sender) {
           const params = sender.getParameters();
-          params.encodings = [{ maxBitrate: 1_800_000, maxFramerate: 30 }];
+          params.degradationPreference = "maintain-framerate";
+          params.encodings = [{ maxBitrate: 1_500_000, maxFramerate: 30, scaleResolutionDownBy: 1 }];
           void sender.setParameters(params);
         }
       } catch {}
@@ -340,8 +372,10 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         setWithVideo(video);
         setState("calling");
         const pc = await buildPeer(peerId, video);
-        const offer = await pc.createOffer();
+        makingOffer.current = true;
+        const offer = await pc.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: video });
         await pc.setLocalDescription(offer);
+        makingOffer.current = false;
         await waitForIce(pc);
         const finalOffer = pc.localDescription?.toJSON() ?? offer;
         const created = await createCall({ data: { peerId, video, offer: finalOffer } });
@@ -356,6 +390,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
           callId: created.callId,
         });
       } catch (e) {
+        makingOffer.current = false;
         toast.error("মাইক/ক্যামেরার অনুমতি দিন");
         if (currentCallId.current) {
           await updateCall({
@@ -494,6 +529,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
           const pc = pcRef.current;
           if (!pc) return;
           try {
+            if (makingOffer.current || pc.signalingState !== "stable") return;
             await pc.setRemoteDescription(new RTCSessionDescription(sig.sdp));
             const answer = await pc.createAnswer();
             await pc.setLocalDescription(answer);
@@ -510,7 +546,9 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
           try {
             const pc = pcRef.current;
             if (pc) {
-              await pc.setRemoteDescription(new RTCSessionDescription(sig.sdp));
+              if (pc.signalingState === "have-local-offer") {
+                await pc.setRemoteDescription(new RTCSessionDescription(sig.sdp));
+              }
               await flushPendingIce(pc);
             }
             if (stateRef.current !== "active") setState("connecting");
