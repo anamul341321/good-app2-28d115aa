@@ -381,6 +381,9 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         const offer = await pc.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: video });
         await pc.setLocalDescription(offer);
         makingOffer.current = false;
+         // Keep the durable database offer self-contained for a native cold start.
+         // The cap is short, so this no longer waits on push delivery or slow TURN paths.
+         await waitForIce(pc);
         const finalOffer = pc.localDescription?.toJSON() ?? offer;
         const created = await createCall({ data: { peerId, video, offer: finalOffer } });
         currentCallId.current = created.callId;
@@ -407,7 +410,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         cleanup();
       }
     },
-    [buildPeer, cleanup, myId, myName, sendTo, state],
+    [buildPeer, cleanup, myId, myName, sendTo, state, waitForIce],
   );
 
   const acceptCall = useCallback(async () => {
