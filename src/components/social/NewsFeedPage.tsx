@@ -117,12 +117,18 @@ function PostCard({ post }: { post: any }) {
   const { t } = useLang();
   const queryClient = useQueryClient();
 
+
+  return <PostCard post={post} />;
+}
+
+export function PostCard({ post }: { post: any }) {
+  const { t } = useLang();
+  const queryClient = useQueryClient();
   const reactMut = useMutation({
     mutationFn: (type: string) => reactToPost({ data: { postId: post.id, reactionType: type } }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["posts"] }),
   });
 
-  return (
     <div className="bg-white shadow-sm border-b border-gray-200">
       {/* Post Header */}
       <div className="p-3 flex items-start gap-2">
