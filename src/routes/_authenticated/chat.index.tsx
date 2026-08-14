@@ -25,7 +25,7 @@ export const Route = createFileRoute("/_authenticated/chat/")({
   }),
 });
 
-function ChatListPage() {
+export function ChatListPage() {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const onlineIds = usePresence();
