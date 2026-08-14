@@ -199,7 +199,13 @@ export async function sendCancelCallPush(userId: string, callId: string) {
 /** নির্দিষ্ট ইউজারের সব ফোনে push পাঠাও */
 export async function sendPushToUser(
   userId: string,
-  payload: { title: string; body: string; url?: string },
+  payload: {
+    title: string;
+    body: string;
+    url?: string;
+    data?: Record<string, string>;
+    collapseKey?: string;
+  },
 ) {
   if (!process.env.FIREBASE_SERVICE_ACCOUNT_JSON) return { sent: 0, failed: 0 };
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

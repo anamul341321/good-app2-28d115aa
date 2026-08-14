@@ -232,6 +232,14 @@ export const sendMessage = createServerFn({ method: "POST" })
           title: `💬 ${name}`,
           body: preview.slice(0, 120),
           url: `/chat/${context.userId}`,
+          collapseKey: `chat-${context.userId}`,
+          data: {
+            type: "chat_message",
+            sender_id: context.userId,
+            sender_name: name,
+            message_id: String(inserted?.id ?? ""),
+            body: preview.slice(0, 120),
+          },
         });
       } else if (data.groupId) {
         const { data: members } = await sb
