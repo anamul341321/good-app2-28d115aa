@@ -101,6 +101,8 @@ function ChatListPage() {
     </button>
   );
 
+  const activeFriends = friendList.filter((f) => onlineIds.has(f.userId));
+
   return (
     <div className="space-y-4 pb-8 pt-1">
       <div className="text-center">
@@ -109,6 +111,34 @@ function ChatListPage() {
           ছবি, ভিডিও, ভয়েস মেসেজ ও ফ্রি অডিও/ভিডিও কল
         </p>
       </div>
+
+      {/* এখন অ্যাকটিভ — মেসেঞ্জারের মতো সবুজ ডটসহ সারি */}
+      <div className="glass rounded-2xl p-3">
+        <p className="flex items-center gap-2 text-[11px] font-black">
+          <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-emerald-500" />
+          {activeFriends.length > 0
+            ? `এখন অ্যাকটিভ — ${activeFriends.length} জন`
+            : "এখন কেউ অ্যাকটিভ নেই"}
+        </p>
+        {activeFriends.length > 0 && (
+          <div className="mt-3 flex gap-3 overflow-x-auto pb-1">
+            {activeFriends.map((f) => (
+              <Link
+                key={f.userId}
+                to="/chat/$peerId"
+                params={{ peerId: f.userId }}
+                className="btn-press flex w-16 shrink-0 flex-col items-center gap-1.5"
+              >
+                <Avatar name={f.name} online />
+                <span className="w-full truncate text-center text-[10px] font-bold text-muted-foreground">
+                  {f.name}
+                </span>
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
+
 
       <div className="grid grid-cols-2 gap-2">
         <Link
