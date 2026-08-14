@@ -26,6 +26,7 @@ export function Composer({
   const rec = useRef<MediaRecorder | null>(null);
   const chunks = useRef<Blob[]>([]);
   const timer = useRef<number | undefined>(undefined);
+  const elapsed = useRef(0);
 
   const submitText = () => {
     const b = text.trim();
@@ -49,7 +50,9 @@ export function Composer({
 
   const startRec = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+      });
       const mr = new MediaRecorder(stream);
       chunks.current = [];
       mr.ondataavailable = (e) => e.data.size && chunks.current.push(e.data);
@@ -57,12 +60,14 @@ export function Composer({
         stream.getTracks().forEach((t) => t.stop());
         window.clearInterval(timer.current);
         const blob = new Blob(chunks.current, { type: mr.mimeType || "audio/webm" });
+        const duration = elapsed.current;
+        elapsed.current = 0;
         setRecSec(0);
         if (blob.size < 800) return;
         setBusy(true);
         try {
           const path = await uploadChatFile(blob, "voice", "webm");
-          onSend({ kind: "voice", mediaPath: path, mediaMeta: { size: blob.size } });
+          onSend({ kind: "voice", mediaPath: path, mediaMeta: { size: blob.size, duration } });
         } catch (e: any) {
           toast.error(e?.message ?? "ভয়েস পাঠানো যায়নি");
         } finally {
@@ -71,8 +76,13 @@ export function Composer({
       };
       mr.start();
       rec.current = mr;
+      elapsed.current = 1;
       setRecSec(1);
-      timer.current = window.setInterval(() => setRecSec((v) => v + 1), 1000);
+      timer.current = window.setInterval(() =>
+        setRecSec((v) => {
+          elapsed.current = v + 1;
+          return v + 1;
+        }), 1000);
     } catch {
       toast.error("মাইকের অনুমতি দিন");
     }
@@ -105,9 +115,17 @@ export function Composer({
       {recording ? (
         <div className="flex items-center gap-3 px-2 py-1.5">
           <span className="h-3 w-3 animate-pulse rounded-full bg-rose-500" />
-          <p className="flex-1 text-sm font-black text-rose-500">
-            ভয়েস রেকর্ড হচ্ছে… {String(Math.floor(recSec / 60)).padStart(2, "0")}:
-            {String(recSec % 60).padStart(2, "0")}
+          <div className="flex h-8 flex-1 items-center gap-1" aria-label="ভয়েস রেকর্ড হচ্ছে">
+            {Array.from({ length: 22 }, (_, index) => (
+              <span
+                key={index}
+                className="w-1 animate-pulse rounded-full bg-rose-500"
+                style={{ height: `${8 + ((index * 11) % 22)}px`, animationDelay: `${index * 45}ms` }}
+              />
+            ))}
+          </div>
+          <p className="text-xs font-black text-rose-500">
+            {String(Math.floor(recSec / 60)).padStart(2, "0")}:{String(recSec % 60).padStart(2, "0")}
           </p>
           <button
             onClick={stopRec}

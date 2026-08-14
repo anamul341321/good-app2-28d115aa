@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Play, Trash2, Ban, PhoneMissed, PhoneIncoming, Video } from "lucide-react";
+import { useEffect, useRef } from "react";
+import { Play, Pause, Trash2, Ban, PhoneMissed, PhoneIncoming, Video } from "lucide-react";
 
 export type ChatMsg = {
   id: string;
@@ -27,6 +28,53 @@ function Lightbox({ url, video, onClose }: { url: string; video?: boolean; onClo
       ) : (
         <img src={url} alt="চ্যাটের ছবি" className="max-h-full max-w-full rounded-2xl" />
       )}
+    </div>
+  );
+}
+
+function VoiceMessage({ url, mine, durationHint }: { url: string; mine: boolean; durationHint?: number }) {
+  const audio = useRef<HTMLAudioElement | null>(null);
+  const [playing, setPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [duration, setDuration] = useState(durationHint ?? 0);
+
+  useEffect(() => {
+    const node = audio.current;
+    if (!node) return;
+    const sync = () => setProgress(node.duration ? node.currentTime / node.duration : 0);
+    const loaded = () => setDuration(Number.isFinite(node.duration) ? Math.round(node.duration) : durationHint ?? 0);
+    const ended = () => { setPlaying(false); setProgress(0); };
+    node.addEventListener("timeupdate", sync);
+    node.addEventListener("loadedmetadata", loaded);
+    node.addEventListener("ended", ended);
+    return () => {
+      node.removeEventListener("timeupdate", sync);
+      node.removeEventListener("loadedmetadata", loaded);
+      node.removeEventListener("ended", ended);
+    };
+  }, [durationHint]);
+
+  const toggle = () => {
+    const node = audio.current;
+    if (!node) return;
+    if (node.paused) void node.play().then(() => setPlaying(true)).catch(() => {});
+    else { node.pause(); setPlaying(false); }
+  };
+  const seconds = Math.max(0, duration);
+
+  return (
+    <div className="flex min-w-56 items-center gap-2 py-0.5" onClick={(event) => event.stopPropagation()}>
+      <audio ref={audio} src={url} preload="metadata" />
+      <button onClick={toggle} className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-current/15" aria-label={playing ? "ভয়েস থামান" : "ভয়েস শুনুন"}>
+        {playing ? <Pause className="h-4 w-4" /> : <Play className="ml-0.5 h-4 w-4" />}
+      </button>
+      <div className="flex h-8 flex-1 items-center gap-0.5">
+        {Array.from({ length: 28 }, (_, index) => {
+          const active = index / 28 <= progress;
+          return <span key={index} className={`w-0.5 rounded-full ${active ? "opacity-100" : "opacity-35"} ${mine ? "bg-white" : "bg-foreground"}`} style={{ height: `${7 + ((index * 13) % 20)}px` }} />;
+        })}
+      </div>
+      <span className="w-9 text-right text-[10px] font-black opacity-75">{Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, "0")}</span>
     </div>
   );
 }
@@ -108,7 +156,7 @@ export function MessageBubble({
               </span>
             </button>
           ) : m.kind === "voice" && m.mediaUrl ? (
-            <audio src={m.mediaUrl} controls className="h-10 w-52" />
+            <VoiceMessage url={m.mediaUrl} mine={mine} durationHint={Number(m.mediaMeta?.duration) || undefined} />
           ) : (
             <p className="whitespace-pre-wrap break-words text-sm font-bold">{m.body}</p>
           )}
