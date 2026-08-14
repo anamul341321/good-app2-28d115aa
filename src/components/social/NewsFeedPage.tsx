@@ -62,7 +62,7 @@ export function NewsFeedPage() {
         {/* Post Composer */}
         <div className="bg-white p-3 shadow-sm">
           <div className="flex gap-2">
-            <MessengerAvatar size="md" />
+            <MessengerAvatar name="Me" size="md" />
             <button 
               onClick={() => {}} 
               className="flex-1 text-left px-4 py-2 bg-gray-100 rounded-full text-gray-500 text-sm font-medium hover:bg-gray-200 transition-colors"
