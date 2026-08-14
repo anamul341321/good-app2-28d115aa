@@ -87,10 +87,12 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   const [muted, setMuted] = useState(false);
   const [camOff, setCamOff] = useState(false);
   const [sharing, setSharing] = useState(false);
+  const [quality, setQuality] = useState<"good" | "poor" | "reconnecting">("good");
   const [seconds, setSeconds] = useState(0);
   const [callSessionId, setCallSessionId] = useState<string | null>(null);
   const facing = useRef<"user" | "environment">("user");
   const camTrack = useRef<MediaStreamTrack | null>(null);
+  const shareTrack = useRef<MediaStreamTrack | null>(null);
   const shareStream = useRef<MediaStream | null>(null);
   const ring = useRef<{ stop: () => void } | null>(null);
 
@@ -170,6 +172,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     setMuted(false);
     setCamOff(false);
     setSharing(false);
+    setQuality("good");
     setSeconds(0);
     try {
       (window as any).GoodAppDownloader?.endCall?.();
@@ -299,6 +302,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         if (pc.connectionState === "disconnected" || pc.connectionState === "failed") {
           if (reconnectTimer.current || reconnecting.current) return;
           reconnecting.current = true;
+          setQuality("reconnecting");
           toast("সংযোগ দুর্বল — আবার জোড়া লাগানো হচ্ছে…");
           try {
             pc.restartIce();
@@ -332,6 +336,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       pc.oniceconnectionstatechange = () => {
         if (pc.iceConnectionState === "connected" || pc.iceConnectionState === "completed") {
           reconnecting.current = false;
+          setQuality("good");
         }
       };
 
@@ -454,6 +459,68 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       setState("ringing");
     });
   }, [myId, state]);
+
+  // Screen share bridge events
+  useEffect(() => {
+    const onReady = async () => {
+      if (!pcRef.current || sharing) return;
+      try {
+        const stream = await navigator.mediaDevices.getDisplayMedia({
+          video: true,
+          audio: true,
+        });
+        shareStream.current = stream;
+        const track = stream.getVideoTracks()[0];
+        shareTrack.current = track;
+        
+        const sender = pcRef.current.getSenders().find(s => s.track?.kind === "video");
+        if (sender) {
+          await sender.replaceTrack(track);
+        }
+        
+        setSharing(true);
+        track.onended = () => stopSharing();
+      } catch (err) {
+        toast.error("স্ক্রিন শেয়ার শুরু করা যায়নি");
+      }
+    };
+    
+    const onSwitch = () => {
+      facing.current = facing.current === "user" ? "environment" : "user";
+      if (camTrack.current && !sharing) {
+        const constraints = {
+          facingMode: facing.current,
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        };
+        camTrack.current.applyConstraints(constraints).catch(() => {});
+      }
+    };
+
+    window.addEventListener("goodapp-screen-share-ready", onReady);
+    window.addEventListener("goodapp-switch-camera", onSwitch);
+    return () => {
+      window.removeEventListener("goodapp-screen-share-ready", onReady);
+      window.removeEventListener("goodapp-switch-camera", onSwitch);
+    };
+  }, [sharing]);
+
+  const stopSharing = useCallback(async () => {
+    if (!pcRef.current || !sharing) return;
+    try {
+      shareTrack.current?.stop();
+      shareStream.current?.getTracks().forEach(t => t.stop());
+      
+      const sender = pcRef.current.getSenders().find(s => s.track?.kind === "video");
+      if (sender && camTrack.current) {
+        await sender.replaceTrack(camTrack.current);
+      }
+      
+      setSharing(false);
+      shareTrack.current = null;
+      shareStream.current = null;
+    } catch {}
+  }, [sharing]);
 
   useEffect(() => {
     if (state !== "ringing") return;
@@ -674,12 +741,23 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const toggleShare = useCallback(async () => {
+    if (isNativeApp) {
+      if (sharing) {
+        try {
+          (window as any).GoodAppDownloader?.stopScreenShare?.();
+        } catch {}
+        await stopSharing();
+      } else {
+        try {
+          (window as any).GoodAppDownloader?.startScreenShare?.();
+        } catch {}
+      }
+      return;
+    }
+
     try {
       if (sharing) {
-        shareStream.current?.getTracks().forEach((t) => t.stop());
-        shareStream.current = null;
-        await replaceVideoTrack(camTrack.current);
-        setSharing(false);
+        await stopSharing();
         return;
       }
       const ds = await (navigator.mediaDevices as any).getDisplayMedia?.({
@@ -695,9 +773,16 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     } catch {
       toast.error("স্ক্রিন শেয়ার করা যায়নি (ফোনের ব্রাউজার/অ্যাপ সাপোর্ট করছে না)");
     }
-  }, [replaceVideoTrack, sharing]);
+  }, [replaceVideoTrack, sharing, isNativeApp, stopSharing]);
 
-  const switchCamera = useCallback(async () => {
+  const triggerSwitchCamera = useCallback(async () => {
+    if (isNativeApp) {
+      try {
+        (window as any).GoodAppDownloader?.switchCamera?.();
+      } catch {}
+      return;
+    }
+    
     try {
       facing.current = facing.current === "user" ? "environment" : "user";
       const ns = await navigator.mediaDevices.getUserMedia({
@@ -711,7 +796,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     } catch {
       toast.error("ক্যামেরা বদলানো যায়নি");
     }
-  }, [replaceVideoTrack, sharing]);
+  }, [replaceVideoTrack, sharing, isNativeApp]);
 
   const clock = `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
 
@@ -800,7 +885,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
                 <p className="mt-1.5 inline-flex items-center gap-1.5 text-sm font-semibold text-white/60">
                   <Volume2 className="h-4 w-4" />
                   {state === "active"
-                    ? clock
+                    ? (quality === "poor" ? "সংযোগ দুর্বল…" : quality === "reconnecting" ? "পুনরায় সংযোগ…" : clock)
                     : state === "calling"
                       ? "রিং হচ্ছে…"
                       : "সংযোগ হচ্ছে…"}
@@ -828,7 +913,9 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
             >
               <p className="text-[15px] font-bold drop-shadow">{peer.name}</p>
               <p className="text-[12px] font-semibold text-white/70">
-                {state === "active" ? clock : state === "calling" ? "রিং হচ্ছে…" : "সংযোগ হচ্ছে…"}
+                {state === "active" 
+                  ? (quality === "poor" ? "সংযোগ দুর্বল…" : quality === "reconnecting" ? "পুনরায় সংযোগ…" : clock)
+                  : state === "calling" ? "রিং হচ্ছে…" : "সংযোগ হচ্ছে…"}
                 {sharing ? " • স্ক্রিন শেয়ার" : ""}
               </p>
             </div>
@@ -849,17 +936,19 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
                 </CallCtl>
               )}
               {withVideo && (
-                <CallCtl active={false} onClick={() => void switchCamera()} label="বদল">
+                <CallCtl active={false} onClick={() => void triggerSwitchCamera()} label="বদল">
                   <SwitchCamera className="h-5 w-5" />
                 </CallCtl>
               )}
-              <CallCtl active={sharing} onClick={() => void toggleShare()} label="স্ক্রিন">
-                {sharing ? <MonitorOff className="h-5 w-5" /> : <MonitorUp className="h-5 w-5" />}
-              </CallCtl>
+              {withVideo && (
+                <CallCtl active={sharing} onClick={() => void toggleShare()} label="শেয়ার">
+                  {sharing ? <MonitorOff className="h-5 w-5 text-emerald-400" /> : <MonitorUp className="h-5 w-5" />}
+                </CallCtl>
+              )}
               <button
                 onClick={hangUp}
                 className="btn-press grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[#ff3b30] text-white shadow-[0_10px_24px_-10px_rgba(255,59,48,0.95)]"
-                aria-label="কল কাটুন"
+                aria-label="কেটে দিন"
               >
                 <PhoneOff className="h-5 w-5" />
               </button>

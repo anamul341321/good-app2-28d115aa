@@ -1,6 +1,6 @@
 /**
- * ইনকামিং/আউটগোয়িং কলের রিংটোন — কোনো অডিও ফাইল ছাড়াই WebAudio দিয়ে
- * সুন্দর মেলোডি বাজে (অ্যাপ সাইজ বাড়ে না, লোডিং লাগে না)।
+ * ইনকামিং/আউটগোয়িং কলের রিংটোন — WebAudio oscillator ব্যবহার করে।
+ * এটি ফোনের সাইলেন্ট মোড বা ব্রাউজার অটো-প্লে পলিসি মানতে পারে।
  */
 type Ring = { stop: () => void };
 
@@ -25,30 +25,32 @@ export function playIncomingRing(): Ring {
 
   const chime = (t0: number) => {
     if (!ac) return;
-    // C6 → G5 → E6 — নরম, ইউনিক টোন
-    [
-      { f: 1046.5, at: 0, dur: 0.26 },
-      { f: 783.99, at: 0.24, dur: 0.26 },
-      { f: 1318.5, at: 0.52, dur: 0.42 },
-    ].forEach(({ f, at, dur }) => {
-      const osc = ac.createOscillator();
-      const gain = ac.createGain();
-      osc.type = "sine";
-      osc.frequency.value = f;
-      gain.gain.setValueAtTime(0.0001, t0 + at);
-      gain.gain.exponentialRampToValueAtTime(0.28, t0 + at + 0.05);
-      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + at + dur);
-      osc.connect(gain).connect(ac.destination);
-      osc.start(t0 + at);
-      osc.stop(t0 + at + dur + 0.05);
-    });
+    try {
+      [
+        { f: 1046.5, at: 0, dur: 0.26 },
+        { f: 783.99, at: 0.24, dur: 0.26 },
+        { f: 1318.5, at: 0.52, dur: 0.42 },
+      ].forEach(({ f, at, dur }) => {
+        const osc = ac.createOscillator();
+        const gain = ac.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(f, t0 + at);
+        gain.gain.setValueAtTime(0.0001, t0 + at);
+        gain.gain.exponentialRampToValueAtTime(0.28, t0 + at + 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t0 + at + dur);
+        osc.connect(gain).connect(ac.destination);
+        osc.start(t0 + at);
+        osc.stop(t0 + at + dur + 0.05);
+      });
+    } catch {}
   };
 
   const loop = () => {
     if (stopped) return;
     if (ac) {
-      void ac.resume?.();
-      chime(ac.currentTime + 0.02);
+      void ac.resume?.().then(() => {
+        if (!stopped) chime(ac.currentTime + 0.02);
+      }).catch(() => {});
     }
     vibrate([0, 400, 200, 400]);
     timer = window.setTimeout(loop, 2200);
@@ -75,23 +77,26 @@ export function playRingback(): Ring {
 
   const beep = (t0: number) => {
     if (!ac) return;
-    const osc = ac.createOscillator();
-    const gain = ac.createGain();
-    osc.type = "sine";
-    osc.frequency.value = 440;
-    gain.gain.setValueAtTime(0.0001, t0);
-    gain.gain.exponentialRampToValueAtTime(0.12, t0 + 0.08);
-    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + 1.0);
-    osc.connect(gain).connect(ac.destination);
-    osc.start(t0);
-    osc.stop(t0 + 1.05);
+    try {
+      const osc = ac.createOscillator();
+      const gain = ac.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(440, t0);
+      gain.gain.setValueAtTime(0.0001, t0);
+      gain.gain.exponentialRampToValueAtTime(0.12, t0 + 0.08);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + 1.0);
+      osc.connect(gain).connect(ac.destination);
+      osc.start(t0);
+      osc.stop(t0 + 1.05);
+    } catch {}
   };
 
   const loop = () => {
     if (stopped) return;
     if (ac) {
-      void ac.resume?.();
-      beep(ac.currentTime + 0.02);
+      void ac.resume?.().then(() => {
+        if (!stopped) beep(ac.currentTime + 0.02);
+      }).catch(() => {});
     }
     timer = window.setTimeout(loop, 3000);
   };

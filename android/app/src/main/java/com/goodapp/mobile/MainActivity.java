@@ -26,10 +26,12 @@ import com.getcapacitor.BridgeActivity;
 import com.getcapacitor.BridgeWebViewClient;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.FileProvider;
+import android.media.projection.MediaProjectionManager;
 
 import java.io.File;
 
 public class MainActivity extends BridgeActivity {
+    private static final int SCREEN_SHARE_REQUEST = 9043;
     private static final int NOTIFICATION_PERMISSION_REQUEST = 9042;
     private static final String APP_URL = "https://www.goodapp2.live";
     private static final String APK_DOWNLOAD_PATH = "/api/public/app/download";
@@ -210,6 +212,32 @@ public class MainActivity extends BridgeActivity {
         }
 
         @JavascriptInterface
+        public void startScreenShare() {
+            runOnUiThread(() -> {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    MediaProjectionManager manager = (MediaProjectionManager) getSystemService(Context.MEDIA_PROJECTION_SERVICE);
+                    startActivityForResult(manager.createScreenCaptureIntent(), SCREEN_SHARE_REQUEST);
+                } else {
+                    Toast.makeText(MainActivity.this, "Screen sharing not supported on this version", Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void stopScreenShare() {
+            runOnUiThread(() -> {
+                bridge.getWebView().evaluateJavascript("window.dispatchEvent(new CustomEvent('goodapp-screen-share-stopped'))", null);
+            });
+        }
+
+        @JavascriptInterface
+        public void switchCamera() {
+            runOnUiThread(() -> {
+                bridge.getWebView().evaluateJavascript("window.dispatchEvent(new CustomEvent('goodapp-switch-camera'))", null);
+            });
+        }
+
+        @JavascriptInterface
         public void download(String url, String fileName) {
             runOnUiThread(() -> {
                 try {
@@ -361,6 +389,16 @@ public class MainActivity extends BridgeActivity {
         Uri uri = intent != null ? intent.getData() : null;
         if (uri != null && isAppDomain(uri) && bridge != null) {
             bridge.getWebView().loadUrl(uri.toString());
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == SCREEN_SHARE_REQUEST && resultCode == RESULT_OK) {
+            // Signal to WebRTC that screen capture is ready. We can't pass the Intent directly to JS easily,
+            // but Capacitor/WebView can handle media projection if the permission is granted.
+            bridge.getWebView().evaluateJavascript("window.dispatchEvent(new CustomEvent('goodapp-screen-share-ready'))", null);
         }
     }
 
