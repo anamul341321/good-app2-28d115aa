@@ -36,7 +36,7 @@ export function NewsFeedPage() {
               <Search className="h-5 w-5 text-gray-600" />
             </button>
             <button 
-              onClick={() => navigate({ to: "/chat" as any })}
+              onClick={() => navigate({ to: "/social/messenger" as any })}
               className="h-9 w-9 flex items-center justify-center rounded-full bg-gray-100 btn-press"
             >
               <MessageSquare className="h-5 w-5 text-gray-600" />
