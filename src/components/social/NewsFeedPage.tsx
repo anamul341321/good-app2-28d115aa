@@ -10,18 +10,25 @@ import { MessengerAvatar } from "@/components/messenger/MessengerAvatar";
 export function NewsFeedPage() {
   const { t } = useLang();
   const navigate = useNavigate();
-  const [search, setSearch] = useState("");
+  const queryClient = useQueryClient();
+  const [postBody, setPostBody] = useState("");
 
-  const { data: postsData, isLoading } = useQuery({
+  const { data: posts, isLoading } = useQuery({
     queryKey: ["posts"],
     queryFn: () => listPosts(),
-    refetchInterval: 30000,
   });
 
-  const posts = postsData?.posts ?? [];
+  const createMut = useMutation({
+    mutationFn: (body: string) => createPost({ data: { body, mediaUrls: [] } }),
+    onSuccess: () => {
+      setPostBody("");
+      queryClient.invalidateQueries({ queryKey: ["posts"] });
+      toast.success(t("পোস্ট করা হয়েছে", "Posted successfully"));
+    },
+  });
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#F0F2F5] pb-20">
+    <div className="flex flex-col min-h-screen bg-gray-200 pb-20">
       {/* Top Header - Facebook Lite Style */}
       <header className="sticky top-0 z-40 bg-white border-b shadow-sm">
         <div className="max-w-md mx-auto px-4 py-2 flex items-center justify-between">
@@ -36,87 +43,95 @@ export function NewsFeedPage() {
               <Search className="h-5 w-5 text-gray-600" />
             </button>
             <button 
-              onClick={() => navigate({ to: "/chat" as any })}
+              onClick={() => navigate({ to: "/social/messenger" as any })}
               className="h-9 w-9 flex items-center justify-center rounded-full bg-gray-100 btn-press"
             >
               <MessageSquare className="h-5 w-5 text-gray-600" />
             </button>
-            <button className="h-9 w-9 flex items-center justify-center rounded-full bg-gray-100 btn-press">
-              <MenuIcon className="h-5 w-5 text-gray-600" />
+            <button 
+              onClick={() => navigate({ to: "/social/profile" as any })}
+              className="h-9 w-9 flex items-center justify-center rounded-full bg-gray-100 btn-press overflow-hidden"
+            >
+              <Users className="h-5 w-5 text-gray-600" />
             </button>
           </div>
         </div>
       </header>
 
-      <main className="flex-1 max-w-md mx-auto w-full space-y-2">
-        {/* Composer - What's on your mind? */}
-        <div className="bg-white p-4 shadow-sm">
-          <div className="flex items-center gap-3">
-            <MessengerAvatar src={null} name="Me" size="md" />
+      <main className="flex-1 max-w-md mx-auto w-full space-y-2 py-2">
+        {/* Post Composer */}
+        <div className="bg-white p-3 shadow-sm">
+          <div className="flex gap-2">
+            <MessengerAvatar name="Me" size="md" />
             <button 
-              className="flex-1 h-10 px-4 rounded-full border border-gray-200 text-gray-500 text-sm font-medium text-left hover:bg-gray-50 transition-colors"
-              onClick={() => toast.info("Post creation coming soon")}
+              onClick={() => {}} 
+              className="flex-1 text-left px-4 py-2 bg-gray-100 rounded-full text-gray-500 text-sm font-medium hover:bg-gray-200 transition-colors"
             >
-              {t("আপনি কী ভাবছেন?", "What's on your mind?")}
+              {t("আপনার মনে কি চলছে?", "What's on your mind?") }
             </button>
+            <div className="flex items-center px-2">
+              <ImageIcon className="h-6 w-6 text-green-500" />
+            </div>
           </div>
-          <div className="flex items-center gap-1 mt-3 pt-2 border-t border-gray-100">
-            <button className="flex-1 flex items-center justify-center gap-2 h-9 text-xs font-bold text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
-              <Video className="h-4 w-4 text-[#F3425F]" /> {t("লাইভ", "Live")}
+          <div className="flex border-t mt-3 pt-2">
+            <button className="flex-1 flex items-center justify-center gap-2 py-1 text-[12px] font-bold text-gray-600">
+              <Video className="h-4 w-4 text-rose-500" /> {t("লাইভ", "Live")}
             </button>
-            <div className="w-px h-4 bg-gray-200" />
-            <button className="flex-1 flex items-center justify-center gap-2 h-9 text-xs font-bold text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
-              <ImageIcon className="h-4 w-4 text-[#45BD62]" /> {t("ছবি", "Photo")}
+            <div className="w-px bg-gray-100" />
+            <button className="flex-1 flex items-center justify-center gap-2 py-1 text-[12px] font-bold text-gray-600">
+              <ImageIcon className="h-4 w-4 text-green-500" /> {t("ছবি", "Photo")}
             </button>
-            <div className="w-px h-4 bg-gray-200" />
-            <button className="flex-1 flex items-center justify-center gap-2 h-9 text-xs font-bold text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
-              <Smile className="h-4 w-4 text-[#F7B928]" /> {t("অনুভূতি", "Feeling")}
+            <div className="w-px bg-gray-100" />
+            <button className="flex-1 flex items-center justify-center gap-2 py-1 text-[12px] font-bold text-gray-600">
+              <Video className="h-4 w-4 text-purple-500" /> {t("রুম", "Room")}
             </button>
           </div>
         </div>
 
-        {/* Dash Section Integration Button - Modern Styled */}
-        <div className="px-4 py-3">
-          <Link 
-            to="/reverify" 
-            search={{ taskId: undefined }}
-            className="w-full flex items-center gap-3 bg-gradient-to-r from-[#1877F2] to-[#3B82F6] rounded-xl p-4 text-white shadow-md active:scale-[0.98] transition-all"
-
-          >
-            <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center">
-              <Camera className="w-6 h-6" />
+        {/* Stories - Horizontal Scroll */}
+        <div className="bg-white py-3 shadow-sm overflow-hidden">
+          <div className="flex gap-2 px-3 overflow-x-auto no-scrollbar">
+            <div className="shrink-0 w-24 h-40 rounded-xl bg-gray-100 border relative overflow-hidden group btn-press">
+              <div className="absolute inset-0 bg-gray-200" />
+              <div className="absolute bottom-0 left-0 right-0 bg-white pt-6 pb-2 px-2 text-center">
+                <p className="text-[10px] font-bold text-gray-900 leading-tight">Create Story</p>
+              </div>
+              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-[#1877F2] border-4 border-white flex items-center justify-center text-white">
+                <Plus className="w-4 h-4" />
+              </div>
             </div>
-            <div className="flex-1 text-left">
-              <p className="text-sm font-black leading-tight">{t("ভেরিফিকেশন সেন্টার এ যান", "Go to Verification Center")}</p>
-              <p className="text-[10px] opacity-90 font-bold">{t("আপনার পরিচয় ও ১০ জন সাক্ষী", "Your identity & 10 witnesses")}</p>
-            </div>
-            <Plus className="w-5 h-5" />
-          </Link>
+            {[1,2,3,4,5].map(i => (
+              <div key={i} className="shrink-0 w-24 h-40 rounded-xl bg-gray-200 border relative overflow-hidden group btn-press">
+                <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-black/60" />
+                <div className="absolute top-2 left-2 w-8 h-8 rounded-full border-2 border-[#1877F2] overflow-hidden">
+                  <div className="w-full h-full bg-gray-300" />
+                </div>
+                <div className="absolute bottom-2 left-2 right-2">
+                  <p className="text-[10px] font-bold text-white leading-tight line-clamp-2">Friend {i}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
-        {/* Posts List */}
+        {/* Feed Posts */}
         {isLoading ? (
-          <div className="flex justify-center py-10">
-            <div className="h-6 w-6 border-2 border-[#1877F2] border-t-transparent animate-spin rounded-full" />
-          </div>
-        ) : posts.length === 0 ? (
-          <div className="bg-white p-10 text-center mx-2 rounded-xl border border-dashed border-gray-300">
-            <p className="text-sm font-bold text-gray-400">No posts yet. Be the first to share something!</p>
-          </div>
+          <div className="py-10 flex justify-center"><Plus className="w-6 h-6 animate-spin text-[#1877F2]" /></div>
         ) : (
-          posts.map((post: any) => (
-            <PostCard key={post.id} post={post} />
-          ))
+          <div className="space-y-2">
+            {(posts as any)?.posts?.map((post: any) => (
+              <PostCard key={post.id} post={post} />
+            ))}
+          </div>
         )}
       </main>
     </div>
   );
 }
 
-function PostCard({ post }: { post: any }) {
+export function PostCard({ post }: { post: any }) {
   const { t } = useLang();
   const queryClient = useQueryClient();
-
   const reactMut = useMutation({
     mutationFn: (type: string) => reactToPost({ data: { postId: post.id, reactionType: type } }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["posts"] }),

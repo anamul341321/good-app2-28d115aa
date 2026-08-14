@@ -183,7 +183,7 @@ function FriendsPage() {
         </div>
       </main>
 
-      <MessengerNav />
+      
     </div>
   );
 }
