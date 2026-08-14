@@ -909,17 +909,13 @@ function CallCtl({
   return (
     <button
       onClick={onClick}
-      className="btn-press flex flex-col items-center gap-1.5"
+      title={label}
+      className={`btn-press grid h-12 w-12 shrink-0 place-items-center rounded-full transition ${
+        active ? "bg-white text-[#0b1024]" : "bg-white/15 text-white"
+      }`}
       aria-label={label}
     >
-      <span
-        className={`grid h-14 w-14 place-items-center rounded-full border text-white transition ${
-          active ? "border-white/40 bg-white/85 text-[#0b1024]" : "border-white/15 bg-white/10"
-        }`}
-      >
-        {children}
-      </span>
-      <span className="text-[10px] font-black text-white/70">{label}</span>
+      {children}
     </button>
   );
 }
