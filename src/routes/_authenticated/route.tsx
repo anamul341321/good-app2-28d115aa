@@ -243,6 +243,7 @@ function AuthedLayout() {
       <nav className="fixed bottom-0 inset-x-0 z-30 glass border-t border-violet/20">
         <div className="max-w-md mx-auto px-1.5 py-2 grid grid-cols-6 gap-0.5">
           <NavItem to="/home" icon={<Home className="w-5 h-5" />} label={t("হোম", "Home")} tint="cyan" voice="home.welcome" />
+          <NavItem to="/home" icon={<ScrollText className="w-5 h-5" />} label={t("ফিড", "Feed")} tint="violet" />
           <div data-tour="nav-reverify"><NavItem to="/reverify" icon={<RefreshCcw className="w-5 h-5" />} label={t("রি-ভেরিফাই", "Re-verify")} tint="violet" voice="reverify.intro" /></div>
           <NavItem to="/referral" icon={<Users className="w-5 h-5" />} label={t("রেফার", "Refer")} tint="violet" />
           <NavItem to="/menu" icon={<LayoutGrid className="w-5 h-5" />} label={t("মেনু", "Menu")} tint="emerald" />
