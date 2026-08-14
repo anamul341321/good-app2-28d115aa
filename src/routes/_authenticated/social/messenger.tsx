@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { getAppStatus } from "@/lib/app-status.functions";
 import { MaintenanceScreen } from "@/components/MaintenanceGate";
-import ChatListPage from "@/routes/_authenticated/chat.index";
+import { ChatListPage } from "@/routes/_authenticated/chat.index";
 
 export const Route = createFileRoute("/_authenticated/social/messenger")({
   component: SocialMessenger,
