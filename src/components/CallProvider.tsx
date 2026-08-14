@@ -25,7 +25,7 @@ import {
 import { playIncomingRing, playRingback } from "@/lib/ringtone";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyCallIdentity } from "@/lib/friends.functions";
-import { createCall, getCall, updateCall } from "@/lib/calls.functions";
+import { createCall, getCall, ringCall, updateCall } from "@/lib/calls.functions";
 
 type Signal =
   | { kind: "offer"; from: string; fromName: string; video: boolean; sdp: any; callId?: string }
@@ -108,6 +108,9 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   const reconnecting = useRef(false);
   const peerIdRef = useRef<string | null>(null);
   const makingOffer = useRef(false);
+  const isNativeApp =
+    typeof window !== "undefined" &&
+    Boolean((window as any).Capacitor?.isNativePlatform?.() || (window as any).GoodAppDownloader);
 
   useEffect(() => {
     stateRef.current = state;
@@ -198,10 +201,10 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         resolve();
       };
       pc.addEventListener("icegatheringstatechange", done);
-      window.setTimeout(() => {
+       window.setTimeout(() => {
         pc.removeEventListener("icegatheringstatechange", done);
         resolve();
-      }, 3500);
+       }, 2000);
     });
   }, []);
 
@@ -212,6 +215,8 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     }
     if (remoteAudio.current) {
       remoteAudio.current.srcObject = stream;
+      remoteAudio.current.muted = false;
+      remoteAudio.current.volume = 1;
       void remoteAudio.current.play().catch(() => {});
     }
   }, []);
@@ -376,7 +381,9 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         const offer = await pc.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: video });
         await pc.setLocalDescription(offer);
         makingOffer.current = false;
-        await waitForIce(pc);
+         // Keep the durable database offer self-contained for a native cold start.
+         // The cap is short, so this no longer waits on push delivery or slow TURN paths.
+         await waitForIce(pc);
         const finalOffer = pc.localDescription?.toJSON() ?? offer;
         const created = await createCall({ data: { peerId, video, offer: finalOffer } });
         currentCallId.current = created.callId;
@@ -389,6 +396,9 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
           sdp: finalOffer,
           callId: created.callId,
         });
+         // Realtime starts the call immediately; FCM independently wakes the native
+         // Android full-screen receiver when the app is backgrounded or closed.
+         void ringCall({ data: { callId: created.callId } }).catch(() => {});
       } catch (e) {
         makingOffer.current = false;
         toast.error("মাইক/ক্যামেরার অনুমতি দিন");
@@ -414,9 +424,12 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       await flushPendingIce(pc);
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
-      await waitForIce(pc);
-      const finalAnswer = pc.localDescription?.toJSON() ?? answer;
-      await sendTo(peer.id, { kind: "answer", from: myId, sdp: finalAnswer });
+       const immediateAnswer = pc.localDescription?.toJSON() ?? answer;
+       await sendTo(peer.id, { kind: "answer", from: myId, sdp: immediateAnswer });
+       // Realtime answer immediately starts media. The completed ICE answer is then
+       // persisted as a durable fallback for a caller that briefly lost realtime.
+       await waitForIce(pc);
+       const finalAnswer = pc.localDescription?.toJSON() ?? immediateAnswer;
       if (currentCallId.current) {
         await updateCall({
           data: { callId: currentCallId.current, status: "accepted", answer: finalAnswer },
@@ -512,6 +525,9 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       .on("broadcast", { event: "signal" }, async ({ payload }) => {
         const sig = payload as Signal;
         if (sig.kind === "offer") {
+          // Incoming calls are Android-native only. The FCM full-screen activity owns
+          // ringing/answering in the app; browsers must never show a second call UI.
+          if (!isNativeApp) return;
           if (stateRef.current !== "idle") {
             void sendTo(sig.from, { kind: "busy", from: myId });
             return;
@@ -579,7 +595,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     return () => {
       supabase.removeChannel(ch);
     };
-  }, [myId, sendTo, cleanup, flushPendingIce, waitForIce]);
+  }, [myId, sendTo, cleanup, flushPendingIce, waitForIce, isNativeApp]);
 
   const toggleMute = () => {
     const track = localStream.current?.getAudioTracks()[0];
@@ -598,13 +614,13 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     ring.current?.stop();
     ring.current = null;
-    if (state === "ringing") ring.current = playIncomingRing();
+    if (state === "ringing" && !isNativeApp) ring.current = playIncomingRing();
     else if (state === "calling") ring.current = playRingback();
     return () => {
       ring.current?.stop();
       ring.current = null;
     };
-  }, [state]);
+  }, [state, isNativeApp]);
 
   // কলের সময় গণনা
   useEffect(() => {
@@ -676,7 +692,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       <audio ref={remoteAudio} autoPlay playsInline className="hidden" />
 
       {/* ইনকামিং কল — মেসেঞ্জারের মতো ফুল স্ক্রিন */}
-      {state === "ringing" && peer && (
+       {state === "ringing" && peer && !isNativeApp && (
         <div
           className="fixed inset-0 z-[95] flex flex-col items-center justify-between px-6 pb-12 pt-20 text-white"
           style={{

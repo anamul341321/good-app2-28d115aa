@@ -168,6 +168,8 @@ public class IncomingCallActivity extends Activity {
 
     private void openCall() {
         stopRinging();
+        getSharedPreferences("goodapp_calls", Context.MODE_PRIVATE)
+            .edit().putBoolean("answered_" + callId, true).apply();
         String url = "https://www.goodapp2.live/chat/" + Uri.encode(callerId == null ? "" : callerId)
             + "?call=" + Uri.encode(callId == null ? "" : callId) + "&accept=1";
         Intent app = new Intent(this, MainActivity.class);
@@ -185,6 +187,8 @@ public class IncomingCallActivity extends Activity {
 
     private void declineCall() {
         stopRinging();
+        getSharedPreferences("goodapp_calls", Context.MODE_PRIVATE)
+            .edit().putBoolean("declined_" + callId, true).apply();
         String url = "https://www.goodapp2.live/chat/" + Uri.encode(callerId == null ? "" : callerId)
             + "?call=" + Uri.encode(callId == null ? "" : callId) + "&decline=1";
         Intent app = new Intent(this, MainActivity.class);

@@ -38,14 +38,32 @@ export async function createCallSession(
   ]);
   if (error || !call) throw new Error("কল শুরু করা যায়নি");
 
-  const callerName = profile?.display_name ?? "একজন বন্ধু";
-  await sendIncomingCallPush(input.peerId, {
+  return { callId: call.id as string, callerName: profile?.display_name ?? "একজন বন্ধু" };
+}
+
+export async function notifyIncomingCall(
+  context: AuthContext,
+  input: { callId: string },
+) {
+  if (!input.callId) return { sent: 0, failed: 0 };
+  const { data: call } = await context.supabase
+    .from("call_sessions")
+    .select("id, caller_id, callee_id, call_type, status")
+    .eq("id", input.callId)
+    .eq("caller_id", context.userId)
+    .maybeSingle();
+  if (!call || call.status !== "ringing") return { sent: 0, failed: 0 };
+  const { data: profile } = await context.supabase
+    .from("profiles")
+    .select("display_name")
+    .eq("id", context.userId)
+    .maybeSingle();
+  return sendIncomingCallPush(call.callee_id, {
     callId: call.id,
     callerId: context.userId,
-    callerName,
-    video: input.video,
+    callerName: profile?.display_name ?? "একজন বন্ধু",
+    video: call.call_type === "video",
   });
-  return { callId: call.id as string };
 }
 
 export async function getCallSession(context: AuthContext, callId: string) {

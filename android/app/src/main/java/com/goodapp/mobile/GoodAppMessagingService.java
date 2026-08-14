@@ -40,6 +40,8 @@ public class GoodAppMessagingService extends FirebaseMessagingService {
                 .apply();
             NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
             manager.cancel(callId.hashCode());
+            getSharedPreferences("goodapp_calls", Context.MODE_PRIVATE)
+                .edit().remove("shown_" + callId).apply();
             Intent cancel = new Intent("com.goodapp.mobile.CANCEL_CALL");
             cancel.setPackage(getPackageName());
             cancel.putExtra("call_id", callId);
@@ -65,6 +67,12 @@ public class GoodAppMessagingService extends FirebaseMessagingService {
         String callerId = value(data, "caller_id", "");
         String callerName = value(data, "caller_name", "Good-App user");
         boolean video = "true".equals(data.get("video"));
+
+        // FCM can retry a high-priority data message. Never post the same call twice.
+        String shownKey = "shown_" + callId;
+        if (getSharedPreferences("goodapp_calls", Context.MODE_PRIVATE).getBoolean(shownKey, false)) return;
+        getSharedPreferences("goodapp_calls", Context.MODE_PRIVATE)
+            .edit().putBoolean(shownKey, true).apply();
 
         Intent fullScreen = new Intent(this, IncomingCallActivity.class);
         fullScreen.putExtra("call_id", callId);
