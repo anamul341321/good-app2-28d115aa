@@ -75,7 +75,7 @@ public class GoodAppMessagingService extends FirebaseMessagingService {
             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
         Intent declineIntent = new Intent(this, IncomingCallActivity.class);
-        declineIntent.putExtras(fullScreen);
+        if (fullScreen.getExtras() != null) declineIntent.putExtras(fullScreen.getExtras());
         declineIntent.putExtra("call_action", "decline");
         declineIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         PendingIntent declinePending = PendingIntent.getActivity(
@@ -85,7 +85,7 @@ public class GoodAppMessagingService extends FirebaseMessagingService {
             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
         Intent answerIntent = new Intent(this, IncomingCallActivity.class);
-        answerIntent.putExtras(fullScreen);
+        if (fullScreen.getExtras() != null) answerIntent.putExtras(fullScreen.getExtras());
         answerIntent.putExtra("call_action", "answer");
         answerIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         PendingIntent answerPending = PendingIntent.getActivity(
