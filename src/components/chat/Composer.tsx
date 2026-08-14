@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { Image as ImageIcon, Loader2, Mic, Send, Square, Video } from "lucide-react";
+import { Image as ImageIcon, Loader2, Mic, Send, Square, Video, Plus, Smile } from "lucide-react";
 import { extOf, uploadChatFile, type UploadKind } from "@/lib/chat-upload";
 
 export type SendPayload = {
@@ -10,7 +10,7 @@ export type SendPayload = {
   mediaMeta?: Record<string, any>;
 };
 
-/** মেসেঞ্জারের মতো ইনপুট বার — টেক্সট, ছবি, ভিডিও ও ভয়েস মেসেজ */
+/** Messenger-style input bar */
 export function Composer({
   onSend,
   sending,
@@ -42,7 +42,7 @@ export function Composer({
       const path = await uploadChatFile(file, kind, extOf(file.name, kind === "image" ? "jpg" : "mp4"));
       onSend({ kind, mediaPath: path, mediaMeta: { name: file.name, size: file.size } });
     } catch (e: any) {
-      toast.error(e?.message ?? "আপলোড হয়নি");
+      toast.error(e?.message ?? "Upload failed");
     } finally {
       setBusy(false);
     }
@@ -69,7 +69,7 @@ export function Composer({
           const path = await uploadChatFile(blob, "voice", "webm");
           onSend({ kind: "voice", mediaPath: path, mediaMeta: { size: blob.size, duration } });
         } catch (e: any) {
-          toast.error(e?.message ?? "ভয়েস পাঠানো যায়নি");
+          toast.error(e?.message ?? "Failed to send voice");
         } finally {
           setBusy(false);
         }
@@ -84,7 +84,7 @@ export function Composer({
           return v + 1;
         }), 1000);
     } catch {
-      toast.error("মাইকের অনুমতি দিন");
+      toast.error("Allow microphone access");
     }
   };
 
@@ -96,7 +96,7 @@ export function Composer({
   const recording = recSec > 0;
 
   return (
-    <div className="glass sticky bottom-20 mt-3 rounded-2xl p-2">
+    <div className="bg-background px-2 py-2 border-t">
       <input
         ref={imgRef}
         type="file"
@@ -113,68 +113,82 @@ export function Composer({
       />
 
       {recording ? (
-        <div className="flex items-center gap-3 px-2 py-1.5">
-          <span className="h-3 w-3 animate-pulse rounded-full bg-rose-500" />
-          <div className="flex h-8 flex-1 items-center gap-1" aria-label="ভয়েস রেকর্ড হচ্ছে">
-            {Array.from({ length: 22 }, (_, index) => (
+        <div className="flex items-center gap-3 px-3 py-2 bg-surface-2 rounded-full">
+          <span className="h-2 w-2 animate-pulse rounded-full bg-rose-500" />
+          <div className="flex h-6 flex-1 items-center gap-0.5" aria-label="Recording">
+            {Array.from({ length: 24 }, (_, index) => (
               <span
                 key={index}
-                className="w-1 animate-pulse rounded-full bg-rose-500"
-                style={{ height: `${8 + ((index * 11) % 22)}px`, animationDelay: `${index * 45}ms` }}
+                className="w-0.5 animate-pulse rounded-full bg-rose-500"
+                style={{ height: `${6 + ((index * 9) % 18)}px`, animationDelay: `${index * 50}ms` }}
               />
             ))}
           </div>
-          <p className="text-xs font-black text-rose-500">
+          <p className="text-[10px] font-black text-rose-500">
             {String(Math.floor(recSec / 60)).padStart(2, "0")}:{String(recSec % 60).padStart(2, "0")}
           </p>
           <button
             onClick={stopRec}
-            className="btn-press grid h-11 w-11 place-items-center rounded-xl bg-rose-500 text-white"
-            aria-label="রেকর্ড শেষ করে পাঠান"
+            className="btn-press grid h-8 w-8 place-items-center rounded-full bg-rose-500 text-white"
           >
-            <Square className="h-5 w-5" />
+            <Square className="h-4 w-4 fill-white" />
           </button>
         </div>
       ) : (
-        <div className="flex items-center gap-1.5">
-          <button
-            onClick={() => imgRef.current?.click()}
-            className="btn-press grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-violet-500/15 text-violet-500"
-            aria-label="ছবি পাঠান"
-          >
-            <ImageIcon className="h-5 w-5" />
-          </button>
-          <button
-            onClick={() => vidRef.current?.click()}
-            className="btn-press grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-cyan-500/15 text-cyan-500"
-            aria-label="ভিডিও পাঠান"
-          >
-            <Video className="h-5 w-5" />
-          </button>
-          <input
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && submitText()}
-            placeholder="মেসেজ লিখুন…"
-            className="min-w-0 flex-1 rounded-xl bg-surface-2 px-3 py-3 text-sm font-bold outline-none"
-          />
+        <div className="flex items-center gap-2">
+          {!text.trim() && (
+            <div className="flex items-center gap-2">
+              <button
+                className="btn-press h-9 w-9 flex items-center justify-center rounded-full text-primary"
+                aria-label="More options"
+              >
+                <Plus className="h-6 w-6" />
+              </button>
+              <button
+                onClick={() => vidRef.current?.click()}
+                className="btn-press h-9 w-9 flex items-center justify-center rounded-full text-primary"
+                aria-label="Send video"
+              >
+                <Video className="h-6 w-6" />
+              </button>
+              <button
+                onClick={() => imgRef.current?.click()}
+                className="btn-press h-9 w-9 flex items-center justify-center rounded-full text-primary"
+                aria-label="Send image"
+              >
+                <ImageIcon className="h-6 w-6" />
+              </button>
+            </div>
+          )}
+          
+          <div className="flex-1 relative flex items-center">
+            <input
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && submitText()}
+              placeholder="Aa"
+              className="w-full h-10 rounded-full bg-surface-2 px-4 text-sm font-bold focus:outline-none"
+            />
+            <button className="absolute right-3 text-primary">
+              <Smile className="h-5 w-5" />
+            </button>
+          </div>
+
           {text.trim() ? (
             <button
               onClick={submitText}
               disabled={sending || busy}
-              className="gradient-cta btn-press grid h-11 w-11 shrink-0 place-items-center rounded-xl text-white disabled:opacity-50"
-              aria-label="পাঠান"
+              className="btn-press h-9 w-9 flex items-center justify-center rounded-full text-primary disabled:opacity-50"
             >
-              {sending || busy ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
+              {sending || busy ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-6 w-6 fill-primary" />}
             </button>
           ) : (
             <button
               onClick={() => void startRec()}
               disabled={busy}
-              className="btn-press grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-emerald-500/15 text-emerald-500 disabled:opacity-50"
-              aria-label="ভয়েস মেসেজ"
+              className="btn-press h-9 w-9 flex items-center justify-center rounded-full text-primary disabled:opacity-50"
             >
-              {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : <Mic className="h-5 w-5" />}
+              {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : <Mic className="h-6 w-6" />}
             </button>
           )}
         </div>
