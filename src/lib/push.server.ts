@@ -118,7 +118,10 @@ export async function sendPushToTokens(
             body: JSON.stringify({
               message: {
                 token,
-                notification: payload.call ? undefined : { title: payload.title, body: payload.body },
+                notification:
+                  payload.call || payload.data?.type === "chat_message"
+                    ? undefined
+                    : { title: payload.title, body: payload.body },
                 data: { ...(payload.data ?? {}), ...(payload.url ? { url: payload.url } : {}) },
                 android: {
                   priority: "HIGH",
