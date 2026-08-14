@@ -25,7 +25,7 @@ function Lightbox({ url, video, onClose }: { url: string; video?: boolean; onClo
       {video ? (
         <video src={url} controls autoPlay className="max-h-full max-w-full rounded-2xl" />
       ) : (
-        <img src={url} alt="চ্যাটের ছবি" className="max-h-full max-w-full rounded-2xl" />
+        <img src={url} alt="ছবি" className="max-h-full max-w-full rounded-2xl" />
       )}
     </div>
   );
@@ -64,7 +64,7 @@ function VoiceMessage({ url, mine, durationHint }: { url: string; mine: boolean;
   return (
     <div className="flex min-w-56 items-center gap-2 py-0.5" onClick={(event) => event.stopPropagation()}>
       <audio ref={audio} src={url} preload="metadata" />
-      <button onClick={toggle} className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-current/15" aria-label={playing ? "ভয়েস থামান" : "ভয়েস শুনুন"}>
+      <button onClick={toggle} className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-current/15" aria-label={playing ? "Stop" : "Play"}>
         {playing ? <Pause className="h-4 w-4" /> : <Play className="ml-0.5 h-4 w-4" />}
       </button>
       <div className="flex h-8 flex-1 items-center gap-0.5">
@@ -92,30 +92,27 @@ export function MessageBubble({
   const [zoom, setZoom] = useState(false);
   const [menu, setMenu] = useState(false);
 
-  const shell = mine
-    ? "gradient-cta rounded-br-md text-white"
-    : "rounded-bl-md bg-surface-2 text-foreground";
+  const bubbleClasses = mine
+    ? "bg-primary text-white rounded-[20px] rounded-br-[4px]"
+    : "bg-surface-2 text-foreground rounded-[20px] rounded-bl-[4px]";
 
   return (
-    <div className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-      <div className="max-w-[80%]">
-        {showName && !mine && (
-          <p className="mb-0.5 pl-2 text-[10px] font-black text-muted-foreground">{m.senderName}</p>
-        )}
+    <div className={`flex flex-col ${mine ? "items-end" : "items-start"} mb-1`}>
+      <div className="max-w-[80%] flex items-end gap-2">
         <div
           onClick={() => mine && !m.deleted && setMenu((v) => !v)}
-          className={`relative overflow-hidden rounded-2xl shadow-lg ${shell} ${
-            m.kind === "image" || m.kind === "video" ? "p-1" : "px-3.5 py-2.5"
+          className={`relative overflow-hidden shadow-sm transition-all ${bubbleClasses} ${
+            m.kind === "image" || m.kind === "video" ? "p-1" : "px-3.5 py-2"
           }`}
         >
           {m.deleted ? (
             <p className="flex items-center gap-1.5 text-xs font-bold italic opacity-80">
-              <Ban className="h-3.5 w-3.5" /> মেসেজ মুছে ফেলা হয়েছে
+              <Ban className="h-3.5 w-3.5" /> Message deleted
             </p>
           ) : m.kind === "call" ? (
             <div className="flex min-w-52 items-center gap-3 py-1">
               <span className={`grid h-10 w-10 place-items-center rounded-full ${
-                m.mediaMeta?.status === "ended" ? "bg-emerald-500/20" : "bg-rose-500/20"
+                m.mediaMeta?.status === "ended" ? "bg-white/20" : "bg-rose-500/20"
               }`}>
                 {m.mediaMeta?.status === "ended" ? (
                   m.mediaMeta?.video ? <Video className="h-5 w-5" /> : <PhoneIncoming className="h-5 w-5" />
@@ -125,13 +122,13 @@ export function MessageBubble({
               </span>
               <div>
                 <p className="text-sm font-black">{m.body}</p>
-                <p className="text-[10px] font-bold opacity-75">{m.mediaMeta?.video ? "ভিডিও কল" : "অডিও কল"}</p>
+                <p className="text-[10px] font-bold opacity-75">{m.mediaMeta?.video ? "Video Call" : "Audio Call"}</p>
               </div>
             </div>
           ) : m.kind === "image" && m.mediaUrl ? (
             <img
               src={m.mediaUrl}
-              alt="ছবি"
+              alt="Image"
               onClick={(e) => {
                 e.stopPropagation();
                 setZoom(true);
@@ -157,32 +154,32 @@ export function MessageBubble({
           ) : m.kind === "voice" && m.mediaUrl ? (
             <VoiceMessage url={m.mediaUrl} mine={mine} durationHint={Number(m.mediaMeta?.duration) || undefined} />
           ) : (
-            <p className="whitespace-pre-wrap break-words text-sm font-bold">{m.body}</p>
+            <p className="whitespace-pre-wrap break-words text-sm font-bold leading-snug">{m.body}</p>
           )}
-
-          <p
-            className={`px-1 pt-1 text-[10px] font-black ${
-              mine ? "text-white/75" : "text-muted-foreground"
-            }`}
-          >
-            {timeOf(m.createdAt)} {mine && !m.deleted ? (m.readAt ? "✓✓ সিন" : "✓ পাঠানো") : ""}
-          </p>
         </div>
-
-        {menu && mine && !m.deleted && onDelete && (
-          <div className="mt-1 flex justify-end">
-            <button
-              onClick={() => {
-                setMenu(false);
-                onDelete(m.id);
-              }}
-              className="btn-press flex items-center gap-1.5 rounded-xl bg-rose-500/15 px-3 py-1.5 text-[11px] font-black text-rose-500"
-            >
-              <Trash2 className="h-3.5 w-3.5" /> মেসেজ মুছুন
-            </button>
-          </div>
-        )}
       </div>
+      
+      {/* Seen status / time */}
+      {mine && m.readAt && !m.deleted && (
+        <span className="text-[9px] font-black text-muted-foreground mr-1 mt-0.5">Seen</span>
+      )}
+      {!mine && showName && (
+        <span className="text-[9px] font-black text-muted-foreground ml-3 mt-0.5">{m.senderName}</span>
+      )}
+
+      {menu && mine && !m.deleted && onDelete && (
+        <div className="mt-1 flex justify-end">
+          <button
+            onClick={() => {
+              setMenu(false);
+              onDelete(m.id);
+            }}
+            className="btn-press flex items-center gap-1.5 rounded-full bg-rose-500/10 px-3 py-1 text-[10px] font-black text-rose-500 border border-rose-500/20"
+          >
+            <Trash2 className="h-3 w-3" /> Unsend
+          </button>
+        </div>
+      )}
 
       {zoom && m.mediaUrl && (
         <Lightbox url={m.mediaUrl} video={m.kind === "video"} onClose={() => setZoom(false)} />
