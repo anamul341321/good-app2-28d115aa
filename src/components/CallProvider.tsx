@@ -357,6 +357,11 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         });
       } catch (e) {
         toast.error("মাইক/ক্যামেরার অনুমতি দিন");
+        if (currentCallId.current) {
+          await updateCall({
+            data: { callId: currentCallId.current, status: "failed", reason: "media_error" },
+          }).catch(() => {});
+        }
         cleanup();
       }
     },
