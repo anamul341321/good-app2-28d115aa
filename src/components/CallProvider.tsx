@@ -945,9 +945,13 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
                   {sharing ? <MonitorOff className="h-5 w-5 text-emerald-400" /> : <MonitorUp className="h-5 w-5" />}
                 </CallCtl>
               )}
-              <CallCtl active={false} onClick={hangUp} label="কেটে দিন" className="bg-[#ff3b30] hover:bg-[#ff3b30]/90">
+              <button
+                onClick={hangUp}
+                className="btn-press grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[#ff3b30] text-white shadow-[0_10px_24px_-10px_rgba(255,59,48,0.95)]"
+                aria-label="কেটে দিন"
+              >
                 <PhoneOff className="h-5 w-5" />
-              </CallCtl>
+              </button>
             </div>
           </div>
         </div>
