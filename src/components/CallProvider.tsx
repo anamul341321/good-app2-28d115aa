@@ -725,136 +725,143 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       {children}
 
       {/* ইনকামিং কল — মেসেঞ্জারের মতো ফুল স্ক্রিন */}
-       {state === "ringing" && peer && !isNativeApp && (
+      {state === "ringing" && peer && !isNativeApp && (
         <div
-          className="fixed inset-0 z-[95] flex flex-col items-center justify-between px-6 pb-12 pt-20 text-white"
+          className="fixed inset-0 z-[95] flex flex-col items-center justify-between px-6 text-white"
           style={{
-            background: "radial-gradient(120% 80% at 50% 0%,#1b2a6b 0%,#0b1024 55%,#05060f 100%)",
+            background: "linear-gradient(180deg,#0a1533 0%,#0a1024 45%,#05060f 100%)",
+            paddingTop: "calc(env(safe-area-inset-top,0px) + 64px)",
+            paddingBottom: "calc(env(safe-area-inset-bottom,0px) + 44px)",
           }}
         >
           <div className="flex flex-col items-center">
-            <p className="text-[11px] font-black uppercase tracking-[0.3em] text-cyan-300">
-              {withVideo ? "ভিডিও কল আসছে" : "অডিও কল আসছে"}
-            </p>
-            <div className="relative mt-10 grid place-items-center">
-              <span className="absolute h-40 w-40 animate-ping rounded-full bg-cyan-400/20" />
-              <span className="absolute h-52 w-52 animate-pulse rounded-full bg-violet-500/10" />
-              <div className="relative grid h-32 w-32 place-items-center rounded-full bg-gradient-to-br from-cyan-500 to-violet-600 text-5xl font-black shadow-2xl">
+            <div className="relative grid place-items-center">
+              <span className="absolute h-44 w-44 animate-ping rounded-full bg-white/10" />
+              <div className="relative grid h-28 w-28 place-items-center overflow-hidden rounded-full bg-gradient-to-br from-[#0084ff] to-[#a033ff] text-4xl font-black shadow-2xl">
                 {peer.name.slice(0, 1)}
               </div>
             </div>
-            <p className="mt-8 text-2xl font-black">{peer.name}</p>
-            <p className="mt-1 text-xs font-bold text-white/60">good-app কল</p>
+            <p className="mt-7 text-[26px] font-black tracking-tight">{peer.name}</p>
+            <p className="mt-1.5 text-sm font-semibold text-white/60">
+              {withVideo ? "ভিডিও কল" : "অডিও কল"}
+            </p>
           </div>
 
-          <div className="flex w-full items-end justify-around">
+          <div className="flex w-full max-w-xs items-end justify-between">
             <button
               onClick={hangUp}
-              className="btn-press flex flex-col items-center gap-2"
+              className="btn-press flex flex-col items-center gap-2.5"
               aria-label="কল কাটুন"
             >
-              <span className="grid h-[72px] w-[72px] place-items-center rounded-full bg-rose-600 shadow-[0_10px_30px_-8px_rgba(244,63,94,0.9)]">
+              <span className="grid h-[68px] w-[68px] place-items-center rounded-full bg-[#ff3b30] shadow-[0_12px_28px_-10px_rgba(255,59,48,0.95)]">
                 <PhoneOff className="h-7 w-7" />
               </span>
-              <span className="text-[11px] font-black text-white/80">কেটে দিন</span>
+              <span className="text-[12px] font-bold text-white/70">কেটে দিন</span>
             </button>
             <button
               onClick={() => void acceptCall()}
-              className="btn-press flex flex-col items-center gap-2"
+              className="btn-press flex flex-col items-center gap-2.5"
               aria-label="কল ধরুন"
             >
-              <span className="grid h-[72px] w-[72px] animate-bounce place-items-center rounded-full bg-emerald-500 shadow-[0_10px_30px_-8px_rgba(16,185,129,0.9)]">
+              <span className="grid h-[68px] w-[68px] animate-bounce place-items-center rounded-full bg-[#31c454] shadow-[0_12px_28px_-10px_rgba(49,196,84,0.95)]">
                 <PhoneIncoming className="h-7 w-7" />
               </span>
-              <span className="text-[11px] font-black text-white/80">রিসিভ করুন</span>
+              <span className="text-[12px] font-bold text-white/70">রিসিভ করুন</span>
             </button>
           </div>
         </div>
       )}
 
-      {/* চলমান কল */}
+      {/* চলমান কল — Messenger স্টাইল */}
       {(state === "calling" || state === "connecting" || state === "active") && peer && (
-        <div className="fixed inset-0 z-[95] flex flex-col bg-[#05060f]">
-          <div className="relative flex-1 overflow-hidden">
+        <div className="fixed inset-0 z-[95] bg-[#05060f]">
+          <video
+            ref={remoteVideo}
+            autoPlay
+            playsInline
+            className={`absolute inset-0 h-full w-full object-cover ${withVideo ? "" : "opacity-0"}`}
+          />
+
+          {!withVideo && (
+            <div
+              className="absolute inset-0 grid place-items-center"
+              style={{ background: "linear-gradient(180deg,#0a1533 0%,#0a1024 45%,#05060f 100%)" }}
+            >
+              <div className="-mt-10 text-center text-white">
+                <div className="relative mx-auto grid h-28 w-28 place-items-center">
+                  {state !== "active" && (
+                    <span className="absolute h-36 w-36 animate-ping rounded-full bg-white/10" />
+                  )}
+                  <div className="relative grid h-28 w-28 place-items-center rounded-full bg-gradient-to-br from-[#0084ff] to-[#a033ff] text-4xl font-black">
+                    {peer.name.slice(0, 1)}
+                  </div>
+                </div>
+                <p className="mt-6 text-[24px] font-black tracking-tight">{peer.name}</p>
+                <p className="mt-1.5 inline-flex items-center gap-1.5 text-sm font-semibold text-white/60">
+                  <Volume2 className="h-4 w-4" />
+                  {state === "active"
+                    ? clock
+                    : state === "calling"
+                      ? "রিং হচ্ছে…"
+                      : "সংযোগ হচ্ছে…"}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {withVideo && (
             <video
-              ref={remoteVideo}
+              ref={localVideo}
               autoPlay
               playsInline
-              className={`h-full w-full object-cover ${withVideo ? "" : "opacity-0"}`}
+              muted
+              className="absolute right-3 h-40 w-28 rounded-[22px] border border-white/20 object-cover shadow-2xl"
+              style={{ top: "calc(env(safe-area-inset-top,0px) + 72px)" }}
             />
-            {!withVideo && (
-              <div
-                className="absolute inset-0 grid place-items-center"
-                style={{
-                  background:
-                    "radial-gradient(120% 80% at 50% 0%,#1b2a6b 0%,#0b1024 60%,#05060f 100%)",
-                }}
-              >
-                <div className="text-center text-white">
-                  <div className="relative mx-auto grid h-28 w-28 place-items-center">
-                    {state === "active" && (
-                      <span className="absolute h-32 w-32 animate-ping rounded-full bg-cyan-400/15" />
-                    )}
-                    <div className="relative grid h-28 w-28 place-items-center rounded-full bg-gradient-to-br from-cyan-500 to-violet-600 text-4xl font-black">
-                      {peer.name.slice(0, 1)}
-                    </div>
-                  </div>
-                  <p className="mt-5 text-xl font-black">{peer.name}</p>
-                  <p className="mt-1 inline-flex items-center gap-1 text-xs font-bold text-cyan-300">
-                    <Volume2 className="h-3.5 w-3.5" />
-                    {state === "active"
-                      ? clock
-                      : state === "calling"
-                        ? "রিং হচ্ছে…"
-                        : "সংযোগ হচ্ছে…"}
-                  </p>
-                </div>
-              </div>
-            )}
-            {withVideo && (
-              <video
-                ref={localVideo}
-                autoPlay
-                playsInline
-                muted
-                className="absolute bottom-5 right-4 h-44 w-32 rounded-2xl border border-white/25 object-cover shadow-2xl"
-              />
-            )}
-            <div className="absolute left-0 right-0 top-0 flex flex-col items-center gap-1 bg-gradient-to-b from-black/60 to-transparent p-5 text-white">
-              <p className="text-base font-black drop-shadow">{peer.name}</p>
-              <p className="rounded-full bg-white/10 px-3 py-0.5 text-[11px] font-black text-white/85">
+          )}
+
+          {/* উপরের হেডার */}
+          {withVideo && (
+            <div
+              className="absolute left-0 right-0 top-0 flex flex-col items-center gap-1 bg-gradient-to-b from-black/55 to-transparent px-5 pb-8 text-white"
+              style={{ paddingTop: "calc(env(safe-area-inset-top,0px) + 14px)" }}
+            >
+              <p className="text-[15px] font-bold drop-shadow">{peer.name}</p>
+              <p className="text-[12px] font-semibold text-white/70">
                 {state === "active" ? clock : state === "calling" ? "রিং হচ্ছে…" : "সংযোগ হচ্ছে…"}
                 {sharing ? " • স্ক্রিন শেয়ার" : ""}
               </p>
             </div>
-          </div>
+          )}
 
-          <div className="border-t border-white/10 bg-black/70 px-4 pb-8 pt-5 backdrop-blur">
-            <div className="flex items-center justify-center gap-4">
+          {/* নিচের ভাসমান কন্ট্রোল বার */}
+          <div
+            className="absolute inset-x-0 bottom-0 px-4"
+            style={{ paddingBottom: "calc(env(safe-area-inset-bottom,0px) + 22px)" }}
+          >
+            <div className="mx-auto flex max-w-sm items-center justify-between gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-3 backdrop-blur-xl">
               <CallCtl active={muted} onClick={toggleMute} label={muted ? "আনমিউট" : "মিউট"}>
-                {muted ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
+                {muted ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
               </CallCtl>
               {withVideo && (
                 <CallCtl active={camOff} onClick={toggleCam} label="ক্যামেরা">
-                  {camOff ? <VideoOff className="h-6 w-6" /> : <Video className="h-6 w-6" />}
+                  {camOff ? <VideoOff className="h-5 w-5" /> : <Video className="h-5 w-5" />}
+                </CallCtl>
+              )}
+              {withVideo && (
+                <CallCtl active={false} onClick={() => void switchCamera()} label="বদল">
+                  <SwitchCamera className="h-5 w-5" />
                 </CallCtl>
               )}
               <CallCtl active={sharing} onClick={() => void toggleShare()} label="স্ক্রিন">
-                {sharing ? <MonitorOff className="h-6 w-6" /> : <MonitorUp className="h-6 w-6" />}
+                {sharing ? <MonitorOff className="h-5 w-5" /> : <MonitorUp className="h-5 w-5" />}
               </CallCtl>
-              {withVideo && (
-                <CallCtl active={false} onClick={() => void switchCamera()} label="ক্যাম বদল">
-                  <SwitchCamera className="h-6 w-6" />
-                </CallCtl>
-              )}
-            </div>
-            <div className="mt-5 flex justify-center">
               <button
                 onClick={hangUp}
-                className="btn-press grid h-[68px] w-[68px] place-items-center rounded-full bg-rose-600 text-white shadow-[0_12px_30px_-8px_rgba(244,63,94,0.9)]"
+                className="btn-press grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[#ff3b30] text-white shadow-[0_10px_24px_-10px_rgba(255,59,48,0.95)]"
                 aria-label="কল কাটুন"
               >
-                <PhoneOff className="h-7 w-7" />
+                <PhoneOff className="h-5 w-5" />
               </button>
             </div>
           </div>
