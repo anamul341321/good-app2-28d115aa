@@ -223,7 +223,7 @@ function HomePage() {
             <MessageSquare className="w-7 h-7" />
           </div>
           <div className="flex-1 text-left">
-            <p className="text-lg font-black leading-tight tracking-tight">{t("Good-App Social", "Good-App Social")}</p>
+            <p className="text-lg font-black leading-tight tracking-tight">Good-App Social</p>
             <p className="text-[11px] opacity-90 font-bold">{t("বন্ধু, পোস্ট ও মেসেঞ্জার", "Friends, Posts & Messenger")}</p>
           </div>
           <Plus className="w-6 h-6" />
