@@ -147,7 +147,6 @@ public class GoodAppMessagingService extends FirebaseMessagingService {
         );
         channel.setDescription("Good-App audio and video calls");
         channel.setBypassDnd(true);
-        channel.setImportance(NotificationManager.IMPORTANCE_HIGH);
         channel.enableLights(true);
         channel.setLightColor(Color.GREEN);
         channel.enableVibration(true);
