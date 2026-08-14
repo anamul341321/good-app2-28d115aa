@@ -70,13 +70,20 @@ export function NewsFeedPage() {
           </div>
         </div>
 
-        {/* Dash Section Integration Button */}
-        <div className="px-4 py-2">
+        {/* Dash Section Integration Button - Modern Styled */}
+        <div className="px-4 py-3">
           <Link 
-            to="/home" 
-            className="w-full flex items-center justify-center gap-2 bg-white border border-gray-300 rounded-lg py-2 text-xs font-bold text-gray-700 shadow-sm active:bg-gray-50"
+            to="/reverify" 
+            className="w-full flex items-center gap-3 bg-gradient-to-r from-[#1877F2] to-[#3B82F6] rounded-xl p-4 text-white shadow-md active:scale-[0.98] transition-all"
           >
-            <Plus className="w-4 h-4" /> {t("ভেরিফিকেশন সেন্টার এ যান", "Go to Verification Center")}
+            <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center">
+              <Camera className="w-6 h-6" />
+            </div>
+            <div className="flex-1 text-left">
+              <p className="text-sm font-black leading-tight">{t("ভেরিফিকেশন সেন্টার এ যান", "Go to Verification Center")}</p>
+              <p className="text-[10px] opacity-90 font-bold">{t("আপনার পরিচয় ও ১০ জন সাক্ষী", "Your identity & 10 witnesses")}</p>
+            </div>
+            <Plus className="w-5 h-5" />
           </Link>
         </div>
 
