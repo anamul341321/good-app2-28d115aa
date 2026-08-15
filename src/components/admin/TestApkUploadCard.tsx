@@ -56,7 +56,7 @@ export function TestApkUploadCard() {
       
       await new Promise<void>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
-        xhr.open("POST", signedUrl);
+        xhr.open("PUT", signedUrl);
         xhr.setRequestHeader("content-type", "application/vnd.android.package-archive");
         xhr.upload.onprogress = (e) => {
           if (e.lengthComputable) setProgress(Math.round((e.loaded / e.total) * 100));
