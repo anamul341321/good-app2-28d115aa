@@ -94,7 +94,7 @@ function SocialPeoplePage() {
                       <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">UID {u.uid_seq}</p>
                       {u.phone_number && (
                         <p className="text-[10px] text-gray-400 font-medium">
-                          {u.phone_number.replace(/(\d{3})\d{4}(\d{4})/, "$1****$2")}
+                          {u.phone_number?.replace(/(\d{3})\d{4}(\d{4})/, "$1****$2") || ""}
                         </p>
                       )}
                     </div>
