@@ -164,26 +164,22 @@ function HomePage() {
 
       <AnnouncementTicker />
 
+      <div data-tour="mining" data-voice="home.mining" className="relative mb-6">
+        <MiningCounter
+          accrued={Number(data.mining?.accrued_amount ?? 0)}
+          withdrawn={Number(data.mining?.mining_withdrawn ?? 0)}
+          isActive={data.mining?.is_active ?? false}
+          lastCreditedAt={data.mining?.last_credited_at ?? null}
+          effectiveTaskCount={Number((data as any).bonus?.firstVerifyCount ?? 0)}
+          qualifyingReferees={Number((data as any).referralLock?.firstVerifies ?? 0)}
+          selfQualified={Number((data as any).bonus?.reverifyCount ?? 0) >= 10}
+          displayTaskCount={Number((data as any).bonus?.firstVerifyCount ?? 0)}
+          leagueCount={Number((data as any).bonus?.firstVerifyCount ?? 0)}
+          balanceBreakdown={(data as any).balanceBreakdown}
+        />
+      </div>
+
       <div className="grid grid-cols-2 gap-4">
-
-        {/* Mining Info Mini */}
-        <div data-tour="mining" data-voice="home.mining" className="premium-panel rounded-2xl p-4 flex flex-col justify-between h-32 border-l-4 border-l-emerald shadow-sm">
-          <div>
-            <p className="text-[10px] uppercase text-muted-foreground tracking-widest font-black">{t("মাইনিং", "Mining")}</p>
-            <div className="flex items-baseline gap-1 mt-1">
-              <p className="text-xl font-black text-navy" translate="no">
-                {Math.floor(Number((data as any).balanceBreakdown?.current_balance ?? data.mining?.accrued_amount ?? 0))}৳
-              </p>
-              <span className={`text-[8px] font-bold px-1 rounded ${data.mining?.is_active ? "bg-emerald/10 text-emerald" : "bg-rose/10 text-rose"}`}>
-                {data.mining?.is_active ? "LIVE" : "OFF"}
-              </span>
-            </div>
-          </div>
-          <p className="text-[9px] font-bold text-muted-foreground mt-2 leading-tight">
-            {t("প্রতি মাসে নির্দিষ্ট বোনাস ও মাইনিং ইনকাম", "Fixed monthly bonus & mining income")}
-          </p>
-        </div>
-
         {/* Quick Balance/Wallet Mini */}
         <Link to="/wallet" className="premium-panel rounded-2xl p-4 flex flex-col justify-between h-32 border-l-4 border-l-cyan shadow-sm active:scale-95 transition-all">
           <div>
@@ -196,6 +192,22 @@ function HomePage() {
             </p>
             <div className="h-6 w-6 rounded-lg bg-cyan/10 flex items-center justify-center">
               <Wallet className="w-3.5 h-3.5 text-cyan" />
+            </div>
+          </div>
+        </Link>
+
+        {/* Support/Messenger Mini */}
+        <Link to="/social/messenger" className="premium-panel rounded-2xl p-4 flex flex-col justify-between h-32 border-l-4 border-l-violet shadow-sm active:scale-95 transition-all">
+          <div>
+            <p className="text-[10px] uppercase text-muted-foreground tracking-widest font-black">{t("মেসেঞ্জার", "Messenger")}</p>
+            <p className="text-xs font-black text-navy mt-1">{t("সাপোর্ট ও চ্যাট", "Support & Chat")}</p>
+          </div>
+          <div className="flex items-center justify-between mt-2">
+            <p className="text-[10px] font-bold text-violet flex items-center gap-1">
+              {t("ওপেন", "Open")} <ChevronRight className="w-3 h-3" />
+            </p>
+            <div className="h-6 w-6 rounded-lg bg-violet/10 flex items-center justify-center">
+              <MessageSquare className="w-3.5 h-3.5 text-violet" />
             </div>
           </div>
         </Link>

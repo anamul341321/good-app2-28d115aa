@@ -133,8 +133,10 @@ export function MiningCounter({
     accrued, withdrawn, isActive, lastCreditedAt, ...rateArgs, now,
   });
   
-  // Use audited balance as base, plus live increment if active
-  const displayBalance = isActive ? liveBalance : auditedBalance;
+  // Use audited balance as base, plus live increment if active.
+  // We ensure the live increment is added to the audited balance correctly.
+  const liveIncrement = Math.max(0, liveBalance - (accrued - withdrawn));
+  const displayBalance = isActive ? (auditedBalance + liveIncrement) : auditedBalance;
 
   const rawSelfSlots = selfSlotsProp ?? effectiveTaskCount;
   const selfSlots = selfQualified ? rawSelfSlots : 0;
