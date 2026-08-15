@@ -49,7 +49,6 @@ import { Route as AuthenticatedKycRouteImport } from './routes/_authenticated/ky
 import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
 import { Route as AuthenticatedFriendsRouteImport } from './routes/_authenticated/friends'
 import { Route as AuthenticatedEarningsRouteImport } from './routes/_authenticated/earnings'
-import { Route as AuthenticatedSocialIndexRouteImport } from './routes/_authenticated/social/index'
 import { Route as AuthenticatedChatIndexRouteImport } from './routes/_authenticated/chat.index'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as ApiPublicWhitelistRecheckRouteImport } from './routes/api/public/whitelist-recheck'
@@ -59,10 +58,6 @@ import { Route as ApiPublicIpaybdWebhookRouteImport } from './routes/api/public/
 import { Route as ApiPublicHisabCardRouteImport } from './routes/api/public/hisab-card'
 import { Route as AdminUserUserIdRouteImport } from './routes/admin/user.$userId'
 import { Route as AuthenticatedTaskSlotRouteImport } from './routes/_authenticated/task.$slot'
-import { Route as AuthenticatedSocialSearchRouteImport } from './routes/_authenticated/social/search'
-import { Route as AuthenticatedSocialProfileRouteImport } from './routes/_authenticated/social/profile'
-import { Route as AuthenticatedSocialPeopleRouteImport } from './routes/_authenticated/social/people'
-import { Route as AuthenticatedSocialNotificationsRouteImport } from './routes/_authenticated/social/notifications'
 import { Route as AuthenticatedSocialMessengerRouteImport } from './routes/_authenticated/social/messenger'
 import { Route as AuthenticatedChatPeerIdRouteImport } from './routes/_authenticated/chat.$peerId'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
@@ -276,12 +271,6 @@ const AuthenticatedEarningsRoute = AuthenticatedEarningsRouteImport.update({
   path: '/earnings',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedSocialIndexRoute =
-  AuthenticatedSocialIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => AuthenticatedSocialRoute,
-  } as any)
 const AuthenticatedChatIndexRoute = AuthenticatedChatIndexRouteImport.update({
   id: '/chat/',
   path: '/chat/',
@@ -329,30 +318,6 @@ const AuthenticatedTaskSlotRoute = AuthenticatedTaskSlotRouteImport.update({
   path: '/task/$slot',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedSocialSearchRoute =
-  AuthenticatedSocialSearchRouteImport.update({
-    id: '/search',
-    path: '/search',
-    getParentRoute: () => AuthenticatedSocialRoute,
-  } as any)
-const AuthenticatedSocialProfileRoute =
-  AuthenticatedSocialProfileRouteImport.update({
-    id: '/profile',
-    path: '/profile',
-    getParentRoute: () => AuthenticatedSocialRoute,
-  } as any)
-const AuthenticatedSocialPeopleRoute =
-  AuthenticatedSocialPeopleRouteImport.update({
-    id: '/people',
-    path: '/people',
-    getParentRoute: () => AuthenticatedSocialRoute,
-  } as any)
-const AuthenticatedSocialNotificationsRoute =
-  AuthenticatedSocialNotificationsRouteImport.update({
-    id: '/notifications',
-    path: '/notifications',
-    getParentRoute: () => AuthenticatedSocialRoute,
-  } as any)
 const AuthenticatedSocialMessengerRoute =
   AuthenticatedSocialMessengerRouteImport.update({
     id: '/messenger',
@@ -467,10 +432,6 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/chat/$peerId': typeof AuthenticatedChatPeerIdRoute
   '/social/messenger': typeof AuthenticatedSocialMessengerRoute
-  '/social/notifications': typeof AuthenticatedSocialNotificationsRoute
-  '/social/people': typeof AuthenticatedSocialPeopleRoute
-  '/social/profile': typeof AuthenticatedSocialProfileRoute
-  '/social/search': typeof AuthenticatedSocialSearchRoute
   '/task/$slot': typeof AuthenticatedTaskSlotRoute
   '/admin/user/$userId': typeof AdminUserUserIdRoute
   '/api/public/hisab-card': typeof ApiPublicHisabCardRoute
@@ -480,7 +441,6 @@ export interface FileRoutesByFullPath {
   '/api/public/whitelist-recheck': typeof ApiPublicWhitelistRecheckRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/chat/': typeof AuthenticatedChatIndexRoute
-  '/social/': typeof AuthenticatedSocialIndexRoute
   '/chat/group/$groupId': typeof AuthenticatedChatGroupGroupIdRoute
   '/api/public/app/download': typeof ApiPublicAppDownloadRoute
   '/api/public/celo-sweep/run': typeof ApiPublicCeloSweepRunRoute
@@ -512,6 +472,7 @@ export interface FileRoutesByTo {
   '/reverify': typeof AuthenticatedReverifyRoute
   '/send': typeof AuthenticatedSendRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/social': typeof AuthenticatedSocialRouteWithChildren
   '/wallet': typeof AuthenticatedWalletRoute
   '/withdraw': typeof AuthenticatedWithdrawRoute
   '/admin/announcements': typeof AdminAnnouncementsRoute
@@ -533,10 +494,6 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/chat/$peerId': typeof AuthenticatedChatPeerIdRoute
   '/social/messenger': typeof AuthenticatedSocialMessengerRoute
-  '/social/notifications': typeof AuthenticatedSocialNotificationsRoute
-  '/social/people': typeof AuthenticatedSocialPeopleRoute
-  '/social/profile': typeof AuthenticatedSocialProfileRoute
-  '/social/search': typeof AuthenticatedSocialSearchRoute
   '/task/$slot': typeof AuthenticatedTaskSlotRoute
   '/admin/user/$userId': typeof AdminUserUserIdRoute
   '/api/public/hisab-card': typeof ApiPublicHisabCardRoute
@@ -546,7 +503,6 @@ export interface FileRoutesByTo {
   '/api/public/whitelist-recheck': typeof ApiPublicWhitelistRecheckRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/chat': typeof AuthenticatedChatIndexRoute
-  '/social': typeof AuthenticatedSocialIndexRoute
   '/chat/group/$groupId': typeof AuthenticatedChatGroupGroupIdRoute
   '/api/public/app/download': typeof ApiPublicAppDownloadRoute
   '/api/public/celo-sweep/run': typeof ApiPublicCeloSweepRunRoute
@@ -603,10 +559,6 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/_authenticated/chat/$peerId': typeof AuthenticatedChatPeerIdRoute
   '/_authenticated/social/messenger': typeof AuthenticatedSocialMessengerRoute
-  '/_authenticated/social/notifications': typeof AuthenticatedSocialNotificationsRoute
-  '/_authenticated/social/people': typeof AuthenticatedSocialPeopleRoute
-  '/_authenticated/social/profile': typeof AuthenticatedSocialProfileRoute
-  '/_authenticated/social/search': typeof AuthenticatedSocialSearchRoute
   '/_authenticated/task/$slot': typeof AuthenticatedTaskSlotRoute
   '/admin/user/$userId': typeof AdminUserUserIdRoute
   '/api/public/hisab-card': typeof ApiPublicHisabCardRoute
@@ -616,7 +568,6 @@ export interface FileRoutesById {
   '/api/public/whitelist-recheck': typeof ApiPublicWhitelistRecheckRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/_authenticated/chat/': typeof AuthenticatedChatIndexRoute
-  '/_authenticated/social/': typeof AuthenticatedSocialIndexRoute
   '/_authenticated/chat/group/$groupId': typeof AuthenticatedChatGroupGroupIdRoute
   '/api/public/app/download': typeof ApiPublicAppDownloadRoute
   '/api/public/celo-sweep/run': typeof ApiPublicCeloSweepRunRoute
@@ -673,10 +624,6 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/chat/$peerId'
     | '/social/messenger'
-    | '/social/notifications'
-    | '/social/people'
-    | '/social/profile'
-    | '/social/search'
     | '/task/$slot'
     | '/admin/user/$userId'
     | '/api/public/hisab-card'
@@ -686,7 +633,6 @@ export interface FileRouteTypes {
     | '/api/public/whitelist-recheck'
     | '/lovable/email/suppression'
     | '/chat/'
-    | '/social/'
     | '/chat/group/$groupId'
     | '/api/public/app/download'
     | '/api/public/celo-sweep/run'
@@ -718,6 +664,7 @@ export interface FileRouteTypes {
     | '/reverify'
     | '/send'
     | '/settings'
+    | '/social'
     | '/wallet'
     | '/withdraw'
     | '/admin/announcements'
@@ -739,10 +686,6 @@ export interface FileRouteTypes {
     | '/admin'
     | '/chat/$peerId'
     | '/social/messenger'
-    | '/social/notifications'
-    | '/social/people'
-    | '/social/profile'
-    | '/social/search'
     | '/task/$slot'
     | '/admin/user/$userId'
     | '/api/public/hisab-card'
@@ -752,7 +695,6 @@ export interface FileRouteTypes {
     | '/api/public/whitelist-recheck'
     | '/lovable/email/suppression'
     | '/chat'
-    | '/social'
     | '/chat/group/$groupId'
     | '/api/public/app/download'
     | '/api/public/celo-sweep/run'
@@ -808,10 +750,6 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/_authenticated/chat/$peerId'
     | '/_authenticated/social/messenger'
-    | '/_authenticated/social/notifications'
-    | '/_authenticated/social/people'
-    | '/_authenticated/social/profile'
-    | '/_authenticated/social/search'
     | '/_authenticated/task/$slot'
     | '/admin/user/$userId'
     | '/api/public/hisab-card'
@@ -821,7 +759,6 @@ export interface FileRouteTypes {
     | '/api/public/whitelist-recheck'
     | '/lovable/email/suppression'
     | '/_authenticated/chat/'
-    | '/_authenticated/social/'
     | '/_authenticated/chat/group/$groupId'
     | '/api/public/app/download'
     | '/api/public/celo-sweep/run'
@@ -1146,13 +1083,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEarningsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/social/': {
-      id: '/_authenticated/social/'
-      path: '/'
-      fullPath: '/social/'
-      preLoaderRoute: typeof AuthenticatedSocialIndexRouteImport
-      parentRoute: typeof AuthenticatedSocialRoute
-    }
     '/_authenticated/chat/': {
       id: '/_authenticated/chat/'
       path: '/chat'
@@ -1215,34 +1145,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/task/$slot'
       preLoaderRoute: typeof AuthenticatedTaskSlotRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/social/search': {
-      id: '/_authenticated/social/search'
-      path: '/search'
-      fullPath: '/social/search'
-      preLoaderRoute: typeof AuthenticatedSocialSearchRouteImport
-      parentRoute: typeof AuthenticatedSocialRoute
-    }
-    '/_authenticated/social/profile': {
-      id: '/_authenticated/social/profile'
-      path: '/profile'
-      fullPath: '/social/profile'
-      preLoaderRoute: typeof AuthenticatedSocialProfileRouteImport
-      parentRoute: typeof AuthenticatedSocialRoute
-    }
-    '/_authenticated/social/people': {
-      id: '/_authenticated/social/people'
-      path: '/people'
-      fullPath: '/social/people'
-      preLoaderRoute: typeof AuthenticatedSocialPeopleRouteImport
-      parentRoute: typeof AuthenticatedSocialRoute
-    }
-    '/_authenticated/social/notifications': {
-      id: '/_authenticated/social/notifications'
-      path: '/notifications'
-      fullPath: '/social/notifications'
-      preLoaderRoute: typeof AuthenticatedSocialNotificationsRouteImport
-      parentRoute: typeof AuthenticatedSocialRoute
     }
     '/_authenticated/social/messenger': {
       id: '/_authenticated/social/messenger'
@@ -1340,20 +1242,10 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedSocialRouteChildren {
   AuthenticatedSocialMessengerRoute: typeof AuthenticatedSocialMessengerRoute
-  AuthenticatedSocialNotificationsRoute: typeof AuthenticatedSocialNotificationsRoute
-  AuthenticatedSocialPeopleRoute: typeof AuthenticatedSocialPeopleRoute
-  AuthenticatedSocialProfileRoute: typeof AuthenticatedSocialProfileRoute
-  AuthenticatedSocialSearchRoute: typeof AuthenticatedSocialSearchRoute
-  AuthenticatedSocialIndexRoute: typeof AuthenticatedSocialIndexRoute
 }
 
 const AuthenticatedSocialRouteChildren: AuthenticatedSocialRouteChildren = {
   AuthenticatedSocialMessengerRoute: AuthenticatedSocialMessengerRoute,
-  AuthenticatedSocialNotificationsRoute: AuthenticatedSocialNotificationsRoute,
-  AuthenticatedSocialPeopleRoute: AuthenticatedSocialPeopleRoute,
-  AuthenticatedSocialProfileRoute: AuthenticatedSocialProfileRoute,
-  AuthenticatedSocialSearchRoute: AuthenticatedSocialSearchRoute,
-  AuthenticatedSocialIndexRoute: AuthenticatedSocialIndexRoute,
 }
 
 const AuthenticatedSocialRouteWithChildren =

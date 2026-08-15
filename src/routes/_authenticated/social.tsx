@@ -1,5 +1,4 @@
 import { createFileRoute, Outlet } from "@tanstack/react-router";
-import { MessengerNav } from "@/components/messenger/MessengerNav";
 
 export const Route = createFileRoute("/_authenticated/social")({
   component: SocialLayout,
@@ -7,9 +6,9 @@ export const Route = createFileRoute("/_authenticated/social")({
 
 function SocialLayout() {
   return (
-    <div className="min-h-screen bg-gray-100 social-root">
+    <div className="min-h-screen bg-background social-root">
       <Outlet />
-      <MessengerNav />
     </div>
   );
 }
+
