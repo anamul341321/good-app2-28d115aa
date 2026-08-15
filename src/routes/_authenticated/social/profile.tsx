@@ -29,9 +29,23 @@ export const Route = createFileRoute("/_authenticated/social/profile")({
 });
 
 function SocialProfilePage() {
-  const { user } = useAuth();
+  const { user: authUser } = useAuth();
+  const { userId: targetUserId } = Route.useSearch();
   const { t } = useLang();
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
   
+  const isOwnProfile = !targetUserId || targetUserId === authUser?.id;
+  const effectiveUserId = targetUserId || authUser?.id;
+
+  const { data: profileData } = useQuery({
+    queryKey: ["profile", effectiveUserId],
+    queryFn: () => getProfileById({ data: { userId: effectiveUserId! } }),
+    enabled: !!effectiveUserId,
+  });
+
+  const profile = isOwnProfile ? authUser?.user_metadata : profileData?.profile;
+
   const { data: appStatus } = useQuery({
     queryKey: ["app-status"],
     queryFn: () => getAppStatus(),
@@ -47,16 +61,40 @@ function SocialProfilePage() {
   const { data: postsData, isLoading: postsLoading } = useQuery({
     queryKey: ["posts"],
     queryFn: () => listPosts(),
-    enabled: !!user,
+    enabled: !!effectiveUserId,
   });
 
   if (appStatus?.maintenance) return <MaintenanceScreen message={appStatus.message} />;
-  if (!user) return null;
+  if (!authUser) return null;
 
   // Filter posts for this user only
   const posts = (postsData as any)?.posts ?? [];
-  const myPosts = posts.filter((p: any) => p.user_id === user.id) ?? [];
-  const monthlyRate = (dashData?.mining as any)?.monthly_rate ?? 500;
+  const userPosts = posts.filter((p: any) => p.user_id === effectiveUserId) ?? [];
+  const monthlyRate = dashData?.mining?.monthly_rate ?? 500;
+
+  const handleProfileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!isOwnProfile) return;
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const { uploadMedia } = await import("@/components/social/SocialComponents");
+      const url = await uploadMedia(file);
+      
+      const { error } = await supabase.auth.updateUser({
+        data: { avatar_url: url }
+      });
+
+      if (error) throw error;
+      
+      toast.success(t("প্রোফাইল ছবি আপডেট করা হয়েছে", "Profile picture updated"));
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+    } catch (err: any) {
+      toast.error(t("আপলোড ব্যর্থ হয়েছে", "Upload failed"));
+    }
+  };
+
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-100 pb-20">
