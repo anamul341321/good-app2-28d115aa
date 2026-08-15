@@ -127,15 +127,16 @@ export function MiningCounter({
   const bonusPart = balanceBreakdown?.bonus_part ?? 0;
   const miningPart = balanceBreakdown?.mining_part ?? 0;
 
-  // We still compute live balance for the "ticker" effect if active,
-  // but we should probably tether it to the audited balance to prevent jumps.
-  const liveBalance = computeLiveBalance({
+  // We compute live balance for the "ticker" effect only for the MINING part accrued
+  // since the last ledger entry, to ensure the total balance is anchored to audited data.
+  const liveMiningBalance = computeLiveBalance({
     accrued, withdrawn, isActive, lastCreditedAt, ...rateArgs, now,
   });
   
-  // Use audited balance as base, plus live increment if active.
-  // We ensure the live increment is added to the audited balance correctly.
-  const liveIncrement = Math.max(0, liveBalance - (accrued - withdrawn));
+  // The increment is the difference between the live computed value and the last recorded value in mining_state.
+  const liveIncrement = Math.max(0, liveMiningBalance - (accrued - withdrawn));
+  
+  // displayBalance is anchored to the audited ledger total + the live mining increment.
   const displayBalance = isActive ? (auditedBalance + liveIncrement) : auditedBalance;
 
   const rawSelfSlots = selfSlotsProp ?? effectiveTaskCount;
