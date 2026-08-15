@@ -225,7 +225,10 @@ function RechargePage() {
       <CardStore balance={balance} onDone={() => { refetch(); }} />
 
       <div>
-        <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-black px-1 mb-2">{t("ইতিহাস", "History")}</p>
+        <div className="flex items-center justify-between px-1 mb-2">
+          <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-black">{t("রিচার্জ ইতিহাস", "Recharge history")}</p>
+          <Link to="/history" className="text-[10px] font-black text-violet-500">{t("সব ইতিহাস →", "All history →")}</Link>
+        </div>
         {(history ?? []).length === 0 && (
           <div className="glass rounded-2xl p-6 text-center">
             <Smartphone className="w-8 h-8 text-muted-foreground/40 mx-auto mb-2" />
@@ -257,9 +260,14 @@ function RechargePage() {
           ))}
         </div>
       </div>
+      </>
+      ) : (
+        <CardStore balance={balance} onDone={() => { refetch(); }} />
+      )}
     </div>
   );
 }
+
 
 const OP_COLOR: Record<string, string> = {
   GP: "#00a99d", Robi: "#e2136e", Airtel: "#e2101f", Banglalink: "#f36f21", Other: "#64748b",

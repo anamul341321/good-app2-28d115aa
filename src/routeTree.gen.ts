@@ -48,6 +48,7 @@ import { Route as AuthenticatedOffersRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedMenuRouteImport } from './routes/_authenticated/menu'
 import { Route as AuthenticatedKycRouteImport } from './routes/_authenticated/kyc'
 import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
+import { Route as AuthenticatedHistoryRouteImport } from './routes/_authenticated/history'
 import { Route as AuthenticatedFriendsRouteImport } from './routes/_authenticated/friends'
 import { Route as AuthenticatedEarningsRouteImport } from './routes/_authenticated/earnings'
 import { Route as AuthenticatedChatIndexRouteImport } from './routes/_authenticated/chat.index'
@@ -269,6 +270,11 @@ const AuthenticatedHomeRoute = AuthenticatedHomeRouteImport.update({
   path: '/home',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedHistoryRoute = AuthenticatedHistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedFriendsRoute = AuthenticatedFriendsRouteImport.update({
   id: '/friends',
   path: '/friends',
@@ -418,6 +424,7 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/earnings': typeof AuthenticatedEarningsRoute
   '/friends': typeof AuthenticatedFriendsRoute
+  '/history': typeof AuthenticatedHistoryRoute
   '/home': typeof AuthenticatedHomeRoute
   '/kyc': typeof AuthenticatedKycRoute
   '/menu': typeof AuthenticatedMenuRoute
@@ -483,6 +490,7 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/earnings': typeof AuthenticatedEarningsRoute
   '/friends': typeof AuthenticatedFriendsRoute
+  '/history': typeof AuthenticatedHistoryRoute
   '/home': typeof AuthenticatedHomeRoute
   '/kyc': typeof AuthenticatedKycRoute
   '/menu': typeof AuthenticatedMenuRoute
@@ -551,6 +559,7 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/_authenticated/earnings': typeof AuthenticatedEarningsRoute
   '/_authenticated/friends': typeof AuthenticatedFriendsRoute
+  '/_authenticated/history': typeof AuthenticatedHistoryRoute
   '/_authenticated/home': typeof AuthenticatedHomeRoute
   '/_authenticated/kyc': typeof AuthenticatedKycRoute
   '/_authenticated/menu': typeof AuthenticatedMenuRoute
@@ -619,6 +628,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/earnings'
     | '/friends'
+    | '/history'
     | '/home'
     | '/kyc'
     | '/menu'
@@ -684,6 +694,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/earnings'
     | '/friends'
+    | '/history'
     | '/home'
     | '/kyc'
     | '/menu'
@@ -751,6 +762,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/_authenticated/earnings'
     | '/_authenticated/friends'
+    | '/_authenticated/history'
     | '/_authenticated/home'
     | '/_authenticated/kyc'
     | '/_authenticated/menu'
@@ -1114,6 +1126,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedHomeRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/history': {
+      id: '/_authenticated/history'
+      path: '/history'
+      fullPath: '/history'
+      preLoaderRoute: typeof AuthenticatedHistoryRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/friends': {
       id: '/_authenticated/friends'
       path: '/friends'
@@ -1313,6 +1332,7 @@ const AuthenticatedSocialRouteWithChildren =
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedEarningsRoute: typeof AuthenticatedEarningsRoute
   AuthenticatedFriendsRoute: typeof AuthenticatedFriendsRoute
+  AuthenticatedHistoryRoute: typeof AuthenticatedHistoryRoute
   AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
   AuthenticatedKycRoute: typeof AuthenticatedKycRoute
   AuthenticatedMenuRoute: typeof AuthenticatedMenuRoute
@@ -1335,6 +1355,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedEarningsRoute: AuthenticatedEarningsRoute,
   AuthenticatedFriendsRoute: AuthenticatedFriendsRoute,
+  AuthenticatedHistoryRoute: AuthenticatedHistoryRoute,
   AuthenticatedHomeRoute: AuthenticatedHomeRoute,
   AuthenticatedKycRoute: AuthenticatedKycRoute,
   AuthenticatedMenuRoute: AuthenticatedMenuRoute,
