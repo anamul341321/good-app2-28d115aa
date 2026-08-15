@@ -260,22 +260,33 @@ function CardManagementPage() {
             
             <form onSubmit={(e) => {
               e.preventDefault();
-              const fd = new FormData(e.currentTarget);
-              const raw = fd.get("codes") as string;
+              const raw = codesText;
               const codes = raw.split("\n").map(s => s.trim()).filter(Boolean);
               if (codes.length === 0) return toast.error("Please enter codes");
               addCodes.mutate({ data: { productId: stockCard.id, codes } });
             }} className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-muted-foreground uppercase ml-1">Secret Codes (One per line)</label>
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] font-black text-muted-foreground uppercase ml-1">Secret Codes (One per line)</label>
+                  <button
+                    type="button"
+                    onClick={() => setScanning(true)}
+                    className="px-3 py-1.5 rounded-lg bg-cyan-500 text-white text-[10px] font-black flex items-center gap-1.5"
+                  >
+                    <ScanLine className="h-3.5 w-3.5" /> Scan Card
+                  </button>
+                </div>
                 <textarea 
                   name="codes" 
                   rows={8} 
                   required
+                  value={codesText}
+                  onChange={(e) => setCodesText(e.target.value)}
                   placeholder="CODE001&#10;CODE002&#10;CODE003..." 
                   className="w-full bg-surface-2 border-none rounded-2xl p-4 text-sm font-mono focus:ring-2 ring-primary/20 outline-none resize-none" 
                 />
               </div>
+
 
               <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 flex gap-3">
                 <AlertCircle className="h-5 w-5 text-amber-500 shrink-0" />
