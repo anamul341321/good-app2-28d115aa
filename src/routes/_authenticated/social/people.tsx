@@ -59,19 +59,29 @@ function SocialPeoplePage() {
           <input 
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder={t("অনুসন্ধান করুন...", "Search by name or UID...")}
-            className="w-full bg-gray-100 border-none rounded-full pl-9 pr-4 py-2 text-sm"
+            placeholder={t("নাম, ইউআইডি বা ফোন দিয়ে খুঁজুন...", "Search by name, UID or phone...")}
+            className="w-full bg-gray-100 border-none rounded-full pl-9 pr-4 py-2 text-sm focus:ring-2 focus:ring-primary/20"
           />
+
         </div>
       </header>
 
       <main className="flex-1 max-w-md mx-auto w-full p-4 space-y-4">
         {isLoading ? (
           <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
+        ) : allUsers.length === 0 ? (
+          <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-gray-200">
+            <Search className="w-10 h-10 text-gray-200 mx-auto mb-3" />
+            <p className="text-gray-500 font-bold">{t("কোনো ইউজার পাওয়া যায়নি", "No user found")}</p>
+            <p className="text-xs text-gray-400 mt-1">{t("অন্য কোনো নাম বা আইডি দিয়ে চেষ্টা করুন", "Try searching with a different name or ID")}</p>
+          </div>
         ) : (
           <>
-            <h2 className="text-xl font-black text-navy px-1">{t("সব ব্যবহারকারী", "All Users")}</h2>
+            <h2 className="text-sm font-black text-gray-400 uppercase tracking-widest px-1">
+              {query ? t("অনুসন্ধান ফলাফল", "Search Results") : t("সব ব্যবহারকারী", "All Users")}
+            </h2>
             {allUsers.map((u: any) => (
+
               <div key={u.id} className="bg-white p-3 rounded-xl border flex items-center justify-between shadow-sm">
                 <button 
                   onClick={() => navigate({ to: "/social/profile", search: { userId: u.id } })}
@@ -80,8 +90,16 @@ function SocialPeoplePage() {
                   <MessengerAvatar src={u.avatar_url} name={u.display_name} size="md" />
                   <div>
                     <p className="font-black text-navy leading-tight">{u.display_name || "User"}</p>
-                    <p className="text-xs text-gray-500 font-bold mt-0.5">UID {u.uid_seq}</p>
+                    <div className="flex flex-col mt-0.5">
+                      <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">UID {u.uid_seq}</p>
+                      {u.phone_number && (
+                        <p className="text-[10px] text-gray-400 font-medium">
+                          {u.phone_number.replace(/(\d{3})\d{4}(\d{4})/, "$1****$2")}
+                        </p>
+                      )}
+                    </div>
                   </div>
+
                 </button>
                 <div className="flex gap-2">
                   {u.friendship?.status === "accepted" ? (

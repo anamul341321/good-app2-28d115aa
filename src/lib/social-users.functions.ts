@@ -13,11 +13,29 @@ export const listUsers = createServerFn({ method: "GET" })
     const { supabase, userId } = context;
     let queryBuilder = supabase
       .from("profiles")
-      .select("id, display_name, avatar_url, uid_seq", { count: "exact" })
+      .select("id, display_name, avatar_url, uid_seq, phone_number", { count: "exact" })
       .neq("id", userId);
 
     if (data.query) {
-      queryBuilder = queryBuilder.or(`display_name.ilike.%${data.query}%,uid_seq.ilike.%${data.query}%`);
+      const q = data.query.trim();
+      
+      // Handle phone normalization for query
+      let phoneQ = q;
+      if (q.startsWith('+880')) phoneQ = q.substring(4);
+      else if (q.startsWith('880')) phoneQ = q.substring(3);
+      else if (q.startsWith('0')) phoneQ = q.substring(1);
+
+      // We use server-side logic for OR filters with complex normalization
+      // uid_seq is bigint, phone_number is text, display_name is text
+      const isNumeric = /^\d+$/.test(q);
+      
+      let orFilter = `display_name.ilike.%${q}%`;
+      if (isNumeric) {
+        orFilter += `,uid_seq.eq.${q}`;
+      }
+      orFilter += `,phone_number.ilike.%${phoneQ}%`;
+
+      queryBuilder = queryBuilder.or(orFilter);
     }
 
     const { data: users, error, count } = await queryBuilder
@@ -25,6 +43,7 @@ export const listUsers = createServerFn({ method: "GET" })
       .order("display_name");
 
     if (error) throw new Error(error.message);
+
     
     // Check friendship status for each user
     const userIds = users?.map(u => u.id) || [];
