@@ -670,7 +670,7 @@ function MainIdentityCell({ task, onStart, onReverify, onOpenPhoto }: { task: an
           <RefreshCcw className="w-9 h-9 text-white/95 drop-shadow-lg" />
         </span>
         <p className="absolute bottom-1 left-0 right-0 text-[9px] font-black text-white text-center drop-shadow tracking-wide">
-          ✅ সম্পূর্ণ
+          {reverified ? "✅ সম্পূর্ণ" : (due ? "রি-ভেরিফাই করুন" : "ভেরিফাইড")}
         </p>
 
       </button>
