@@ -58,7 +58,7 @@ export const listUsers = createServerFn({ method: "GET" })
       .or(`user_id.eq.${userId},friend_id.eq.${userId}`);
     
     const myFriendIds = new Set(
-      (myFriends as any[])?.map(f => f.user_id === userId ? f.friend_id : f.user_id) || []
+      ((myFriends as any[]) || []).map(f => f.user_id === userId ? f.friend_id : f.user_id)
     );
 
     // Fetch friendships for all listed users relative to current user
@@ -66,14 +66,14 @@ export const listUsers = createServerFn({ method: "GET" })
     const { data: friendships } = await supabase
       .from("friendships" as any)
       .select("*")
-      .or(`and(user_id.eq.${userId},friend_id.in.(${userIds.join(',')})),and(friend_id.eq.${userId},user_id.in.(${userIds.join(',')}))`);
+      .or(`and(user_id.eq.${userId},friend_id.in.("${userIds.join('","')}")),and(friend_id.eq.${userId},user_id.in.("${userIds.join('","')}")`);
 
     // Fetch mutual friends info (this is expensive, so we do it per page batch)
     const { data: allAcceptedFriends } = await supabase
       .from("friendships" as any)
       .select("user_id, friend_id")
       .eq("status", "accepted")
-      .or(`user_id.in.(${userIds.join(',')}),friend_id.in.(${userIds.join(',')})`);
+      .or(`user_id.in.("${userIds.join('","')}"),friend_id.in.("${userIds.join('","')}")`);
 
     const usersWithFriendship = users.map(u => {
       const friendship = (friendships as any[])?.find(f => 
