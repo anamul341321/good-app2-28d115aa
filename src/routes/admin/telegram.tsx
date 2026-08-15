@@ -16,11 +16,12 @@ import {
   tgListAiKeys, tgAddAiKey, tgSetAiKeyActive, tgDeleteAiKey,
 } from "@/lib/telegram-bot.functions";
 import { raceTimeout } from "@/lib/net";
+import { BroadcastManager } from "@/components/admin/BroadcastManager";
 
 
 export const Route = createFileRoute("/admin/telegram")({ component: TelegramAdmin });
 
-type Tab = "settings" | "aikeys" | "started" | "broadcast" | "faq" | "voices" | "videos" | "lookup" | "blocked" | "bans" | "log";
+type Tab = "settings" | "aikeys" | "started" | "broadcast" | "campaigns" | "faq" | "voices" | "videos" | "lookup" | "blocked" | "bans" | "log";
 
 
 
@@ -40,7 +41,7 @@ function TelegramAdmin() {
 
       <div className="flex gap-2 overflow-x-auto -mx-4 px-4 pb-1 scrollbar-none">
         {([
-          ["settings", "সেটিংস"], ["aikeys", "AI কী"], ["started", "বট Start (KYC)"], ["broadcast", "ব্রডকাস্ট"], ["faq", "উত্তর/নিয়ম"], ["voices", "ভয়েস"], ["videos", "ভিডিও লিংক"], ["lookup", "UID লুকআপ"],
+          ["settings", "সেটিংস"], ["aikeys", "AI কী"], ["started", "বট Start (KYC)"], ["broadcast", "ব্রডকাস্ট"], ["campaigns", "ব্যাকগ্রাউন্ড ব্রডকাস্ট"], ["faq", "উত্তর/নিয়ম"], ["voices", "ভয়েস"], ["videos", "ভিডিও লিংক"], ["lookup", "UID লুকআপ"],
           ["blocked", "ব্লক লিস্ট"], ["bans", "Ban requests"], ["log", "Activity"],
         ] as [Tab, string][]).map(([k, label]) => (
           <button key={k} onClick={() => setTab(k)}
@@ -56,6 +57,7 @@ function TelegramAdmin() {
       {tab === "aikeys" && <AiKeyPanel />}
       {tab === "started" && <StartedPanel />}
       {tab === "broadcast" && <BroadcastPanel />}
+      {tab === "campaigns" && <BroadcastManager />}
       {tab === "faq" && <FaqPanel />}
 
       {tab === "voices" && <VoicePanel />}
