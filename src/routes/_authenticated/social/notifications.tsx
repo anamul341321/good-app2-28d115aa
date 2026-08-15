@@ -1,10 +1,14 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ChevronLeft, Bell, Heart, MessageSquare, Plus, Check } from "lucide-react";
+import { ChevronLeft, Bell, Heart, MessageSquare, Plus, Check, UserPlus, UserCheck, X } from "lucide-react";
 import { listNotifications, markNotificationRead } from "@/lib/news-feed.functions";
+import { acceptFriendRequest } from "@/lib/social-users.functions";
 import { useLang } from "@/lib/i18n";
+
 import { MessengerAvatar } from "@/components/messenger/MessengerAvatar";
 import { format } from "date-fns";
+import { toast } from "sonner";
+
 
 export const Route = createFileRoute("/_authenticated/social/notifications")({
   component: SocialNotificationsPage,
@@ -28,17 +32,29 @@ function SocialNotificationsPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["social-notifications"] }),
   });
 
+  const acceptFriendMutation = useMutation({
+    mutationFn: (requestId: string) => acceptFriendRequest({ data: { requestId } }),
+    onSuccess: () => {
+      toast.success(t("বন্ধুত্ব গ্রহণ করা হয়েছে", "Friend request accepted"));
+      queryClient.invalidateQueries({ queryKey: ["social-notifications"] });
+    },
+    onError: (err: any) => toast.error(err.message)
+  });
+
   const notifications = data?.notifications || [];
+
 
   const handleNotificationClick = (notif: any) => {
     if (!notif.read_at) markReadMut.mutate(notif.id);
     
     const metadata = notif.metadata as any;
     if (metadata?.post_id) {
-      // For now navigate to feed, in future could be specific post detail
       navigate({ to: "/social" as any });
+    } else if (metadata?.sender_id) {
+      navigate({ to: "/social/profile", search: { userId: metadata.sender_id } });
     }
   };
+
 
   return (
     <div className="flex flex-col min-h-screen bg-white pb-20 pt-[env(safe-area-inset-top)]">
@@ -75,9 +91,14 @@ function SocialNotificationsPage() {
                       <Heart className="w-6 h-6 text-rose-500 fill-current" />
                     ) : n.metadata?.type === 'post_comment' ? (
                       <MessageSquare className="w-6 h-6 text-blue-500 fill-current" />
+                    ) : n.metadata?.type === 'friend_request' ? (
+                      <UserPlus className="w-6 h-6 text-primary" />
+                    ) : n.metadata?.type === 'friend_request_accepted' ? (
+                      <UserCheck className="w-6 h-6 text-emerald" />
                     ) : (
                       <Bell className="w-6 h-6 text-gray-400" />
                     )}
+
                   </div>
                   {!n.read_at && (
                     <div className="absolute -top-1 -right-1 h-4 w-4 bg-blue-500 rounded-full border-2 border-white" />
@@ -85,12 +106,40 @@ function SocialNotificationsPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className={`text-[14px] leading-snug ${!n.read_at ? "font-bold text-navy" : "text-gray-700"}`}>
-                    {n.title}: {n.body}
+                    {n.body}
                   </p>
+                  
+                  {n.metadata?.type === 'friend_request' && !n.read_at && (
+                    <div className="flex gap-2 mt-2">
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          // In a real app we'd need the requestId from metadata
+                          // For now this is a placeholder flow
+                          toast.info("Opening friend profile...");
+                          handleNotificationClick(n);
+                        }}
+                        className="bg-primary text-white text-xs px-4 py-1.5 rounded-lg font-black"
+                      >
+                        Confirm
+                      </button>
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          markReadMut.mutate(n.id);
+                        }}
+                        className="bg-gray-100 text-navy text-xs px-4 py-1.5 rounded-lg font-black"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  )}
+
                   <p className="text-[11px] text-gray-400 mt-1 font-medium">
                     {format(new Date(n.created_at), "MMM d, h:mm a")}
                   </p>
                 </div>
+
               </button>
             ))}
           </div>
