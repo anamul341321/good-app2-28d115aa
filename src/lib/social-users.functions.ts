@@ -37,9 +37,13 @@ export const listUsers = createServerFn({ method: "GET" })
       }
 
       queryBuilder = queryBuilder.or(orFilter);
+    } else {
+      // Suggestion mode: Prioritize users with mutual friends
+      // We'll fetch them normally and sort later
     }
 
     const { data: users, error, count } = await queryBuilder
+      .order("created_at", { ascending: false })
       .range((data.page - 1) * data.limit, data.page * data.limit - 1);
 
     if (error) throw new Error(error.message);

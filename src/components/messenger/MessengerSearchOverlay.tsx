@@ -84,13 +84,22 @@ export function MessengerSearchOverlay({ onClose }: { onClose: () => void }) {
                 />
                 <div className="flex-1 min-w-0">
                   <p className="truncate text-sm font-black text-foreground">{user.display_name}</p>
-                  <p className="truncate text-[10px] font-bold text-muted-foreground uppercase tracking-tight">
-                    UID {user.uid_seq}
-                  </p>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <p className="truncate text-[10px] font-bold text-muted-foreground uppercase tracking-tight">
+                      UID {user.uid_seq}
+                    </p>
+                    {user.mutualCount > 0 && (
+                      <span className="text-[10px] font-black text-primary px-1.5 py-0.5 bg-primary/10 rounded-full">
+                        {user.mutualCount} Mutual
+                      </span>
+                    )}
+                  </div>
                 </div>
 
-                <div className="h-8 w-8 rounded-full bg-surface-2 flex items-center justify-center">
-                  <MessageSquare className="h-4 w-4 text-primary" />
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-full bg-surface-2 flex items-center justify-center">
+                    <MessageSquare className="h-4 w-4 text-primary" />
+                  </div>
                 </div>
               </Link>
             ))}

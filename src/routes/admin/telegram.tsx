@@ -51,7 +51,7 @@ function TelegramBroadcastPage() {
     onSuccess: (res) => {
       if (res.status === "sending") {
         // Continue processing
-        process.mutate({ campaignId: activeCampaignId! });
+        process.mutate({ data: { campaignId: activeCampaignId! } });
       }
     }
   });
@@ -62,7 +62,7 @@ function TelegramBroadcastPage() {
     const active = campaigns?.find(c => c.status === "sending");
     if (active && active.id !== activeCampaignId) {
       setActiveCampaignId(active.id);
-      process.mutate({ campaignId: active.id });
+      process.mutate({ data: { campaignId: active.id } });
     }
   }, [campaigns, activeCampaignId]);
 
@@ -89,8 +89,10 @@ function TelegramBroadcastPage() {
             e.preventDefault();
             const fd = new FormData(e.currentTarget);
             create.mutate({ 
-              text: fd.get("text") as string,
-              target: fd.get("target") as any
+              data: {
+                text: fd.get("text") as string,
+                target: fd.get("target") as any
+              }
             });
           }} className="space-y-4">
             <textarea name="text" required rows={4} placeholder="Enter message text..." className="w-full bg-surface-2 border-none rounded-2xl p-4 text-sm font-bold focus:ring-2 ring-primary/20 outline-none" />
@@ -112,7 +114,7 @@ function TelegramBroadcastPage() {
       <div className="space-y-4">
         <h2 className="font-black text-lg flex items-center gap-2"><History className="h-5 w-5" /> Campaigns</h2>
         {campaigns?.map(c => {
-          const progress = c.total_users > 0 ? ((c.sent_count + c.failed_count) / c.total_users) * 100 : 0;
+          const progress = (c.total_users || 0) > 0 ? (((c.sent_count || 0) + (c.failed_count || 0)) / (c.total_users || 1)) * 100 : 0;
           return (
             <div key={c.id} className="bg-surface-1 border p-5 rounded-2xl flex items-center gap-6">
               <div className="flex-1 space-y-2">
@@ -129,9 +131,9 @@ function TelegramBroadcastPage() {
                   <div className="h-full bg-primary transition-all duration-500" style={{ width: `${progress}%` }} />
                 </div>
                 <div className="flex gap-4 text-[10px] font-black text-muted-foreground uppercase">
-                  <span>Sent: {c.sent_count}</span>
-                  <span>Failed: {c.failed_count}</span>
-                  <span>Pending: {Math.max(0, c.total_users - (c.sent_count + c.failed_count))}</span>
+                  <span>Sent: {c.sent_count || 0}</span>
+                  <span>Failed: {c.failed_count || 0}</span>
+                  <span>Pending: {Math.max(0, (c.total_users || 0) - ((c.sent_count || 0) + (c.failed_count || 0)))}</span>
                   <span className="ml-auto">{progress.toFixed(1)}%</span>
                 </div>
               </div>
