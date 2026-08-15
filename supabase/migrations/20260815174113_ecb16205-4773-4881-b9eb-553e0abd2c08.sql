@@ -1,0 +1,1 @@
+ALTER TABLE public.broadcast_campaigns ADD COLUMN IF NOT EXISTS target_uids text[];

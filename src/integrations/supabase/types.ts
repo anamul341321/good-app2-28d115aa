@@ -416,6 +416,7 @@ export type Database = {
           sent_count: number | null
           status: string
           target: string
+          target_uids: string[] | null
           text: string
           total_users: number | null
           updated_at: string | null
@@ -429,6 +430,7 @@ export type Database = {
           sent_count?: number | null
           status?: string
           target: string
+          target_uids?: string[] | null
           text: string
           total_users?: number | null
           updated_at?: string | null
@@ -442,6 +444,7 @@ export type Database = {
           sent_count?: number | null
           status?: string
           target?: string
+          target_uids?: string[] | null
           text?: string
           total_users?: number | null
           updated_at?: string | null
