@@ -58,13 +58,18 @@ function RechargePage() {
     debt: debtTotal,
   })) : 0;
 
+  const amtInput = Math.floor(Number(amount) || 0);
+  const rechargeFee = Math.floor(amtInput * 0.1);
+  const totalCost = amtInput + rechargeFee;
+
   const mut = useMutation({
     mutationFn: () => submitRecharge({ data: {
       mobile: mobile.replace(/\D/g, ""),
       operator: operator as any,
       connection_type: connType,
-      amount: Math.floor(Number(amount) || 0),
+      amount: amtInput,
     } }),
+
     onSuccess: (r: any) => {
       if (r.ok) toast.success(t(`✅ রিচার্জ সফল! Trx: ${r.transaction_id ?? "—"}`, `✅ Recharge successful! Trx: ${r.transaction_id ?? "—"}`));
       else toast.error(t(`❌ রিচার্জ ব্যর্থ: ${r.message}`, `❌ Recharge failed: ${r.message}`));
@@ -96,7 +101,8 @@ function RechargePage() {
 
   const amt = Math.floor(Number(amount) || 0);
   const mob = mobile.replace(/\D/g, "");
-  const canSubmit = /^0?1\d{9,10}$/.test(mob) && !!operator && amt >= MIN_RECHARGE && amt <= balance && !mut.isPending;
+  const canSubmit = /^0?1\d{9,10}$/.test(mob) && !!operator && amt >= MIN_RECHARGE && totalCost <= balance && !mut.isPending;
+
   const selectedOp = OPERATORS.find((o) => o.id === operator);
 
   return (
@@ -186,12 +192,31 @@ function RechargePage() {
           </div>
         </div>
 
+        {amt >= MIN_RECHARGE && (
+          <div className="rounded-xl border-2 border-cyan-500/30 bg-cyan-500/5 p-3 space-y-1 animate-in zoom-in-95 duration-200" translate="no">
+            <p className="text-[10px] uppercase tracking-widest font-black text-cyan-600">{t("ফি হিসাব (১০%)", "Fee breakdown (10%)")}</p>
+            <div className="flex justify-between text-[12px]">
+              <span className="text-muted-foreground">{t("রিচার্জ হবে", "Recharge amount")}</span>
+              <span className="mono-num font-bold text-emerald">{amt}৳</span>
+            </div>
+            <div className="flex justify-between text-[12px]">
+              <span className="text-muted-foreground">{t("সার্ভিস ফি (১০%)", "Service fee (10%)")}</span>
+              <span className="mono-num font-bold text-rose">+ {rechargeFee}৳</span>
+            </div>
+            <div className="flex justify-between text-sm border-t border-cyan-500/20 pt-1.5">
+              <span className="font-black">{t("মোট ব্যালেন্স কাটবে", "Total payable")}</span>
+              <span className="mono-num font-black text-cyan-600">{totalCost}৳</span>
+            </div>
+          </div>
+        )}
+
         <button disabled={!canSubmit} onClick={() => mut.mutate()}
           className="w-full py-4 rounded-2xl font-black text-base flex items-center justify-center gap-2 disabled:opacity-50 btn-press text-white shadow-xl transition"
           style={{ background: canSubmit ? "linear-gradient(135deg,#7c3aed,#06b6d4,#10b981)" : "linear-gradient(135deg,#94a3b8,#64748b)" }}>
           {mut.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Zap className="w-5 h-5" />}
           {amt >= MIN_RECHARGE ? t(`${amt}৳ রিচার্জ করুন`, `Recharge ${amt}৳`) : t("রিচার্জ করুন", "Recharge")}
         </button>
+
       </div>
 
       <div>
@@ -214,7 +239,15 @@ function RechargePage() {
                 {r.status === "failed" && r.error_message && <p className="text-[10px] text-rose mt-0.5 truncate">{r.error_message}</p>}
                 {r.provider_ref && <p className="text-[10px] text-emerald mono-num truncate" translate="no">Trx: {r.provider_ref}</p>}
               </div>
-              <p className="mono-num font-black text-navy shrink-0" translate="no">{Math.floor(Number(r.amount))}৳</p>
+              <div className="text-right shrink-0">
+                <p className="mono-num font-black text-navy" translate="no">{Math.floor(Number(r.amount))}৳</p>
+                {(r.fee_amount > 0 || r.total_deducted > 0) && (
+                  <p className="text-[9px] text-muted-foreground font-bold" translate="no">
+                    Fee: {Math.floor(Number(r.fee_amount))}৳ · Total: {Math.floor(Number(r.total_deducted || (Number(r.amount) + Number(r.fee_amount))))}৳
+                  </p>
+                )}
+              </div>
+
             </div>
           ))}
         </div>
