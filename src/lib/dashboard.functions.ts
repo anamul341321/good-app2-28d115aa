@@ -8,7 +8,7 @@ export const getDashboard = createServerFn({ method: "GET" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const TASK_COLS = "id,slot,status,face_label,face_photo_url,wallet_address,initial_verify_at,reverify_due_at,done_at,reverify_count,last_reverified_at,whitelist_ok,last_whitelist_check_at,created_at,user_id";
-    const [{ data: profile }, tasksResult, { data: mining }, { data: walletList }, { data: roles }, { count: pendingCount }, { data: bonusSettings }] =
+    const [{ data: profile }, tasksResult, { data: mining }, { data: walletList }, { data: roles }, { count: pendingCount }, { data: bonusSettings }, { data: balanceBreakdown }] =
       await Promise.all([
         supabase.from("profiles").select("*").eq("id", userId).maybeSingle(),
         supabaseAdmin.from("tasks").select(TASK_COLS).eq("user_id", userId).order("slot"),
@@ -18,6 +18,7 @@ export const getDashboard = createServerFn({ method: "GET" })
         supabaseAdmin.from("unverified_attempts").select("id", { count: "exact", head: true })
           .eq("user_id", userId).eq("kind", "first_verify"),
         supabaseAdmin.from("bonus_settings").select("bkash_enabled,nagad_enabled,bkash_off_message,nagad_off_message,recharge_enabled,recharge_off_message,usdt_enabled,usdt_off_message,usdt_rate_bdt,withdraw_enabled,withdraw_off_message,withdraw_off_until").eq("id", "default").maybeSingle(),
+        supabaseAdmin.rpc("get_user_balance_breakdown", { _user_id: userId }),
       ]);
 
     if ((profile as any)?.banned) {
@@ -165,10 +166,11 @@ export const getDashboard = createServerFn({ method: "GET" })
         selfFirstAmount: bonus.selfFirstAmount,
         referrerAmount: bonus.referrerAmount,
         userAmount: bonus.userAmount,
-        totalAmount: bonus.selfFirstAmount + bonus.referrerAmount + bonus.userAmount,
+        totalAmount: Number((balanceBreakdown as any)?.bonus ?? 0),
         hasReferrer: !!(profile as any)?.referred_by,
         rates: bonus.rates,
       },
+      balanceBreakdown,
     };
   });
 

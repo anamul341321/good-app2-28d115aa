@@ -88,11 +88,9 @@ function WithdrawPage() {
     debt: debtTotal,
     now,
   }) : 0;
-  const claimable = debtTotal > 0 ? Math.floor(balance) : Math.floor(balance);
-
-  // Main balance (instantly withdrawable) vs mining (1st–3rd of each month window)
+  const claimable = Math.floor((data as any).balanceBreakdown?.current_balance ?? balance);
   const bonusTotal = Number((mining as any)?.bonus_amount ?? 0);
-  const bonusAvailable = Math.floor(splitBalance({
+  const bonusAvailable = Math.floor((data as any).balanceBreakdown?.bonus_part ?? splitBalance({
     balance,
     bonusTotal,
     withdrawn: Number((mining as any)?.withdrawn_amount ?? 0),

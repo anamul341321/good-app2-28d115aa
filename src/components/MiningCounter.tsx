@@ -1,6 +1,6 @@
 import { memo, useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { computeLiveBalance, monthlyRate, MONTHLY_PER_SLOT, splitBalance } from "@/lib/mining";
+import { computeLiveBalance, monthlyRate, MONTHLY_PER_SLOT } from "@/lib/mining";
 import { miningWindowInfo, nextOpenLabelBn } from "@/lib/mining-window";
 import { Wallet, Sparkles } from "lucide-react";
 
@@ -15,7 +15,6 @@ const MiningDecor = memo(function MiningDecor({ live }: { live: boolean }) {
       <div className="absolute inset-0 mc-aurora opacity-30 pointer-events-none" aria-hidden />
       {live && <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden><span className="mc-sheen" /></div>}
       <div className="absolute -inset-1 mc-ring pointer-events-none" aria-hidden />
-
 
       {live && (
         <div className="absolute inset-0 pointer-events-none" aria-hidden>
@@ -72,9 +71,15 @@ type Props = {
   bonusTotal?: number;
   referralAccrued?: number;
   miningWithdrawn?: number;
+  balanceBreakdown?: {
+    total_accrued: number;
+    bonus_part: number;
+    mining_part: number;
+    withdrawn_total: number;
+    current_balance: number;
+  };
 };
 
-// League tiers based on total submitted slots.
 function leagueFor(n: number): { name: string; emoji: string; from: string; to: string } | null {
   if (n >= 100) return { name: "লিজেন্ড", emoji: "👑", from: "#facc15", to: "#f59e0b" };
   if (n >= 50)  return { name: "ডায়মন্ড", emoji: "💎", from: "#22d3ee", to: "#8b5cf6" };
@@ -89,7 +94,7 @@ export function MiningCounter({
   effectiveTaskCount = 0, qualifyingReferees = 0,
   selfSlots: selfSlotsProp, referralUnits: referralUnitsProp,
   selfQualified = true, displayTaskCount, leagueCount,
-  bonusTotal = 0, referralAccrued = 0, miningWithdrawn = 0,
+  balanceBreakdown,
 }: Props) {
 
   const [now, setNow] = useState(Date.now());
@@ -116,9 +121,21 @@ export function MiningCounter({
     qualifyingReferees,
     selfQualified,
   };
-  const balance = computeLiveBalance({
+  
+  // Audited values from breakdown
+  const auditedBalance = balanceBreakdown?.current_balance ?? 0;
+  const bonusPart = balanceBreakdown?.bonus_part ?? 0;
+  const miningPart = balanceBreakdown?.mining_part ?? 0;
+
+  // We still compute live balance for the "ticker" effect if active,
+  // but we should probably tether it to the audited balance to prevent jumps.
+  const liveBalance = computeLiveBalance({
     accrued, withdrawn, isActive, lastCreditedAt, ...rateArgs, now,
   });
+  
+  // Use audited balance as base, plus live increment if active
+  const displayBalance = isActive ? liveBalance : auditedBalance;
+
   const rawSelfSlots = selfSlotsProp ?? effectiveTaskCount;
   const selfSlots = selfQualified ? rawSelfSlots : 0;
   const refUnits = referralUnitsProp ?? qualifyingReferees;
@@ -127,13 +144,8 @@ export function MiningCounter({
   const ratePerMonth = monthlyRate(rateArgs);
   const selfMonth = MONTHLY_PER_SLOT * selfSlots;
   const bonusMonth = MONTHLY_PER_SLOT * refUnits;
-  const claimable = Math.floor(balance);
+  const claimable = Math.floor(auditedBalance);
   const league = leagueFor(leagueCount ?? Math.max(effectiveTaskCount, displayTaskCount ?? 0));
-
-  const bonusPart = splitBalance({ balance, bonusTotal, withdrawn, miningWithdrawn }).main;
-  const miningPart = Math.max(0, balance - bonusPart);
-  const refPart = Math.min(miningPart, Math.max(0, referralAccrued));
-  const selfPart = Math.max(0, miningPart - refPart);
 
   const win = miningWindowInfo(now);
   const withdrawOpen = win.isOpen;
@@ -145,7 +157,6 @@ export function MiningCounter({
       <MiningDecor live={live} />
 
       <div className="relative">
-        {/* Header */}
         <div className="flex items-center justify-between mb-2">
           <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full mc-chip">
             {live ? (
@@ -176,13 +187,11 @@ export function MiningCounter({
           )}
         </div>
 
-        {/* Balance — animated */}
         <div className="text-center">
           <p className="text-[9px] uppercase tracking-[0.3em] text-white/60 font-black">Total Balance</p>
-          <AnimatedMoney value={balance} live={live} />
+          <AnimatedMoney value={displayBalance} live={live} />
         </div>
 
-        {/* Withdraw window notice — always visible */}
         <div className={`mt-2.5 rounded-xl px-2.5 py-1.5 text-[10px] font-black flex items-center justify-between gap-2 border ${withdrawOpen ? "mc-ribbon-open" : "mc-ribbon-closed"}`}>
           <span className="flex items-center gap-1.5 min-w-0">
             <span>{withdrawOpen ? "🔓" : "⏳"}</span>
@@ -195,7 +204,6 @@ export function MiningCounter({
           </span>
         </div>
 
-        {/* Two compact balance cards side by side */}
         <div className="mt-2.5 grid grid-cols-2 gap-2">
           <div className="mc-mini rounded-2xl p-2">
             <p className="text-[8px] font-black tracking-widest text-white/70">⛏️ মাইনিং</p>
@@ -203,7 +211,7 @@ export function MiningCounter({
               {miningPart.toFixed(2)}<span className="text-[9px] text-white/60">৳</span>
             </p>
             <p className="text-[7.5px] text-white/60 leading-tight mt-0.5">
-              নিজের {selfPart.toFixed(0)}৳ + রেফার {refPart.toFixed(0)}৳ · ১–৩ তারিখে
+              নিজের ও রেফার মাইনিং · ১–৩ তারিখে
             </p>
           </div>
           <div className="mc-mini rounded-2xl p-2">
@@ -217,7 +225,6 @@ export function MiningCounter({
           </div>
         </div>
 
-        {/* Rate stat pills */}
         <div className="mt-2 grid grid-cols-2 gap-2">
           <div className="mc-stat rounded-2xl p-2">
             <p className="text-[8px] uppercase tracking-widest text-white/60 font-black">মাইনিং ঘর</p>
