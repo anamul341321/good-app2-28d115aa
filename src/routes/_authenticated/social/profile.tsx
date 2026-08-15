@@ -48,16 +48,16 @@ function SocialProfilePage() {
 
   const profile = isOwnProfile ? authUser?.user_metadata : profileData?.profile;
 
+  const { data: stats } = useQuery({
+    queryKey: ["profile-stats", effectiveUserId],
+    queryFn: () => getProfileStats({ data: { userId: effectiveUserId! } }),
+    enabled: !!effectiveUserId,
+  });
+
   const { data: appStatus } = useQuery({
     queryKey: ["app-status"],
     queryFn: () => getAppStatus(),
     staleTime: 30_000,
-  });
-
-  const { data: dashData } = useQuery({
-    queryKey: ["dashboard"],
-    queryFn: () => getDashboard(),
-    staleTime: 60_000,
   });
 
   const { data: postsData, isLoading: postsLoading } = useQuery({
@@ -65,6 +65,7 @@ function SocialProfilePage() {
     queryFn: () => listPosts(),
     enabled: !!effectiveUserId,
   });
+
 
   if (appStatus?.maintenance) return <MaintenanceScreen message={appStatus.message} />;
   if (!authUser) return null;
@@ -160,12 +161,13 @@ function SocialProfilePage() {
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-[10px] font-bold text-muted-foreground uppercase">{t("স্ট্যাটাস", "Status")}</p>
-                <p className={`text-sm font-black ${dashData?.mining?.is_active ? "text-emerald" : "text-rose"}`}>
-                  {dashData?.mining?.is_active ? t("সক্রিয়", "Active") : t("নিষ্ক্রিয়", "Inactive")}
+                <p className="text-[10px] font-bold text-muted-foreground uppercase">{t("ভেরিফাইড", "Verified")}</p>
+                <p className="text-sm font-black text-emerald">
+                  {verifiedCount} Slots
                 </p>
               </div>
             </div>
+
           </div>
 
           {/* Action Buttons */}
@@ -194,13 +196,18 @@ function SocialProfilePage() {
                   <MessageSquare className="w-4 h-4" /> Message
                 </button>
                 <button 
-                  onClick={() => toast.success(t("অনুসরণ করা হয়েছে", "Following"))}
+                  onClick={() => {
+                    sendFriendRequest({ data: { friendId: effectiveUserId! } })
+                      .then(() => toast.success(t("রিকোয়েস্ট পাঠানো হয়েছে", "Request sent")))
+                      .catch((e) => toast.error(e.message));
+                  }}
                   className="flex items-center justify-center gap-2 bg-gray-100 text-navy py-2.5 rounded-xl font-black text-sm btn-press"
                 >
-                  <Plus className="w-4 h-4" /> Follow
+                  <Plus className="w-4 h-4" /> Add Friend
                 </button>
               </>
             )}
+
           </div>
         </div>
       </div>
