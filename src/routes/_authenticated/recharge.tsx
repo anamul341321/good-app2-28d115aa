@@ -4,7 +4,8 @@ import { useState } from "react";
 import { submitRecharge, getMyRecharges } from "@/lib/recharge.functions";
 import { getDashboard } from "@/lib/dashboard.functions";
 import { computeLiveBalance } from "@/lib/mining";
-import { Loader2, Smartphone, CheckCircle2, XCircle, ArrowLeft, Sparkles, Zap } from "lucide-react";
+import { Loader2, Smartphone, CheckCircle2, XCircle, ArrowLeft, Sparkles, Zap, Wifi, Copy, Ticket } from "lucide-react";
+import { listCardStore, purchaseCard, myCards } from "@/lib/cards.functions";
 import { toast } from "sonner";
 import { useLang } from "@/lib/i18n";
 
@@ -221,6 +222,8 @@ function RechargePage() {
 
       </div>
 
+      <CardStore balance={balance} onDone={() => { refetch(); }} />
+
       <div>
         <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-black px-1 mb-2">{t("ইতিহাস", "History")}</p>
         {(history ?? []).length === 0 && (
@@ -254,6 +257,134 @@ function RechargePage() {
           ))}
         </div>
       </div>
+    </div>
+  );
+}
+
+const OP_COLOR: Record<string, string> = {
+  GP: "#00a99d", Robi: "#e2136e", Airtel: "#e2101f", Banglalink: "#f36f21", Other: "#64748b",
+};
+
+function CardStore({ balance, onDone }: { balance: number; onDone: () => void }) {
+  const { t } = useLang();
+  const [op, setOp] = useState<string>("all");
+  const { data: cards, refetch } = useQuery({ queryKey: ["card-store"], queryFn: () => listCardStore() });
+  const { data: mine, refetch: refetchMine } = useQuery({ queryKey: ["my-cards"], queryFn: () => myCards() });
+  const [bought, setBought] = useState<any>(null);
+
+  const buy = useMutation({
+    mutationFn: (productId: string) => purchaseCard({ data: { productId } }),
+    onSuccess: (r: any) => {
+      setBought(r);
+      toast.success(t("কার্ড কেনা সফল!", "Card purchased!"));
+      refetch(); refetchMine(); onDone();
+    },
+    onError: (e: any) => toast.error(e?.message ?? t("কার্ড কেনা যায়নি", "Purchase failed")),
+  });
+
+  const list = (cards ?? []).filter((c: any) => op === "all" || c.operator === op);
+  const ops = ["all", "GP", "Robi", "Airtel", "Banglalink", "Other"];
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2 px-1">
+        <Ticket className="w-4 h-4 text-violet-500" />
+        <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-black">
+          {t("মিনিট / এমবি কার্ড", "Minute / MB Cards")}
+        </p>
+      </div>
+
+      <div className="flex gap-1.5 overflow-x-auto scrollbar-none pb-1">
+        {ops.map((o) => (
+          <button key={o} onClick={() => setOp(o)}
+            className={`px-3 py-1.5 rounded-xl text-[11px] font-black border-2 whitespace-nowrap btn-press transition ${op === o ? "text-white border-transparent shadow-md" : "bg-surface-2 border-border text-navy"}`}
+            style={op === o ? { background: o === "all" ? "#7c3aed" : OP_COLOR[o] } : {}}>
+            {o === "all" ? t("সব", "All") : o}
+          </button>
+        ))}
+      </div>
+
+      {list.length === 0 ? (
+        <div className="glass rounded-2xl p-6 text-center">
+          <Ticket className="w-8 h-8 text-muted-foreground/40 mx-auto mb-2" />
+          <p className="text-xs text-muted-foreground">{t("এখন কোনো কার্ড নেই", "No cards available right now")}</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-2">
+          {list.map((c: any) => {
+            const out = Number(c.stock) <= 0;
+            const poor = balance < Number(c.selling_price);
+            return (
+              <div key={c.id} className="glass rounded-2xl p-3 border border-border/60 flex flex-col gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-1 rounded-lg text-[9px] font-black text-white" style={{ background: OP_COLOR[c.operator] ?? "#64748b" }}>
+                    {c.operator}
+                  </span>
+                  <span className="text-[9px] font-black text-muted-foreground uppercase flex items-center gap-1">
+                    {c.card_type === "Minute" ? <Smartphone className="w-3 h-3" /> : <Wifi className="w-3 h-3" />}
+                    {c.card_type}
+                  </span>
+                </div>
+                <p className="font-black text-sm leading-tight">{c.amount_label}</p>
+                <p className="text-[10px] text-muted-foreground leading-tight">{c.name}{c.validity ? ` · ${c.validity}` : ""}</p>
+                <div className="flex items-center justify-between mt-auto pt-1">
+                  <p className="mono-num font-black text-cyan-600" translate="no">{Math.floor(Number(c.selling_price))}৳</p>
+                  <p className={`text-[9px] font-black ${out ? "text-rose" : "text-emerald"}`} translate="no">
+                    {out ? t("স্টক শেষ", "Out of stock") : `${c.stock} ${t("টি আছে", "left")}`}
+                  </p>
+                </div>
+                <button disabled={out || poor || buy.isPending} onClick={() => buy.mutate(c.id)}
+                  className="w-full py-2 rounded-xl text-[11px] font-black text-white disabled:opacity-50 btn-press"
+                  style={{ background: "linear-gradient(135deg,#7c3aed,#06b6d4)" }}>
+                  {buy.isPending ? "…" : poor ? t("ব্যালেন্স নেই", "Low balance") : t("কিনুন", "Buy")}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {(mine ?? []).length > 0 && (
+        <div className="space-y-2">
+          <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-black px-1">
+            {t("আমার কার্ড", "My cards")}
+          </p>
+          {(mine ?? []).map((m: any) => (
+            <div key={m.id} className="glass rounded-2xl p-3 flex items-center gap-3 border border-border/50">
+              <div className="w-9 h-9 rounded-xl bg-violet-500/15 text-violet-500 flex items-center justify-center shrink-0">
+                <Ticket className="w-4 h-4" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="font-black text-xs">{m.card_products?.name ?? "Card"}</p>
+                <p className="mono-num text-sm font-black text-navy tracking-wider truncate" translate="no">{m.code}</p>
+              </div>
+              <button onClick={() => { navigator.clipboard.writeText(m.code); toast.success(t("কোড কপি হয়েছে", "Code copied")); }}
+                className="p-2 rounded-lg bg-surface-2 border border-border">
+                <Copy className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {bought && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="glass w-full max-w-xs rounded-3xl p-5 text-center space-y-3">
+            <CheckCircle2 className="w-10 h-10 text-emerald mx-auto" />
+            <p className="font-black text-sm">{bought.name}</p>
+            <p className="mono-num text-lg font-black tracking-widest break-all" translate="no">{bought.code}</p>
+            <button onClick={() => { navigator.clipboard.writeText(bought.code); toast.success(t("কপি হয়েছে", "Copied")); }}
+              className="w-full py-2.5 rounded-xl bg-surface-2 border border-border font-black text-xs">
+              {t("কোড কপি করুন", "Copy code")}
+            </button>
+            <button onClick={() => setBought(null)}
+              className="w-full py-2.5 rounded-xl text-white font-black text-xs"
+              style={{ background: "linear-gradient(135deg,#7c3aed,#06b6d4)" }}>
+              {t("ঠিক আছে", "Done")}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
