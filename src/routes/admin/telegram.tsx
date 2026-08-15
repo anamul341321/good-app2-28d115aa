@@ -20,7 +20,7 @@ import { raceTimeout } from "@/lib/net";
 
 export const Route = createFileRoute("/admin/telegram")({ component: TelegramAdmin });
 
-type Tab = "settings" | "aikeys" | "started" | "broadcast" | "faq" | "voices" | "videos" | "lookup" | "blocked" | "bans" | "log";
+type Tab = "settings" | "aikeys" | "started" | "broadcast" | "campaigns" | "faq" | "voices" | "videos" | "lookup" | "blocked" | "bans" | "log";
 
 
 
