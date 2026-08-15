@@ -444,23 +444,20 @@ function HomePage() {
         )}
       </div>
       </DashSection>
-
-      <Link to="/menu"
-        className="block rounded-3xl p-4 relative overflow-hidden btn-press border border-white/20 shadow-[0_18px_40px_-18px_rgba(99,102,241,0.6)]"
-        style={{ background: "linear-gradient(135deg,#4f46e5 0%,#8b5cf6 50%,#06b6d4 100%)" }}>
-        <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/10 blur-2xl" />
-        <div className="relative flex items-center gap-3 text-white">
-          <div className="w-13 h-13 p-3.5 rounded-2xl bg-white/25 backdrop-blur border border-white/40 text-2xl shrink-0">☰</div>
-          <div className="flex-1 min-w-0">
-            <p className="text-[10px] uppercase tracking-[0.25em] font-black opacity-95">Menu</p>
-            <p className="text-lg font-black leading-tight drop-shadow">{t("সব অপশন ও ফিচার", "All options & features")}</p>
-            <p className="text-[11px] opacity-95 font-bold mt-0.5">
-              {t("অফার · সেন্ড · রিচার্জ · রেফার · লিডারবোর্ড · সাপোর্ট", "Offers · Send · Recharge · Refer · Leaderboard · Support")}
-            </p>
+      <div className="grid grid-cols-2 gap-4">
+        <Link to="/menu"
+          className="rounded-2xl p-4 flex flex-col justify-between h-32 relative overflow-hidden border border-white/10 shadow-sm active:scale-95 transition-all"
+          style={{ background: "linear-gradient(135deg, #4f46e5, #8b5cf6)" }}>
+          <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-white/10 blur-xl" />
+          <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur border border-white/30 flex items-center justify-center text-xl shrink-0 relative">☰</div>
+          <div className="relative">
+            <p className="text-[10px] uppercase tracking-[0.2em] font-black text-white/90">Menu</p>
+            <p className="text-sm font-black text-white leading-tight mt-0.5">{t("সব অপশন", "All Options")}</p>
           </div>
-          <span className="text-3xl opacity-90 font-black">›</span>
-        </div>
-      </Link>
+        </Link>
+        <WithdrawFeedMini />
+      </div>
+
 
 
       {!data.wallet && (
