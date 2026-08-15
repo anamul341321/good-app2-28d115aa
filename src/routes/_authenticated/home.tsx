@@ -651,7 +651,7 @@ function MainIdentityCell({ task, onStart, onReverify, onOpenPhoto }: { task: an
     const days = anchor ? (Date.now() - new Date(anchor).getTime()) / 86400000 : null;
     const remain = days != null ? Math.max(0, 4 - days) : null;
     const due = remain != null && remain <= 0;
-    const hint = remain == null ? null : due ? "সময় হয়েছে" : `পরবর্তী: ${Math.ceil(remain)} দিন পর`;
+    const hint = remain == null ? null : due ? "সময় হয়েছে" : (Number(task.reverify_count ?? 0) > 0 ? "✅ সম্পূর্ণ" : `পরবর্তী: ${Math.ceil(remain)} দিন পর`);
     return (
       <button onClick={() => faceUrl && onOpenPhoto(faceUrl)} data-voice="home.open.photo"
         className="relative w-24 h-24 rounded-2xl overflow-hidden border-2 shadow-[0_12px_28px_-8px_rgba(99,102,241,0.75)] active:scale-95 transition"
