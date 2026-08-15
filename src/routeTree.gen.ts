@@ -59,6 +59,7 @@ import { Route as ApiPublicIpaybdWebhookRouteImport } from './routes/api/public/
 import { Route as ApiPublicHisabCardRouteImport } from './routes/api/public/hisab-card'
 import { Route as AdminUserUserIdRouteImport } from './routes/admin/user.$userId'
 import { Route as AuthenticatedTaskSlotRouteImport } from './routes/_authenticated/task.$slot'
+import { Route as AuthenticatedSocialSearchRouteImport } from './routes/_authenticated/social/search'
 import { Route as AuthenticatedSocialProfileRouteImport } from './routes/_authenticated/social/profile'
 import { Route as AuthenticatedSocialMessengerRouteImport } from './routes/_authenticated/social/messenger'
 import { Route as AuthenticatedChatPeerIdRouteImport } from './routes/_authenticated/chat.$peerId'
@@ -326,6 +327,12 @@ const AuthenticatedTaskSlotRoute = AuthenticatedTaskSlotRouteImport.update({
   path: '/task/$slot',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedSocialSearchRoute =
+  AuthenticatedSocialSearchRouteImport.update({
+    id: '/search',
+    path: '/search',
+    getParentRoute: () => AuthenticatedSocialRoute,
+  } as any)
 const AuthenticatedSocialProfileRoute =
   AuthenticatedSocialProfileRouteImport.update({
     id: '/profile',
@@ -447,6 +454,7 @@ export interface FileRoutesByFullPath {
   '/chat/$peerId': typeof AuthenticatedChatPeerIdRoute
   '/social/messenger': typeof AuthenticatedSocialMessengerRoute
   '/social/profile': typeof AuthenticatedSocialProfileRoute
+  '/social/search': typeof AuthenticatedSocialSearchRoute
   '/task/$slot': typeof AuthenticatedTaskSlotRoute
   '/admin/user/$userId': typeof AdminUserUserIdRoute
   '/api/public/hisab-card': typeof ApiPublicHisabCardRoute
@@ -510,6 +518,7 @@ export interface FileRoutesByTo {
   '/chat/$peerId': typeof AuthenticatedChatPeerIdRoute
   '/social/messenger': typeof AuthenticatedSocialMessengerRoute
   '/social/profile': typeof AuthenticatedSocialProfileRoute
+  '/social/search': typeof AuthenticatedSocialSearchRoute
   '/task/$slot': typeof AuthenticatedTaskSlotRoute
   '/admin/user/$userId': typeof AdminUserUserIdRoute
   '/api/public/hisab-card': typeof ApiPublicHisabCardRoute
@@ -577,6 +586,7 @@ export interface FileRoutesById {
   '/_authenticated/chat/$peerId': typeof AuthenticatedChatPeerIdRoute
   '/_authenticated/social/messenger': typeof AuthenticatedSocialMessengerRoute
   '/_authenticated/social/profile': typeof AuthenticatedSocialProfileRoute
+  '/_authenticated/social/search': typeof AuthenticatedSocialSearchRoute
   '/_authenticated/task/$slot': typeof AuthenticatedTaskSlotRoute
   '/admin/user/$userId': typeof AdminUserUserIdRoute
   '/api/public/hisab-card': typeof ApiPublicHisabCardRoute
@@ -644,6 +654,7 @@ export interface FileRouteTypes {
     | '/chat/$peerId'
     | '/social/messenger'
     | '/social/profile'
+    | '/social/search'
     | '/task/$slot'
     | '/admin/user/$userId'
     | '/api/public/hisab-card'
@@ -707,6 +718,7 @@ export interface FileRouteTypes {
     | '/chat/$peerId'
     | '/social/messenger'
     | '/social/profile'
+    | '/social/search'
     | '/task/$slot'
     | '/admin/user/$userId'
     | '/api/public/hisab-card'
@@ -773,6 +785,7 @@ export interface FileRouteTypes {
     | '/_authenticated/chat/$peerId'
     | '/_authenticated/social/messenger'
     | '/_authenticated/social/profile'
+    | '/_authenticated/social/search'
     | '/_authenticated/task/$slot'
     | '/admin/user/$userId'
     | '/api/public/hisab-card'
@@ -1177,6 +1190,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTaskSlotRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/social/search': {
+      id: '/_authenticated/social/search'
+      path: '/search'
+      fullPath: '/social/search'
+      preLoaderRoute: typeof AuthenticatedSocialSearchRouteImport
+      parentRoute: typeof AuthenticatedSocialRoute
+    }
     '/_authenticated/social/profile': {
       id: '/_authenticated/social/profile'
       path: '/profile'
@@ -1281,12 +1301,14 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedSocialRouteChildren {
   AuthenticatedSocialMessengerRoute: typeof AuthenticatedSocialMessengerRoute
   AuthenticatedSocialProfileRoute: typeof AuthenticatedSocialProfileRoute
+  AuthenticatedSocialSearchRoute: typeof AuthenticatedSocialSearchRoute
   AuthenticatedSocialIndexRoute: typeof AuthenticatedSocialIndexRoute
 }
 
 const AuthenticatedSocialRouteChildren: AuthenticatedSocialRouteChildren = {
   AuthenticatedSocialMessengerRoute: AuthenticatedSocialMessengerRoute,
   AuthenticatedSocialProfileRoute: AuthenticatedSocialProfileRoute,
+  AuthenticatedSocialSearchRoute: AuthenticatedSocialSearchRoute,
   AuthenticatedSocialIndexRoute: AuthenticatedSocialIndexRoute,
 }
 

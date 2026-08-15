@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Search, Plus, Bell, Image as ImageIcon, Share2, MoreHorizontal, Heart, Smile, MessageSquare, Video, Globe, ChevronLeft, Trash2 } from "lucide-react";
-import { listPosts, listStories, reactToPost, deletePost } from "@/lib/news-feed.functions";
+import { listPosts, listStories, reactToPost, deletePost, listNotifications } from "@/lib/news-feed.functions";
 import { useLang } from "@/lib/i18n";
 import { toast } from "sonner";
 import { Link, useNavigate } from "@tanstack/react-router";
@@ -26,6 +26,14 @@ export function NewsFeedPage() {
     queryKey: ["stories"],
     queryFn: () => listStories(),
   });
+
+  const { data: notificationsData } = useQuery({
+    queryKey: ["social-notifications"],
+    queryFn: () => listNotifications(),
+    refetchInterval: 30000,
+  });
+
+  const unreadNotifCount = (notificationsData as any)?.notifications?.filter((n: any) => !n.read_at).length || 0;
 
   const posts = (postsData as any)?.posts || [];
   const stories = (storiesData as any)?.stories || [];
@@ -53,7 +61,10 @@ export function NewsFeedPage() {
             </div>
             
             <div className="flex items-center gap-2">
-              <button className="h-9 w-9 flex items-center justify-center rounded-full bg-gray-100 btn-press text-gray-600">
+              <button 
+                onClick={() => navigate({ to: "/social/search" as any })}
+                className="h-9 w-9 flex items-center justify-center rounded-full bg-gray-100 btn-press text-gray-600"
+              >
                 <Search className="h-5 w-5" />
               </button>
               <button 
@@ -63,8 +74,16 @@ export function NewsFeedPage() {
                 <MessageSquare className="h-5 w-5" />
                 <span className="absolute top-0 right-0 h-4 w-4 bg-rose-500 rounded-full text-[10px] text-white flex items-center justify-center border-2 border-white">2</span>
               </button>
-              <button className="h-9 w-9 flex items-center justify-center rounded-full bg-gray-100 btn-press text-gray-600">
+              <button 
+                onClick={() => navigate({ to: "/social/notifications" as any })}
+                className="h-9 w-9 flex items-center justify-center rounded-full bg-gray-100 btn-press relative text-gray-600"
+              >
                 <Bell className="h-5 w-5" />
+                {unreadNotifCount > 0 && (
+                  <span className="absolute top-0 right-0 h-4 w-4 bg-rose-500 rounded-full text-[10px] text-white flex items-center justify-center border-2 border-white">
+                    {unreadNotifCount}
+                  </span>
+                )}
               </button>
             </div>
           </div>

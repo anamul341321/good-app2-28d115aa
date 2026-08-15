@@ -172,19 +172,31 @@ function SocialProfilePage() {
           <div className="mt-6 grid grid-cols-2 gap-2 max-w-md mx-auto">
             {isOwnProfile ? (
               <>
-                <button className="flex items-center justify-center gap-2 bg-[#1877F2] text-white py-2.5 rounded-xl font-black text-sm btn-press">
+                <button 
+                  onClick={() => navigate({ to: "/social" as any })}
+                  className="flex items-center justify-center gap-2 bg-[#1877F2] text-white py-2.5 rounded-xl font-black text-sm btn-press"
+                >
                   <Plus className="w-4 h-4" /> Add Story
                 </button>
-                <button className="flex items-center justify-center gap-2 bg-gray-100 text-navy py-2.5 rounded-xl font-black text-sm btn-press">
+                <button 
+                  onClick={() => toast.info(t("প্রোফাইল সেটিংস শীঘ্রই আসছে", "Profile settings coming soon"))}
+                  className="flex items-center justify-center gap-2 bg-gray-100 text-navy py-2.5 rounded-xl font-black text-sm btn-press"
+                >
                   <Settings className="w-4 h-4" /> Edit Profile
                 </button>
               </>
             ) : (
               <>
-                <button className="flex items-center justify-center gap-2 bg-[#1877F2] text-white py-2.5 rounded-xl font-black text-sm btn-press">
+                <button 
+                  onClick={() => navigate({ to: `/social/messenger` as any, search: { peerId: effectiveUserId } as any })}
+                  className="flex items-center justify-center gap-2 bg-[#1877F2] text-white py-2.5 rounded-xl font-black text-sm btn-press"
+                >
                   <MessageSquare className="w-4 h-4" /> Message
                 </button>
-                <button className="flex items-center justify-center gap-2 bg-gray-100 text-navy py-2.5 rounded-xl font-black text-sm btn-press">
+                <button 
+                  onClick={() => toast.success(t("অনুসরণ করা হয়েছে", "Following"))}
+                  className="flex items-center justify-center gap-2 bg-gray-100 text-navy py-2.5 rounded-xl font-black text-sm btn-press"
+                >
                   <Plus className="w-4 h-4" /> Follow
                 </button>
               </>
