@@ -146,8 +146,9 @@ export const getEarnings = createServerFn({ method: "GET" })
     const adminIn = (credits ?? []).filter((c: any) => Number(c.amount) > 0).reduce((s: number, c: any) => s + Number(c.amount), 0);
     const transferInTotal = (transfersIn ?? []).reduce((s: number, t: any) => s + Number(t.amount), 0);
     const paidWithdrawals = (withdrawals ?? []).filter((w: any) => w.status === "paid").reduce((s: number, w: any) => s + Number(w.amount), 0);
-    const successfulRecharges = (recharges ?? []).filter((r: any) => r.status === "success").reduce((s: number, r: any) => s + Number(r.amount), 0);
-    const transfersOutTotal = (transfersOut ?? []).reduce((s: number, t: any) => s + Number(t.amount), 0);
+    const successfulRecharges = (recharges ?? []).filter((r: any) => r.status === "success").reduce((s: number, r: any) => s + Number(r.total_deducted || r.amount), 0);
+    const transfersOutTotal = (transfersOut ?? []).reduce((s: number, t: any) => s + Number(t.amount) + Number(t.fee_amount || 0), 0);
+
     const pendingWithdrawals = (withdrawals ?? []).filter((w: any) => w.status === "pending").reduce((s: number, w: any) => s + Number(w.amount), 0);
     // Pending requests already reserved balance, so they count as accounted-out;
     // otherwise the leftover would be mislabelled as a huge withdraw "fee".
