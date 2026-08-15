@@ -67,7 +67,35 @@ function ProfilePage() {
     enabled: !!effectiveUserId,
   });
 
+  const profilePhotoInputRef = React.useRef<HTMLInputElement>(null);
+
+  const updateProfileMutation = useMutation({
+    mutationFn: (data: { avatarUrl?: string, displayName?: string }) => updateProfile({ data }),
+    onSuccess: () => {
+      toast.success(t("প্রোফাইল আপডেট করা হয়েছে", "Profile updated"));
+      queryClient.invalidateQueries({ queryKey: ["social-profile", effectiveUserId] });
+      // Invalidate auth query if it exists
+      queryClient.invalidateQueries({ queryKey: ["auth"] });
+    },
+    onError: (err: any) => toast.error(err.message)
+  });
+
+  const handleProfilePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const toastId = toast.loading(t("আপলোড হচ্ছে...", "Uploading..."));
+    try {
+      const url = await uploadMedia(file);
+      await updateProfileMutation.mutateAsync({ avatarUrl: url });
+      toast.dismiss(toastId);
+    } catch (err: any) {
+      toast.error(t("আপলোড ব্যর্থ হয়েছে", "Upload failed"), { id: toastId });
+    }
+  };
+
   const sendFriendMutation = useMutation({
+
     mutationFn: (friendId: string) => sendFriendRequest({ data: { friendId } }),
     onSuccess: () => {
       toast.success(t("রিকোয়েস্ট পাঠানো হয়েছে", "Friend request sent"));
