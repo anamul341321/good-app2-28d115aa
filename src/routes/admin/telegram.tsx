@@ -29,6 +29,8 @@ export const Route = createFileRoute("/admin/telegram")({
 function TelegramBroadcastPage() {
   const qc = useQueryClient();
   const [isCreating, setIsCreating] = useState(false);
+  const [target, setTarget] = useState("dm");
+
   
   const { data: campaigns, refetch } = useQuery({
     queryKey: ["tg-campaigns"],
