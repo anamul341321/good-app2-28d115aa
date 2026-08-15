@@ -13,6 +13,9 @@ import { useLang } from "@/lib/i18n";
 import { getDashboard } from "@/lib/dashboard.functions";
 
 export const Route = createFileRoute("/_authenticated/social/profile")({
+  validateSearch: (search) => z.object({
+    userId: z.string().uuid().optional(),
+  }).parse(search),
   component: SocialProfilePage,
   head: () => ({
     meta: [
