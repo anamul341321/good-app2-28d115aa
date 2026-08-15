@@ -172,6 +172,8 @@ function AuthedLayout() {
 
   if (appStatus?.maintenance) return <MaintenanceScreen message={appStatus.message} />;
 
+  const isSocialRoute = router.state.location.pathname.startsWith("/social");
+
   return (
     <CallProvider>
     <div className="min-h-screen pb-24">
@@ -181,8 +183,8 @@ function AuthedLayout() {
         <ServerBackModal />
       )}
 
-
-      <header className="sticky top-0 z-30 glass pt-[env(safe-area-inset-top)]">
+      {!isSocialRoute && (
+        <header className="sticky top-0 z-30 glass pt-[env(safe-area-inset-top)]">
         <div className="max-w-md mx-auto px-3 pt-4 pb-3 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2.5">
             <div data-tour="profile"><ProfileButton /></div>
