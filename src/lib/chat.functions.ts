@@ -240,6 +240,7 @@ export const sendMessage = createServerFn({ method: "POST" })
             sender_name: name,
             message_id: String(inserted?.id ?? ""),
             body: preview.slice(0, 120),
+            reply_token: createReplyToken(data.peerId),
           },
         });
       } else if (data.groupId) {
