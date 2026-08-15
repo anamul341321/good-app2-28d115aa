@@ -179,9 +179,8 @@ function HomePage() {
       />
       </div>
 
-      {/* Long progress lines — first verify & re-verify, so the user can see
-          exactly how many are left before mining unlocks. */}
-      <VerifyProgressLines firstVerify={firstVerifyDone} reverify={reverifyDone} target={10} />
+      {/* Verify progress will be moved inside the network section for better organization */}
+
 
       <HeroBanner
         adminOff={(data as any)?.payoutSettings?.withdrawEnabled === false}
