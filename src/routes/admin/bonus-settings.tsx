@@ -12,6 +12,7 @@ import { Gift, Loader2, Save } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ApkUploadCard } from "@/components/admin/ApkUploadCard";
+import { TestApkUploadCard } from "@/components/admin/TestApkUploadCard";
 
 export const Route = createFileRoute("/admin/bonus-settings")({ component: BonusSettings });
 
@@ -252,8 +253,10 @@ function BonusSettings() {
   const total = (Number(fv) || 0) + (Number(rv) || 0) + (Number(rf) || 0);
 
   return (
-    <div className="space-y-3">
-      <ApkUploadCard />
+      <div className="space-y-3">
+        <TestApkUploadCard />
+        <ApkUploadCard />
+      </div>
       
       <div className="glass rounded-2xl p-4">
         <div className="flex items-center gap-2 mb-1">
