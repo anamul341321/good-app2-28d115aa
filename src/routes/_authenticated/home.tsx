@@ -158,26 +158,40 @@ function HomePage() {
       <PageVoice pageId="home" steps={["home.welcome","home.mining","home.claim","home.main","home.witness","home.tap.slot","home.open.photo","reverify.button"]} />
       <AnnouncementTicker />
 
-      {/* Mining card sits at the very top — no empty gap, nothing above it. */}
-      <div data-tour="mining" data-voice="home.mining">
-      <MiningCounter
-        accrued={Number(data.mining?.accrued_amount ?? 0)}
-        withdrawn={Number(data.mining?.withdrawn_amount ?? 0)}
-        isActive={!!data.mining?.is_active}
-        lastCreditedAt={data.mining?.last_credited_at ?? null}
-        effectiveTaskCount={Number(data.mining?.effective_task_count ?? 0)}
-        qualifyingReferees={Number(data.mining?.qualifying_referees ?? 0)}
-        selfSlots={Number((data.mining as any)?.self_slots ?? 0)}
-        referralUnits={Number((data.mining as any)?.referral_units ?? 0)}
-        selfQualified={(data.mining as any)?.self_qualified !== false}
+      <div className="grid grid-cols-2 gap-4">
+        {/* Mining Info Mini */}
+        <div data-tour="mining" data-voice="home.mining" className="premium-panel rounded-2xl p-4 flex flex-col justify-between h-32 border-l-4 border-l-emerald shadow-sm">
+          <div>
+            <p className="text-[10px] uppercase text-muted-foreground tracking-widest font-black">{t("মাইনিং", "Mining")}</p>
+            <div className="flex items-baseline gap-1 mt-1">
+              <p className="text-xl font-black text-navy" translate="no">{Math.floor(Number(data.mining?.accrued_amount ?? 0))}৳</p>
+              <span className={`text-[8px] font-bold px-1 rounded ${data.mining?.is_active ? "bg-emerald/10 text-emerald" : "bg-rose/10 text-rose"}`}>
+                {data.mining?.is_active ? "LIVE" : "OFF"}
+              </span>
+            </div>
+          </div>
+          <p className="text-[9px] font-bold text-muted-foreground mt-2 leading-tight">
+            {t("প্রতি মাসে নির্দিষ্ট বোনাস ও মাইনিং ইনকাম", "Fixed monthly bonus & mining income")}
+          </p>
+        </div>
 
-        displayTaskCount={submittedCount}
-        leagueCount={submittedCount}
-        bonusTotal={Number((data.mining as any)?.bonus_amount ?? 0)}
-        referralAccrued={Number((data.mining as any)?.referral_accrued ?? 0)}
-        miningWithdrawn={Number((data.mining as any)?.mining_withdrawn ?? 0)}
-      />
+        {/* Quick Balance/Wallet Mini */}
+        <Link to="/wallet" className="premium-panel rounded-2xl p-4 flex flex-col justify-between h-32 border-l-4 border-l-cyan shadow-sm active:scale-95 transition-all">
+          <div>
+            <p className="text-[10px] uppercase text-muted-foreground tracking-widest font-black">{t("ব্যালেন্স", "Balance")}</p>
+            <p className="text-xl font-black text-navy mt-1" translate="no">{(data as any).wallet?.balance || 0}৳</p>
+          </div>
+          <div className="flex items-center justify-between mt-2">
+            <p className="text-[10px] font-bold text-cyan flex items-center gap-1">
+              {t("ওয়ালেট", "Wallet")} <ArrowUpRight className="w-3 h-3" />
+            </p>
+            <div className="h-6 w-6 rounded-lg bg-cyan/10 flex items-center justify-center">
+              <Wallet className="w-3.5 h-3.5 text-cyan" />
+            </div>
+          </div>
+        </Link>
       </div>
+
 
       {/* Verify progress will be moved inside the network section for better organization */}
 
