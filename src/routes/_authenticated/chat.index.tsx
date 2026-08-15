@@ -1,8 +1,8 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Search, Edit, UserCircle } from "lucide-react";
+import { Search, Edit, UserCircle, ChevronLeft } from "lucide-react";
 import { createGroup, listChats } from "@/lib/chat.functions";
 import { listFriends } from "@/lib/friends.functions";
 import { usePresence } from "@/lib/presence";

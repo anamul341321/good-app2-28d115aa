@@ -214,19 +214,21 @@ function HomePage() {
 
 
       {/* Social Entry Button */}
-      <div className="px-4 py-1">
+      <div className="px-4 py-1" data-tour="social-entry">
         <Link 
           to="/social" 
-          className="w-full flex items-center gap-3 bg-gradient-to-r from-[#1877F2] to-[#3B82F6] rounded-2xl p-4 text-white shadow-lg active:scale-[0.98] transition-all hover:brightness-110"
+          className="w-full flex items-center gap-3 bg-gradient-to-r from-[#1877F2] to-[#3B82F6] rounded-2xl p-4 text-white shadow-lg active:scale-[0.98] transition-all hover:brightness-110 border-2 border-white/20"
         >
-          <div className="h-12 w-12 rounded-xl bg-white/20 flex items-center justify-center border border-white/30 backdrop-blur-sm">
+          <div className="h-12 w-12 rounded-xl bg-white/25 flex items-center justify-center border border-white/30 backdrop-blur-sm shadow-inner">
             <MessageSquare className="w-7 h-7" />
           </div>
           <div className="flex-1 text-left">
-            <p className="text-lg font-black leading-tight tracking-tight">Good-App Social</p>
-            <p className="text-[11px] opacity-90 font-bold">{t("বন্ধু, পোস্ট ও মেসেঞ্জার", "Friends, Posts & Messenger")}</p>
+            <p className="text-lg font-black leading-tight tracking-tight uppercase">Good-App Social</p>
+            <p className="text-[10px] opacity-90 font-bold uppercase tracking-wider">{t("বন্ধু, পোস্ট ও মেসেঞ্জার", "Friends, Posts & Messenger")}</p>
           </div>
-          <Plus className="w-6 h-6" />
+          <div className="h-8 w-8 rounded-full bg-white/20 flex items-center justify-center">
+            <Plus className="w-5 h-5" />
+          </div>
         </Link>
       </div>
 
