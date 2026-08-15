@@ -1192,7 +1192,7 @@ function WithdrawFeed() {
                 )}
               </ol>
               <p className="text-[10px] mt-2 opacity-90 text-white">
-                🏆 সবচেয়ে বেশি payment যারা পেয়েছেন — total থেকে সাজানো
+                🏆 সবচেয়ে বেশি পেমেন্ট যারা পেয়েছেন — সর্বমোট উইথড্র থেকে সাজানো
               </p>
             </>
           ) : (
