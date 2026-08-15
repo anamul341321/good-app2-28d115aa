@@ -351,8 +351,9 @@ function HomePage() {
                   <div className="h-full bg-white w-2/3" />
                 </div>
                 <p className="text-[11px] font-bold text-white/90 drop-shadow">
-                  {t("ব্যক্তিগত প্রোফাইল ও ডিজিটাল আইডি", "Personal Profile & Digital ID")}
+                  {t("আপনার ডিজিটাল আইডি ও পার্সোনাল প্রোফাইল", "Personal Profile & Digital ID")}
                 </p>
+
               </div>
             </div>
             <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
@@ -369,7 +370,7 @@ function HomePage() {
         <div className="flex items-center justify-between mb-2.5">
           <div className="min-w-0">
             <p className="text-[10px] uppercase text-muted-foreground tracking-[0.15em] font-bold flex items-center gap-1">
-              <Users className="w-3 h-3" /> {t("সাক্ষী প্রগ্রেস", "Witness Progress")}
+              <Users className="w-3 h-3" /> {t("সাক্ষী যাচাই", "Witness Verification")}
             </p>
             <p className="text-lg font-black mt-0.5 text-navy leading-none">
               <span translate="no">{submittedCount}<span className="text-muted-foreground text-sm">/{total}</span></span>

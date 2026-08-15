@@ -14,15 +14,16 @@ export const Route = createFileRoute("/_authenticated/chat/")({
   component: ChatListPage,
   head: () => ({
     meta: [
-      { title: "Chats — good-app" },
+      { title: "Good-App Messenger" },
       {
         name: "description",
-        content: "Messenger-style chat for good-app.",
+        content: "Good-App Messenger এ বন্ধুদের সাথে চ্যাট ও কল করুন।",
       },
-      { property: "og:title", content: "Chats — good-app" },
+      { property: "og:title", content: "Good-App Messenger" },
       { property: "og:type", content: "website" },
     ],
   }),
+
 });
 
 export function ChatListPage() {
@@ -73,11 +74,12 @@ export function ChatListPage() {
           <div className="flex items-center gap-2">
             <Link 
               to="/home"
-              className="btn-press h-9 w-9 flex items-center justify-center rounded-full hover:bg-surface-2 transition-colors"
+              className="btn-press h-9 w-9 flex items-center justify-center rounded-full bg-surface-2 transition-colors"
             >
-              <ChevronLeft className="h-6 w-6 text-primary" />
+              <ChevronLeft className="h-6 w-6 text-foreground" />
             </Link>
-            <h1 className="text-2xl font-black text-foreground tracking-tight">Good-App Messenger</h1>
+            <h1 className="text-xl font-black text-foreground tracking-tight">Messenger</h1>
+
 
           </div>
           <div className="flex items-center gap-2">
@@ -97,7 +99,8 @@ export function ChatListPage() {
         >
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <div className="w-full h-10 bg-surface-2 rounded-full pl-10 pr-4 flex items-center text-sm font-bold text-muted-foreground">
-            Search
+            খুঁজুন (নাম, UID বা ফোন)
+
           </div>
         </button>
       </header>
