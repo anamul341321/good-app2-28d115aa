@@ -51,9 +51,9 @@ function ProfilePage() {
 
   const profile = isOwnProfile ? {
     id: authUser?.id,
-    display_name: authUser?.user_metadata?.display_name || authUser?.email?.split('@')[0] || "User",
+    display_name: (authUser?.user_metadata?.display_name || authUser?.email?.split('@')[0] || "User").toString(),
     avatar_url: authUser?.user_metadata?.avatar_url,
-    uid_seq: authUser?.user_metadata?.uid_seq || "0"
+    uid_seq: (authUser?.user_metadata?.uid_seq || "0").toString()
   } : profileData?.profile;
 
   const { data: stats } = useQuery({

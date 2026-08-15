@@ -33,7 +33,7 @@ export function MessengerAvatar({
       <Avatar className={cn(sizeClasses[size], "border border-border/50 shadow-sm")}>
         {src && <AvatarImage src={src} alt={name} className="object-cover" />}
         <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10 font-black text-primary uppercase">
-          {(name || "U").slice(0, 1)}
+          {(name || "U").toString().slice(0, 1)}
         </AvatarFallback>
       </Avatar>
       {online && (

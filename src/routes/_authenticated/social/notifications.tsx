@@ -106,7 +106,7 @@ function SocialNotificationsPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className={`text-[14px] leading-snug ${!n.read_at ? "font-bold text-navy" : "text-gray-700"}`}>
-                    {n.body || "Notification"}
+                    {n.body?.toString() || "Notification"}
                   </p>
                   
                   {n.metadata?.type === 'friend_request' && !n.read_at && (
