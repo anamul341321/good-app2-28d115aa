@@ -79,15 +79,15 @@ export function ChatListPage() {
   return (
     <div className="flex flex-col min-h-screen bg-background pb-20">
       {/* Messenger Header */}
-      <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md px-4 py-3 flex flex-col gap-3">
+      <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md px-4 py-3 flex flex-col gap-3 pt-[env(safe-area-inset-top)]">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <button 
-              onClick={() => navigate({ to: "/profile" as any })}
-              className="btn-press"
+            <Link 
+              to="/social"
+              className="btn-press h-9 w-9 flex items-center justify-center rounded-full hover:bg-surface-2 transition-colors"
             >
-              <UserCircle className="h-8 w-8 text-muted-foreground" />
-            </button>
+              <ChevronLeft className="h-6 w-6 text-primary" />
+            </Link>
             <h1 className="text-2xl font-black text-foreground tracking-tight">Chats</h1>
           </div>
           <div className="flex items-center gap-2">
