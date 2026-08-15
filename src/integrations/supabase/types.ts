@@ -376,6 +376,83 @@ export type Database = {
           },
         ]
       }
+      broadcast_campaigns: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          failed_count: number | null
+          id: string
+          last_processed_id: string | null
+          sent_count: number | null
+          status: string
+          target: string
+          text: string
+          total_users: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          failed_count?: number | null
+          id?: string
+          last_processed_id?: string | null
+          sent_count?: number | null
+          status?: string
+          target: string
+          text: string
+          total_users?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          failed_count?: number | null
+          id?: string
+          last_processed_id?: string | null
+          sent_count?: number | null
+          status?: string
+          target?: string
+          text?: string
+          total_users?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      broadcast_logs: {
+        Row: {
+          campaign_id: string | null
+          created_at: string | null
+          error: string | null
+          id: string
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          campaign_id?: string | null
+          created_at?: string | null
+          error?: string | null
+          id?: string
+          status: string
+          user_id?: string | null
+        }
+        Update: {
+          campaign_id?: string | null
+          created_at?: string | null
+          error?: string | null
+          id?: string
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "broadcast_logs_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "broadcast_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       call_sessions: {
         Row: {
           accepted_at: string | null
