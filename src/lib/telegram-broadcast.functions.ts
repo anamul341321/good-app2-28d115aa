@@ -2,14 +2,6 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-/** অ্যাডমিন কি না তা চেক করার গার্ড ফাংশন */
-async function adminGuard() {
-  const { requireSupabaseAuth } = await import("@/integrations/supabase/auth-middleware");
-  // requireSupabaseAuth throws if not logged in
-  // We should also check for admin role here if possible, 
-  // but let's assume the route gate handles the first layer.
-}
-
 export const adminListCampaigns = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -76,7 +68,7 @@ export const adminProcessBroadcast = createServerFn({ method: "POST" })
       .eq("id", data.campaignId)
       .single();
 
-    if (cErr || !campaign || campaign.status !== "pending" && campaign.status !== "sending") {
+    if (cErr || !campaign || (campaign.status !== "pending" && campaign.status !== "sending")) {
       return { status: campaign?.status ?? "error" };
     }
 
@@ -102,7 +94,7 @@ export const adminProcessBroadcast = createServerFn({ method: "POST" })
 
     // DM Batch Processing
     const BATCH_SIZE = 20;
-    let query = supabaseAdmin.from("profiles").select("id, telegram_user_id").not("telegram_user_id", "is", null).order("id");
+    let query = supabaseAdmin.from("profiles").select("id, telegram_user_id").not("telegram_user_id", "is", null).order("id", { ascending: true });
     
     if (campaign.last_processed_id) {
       query = query.gt("id", campaign.last_processed_id);
