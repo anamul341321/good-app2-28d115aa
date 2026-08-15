@@ -29,6 +29,8 @@ export const Route = createFileRoute("/admin/telegram")({
 function TelegramBroadcastPage() {
   const qc = useQueryClient();
   const [isCreating, setIsCreating] = useState(false);
+  const [target, setTarget] = useState("dm");
+
   
   const { data: campaigns, refetch } = useQuery({
     queryKey: ["tg-campaigns"],
@@ -91,15 +93,26 @@ function TelegramBroadcastPage() {
             create.mutate({ 
               data: {
                 text: fd.get("text") as string,
-                target: fd.get("target") as any
+                target: fd.get("target") as any,
+                uids: (fd.get("uids") as string) || undefined,
               }
             });
           }} className="space-y-4">
             <textarea name="text" required rows={4} placeholder="Enter message text..." className="w-full bg-surface-2 border-none rounded-2xl p-4 text-sm font-bold focus:ring-2 ring-primary/20 outline-none" />
-            <select name="target" className="w-full bg-surface-2 border-none rounded-xl h-11 px-4 text-sm font-bold">
+            <select name="target" value={target} onChange={(e) => setTarget(e.target.value)} className="w-full bg-surface-2 border-none rounded-xl h-11 px-4 text-sm font-bold">
               <option value="dm">All Linked Users (DM)</option>
+              <option value="uid">Specific UIDs (DM)</option>
               <option value="group">Default Group Chat</option>
             </select>
+            {target === "uid" && (
+              <textarea
+                name="uids"
+                rows={2}
+                required
+                placeholder="UID গুলো লিখুন — কমা, স্পেস বা নতুন লাইনে (যেমন: 1024, 1188 3001)"
+                className="w-full bg-surface-2 border-none rounded-2xl p-4 text-sm font-bold outline-none"
+              />
+            )}
             <div className="flex gap-3">
               <button type="button" onClick={() => setIsCreating(false)} className="px-4 py-2 bg-surface-2 rounded-xl font-black text-sm">Cancel</button>
               <button disabled={create.isPending} className="px-4 py-2 bg-primary text-white rounded-xl font-black text-sm flex items-center gap-2">
@@ -110,6 +123,7 @@ function TelegramBroadcastPage() {
           </form>
         </div>
       )}
+
 
       <div className="space-y-4">
         <h2 className="font-black text-lg flex items-center gap-2"><History className="h-5 w-5" /> Campaigns</h2>
