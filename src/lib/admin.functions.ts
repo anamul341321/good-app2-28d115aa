@@ -2703,3 +2703,101 @@ export const adminSetTestApkRelease = createServerFn({ method: "POST" })
     const { data: s } = await supabaseAdmin.storage.from("app-releases").createSignedUrl(input.path, 60 * 60 * 24 * 365);
     return { ok: true, path: input.path, version: input.version, downloadUrl: s?.signedUrl };
   });
+
+// ---------------- Cards ----------------
+
+export const adminListCardProducts = createServerFn({ method: "GET" }).handler(async () => {
+  const supabaseAdmin = await gate();
+  const { data, error } = await supabaseAdmin
+    .from("card_products")
+    .select("*, stock_count:card_codes(count)")
+    .order("created_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  
+  // Transform count objects into numbers
+  return (data as any[]).map(card => ({
+    ...card,
+    stock_count: card.stock_count?.[0]?.count ?? 0
+  }));
+});
+
+export const adminCreateCardProduct = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => z.object({
+    name: z.string(),
+    operator: z.enum(["GP", "Robi", "Airtel", "Banglalink", "Other"]),
+    card_type: z.enum(["Minute", "Internet"]),
+    amount_label: z.string(),
+    selling_price: z.number(),
+    image_url: z.string().optional(),
+    description: z.string().optional(),
+    validity: z.string().optional(),
+    is_active: z.boolean().default(true),
+  }).parse(i))
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await gate();
+    const { data: res, error } = await supabaseAdmin.from("card_products").insert(data).select().single();
+    if (error) throw new Error(error.message);
+    return res;
+  });
+
+export const adminUpdateCardProduct = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => z.object({
+    id: z.string().uuid(),
+    data: z.object({
+      name: z.string().optional(),
+      operator: z.enum(["GP", "Robi", "Airtel", "Banglalink", "Other"]).optional(),
+      card_type: z.enum(["Minute", "Internet"]).optional(),
+      amount_label: z.string().optional(),
+      selling_price: z.number().optional(),
+      image_url: z.string().optional(),
+      description: z.string().optional(),
+      validity: z.string().optional(),
+      is_active: z.boolean().optional(),
+    })
+  }).parse(i))
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await gate();
+    const { error } = await supabaseAdmin.from("card_products").update(data.data).eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const adminDeleteCardProduct = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => z.object({ id: z.string().uuid() }).parse(i))
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await gate();
+    const { error } = await supabaseAdmin.from("card_products").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const adminAddCardCodes = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => z.object({
+    productId: z.string().uuid(),
+    codes: z.array(z.string().min(1)),
+  }).parse(i))
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await gate();
+    const rows = data.codes.map(code => ({
+      product_id: data.productId,
+      code,
+      is_used: false
+    }));
+    const { error } = await supabaseAdmin.from("card_codes").insert(rows);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const adminGetProductCodes = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => z.object({ productId: z.string().uuid() }).parse(i))
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await gate();
+    const { data: codes, error } = await supabaseAdmin
+      .from("card_codes")
+      .select("*")
+      .eq("product_id", data.productId)
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return codes;
+  });
+
