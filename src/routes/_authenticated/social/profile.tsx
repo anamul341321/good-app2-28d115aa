@@ -15,9 +15,11 @@ import {
   Camera
 } from "lucide-react";
 import { listPosts, getProfileById } from "@/lib/news-feed.functions";
-import { getProfileStats, sendFriendRequest, acceptFriendRequest } from "@/lib/social-users.functions";
+import { getProfileStats, sendFriendRequest, acceptFriendRequest, updateProfile } from "@/lib/social-users.functions";
 import { MessengerNav } from "@/components/messenger/MessengerNav";
 import { toast } from "sonner";
+import { uploadMedia } from "@/components/social/SocialComponents";
+
 
 import { useAuth } from "@/hooks/useAuth";
 import { useLang } from "@/lib/i18n";
