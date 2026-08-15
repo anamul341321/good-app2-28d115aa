@@ -162,10 +162,23 @@ function ProfilePage() {
               />
 
               {isOwnProfile && (
-                <button className="absolute bottom-1 right-1 bg-gray-100 p-2 rounded-full border-2 border-white shadow-sm btn-press">
-                  <Camera className="w-4 h-4 text-navy" />
-                </button>
+                <>
+                  <button 
+                    onClick={() => profilePhotoInputRef.current?.click()}
+                    className="absolute bottom-1 right-1 bg-gray-100 p-2 rounded-full border-2 border-white shadow-sm btn-press"
+                  >
+                    <Camera className="w-4 h-4 text-navy" />
+                  </button>
+                  <input 
+                    ref={profilePhotoInputRef} 
+                    type="file" 
+                    accept="image/*" 
+                    className="hidden" 
+                    onChange={handleProfilePhotoChange} 
+                  />
+                </>
               )}
+
             </div>
             
             <div className="mt-3 text-center">
