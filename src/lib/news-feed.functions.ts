@@ -190,7 +190,7 @@ export const searchUsers = createServerFn({ method: "GET" })
     const { data: users, error } = await supabase
       .from("profiles")
       .select("id, display_name, avatar_url, uid_seq")
-      .or(`display_name.ilike.%${data.query}%,uid_seq.ilike.%${data.query}%`)
+      .or(`display_name.ilike.%${data.query}%,uid_seq.eq.${data.query}`)
       .limit(20);
 
     if (error) throw new Error(error.message);
