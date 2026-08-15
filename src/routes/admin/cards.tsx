@@ -11,22 +11,22 @@ import {
 import { useState } from "react";
 import { 
   Plus, 
-  Search, 
   Package, 
   Trash2, 
   Edit2, 
   PlusSquare, 
-  ChevronRight, 
   Loader2,
   AlertCircle,
-  CheckCircle2,
+  ScanLine,
   Smartphone,
   Wifi
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { CardCodeScanner } from "@/components/CardCodeScanner";
 
 export const Route = createFileRoute("/admin/cards")({
+  ssr: false,
   component: CardManagementPage,
 });
 
@@ -35,6 +35,8 @@ function CardManagementPage() {
   const [isAdding, setIsAdding] = useState(false);
   const [editingCard, setEditingCard] = useState<any>(null);
   const [stockCard, setStockCard] = useState<any>(null);
+  const [codesText, setCodesText] = useState("");
+  const [scanning, setScanning] = useState(false);
   
   const { data: cards, isLoading } = useQuery({
     queryKey: ["admin-cards"],
