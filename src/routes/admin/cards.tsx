@@ -153,7 +153,7 @@ function CardManagementPage() {
                 </button>
                 <button 
                   onClick={() => {
-                    if (confirm("Delete this product?")) del.mutate({ id: card.id });
+                    if (confirm("Delete this product?")) del.mutate({ data: { id: card.id } });
                   }}
                   className="p-2 bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 rounded-lg transition-colors"
                 >
@@ -184,9 +184,9 @@ function CardManagementPage() {
                 is_active: true
               };
               if (editingCard) {
-                update.mutate({ id: editingCard.id, data });
+                update.mutate({ data: { id: editingCard.id, data } });
               } else {
-                create.mutate(data);
+                create.mutate({ data });
               }
             }} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -264,7 +264,7 @@ function CardManagementPage() {
               const raw = fd.get("codes") as string;
               const codes = raw.split("\n").map(s => s.trim()).filter(Boolean);
               if (codes.length === 0) return toast.error("Please enter codes");
-              addCodes.mutate({ productId: stockCard.id, codes });
+              addCodes.mutate({ data: { productId: stockCard.id, codes } });
             }} className="space-y-4">
               <div className="space-y-1.5">
                 <label className="text-[10px] font-black text-muted-foreground uppercase ml-1">Secret Codes (One per line)</label>

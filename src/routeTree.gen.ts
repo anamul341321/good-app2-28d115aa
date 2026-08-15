@@ -32,6 +32,7 @@ import { Route as AdminMiningRouteImport } from './routes/admin/mining'
 import { Route as AdminKycRouteImport } from './routes/admin/kyc'
 import { Route as AdminFacesRouteImport } from './routes/admin/faces'
 import { Route as AdminCeloGasTransferRouteImport } from './routes/admin/celo-gas-transfer'
+import { Route as AdminCardsRouteImport } from './routes/admin/cards'
 import { Route as AdminBonusSettingsRouteImport } from './routes/admin/bonus-settings'
 import { Route as AdminAnnouncementsRouteImport } from './routes/admin/announcements'
 import { Route as AuthenticatedWithdrawRouteImport } from './routes/_authenticated/withdraw'
@@ -184,6 +185,11 @@ const AdminFacesRoute = AdminFacesRouteImport.update({
 const AdminCeloGasTransferRoute = AdminCeloGasTransferRouteImport.update({
   id: '/celo-gas-transfer',
   path: '/celo-gas-transfer',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCardsRoute = AdminCardsRouteImport.update({
+  id: '/cards',
+  path: '/cards',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminBonusSettingsRoute = AdminBonusSettingsRouteImport.update({
@@ -415,6 +421,7 @@ export interface FileRoutesByFullPath {
   '/withdraw': typeof AuthenticatedWithdrawRoute
   '/admin/announcements': typeof AdminAnnouncementsRoute
   '/admin/bonus-settings': typeof AdminBonusSettingsRoute
+  '/admin/cards': typeof AdminCardsRoute
   '/admin/celo-gas-transfer': typeof AdminCeloGasTransferRoute
   '/admin/faces': typeof AdminFacesRoute
   '/admin/kyc': typeof AdminKycRoute
@@ -477,6 +484,7 @@ export interface FileRoutesByTo {
   '/withdraw': typeof AuthenticatedWithdrawRoute
   '/admin/announcements': typeof AdminAnnouncementsRoute
   '/admin/bonus-settings': typeof AdminBonusSettingsRoute
+  '/admin/cards': typeof AdminCardsRoute
   '/admin/celo-gas-transfer': typeof AdminCeloGasTransferRoute
   '/admin/faces': typeof AdminFacesRoute
   '/admin/kyc': typeof AdminKycRoute
@@ -542,6 +550,7 @@ export interface FileRoutesById {
   '/_authenticated/withdraw': typeof AuthenticatedWithdrawRoute
   '/admin/announcements': typeof AdminAnnouncementsRoute
   '/admin/bonus-settings': typeof AdminBonusSettingsRoute
+  '/admin/cards': typeof AdminCardsRoute
   '/admin/celo-gas-transfer': typeof AdminCeloGasTransferRoute
   '/admin/faces': typeof AdminFacesRoute
   '/admin/kyc': typeof AdminKycRoute
@@ -607,6 +616,7 @@ export interface FileRouteTypes {
     | '/withdraw'
     | '/admin/announcements'
     | '/admin/bonus-settings'
+    | '/admin/cards'
     | '/admin/celo-gas-transfer'
     | '/admin/faces'
     | '/admin/kyc'
@@ -669,6 +679,7 @@ export interface FileRouteTypes {
     | '/withdraw'
     | '/admin/announcements'
     | '/admin/bonus-settings'
+    | '/admin/cards'
     | '/admin/celo-gas-transfer'
     | '/admin/faces'
     | '/admin/kyc'
@@ -733,6 +744,7 @@ export interface FileRouteTypes {
     | '/_authenticated/withdraw'
     | '/admin/announcements'
     | '/admin/bonus-settings'
+    | '/admin/cards'
     | '/admin/celo-gas-transfer'
     | '/admin/faces'
     | '/admin/kyc'
@@ -962,6 +974,13 @@ declare module '@tanstack/react-router' {
       path: '/celo-gas-transfer'
       fullPath: '/admin/celo-gas-transfer'
       preLoaderRoute: typeof AdminCeloGasTransferRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/cards': {
+      id: '/admin/cards'
+      path: '/cards'
+      fullPath: '/admin/cards'
+      preLoaderRoute: typeof AdminCardsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/bonus-settings': {
@@ -1301,6 +1320,7 @@ const AuthenticatedRouteRouteWithChildren =
 interface AdminRouteChildren {
   AdminAnnouncementsRoute: typeof AdminAnnouncementsRoute
   AdminBonusSettingsRoute: typeof AdminBonusSettingsRoute
+  AdminCardsRoute: typeof AdminCardsRoute
   AdminCeloGasTransferRoute: typeof AdminCeloGasTransferRoute
   AdminFacesRoute: typeof AdminFacesRoute
   AdminKycRoute: typeof AdminKycRoute
@@ -1320,6 +1340,7 @@ interface AdminRouteChildren {
 const AdminRouteChildren: AdminRouteChildren = {
   AdminAnnouncementsRoute: AdminAnnouncementsRoute,
   AdminBonusSettingsRoute: AdminBonusSettingsRoute,
+  AdminCardsRoute: AdminCardsRoute,
   AdminCeloGasTransferRoute: AdminCeloGasTransferRoute,
   AdminFacesRoute: AdminFacesRoute,
   AdminKycRoute: AdminKycRoute,
