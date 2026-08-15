@@ -184,7 +184,7 @@ function HomePage() {
         <Link to="/wallet" className="premium-panel rounded-2xl p-4 flex flex-col justify-between h-32 border-l-4 border-l-cyan shadow-sm active:scale-95 transition-all">
           <div>
             <p className="text-[10px] uppercase text-muted-foreground tracking-widest font-black">{t("ব্যালেন্স", "Balance")}</p>
-            <p className="text-xl font-black text-navy mt-1" translate="no">{(data as any).wallet?.balance || 0}৳</p>
+            <p className="text-xl font-black text-navy mt-1" translate="no">{(data as any).balanceBreakdown?.current_balance || 0}৳</p>
           </div>
           <div className="flex items-center justify-between mt-2">
             <p className="text-[10px] font-bold text-cyan flex items-center gap-1">
