@@ -94,6 +94,8 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   const camTrack = useRef<MediaStreamTrack | null>(null);
   const shareTrack = useRef<MediaStreamTrack | null>(null);
   const shareStream = useRef<MediaStream | null>(null);
+  // Android অ্যাপে স্ক্রিন ফ্রেম native থেকে আসে, তাই canvas দিয়ে video track বানানো হয়।
+  const shareCanvas = useRef<HTMLCanvasElement | null>(null);
   const ring = useRef<{ stop: () => void } | null>(null);
 
   const pcRef = useRef<RTCPeerConnection | null>(null);
