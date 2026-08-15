@@ -1,33 +1,13 @@
+import React, { useState, useEffect } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { Search, Loader2, UserPlus, MessageSquare } from "lucide-react";
 import { listUsers } from "@/lib/social-users.functions";
-import { useState } from "react";
 import { useLang } from "@/lib/i18n";
 import { MessengerAvatar } from "@/components/messenger/MessengerAvatar";
 import { useAuth } from "@/hooks/useAuth";
 import { useInView } from "react-intersection-observer";
 
-export const Route = createFileRoute("/_authenticated/social/people")({
-  component: SocialPeoplePage,
-});
-
-function SocialPeoplePage() {
-  const { t } = useLang();
-  const navigate = useNavigate();
-  const { user: currentUser } = useAuth();
-  const [query, setQuery] = useState("");
-  const { ref, inView } = useInView();
-
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useInfiniteQuery({
-    queryKey: ["users-list", query],
-    queryFn: ({ pageParam = 1 }) => listUsers({ data: { page: pageParam, limit: 20, query } }),
-    initialPageParam: 1,
-    getNextPageParam: (lastPage, allPages) => 
-      lastPage.users.length === 20 ? allPages.length + 1 : undefined,
-  });
-
-  React.useEffect(() => {
     if (inView && hasNextPage) fetchNextPage();
   }, [inView, hasNextPage, fetchNextPage]);
 

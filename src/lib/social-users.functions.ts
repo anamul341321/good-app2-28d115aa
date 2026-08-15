@@ -48,21 +48,22 @@ export const updateProfile = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-export const followUser = createServerFn({ method: "POST" })
+export const sendFriendRequest = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => z.object({
-    followingId: z.string().uuid()
+    friendId: z.string().uuid()
   }).parse(i))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const { error } = await supabase
       .from("friendships")
-      .insert({
+      .upsert({
         user_id: userId,
-        friend_id: data.followingId,
+        friend_id: data.friendId,
         status: "pending"
       } as any);
 
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
