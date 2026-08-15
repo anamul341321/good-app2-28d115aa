@@ -52,7 +52,7 @@ export const listUsers = createServerFn({ method: "GET" })
       .or(`user_id.eq.${userId},friend_id.eq.${userId}`);
     
     const myFriendIds = new Set(
-      myFriends?.map(f => f.user_id === userId ? f.friend_id : f.user_id) || []
+      (myFriends as any[])?.map(f => f.user_id === userId ? f.friend_id : f.user_id) || []
     );
 
     // Fetch friendships for all listed users relative to current user
