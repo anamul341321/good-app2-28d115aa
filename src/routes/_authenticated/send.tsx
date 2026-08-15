@@ -48,21 +48,23 @@ function SendPage() {
 
   const mining = dash?.mining;
   const debtTotal = Number((dash as any)?.debtTotal ?? 0);
-  const balance = mining ? Math.floor(computeLiveBalance({
-    accrued: Number(mining.accrued_amount), withdrawn: Number(mining.withdrawn_amount),
-    isActive: mining.is_active, lastCreditedAt: mining.last_credited_at,
-    effectiveTaskCount: Number((mining as any).effective_task_count ?? 0),
-    qualifyingReferees: Number((mining as any).qualifying_referees ?? 0),
-    selfSlots: Number((mining as any).self_slots ?? 0),
-    referralUnits: Number((mining as any).referral_units ?? 0),
-    selfQualified: (mining as any).self_qualified !== false,
-    debt: debtTotal,
-  })) : 0;
+  const balance = (dash as any)?.balanceBreakdown
+    ? Math.floor((dash as any).balanceBreakdown.current_balance)
+    : mining ? Math.floor(computeLiveBalance({
+        accrued: Number(mining.accrued_amount), withdrawn: Number(mining.withdrawn_amount),
+        isActive: mining.is_active, lastCreditedAt: mining.last_credited_at,
+        effectiveTaskCount: Number((mining as any).effective_task_count ?? 0),
+        qualifyingReferees: Number((mining as any).qualifying_referees ?? 0),
+        selfSlots: Number((mining as any).self_slots ?? 0),
+        referralUnits: Number((mining as any).referral_units ?? 0),
+        selfQualified: (mining as any).self_qualified !== false,
+        debt: debtTotal,
+      })) : 0;
 
   // Mining balance can only be sent during the monthly window (1st–3rd, Asia/Dhaka).
   const win = miningWindowInfo();
   const bonusTotal = Number((mining as any)?.bonus_amount ?? 0);
-  const bonusAvailable = Math.floor(splitBalance({
+  const bonusAvailable = Math.floor((dash as any)?.balanceBreakdown?.bonus_part ?? splitBalance({
     balance,
     bonusTotal,
     withdrawn: Number((mining as any)?.withdrawn_amount ?? 0),
