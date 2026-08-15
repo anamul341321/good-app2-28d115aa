@@ -56,6 +56,7 @@ function TelegramAdmin() {
       {tab === "aikeys" && <AiKeyPanel />}
       {tab === "started" && <StartedPanel />}
       {tab === "broadcast" && <BroadcastPanel />}
+      {tab === "campaigns" && <BroadcastManager />}
       {tab === "faq" && <FaqPanel />}
 
       {tab === "voices" && <VoicePanel />}
