@@ -2666,25 +2666,25 @@ export const adminTestAdminPush = createServerFn({ method: "POST" }).handler(asy
 });
 
 export const adminCreateTestApkUpload = createServerFn({ method: "POST" })
-  .inputValidator((i: unknown) => z.object({ data: z.object({ version: z.string() }) }).parse(i))
+  .inputValidator((i: unknown) => z.object({ version: z.string() }).parse(i))
   .handler(async ({ data: input }) => {
     const supabaseAdmin = await gate();
-    const fileName = `test-app-v${input.data.version}-${Date.now()}.apk`;
+    const fileName = `test-app-v${input.version}-${Date.now()}.apk`;
     const path = `releases/${fileName}`;
-    const { data: s, error } = await supabaseAdmin.storage.from("app-releases").createSignedUrl(path, 60 * 15);
+    const { data: s, error } = await supabaseAdmin.storage.from("app-releases").createSignedUrl(path, 60 * 15, { upsert: true });
     if (error) throw new Error(error.message);
     return { path, signedUrl: s.signedUrl };
   });
 
 export const adminSetTestApkRelease = createServerFn({ method: "POST" })
-  .inputValidator((i: unknown) => z.object({ data: z.object({ path: z.string(), version: z.string() }) }).parse(i))
+  .inputValidator((i: unknown) => z.object({ path: z.string(), version: z.string() }).parse(i))
   .handler(async ({ data: input }) => {
     const supabaseAdmin = await gate();
     const { error } = await supabaseAdmin
       .from("bonus_settings")
-      .update({ test_apk_url: input.data.path, test_apk_version: input.data.version } as any)
+      .update({ test_apk_url: input.path, test_apk_version: input.version } as any)
       .eq("id", "default");
     if (error) throw new Error(error.message);
-    const { data: s } = await supabaseAdmin.storage.from("app-releases").createSignedUrl(input.data.path, 60 * 60 * 24 * 365);
-    return { ok: true, path: input.data.path, version: input.data.version, downloadUrl: s?.signedUrl };
+    const { data: s } = await supabaseAdmin.storage.from("app-releases").createSignedUrl(input.path, 60 * 60 * 24 * 365);
+    return { ok: true, path: input.path, version: input.version, downloadUrl: s?.signedUrl };
   });
