@@ -89,6 +89,7 @@ function WithdrawPage() {
     now,
   }) : 0;
   const claimable = Math.floor((data as any).balanceBreakdown?.current_balance ?? balance);
+  const bonusTotal = Number((mining as any)?.bonus_amount ?? 0);
   const bonusAvailable = Math.floor((data as any).balanceBreakdown?.bonus_part ?? splitBalance({
     balance,
     bonusTotal,
