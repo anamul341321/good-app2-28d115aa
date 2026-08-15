@@ -253,10 +253,9 @@ function BonusSettings() {
   const total = (Number(fv) || 0) + (Number(rv) || 0) + (Number(rf) || 0);
 
   return (
-      <div className="space-y-3">
-        <TestApkUploadCard />
-        <ApkUploadCard />
-      </div>
+    <div className="space-y-3">
+      <TestApkUploadCard />
+      <ApkUploadCard />
       
       <div className="glass rounded-2xl p-4">
         <div className="flex items-center gap-2 mb-1">
