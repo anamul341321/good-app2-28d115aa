@@ -94,6 +94,8 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   const camTrack = useRef<MediaStreamTrack | null>(null);
   const shareTrack = useRef<MediaStreamTrack | null>(null);
   const shareStream = useRef<MediaStream | null>(null);
+  // Android অ্যাপে স্ক্রিন ফ্রেম native থেকে আসে, তাই canvas দিয়ে video track বানানো হয়।
+  const shareCanvas = useRef<HTMLCanvasElement | null>(null);
   const ring = useRef<{ stop: () => void } | null>(null);
 
   const pcRef = useRef<RTCPeerConnection | null>(null);
@@ -462,29 +464,54 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
 
   // Screen share bridge events
   useEffect(() => {
-    const onReady = async () => {
-      if (!pcRef.current || sharing) return;
+    // Android WebView-এ getDisplayMedia নেই, তাই native MediaProjection থেকে আসা
+    // JPEG ফ্রেম canvas-এ এঁকে captureStream() দিয়ে WebRTC track বানানো হয়।
+    const onFrame = async (event: Event) => {
+      const detail = (event as CustomEvent).detail as { data: string; width: number; height: number };
+      if (!detail?.data || !pcRef.current) return;
+      let canvas = shareCanvas.current;
+      if (!canvas) {
+        canvas = document.createElement("canvas");
+        canvas.width = detail.width;
+        canvas.height = detail.height;
+        shareCanvas.current = canvas;
+      }
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      const image = new Image();
+      image.src = `data:image/jpeg;base64,${detail.data}`;
       try {
-        const stream = await navigator.mediaDevices.getDisplayMedia({
-          video: true,
-          audio: true,
-        });
+        await image.decode();
+      } catch {
+        return;
+      }
+      if (canvas.width !== detail.width || canvas.height !== detail.height) {
+        canvas.width = detail.width;
+        canvas.height = detail.height;
+      }
+      ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+      if (!shareTrack.current) {
+        const stream = (canvas as any).captureStream(10) as MediaStream;
         shareStream.current = stream;
         const track = stream.getVideoTracks()[0];
         shareTrack.current = track;
-        
-        const sender = pcRef.current.getSenders().find(s => s.track?.kind === "video");
-        if (sender) {
-          await sender.replaceTrack(track);
-        }
-        
+        const sender = pcRef.current.getSenders().find((s) => s.track?.kind === "video");
+        if (sender) await sender.replaceTrack(track);
         setSharing(true);
-        track.onended = () => stopSharing();
-      } catch (err) {
-        toast.error("স্ক্রিন শেয়ার শুরু করা যায়নি");
       }
     };
-    
+
+    const onReady = () => {
+      shareCanvas.current = null;
+      shareTrack.current = null;
+    };
+
+    const onStopped = () => {
+      shareCanvas.current = null;
+      void stopSharing();
+    };
+
     const onSwitch = () => {
       facing.current = facing.current === "user" ? "environment" : "user";
       if (camTrack.current && !sharing) {
@@ -497,9 +524,14 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       }
     };
 
+    window.addEventListener("goodapp-screen-frame", onFrame as EventListener);
+    window.addEventListener("goodapp-screen-share-stopped", onStopped);
+
     window.addEventListener("goodapp-screen-share-ready", onReady);
     window.addEventListener("goodapp-switch-camera", onSwitch);
     return () => {
+      window.removeEventListener("goodapp-screen-frame", onFrame as EventListener);
+      window.removeEventListener("goodapp-screen-share-stopped", onStopped);
       window.removeEventListener("goodapp-screen-share-ready", onReady);
       window.removeEventListener("goodapp-switch-camera", onSwitch);
     };

@@ -228,6 +228,7 @@ export const sendMessage = createServerFn({ method: "POST" })
       const preview = previewOf({ kind: data.kind, body: data.body });
       const { sendPushToUser } = await import("./push.server");
       if (data.peerId) {
+        const { createReplyToken } = await import("./chat-reply-token.server");
         await sendPushToUser(data.peerId, {
           title: `💬 ${name}`,
           body: preview.slice(0, 120),
@@ -239,6 +240,7 @@ export const sendMessage = createServerFn({ method: "POST" })
             sender_name: name,
             message_id: String(inserted?.id ?? ""),
             body: preview.slice(0, 120),
+            reply_token: createReplyToken(data.peerId),
           },
         });
       } else if (data.groupId) {

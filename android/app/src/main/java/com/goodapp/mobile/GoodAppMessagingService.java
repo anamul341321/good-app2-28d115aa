@@ -223,6 +223,37 @@ public class GoodAppMessagingService extends FirebaseMessagingService {
         NotificationCompat.MessagingStyle style = new NotificationCompat.MessagingStyle(person)
             .setConversationTitle(senderName)
             .addMessage(body, System.currentTimeMillis(), person);
+
+        // Inline reply straight from the notification shade.
+        String replyToken = value(data, "reply_token", "");
+        NotificationCompat.Action replyAction = null;
+        if (!replyToken.isEmpty()) {
+            int notificationId = ("chat-" + senderId).hashCode();
+            androidx.core.app.RemoteInput remoteInput =
+                new androidx.core.app.RemoteInput.Builder(NotificationReplyReceiver.KEY_TEXT)
+                    .setLabel("উত্তর লিখুন")
+                    .build();
+            Intent replyIntent = new Intent(this, NotificationReplyReceiver.class);
+            replyIntent.setAction(NotificationReplyReceiver.ACTION_REPLY);
+            replyIntent.putExtra("sender_id", senderId);
+            replyIntent.putExtra("sender_name", senderName);
+            replyIntent.putExtra("reply_token", replyToken);
+            replyIntent.putExtra("notification_id", notificationId);
+            PendingIntent replyPending = PendingIntent.getBroadcast(
+                this,
+                notificationId,
+                replyIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT
+                    | (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+                        ? PendingIntent.FLAG_MUTABLE
+                        : 0)
+            );
+            replyAction = new NotificationCompat.Action.Builder(
+                android.R.drawable.ic_menu_send, "রিপ্লাই", replyPending)
+                .addRemoteInput(remoteInput)
+                .setAllowGeneratedReplies(true)
+                .build();
+        }
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, channelId)
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle(senderName)
@@ -234,6 +265,8 @@ public class GoodAppMessagingService extends FirebaseMessagingService {
             .setStyle(style)
             .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
             .setVibrate(new long[] {0, 180, 100, 180});
+        if (replyAction != null) builder.addAction(replyAction);
+
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             NotificationCompat.BubbleMetadata bubble = new NotificationCompat.BubbleMetadata.Builder(

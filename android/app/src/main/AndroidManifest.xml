@@ -86,6 +86,20 @@
             android:name="com.capacitorjs.plugins.pushnotifications.MessagingService"
             tools:node="remove" />
 
+        <!-- Android 14+ needs a mediaProjection foreground service for screen sharing. -->
+        <service
+            android:name=".ScreenShareService"
+            android:exported="false"
+            android:foregroundServiceType="mediaProjection" />
+
+        <receiver
+            android:name=".NotificationReplyReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.goodapp.mobile.CHAT_REPLY" />
+            </intent-filter>
+        </receiver>
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
