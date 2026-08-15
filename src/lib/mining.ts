@@ -78,7 +78,19 @@ export function splitBalance(input: {
   bonusTotal: number;
   withdrawn?: number;
   miningWithdrawn?: number;
+  balanceBreakdown?: {
+    bonus_part?: number;
+    mining_part?: number;
+  };
 }): { main: number; mining: number } {
+  // If we have an audited breakdown from the ledger, use it directly.
+  if (input.balanceBreakdown) {
+    return {
+      main: Math.max(0, input.balanceBreakdown.bonus_part ?? 0),
+      mining: Math.max(0, input.balanceBreakdown.mining_part ?? 0),
+    };
+  }
+
   const balance = Math.max(0, input.balance);
   const bonusTotal = Math.max(0, input.bonusTotal);
   const withdrawn = Math.max(0, input.withdrawn ?? 0);

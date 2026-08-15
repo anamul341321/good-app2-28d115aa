@@ -134,12 +134,11 @@ export function MiningCounter({
   });
   
   // The increment is the difference between the live computed value and the last recorded value in mining_state.
-  // IMPORTANT: We only add this to the display if the ledger hasn't been updated recently with this data.
   const liveIncrement = Math.max(0, liveMiningBalance - (accrued - withdrawn));
   
   // displayBalance is anchored to the audited ledger total + the live mining increment.
-  // We floor to avoid floating point jitter in the main display.
-  const displayBalance = isActive ? (auditedBalance + liveIncrement) : auditedBalance;
+  // We floor to avoid floating point jitter.
+  const displayBalance = Math.floor(isActive ? (auditedBalance + liveIncrement) : auditedBalance);
 
   const rawSelfSlots = selfSlotsProp ?? effectiveTaskCount;
   const selfSlots = selfQualified ? rawSelfSlots : 0;

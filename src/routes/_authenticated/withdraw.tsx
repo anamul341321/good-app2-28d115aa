@@ -90,12 +90,15 @@ function WithdrawPage() {
   }) : 0;
   const claimable = Math.floor((data as any).balanceBreakdown?.current_balance ?? balance);
   const bonusTotal = Number((mining as any)?.bonus_amount ?? 0);
-  const bonusAvailable = Math.floor((data as any).balanceBreakdown?.bonus_part ?? splitBalance({
+  const split = splitBalance({
     balance,
     bonusTotal,
     withdrawn: Number((mining as any)?.withdrawn_amount ?? 0),
     miningWithdrawn: Number((mining as any)?.mining_withdrawn ?? 0),
-  }).main);
+    balanceBreakdown: (data as any).balanceBreakdown,
+  });
+  const bonusAvailable = Math.floor(split.main);
+  const miningPart = Math.floor(split.mining);
 
   const win = miningWindowInfo(now);
   const miningLocked = !win.isOpen;
@@ -189,7 +192,7 @@ function WithdrawPage() {
             </div>
             <div className="text-right">
               <p className="text-[10px] uppercase tracking-widest text-cyan font-black">⛏️ মাইনিং</p>
-              <p className="mono-num text-2xl font-black text-cyan mt-0.5" translate="no">{Math.max(0, Math.floor(balance - bonusAvailable))}৳</p>
+              <p className="mono-num text-2xl font-black text-cyan mt-0.5" translate="no">{miningPart}৳</p>
               {miningLocked ? (
                 <p className="text-[10px] text-rose font-bold mt-0.5">🔒 {nextOpenLabel} · আর {daysUntilUnlock} দিন</p>
               ) : (
