@@ -56,14 +56,15 @@ export const sendFriendRequest = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const { error } = await supabase
-      .from("friendships")
+      .from("friendships" as any)
       .upsert({
         user_id: userId,
         friend_id: data.friendId,
         status: "pending"
-      } as any);
+      });
 
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
 
