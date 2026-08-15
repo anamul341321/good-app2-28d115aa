@@ -784,7 +784,7 @@ function TaskCell({ task, onStart, onReverify, onOpenPhoto }: { task: any; onSta
             : <RefreshCcw className={`w-9 h-9 text-white/95 drop-shadow-lg ${due ? "animate-spin-slow" : ""}`} />}
         </span>
         <p className="absolute bottom-1 left-1 right-1 text-[9.5px] font-black text-white text-center drop-shadow leading-tight">
-          {reverified ? "✅ রি-ভেরিফাই সম্পন্ন" : due ? "রি-ভেরিফাই সময় হয়েছে" : `${Math.ceil(remain ?? 4)} দিন পর রি-ভেরিফাই`}
+          {reverified ? "✅ রি-ভেরিফাই সম্পন্ন" : due ? "রি-ভেরিফাই সময় হয়েছে" : `পরবর্তী: ${Math.ceil(remain ?? 4)} দিন পর`}
         </p>
         {(reverified || !due) && earnBadge}
       </button>
