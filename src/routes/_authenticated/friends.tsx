@@ -12,7 +12,7 @@ import {
 } from "@/lib/friends.functions";
 import { CallButtons } from "@/components/CallProvider";
 import { MessengerAvatar } from "@/components/messenger/MessengerAvatar";
-import { MessengerNav } from "@/components/messenger/MessengerNav";
+
 import { usePresence } from "@/lib/presence";
 
 export const Route = createFileRoute("/_authenticated/friends")({

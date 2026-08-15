@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
-import { searchUsers } from "@/lib/social-users.functions";
+import { searchPeople } from "@/lib/friends.functions";
 import { useState } from "react";
-import { Search, X, UserPlus, MessageSquare, Loader2 } from "lucide-react";
+import { Search, X, MessageSquare, Loader2 } from "lucide-react";
 import { MessengerAvatar } from "./MessengerAvatar";
 import { Link } from "@tanstack/react-router";
 import { useLang } from "@/lib/i18n";
@@ -12,12 +12,14 @@ export function MessengerSearchOverlay({ onClose }: { onClose: () => void }) {
   
   const { data, isLoading } = useQuery({
     queryKey: ["messenger-search", query],
-    queryFn: () => searchUsers({ query }),
+    queryFn: () => searchPeople({ data: { query } }),
+
     enabled: query.trim().length > 0,
     staleTime: 5000,
   });
 
-  const results = data?.users ?? [];
+  const results = (data as any)?.people ?? [];
+
 
   return (
     <div className="fixed inset-0 z-[60] bg-background flex flex-col pt-[env(safe-area-inset-top)]">
@@ -69,23 +71,24 @@ export function MessengerSearchOverlay({ onClose }: { onClose: () => void }) {
           <div className="flex flex-col">
             {results.map((user: any) => (
               <Link
-                key={user.userId}
+                key={user.id}
                 to="/chat/$peerId"
-                params={{ peerId: user.userId }}
+                params={{ peerId: user.id }}
                 onClick={onClose}
                 className="btn-press flex items-center gap-3 px-4 py-3 hover:bg-surface-2 transition-colors border-b border-border/10"
               >
                 <MessengerAvatar
-                  name={user.name}
-                  src={user.avatar}
+                  name={user.display_name}
+                  src={user.avatar_url}
                   size="md"
                 />
                 <div className="flex-1 min-w-0">
-                  <p className="truncate text-sm font-black text-foreground">{user.name}</p>
+                  <p className="truncate text-sm font-black text-foreground">{user.display_name}</p>
                   <p className="truncate text-[10px] font-bold text-muted-foreground uppercase tracking-tight">
-                    UID {user.uid_seq} {user.isFriend ? "· Friend" : ""}
+                    UID {user.uid_seq}
                   </p>
                 </div>
+
                 <div className="h-8 w-8 rounded-full bg-surface-2 flex items-center justify-center">
                   <MessageSquare className="h-4 w-4 text-primary" />
                 </div>

@@ -8,7 +8,7 @@ import { listFriends } from "@/lib/friends.functions";
 import { usePresence } from "@/lib/presence";
 import { StoryRow } from "@/components/messenger/StoryRow";
 import { ChatRow } from "@/components/messenger/ChatRow";
-import { MessengerNav } from "@/components/messenger/MessengerNav";
+import { MessengerSearchOverlay } from "@/components/messenger/MessengerSearchOverlay";
 
 export const Route = createFileRoute("/_authenticated/chat/")({
   component: ChatListPage,
@@ -29,7 +29,7 @@ export function ChatListPage() {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const onlineIds = usePresence();
-  const [search, setSearch] = useState("");
+  const [showSearch, setShowSearch] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["chats"],
@@ -47,23 +47,12 @@ export function ChatListPage() {
   const groups = data?.groups ?? [];
   const friendList = friends.data?.friends ?? [];
 
-  // Filter conversations based on search
-  const filteredChats = useMemo(() => {
-    const s = search.toLowerCase();
-    return chats.filter(c => c.name.toLowerCase().includes(s));
-  }, [chats, search]);
-
-  const filteredGroups = useMemo(() => {
-    const s = search.toLowerCase();
-    return groups.filter(g => g.name.toLowerCase().includes(s));
-  }, [groups, search]);
-
-  // Combine and sort for the main list
   const allConversations = useMemo(() => {
-    return [...filteredChats, ...filteredGroups].sort((a, b) => 
+    return [...chats, ...groups].sort((a, b) => 
       new Date(b.lastAt).getTime() - new Date(a.lastAt).getTime()
     );
-  }, [filteredChats, filteredGroups]);
+  }, [chats, groups]);
+
 
   const activeUsers = useMemo(() => {
     return friendList
@@ -77,18 +66,19 @@ export function ChatListPage() {
   }, [friendList, onlineIds]);
 
   return (
-    <div className="flex flex-col min-h-screen bg-background pb-20">
+    <div className="flex flex-col min-h-screen bg-background">
       {/* Messenger Header */}
       <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md px-4 py-3 flex flex-col gap-3 pt-[env(safe-area-inset-top)]">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Link 
-              to="/social"
+              to="/home"
               className="btn-press h-9 w-9 flex items-center justify-center rounded-full hover:bg-surface-2 transition-colors"
             >
               <ChevronLeft className="h-6 w-6 text-primary" />
             </Link>
-            <h1 className="text-2xl font-black text-foreground tracking-tight">Chats</h1>
+            <h1 className="text-2xl font-black text-foreground tracking-tight">Messenger</h1>
+
           </div>
           <div className="flex items-center gap-2">
             <button 
@@ -100,17 +90,20 @@ export function ChatListPage() {
           </div>
         </div>
 
-        {/* Search Bar */}
-        <div className="relative">
+        {/* Search Bar (Triggers Overlay) */}
+        <button
+          onClick={() => setShowSearch(true)}
+          className="relative w-full text-left"
+        >
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search"
-            className="w-full h-10 bg-surface-2 rounded-full pl-10 pr-4 text-sm font-bold focus:outline-none focus:ring-1 focus:ring-primary/30 transition-shadow"
-          />
-        </div>
+          <div className="w-full h-10 bg-surface-2 rounded-full pl-10 pr-4 flex items-center text-sm font-bold text-muted-foreground">
+            Search
+          </div>
+        </button>
       </header>
+
+      {showSearch && <MessengerSearchOverlay onClose={() => setShowSearch(false)} />}
+
 
       {/* Stories Row */}
       <section className="mt-1">
