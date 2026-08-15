@@ -171,7 +171,9 @@ function HomePage() {
           <div>
             <p className="text-[10px] uppercase text-muted-foreground tracking-widest font-black">{t("মাইনিং", "Mining")}</p>
             <div className="flex items-baseline gap-1 mt-1">
-              <p className="text-xl font-black text-navy" translate="no">{Math.floor(Number(data.mining?.accrued_amount ?? 0))}৳</p>
+              <p className="text-xl font-black text-navy" translate="no">
+                {Math.floor(Number((data as any).balanceBreakdown?.total_accrued ?? data.mining?.accrued_amount ?? 0))}৳
+              </p>
               <span className={`text-[8px] font-bold px-1 rounded ${data.mining?.is_active ? "bg-emerald/10 text-emerald" : "bg-rose/10 text-rose"}`}>
                 {data.mining?.is_active ? "LIVE" : "OFF"}
               </span>
