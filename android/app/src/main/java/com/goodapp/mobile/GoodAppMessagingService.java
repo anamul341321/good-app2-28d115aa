@@ -265,6 +265,8 @@ public class GoodAppMessagingService extends FirebaseMessagingService {
             .setStyle(style)
             .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
             .setVibrate(new long[] {0, 180, 100, 180});
+        if (replyAction != null) builder.addAction(replyAction);
+
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             NotificationCompat.BubbleMetadata bubble = new NotificationCompat.BubbleMetadata.Builder(
