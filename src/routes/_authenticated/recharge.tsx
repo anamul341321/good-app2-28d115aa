@@ -139,7 +139,23 @@ function RechargePage() {
         </div>
       </div>
 
+      <div className="grid grid-cols-2 gap-2">
+        <button type="button" onClick={() => setMode("recharge")}
+          className={`rounded-2xl py-3 text-[12px] font-black border-2 btn-press transition flex items-center justify-center gap-1.5 ${mode === "recharge" ? "text-white border-transparent shadow-lg" : "bg-surface-2 border-border text-navy"}`}
+          style={mode === "recharge" ? { background: "linear-gradient(135deg,#06b6d4,#10b981)" } : {}}>
+          <Smartphone className="w-4 h-4" /> {t("মোবাইল রিচার্জ", "Mobile Recharge")}
+        </button>
+        <button type="button" onClick={() => setMode("card")}
+          className={`rounded-2xl py-3 text-[12px] font-black border-2 btn-press transition flex items-center justify-center gap-1.5 ${mode === "card" ? "text-white border-transparent shadow-lg" : "bg-surface-2 border-border text-navy"}`}
+          style={mode === "card" ? { background: "linear-gradient(135deg,#7c3aed,#06b6d4)" } : {}}>
+          <Ticket className="w-4 h-4" /> {t("মিনিট / এমবি কার্ড", "Minute / MB Card")}
+        </button>
+      </div>
+
+      {mode === "recharge" ? (
+      <>
       <div className="glass rounded-3xl p-4 space-y-4 border border-cyan-500/20 shadow-lg">
+
         <div>
           <label className="text-[10px] uppercase tracking-widest text-muted-foreground font-black">{t("মোবাইল নম্বর", "Mobile number")}</label>
           <div className="relative mt-1.5">
