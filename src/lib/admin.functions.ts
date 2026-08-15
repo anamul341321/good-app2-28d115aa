@@ -2728,9 +2728,9 @@ export const adminCreateCardProduct = createServerFn({ method: "POST" })
     card_type: z.enum(["Minute", "Internet"]),
     amount_label: z.string(),
     selling_price: z.number(),
-    image_url: z.string().optional(),
-    description: z.string().optional(),
-    validity: z.string().optional(),
+    image_url: z.string().nullish(),
+    description: z.string().nullish(),
+    validity: z.string().nullish(),
     is_active: z.boolean().default(true),
   }).parse(i))
   .handler(async ({ data }) => {
@@ -2749,9 +2749,9 @@ export const adminUpdateCardProduct = createServerFn({ method: "POST" })
       card_type: z.enum(["Minute", "Internet"]).optional(),
       amount_label: z.string().optional(),
       selling_price: z.number().optional(),
-      image_url: z.string().optional(),
-      description: z.string().optional(),
-      validity: z.string().optional(),
+      image_url: z.string().nullish(),
+      description: z.string().nullish(),
+      validity: z.string().nullish(),
       is_active: z.boolean().optional(),
     })
   }).parse(i))

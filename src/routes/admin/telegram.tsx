@@ -16,6 +16,7 @@ import {
   tgListAiKeys, tgAddAiKey, tgSetAiKeyActive, tgDeleteAiKey,
 } from "@/lib/telegram-bot.functions";
 import { raceTimeout } from "@/lib/net";
+import { BroadcastManager } from "@/components/admin/BroadcastManager";
 
 
 export const Route = createFileRoute("/admin/telegram")({ component: TelegramAdmin });
