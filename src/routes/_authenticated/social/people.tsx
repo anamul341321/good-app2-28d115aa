@@ -86,8 +86,8 @@ function SocialPeoplePage() {
           </div>
         ) : (
           <>
-            <h2 className="text-sm font-black text-gray-400 uppercase tracking-widest px-1">
-              {query ? t("অনুসন্ধান ফলাফল", "Search Results") : t("সব ব্যবহারকারী", "All Users")}
+            <h2 className="text-[11px] font-black text-gray-400 uppercase tracking-widest px-1">
+              {query ? t("অনুসন্ধান ফলাফল", "Search Results") : (allUsers.some(u => u.mutualCount > 0) ? t("পিপল ইউ মে নো", "People You May Know") : t("সব ব্যবহারকারী", "All Users"))}
             </h2>
             {allUsers.map((u: any) => (
               <div key={u.id} className="bg-white p-3 rounded-xl border flex items-center justify-between shadow-sm">

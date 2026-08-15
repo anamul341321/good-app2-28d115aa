@@ -186,11 +186,27 @@ export const searchUsers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => z.object({ query: z.string() }).parse(i))
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
+    const { supabase, userId } = context;
+    const q = data.query.trim();
+    if (!q) return { users: [] };
+
+    // Phone normalization
+    let phoneQ = q;
+    if (q.startsWith('+880')) phoneQ = q.substring(4);
+    else if (q.startsWith('880')) phoneQ = q.substring(3);
+    else if (q.startsWith('0')) phoneQ = q.substring(1);
+
+    const isNumeric = /^\d+$/.test(q);
+    let orFilter = `display_name.ilike.%${q}%,phone_number.ilike.%${phoneQ}%`;
+    if (isNumeric) {
+      orFilter += `,uid_seq.eq.${q}`;
+    }
+
     const { data: users, error } = await supabase
       .from("profiles")
-      .select("id, display_name, avatar_url, uid_seq")
-      .or(`display_name.ilike.%${data.query}%,uid_seq.eq.${data.query}`)
+      .select("id, display_name, avatar_url, uid_seq, phone_number")
+      .or(orFilter)
+      .neq("id", userId)
       .limit(20);
 
     if (error) throw new Error(error.message);

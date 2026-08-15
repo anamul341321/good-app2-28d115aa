@@ -11,6 +11,8 @@ export const listUsers = createServerFn({ method: "GET" })
   }).parse(i))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    
+    // Base query: profiles except the current user
     let queryBuilder = supabase
       .from("profiles")
       .select("id, display_name, avatar_url, uid_seq, phone_number", { count: "exact" })
@@ -19,7 +21,7 @@ export const listUsers = createServerFn({ method: "GET" })
     if (data.query) {
       const q = data.query.trim();
       
-      // Handle phone normalization for query
+      // Handle phone normalization for query (017... -> 17...)
       let phoneQ = q;
       if (q.startsWith('+880')) phoneQ = q.substring(4);
       else if (q.startsWith('880')) phoneQ = q.substring(3);
@@ -27,18 +29,18 @@ export const listUsers = createServerFn({ method: "GET" })
 
       const isNumeric = /^\d+$/.test(q);
       
-      let orFilter = `display_name.ilike.%${q}%`;
+      // Case-insensitive search on display_name and ilike on phone_number
+      // If numeric, also check uid_seq
+      let orFilter = `display_name.ilike.%${q}%,phone_number.ilike.%${phoneQ}%`;
       if (isNumeric) {
         orFilter += `,uid_seq.eq.${q}`;
       }
-      orFilter += `,phone_number.ilike.%${phoneQ}%`;
 
       queryBuilder = queryBuilder.or(orFilter);
     }
 
     const { data: users, error, count } = await queryBuilder
-      .range((data.page - 1) * data.limit, data.page * data.limit - 1)
-      .order("display_name");
+      .range((data.page - 1) * data.limit, data.page * data.limit - 1);
 
     if (error) throw new Error(error.message);
 
@@ -210,8 +212,8 @@ export const getProfileStats = createServerFn({ method: "GET" })
     ]);
 
     const verifiedCount = (tasksRes.data ?? []).filter(t => !!t.initial_verify_at).length;
-    // Guessing monthly rate since it's missing from the type
-    const monthlyRate = (miningRes.data as any)?.monthly_rate ?? (miningRes.data?.is_active ? 500 : 0);
+    const monthlyRate = (miningRes.data as any)?.monthly_rate 
+      ?? ((miningRes.data?.is_active && verifiedCount >= 10) ? 500 : 0);
 
     return { verifiedCount, monthlyRate };
   });
