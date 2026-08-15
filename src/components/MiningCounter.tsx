@@ -1,18 +1,76 @@
-import { useLang } from "@/lib/i18n";
+import { memo, useEffect, useRef, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
+import { computeLiveBalance, monthlyRate, MONTHLY_PER_SLOT } from "@/lib/mining";
+import { miningWindowInfo, nextOpenLabelBn } from "@/lib/mining-window";
+import { Wallet, Sparkles } from "lucide-react";
 
-export interface MiningCounterProps {
+/** Decorative layers never change — memoised so the 1s balance tick doesn't repaint them. */
+const MiningDecor = memo(function MiningDecor({ live }: { live: boolean }) {
+  return (
+    <>
+      <div className="absolute inset-0 mc-base pointer-events-none" aria-hidden />
+      <div className="absolute -top-14 -left-10 w-48 h-48 rounded-full blur-3xl opacity-40 pointer-events-none mc-orb-a" aria-hidden />
+      <div className="absolute -bottom-16 -right-14 w-56 h-56 rounded-full blur-3xl opacity-35 pointer-events-none mc-orb-b" aria-hidden />
+      <div className="absolute inset-0 mc-holo opacity-20 pointer-events-none" aria-hidden />
+      <div className="absolute inset-0 mc-aurora opacity-30 pointer-events-none" aria-hidden />
+      {live && <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden><span className="mc-sheen" /></div>}
+      <div className="absolute -inset-1 mc-ring pointer-events-none" aria-hidden />
+
+      {live && (
+        <div className="absolute inset-0 pointer-events-none" aria-hidden>
+          {[
+            { l: "12%", t: "20%", d: "0s", e: "✦" },
+            { l: "84%", t: "16%", d: "1.1s", e: "✧" },
+          ].map((s, i) => (
+            <span key={i} className="mc-sparkle" style={{ left: s.l, top: s.t, animationDelay: s.d }}>
+              {s.e}
+            </span>
+          ))}
+        </div>
+      )}
+    </>
+  );
+});
+
+/** Money that visibly counts up — each digit change gets a soft roll + glow. */
+function AnimatedMoney({ value, live }: { value: number; live: boolean }) {
+  const [intPart, decPart] = value.toFixed(2).split(".");
+  const prev = useRef(intPart);
+  const [bump, setBump] = useState(0);
+  useEffect(() => {
+    if (prev.current !== intPart) {
+      prev.current = intPart;
+      setBump((b) => b + 1);
+    }
+  }, [intPart]);
+  return (
+    <div className="flex items-baseline justify-center gap-1 flex-nowrap whitespace-nowrap">
+      <span key={bump}
+        className={`mono-num text-[2.7rem] leading-none font-black mc-num mc-roll ${live ? "mc-num-live" : ""}`}>
+        {intPart}
+      </span>
+      <span className="mono-num text-base leading-none font-black text-white/60 mc-dec">.{decPart}</span>
+      <span className="text-sm font-black text-yellow-100 ml-1 drop-shadow">৳</span>
+    </div>
+  );
+}
+
+type Props = {
   accrued: number;
   withdrawn: number;
   isActive: boolean;
   lastCreditedAt: string | null;
-  effectiveTaskCount: number;
-  qualifyingReferees: number;
-  selfSlots: number;
-  referralUnits: number;
-  selfQualified: boolean;
+  effectiveTaskCount?: number;
+  qualifyingReferees?: number;
+  selfSlots?: number;
+  referralUnits?: number;
+  selfQualified?: boolean;
+
+  displayTaskCount?: number;
+  leagueCount?: number;
   bonusTotal?: number;
+  referralAccrued?: number;
   miningWithdrawn?: number;
-  debt?: number;
   balanceBreakdown?: {
     total_accrued: number;
     bonus_part: number;
@@ -20,96 +78,209 @@ export interface MiningCounterProps {
     withdrawn_total: number;
     current_balance: number;
   };
+};
+
+function leagueFor(n: number): { name: string; emoji: string; from: string; to: string } | null {
+  if (n >= 100) return { name: "লিজেন্ড", emoji: "👑", from: "#facc15", to: "#f59e0b" };
+  if (n >= 50)  return { name: "ডায়মন্ড", emoji: "💎", from: "#22d3ee", to: "#8b5cf6" };
+  if (n >= 30)  return { name: "গোল্ড",   emoji: "🥇", from: "#fbbf24", to: "#f97316" };
+  if (n >= 20)  return { name: "সিলভার", emoji: "🥈", from: "#e5e7eb", to: "#94a3b8" };
+  if (n >= 10)  return { name: "ব্রোঞ্জ", emoji: "🥉", from: "#f97316", to: "#b45309" };
+  return null;
 }
 
-export function MiningCounter({ balanceBreakdown }: MiningCounterProps) {
-  const { t } = useLang();
+export function MiningCounter({
+  accrued, withdrawn, isActive, lastCreditedAt,
+  effectiveTaskCount = 0, qualifyingReferees = 0,
+  selfSlots: selfSlotsProp, referralUnits: referralUnitsProp,
+  selfQualified = true, displayTaskCount, leagueCount,
+  balanceBreakdown,
+}: Props) {
 
-  // Use audited breakdown if available, otherwise fallback to 0
-  const totalAccrued = Math.floor(balanceBreakdown?.total_accrued ?? 0);
-  const bonusPart = Math.floor(balanceBreakdown?.bonus_part ?? 0);
-  const miningPart = Math.floor(balanceBreakdown?.mining_part ?? 0);
-  const currentBalance = Math.floor(balanceBreakdown?.current_balance ?? 0);
+  const [now, setNow] = useState(Date.now());
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!isActive) return;
+    let id: any;
+    const start = () => {
+      stop();
+      id = setInterval(() => setNow(Date.now()), 1000);
+    };
+    const stop = () => { if (id) { clearInterval(id); id = undefined; } };
+    const onVis = () => (document.hidden ? stop() : (setNow(Date.now()), start()));
+    start();
+    document.addEventListener("visibilitychange", onVis);
+    return () => { stop(); document.removeEventListener("visibilitychange", onVis); };
+  }, [isActive]);
+
+  const rateArgs = {
+    selfSlots: selfSlotsProp,
+    referralUnits: referralUnitsProp,
+    effectiveTaskCount,
+    qualifyingReferees,
+    selfQualified,
+  };
+  
+  // Audited values from breakdown
+  const auditedBalance = balanceBreakdown?.current_balance ?? 0;
+  const bonusPart = balanceBreakdown?.bonus_part ?? 0;
+  const miningPart = balanceBreakdown?.mining_part ?? 0;
+
+  // We still compute live balance for the "ticker" effect if active,
+  // but we should probably tether it to the audited balance to prevent jumps.
+  const liveBalance = computeLiveBalance({
+    accrued, withdrawn, isActive, lastCreditedAt, ...rateArgs, now,
+  });
+  
+  // Use audited balance as base, plus live increment if active
+  const displayBalance = isActive ? liveBalance : auditedBalance;
+
+  const rawSelfSlots = selfSlotsProp ?? effectiveTaskCount;
+  const selfSlots = selfQualified ? rawSelfSlots : 0;
+  const refUnits = referralUnitsProp ?? qualifyingReferees;
+  const live = isActive && (selfSlots > 0 || refUnits > 0);
+  const shownSlots = selfSlots;
+  const ratePerMonth = monthlyRate(rateArgs);
+  const selfMonth = MONTHLY_PER_SLOT * selfSlots;
+  const bonusMonth = MONTHLY_PER_SLOT * refUnits;
+  const claimable = Math.floor(auditedBalance);
+  const league = leagueFor(leagueCount ?? Math.max(effectiveTaskCount, displayTaskCount ?? 0));
+
+  const win = miningWindowInfo(now);
+  const withdrawOpen = win.isOpen;
+  const hoursUntilClose = Math.ceil(win.msUntilClose / (60 * 60 * 1000));
+  const nextOpen = nextOpenLabelBn(now);
 
   return (
-    <div className="glass rounded-3xl p-5 border border-cyan-500/20 shadow-xl relative overflow-hidden">
-      {/* Background Decorative Elements */}
-      <div className="absolute -top-10 -right-10 w-32 h-32 bg-cyan-500/10 blur-3xl rounded-full" />
-      <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-emerald-500/10 blur-3xl rounded-full" />
+    <div className="mc-premium relative rounded-[24px] p-4 overflow-hidden" style={{ contain: "paint" }}>
+      <MiningDecor live={live} />
 
-      <div className="relative z-10 flex flex-col gap-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-black">
-              {t("মোট অর্জিত ব্যালেন্স", "Total Accrued Balance")}
-            </p>
-            <div className="flex items-baseline gap-1 mt-0.5">
-              <span className="text-4xl font-black text-navy mono-num" translate="no">
-                {totalAccrued}
-              </span>
-              <span className="text-xl font-bold text-navy/60">৳</span>
-            </div>
-          </div>
-          <div className="text-right">
-            <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-black">
-              {t("বর্তমান ব্যালেন্স", "Current Balance")}
-            </p>
-            <div className="flex items-baseline justify-end gap-1 mt-0.5">
-              <span className="text-2xl font-black text-cyan-600 mono-num" translate="no">
-                {currentBalance}
-              </span>
-              <span className="text-lg font-bold text-cyan-600/60">৳</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3 pt-2 border-t border-border/50">
-          <div className="space-y-1">
-            <p className="text-[9px] uppercase tracking-widest text-muted-foreground font-bold">
-              {t("মেইন বোনাস", "Main Bonus")}
-            </p>
-            <p className="text-lg font-black text-emerald mono-num" translate="no">
-              {bonusPart}৳
-            </p>
-          </div>
-          <div className="space-y-1 text-right">
-            <p className="text-[9px] uppercase tracking-widest text-muted-foreground font-bold">
-              {t("মাইনিং প্রফিট", "Mining Profit")}
-            </p>
-            <p className="text-lg font-black text-cyan-600 mono-num" translate="no">
-              {miningPart}৳
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-1">
-          <div className="w-full h-1.5 bg-surface-2 rounded-full overflow-hidden flex">
-            {totalAccrued > 0 ? (
+      <div className="relative">
+        <div className="flex items-center justify-between mb-2">
+          <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full mc-chip">
+            {live ? (
               <>
-                <div 
-                  className="h-full bg-emerald transition-all duration-500" 
-                  style={{ width: `${(bonusPart / totalAccrued) * 100}%` }}
-                />
-                <div 
-                  className="h-full bg-cyan-500 transition-all duration-500" 
-                  style={{ width: `${(miningPart / totalAccrued) * 100}%` }}
-                />
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-300 animate-ping opacity-80" />
+                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-300" />
+                </span>
+                <span className="text-[9px] font-black tracking-[0.15em] text-white/95">লাইভ মাইনিং</span>
               </>
             ) : (
-              <div className="h-full w-0 bg-muted" />
+              <>
+                <Sparkles className="w-2.5 h-2.5 text-white/80" />
+                <span className="text-[9px] font-black tracking-[0.15em] text-white/85">মাইনিং লক</span>
+              </>
             )}
           </div>
-          <div className="flex justify-between mt-1.5 px-0.5">
-             <div className="flex items-center gap-1">
-                <div className="w-2 h-2 rounded-full bg-emerald" />
-                <span className="text-[8px] font-black text-muted-foreground uppercase">{t("বোনাস", "Bonus")}</span>
-             </div>
-             <div className="flex items-center gap-1">
-                <span className="text-[8px] font-black text-muted-foreground uppercase">{t("মাইনিং", "Mining")}</span>
-                <div className="w-2 h-2 rounded-full bg-cyan-500" />
-             </div>
+          {league ? (
+            <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full backdrop-blur-md border border-white/25 shadow"
+                 style={{ background: `linear-gradient(135deg, ${league.from}, ${league.to})` }}>
+              <span className="text-[10px]">{league.emoji}</span>
+              <span className="text-[8px] font-black tracking-widest text-white drop-shadow">{league.name} লিগ</span>
+            </div>
+          ) : (
+            <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/10 border border-white/15 backdrop-blur-md">
+              <span className="text-[8px] font-black tracking-widest text-white/70">লিগ · লক</span>
+            </div>
+          )}
+        </div>
+
+        <div className="text-center">
+          <p className="text-[9px] uppercase tracking-[0.3em] text-white/60 font-black">Total Balance</p>
+          <AnimatedMoney value={displayBalance} live={live} />
+        </div>
+
+        <div className={`mt-2.5 rounded-xl px-2.5 py-1.5 text-[10px] font-black flex items-center justify-between gap-2 border ${withdrawOpen ? "mc-ribbon-open" : "mc-ribbon-closed"}`}>
+          <span className="flex items-center gap-1.5 min-w-0">
+            <span>{withdrawOpen ? "🔓" : "⏳"}</span>
+            <span className="text-white/95 truncate">
+              সবাইকে ১–৩ তারিখের মধ্যে উইথড্র করুন
+            </span>
+          </span>
+          <span className="text-[8px] text-white/80 uppercase tracking-widest shrink-0">
+            {withdrawOpen ? `আর ${hoursUntilClose}ঘ` : nextOpen}
+          </span>
+        </div>
+
+        <div className="mt-2.5 grid grid-cols-2 gap-2">
+          <div className="mc-mini rounded-2xl p-2">
+            <p className="text-[8px] font-black tracking-widest text-white/70">⛏️ মাইনিং</p>
+            <p className="mono-num text-[15px] font-black text-cyan-100 leading-none mt-0.5 mc-mini-num">
+              {miningPart.toFixed(2)}<span className="text-[9px] text-white/60">৳</span>
+            </p>
+            <p className="text-[7.5px] text-white/60 leading-tight mt-0.5">
+              নিজের ও রেফার মাইনিং · ১–৩ তারিখে
+            </p>
+          </div>
+          <div className="mc-mini rounded-2xl p-2">
+            <p className="text-[8px] font-black tracking-widest text-white/70">💚 মেইন</p>
+            <p className="mono-num text-[15px] font-black text-yellow-100 leading-none mt-0.5 mc-mini-num">
+              {bonusPart.toFixed(2)}<span className="text-[9px] text-white/60">৳</span>
+            </p>
+            <p className="text-[7.5px] text-white/60 leading-tight mt-0.5">
+              বোনাস + রেফার বোনাস · যেকোনো সময়
+            </p>
           </div>
         </div>
+
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          <div className="mc-stat rounded-2xl p-2">
+            <p className="text-[8px] uppercase tracking-widest text-white/60 font-black">মাইনিং ঘর</p>
+            <p className="mono-num text-[15px] font-black text-white leading-none mt-0.5">
+              {shownSlots}<span className="text-[10px] text-white/50">টি</span>
+            </p>
+            <p className="text-[7.5px] text-white/55 leading-tight">প্রতি ঘর {MONTHLY_PER_SLOT}৳/মাস</p>
+          </div>
+          <div className="mc-stat rounded-2xl p-2">
+            <p className="text-[8px] uppercase tracking-widest text-white/60 font-black">মাসিক রেট</p>
+            {live ? (
+              <>
+                <p className="mono-num text-[15px] font-black text-yellow-100 leading-none mt-0.5">{ratePerMonth.toFixed(0)}<span className="text-[10px] text-white/60">৳</span></p>
+                <p className="text-[7.5px] text-white/55 leading-tight mono-num">
+                  নিজের {selfMonth.toFixed(0)}৳ + রেফার {bonusMonth.toFixed(0)}৳
+                </p>
+              </>
+            ) : (
+              <p className="text-[9px] font-black text-white/70 mt-0.5 leading-tight">🔒 ১০টি রি-ভেরিফাই হলে</p>
+            )}
+          </div>
+        </div>
+
+        {!live && (
+          <p className="text-[10px] text-white/70 text-center mt-2 font-bold leading-snug">
+            ১০টি ঘর রি-ভেরিফাই করলেই মাইনিং চালু · প্রতিটি বাড়তি ঘরে +{MONTHLY_PER_SLOT}৳/মাস
+          </p>
+        )}
+
+        {refUnits > 0 && (
+          <p className="mt-2 mx-auto w-fit rounded-full px-2.5 py-1 text-[10px] font-black flex items-center gap-1.5"
+             style={{
+               background: "linear-gradient(90deg, rgba(52,211,153,0.35), rgba(34,211,238,0.35))",
+               border: "1px solid rgba(255,255,255,0.25)",
+               color: "white",
+             }}>
+            🎁 {qualifyingReferees} জন রেফার · ১০% = +{bonusMonth.toFixed(0)}৳/মাস
+          </p>
+        )}
+
+        <div className="mt-2.5 grid grid-cols-2 gap-2">
+          <button
+            onClick={() => navigate({ to: "/withdraw" })}
+            className="rounded-2xl py-2.5 font-black text-[12px] flex items-center justify-center gap-1.5 btn-press mc-cta"
+          >
+            <Wallet className="w-3.5 h-3.5" />
+            {live && claimable > 0 ? `${claimable}৳ উইথড্র` : "উইথড্র"}
+          </button>
+          <button
+            onClick={() => navigate({ to: "/earnings" })}
+            className="rounded-2xl py-2.5 font-black text-[12px] text-white flex items-center justify-center gap-1.5 btn-press border border-white/25 bg-white/10 backdrop-blur-md"
+          >
+            📜 আয়ের হিসাব
+          </button>
+        </div>
+
       </div>
     </div>
   );
