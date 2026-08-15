@@ -27,6 +27,7 @@ import com.getcapacitor.BridgeWebViewClient;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.FileProvider;
 import android.media.projection.MediaProjectionManager;
+import android.app.KeyguardManager;
 
 import java.io.File;
 
