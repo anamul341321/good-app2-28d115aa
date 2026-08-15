@@ -7,7 +7,7 @@ import { claimVoucher } from "@/lib/vouchers.functions";
 import { getLeaderboards } from "@/lib/leaderboard.functions";
 import { MiningCounter } from "@/components/MiningCounter";
 import bonusGirl from "@/assets/bonus-girl.png";
-import { CheckCircle2, Camera, Lock, Sparkles, Loader2, X, Plus, Crown, Users, User, ShieldCheck, BadgeCheck, ChevronDown, Gift, RefreshCcw, MessageSquare, MessageCircle, ChevronRight, ArrowUpRight } from "lucide-react";
+import { CheckCircle2, Camera, Lock, Sparkles, Loader2, X, Plus, Crown, Users, User, ShieldCheck, BadgeCheck, ChevronDown, Gift, RefreshCcw, MessageSquare, MessageCircle, ChevronRight, ArrowUpRight, Wallet } from "lucide-react";
 import { AnnouncementTicker } from "@/components/AnnouncementTicker";
 import { ApkDownloadCard } from "@/components/ApkDownloadCard";
 import { HeroBanner } from "@/components/HeroBanner";
