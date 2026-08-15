@@ -120,19 +120,28 @@ function SocialProfilePage() {
         {/* Profile Details Container */}
         <div className="px-4 pb-4 -mt-12 relative z-10">
           <div className="flex flex-col items-center">
-            <div className="p-1 bg-white rounded-full shadow-xl">
+            <div className="p-1 bg-white rounded-full shadow-xl relative group">
               <MessengerAvatar 
-                name={user.user_metadata?.display_name || user.email?.split("@")[0] || "User"} 
+                src={profile?.avatar_url}
+                name={profile?.display_name || profile?.email?.split("@")[0] || "User"} 
                 size="xl" 
                 className="w-32 h-32 border-4 border-white"
               />
+              {isOwnProfile && (
+                <button 
+                  onClick={() => fileInputRef.current?.click()}
+                  className="absolute bottom-0 right-0 h-8 w-8 bg-[#1877F2] text-white rounded-full flex items-center justify-center border-2 border-white btn-press"
+                >
+                  <Camera className="w-4 h-4" />
+                </button>
+              )}
             </div>
             
             <h1 className="mt-3 text-2xl font-black text-navy text-center leading-tight">
-              {user.user_metadata?.display_name || user.email?.split("@")[0]}
+              {profile?.display_name || profile?.email?.split("@")[0]}
             </h1>
             <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-0.5">
-              UID {user.user_metadata?.uid_seq || "-"}
+              UID {profile?.uid_seq || "-"}
             </p>
           </div>
 
@@ -161,12 +170,25 @@ function SocialProfilePage() {
 
           {/* Action Buttons */}
           <div className="mt-6 grid grid-cols-2 gap-2 max-w-md mx-auto">
-            <button className="flex items-center justify-center gap-2 bg-[#1877F2] text-white py-2.5 rounded-xl font-black text-sm btn-press">
-              <Plus className="w-4 h-4" /> Add Story
-            </button>
-            <button className="flex items-center justify-center gap-2 bg-gray-100 text-navy py-2.5 rounded-xl font-black text-sm btn-press">
-              <Settings className="w-4 h-4" /> Edit Profile
-            </button>
+            {isOwnProfile ? (
+              <>
+                <button className="flex items-center justify-center gap-2 bg-[#1877F2] text-white py-2.5 rounded-xl font-black text-sm btn-press">
+                  <Plus className="w-4 h-4" /> Add Story
+                </button>
+                <button className="flex items-center justify-center gap-2 bg-gray-100 text-navy py-2.5 rounded-xl font-black text-sm btn-press">
+                  <Settings className="w-4 h-4" /> Edit Profile
+                </button>
+              </>
+            ) : (
+              <>
+                <button className="flex items-center justify-center gap-2 bg-[#1877F2] text-white py-2.5 rounded-xl font-black text-sm btn-press">
+                  <MessageSquare className="w-4 h-4" /> Message
+                </button>
+                <button className="flex items-center justify-center gap-2 bg-gray-100 text-navy py-2.5 rounded-xl font-black text-sm btn-press">
+                  <Plus className="w-4 h-4" /> Follow
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -174,29 +196,31 @@ function SocialProfilePage() {
       {/* Posts Section */}
       <main className="flex-1 max-w-md mx-auto w-full px-2 py-4 space-y-4">
         <div className="bg-white rounded-xl p-4 shadow-sm border">
-          <h2 className="text-lg font-black text-navy mb-4">আপনার পোস্টসমূহ</h2>
+          <h2 className="text-lg font-black text-navy mb-4">
+            {isOwnProfile ? "আপনার পোস্টসমূহ" : `${profile?.display_name || "User"}-এর পোস্টসমূহ`}
+          </h2>
           
           {postsLoading ? (
             <div className="py-10 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
-          ) : myPosts.length === 0 ? (
+          ) : userPosts.length === 0 ? (
             <div className="py-12 text-center">
               <div className="h-16 w-16 mx-auto rounded-full bg-gray-50 flex items-center justify-center mb-3">
                 <ImageIcon className="h-8 w-8 text-gray-300" />
               </div>
-              <p className="text-sm font-bold text-gray-400">আপনি এখনো কোনো পোস্ট করেননি</p>
+              <p className="text-sm font-bold text-gray-400">কোনো পোস্ট খুঁজে পাওয়া যায়নি</p>
               <Link to="/social" className="mt-4 inline-block text-[#1877F2] font-black text-xs uppercase tracking-wider">ফিড এ যান</Link>
             </div>
           ) : (
             <div className="space-y-4">
-              {myPosts.map((post: any) => (
-                <PostCard key={post.id} post={post} />
+              {userPosts.map((post: any) => (
+                <PostCard key={post.id} post={post} currentUser={authUser} />
               ))}
             </div>
           )}
         </div>
       </main>
-
-      {/* MessengerNav is now in SocialLayout */}
+      
+      <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleProfileUpload} />
     </div>
   );
 }
