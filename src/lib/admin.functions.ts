@@ -2680,10 +2680,25 @@ export const adminSetTestApkRelease = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => z.object({ path: z.string(), version: z.string() }).parse(i))
   .handler(async ({ data: input }) => {
     const supabaseAdmin = await gate();
+    const pathParts = input.path.split("/");
+    const fileName = pathParts.pop();
+    const folder = pathParts.join("/");
+    if (!fileName) throw new Error("টেস্ট APK path সঠিক নয়");
+    const { data: uploaded, error: uploadedError } = await supabaseAdmin.storage
+      .from("app-releases")
+      .list(folder, { search: fileName, limit: 2 });
+    const uploadedFile = uploaded?.find((file) => file.name === fileName);
+    if (uploadedError || !uploadedFile || Number(uploadedFile.metadata?.size ?? 0) < 1_000_000) {
+      throw new Error("টেস্ট APK সম্পূর্ণ আপলোড হয়নি—আবার চেষ্টা করুন");
+    }
     const { error } = await supabaseAdmin
       .from("bonus_settings")
-      .update({ test_apk_url: input.path, test_apk_version: input.version } as any)
-      .eq("id", "default");
+      .upsert({
+        id: "default",
+        test_apk_url: input.path,
+        test_apk_version: input.version,
+        updated_at: new Date().toISOString(),
+      } as any);
     if (error) throw new Error(error.message);
     const { data: s } = await supabaseAdmin.storage.from("app-releases").createSignedUrl(input.path, 60 * 60 * 24 * 365);
     return { ok: true, path: input.path, version: input.version, downloadUrl: s?.signedUrl };
