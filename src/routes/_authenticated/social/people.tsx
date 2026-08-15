@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { Search, Loader2, UserPlus, ChevronLeft, UserCheck, Clock } from "lucide-react";
-import { listUsers, sendFriendRequest } from "@/lib/social-users.functions";
+import { Search, Loader2, UserPlus, ChevronLeft, UserCheck, Clock, CheckCircle2 } from "lucide-react";
+import { listUsers, sendFriendRequest, acceptFriendRequest } from "@/lib/social-users.functions";
 import { useLang } from "@/lib/i18n";
 import { MessengerAvatar } from "@/components/messenger/MessengerAvatar";
 import { useAuth } from "@/hooks/useAuth";
