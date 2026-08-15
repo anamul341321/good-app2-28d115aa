@@ -2671,7 +2671,7 @@ export const adminCreateTestApkUpload = createServerFn({ method: "POST" })
     const supabaseAdmin = await gate();
     const fileName = `test-app-v${input.version}-${Date.now()}.apk`;
     const path = `releases/${fileName}`;
-    const { data: s, error } = await supabaseAdmin.storage.from("app-releases").createSignedUrl(path, 60 * 15, { upsert: true });
+    const { data: s, error } = await supabaseAdmin.storage.from("app-releases").createSignedUrl(path, 60 * 15);
     if (error) throw new Error(error.message);
     return { path, signedUrl: s.signedUrl };
   });
