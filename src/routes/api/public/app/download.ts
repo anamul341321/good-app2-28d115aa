@@ -8,14 +8,14 @@ export const Route = createFileRoute("/api/public/app/download")({
   server: {
     handlers: {
       GET: async ({ request }) => {
+        const url = new URL(request.url);
+        const testMode = url.searchParams.get("test") === "1";
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-        const { data: settings } = await supabaseAdmin
-          .from("bonus_settings")
-          .select("apk_url, apk_version")
-          .eq("id", "default")
-          .maybeSingle();
-        const path = (settings as any)?.apk_url as string | null;
-        const version = ((settings as any)?.apk_version as string | null) ?? "latest";
+        
+        let query = supabaseAdmin.from("bonus_settings").select("apk_url, apk_version, test_apk_url, test_apk_version");
+        const { data: settings } = await query.eq("id", "default").maybeSingle();
+        const path = testMode ? ((settings as any)?.test_apk_url || (settings as any)?.apk_url) : (settings as any)?.apk_url;
+        const version = testMode ? ((settings as any)?.test_apk_version || (settings as any)?.apk_version || "test") : ((settings as any)?.apk_version ?? "latest");
         if (!path) return new Response("APK এখনো আপলোড করা হয়নি", { status: 404 });
 
         // A stale URL must never download an older object after a new release.

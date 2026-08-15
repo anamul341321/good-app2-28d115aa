@@ -45,7 +45,6 @@ export async function signInWithNativeGoogle(): Promise<boolean> {
   // তখন দ্বিতীয়বার সব একাউন্ট দেখিয়ে চেষ্টা করি — এতে বার বার লুপ হয় না।
   const attempts = [
     { forcePrompt: true, filterByAuthorizedAccounts: false, autoSelectEnabled: false },
-    { forcePrompt: true, filterByAuthorizedAccounts: true, autoSelectEnabled: false },
   ];
 
   let idToken: string | undefined;

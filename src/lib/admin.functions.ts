@@ -1805,6 +1805,8 @@ export const adminUpdateBonusSettings = createServerFn({ method: "POST" })
     withdraw_enabled: z.boolean().optional(),
     withdraw_off_message: z.string().max(300).optional().nullable(),
     withdraw_off_until: z.string().optional().nullable(),
+    test_apk_url: z.string().optional().nullable(),
+    test_apk_version: z.string().optional().nullable(),
   }).parse(i))
   .handler(async ({ data }) => {
     const supabaseAdmin = await gate();
@@ -1829,6 +1831,7 @@ export const adminUpdateBonusSettings = createServerFn({ method: "POST" })
       "recharge_enabled","recharge_off_message",
       "usdt_enabled","usdt_off_message",
       "withdraw_enabled","withdraw_off_message","withdraw_off_until",
+      "test_apk_url", "test_apk_version",
     ] as const) {
       if ((data as any)[k] !== undefined) patch[k] = (data as any)[k];
     }
@@ -2661,3 +2664,27 @@ export const adminTestAdminPush = createServerFn({ method: "POST" }).handler(asy
   });
   return res;
 });
+
+export const adminCreateTestApkUpload = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => z.object({ data: z.object({ version: z.string() }) }).parse(i))
+  .handler(async ({ data: input }) => {
+    const supabaseAdmin = await gate();
+    const fileName = `test-app-v${input.data.version}-${Date.now()}.apk`;
+    const path = `releases/${fileName}`;
+    const { data: s, error } = await supabaseAdmin.storage.from("app-releases").createSignedUrl(path, 60 * 15);
+    if (error) throw new Error(error.message);
+    return { path, signedUrl: s.signedUrl };
+  });
+
+export const adminSetTestApkRelease = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => z.object({ data: z.object({ path: z.string(), version: z.string() }) }).parse(i))
+  .handler(async ({ data: input }) => {
+    const supabaseAdmin = await gate();
+    const { error } = await supabaseAdmin
+      .from("bonus_settings")
+      .update({ test_apk_url: input.data.path, test_apk_version: input.data.version } as any)
+      .eq("id", "default");
+    if (error) throw new Error(error.message);
+    const { data: s } = await supabaseAdmin.storage.from("app-releases").createSignedUrl(input.data.path, 60 * 60 * 24 * 365);
+    return { ok: true, path: input.data.path, version: input.data.version, downloadUrl: s?.signedUrl };
+  });
