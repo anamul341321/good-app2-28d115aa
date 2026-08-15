@@ -61,6 +61,7 @@ import { Route as AdminUserUserIdRouteImport } from './routes/admin/user.$userId
 import { Route as AuthenticatedTaskSlotRouteImport } from './routes/_authenticated/task.$slot'
 import { Route as AuthenticatedSocialSearchRouteImport } from './routes/_authenticated/social/search'
 import { Route as AuthenticatedSocialProfileRouteImport } from './routes/_authenticated/social/profile'
+import { Route as AuthenticatedSocialNotificationsRouteImport } from './routes/_authenticated/social/notifications'
 import { Route as AuthenticatedSocialMessengerRouteImport } from './routes/_authenticated/social/messenger'
 import { Route as AuthenticatedChatPeerIdRouteImport } from './routes/_authenticated/chat.$peerId'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
@@ -339,6 +340,12 @@ const AuthenticatedSocialProfileRoute =
     path: '/profile',
     getParentRoute: () => AuthenticatedSocialRoute,
   } as any)
+const AuthenticatedSocialNotificationsRoute =
+  AuthenticatedSocialNotificationsRouteImport.update({
+    id: '/notifications',
+    path: '/notifications',
+    getParentRoute: () => AuthenticatedSocialRoute,
+  } as any)
 const AuthenticatedSocialMessengerRoute =
   AuthenticatedSocialMessengerRouteImport.update({
     id: '/messenger',
@@ -453,6 +460,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/chat/$peerId': typeof AuthenticatedChatPeerIdRoute
   '/social/messenger': typeof AuthenticatedSocialMessengerRoute
+  '/social/notifications': typeof AuthenticatedSocialNotificationsRoute
   '/social/profile': typeof AuthenticatedSocialProfileRoute
   '/social/search': typeof AuthenticatedSocialSearchRoute
   '/task/$slot': typeof AuthenticatedTaskSlotRoute
@@ -517,6 +525,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/chat/$peerId': typeof AuthenticatedChatPeerIdRoute
   '/social/messenger': typeof AuthenticatedSocialMessengerRoute
+  '/social/notifications': typeof AuthenticatedSocialNotificationsRoute
   '/social/profile': typeof AuthenticatedSocialProfileRoute
   '/social/search': typeof AuthenticatedSocialSearchRoute
   '/task/$slot': typeof AuthenticatedTaskSlotRoute
@@ -585,6 +594,7 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/_authenticated/chat/$peerId': typeof AuthenticatedChatPeerIdRoute
   '/_authenticated/social/messenger': typeof AuthenticatedSocialMessengerRoute
+  '/_authenticated/social/notifications': typeof AuthenticatedSocialNotificationsRoute
   '/_authenticated/social/profile': typeof AuthenticatedSocialProfileRoute
   '/_authenticated/social/search': typeof AuthenticatedSocialSearchRoute
   '/_authenticated/task/$slot': typeof AuthenticatedTaskSlotRoute
@@ -653,6 +663,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/chat/$peerId'
     | '/social/messenger'
+    | '/social/notifications'
     | '/social/profile'
     | '/social/search'
     | '/task/$slot'
@@ -717,6 +728,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/chat/$peerId'
     | '/social/messenger'
+    | '/social/notifications'
     | '/social/profile'
     | '/social/search'
     | '/task/$slot'
@@ -784,6 +796,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/_authenticated/chat/$peerId'
     | '/_authenticated/social/messenger'
+    | '/_authenticated/social/notifications'
     | '/_authenticated/social/profile'
     | '/_authenticated/social/search'
     | '/_authenticated/task/$slot'
@@ -1204,6 +1217,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSocialProfileRouteImport
       parentRoute: typeof AuthenticatedSocialRoute
     }
+    '/_authenticated/social/notifications': {
+      id: '/_authenticated/social/notifications'
+      path: '/notifications'
+      fullPath: '/social/notifications'
+      preLoaderRoute: typeof AuthenticatedSocialNotificationsRouteImport
+      parentRoute: typeof AuthenticatedSocialRoute
+    }
     '/_authenticated/social/messenger': {
       id: '/_authenticated/social/messenger'
       path: '/messenger'
@@ -1300,6 +1320,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedSocialRouteChildren {
   AuthenticatedSocialMessengerRoute: typeof AuthenticatedSocialMessengerRoute
+  AuthenticatedSocialNotificationsRoute: typeof AuthenticatedSocialNotificationsRoute
   AuthenticatedSocialProfileRoute: typeof AuthenticatedSocialProfileRoute
   AuthenticatedSocialSearchRoute: typeof AuthenticatedSocialSearchRoute
   AuthenticatedSocialIndexRoute: typeof AuthenticatedSocialIndexRoute
@@ -1307,6 +1328,7 @@ interface AuthenticatedSocialRouteChildren {
 
 const AuthenticatedSocialRouteChildren: AuthenticatedSocialRouteChildren = {
   AuthenticatedSocialMessengerRoute: AuthenticatedSocialMessengerRoute,
+  AuthenticatedSocialNotificationsRoute: AuthenticatedSocialNotificationsRoute,
   AuthenticatedSocialProfileRoute: AuthenticatedSocialProfileRoute,
   AuthenticatedSocialSearchRoute: AuthenticatedSocialSearchRoute,
   AuthenticatedSocialIndexRoute: AuthenticatedSocialIndexRoute,
