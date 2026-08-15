@@ -37,7 +37,7 @@ function dhakaInputToUtc(local: string): string | null {
 function BonusSettings() {
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["admin-bonus-settings"],
-    queryFn: () => adminGetBonusSettings(),
+    queryFn: () => adminGetBonusSettings() as Promise<any>,
   });
 
   const [fv, setFv] = useState("");
