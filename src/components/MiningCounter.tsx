@@ -224,7 +224,7 @@ export function MiningCounter({
               {bonusPart.toFixed(2)}<span className="text-[9px] text-white/60">৳</span>
             </p>
             <p className="text-[7.5px] text-white/60 leading-tight mt-0.5">
-              বোনাস + রেফার বোনাস · যেকোনো সময়
+              বোনাস + রেফারেল বোনাস + গিফট · যেকোনো সময়
             </p>
           </div>
         </div>

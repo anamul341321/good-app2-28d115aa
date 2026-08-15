@@ -196,7 +196,7 @@ function WithdrawPage() {
             </div>
           </div>
           <p className="text-[10px] text-muted-foreground leading-snug">
-            বোনাসের টাকা যেকোনো সময় withdraw করা যাবে। মাইনিং ব্যালেন্স শুধু প্রতি মাসের ১, ২, ৩ তারিখে withdraw করা যায়।
+            মেইন ব্যালেন্স (বোনাস ও রেফারেল বোনাস) যেকোনো সময় withdraw করা যাবে। মাইনিং ব্যালেন্স শুধু প্রতি মাসের ১, ২, ৩ তারিখে withdraw করা যায়।
           </p>
         </div>
       )}
