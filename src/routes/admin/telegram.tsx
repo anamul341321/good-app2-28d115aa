@@ -40,7 +40,7 @@ function TelegramAdmin() {
 
       <div className="flex gap-2 overflow-x-auto -mx-4 px-4 pb-1 scrollbar-none">
         {([
-          ["settings", "সেটিংস"], ["aikeys", "AI কী"], ["started", "বট Start (KYC)"], ["broadcast", "ব্রডকাস্ট"], ["faq", "উত্তর/নিয়ম"], ["voices", "ভয়েস"], ["videos", "ভিডিও লিংক"], ["lookup", "UID লুকআপ"],
+          ["settings", "সেটিংস"], ["aikeys", "AI কী"], ["started", "বট Start (KYC)"], ["broadcast", "ব্রডকাস্ট"], ["campaigns", "ব্যাকগ্রাউন্ড ব্রডকাস্ট"], ["faq", "উত্তর/নিয়ম"], ["voices", "ভয়েস"], ["videos", "ভিডিও লিংক"], ["lookup", "UID লুকআপ"],
           ["blocked", "ব্লক লিস্ট"], ["bans", "Ban requests"], ["log", "Activity"],
         ] as [Tab, string][]).map(([k, label]) => (
           <button key={k} onClick={() => setTab(k)}
