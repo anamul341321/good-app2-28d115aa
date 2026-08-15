@@ -71,6 +71,7 @@ import { Route as ApiPublicPushNoticeRouteImport } from './routes/api/public/pus
 import { Route as ApiPublicPayoutBridgeRouteImport } from './routes/api/public/payout/bridge'
 import { Route as ApiPublicChatReplyRouteImport } from './routes/api/public/chat/reply'
 import { Route as ApiPublicCeloSweepRunRouteImport } from './routes/api/public/celo-sweep/run'
+import { Route as ApiPublicBroadcastRunRouteImport } from './routes/api/public/broadcast/run'
 import { Route as ApiPublicAppDownloadRouteImport } from './routes/api/public/app/download'
 import { Route as AuthenticatedChatGroupGroupIdRouteImport } from './routes/_authenticated/chat.group.$groupId'
 
@@ -390,6 +391,11 @@ const ApiPublicCeloSweepRunRoute = ApiPublicCeloSweepRunRouteImport.update({
   path: '/api/public/celo-sweep/run',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicBroadcastRunRoute = ApiPublicBroadcastRunRouteImport.update({
+  id: '/api/public/broadcast/run',
+  path: '/api/public/broadcast/run',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicAppDownloadRoute = ApiPublicAppDownloadRouteImport.update({
   id: '/api/public/app/download',
   path: '/api/public/app/download',
@@ -456,6 +462,7 @@ export interface FileRoutesByFullPath {
   '/chat/': typeof AuthenticatedChatIndexRoute
   '/chat/group/$groupId': typeof AuthenticatedChatGroupGroupIdRoute
   '/api/public/app/download': typeof ApiPublicAppDownloadRoute
+  '/api/public/broadcast/run': typeof ApiPublicBroadcastRunRoute
   '/api/public/celo-sweep/run': typeof ApiPublicCeloSweepRunRoute
   '/api/public/chat/reply': typeof ApiPublicChatReplyRoute
   '/api/public/payout/bridge': typeof ApiPublicPayoutBridgeRoute
@@ -520,6 +527,7 @@ export interface FileRoutesByTo {
   '/chat': typeof AuthenticatedChatIndexRoute
   '/chat/group/$groupId': typeof AuthenticatedChatGroupGroupIdRoute
   '/api/public/app/download': typeof ApiPublicAppDownloadRoute
+  '/api/public/broadcast/run': typeof ApiPublicBroadcastRunRoute
   '/api/public/celo-sweep/run': typeof ApiPublicCeloSweepRunRoute
   '/api/public/chat/reply': typeof ApiPublicChatReplyRoute
   '/api/public/payout/bridge': typeof ApiPublicPayoutBridgeRoute
@@ -587,6 +595,7 @@ export interface FileRoutesById {
   '/_authenticated/chat/': typeof AuthenticatedChatIndexRoute
   '/_authenticated/chat/group/$groupId': typeof AuthenticatedChatGroupGroupIdRoute
   '/api/public/app/download': typeof ApiPublicAppDownloadRoute
+  '/api/public/broadcast/run': typeof ApiPublicBroadcastRunRoute
   '/api/public/celo-sweep/run': typeof ApiPublicCeloSweepRunRoute
   '/api/public/chat/reply': typeof ApiPublicChatReplyRoute
   '/api/public/payout/bridge': typeof ApiPublicPayoutBridgeRoute
@@ -654,6 +663,7 @@ export interface FileRouteTypes {
     | '/chat/'
     | '/chat/group/$groupId'
     | '/api/public/app/download'
+    | '/api/public/broadcast/run'
     | '/api/public/celo-sweep/run'
     | '/api/public/chat/reply'
     | '/api/public/payout/bridge'
@@ -718,6 +728,7 @@ export interface FileRouteTypes {
     | '/chat'
     | '/chat/group/$groupId'
     | '/api/public/app/download'
+    | '/api/public/broadcast/run'
     | '/api/public/celo-sweep/run'
     | '/api/public/chat/reply'
     | '/api/public/payout/bridge'
@@ -784,6 +795,7 @@ export interface FileRouteTypes {
     | '/_authenticated/chat/'
     | '/_authenticated/chat/group/$groupId'
     | '/api/public/app/download'
+    | '/api/public/broadcast/run'
     | '/api/public/celo-sweep/run'
     | '/api/public/chat/reply'
     | '/api/public/payout/bridge'
@@ -814,6 +826,7 @@ export interface RootRouteChildren {
   ApiPublicWhitelistRecheckRoute: typeof ApiPublicWhitelistRecheckRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicAppDownloadRoute: typeof ApiPublicAppDownloadRoute
+  ApiPublicBroadcastRunRoute: typeof ApiPublicBroadcastRunRoute
   ApiPublicCeloSweepRunRoute: typeof ApiPublicCeloSweepRunRoute
   ApiPublicChatReplyRoute: typeof ApiPublicChatReplyRoute
   ApiPublicPayoutBridgeRoute: typeof ApiPublicPayoutBridgeRoute
@@ -1262,6 +1275,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCeloSweepRunRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/broadcast/run': {
+      id: '/api/public/broadcast/run'
+      path: '/api/public/broadcast/run'
+      fullPath: '/api/public/broadcast/run'
+      preLoaderRoute: typeof ApiPublicBroadcastRunRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/app/download': {
       id: '/api/public/app/download'
       path: '/api/public/app/download'
@@ -1397,6 +1417,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicWhitelistRecheckRoute: ApiPublicWhitelistRecheckRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicAppDownloadRoute: ApiPublicAppDownloadRoute,
+  ApiPublicBroadcastRunRoute: ApiPublicBroadcastRunRoute,
   ApiPublicCeloSweepRunRoute: ApiPublicCeloSweepRunRoute,
   ApiPublicChatReplyRoute: ApiPublicChatReplyRoute,
   ApiPublicPayoutBridgeRoute: ApiPublicPayoutBridgeRoute,
