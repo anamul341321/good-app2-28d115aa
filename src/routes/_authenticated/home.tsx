@@ -153,12 +153,19 @@ function HomePage() {
 
   return (
     <NowProvider>
-    <div className="space-y-4 pt-1 pb-6">
-
+    <div className="space-y-4 pt-1 pb-6 relative">
       <PageVoice pageId="home" steps={["home.welcome","home.mining","home.claim","home.main","home.witness","home.tap.slot","home.open.photo","reverify.button"]} />
+      
+      {/* Dynamic Background Effects */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-[-1] opacity-20">
+        <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[40%] rounded-full bg-cyan-500 blur-[120px]" />
+        <div className="absolute bottom-[20%] left-[-10%] w-[40%] h-[30%] rounded-full bg-purple-500 blur-[100px]" />
+      </div>
+
       <AnnouncementTicker />
 
       <div className="grid grid-cols-2 gap-4">
+
         {/* Mining Info Mini */}
         <div data-tour="mining" data-voice="home.mining" className="premium-panel rounded-2xl p-4 flex flex-col justify-between h-32 border-l-4 border-l-emerald shadow-sm">
           <div>
