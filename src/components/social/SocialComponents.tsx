@@ -52,7 +52,7 @@ export function PostComposer({ onClose, author }: { onClose: () => void, author:
 
     setIsUploading(true);
     try {
-      const urls = [];
+      const urls: string[] = [];
       for (const file of Array.from(files)) {
         const url = await uploadMedia(file);
         urls.push(url);
