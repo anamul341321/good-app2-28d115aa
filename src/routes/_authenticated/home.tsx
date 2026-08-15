@@ -257,6 +257,8 @@ function HomePage() {
         title={t("ভেরিফিকেশন সেন্টার", "Verification Center")}
         subtitle={t("আপনার পরিচয় ও ১০ জন সাক্ষী", "Your identity & 10 witnesses")}
       >
+      <VerifyProgressLines firstVerify={firstVerifyDone} reverify={reverifyDone} target={10} />
+
       {/* Premium hero submit button — batch-submits all pending keys, or opens next empty slot. */}
       {(pendingSubmits > 0 || firstEmpty || allSubmitted) && (
         <button
@@ -269,13 +271,14 @@ function HomePage() {
             addSlots.mutate();
           }}
           disabled={batchMut.isPending || (!firstEmpty && addSlots.isPending)}
-          className="submit-hero w-full rounded-3xl px-5 py-5 text-white font-black btn-press flex items-center gap-3 disabled:opacity-70"
+          className="submit-hero w-full rounded-2xl px-5 py-4 text-white font-black btn-press flex items-center gap-3 disabled:opacity-70 shadow-[0_12px_24px_-8px_rgba(59,130,246,0.5)]"
         >
-          <span className="shrink-0 w-14 h-14 rounded-2xl bg-white/25 backdrop-blur flex items-center justify-center text-3xl border border-white/40 shadow-inner">
+          <span className="shrink-0 w-12 h-12 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center text-2xl border border-white/30">
             {(batchMut.isPending || (addSlots.isPending && !firstEmpty))
-              ? <Loader2 className="w-7 h-7 animate-spin" />
+              ? <Loader2 className="w-6 h-6 animate-spin" />
               : <span className="rocket">{pendingSubmits > 0 ? "📦" : "🚀"}</span>}
           </span>
+
           <span className="flex-1 text-left leading-tight">
             <span className="block text-[10px] uppercase tracking-[0.2em] text-white/85 font-bold">
               {pendingSubmits > 0 ? t("ব্যাচ জমা · হোয়াইটলিস্ট চেক", "Batch submit · whitelist check") : (firstEmpty ? t("এক ট্যাপে সাক্ষী যোগ", "Add witness in one tap") : t("নতুন ব্যাচ আনলক", "Unlock a new batch"))}
