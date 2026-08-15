@@ -7,7 +7,7 @@ export const Route = createFileRoute("/_authenticated/social")({
 
 function SocialLayout() {
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100 social-root">
       <Outlet />
       <MessengerNav />
     </div>
