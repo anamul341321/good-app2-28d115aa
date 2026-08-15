@@ -1,0 +1,101 @@
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { ChevronLeft, Bell, Heart, MessageSquare, Plus, Check } from "lucide-react";
+import { listNotifications, markNotificationRead } from "@/lib/news-feed.functions";
+import { useLang } from "@/lib/i18n";
+import { MessengerAvatar } from "@/components/messenger/MessengerAvatar";
+import { format } from "date-fns";
+
+export const Route = createFileRoute("/_authenticated/social/notifications")({
+  component: SocialNotificationsPage,
+  head: () => ({
+    meta: [{ title: "Good-App Social · নোটিফিকেশন" }],
+  }),
+});
+
+function SocialNotificationsPage() {
+  const { t } = useLang();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["social-notifications"],
+    queryFn: () => listNotifications(),
+  });
+
+  const markReadMut = useMutation({
+    mutationFn: (id: string) => markNotificationRead({ data: { id } }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["social-notifications"] }),
+  });
+
+  const notifications = data?.notifications || [];
+
+  const handleNotificationClick = (notif: any) => {
+    if (!notif.read_at) markReadMut.mutate(notif.id);
+    
+    const metadata = notif.metadata as any;
+    if (metadata?.post_id) {
+      // For now navigate to feed, in future could be specific post detail
+      navigate({ to: "/social" as any });
+    }
+  };
+
+  return (
+    <div className="flex flex-col min-h-screen bg-white pb-20 pt-[env(safe-area-inset-top)]">
+      <header className="sticky top-0 z-40 bg-white border-b px-4 py-3 flex items-center gap-3">
+        <Link to="/social" className="btn-press">
+          <ChevronLeft className="h-6 w-6 text-primary" />
+        </Link>
+        <h1 className="text-xl font-black text-navy">{t("নোটিফিকেশন", "Notifications")}</h1>
+      </header>
+
+      <main className="flex-1 max-w-md mx-auto w-full">
+        {isLoading ? (
+          <div className="flex justify-center py-12 text-primary animate-pulse">
+            <Bell className="w-8 h-8" />
+          </div>
+        ) : notifications.length === 0 ? (
+          <div className="text-center py-20">
+            <div className="h-20 w-20 mx-auto rounded-full bg-gray-50 flex items-center justify-center mb-4">
+              <Bell className="h-10 w-10 text-gray-200" />
+            </div>
+            <p className="text-gray-500 font-bold">{t("কোনো নোটিফিকেশন নেই", "No notifications yet")}</p>
+          </div>
+        ) : (
+          <div className="divide-y">
+            {notifications.map((n: any) => (
+              <button 
+                key={n.id} 
+                onClick={() => handleNotificationClick(n)}
+                className={`w-full flex items-start gap-3 p-4 text-left transition-colors ${!n.read_at ? "bg-blue-50/50" : "hover:bg-gray-50"}`}
+              >
+                <div className="relative">
+                  <div className="h-12 w-12 rounded-full bg-gray-100 flex items-center justify-center">
+                    {n.metadata?.type === 'post_reaction' ? (
+                      <Heart className="w-6 h-6 text-rose-500 fill-current" />
+                    ) : n.metadata?.type === 'post_comment' ? (
+                      <MessageSquare className="w-6 h-6 text-blue-500 fill-current" />
+                    ) : (
+                      <Bell className="w-6 h-6 text-gray-400" />
+                    )}
+                  </div>
+                  {!n.read_at && (
+                    <div className="absolute -top-1 -right-1 h-4 w-4 bg-blue-500 rounded-full border-2 border-white" />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className={`text-[14px] leading-snug ${!n.read_at ? "font-bold text-navy" : "text-gray-700"}`}>
+                    {n.title}: {n.body}
+                  </p>
+                  <p className="text-[11px] text-gray-400 mt-1 font-medium">
+                    {format(new Date(n.created_at), "MMM d, h:mm a")}
+                  </p>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
