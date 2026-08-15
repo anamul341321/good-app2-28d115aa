@@ -186,15 +186,9 @@ export const searchUsers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => z.object({ query: z.string() }).parse(i))
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
-    const { data: users, error } = await supabase
-      .from("profiles")
-      .select("id, display_name, avatar_url, uid_seq")
-      .or(`display_name.ilike.%${data.query}%,uid_seq.eq.${data.query}`)
-      .limit(20);
-
-    if (error) throw new Error(error.message);
-    return { users: users ?? [] };
+    // Redirect search to the more robust listUsers function to avoid duplication
+    const { listUsers } = await import("./social-users.functions");
+    return listUsers({ data: { page: 1, limit: 20, query: data.query }, context });
   });
 
 export const listNotifications = createServerFn({ method: "GET" })

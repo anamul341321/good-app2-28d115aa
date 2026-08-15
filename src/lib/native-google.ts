@@ -41,8 +41,8 @@ export async function signInWithNativeGoogle(): Promise<boolean> {
     google: { webClientId: WEB_CLIENT_ID, mode: "online" },
   });
 
-  // Credential Manager কখনো "authorized accounts only" মোডে খালি ফেরত দেয়,
-  // তখন দ্বিতীয়বার সব একাউন্ট দেখিয়ে চেষ্টা করি — এতে বার বার লুপ হয় না।
+  // Always force prompt and show all accounts to prevent looping with
+  // previously cached or partially authorized accounts.
   const attempts = [
     { forcePrompt: true, filterByAuthorizedAccounts: false, autoSelectEnabled: false },
   ];

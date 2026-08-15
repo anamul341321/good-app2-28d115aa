@@ -827,7 +827,8 @@ function TaskCell({ task, onStart, onReverify, onOpenPhoto }: { task: any; onSta
   // Logic for re-verification wording
   let label = isDone ? "✅ সম্পূর্ণ" : "শুরু করুন";
   if (isDone && (task as any).reverify_required) {
-    label = "পরবর্তী Re-verify: ৪ দিন পর";
+    const remain = (task as any).reverify_due_at ? (new Date((task as any).reverify_due_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24) : 0;
+    label = remain > 0 ? `পরবর্তী: ${Math.ceil(remain)} দিন পর` : "রি-ভেরিফাই করুন";
   }
 
   const bg = isDone
