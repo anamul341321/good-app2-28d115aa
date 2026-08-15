@@ -214,23 +214,28 @@ function HomePage() {
 
 
       {/* Messenger Entry Button */}
-      <div className="px-4 py-1" data-tour="social-entry">
-        <Link 
-          to="/social/messenger" 
-          className="w-full flex items-center gap-3 bg-gradient-to-r from-[#1877F2] to-[#3B82F6] rounded-2xl p-4 text-white shadow-lg active:scale-[0.98] transition-all hover:brightness-110 border-2 border-white/20"
-        >
-          <div className="h-12 w-12 rounded-xl bg-white/25 flex items-center justify-center border border-white/30 backdrop-blur-sm shadow-inner">
-            <MessageSquare className="w-7 h-7" />
+      <Link to="/social/messenger"
+        className="block rounded-3xl p-5 relative overflow-hidden btn-press border border-white/10 shadow-[0_20px_45px_-20px_rgba(59,130,246,0.5)]"
+        style={{ background: "linear-gradient(135deg, #0088cc 0%, #3b82f6 50%, #8b5cf6 100%)" }}>
+        <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/10 blur-3xl" />
+        <div className="relative flex items-center gap-4 text-white">
+          <div className="w-16 h-16 p-4 rounded-2xl bg-white/20 backdrop-blur border border-white/30 text-3xl shrink-0 flex items-center justify-center">
+            <MessageCircle className="w-8 h-8" />
           </div>
-          <div className="flex-1 text-left">
-            <p className="text-lg font-black leading-tight tracking-tight uppercase">Good-App Messenger</p>
-            <p className="text-[10px] opacity-90 font-bold uppercase tracking-wider">{t("চ্যাট ও কল করুন", "Chat & Call Now")}</p>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <p className="text-[11px] uppercase tracking-[0.25em] font-black opacity-90">Good-App Messenger</p>
+              <span className="bg-white/20 px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider">PRO</span>
+            </div>
+            <p className="text-xl font-black leading-tight drop-shadow-sm mt-0.5">{t("মেসেঞ্জার ও কলিং", "Messenger & Calling")}</p>
+            <p className="text-xs opacity-90 font-medium mt-1 leading-relaxed">
+              {t("চ্যাট · অডিও/ভিডিও কল · স্ক্রিন শেয়ারিং", "Chat · Audio/Video Call · Screen Share")}
+            </p>
           </div>
-          <div className="h-8 w-8 rounded-full bg-white/20 flex items-center justify-center">
-            <Plus className="w-5 h-5" />
-          </div>
-        </Link>
-      </div>
+          <ChevronRight className="w-6 h-6 opacity-80" />
+        </div>
+      </Link>
+
 
 
       <DashSection
