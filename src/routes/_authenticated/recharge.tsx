@@ -41,7 +41,9 @@ function RechargePage() {
   const { data: dash, refetch } = useQuery({ queryKey: ["dashboard"], queryFn: () => getDashboard() });
   const { data: history, refetch: refetchHist } = useQuery({ queryKey: ["my-recharges"], queryFn: () => getMyRecharges() });
 
+  const [mode, setMode] = useState<"recharge" | "card">("recharge");
   const [mobile, setMobile] = useState("");
+
   const [operator, setOperator] = useState<string>("");
   const [connType, setConnType] = useState<"prepaid" | "postpaid">("prepaid");
   const [amount, setAmount] = useState("");
