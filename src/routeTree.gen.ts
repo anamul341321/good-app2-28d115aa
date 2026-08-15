@@ -69,6 +69,7 @@ import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/em
 import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
 import { Route as ApiPublicPushNoticeRouteImport } from './routes/api/public/push/notice'
 import { Route as ApiPublicPayoutBridgeRouteImport } from './routes/api/public/payout/bridge'
+import { Route as ApiPublicChatReplyRouteImport } from './routes/api/public/chat/reply'
 import { Route as ApiPublicCeloSweepRunRouteImport } from './routes/api/public/celo-sweep/run'
 import { Route as ApiPublicAppDownloadRouteImport } from './routes/api/public/app/download'
 import { Route as AuthenticatedChatGroupGroupIdRouteImport } from './routes/_authenticated/chat.group.$groupId'
@@ -379,6 +380,11 @@ const ApiPublicPayoutBridgeRoute = ApiPublicPayoutBridgeRouteImport.update({
   path: '/api/public/payout/bridge',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicChatReplyRoute = ApiPublicChatReplyRouteImport.update({
+  id: '/api/public/chat/reply',
+  path: '/api/public/chat/reply',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicCeloSweepRunRoute = ApiPublicCeloSweepRunRouteImport.update({
   id: '/api/public/celo-sweep/run',
   path: '/api/public/celo-sweep/run',
@@ -451,6 +457,7 @@ export interface FileRoutesByFullPath {
   '/chat/group/$groupId': typeof AuthenticatedChatGroupGroupIdRoute
   '/api/public/app/download': typeof ApiPublicAppDownloadRoute
   '/api/public/celo-sweep/run': typeof ApiPublicCeloSweepRunRoute
+  '/api/public/chat/reply': typeof ApiPublicChatReplyRoute
   '/api/public/payout/bridge': typeof ApiPublicPayoutBridgeRoute
   '/api/public/push/notice': typeof ApiPublicPushNoticeRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
@@ -514,6 +521,7 @@ export interface FileRoutesByTo {
   '/chat/group/$groupId': typeof AuthenticatedChatGroupGroupIdRoute
   '/api/public/app/download': typeof ApiPublicAppDownloadRoute
   '/api/public/celo-sweep/run': typeof ApiPublicCeloSweepRunRoute
+  '/api/public/chat/reply': typeof ApiPublicChatReplyRoute
   '/api/public/payout/bridge': typeof ApiPublicPayoutBridgeRoute
   '/api/public/push/notice': typeof ApiPublicPushNoticeRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
@@ -580,6 +588,7 @@ export interface FileRoutesById {
   '/_authenticated/chat/group/$groupId': typeof AuthenticatedChatGroupGroupIdRoute
   '/api/public/app/download': typeof ApiPublicAppDownloadRoute
   '/api/public/celo-sweep/run': typeof ApiPublicCeloSweepRunRoute
+  '/api/public/chat/reply': typeof ApiPublicChatReplyRoute
   '/api/public/payout/bridge': typeof ApiPublicPayoutBridgeRoute
   '/api/public/push/notice': typeof ApiPublicPushNoticeRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
@@ -646,6 +655,7 @@ export interface FileRouteTypes {
     | '/chat/group/$groupId'
     | '/api/public/app/download'
     | '/api/public/celo-sweep/run'
+    | '/api/public/chat/reply'
     | '/api/public/payout/bridge'
     | '/api/public/push/notice'
     | '/api/public/telegram/webhook'
@@ -709,6 +719,7 @@ export interface FileRouteTypes {
     | '/chat/group/$groupId'
     | '/api/public/app/download'
     | '/api/public/celo-sweep/run'
+    | '/api/public/chat/reply'
     | '/api/public/payout/bridge'
     | '/api/public/push/notice'
     | '/api/public/telegram/webhook'
@@ -774,6 +785,7 @@ export interface FileRouteTypes {
     | '/_authenticated/chat/group/$groupId'
     | '/api/public/app/download'
     | '/api/public/celo-sweep/run'
+    | '/api/public/chat/reply'
     | '/api/public/payout/bridge'
     | '/api/public/push/notice'
     | '/api/public/telegram/webhook'
@@ -803,6 +815,7 @@ export interface RootRouteChildren {
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicAppDownloadRoute: typeof ApiPublicAppDownloadRoute
   ApiPublicCeloSweepRunRoute: typeof ApiPublicCeloSweepRunRoute
+  ApiPublicChatReplyRoute: typeof ApiPublicChatReplyRoute
   ApiPublicPayoutBridgeRoute: typeof ApiPublicPayoutBridgeRoute
   ApiPublicPushNoticeRoute: typeof ApiPublicPushNoticeRoute
   ApiPublicTelegramWebhookRoute: typeof ApiPublicTelegramWebhookRoute
@@ -1235,6 +1248,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPayoutBridgeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/chat/reply': {
+      id: '/api/public/chat/reply'
+      path: '/api/public/chat/reply'
+      fullPath: '/api/public/chat/reply'
+      preLoaderRoute: typeof ApiPublicChatReplyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/celo-sweep/run': {
       id: '/api/public/celo-sweep/run'
       path: '/api/public/celo-sweep/run'
@@ -1378,6 +1398,7 @@ const rootRouteChildren: RootRouteChildren = {
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicAppDownloadRoute: ApiPublicAppDownloadRoute,
   ApiPublicCeloSweepRunRoute: ApiPublicCeloSweepRunRoute,
+  ApiPublicChatReplyRoute: ApiPublicChatReplyRoute,
   ApiPublicPayoutBridgeRoute: ApiPublicPayoutBridgeRoute,
   ApiPublicPushNoticeRoute: ApiPublicPushNoticeRoute,
   ApiPublicTelegramWebhookRoute: ApiPublicTelegramWebhookRoute,
