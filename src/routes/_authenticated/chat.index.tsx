@@ -1,8 +1,8 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Search, Edit, UserCircle } from "lucide-react";
+import { Search, Edit, UserCircle, ChevronLeft } from "lucide-react";
 import { createGroup, listChats } from "@/lib/chat.functions";
 import { listFriends } from "@/lib/friends.functions";
 import { usePresence } from "@/lib/presence";
@@ -79,15 +79,15 @@ export function ChatListPage() {
   return (
     <div className="flex flex-col min-h-screen bg-background pb-20">
       {/* Messenger Header */}
-      <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md px-4 py-3 flex flex-col gap-3">
+      <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md px-4 py-3 flex flex-col gap-3 pt-[env(safe-area-inset-top)]">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <button 
-              onClick={() => navigate({ to: "/profile" as any })}
-              className="btn-press"
+            <Link 
+              to="/social"
+              className="btn-press h-9 w-9 flex items-center justify-center rounded-full hover:bg-surface-2 transition-colors"
             >
-              <UserCircle className="h-8 w-8 text-muted-foreground" />
-            </button>
+              <ChevronLeft className="h-6 w-6 text-primary" />
+            </Link>
             <h1 className="text-2xl font-black text-foreground tracking-tight">Chats</h1>
           </div>
           <div className="flex items-center gap-2">

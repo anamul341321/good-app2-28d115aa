@@ -172,6 +172,8 @@ function AuthedLayout() {
 
   if (appStatus?.maintenance) return <MaintenanceScreen message={appStatus.message} />;
 
+  const isSocialRoute = router.state.location.pathname.startsWith("/social");
+
   return (
     <CallProvider>
     <div className="min-h-screen pb-24">
@@ -181,8 +183,8 @@ function AuthedLayout() {
         <ServerBackModal />
       )}
 
-
-      <header className="sticky top-0 z-30 glass pt-[env(safe-area-inset-top)]">
+      {!isSocialRoute && (
+        <header className="sticky top-0 z-30 glass pt-[env(safe-area-inset-top)]">
         <div className="max-w-md mx-auto px-3 pt-4 pb-3 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2.5">
             <div data-tour="profile"><ProfileButton /></div>
@@ -236,11 +238,13 @@ function AuthedLayout() {
 
         </div>
       </header>
+      )}
 
-      <main className="max-w-md mx-auto px-4 pt-4">
+      <main className={isSocialRoute ? "" : "max-w-md mx-auto px-4 pt-4"}>
         <Outlet />
       </main>
 
+      {!isSocialRoute && (
       <nav className="fixed bottom-0 inset-x-0 z-30 glass border-t border-violet/20">
         <div className="max-w-md mx-auto px-1.5 py-2 grid grid-cols-6 gap-0.5">
           <NavItem to="/home" icon={<Home className="w-5 h-5" />} label={t("হোম", "Home")} tint="cyan" voice="home.welcome" />
@@ -252,6 +256,7 @@ function AuthedLayout() {
 
         </div>
       </nav>
+      )}
 
       <GuidedTour />
 

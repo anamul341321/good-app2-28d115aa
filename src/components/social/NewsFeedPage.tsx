@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Search, Plus, Bell, Image as ImageIcon, Share2, MoreHorizontal, Heart, Smile, MessageSquare, Video, Globe, Users, Clock, Camera, Home, Menu as MenuIcon } from "lucide-react";
+import { Search, Plus, Bell, Image as ImageIcon, Share2, MoreHorizontal, Heart, Smile, MessageSquare, Video, Globe, Users, Clock, Camera, Home, Menu as MenuIcon, ChevronLeft } from "lucide-react";
 import { listPosts, createPost, reactToPost } from "@/lib/news-feed.functions";
 import { useLang } from "@/lib/i18n";
 import { toast } from "sonner";
@@ -29,31 +29,49 @@ export function NewsFeedPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-200 pb-20">
-      {/* Top Header - Facebook Lite Style */}
-      <header className="sticky top-0 z-40 bg-white border-b shadow-sm">
-        <div className="max-w-md mx-auto px-4 py-2 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link to="/home" className="h-9 w-9 flex items-center justify-center rounded-full bg-gray-100 btn-press text-gray-600">
-              <Home className="h-5 w-5" />
+      {/* Top Header - Facebook Messenger Style */}
+      <header className="sticky top-0 z-40 bg-white border-b shadow-sm pt-[env(safe-area-inset-top)]">
+        <div className="max-w-md mx-auto px-4 py-2 flex flex-col gap-2">
+          {/* Top Row: Back to Dashboard & Logo */}
+          <div className="flex items-center justify-between">
+            <Link 
+              to="/home" 
+              className="flex items-center gap-1.5 text-[#1877F2] font-black text-sm btn-press"
+            >
+              <ChevronLeft className="h-5 w-5" />
+              <span>Dashboard</span>
             </Link>
-            <h1 className="text-2xl font-black text-[#1877F2] tracking-tighter">social</h1>
+            
+            <h1 className="text-xl font-black text-[#1877F2] tracking-tighter">Good-App Social</h1>
+            
+            <div className="w-10" /> {/* Spacer */}
           </div>
-          <div className="flex items-center gap-1">
-            <button className="h-9 w-9 flex items-center justify-center rounded-full bg-gray-100 btn-press">
-              <Search className="h-5 w-5 text-gray-600" />
-            </button>
-            <button 
-              onClick={() => navigate({ to: "/social/messenger" as any })}
-              className="h-9 w-9 flex items-center justify-center rounded-full bg-gray-100 btn-press"
-            >
-              <MessageSquare className="h-5 w-5 text-gray-600" />
-            </button>
-            <button 
-              onClick={() => navigate({ to: "/social/profile" as any })}
-              className="h-9 w-9 flex items-center justify-center rounded-full bg-gray-100 btn-press overflow-hidden"
-            >
-              <Users className="h-5 w-5 text-gray-600" />
-            </button>
+
+          {/* Action Row */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <MessengerAvatar name="Me" size="sm" />
+              <h2 className="text-2xl font-black text-navy tracking-tight">{t("ফিড", "Feed")}</h2>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <button className="h-9 w-9 flex items-center justify-center rounded-full bg-gray-100 btn-press text-gray-600">
+                <Search className="h-5 w-5" />
+              </button>
+              <button 
+                onClick={() => navigate({ to: "/social/messenger" as any })}
+                className="h-9 w-9 flex items-center justify-center rounded-full bg-gray-100 btn-press relative text-gray-600"
+              >
+                <MessageSquare className="h-5 w-5" />
+                <span className="absolute top-0 right-0 h-4 w-4 bg-rose-500 rounded-full text-[10px] text-white flex items-center justify-center border-2 border-white">2</span>
+              </button>
+              <button 
+                onClick={() => navigate({ to: "/social/profile" as any })}
+                className="h-9 w-9 flex items-center justify-center rounded-full bg-gray-100 btn-press text-gray-600"
+              >
+                <Bell className="h-5 w-5" />
+              </button>
+            </div>
           </div>
         </div>
       </header>

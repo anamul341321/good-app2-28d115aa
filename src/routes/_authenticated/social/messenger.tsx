@@ -25,6 +25,9 @@ function SocialMessenger() {
 
   if (appStatus?.maintenance) return <MaintenanceScreen message={appStatus.message} />;
 
-  // Reuse the existing ChatListPage component logic
-  return <ChatListPage />;
+  return (
+    <div className="bg-background min-h-screen">
+      <ChatListPage />
+    </div>
+  );
 }

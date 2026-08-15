@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { listPosts } from "@/lib/news-feed.functions";
 import { MessengerNav } from "@/components/messenger/MessengerNav";
 import { MessengerAvatar } from "@/components/messenger/MessengerAvatar";
-import { Home, MessageSquare, Video, Settings, Camera, Sparkles, Image as ImageIcon, Plus, Loader2 } from "lucide-react";
+import { Home, MessageSquare, Video, Settings, Camera, Sparkles, Image as ImageIcon, Plus, Loader2, ChevronLeft } from "lucide-react";
 import { PostCard } from "@/components/social/NewsFeedPage";
 import { Link } from "@tanstack/react-router";
 import { useLang } from "@/lib/i18n";
@@ -62,9 +62,9 @@ function SocialProfilePage() {
         <div className="h-48 bg-gradient-to-br from-[#1877F2] to-[#3B82F6] relative">
           <Link 
             to="/social" 
-            className="absolute top-4 left-4 h-9 w-9 flex items-center justify-center rounded-full bg-black/20 text-white backdrop-blur-md btn-press"
+            className="absolute top-4 left-4 h-9 w-9 flex items-center justify-center rounded-full bg-black/20 text-white backdrop-blur-md btn-press z-20"
           >
-            <Home className="h-5 w-5" />
+            <ChevronLeft className="h-5 w-5" />
           </Link>
           <div className="absolute bottom-4 right-4 flex gap-2">
             <button className="h-9 w-9 flex items-center justify-center rounded-full bg-black/20 text-white backdrop-blur-md btn-press">

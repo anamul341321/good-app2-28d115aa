@@ -95,13 +95,13 @@ function ThreadPage() {
   return (
     <div className="flex flex-col h-screen bg-background">
       {/* Messenger-style Conversation Header */}
-      <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md px-2 py-2 border-b flex items-center gap-2">
-        <Link
-          to="/chat"
+      <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md px-2 py-2 border-b flex items-center gap-2 pt-[env(safe-area-inset-top)]">
+        <button
+          onClick={() => window.history.back()}
           className="btn-press h-9 w-9 flex items-center justify-center rounded-full hover:bg-surface-2 transition-colors"
         >
           <ChevronLeft className="h-6 w-6 text-primary" />
-        </Link>
+        </button>
         
         <div className="flex flex-1 items-center gap-2 min-w-0">
           <MessengerAvatar

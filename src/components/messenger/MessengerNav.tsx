@@ -1,5 +1,5 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { MessageCircle, Users, Menu as MenuIcon, Home } from "lucide-react";
+import { MessageCircle, Users, Menu as MenuIcon, Home, ChevronLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function MessengerNav({ unreadCount = 0 }: { unreadCount?: number }) {
@@ -40,11 +40,16 @@ export function MessengerNav({ unreadCount = 0 }: { unreadCount?: number }) {
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 flex h-16 items-center border-t bg-background/80 backdrop-blur-lg px-4 pb-safe shadow-[0_-1px_10px_rgba(0,0,0,0.05)]">
+    <div className="fixed bottom-0 left-0 right-0 z-50 flex h-16 items-center border-t bg-background/95 backdrop-blur-xl px-4 pb-safe shadow-[0_-1px_10px_rgba(0,0,0,0.05)] border-primary/10">
       <NavItem to="/social" icon={Home} label="Social" />
       <NavItem to="/social/messenger" icon={MessageCircle} label="Chats" badge={unreadCount} />
       <NavItem to="/friends" icon={Users} label="People" />
-      <NavItem to="/menu" icon={MenuIcon} label="Menu" />
+      <Link to="/home" className="flex flex-1 flex-col items-center justify-center gap-1 text-muted-foreground hover:text-rose-500 transition-colors">
+        <div className="relative">
+          <ChevronLeft className="h-6 w-6" />
+        </div>
+        <span className="text-[10px] font-black">Dashboard</span>
+      </Link>
     </div>
   );
 }
