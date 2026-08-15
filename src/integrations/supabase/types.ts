@@ -212,6 +212,36 @@ export type Database = {
         }
         Relationships: []
       }
+      balance_ledger: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          metadata: Json | null
+          source_id: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          source_id?: string | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          source_id?: string | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       bonus_settings: {
         Row: {
           apk_url: string | null
@@ -2544,10 +2574,18 @@ export type Database = {
         }
         Returns: Json
       }
-      credit_bonus_balance: {
-        Args: { _amount: number; _user_id: string }
-        Returns: undefined
-      }
+      credit_bonus_balance:
+        | { Args: { _amount: number; _user_id: string }; Returns: undefined }
+        | {
+            Args: {
+              _amount: number
+              _metadata?: Json
+              _source_id?: string
+              _type?: string
+              _user_id: string
+            }
+            Returns: undefined
+          }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
@@ -2558,6 +2596,7 @@ export type Database = {
         Returns: number
       }
       expire_unanswered_calls: { Args: never; Returns: number }
+      get_user_balance_breakdown: { Args: { _user_id: string }; Returns: Json }
       get_whitelist_cron_secret: { Args: never; Returns: string }
       has_role: {
         Args: {
