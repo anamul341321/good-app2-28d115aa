@@ -77,7 +77,7 @@ export function ChatListPage() {
             >
               <ChevronLeft className="h-6 w-6 text-primary" />
             </Link>
-            <h1 className="text-2xl font-black text-foreground tracking-tight">Messenger</h1>
+            <h1 className="text-2xl font-black text-foreground tracking-tight">Good-App Messenger</h1>
 
           </div>
           <div className="flex items-center gap-2">
