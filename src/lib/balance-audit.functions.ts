@@ -24,7 +24,9 @@ export const getBalanceBreakdown = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { userId } = context;
 
-    const { data, error } = await supabaseAdmin.rpc("get_user_balance_breakdown", {
+    // Use maybeSingle or raw select because the RPC name is registered in the database
+    // but the generated types might not have caught up yet.
+    const { data, error } = await supabaseAdmin.rpc("get_user_balance_breakdown" as any, {
       _user_id: userId
     });
 
