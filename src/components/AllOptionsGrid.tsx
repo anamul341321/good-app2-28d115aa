@@ -47,11 +47,13 @@ const TILES: Tile[] = [
  * All-options launcher — real, tappable rows with clear icons, titles and a
  * one-line hint so users know exactly what each option does.
  */
-export function AllOptionsGrid() {
+export function AllOptionsGrid({ hideSocial }: { hideSocial?: boolean }) {
   const { t } = useLang();
+  const tiles = hideSocial ? TILES.filter(t => !['/profile'].includes(t.to)) : TILES;
+
   return (
     <div className="grid grid-cols-2 gap-2.5">
-      {TILES.map(({ to, Icon, bn, en, hintBn, hintEn, from, to2 }) => (
+      {tiles.map(({ to, Icon, bn, en, hintBn, hintEn, from, to2 }) => (
         <Link
           key={to}
           to={to as any}

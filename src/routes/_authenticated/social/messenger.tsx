@@ -8,12 +8,13 @@ export const Route = createFileRoute("/_authenticated/social/messenger")({
   component: SocialMessenger,
   head: () => ({
     meta: [
-      { title: "Good-App Social · মেসেঞ্জার" },
-      { name: "description", content: "Good-App Social এ বন্ধুদের সাথে কথা বলুন।" },
-      { property: "og:title", content: "মেসেঞ্জার · Good-App Social" },
+      { title: "Good-App Messenger" },
+      { name: "description", content: "Good-App Messenger এ বন্ধুদের সাথে চ্যাট ও কল করুন।" },
+      { property: "og:title", content: "মেসেঞ্জার · Good-App Messenger" },
       { property: "og:type", content: "website" },
     ],
   }),
+
 });
 
 function SocialMessenger() {

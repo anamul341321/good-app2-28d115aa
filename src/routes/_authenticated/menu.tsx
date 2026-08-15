@@ -57,7 +57,7 @@ function MenuPage() {
         title={t("সব অপশন", "All Options")}
         subtitle={t("এক ট্যাপে যেকোনো সেকশনে যান", "Jump to any section in one tap")}
       >
-        <AllOptionsGrid />
+        <AllOptionsGrid hideSocial />
       </DashSection>
 
       <DashSection

@@ -7,7 +7,7 @@ import { claimVoucher } from "@/lib/vouchers.functions";
 import { getLeaderboards } from "@/lib/leaderboard.functions";
 import { MiningCounter } from "@/components/MiningCounter";
 import bonusGirl from "@/assets/bonus-girl.png";
-import { CheckCircle2, Camera, Lock, Sparkles, Loader2, X, Plus, Crown, Users, ShieldCheck, BadgeCheck, ChevronDown, Gift, RefreshCcw, MessageSquare } from "lucide-react";
+import { CheckCircle2, Camera, Lock, Sparkles, Loader2, X, Plus, Crown, Users, User, ShieldCheck, BadgeCheck, ChevronDown, Gift, RefreshCcw, MessageSquare, MessageCircle, ChevronRight, ArrowUpRight, Wallet } from "lucide-react";
 import { AnnouncementTicker } from "@/components/AnnouncementTicker";
 import { ApkDownloadCard } from "@/components/ApkDownloadCard";
 import { HeroBanner } from "@/components/HeroBanner";
@@ -153,35 +153,55 @@ function HomePage() {
 
   return (
     <NowProvider>
-    <div className="space-y-4 pt-1 pb-6">
-
+    <div className="space-y-4 pt-1 pb-6 relative">
       <PageVoice pageId="home" steps={["home.welcome","home.mining","home.claim","home.main","home.witness","home.tap.slot","home.open.photo","reverify.button"]} />
-      <AnnouncementTicker />
-
-      {/* Mining card sits at the very top — no empty gap, nothing above it. */}
-      <div data-tour="mining" data-voice="home.mining">
-      <MiningCounter
-        accrued={Number(data.mining?.accrued_amount ?? 0)}
-        withdrawn={Number(data.mining?.withdrawn_amount ?? 0)}
-        isActive={!!data.mining?.is_active}
-        lastCreditedAt={data.mining?.last_credited_at ?? null}
-        effectiveTaskCount={Number(data.mining?.effective_task_count ?? 0)}
-        qualifyingReferees={Number(data.mining?.qualifying_referees ?? 0)}
-        selfSlots={Number((data.mining as any)?.self_slots ?? 0)}
-        referralUnits={Number((data.mining as any)?.referral_units ?? 0)}
-        selfQualified={(data.mining as any)?.self_qualified !== false}
-
-        displayTaskCount={submittedCount}
-        leagueCount={submittedCount}
-        bonusTotal={Number((data.mining as any)?.bonus_amount ?? 0)}
-        referralAccrued={Number((data.mining as any)?.referral_accrued ?? 0)}
-        miningWithdrawn={Number((data.mining as any)?.mining_withdrawn ?? 0)}
-      />
+      
+      {/* Dynamic Background Effects */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-[-1] opacity-20">
+        <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[40%] rounded-full bg-cyan-500 blur-[120px]" />
+        <div className="absolute bottom-[20%] left-[-10%] w-[40%] h-[30%] rounded-full bg-purple-500 blur-[100px]" />
       </div>
 
-      {/* Long progress lines — first verify & re-verify, so the user can see
-          exactly how many are left before mining unlocks. */}
-      <VerifyProgressLines firstVerify={firstVerifyDone} reverify={reverifyDone} target={10} />
+      <AnnouncementTicker />
+
+      <div className="grid grid-cols-2 gap-4">
+
+        {/* Mining Info Mini */}
+        <div data-tour="mining" data-voice="home.mining" className="premium-panel rounded-2xl p-4 flex flex-col justify-between h-32 border-l-4 border-l-emerald shadow-sm">
+          <div>
+            <p className="text-[10px] uppercase text-muted-foreground tracking-widest font-black">{t("মাইনিং", "Mining")}</p>
+            <div className="flex items-baseline gap-1 mt-1">
+              <p className="text-xl font-black text-navy" translate="no">{Math.floor(Number(data.mining?.accrued_amount ?? 0))}৳</p>
+              <span className={`text-[8px] font-bold px-1 rounded ${data.mining?.is_active ? "bg-emerald/10 text-emerald" : "bg-rose/10 text-rose"}`}>
+                {data.mining?.is_active ? "LIVE" : "OFF"}
+              </span>
+            </div>
+          </div>
+          <p className="text-[9px] font-bold text-muted-foreground mt-2 leading-tight">
+            {t("প্রতি মাসে নির্দিষ্ট বোনাস ও মাইনিং ইনকাম", "Fixed monthly bonus & mining income")}
+          </p>
+        </div>
+
+        {/* Quick Balance/Wallet Mini */}
+        <Link to="/wallet" className="premium-panel rounded-2xl p-4 flex flex-col justify-between h-32 border-l-4 border-l-cyan shadow-sm active:scale-95 transition-all">
+          <div>
+            <p className="text-[10px] uppercase text-muted-foreground tracking-widest font-black">{t("ব্যালেন্স", "Balance")}</p>
+            <p className="text-xl font-black text-navy mt-1" translate="no">{(data as any).wallet?.balance || 0}৳</p>
+          </div>
+          <div className="flex items-center justify-between mt-2">
+            <p className="text-[10px] font-bold text-cyan flex items-center gap-1">
+              {t("ওয়ালেট", "Wallet")} <ArrowUpRight className="w-3 h-3" />
+            </p>
+            <div className="h-6 w-6 rounded-lg bg-cyan/10 flex items-center justify-center">
+              <Wallet className="w-3.5 h-3.5 text-cyan" />
+            </div>
+          </div>
+        </Link>
+      </div>
+
+
+      {/* Verify progress will be moved inside the network section for better organization */}
+
 
       <HeroBanner
         adminOff={(data as any)?.payoutSettings?.withdrawEnabled === false}
@@ -214,23 +234,32 @@ function HomePage() {
 
 
       {/* Messenger Entry Button */}
-      <div className="px-4 py-1" data-tour="social-entry">
-        <Link 
-          to="/social/messenger" 
-          className="w-full flex items-center gap-3 bg-gradient-to-r from-[#1877F2] to-[#3B82F6] rounded-2xl p-4 text-white shadow-lg active:scale-[0.98] transition-all hover:brightness-110 border-2 border-white/20"
-        >
-          <div className="h-12 w-12 rounded-xl bg-white/25 flex items-center justify-center border border-white/30 backdrop-blur-sm shadow-inner">
-            <MessageSquare className="w-7 h-7" />
+      <Link to="/social/messenger"
+        className="block rounded-3xl p-6 relative overflow-hidden btn-press border border-white/20 shadow-[0_25px_50px_-12px_rgba(59,130,246,0.5)]"
+        style={{ background: "linear-gradient(135deg, #0088cc 0%, #3b82f6 50%, #8b5cf6 100%)" }}>
+        <div className="absolute -top-10 -right-10 w-48 h-48 rounded-full bg-white/20 blur-3xl" />
+        <div className="absolute -bottom-10 -left-10 w-32 h-32 rounded-full bg-purple-500/20 blur-2xl" />
+        <div className="relative flex items-center gap-5 text-white">
+          <div className="w-16 h-16 p-4 rounded-2xl bg-white/25 backdrop-blur border border-white/40 text-3xl shrink-0 flex items-center justify-center shadow-lg">
+            <MessageCircle className="w-8 h-8" />
           </div>
-          <div className="flex-1 text-left">
-            <p className="text-lg font-black leading-tight tracking-tight uppercase">Good-App Messenger</p>
-            <p className="text-[10px] opacity-90 font-bold uppercase tracking-wider">{t("চ্যাট ও কল করুন", "Chat & Call Now")}</p>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <p className="text-[10px] uppercase tracking-[0.3em] font-black text-white/90">Good-App Messenger</p>
+              <span className="bg-white/30 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider">PREMIUM</span>
+            </div>
+            <p className="text-2xl font-black leading-tight drop-shadow-lg mt-1">{t("মেসেঞ্জার ও কলিং", "Messenger & Calling")}</p>
+            <p className="text-xs text-white/90 font-bold mt-1.5 leading-relaxed">
+              {t("চ্যাট · অডিও/ভিডিও কল · স্ক্রিন শেয়ারিং", "Chat · Audio/Video Call · Screen Share")}
+            </p>
           </div>
-          <div className="h-8 w-8 rounded-full bg-white/20 flex items-center justify-center">
-            <Plus className="w-5 h-5" />
+          <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+            <ChevronRight className="w-5 h-5 text-white" />
           </div>
-        </Link>
-      </div>
+        </div>
+      </Link>
+
+
 
 
       <DashSection
@@ -239,6 +268,8 @@ function HomePage() {
         title={t("ভেরিফিকেশন সেন্টার", "Verification Center")}
         subtitle={t("আপনার পরিচয় ও ১০ জন সাক্ষী", "Your identity & 10 witnesses")}
       >
+      <VerifyProgressLines firstVerify={firstVerifyDone} reverify={reverifyDone} target={10} />
+
       {/* Premium hero submit button — batch-submits all pending keys, or opens next empty slot. */}
       {(pendingSubmits > 0 || firstEmpty || allSubmitted) && (
         <button
@@ -251,13 +282,14 @@ function HomePage() {
             addSlots.mutate();
           }}
           disabled={batchMut.isPending || (!firstEmpty && addSlots.isPending)}
-          className="submit-hero w-full rounded-3xl px-5 py-5 text-white font-black btn-press flex items-center gap-3 disabled:opacity-70"
+          className="submit-hero w-full rounded-2xl px-5 py-4 text-white font-black btn-press flex items-center gap-3 disabled:opacity-70 shadow-[0_12px_24px_-8px_rgba(59,130,246,0.5)]"
         >
-          <span className="shrink-0 w-14 h-14 rounded-2xl bg-white/25 backdrop-blur flex items-center justify-center text-3xl border border-white/40 shadow-inner">
+          <span className="shrink-0 w-12 h-12 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center text-2xl border border-white/30">
             {(batchMut.isPending || (addSlots.isPending && !firstEmpty))
-              ? <Loader2 className="w-7 h-7 animate-spin" />
+              ? <Loader2 className="w-6 h-6 animate-spin" />
               : <span className="rocket">{pendingSubmits > 0 ? "📦" : "🚀"}</span>}
           </span>
+
           <span className="flex-1 text-left leading-tight">
             <span className="block text-[10px] uppercase tracking-[0.2em] text-white/85 font-bold">
               {pendingSubmits > 0 ? t("ব্যাচ জমা · হোয়াইটলিস্ট চেক", "Batch submit · whitelist check") : (firstEmpty ? t("এক ট্যাপে সাক্ষী যোগ", "Add witness in one tap") : t("নতুন ব্যাচ আনলক", "Unlock a new batch"))}
@@ -278,8 +310,8 @@ function HomePage() {
 
       {/* Main identity card — premium hero */}
       {mainTask && (
-        <div data-tour="main-identity" data-voice="home.main"
-             className="relative overflow-hidden rounded-2xl p-4 border-2 shadow-[0_18px_40px_-12px_rgba(245,158,11,0.55)]"
+        <Link to="/profile" data-tour="main-identity" data-voice="home.main"
+             className="relative overflow-hidden rounded-2xl p-4 border-2 shadow-[0_18px_40px_-12px_rgba(245,158,11,0.55)] block active:scale-[0.98] transition-transform"
              style={{
                borderColor: "rgba(255,255,255,0.25)",
                background: "linear-gradient(135deg, #7c3aed 0%, #ec4899 45%, #f59e0b 100%)",
@@ -292,45 +324,53 @@ function HomePage() {
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_15%,rgba(255,255,255,0.35),transparent_55%)]" />
 
           <div className="relative flex items-center gap-3">
-            <div className="shrink-0 rounded-2xl p-1 bg-white/25 backdrop-blur-sm shadow-lg">
-              <MainIdentityCell task={mainTask}
-                onStart={() => router.navigate({ to: "/task/$slot", params: { slot: "1" } })}
-                onReverify={() => {
-                  const url = mainTask.signed_face_url;
-                  if (url) {
-                    setLightbox({
-                      url,
-                      label: `আপনার পরিচয় · ${mainTask.face_label || "আপনি"} — রি-ভেরিফাই প্রয়োজন`,
-                      action: { label: "রি-ভেরিফাই করুন", tone: "rose", onClick: () => router.navigate({ to: "/reverify", search: { taskId: mainTask.id } as any }) },
-                    });
-                  } else {
-                    router.navigate({ to: "/reverify", search: { taskId: mainTask.id } as any });
-                  }
-                }}
-                onOpenPhoto={(url) => setLightbox({ url, label: `আপনার পরিচয় · ${mainTask.face_label || "আপনি"}` })} />
+            <div className="shrink-0 rounded-2xl p-1 bg-white/25 backdrop-blur-sm shadow-lg overflow-hidden w-20 h-20 flex items-center justify-center border border-white/30">
+              {(data as any).avatar_signed ? (
+                <img src={(data as any).avatar_signed} className="w-full h-full object-cover rounded-xl" alt="avatar" />
+              ) : (
+                <div className="flex flex-col items-center justify-center">
+                  <User className="w-8 h-8 text-white/80" />
+                  <p className="text-[7px] font-black text-white/60 uppercase">No Photo</p>
+                </div>
+              )}
             </div>
             <div className="min-w-0 flex-1 text-white">
-              <p className="text-[10px] uppercase tracking-[0.2em] font-black flex items-center gap-1 text-white/95 drop-shadow">
-                <BadgeCheck className="w-3.5 h-3.5" /> {t("ভেরিফাইড পরিচয়", "Verified Identity")}
+              <div className="flex items-center gap-1.5">
+                <p className="text-[10px] uppercase tracking-[0.25em] font-black text-white/90 drop-shadow flex items-center gap-1.5">
+                  <BadgeCheck className="w-3.5 h-3.5" /> {t("আমার পরিচয়", "My Identity")}
+                </p>
+                {data.profile && (data.profile as any).kyc_verified && (
+                  <span className="bg-emerald-400/30 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider border border-emerald-400/40">VERIFIED</span>
+                )}
+              </div>
+              <p className="text-2xl font-black mt-1.5 leading-tight drop-shadow-xl truncate" translate="no">
+                {data.profile?.display_name || "ইউজার"}
               </p>
-              <p className="text-base font-black mt-1 leading-tight drop-shadow-lg">
-                {t("আপনি — এই অ্যাকাউন্টের মালিক", "You — owner of this account")}
-              </p>
-              <p className="text-[11px] font-semibold mt-1 leading-snug text-white/90 drop-shadow">
-                {t("আপনার নিজের ছবি এখানে সুরক্ষিত। বাকি ১০ জন সাক্ষী আপনার পক্ষে সাক্ষ্য দিচ্ছেন যে আপনি সত্যিকারের একজন প্রকৃত ব্যবহারকারী।",
-                   "Your own photo is protected here. The other 10 witnesses are testifying that you are a genuine real user.")}
-              </p>
+              <div className="flex items-center gap-2 mt-2">
+                <div className="h-1 w-12 rounded-full bg-white/30 overflow-hidden">
+                  <div className="h-full bg-white w-2/3" />
+                </div>
+                <p className="text-[11px] font-bold text-white/90 drop-shadow">
+                  {t("আপনার ডিজিটাল আইডি ও পার্সোনাল প্রোফাইল", "Personal Profile & Digital ID")}
+                </p>
+
+              </div>
+            </div>
+            <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+              <ChevronRight className="w-5 h-5 text-white" />
             </div>
           </div>
-        </div>
+        </Link>
       )}
+
+
 
       {/* Witness grid */}
       <div data-tour="witness-grid" data-voice="home.witness" className="premium-panel rounded-2xl p-3">
         <div className="flex items-center justify-between mb-2.5">
           <div className="min-w-0">
             <p className="text-[10px] uppercase text-muted-foreground tracking-[0.15em] font-bold flex items-center gap-1">
-              <Users className="w-3 h-3" /> {t("সাক্ষী প্রগ্রেস", "Witness Progress")}
+              <Users className="w-3 h-3" /> {t("সাক্ষী যাচাই", "Witness Verification")}
             </p>
             <p className="text-lg font-black mt-0.5 text-navy leading-none">
               <span translate="no">{submittedCount}<span className="text-muted-foreground text-sm">/{total}</span></span>
@@ -439,23 +479,20 @@ function HomePage() {
         )}
       </div>
       </DashSection>
-
-      <Link to="/menu"
-        className="block rounded-3xl p-4 relative overflow-hidden btn-press border border-white/20 shadow-[0_18px_40px_-18px_rgba(99,102,241,0.6)]"
-        style={{ background: "linear-gradient(135deg,#4f46e5 0%,#8b5cf6 50%,#06b6d4 100%)" }}>
-        <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/10 blur-2xl" />
-        <div className="relative flex items-center gap-3 text-white">
-          <div className="w-13 h-13 p-3.5 rounded-2xl bg-white/25 backdrop-blur border border-white/40 text-2xl shrink-0">☰</div>
-          <div className="flex-1 min-w-0">
-            <p className="text-[10px] uppercase tracking-[0.25em] font-black opacity-95">Menu</p>
-            <p className="text-lg font-black leading-tight drop-shadow">{t("সব অপশন ও ফিচার", "All options & features")}</p>
-            <p className="text-[11px] opacity-95 font-bold mt-0.5">
-              {t("অফার · সেন্ড · রিচার্জ · রেফার · লিডারবোর্ড · সাপোর্ট", "Offers · Send · Recharge · Refer · Leaderboard · Support")}
-            </p>
+      <div className="grid grid-cols-2 gap-4">
+        <Link to="/menu"
+          className="rounded-2xl p-4 flex flex-col justify-between h-32 relative overflow-hidden border border-white/10 shadow-sm active:scale-95 transition-all"
+          style={{ background: "linear-gradient(135deg, #4f46e5, #8b5cf6)" }}>
+          <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-white/10 blur-xl" />
+          <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur border border-white/30 flex items-center justify-center text-xl shrink-0 relative">☰</div>
+          <div className="relative">
+            <p className="text-[10px] uppercase tracking-[0.2em] font-black text-white/90">Menu</p>
+            <p className="text-sm font-black text-white leading-tight mt-0.5">{t("সব অপশন", "All Options")}</p>
           </div>
-          <span className="text-3xl opacity-90 font-black">›</span>
-        </div>
-      </Link>
+        </Link>
+        <WithdrawFeedMini />
+      </div>
+
 
 
       {!data.wallet && (
@@ -1015,7 +1052,33 @@ function useTicker(intervalMs = 1000) {
   }, [intervalMs]);
 }
 
+function WithdrawFeedMini() {
+  const { data } = useLeaderboardsData();
+  const { t } = useLang();
+  if (!data) return null;
+  const { withdraws = [] } = data as any;
+  const todayTotal = (withdraws as any[]).reduce((s, w) => {
+    const startOfToday = new Date(); startOfToday.setHours(0, 0, 0, 0);
+    const ts = new Date(w.processed_at ?? w.created_at).getTime();
+    return ts >= startOfToday.getTime() ? s + Number(w.amount) : s;
+  }, 0);
+
+  return (
+    <Link to="/menu"
+      className="rounded-2xl p-4 flex flex-col justify-between h-32 relative overflow-hidden border border-white/10 shadow-sm active:scale-95 transition-all"
+      style={{ background: "linear-gradient(135deg, #10b981, #06b6d4)" }}>
+      <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-white/10 blur-xl" />
+      <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur border border-white/30 flex items-center justify-center text-xl shrink-0 relative">📊</div>
+      <div className="relative">
+        <p className="text-[10px] uppercase tracking-[0.2em] font-black text-white/90">{t("লাইভ পেমেন্ট", "Live Payment")}</p>
+        <p className="text-sm font-black text-white leading-tight mt-0.5" translate="no"> আজ {Math.floor(todayTotal)}৳</p>
+      </div>
+    </Link>
+  );
+}
+
 function WithdrawFeed() {
+
   const { data } = useLeaderboardsData();
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
@@ -1130,7 +1193,7 @@ function WithdrawFeed() {
                 )}
               </ol>
               <p className="text-[10px] mt-2 opacity-90 text-white">
-                🏆 সবচেয়ে বেশি payment যারা পেয়েছেন — total থেকে সাজানো
+                🏆 সবচেয়ে বেশি পেমেন্ট যারা পেয়েছেন — সর্বমোট উইথড্র থেকে সাজানো
               </p>
             </>
           ) : (
@@ -1175,7 +1238,7 @@ function WithdrawFeed() {
                 )}
               </ol>
               <p className="text-[10px] mt-2 opacity-90 text-white">
-                গোপনীয়তার জন্য নম্বর হাইড করা — শুধু নাম ও UID দেখানো হচ্ছে
+                গোপনীয়তার জন্য নম্বর আংশিক গোপন — শুধু নাম ও UID দেখানো হচ্ছে
               </p>
             </>
           )}
