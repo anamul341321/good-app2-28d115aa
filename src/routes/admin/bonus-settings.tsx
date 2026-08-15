@@ -37,7 +37,7 @@ function dhakaInputToUtc(local: string): string | null {
 function BonusSettings() {
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["admin-bonus-settings"],
-    queryFn: () => adminGetBonusSettings(),
+    queryFn: () => adminGetBonusSettings() as Promise<any>,
   });
 
   const [fv, setFv] = useState("");
@@ -72,6 +72,9 @@ function BonusSettings() {
   const [usdtOn, setUsdtOn] = useState(true);
   const [usdtMsg, setUsdtMsg] = useState("");
 
+  const [testApkUrl, setTestApkUrl] = useState("");
+  const [testApkVer, setTestApkVer] = useState("");
+
   useEffect(() => {
     if (!data) return;
     const d: any = data;
@@ -104,6 +107,8 @@ function BonusSettings() {
     setWithdrawOn(d.withdraw_enabled !== false);
     setWithdrawMsg(d.withdraw_off_message ?? "");
     setOffUntil(d.withdraw_off_until ?? null);
+    setTestApkUrl(d.test_apk_url ?? "");
+    setTestApkVer(d.test_apk_version ?? "");
   }, [data]);
 
   const save = useMutation({
@@ -133,6 +138,8 @@ function BonusSettings() {
           withdraw_enabled: withdrawOn,
           withdraw_off_message: withdrawMsg || null,
           withdraw_off_until: withdrawOn ? null : offUntil,
+          test_apk_url: testApkUrl || null,
+          test_apk_version: testApkVer || null,
         } as any,
       }),
     onSuccess: () => {
