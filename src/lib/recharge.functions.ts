@@ -64,7 +64,7 @@ export const getMyRecharges = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data } = await supabaseAdmin
       .from("recharges")
-      .select("id, mobile, operator, connection_type, amount, status, provider_ref, error_message, created_at")
+      .select("id, mobile, operator, connection_type, amount, fee_amount, total_deducted, status, provider_ref, error_message, created_at")
       .eq("user_id", context.userId)
       .order("created_at", { ascending: false })
       .limit(100);

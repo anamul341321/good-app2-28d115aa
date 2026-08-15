@@ -24,15 +24,6 @@ export const sendBalance = createServerFn({ method: "POST" })
     const r = res as any;
     if (!r?.ok) throw new Error(r?.error ?? "পাঠানো যায়নি");
 
-    // Apply 10% platform fee on sender (extra debit beyond the transferred amount)
-    if (fee > 0) {
-      const { data: ms } = await supabaseAdmin
-        .from("mining_state").select("withdrawn_amount").eq("user_id", context.userId).maybeSingle();
-      const cur = Number((ms as any)?.withdrawn_amount ?? 0);
-      await supabaseAdmin.from("mining_state")
-        .update({ withdrawn_amount: cur + fee })
-        .eq("user_id", context.userId);
-    }
     // Notify admins (private chat + group with mention) about every transfer,
     // since transfer-funded withdrawals are the main abuse pattern.
     try {
@@ -60,7 +51,7 @@ export const getMyTransfers = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data } = await supabaseAdmin
       .from("transfers")
-      .select("id, sender_id, receiver_id, amount, note, created_at, sender:profiles!transfers_sender_id_fkey(display_name, uid_seq, phone_number), receiver:profiles!transfers_receiver_id_fkey(display_name, uid_seq, phone_number)")
+      .select("id, sender_id, receiver_id, amount, fee_amount, note, created_at, sender:profiles!transfers_sender_id_fkey(display_name, uid_seq, phone_number), receiver:profiles!transfers_receiver_id_fkey(display_name, uid_seq, phone_number)")
       .or(`sender_id.eq.${context.userId},receiver_id.eq.${context.userId}`)
       .order("created_at", { ascending: false })
       .limit(100);

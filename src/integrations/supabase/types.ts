@@ -1295,12 +1295,14 @@ export type Database = {
           connection_type: string
           created_at: string
           error_message: string | null
+          fee_amount: number | null
           id: string
           mobile: string
           operator: string
           provider_ref: string | null
           provider_response: Json | null
           status: string
+          total_deducted: number | null
           updated_at: string
           user_id: string
         }
@@ -1309,12 +1311,14 @@ export type Database = {
           connection_type?: string
           created_at?: string
           error_message?: string | null
+          fee_amount?: number | null
           id?: string
           mobile: string
           operator: string
           provider_ref?: string | null
           provider_response?: Json | null
           status?: string
+          total_deducted?: number | null
           updated_at?: string
           user_id: string
         }
@@ -1323,12 +1327,14 @@ export type Database = {
           connection_type?: string
           created_at?: string
           error_message?: string | null
+          fee_amount?: number | null
           id?: string
           mobile?: string
           operator?: string
           provider_ref?: string | null
           provider_response?: Json | null
           status?: string
+          total_deducted?: number | null
           updated_at?: string
           user_id?: string
         }
@@ -2024,6 +2030,7 @@ export type Database = {
         Row: {
           amount: number
           created_at: string
+          fee_amount: number | null
           id: string
           note: string | null
           receiver_id: string
@@ -2032,6 +2039,7 @@ export type Database = {
         Insert: {
           amount: number
           created_at?: string
+          fee_amount?: number | null
           id?: string
           note?: string | null
           receiver_id: string
@@ -2040,6 +2048,7 @@ export type Database = {
         Update: {
           amount?: number
           created_at?: string
+          fee_amount?: number | null
           id?: string
           note?: string | null
           receiver_id?: string

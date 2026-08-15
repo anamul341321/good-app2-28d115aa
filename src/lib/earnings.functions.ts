@@ -43,6 +43,7 @@ export const getEarnings = createServerFn({ method: "GET" })
       supabaseAdmin.from("transfers").select("*").eq("receiver_id", userId).order("created_at", { ascending: false }).limit(200),
       supabaseAdmin.from("transfers").select("*").eq("sender_id", userId).order("created_at", { ascending: false }).limit(200),
       supabaseAdmin.from("recharges").select("*").eq("user_id", userId).order("created_at", { ascending: false }).limit(200),
+
       supabaseAdmin.from("user_debts").select("*").eq("user_id", userId).order("created_at", { ascending: false }).limit(100),
       supabase.from("profiles").select("display_name, uid_seq, phone_number").eq("id", userId).maybeSingle(),
     ]);
@@ -107,7 +108,7 @@ export const getEarnings = createServerFn({ method: "GET" })
       rows.push({ id: `tin-${t.id}`, kind: "transfer_in", label: "📥 অন্য ইউজার পাঠিয়েছে", note: t.note ?? null, amount: Number(t.amount), created_at: t.created_at });
     }
     for (const t of transfersOut ?? []) {
-      rows.push({ id: `tout-${t.id}`, kind: "transfer_out", label: "📤 অন্যকে পাঠিয়েছেন", note: t.note ?? null, amount: -Number(t.amount), created_at: t.created_at });
+      rows.push({ id: `tout-${t.id}`, kind: "transfer_out", label: "📤 অন্যকে পাঠিয়েছেন", note: t.note ?? null, amount: -Number(t.amount) - Number(t.fee_amount || 0), created_at: t.created_at });
     }
     for (const r of recharges ?? []) {
       rows.push({
@@ -115,7 +116,7 @@ export const getEarnings = createServerFn({ method: "GET" })
         kind: "recharge",
         label: `📱 মোবাইল রিচার্জ · ${r.status}`,
         note: r.mobile ?? null,
-        amount: r.status === "failed" ? 0 : -Number(r.amount),
+        amount: r.status === "failed" ? 0 : -Number(r.total_deducted || r.amount),
         created_at: r.created_at,
       });
     }
@@ -145,8 +146,9 @@ export const getEarnings = createServerFn({ method: "GET" })
     const adminIn = (credits ?? []).filter((c: any) => Number(c.amount) > 0).reduce((s: number, c: any) => s + Number(c.amount), 0);
     const transferInTotal = (transfersIn ?? []).reduce((s: number, t: any) => s + Number(t.amount), 0);
     const paidWithdrawals = (withdrawals ?? []).filter((w: any) => w.status === "paid").reduce((s: number, w: any) => s + Number(w.amount), 0);
-    const successfulRecharges = (recharges ?? []).filter((r: any) => r.status === "success").reduce((s: number, r: any) => s + Number(r.amount), 0);
-    const transfersOutTotal = (transfersOut ?? []).reduce((s: number, t: any) => s + Number(t.amount), 0);
+    const successfulRecharges = (recharges ?? []).filter((r: any) => r.status === "success").reduce((s: number, r: any) => s + Number(r.total_deducted || r.amount), 0);
+    const transfersOutTotal = (transfersOut ?? []).reduce((s: number, t: any) => s + Number(t.amount) + Number(t.fee_amount || 0), 0);
+
     const pendingWithdrawals = (withdrawals ?? []).filter((w: any) => w.status === "pending").reduce((s: number, w: any) => s + Number(w.amount), 0);
     // Pending requests already reserved balance, so they count as accounted-out;
     // otherwise the leftover would be mislabelled as a huge withdraw "fee".

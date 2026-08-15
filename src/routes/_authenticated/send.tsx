@@ -243,7 +243,15 @@ function SendPage() {
                   <p className="text-[10px] text-muted-foreground" translate="no">{new Date(tx.created_at).toLocaleString()}</p>
                   {tx.note && <p className="text-[11px] text-navy/80 mt-0.5 italic">"{tx.note}"</p>}
                 </div>
-                <p className={`mono-num font-black ${out ? "text-rose" : "text-emerald"}`} translate="no">{out ? "-" : "+"}{Math.floor(Number(tx.amount))}৳</p>
+                <div className="text-right shrink-0">
+                  <p className={`mono-num font-black ${out ? "text-rose" : "text-emerald"}`} translate="no">{out ? "-" : "+"}{Math.floor(Number(tx.amount))}৳</p>
+                  {out && tx.fee_amount > 0 && (
+                    <p className="text-[9px] text-muted-foreground font-bold" translate="no">
+                      Fee: {Math.floor(Number(tx.fee_amount))}৳ · Total: {Math.floor(Number(tx.amount) + Number(tx.fee_amount))}৳
+                    </p>
+                  )}
+                </div>
+
               </div>
             );
           })}
