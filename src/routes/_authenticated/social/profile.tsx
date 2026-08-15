@@ -17,8 +17,8 @@ import {
 import { listPosts, getProfileById } from "@/lib/news-feed.functions";
 import { getProfileStats, sendFriendRequest, acceptFriendRequest } from "@/lib/social-users.functions";
 import { MessengerNav } from "@/components/messenger/MessengerNav";
-import { getAppStatus } from "@/lib/dashboard.functions";
 import { toast } from "sonner";
+
 import { useAuth } from "@/hooks/useAuth";
 import { useLang } from "@/lib/i18n";
 import { MessengerAvatar } from "@/components/messenger/MessengerAvatar";
@@ -60,13 +60,8 @@ function ProfilePage() {
     enabled: !!effectiveUserId,
   });
 
-  const { data: appStatus } = useQuery({
-    queryKey: ["app-status"],
-    queryFn: () => getAppStatus(),
-    staleTime: 30_000,
-  });
-
   const { data: postsData, isLoading: postsLoading } = useQuery({
+
     queryKey: ["posts-profile", effectiveUserId],
     queryFn: () => listPosts(),
     enabled: !!effectiveUserId,
@@ -131,10 +126,11 @@ function ProfilePage() {
             <div className="relative">
               <MessengerAvatar 
                 src={profile?.avatar_url} 
-                name={profile?.display_name} 
-                size="2xl" 
-                className="border-4 border-white shadow-md ring-1 ring-gray-100"
+                name={profile?.display_name || "User"} 
+                size="xl" 
+                className="h-28 w-28 border-4 border-white shadow-md ring-1 ring-gray-100"
               />
+
               {isOwnProfile && (
                 <button className="absolute bottom-1 right-1 bg-gray-100 p-2 rounded-full border-2 border-white shadow-sm btn-press">
                   <Camera className="w-4 h-4 text-navy" />
