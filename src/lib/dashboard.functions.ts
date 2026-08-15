@@ -166,7 +166,7 @@ export const getDashboard = createServerFn({ method: "GET" })
         selfFirstAmount: bonus.selfFirstAmount,
         referrerAmount: bonus.referrerAmount,
         userAmount: bonus.userAmount,
-        totalAmount: (Number(balanceBreakdown?.bonus ?? 0)),
+        totalAmount: Number((balanceBreakdown as any)?.bonus ?? 0),
         hasReferrer: !!(profile as any)?.referred_by,
         rates: bonus.rates,
       },
