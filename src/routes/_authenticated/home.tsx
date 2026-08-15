@@ -7,7 +7,7 @@ import { claimVoucher } from "@/lib/vouchers.functions";
 import { getLeaderboards } from "@/lib/leaderboard.functions";
 import { MiningCounter } from "@/components/MiningCounter";
 import bonusGirl from "@/assets/bonus-girl.png";
-import { CheckCircle2, Camera, Lock, Sparkles, Loader2, X, Plus, Crown, Users, ShieldCheck, BadgeCheck, ChevronDown, Gift, RefreshCcw, MessageSquare, MessageCircle, ChevronRight, ArrowUpRight } from "lucide-react";
+import { CheckCircle2, Camera, Lock, Sparkles, Loader2, X, Plus, Crown, Users, User, ShieldCheck, BadgeCheck, ChevronDown, Gift, RefreshCcw, MessageSquare, MessageCircle, ChevronRight, ArrowUpRight } from "lucide-react";
 import { AnnouncementTicker } from "@/components/AnnouncementTicker";
 import { ApkDownloadCard } from "@/components/ApkDownloadCard";
 import { HeroBanner } from "@/components/HeroBanner";
@@ -298,8 +298,8 @@ function HomePage() {
 
           <div className="relative flex items-center gap-3">
             <div className="shrink-0 rounded-2xl p-1 bg-white/25 backdrop-blur-sm shadow-lg overflow-hidden w-20 h-20 flex items-center justify-center border border-white/30">
-              {data.avatar_signed ? (
-                <img src={data.avatar_signed} className="w-full h-full object-cover rounded-xl" alt="avatar" />
+              {(data as any).avatar_signed ? (
+                <img src={(data as any).avatar_signed} className="w-full h-full object-cover rounded-xl" alt="avatar" />
               ) : (
                 <div className="flex flex-col items-center justify-center">
                   <User className="w-8 h-8 text-white/80" />
@@ -312,13 +312,14 @@ function HomePage() {
                 <p className="text-[10px] uppercase tracking-[0.2em] font-black text-white/95 drop-shadow flex items-center gap-1">
                   <BadgeCheck className="w-3.5 h-3.5" /> {t("আমার পরিচয়", "My Identity")}
                 </p>
-                {(data.profile as any).kyc_verified && (
+                {data.profile && (data.profile as any).kyc_verified && (
                   <span className="bg-white/20 px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider">VERIFIED</span>
                 )}
               </div>
               <p className="text-xl font-black mt-1 leading-tight drop-shadow-lg truncate">
-                {data.profile.display_name || "ইউজার"}
+                {data.profile?.display_name || "ইউজার"}
               </p>
+
               <p className="text-[11px] font-semibold mt-1 leading-snug text-white/90 drop-shadow">
                 {t("আপনার ডিজিটাল আইডি ও ব্যক্তিগত তথ্য এখানে দেখুন।", "View your digital ID and personal info here.")}
               </p>
