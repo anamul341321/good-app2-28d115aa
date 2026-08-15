@@ -43,6 +43,13 @@ function AdminDashboard() {
 
   return (
     <div className="space-y-4">
+      <div className="rounded-2xl p-4 border border-rose/30 bg-rose/5">
+        <p className="text-xs font-black text-rose mb-1">⚠️ জরুরী তথ্য</p>
+        <p className="text-[11px] text-muted-foreground leading-snug">
+          কোনো APK আপলোড করার পর বা কোনো আপডেট আসলে অবশ্যই <b>Bonus Settings</b> এ গিয়ে APK চেক করুন। বর্তমান Android Version <b>1.18</b> এ সেট করা আছে।
+        </p>
+      </div>
+
       {/* আজকের হিসাব — first verify vs re-verify */}
       <div className="rounded-2xl p-4 border border-white/15 relative overflow-hidden"
            style={{ background: "linear-gradient(135deg,#0f172a 0%,#1e293b 55%,#0f766e 100%)" }}>
