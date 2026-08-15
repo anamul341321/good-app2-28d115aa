@@ -368,6 +368,7 @@ public class MainActivity extends BridgeActivity {
         Intent launchIntent = getIntent();
         Uri launchUri = launchIntent != null ? launchIntent.getData() : null;
         if (launchUri != null && isAppDomain(launchUri)) {
+            allowOverLockScreen(launchUri);
             appWebView.loadUrl(launchUri.toString());
         } else {
             appWebView.loadUrl(APP_URL);
