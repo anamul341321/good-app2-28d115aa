@@ -1,17 +1,19 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getAppStatus } from "@/lib/app-status.functions";
 import { MaintenanceScreen } from "@/components/MaintenanceGate";
 import { useAuth } from "@/hooks/useAuth";
-import { listPosts } from "@/lib/news-feed.functions";
+import { listPosts, getProfileById } from "@/lib/news-feed.functions";
 import { MessengerNav } from "@/components/messenger/MessengerNav";
 import { MessengerAvatar } from "@/components/messenger/MessengerAvatar";
 import { Home, MessageSquare, Video, Settings, Camera, Sparkles, Image as ImageIcon, Plus, Loader2, ChevronLeft } from "lucide-react";
 import { PostCard } from "@/components/social/NewsFeedPage";
-import { Link } from "@tanstack/react-router";
 import { useLang } from "@/lib/i18n";
 import { getDashboard } from "@/lib/dashboard.functions";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import React from "react";
 
 export const Route = createFileRoute("/_authenticated/social/profile")({
   validateSearch: (search) => z.object({
