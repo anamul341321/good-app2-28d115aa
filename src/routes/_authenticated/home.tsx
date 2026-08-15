@@ -651,7 +651,7 @@ function MainIdentityCell({ task, onStart, onReverify, onOpenPhoto }: { task: an
     const days = anchor ? (Date.now() - new Date(anchor).getTime()) / 86400000 : null;
     const remain = days != null ? Math.max(0, 4 - days) : null;
     const due = remain != null && remain <= 0;
-    const hint = remain == null ? null : due ? "সময় হয়েছে" : `${Math.ceil(remain)} দিন পর`;
+    const hint = remain == null ? null : due ? "সময় হয়েছে" : `পরবর্তী: ${Math.ceil(remain)} দিন পর`;
     return (
       <button onClick={() => faceUrl && onOpenPhoto(faceUrl)} data-voice="home.open.photo"
         className="relative w-24 h-24 rounded-2xl overflow-hidden border-2 shadow-[0_12px_28px_-8px_rgba(99,102,241,0.75)] active:scale-95 transition"
@@ -670,7 +670,7 @@ function MainIdentityCell({ task, onStart, onReverify, onOpenPhoto }: { task: an
           <RefreshCcw className="w-9 h-9 text-white/95 drop-shadow-lg" />
         </span>
         <p className="absolute bottom-1 left-0 right-0 text-[9px] font-black text-white text-center drop-shadow tracking-wide">
-          ৩–৪ দিন পর রি-ভেরিফাই
+          ✅ সম্পূর্ণ
         </p>
 
       </button>
