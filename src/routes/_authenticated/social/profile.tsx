@@ -72,7 +72,7 @@ function SocialProfilePage() {
   // Filter posts for this user only
   const posts = (postsData as any)?.posts ?? [];
   const userPosts = posts.filter((p: any) => p.user_id === effectiveUserId) ?? [];
-  const monthlyRate = dashData?.mining?.monthly_rate ?? 500;
+  const monthlyRate = (dashData?.mining as any)?.monthly_rate ?? 500;
 
   const handleProfileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!isOwnProfile) return;
