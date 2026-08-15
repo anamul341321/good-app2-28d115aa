@@ -27,6 +27,7 @@ import com.getcapacitor.BridgeWebViewClient;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.FileProvider;
 import android.media.projection.MediaProjectionManager;
+import android.app.KeyguardManager;
 
 import java.io.File;
 
@@ -226,6 +227,7 @@ public class MainActivity extends BridgeActivity {
         @JavascriptInterface
         public void stopScreenShare() {
             runOnUiThread(() -> {
+                stopCapture();
                 bridge.getWebView().evaluateJavascript("window.dispatchEvent(new CustomEvent('goodapp-screen-share-stopped'))", null);
             });
         }
@@ -366,6 +368,7 @@ public class MainActivity extends BridgeActivity {
         Intent launchIntent = getIntent();
         Uri launchUri = launchIntent != null ? launchIntent.getData() : null;
         if (launchUri != null && isAppDomain(launchUri)) {
+            allowOverLockScreen(launchUri);
             appWebView.loadUrl(launchUri.toString());
         } else {
             appWebView.loadUrl(APP_URL);
@@ -388,25 +391,83 @@ public class MainActivity extends BridgeActivity {
         setIntent(intent);
         Uri uri = intent != null ? intent.getData() : null;
         if (uri != null && isAppDomain(uri) && bridge != null) {
+            allowOverLockScreen(uri);
             bridge.getWebView().loadUrl(uri.toString());
         }
+    }
+
+    /**
+     * An answered call must be audible while the phone is still locked. Showing the
+     * activity over the keyguard (and asking the keyguard to dismiss) lets the WebView
+     * resume, so getUserMedia/WebRTC audio starts immediately instead of waiting for
+     * the user to unlock the phone.
+     */
+    private void allowOverLockScreen(Uri uri) {
+        boolean isCall = uri != null && uri.getQueryParameter("call") != null;
+        if (!isCall) return;
+        runOnUiThread(() -> {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+                setShowWhenLocked(true);
+                setTurnScreenOn(true);
+            }
+            getWindow().addFlags(
+                WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
+                    | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
+                    | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+                    | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
+            );
+            try {
+                KeyguardManager keyguard = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && keyguard != null) {
+                    keyguard.requestDismissKeyguard(MainActivity.this, null);
+                }
+            } catch (Exception ignored) {}
+        });
+    }
+
+    private void stopCapture() {
+        try {
+            ScreenShareService.setSink(null);
+            Intent stop = new Intent(this, ScreenShareService.class);
+            stop.setAction(ScreenShareService.ACTION_STOP);
+            startService(stop);
+        } catch (Exception ignored) {}
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == SCREEN_SHARE_REQUEST && resultCode == RESULT_OK) {
-            // Signal to WebRTC that screen capture is ready. We can't pass the Intent directly to JS easily,
-            // but Capacitor/WebView can handle media projection if the permission is granted.
-            bridge.getWebView().evaluateJavascript("window.dispatchEvent(new CustomEvent('goodapp-screen-share-ready'))", null);
+        if (requestCode != SCREEN_SHARE_REQUEST) return;
+        if (resultCode != RESULT_OK || data == null) {
+            emit("window.dispatchEvent(new CustomEvent('goodapp-screen-share-stopped'))");
+            return;
         }
-    }
+        // Android 14+ refuses MediaProjection unless a mediaProjection foreground
+        // service owns it, which is why screen sharing used to fail silently.
+        ScreenShareService.setSink(new ScreenShareService.FrameSink() {
+            @Override
+            public void onFrame(String base64Jpeg, int width, int height) {
+                emit("window.dispatchEvent(new CustomEvent('goodapp-screen-frame',{detail:{data:'"
+                    + base64Jpeg + "',width:" + width + ",height:" + height + "}}))");
+            }
 
-    private String approvalPlan = "'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''\n                                        \n                                            \n                                            I have approved the plan";
+            @Override
+            public void onStopped() {
+                emit("window.dispatchEvent(new CustomEvent('goodapp-screen-share-stopped'))");
+            }
+        });
+        Intent share = new Intent(this, ScreenShareService.class);
+        share.setAction(ScreenShareService.ACTION_START);
+        share.putExtra("result_code", resultCode);
+        share.putExtra("result_data", data);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(share);
+        else startService(share);
+        emit("window.dispatchEvent(new CustomEvent('goodapp-screen-share-ready'))");
+    }
 
     @Override
     public void onDestroy() {
-
+        stopCapture();
         try {
             unregisterReceiver(downloadReceiver);
         } catch (Exception ignored) {}
