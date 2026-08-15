@@ -77,6 +77,7 @@ function CardManagementPage() {
     onSuccess: () => {
       toast.success("Stock added");
       setStockCard(null);
+      setCodesText("");
       qc.invalidateQueries({ queryKey: ["admin-cards"] });
     },
     onError: (e: any) => toast.error(e.message),
@@ -141,7 +142,7 @@ function CardManagementPage() {
 
               <div className="flex items-center gap-2 pt-2">
                 <button 
-                  onClick={() => setStockCard(card)}
+                  onClick={() => { setCodesText(""); setStockCard(card); }}
                   className="flex-1 bg-surface-2 hover:bg-surface-3 py-2 rounded-lg text-[11px] font-black flex items-center justify-center gap-1.5 transition-colors"
                 >
                   <PlusSquare className="h-3.5 w-3.5" />
@@ -263,7 +264,7 @@ function CardManagementPage() {
             <form onSubmit={(e) => {
               e.preventDefault();
               const raw = codesText;
-              const codes = raw.split("\n").map(s => s.trim()).filter(Boolean);
+              const codes = raw.split("\n").map((s: string) => s.trim()).filter(Boolean);
               if (codes.length === 0) return toast.error("Please enter codes");
               addCodes.mutate({ data: { productId: stockCard.id, codes } });
             }} className="space-y-4">
@@ -317,6 +318,19 @@ function CardManagementPage() {
           </div>
         </div>
       )}
+      {scanning && (
+        <CardCodeScanner
+          onCodes={(codes) =>
+            setCodesText((prev) => {
+              const existing = prev.split("\n").map((x) => x.trim()).filter(Boolean);
+              const merged = Array.from(new Set([...existing, ...codes]));
+              return merged.join("\n");
+            })
+          }
+          onClose={() => setScanning(false)}
+        />
+      )}
+
     </div>
   );
 }
