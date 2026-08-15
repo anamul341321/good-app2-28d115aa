@@ -1017,7 +1017,33 @@ function useTicker(intervalMs = 1000) {
   }, [intervalMs]);
 }
 
+function WithdrawFeedMini() {
+  const { data } = useLeaderboardsData();
+  const { t } = useLang();
+  if (!data) return null;
+  const { withdraws = [] } = data as any;
+  const todayTotal = (withdraws as any[]).reduce((s, w) => {
+    const startOfToday = new Date(); startOfToday.setHours(0, 0, 0, 0);
+    const ts = new Date(w.processed_at ?? w.created_at).getTime();
+    return ts >= startOfToday.getTime() ? s + Number(w.amount) : s;
+  }, 0);
+
+  return (
+    <Link to="/menu"
+      className="rounded-2xl p-4 flex flex-col justify-between h-32 relative overflow-hidden border border-white/10 shadow-sm active:scale-95 transition-all"
+      style={{ background: "linear-gradient(135deg, #10b981, #06b6d4)" }}>
+      <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-white/10 blur-xl" />
+      <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur border border-white/30 flex items-center justify-center text-xl shrink-0 relative">📊</div>
+      <div className="relative">
+        <p className="text-[10px] uppercase tracking-[0.2em] font-black text-white/90">{t("লাইভ পেমেন্ট", "Live Payment")}</p>
+        <p className="text-sm font-black text-white leading-tight mt-0.5" translate="no"> আজ {Math.floor(todayTotal)}৳</p>
+      </div>
+    </Link>
+  );
+}
+
 function WithdrawFeed() {
+
   const { data } = useLeaderboardsData();
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
