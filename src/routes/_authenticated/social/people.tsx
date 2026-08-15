@@ -41,6 +41,15 @@ function SocialPeoplePage() {
     onError: (err: any) => toast.error(err.message)
   });
 
+  const acceptFriendMutation = useMutation({
+    mutationFn: (requestId: string) => acceptFriendRequest({ data: { requestId } }),
+    onSuccess: () => {
+      toast.success(t("রিকোয়েস্ট গ্রহণ করা হয়েছে", "Request accepted"));
+      queryClient.invalidateQueries({ queryKey: ["users-list"] });
+    },
+    onError: (err: any) => toast.error(err.message)
+  });
+
 
   useEffect(() => {
     if (inView && hasNextPage) fetchNextPage();
@@ -81,7 +90,6 @@ function SocialPeoplePage() {
               {query ? t("অনুসন্ধান ফলাফল", "Search Results") : t("সব ব্যবহারকারী", "All Users")}
             </h2>
             {allUsers.map((u: any) => (
-
               <div key={u.id} className="bg-white p-3 rounded-xl border flex items-center justify-between shadow-sm">
                 <button 
                   onClick={() => navigate({ to: "/social/profile", search: { userId: u.id } })}
@@ -92,6 +100,11 @@ function SocialPeoplePage() {
                     <p className="font-black text-navy leading-tight">{u.display_name || "User"}</p>
                     <div className="flex flex-col mt-0.5">
                       <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">UID {u.uid_seq}</p>
+                      {u.mutualCount > 0 && (
+                        <p className="text-[10px] text-primary font-bold">
+                          {u.mutualCount} {t("mutual friends", "mutual friends")}
+                        </p>
+                      )}
                       {u.phone_number && (
                         <p className="text-[10px] text-gray-400 font-medium">
                           {u.phone_number?.toString().replace(/(\d{3})\d{4}(\d{4})/, "$1****$2") || ""}
@@ -99,28 +112,38 @@ function SocialPeoplePage() {
                       )}
                     </div>
                   </div>
-
                 </button>
                 <div className="flex gap-2">
-                  {u.friendship?.status === "accepted" ? (
-                    <div className="h-9 w-9 rounded-full bg-emerald/10 text-emerald flex items-center justify-center">
-                      <UserCheck className="w-5 h-5" />
+                  {u.status === "accepted" ? (
+                    <div className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-emerald/10 text-emerald text-[11px] font-black">
+                      <UserCheck className="w-4 h-4" />
+                      {t("Friends", "Friends")}
                     </div>
-                  ) : u.friendship?.status === "pending" ? (
-                    <div className="h-9 w-9 rounded-full bg-amber/10 text-amber flex items-center justify-center">
-                      <Clock className="w-5 h-5" />
+                  ) : u.status === "pending_sent" ? (
+                    <div className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-amber/10 text-amber text-[11px] font-black">
+                      <Clock className="w-4 h-4" />
+                      {t("Request Sent", "Sent")}
                     </div>
+                  ) : u.status === "pending_received" ? (
+                    <button 
+                      onClick={() => acceptFriendMutation.mutate(u.friendship.id)}
+                      disabled={acceptFriendMutation.isPending}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-emerald text-white text-[11px] font-black btn-press disabled:opacity-50 shadow-sm"
+                    >
+                      <CheckCircle2 className="w-4 h-4" />
+                      {t("Accept", "Accept")}
+                    </button>
                   ) : (
                     <button 
                       onClick={() => sendFriendMutation.mutate(u.id)}
                       disabled={sendFriendMutation.isPending}
-                      className="h-9 w-9 rounded-full bg-primary/10 text-primary flex items-center justify-center btn-press disabled:opacity-50"
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary text-white text-[11px] font-black btn-press disabled:opacity-50 shadow-sm"
                     >
-                      <UserPlus className="w-5 h-5" />
+                      <UserPlus className="w-4 h-4" />
+                      {t("Add Friend", "Add Friend")}
                     </button>
                   )}
                 </div>
-
               </div>
             ))}
             <div ref={ref} className="h-10 flex justify-center items-center">
