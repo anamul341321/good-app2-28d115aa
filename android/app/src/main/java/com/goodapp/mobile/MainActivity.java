@@ -227,6 +227,7 @@ public class MainActivity extends BridgeActivity {
         @JavascriptInterface
         public void stopScreenShare() {
             runOnUiThread(() -> {
+                stopCapture();
                 bridge.getWebView().evaluateJavascript("window.dispatchEvent(new CustomEvent('goodapp-screen-share-stopped'))", null);
             });
         }
