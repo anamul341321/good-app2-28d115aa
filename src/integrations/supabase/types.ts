@@ -244,6 +244,8 @@ export type Database = {
           referrer_bonus: number
           reverify_bonus: number
           signup_off_message: string | null
+          test_apk_url: string | null
+          test_apk_version: string | null
           updated_at: string
           usdt_enabled: boolean
           usdt_off_message: string | null
@@ -283,6 +285,8 @@ export type Database = {
           referrer_bonus?: number
           reverify_bonus?: number
           signup_off_message?: string | null
+          test_apk_url?: string | null
+          test_apk_version?: string | null
           updated_at?: string
           usdt_enabled?: boolean
           usdt_off_message?: string | null
@@ -322,6 +326,8 @@ export type Database = {
           referrer_bonus?: number
           reverify_bonus?: number
           signup_off_message?: string | null
+          test_apk_url?: string | null
+          test_apk_version?: string | null
           updated_at?: string
           usdt_enabled?: boolean
           usdt_off_message?: string | null
