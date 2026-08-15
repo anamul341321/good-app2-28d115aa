@@ -1831,6 +1831,7 @@ export const adminUpdateBonusSettings = createServerFn({ method: "POST" })
       "recharge_enabled","recharge_off_message",
       "usdt_enabled","usdt_off_message",
       "withdraw_enabled","withdraw_off_message","withdraw_off_until",
+      "test_apk_url", "test_apk_version",
     ] as const) {
       if ((data as any)[k] !== undefined) patch[k] = (data as any)[k];
     }
