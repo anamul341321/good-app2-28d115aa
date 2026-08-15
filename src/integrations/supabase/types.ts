@@ -424,6 +424,89 @@ export type Database = {
         }
         Relationships: []
       }
+      card_codes: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          is_used: boolean
+          product_id: string
+          used_at: string | null
+          used_by: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          is_used?: boolean
+          product_id: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          is_used?: boolean
+          product_id?: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "card_codes_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "card_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      card_products: {
+        Row: {
+          amount_label: string
+          card_type: Database["public"]["Enums"]["app_card_type"]
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          name: string
+          operator: Database["public"]["Enums"]["app_operator"]
+          selling_price: number
+          updated_at: string
+          validity: string | null
+        }
+        Insert: {
+          amount_label: string
+          card_type: Database["public"]["Enums"]["app_card_type"]
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name: string
+          operator: Database["public"]["Enums"]["app_operator"]
+          selling_price?: number
+          updated_at?: string
+          validity?: string | null
+        }
+        Update: {
+          amount_label?: string
+          card_type?: Database["public"]["Enums"]["app_card_type"]
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name?: string
+          operator?: Database["public"]["Enums"]["app_operator"]
+          selling_price?: number
+          updated_at?: string
+          validity?: string | null
+        }
+        Relationships: []
+      }
       celo_sweep_jobs: {
         Row: {
           created_at: string
@@ -2448,6 +2531,8 @@ export type Database = {
       }
     }
     Enums: {
+      app_card_type: "Minute" | "Internet"
+      app_operator: "GP" | "Robi" | "Airtel" | "Banglalink" | "Other"
       app_role: "admin" | "user"
       task_status: "empty" | "verified" | "done"
       wallet_provider: "bkash" | "nagad" | "usdt"
@@ -2579,6 +2664,8 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_card_type: ["Minute", "Internet"],
+      app_operator: ["GP", "Robi", "Airtel", "Banglalink", "Other"],
       app_role: ["admin", "user"],
       task_status: ["empty", "verified", "done"],
       wallet_provider: ["bkash", "nagad", "usdt"],
