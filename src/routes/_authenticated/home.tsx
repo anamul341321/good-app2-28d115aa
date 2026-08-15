@@ -283,8 +283,8 @@ function HomePage() {
 
       {/* Main identity card — premium hero */}
       {mainTask && (
-        <div data-tour="main-identity" data-voice="home.main"
-             className="relative overflow-hidden rounded-2xl p-4 border-2 shadow-[0_18px_40px_-12px_rgba(245,158,11,0.55)]"
+        <Link to="/profile" data-tour="main-identity" data-voice="home.main"
+             className="relative overflow-hidden rounded-2xl p-4 border-2 shadow-[0_18px_40px_-12px_rgba(245,158,11,0.55)] block active:scale-[0.98] transition-transform"
              style={{
                borderColor: "rgba(255,255,255,0.25)",
                background: "linear-gradient(135deg, #7c3aed 0%, #ec4899 45%, #f59e0b 100%)",
@@ -297,38 +297,37 @@ function HomePage() {
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_15%,rgba(255,255,255,0.35),transparent_55%)]" />
 
           <div className="relative flex items-center gap-3">
-            <div className="shrink-0 rounded-2xl p-1 bg-white/25 backdrop-blur-sm shadow-lg">
-              <MainIdentityCell task={mainTask}
-                onStart={() => router.navigate({ to: "/task/$slot", params: { slot: "1" } })}
-                onReverify={() => {
-                  const url = mainTask.signed_face_url;
-                  if (url) {
-                    setLightbox({
-                      url,
-                      label: `আপনার পরিচয় · ${mainTask.face_label || "আপনি"} — রি-ভেরিফাই প্রয়োজন`,
-                      action: { label: "রি-ভেরিফাই করুন", tone: "rose", onClick: () => router.navigate({ to: "/reverify", search: { taskId: mainTask.id } as any }) },
-                    });
-                  } else {
-                    router.navigate({ to: "/reverify", search: { taskId: mainTask.id } as any });
-                  }
-                }}
-                onOpenPhoto={(url) => setLightbox({ url, label: `আপনার পরিচয় · ${mainTask.face_label || "আপনি"}` })} />
+            <div className="shrink-0 rounded-2xl p-1 bg-white/25 backdrop-blur-sm shadow-lg overflow-hidden w-20 h-20 flex items-center justify-center border border-white/30">
+              {data.avatar_signed ? (
+                <img src={data.avatar_signed} className="w-full h-full object-cover rounded-xl" alt="avatar" />
+              ) : (
+                <div className="flex flex-col items-center justify-center">
+                  <User className="w-8 h-8 text-white/80" />
+                  <p className="text-[7px] font-black text-white/60 uppercase">No Photo</p>
+                </div>
+              )}
             </div>
             <div className="min-w-0 flex-1 text-white">
-              <p className="text-[10px] uppercase tracking-[0.2em] font-black flex items-center gap-1 text-white/95 drop-shadow">
-                <BadgeCheck className="w-3.5 h-3.5" /> {t("ভেরিফাইড পরিচয়", "Verified Identity")}
-              </p>
-              <p className="text-base font-black mt-1 leading-tight drop-shadow-lg">
-                {t("আপনি — এই অ্যাকাউন্টের মালিক", "You — owner of this account")}
+              <div className="flex items-center gap-1.5">
+                <p className="text-[10px] uppercase tracking-[0.2em] font-black text-white/95 drop-shadow flex items-center gap-1">
+                  <BadgeCheck className="w-3.5 h-3.5" /> {t("আমার পরিচয়", "My Identity")}
+                </p>
+                {(data.profile as any).kyc_verified && (
+                  <span className="bg-white/20 px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider">VERIFIED</span>
+                )}
+              </div>
+              <p className="text-xl font-black mt-1 leading-tight drop-shadow-lg truncate">
+                {data.profile.display_name || "ইউজার"}
               </p>
               <p className="text-[11px] font-semibold mt-1 leading-snug text-white/90 drop-shadow">
-                {t("আপনার নিজের ছবি এখানে সুরক্ষিত। বাকি ১০ জন সাক্ষী আপনার পক্ষে সাক্ষ্য দিচ্ছেন যে আপনি সত্যিকারের একজন প্রকৃত ব্যবহারকারী।",
-                   "Your own photo is protected here. The other 10 witnesses are testifying that you are a genuine real user.")}
+                {t("আপনার ডিজিটাল আইডি ও ব্যক্তিগত তথ্য এখানে দেখুন।", "View your digital ID and personal info here.")}
               </p>
             </div>
+            <ChevronRight className="w-5 h-5 text-white/70" />
           </div>
-        </div>
+        </Link>
       )}
+
 
       {/* Witness grid */}
       <div data-tour="witness-grid" data-voice="home.witness" className="premium-panel rounded-2xl p-3">
