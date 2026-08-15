@@ -8,15 +8,16 @@ export const listCardStore = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data, error } = await supabaseAdmin
       .from("card_products")
-      .select("id, name, operator, card_type, amount_label, selling_price, validity, description, card_codes(id)")
+      .select("id, name, operator, card_type, amount_label, selling_price, validity, description, card_codes(id, is_used)")
       .eq("is_active", true)
       .order("operator")
       .order("selling_price");
     if (error) throw new Error(error.message);
     return (data ?? []).map((p: any) => {
       const { card_codes, ...rest } = p;
-      return { ...rest, stock: 0 as number, _ids: card_codes };
-    }).map((p: any) => ({ ...p, stock: (p._ids ?? []).length, _ids: undefined }));
+      const stock = (card_codes ?? []).filter((c: any) => !c.is_used).length;
+      return { ...rest, stock };
+    });
   });
 
 export const purchaseCard = createServerFn({ method: "POST" })
