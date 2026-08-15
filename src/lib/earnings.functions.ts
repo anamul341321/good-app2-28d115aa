@@ -108,7 +108,7 @@ export const getEarnings = createServerFn({ method: "GET" })
       rows.push({ id: `tin-${t.id}`, kind: "transfer_in", label: "📥 অন্য ইউজার পাঠিয়েছে", note: t.note ?? null, amount: Number(t.amount), created_at: t.created_at });
     }
     for (const t of transfersOut ?? []) {
-      rows.push({ id: `tout-${t.id}`, kind: "transfer_out", label: "📤 অন্যকে পাঠিয়েছেন", note: t.note ?? null, amount: -Number(t.amount), created_at: t.created_at });
+      rows.push({ id: `tout-${t.id}`, kind: "transfer_out", label: "📤 অন্যকে পাঠিয়েছেন", note: t.note ?? null, amount: -Number(t.amount) - Number(t.fee_amount || 0), created_at: t.created_at });
     }
     for (const r of recharges ?? []) {
       rows.push({
@@ -116,7 +116,7 @@ export const getEarnings = createServerFn({ method: "GET" })
         kind: "recharge",
         label: `📱 মোবাইল রিচার্জ · ${r.status}`,
         note: r.mobile ?? null,
-        amount: r.status === "failed" ? 0 : -Number(r.amount),
+        amount: r.status === "failed" ? 0 : -Number(r.total_deducted || r.amount),
         created_at: r.created_at,
       });
     }
