@@ -25,8 +25,6 @@ export const listUsers = createServerFn({ method: "GET" })
       else if (q.startsWith('880')) phoneQ = q.substring(3);
       else if (q.startsWith('0')) phoneQ = q.substring(1);
 
-      // We use server-side logic for OR filters with complex normalization
-      // uid_seq is bigint, phone_number is text, display_name is text
       const isNumeric = /^\d+$/.test(q);
       
       let orFilter = `display_name.ilike.%${q}%`;
@@ -44,25 +42,67 @@ export const listUsers = createServerFn({ method: "GET" })
 
     if (error) throw new Error(error.message);
 
-    
-    // Check friendship status for each user
-    const userIds = users?.map(u => u.id) || [];
-    if (userIds.length === 0) return { users: [], count: count ?? 0 };
+    if (!users || users.length === 0) return { users: [], count: count ?? 0 };
 
+    // Fetch current user's friends to calculate mutual friends
+    const { data: myFriends } = await supabase
+      .from("friendships" as any)
+      .select("user_id, friend_id")
+      .eq("status", "accepted")
+      .or(`user_id.eq.${userId},friend_id.eq.${userId}`);
+    
+    const myFriendIds = new Set(
+      myFriends?.map(f => f.user_id === userId ? f.friend_id : f.user_id) || []
+    );
+
+    // Fetch friendships for all listed users relative to current user
+    const userIds = users.map(u => u.id);
     const { data: friendships } = await supabase
       .from("friendships" as any)
       .select("*")
+      .or(`and(user_id.eq.${userId},friend_id.in.(${userIds.join(',')})),and(friend_id.eq.${userId},user_id.in.(${userIds.join(',')}))`);
+
+    // Fetch mutual friends info (this is expensive, so we do it per page batch)
+    const { data: allAcceptedFriends } = await supabase
+      .from("friendships" as any)
+      .select("user_id, friend_id")
+      .eq("status", "accepted")
       .or(`user_id.in.(${userIds.join(',')}),friend_id.in.(${userIds.join(',')})`);
 
-    const usersWithFriendship = users?.map(u => {
+    const usersWithFriendship = users.map(u => {
       const friendship = (friendships as any[])?.find(f => 
         (f.user_id === userId && f.friend_id === u.id) || 
         (f.friend_id === userId && f.user_id === u.id)
       );
-      return { ...u, friendship };
+
+      // Simple status mapping
+      let status: 'none' | 'pending_sent' | 'pending_received' | 'accepted' = 'none';
+      if (friendship) {
+        if (friendship.status === 'accepted') {
+          status = 'accepted';
+        } else if (friendship.status === 'pending') {
+          status = friendship.user_id === userId ? 'pending_sent' : 'pending_received';
+        }
+      }
+
+      // Calculate mutual friends
+      const theirFriends = new Set(
+        (allAcceptedFriends as any[])
+          ?.filter(f => f.user_id === u.id || f.friend_id === u.id)
+          .map(f => f.user_id === u.id ? f.friend_id : f.user_id)
+      );
+
+      const mutualCount = Array.from(myFriendIds).filter(id => theirFriends.has(id)).length;
+
+      return { ...u, friendship, status, mutualCount };
     });
 
-    return { users: usersWithFriendship ?? [], count: count ?? 0 };
+    // If it's a suggestion list (no query), sort by mutual friends count
+    if (!data.query) {
+      usersWithFriendship.sort((a, b) => (b.mutualCount || 0) - (a.mutualCount || 0));
+    }
+
+    return { users: usersWithFriendship, count: count ?? 0 };
   });
 
 export const updateProfile = createServerFn({ method: "POST" })
