@@ -77,9 +77,8 @@ export const adminCreateCampaign = createServerFn({ method: "POST" })
 
     // সার্ভারেই পাঠানো শুরু হয়ে যায় — অ্যাডমিন প্যানেল বন্ধ করলেও চলতে থাকবে।
     try {
-      const { getWebRequest } = await import("@tanstack/react-start/server");
       const { kickBroadcast } = await import("@/lib/telegram-broadcast.server");
-      const origin = new URL(getWebRequest().url).origin;
+      const origin = process.env["PUBLIC_SITE_URL"] ?? "https://good-app2.lovable.app";
       kickBroadcast((campaign as any).id, origin);
     } catch {
       /* ট্রিগার ব্যর্থ হলে অ্যাডমিন প্যানেলের polling ব্যাকআপ হিসেবে কাজ করবে */
