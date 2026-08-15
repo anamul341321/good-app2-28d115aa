@@ -88,17 +88,12 @@ function WithdrawPage() {
     debt: debtTotal,
     now,
   }) : 0;
-  const claimable = Math.floor((data as any).balanceBreakdown?.current_balance ?? balance);
-  const bonusTotal = Number((mining as any)?.bonus_amount ?? 0);
-  const split = splitBalance({
-    balance,
-    bonusTotal,
-    withdrawn: Number((mining as any)?.withdrawn_amount ?? 0),
-    miningWithdrawn: Number((mining as any)?.mining_withdrawn ?? 0),
-    balanceBreakdown: (data as any).balanceBreakdown,
-  });
-  const bonusAvailable = Math.floor(split.main);
-  const miningPart = Math.floor(split.mining);
+
+  const breakdown = (data as any).balanceBreakdown || { current_balance: 0, bonus_part: 0, mining_part: 0 };
+  const claimable = Math.floor(breakdown.current_balance);
+  const bonusAvailable = Math.floor(breakdown.bonus_part);
+  const miningPart = Math.floor(breakdown.mining_part);
+
 
   const win = miningWindowInfo(now);
   const miningLocked = !win.isOpen;
