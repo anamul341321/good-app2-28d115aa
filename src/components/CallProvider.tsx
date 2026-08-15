@@ -527,22 +527,11 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     window.addEventListener("goodapp-screen-frame", onFrame as EventListener);
     window.addEventListener("goodapp-screen-share-stopped", onStopped);
 
-    
-    const onSwitch = () => {
-      facing.current = facing.current === "user" ? "environment" : "user";
-      if (camTrack.current && !sharing) {
-        const constraints = {
-          facingMode: facing.current,
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-        };
-        camTrack.current.applyConstraints(constraints).catch(() => {});
-      }
-    };
-
     window.addEventListener("goodapp-screen-share-ready", onReady);
     window.addEventListener("goodapp-switch-camera", onSwitch);
     return () => {
+      window.removeEventListener("goodapp-screen-frame", onFrame as EventListener);
+      window.removeEventListener("goodapp-screen-share-stopped", onStopped);
       window.removeEventListener("goodapp-screen-share-ready", onReady);
       window.removeEventListener("goodapp-switch-camera", onSwitch);
     };
