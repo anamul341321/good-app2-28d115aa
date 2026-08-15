@@ -70,7 +70,7 @@ export function TestApkUploadCard() {
     },
     onSuccess: (res) => {
       setProgress(null);
-      setDoneUrl(res.downloadUrl);
+      setDoneUrl(res.downloadUrl || null);
       queryClient.invalidateQueries({ queryKey: ["admin-bonus-settings"] });
       toast.success(`✅ টেস্ট APK v${res.version} আপলোড হয়েছে। লিংক কপি করে ব্রাউজারে ওপেন করুন।`);
     },
