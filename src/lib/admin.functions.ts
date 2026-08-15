@@ -2664,3 +2664,27 @@ export const adminTestAdminPush = createServerFn({ method: "POST" }).handler(asy
   });
   return res;
 });
+
+export const adminCreateTestApkUpload = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => z.object({ data: z.object({ version: z.string() }) }).parse(i))
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await gate();
+    const fileName = `test-app-v${data.version}-${Date.now()}.apk`;
+    const path = `releases/${fileName}`;
+    const { data: s, error } = await supabaseAdmin.storage.from("app-releases").createSignedUrl(path, 60 * 15, { upsert: true });
+    if (error) throw new Error(error.message);
+    return { path, signedUrl: s.signedUrl };
+  });
+
+export const adminSetTestApkRelease = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => z.object({ data: z.object({ path: z.string(), version: z.string() }) }).parse(i))
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await gate();
+    const { error } = await supabaseAdmin
+      .from("bonus_settings")
+      .update({ test_apk_url: data.path, test_apk_version: data.version } as any)
+      .eq("id", "default");
+    if (error) throw new Error(error.message);
+    const { data: s } = await supabaseAdmin.storage.from("app-releases").createSignedUrl(data.path, 60 * 60 * 24 * 365);
+    return { ok: true, path: data.path, version: data.version, downloadUrl: s?.signedUrl };
+  });
