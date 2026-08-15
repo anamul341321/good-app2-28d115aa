@@ -222,7 +222,7 @@ function RechargePage() {
 
       </div>
 
-      <CardStore balance={balance} onDone={() => { refetch(); }} />
+
 
       <div>
         <div className="flex items-center justify-between px-1 mb-2">
