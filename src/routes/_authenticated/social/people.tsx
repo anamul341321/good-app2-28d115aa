@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { Search, Loader2, UserPlus, ChevronLeft } from "lucide-react";
-import { listUsers } from "@/lib/social-users.functions";
+import { Search, Loader2, UserPlus, ChevronLeft, UserCheck, Clock } from "lucide-react";
+import { listUsers, sendFriendRequest } from "@/lib/social-users.functions";
 import { useLang } from "@/lib/i18n";
 import { MessengerAvatar } from "@/components/messenger/MessengerAvatar";
 import { useAuth } from "@/hooks/useAuth";
 import { useInView } from "react-intersection-observer";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+
 
 export const Route = createFileRoute("/_authenticated/social/people")({
   component: SocialPeoplePage,
@@ -16,8 +19,10 @@ function SocialPeoplePage() {
   const { t } = useLang();
   const navigate = useNavigate();
   const { user: currentUser } = useAuth();
+  const queryClient = useQueryClient();
   const [query, setQuery] = useState("");
   const { ref, inView } = useInView();
+
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useInfiniteQuery({
     queryKey: ["users-list", query],
@@ -26,6 +31,16 @@ function SocialPeoplePage() {
     getNextPageParam: (lastPage, allPages) => 
       lastPage.users.length === 20 ? allPages.length + 1 : undefined,
   });
+
+  const sendFriendMutation = useMutation({
+    mutationFn: (friendId: string) => sendFriendRequest({ data: { friendId } }),
+    onSuccess: () => {
+      toast.success(t("রিকোয়েস্ট পাঠানো হয়েছে", "Request sent"));
+      queryClient.invalidateQueries({ queryKey: ["users-list"] });
+    },
+    onError: (err: any) => toast.error(err.message)
+  });
+
 
   useEffect(() => {
     if (inView && hasNextPage) fetchNextPage();
@@ -69,10 +84,25 @@ function SocialPeoplePage() {
                   </div>
                 </button>
                 <div className="flex gap-2">
-                  <button className="h-9 w-9 rounded-full bg-primary/10 text-primary flex items-center justify-center btn-press">
-                    <UserPlus className="w-5 h-5" />
-                  </button>
+                  {u.friendship?.status === "accepted" ? (
+                    <div className="h-9 w-9 rounded-full bg-emerald/10 text-emerald flex items-center justify-center">
+                      <UserCheck className="w-5 h-5" />
+                    </div>
+                  ) : u.friendship?.status === "pending" ? (
+                    <div className="h-9 w-9 rounded-full bg-amber/10 text-amber flex items-center justify-center">
+                      <Clock className="w-5 h-5" />
+                    </div>
+                  ) : (
+                    <button 
+                      onClick={() => sendFriendMutation.mutate(u.id)}
+                      disabled={sendFriendMutation.isPending}
+                      className="h-9 w-9 rounded-full bg-primary/10 text-primary flex items-center justify-center btn-press disabled:opacity-50"
+                    >
+                      <UserPlus className="w-5 h-5" />
+                    </button>
+                  )}
                 </div>
+
               </div>
             ))}
             <div ref={ref} className="h-10 flex justify-center items-center">
