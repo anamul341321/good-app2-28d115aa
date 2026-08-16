@@ -104,6 +104,9 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   const [peerControl, setPeerControl] = useState(false);
   const allowControlRef = useRef(false);
   useEffect(() => { allowControlRef.current = allowControl; }, [allowControl]);
+  // অনুমতি চাওয়ার শীট (disclaimer) — চালু করার আগে ইউজারকে স্পষ্ট জানানো হয়
+  const [controlAsk, setControlAsk] = useState(false);
+
 
 
   const [quality, setQuality] = useState<"good" | "poor" | "reconnecting">("good");
@@ -822,26 +825,33 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // রিমোট কন্ট্রোল অনুমতি টগল — Android-এ Accessibility অনুমতি লাগে
-  const toggleControl = useCallback(() => {
+  // অনুমতি নিশ্চিত করার পর আসল কাজ — Android-এ Accessibility অনুমতি লাগে
+  const enableControl = useCallback(() => {
     const bridge = (window as any).GoodAppDownloader;
-    if (allowControl) {
-      setAllowControl(false);
-      if (peer && myId) void sendTo(peer.id, { kind: "control", from: myId, enabled: false });
-      return;
-    }
+    setControlAsk(false);
     if (!bridge?.remoteControlReady) {
       toast.error("রিমোট কন্ট্রোল শুধু Good-App অ্যাপে কাজ করে");
       return;
     }
     if (!bridge.remoteControlReady()) {
-      toast("Settings-এ Good-App রিমোট কন্ট্রোল চালু করুন, তারপর আবার চাপুন");
+      toast("Settings → Accessibility → Good-App চালু করুন, তারপর আবার চাপুন");
       bridge.openRemoteControlSettings?.();
       return;
     }
     setAllowControl(true);
     if (peer && myId) void sendTo(peer.id, { kind: "control", from: myId, enabled: true });
     toast.success("রিমোট কন্ট্রোল চালু — সে এখন আপনার ফোন চালাতে পারবে");
+  }, [peer, myId, sendTo]);
+
+  // টগল — বন্ধ করা সাথে সাথে, চালু করার আগে disclaimer শীট
+  const toggleControl = useCallback(() => {
+    if (allowControl) {
+      setAllowControl(false);
+      if (peer && myId) void sendTo(peer.id, { kind: "control", from: myId, enabled: false });
+      toast("রিমোট কন্ট্রোল বন্ধ");
+      return;
+    }
+    setControlAsk(true);
   }, [allowControl, peer, myId, sendTo]);
 
   const toggleShare = useCallback(async () => {
@@ -980,8 +990,16 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
               const r = el.getBoundingClientRect();
               const start = el.__pd;
               el.__pd = undefined;
-              const nx = (v: number) => (v - r.left) / Math.max(1, r.width);
-              const ny = (v: number) => (v - r.top) / Math.max(1, r.height);
+              // object-cover হওয়ায় ভিডিওর কিছু অংশ কাটা পড়ে — তাই আসল ফ্রেম
+              // অনুযায়ী কো-অর্ডিনেট বের করি, নাহলে ট্যাপ ভুল জায়গায় পড়বে
+              const vw = el.videoWidth || r.width;
+              const vh = el.videoHeight || r.height;
+              const scale = Math.max(r.width / vw, r.height / vh);
+              const dw = vw * scale, dh = vh * scale;
+              const ox = (r.width - dw) / 2, oy = (r.height - dh) / 2;
+              const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
+              const nx = (v: number) => clamp01((v - r.left - ox) / Math.max(1, dw));
+              const ny = (v: number) => clamp01((v - r.top - oy) / Math.max(1, dh));
               const x = nx(e.clientX), y = ny(e.clientY);
               const dx = start ? e.clientX - start.x : 0;
               const dy = start ? e.clientY - start.y : 0;
@@ -1040,6 +1058,37 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
               </button>
             </div>
           )}
+
+          {/* রিমোট কন্ট্রোল — অনুমতি চাওয়ার আগে স্পষ্ট সতর্কবার্তা */}
+          {controlAsk && (
+            <div className="absolute inset-0 z-[9] grid place-items-center bg-black/70 p-5 backdrop-blur">
+              <div className="w-full max-w-[340px] rounded-3xl border border-white/12 bg-[#0f1730] p-5 text-white shadow-2xl">
+                <h3 className="text-[15px] font-extrabold">রিমোট কন্ট্রোল চালু করবেন?</h3>
+                <ul className="mt-3 space-y-2 text-[12.5px] leading-relaxed text-white/75">
+                  <li>• অনুমতি দিলে <b>শুধু এই কলের সময়</b> অন্য পাশ থেকে আপনার স্ক্রিনে ট্যাপ, স্বাইপ, ব্যাক ও হোম চালানো যাবে।</li>
+                  <li>• কল শেষ হলে অনুমতি <b>স্বয়ংক্রিয়ভাবে বন্ধ</b> হয়ে যাবে।</li>
+                  <li>• ব্যাংকিং/OTP/পাসওয়ার্ড স্ক্রিন খোলা থাকলে চালু করবেন না।</li>
+                  <li>• শুধু বিশ্বস্ত সাপোর্ট/পরিচিত ব্যক্তিকে অনুমতি দিন।</li>
+                </ul>
+                <div className="mt-4 grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => setControlAsk(false)}
+                    className="btn-press rounded-xl border border-white/12 bg-white/5 py-2.5 text-[13px] font-bold text-white/80"
+                  >
+                    বাতিল
+                  </button>
+                  <button
+                    onClick={enableControl}
+                    className="btn-press rounded-xl bg-amber-500 py-2.5 text-[13px] font-extrabold text-black"
+                  >
+                    রাজি, চালু করুন
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+
 
 
           {/* অন্যজনের নির্দেশনা মার্কার — শেয়ার করার সময় "এখানে চাপুন" */}
