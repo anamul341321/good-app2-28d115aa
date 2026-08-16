@@ -1131,7 +1131,8 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
                   {sharing ? <MonitorOff className="h-5 w-5 text-emerald-400" /> : <MonitorUp className="h-5 w-5" />}
                 </CallCtl>
               )}
-              {sharing && (
+              {(sharing || state === "active") && (
+
                 <CallCtl active={allowControl} onClick={toggleControl} label="কন্ট্রোল">
                   <MousePointerClick className={`h-5 w-5 ${allowControl ? "text-amber-400" : ""}`} />
                 </CallCtl>
