@@ -192,10 +192,8 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     ring.current?.stop();
     ring.current = null;
     setPeer(null);
-    setAllowControl(false);
-    setPeerControl(false);
-    setControlAsk(false);
     setRemotePointer(null);
+
     setState("idle");
 
     setMuted(false);
