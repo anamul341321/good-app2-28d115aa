@@ -984,36 +984,22 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
               (e.currentTarget as any).__pd = { x: e.clientX, y: e.clientY, t: Date.now() };
             }}
             onPointerUp={(e) => {
-              // অন্যজনের স্ক্রিন দেখার সময় ট্যাপ করলে তার স্ক্রিনে মার্কার যায়;
-              // অনুমতি দেওয়া থাকলে সেটি আসল টাচ হয়ে যায়। টেনে দিলে স্ক্রল (swipe)।
+              // অন্যজনের স্ক্রিন দেখার সময় ট্যাপ করলে তার স্ক্রিনে শুধু মার্কার যায়
               if (!peer || state !== "active" || !myId) return;
               const el = e.currentTarget as HTMLVideoElement & { __pd?: { x: number; y: number } };
               const r = el.getBoundingClientRect();
-              const start = el.__pd;
               el.__pd = undefined;
-              // object-cover হওয়ায় ভিডিওর কিছু অংশ কাটা পড়ে — তাই আসল ফ্রেম
-              // অনুযায়ী কো-অর্ডিনেট বের করি, নাহলে ট্যাপ ভুল জায়গায় পড়বে
               const vw = el.videoWidth || r.width;
               const vh = el.videoHeight || r.height;
               const scale = Math.max(r.width / vw, r.height / vh);
               const dw = vw * scale, dh = vh * scale;
               const ox = (r.width - dw) / 2, oy = (r.height - dh) / 2;
               const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
-              const nx = (v: number) => clamp01((v - r.left - ox) / Math.max(1, dw));
-              const ny = (v: number) => clamp01((v - r.top - oy) / Math.max(1, dh));
-              const x = nx(e.clientX), y = ny(e.clientY);
-              const dx = start ? e.clientX - start.x : 0;
-              const dy = start ? e.clientY - start.y : 0;
-              const dragged = Math.hypot(dx, dy) > 24;
-              if (dragged && peerControl && start) {
-                void sendTo(peer.id, {
-                  kind: "gesture", from: myId, type: "swipe",
-                  x: nx(start.x), y: ny(start.y), x2: x, y2: y,
-                });
-                return;
-              }
+              const x = clamp01((e.clientX - r.left - ox) / Math.max(1, dw));
+              const y = clamp01((e.clientY - r.top - oy) / Math.max(1, dh));
               void sendTo(peer.id, { kind: "pointer", from: myId, x, y });
             }}
+
 
             className={`absolute inset-0 h-full w-full object-cover ${withVideo ? "" : "opacity-0"}`}
           />
