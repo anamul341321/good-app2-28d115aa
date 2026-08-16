@@ -142,7 +142,10 @@ export function MiningCounter({
 
   const rawSelfSlots = selfSlotsProp ?? effectiveTaskCount;
   const selfSlots = selfQualified ? rawSelfSlots : 0;
-  const refUnits = referralUnitsProp ?? qualifyingReferees;
+  // referralUnits is in "slot units": প্রতি রেফারির প্রতি স্লটে ০.১ ইউনিট (=৫৳/মাস)।
+  // পুরনো fallback রেফারির সংখ্যাকেই ইউনিট ধরত, তাতে রেট ১০ গুণ বেশি দেখাত।
+  const refUnits = referralUnitsProp ?? qualifyingReferees * 0.1;
+
   const live = isActive && (selfSlots > 0 || refUnits > 0);
   const shownSlots = selfSlots;
   const ratePerMonth = monthlyRate(rateArgs);
