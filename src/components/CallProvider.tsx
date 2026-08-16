@@ -33,6 +33,10 @@ type Signal =
   | { kind: "answer"; from: string; sdp: any }
   | { kind: "ice"; from: string; candidate: any }
   | { kind: "pointer"; from: string; x: number; y: number }
+  | { kind: "control"; from: string; enabled: boolean }
+  | { kind: "gesture"; from: string; type: "swipe"; x: number; y: number; x2: number; y2: number }
+  | { kind: "gesture"; from: string; type: "back" | "home" | "recents" }
+
   | { kind: "end"; from: string }
   | { kind: "busy"; from: string };
 
