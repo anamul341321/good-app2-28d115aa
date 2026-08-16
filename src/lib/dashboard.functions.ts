@@ -157,19 +157,36 @@ export const getDashboard = createServerFn({ method: "GET" })
       vouchers: pendingVouchers ?? [],
       debts: activeDebts ?? [],
       debtTotal,
-      bonus: {
-        firstVerifyCount,
-        reverifyCount,
-        selfFirstPaid: bonus.selfFirstPaid,
-        referrerPaid: bonus.referrerPaid,
-        userReverifyPaid: bonus.userReverifyPaid,
-        selfFirstAmount: bonus.selfFirstAmount,
-        referrerAmount: bonus.referrerAmount,
-        userAmount: bonus.userAmount,
-        totalAmount: Number((balanceBreakdown as any)?.bonus ?? 0),
-        hasReferrer: !!(profile as any)?.referred_by,
-        rates: bonus.rates,
-      },
+      bonus: (() => {
+        // The banner must advertise the *offer* value (re-verify + refer + first-verify
+        // rates), not the user's current bonus balance — a new user has 0৳ balance and
+        // used to see "0৳ বোনাস!", which killed the offer.
+        const selfFirstAmount = Number(bonus.selfFirstAmount ?? 0);
+        const userAmount = Number(bonus.userAmount ?? 0);
+        const referrerAmount = Number(bonus.referrerAmount ?? 0);
+        const offerTotal = selfFirstAmount + userAmount + referrerAmount;
+        const pendingAmount =
+          (bonus.selfFirstPaid ? 0 : selfFirstAmount) +
+          (bonus.userReverifyPaid ? 0 : userAmount) +
+          (bonus.referrerPaid ? 0 : referrerAmount);
+        return {
+          firstVerifyCount,
+          reverifyCount,
+          selfFirstPaid: bonus.selfFirstPaid,
+          referrerPaid: bonus.referrerPaid,
+          userReverifyPaid: bonus.userReverifyPaid,
+          selfFirstAmount,
+          referrerAmount,
+          userAmount,
+          totalAmount: offerTotal,
+          offerTotal,
+          pendingAmount,
+          bonusBalance: Number((balanceBreakdown as any)?.bonus ?? 0),
+          hasReferrer: !!(profile as any)?.referred_by,
+          rates: bonus.rates,
+        };
+      })(),
+
       balanceBreakdown,
     };
   });

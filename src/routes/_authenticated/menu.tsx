@@ -37,7 +37,7 @@ function MenuPage() {
     staleTime: 30_000,
   });
   const b = (data as any)?.bonus;
-  const bonusTotal = b ? Number(b.totalAmount ?? 0) : 0;
+  const bonusTotal = b ? Number(b.pendingAmount ?? b.totalAmount ?? 0) : 0;
   const bonusOn = b?.rates?.bonus_enabled !== false;
   const hasUnclaimed = bonusOn && b && !(b.selfFirstPaid && b.referrerPaid && b.userReverifyPaid);
   const rechargeOn = (data as any)?.payoutSettings?.rechargeEnabled !== false;
