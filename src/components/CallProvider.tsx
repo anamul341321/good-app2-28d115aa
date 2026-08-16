@@ -719,6 +719,14 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
           }
           return;
         }
+        if (sig.kind === "pointer") {
+          setRemotePointer({ x: sig.x, y: sig.y, at: Date.now() });
+          window.setTimeout(() => {
+            setRemotePointer((p) => (p && Date.now() - p.at >= 2500 ? null : p));
+          }, 2600);
+          return;
+        }
+
         if (sig.kind === "busy") {
           toast.error("ইউজার এখন অন্য কলে ব্যস্ত");
           cleanup();
