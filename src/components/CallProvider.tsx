@@ -826,34 +826,6 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // অনুমতি নিশ্চিত করার পর আসল কাজ — Android-এ Accessibility অনুমতি লাগে
-  const enableControl = useCallback(() => {
-    const bridge = (window as any).GoodAppDownloader;
-    setControlAsk(false);
-    if (!bridge?.remoteControlReady) {
-      toast.error("রিমোট কন্ট্রোল শুধু Good-App অ্যাপে কাজ করে");
-      return;
-    }
-    if (!bridge.remoteControlReady()) {
-      toast("Settings → Accessibility → Good-App চালু করুন, তারপর আবার চাপুন");
-      bridge.openRemoteControlSettings?.();
-      return;
-    }
-    setAllowControl(true);
-    if (peer && myId) void sendTo(peer.id, { kind: "control", from: myId, enabled: true });
-    toast.success("রিমোট কন্ট্রোল চালু — সে এখন আপনার ফোন চালাতে পারবে");
-  }, [peer, myId, sendTo]);
-
-  // টগল — বন্ধ করা সাথে সাথে, চালু করার আগে disclaimer শীট
-  const toggleControl = useCallback(() => {
-    if (allowControl) {
-      setAllowControl(false);
-      if (peer && myId) void sendTo(peer.id, { kind: "control", from: myId, enabled: false });
-      toast("রিমোট কন্ট্রোল বন্ধ");
-      return;
-    }
-    setControlAsk(true);
-  }, [allowControl, peer, myId, sendTo]);
 
   const toggleShare = useCallback(async () => {
 
