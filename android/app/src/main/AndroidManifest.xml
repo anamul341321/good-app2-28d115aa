@@ -94,18 +94,6 @@
             android:exported="false"
             android:foregroundServiceType="mediaProjection" />
 
-        <!-- রিমোট কন্ট্রোল (ইউজার নিজে Settings থেকে অন করলে কাজ করে) -->
-        <service
-            android:name=".RemoteControlService"
-            android:exported="false"
-            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
-            <intent-filter>
-                <action android:name="android.accessibilityservice.AccessibilityService" />
-            </intent-filter>
-            <meta-data
-                android:name="android.accessibilityservice"
-                android:resource="@xml/remote_control_service" />
-        </service>
 
         <receiver
             android:name=".NotificationReplyReceiver"
