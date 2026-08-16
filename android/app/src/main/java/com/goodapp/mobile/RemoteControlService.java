@@ -32,6 +32,12 @@ public class RemoteControlService extends AccessibilityService {
     }
 
     @Override
+    public void onDestroy() {
+        instance = null;
+        super.onDestroy();
+    }
+
+    @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
         // আমরা কোনো স্ক্রিন কনটেন্ট পড়ি না — শুধু জেসচার চালাই।
     }
