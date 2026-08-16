@@ -89,6 +89,9 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   const [muted, setMuted] = useState(false);
   const [camOff, setCamOff] = useState(false);
   const [sharing, setSharing] = useState(false);
+  // অন্য পাশ থেকে আসা "এখানে চাপুন" নির্দেশনা — শেয়ার করার সময় স্ক্রিনে মার্কার দেখায়
+  const [remotePointer, setRemotePointer] = useState<{ x: number; y: number; at: number } | null>(null);
+
   const [quality, setQuality] = useState<"good" | "poor" | "reconnecting">("good");
   const [seconds, setSeconds] = useState(0);
   const [callSessionId, setCallSessionId] = useState<string | null>(null);
