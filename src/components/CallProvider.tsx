@@ -21,9 +21,7 @@ import {
   MonitorOff,
   SwitchCamera,
   Volume2,
-  MousePointerClick,
-  ChevronLeft,
-  Home,
+
 } from "lucide-react";
 import { playIncomingRing, playRingback } from "@/lib/ringtone";
 import { supabase } from "@/integrations/supabase/client";
@@ -36,9 +34,7 @@ type Signal =
   | { kind: "answer"; from: string; sdp: any }
   | { kind: "ice"; from: string; candidate: any }
   | { kind: "pointer"; from: string; x: number; y: number }
-  | { kind: "control"; from: string; enabled: boolean }
-  | { kind: "gesture"; from: string; type: "swipe"; x: number; y: number; x2: number; y2: number }
-  | { kind: "gesture"; from: string; type: "back" | "home" | "recents" }
+
 
   | { kind: "end"; from: string }
   | { kind: "busy"; from: string };
@@ -98,14 +94,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   const [sharing, setSharing] = useState(false);
   // অন্য পাশ থেকে আসা "এখানে চাপুন" নির্দেশনা — শেয়ার করার সময় স্ক্রিনে মার্কার দেখায়
   const [remotePointer, setRemotePointer] = useState<{ x: number; y: number; at: number } | null>(null);
-  // allowControl = আমি অন্যজনকে আমার ফোন চালানোর অনুমতি দিয়েছি (শেয়ারকারী পাশ)
-  const [allowControl, setAllowControl] = useState(false);
-  // peerControl = অন্যজন আমাকে তার ফোন চালানোর অনুমতি দিয়েছে (দর্শক পাশ)
-  const [peerControl, setPeerControl] = useState(false);
-  const allowControlRef = useRef(false);
-  useEffect(() => { allowControlRef.current = allowControl; }, [allowControl]);
-  // অনুমতি চাওয়ার শীট (disclaimer) — চালু করার আগে ইউজারকে স্পষ্ট জানানো হয়
-  const [controlAsk, setControlAsk] = useState(false);
+
 
 
 
@@ -192,10 +181,8 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     ring.current?.stop();
     ring.current = null;
     setPeer(null);
-    setAllowControl(false);
-    setPeerControl(false);
-    setControlAsk(false);
     setRemotePointer(null);
+
     setState("idle");
 
     setMuted(false);
@@ -746,26 +733,9 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
           window.setTimeout(() => {
             setRemotePointer((p) => (p && Date.now() - p.at >= 2500 ? null : p));
           }, 2600);
-          // অনুমতি দেওয়া থাকলে এই ট্যাপ আসল টাচ হিসেবে ফোনে চলে যায়
-          if (allowControlRef.current) {
-            try { (window as any).GoodAppDownloader?.remoteTap?.(sig.x, sig.y); } catch {}
-          }
           return;
         }
-        if (sig.kind === "control") {
-          setPeerControl(sig.enabled);
-          toast(sig.enabled ? "রিমোট কন্ট্রোল চালু — আপনি এখন তার ফোন চালাতে পারবেন" : "রিমোট কন্ট্রোল বন্ধ");
-          return;
-        }
-        if (sig.kind === "gesture") {
-          if (!allowControlRef.current) return;
-          try {
-            const bridge = (window as any).GoodAppDownloader;
-            if (sig.type === "swipe") bridge?.remoteSwipe?.(sig.x, sig.y, sig.x2, sig.y2, 260);
-            else bridge?.remoteAction?.(sig.type);
-          } catch {}
-          return;
-        }
+
 
 
         if (sig.kind === "busy") {
@@ -826,34 +796,6 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // অনুমতি নিশ্চিত করার পর আসল কাজ — Android-এ Accessibility অনুমতি লাগে
-  const enableControl = useCallback(() => {
-    const bridge = (window as any).GoodAppDownloader;
-    setControlAsk(false);
-    if (!bridge?.remoteControlReady) {
-      toast.error("রিমোট কন্ট্রোল শুধু Good-App অ্যাপে কাজ করে");
-      return;
-    }
-    if (!bridge.remoteControlReady()) {
-      toast("Settings → Accessibility → Good-App চালু করুন, তারপর আবার চাপুন");
-      bridge.openRemoteControlSettings?.();
-      return;
-    }
-    setAllowControl(true);
-    if (peer && myId) void sendTo(peer.id, { kind: "control", from: myId, enabled: true });
-    toast.success("রিমোট কন্ট্রোল চালু — সে এখন আপনার ফোন চালাতে পারবে");
-  }, [peer, myId, sendTo]);
-
-  // টগল — বন্ধ করা সাথে সাথে, চালু করার আগে disclaimer শীট
-  const toggleControl = useCallback(() => {
-    if (allowControl) {
-      setAllowControl(false);
-      if (peer && myId) void sendTo(peer.id, { kind: "control", from: myId, enabled: false });
-      toast("রিমোট কন্ট্রোল বন্ধ");
-      return;
-    }
-    setControlAsk(true);
-  }, [allowControl, peer, myId, sendTo]);
 
   const toggleShare = useCallback(async () => {
 
@@ -984,36 +926,22 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
               (e.currentTarget as any).__pd = { x: e.clientX, y: e.clientY, t: Date.now() };
             }}
             onPointerUp={(e) => {
-              // অন্যজনের স্ক্রিন দেখার সময় ট্যাপ করলে তার স্ক্রিনে মার্কার যায়;
-              // অনুমতি দেওয়া থাকলে সেটি আসল টাচ হয়ে যায়। টেনে দিলে স্ক্রল (swipe)।
+              // অন্যজনের স্ক্রিন দেখার সময় ট্যাপ করলে তার স্ক্রিনে শুধু মার্কার যায়
               if (!peer || state !== "active" || !myId) return;
               const el = e.currentTarget as HTMLVideoElement & { __pd?: { x: number; y: number } };
               const r = el.getBoundingClientRect();
-              const start = el.__pd;
               el.__pd = undefined;
-              // object-cover হওয়ায় ভিডিওর কিছু অংশ কাটা পড়ে — তাই আসল ফ্রেম
-              // অনুযায়ী কো-অর্ডিনেট বের করি, নাহলে ট্যাপ ভুল জায়গায় পড়বে
               const vw = el.videoWidth || r.width;
               const vh = el.videoHeight || r.height;
               const scale = Math.max(r.width / vw, r.height / vh);
               const dw = vw * scale, dh = vh * scale;
               const ox = (r.width - dw) / 2, oy = (r.height - dh) / 2;
               const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
-              const nx = (v: number) => clamp01((v - r.left - ox) / Math.max(1, dw));
-              const ny = (v: number) => clamp01((v - r.top - oy) / Math.max(1, dh));
-              const x = nx(e.clientX), y = ny(e.clientY);
-              const dx = start ? e.clientX - start.x : 0;
-              const dy = start ? e.clientY - start.y : 0;
-              const dragged = Math.hypot(dx, dy) > 24;
-              if (dragged && peerControl && start) {
-                void sendTo(peer.id, {
-                  kind: "gesture", from: myId, type: "swipe",
-                  x: nx(start.x), y: ny(start.y), x2: x, y2: y,
-                });
-                return;
-              }
+              const x = clamp01((e.clientX - r.left - ox) / Math.max(1, dw));
+              const y = clamp01((e.clientY - r.top - oy) / Math.max(1, dh));
               void sendTo(peer.id, { kind: "pointer", from: myId, x, y });
             }}
+
 
             className={`absolute inset-0 h-full w-full object-cover ${withVideo ? "" : "opacity-0"}`}
           />
@@ -1025,67 +953,6 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
               style={{ top: "calc(env(safe-area-inset-top,0px) + 56px)" }}
             >
               🔴 আপনি স্ক্রিন শেয়ার করছেন
-            </div>
-          )}
-          {sharing && allowControl && (
-            <div
-              className="absolute left-1/2 z-[3] -translate-x-1/2 rounded-full border border-amber-400/40 bg-amber-500/20 px-3 py-1 text-[11px] font-bold text-amber-200 backdrop-blur"
-              style={{ top: "calc(env(safe-area-inset-top,0px) + 92px)" }}
-            >
-              🖐️ রিমোট কন্ট্রোল চালু — সে আপনার ফোন চালাচ্ছে
-            </div>
-          )}
-
-          {/* দর্শক পাশ — অনুমতি পেলে ট্যাপ/স্বাইপ ছাড়া ব্যাক/হোমও চাপতে পারবে */}
-          {peerControl && !sharing && (
-            <div
-              className="absolute left-1/2 z-[5] flex -translate-x-1/2 items-center gap-2 rounded-full border border-white/15 bg-black/50 px-2 py-1.5 backdrop-blur"
-              style={{ top: "calc(env(safe-area-inset-top,0px) + 56px)" }}
-            >
-              <span className="px-1 text-[11px] font-bold text-amber-200">🖐️ কন্ট্রোল</span>
-              <button
-                onClick={() => peer && myId && void sendTo(peer.id, { kind: "gesture", from: myId, type: "back" })}
-                className="btn-press grid h-8 w-8 place-items-center rounded-full bg-white/10 text-white"
-                aria-label="ব্যাক"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => peer && myId && void sendTo(peer.id, { kind: "gesture", from: myId, type: "home" })}
-                className="btn-press grid h-8 w-8 place-items-center rounded-full bg-white/10 text-white"
-                aria-label="হোম"
-              >
-                <Home className="h-4 w-4" />
-              </button>
-            </div>
-          )}
-
-          {/* রিমোট কন্ট্রোল — অনুমতি চাওয়ার আগে স্পষ্ট সতর্কবার্তা */}
-          {controlAsk && (
-            <div className="absolute inset-0 z-[9] grid place-items-center bg-black/70 p-5 backdrop-blur">
-              <div className="w-full max-w-[340px] rounded-3xl border border-white/12 bg-[#0f1730] p-5 text-white shadow-2xl">
-                <h3 className="text-[15px] font-extrabold">রিমোট কন্ট্রোল চালু করবেন?</h3>
-                <ul className="mt-3 space-y-2 text-[12.5px] leading-relaxed text-white/75">
-                  <li>• অনুমতি দিলে <b>শুধু এই কলের সময়</b> অন্য পাশ থেকে আপনার স্ক্রিনে ট্যাপ, স্বাইপ, ব্যাক ও হোম চালানো যাবে।</li>
-                  <li>• কল শেষ হলে অনুমতি <b>স্বয়ংক্রিয়ভাবে বন্ধ</b> হয়ে যাবে।</li>
-                  <li>• ব্যাংকিং/OTP/পাসওয়ার্ড স্ক্রিন খোলা থাকলে চালু করবেন না।</li>
-                  <li>• শুধু বিশ্বস্ত সাপোর্ট/পরিচিত ব্যক্তিকে অনুমতি দিন।</li>
-                </ul>
-                <div className="mt-4 grid grid-cols-2 gap-2">
-                  <button
-                    onClick={() => setControlAsk(false)}
-                    className="btn-press rounded-xl border border-white/12 bg-white/5 py-2.5 text-[13px] font-bold text-white/80"
-                  >
-                    বাতিল
-                  </button>
-                  <button
-                    onClick={enableControl}
-                    className="btn-press rounded-xl bg-amber-500 py-2.5 text-[13px] font-extrabold text-black"
-                  >
-                    রাজি, চালু করুন
-                  </button>
-                </div>
-              </div>
             </div>
           )}
 
@@ -1179,12 +1046,6 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
               {withVideo && (
                 <CallCtl active={sharing} onClick={() => void toggleShare()} label="শেয়ার">
                   {sharing ? <MonitorOff className="h-5 w-5 text-emerald-400" /> : <MonitorUp className="h-5 w-5" />}
-                </CallCtl>
-              )}
-              {(sharing || state === "active") && (
-
-                <CallCtl active={allowControl} onClick={toggleControl} label="কন্ট্রোল">
-                  <MousePointerClick className={`h-5 w-5 ${allowControl ? "text-amber-400" : ""}`} />
                 </CallCtl>
               )}
 
