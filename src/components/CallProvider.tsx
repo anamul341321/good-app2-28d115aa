@@ -1095,6 +1095,12 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
                   {sharing ? <MonitorOff className="h-5 w-5 text-emerald-400" /> : <MonitorUp className="h-5 w-5" />}
                 </CallCtl>
               )}
+              {sharing && (
+                <CallCtl active={allowControl} onClick={toggleControl} label="কন্ট্রোল">
+                  <MousePointerClick className={`h-5 w-5 ${allowControl ? "text-amber-400" : ""}`} />
+                </CallCtl>
+              )}
+
               <button
                 onClick={hangUp}
                 className="btn-press grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[#ff3b30] text-white shadow-[0_10px_24px_-10px_rgba(255,59,48,0.95)]"
