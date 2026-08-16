@@ -24,7 +24,7 @@ export function ReferralCommissionCard() {
 
   if (!data) return null;
 
-  const refUnits = Number(data.referralUnits ?? data.qualifyingReferees ?? 0);
+  const refUnits = Number(data.referralUnits ?? Number(data.qualifyingReferees ?? 0) * 0.1);
   const ratePerSec = RATE_PER_SLOT_SEC * refUnits;
   let balance = Number(data.referralAccrued ?? 0);
   if (live && data.lastCreditedAt) {

@@ -20,7 +20,12 @@ export function miningUnits(input: {
   const selfOk = input.selfQualified !== false;
   const rawSelf = input.selfSlots ?? input.effectiveTaskCount ?? 0;
   const selfUnits = selfOk ? Math.max(0, rawSelf) : 0;
-  const refUnits = Math.max(0, input.referralUnits ?? input.qualifyingReferees ?? 0);
+  // Fallback: a referee count is NOT a unit count — each referee slot is worth
+  // only 10% of a slot (5৳/মাস), so scale it. Otherwise rates showed 10x.
+  const refUnits = Math.max(
+    0,
+    input.referralUnits ?? (input.qualifyingReferees ?? 0) * REFERRAL_SHARE,
+  );
   return { selfUnits, refUnits };
 }
 
