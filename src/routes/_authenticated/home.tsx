@@ -621,10 +621,11 @@ function HomePage() {
                   🚀 চলুন শুরু করি!
                 </button>
                 <p className="text-[10px] text-center text-muted-foreground">
-                  {b.selfFirstPaid ? "✅" : "⏳"} {b.selfFirstAmount}৳ &nbsp;·&nbsp;
+                  {Number(b.selfFirstAmount) > 0 ? `${b.selfFirstPaid ? "✅" : "⏳"} ${b.selfFirstAmount}৳ · ` : ""}
                   {b.userReverifyPaid ? "✅" : "⏳"} {b.userAmount}৳ &nbsp;·&nbsp;
                   {b.referrerPaid ? "✅" : "⏳"} {b.referrerAmount}৳
                 </p>
+
               </div>
             </div>
           </div>
