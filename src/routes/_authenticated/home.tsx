@@ -572,13 +572,15 @@ function HomePage() {
                   {Number(b.totalAmount ?? 350)}৳ বোনাস!
                 </p>
                 <p className="relative text-[11px] font-black text-white/90 mt-1">
-                  {b.selfFirstAmount}৳ First + {b.userAmount}৳ Re-verify + {b.referrerAmount}৳ Refer = <span className="text-amber-200">মোট {b.totalAmount}৳</span>
+                  {Number(b.selfFirstAmount) > 0 ? `${b.selfFirstAmount}৳ First + ` : ""}
+                  {b.userAmount}৳ Re-verify + {b.referrerAmount}৳ Refer = <span className="text-amber-200">মোট {b.totalAmount}৳</span>
                 </p>
                 <p className="relative text-[13px] font-black text-white/95 mt-1">
                   একদম <span className="underline decoration-white/70">ফ্রি</span> — আজই নিন!
                 </p>
               </div>
               <div className="bg-white p-4 space-y-3">
+                {Number(b.selfFirstAmount) > 0 && (
                 <div className="rounded-2xl p-3 border-2 border-cyan/30 bg-cyan/5">
                   <p className="text-sm font-black text-cyan flex items-center gap-1.5">
                     <Gift className="w-4 h-4" /> {b.selfFirstAmount}৳ — First-verify বোনাস (আপনার)
@@ -587,6 +589,8 @@ function HomePage() {
                     ১০ জন সাক্ষীর <b>First Verify</b> শেষ করলেই সাথে সাথে <b>{b.selfFirstAmount}৳</b> আপনার balance-এ জমা।
                   </p>
                 </div>
+                )}
+
                 <div className="rounded-2xl p-3 border-2 border-amber/40 bg-amber/5">
                   <p className="text-sm font-black text-amber flex items-center gap-1.5">
                     <Gift className="w-4 h-4" /> {b.userAmount}৳ — রি-ভেরিফাই বোনাস (আপনার)
