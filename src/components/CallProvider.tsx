@@ -966,14 +966,33 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
             ref={remoteVideo}
             autoPlay
             playsInline
-            onClick={(e) => {
-              // অন্যজনের স্ক্রিন দেখার সময় ট্যাপ করলে তার স্ক্রিনে "এখানে চাপুন" মার্কার যায়
-              if (!peer || state !== "active") return;
-              const r = (e.currentTarget as HTMLVideoElement).getBoundingClientRect();
-              const x = (e.clientX - r.left) / Math.max(1, r.width);
-              const y = (e.clientY - r.top) / Math.max(1, r.height);
-              if (myId) void sendTo(peer.id, { kind: "pointer", from: myId, x, y });
+            onPointerDown={(e) => {
+              (e.currentTarget as any).__pd = { x: e.clientX, y: e.clientY, t: Date.now() };
             }}
+            onPointerUp={(e) => {
+              // অন্যজনের স্ক্রিন দেখার সময় ট্যাপ করলে তার স্ক্রিনে মার্কার যায়;
+              // অনুমতি দেওয়া থাকলে সেটি আসল টাচ হয়ে যায়। টেনে দিলে স্ক্রল (swipe)।
+              if (!peer || state !== "active" || !myId) return;
+              const el = e.currentTarget as HTMLVideoElement & { __pd?: { x: number; y: number } };
+              const r = el.getBoundingClientRect();
+              const start = el.__pd;
+              el.__pd = undefined;
+              const nx = (v: number) => (v - r.left) / Math.max(1, r.width);
+              const ny = (v: number) => (v - r.top) / Math.max(1, r.height);
+              const x = nx(e.clientX), y = ny(e.clientY);
+              const dx = start ? e.clientX - start.x : 0;
+              const dy = start ? e.clientY - start.y : 0;
+              const dragged = Math.hypot(dx, dy) > 24;
+              if (dragged && peerControl && start) {
+                void sendTo(peer.id, {
+                  kind: "gesture", from: myId, type: "swipe",
+                  x: nx(start.x), y: ny(start.y), x2: x, y2: y,
+                });
+                return;
+              }
+              void sendTo(peer.id, { kind: "pointer", from: myId, x, y });
+            }}
+
             className={`absolute inset-0 h-full w-full object-cover ${withVideo ? "" : "opacity-0"}`}
           />
 
