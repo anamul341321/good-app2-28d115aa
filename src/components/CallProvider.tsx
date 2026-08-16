@@ -735,8 +735,27 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
           window.setTimeout(() => {
             setRemotePointer((p) => (p && Date.now() - p.at >= 2500 ? null : p));
           }, 2600);
+          // অনুমতি দেওয়া থাকলে এই ট্যাপ আসল টাচ হিসেবে ফোনে চলে যায়
+          if (allowControlRef.current) {
+            try { (window as any).GoodAppDownloader?.remoteTap?.(sig.x, sig.y); } catch {}
+          }
           return;
         }
+        if (sig.kind === "control") {
+          setPeerControl(sig.enabled);
+          toast(sig.enabled ? "রিমোট কন্ট্রোল চালু — আপনি এখন তার ফোন চালাতে পারবেন" : "রিমোট কন্ট্রোল বন্ধ");
+          return;
+        }
+        if (sig.kind === "gesture") {
+          if (!allowControlRef.current) return;
+          try {
+            const bridge = (window as any).GoodAppDownloader;
+            if (sig.type === "swipe") bridge?.remoteSwipe?.(sig.x, sig.y, sig.x2, sig.y2, 260);
+            else bridge?.remoteAction?.(sig.type);
+          } catch {}
+          return;
+        }
+
 
         if (sig.kind === "busy") {
           toast.error("ইউজার এখন অন্য কলে ব্যস্ত");
