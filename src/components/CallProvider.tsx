@@ -1008,6 +1008,39 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
               🔴 আপনি স্ক্রিন শেয়ার করছেন
             </div>
           )}
+          {sharing && allowControl && (
+            <div
+              className="absolute left-1/2 z-[3] -translate-x-1/2 rounded-full border border-amber-400/40 bg-amber-500/20 px-3 py-1 text-[11px] font-bold text-amber-200 backdrop-blur"
+              style={{ top: "calc(env(safe-area-inset-top,0px) + 92px)" }}
+            >
+              🖐️ রিমোট কন্ট্রোল চালু — সে আপনার ফোন চালাচ্ছে
+            </div>
+          )}
+
+          {/* দর্শক পাশ — অনুমতি পেলে ট্যাপ/স্বাইপ ছাড়া ব্যাক/হোমও চাপতে পারবে */}
+          {peerControl && !sharing && (
+            <div
+              className="absolute left-1/2 z-[5] flex -translate-x-1/2 items-center gap-2 rounded-full border border-white/15 bg-black/50 px-2 py-1.5 backdrop-blur"
+              style={{ top: "calc(env(safe-area-inset-top,0px) + 56px)" }}
+            >
+              <span className="px-1 text-[11px] font-bold text-amber-200">🖐️ কন্ট্রোল</span>
+              <button
+                onClick={() => peer && myId && void sendTo(peer.id, { kind: "gesture", from: myId, type: "back" })}
+                className="btn-press grid h-8 w-8 place-items-center rounded-full bg-white/10 text-white"
+                aria-label="ব্যাক"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => peer && myId && void sendTo(peer.id, { kind: "gesture", from: myId, type: "home" })}
+                className="btn-press grid h-8 w-8 place-items-center rounded-full bg-white/10 text-white"
+                aria-label="হোম"
+              >
+                <Home className="h-4 w-4" />
+              </button>
+            </div>
+          )}
+
 
           {/* অন্যজনের নির্দেশনা মার্কার — শেয়ার করার সময় "এখানে চাপুন" */}
           {sharing && remotePointer && (
