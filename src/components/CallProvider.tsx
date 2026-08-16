@@ -32,8 +32,10 @@ type Signal =
   | { kind: "reoffer"; from: string; sdp: any }
   | { kind: "answer"; from: string; sdp: any }
   | { kind: "ice"; from: string; candidate: any }
+  | { kind: "pointer"; from: string; x: number; y: number }
   | { kind: "end"; from: string }
   | { kind: "busy"; from: string };
+
 
 type CallState = "idle" | "calling" | "ringing" | "connecting" | "active";
 
