@@ -100,6 +100,18 @@ function MenuPage() {
             </div>
           </Link>
 
+          <Link to="/history"
+            className="rounded-3xl p-4 btn-press flex flex-col items-start gap-2 relative overflow-hidden shadow-[0_15px_35px_-15px_rgba(124,58,237,0.55)] text-white border border-white/20"
+            style={{ background: "linear-gradient(135deg,#7c3aed,#06b6d4)" }}>
+            <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-white/15 blur-xl" />
+            <div className="w-12 h-12 rounded-2xl bg-white/25 backdrop-blur flex items-center justify-center text-2xl shrink-0 relative">🧾</div>
+            <div className="min-w-0 relative">
+              <p className="text-base font-black leading-tight">{t("সব ইতিহাস", "All History")}</p>
+              <p className="text-[11px] opacity-95 font-bold mt-0.5">{t("রিচার্জ · কার্ড · উইথড্র", "Recharge · Card · Withdraw")}</p>
+            </div>
+          </Link>
+
+
           {rechargeOn ? (
             <Link to="/recharge"
               className="rounded-3xl p-4 btn-press flex flex-col items-start gap-2 relative overflow-hidden shadow-[0_15px_35px_-15px_rgba(6,182,212,0.55)] text-white border border-white/20"
