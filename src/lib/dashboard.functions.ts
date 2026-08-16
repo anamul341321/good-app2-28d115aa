@@ -7,8 +7,14 @@ export const getDashboard = createServerFn({ method: "GET" })
     const { supabase, userId } = context;
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // Settle first, then read mining_state and its breakdown from the same
+    // settled point. Previously these reads happened before settlement and a
+    // later bonus write could make the response mix old totals with new state.
+    const { error: settleError } = await supabaseAdmin.rpc("settle_mining", { _user_id: userId });
+    if (settleError) throw new Error(settleError.message);
+
     const TASK_COLS = "id,slot,status,face_label,face_photo_url,wallet_address,initial_verify_at,reverify_due_at,done_at,reverify_count,last_reverified_at,whitelist_ok,last_whitelist_check_at,created_at,user_id";
-    const [{ data: profile }, tasksResult, { data: mining }, { data: walletList }, { data: roles }, { count: pendingCount }, { data: bonusSettings }, { data: balanceBreakdown }] =
+    const [{ data: profile }, tasksResult, { data: mining }, { data: walletList }, { data: roles }, { count: pendingCount }, { data: bonusSettings }, { data: initialBalanceBreakdown }] =
       await Promise.all([
         supabase.from("profiles").select("*").eq("id", userId).maybeSingle(),
         supabaseAdmin.from("tasks").select(TASK_COLS).eq("user_id", userId).order("slot"),
@@ -93,9 +99,15 @@ export const getDashboard = createServerFn({ method: "GET" })
     );
 
     let miningFinal = mining;
+    let balanceBreakdown = initialBalanceBreakdown;
     if (bonus.userReverifyPaid || bonus.selfFirstPaid) {
-      const { data: fresh } = await supabase.from("mining_state").select("*").eq("user_id", userId).maybeSingle();
-      miningFinal = fresh ?? mining;
+      const [{ data: freshMining }, { data: freshBreakdown, error: breakdownError }] = await Promise.all([
+        supabase.from("mining_state").select("*").eq("user_id", userId).maybeSingle(),
+        supabaseAdmin.rpc("get_user_balance_breakdown", { _user_id: userId }),
+      ]);
+      if (breakdownError) throw new Error(breakdownError.message);
+      miningFinal = freshMining ?? mining;
+      balanceBreakdown = freshBreakdown ?? initialBalanceBreakdown;
     }
 
     const { data: pendingVouchers } = await supabaseAdmin
@@ -181,7 +193,7 @@ export const getDashboard = createServerFn({ method: "GET" })
           totalAmount: offerTotal,
           offerTotal,
           pendingAmount,
-          bonusBalance: Number((balanceBreakdown as any)?.bonus ?? 0),
+          bonusBalance: Number((balanceBreakdown as any)?.bonus_part ?? 0),
           hasReferrer: !!(profile as any)?.referred_by,
           rates: bonus.rates,
         };
