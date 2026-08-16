@@ -186,7 +186,11 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     ring.current?.stop();
     ring.current = null;
     setPeer(null);
+    setAllowControl(false);
+    setPeerControl(false);
+    setRemotePointer(null);
     setState("idle");
+
     setMuted(false);
     setCamOff(false);
     setSharing(false);
