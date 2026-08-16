@@ -203,7 +203,7 @@ export function MiningCounter({
           <span className="flex items-center gap-1.5 min-w-0">
             <span>{withdrawOpen ? "🔓" : "⏳"}</span>
             <span className="text-white/95 truncate">
-              সবাইকে ১–৩ তারিখের মধ্যে উইথড্র করুন
+              মাইনিং ব্যালেন্স ১–৩ তারিখে · বোনাস যেকোনো সময়
             </span>
           </span>
           <span className="text-[8px] text-white/80 uppercase tracking-widest shrink-0">
