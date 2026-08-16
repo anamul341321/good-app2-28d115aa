@@ -104,6 +104,9 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   const [peerControl, setPeerControl] = useState(false);
   const allowControlRef = useRef(false);
   useEffect(() => { allowControlRef.current = allowControl; }, [allowControl]);
+  // অনুমতি চাওয়ার শীট (disclaimer) — চালু করার আগে ইউজারকে স্পষ্ট জানানো হয়
+  const [controlAsk, setControlAsk] = useState(false);
+
 
 
   const [quality, setQuality] = useState<"good" | "poor" | "reconnecting">("good");
