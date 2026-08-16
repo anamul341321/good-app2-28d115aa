@@ -1027,67 +1027,6 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
               🔴 আপনি স্ক্রিন শেয়ার করছেন
             </div>
           )}
-          {sharing && allowControl && (
-            <div
-              className="absolute left-1/2 z-[3] -translate-x-1/2 rounded-full border border-amber-400/40 bg-amber-500/20 px-3 py-1 text-[11px] font-bold text-amber-200 backdrop-blur"
-              style={{ top: "calc(env(safe-area-inset-top,0px) + 92px)" }}
-            >
-              🖐️ রিমোট কন্ট্রোল চালু — সে আপনার ফোন চালাচ্ছে
-            </div>
-          )}
-
-          {/* দর্শক পাশ — অনুমতি পেলে ট্যাপ/স্বাইপ ছাড়া ব্যাক/হোমও চাপতে পারবে */}
-          {peerControl && !sharing && (
-            <div
-              className="absolute left-1/2 z-[5] flex -translate-x-1/2 items-center gap-2 rounded-full border border-white/15 bg-black/50 px-2 py-1.5 backdrop-blur"
-              style={{ top: "calc(env(safe-area-inset-top,0px) + 56px)" }}
-            >
-              <span className="px-1 text-[11px] font-bold text-amber-200">🖐️ কন্ট্রোল</span>
-              <button
-                onClick={() => peer && myId && void sendTo(peer.id, { kind: "gesture", from: myId, type: "back" })}
-                className="btn-press grid h-8 w-8 place-items-center rounded-full bg-white/10 text-white"
-                aria-label="ব্যাক"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => peer && myId && void sendTo(peer.id, { kind: "gesture", from: myId, type: "home" })}
-                className="btn-press grid h-8 w-8 place-items-center rounded-full bg-white/10 text-white"
-                aria-label="হোম"
-              >
-                <Home className="h-4 w-4" />
-              </button>
-            </div>
-          )}
-
-          {/* রিমোট কন্ট্রোল — অনুমতি চাওয়ার আগে স্পষ্ট সতর্কবার্তা */}
-          {controlAsk && (
-            <div className="absolute inset-0 z-[9] grid place-items-center bg-black/70 p-5 backdrop-blur">
-              <div className="w-full max-w-[340px] rounded-3xl border border-white/12 bg-[#0f1730] p-5 text-white shadow-2xl">
-                <h3 className="text-[15px] font-extrabold">রিমোট কন্ট্রোল চালু করবেন?</h3>
-                <ul className="mt-3 space-y-2 text-[12.5px] leading-relaxed text-white/75">
-                  <li>• অনুমতি দিলে <b>শুধু এই কলের সময়</b> অন্য পাশ থেকে আপনার স্ক্রিনে ট্যাপ, স্বাইপ, ব্যাক ও হোম চালানো যাবে।</li>
-                  <li>• কল শেষ হলে অনুমতি <b>স্বয়ংক্রিয়ভাবে বন্ধ</b> হয়ে যাবে।</li>
-                  <li>• ব্যাংকিং/OTP/পাসওয়ার্ড স্ক্রিন খোলা থাকলে চালু করবেন না।</li>
-                  <li>• শুধু বিশ্বস্ত সাপোর্ট/পরিচিত ব্যক্তিকে অনুমতি দিন।</li>
-                </ul>
-                <div className="mt-4 grid grid-cols-2 gap-2">
-                  <button
-                    onClick={() => setControlAsk(false)}
-                    className="btn-press rounded-xl border border-white/12 bg-white/5 py-2.5 text-[13px] font-bold text-white/80"
-                  >
-                    বাতিল
-                  </button>
-                  <button
-                    onClick={enableControl}
-                    className="btn-press rounded-xl bg-amber-500 py-2.5 text-[13px] font-extrabold text-black"
-                  >
-                    রাজি, চালু করুন
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
 
 
 
