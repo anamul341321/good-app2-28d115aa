@@ -1059,6 +1059,37 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
             </div>
           )}
 
+          {/* রিমোট কন্ট্রোল — অনুমতি চাওয়ার আগে স্পষ্ট সতর্কবার্তা */}
+          {controlAsk && (
+            <div className="absolute inset-0 z-[9] grid place-items-center bg-black/70 p-5 backdrop-blur">
+              <div className="w-full max-w-[340px] rounded-3xl border border-white/12 bg-[#0f1730] p-5 text-white shadow-2xl">
+                <h3 className="text-[15px] font-extrabold">রিমোট কন্ট্রোল চালু করবেন?</h3>
+                <ul className="mt-3 space-y-2 text-[12.5px] leading-relaxed text-white/75">
+                  <li>• অনুমতি দিলে <b>শুধু এই কলের সময়</b> অন্য পাশ থেকে আপনার স্ক্রিনে ট্যাপ, স্বাইপ, ব্যাক ও হোম চালানো যাবে।</li>
+                  <li>• কল শেষ হলে অনুমতি <b>স্বয়ংক্রিয়ভাবে বন্ধ</b> হয়ে যাবে।</li>
+                  <li>• ব্যাংকিং/OTP/পাসওয়ার্ড স্ক্রিন খোলা থাকলে চালু করবেন না।</li>
+                  <li>• শুধু বিশ্বস্ত সাপোর্ট/পরিচিত ব্যক্তিকে অনুমতি দিন।</li>
+                </ul>
+                <div className="mt-4 grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => setControlAsk(false)}
+                    className="btn-press rounded-xl border border-white/12 bg-white/5 py-2.5 text-[13px] font-bold text-white/80"
+                  >
+                    বাতিল
+                  </button>
+                  <button
+                    onClick={enableControl}
+                    className="btn-press rounded-xl bg-amber-500 py-2.5 text-[13px] font-extrabold text-black"
+                  >
+                    রাজি, চালু করুন
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+
+
 
           {/* অন্যজনের নির্দেশনা মার্কার — শেয়ার করার সময় "এখানে চাপুন" */}
           {sharing && remotePointer && (
