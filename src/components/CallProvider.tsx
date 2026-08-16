@@ -194,6 +194,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     setPeer(null);
     setAllowControl(false);
     setPeerControl(false);
+    setControlAsk(false);
     setRemotePointer(null);
     setState("idle");
 
