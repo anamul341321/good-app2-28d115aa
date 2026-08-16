@@ -990,8 +990,16 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
               const r = el.getBoundingClientRect();
               const start = el.__pd;
               el.__pd = undefined;
-              const nx = (v: number) => (v - r.left) / Math.max(1, r.width);
-              const ny = (v: number) => (v - r.top) / Math.max(1, r.height);
+              // object-cover হওয়ায় ভিডিওর কিছু অংশ কাটা পড়ে — তাই আসল ফ্রেম
+              // অনুযায়ী কো-অর্ডিনেট বের করি, নাহলে ট্যাপ ভুল জায়গায় পড়বে
+              const vw = el.videoWidth || r.width;
+              const vh = el.videoHeight || r.height;
+              const scale = Math.max(r.width / vw, r.height / vh);
+              const dw = vw * scale, dh = vh * scale;
+              const ox = (r.width - dw) / 2, oy = (r.height - dh) / 2;
+              const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
+              const nx = (v: number) => clamp01((v - r.left - ox) / Math.max(1, dw));
+              const ny = (v: number) => clamp01((v - r.top - oy) / Math.max(1, dh));
               const x = nx(e.clientX), y = ny(e.clientY);
               const dx = start ? e.clientX - start.x : 0;
               const dy = start ? e.clientY - start.y : 0;
