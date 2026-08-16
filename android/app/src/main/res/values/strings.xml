@@ -4,4 +4,5 @@
     <string name="title_activity_main">Good-App</string>
     <string name="package_name">com.goodapp.mobile</string>
     <string name="custom_url_scheme">com.goodapp.mobile</string>
+    <string name="remote_control_service_description">Good-App কল চলার সময় স্ক্রিন শেয়ার করলে অন্য পাশ থেকে সাহায্যকারী আপনার স্ক্রিনে ট্যাপ/স্বাইপ করতে পারবে। আপনি চাইলে যেকোনো সময় বন্ধ করতে পারবেন।</string>
 </resources>

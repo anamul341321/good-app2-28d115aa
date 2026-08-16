@@ -239,6 +239,45 @@ public class MainActivity extends BridgeActivity {
             });
         }
 
+        /** রিমোট কন্ট্রোল অনুমতি আছে কি না */
+        @JavascriptInterface
+        public boolean remoteControlReady() {
+            return RemoteControlService.isConnected();
+        }
+
+        /** অনুমতি না থাকলে Accessibility settings খুলে দেয় */
+        @JavascriptInterface
+        public void openRemoteControlSettings() {
+            runOnUiThread(() -> {
+                try {
+                    Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(intent);
+                    Toast.makeText(MainActivity.this,
+                        "Good-App রিমোট কন্ট্রোল চালু করুন", Toast.LENGTH_LONG).show();
+                } catch (Exception ignored) {}
+            });
+        }
+
+        /** অন্য পাশ থেকে আসা ট্যাপ (0..1 নরমালাইজড) */
+        @JavascriptInterface
+        public boolean remoteTap(float x, float y) {
+            return RemoteControlService.tap(x, y);
+        }
+
+        /** অন্য পাশ থেকে আসা স্বাইপ/স্ক্রল */
+        @JavascriptInterface
+        public boolean remoteSwipe(float x1, float y1, float x2, float y2, int durationMs) {
+            return RemoteControlService.swipe(x1, y1, x2, y2, durationMs);
+        }
+
+        /** ব্যাক / হোম / রিসেন্ট */
+        @JavascriptInterface
+        public boolean remoteAction(String action) {
+            return RemoteControlService.globalAction(action);
+        }
+
+
         @JavascriptInterface
         public void download(String url, String fileName) {
             runOnUiThread(() -> {
