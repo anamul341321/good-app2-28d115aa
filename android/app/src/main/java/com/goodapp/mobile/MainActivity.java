@@ -414,14 +414,21 @@ public class MainActivity extends BridgeActivity {
                 WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
                     | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
                     | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
-                    | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
             );
             try {
                 KeyguardManager keyguard = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && keyguard != null) {
+                // A *secure* keyguard (PIN/pattern/fingerprint) must NOT be dismissed here:
+                // the unlock sheet pauses this activity, which suspends the WebView and
+                // kills call audio until the user unlocks. Showing the call over the lock
+                // screen instead keeps WebRTC running, so voice works while still locked.
+                boolean secure = keyguard != null && keyguard.isKeyguardSecure();
+                if (!secure && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && keyguard != null) {
                     keyguard.requestDismissKeyguard(MainActivity.this, null);
+                } else {
+                    getWindow().addFlags(WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
                 }
             } catch (Exception ignored) {}
+
         });
     }
 
