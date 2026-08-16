@@ -178,11 +178,15 @@ function RechargePage() {
           <div className="grid grid-cols-5 gap-1.5 mt-1.5">
             {OPERATORS.map((op) => (
               <button key={op.id} type="button" onClick={() => setOperator(op.id)}
-                className={`rounded-2xl py-2.5 text-[11px] font-black border-2 transition-all btn-press ${operator === op.id ? "text-white scale-105 shadow-lg border-transparent" : "text-navy bg-surface-2 border-border hover:border-cyan-500/40"}`}
+                className={`rounded-2xl py-2 text-[10px] font-black border-2 transition-all btn-press flex flex-col items-center gap-1 ${operator === op.id ? "text-white scale-105 shadow-lg border-transparent" : "text-navy bg-surface-2 border-border hover:border-cyan-500/40"}`}
                 style={operator === op.id ? { background: op.color, boxShadow: `0 8px 20px -6px ${op.color}` } : {}}>
+                <span className="w-7 h-7 rounded-lg bg-white flex items-center justify-center overflow-hidden">
+                  <img src={SIM_LOGO[op.id] ?? ""} alt={`${op.label} logo`} className="w-5 h-5 object-contain" loading="lazy" />
+                </span>
                 {op.label}
               </button>
             ))}
+
           </div>
         </div>
 
