@@ -98,14 +98,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   const [sharing, setSharing] = useState(false);
   // অন্য পাশ থেকে আসা "এখানে চাপুন" নির্দেশনা — শেয়ার করার সময় স্ক্রিনে মার্কার দেখায়
   const [remotePointer, setRemotePointer] = useState<{ x: number; y: number; at: number } | null>(null);
-  // allowControl = আমি অন্যজনকে আমার ফোন চালানোর অনুমতি দিয়েছি (শেয়ারকারী পাশ)
-  const [allowControl, setAllowControl] = useState(false);
-  // peerControl = অন্যজন আমাকে তার ফোন চালানোর অনুমতি দিয়েছে (দর্শক পাশ)
-  const [peerControl, setPeerControl] = useState(false);
-  const allowControlRef = useRef(false);
-  useEffect(() => { allowControlRef.current = allowControl; }, [allowControl]);
-  // অনুমতি চাওয়ার শীট (disclaimer) — চালু করার আগে ইউজারকে স্পষ্ট জানানো হয়
-  const [controlAsk, setControlAsk] = useState(false);
+
 
 
 
