@@ -719,6 +719,14 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
           }
           return;
         }
+        if (sig.kind === "pointer") {
+          setRemotePointer({ x: sig.x, y: sig.y, at: Date.now() });
+          window.setTimeout(() => {
+            setRemotePointer((p) => (p && Date.now() - p.at >= 2500 ? null : p));
+          }, 2600);
+          return;
+        }
+
         if (sig.kind === "busy") {
           toast.error("ইউজার এখন অন্য কলে ব্যস্ত");
           cleanup();
@@ -901,8 +909,37 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
             ref={remoteVideo}
             autoPlay
             playsInline
+            onClick={(e) => {
+              // অন্যজনের স্ক্রিন দেখার সময় ট্যাপ করলে তার স্ক্রিনে "এখানে চাপুন" মার্কার যায়
+              if (!peer || state !== "active") return;
+              const r = (e.currentTarget as HTMLVideoElement).getBoundingClientRect();
+              const x = (e.clientX - r.left) / Math.max(1, r.width);
+              const y = (e.clientY - r.top) / Math.max(1, r.height);
+              if (myId) void sendTo(peer.id, { kind: "pointer", from: myId, x, y });
+            }}
             className={`absolute inset-0 h-full w-full object-cover ${withVideo ? "" : "opacity-0"}`}
           />
+
+          {/* নিজে শেয়ার করছি — স্পষ্ট ইন্ডিকেটর */}
+          {sharing && (
+            <div
+              className="absolute left-1/2 z-[3] -translate-x-1/2 rounded-full border border-emerald-400/40 bg-emerald-500/20 px-3 py-1.5 text-[12px] font-bold text-emerald-200 backdrop-blur"
+              style={{ top: "calc(env(safe-area-inset-top,0px) + 56px)" }}
+            >
+              🔴 আপনি স্ক্রিন শেয়ার করছেন
+            </div>
+          )}
+
+          {/* অন্যজনের নির্দেশনা মার্কার — শেয়ার করার সময় "এখানে চাপুন" */}
+          {sharing && remotePointer && (
+            <div
+              className="pointer-events-none absolute z-[4] -translate-x-1/2 -translate-y-1/2"
+              style={{ left: `${remotePointer.x * 100}%`, top: `${remotePointer.y * 100}%` }}
+            >
+              <span className="block h-12 w-12 animate-ping rounded-full border-4 border-amber-400" />
+            </div>
+          )}
+
 
           {!withVideo && (
             <div
