@@ -170,13 +170,16 @@ function HomePage() {
           withdrawn={Number(data.mining?.mining_withdrawn ?? 0)}
           isActive={data.mining?.is_active ?? false}
           lastCreditedAt={data.mining?.last_credited_at ?? null}
-          effectiveTaskCount={Number((data as any).bonus?.firstVerifyCount ?? 0)}
-          qualifyingReferees={Number((data as any).referralLock?.firstVerifies ?? 0)}
-          selfQualified={Number((data as any).bonus?.reverifyCount ?? 0) >= 10}
+          selfSlots={Number((data.mining as any)?.self_slots ?? 0)}
+          referralUnits={Number((data.mining as any)?.referral_units ?? 0)}
+          effectiveTaskCount={Number((data.mining as any)?.self_slots ?? 0)}
+          qualifyingReferees={Number((data.mining as any)?.qualifying_referees ?? 0)}
+          selfQualified={(data.mining as any)?.self_qualified ?? false}
           displayTaskCount={Number((data as any).bonus?.firstVerifyCount ?? 0)}
           leagueCount={Number((data as any).bonus?.firstVerifyCount ?? 0)}
           balanceBreakdown={(data as any).balanceBreakdown}
         />
+
       </div>
 
       <div className="grid grid-cols-2 gap-4">
