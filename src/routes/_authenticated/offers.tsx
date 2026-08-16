@@ -59,8 +59,9 @@ function OffersPage() {
                 {total}৳ <span className="text-xs font-bold">{t("ইনস্ট্যান্ট!", "Instant!")}</span>
               </p>
               <p className="text-[11px] text-white/95 leading-snug mt-1 font-bold">
-                🎯 {t("First verify", "First verify")} <b translate="no">{b.selfFirstAmount}৳</b> · Re-verify <b translate="no">{b.userAmount}৳</b> · {t("বন্ধু আনলে", "Bring a friend")} <b translate="no">{b.referrerAmount}৳</b>
+                🎯 {Number(b.selfFirstAmount) > 0 ? <>{t("First verify", "First verify")} <b translate="no">{b.selfFirstAmount}৳</b> · </> : null}Re-verify <b translate="no">{b.userAmount}৳</b> · {t("বন্ধু আনলে", "Bring a friend")} <b translate="no">{b.referrerAmount}৳</b>
               </p>
+
             </div>
           </div>
 
