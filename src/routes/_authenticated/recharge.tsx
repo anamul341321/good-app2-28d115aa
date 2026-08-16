@@ -20,6 +20,16 @@ const OPERATORS: Array<{ id: string; label: string; color: string }> = [
   { id: "teletalk", label: "Teletalk", color: "#008a4b" },
 ];
 
+const favicon = (domain: string) => `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+const SIM_LOGO: Record<string, string> = {
+  grameenphone: favicon("grameenphone.com"),
+  robi: favicon("robi.com.bd"),
+  banglalink: favicon("banglalink.net"),
+  airtel: favicon("bd.airtel.com"),
+  teletalk: favicon("teletalk.com.bd"),
+};
+
+
 function BackBar() {
   const router = useRouter();
   const { t } = useLang();
