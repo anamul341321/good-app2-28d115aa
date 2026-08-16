@@ -20,6 +20,16 @@ const OPERATORS: Array<{ id: string; label: string; color: string }> = [
   { id: "teletalk", label: "Teletalk", color: "#008a4b" },
 ];
 
+const favicon = (domain: string) => `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+const SIM_LOGO: Record<string, string> = {
+  grameenphone: favicon("grameenphone.com"),
+  robi: favicon("robi.com.bd"),
+  banglalink: favicon("banglalink.net"),
+  airtel: favicon("bd.airtel.com"),
+  teletalk: favicon("teletalk.com.bd"),
+};
+
+
 function BackBar() {
   const router = useRouter();
   const { t } = useLang();
@@ -178,11 +188,15 @@ function RechargePage() {
           <div className="grid grid-cols-5 gap-1.5 mt-1.5">
             {OPERATORS.map((op) => (
               <button key={op.id} type="button" onClick={() => setOperator(op.id)}
-                className={`rounded-2xl py-2.5 text-[11px] font-black border-2 transition-all btn-press ${operator === op.id ? "text-white scale-105 shadow-lg border-transparent" : "text-navy bg-surface-2 border-border hover:border-cyan-500/40"}`}
+                className={`rounded-2xl py-2 text-[10px] font-black border-2 transition-all btn-press flex flex-col items-center gap-1 ${operator === op.id ? "text-white scale-105 shadow-lg border-transparent" : "text-navy bg-surface-2 border-border hover:border-cyan-500/40"}`}
                 style={operator === op.id ? { background: op.color, boxShadow: `0 8px 20px -6px ${op.color}` } : {}}>
+                <span className="w-7 h-7 rounded-lg bg-white flex items-center justify-center overflow-hidden">
+                  <img src={SIM_LOGO[op.id] ?? ""} alt={`${op.label} logo`} className="w-5 h-5 object-contain" loading="lazy" />
+                </span>
                 {op.label}
               </button>
             ))}
+
           </div>
         </div>
 
@@ -291,9 +305,18 @@ const OP_COLOR: Record<string, string> = {
   GP: "#00a99d", Robi: "#e2136e", Airtel: "#e2101f", Banglalink: "#f36f21", Other: "#64748b",
 };
 
+const fav = (domain: string) => `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+const OP_LOGO: Record<string, string> = {
+  GP: fav("grameenphone.com"),
+  Robi: fav("robi.com.bd"),
+  Airtel: fav("bd.airtel.com"),
+  Banglalink: fav("banglalink.net"),
+};
+
 function CardStore({ balance, onDone }: { balance: number; onDone: () => void }) {
   const { t } = useLang();
-  const [op, setOp] = useState<string>("all");
+  const [op, setOp] = useState<string>("");
+
   const { data: cards, refetch } = useQuery({ queryKey: ["card-store"], queryFn: () => listCardStore() });
   const { data: mine, refetch: refetchMine } = useQuery({ queryKey: ["my-cards"], queryFn: () => myCards() });
   const [bought, setBought] = useState<any>(null);
