@@ -291,9 +291,18 @@ const OP_COLOR: Record<string, string> = {
   GP: "#00a99d", Robi: "#e2136e", Airtel: "#e2101f", Banglalink: "#f36f21", Other: "#64748b",
 };
 
+const fav = (domain: string) => `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+const OP_LOGO: Record<string, string> = {
+  GP: fav("grameenphone.com"),
+  Robi: fav("robi.com.bd"),
+  Airtel: fav("bd.airtel.com"),
+  Banglalink: fav("banglalink.net"),
+};
+
 function CardStore({ balance, onDone }: { balance: number; onDone: () => void }) {
   const { t } = useLang();
-  const [op, setOp] = useState<string>("all");
+  const [op, setOp] = useState<string>("");
+
   const { data: cards, refetch } = useQuery({ queryKey: ["card-store"], queryFn: () => listCardStore() });
   const { data: mine, refetch: refetchMine } = useQuery({ queryKey: ["my-cards"], queryFn: () => myCards() });
   const [bought, setBought] = useState<any>(null);
