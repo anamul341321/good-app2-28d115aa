@@ -21,9 +21,7 @@ import {
   MonitorOff,
   SwitchCamera,
   Volume2,
-  MousePointerClick,
-  ChevronLeft,
-  Home,
+
 } from "lucide-react";
 import { playIncomingRing, playRingback } from "@/lib/ringtone";
 import { supabase } from "@/integrations/supabase/client";
