@@ -1,5 +1,6 @@
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { AppUpdateBanner } from "@/components/AppUpdateBanner";
+import { ForceUpdateGate } from "@/components/ForceUpdateGate";
 
 import { SplashScreen } from "@/components/SplashScreen";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -146,6 +147,7 @@ function RootComponent() {
       <LanguageProvider>
         <SplashScreen />
         <AppUpdateBanner />
+        <ForceUpdateGate />
         <Outlet />
 
         <InstallPrompt />

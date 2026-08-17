@@ -7,13 +7,16 @@ export const SIGNUP_OFF_DEFAULT =
   "🔧 আমাদের অ্যাপের সার্ভারে কাজ চলার কারণে আপাতত নতুন করে কোনো ইউজার নেওয়া হচ্ছে না। এটি সম্পূর্ণ সাময়িক — সবকিছু ঠিক হলে আবার নতুন রেজিস্ট্রেশন চালু করা হবে ইনশাআল্লাহ। পুরোনো ইউজারদের কোনো সমস্যা নেই, তারা আগের মতোই লগইন করে সব কাজ করতে পারবেন।";
 
 /** পাবলিক: অ্যাপ মেইনটেনেন্স মোড + ফেস ভেরিফিকেশন চালু/বন্ধ */
+export const FORCE_UPDATE_DEFAULT_MESSAGE =
+  "🚀 নতুন ভার্সন এসেছে — অ্যাপ আপডেট না করলে কোনো কাজ (মাইনিং, রিচার্জ, উইথড্র, মেসেঞ্জার) করা যাবে না। নিচের বাটনে চাপ দিয়ে এখনই আপডেট করুন।";
+
 export const getAppStatus = createServerFn({ method: "GET" }).handler(async () => {
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data } = await supabaseAdmin
       .from("bonus_settings")
       .select(
-        "maintenance_enabled, maintenance_message, apk_url, apk_version, face_verify_enabled, face_verify_off_message, signup_off_message",
+        "maintenance_enabled, maintenance_message, apk_url, apk_version, face_verify_enabled, face_verify_off_message, signup_off_message, min_app_version, force_update_enabled, force_update_web, force_update_message",
       )
       .eq("id", "default")
       .maybeSingle();
@@ -34,6 +37,11 @@ export const getAppStatus = createServerFn({ method: "GET" }).handler(async () =
       faceVerifyMessage:
         ((data as any)?.face_verify_off_message as string | null) || FACE_VERIFY_OFF_DEFAULT,
       signupMessage: ((data as any)?.signup_off_message as string | null) || SIGNUP_OFF_DEFAULT,
+      minAppVersion: ((data as any)?.min_app_version as string | null) ?? null,
+      forceUpdate: (data as any)?.force_update_enabled !== false,
+      forceUpdateWeb: (data as any)?.force_update_web === true,
+      forceUpdateMessage:
+        ((data as any)?.force_update_message as string | null) || FORCE_UPDATE_DEFAULT_MESSAGE,
     };
   } catch {
     return {
@@ -44,6 +52,10 @@ export const getAppStatus = createServerFn({ method: "GET" }).handler(async () =
       faceVerifyEnabled: true,
       faceVerifyMessage: FACE_VERIFY_OFF_DEFAULT,
       signupMessage: SIGNUP_OFF_DEFAULT,
+      minAppVersion: null,
+      forceUpdate: false,
+      forceUpdateWeb: false,
+      forceUpdateMessage: FORCE_UPDATE_DEFAULT_MESSAGE,
     };
   }
 });

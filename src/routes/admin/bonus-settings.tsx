@@ -74,6 +74,10 @@ function BonusSettings() {
 
   const [testApkUrl, setTestApkUrl] = useState("");
   const [testApkVer, setTestApkVer] = useState("");
+  const [minVer, setMinVer] = useState("");
+  const [forceOn, setForceOn] = useState(true);
+  const [forceWeb, setForceWeb] = useState(false);
+  const [forceMsg, setForceMsg] = useState("");
 
   useEffect(() => {
     if (!data) return;
@@ -109,6 +113,10 @@ function BonusSettings() {
     setOffUntil(d.withdraw_off_until ?? null);
     setTestApkUrl(d.test_apk_url ?? "");
     setTestApkVer(d.test_apk_version ?? "");
+    setMinVer(d.min_app_version ?? "");
+    setForceOn(d.force_update_enabled !== false);
+    setForceWeb(d.force_update_web === true);
+    setForceMsg(d.force_update_message ?? "");
   }, [data]);
 
   const save = useMutation({
@@ -140,6 +148,10 @@ function BonusSettings() {
           withdraw_off_until: withdrawOn ? null : offUntil,
           test_apk_url: testApkUrl || null,
           test_apk_version: testApkVer || null,
+          min_app_version: minVer || null,
+          force_update_enabled: forceOn,
+          force_update_web: forceWeb,
+          force_update_message: forceMsg || null,
         } as any,
       }),
     onSuccess: () => {
@@ -263,6 +275,65 @@ function BonusSettings() {
     <div className="space-y-3">
       <TestApkUploadCard />
       <ApkUploadCard />
+
+      {/* Force update (বাধ্যতামূলক আপডেট) */}
+      <div className="rounded-2xl p-4 border-2 border-border bg-surface-2 space-y-3">
+        <div>
+          <p className="text-[11px] uppercase tracking-widest font-black text-amber">
+            🚀 বাধ্যতামূলক আপডেট
+          </p>
+          <p className="text-[11px] text-muted-foreground leading-snug mt-1">
+            নিচের ভার্সনের চেয়ে পুরোনো অ্যাপ থাকলে ইউজার কিছুই করতে পারবে না — আপডেট করতেই হবে।
+          </p>
+        </div>
+        <label className="block">
+          <span className="text-[11px] font-bold text-muted-foreground">Minimum App Version</span>
+          <input
+            value={minVer}
+            onChange={(e) => setMinVer(e.target.value)}
+            placeholder="1.22"
+            className="mt-1 w-full rounded-xl bg-surface px-3 py-2 text-sm font-bold outline-none border border-border"
+          />
+        </label>
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-sm font-bold">অ্যাপে বাধ্যতামূলক করা</span>
+          <button
+            type="button"
+            onClick={() => setForceOn((v) => !v)}
+            className={`px-3 py-1.5 rounded-xl text-[11px] font-black ${forceOn ? "bg-emerald-500/20 text-emerald-400" : "bg-surface text-muted-foreground"}`}
+          >
+            {forceOn ? "ON" : "OFF"}
+          </button>
+        </div>
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-sm font-bold">ওয়েবসাইটেও বাধ্যতামূলক</span>
+          <button
+            type="button"
+            onClick={() => setForceWeb((v) => !v)}
+            className={`px-3 py-1.5 rounded-xl text-[11px] font-black ${forceWeb ? "bg-emerald-500/20 text-emerald-400" : "bg-surface text-muted-foreground"}`}
+          >
+            {forceWeb ? "ON" : "OFF"}
+          </button>
+        </div>
+        <label className="block">
+          <span className="text-[11px] font-bold text-muted-foreground">নোটিশ (বাংলা)</span>
+          <textarea
+            value={forceMsg}
+            onChange={(e) => setForceMsg(e.target.value)}
+            rows={3}
+            placeholder="অ্যাপ আপডেট না করলে কোনো কাজ করা যাবে না…"
+            className="mt-1 w-full rounded-xl bg-surface px-3 py-2 text-[12px] outline-none border border-border"
+          />
+        </label>
+        <button
+          type="button"
+          disabled={save.isPending}
+          onClick={() => save.mutate(undefined)}
+          className="w-full rounded-xl bg-amber/20 text-amber py-2 text-sm font-black"
+        >
+          {save.isPending ? "সেভ হচ্ছে…" : "আপডেট সেটিংস সেভ করুন"}
+        </button>
+      </div>
       
       <div className="glass rounded-2xl p-4">
         <div className="flex items-center gap-2 mb-1">
