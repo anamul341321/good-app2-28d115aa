@@ -281,9 +281,9 @@ export const requestWithdraw = createServerFn({ method: "POST" })
         reasons.push(`অন্য user-এর পাঠানো টাকা আছে — মোট ${Math.round(recvSum)}৳ · ${froms}`);
       }
 
-      // মাইনিং লক থাকা সময়েও বড় অংশ withdraw
-      if (miningLocked && amount > bonusAvailable + 1) {
-        reasons.push(`মাইনিং লক উইন্ডোতে বোনাস (${Math.floor(bonusAvailable)}৳)-এর বেশি withdraw চেয়েছে`);
+      // লক থাকা মাইনিং ব্যালেন্স থাকা অবস্থায় বড় অংশ withdraw
+      if (miningLockedAmount > 0 && amount > bonusAvailable + 1) {
+        reasons.push(`লক মাইনিং (${Math.floor(miningLockedAmount)}৳) থাকা অবস্থায় বোনাস (${Math.floor(bonusAvailable)}৳)-এর বেশি withdraw চেয়েছে`);
       }
 
       if (reasons.length > 0) {
