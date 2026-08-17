@@ -1807,6 +1807,10 @@ export const adminUpdateBonusSettings = createServerFn({ method: "POST" })
     withdraw_off_until: z.string().optional().nullable(),
     test_apk_url: z.string().max(500).optional().nullable(),
     test_apk_version: z.string().max(50).optional().nullable(),
+    min_app_version: z.string().max(50).optional().nullable(),
+    force_update_enabled: z.boolean().optional(),
+    force_update_web: z.boolean().optional(),
+    force_update_message: z.string().max(600).optional().nullable(),
   }).parse(i))
   .handler(async ({ data }) => {
     const supabaseAdmin = await gate();
@@ -1832,6 +1836,7 @@ export const adminUpdateBonusSettings = createServerFn({ method: "POST" })
       "usdt_enabled","usdt_off_message",
       "withdraw_enabled","withdraw_off_message","withdraw_off_until",
       "test_apk_url", "test_apk_version",
+      "min_app_version", "force_update_enabled", "force_update_web", "force_update_message",
     ] as const) {
       if ((data as any)[k] !== undefined) patch[k] = (data as any)[k];
     }
