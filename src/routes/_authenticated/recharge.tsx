@@ -74,8 +74,11 @@ function RechargePage() {
       })) : 0;
 
   const amtInput = Math.floor(Number(amount) || 0);
-  const rechargeFee = Math.floor(amtInput * 0.1);
+  const rechargeFee = Math.floor(amtInput * 0.2);
   const totalCost = amtInput + rechargeFee;
+  // মেইন (বোনাস) ব্যালেন্স আগে খরচ হয়, বাকিটা মাইনিং ব্যালেন্স থেকে যায়
+  const mainPart = Math.floor(Number((dash as any)?.balanceBreakdown?.bonus_part ?? 0));
+  const miningNeeded = Math.max(totalCost - mainPart, 0);
 
   const mut = useMutation({
     mutationFn: () => submitRecharge({ data: {
