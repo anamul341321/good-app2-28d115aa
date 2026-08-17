@@ -717,7 +717,7 @@ function VerifyProgressLines({ firstVerify, reverify, target }: { firstVerify: n
         );
       })}
       <p className="text-[10px] text-muted-foreground font-bold leading-snug">
-        ১০টি স্লট Re-verify সম্পূর্ণ হলেই ⛏️ মাইনিং চালু + ২০০৳ বোনাস
+        ১টি স্লট Re-verify করলেই ⛏️ ওই স্লটের মাইনিং চালু (৫০৳/মাস · দিনে ১.৬৭৳) · আগে রি-ভেরিফাই করা স্লট আবার করলে প্রতি স্লটে ১০৳ বোনাস
       </p>
     </div>
   );
