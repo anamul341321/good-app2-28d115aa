@@ -133,6 +133,8 @@ function SettingsPanel() {
         voice_text_enabled: form.voice_text_enabled !== false,
         welcome_message: form.welcome_message?.trim() || null,
         default_video_url: form.default_video_url?.trim() || null,
+        website_url: form.website_url?.trim() || null,
+        download_url: form.download_url?.trim() || null,
 
 
 
@@ -254,6 +256,11 @@ function SettingsPanel() {
 
         <Field label="ডিফল্ট ভিডিও লিংক 📺" hint="কেউ 'কিভাবে কাজ করবো / ভিডিও দিন' বললে এই লিংকটি যাবে"
           value={form.default_video_url ?? ""} onChange={(v) => set("default_video_url", v)} />
+
+        <Field label="ওয়েবসাইট লিংক 🌐" hint="বট ওয়েলকাম ও উত্তরে এই লিংক দেবে"
+          value={form.website_url ?? ""} onChange={(v) => set("website_url", v)} />
+        <Field label="অ্যাপ ডাউনলোড লিংক 📲" hint="বট অবশ্যই অ্যাপ ডাউনলোড করার কথা বলবে"
+          value={form.download_url ?? ""} onChange={(v) => set("download_url", v)} />
 
         <Area label="UID চাওয়ার মেসেজ" rows={2}
           value={form.ask_uid_message ?? ""} onChange={(v) => set("ask_uid_message", v)} />

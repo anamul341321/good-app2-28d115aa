@@ -95,7 +95,7 @@ function SendPage() {
   });
 
   const amt = Math.floor(Number(amount) || 0);
-  const sendFee = Math.floor(amt * 0.1);
+  const sendFee = Math.floor(amt * 0.2);
   const totalCost = amt + sendFee;
   const canSubmit = found && amt >= MIN_SEND && totalCost <= sendable && !send.isPending;
 
@@ -195,13 +195,13 @@ function SendPage() {
           </p>
           {amt >= MIN_SEND && (
             <div className="mt-2 rounded-xl border-2 border-violet-500/30 bg-violet-500/5 p-2.5 space-y-1" translate="no">
-              <p className="text-[10px] uppercase tracking-widest font-black text-violet-600">{t("ফি হিসাব (১০%)", "Fee breakdown (10%)")}</p>
+              <p className="text-[10px] uppercase tracking-widest font-black text-violet-600">{t("ফি হিসাব (২০%)", "Fee breakdown (20%)")}</p>
               <div className="flex justify-between text-[12px]">
                 <span className="text-muted-foreground">{t("রিসিভার পাবে", "Receiver gets")}</span>
                 <span className="mono-num font-bold text-emerald">{amt}৳</span>
               </div>
               <div className="flex justify-between text-[12px]">
-                <span className="text-muted-foreground">{t("সেন্ড ফি (১০%)", "Send fee (10%)")}</span>
+                <span className="text-muted-foreground">{t("সেন্ড ফি (২০%)", "Send fee (20%)")}</span>
                 <span className="mono-num font-bold text-rose">+ {sendFee}৳</span>
               </div>
               <div className="flex justify-between text-sm border-t border-violet-500/20 pt-1.5">

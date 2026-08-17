@@ -13,7 +13,7 @@ export const sendBalance = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => SendInput.parse(input))
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const fee = Math.floor(data.amount * 0.1);
+    const fee = Math.floor(data.amount * 0.2);
     const { data: res, error } = await supabaseAdmin.rpc("send_balance_transfer", {
       _sender: context.userId,
       _target: data.target,

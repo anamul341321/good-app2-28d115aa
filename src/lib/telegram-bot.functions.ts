@@ -49,6 +49,9 @@ const settingsSchema = z.object({
   voice_text_enabled: z.boolean().optional(),
   welcome_message: z.string().max(2000).nullable().optional(),
   default_video_url: z.string().max(500).nullable().optional(),
+  website_url: z.string().max(300).nullable().optional(),
+  download_url: z.string().max(300).nullable().optional(),
+  download_notice: z.string().max(500).nullable().optional(),
 
 
   group_chat_id: z.string().max(64).nullable(),

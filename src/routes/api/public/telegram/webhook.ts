@@ -136,7 +136,10 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               const nm = [m.first_name, m.last_name].filter(Boolean).join(" ") || m.username || "বন্ধু";
               await sendMessage(
                 chatId,
-                welcomeReply(nm, (settings as any).welcome_message ?? null, (settings as any).default_video_url ?? null),
+                welcomeReply(nm, (settings as any).welcome_message ?? null, (settings as any).default_video_url ?? null, {
+                  websiteUrl: (settings as any).website_url ?? null,
+                  downloadUrl: (settings as any).download_url ?? null,
+                }),
               );
             }
 
