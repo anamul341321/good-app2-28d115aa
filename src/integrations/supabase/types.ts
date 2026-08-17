@@ -1032,6 +1032,7 @@ export type Database = {
           effective_task_count: number
           is_active: boolean
           last_credited_at: string | null
+          mining_unlocked: number
           mining_withdrawn: number
           qualifying_referees: number
           referral_accrued: number
@@ -1050,6 +1051,7 @@ export type Database = {
           effective_task_count?: number
           is_active?: boolean
           last_credited_at?: string | null
+          mining_unlocked?: number
           mining_withdrawn?: number
           qualifying_referees?: number
           referral_accrued?: number
@@ -1068,6 +1070,7 @@ export type Database = {
           effective_task_count?: number
           is_active?: boolean
           last_credited_at?: string | null
+          mining_unlocked?: number
           mining_withdrawn?: number
           qualifying_referees?: number
           referral_accrued?: number
@@ -1658,6 +1661,7 @@ export type Database = {
           initial_verify_at: string | null
           last_reverified_at: string | null
           last_whitelist_check_at: string | null
+          locked_mined: number
           reverify_count: number
           reverify_due_at: string | null
           slot: number
@@ -1676,6 +1680,7 @@ export type Database = {
           initial_verify_at?: string | null
           last_reverified_at?: string | null
           last_whitelist_check_at?: string | null
+          locked_mined?: number
           reverify_count?: number
           reverify_due_at?: string | null
           slot: number
@@ -1694,6 +1699,7 @@ export type Database = {
           initial_verify_at?: string | null
           last_reverified_at?: string | null
           last_whitelist_check_at?: string | null
+          locked_mined?: number
           reverify_count?: number
           reverify_due_at?: string | null
           slot?: number

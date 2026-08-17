@@ -1,7 +1,6 @@
 import { memo, useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { computeLiveBalance, monthlyRate, MONTHLY_PER_SLOT } from "@/lib/mining";
-import { miningWindowInfo, nextOpenLabelBn } from "@/lib/mining-window";
 import { Wallet, Sparkles } from "lucide-react";
 
 /** Decorative layers never change — memoised so the 1s balance tick doesn't repaint them. */
@@ -75,6 +74,8 @@ type Props = {
     total_accrued: number;
     bonus_part: number;
     mining_part: number;
+    mining_available?: number;
+    mining_locked?: number;
     withdrawn_total: number;
     current_balance: number;
   };
@@ -126,6 +127,8 @@ export function MiningCounter({
   const auditedBalance = balanceBreakdown?.current_balance ?? 0;
   const bonusPart = balanceBreakdown?.bonus_part ?? 0;
   const miningPart = balanceBreakdown?.mining_part ?? 0;
+  const miningAvailable = balanceBreakdown?.mining_available ?? miningPart;
+  const miningLockedAmount = Math.max(0, balanceBreakdown?.mining_locked ?? 0);
 
   // We compute live balance for the "ticker" effect only for the MINING part accrued
   // since the last ledger entry, to ensure the total balance is anchored to audited data.
@@ -151,13 +154,11 @@ export function MiningCounter({
   const ratePerMonth = monthlyRate(rateArgs);
   const selfMonth = MONTHLY_PER_SLOT * selfSlots;
   const bonusMonth = MONTHLY_PER_SLOT * refUnits;
-  const claimable = Math.floor(auditedBalance);
+  const claimable = Math.floor(bonusPart + miningAvailable);
   const league = leagueFor(leagueCount ?? Math.max(effectiveTaskCount, displayTaskCount ?? 0));
 
-  const win = miningWindowInfo(now);
-  const withdrawOpen = win.isOpen;
-  const hoursUntilClose = Math.ceil(win.msUntilClose / (60 * 60 * 1000));
-  const nextOpen = nextOpenLabelBn(now);
+  // দিনে কত আসে — মাসিক রেট ÷ ৩০
+  const perDay = ratePerMonth / 30;
 
   return (
     <div className="mc-premium relative rounded-[24px] p-4 overflow-hidden" style={{ contain: "paint" }}>
@@ -199,15 +200,17 @@ export function MiningCounter({
           <AnimatedMoney value={displayBalance} live={live} />
         </div>
 
-        <div className={`mt-2.5 rounded-xl px-2.5 py-1.5 text-[10px] font-black flex items-center justify-between gap-2 border ${withdrawOpen ? "mc-ribbon-open" : "mc-ribbon-closed"}`}>
+        <div className={`mt-2.5 rounded-xl px-2.5 py-1.5 text-[10px] font-black flex items-center justify-between gap-2 border ${live ? "mc-ribbon-open" : "mc-ribbon-closed"}`}>
           <span className="flex items-center gap-1.5 min-w-0">
-            <span>{withdrawOpen ? "🔓" : "⏳"}</span>
+            <span>{live ? "🟢" : "🔴"}</span>
             <span className="text-white/95 truncate">
-              মাইনিং ব্যালেন্স ১–৩ তারিখে · বোনাস যেকোনো সময়
+              {live
+                ? `মাইনিং চালু · ${shownSlots}টি ঘর · দিনে ${perDay.toFixed(2)}৳`
+                : "মাইনিং বন্ধ — ১টি ঘর রি-ভেরিফাই করলেই চালু"}
             </span>
           </span>
           <span className="text-[8px] text-white/80 uppercase tracking-widest shrink-0">
-            {withdrawOpen ? `আর ${hoursUntilClose}ঘ` : nextOpen}
+            {live ? "LIVE" : "OFF"}
           </span>
         </div>
 
@@ -218,7 +221,9 @@ export function MiningCounter({
               {miningPart.toFixed(2)}<span className="text-[9px] text-white/60">৳</span>
             </p>
             <p className="text-[7.5px] text-white/60 leading-tight mt-0.5">
-              নিজের ও রেফার মাইনিং · ১–৩ তারিখে
+              {miningLockedAmount > 0.5
+                ? `আনলক ${miningAvailable.toFixed(0)}৳ · লক ${miningLockedAmount.toFixed(0)}৳ (রি-ভেরিফাই করলে খুলবে)`
+                : "পুরোটাই আনলক · যেকোনো সময় তোলা যাবে"}
             </p>
           </div>
           <div className="mc-mini rounded-2xl p-2">
@@ -238,7 +243,7 @@ export function MiningCounter({
             <p className="mono-num text-[15px] font-black text-white leading-none mt-0.5">
               {shownSlots}<span className="text-[10px] text-white/50">টি</span>
             </p>
-            <p className="text-[7.5px] text-white/55 leading-tight">প্রতি ঘর {MONTHLY_PER_SLOT}৳/মাস</p>
+            <p className="text-[7.5px] text-white/55 leading-tight">প্রতি ঘর {MONTHLY_PER_SLOT}৳/মাস · দিনে {(MONTHLY_PER_SLOT/30).toFixed(2)}৳</p>
           </div>
           <div className="mc-stat rounded-2xl p-2">
             <p className="text-[8px] uppercase tracking-widest text-white/60 font-black">মাসিক রেট</p>
@@ -250,14 +255,14 @@ export function MiningCounter({
                 </p>
               </>
             ) : (
-              <p className="text-[9px] font-black text-white/70 mt-0.5 leading-tight">🔒 ১০টি রি-ভেরিফাই হলে</p>
+              <p className="text-[9px] font-black text-white/70 mt-0.5 leading-tight">🔒 ১টি রি-ভেরিফাই করলেই চালু</p>
             )}
           </div>
         </div>
 
         {!live && (
           <p className="text-[10px] text-white/70 text-center mt-2 font-bold leading-snug">
-            ১০টি ঘর রি-ভেরিফাই করলেই মাইনিং চালু · প্রতিটি বাড়তি ঘরে +{MONTHLY_PER_SLOT}৳/মাস
+যে ঘরটি রি-ভেরিফাই করবেন সেই ঘরেই মাইনিং চালু · প্রতি ঘর +{MONTHLY_PER_SLOT}৳/মাস (দিনে {(MONTHLY_PER_SLOT/30).toFixed(2)}৳)
           </p>
         )}
 

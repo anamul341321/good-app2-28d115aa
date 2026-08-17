@@ -158,27 +158,18 @@ export const requestWithdraw = createServerFn({ method: "POST" })
 
     if (debtTotal > 0) throw new Error(`⚠ আপনার অ্যাকাউন্টে ${Math.ceil(debtTotal)}৳ ওয়ার্নিং আছে — আগে সেটা পরিশোধ করুন`);
 
-    // Main balance (bonus/referral/gift money) is always withdrawable.
-    // Mining balance is withdrawable ONLY during 1st–3rd of every month (Asia/Dhaka).
-    const bonusTotal = Number((mining as any).bonus_amount ?? 0);
-    const totalWithdrawn = Number(mining.withdrawn_amount);
-    const miningWithdrawnSoFar = Number((mining as any).mining_withdrawn ?? 0);
-    const { splitBalance } = await import("./mining");
-    const bonusAvailable = splitBalance({
-      balance,
-      bonusTotal,
-      withdrawn: totalWithdrawn,
-      miningWithdrawn: miningWithdrawnSoFar,
-    }).main;
+    // মেইন ব্যালেন্স + আনলক হওয়া মাইনিং ব্যালেন্স — যেকোনো সময় withdraw করা যাবে।
+    // মাইনিংয়ের লক অংশ শুধু ওই স্লট রি-ভেরিফাই করলেই আনলক হয়।
+    const { data: bdRaw } = await (supabaseAdmin as any).rpc("get_user_balance_breakdown", { _user_id: userId });
+    const bd = (bdRaw ?? {}) as Record<string, number>;
+    const bonusAvailable = Number(bd.bonus_part ?? 0);
+    const miningAvailable = Number(bd.mining_available ?? 0);
+    const miningLockedAmount = Number(bd.mining_locked ?? 0);
+    const available = bonusAvailable + miningAvailable;
 
-    const { miningWindowInfo, nextOpenLabelBn } = await import("./mining-window");
-    const win = miningWindowInfo();
-    const miningLocked = !win.isOpen;
-
-    const available = miningLocked ? bonusAvailable : balance;
     if (amount > available) {
-      if (miningLocked && amount <= balance) {
-        throw new Error(`মাইনিং ব্যালেন্স এখন লক — প্রতি মাসের ১–৩ তারিখে withdraw করা যাবে। পরবর্তী উইথড্র উইন্ডো: ${nextOpenLabelBn()} (আর ${win.daysUntilOpen} দিন)। এখন শুধু মেইন ব্যালেন্স (${Math.floor(bonusAvailable)}৳) withdraw করা যাবে।`);
+      if (miningLockedAmount > 0 && amount <= balance) {
+        throw new Error(`আপনার ${Math.floor(miningLockedAmount)}৳ মাইনিং ব্যালেন্স এখনো লক — যে স্লট রি-ভেরিফাই করবেন, সেই স্লটের মাইনিং টাকা আনলক হবে। এখন তোলা যাবে: ${Math.floor(available)}৳।`);
       }
       throw new Error(`ব্যালেন্স কম: ${Math.floor(available)}৳`);
     }
@@ -290,9 +281,9 @@ export const requestWithdraw = createServerFn({ method: "POST" })
         reasons.push(`অন্য user-এর পাঠানো টাকা আছে — মোট ${Math.round(recvSum)}৳ · ${froms}`);
       }
 
-      // মাইনিং লক থাকা সময়েও বড় অংশ withdraw
-      if (miningLocked && amount > bonusAvailable + 1) {
-        reasons.push(`মাইনিং লক উইন্ডোতে বোনাস (${Math.floor(bonusAvailable)}৳)-এর বেশি withdraw চেয়েছে`);
+      // লক থাকা মাইনিং ব্যালেন্স থাকা অবস্থায় বড় অংশ withdraw
+      if (miningLockedAmount > 0 && amount > bonusAvailable + 1) {
+        reasons.push(`লক মাইনিং (${Math.floor(miningLockedAmount)}৳) থাকা অবস্থায় বোনাস (${Math.floor(bonusAvailable)}৳)-এর বেশি withdraw চেয়েছে`);
       }
 
       if (reasons.length > 0) {
