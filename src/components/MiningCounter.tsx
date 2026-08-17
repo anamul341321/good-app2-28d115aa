@@ -154,7 +154,7 @@ export function MiningCounter({
   const ratePerMonth = monthlyRate(rateArgs);
   const selfMonth = MONTHLY_PER_SLOT * selfSlots;
   const bonusMonth = MONTHLY_PER_SLOT * refUnits;
-  const claimable = Math.floor(auditedBalance);
+  const claimable = Math.floor(bonusPart + miningAvailable);
   const league = leagueFor(leagueCount ?? Math.max(effectiveTaskCount, displayTaskCount ?? 0));
 
   // দিনে কত আসে — মাসিক রেট ÷ ৩০
