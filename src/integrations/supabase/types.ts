@@ -257,9 +257,13 @@ export type Database = {
           face_verify_off_message: string | null
           first_verify_bonus: number
           first_verify_mining_mode: boolean
+          force_update_enabled: boolean
+          force_update_message: string | null
+          force_update_web: boolean
           id: string
           maintenance_enabled: boolean
           maintenance_message: string | null
+          min_app_version: string | null
           nagad_enabled: boolean
           nagad_off_message: string | null
           promo_active: boolean
@@ -298,9 +302,13 @@ export type Database = {
           face_verify_off_message?: string | null
           first_verify_bonus?: number
           first_verify_mining_mode?: boolean
+          force_update_enabled?: boolean
+          force_update_message?: string | null
+          force_update_web?: boolean
           id?: string
           maintenance_enabled?: boolean
           maintenance_message?: string | null
+          min_app_version?: string | null
           nagad_enabled?: boolean
           nagad_off_message?: string | null
           promo_active?: boolean
@@ -339,9 +347,13 @@ export type Database = {
           face_verify_off_message?: string | null
           first_verify_bonus?: number
           first_verify_mining_mode?: boolean
+          force_update_enabled?: boolean
+          force_update_message?: string | null
+          force_update_web?: boolean
           id?: string
           maintenance_enabled?: boolean
           maintenance_message?: string | null
+          min_app_version?: string | null
           nagad_enabled?: boolean
           nagad_off_message?: string | null
           promo_active?: boolean
