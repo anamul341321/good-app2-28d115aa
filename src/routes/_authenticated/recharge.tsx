@@ -119,7 +119,7 @@ function RechargePage() {
 
   const amt = Math.floor(Number(amount) || 0);
   const mob = mobile.replace(/\D/g, "");
-  const canSubmit = /^0?1\d{9,10}$/.test(mob) && !!operator && amt >= MIN_RECHARGE && totalCost <= balance && !mut.isPending;
+  const canSubmit = /^0?1\d{9,10}$/.test(mob) && !!operator && amt >= MIN_RECHARGE && totalCost <= balance && miningNeeded <= 50 && !mut.isPending;
 
   const selectedOp = OPERATORS.find((o) => o.id === operator);
 
