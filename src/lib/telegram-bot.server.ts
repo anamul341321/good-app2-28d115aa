@@ -1254,11 +1254,25 @@ export async function faqImageBase64(path: string): Promise<string | null> {
 
 export const DEFAULT_TUTORIAL_VIDEO = "https://youtu.be/gbUn9GdDvK8?si=Uu-6IXQSHpsGhiJG";
 
+export const DEFAULT_WEBSITE_URL = "https://goodapp2.live";
+export const DEFAULT_DOWNLOAD_URL = "https://goodapp2.live/api/public/app/download";
+
 /** Warm Bengali welcome for a member who just joined the group. */
-export function welcomeReply(name: string, template: string | null, videoUrl: string | null): string {
+export function welcomeReply(
+  name: string,
+  template: string | null,
+  videoUrl: string | null,
+  links?: { websiteUrl?: string | null; downloadUrl?: string | null },
+): string {
   const video = videoUrl || DEFAULT_TUTORIAL_VIDEO;
+  const site = links?.websiteUrl || DEFAULT_WEBSITE_URL;
+  const apk = links?.downloadUrl || DEFAULT_DOWNLOAD_URL;
   if (template && template.trim()) {
-    return template.replaceAll("{name}", `<b>${name}</b>`).replaceAll("{video}", video);
+    return template
+      .replaceAll("{name}", `<b>${name}</b>`)
+      .replaceAll("{video}", video)
+      .replaceAll("{website}", site)
+      .replaceAll("{download}", apk);
   }
   const openers = [
     `🎉 স্বাগতম <b>${name}</b>! Good-App পরিবারে আপনাকে সাদরে আমন্ত্রণ 💙`,
@@ -1269,10 +1283,13 @@ export function welcomeReply(name: string, template: string | null, videoUrl: st
   return (
     `${pick(openers)}\n\n` +
     `✅ এখানে ফেস ভেরিফিকেশন করে <b>বোনাস</b> ও <b>মাইনিং ইনকাম</b> করতে পারবেন।\n` +
+    `🌐 ওয়েবসাইট: ${site}\n` +
+    `📲 <b>অ্যাপটি অবশ্যই ডাউনলোড করুন</b> (অ্যাপ ছাড়া কাজ করা যাবে না): ${apk}\n` +
     `📺 কিভাবে কাজ করতে হয় দেখে নিন: ${video}\n\n` +
     `যেকোনো সমস্যা হলে এখানেই লিখুন — আমি সাথে সাথে সাহায্য করব 🙂`
   );
 }
+
 
 /** Nicely formatted "watch this video" message. */
 export function videoReply(name: string, url: string, topic?: string | null, note?: string | null): string {
