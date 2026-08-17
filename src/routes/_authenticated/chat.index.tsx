@@ -72,17 +72,16 @@ export function ChatListPage() {
       <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md px-4 py-3 flex flex-col gap-3 pt-[env(safe-area-inset-top)]">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Link 
-              to="/home"
-              className="btn-press h-9 w-9 flex items-center justify-center rounded-full bg-surface-2 transition-colors"
-            >
-              <ChevronLeft className="h-6 w-6 text-foreground" />
-            </Link>
             <h1 className="text-xl font-black text-foreground tracking-tight">Messenger</h1>
-
-
           </div>
           <div className="flex items-center gap-2">
+            {/* যারা ড্যাশবোর্ডে যেতে চান শুধু তারাই এই বাটনে ট্যাপ করবেন */}
+            <Link
+              to="/home"
+              className="btn-press h-9 px-3 flex items-center gap-1.5 rounded-full bg-surface-2 text-[11px] font-black text-foreground"
+            >
+              <ChevronLeft className="h-4 w-4" /> ড্যাশবোর্ড
+            </Link>
             <button 
               onClick={() => navigate({ to: "/chat" as any, search: { new: true } as any })}
               className="h-9 w-9 flex items-center justify-center rounded-full bg-surface-2 btn-press"
