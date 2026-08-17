@@ -4,7 +4,6 @@ import { useState } from "react";
 import { sendBalance, getMyTransfers, lookupTransferTarget } from "@/lib/transfer.functions";
 import { getDashboard } from "@/lib/dashboard.functions";
 import { computeLiveBalance, splitBalance } from "@/lib/mining";
-import { miningWindowInfo, nextOpenLabelBn } from "@/lib/mining-window";
 import { Loader2, Send, Search, ArrowUpRight, ArrowDownLeft, User, ArrowLeft, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { useLang } from "@/lib/i18n";
@@ -61,18 +60,21 @@ function SendPage() {
         debt: debtTotal,
       })) : 0;
 
-  // Mining balance can only be sent during the monthly window (1st–3rd, Asia/Dhaka).
-  const win = miningWindowInfo();
+  // মাইনিং ব্যালেন্সের যে অংশ আনলক হয়েছে (স্লট রি-ভেরিফাই করলে আনলক হয়) + মেইন ব্যালেন্স
+  // যেকোনো সময় পাঠানো যাবে — তারিখের কোনো নিয়ম নেই।
+  const bd = (dash as any)?.balanceBreakdown;
   const bonusTotal = Number((mining as any)?.bonus_amount ?? 0);
-  const bonusAvailable = Math.floor((dash as any)?.balanceBreakdown?.bonus_part ?? splitBalance({
+  const bonusAvailable = Math.floor(bd?.bonus_part ?? splitBalance({
     balance,
     bonusTotal,
     withdrawn: Number((mining as any)?.withdrawn_amount ?? 0),
     miningWithdrawn: Number((mining as any)?.mining_withdrawn ?? 0),
   }).main);
-  const sendable = win.isOpen ? balance : Math.min(balance, bonusAvailable);
+  const miningAvailable = Math.floor(bd?.mining_available ?? 0);
+  const miningLockedAmount = Math.floor(bd?.mining_locked ?? 0);
+  const sendable = Math.min(balance, bonusAvailable + miningAvailable);
 
-  const miningLocked = !win.isOpen && balance > sendable;
+  const miningLocked = miningLockedAmount > 0;
 
   const lookup = useMutation({
     mutationFn: (tg: string) => lookupTransferTarget({ data: { target: tg } }),
@@ -138,8 +140,8 @@ function SendPage() {
           <p className="text-xs font-black text-amber-600">⛏️🔒 {t("মাইনিং ব্যালেন্স এখন লক", "Mining balance is locked now")}</p>
           <p className="text-[11px] text-muted-foreground font-bold mt-1 leading-relaxed">
             {t(
-              `মাইনিংয়ের টাকা শুধু প্রতি মাসের ১, ২, ৩ তারিখে অন্য কাউকে পাঠানো বা withdraw করা যাবে। পরবর্তী উইন্ডো: ${nextOpenLabelBn()} (আর ${win.daysUntilOpen} দিন)। এখন শুধু মেইন ব্যালেন্সের ${bonusAvailable}৳ পাঠাতে পারবেন।`,
-              `Mining balance can only be sent or withdrawn on the 1st–3rd of each month. Next window in ${win.daysUntilOpen} day(s). For now you can only send your main balance: ${bonusAvailable}৳.`,
+              `আপনার ${miningLockedAmount}৳ মাইনিং ব্যালেন্স এখনো লক। যে স্লট রি-ভেরিফাই করবেন, সেই স্লটের মাইনিং টাকা সাথে সাথেই আনলক হবে। এখন পাঠাতে পারবেন ${sendable}৳।`,
+              `${miningLockedAmount}৳ of your mining balance is still locked. Re-verify a slot and that slot's mining earnings unlock instantly. You can send ${sendable}৳ now.`,
             )}
           </p>
         </div>

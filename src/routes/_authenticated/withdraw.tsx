@@ -12,7 +12,6 @@ import bkashLogo from "@/assets/bkash-logo.png";
 import nagadLogo from "@/assets/nagad-logo.png";
 import usdtLogo from "@/assets/usdt-logo.png";
 import { useLang } from "@/lib/i18n";
-import { miningWindowInfo, nextOpenLabelBn } from "@/lib/mining-window";
 import { withdrawWindowInfo } from "@/lib/withdraw-window";
 import { WithdrawClosedBanner } from "@/components/WithdrawClosedBanner";
 import { WithdrawRejectDetails } from "@/components/WithdrawRejectDetails";
