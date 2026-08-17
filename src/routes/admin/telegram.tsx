@@ -133,6 +133,8 @@ function SettingsPanel() {
         voice_text_enabled: form.voice_text_enabled !== false,
         welcome_message: form.welcome_message?.trim() || null,
         default_video_url: form.default_video_url?.trim() || null,
+        website_url: form.website_url?.trim() || null,
+        download_url: form.download_url?.trim() || null,
 
 
 
