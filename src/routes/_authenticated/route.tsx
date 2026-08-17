@@ -28,7 +28,7 @@ import { UserNoticeBanner } from "@/components/UserNoticeBanner";
 import { ChatNotifier } from "@/components/ChatNotifier";
 import { NotificationBell } from "@/components/NotificationBell";
 import { SlotPausedModal } from "@/components/SlotPausedModal";
-import { ServerBackModal } from "@/components/ServerBackModal";
+import { NewSystemModal } from "@/components/NewSystemModal";
 import { CallProvider } from "@/components/CallProvider";
 
 import { clearSharedSession, getSharedSession } from "@/lib/auth-session";
@@ -181,7 +181,7 @@ function AuthedLayout() {
       {appStatus?.faceVerifyEnabled === false ? (
         <SlotPausedModal message={appStatus?.faceVerifyMessage} />
       ) : (
-        <ServerBackModal />
+        <NewSystemModal />
       )}
 
       {!isSocialRoute && (
