@@ -172,7 +172,8 @@ function AuthedLayout() {
 
   if (appStatus?.maintenance) return <MaintenanceScreen message={appStatus.message} />;
 
-  const isSocialRoute = router.state.location.pathname.startsWith("/social");
+  // মেসেঞ্জার (chat) ও social — দুইটাই ফুল-স্ক্রিন, নিচে ড্যাশবোর্ড নেভিগেশন দেখাবে না
+  const isSocialRoute = /^\/(social|chat)/.test(router.state.location.pathname);
 
   return (
     <CallProvider>
