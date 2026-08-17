@@ -296,7 +296,7 @@ function BigMenuLink({ to, icon, label, tone, search }: { to: string; icon: Reac
 
 function ProfileButton() {
   const { data } = useQuery({ queryKey: ["profile-history"], queryFn: () => getProfileHistory(), staleTime: 60_000 });
-  const uid = (data as any)?.uid_seq ?? null;
+  const uid = (data as any)?.profile?.uid_seq ?? null;
   return (
     <Link to="/profile" data-voice="profile.intro" className="btn-press flex flex-col items-center gap-0.5 active:scale-95">
       <span className="w-12 h-12 rounded-2xl overflow-hidden border-2 border-gold/60 glow-gold bg-surface-2 flex items-center justify-center">
