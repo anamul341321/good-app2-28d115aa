@@ -229,21 +229,29 @@ function RechargePage() {
 
         {amt >= MIN_RECHARGE && (
           <div className="rounded-xl border-2 border-cyan-500/30 bg-cyan-500/5 p-3 space-y-1 animate-in zoom-in-95 duration-200" translate="no">
-            <p className="text-[10px] uppercase tracking-widest font-black text-cyan-600">{t("ফি হিসাব (১০%)", "Fee breakdown (10%)")}</p>
+            <p className="text-[10px] uppercase tracking-widest font-black text-cyan-600">{t("ফি হিসাব (২০%)", "Fee breakdown (20%)")}</p>
             <div className="flex justify-between text-[12px]">
               <span className="text-muted-foreground">{t("রিচার্জ হবে", "Recharge amount")}</span>
               <span className="mono-num font-bold text-emerald">{amt}৳</span>
             </div>
             <div className="flex justify-between text-[12px]">
-              <span className="text-muted-foreground">{t("সার্ভিস ফি (১০%)", "Service fee (10%)")}</span>
+              <span className="text-muted-foreground">{t("সার্ভিস ফি (২০%)", "Service fee (20%)")}</span>
               <span className="mono-num font-bold text-rose">+ {rechargeFee}৳</span>
             </div>
             <div className="flex justify-between text-sm border-t border-cyan-500/20 pt-1.5">
               <span className="font-black">{t("মোট ব্যালেন্স কাটবে", "Total payable")}</span>
               <span className="mono-num font-black text-cyan-600">{totalCost}৳</span>
             </div>
+            {miningNeeded > 0 && (
+              <p className={`text-[11px] font-bold leading-snug pt-1 ${miningNeeded > 50 ? "text-rose" : "text-amber-600"}`}>
+                {miningNeeded > 50
+                  ? t("মাইনিং ব্যালেন্স দিয়ে সর্বোচ্চ ৫০৳ রিচার্জ করা যাবে — বোনাস ব্যালেন্স দিয়ে বেশি নিতে পারবেন।", "Mining balance covers at most 50৳ per recharge — use bonus balance for more.")
+                  : t(`এই রিচার্জে মাইনিং ব্যালেন্স থেকে ${miningNeeded}৳ কাটবে · মাইনিং দিয়ে দিনে মাত্র ১ বার রিচার্জ করা যাবে।`, `${miningNeeded}৳ will come from mining balance · only 1 mining-funded recharge per day.`)}
+              </p>
+            )}
           </div>
         )}
+
 
         <button disabled={!canSubmit} onClick={() => mut.mutate()}
           className="w-full py-4 rounded-2xl font-black text-base flex items-center justify-center gap-2 disabled:opacity-50 btn-press text-white shadow-xl transition"
