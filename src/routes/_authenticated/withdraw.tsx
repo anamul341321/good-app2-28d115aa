@@ -89,17 +89,14 @@ function WithdrawPage() {
     now,
   }) : 0;
 
-  const breakdown = (data as any).balanceBreakdown || { current_balance: 0, bonus_part: 0, mining_part: 0 };
-  const claimable = Math.floor(breakdown.current_balance);
+  const breakdown = (data as any).balanceBreakdown || { current_balance: 0, bonus_part: 0, mining_part: 0, mining_available: 0, mining_locked: 0 };
   const bonusAvailable = Math.floor(breakdown.bonus_part);
   const miningPart = Math.floor(breakdown.mining_part);
-
-
-  const win = miningWindowInfo(now);
-  const miningLocked = !win.isOpen;
-  const daysUntilUnlock = win.daysUntilOpen;
-  const hoursUntilClose = Math.ceil(win.msUntilClose / (60 * 60 * 1000));
-  const nextOpenLabel = nextOpenLabelBn(now);
+  const miningAvailable = Math.floor(breakdown.mining_available ?? breakdown.mining_part ?? 0);
+  const miningLockedAmount = Math.floor(breakdown.mining_locked ?? 0);
+  // যেকোনো সময় তোলা যাবে: মেইন ব্যালেন্স + আনলক হওয়া মাইনিং ব্যালেন্স
+  const claimable = bonusAvailable + miningAvailable;
+  const miningLocked = miningLockedAmount > 0;
 
   const chosenWallet = provider === "bkash" ? walletBkash : provider === "nagad" ? walletNagad : null;
   const chosenEnabled = provider === "bkash" ? payout.bkashEnabled : provider === "nagad" ? payout.nagadEnabled : false;
