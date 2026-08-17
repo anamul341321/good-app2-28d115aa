@@ -1086,10 +1086,42 @@ function UserDetail() {
         )}
       </div>
 
+      {/* সহজ হিসাব — এক নজরে (এই কার্ডটাই যথেষ্ট, নিচেরটা বিস্তারিত) */}
+      {(data as any).breakdown && (() => {
+        const d = data as any;
+        const b = d.breakdown ?? {};
+        const withdrawn = Number(d.mining?.withdrawn_amount ?? 0);
+        const paid = (d.withdrawals ?? []).filter((w: any) => w.status === "paid")
+          .reduce((s: number, w: any) => s + Number(w.amount), 0);
+        const recharge = (d.recharges ?? []).filter((r: any) => r.status === "success")
+          .reduce((s: number, r: any) => s + Number(r.amount), 0);
+        const sent = (d.transfersOut ?? []).reduce((s: number, t: any) => s + Number(t.amount), 0);
+        const rows: Array<[string, number, string]> = [
+          ["🎁 বোনাস (মেইন) ব্যালেন্স — যেকোনো সময় তোলা যাবে", Number(b.bonus_part ?? 0), "text-emerald"],
+          ["⛏️ মাইনিং ব্যালেন্স — শুধু ১/২/৩ তারিখে তোলা যাবে", Number(b.mining_part ?? 0), "text-amber"],
+          ["💰 এখনকার মোট ব্যালেন্স", Number(b.current_balance ?? 0), "text-primary"],
+          ["✅ পেমেন্ট দেওয়া হয়েছে (withdraw)", paid, "text-foreground"],
+          ["📱 মোবাইল রিচার্জ হয়েছে", recharge, "text-foreground"],
+          ["🔄 অন্যকে পাঠানো হয়েছে", sent, "text-foreground"],
+          ["📤 সব মিলিয়ে খরচ", withdrawn, "text-rose"],
+        ];
+        return (
+          <div className="glass rounded-2xl p-4 space-y-2 border border-primary/30">
+            <p className="text-[10px] uppercase tracking-widest text-primary font-black">সহজ হিসাব — এক নজরে</p>
+            {rows.map(([label, val, cls]) => (
+              <div key={label} className="flex items-center justify-between gap-2 text-[12px]">
+                <span className="text-muted-foreground font-bold">{label}</span>
+                <span className={`mono-num font-black ${cls}`} translate="no">{Math.floor(val)}৳</span>
+              </div>
+            ))}
+          </div>
+        );
+      })()}
+
       {/* Step-by-step reconciliation of bonus + mining */}
       {(data as any).breakdown && (
         <div className="glass rounded-2xl p-4 space-y-3 border border-amber/30">
-          <p className="text-[10px] uppercase tracking-widest text-amber font-black">ধাপে ধাপে হিসাব — বোনাস ও মাইনিং</p>
+          <p className="text-[10px] uppercase tracking-widest text-amber font-black">বিস্তারিত হিসাব (চাইলে দেখুন) — বোনাস ও মাইনিং</p>
           {(() => {
             const d = data as any;
             const withdrawn = Number(d.mining?.withdrawn_amount ?? 0);
