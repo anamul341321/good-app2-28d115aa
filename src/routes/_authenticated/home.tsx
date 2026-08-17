@@ -380,6 +380,31 @@ function HomePage() {
         </Link>
       )}
 
+      {/* নিজের ছবি — Slot #1 (আগের মতো ড্যাশবোর্ডেই দেখা ও রি-ভেরিফাই করা যাবে) */}
+      {mainTask && (
+        <div className="premium-panel rounded-2xl p-3">
+          <p className="text-[10px] uppercase text-muted-foreground tracking-[0.15em] font-bold mb-2 flex items-center gap-1">
+            <Camera className="w-3 h-3" /> {t("আমার নিজের ছবি · Slot #1", "My own photo · Slot #1")}
+          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+            <TaskCell task={mainTask}
+              onStart={() => router.navigate({ to: "/task/$slot", params: { slot: "1" } })}
+              onReverify={() => {
+                const url = mainTask.signed_face_url;
+                if (url) {
+                  setLightbox({
+                    url,
+                    label: t("আমার নিজের ছবি · Slot #1 — রি-ভেরিফাই প্রয়োজন", "My own photo · Slot #1 — needs re-verify"),
+                    action: { label: t("রি-ভেরিফাই করুন", "Re-verify"), tone: "rose", onClick: () => router.navigate({ to: "/reverify", search: { taskId: mainTask.id } as any }) },
+                  });
+                } else {
+                  router.navigate({ to: "/reverify", search: { taskId: mainTask.id } as any });
+                }
+              }}
+              onOpenPhoto={(url) => setLightbox({ url, label: t("আমার নিজের ছবি · Slot #1", "My own photo · Slot #1") })} />
+          </div>
+        </div>
+      )}
 
 
       {/* Witness grid */}

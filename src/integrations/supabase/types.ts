@@ -1759,6 +1759,8 @@ export type Database = {
           created_at: string
           default_video_url: string | null
           delete_bad_messages: boolean
+          download_notice: string | null
+          download_url: string | null
           enabled: boolean
           escalate_enabled: boolean
           group_chat_id: string | null
@@ -1779,6 +1781,7 @@ export type Database = {
           voice_reply_enabled: boolean
           voice_text_enabled: boolean
           warn_threshold: number
+          website_url: string | null
           welcome_enabled: boolean
           welcome_message: string | null
         }
@@ -1794,6 +1797,8 @@ export type Database = {
           created_at?: string
           default_video_url?: string | null
           delete_bad_messages?: boolean
+          download_notice?: string | null
+          download_url?: string | null
           enabled?: boolean
           escalate_enabled?: boolean
           group_chat_id?: string | null
@@ -1814,6 +1819,7 @@ export type Database = {
           voice_reply_enabled?: boolean
           voice_text_enabled?: boolean
           warn_threshold?: number
+          website_url?: string | null
           welcome_enabled?: boolean
           welcome_message?: string | null
         }
@@ -1829,6 +1835,8 @@ export type Database = {
           created_at?: string
           default_video_url?: string | null
           delete_bad_messages?: boolean
+          download_notice?: string | null
+          download_url?: string | null
           enabled?: boolean
           escalate_enabled?: boolean
           group_chat_id?: string | null
@@ -1849,6 +1857,7 @@ export type Database = {
           voice_reply_enabled?: boolean
           voice_text_enabled?: boolean
           warn_threshold?: number
+          website_url?: string | null
           welcome_enabled?: boolean
           welcome_message?: string | null
         }

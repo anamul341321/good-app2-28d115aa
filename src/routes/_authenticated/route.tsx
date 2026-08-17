@@ -172,7 +172,8 @@ function AuthedLayout() {
 
   if (appStatus?.maintenance) return <MaintenanceScreen message={appStatus.message} />;
 
-  const isSocialRoute = router.state.location.pathname.startsWith("/social");
+  // মেসেঞ্জার (chat) ও social — দুইটাই ফুল-স্ক্রিন, নিচে ড্যাশবোর্ড নেভিগেশন দেখাবে না
+  const isSocialRoute = /^\/(social|chat)/.test(router.state.location.pathname);
 
   return (
     <CallProvider>
@@ -295,11 +296,18 @@ function BigMenuLink({ to, icon, label, tone, search }: { to: string; icon: Reac
 
 function ProfileButton() {
   const { data } = useQuery({ queryKey: ["profile-history"], queryFn: () => getProfileHistory(), staleTime: 60_000 });
+  const uid = (data as any)?.profile?.uid_seq ?? null;
   return (
-    <Link to="/profile" data-voice="profile.intro" className="btn-press w-12 h-12 rounded-2xl overflow-hidden border-2 border-gold/60 glow-gold bg-surface-2 flex items-center justify-center active:scale-95">
-      {data?.avatar_signed
-        ? <img src={data.avatar_signed} className="w-full h-full object-cover" alt="me" />
-        : <User className="w-5 h-5 text-gold" />}
+    <Link to="/profile" data-voice="profile.intro" className="btn-press flex flex-col items-center gap-0.5 active:scale-95">
+      <span className="w-12 h-12 rounded-2xl overflow-hidden border-2 border-gold/60 glow-gold bg-surface-2 flex items-center justify-center">
+        {data?.avatar_signed
+          ? <img src={data.avatar_signed} className="w-full h-full object-cover" alt="me" />
+          : <User className="w-5 h-5 text-gold" />}
+      </span>
+      {/* প্রোফাইলে না ঢুকেই UID দেখা যাবে */}
+      <span className="text-[9px] font-black leading-none text-gold mono-num" translate="no">
+        UID {uid ?? "—"}
+      </span>
     </Link>
   );
 }
