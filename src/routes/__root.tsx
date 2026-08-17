@@ -147,6 +147,7 @@ function RootComponent() {
       <LanguageProvider>
         <SplashScreen />
         <AppUpdateBanner />
+        <ForceUpdateGate />
         <Outlet />
 
         <InstallPrompt />
