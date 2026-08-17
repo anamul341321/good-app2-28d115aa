@@ -96,12 +96,13 @@ function ThreadPage() {
     <div className="flex flex-col h-screen bg-background">
       {/* Messenger-style Conversation Header */}
       <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md px-2 py-2 border-b flex items-center gap-2 pt-[env(safe-area-inset-top)]">
-        <button
-          onClick={() => window.history.length > 1 ? window.history.back() : window.location.href = '/social/messenger'}
+        {/* ব্যাক দিলে সবসময় মেসেঞ্জার লিস্টে ফিরবে — ড্যাশবোর্ডে নয় */}
+        <Link
+          to="/chat"
           className="btn-press h-9 w-9 flex items-center justify-center rounded-full hover:bg-surface-2 transition-colors"
         >
           <ChevronLeft className="h-6 w-6 text-primary" />
-        </button>
+        </Link>
         
         <div className="flex flex-1 items-center gap-2 min-w-0">
           <MessengerAvatar
