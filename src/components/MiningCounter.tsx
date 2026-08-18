@@ -1,7 +1,10 @@
 import { memo, useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { computeLiveBalance, monthlyRate, MONTHLY_PER_SLOT } from "@/lib/mining";
-import { Wallet, Sparkles } from "lucide-react";
+import { claimMiningToMain } from "@/lib/earnings.functions";
+import { Wallet, Sparkles, Gift, Loader2 } from "lucide-react";
 
 /** Decorative layers never change — memoised so the 1s balance tick doesn't repaint them. */
 const MiningDecor = memo(function MiningDecor({ live }: { live: boolean }) {
@@ -100,6 +103,15 @@ export function MiningCounter({
 
   const [now, setNow] = useState(Date.now());
   const navigate = useNavigate();
+  const qc = useQueryClient();
+  const claim = useMutation({
+    mutationFn: () => claimMiningToMain(),
+    onSuccess: (res: any) => {
+      toast.success(`🎉 ${Number(res?.amount ?? 0).toFixed(2)}৳ মেইন ব্যালেন্সে যোগ হয়েছে`);
+      void qc.invalidateQueries();
+    },
+    onError: (e: any) => toast.error(e?.message ?? "ক্লেইম করা যায়নি"),
+  });
 
   useEffect(() => {
     if (!isActive) return;
@@ -276,6 +288,27 @@ export function MiningCounter({
             🎁 {qualifyingReferees} জন রেফার · ১০% = +{bonusMonth.toFixed(0)}৳/মাস
           </p>
         )}
+
+        {/* আনলক হওয়া মাইনিং টাকা → মেইন ব্যালেন্সে ক্লেইম */}
+        <button
+          disabled={miningAvailable < 0.5 || claim.isPending}
+          onClick={() => claim.mutate()}
+          className={`mt-2.5 w-full rounded-2xl py-2.5 text-[12.5px] font-black flex items-center justify-center gap-1.5 btn-press border ${
+            miningAvailable >= 0.5
+              ? "bg-gradient-to-r from-emerald-400 to-teal-500 text-emerald-950 border-white/40 shadow-lg"
+              : "bg-white/10 text-white/60 border-white/20"
+          }`}
+        >
+          {claim.isPending ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Gift className="w-4 h-4" />
+          )}
+          {miningAvailable >= 0.5
+            ? `${miningAvailable.toFixed(2)}৳ ক্লেইম করে মেইন ব্যালেন্সে নিন`
+            : "ক্লেইম — আনলক মাইনিং জমা হলেই চালু"}
+        </button>
+
 
         <div className="mt-2.5 grid grid-cols-2 gap-2">
           <button

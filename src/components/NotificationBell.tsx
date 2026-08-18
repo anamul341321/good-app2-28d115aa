@@ -13,6 +13,16 @@ function timeAgo(iso: string) {
   return `${Math.floor(h / 24)} দিন আগে`;
 }
 
+/** নোটিশের ধরন বুঝে রঙ — সব নোটিফিকেশন লাল/ওয়ার্নিং হয়ে যাবে না */
+const BAD_WORDS = [
+  "warning", "ওয়ার্নিং", "সতর্ক", "ব্যান", "banned", "block", "ব্লক", "বাতিল",
+  "reject", "ব্যর্থ", "failed", "ঋণ", "debt", "জরিমানা", "ফ্রিজ", "freeze", "সমস্যা",
+];
+function severityOf(text: string): "bad" | "good" {
+  const t = text.toLowerCase();
+  return BAD_WORDS.some((w) => t.includes(w.toLowerCase())) ? "bad" : "good";
+}
+
 /** হেডারের ঘণ্টা আইকন — সব নোটিফিকেশন এক জায়গায় */
 export function NotificationBell() {
   const [open, setOpen] = useState(false);
@@ -29,6 +39,9 @@ export function NotificationBell() {
 
   const unread = data?.unread ?? 0;
   const items = data?.items ?? [];
+  const hasUnreadWarning = items.some(
+    (n) => !n.read && severityOf(`${n.title ?? ""} ${n.body}`) === "bad",
+  );
 
   return (
     <>
@@ -36,9 +49,11 @@ export function NotificationBell() {
         aria-label="নোটিফিকেশন"
         onClick={() => setOpen(true)}
         className={`btn-press relative grid h-12 w-12 place-items-center rounded-2xl border shadow-lg active:scale-95 ${
-          unread > 0
-            ? "border-rose-300/60 bg-gradient-to-br from-rose-500 to-rose-700 text-white"
-            : "border-gold/50 gradient-navy text-gold"
+          unread === 0
+            ? "border-gold/50 gradient-navy text-gold"
+            : hasUnreadWarning
+              ? "border-rose-300/60 bg-gradient-to-br from-rose-500 to-rose-700 text-white"
+              : "border-emerald-300/60 bg-gradient-to-br from-emerald-500 to-teal-600 text-white"
         }`}
       >
         <Bell className={`w-6 h-6 ${unread > 0 ? "animate-bounce" : ""}`} />
@@ -80,11 +95,20 @@ export function NotificationBell() {
                   এখনো কোনো নোটিফিকেশন নেই
                 </p>
               )}
-              {items.map((n) => (
-                <div key={n.id} className={`p-3 ${n.read ? "" : "bg-violet-500/5"}`}>
+              {items.map((n) => {
+                const bad = severityOf(`${n.title ?? ""} ${n.body}`) === "bad";
+                return (
+                <div
+                  key={n.id}
+                  className={`p-3 ${
+                    n.read ? "" : bad ? "bg-rose-500/5" : "bg-emerald-500/5"
+                  }`}
+                >
                   <div className="flex items-start gap-2">
                     <span
-                      className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${n.read ? "bg-border" : "bg-rose-500 animate-pulse"}`}
+                      className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${
+                        n.read ? "bg-border" : bad ? "bg-rose-500 animate-pulse" : "bg-emerald-500"
+                      }`}
                     />
                     <div className="min-w-0 flex-1">
                       {n.title && <p className="text-xs font-black leading-tight">{n.title}</p>}
@@ -97,7 +121,8 @@ export function NotificationBell() {
                     </div>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>

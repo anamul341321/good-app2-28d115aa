@@ -222,3 +222,19 @@ export const claimMiningEarnings = createServerFn({ method: "POST" })
       referralAmount: Number(res.referral_amount ?? 0),
     };
   });
+
+/** আনলক হওয়া মাইনিং টাকা → মেইন ব্যালেন্সে নিয়ে নেওয়া (ক্লেইম) */
+export const claimMiningToMain = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin.rpc("claim_mining_to_main" as any, {
+      _user_id: context.userId,
+    });
+    if (error) throw new Error(error.message);
+    const res = (data ?? {}) as any;
+    if (!res.ok) {
+      throw new Error("এখনো ক্লেইম করার মতো আনলক মাইনিং টাকা জমা হয়নি (সর্বনিম্ন ০.৫০৳)।");
+    }
+    return { ok: true, amount: Number(res.amount ?? 0) };
+  });

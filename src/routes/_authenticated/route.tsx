@@ -24,7 +24,6 @@ import { ProfileCompleteGate } from "@/components/ProfileCompleteGate";
 import { useDeviceGuard } from "@/hooks/useDeviceGuard";
 import { getAppStatus } from "@/lib/app-status.functions";
 import { MaintenanceScreen } from "@/components/MaintenanceGate";
-import { UserNoticeBanner } from "@/components/UserNoticeBanner";
 import { ChatNotifier } from "@/components/ChatNotifier";
 import { NotificationBell } from "@/components/NotificationBell";
 import { SlotPausedModal } from "@/components/SlotPausedModal";
@@ -266,7 +265,6 @@ function AuthedLayout() {
 
       <ProfileCompleteGate />
       <EmailVerifyGate />
-      <UserNoticeBanner />
       <ChatNotifier />
 
 
