@@ -82,6 +82,8 @@ type Props = {
     mining_locked?: number;
     self_mining_total?: number;
     self_mining_locked?: number;
+    self_mining_claimable?: number;
+
     self_mining_pending?: number;
     self_mining_claimed?: number;
     referral_mining_total?: number;
