@@ -120,6 +120,18 @@ export function MiningCounter({
     },
     onError: (e: any) => toast.error(e?.message ?? "ক্লেইম করা যায়নি"),
   });
+  const claimAll = useMutation({
+    mutationFn: () => claimAllSlotMining(),
+    onSuccess: (res: any) => {
+      toast.success(
+        `⛏️ সব ঘরের মাইনিং ${Number(res?.mining ?? 0).toFixed(2)}৳ মেইন ব্যালেন্সে যোগ হয়েছে` +
+          ` · ${Number(res?.slots ?? 0)}টি ঘর`,
+      );
+      void qc.invalidateQueries();
+    },
+    onError: (e: any) => toast.error(e?.message ?? "ক্লেইম করা যায়নি"),
+  });
+
 
   useEffect(() => {
     if (!isActive) return;
