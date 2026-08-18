@@ -256,6 +256,7 @@ export const claimSlotMining = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     const out = (res ?? {}) as any;
     if (!out.ok) {
+      if (out.reason === "reverify_required") throw new Error("🔒 এই ঘরে GoodDollar Re-verify চেয়েছে — Re-verify না করলে এই ঘরের মাইনিং টাকা খুলবে না।");
       if (out.reason === "too_small") throw new Error("এই ঘরে এখনো ক্লেইম করার মতো মাইনিং জমা হয়নি (সর্বনিম্ন ০.৫০৳)।");
       if (out.reason === "use_full_claim") throw new Error("এই ঘরে Re-verify বোনাসসহ পুরো ক্লেইম অপেক্ষা করছে — সেটিই ক্লেইম করুন।");
       throw new Error("ক্লেইম করা যায়নি — আবার চেষ্টা করুন।");
