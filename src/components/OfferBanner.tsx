@@ -77,7 +77,7 @@ export function OfferBanner() {
         </div>
 
         <button
-          onClick={() => navigate({ to: "/reverify" })}
+          onClick={() => navigate({ to: "/reverify", search: { taskId: undefined } })}
           className="mt-2.5 w-full rounded-2xl bg-white py-2.5 text-[13px] font-black text-rose-700 btn-press flex items-center justify-center gap-1.5 shadow-lg"
         >
           <Zap className="w-4 h-4" /> এখনই Re-verify করে ১০৳ নিন
