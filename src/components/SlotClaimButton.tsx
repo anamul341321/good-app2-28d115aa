@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Gift, Loader2, Lock, Pickaxe, RefreshCcw, Sparkles, X } from "lucide-react";
 import { claimSlotReward } from "@/lib/slot-claims.functions";
+import { claimSlotMining } from "@/lib/earnings.functions";
 
 export type SlotClaim = { taskId: string; slot: number; bonus: number; mining: number; dueAt?: string | null };
 
