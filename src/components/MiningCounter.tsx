@@ -289,6 +289,27 @@ export function MiningCounter({
           </p>
         )}
 
+        {/* আনলক হওয়া মাইনিং টাকা → মেইন ব্যালেন্সে ক্লেইম */}
+        <button
+          disabled={miningAvailable < 0.5 || claim.isPending}
+          onClick={() => claim.mutate()}
+          className={`mt-2.5 w-full rounded-2xl py-2.5 text-[12.5px] font-black flex items-center justify-center gap-1.5 btn-press border ${
+            miningAvailable >= 0.5
+              ? "bg-gradient-to-r from-emerald-400 to-teal-500 text-emerald-950 border-white/40 shadow-lg"
+              : "bg-white/10 text-white/60 border-white/20"
+          }`}
+        >
+          {claim.isPending ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Gift className="w-4 h-4" />
+          )}
+          {miningAvailable >= 0.5
+            ? `${miningAvailable.toFixed(2)}৳ ক্লেইম করে মেইন ব্যালেন্সে নিন`
+            : "ক্লেইম — আনলক মাইনিং জমা হলেই চালু"}
+        </button>
+
+
         <div className="mt-2.5 grid grid-cols-2 gap-2">
           <button
             onClick={() => navigate({ to: "/withdraw" })}
