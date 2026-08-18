@@ -99,7 +99,7 @@ export function SlotClaimButton({
               <p className="mono-num text-[2.2rem] leading-none font-black text-white drop-shadow">{tk(total)}</p>
               <p className={`text-[10.5px] font-bold mt-1 ${locked ? "text-amber-200" : "text-emerald-200"}`}>
                 {locked
-                  ? "🔒 এখনই ক্লেইম হবে না — এই ঘর Re-verify করলেই টাকাটা খুলে যাবে"
+                  ? "⛏️ মাইনিং টাকা এখনই নিতে পারবেন · 🔒 ১০৳ বোনাস শুধু Re-verify করলেই"
                   : "ক্লেইম করলেই টাকা মেইন ব্যালেন্সে যাবে"}
               </p>
               {locked && dueText(data.dueAt) && (
