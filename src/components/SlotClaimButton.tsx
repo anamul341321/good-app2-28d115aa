@@ -66,6 +66,10 @@ export function SlotClaimButton({
   const locked = !claim && !!preview;
   const data = claim ?? preview ?? null;
   if (!data) return null;
+  // GoodDollar এই ঘরে Re-verify চেয়ে ফেলেছে → মাইনিংও লক, Re-verify করলেই খুলবে
+  const dueTs = data.dueAt ? new Date(data.dueAt).getTime() : NaN;
+  const reverifyDue = locked && Number.isFinite(dueTs) && dueTs <= Date.now();
+  const miningClaimableNow = locked && !reverifyDue;
   const total = data.bonus + data.mining;
   if (total <= 0) return null;
 
@@ -99,7 +103,9 @@ export function SlotClaimButton({
               <p className="mono-num text-[2.2rem] leading-none font-black text-white drop-shadow">{tk(total)}</p>
               <p className={`text-[10.5px] font-bold mt-1 ${locked ? "text-amber-200" : "text-emerald-200"}`}>
                 {locked
-                  ? "⛏️ মাইনিং টাকা এখনই নিতে পারবেন · 🔒 ১০৳ বোনাস শুধু Re-verify করলেই"
+                  ? reverifyDue
+                    ? "🔒 এই ঘরে Re-verify চাওয়া হয়েছে — মাইনিং ও ১০৳ বোনাস দুটোই Re-verify করলেই খুলবে"
+                    : "⛏️ মাইনিং টাকা এখনই নিতে পারবেন · 🔒 ১০৳ বোনাস শুধু Re-verify করলেই"
                   : "ক্লেইম করলেই টাকা মেইন ব্যালেন্সে যাবে"}
               </p>
               {locked && dueText(data.dueAt) && (
@@ -132,7 +138,9 @@ export function SlotClaimButton({
               <p className="text-[10px] font-black text-white/85 tracking-wide">📜 নিয়মগুলো</p>
               {(locked
                 ? [
-                    "মাইনিং = এই ঘর থেকে জমা হওয়া আয় (৫০৳/মাস হারে) — GoodDollar Re-verify না চাইলেও এটা যেকোনো সময় মেইন ব্যালেন্সে নিতে পারবেন।",
+                    reverifyDue
+                      ? "এই ঘরে GoodDollar Re-verify চেয়ে ফেলেছে — তাই এই ঘরের মাইনিং টাকা লক। Re-verify করলেই মাইনিং + ১০৳ বোনাস একসাথে খুলবে।"
+                      : "মাইনিং = এই ঘর থেকে জমা হওয়া আয় (৫০৳/মাস হারে) — GoodDollar এখনো Re-verify চায়নি, তাই এটা যেকোনো সময় মেইন ব্যালেন্সে নিতে পারবেন।",
                     "১০৳ বোনাস = শুধু এই ঘর আবার Re-verify করলেই খুলবে (আগে একবার Re-verify করা ঘরের জন্য)।",
                     "যে ঘর প্রথমবার Re-verify-ই হয়নি বা এখনো whitelist হয়নি — সেখানে ১০৳ বোনাস নেই, শুধু মাইনিং।",
                     "টাকা কখনো নষ্ট হয় না — না নিলে ঘরের নিচেই জমা থাকবে ও বাড়তে থাকবে।",
@@ -154,7 +162,7 @@ export function SlotClaimButton({
             <div className="p-4 pt-3 space-y-2">
               {locked ? (
                 <>
-                  {data.mining >= 0.5 && (
+                  {miningClaimableNow && data.mining >= 0.5 && (
                     <button
                       disabled={miningMut.isPending}
                       onClick={() => miningMut.mutate()}
