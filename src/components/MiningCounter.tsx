@@ -114,7 +114,7 @@ export function MiningCounter({
   const claim = useMutation({
     mutationFn: () => claimMiningToMain(),
     onSuccess: (res: any) => {
-      toast.success(`🎉 ${Number(res?.amount ?? 0).toFixed(2)}৳ মেইন ব্যালেন্সে যোগ হয়েছে`);
+      toast.success(`🎉 রেফার ১০% কমিশন ${Number(res?.amount ?? 0).toFixed(2)}৳ মেইন ব্যালেন্সে যোগ হয়েছে`);
       void qc.invalidateQueries();
     },
     onError: (e: any) => toast.error(e?.message ?? "ক্লেইম করা যায়নি"),
@@ -147,7 +147,6 @@ export function MiningCounter({
   const bonusPart = balanceBreakdown?.bonus_part ?? 0;
   const miningPart = balanceBreakdown?.mining_part ?? 0;
   const miningAvailable = balanceBreakdown?.mining_available ?? miningPart;
-  const miningLockedAmount = Math.max(0, balanceBreakdown?.mining_locked ?? 0);
   const selfMiningTotal = Math.max(0, balanceBreakdown?.self_mining_total ?? 0);
   const selfMiningLocked = Math.max(0, balanceBreakdown?.self_mining_locked ?? 0);
   const selfMiningClaimed = Math.max(0, balanceBreakdown?.self_mining_claimed ?? 0);
