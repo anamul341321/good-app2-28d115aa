@@ -2620,6 +2620,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      claim_all_slot_mining: { Args: { _user_id: string }; Returns: Json }
       claim_mining_earnings: { Args: { _user_id: string }; Returns: Json }
       claim_mining_to_main: { Args: { _user_id: string }; Returns: Json }
       claim_reverify_bonus: { Args: { _user_id: string }; Returns: number }
