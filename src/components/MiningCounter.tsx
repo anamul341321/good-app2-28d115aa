@@ -309,6 +309,10 @@ export function MiningCounter({
             : "ক্লেইম — আনলক মাইনিং জমা হলেই চালু"}
         </button>
 
+        <p className="mt-1.5 text-[9.5px] text-white/70 font-bold leading-snug text-center">
+          📜 যে ঘর Re-verify করবেন, ওই ঘরের নিচেই আলাদা সবুজ ক্লেইম বাটন আসবে — সেখানে <span className="text-yellow-100">বোনাস ১০৳</span> আর <span className="text-cyan-100">ওই ঘরের মাইনিং</span> আলাদা দেখে একসাথে মেইন ব্যালেন্সে নিতে পারবেন · মেইন ব্যালেন্স যেকোনো সময় তোলা যায়
+        </p>
+
 
         <div className="mt-2.5 grid grid-cols-2 gap-2">
           <button

@@ -1,0 +1,124 @@
+import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { Gift, Loader2, Pickaxe, Sparkles, X } from "lucide-react";
+import { claimSlotReward } from "@/lib/slot-claims.functions";
+
+export type SlotClaim = { taskId: string; slot: number; bonus: number; mining: number };
+
+const tk = (n: number) => `${n.toFixed(2)}৳`;
+
+/**
+ * ঘরের ঠিক নিচে বসে থাকা ক্লেইম বাটন — ওই ঘরের রি-ভেরিফাই বোনাস (১০৳) এবং
+ * ওই ঘর থেকে যত মাইনিং হয়েছে, দুটোই একসাথে মেইন ব্যালেন্সে নেওয়া যায়।
+ * কনফার্ম করার আগে কোনটা বোনাস, কোনটা মাইনিং — আলাদা করে দেখানো হয়।
+ */
+export function SlotClaimButton({ claim, compact = false }: { claim?: SlotClaim | null; compact?: boolean }) {
+  const [open, setOpen] = useState(false);
+  const qc = useQueryClient();
+
+  const mut = useMutation({
+    mutationFn: () => claimSlotReward({ data: { taskId: claim!.taskId } }),
+    onSuccess: (r: any) => {
+      setOpen(false);
+      toast.success(
+        `🎉 ${tk(Number(r?.total ?? 0))} মেইন ব্যালেন্সে যোগ হয়েছে` +
+          ` · বোনাস ${tk(Number(r?.bonus ?? 0))} + মাইনিং ${tk(Number(r?.mining ?? 0))}`,
+      );
+      void qc.invalidateQueries();
+    },
+    onError: (e: any) => toast.error(e?.message ?? "ক্লেইম করা যায়নি"),
+  });
+
+  if (!claim) return null;
+  const total = claim.bonus + claim.mining;
+  if (total <= 0) return null;
+
+  return (
+    <>
+      <button
+        onClick={() => setOpen(true)}
+        className={`mt-1.5 w-full rounded-xl ${compact ? "py-1.5 text-[10.5px]" : "py-2 text-[12px]"} font-black text-emerald-950 flex items-center justify-center gap-1 btn-press border border-emerald-300 shadow-[0_8px_18px_-8px_rgba(16,185,129,0.9)] relative overflow-hidden`}
+        style={{ background: "linear-gradient(120deg,#6ee7b7,#34d399,#10b981)" }}
+      >
+        <span className="absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(255,255,255,0.6),transparent_55%)]" />
+        <Gift className="w-3.5 h-3.5 relative" />
+        <span className="relative">{tk(total)} ক্লেইম</span>
+      </button>
+
+      {open && (
+        <div className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center p-3 bg-black/60 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-3xl overflow-hidden border border-white/20 shadow-2xl"
+               style={{ background: "linear-gradient(160deg,#0f172a,#122c4a 55%,#0b3b34)" }}>
+            <div className="flex items-center justify-between px-4 pt-4">
+              <p className="text-[11px] font-black tracking-[0.2em] uppercase text-emerald-200">
+                ঘর #{claim.slot} · পুরস্কার
+              </p>
+              <button onClick={() => setOpen(false)} className="p-1 rounded-full bg-white/10 text-white/80">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="px-4 pt-2 pb-1 text-center">
+              <p className="text-[10px] uppercase tracking-[0.25em] text-white/55 font-black">মোট ক্লেইম</p>
+              <p className="mono-num text-[2.2rem] leading-none font-black text-white drop-shadow">{tk(total)}</p>
+              <p className="text-[10.5px] text-emerald-200 font-bold mt-1">
+                ক্লেইম করলেই টাকা <span className="underline">মেইন ব্যালেন্সে</span> যাবে
+              </p>
+            </div>
+
+            <div className="px-4 mt-3 grid grid-cols-2 gap-2">
+              <div className="rounded-2xl p-2.5 border border-yellow-200/30 bg-yellow-300/10">
+                <p className="text-[9px] font-black tracking-widest text-yellow-100 flex items-center gap-1">
+                  <Sparkles className="w-3 h-3" /> বোনাস
+                </p>
+                <p className="mono-num text-[17px] font-black text-yellow-100 mt-0.5">{tk(claim.bonus)}</p>
+                <p className="text-[8.5px] text-white/60 leading-tight mt-0.5">
+                  এই ঘর আবার Re-verify করার উপহার
+                </p>
+              </div>
+              <div className="rounded-2xl p-2.5 border border-cyan-200/30 bg-cyan-300/10">
+                <p className="text-[9px] font-black tracking-widest text-cyan-100 flex items-center gap-1">
+                  <Pickaxe className="w-3 h-3" /> মাইনিং
+                </p>
+                <p className="mono-num text-[17px] font-black text-cyan-100 mt-0.5">{tk(claim.mining)}</p>
+                <p className="text-[8.5px] text-white/60 leading-tight mt-0.5">
+                  এই ঘর থেকে জমা হওয়া মাইনিং আয়
+                </p>
+              </div>
+            </div>
+
+            <div className="mx-4 mt-3 rounded-2xl border border-white/15 bg-white/5 p-3 space-y-1.5">
+              <p className="text-[10px] font-black text-white/85 tracking-wide">📜 নিয়মগুলো</p>
+              {[
+                "বোনাস = এই ঘর আবার Re-verify করার জন্য ১০৳ (উপহার)।",
+                "মাইনিং = শুধু এই ঘর থেকে জমা হওয়া আয় (৫০৳/মাস হারে)।",
+                "ক্লেইম করলে দুটোই মেইন ব্যালেন্সে যোগ হবে — একসাথে।",
+                "মেইন ব্যালেন্সের টাকা যেকোনো সময় উইথড্র বা সেন্ড করা যাবে।",
+                "ক্লেইম না করলে টাকা নষ্ট হবে না — ঘরের নিচেই জমা থাকবে।",
+              ].map((line, i) => (
+                <p key={i} className="text-[10px] text-white/70 font-bold leading-snug">• {line}</p>
+              ))}
+            </div>
+
+            <div className="p-4 pt-3 space-y-2">
+              <button
+                disabled={mut.isPending}
+                onClick={() => mut.mutate()}
+                className="w-full rounded-2xl py-3 font-black text-[13px] text-emerald-950 flex items-center justify-center gap-2 btn-press border border-white/40 disabled:opacity-70"
+                style={{ background: "linear-gradient(120deg,#a7f3d0,#34d399,#059669)" }}
+              >
+                {mut.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Gift className="w-4 h-4" />}
+                হ্যাঁ, {tk(total)} মেইন ব্যালেন্সে নিন
+              </button>
+              <button onClick={() => setOpen(false)}
+                      className="w-full rounded-2xl py-2.5 font-black text-[12px] text-white/80 border border-white/20 bg-white/5">
+                পরে করব
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}

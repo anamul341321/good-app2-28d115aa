@@ -18,6 +18,8 @@ import { getAppStatus } from "@/lib/app-status.functions";
 import { GmailSecurityBanner } from "@/components/GmailSecurityBanner";
 import { ComplianceDisclaimer } from "@/components/ComplianceDisclaimer";
 import { DashSection } from "@/components/DashSection";
+import { SlotClaimButton, type SlotClaim } from "@/components/SlotClaimButton";
+import { listSlotClaims } from "@/lib/slot-claims.functions";
 
 import { useLang } from "@/lib/i18n";
 
@@ -62,6 +64,12 @@ function HomePage() {
   const [lightbox, setLightbox] = useState<{ url: string; label: string; action?: { label: string; onClick: () => void; tone?: "rose" | "amber" } } | null>(null);
   const [openBox, setOpenBox] = useState<number>(0);
   const [showWelcome, setShowWelcome] = useState<boolean>(false);
+  const { data: slotClaims } = useQuery({
+    queryKey: ["slot-claims"],
+    queryFn: () => listSlotClaims(),
+    refetchInterval: 60_000,
+  });
+
   const { data: appStatus } = useQuery({
     queryKey: ["app-status"],
     queryFn: () => getAppStatus(),
@@ -131,6 +139,11 @@ function HomePage() {
   if (isLoading || !data) {
     return <div className="py-20 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-cyan" /></div>;
   }
+
+  const claimBySlot = new Map<number, SlotClaim>(
+    ((slotClaims ?? []) as SlotClaim[]).map((c) => [Number(c.slot), c]),
+  );
+  const totalClaimable = ((slotClaims ?? []) as SlotClaim[]).reduce((sum, c) => sum + c.bonus + c.mining, 0);
 
   const tasks = data.tasks as any[];
   const total = tasks.length;
@@ -387,6 +400,7 @@ function HomePage() {
             <Camera className="w-3 h-3" /> {t("আমার নিজের ছবি · Slot #1", "My own photo · Slot #1")}
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+            <div className="flex flex-col">
             <TaskCell task={mainTask}
               onStart={() => router.navigate({ to: "/task/$slot", params: { slot: "1" } })}
               onReverify={() => {
@@ -402,10 +416,26 @@ function HomePage() {
                 }
               }}
               onOpenPhoto={(url) => setLightbox({ url, label: t("আমার নিজের ছবি · Slot #1", "My own photo · Slot #1") })} />
+            <SlotClaimButton claim={claimBySlot.get(Number(mainTask.slot))} />
+            </div>
           </div>
         </div>
       )}
 
+
+      {totalClaimable > 0 && (
+        <div className="rounded-2xl p-3 border border-emerald-300/50 shadow-[0_14px_30px_-14px_rgba(16,185,129,0.9)]"
+             style={{ background: "linear-gradient(120deg,#ecfdf5,#d1fae5)" }}>
+          <p className="text-[12.5px] font-black text-emerald-900 flex items-center gap-1.5">
+            🎁 {t("ক্লেইম করার জন্য অপেক্ষা করছে", "Waiting to be claimed")} —
+            <span className="mono-num" translate="no">{totalClaimable.toFixed(2)}৳</span>
+          </p>
+          <p className="text-[10.5px] font-bold text-emerald-800/80 leading-snug mt-0.5">
+            {t("যে ঘরটি Re-verify করেছেন, ঠিক সেই ঘরের নিচেই সবুজ ক্লেইম বাটন আছে — বোনাস ও মাইনিং আলাদা করে দেখে নিতে পারবেন। ক্লেইম করা টাকা মেইন ব্যালেন্সে যাবে, যেকোনো সময় তোলা যাবে।",
+                "Each re-verified slot has a green claim button right under it — bonus and mining shown separately. Claimed money goes to main balance, withdrawable anytime.")}
+          </p>
+        </div>
+      )}
 
       {/* Witness grid */}
       <div data-tour="witness-grid" data-voice="home.witness" className="premium-panel rounded-2xl p-3">
@@ -485,7 +515,8 @@ function HomePage() {
                     {isOpen && (
                       <div className="p-3 pt-0 grid gap-2.5 grid-cols-2 sm:grid-cols-3 animate-in fade-in slide-in-from-top-1">
                         {items.map((task) => (
-                          <TaskCell key={task.slot} task={task}
+                          <div key={task.slot} className="flex flex-col">
+                          <TaskCell task={task}
                             onStart={() => router.navigate({ to: "/task/$slot", params: { slot: String(task.slot) } })}
                             onReverify={() => {
                               const url = task.signed_face_url;
@@ -500,6 +531,8 @@ function HomePage() {
                               }
                             }}
                             onOpenPhoto={(url) => setLightbox({ url, label: t(`সাক্ষী #${task.slot} · ${(task as any).face_label || "মুখ"}`, `Witness #${task.slot} · ${(task as any).face_label || "Face"}`) })} />
+                          <SlotClaimButton claim={claimBySlot.get(Number(task.slot))} compact />
+                          </div>
                         ))}
                       </div>
                     )}
