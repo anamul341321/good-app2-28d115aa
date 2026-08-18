@@ -150,7 +150,13 @@ function HomePage() {
     const mining = Number(task.locked_mined ?? 0);
     const bonus = repeat ? 10 : 0;
     if (bonus + mining <= 0) return null;
-    return { taskId: String(task.id), slot: Number(task.slot), bonus, mining };
+    return {
+      taskId: String(task.id),
+      slot: Number(task.slot),
+      bonus,
+      mining,
+      dueAt: (task.reverify_due_at as string | null) ?? null,
+    };
   };
 
   const totalClaimable = ((slotClaims ?? []) as SlotClaim[]).reduce((sum, c) => sum + c.bonus + c.mining, 0);
