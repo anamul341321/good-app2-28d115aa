@@ -142,14 +142,27 @@ export function SlotClaimButton({
 
             <div className="p-4 pt-3 space-y-2">
               {locked ? (
-                <button
-                  onClick={() => { setOpen(false); onReverify?.(); }}
-                  className="w-full rounded-2xl py-3 font-black text-[13px] text-amber-950 flex items-center justify-center gap-2 btn-press border border-white/40"
-                  style={{ background: "linear-gradient(120deg,#fde68a,#fbbf24,#f59e0b)" }}
-                >
-                  <RefreshCcw className="w-4 h-4" />
-                  এখনই Re-verify করে {tk(total)} খুলুন
-                </button>
+                <>
+                  {data.mining >= 0.5 && (
+                    <button
+                      disabled={miningMut.isPending}
+                      onClick={() => miningMut.mutate()}
+                      className="w-full rounded-2xl py-3 font-black text-[13px] text-cyan-950 flex items-center justify-center gap-2 btn-press border border-white/40 disabled:opacity-70"
+                      style={{ background: "linear-gradient(120deg,#a5f3fc,#22d3ee,#06b6d4)" }}
+                    >
+                      {miningMut.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Pickaxe className="w-4 h-4" />}
+                      শুধু মাইনিং {tk(data.mining)} এখনই নিন
+                    </button>
+                  )}
+                  <button
+                    onClick={() => { setOpen(false); onReverify?.(); }}
+                    className="w-full rounded-2xl py-3 font-black text-[13px] text-amber-950 flex items-center justify-center gap-2 btn-press border border-white/40"
+                    style={{ background: "linear-gradient(120deg,#fde68a,#fbbf24,#f59e0b)" }}
+                  >
+                    <RefreshCcw className="w-4 h-4" />
+                    Re-verify করে {tk(data.bonus)} বোনাসসহ নিন
+                  </button>
+                </>
               ) : (
               <button
                 disabled={mut.isPending}
