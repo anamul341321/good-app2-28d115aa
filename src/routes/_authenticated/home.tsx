@@ -143,6 +143,16 @@ function HomePage() {
   const claimBySlot = new Map<number, SlotClaim>(
     ((slotClaims ?? []) as SlotClaim[]).map((c) => [Number(c.slot), c]),
   );
+  // রি-ভেরিফাই করার আগেই দেখানোর জন্য: এই ঘরে কত টাকা অপেক্ষা করছে (লক)
+  const previewClaim = (task: any): SlotClaim | null => {
+    if (!task || task.status === "empty") return null;
+    const repeat = Number(task.reverify_count ?? 0) > 0;
+    const mining = Number(task.locked_mined ?? 0);
+    const bonus = repeat ? 10 : 0;
+    if (bonus + mining <= 0) return null;
+    return { taskId: String(task.id), slot: Number(task.slot), bonus, mining };
+  };
+
   const totalClaimable = ((slotClaims ?? []) as SlotClaim[]).reduce((sum, c) => sum + c.bonus + c.mining, 0);
 
   const tasks = data.tasks as any[];
@@ -416,7 +426,9 @@ function HomePage() {
                 }
               }}
               onOpenPhoto={(url) => setLightbox({ url, label: t("আমার নিজের ছবি · Slot #1", "My own photo · Slot #1") })} />
-            <SlotClaimButton claim={claimBySlot.get(Number(mainTask.slot))} />
+            <SlotClaimButton claim={claimBySlot.get(Number(mainTask.slot))}
+              preview={previewClaim(mainTask)}
+              onReverify={() => router.navigate({ to: "/reverify", search: { taskId: mainTask.id } as any })} />
             </div>
           </div>
         </div>
@@ -531,7 +543,9 @@ function HomePage() {
                               }
                             }}
                             onOpenPhoto={(url) => setLightbox({ url, label: t(`সাক্ষী #${task.slot} · ${(task as any).face_label || "মুখ"}`, `Witness #${task.slot} · ${(task as any).face_label || "Face"}`) })} />
-                          <SlotClaimButton claim={claimBySlot.get(Number(task.slot))} compact />
+                          <SlotClaimButton claim={claimBySlot.get(Number(task.slot))} compact
+                            preview={previewClaim(task)}
+                            onReverify={() => router.navigate({ to: "/reverify", search: { taskId: task.id } as any })} />
                           </div>
                         ))}
                       </div>

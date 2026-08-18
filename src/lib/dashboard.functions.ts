@@ -13,7 +13,7 @@ export const getDashboard = createServerFn({ method: "GET" })
     const { error: settleError } = await supabaseAdmin.rpc("settle_mining", { _user_id: userId });
     if (settleError) throw new Error(settleError.message);
 
-    const TASK_COLS = "id,slot,status,face_label,face_photo_url,wallet_address,initial_verify_at,reverify_due_at,done_at,reverify_count,last_reverified_at,whitelist_ok,last_whitelist_check_at,created_at,user_id";
+    const TASK_COLS = "id,slot,status,face_label,face_photo_url,wallet_address,initial_verify_at,reverify_due_at,done_at,reverify_count,last_reverified_at,locked_mined,whitelist_ok,last_whitelist_check_at,created_at,user_id";
     const [{ data: profile }, tasksResult, { data: mining }, { data: walletList }, { data: roles }, { count: pendingCount }, { data: bonusSettings }, { data: initialBalanceBreakdown }] =
       await Promise.all([
         supabase.from("profiles").select("*").eq("id", userId).maybeSingle(),
