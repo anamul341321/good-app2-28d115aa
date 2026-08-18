@@ -329,19 +329,22 @@ export function MiningCounter({
 
         {/* সব ঘরের জমা মাইনিং একসাথে → মেইন ব্যালেন্স (১০৳ বোনাস ছাড়া) */}
         <Button
-          disabled={selfMiningLocked < 0.5 || claimAll.isPending}
+          disabled={selfMiningClaimable < 0.5 || claimAll.isPending}
           onClick={() => claimAll.mutate()}
           className={`mt-2.5 h-auto w-full rounded-2xl py-2.5 text-[12.5px] font-black btn-press border ${
-            selfMiningLocked >= 0.5
+            selfMiningClaimable >= 0.5
               ? "bg-gradient-to-r from-cyan-300 to-sky-500 text-cyan-950 border-white/40 shadow-lg"
               : "bg-white/10 text-white/60 border-white/20"
           }`}
         >
           {claimAll.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Pickaxe className="w-4 h-4" />}
-          {selfMiningLocked >= 0.5
-            ? `সব ঘরের মাইনিং ${selfMiningLocked.toFixed(2)}৳ ক্লেইম করুন`
-            : "প্রতিদিনের মাইনিং জমা হলে এখান থেকে সব ক্লেইম করুন"}
+          {selfMiningClaimable >= 0.5
+            ? `Re-verify থাকা ঘরের মাইনিং ${selfMiningClaimable.toFixed(2)}৳ ক্লেইম করুন`
+            : selfMiningReverifyLocked >= 0.5
+              ? `🔒 ${selfMiningReverifyLocked.toFixed(2)}৳ লক — ঘরগুলো Re-verify করলেই খুলবে`
+              : "প্রতিদিনের মাইনিং জমা হলে এখান থেকে সব ক্লেইম করুন"}
         </Button>
+
 
         {/* আনলক হওয়া মাইনিং টাকা → মেইন ব্যালেন্সে ক্লেইম */}
 
