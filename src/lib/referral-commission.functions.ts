@@ -1,11 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-// Referral commission = 10% of the 500৳/month base rate for every referee whose
-// mining is actually running (all 10 slots valid + whitelisted AND all 10 slots
-// re-verified at least once). If a referee loses even one slot the commission
-// stops until they re-verify again — the database mirrors this rule in
-// public.settle_mining().
+// Referral commission = 10% of each referee's actual per-slot mining.
+// Every active re-verified slot earns the referrer 5৳/month; 10 slots are not
+// required. This mirrors public.settle_mining().
 export const MONTHLY_PER_REFEREE = 500 * 0.1;
 // Referrer gets 10% of the referee's actual monthly earning.
 // Referee earns 50৳/month per re-verified slot → referrer gets 5৳ per slot.
@@ -83,7 +81,8 @@ export const getReferralCommission = createServerFn({ method: "GET" })
       .map((r) => {
         const valid = validByUser.get(r.id) ?? 0;
         const reverifies = reverifySlots.get(r.id)?.size ?? 0;
-        const mining = valid >= 10 && reverifies >= 10;
+        const commissionSlots = Math.min(valid, reverifies);
+        const mining = commissionSlots > 0;
         const phone: string = r.phone_number ?? "";
         return {
           id: r.id as string,
@@ -93,10 +92,10 @@ export const getReferralCommission = createServerFn({ method: "GET" })
           valid,
           reverifies,
           mining,
-          // প্রতি ১০টি রি-ভেরিফাই = রেফারির ৫০০৳/মাস স্তর → তার ১০% = ৫০৳
-          slots: mining ? reverifies : 0,
-          units: mining ? reverifies * 0.1 : 0,
-          monthly: mining ? MONTHLY_PER_REFEREE_SLOT * reverifies : 0,
+          // প্রতি সক্রিয় রি-ভেরিফাইড স্লট ৫০৳/মাস → তার ১০% = ৫৳।
+          slots: commissionSlots,
+          units: commissionSlots * 0.1,
+          monthly: MONTHLY_PER_REFEREE_SLOT * commissionSlots,
         };
       })
       .sort((a, b) => Number(b.mining) - Number(a.mining) || b.reverifies - a.reverifies);
