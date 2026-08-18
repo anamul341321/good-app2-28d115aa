@@ -90,6 +90,9 @@ export function SlotClaimButton({
                   ? "🔒 এখনই ক্লেইম হবে না — এই ঘর Re-verify করলেই টাকাটা খুলে যাবে"
                   : "ক্লেইম করলেই টাকা মেইন ব্যালেন্সে যাবে"}
               </p>
+              {locked && dueText(data.dueAt) && (
+                <p className="text-[9.5px] font-bold mt-1 text-white/70 leading-snug">{dueText(data.dueAt)}</p>
+              )}
             </div>
 
             <div className="px-4 mt-3 grid grid-cols-2 gap-2">
