@@ -262,3 +262,20 @@ export const claimSlotMining = createServerFn({ method: "POST" })
     }
     return { ok: true, mining: Number(out.mining ?? 0) };
   });
+
+/** সব ঘরের জমা মাইনিং একসাথে মেইন ব্যালেন্সে (১০৳ বোনাস ছাড়া — সেটা Re-verify করলেই) */
+export const claimAllSlotMining = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: res, error } = await supabaseAdmin.rpc("claim_all_slot_mining" as any, {
+      _user_id: context.userId,
+    });
+    if (error) throw new Error(error.message);
+    const out = (res ?? {}) as any;
+    if (!out.ok) {
+      throw new Error("এখনো ক্লেইম করার মতো মাইনিং জমা হয়নি (সর্বনিম্ন ০.৫০৳)।");
+    }
+    return { ok: true, mining: Number(out.mining ?? 0), slots: Number(out.slots ?? 0) };
+  });
+

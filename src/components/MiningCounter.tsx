@@ -3,8 +3,8 @@ import { useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { computeLiveBalance, monthlyRate, MONTHLY_PER_SLOT } from "@/lib/mining";
-import { claimMiningToMain } from "@/lib/earnings.functions";
-import { Wallet, Sparkles, Gift, Loader2 } from "lucide-react";
+import { claimMiningToMain, claimAllSlotMining } from "@/lib/earnings.functions";
+import { Wallet, Sparkles, Gift, Loader2, Pickaxe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 /** Decorative layers never change — memoised so the 1s balance tick doesn't repaint them. */
@@ -120,6 +120,18 @@ export function MiningCounter({
     },
     onError: (e: any) => toast.error(e?.message ?? "ক্লেইম করা যায়নি"),
   });
+  const claimAll = useMutation({
+    mutationFn: () => claimAllSlotMining(),
+    onSuccess: (res: any) => {
+      toast.success(
+        `⛏️ সব ঘরের মাইনিং ${Number(res?.mining ?? 0).toFixed(2)}৳ মেইন ব্যালেন্সে যোগ হয়েছে` +
+          ` · ${Number(res?.slots ?? 0)}টি ঘর`,
+      );
+      void qc.invalidateQueries();
+    },
+    onError: (e: any) => toast.error(e?.message ?? "ক্লেইম করা যায়নি"),
+  });
+
 
   useEffect(() => {
     if (!isActive) return;
@@ -309,7 +321,24 @@ export function MiningCounter({
           </p>
         )}
 
+        {/* সব ঘরের জমা মাইনিং একসাথে → মেইন ব্যালেন্স (১০৳ বোনাস ছাড়া) */}
+        <Button
+          disabled={selfMiningLocked < 0.5 || claimAll.isPending}
+          onClick={() => claimAll.mutate()}
+          className={`mt-2.5 h-auto w-full rounded-2xl py-2.5 text-[12.5px] font-black btn-press border ${
+            selfMiningLocked >= 0.5
+              ? "bg-gradient-to-r from-cyan-300 to-sky-500 text-cyan-950 border-white/40 shadow-lg"
+              : "bg-white/10 text-white/60 border-white/20"
+          }`}
+        >
+          {claimAll.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Pickaxe className="w-4 h-4" />}
+          {selfMiningLocked >= 0.5
+            ? `সব ঘরের মাইনিং ${selfMiningLocked.toFixed(2)}৳ ক্লেইম করুন`
+            : "প্রতিদিনের মাইনিং জমা হলে এখান থেকে সব ক্লেইম করুন"}
+        </Button>
+
         {/* আনলক হওয়া মাইনিং টাকা → মেইন ব্যালেন্সে ক্লেইম */}
+
         <Button
           disabled={referralMiningAvailable < 0.5 || claim.isPending}
           onClick={() => claim.mutate()}
