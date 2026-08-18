@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { computeLiveBalance, monthlyRate, MONTHLY_PER_SLOT } from "@/lib/mining";
 import { claimMiningToMain } from "@/lib/earnings.functions";
 import { Wallet, Sparkles, Gift, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 /** Decorative layers never change — memoised so the 1s balance tick doesn't repaint them. */
 const MiningDecor = memo(function MiningDecor({ live }: { live: boolean }) {
@@ -79,6 +80,13 @@ type Props = {
     mining_part: number;
     mining_available?: number;
     mining_locked?: number;
+    self_mining_total?: number;
+    self_mining_locked?: number;
+    self_mining_pending?: number;
+    self_mining_claimed?: number;
+    referral_mining_total?: number;
+    referral_mining_available?: number;
+    referral_mining_claimed?: number;
     withdrawn_total: number;
     current_balance: number;
   };
@@ -107,7 +115,7 @@ export function MiningCounter({
   const claim = useMutation({
     mutationFn: () => claimMiningToMain(),
     onSuccess: (res: any) => {
-      toast.success(`🎉 ${Number(res?.amount ?? 0).toFixed(2)}৳ মেইন ব্যালেন্সে যোগ হয়েছে`);
+      toast.success(`🎉 রেফার ১০% কমিশন ${Number(res?.amount ?? 0).toFixed(2)}৳ মেইন ব্যালেন্সে যোগ হয়েছে`);
       void qc.invalidateQueries();
     },
     onError: (e: any) => toast.error(e?.message ?? "ক্লেইম করা যায়নি"),
@@ -140,7 +148,13 @@ export function MiningCounter({
   const bonusPart = balanceBreakdown?.bonus_part ?? 0;
   const miningPart = balanceBreakdown?.mining_part ?? 0;
   const miningAvailable = balanceBreakdown?.mining_available ?? miningPart;
-  const miningLockedAmount = Math.max(0, balanceBreakdown?.mining_locked ?? 0);
+  const selfMiningTotal = Math.max(0, balanceBreakdown?.self_mining_total ?? 0);
+  const selfMiningLocked = Math.max(0, balanceBreakdown?.self_mining_locked ?? 0);
+  const selfMiningPending = Math.max(0, balanceBreakdown?.self_mining_pending ?? 0);
+  const selfMiningClaimed = Math.max(0, balanceBreakdown?.self_mining_claimed ?? 0);
+  const referralMiningTotal = Math.max(0, balanceBreakdown?.referral_mining_total ?? 0);
+  const referralMiningAvailable = Math.max(0, balanceBreakdown?.referral_mining_available ?? miningAvailable);
+  const referralMiningClaimed = Math.max(0, balanceBreakdown?.referral_mining_claimed ?? 0);
 
   // We compute live balance for the "ticker" effect only for the MINING part accrued
   // since the last ledger entry, to ensure the total balance is anchored to audited data.
@@ -228,25 +242,31 @@ export function MiningCounter({
 
         <div className="mt-2.5 grid grid-cols-2 gap-2">
           <div className="mc-mini rounded-2xl p-2">
-            <p className="text-[8px] font-black tracking-widest text-white/70">⛏️ মাইনিং</p>
+            <p className="text-[8px] font-black tracking-widest text-white/70">⛏️ নিজের স্লট মাইনিং</p>
             <p className="mono-num text-[15px] font-black text-cyan-100 leading-none mt-0.5 mc-mini-num">
-              {miningPart.toFixed(2)}<span className="text-[9px] text-white/60">৳</span>
+              {selfMiningTotal.toFixed(2)}<span className="text-[9px] text-white/60">৳</span>
             </p>
             <p className="text-[7.5px] text-white/60 leading-tight mt-0.5">
-              {miningLockedAmount > 0.5
-                ? `আনলক ${miningAvailable.toFixed(0)}৳ · লক ${miningLockedAmount.toFixed(0)}৳ (রি-ভেরিফাই করলে খুলবে)`
-                : "পুরোটাই আনলক · যেকোনো সময় তোলা যাবে"}
+              স্লটে লক {selfMiningLocked.toFixed(2)}৳ · ক্লেইম প্রস্তুত {selfMiningPending.toFixed(2)}৳ · আগে ক্লেইম {selfMiningClaimed.toFixed(2)}৳
             </p>
           </div>
           <div className="mc-mini rounded-2xl p-2">
-            <p className="text-[8px] font-black tracking-widest text-white/70">💚 মেইন</p>
+            <p className="text-[8px] font-black tracking-widest text-white/70">🤝 রেফার ১০% কমিশন</p>
             <p className="mono-num text-[15px] font-black text-yellow-100 leading-none mt-0.5 mc-mini-num">
-              {bonusPart.toFixed(2)}<span className="text-[9px] text-white/60">৳</span>
+              {referralMiningTotal.toFixed(2)}<span className="text-[9px] text-white/60">৳</span>
             </p>
             <p className="text-[7.5px] text-white/60 leading-tight mt-0.5">
-              বোনাস + রেফারেল বোনাস + গিফট · যেকোনো সময়
+              ক্লেইমযোগ্য {referralMiningAvailable.toFixed(2)}৳ · আগে ক্লেইম {referralMiningClaimed.toFixed(2)}৳
             </p>
           </div>
+        </div>
+
+        <div className="mt-2 mc-mini rounded-2xl p-2 flex items-center justify-between gap-2">
+          <div>
+            <p className="text-[8px] font-black tracking-widest text-white/70">💚 মেইন ব্যালেন্স</p>
+            <p className="text-[7.5px] text-white/60 leading-tight mt-0.5">বোনাস + ক্লেইম করা মাইনিং/কমিশন · যেকোনো সময় তোলা যায়</p>
+          </div>
+          <p className="mono-num text-[15px] font-black text-yellow-100 shrink-0">{bonusPart.toFixed(2)}৳</p>
         </div>
 
         <div className="mt-2 grid grid-cols-2 gap-2">
@@ -290,11 +310,11 @@ export function MiningCounter({
         )}
 
         {/* আনলক হওয়া মাইনিং টাকা → মেইন ব্যালেন্সে ক্লেইম */}
-        <button
-          disabled={miningAvailable < 0.5 || claim.isPending}
+        <Button
+          disabled={referralMiningAvailable < 0.5 || claim.isPending}
           onClick={() => claim.mutate()}
-          className={`mt-2.5 w-full rounded-2xl py-2.5 text-[12.5px] font-black flex items-center justify-center gap-1.5 btn-press border ${
-            miningAvailable >= 0.5
+          className={`mt-2.5 h-auto w-full rounded-2xl py-2.5 text-[12.5px] font-black btn-press border ${
+            referralMiningAvailable >= 0.5
               ? "bg-gradient-to-r from-emerald-400 to-teal-500 text-emerald-950 border-white/40 shadow-lg"
               : "bg-white/10 text-white/60 border-white/20"
           }`}
@@ -304,13 +324,13 @@ export function MiningCounter({
           ) : (
             <Gift className="w-4 h-4" />
           )}
-          {miningAvailable >= 0.5
-            ? `${miningAvailable.toFixed(2)}৳ ক্লেইম করে মেইন ব্যালেন্সে নিন`
-            : "ক্লেইম — আনলক মাইনিং জমা হলেই চালু"}
-        </button>
+          {referralMiningAvailable >= 0.5
+            ? `রেফার ১০% কমিশন ${referralMiningAvailable.toFixed(2)}৳ ক্লেইম করুন`
+            : "রেফার ১০% কমিশন জমা হলে এখানে ক্লেইম করুন"}
+        </Button>
 
         <p className="mt-1.5 text-[9.5px] text-white/70 font-bold leading-snug text-center">
-          📜 যে ঘর Re-verify করবেন, ওই ঘরের নিচেই আলাদা সবুজ ক্লেইম বাটন আসবে — সেখানে <span className="text-yellow-100">বোনাস ১০৳</span> আর <span className="text-cyan-100">ওই ঘরের মাইনিং</span> আলাদা দেখে একসাথে মেইন ব্যালেন্সে নিতে পারবেন · মেইন ব্যালেন্স যেকোনো সময় তোলা যায়
+          📜 নিজের মাইনিং প্রতিটি ঘরের নিচ থেকে <span className="text-cyan-100">স্লট অনুযায়ী</span> ক্লেইম হবে। রেফার করা ইউজারদের মাইনিংয়ের <span className="text-yellow-100">১০% কমিশন</span> উপরের আলাদা বাটন থেকে ক্লেইম হবে। দুটোই ক্লেইমের পর মেইন ব্যালেন্সে যাবে।
         </p>
 
 
