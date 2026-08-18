@@ -82,6 +82,7 @@ type Props = {
     mining_locked?: number;
     self_mining_total?: number;
     self_mining_locked?: number;
+    self_mining_pending?: number;
     self_mining_claimed?: number;
     referral_mining_total?: number;
     referral_mining_available?: number;
@@ -149,6 +150,7 @@ export function MiningCounter({
   const miningAvailable = balanceBreakdown?.mining_available ?? miningPart;
   const selfMiningTotal = Math.max(0, balanceBreakdown?.self_mining_total ?? 0);
   const selfMiningLocked = Math.max(0, balanceBreakdown?.self_mining_locked ?? 0);
+  const selfMiningPending = Math.max(0, balanceBreakdown?.self_mining_pending ?? 0);
   const selfMiningClaimed = Math.max(0, balanceBreakdown?.self_mining_claimed ?? 0);
   const referralMiningTotal = Math.max(0, balanceBreakdown?.referral_mining_total ?? 0);
   const referralMiningAvailable = Math.max(0, balanceBreakdown?.referral_mining_available ?? miningAvailable);
@@ -245,7 +247,7 @@ export function MiningCounter({
               {selfMiningTotal.toFixed(2)}<span className="text-[9px] text-white/60">৳</span>
             </p>
             <p className="text-[7.5px] text-white/60 leading-tight mt-0.5">
-              স্লটে লক {selfMiningLocked.toFixed(2)}৳ · আগে ক্লেইম {selfMiningClaimed.toFixed(2)}৳
+              স্লটে লক {selfMiningLocked.toFixed(2)}৳ · ক্লেইম প্রস্তুত {selfMiningPending.toFixed(2)}৳ · আগে ক্লেইম {selfMiningClaimed.toFixed(2)}৳
             </p>
           </div>
           <div className="mc-mini rounded-2xl p-2">
