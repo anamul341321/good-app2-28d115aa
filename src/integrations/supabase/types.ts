@@ -2577,6 +2577,7 @@ export type Database = {
     }
     Functions: {
       claim_mining_earnings: { Args: { _user_id: string }; Returns: Json }
+      claim_mining_to_main: { Args: { _user_id: string }; Returns: Json }
       claim_reverify_bonus: { Args: { _user_id: string }; Returns: number }
       claim_welcome_bonuses: { Args: { _user_id: string }; Returns: Json }
       claim_whitelist_run: {
