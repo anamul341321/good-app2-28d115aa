@@ -1,6 +1,8 @@
 import { WithdrawClosedBanner } from "@/components/WithdrawClosedBanner";
 import { PromoBanner } from "@/components/PromoBanner";
 import { RatesBanner } from "@/components/RatesBanner";
+import { OfferBanner } from "@/components/OfferBanner";
+import { offerTimeLeft } from "@/lib/offer";
 import { withdrawWindowInfo } from "@/lib/withdraw-window";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
@@ -40,6 +42,7 @@ export function HeroBanner({
     referrer: !!bonus?.referrerPaid,
   };
   const allBonusDone = claimed.first && claimed.reverify && claimed.referrer;
+  if (offerTimeLeft(now).active) slides.push(<OfferBanner />);
   if (promoActive && !allBonusDone) slides.push(<PromoBanner rates={rates} claimed={claimed} />);
   slides.push(<RatesBanner />);
 
