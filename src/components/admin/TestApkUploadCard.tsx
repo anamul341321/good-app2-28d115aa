@@ -8,7 +8,7 @@ import {
   adminSetTestApkRelease,
 } from "@/lib/admin.functions";
 
-const CURRENT_ANDROID_VERSION = "1.18";
+const CURRENT_ANDROID_VERSION = "1.23";
 
 function normalizeAndroidVersion(value: string): string {
   const match = value.trim().match(/\d+(?:\.\d+){1,2}/);
