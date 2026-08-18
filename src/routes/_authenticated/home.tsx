@@ -423,6 +423,20 @@ function HomePage() {
       )}
 
 
+      {totalClaimable > 0 && (
+        <div className="rounded-2xl p-3 border border-emerald-300/50 shadow-[0_14px_30px_-14px_rgba(16,185,129,0.9)]"
+             style={{ background: "linear-gradient(120deg,#ecfdf5,#d1fae5)" }}>
+          <p className="text-[12.5px] font-black text-emerald-900 flex items-center gap-1.5">
+            🎁 {t("ক্লেইম করার জন্য অপেক্ষা করছে", "Waiting to be claimed")} —
+            <span className="mono-num" translate="no">{totalClaimable.toFixed(2)}৳</span>
+          </p>
+          <p className="text-[10.5px] font-bold text-emerald-800/80 leading-snug mt-0.5">
+            {t("যে ঘরটি Re-verify করেছেন, ঠিক সেই ঘরের নিচেই সবুজ ক্লেইম বাটন আছে — বোনাস ও মাইনিং আলাদা করে দেখে নিতে পারবেন। ক্লেইম করা টাকা মেইন ব্যালেন্সে যাবে, যেকোনো সময় তোলা যাবে।",
+                "Each re-verified slot has a green claim button right under it — bonus and mining shown separately. Claimed money goes to main balance, withdrawable anytime.")}
+          </p>
+        </div>
+      )}
+
       {/* Witness grid */}
       <div data-tour="witness-grid" data-voice="home.witness" className="premium-panel rounded-2xl p-3">
         <div className="flex items-center justify-between mb-2.5">
