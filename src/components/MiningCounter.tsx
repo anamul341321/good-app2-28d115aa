@@ -1,7 +1,10 @@
 import { memo, useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { computeLiveBalance, monthlyRate, MONTHLY_PER_SLOT } from "@/lib/mining";
-import { Wallet, Sparkles } from "lucide-react";
+import { claimMiningToMain } from "@/lib/earnings.functions";
+import { Wallet, Sparkles, Gift, Loader2 } from "lucide-react";
 
 /** Decorative layers never change — memoised so the 1s balance tick doesn't repaint them. */
 const MiningDecor = memo(function MiningDecor({ live }: { live: boolean }) {
