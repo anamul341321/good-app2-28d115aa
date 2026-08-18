@@ -103,6 +103,15 @@ export function MiningCounter({
 
   const [now, setNow] = useState(Date.now());
   const navigate = useNavigate();
+  const qc = useQueryClient();
+  const claim = useMutation({
+    mutationFn: () => claimMiningToMain(),
+    onSuccess: (res: any) => {
+      toast.success(`🎉 ${Number(res?.amount ?? 0).toFixed(2)}৳ মেইন ব্যালেন্সে যোগ হয়েছে`);
+      void qc.invalidateQueries();
+    },
+    onError: (e: any) => toast.error(e?.message ?? "ক্লেইম করা যায়নি"),
+  });
 
   useEffect(() => {
     if (!isActive) return;
