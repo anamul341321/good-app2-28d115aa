@@ -4,7 +4,16 @@ import { toast } from "sonner";
 import { Gift, Loader2, Lock, Pickaxe, RefreshCcw, Sparkles, X } from "lucide-react";
 import { claimSlotReward } from "@/lib/slot-claims.functions";
 
-export type SlotClaim = { taskId: string; slot: number; bonus: number; mining: number };
+export type SlotClaim = { taskId: string; slot: number; bonus: number; mining: number; dueAt?: string | null };
+
+const dueText = (dueAt?: string | null) => {
+  if (!dueAt) return null;
+  const ts = new Date(dueAt).getTime();
+  if (!Number.isFinite(ts)) return null;
+  const days = Math.ceil((ts - Date.now()) / 86400000);
+  if (days > 0) return `⏳ এই ঘরের পরবর্তী Re-verify আসবে ${new Date(ts).toLocaleDateString("bn-BD")} (≈${days} দিন পরে) — তখনই টাকাটা খুলবে।`;
+  return "✅ এই ঘরের Re-verify এখন খোলা — এখনই Re-verify করলেই টাকাটা ক্লেইম হবে।";
+};
 
 const tk = (n: number) => `${n.toFixed(2)}৳`;
 
