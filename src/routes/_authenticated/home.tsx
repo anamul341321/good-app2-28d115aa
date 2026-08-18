@@ -140,19 +140,28 @@ function HomePage() {
     return <div className="py-20 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-cyan" /></div>;
   }
 
+  const allClaims = (slotClaims ?? []) as SlotClaim[];
+  // শুধু যেসব ঘর এখন whitelist-এ আছে (Re-verify সম্পূর্ণ) সেগুলোতেই সবুজ ক্লেইম বাটন।
   const claimBySlot = new Map<number, SlotClaim>(
-    ((slotClaims ?? []) as SlotClaim[]).map((c) => [Number(c.slot), c]),
+    allClaims.filter((c) => c.whitelistOk === true).map((c) => [Number(c.slot), c]),
+  );
+  // Re-verify চাওয়া ঘরের জমা পুরস্কার — লক অবস্থায় শুধু দেখানো হবে।
+  const lockedClaimBySlot = new Map<number, SlotClaim>(
+    allClaims.filter((c) => c.whitelistOk !== true).map((c) => [Number(c.slot), c]),
   );
   // রি-ভেরিফাই করার আগেই দেখানোর জন্য: এই ঘরে কত টাকা অপেক্ষা করছে (লক)
   const previewClaim = (task: any): SlotClaim | null => {
     if (!task || task.status === "empty") return null;
+    const slot = Number(task.slot);
+    const parked = lockedClaimBySlot.get(slot);
+    if (parked) return parked;
     const repeat = Number(task.reverify_count ?? 0) > 0;
     const mining = Number(task.locked_mined ?? 0);
     const bonus = repeat ? 10 : 0;
     if (bonus + mining <= 0) return null;
     return {
       taskId: String(task.id),
-      slot: Number(task.slot),
+      slot,
       bonus,
       mining,
       dueAt: (task.reverify_due_at as string | null) ?? null,
@@ -161,7 +170,8 @@ function HomePage() {
 
   };
 
-  const totalClaimable = ((slotClaims ?? []) as SlotClaim[]).reduce((sum, c) => sum + c.bonus + c.mining, 0);
+  const totalClaimable = Array.from(claimBySlot.values()).reduce((sum, c) => sum + c.bonus + c.mining, 0);
+
 
   const tasks = data.tasks as any[];
   const total = tasks.length;
