@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { computeLiveBalance, monthlyRate, MONTHLY_PER_SLOT } from "@/lib/mining";
 import { claimMiningToMain, claimAllSlotMining } from "@/lib/earnings.functions";
-import { Wallet, Sparkles, Gift, Loader2 } from "lucide-react";
+import { Wallet, Sparkles, Gift, Loader2, Pickaxe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 /** Decorative layers never change — memoised so the 1s balance tick doesn't repaint them. */
