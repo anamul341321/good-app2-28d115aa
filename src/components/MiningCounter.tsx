@@ -3,7 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { computeLiveBalance, monthlyRate, MONTHLY_PER_SLOT } from "@/lib/mining";
-import { claimMiningToMain } from "@/lib/earnings.functions";
+import { claimMiningToMain, claimAllSlotMining } from "@/lib/earnings.functions";
 import { Wallet, Sparkles, Gift, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
