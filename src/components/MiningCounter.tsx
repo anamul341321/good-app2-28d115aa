@@ -264,8 +264,9 @@ export function MiningCounter({
               {selfMiningTotal.toFixed(2)}<span className="text-[9px] text-white/60">৳</span>
             </p>
             <p className="text-[7.5px] text-white/60 leading-tight mt-0.5">
-              স্লটে লক {selfMiningLocked.toFixed(2)}৳ · ক্লেইম প্রস্তুত {selfMiningPending.toFixed(2)}৳ · আগে ক্লেইম {selfMiningClaimed.toFixed(2)}৳
+              এখনই ক্লেইমযোগ্য {selfMiningClaimable.toFixed(2)}৳ · 🔒 Re-verify বাকি {selfMiningReverifyLocked.toFixed(2)}৳ · আগে ক্লেইম {selfMiningClaimed.toFixed(2)}৳
             </p>
+
           </div>
           <div className="mc-mini rounded-2xl p-2">
             <p className="text-[8px] font-black tracking-widest text-white/70">🤝 রেফার ১০% কমিশন</p>
