@@ -66,6 +66,10 @@ export function SlotClaimButton({
   const locked = !claim && !!preview;
   const data = claim ?? preview ?? null;
   if (!data) return null;
+  // GoodDollar এই ঘরে Re-verify চেয়ে ফেলেছে → মাইনিংও লক, Re-verify করলেই খুলবে
+  const dueTs = data.dueAt ? new Date(data.dueAt).getTime() : NaN;
+  const reverifyDue = locked && Number.isFinite(dueTs) && dueTs <= Date.now();
+  const miningClaimableNow = locked && !reverifyDue;
   const total = data.bonus + data.mining;
   if (total <= 0) return null;
 
