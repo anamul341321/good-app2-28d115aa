@@ -5,7 +5,7 @@ import { Gift, Loader2, Lock, Pickaxe, RefreshCcw, Sparkles, X } from "lucide-re
 import { claimSlotReward } from "@/lib/slot-claims.functions";
 import { claimSlotMining } from "@/lib/earnings.functions";
 
-export type SlotClaim = { taskId: string; slot: number; bonus: number; mining: number; dueAt?: string | null };
+export type SlotClaim = { taskId: string; slot: number; bonus: number; mining: number; dueAt?: string | null; whitelistOk?: boolean };
 
 const dueText = (dueAt?: string | null) => {
   if (!dueAt) return null;

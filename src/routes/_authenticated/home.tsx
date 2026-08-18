@@ -156,7 +156,9 @@ function HomePage() {
       bonus,
       mining,
       dueAt: (task.reverify_due_at as string | null) ?? null,
+      whitelistOk: Boolean(task.whitelist_ok),
     };
+
   };
 
   const totalClaimable = ((slotClaims ?? []) as SlotClaim[]).reduce((sum, c) => sum + c.bonus + c.mining, 0);
