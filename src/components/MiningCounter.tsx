@@ -164,6 +164,9 @@ export function MiningCounter({
   const miningAvailable = balanceBreakdown?.mining_available ?? miningPart;
   const selfMiningTotal = Math.max(0, balanceBreakdown?.self_mining_total ?? 0);
   const selfMiningLocked = Math.max(0, balanceBreakdown?.self_mining_locked ?? 0);
+  const selfMiningClaimable = Math.max(0, balanceBreakdown?.self_mining_claimable ?? selfMiningLocked);
+  const selfMiningReverifyLocked = Math.max(0, selfMiningLocked - selfMiningClaimable);
+
   const selfMiningPending = Math.max(0, balanceBreakdown?.self_mining_pending ?? 0);
   const selfMiningClaimed = Math.max(0, balanceBreakdown?.self_mining_claimed ?? 0);
   const referralMiningTotal = Math.max(0, balanceBreakdown?.referral_mining_total ?? 0);
