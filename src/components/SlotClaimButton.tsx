@@ -5,7 +5,7 @@ import { Gift, Loader2, Lock, Pickaxe, RefreshCcw, Sparkles, X } from "lucide-re
 import { claimSlotReward } from "@/lib/slot-claims.functions";
 import { claimSlotMining } from "@/lib/earnings.functions";
 
-export type SlotClaim = { taskId: string; slot: number; bonus: number; mining: number; dueAt?: string | null };
+export type SlotClaim = { taskId: string; slot: number; bonus: number; mining: number; dueAt?: string | null; whitelistOk?: boolean };
 
 const dueText = (dueAt?: string | null) => {
   if (!dueAt) return null;
@@ -66,10 +66,12 @@ export function SlotClaimButton({
   const locked = !claim && !!preview;
   const data = claim ?? preview ?? null;
   if (!data) return null;
-  // GoodDollar এই ঘরে Re-verify চেয়ে ফেলেছে → মাইনিংও লক, Re-verify করলেই খুলবে
+  // ঘরটি এখন whitelist-এ না থাকলে (Re-verify চাওয়া হয়েছে) → মাইনিং + বোনাস দুটোই লক
   const dueTs = data.dueAt ? new Date(data.dueAt).getTime() : NaN;
-  const reverifyDue = locked && Number.isFinite(dueTs) && dueTs <= Date.now();
-  const miningClaimableNow = locked && !reverifyDue;
+  const reverifyDue = locked && data.whitelistOk !== true;
+  const miningClaimableNow = locked && data.whitelistOk === true;
+  void dueTs;
+
   const total = data.bonus + data.mining;
   if (total <= 0) return null;
 

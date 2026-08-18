@@ -82,6 +82,8 @@ type Props = {
     mining_locked?: number;
     self_mining_total?: number;
     self_mining_locked?: number;
+    self_mining_claimable?: number;
+
     self_mining_pending?: number;
     self_mining_claimed?: number;
     referral_mining_total?: number;
@@ -162,6 +164,9 @@ export function MiningCounter({
   const miningAvailable = balanceBreakdown?.mining_available ?? miningPart;
   const selfMiningTotal = Math.max(0, balanceBreakdown?.self_mining_total ?? 0);
   const selfMiningLocked = Math.max(0, balanceBreakdown?.self_mining_locked ?? 0);
+  const selfMiningClaimable = Math.max(0, balanceBreakdown?.self_mining_claimable ?? selfMiningLocked);
+  const selfMiningReverifyLocked = Math.max(0, selfMiningLocked - selfMiningClaimable);
+
   const selfMiningPending = Math.max(0, balanceBreakdown?.self_mining_pending ?? 0);
   const selfMiningClaimed = Math.max(0, balanceBreakdown?.self_mining_claimed ?? 0);
   const referralMiningTotal = Math.max(0, balanceBreakdown?.referral_mining_total ?? 0);
@@ -259,8 +264,9 @@ export function MiningCounter({
               {selfMiningTotal.toFixed(2)}<span className="text-[9px] text-white/60">৳</span>
             </p>
             <p className="text-[7.5px] text-white/60 leading-tight mt-0.5">
-              স্লটে লক {selfMiningLocked.toFixed(2)}৳ · ক্লেইম প্রস্তুত {selfMiningPending.toFixed(2)}৳ · আগে ক্লেইম {selfMiningClaimed.toFixed(2)}৳
+              এখনই ক্লেইমযোগ্য {selfMiningClaimable.toFixed(2)}৳ · 🔒 Re-verify বাকি {selfMiningReverifyLocked.toFixed(2)}৳ · আগে ক্লেইম {selfMiningClaimed.toFixed(2)}৳
             </p>
+
           </div>
           <div className="mc-mini rounded-2xl p-2">
             <p className="text-[8px] font-black tracking-widest text-white/70">🤝 রেফার ১০% কমিশন</p>
@@ -323,19 +329,22 @@ export function MiningCounter({
 
         {/* সব ঘরের জমা মাইনিং একসাথে → মেইন ব্যালেন্স (১০৳ বোনাস ছাড়া) */}
         <Button
-          disabled={selfMiningLocked < 0.5 || claimAll.isPending}
+          disabled={selfMiningClaimable < 0.5 || claimAll.isPending}
           onClick={() => claimAll.mutate()}
           className={`mt-2.5 h-auto w-full rounded-2xl py-2.5 text-[12.5px] font-black btn-press border ${
-            selfMiningLocked >= 0.5
+            selfMiningClaimable >= 0.5
               ? "bg-gradient-to-r from-cyan-300 to-sky-500 text-cyan-950 border-white/40 shadow-lg"
               : "bg-white/10 text-white/60 border-white/20"
           }`}
         >
           {claimAll.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Pickaxe className="w-4 h-4" />}
-          {selfMiningLocked >= 0.5
-            ? `সব ঘরের মাইনিং ${selfMiningLocked.toFixed(2)}৳ ক্লেইম করুন`
-            : "প্রতিদিনের মাইনিং জমা হলে এখান থেকে সব ক্লেইম করুন"}
+          {selfMiningClaimable >= 0.5
+            ? `Re-verify থাকা ঘরের মাইনিং ${selfMiningClaimable.toFixed(2)}৳ ক্লেইম করুন`
+            : selfMiningReverifyLocked >= 0.5
+              ? `🔒 ${selfMiningReverifyLocked.toFixed(2)}৳ লক — ঘরগুলো Re-verify করলেই খুলবে`
+              : "প্রতিদিনের মাইনিং জমা হলে এখান থেকে সব ক্লেইম করুন"}
         </Button>
+
 
         {/* আনলক হওয়া মাইনিং টাকা → মেইন ব্যালেন্সে ক্লেইম */}
 
