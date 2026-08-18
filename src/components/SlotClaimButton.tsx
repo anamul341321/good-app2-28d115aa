@@ -50,6 +50,17 @@ export function SlotClaimButton({
     onError: (e: any) => toast.error(e?.message ?? "ক্লেইম করা যায়নি"),
   });
 
+  // Re-verify চাওয়ার আগেই: ওই ঘরের জমা মাইনিং (বোনাস ছাড়া) এখনই মেইন ব্যালেন্সে
+  const miningMut = useMutation({
+    mutationFn: () => claimSlotMining({ data: { taskId: (preview ?? claim)!.taskId } }),
+    onSuccess: (r: any) => {
+      setOpen(false);
+      toast.success(`⛏️ মাইনিং ${tk(Number(r?.mining ?? 0))} মেইন ব্যালেন্সে যোগ হয়েছে`);
+      void qc.invalidateQueries();
+    },
+    onError: (e: any) => toast.error(e?.message ?? "ক্লেইম করা যায়নি"),
+  });
+
   // ── রি-ভেরিফাই করার আগে: লক করা (teaser) বাটন ─────────────────────────────
   const locked = !claim && !!preview;
   const data = claim ?? preview ?? null;
