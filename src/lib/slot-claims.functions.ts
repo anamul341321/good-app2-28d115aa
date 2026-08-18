@@ -17,11 +17,37 @@ export const listSlotClaims = createServerFn({ method: "GET" })
       .order("slot", { ascending: true });
     if (error) throw new Error(error.message);
 
+    const taskIds = Array.from(new Set(((data ?? []) as any[]).map((r) => String(r.task_id))));
+    const taskInfo = new Map<string, { whitelistOk: boolean; locked: number; dueAt: string | null }>();
+    if (taskIds.length) {
+      const { data: tasks } = await supabaseAdmin
+        .from("tasks" as any)
+        .select("id, whitelist_ok, locked_mined, reverify_due_at")
+        .in("id", taskIds);
+      for (const t of (tasks ?? []) as any[]) {
+        taskInfo.set(String(t.id), {
+          whitelistOk: t.whitelist_ok === true,
+          locked: Number(t.locked_mined ?? 0),
+          dueAt: (t.reverify_due_at as string | null) ?? null,
+        });
+      }
+    }
+
     // এক ঘরে একাধিক pending থাকলে একসাথে যোগ করে দেখাই
-    const map = new Map<string, { taskId: string; slot: number; bonus: number; mining: number }>();
+    const map = new Map<string, { taskId: string; slot: number; bonus: number; mining: number; whitelistOk: boolean; dueAt: string | null }>();
     for (const row of (data ?? []) as any[]) {
       const key = row.task_id as string;
-      const prev = map.get(key) ?? { taskId: key, slot: Number(row.slot), bonus: 0, mining: 0 };
+      const info = taskInfo.get(key);
+      const prev = map.get(key) ?? {
+        taskId: key,
+        slot: Number(row.slot),
+        bonus: 0,
+        // ঘরে জমে থাকা (এখনো ক্লেইম না করা) মাইনিংও যোগ করে দেখাই — কয়েকদিন
+        // জমিয়ে ক্লেইম করলেও এক টাকাও হারায় না।
+        mining: info?.locked ?? 0,
+        whitelistOk: info?.whitelistOk ?? false,
+        dueAt: info?.dueAt ?? null,
+      };
       prev.bonus += Number(row.bonus_amount ?? 0);
       prev.mining += Number(row.mining_amount ?? 0);
       map.set(key, prev);
@@ -41,7 +67,14 @@ export const claimSlotReward = createServerFn({ method: "POST" })
     });
     if (error) throw new Error(error.message);
     const out = (res ?? {}) as any;
-    if (!out.ok) throw new Error("এই ঘরে এখন ক্লেইম করার মতো কিছু নেই।");
+    if (!out.ok) {
+      throw new Error(
+        out.reason === "reverify_required"
+          ? "এই ঘরে আবার Re-verify চাওয়া হয়েছে — Re-verify করলেই মাইনিং ও ১০৳ বোনাস খুলবে।"
+          : "এই ঘরে এখন ক্লেইম করার মতো কিছু নেই।",
+      );
+    }
+
     return {
       ok: true,
       bonus: Number(out.bonus ?? 0),
