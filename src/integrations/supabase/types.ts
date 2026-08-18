@@ -2623,6 +2623,10 @@ export type Database = {
       claim_mining_earnings: { Args: { _user_id: string }; Returns: Json }
       claim_mining_to_main: { Args: { _user_id: string }; Returns: Json }
       claim_reverify_bonus: { Args: { _user_id: string }; Returns: number }
+      claim_slot_mining: {
+        Args: { _task_id: string; _user_id: string }
+        Returns: Json
+      }
       claim_slot_reward: {
         Args: { _task_id: string; _user_id: string }
         Returns: Json

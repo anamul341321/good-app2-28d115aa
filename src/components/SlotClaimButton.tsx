@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Gift, Loader2, Lock, Pickaxe, RefreshCcw, Sparkles, X } from "lucide-react";
 import { claimSlotReward } from "@/lib/slot-claims.functions";
+import { claimSlotMining } from "@/lib/earnings.functions";
 
 export type SlotClaim = { taskId: string; slot: number; bonus: number; mining: number; dueAt?: string | null };
 
@@ -50,6 +51,17 @@ export function SlotClaimButton({
     onError: (e: any) => toast.error(e?.message ?? "ক্লেইম করা যায়নি"),
   });
 
+  // Re-verify চাওয়ার আগেই: ওই ঘরের জমা মাইনিং (বোনাস ছাড়া) এখনই মেইন ব্যালেন্সে
+  const miningMut = useMutation({
+    mutationFn: () => claimSlotMining({ data: { taskId: (preview ?? claim)!.taskId } }),
+    onSuccess: (r: any) => {
+      setOpen(false);
+      toast.success(`⛏️ মাইনিং ${tk(Number(r?.mining ?? 0))} মেইন ব্যালেন্সে যোগ হয়েছে`);
+      void qc.invalidateQueries();
+    },
+    onError: (e: any) => toast.error(e?.message ?? "ক্লেইম করা যায়নি"),
+  });
+
   // ── রি-ভেরিফাই করার আগে: লক করা (teaser) বাটন ─────────────────────────────
   const locked = !claim && !!preview;
   const data = claim ?? preview ?? null;
@@ -87,7 +99,7 @@ export function SlotClaimButton({
               <p className="mono-num text-[2.2rem] leading-none font-black text-white drop-shadow">{tk(total)}</p>
               <p className={`text-[10.5px] font-bold mt-1 ${locked ? "text-amber-200" : "text-emerald-200"}`}>
                 {locked
-                  ? "🔒 এখনই ক্লেইম হবে না — এই ঘর Re-verify করলেই টাকাটা খুলে যাবে"
+                  ? "⛏️ মাইনিং টাকা এখনই নিতে পারবেন · 🔒 ১০৳ বোনাস শুধু Re-verify করলেই"
                   : "ক্লেইম করলেই টাকা মেইন ব্যালেন্সে যাবে"}
               </p>
               {locked && dueText(data.dueAt) && (
@@ -120,12 +132,11 @@ export function SlotClaimButton({
               <p className="text-[10px] font-black text-white/85 tracking-wide">📜 নিয়মগুলো</p>
               {(locked
                 ? [
-                    "এই টাকা এখন লক অবস্থায় আছে — Re-verify না করলে ক্লেইম হবে না।",
-                    "বোনাস = এই ঘর আবার Re-verify করলেই ১০৳ (উপহার)।",
-                    "মাইনিং = এই ঘর থেকে এখন পর্যন্ত জমা হওয়া আয় (৫০৳/মাস হারে)।",
-                    "Re-verify করার সাথে সাথেই দুটো একসাথে ক্লেইম করা যাবে।",
-                    "GoodDollar এখনো এই ঘরে Re-verify না চাইলে টাকা নষ্ট হবে না — এখানেই জমা থেকে বাড়তে থাকবে, সময় হলেই খুলবে।",
-                    "রেফারের ১০% কমিশন এই ঘরের সাথে লক নয় — মাইনিং কার্ডের 🤝 রেফার কমিশন থেকে যেকোনো সময় ক্লেইম করা যায়।",
+                    "মাইনিং = এই ঘর থেকে জমা হওয়া আয় (৫০৳/মাস হারে) — GoodDollar Re-verify না চাইলেও এটা যেকোনো সময় মেইন ব্যালেন্সে নিতে পারবেন।",
+                    "১০৳ বোনাস = শুধু এই ঘর আবার Re-verify করলেই খুলবে (আগে একবার Re-verify করা ঘরের জন্য)।",
+                    "যে ঘর প্রথমবার Re-verify-ই হয়নি বা এখনো whitelist হয়নি — সেখানে ১০৳ বোনাস নেই, শুধু মাইনিং।",
+                    "টাকা কখনো নষ্ট হয় না — না নিলে ঘরের নিচেই জমা থাকবে ও বাড়তে থাকবে।",
+                    "রেফারের ১০% কমিশন ঘরের সাথে লক নয় — মাইনিং কার্ডের 🤝 রেফার কমিশন থেকে যেকোনো সময় ক্লেইম করা যায়।",
                     "ক্লেইম করা টাকা মেইন ব্যালেন্সে যাবে — যেকোনো সময় তোলা যাবে।",
                   ]
                 : [
@@ -142,14 +153,27 @@ export function SlotClaimButton({
 
             <div className="p-4 pt-3 space-y-2">
               {locked ? (
-                <button
-                  onClick={() => { setOpen(false); onReverify?.(); }}
-                  className="w-full rounded-2xl py-3 font-black text-[13px] text-amber-950 flex items-center justify-center gap-2 btn-press border border-white/40"
-                  style={{ background: "linear-gradient(120deg,#fde68a,#fbbf24,#f59e0b)" }}
-                >
-                  <RefreshCcw className="w-4 h-4" />
-                  এখনই Re-verify করে {tk(total)} খুলুন
-                </button>
+                <>
+                  {data.mining >= 0.5 && (
+                    <button
+                      disabled={miningMut.isPending}
+                      onClick={() => miningMut.mutate()}
+                      className="w-full rounded-2xl py-3 font-black text-[13px] text-cyan-950 flex items-center justify-center gap-2 btn-press border border-white/40 disabled:opacity-70"
+                      style={{ background: "linear-gradient(120deg,#a5f3fc,#22d3ee,#06b6d4)" }}
+                    >
+                      {miningMut.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Pickaxe className="w-4 h-4" />}
+                      শুধু মাইনিং {tk(data.mining)} এখনই নিন
+                    </button>
+                  )}
+                  <button
+                    onClick={() => { setOpen(false); onReverify?.(); }}
+                    className="w-full rounded-2xl py-3 font-black text-[13px] text-amber-950 flex items-center justify-center gap-2 btn-press border border-white/40"
+                    style={{ background: "linear-gradient(120deg,#fde68a,#fbbf24,#f59e0b)" }}
+                  >
+                    <RefreshCcw className="w-4 h-4" />
+                    Re-verify করে {tk(data.bonus)} বোনাসসহ নিন
+                  </button>
+                </>
               ) : (
               <button
                 disabled={mut.isPending}

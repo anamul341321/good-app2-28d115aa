@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export type EarningRow = {
@@ -237,4 +238,27 @@ export const claimMiningToMain = createServerFn({ method: "POST" })
       throw new Error("এখনো ক্লেইম করার মতো আনলক মাইনিং টাকা জমা হয়নি (সর্বনিম্ন ০.৫০৳)।");
     }
     return { ok: true, amount: Number(res.amount ?? 0) };
+  });
+
+/**
+ * যে ঘরে GoodDollar এখনো Re-verify চায়নি — সেই ঘরের জমা মাইনিং টাকা এখনই
+ * মেইন ব্যালেন্সে নেওয়া যায় (১০৳ Re-verify বোনাস বাদে; সেটা Re-verify করলেই)।
+ */
+export const claimSlotMining = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ taskId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: res, error } = await supabaseAdmin.rpc("claim_slot_mining" as any, {
+      _user_id: context.userId,
+      _task_id: data.taskId,
+    });
+    if (error) throw new Error(error.message);
+    const out = (res ?? {}) as any;
+    if (!out.ok) {
+      if (out.reason === "too_small") throw new Error("এই ঘরে এখনো ক্লেইম করার মতো মাইনিং জমা হয়নি (সর্বনিম্ন ০.৫০৳)।");
+      if (out.reason === "use_full_claim") throw new Error("এই ঘরে Re-verify বোনাসসহ পুরো ক্লেইম অপেক্ষা করছে — সেটিই ক্লেইম করুন।");
+      throw new Error("ক্লেইম করা যায়নি — আবার চেষ্টা করুন।");
+    }
+    return { ok: true, mining: Number(out.mining ?? 0) };
   });
