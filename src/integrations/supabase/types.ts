@@ -1511,6 +1511,50 @@ export type Database = {
           },
         ]
       }
+      slot_claims: {
+        Row: {
+          bonus_amount: number
+          claimed_at: string | null
+          created_at: string
+          id: string
+          mining_amount: number
+          slot: number
+          status: string
+          task_id: string
+          user_id: string
+        }
+        Insert: {
+          bonus_amount?: number
+          claimed_at?: string | null
+          created_at?: string
+          id?: string
+          mining_amount?: number
+          slot: number
+          status?: string
+          task_id: string
+          user_id: string
+        }
+        Update: {
+          bonus_amount?: number
+          claimed_at?: string | null
+          created_at?: string
+          id?: string
+          mining_amount?: number
+          slot?: number
+          status?: string
+          task_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "slot_claims_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       slot_reset_requests: {
         Row: {
           created_at: string
@@ -2579,6 +2623,10 @@ export type Database = {
       claim_mining_earnings: { Args: { _user_id: string }; Returns: Json }
       claim_mining_to_main: { Args: { _user_id: string }; Returns: Json }
       claim_reverify_bonus: { Args: { _user_id: string }; Returns: number }
+      claim_slot_reward: {
+        Args: { _task_id: string; _user_id: string }
+        Returns: Json
+      }
       claim_welcome_bonuses: { Args: { _user_id: string }; Returns: Json }
       claim_whitelist_run: {
         Args: { _lease_token: string; _run_id: string }
