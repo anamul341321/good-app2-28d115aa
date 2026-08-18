@@ -4,7 +4,16 @@ import { toast } from "sonner";
 import { Gift, Loader2, Lock, Pickaxe, RefreshCcw, Sparkles, X } from "lucide-react";
 import { claimSlotReward } from "@/lib/slot-claims.functions";
 
-export type SlotClaim = { taskId: string; slot: number; bonus: number; mining: number };
+export type SlotClaim = { taskId: string; slot: number; bonus: number; mining: number; dueAt?: string | null };
+
+const dueText = (dueAt?: string | null) => {
+  if (!dueAt) return null;
+  const ts = new Date(dueAt).getTime();
+  if (!Number.isFinite(ts)) return null;
+  const days = Math.ceil((ts - Date.now()) / 86400000);
+  if (days > 0) return `⏳ এই ঘরের পরবর্তী Re-verify আসবে ${new Date(ts).toLocaleDateString("bn-BD")} (≈${days} দিন পরে) — তখনই টাকাটা খুলবে।`;
+  return "✅ এই ঘরের Re-verify এখন খোলা — এখনই Re-verify করলেই টাকাটা ক্লেইম হবে।";
+};
 
 const tk = (n: number) => `${n.toFixed(2)}৳`;
 
@@ -81,6 +90,9 @@ export function SlotClaimButton({
                   ? "🔒 এখনই ক্লেইম হবে না — এই ঘর Re-verify করলেই টাকাটা খুলে যাবে"
                   : "ক্লেইম করলেই টাকা মেইন ব্যালেন্সে যাবে"}
               </p>
+              {locked && dueText(data.dueAt) && (
+                <p className="text-[9.5px] font-bold mt-1 text-white/70 leading-snug">{dueText(data.dueAt)}</p>
+              )}
             </div>
 
             <div className="px-4 mt-3 grid grid-cols-2 gap-2">
@@ -112,6 +124,8 @@ export function SlotClaimButton({
                     "বোনাস = এই ঘর আবার Re-verify করলেই ১০৳ (উপহার)।",
                     "মাইনিং = এই ঘর থেকে এখন পর্যন্ত জমা হওয়া আয় (৫০৳/মাস হারে)।",
                     "Re-verify করার সাথে সাথেই দুটো একসাথে ক্লেইম করা যাবে।",
+                    "GoodDollar এখনো এই ঘরে Re-verify না চাইলে টাকা নষ্ট হবে না — এখানেই জমা থেকে বাড়তে থাকবে, সময় হলেই খুলবে।",
+                    "রেফারের ১০% কমিশন এই ঘরের সাথে লক নয় — মাইনিং কার্ডের 🤝 রেফার কমিশন থেকে যেকোনো সময় ক্লেইম করা যায়।",
                     "ক্লেইম করা টাকা মেইন ব্যালেন্সে যাবে — যেকোনো সময় তোলা যাবে।",
                   ]
                 : [
