@@ -162,7 +162,7 @@ export function SlotClaimButton({
             <div className="p-4 pt-3 space-y-2">
               {locked ? (
                 <>
-                  {data.mining >= 0.5 && (
+                  {miningClaimableNow && data.mining >= 0.5 && (
                     <button
                       disabled={miningMut.isPending}
                       onClick={() => miningMut.mutate()}
