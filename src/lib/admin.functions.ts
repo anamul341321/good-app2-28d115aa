@@ -389,6 +389,21 @@ export const adminUserDetail = createServerFn({ method: "POST" })
         const { buildEarningsBreakdown } = await import("@/lib/earnings-breakdown.server");
         return buildEarningsBreakdown(supabaseAdmin, data.userId);
       })(),
+      // কে কোন রেটে রেফার বোনাস দিয়েছে + কোন রেফার এখনো বাকি (নাম ধরে হিসাব)
+      referralHistory: await (async () => {
+        const { buildReferralHistory } = await import("@/lib/referral-history.server");
+        try {
+          return await buildReferralHistory(supabaseAdmin, data.userId);
+        } catch {
+          return null;
+        }
+      })(),
+      // not-whitelist হওয়ার পর কতবার আবার re-verify হয়েছে
+      reverifyStats: await (async () => {
+        const { buildReverifyStats } = await import("@/lib/referral-history.server");
+        return buildReverifyStats(taskRows);
+      })(),
+
       income: {
         vouchers: vouchersAll.data ?? [],
         adminCredits: creditsAll.data ?? [],
