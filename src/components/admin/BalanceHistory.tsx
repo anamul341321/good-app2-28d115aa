@@ -43,14 +43,33 @@ export function BalanceHistory({ mining, income, withdrawals, debts, profile, br
   const referralPart = Math.min(miningPart, Math.max(0, trackedReferral));
   const selfMiningPart = Math.max(0, miningPart - referralPart);
 
+  // `bonus_amount` is the whole main-balance bucket, NOT just verify bonuses:
+  // first/re-verify bonus + রেফার বোনাস + স্লট ক্লেইম (১০৳ + ক্লেইম করা মাইনিং)
+  // + ledger চালুর আগের পুরোনো ব্যালেন্স — সব এক জায়গায় জমা। তাই এখানে ভেঙে
+  // দেখানো হয়, না হলে "বোনাস ৯০০৳" এর মতো ভুল ধারণা হয়।
+  let bonusLeft = bonusPart;
+  const takeBonus = (want: number) => {
+    const got = Math.max(0, Math.min(want, bonusLeft));
+    bonusLeft = Number((bonusLeft - got).toFixed(2));
+    return got;
+  };
+  const firstVerifyBonus = takeBonus(Number(breakdown?.bonus?.selfFirst ?? 0));
+  const reverifyBonus = takeBonus(Number(breakdown?.bonus?.selfReverify ?? 0));
+  const referrerBonus = takeBonus(Number(breakdown?.bonus?.referrerTotal ?? 0));
+  const otherBonusPart = Number(bonusLeft.toFixed(2));
+
   const sources: Source[] = [
     { key: "mining", label: "⛏️ নিজের স্লট মাইনিং", amount: selfMiningPart, color: "text-cyan" },
     { key: "refcom", label: "🤝 রেফার ১০% কমিশন (মাইনিং-এর ভেতরে)", amount: referralPart, color: "text-emerald" },
-    { key: "bonus", label: "🎉 বোনাস (first/re-verify)", amount: bonusPart, color: "text-amber" },
+    { key: "bonus_first", label: "🎉 First verify বোনাস", amount: firstVerifyBonus, color: "text-amber" },
+    { key: "bonus_re", label: "🔁 Re-verify বোনাস (১০ ঘর পূর্ণ)", amount: reverifyBonus, color: "text-amber" },
+    { key: "bonus_ref", label: "👥 রেফার বোনাস", amount: referrerBonus, color: "text-amber" },
+    { key: "bonus_other", label: "📦 স্লট ক্লেইম (১০৳ + ক্লেইম করা মাইনিং) ও পুরোনো ব্যালেন্স", amount: otherBonusPart, color: "text-amber" },
     { key: "voucher", label: "🎁 ভাউচার (claim করা)", amount: voucher, color: "text-amber" },
     { key: "admin", label: "➕ অ্যাডমিন যোগ করেছে", amount: adminPlus, color: "text-emerald" },
     { key: "transfer", label: "📥 অন্য user পাঠিয়েছে", amount: transferIn, color: "text-violet" },
   ].filter((s) => s.amount > 0.004);
+
 
 
   const totalIn = sources.reduce((s, x) => s + x.amount, 0);
