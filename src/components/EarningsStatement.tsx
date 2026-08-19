@@ -32,6 +32,7 @@ export type StatementData = {
 export function EarningsStatement({ data, onClose }: { data: StatementData; onClose?: () => void }) {
   const sheetRef = useRef<HTMLDivElement>(null);
   const [busy, setBusy] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
 
   const downloadPng = async () => {
     const node = sheetRef.current;
@@ -143,19 +144,6 @@ export function EarningsStatement({ data, onClose }: { data: StatementData; onCl
           </tbody>
         </table>
 
-        {/* Step-by-step reconciliation */}
-        {(data.bonusSteps?.length || data.miningSteps?.length) ? (
-          <>
-            <p className="text-[12px] font-black mt-4 mb-1">১ক) ধাপে ধাপে হিসাব</p>
-            {data.bonusSteps?.length ? (
-              <StepTable title={`🎉 বোনাস — মোট ${tk(data.bonusTotal ?? 0)}`} steps={data.bonusSteps} total={data.bonusTotal ?? 0} />
-            ) : null}
-            {data.miningSteps?.length ? (
-              <StepTable title={`⛏️ মাইনিং — মোট ${tk(data.miningTotal ?? 0)}`} steps={data.miningSteps} total={data.miningTotal ?? 0} />
-            ) : null}
-          </>
-        ) : null}
-
         {/* Outgoing */}
         {data.outs.length > 0 && (
           <>
@@ -177,39 +165,79 @@ export function EarningsStatement({ data, onClose }: { data: StatementData; onCl
           </>
         )}
 
-        {/* Ledger */}
-        <p className="text-[12px] font-black mt-4 mb-1">৩) তারিখ অনুযায়ী পূর্ণ হিসাব</p>
-        <table className="w-full text-[10.5px] border-collapse">
-          <thead>
-            <tr className="bg-black/5">
-              <th className="text-left p-1.5 border border-black/15">তারিখ</th>
-              <th className="text-left p-1.5 border border-black/15">বিবরণ</th>
-              <th className="text-right p-1.5 border border-black/15 w-24">টাকা</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.rows.length === 0 && (
-              <tr><td colSpan={3} className="p-2 text-center border border-black/15 text-black/50">কোনো লেনদেন নেই</td></tr>
-            )}
-            {data.rows.slice(0, 200).map((r) => (
-              <tr key={r.id}>
-                <td className="p-1.5 border border-black/15 whitespace-nowrap">{bn(r.created_at)}</td>
-                <td className="p-1.5 border border-black/15">
-                  {r.label}
-                  {r.note ? <span className="block text-black/50">{r.note}</span> : null}
-                </td>
-                <td className={`p-1.5 border border-black/15 text-right font-bold ${r.amount < 0 ? "text-red-700" : ""}`}>
-                  {r.amount > 0 ? "+" : ""}{tk(r.amount)}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        {/* Short bottom line */}
+        <div className="mt-4 border-2 border-black/70 rounded-xl p-3 grid grid-cols-3 gap-2 text-center">
+          <div>
+            <p className="text-[9px] font-bold text-black/55 uppercase tracking-wider">মোট আয়</p>
+            <p className="text-[13px] font-black" style={{ color: "#047857" }}>{tk(data.totalIn)}</p>
+          </div>
+          <div>
+            <p className="text-[9px] font-bold text-black/55 uppercase tracking-wider">মোট তোলা/খরচ</p>
+            <p className="text-[13px] font-black" style={{ color: "#b91c1c" }}>-{tk(data.totalOut)}</p>
+          </div>
+          <div>
+            <p className="text-[9px] font-bold text-black/55 uppercase tracking-wider">এখন ব্যালেন্স</p>
+            <p className="text-[13px] font-black" style={{ color: "#0369a1" }}>{tk(data.balance)}</p>
+          </div>
+        </div>
+
+        {/* Optional details — hidden unless asked, keeps the sheet short */}
+        <button
+          type="button"
+          onClick={() => setShowDetails((v) => !v)}
+          className="print:hidden mt-3 text-[11px] font-black underline text-black/70"
+        >
+          {showDetails ? "বিস্তারিত হিসাব লুকান" : "বিস্তারিত হিসাব দেখুন (তারিখ অনুযায়ী)"}
+        </button>
+
+        {showDetails && (
+          <>
+            {(data.bonusSteps?.length || data.miningSteps?.length) ? (
+              <>
+                <p className="text-[12px] font-black mt-3 mb-1">ধাপে ধাপে হিসাব</p>
+                {data.bonusSteps?.length ? (
+                  <StepTable title={`🎉 বোনাস — মোট ${tk(data.bonusTotal ?? 0)}`} steps={data.bonusSteps} total={data.bonusTotal ?? 0} />
+                ) : null}
+                {data.miningSteps?.length ? (
+                  <StepTable title={`⛏️ মাইনিং — মোট ${tk(data.miningTotal ?? 0)}`} steps={data.miningSteps} total={data.miningTotal ?? 0} />
+                ) : null}
+              </>
+            ) : null}
+
+            <p className="text-[12px] font-black mt-4 mb-1">তারিখ অনুযায়ী পূর্ণ হিসাব</p>
+            <table className="w-full text-[10.5px] border-collapse">
+              <thead>
+                <tr className="bg-black/5">
+                  <th className="text-left p-1.5 border border-black/15">তারিখ</th>
+                  <th className="text-left p-1.5 border border-black/15">বিবরণ</th>
+                  <th className="text-right p-1.5 border border-black/15 w-24">টাকা</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.rows.length === 0 && (
+                  <tr><td colSpan={3} className="p-2 text-center border border-black/15 text-black/50">কোনো লেনদেন নেই</td></tr>
+                )}
+                {data.rows.slice(0, 200).map((r) => (
+                  <tr key={r.id}>
+                    <td className="p-1.5 border border-black/15 whitespace-nowrap">{bn(r.created_at)}</td>
+                    <td className="p-1.5 border border-black/15">
+                      {r.label}
+                      {r.note ? <span className="block text-black/50">{r.note}</span> : null}
+                    </td>
+                    <td className={`p-1.5 border border-black/15 text-right font-bold ${r.amount < 0 ? "text-red-700" : ""}`}>
+                      {r.amount > 0 ? "+" : ""}{tk(r.amount)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </>
+        )}
 
         <p className="text-[9.5px] text-black/55 mt-3 leading-relaxed border-t border-black/20 pt-2">
-          ℹ️ মাইনিং প্রতি সেকেন্ডে জমা হয়, তাই ক্লেইম না করা মাইনিং আয় “আয়ের উৎস”-এ দেখানো হয় কিন্তু নিচের তারিখভিত্তিক হিসাবে শুধু ক্লেইম করা অংশ থাকে।
-          রেফার ১০% কমিশন আলাদা ওয়ালেটে যায় না — মাইনিং ব্যালেন্সের সাথেই যোগ হয়।
+          ℹ️ মাইনিং প্রতি সেকেন্ডে জমা হয়, তাই ক্লেইম না করা মাইনিং আয় “আয়ের উৎস”-এ দেখানো হয়। রেফার ১০% কমিশন মাইনিং ব্যালেন্সের সাথেই যোগ হয়।
         </p>
+
       </div>
     </div>
   );
