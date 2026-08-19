@@ -32,6 +32,7 @@ export type StatementData = {
 export function EarningsStatement({ data, onClose }: { data: StatementData; onClose?: () => void }) {
   const sheetRef = useRef<HTMLDivElement>(null);
   const [busy, setBusy] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
 
   const downloadPng = async () => {
     const node = sheetRef.current;
