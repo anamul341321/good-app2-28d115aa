@@ -1072,7 +1072,26 @@ function UserDetail() {
                         {" · "}{new Date(w.created_at).toLocaleDateString()}
                       </p>
                       {noteClean && <p className="text-[9px] text-muted-foreground italic truncate">{noteClean}</p>}
+                      {/* এই withdraw-এর টাকা কোন আয় থেকে এসেছে */}
+                      {(Number(w.src_main ?? 0) + Number(w.src_mining ?? 0)) > 0 ? (
+                        <p className="text-[9px] mt-0.5 flex flex-wrap gap-1">
+                          <span className="px-1.5 py-0.5 rounded bg-emerald/15 text-emerald font-black mono-num">
+                            মেইন/বোনাস {Number(w.src_main ?? 0).toFixed(2)}৳
+                          </span>
+                          <span className="px-1.5 py-0.5 rounded bg-cyan/15 text-cyan font-black mono-num">
+                            মাইনিং {Number(w.src_mining ?? 0).toFixed(2)}৳
+                          </span>
+                          {Number(w.src_referral ?? 0) > 0 && (
+                            <span className="px-1.5 py-0.5 rounded bg-violet/15 text-violet font-black mono-num">
+                              রেফার ১০% {Number(w.src_referral ?? 0).toFixed(2)}৳
+                            </span>
+                          )}
+                        </p>
+                      ) : (
+                        <p className="text-[9px] text-muted-foreground mt-0.5">উৎস রেকর্ড নেই (পুরোনো রিকোয়েস্ট)</p>
+                      )}
                     </div>
+
                     <span className={`text-[9px] font-black px-2 py-0.5 rounded-full shrink-0 ${
                       w.status === "paid" ? "bg-emerald/15 text-emerald" :
                       w.status === "rejected" ? "bg-rose/15 text-rose" :
