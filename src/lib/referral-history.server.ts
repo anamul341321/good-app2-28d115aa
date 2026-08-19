@@ -237,5 +237,7 @@ export function buildReverifyStats(tasks: any[]): ReverifyStats {
     cycleDone: perSlot.filter((s) => s.count > 0 && s.whitelistOk).length,
     // এখন whitelist নেই — এই ঘরগুলো আবার re-verify চাচ্ছে
     cyclePending: perSlot.filter((s) => !s.whitelistOk).length,
+    perSlot,
   };
+
 }
