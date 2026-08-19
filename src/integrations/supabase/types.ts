@@ -2747,6 +2747,10 @@ export type Database = {
         Returns: Json
       }
       settle_mining: { Args: { _user_id: string }; Returns: undefined }
+      spend_locked_mining: {
+        Args: { _amount: number; _user_id: string }
+        Returns: number
+      }
       transition_task_whitelist: {
         Args: { _is_whitelisted: boolean; _task_id: string }
         Returns: string
