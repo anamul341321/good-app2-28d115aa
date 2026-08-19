@@ -2555,6 +2555,9 @@ export type Database = {
           provider: Database["public"]["Enums"]["wallet_provider"]
           reject_proof_path: string | null
           reject_reason: string | null
+          src_main: number
+          src_mining: number
+          src_referral: number
           status: Database["public"]["Enums"]["withdrawal_status"]
           tg_chat_id: string | null
           tg_message_id: number | null
@@ -2577,6 +2580,9 @@ export type Database = {
           provider: Database["public"]["Enums"]["wallet_provider"]
           reject_proof_path?: string | null
           reject_reason?: string | null
+          src_main?: number
+          src_mining?: number
+          src_referral?: number
           status?: Database["public"]["Enums"]["withdrawal_status"]
           tg_chat_id?: string | null
           tg_message_id?: number | null
@@ -2599,6 +2605,9 @@ export type Database = {
           provider?: Database["public"]["Enums"]["wallet_provider"]
           reject_proof_path?: string | null
           reject_reason?: string | null
+          src_main?: number
+          src_mining?: number
+          src_referral?: number
           status?: Database["public"]["Enums"]["withdrawal_status"]
           tg_chat_id?: string | null
           tg_message_id?: number | null
