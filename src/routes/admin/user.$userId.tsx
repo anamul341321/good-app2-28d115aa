@@ -815,15 +815,24 @@ function UserDetail() {
                   {isReverified && <span className="px-1.5 py-0.5 rounded bg-emerald/20 text-emerald text-[9px] font-black">🔁 RE-VERIFIED</span>}
                   {isFirstOnly && t.whitelist_ok !== false && <span className="px-1.5 py-0.5 rounded bg-amber/20 text-amber text-[9px] font-black">✅ 1ST VERIFY</span>}
                   {t.whitelist_ok === false && <span className="px-1.5 py-0.5 rounded bg-rose/20 text-rose text-[9px] font-black">⚠ NOT WHITELIST</span>}
+                  {Number(t.reverify_count ?? 0) > 0 && (
+                    <span className="px-1.5 py-0.5 rounded bg-cyan/20 text-cyan text-[9px] font-black mono-num">
+                      🔁 {t.reverify_count} বার re-verify
+                    </span>
+                  )}
                   {t.status === "empty" && <span className="text-[10px] text-muted-foreground">empty</span>}
                 </div>
                 {t.face_label && <p className="text-[10px] text-amber truncate">{t.face_label}</p>}
                 {t.initial_verify_at && (
                   <p className="text-[9px] text-muted-foreground">1st verify: {new Date(t.initial_verify_at).toLocaleString()}</p>
                 )}
+                {t.last_reverified_at && (
+                  <p className="text-[9px] text-cyan">শেষ re-verify: {new Date(t.last_reverified_at).toLocaleString()}</p>
+                )}
                 {t.done_at && (
                   <p className="text-[9px] text-emerald">Re-verified: {new Date(t.done_at).toLocaleString()}</p>
                 )}
+
                 {t.wallet_address && (
                   <button onClick={() => copy(t.wallet_address)} className="w-full flex items-center gap-1 text-[9px] text-cyan mono-num truncate">
                     <span className="truncate flex-1 text-left">{t.wallet_address}</span><Copy className="w-2.5 h-2.5 shrink-0" />
