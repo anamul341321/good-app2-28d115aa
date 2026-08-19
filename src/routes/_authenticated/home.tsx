@@ -20,6 +20,8 @@ import { ComplianceDisclaimer } from "@/components/ComplianceDisclaimer";
 import { DashSection } from "@/components/DashSection";
 import { SlotClaimButton, type SlotClaim } from "@/components/SlotClaimButton";
 import { listSlotClaims } from "@/lib/slot-claims.functions";
+import { RecentHistoryCard } from "@/components/RecentHistoryCard";
+
 
 import { useLang } from "@/lib/i18n";
 
@@ -256,6 +258,10 @@ function HomePage() {
           </div>
         </Link>
       </div>
+
+      {/* সাম্প্রতিক হিসাব — কোন টাকা কোথা থেকে এলো/গেল */}
+      <RecentHistoryCard />
+
 
 
       {/* Verify progress will be moved inside the network section for better organization */}
