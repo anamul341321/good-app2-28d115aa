@@ -279,17 +279,25 @@ export async function buildEarningsBreakdown(admin: any, userId: string): Promis
       best.re !== rates.reverify_bonus ||
       best.ref !== rates.referrer_bonus);
 
+  // Referral guessing is only allowed for referees whose payout is NOT already
+  // shown elsewhere (audit-matched or the legacy block). Without this, a plain
+  // 300৳ re-verify bonus was being mislabelled as "রেফার বোনাস 2 জন × 150৳".
+  let refsLeftToExplain = Math.max(0, referrerPaidCount - refsExplainedByAudit - legacyRefCount);
+
   const describeBonus = (delta: number, opts: { allowFirst: boolean; allowRe: boolean }): string => {
     const parts: string[] = [];
     let left = Math.round(delta);
     // Referral first: a plain refer-bonus credit must never be mislabelled as a
     // first-verify bonus just because the two rates happen to be equal.
-    for (const rf of [usedRates.referrer, rates.referrer_bonus, 150, 100, 63, 60, 50]) {
-      if (rf > 0 && left % rf === 0 && left / rf >= 1 && left / rf <= 20) {
-        const n = left / rf;
-        left = 0;
-        parts.push(`রেফার বোনাস ${n} জন × ${rf}৳`);
-        break;
+    if (refsLeftToExplain > 0) {
+      for (const rf of [usedRates.referrer, rates.referrer_bonus, 150, 100, 63, 60, 50]) {
+        if (rf > 0 && left % rf === 0 && left / rf >= 1 && left / rf <= refsLeftToExplain) {
+          const n = left / rf;
+          left = 0;
+          refsLeftToExplain -= n;
+          parts.push(`রেফার বোনাস ${n} জন × ${rf}৳`);
+          break;
+        }
       }
     }
     if (opts.allowFirst && usedRates.firstVerify > 0 && left >= usedRates.firstVerify) {
@@ -303,6 +311,7 @@ export async function buildEarningsBreakdown(admin: any, userId: string): Promis
     if (left > 0) parts.push(`অন্যান্য ${left}৳`);
     return parts.length ? parts.join(" + ") : "বোনাস";
   };
+
 
   const bonusSteps: BreakdownStep[] = [];
 
