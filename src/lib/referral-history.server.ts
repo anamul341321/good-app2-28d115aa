@@ -117,12 +117,13 @@ export async function buildReferralHistory(admin: any, userId: string): Promise<
   }
 
   // 2) audit bonus credits, matched by time to referrer_bonus_paid_at
-  const auditEvents = (auditRes?.data ?? [])
+  const auditEvents: { at: number; delta: number }[] = (auditRes?.data ?? [])
     .map((r: any) => ({
       at: new Date(r.created_at).getTime(),
       delta: Number(r.bonus_after ?? 0) - Number(r.bonus_before ?? 0),
     }))
-    .filter((r: any) => r.delta > 0.009);
+    .filter((r: { delta: number }) => r.delta > 0.009);
+
 
   const knownRates = Array.from(
     new Set([rates.referrer_bonus, rates.base_referrer_bonus, 150, 100, 70, 63, 60, 50].filter((n) => n > 0)),
