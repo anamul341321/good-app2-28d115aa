@@ -1057,6 +1057,117 @@ function UserDetail() {
         </button>
       </div>
 
+      {/* 🔁 রি-ভেরিফাই হিসাব — not-whitelist হওয়ার পর কতবার re-verify করেছে */}
+      {(data as any).reverifyStats && (() => {
+        const rs = (data as any).reverifyStats;
+        return (
+          <div className="glass rounded-2xl p-4 space-y-2 border border-cyan/25">
+            <p className="text-[10px] uppercase tracking-widest text-cyan font-black">🔁 রি-ভেরিফাই হিসাব</p>
+            <div className="grid grid-cols-4 gap-2 text-center">
+              <div className="rounded-xl bg-surface-2 py-2">
+                <p className="mono-num font-black text-amber">{rs.firstVerifies}</p>
+                <p className="text-[8px] text-muted-foreground font-bold uppercase">১ম ভেরিফাই</p>
+              </div>
+              <div className="rounded-xl bg-surface-2 py-2">
+                <p className="mono-num font-black text-cyan">{rs.totalReverifies}</p>
+                <p className="text-[8px] text-muted-foreground font-bold uppercase">মোট re-verify</p>
+              </div>
+              <div className="rounded-xl bg-surface-2 py-2">
+                <p className="mono-num font-black text-emerald">{rs.cycleDone}</p>
+                <p className="text-[8px] text-muted-foreground font-bold uppercase">এই চক্রে হয়েছে</p>
+              </div>
+              <div className="rounded-xl bg-surface-2 py-2">
+                <p className="mono-num font-black text-rose">{rs.cyclePending}</p>
+                <p className="text-[8px] text-muted-foreground font-bold uppercase">এখন বাকি</p>
+              </div>
+            </div>
+            <p className="text-[9px] text-muted-foreground leading-relaxed">
+              “মোট re-verify” = প্রতিটি ঘরে যতবার re-verify হয়েছে তার যোগফল · “এই চক্রে হয়েছে” = not-whitelist হওয়ার পর
+              আবার re-verify করে whitelist ফিরে পেয়েছে · “এখন বাকি” = whitelist নেই, এখন আবার re-verify চাচ্ছে।
+            </p>
+            <div className="flex flex-wrap gap-1">
+              {rs.perSlot.map((s: any) => (
+                <span key={s.slot}
+                  className={`text-[9px] mono-num font-black px-1.5 py-0.5 rounded ${
+                    !s.whitelistOk ? "bg-rose/15 text-rose" : s.count > 0 ? "bg-emerald/15 text-emerald" : "bg-surface-2 text-muted-foreground"
+                  }`}
+                  title={`${s.label ?? ""} · শেষ re-verify: ${s.lastAt ? new Date(s.lastAt).toLocaleString("bn-BD") : "—"}`}>
+                  #{s.slot} · 🔁{s.count}
+                </span>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* 👥 রেফার বোনাস হিসাব — কার কাছ থেকে কত, কোন রেটে, কখন */}
+      {(data as any).referralHistory && (() => {
+        const rh = (data as any).referralHistory;
+        return (
+          <div className="glass rounded-2xl p-4 space-y-2 border border-violet/25">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-[10px] uppercase tracking-widest text-violet font-black">👥 রেফার বোনাস হিসাব</p>
+              <span className="text-[9px] mono-num font-black bg-violet/15 text-violet px-2 py-0.5 rounded-full">
+                এখনকার রেট {rh.currentRate}৳
+              </span>
+            </div>
+            <div className="grid grid-cols-4 gap-2 text-center">
+              <div className="rounded-xl bg-surface-2 py-2">
+                <p className="mono-num font-black">{rh.totals.referees}</p>
+                <p className="text-[8px] text-muted-foreground font-bold uppercase">রেফার</p>
+              </div>
+              <div className="rounded-xl bg-surface-2 py-2">
+                <p className="mono-num font-black text-emerald">{rh.totals.paidCount}</p>
+                <p className="text-[8px] text-muted-foreground font-bold uppercase">বোনাস পেয়েছে</p>
+              </div>
+              <div className="rounded-xl bg-surface-2 py-2">
+                <p className="mono-num font-black text-amber">{rh.totals.paidAmount.toFixed(0)}৳</p>
+                <p className="text-[8px] text-muted-foreground font-bold uppercase">মোট বোনাস</p>
+              </div>
+              <div className="rounded-xl bg-surface-2 py-2">
+                <p className="mono-num font-black text-cyan">{rh.totals.commissionAccrued.toFixed(2)}৳</p>
+                <p className="text-[8px] text-muted-foreground font-bold uppercase">১০% কমিশন</p>
+              </div>
+            </div>
+            {rh.rows.length === 0 ? (
+              <p className="text-[11px] text-muted-foreground">কোনো রেফার নেই</p>
+            ) : (
+              <div className="space-y-1.5">
+                {rh.rows.map((r: any) => (
+                  <div key={r.refereeId} className="bg-surface-2 rounded-xl px-2 py-1.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-[11px] font-black truncate">
+                        {r.name} <span className="mono-num text-muted-foreground">· UID {r.uid ?? "—"}</span>
+                      </p>
+                      {r.paid ? (
+                        <span className="text-[9px] mono-num font-black text-emerald shrink-0">+{r.amount.toFixed(0)}৳</span>
+                      ) : (
+                        <span className="text-[9px] font-black text-rose shrink-0">বাকি</span>
+                      )}
+                    </div>
+                    <p className="text-[9px] text-muted-foreground">
+                      {r.paid ? (
+                        <>
+                          {new Date(r.paidAt).toLocaleString("bn-BD")} · তখনকার রেট {r.rate.toFixed(0)}৳
+                          {r.source === "approx" ? " (আনুমানিক)" : r.source === "audit" ? " (অডিট লগ)" : " (লেজার)"}
+                        </>
+                      ) : (
+                        <>{r.pendingReason}</>
+                      )}
+                    </p>
+                    <p className="text-[9px] text-muted-foreground">
+                      ১ম ভেরিফাই {r.firstVerifies} · re-verify {r.reverifies} · সক্রিয় ঘর {r.activeSlots} ·
+                      মাসিক ১০% কমিশন {r.monthlyCommission.toFixed(2)}৳
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
+
       {/* Withdrawals */}
       <div className="glass rounded-2xl p-4">
         <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-2">Withdrawal history ({data.withdrawals.length})</p>
