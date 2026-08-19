@@ -80,6 +80,42 @@ export async function fullHisabText(uid: string): Promise<string | null> {
       : `   • মাইনিং এখনো চালু হয়নি (১০টি রি-ভেরিফাই শেষ হলেই চালু)`,
   ].join("\n");
 
+  // 🔁 not-whitelist হওয়ার পর কতবার আবার re-verify হয়েছে + রেফার বোনাসের নাম-ধরে হিসাব
+  const { buildReverifyStats, buildReferralHistory } = await import("@/lib/referral-history.server");
+  const { data: taskRows } = await supabaseAdmin
+    .from("tasks")
+    .select("slot,status,face_label,initial_verify_at,reverify_count,last_reverified_at,done_at,whitelist_ok")
+    .eq("user_id", (prof as any).id)
+    .order("slot");
+  const rs = buildReverifyStats(taskRows ?? []);
+  const reverifyLines = [
+    `   • ১ম ভেরিফাই: <b>${rs.firstVerifies}</b> টি ঘর`,
+    `   • মোট রি-ভেরিফাই হয়েছে: <b>${rs.totalReverifies}</b> বার (${rs.slotsEverReverified} টি ঘরে)`,
+    `   • এই চক্রে আবার রি-ভেরিফাই শেষ: <b>${rs.cycleDone}</b> টি`,
+    rs.cyclePending > 0
+      ? `   • এখন whitelist নেই, রি-ভেরিফাই দরকার: <b>${rs.cyclePending}</b> টি ঘর`
+      : `   • এখন কোনো ঘরে রি-ভেরিফাই বাকি নেই ✅`,
+  ].join("\n");
+
+  let referralBlock = "";
+  try {
+    const rh = await buildReferralHistory(supabaseAdmin, (prof as any).id);
+    const rows = (rh.rows ?? []).slice(0, 10);
+    const lines = rows
+      .map((r: any) =>
+        r.paid
+          ? `   • ${r.name} (UID ${r.uid ?? "—"}) — <b>${bdt(r.amount)}</b> · তখনকার রেট ${Number(r.rate).toFixed(0)}৳ · ${new Date(r.paidAt).toLocaleDateString("bn-BD")}`
+          : `   • ${r.name} (UID ${r.uid ?? "—"}) — এখনো বোনাস হয়নি (${r.pendingReason})`,
+      )
+      .join("\n");
+    referralBlock =
+      `\n\n👥 <b>রেফার বোনাস হিসাব — মোট ${bdt(rh.totals.paidAmount)} (${rh.totals.paidCount}/${rh.totals.referees} জন)</b>\n` +
+      (lines || `   • এখনো কোনো রেফার নেই`) +
+      `\n   ↳ এখনকার রেফার রেট: <b>${Number(rh.currentRate).toFixed(0)}৳</b> · রেফার ১০% কমিশন জমা: <b>${bdt(rh.totals.commissionAccrued)}</b>`;
+  } catch {
+    referralBlock = "";
+  }
+
   return (
     `🧾 <b>${(prof as any).display_name || "ইউজার"} — UID ${(prof as any).uid_seq} এর ধাপে ধাপে হিসাব</b>\n\n` +
     `🎁 <b>বোনাস মোট: ${bdt(b.bonus.total)}</b>\n` +
@@ -87,8 +123,12 @@ export async function fullHisabText(uid: string): Promise<string | null> {
     `\n\n⛏️ <b>মাইনিং মোট: ${bdt(mining.total)}</b>\n` +
     miningLines +
     `\n   ↳ নিজের স্লট থেকে <b>${bdt(mining.selfTotal)}</b> · রেফার কমিশন <b>${bdt(mining.referralTotal)}</b>\n\n` +
-    `💰 <b>সব মিলিয়ে: ${bdt(b.bonus.total + mining.total)}</b>\n\n` +
+    `🔁 <b>রি-ভেরিফাই হিসাব</b>\n` +
+    reverifyLines +
+    referralBlock +
+    `\n\n💰 <b>সব মিলিয়ে: ${bdt(b.bonus.total + mining.total)}</b>\n\n` +
     `📸 পুরো হিসাবের <b>ছবি (ছবি আকারে ডাউনলোড/শেয়ার)</b> নিতে চাইলে — অ্যাপের <b>Earnings</b> পেজে গিয়ে ` +
     `“ধাপে ধাপে হিসাব” এর নিচে <b>ডাউনলোড</b> বাটনে চাপ দিন, পুরো হিসাবের ছবি গ্যালারিতে সেভ হয়ে যাবে 💙`
   );
 }
+
