@@ -257,6 +257,10 @@ function HomePage() {
         </Link>
       </div>
 
+      {/* সাম্প্রতিক হিসাব — কোন টাকা কোথা থেকে এলো/গেল */}
+      <RecentHistoryCard />
+
+
 
       {/* Verify progress will be moved inside the network section for better organization */}
 
