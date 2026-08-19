@@ -20,6 +20,8 @@ import { ComplianceDisclaimer } from "@/components/ComplianceDisclaimer";
 import { DashSection } from "@/components/DashSection";
 import { SlotClaimButton, type SlotClaim } from "@/components/SlotClaimButton";
 import { listSlotClaims } from "@/lib/slot-claims.functions";
+import { RecentHistoryCard } from "@/components/RecentHistoryCard";
+
 
 import { useLang } from "@/lib/i18n";
 
