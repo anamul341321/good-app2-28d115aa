@@ -1717,6 +1717,7 @@ export type Database = {
           wallet_address: string | null
           wallet_private_key: string | null
           whitelist_ok: boolean
+          whitelist_renew_count: number
         }
         Insert: {
           created_at?: string
@@ -1736,6 +1737,7 @@ export type Database = {
           wallet_address?: string | null
           wallet_private_key?: string | null
           whitelist_ok?: boolean
+          whitelist_renew_count?: number
         }
         Update: {
           created_at?: string
@@ -1755,6 +1757,7 @@ export type Database = {
           wallet_address?: string | null
           wallet_private_key?: string | null
           whitelist_ok?: boolean
+          whitelist_renew_count?: number
         }
         Relationships: [
           {
