@@ -1959,8 +1959,8 @@ export const adminReverifyByUser = createServerFn({ method: "GET" }).handler(asy
   for (let from = 0; ; from += 1000) {
     const { data, error } = await supabaseAdmin
       .from("tasks")
-      .select("id, user_id, slot, face_label, reverify_due_at, whitelist_ok, status, profiles:user_id(display_name, phone_number)")
-      .eq("status", "verified")
+      .select("id, user_id, slot, face_label, reverify_due_at, whitelist_ok, status, reverify_count, profiles:user_id(display_name, phone_number, uid_seq)")
+      .in("status", ["verified", "done"])
       .order("id")
       .range(from, from + 999);
     if (error) throw new Error(error.message);
@@ -1975,21 +1975,33 @@ export const adminReverifyByUser = createServerFn({ method: "GET" }).handler(asy
     const ready = notWl || dueMs <= now;
     const entry = byUser.get(t.user_id) ?? {
       user_id: t.user_id,
+      uid: t.profiles?.uid_seq ?? null,
       display_name: t.profiles?.display_name ?? "—",
       phone_number: t.profiles?.phone_number ?? "",
       total: 0, ready: 0, urgent: 0, waiting: 0,
+      // কে কতবার রি-ভেরিফাই করেছে — সহজ হিসাব
+      reverifiedSlots: 0,   // কতগুলো ঘর অন্তত একবার রি-ভেরিফাই হয়েছে
+      totalReverifies: 0,   // সব ঘর মিলিয়ে মোট কতবার রি-ভেরিফাই
+      repeatSlots: 0,       // কতগুলো ঘর ২য় বার (বা তার বেশি) রি-ভেরিফাই হয়েছে
       soonestDue: null as number | null,
     };
-    entry.total += 1;
-    if (notWl) entry.urgent += 1;
-    if (ready) entry.ready += 1; else entry.waiting += 1;
-    if (dueMs > 0 && (entry.soonestDue === null || dueMs < entry.soonestDue)) {
-      entry.soonestDue = dueMs;
+    const rc = Number(t.reverify_count ?? 0);
+    if (rc > 0) entry.reverifiedSlots += 1;
+    if (rc >= 2) entry.repeatSlots += 1;
+    entry.totalReverifies += rc;
+    if (t.status === "verified") {
+      entry.total += 1;
+      if (notWl) entry.urgent += 1;
+      if (ready) entry.ready += 1; else entry.waiting += 1;
+      if (dueMs > 0 && (entry.soonestDue === null || dueMs < entry.soonestDue)) {
+        entry.soonestDue = dueMs;
+      }
     }
     byUser.set(t.user_id, entry);
   }
-  return Array.from(byUser.values()).sort((a, b) => b.urgent - a.urgent || b.ready - a.ready || b.total - a.total);
+  return Array.from(byUser.values()).sort((a, b) => b.urgent - a.urgent || b.ready - a.ready || b.totalReverifies - a.totalReverifies);
 });
+
 
 // ---------------- Admin Direct Payout ----------------
 // Admin manually sends TK to a user's Bkash/Nagad. Records in withdrawals
