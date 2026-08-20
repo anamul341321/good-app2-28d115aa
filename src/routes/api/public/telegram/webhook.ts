@@ -321,6 +321,36 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
         // ---- প্রাইভেট চ্যাটে UID পাঠালেই KYC লিংক হয়ে যাবে ----------------
         if (msg.chat?.type === "private" && msg.from?.id) {
+          // ---- মালিক (support_username) ইনবক্সে লিখলে পূর্ণ অ্যাডমিন ক্ষমতা --
+          // স্লট/ওয়ালেট রিসেট, সেটিংস পরিবর্তন, UID/হিসাব — সব এখানেই করা যাবে।
+          const { isOwnerUsername, runOwnerCommand } = await import("@/lib/telegram-owner.server");
+          if (isOwnerUsername(msg.from?.username, (settings as any).support_username)) {
+            const res = await runOwnerCommand(text);
+            if (res.handled && res.reply) {
+              await sendMessage(chatId, res.reply, msg.message_id);
+              await finalizeLog("question", res.flow, res.reply);
+              return Response.json({ ok: true, flow: res.flow });
+            }
+            // কমান্ড নয় → AI অ্যাডমিন-মোডে উত্তর দেবে (অন্য ইউজারের ডেটাও দেখতে পারবে)
+            const { loadRates, knowledgeText } = await import("@/lib/telegram-knowledge.server");
+            const { appRulebook } = await import("@/lib/telegram-app-rules.server");
+            const { agentAnswer } = await import("@/lib/telegram-agent.server");
+            const rates = await loadRates();
+            const answer = await agentAnswer({
+              name: msg.from?.first_name || "স্যার",
+              question: text,
+              knowledge: knowledgeText(rates),
+              rulebook: appRulebook(rates),
+              isAdmin: true,
+            });
+            const reply =
+              answer ??
+              `🙏 জি স্যার — এখন উত্তর তৈরি করা যাচ্ছে না। একটু পরে আবার বলুন, অথবা সরাসরি কমান্ড দিন (যেমন: <code>uid 4100 এর ৪ নম্বর স্লট রিসেট করো</code>) 💙`;
+            await sendMessage(chatId, reply, msg.message_id);
+            await finalizeLog("question", "owner-dm-answer", reply);
+            return Response.json({ ok: true, flow: "owner-dm-answer" });
+          }
+
           const bare = /^\s*(?:uid|আইডি)?\s*[:#-]?\s*(\d{2,9})\s*$/i.exec(text.trim());
           if (bare) {
             const { data: alreadyLinked } = await supabaseAdmin
