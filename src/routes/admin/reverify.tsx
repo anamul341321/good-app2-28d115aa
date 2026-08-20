@@ -66,6 +66,7 @@ function ReverifyQueue() {
           </p>
           <p className="text-[10px] text-muted-foreground px-1 leading-relaxed">
             🔴 Whitelist নেই — এখনই রি-ভেরিফাই দরকার · ⚡ সময় হয়ে গেছে — রি-ভেরিফাই করা যাবে · ⏳ সময় হয়নি
+            <br />🔁 = মোট কতবার রি-ভেরিফাই করেছে · ⭐ = কতগুলো ঘর ২য় বার রি-ভেরিফাই হয়েছে (১০৳ বোনাস পাওয়ার ঘর)
           </p>
           {byUser.map((u: any) => (
             <Link key={u.user_id} to="/admin/user/$userId" params={{ userId: u.user_id }}
@@ -74,16 +75,25 @@ function ReverifyQueue() {
                 {u.total}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-black truncate">{u.display_name || u.phone_number || "—"}</p>
+                <p className="text-xs font-black truncate">
+                  {u.display_name || u.phone_number || "—"}
+                  {u.uid != null && <span className="ml-1 text-[10px] font-bold text-muted-foreground">UID {u.uid}</span>}
+                </p>
                 <p className="text-[10px] text-muted-foreground truncate">
                   {u.urgent > 0 && <span className="text-rose font-black">🔴 {u.urgent} টি whitelist নেই · </span>}
                   {u.ready > 0 && <span className="text-amber font-black">⚡ {u.ready} টি সময় হয়েছে · </span>}
                   {u.waiting > 0 && <span>⏳ {u.waiting} টি অপেক্ষায়</span>}
                 </p>
+                <p className="text-[10px] truncate">
+                  <span className="text-violet font-black">🔁 মোট {u.totalReverifies} বার</span>
+                  <span className="text-muted-foreground"> · {u.reverifiedSlots} টি ঘর রি-ভেরিফাই হয়েছে</span>
+                  {u.repeatSlots > 0 && <span className="text-emerald font-black"> · ⭐ {u.repeatSlots} টি ঘর ২য় বার</span>}
+                </p>
               </div>
               <span className="text-muted-foreground text-xs">→</span>
             </Link>
           ))}
+
 
         </div>
       )}
