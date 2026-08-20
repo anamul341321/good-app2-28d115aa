@@ -617,6 +617,15 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               }
 
               if (uidSeq != null) {
+                // মালিক শুধু UID চাইলে পুরো হিসাব দেখাবে না — শুধু UID দেবে।
+                const wantsDetails =
+                  /(হিসাব|hisab|details?|ডিটেইল|তথ্য|balance|ব্যালেন্স|slot|স্লট|withdraw|উইথড্র|mining|মাইনিং|earn|আয়|পুরো|full|info|information)/i.test(order);
+                if (!wantsDetails) {
+                  const reply = `🆔 <b>${name || targetLabel}</b> এর UID: <code>${uidSeq}</code>`;
+                  await sendMessage(chatId, reply, replyTo);
+                  await finalizeLog("question", "owner-uid-only", reply, String(uidSeq));
+                  return Response.json({ ok: true, flow: "owner-uid-only" });
+                }
                 const { buildUserCard } = await import("@/lib/telegram-lookup.server");
                 const res = await buildUserCard(String(uidSeq));
                 const reply = res.found
@@ -625,8 +634,10 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
                   : `🙏 জি স্যার — <b>${name || targetLabel}</b> এর UID: <code>${uidSeq}</code>\n` +
                     `তবে এই UID দিয়ে অ্যাপে কোনো একাউন্ট পাওয়া যায়নি।`;
                 await sendMessage(chatId, reply, replyTo);
+                await finalizeLog("question", "owner-uid-lookup", reply, String(uidSeq));
                 return Response.json({ ok: true, flow: "owner-uid-lookup" });
               }
+
 
               await sendMessage(
                 chatId,
