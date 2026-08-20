@@ -817,9 +817,15 @@ function UserDetail() {
                   {t.whitelist_ok === false && <span className="px-1.5 py-0.5 rounded bg-rose/20 text-rose text-[9px] font-black">⚠ NOT WHITELIST</span>}
                   {Number(t.reverify_count ?? 0) > 0 && (
                     <span className="px-1.5 py-0.5 rounded bg-cyan/20 text-cyan text-[9px] font-black mono-num">
-                      🔁 {t.reverify_count} বার re-verify
+                      🔁 {t.reverify_count} বার GoodDollar re-verify (1st verify বাদে)
                     </span>
                   )}
+                  {Number(t.whitelist_renew_count ?? 0) > 0 && (
+                    <span className="px-1.5 py-0.5 rounded bg-violet/20 text-violet text-[9px] font-black mono-num">
+                      ♻ {t.whitelist_renew_count} বার auto-renew (user কিছু করেনি)
+                    </span>
+                  )}
+
                   {t.status === "empty" && <span className="text-[10px] text-muted-foreground">empty</span>}
                 </div>
                 {t.face_label && <p className="text-[10px] text-amber truncate">{t.face_label}</p>}
