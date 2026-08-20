@@ -104,6 +104,26 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return Response.json({ ok: false, error: "update-claim-failed" }, { status: 500 });
         }
 
+        /**
+         * অ্যাডমিন প্যানেলের লগে যেন কোনো মেসেজ চিরকাল "processing" হয়ে পড়ে
+         * না থাকে — যেকোনো পথ থেকে বেরোনোর আগে এটি ডেকে ফাইনাল অবস্থা লিখে দেয়।
+         */
+        const finalizeLog = async (verdict: string, action: string, reply: string | null, uid?: string | null) => {
+          await supabaseAdmin.from("tg_messages").update({
+            verdict,
+            action,
+            bot_reply: reply,
+            matched_uid: uid ?? null,
+          }).eq("update_id", update.update_id);
+        };
+
+        // পুরোনো আটকে থাকা "processing" লগ (webhook timeout/crash) পরিষ্কার করা।
+        void supabaseAdmin.from("tg_messages")
+          .update({ verdict: "done", action: "timed-out" })
+          .eq("verdict", "processing")
+          .lt("created_at", new Date(Date.now() - 3 * 60_000).toISOString());
+
+
         const addChatToAllowList = async () => {
           if (allowedChats.includes(chatId)) return;
           await supabaseAdmin.from("tg_bot_settings")
