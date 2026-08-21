@@ -2461,6 +2461,24 @@ export const adminSetFaceVerify = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+/** নতুন (first) ফেস ভেরিফাই আলাদা সুইচ — re-verify চালু থাকবে */
+export const adminSetFirstVerify = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => z.object({
+    enabled: z.boolean(),
+    message: z.string().max(1500).optional().nullable(),
+  }).parse(i))
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await gate();
+    const { error } = await supabaseAdmin.from("bonus_settings").upsert({
+      id: "default",
+      first_verify_enabled: data.enabled,
+      first_verify_off_message: data.message ?? null,
+      updated_at: new Date().toISOString(),
+    } as any);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 /** Welcome bonus offer master switch (first verify / re-verify / referral bonus) */
 export const adminSetBonusEnabled = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => z.object({ enabled: z.boolean() }).parse(i))

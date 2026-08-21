@@ -29,7 +29,8 @@ function TaskPage() {
     queryFn: () => getAppStatus(),
     staleTime: 30_000,
   });
-  const faceVerifyOff = appStatus?.faceVerifyEnabled === false;
+  const faceVerifyOff =
+    appStatus?.faceVerifyEnabled === false || appStatus?.firstVerifyEnabled === false;
 
   const LS_KEY = `task-progress-${slotNum}`;
   const [step, setStep] = useState<Step>("intro");
@@ -453,7 +454,13 @@ function TaskPage() {
       )}
 
       {task.status === "empty" && faceVerifyOff && (
-        <FaceVerifyPausedNotice message={appStatus?.faceVerifyMessage} />
+        <FaceVerifyPausedNotice
+          message={
+            appStatus?.faceVerifyEnabled === false
+              ? appStatus?.faceVerifyMessage
+              : appStatus?.firstVerifyMessage
+          }
+        />
       )}
 
       {task.status === "empty" && !faceVerifyOff && step === "intro" && (
