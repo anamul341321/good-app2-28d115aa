@@ -9,7 +9,8 @@
  * অ্যাপের সেটিংস পরিবর্তন (withdraw/recharge on-off, বোনাস রেট, নোটিশ)।
  */
 
-const bnNum = (s: string) => String(s ?? "").replace(/[০-৯]/g, (d) => String("০১২৩৪৫৬৭৮৯".indexOf(d)));
+const bnNum = (s: string) =>
+  String(s ?? "").replace(/[০-৯]/g, (d) => String("০১২৩৪৫৬৭৮৯".indexOf(d)));
 
 /** এই টেলিগ্রাম ইউজারনেমটি অ্যাপের মালিকের কি না। */
 export function isOwnerIdentity(
@@ -18,13 +19,18 @@ export function isOwnerIdentity(
   supportUsername?: string | null,
   adminChatId?: string | number | null,
 ): boolean {
-  const owner = String(supportUsername || "@anamulmunni").replace(/^@/, "").toLowerCase();
+  const owner = String(supportUsername || "@anamulmunni")
+    .replace(/^@/, "")
+    .toLowerCase();
   const usernameMatches = !!username && username.toLowerCase() === owner;
   const savedId = String(adminChatId ?? "").trim();
   return usernameMatches || (!!savedId && savedId === String(telegramUserId ?? ""));
 }
 
-export function isOwnerUsername(username: string | null | undefined, supportUsername?: string | null): boolean {
+export function isOwnerUsername(
+  username: string | null | undefined,
+  supportUsername?: string | null,
+): boolean {
   return isOwnerIdentity(username, null, supportUsername, null);
 }
 
@@ -34,8 +40,7 @@ const RESET_INTENT =
   /(reset|রিসেট|muche|মুছে|মুছ|delete|ডিলিট|khali|খালি|clear|ক্লিয়ার|বাদ\s*দা|সরিয়ে)/i;
 const WALLET_WORD =
   /(wallet|ওয়ালেট|payment|পেমেন্ট|bkash|বিকাশ|nagad|নগদ|usdt|পেমেন্ট\s*নম্বর|নম্বর|নাম্বার|number)/i;
-const UID_ASK =
-  /(uid|ইউআইডি|আইডি|আই\s*ডি)/i;
+const UID_ASK = /(uid|ইউআইডি|আইডি|আই\s*ডি)/i;
 const DETAIL_ASK =
   /(হিসাব|hisab|details?|ডিটেইল|তথ্য|balance|ব্যালেন্স|slot|স্লট|withdraw|উইথড্র|mining|মাইনিং|earn|আয়|full|পুরো)/i;
 
@@ -74,9 +79,13 @@ export async function runOwnerCommand(rawText: string): Promise<OwnerResult> {
       };
     }
     const found: number[] = [];
-    for (const m of cmd.matchAll(new RegExp(`(\\d{1,3})\\s*${NUM_WORD}?\\s*(?:er|এর)?\\s*${SLOT_WORD}`, "gi")))
+    for (const m of cmd.matchAll(
+      new RegExp(`(\\d{1,3})\\s*${NUM_WORD}?\\s*(?:er|এর)?\\s*${SLOT_WORD}`, "gi"),
+    ))
       found.push(Number(m[1]));
-    for (const m of cmd.matchAll(new RegExp(`${SLOT_WORD}\\s*${NUM_WORD}?\\s*[:#-]?\\s*(\\d{1,3})`, "gi")))
+    for (const m of cmd.matchAll(
+      new RegExp(`${SLOT_WORD}\\s*${NUM_WORD}?\\s*[:#-]?\\s*(\\d{1,3})`, "gi"),
+    ))
       found.push(Number(m[1]));
     const uniq = Array.from(new Set(found.filter((n) => n >= 1 && n <= 500)));
     const wantsAll = /(সব|সবগুলো|সবগুলা|all|full)/i.test(cmd);
@@ -93,7 +102,9 @@ export async function runOwnerCommand(rawText: string): Promise<OwnerResult> {
       ? `❌ UID <code>${uid}</code> দিয়ে কোনো একাউন্ট পাওয়া যায়নি স্যার।`
       : `✅ <b>${res.name}</b> (UID <code>${res.uid ?? uid}</code>) —\n` +
         (res.done.length ? `🔄 রিসেট হয়েছে: <b>স্লট ${res.done.join(", ")}</b>\n` : "") +
-        (res.failed.length ? res.failed.map((f) => `⚠️ স্লট ${f.slot}: ${f.error}`).join("\n") + "\n" : "") +
+        (res.failed.length
+          ? res.failed.map((f) => `⚠️ স্লট ${f.slot}: ${f.error}`).join("\n") + "\n"
+          : "") +
         `এখন নতুন ফেস দিয়ে আবার ভেরিফাই করা যাবে 💙`;
     return { handled: true, reply, flow: "owner-slot-reset" };
   }
@@ -115,7 +126,8 @@ export async function runOwnerCommand(rawText: string): Promise<OwnerResult> {
         : /usdt/i.test(cmd)
           ? "usdt"
           : null;
-    const { resetPaymentNumbersForUid, walletResetReply } = await import("./telegram-wallet.server");
+    const { resetPaymentNumbersForUid, walletResetReply } =
+      await import("./telegram-wallet.server");
     const res = await resetPaymentNumbersForUid(uid, provider);
     return { handled: true, reply: walletResetReply(res), flow: "owner-wallet-reset" };
   }
@@ -136,7 +148,8 @@ export async function runOwnerCommand(rawText: string): Promise<OwnerResult> {
   }
 
   // ---- ৪) অ্যাপের সেটিংস পরিবর্তন --------------------------------------
-  const { interpretAdminOrder, runAdminOps, opsAnnouncement } = await import("./telegram-admin-actions.server");
+  const { interpretAdminOrder, runAdminOps, opsAnnouncement } =
+    await import("./telegram-admin-actions.server");
   const ops = await interpretAdminOrder(cmd);
   if (ops.length) {
     const { done, failed } = await runAdminOps(ops);

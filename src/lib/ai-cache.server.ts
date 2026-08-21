@@ -27,7 +27,12 @@ async function hash(text: string): Promise<string> {
 export async function cachedAnswer(question: string): Promise<string | null> {
   const norm = normalize(question);
   if (norm.length < 8) return null;
-  if (/(bonus|বোনাস|offer|অফার|verify|ভেরিফাই|reverify|রি ভেরিফাই|রিভেরিফাই|refer|রেফার|commission|কমিশন|rate|রেট)/i.test(norm)) return null;
+  if (
+    /(bonus|বোনাস|offer|অফার|verify|ভেরিফাই|reverify|রি ভেরিফাই|রিভেরিফাই|refer|রেফার|commission|কমিশন|rate|রেট)/i.test(
+      norm,
+    )
+  )
+    return null;
   try {
     const qhash = await hash(norm);
     const { data } = await supabaseAdmin
@@ -49,7 +54,12 @@ export async function cachedAnswer(question: string): Promise<string | null> {
 export async function rememberAnswer(question: string, answer: string): Promise<void> {
   const norm = normalize(question);
   if (norm.length < 8 || !answer || answer.length < 10) return;
-  if (/(bonus|বোনাস|offer|অফার|verify|ভেরিফাই|reverify|রি ভেরিফাই|রিভেরিফাই|refer|রেফার|commission|কমিশন|rate|রেট)/i.test(norm)) return;
+  if (
+    /(bonus|বোনাস|offer|অফার|verify|ভেরিফাই|reverify|রি ভেরিফাই|রিভেরিফাই|refer|রেফার|commission|কমিশন|rate|রেট)/i.test(
+      norm,
+    )
+  )
+    return;
   try {
     const qhash = await hash(norm);
     await supabaseAdmin.from("ai_answer_cache").upsert(

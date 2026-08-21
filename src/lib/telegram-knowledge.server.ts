@@ -31,7 +31,10 @@ export type AppRates = {
 export async function loadRates(): Promise<AppRates> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data } = await supabaseAdmin
-    .from("bonus_settings").select("*").eq("id", "default").maybeSingle();
+    .from("bonus_settings")
+    .select("*")
+    .eq("id", "default")
+    .maybeSingle();
   const b: any = data ?? {};
   const now = Date.now();
   const promo =
@@ -67,7 +70,6 @@ export async function loadRates(): Promise<AppRates> {
     bonusEnabled,
   };
 }
-
 
 const tk = (n: number) => `${Math.round(n)}৳`;
 
@@ -132,7 +134,9 @@ export function faceVerifyPausedReply(name: string, r: AppRates): string {
   return (
     `${name}, একটা গুরুত্বপূর্ণ কথা আগে জানিয়ে রাখি 🙏\n\n` +
     `🔧 <b>এই মুহূর্তে স্লট ফেস ভেরিফিকেশন সাময়িকভাবে বন্ধ</b> — <b>First verify</b> ও <b>Re-verify</b> দুটোই আপাতত করা যাচ্ছে না, তাই নতুন বোনাস অফারও এখন বন্ধ।\n` +
-    (r.faceVerifyOffMsg ? `${r.faceVerifyOffMsg}\n` : `অ্যাপের সার্ভারে কাজ চলছে, ঠিক হলেই আবার স্বাভাবিকভাবে চালু হয়ে যাবে ইনশাআল্লাহ।\n`) +
+    (r.faceVerifyOffMsg
+      ? `${r.faceVerifyOffMsg}\n`
+      : `অ্যাপের সার্ভারে কাজ চলছে, ঠিক হলেই আবার স্বাভাবিকভাবে চালু হয়ে যাবে ইনশাআল্লাহ।\n`) +
     `\n✅ <b>চিন্তার কিছু নেই:</b> আগের ভেরিফাই করা স্লট, <b>মাইনিং</b>, ব্যালেন্স, বোনাস ও রেফার কমিশন আগের মতোই ঠিক থাকবে — কিছুই কমবে না।\n` +
     `📝 রেজিস্ট্রেশন ও লগইন আগের মতোই চালু আছে।\n\n` +
     `চালু হলেই গ্রুপে জানিয়ে দেওয়া হবে 💙`
@@ -207,7 +211,6 @@ export function verifyTipsReply(name: string, r?: AppRates): string {
     `এরপরও না হলে জানাবেন — আমরা পাশে আছি 💙`
   );
 }
-
 
 /** Answer for "এখানে face verification করতে কী কী লাগে?" */
 export function verifyRequirementsReply(name: string): string {
@@ -292,13 +295,9 @@ export function howToReply(name: string, topic: HowToTopic): string {
         `<b>৩️⃣</b> ১০টি রি-ভেরিফাই শেষ হলেই মাইনিং চালু — ১০ স্লটে মাসে <b>৫০০৳</b> (১ স্লট = ৫০৳)।`
       );
     case "recharge":
-      return (
-        `${name}, মোবাইল রিচার্জ নিতে চাইলে <b>Withdraw</b> পেজে গিয়ে <b>মোবাইল রিচার্জ</b> অপশন সিলেক্ট করুন, নাম্বার ও অপারেটর দিন। সর্বনিম্ন <b>২০৳</b> রিচার্জ নেওয়া যায় ⚡`
-      );
+      return `${name}, মোবাইল রিচার্জ নিতে চাইলে <b>Withdraw</b> পেজে গিয়ে <b>মোবাইল রিচার্জ</b> অপশন সিলেক্ট করুন, নাম্বার ও অপারেটর দিন। সর্বনিম্ন <b>২০৳</b> রিচার্জ নেওয়া যায় ⚡`;
     case "usdt":
-      return (
-        `${name}, দেশের বাইরে থাকলে <b>USDT</b> তে উইথড্র নিতে পারবেন — <b>Withdraw</b> পেজে USDT সিলেক্ট করে আপনার ওয়ালেট এড্রেস দিন 💵`
-      );
+      return `${name}, দেশের বাইরে থাকলে <b>USDT</b> তে উইথড্র নিতে পারবেন — <b>Withdraw</b> পেজে USDT সিলেক্ট করে আপনার ওয়ালেট এড্রেস দিন 💵`;
   }
 }
 
@@ -306,20 +305,27 @@ export function howToReply(name: string, topic: HowToTopic): string {
 export function detectHowTo(text: string): HowToTopic | null {
   const s = ` ${text.toLowerCase()} `;
   const howish =
-    /(kivabe|kibhabe|kemne|kemon kore|ki vabe|কিভাবে|কীভাবে|কেমনে|কি ভাবে|নিয়ম|niyom|how|koray|করব|korbo|করবো|korte|করতে|kore|পাব|pabo)/i.test(s);
+    /(kivabe|kibhabe|kemne|kemon kore|ki vabe|কিভাবে|কীভাবে|কেমনে|কি ভাবে|নিয়ম|niyom|how|koray|করব|korbo|করবো|korte|করতে|kore|পাব|pabo)/i.test(
+      s,
+    );
   if (!howish) return null;
-  if (/(password|পাসওয়ার্ড|পাসওয়ার্ড|pass ?word|পাস ওয়ার্ড|reset|রিসেট|change|পরিবর্তন)/i.test(s)) return "password";
+  if (
+    /(password|পাসওয়ার্ড|পাসওয়ার্ড|pass ?word|পাস ওয়ার্ড|reset|রিসেট|change|পরিবর্তন)/i.test(s)
+  )
+    return "password";
   if (/(recharge|রিচার্জ)/i.test(s)) return "recharge";
   if (/(usdt|ইউএসডিটি|crypto|binance)/i.test(s)) return "usdt";
-  if (/(withdraw|উইথড্র|টাকা তুল|taka tul|tk tul|উঠাব|payment nibo|পেমেন্ট নিব)/i.test(s)) return "withdraw";
+  if (/(withdraw|উইথড্র|টাকা তুল|taka tul|tk tul|উঠাব|payment nibo|পেমেন্ট নিব)/i.test(s))
+    return "withdraw";
   if (/(refer|reffer|রেফার|রেফারেল|referral)/i.test(s)) return "referral";
   if (/(mining|মাইনিং|মাইনিং চালু|mining on)/i.test(s)) return "mining";
   return null;
 }
 
-
 const bn = (n: number) =>
-  Math.round(n).toLocaleString("en-US").replace(/\d/g, (d) => "০১২৩৪৫৬৭৮৯"[Number(d)]);
+  Math.round(n)
+    .toLocaleString("en-US")
+    .replace(/\d/g, (d) => "০১২৩৪৫৬৭৮৯"[Number(d)]);
 
 /** পূর্ণ ১০ স্লটে মাসিক মাইনিং ≈ ৫০০৳ → প্রতি স্লটে ৫০৳/মাস। */
 export const MONTHLY_PER_SLOT = 50;
@@ -370,7 +376,6 @@ export function slotEarningReply(
   );
 }
 
-
 /**
  * "আমি যাকে রেফার করবো সে ১০টি রি-ভেরিফাই করলে আমি কত পাবো?" —
  * রেফারারের আয়: এককালীন বোনাস + প্রতি মাসে ১০% মাইনিং কমিশন।
@@ -378,11 +383,12 @@ export function slotEarningReply(
 export function referralEarningReply(name: string, r: AppRates): string {
   const ref = r.promoRef ?? r.referrer;
   const monthlyFull = 10 * MONTHLY_PER_SLOT; // ১০ স্লট = ৫০০৳/মাস
-  const commission = Math.round(monthlyFull * 0.10); // ১০% = ৫০৳/মাস
+  const commission = Math.round(monthlyFull * 0.1); // ১০% = ৫০৳/মাস
   const selfRe = r.promoRe ?? r.reVerify;
-  const promo = r.faceVerifyOn && (r as any).promo && (r as any).promoTitle
-    ? `🎊 <b>এখন অফার চলছে: ${(r as any).promoTitle}</b> — অফার শেষ হওয়ার আগেই ১০টি স্লট রি-ভেরিফাই সম্পন্ন করে ফেলুন ভাইয়া 💙\n\n`
-    : "";
+  const promo =
+    r.faceVerifyOn && (r as any).promo && (r as any).promoTitle
+      ? `🎊 <b>এখন অফার চলছে: ${(r as any).promoTitle}</b> — অফার শেষ হওয়ার আগেই ১০টি স্লট রি-ভেরিফাই সম্পন্ন করে ফেলুন ভাইয়া 💙\n\n`
+      : "";
   return (
     `${name}, রেফার করলে আপনি <b>দুইভাবে</b> আয় করবেন 👇\n\n` +
     `🎁 <b>১) এককালীন রেফার বোনাস ${tk(ref)}</b> — আপনার রেফারি ১ম ১০টি স্লট ভেরিফাই শেষ করলেই সাথে সাথে আপনার ব্যালেন্সে যোগ হবে।\n\n` +
@@ -394,4 +400,3 @@ export function referralEarningReply(name: string, r: AppRates): string {
       : `🔧 তবে এখন <b>স্লট ভেরিফিকেশন সাময়িকভাবে বন্ধ</b> (First verify ও Re-verify দুটোই), তাই এখনই নতুন করে ভেরিফাই করা যাবে না। চালু হলেই এই নিয়মে সব আবার স্বাভাবিকভাবে কাজ করবে ইনশাআল্লাহ 💙`)
   );
 }
-

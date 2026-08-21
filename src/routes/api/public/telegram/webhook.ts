@@ -11,16 +11,22 @@ function alreadyWelcomed(key: string) {
   return false;
 }
 
-
 export const Route = createFileRoute("/api/public/telegram/webhook")({
   server: {
     handlers: {
       POST: async ({ request }) => {
         const {
-          getBotToken, webhookSecretFor, sendMessage, deleteMessage,
-          restrictUser, getPhotoBase64, decide, faqImageBase64,
-          isChatAdmin, getMe, adminCompose,
-
+          getBotToken,
+          webhookSecretFor,
+          sendMessage,
+          deleteMessage,
+          restrictUser,
+          getPhotoBase64,
+          decide,
+          faqImageBase64,
+          isChatAdmin,
+          getMe,
+          adminCompose,
         } = await import("@/lib/telegram-bot.server");
 
         let expected: string;
@@ -37,9 +43,9 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         // ⚡ Fast-pay: অ্যাডমিন টেলিগ্রাম থেকেই withdraw paid/বাতিল করতে পারে।
         if (update?.callback_query) {
           const { handleFastPayCallback } = await import("@/lib/withdraw-fastpay.server");
-          if (await handleFastPayCallback(update)) return Response.json({ ok: true, fastpay: true });
+          if (await handleFastPayCallback(update))
+            return Response.json({ ok: true, fastpay: true });
         }
-
 
         // নতুন মেম্বার join হলে Telegram কখনো service message পাঠায়, কখনো শুধু
         // chat_member update পাঠায় (invite link / approval দিয়ে join করলে)।
@@ -51,17 +57,22 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           !cm.new_chat_member?.user?.is_bot
             ? cm.new_chat_member.user
             : null;
-        const msg = update?.message ?? update?.edited_message ?? (cmJoined ? { chat: cm.chat, from: cm.from, new_chat_members: [cmJoined] } : null);
+        const msg =
+          update?.message ??
+          update?.edited_message ??
+          (cmJoined ? { chat: cm.chat, from: cm.from, new_chat_members: [cmJoined] } : null);
         if (!msg?.chat?.id || typeof update?.update_id !== "number") {
           return Response.json({ ok: true, ignored: true });
         }
         if (!cmJoined && msg.from?.is_bot) return Response.json({ ok: true, ignored: "bot" });
 
-
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
         const { data: settings } = await supabaseAdmin
-          .from("tg_bot_settings").select("*").eq("id", "default").maybeSingle();
+          .from("tg_bot_settings")
+          .select("*")
+          .eq("id", "default")
+          .maybeSingle();
         if (!settings) return Response.json({ ok: true, disabled: true });
         // "KYC চালু" টগলটি অন থাকলে বটের বাকি সব বন্ধ থাকলেও প্রাইভেট চ্যাটের KYC
         // (/start uid_xxx বা শুধু UID লেখা) সবসময় কাজ করবে। KYC-তে কোনো AI/ক্রেডিট
@@ -75,7 +86,9 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         const chatId = String(msg.chat.id);
         // group_chat_id এ কমা দিয়ে একাধিক গ্রুপ আইডি রাখা যায়; ফাঁকা থাকলে সব গ্রুপে কাজ করবে।
         const allowedChats = String(settings.group_chat_id ?? "")
-          .split(/[,\s]+/).map((s) => s.trim()).filter(Boolean);
+          .split(/[,\s]+/)
+          .map((s) => s.trim())
+          .filter(Boolean);
         // প্রাইভেট চ্যাট (KYC/সাপোর্ট DM) সবসময় অনুমোদিত — গ্রুপ হোয়াইটলিস্ট শুধু গ্রুপের জন্য
         const isPrivateChat = msg.chat?.type === "private";
         const { isOwnerIdentity } = await import("@/lib/telegram-owner.server");
@@ -85,7 +98,8 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           (settings as any).support_username,
           (settings as any).admin_chat_id,
         );
-        const chatAllowed = isPrivateChat || allowedChats.length === 0 || allowedChats.includes(chatId);
+        const chatAllowed =
+          isPrivateChat || allowedChats.length === 0 || allowedChats.includes(chatId);
 
         // Claim the Telegram update before voice transcription / screenshot OCR.
         // Telegram may retry slow webhook deliveries; the update_id primary key
@@ -97,7 +111,10 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           message_id: msg.message_id ?? null,
           tg_user_id: msg.from?.id ?? null,
           username: msg.from?.username ?? null,
-          full_name: [msg.from?.first_name, msg.from?.last_name].filter(Boolean).join(" ") || msg.from?.username || "User",
+          full_name:
+            [msg.from?.first_name, msg.from?.last_name].filter(Boolean).join(" ") ||
+            msg.from?.username ||
+            "User",
           text: initialText.slice(0, 2000),
           has_photo: !!msg.photo?.length,
           verdict: "processing",
@@ -115,36 +132,47 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
          * অ্যাডমিন প্যানেলের লগে যেন কোনো মেসেজ চিরকাল "processing" হয়ে পড়ে
          * না থাকে — যেকোনো পথ থেকে বেরোনোর আগে এটি ডেকে ফাইনাল অবস্থা লিখে দেয়।
          */
-        const finalizeLog = async (verdict: string, action: string, reply: string | null, uid?: string | null) => {
-          await supabaseAdmin.from("tg_messages").update({
-            verdict,
-            action,
-            bot_reply: reply,
-            matched_uid: uid ?? null,
-          }).eq("update_id", update.update_id);
+        const finalizeLog = async (
+          verdict: string,
+          action: string,
+          reply: string | null,
+          uid?: string | null,
+        ) => {
+          await supabaseAdmin
+            .from("tg_messages")
+            .update({
+              verdict,
+              action,
+              bot_reply: reply,
+              matched_uid: uid ?? null,
+            })
+            .eq("update_id", update.update_id);
         };
 
         // পুরোনো আটকে থাকা "processing" লগ (webhook timeout/crash) পরিষ্কার করা।
-        void supabaseAdmin.from("tg_messages")
+        void supabaseAdmin
+          .from("tg_messages")
           .update({ verdict: "done", action: "timed-out" })
           .eq("verdict", "processing")
           .lt("created_at", new Date(Date.now() - 3 * 60_000).toISOString());
 
-
         const addChatToAllowList = async () => {
           if (allowedChats.includes(chatId)) return;
-          await supabaseAdmin.from("tg_bot_settings")
+          await supabaseAdmin
+            .from("tg_bot_settings")
             .update({ group_chat_id: [...allowedChats, chatId].join(",") })
             .eq("id", "default");
         };
-
 
         // ---- new members joined → warm welcome -------------------------------
         const joined = (msg.new_chat_members ?? []) as any[];
         if (joined.length) {
           // বটকে নতুন গ্রুপে অ্যাড করা হলে সেই গ্রুপটি নিজে থেকেই অনুমোদিত তালিকায় যোগ হবে।
           const me = await getMe().catch(() => null);
-          if (me && joined.some((m: any) => m?.is_bot && (m.id === me.id || m.username === me.username))) {
+          if (
+            me &&
+            joined.some((m: any) => m?.is_bot && (m.id === me.id || m.username === me.username))
+          ) {
             await addChatToAllowList();
             await sendMessage(
               chatId,
@@ -160,16 +188,21 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             for (const m of joined) {
               if (m?.is_bot) continue;
               if (alreadyWelcomed(`${chatId}:${m.id}`)) continue;
-              const nm = [m.first_name, m.last_name].filter(Boolean).join(" ") || m.username || "বন্ধু";
+              const nm =
+                [m.first_name, m.last_name].filter(Boolean).join(" ") || m.username || "বন্ধু";
               await sendMessage(
                 chatId,
-                welcomeReply(nm, (settings as any).welcome_message ?? null, (settings as any).default_video_url ?? null, {
-                  websiteUrl: (settings as any).website_url ?? null,
-                  downloadUrl: (settings as any).download_url ?? null,
-                }),
+                welcomeReply(
+                  nm,
+                  (settings as any).welcome_message ?? null,
+                  (settings as any).default_video_url ?? null,
+                  {
+                    websiteUrl: (settings as any).website_url ?? null,
+                    downloadUrl: (settings as any).download_url ?? null,
+                  },
+                ),
               );
             }
-
           }
           return Response.json({ ok: true, flow: "welcome" });
         }
@@ -185,13 +218,16 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           let existing: { uid_seq: number | null; display_name: string | null } | null = null;
           if (msg.from?.id) {
             const { data } = await supabaseAdmin
-              .from("profiles").select("uid_seq, display_name")
-              .eq("telegram_user_id", msg.from.id).maybeSingle();
+              .from("profiles")
+              .select("uid_seq, display_name")
+              .eq("telegram_user_id", msg.from.id)
+              .maybeSingle();
             existing = (data as any) ?? null;
           }
 
           if (existing) {
-            const sameUid = uidMatch && String(existing.uid_seq ?? "") === String(Number(uidMatch[1]));
+            const sameUid =
+              uidMatch && String(existing.uid_seq ?? "") === String(Number(uidMatch[1]));
             await sendMessage(
               chatId,
               `🤖 <b>স্বাগতম ${who}!</b>\n\n` +
@@ -211,17 +247,21 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           let uidTakenBy: string | null = null;
           if (uidMatch && msg.from?.id) {
             const { data: prof } = await supabaseAdmin
-              .from("profiles").select("id, uid_seq, telegram_user_id")
-              .eq("uid_seq", Number(uidMatch[1])).maybeSingle();
+              .from("profiles")
+              .select("id, uid_seq, telegram_user_id")
+              .eq("uid_seq", Number(uidMatch[1]))
+              .maybeSingle();
             if (prof && (prof as any).telegram_user_id) {
               uidTakenBy = String((prof as any).uid_seq ?? "");
             } else if (prof) {
-              await supabaseAdmin.from("profiles")
+              await supabaseAdmin
+                .from("profiles")
                 .update({
                   telegram_user_id: msg.from.id,
                   kyc_verified: true,
                   kyc_verified_at: new Date().toISOString(),
-                }).eq("id", prof.id);
+                })
+                .eq("id", prof.id);
               linkedUid = String(prof.uid_seq ?? "");
             }
           }
@@ -238,15 +278,15 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return Response.json({ ok: true, flow: "start" });
         }
 
-
         if (!chatAllowed) return Response.json({ ok: true, ignored: "other-chat" });
         if (msg.left_chat_member) return Response.json({ ok: true, ignored: "left" });
 
-
         let text: string = msg.text ?? msg.caption ?? "";
         const photos = msg.photo as { file_id: string }[] | undefined;
-        const senderName = [msg.from?.first_name, msg.from?.last_name].filter(Boolean).join(" ")
-          || msg.from?.username || "User";
+        const senderName =
+          [msg.from?.first_name, msg.from?.last_name].filter(Boolean).join(" ") ||
+          msg.from?.username ||
+          "User";
 
         // ---- voice note / audio clip → transcribe BEFORE admin/mention logic ----
         // Admin voice replies were previously ignored because the admin-silence
@@ -259,18 +299,16 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         // KYC (প্রাইভেট চ্যাট) কখনোই AI/ক্রেডিটের উপর নির্ভর করবে না — DM-এ ভয়েস এলে
         // ট্রান্সক্রিপশন না করে সরাসরি UID লিখে পাঠাতে বলা হবে।
         if (audioMsg?.file_id && isPrivateChat && !captionText && !senderIsOwnerIdentity) {
-          const kycVoiceReply =
-            `🔐 এখানে শুধু <b>KYC</b> হয়।\nআপনার <b>UID নম্বরটি লিখে</b> পাঠান — সাথে সাথে KYC হয়ে যাবে 💙`;
-          await sendMessage(
-            chatId,
-            kycVoiceReply,
-            msg.message_id,
-          );
-          await supabaseAdmin.from("tg_messages").update({
-            verdict: "question",
-            action: "dm-voice-kyc-hint",
-            bot_reply: kycVoiceReply,
-          }).eq("update_id", update.update_id);
+          const kycVoiceReply = `🔐 এখানে শুধু <b>KYC</b> হয়।\nআপনার <b>UID নম্বরটি লিখে</b> পাঠান — সাথে সাথে KYC হয়ে যাবে 💙`;
+          await sendMessage(chatId, kycVoiceReply, msg.message_id);
+          await supabaseAdmin
+            .from("tg_messages")
+            .update({
+              verdict: "question",
+              action: "dm-voice-kyc-hint",
+              bot_reply: kycVoiceReply,
+            })
+            .eq("update_id", update.update_id);
           return Response.json({ ok: true, flow: "dm-voice-kyc-hint" });
         }
         if (audioMsg?.file_id && (!isPrivateChat || senderIsOwnerIdentity)) {
@@ -280,7 +318,9 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             const ext = (file.path.split(".").pop() || "ogg").toLowerCase();
             const fmt = ["wav", "mp3", "webm", "m4a", "ogg", "aac", "flac"].includes(ext)
               ? ext
-              : msg.video_note ? "mp4" : "ogg";
+              : msg.video_note
+                ? "mp4"
+                : "ogg";
             // ভয়েস যদি কোনো মেসেজের রিপ্লাই হয়, ওই লেখাটা হিন্ট হিসেবে দিলে
             // অস্পষ্ট/দ্রুত বলা কথাও অনেক ভালো বোঝে।
             const sttHint = String(
@@ -304,24 +344,26 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             ]);
 
             if (voiceHeard) voiceHeard = voiceHeard.trim();
-            if (voiceHeard) text = captionText ? `${captionText}\n${voiceHeard}`.trim() : voiceHeard;
+            if (voiceHeard)
+              text = captionText ? `${captionText}\n${voiceHeard}`.trim() : voiceHeard;
           }
           // Couldn't understand the voice → politely ask again instead of
           // guessing and sending an unrelated answer.
-          if ((!voiceHeard || voiceHeard.replace(/[^\p{L}\p{N}]/gu, "").length < 3) && !captionText) {
+          if (
+            (!voiceHeard || voiceHeard.replace(/[^\p{L}\p{N}]/gu, "").length < 3) &&
+            !captionText
+          ) {
             const who = msg.from?.first_name ? `${msg.from.first_name}, ` : "";
-            const fallbackReply =
-              `${who}দুঃখিত 🙏 আপনার ভয়েসটা ঠিকমতো বুঝতে পারিনি।\nএকটু আস্তে করে আবার বলবেন, অথবা লিখে পাঠান — আমি সাথে সাথে সাহায্য করছি 💙`;
-            await sendMessage(
-              chatId,
-              fallbackReply,
-              msg.message_id,
-            );
-            await supabaseAdmin.from("tg_messages").update({
-              verdict: "question",
-              action: "voice-unclear",
-              bot_reply: fallbackReply,
-            }).eq("update_id", update.update_id);
+            const fallbackReply = `${who}দুঃখিত 🙏 আপনার ভয়েসটা ঠিকমতো বুঝতে পারিনি।\nএকটু আস্তে করে আবার বলবেন, অথবা লিখে পাঠান — আমি সাথে সাথে সাহায্য করছি 💙`;
+            await sendMessage(chatId, fallbackReply, msg.message_id);
+            await supabaseAdmin
+              .from("tg_messages")
+              .update({
+                verdict: "question",
+                action: "voice-unclear",
+                bot_reply: fallbackReply,
+              })
+              .eq("update_id", update.update_id);
             return Response.json({ ok: true, flow: "voice-unclear" });
           }
         }
@@ -354,7 +396,8 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               answer ??
               `🙏 জি স্যার — এখন উত্তর তৈরি করা যাচ্ছে না। একটু পরে আবার বলুন, অথবা সরাসরি কমান্ড দিন (যেমন: <code>uid 4100 এর ৪ নম্বর স্লট রিসেট করো</code>) 💙`;
             await sendMessage(chatId, reply, msg.message_id);
-            const flow = res.flow === "owner-unhandled" ? "owner-unhandled-ai-fallback" : "owner-dm-answer";
+            const flow =
+              res.flow === "owner-unhandled" ? "owner-unhandled-ai-fallback" : "owner-dm-answer";
             await finalizeLog("question", flow, reply);
             return Response.json({ ok: true, flow });
           }
@@ -362,10 +405,16 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           const bare = /^\s*(?:uid|আইডি)?\s*[:#-]?\s*(\d{2,9})\s*$/i.exec(text.trim());
           if (bare) {
             const { data: alreadyLinked } = await supabaseAdmin
-              .from("profiles").select("uid_seq, display_name")
-              .eq("telegram_user_id", msg.from.id).maybeSingle();
+              .from("profiles")
+              .select("uid_seq, display_name")
+              .eq("telegram_user_id", msg.from.id)
+              .maybeSingle();
             // একটি টেলিগ্রাম = একটি UID: আগে লিংক থাকলে নতুন UID নেওয়া হবে না
-            if (alreadyLinked && bare[1].length >= 3 && String((alreadyLinked as any).uid_seq ?? "") !== bare[1]) {
+            if (
+              alreadyLinked &&
+              bare[1].length >= 3 &&
+              String((alreadyLinked as any).uid_seq ?? "") !== bare[1]
+            ) {
               await sendMessage(
                 chatId,
                 `⚠️ <b>এই টেলিগ্রাম অ্যাকাউন্টটি দিয়ে আগেই KYC করা হয়েছে</b>\n\n` +
@@ -385,10 +434,11 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               return Response.json({ ok: true, flow: "kyc-already" });
             }
             if (!alreadyLinked) {
-
               const { data: prof } = await supabaseAdmin
-                .from("profiles").select("id, uid_seq, telegram_user_id, display_name")
-                .eq("uid_seq", Number(bare[1])).maybeSingle();
+                .from("profiles")
+                .select("id, uid_seq, telegram_user_id, display_name")
+                .eq("uid_seq", Number(bare[1]))
+                .maybeSingle();
               if (!prof) {
                 await sendMessage(
                   chatId,
@@ -405,11 +455,14 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
                 );
                 return Response.json({ ok: true, flow: "kyc-uid-taken" });
               }
-              await supabaseAdmin.from("profiles").update({
-                telegram_user_id: msg.from.id,
-                kyc_verified: true,
-                kyc_verified_at: new Date().toISOString(),
-              }).eq("id", prof.id);
+              await supabaseAdmin
+                .from("profiles")
+                .update({
+                  telegram_user_id: msg.from.id,
+                  kyc_verified: true,
+                  kyc_verified_at: new Date().toISOString(),
+                })
+                .eq("id", prof.id);
               await sendMessage(
                 chatId,
                 `✅ <b>KYC সম্পন্ন! অ্যাকাউন্ট ভেরিফাইড 🎉</b>\n\n` +
@@ -430,17 +483,13 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return Response.json({ ok: true, flow: "dm-kyc-only" });
         }
 
-
-
-
-
-
         // Do not jump into conversations already being handled by a human admin.
         // If an admin writes, or the user replies to an admin's message, stay silent.
         const isBotCommand = /^\/(?:start|help|admin|reset)\b/i.test(text.trim());
         // গ্রুপের মালিক (support_username) সবসময় অ্যাডমিন হিসেবেই গণ্য হবে
         const ownerUsername = String((settings as any).support_username || "@anamulmunni")
-          .replace(/^@/, "").toLowerCase();
+          .replace(/^@/, "")
+          .toLowerCase();
         const senderIsOwner = (msg.from?.username ?? "").toLowerCase() === ownerUsername;
         const [chatAdminFlag, repliedToAdmin] = await Promise.all([
           isChatAdmin(chatId, msg.from?.id).catch(() => false),
@@ -458,9 +507,15 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         const adminAddressedBot = mentionsBot || repliedToBot;
         // Exception: when an admin announces that a password was changed, the bot
         // confirms it to the user instead of staying silent.
-        const passwordChanged = senderIsAdmin && adminAddressedBot && !isBotCommand && text.trim().length > 0
-          && /(password|পাসওয়ার্ড|pass ?word)/i.test(text)
-          && /(change|changed|change kora|change kore|পরিবর্তন|চেঞ্জ|বদলে|reset|রিসেট|new password|নতুন পাসওয়ার্ড)/i.test(text);
+        const passwordChanged =
+          senderIsAdmin &&
+          adminAddressedBot &&
+          !isBotCommand &&
+          text.trim().length > 0 &&
+          /(password|পাসওয়ার্ড|pass ?word)/i.test(text) &&
+          /(change|changed|change kora|change kore|পরিবর্তন|চেঞ্জ|বদলে|reset|রিসেট|new password|নতুন পাসওয়ার্ড)/i.test(
+            text,
+          );
         if (passwordChanged && settings.auto_reply_enabled) {
           const reply =
             `✅ <b>আপনার পাসওয়ার্ডটি সফলভাবে পরিবর্তন করা হয়েছে।</b>\n\n` +
@@ -468,34 +523,43 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             `⚠️ মনে রাখবেন, লগইন করার পর অবশ্যই আপনার <b>প্রোফাইল পেজে</b> গিয়ে পাসওয়ার্ডটি পরিবর্তন করে ` +
             `নিজের একটি <b>নতুন পাসওয়ার্ড</b> দিয়ে নেবেন 🔐`;
           await sendMessage(chatId, reply, msg.message_id);
-          
+
           return Response.json({ ok: true, flow: "password-changed" });
         }
         // ---- অ্যাডমিন বটকে মেনশন করে কিছু করতে বললে বট সেটা করবে -------------
         if (senderIsAdmin && !isBotCommand && adminAddressedBot && text.trim()) {
-
           const order = text.replace(new RegExp(`@${meInfo?.username ?? "___"}`, "ig"), "").trim();
-          const targetName = msg.reply_to_message && !msg.reply_to_message.from?.is_bot
-            ? [msg.reply_to_message.from?.first_name, msg.reply_to_message.from?.last_name].filter(Boolean).join(" ")
-            : null;
+          const targetName =
+            msg.reply_to_message && !msg.reply_to_message.from?.is_bot
+              ? [msg.reply_to_message.from?.first_name, msg.reply_to_message.from?.last_name]
+                  .filter(Boolean)
+                  .join(" ")
+              : null;
           const replyTo = msg.reply_to_message?.message_id ?? msg.message_id;
-          const replyContextText = String(msg.reply_to_message?.text ?? msg.reply_to_message?.caption ?? "");
+          const replyContextText = String(
+            msg.reply_to_message?.text ?? msg.reply_to_message?.caption ?? "",
+          );
 
           // ---- অ্যাডমিন মেনশন দিয়ে "এই UID এর ৪ নম্বর স্লট রিসেট করে দাও" বা
           // "ওয়ালেট নম্বর রিসেট করো" বললে বট সাথে সাথেই কাজটা করবে। এটা UID
           // লুকআপের আগেই চলে, নইলে শুধু হিসাব কার্ড দিয়ে থেমে যেত।
           {
-            const bnNum = (s: string) => s.replace(/[০-৯]/g, (d) => String("০১২৩৪৫৬৭৮৯".indexOf(d)));
+            const bnNum = (s: string) =>
+              s.replace(/[০-৯]/g, (d) => String("০১২৩৪৫৬৭৮৯".indexOf(d)));
             const cmd = bnNum(`${order} ${replyContextText}`);
             const resetIntent =
-              /(reset|রিসেট|রিসেট|muche|মুছে|মুছ|delete|ডিলিট|khali|খালি|clear|ক্লিয়ার|বাদ\s*দা|সরিয়ে|off\s*kore)/i.test(cmd);
+              /(reset|রিসেট|রিসেট|muche|মুছে|মুছ|delete|ডিলিট|khali|খালি|clear|ক্লিয়ার|বাদ\s*দা|সরিয়ে|off\s*kore)/i.test(
+                cmd,
+              );
             if (resetIntent) {
               const slotMod = await import("@/lib/telegram-slot.server");
               const { SLOT_WORD, NUM_WORD, stripSlotMentions } = slotMod;
               const hasSlotWord = new RegExp(SLOT_WORD, "i").test(cmd);
               const walletIntent =
                 !hasSlotWord &&
-                /(wallet|ওয়ালেট|payment|পেমেন্ট|bkash|বিকাশ|nagad|নগদ|number|নম্বর|নাম্বার)/i.test(cmd);
+                /(wallet|ওয়ালেট|payment|পেমেন্ট|bkash|বিকাশ|nagad|নগদ|number|নম্বর|নাম্বার)/i.test(
+                  cmd,
+                );
               const uid =
                 cmd.match(/(?:uid|ইউআইডি|আইডি|\bid\b)\s*[:#-]?\s*(\d{2,9})/i)?.[1] ??
                 stripSlotMentions(cmd).match(/(?<![\d@])(\d{3,9})(?![\d])/)?.[1] ??
@@ -512,9 +576,8 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               }
 
               if (walletIntent) {
-                const { resetPaymentNumbersForUid, walletResetReply } = await import(
-                  "@/lib/telegram-wallet.server"
-                );
+                const { resetPaymentNumbersForUid, walletResetReply } =
+                  await import("@/lib/telegram-wallet.server");
                 const provider = /(bkash|বিকাশ)/i.test(cmd)
                   ? "bkash"
                   : /(nagad|নগদ)/i.test(cmd)
@@ -569,7 +632,10 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           // বা তার তথ্য জিজ্ঞেস করলে — সরাসরি UID + হিসাব কার্ড দেবে, ভদ্রভাবে।
           // শুধু owner-ই এই তথ্য পাবে; অন্য কেউ নয়।
           if (senderIsOwner) {
-            const ents: any[] = [...((msg as any).entities ?? []), ...((msg as any).caption_entities ?? [])];
+            const ents: any[] = [
+              ...((msg as any).entities ?? []),
+              ...((msg as any).caption_entities ?? []),
+            ];
             const textMention = ents.find((e) => e?.type === "text_mention" && e?.user?.id);
             const repliedUser =
               msg.reply_to_message?.from?.id && !msg.reply_to_message.from?.is_bot
@@ -583,13 +649,19 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             // মালিক মেনশন/রিপ্লাই করে যেকোনোভাবে তথ্য চাইলেই বট দেবে —
             // শব্দ মিলানোর কড়াকড়ি নেই, শুধু তথ্য-জাতীয় ইঙ্গিত থাকলেই হবে।
             const asksUidOrInfo =
-              /(uid|ইউআইডি|আইডি|আই\s*ডি|info|information|details|detail|তথ্য|ডিটেইলস|ডিটেইল|হিসাব|hisab|balance|ব্যালেন্স|earn|আয়|slot|স্লট|withdraw|উইথড্র|mining|মাইনিং|kyc|কেওয়াইসি|profile|প্রোফাইল|number|নম্বর|ke|কে|who)/i.test(order)
-              || /(koto|kt|kx|কত|কতো|\?|ber|বের|dekha|দেখা|dekhao|dao|দাও|daw|janao|জানাও|what|show|check|চেক)/i.test(order);
+              /(uid|ইউআইডি|আইডি|আই\s*ডি|info|information|details|detail|তথ্য|ডিটেইলস|ডিটেইল|হিসাব|hisab|balance|ব্যালেন্স|earn|আয়|slot|স্লট|withdraw|উইথড্র|mining|মাইনিং|kyc|কেওয়াইসি|profile|প্রোফাইল|number|নম্বর|ke|কে|who)/i.test(
+                order,
+              ) ||
+              /(koto|kt|kx|কত|কতো|\?|ber|বের|dekha|দেখা|dekhao|dao|দাও|daw|janao|জানাও|what|show|check|চেক)/i.test(
+                order,
+              );
 
             if (asksUidOrInfo && (explicitUid || textMention || repliedUser || handleIsOther)) {
               const targetLabel =
                 (textMention
-                  ? [textMention.user.first_name, textMention.user.last_name].filter(Boolean).join(" ")
+                  ? [textMention.user.first_name, textMention.user.last_name]
+                      .filter(Boolean)
+                      .join(" ")
                   : repliedUser
                     ? [repliedUser.first_name, repliedUser.last_name].filter(Boolean).join(" ")
                     : handleIsOther
@@ -607,7 +679,8 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
                     : null;
                 if (!tgId && handleIsOther) {
                   const { data: seen } = await supabaseAdmin
-                    .from("tg_messages").select("tg_user_id")
+                    .from("tg_messages")
+                    .select("tg_user_id")
                     .ilike("username", handle!)
                     .not("tg_user_id", "is", null)
                     .order("created_at", { ascending: false })
@@ -617,8 +690,10 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
                 }
                 if (tgId) {
                   const { data: prof } = await supabaseAdmin
-                    .from("profiles").select("uid_seq, display_name")
-                    .eq("telegram_user_id", tgId).maybeSingle();
+                    .from("profiles")
+                    .select("uid_seq, display_name")
+                    .eq("telegram_user_id", tgId)
+                    .maybeSingle();
                   uidSeq = (prof as any)?.uid_seq ?? null;
                   name = (prof as any)?.display_name ?? null;
                 }
@@ -627,7 +702,9 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               if (uidSeq != null) {
                 // মালিক শুধু UID চাইলে পুরো হিসাব দেখাবে না — শুধু UID দেবে।
                 const wantsDetails =
-                  /(হিসাব|hisab|details?|ডিটেইল|তথ্য|balance|ব্যালেন্স|slot|স্লট|withdraw|উইথড্র|mining|মাইনিং|earn|আয়|পুরো|full|info|information)/i.test(order);
+                  /(হিসাব|hisab|details?|ডিটেইল|তথ্য|balance|ব্যালেন্স|slot|স্লট|withdraw|উইথড্র|mining|মাইনিং|earn|আয়|পুরো|full|info|information)/i.test(
+                    order,
+                  );
                 if (!wantsDetails) {
                   const reply = `🆔 <b>${name || targetLabel}</b> এর UID: <code>${uidSeq}</code>`;
                   await sendMessage(chatId, reply, replyTo);
@@ -646,7 +723,6 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
                 return Response.json({ ok: true, flow: "owner-uid-lookup" });
               }
 
-
               await sendMessage(
                 chatId,
                 `🙏 জি স্যার, দুঃখিত — <b>${targetLabel}</b> এর টেলিগ্রাম একাউন্টটি এখনো Good-App এর সাথে ` +
@@ -658,9 +734,12 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             }
           }
 
-
           // ---- আনফ্রিজ: "@bot unfreeze" (reply দিয়ে) / "ফ্রিজ খুলে দাও" / "unfreeze @user" / "unfreeze 4238"
-          if (/(unfreeze|un\s*freeze|unmute|unblock|আনফ্রিজ|আনব্লক|ফ্রিজ\s*(খুলে|তুলে|বাতিল|off)|freeze\s*(khule|tule|off))/i.test(order)) {
+          if (
+            /(unfreeze|un\s*freeze|unmute|unblock|আনফ্রিজ|আনব্লক|ফ্রিজ\s*(খুলে|তুলে|বাতিল|off)|freeze\s*(khule|tule|off))/i.test(
+              order,
+            )
+          ) {
             const { unrestrictUser } = await import("@/lib/telegram-bot.server");
             let targetId: number | null =
               msg.reply_to_message && !msg.reply_to_message.from?.is_bot
@@ -672,26 +751,38 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               const uname = order.match(/@([A-Za-z0-9_]{4,32})/)?.[1];
               if (uname && uname.toLowerCase() !== (meInfo?.username ?? "").toLowerCase()) {
                 const { data: off } = await supabaseAdmin
-                  .from("tg_offenders").select("tg_user_id, full_name")
-                  .ilike("username", uname).maybeSingle();
-                if (off) { targetId = Number(off.tg_user_id); shownName = off.full_name ?? `@${uname}`; }
+                  .from("tg_offenders")
+                  .select("tg_user_id, full_name")
+                  .ilike("username", uname)
+                  .maybeSingle();
+                if (off) {
+                  targetId = Number(off.tg_user_id);
+                  shownName = off.full_name ?? `@${uname}`;
+                }
               }
             }
             if (!targetId) {
               const uidTxt = order.match(/(?:uid|ইউআইডি|আইডি|id)?\s*[:#-]?\s*(\d{2,9})/i)?.[1];
               if (uidTxt) {
                 const { data: prof } = await supabaseAdmin
-                  .from("profiles").select("telegram_user_id, display_name")
-                  .eq("uid_seq", Number(uidTxt)).maybeSingle();
+                  .from("profiles")
+                  .select("telegram_user_id, display_name")
+                  .eq("uid_seq", Number(uidTxt))
+                  .maybeSingle();
                 if (prof?.telegram_user_id) {
                   targetId = Number(prof.telegram_user_id);
                   shownName = prof.display_name ?? `UID ${uidTxt}`;
                 }
                 if (!targetId) {
                   const { data: off2 } = await supabaseAdmin
-                    .from("tg_offenders").select("tg_user_id, full_name")
-                    .eq("known_uid", uidTxt).maybeSingle();
-                  if (off2) { targetId = Number(off2.tg_user_id); shownName = off2.full_name ?? `UID ${uidTxt}`; }
+                    .from("tg_offenders")
+                    .select("tg_user_id, full_name")
+                    .eq("known_uid", uidTxt)
+                    .maybeSingle();
+                  if (off2) {
+                    targetId = Number(off2.tg_user_id);
+                    shownName = off2.full_name ?? `UID ${uidTxt}`;
+                  }
                 }
               }
             }
@@ -708,12 +799,15 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             }
 
             await unrestrictUser(chatId, targetId);
-            await supabaseAdmin.from("tg_offenders").update({
-              warn_count: 0,
-              blocked: false,
-              unblocked_at: new Date().toISOString(),
-              last_reason: "admin unfreeze",
-            }).eq("tg_user_id", targetId);
+            await supabaseAdmin
+              .from("tg_offenders")
+              .update({
+                warn_count: 0,
+                blocked: false,
+                unblocked_at: new Date().toISOString(),
+                last_reason: "admin unfreeze",
+              })
+              .eq("tg_user_id", targetId);
 
             await sendMessage(
               chatId,
@@ -723,7 +817,6 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             );
             return Response.json({ ok: true, flow: "unfreeze" });
           }
-
 
           // "uid 4100 er details" / "01720095454 ei account ta check koro" → একাউন্ট কার্ড
           const refFrom = (s: string): string | null => {
@@ -736,15 +829,25 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             return bare ? bare[1] : null;
           };
           const accountRef = refFrom(order) || refFrom(replyContextText);
-          const cardCmd = accountRef ? ([accountRef, accountRef] as unknown as RegExpMatchArray) : null;
-          if (cardCmd && /(details|ডিটেইলস|card|কার্ড|hisab|হিসাব|check|চেক|chek|dekho|dekh|দেখো|dekha|দেখা|info|তথ্য|account|একাউন্ট|অ্যাকাউন্ট|somossa|সমস্যা|problem)/i.test(order)
-              && !/(verify|verification|ভেরিফাই|ভেরিফিকেশন|face|ফেস|date|time|তারিখ|সময়|কবে|status|স্ট্যাটাস|রি\s*-?ভেরিফাই|re\s*-?verify|first|1st|প্রথম|১ম)/i.test(order)) {
-
+          const cardCmd = accountRef
+            ? ([accountRef, accountRef] as unknown as RegExpMatchArray)
+            : null;
+          if (
+            cardCmd &&
+            /(details|ডিটেইলস|card|কার্ড|hisab|হিসাব|check|চেক|chek|dekho|dekh|দেখো|dekha|দেখা|info|তথ্য|account|একাউন্ট|অ্যাকাউন্ট|somossa|সমস্যা|problem)/i.test(
+              order,
+            ) &&
+            !/(verify|verification|ভেরিফাই|ভেরিফিকেশন|face|ফেস|date|time|তারিখ|সময়|কবে|status|স্ট্যাটাস|রি\s*-?ভেরিফাই|re\s*-?verify|first|1st|প্রথম|১ম)/i.test(
+              order,
+            )
+          ) {
             const { buildUserCard } = await import("@/lib/telegram-lookup.server");
             const res = await buildUserCard(cardCmd[1]);
             await sendMessage(
               chatId,
-              res.found ? res.card : `❌ UID <code>${cardCmd[1]}</code> দিয়ে কোনো একাউন্ট পাওয়া যায়নি।`,
+              res.found
+                ? res.card
+                : `❌ UID <code>${cardCmd[1]}</code> দিয়ে কোনো একাউন্ট পাওয়া যায়নি।`,
               replyTo,
             );
             return Response.json({ ok: true, flow: "admin-card" });
@@ -753,11 +856,21 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           // Owner/admin: "UID 4100 er sob slot er first verify date time dekhao"
           // or "ei UID e 3 din hoise re-verify chay na keno" → show real app data,
           // never repeat the admin's sentence back.
-          if (cardCmd && /(verify|verification|ভেরিফাই|ভেরিফিকেশন|face|ফেস|date|time|তারিখ|সময়|কবে|status|স্ট্যাটাস|রি\s*-?ভেরিফাই|re\s*-?verify|first|1st|প্রথম|১ম)/i.test(order)) {
-            const { buildVerificationDateReport, buildReverifyStatusReport } = await import("@/lib/telegram-lookup.server");
+          if (
+            cardCmd &&
+            /(verify|verification|ভেরিফাই|ভেরিফিকেশন|face|ফেস|date|time|তারিখ|সময়|কবে|status|স্ট্যাটাস|রি\s*-?ভেরিফাই|re\s*-?verify|first|1st|প্রথম|১ম)/i.test(
+              order,
+            )
+          ) {
+            const { buildVerificationDateReport, buildReverifyStatusReport } =
+              await import("@/lib/telegram-lookup.server");
             const wantsReverifyStatus =
-              /(re\s*-?verify|reverify|রি\s*-?ভেরিফাই|রি-ভেরিফাই)[^\n]{0,80}(চায় না|চাই না|চাচ্ছে না|আসে না|আসেনি|ashe na|chay na|chai na|hocche na|hoy na|কেন|keno|kn|status|স্ট্যাটাস)/i.test(order) ||
-              /(৩|3|৪|4)\s*(দিন|din|day)[^\n]{0,80}(re\s*-?verify|reverify|রি\s*-?ভেরিফাই|রি-ভেরিফাই)/i.test(order);
+              /(re\s*-?verify|reverify|রি\s*-?ভেরিফাই|রি-ভেরিফাই)[^\n]{0,80}(চায় না|চাই না|চাচ্ছে না|আসে না|আসেনি|ashe na|chay na|chai na|hocche na|hoy na|কেন|keno|kn|status|স্ট্যাটাস)/i.test(
+                order,
+              ) ||
+              /(৩|3|৪|4)\s*(দিন|din|day)[^\n]{0,80}(re\s*-?verify|reverify|রি\s*-?ভেরিফাই|রি-ভেরিফাই)/i.test(
+                order,
+              );
             const kind = /(re\s*-?verify|reverify|রি\s*-?ভেরিফাই|রি-ভেরিফাই)/i.test(order)
               ? "reverify"
               : /(first|1st|প্রথম|১ম)/i.test(order)
@@ -770,18 +883,28 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               ? res.card
               : `❌ UID <code>${cardCmd[1]}</code> দিয়ে কোনো ইউজার পাওয়া যায়নি।`;
             await sendMessage(chatId, reply, replyTo);
-            return Response.json({ ok: true, flow: wantsReverifyStatus ? "admin-reverify-status" : "admin-verification-dates" });
+            return Response.json({
+              ok: true,
+              flow: wantsReverifyStatus ? "admin-reverify-status" : "admin-verification-dates",
+            });
           }
 
           // "video dao / টিউটোরিয়াল দাও"
           if (/(video|ভিডিও|tutorial|টিউটোরিয়াল)/i.test(order)) {
             const { data: vids } = await supabaseAdmin
-              .from("tg_videos").select("topic, keywords, note, url").eq("is_active", true);
+              .from("tg_videos")
+              .select("topic, keywords, note, url")
+              .eq("is_active", true);
             const hay = order.toLowerCase();
-            const match = (vids ?? []).find((v: any) =>
-              (v.keywords ?? []).some((k: string) => k && hay.includes(String(k).toLowerCase()))
-              || (v.topic && hay.includes(String(v.topic).toLowerCase()))) as any;
-            const { videoReply, DEFAULT_TUTORIAL_VIDEO } = await import("@/lib/telegram-bot.server");
+            const match = (vids ?? []).find(
+              (v: any) =>
+                (v.keywords ?? []).some(
+                  (k: string) => k && hay.includes(String(k).toLowerCase()),
+                ) ||
+                (v.topic && hay.includes(String(v.topic).toLowerCase())),
+            ) as any;
+            const { videoReply, DEFAULT_TUTORIAL_VIDEO } =
+              await import("@/lib/telegram-bot.server");
             const url = match?.url || (settings as any).default_video_url || DEFAULT_TUTORIAL_VIDEO;
             await sendMessage(
               chatId,
@@ -795,9 +918,8 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           // পরিবর্তন / নোটিশ দেওয়া) → আগে কাজটা করে ফেলবে, তারপর জানাবে।
           // এটা ব্যাখ্যা/স্মার্ট-উত্তরের আগেই চলে, নইলে নির্দেশ শুধু কথা হয়ে যায়।
           {
-            const { interpretAdminOrder, runAdminOps, opsAnnouncement } = await import(
-              "@/lib/telegram-admin-actions.server"
-            );
+            const { interpretAdminOrder, runAdminOps, opsAnnouncement } =
+              await import("@/lib/telegram-admin-actions.server");
             const ops = await interpretAdminOrder(order);
             if (ops.length) {
               const { done, failed } = await runAdminOps(ops);
@@ -823,10 +945,8 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               (/(refer|reffer|রেফার|referral)/i.test(bnDigits) ||
                 /(bondhu|বন্ধু|friend|যাকে|jake|kauke|কাউকে|downline|টিম)/i.test(bnDigits))
             ) {
-
-              const { loadRates, referralEarningReply } = await import(
-                "@/lib/telegram-knowledge.server"
-              );
+              const { loadRates, referralEarningReply } =
+                await import("@/lib/telegram-knowledge.server");
               const rates = await loadRates();
               const reply = referralEarningReply(targetName || "বন্ধুরা", rates);
               await sendMessage(chatId, reply, replyTo);
@@ -836,7 +956,8 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               const m = bnDigits.match(/(\d{1,4})\s*(ta|টা|টি|ti|slot|স্লট)?/);
               const n = m ? Number(m[1]) : null;
               const slots = n && n >= 1 && n <= 500 ? n : null;
-              const { loadRates, slotEarningReply } = await import("@/lib/telegram-knowledge.server");
+              const { loadRates, slotEarningReply } =
+                await import("@/lib/telegram-knowledge.server");
               const rates = await loadRates();
               const reply = slotEarningReply(targetName || "বন্ধুরা", rates, slots, true);
               await sendMessage(chatId, reply, replyTo);
@@ -844,9 +965,15 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             }
 
             // প্রশ্ন/টপিক বুঝিয়ে বলতে বললে → অ্যাপের রুলবুক থেকে গ্রাউন্ডেড উত্তর
-            if (askCtx || /(\bki\b|কি\b|\bkivabe\b|কীভাবে|কিভাবে|\bkeno\b|কেন|\bbolo\b|বলো|\bbujhao\b|বুঝিয়ে)/i.test(bnDigits)) {
+            if (
+              askCtx ||
+              /(\bki\b|কি\b|\bkivabe\b|কীভাবে|কিভাবে|\bkeno\b|কেন|\bbolo\b|বলো|\bbujhao\b|বুঝিয়ে)/i.test(
+                bnDigits,
+              )
+            ) {
               const { smartAnswer } = await import("@/lib/telegram-bot.server");
-              const { knowledgeText, loadRates: lr } = await import("@/lib/telegram-knowledge.server");
+              const { knowledgeText, loadRates: lr } =
+                await import("@/lib/telegram-knowledge.server");
               const { appRulebook } = await import("@/lib/telegram-app-rules.server");
               const { agentAnswer } = await import("@/lib/telegram-agent.server");
               const rates = await lr();
@@ -856,8 +983,8 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
                 knowledge: knowledgeText(rates),
               };
               const ans =
-                (await agentAnswer({ ...base, rulebook: appRulebook(rates), isAdmin: true }))
-                ?? (await smartAnswer(base));
+                (await agentAnswer({ ...base, rulebook: appRulebook(rates), isAdmin: true })) ??
+                (await smartAnswer(base));
               if (ans && ans !== "NO_ANSWER") {
                 await sendMessage(chatId, ans, replyTo);
                 return Response.json({ ok: true, flow: "admin-smart" });
@@ -865,13 +992,13 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             }
           }
 
-
           // বাকি সব: অ্যাডমিনের নির্দেশমতো সুন্দর মেসেজ সাজিয়ে গ্রুপে পাঠাবে।
           // কখনোই অ্যাডমিনের নির্দেশটাই হুবহু ফেরত পাঠাবে না।
           const composed = (await adminCompose(order, targetName))?.trim();
           const echoed =
             !composed ||
-            composed.toLowerCase().replace(/\s+/g, " ") === order.toLowerCase().replace(/\s+/g, " ");
+            composed.toLowerCase().replace(/\s+/g, " ") ===
+              order.toLowerCase().replace(/\s+/g, " ");
           if (!echoed) {
             await sendMessage(chatId, composed, replyTo);
             return Response.json({ ok: true, flow: "admin-instruction" });
@@ -882,33 +1009,47 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             replyTo,
           );
           return Response.json({ ok: true, flow: "admin-instruction-unclear" });
-
-
         }
 
         if ((senderIsAdmin && !isBotCommand) || repliedToAdmin) {
           // Save human admin replies as learning examples. Later, recallSimilar()
           // can use the exact question → admin answer pair instead of guessing.
-          if (senderIsAdmin && text.trim() && msg.reply_to_message && !msg.reply_to_message.from?.is_bot) {
-            const original = String(msg.reply_to_message.text ?? msg.reply_to_message.caption ?? "").trim();
+          if (
+            senderIsAdmin &&
+            text.trim() &&
+            msg.reply_to_message &&
+            !msg.reply_to_message.from?.is_bot
+          ) {
+            const original = String(
+              msg.reply_to_message.text ?? msg.reply_to_message.caption ?? "",
+            ).trim();
             if (original) {
-              await supabaseAdmin.from("tg_messages").upsert({
-                update_id: update.update_id,
-                chat_id: msg.chat.id,
-                message_id: msg.message_id,
-                tg_user_id: msg.reply_to_message.from?.id ?? null,
-                username: msg.reply_to_message.from?.username ?? null,
-                full_name: [msg.reply_to_message.from?.first_name, msg.reply_to_message.from?.last_name].filter(Boolean).join(" ") || "User",
-                text: original.slice(0, 2000),
-                has_photo: !!msg.reply_to_message.photo?.length,
-                verdict: "question",
-                action: "admin-reply-learning",
-                bot_reply: text.slice(0, 2000),
-                matched_uid: null,
-              }, { onConflict: "update_id" });
+              await supabaseAdmin.from("tg_messages").upsert(
+                {
+                  update_id: update.update_id,
+                  chat_id: msg.chat.id,
+                  message_id: msg.message_id,
+                  tg_user_id: msg.reply_to_message.from?.id ?? null,
+                  username: msg.reply_to_message.from?.username ?? null,
+                  full_name:
+                    [msg.reply_to_message.from?.first_name, msg.reply_to_message.from?.last_name]
+                      .filter(Boolean)
+                      .join(" ") || "User",
+                  text: original.slice(0, 2000),
+                  has_photo: !!msg.reply_to_message.photo?.length,
+                  verdict: "question",
+                  action: "admin-reply-learning",
+                  bot_reply: text.slice(0, 2000),
+                  matched_uid: null,
+                },
+                { onConflict: "update_id" },
+              );
             }
           }
-          return Response.json({ ok: true, ignored: senderIsAdmin ? "admin-message" : "reply-to-admin" });
+          return Response.json({
+            ok: true,
+            ignored: senderIsAdmin ? "admin-message" : "reply-to-admin",
+          });
         }
 
         // ---- security guard: non-admins can't extract secrets or order edits ----
@@ -921,10 +1062,13 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           }
         }
 
-
         // ---- offender record (warnings / block state) -------------------------
         const { data: offender } = msg.from?.id
-          ? await supabaseAdmin.from("tg_offenders").select("*").eq("tg_user_id", msg.from.id).maybeSingle()
+          ? await supabaseAdmin
+              .from("tg_offenders")
+              .select("*")
+              .eq("tg_user_id", msg.from.id)
+              .maybeSingle()
           : { data: null as any };
 
         // Already blocked → delete anything they manage to post and stop.
@@ -940,8 +1084,14 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           const linkSrc = `${text} ${msg.caption ?? ""}`;
           const urls = linkSrc.match(/(?:https?:\/\/|www\.|t\.me\/|telegram\.me\/)[^\s]+/gi) ?? [];
           const ownHost = /(goodapp2\.live|good-app2\.lovable\.app|youtu\.be|youtube\.com)/i;
-          const supportUser = String((settings as any).support_username || "@anamulmunni").replace(/^@/, "");
-          const badUrl = urls.find((u) => !ownHost.test(u) && !new RegExp(`t(?:elegram)?\\.me/${supportUser}`, "i").test(u));
+          const supportUser = String((settings as any).support_username || "@anamulmunni").replace(
+            /^@/,
+            "",
+          );
+          const badUrl = urls.find(
+            (u) =>
+              !ownHost.test(u) && !new RegExp(`t(?:elegram)?\\.me/${supportUser}`, "i").test(u),
+          );
           const invite = /(t\.me\/(?:joinchat|\+)|chat\.whatsapp\.com|wa\.me\/)/i.test(linkSrc);
 
           if (badUrl || invite) {
@@ -951,30 +1101,29 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               `আমাদের একটাই অফিসিয়াল লিংক: <b>https://goodapp2.live</b>\n` +
               `কোনো প্রশ্ন থাকলে এখানেই লিখুন, আমি সাহায্য করছি 💙`;
             await sendMessage(chatId, warn);
-            await supabaseAdmin.from("tg_messages").upsert({
-              update_id: update.update_id,
-              chat_id: msg.chat.id,
-              message_id: msg.message_id,
-              tg_user_id: msg.from?.id ?? null,
-              username: msg.from?.username ?? null,
-              full_name: senderName,
-              text: linkSrc.slice(0, 2000),
-              has_photo: !!photos?.length,
-              verdict: "spam",
-              action: "link-deleted",
-              bot_reply: warn,
-              matched_uid: null,
-            }, { onConflict: "update_id" });
+            await supabaseAdmin.from("tg_messages").upsert(
+              {
+                update_id: update.update_id,
+                chat_id: msg.chat.id,
+                message_id: msg.message_id,
+                tg_user_id: msg.from?.id ?? null,
+                username: msg.from?.username ?? null,
+                full_name: senderName,
+                text: linkSrc.slice(0, 2000),
+                has_photo: !!photos?.length,
+                verdict: "spam",
+                action: "link-deleted",
+                bot_reply: warn,
+                matched_uid: null,
+              },
+              { onConflict: "update_id" },
+            );
             return Response.json({ ok: true, flow: "link-deleted" });
           }
         }
 
-
-
-
         // ---- helpers for the guided slot-reset conversation -------------------
-        const bnDigits = (s: string) =>
-          s.replace(/[০-৯]/g, (d) => String("০১২৩৪৫৬৭৮৯".indexOf(d)));
+        const bnDigits = (s: string) => s.replace(/[০-৯]/g, (d) => String("০১২৩৪৫৬৭৮৯".indexOf(d)));
         const norm = bnDigits(text).trim();
         // ইউজার "ভয়েসে বলো" বললে এই উত্তরটা শুধু ভয়েসে যাবে, নইলে শুধু লেখায়।
         {
@@ -982,10 +1131,14 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           setReplyMode(asksForVoiceReply(norm) ? "voice" : "text");
         }
 
-        const replyNorm = bnDigits(String(msg.reply_to_message?.text ?? msg.reply_to_message?.caption ?? "")).trim();
+        const replyNorm = bnDigits(
+          String(msg.reply_to_message?.text ?? msg.reply_to_message?.caption ?? ""),
+        ).trim();
         // কেউ কোনো মেসেজ "মার্ক"/রিপ্লাই করে প্রশ্ন করলে ওই মেসেজটাই আসল প্রসঙ্গ —
         // সেটা AI-কে না দিলে বট এলোমেলো উত্তর দেয়।
-        const quotedRaw = String(msg.reply_to_message?.text ?? msg.reply_to_message?.caption ?? "").trim();
+        const quotedRaw = String(
+          msg.reply_to_message?.text ?? msg.reply_to_message?.caption ?? "",
+        ).trim();
         const quotedIsBot = !!msg.reply_to_message?.from?.is_bot;
         const quotedContext = quotedRaw
           ? `\n\n[ইউজার নিচের মেসেজটি মার্ক/রিপ্লাই করে এই প্রশ্নটি করেছে — ${
@@ -999,15 +1152,20 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             s.trim(),
           );
         const isThanksOnly = (s: string) =>
-          /^(thanks|thank you|tnx|ty|ধন্যবাদ|থ্যাংকস|শুকরিয়া|jazakallah|জাযাকাল্লাহ)[\s.!।🙏😊🙂]*$/i.test(s.trim());
-        const { stripSlotMentions, SLOT_WORD, NUM_WORD } = await import("@/lib/telegram-slot.server");
+          /^(thanks|thank you|tnx|ty|ধন্যবাদ|থ্যাংকস|শুকরিয়া|jazakallah|জাযাকাল্লাহ)[\s.!।🙏😊🙂]*$/i.test(
+            s.trim(),
+          );
+        const { stripSlotMentions, SLOT_WORD, NUM_WORD } =
+          await import("@/lib/telegram-slot.server");
         // "মুছে দে / কেটে দাও / রিসেট করে দেন" — স্লট মোছার কথা।
         const removalIntent =
           /(reset|রিসেট|muche|মুছ|mucche|delete|ডিলিট|clear|ক্লিয়ার|khali|খালি|kete|কেটে|kata|কাটা|kaita|কাইটা|bad de|বাদ দ|remove|রিমুভ|off kore|বন্ধ কর)/i;
         const pickUid = (s: string): string | null => {
           const raw = bnDigits(s).trim();
           if (isAffirmation(raw)) return null;
-          const explicit = raw.match(/(?:uid|ইউআইডি|আইডি|আই ডি|id\s*no|আইডি নাম্বার)\s*[:#-]?\s*([A-Za-z0-9]{2,10})/i);
+          const explicit = raw.match(
+            /(?:uid|ইউআইডি|আইডি|আই ডি|id\s*no|আইডি নাম্বার)\s*[:#-]?\s*([A-Za-z0-9]{2,10})/i,
+          );
           if (explicit) return explicit[1].trim().toUpperCase();
           // "৪ নম্বর স্লট" এর ৪ কখনোই UID নয় — তাই স্লটের কথা বাদ দিয়ে খুঁজি।
           const source = stripSlotMentions(raw);
@@ -1022,7 +1180,8 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return code && /\d/.test(code[1]) ? code[1].toUpperCase() : null;
         };
 
-        const pickUidFromCurrentOrReply = (): string | null => pickUid(norm) || (replyNorm ? pickUid(replyNorm) : null);
+        const pickUidFromCurrentOrReply = (): string | null =>
+          pickUid(norm) || (replyNorm ? pickUid(replyNorm) : null);
 
         // Accepts: "3", "5 ta", "2,3,4", "২-৫", "3 4 7", "সব"/"all"
         const wantsAll = /(সব|সবগুলো|সবগুলা|all|full)/i.test(norm);
@@ -1038,14 +1197,17 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             if (n >= 1 && n <= 500) out.push(n);
             rest = rest.replace(m[0], " ");
           }
-          for (const m of s.matchAll(new RegExp(`(\\d{1,3})\\s*${NUM_WORD}\\s*(?:টা|টি|ta|ti)?`, "gi"))) {
+          for (const m of s.matchAll(
+            new RegExp(`(\\d{1,3})\\s*${NUM_WORD}\\s*(?:টা|টি|ta|ti)?`, "gi"),
+          )) {
             const n = Number(m[1]);
             if (n >= 1 && n <= 500) out.push(n);
             rest = rest.replace(m[0], " ");
           }
           const range = rest.matchAll(/\b(\d{1,3})\s*(?:-|–|to|থেকে)\s*(\d{1,3})\b/g);
           for (const r of range) {
-            const a = Number(r[1]), b = Number(r[2]);
+            const a = Number(r[1]),
+              b = Number(r[2]);
             if (a >= 1 && b >= a && b - a < 100) for (let i = a; i <= b; i++) out.push(i);
             rest = rest.replace(r[0], " ");
           }
@@ -1063,8 +1225,10 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         // user moved on to a completely new question? (never keep looping)
         const stripped = norm.replace(/[০-৯0-9,\s.\-–#]/g, "").trim();
         // "৩ নম্বর স্লটটা কেটে দাও" — এটাও স্লটের উত্তরই, শুধু "৩" লেখা জরুরি নয়।
-        const mentionsSlotWord =
-          new RegExp(`(${SLOT_WORD}|${NUM_WORD}|reset|রিসেট|কেটে|kete|kate|মুছ|muche|delete|clear|খালি|khali|বাদ)`, "i").test(norm);
+        const mentionsSlotWord = new RegExp(
+          `(${SLOT_WORD}|${NUM_WORD}|reset|রিসেট|কেটে|kete|kate|মুছ|muche|delete|clear|খালি|khali|বাদ)`,
+          "i",
+        ).test(norm);
 
         const looksLikeSlotAnswer =
           (wantsAll || pickSlots(norm).length > 0) && (stripped.length <= 10 || mentionsSlotWord);
@@ -1073,22 +1237,29 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         const questionish =
           /(\?|কেন|কন\b|\bkn\b|keno|kivabe|kibhabe|কিভাবে|koita|কয়টা|কতটা|কত|koto|kobe|কবে|kokhon|withdraw|উইথড্র|balance|ব্যালেন্স|refer|রেফার|verify|ভেরিফাই|mining|মাইনিং|bonus|বোনাস|problem|somossa|সমস্যা|help|সাহায্য|\bki\b|কি\b|admin|অ্যাডমিন|এডমিন)/i.test(
             norm,
-          ) || (photos?.length ?? 0) > 0 || !!voiceHeard;
+          ) ||
+          (photos?.length ?? 0) > 0 ||
+          !!voiceHeard;
         const hasExplicitUid = /(\buid\b|\bid\s*no\b|ইউআইডি|আইডি|আই ডি|আইডি নাম্বার)/i.test(norm);
         const pendingWithdrawQuestion =
           /(withdraw|উইথড্র|payment|পেমেন্ট|টাকা|tk|taka|টিকে|পাই নাই|পাইনাই)/i.test(norm) &&
-          /(দিছি|দিয়েছি|দিসি|দিছে|দিয়াছি|dichi|dise|disi|diyechi|pending|পেন্ডিং|কখন পাব|কবে পাব|kokhon|kobe|pabo|pamu|pai nai|painai|paini|ashe nai|ashe na|asheni|আসে নাই|আসে না|আসেনি|এখনো পাই নাই|এখনো আসেনি|status|স্ট্যাটাস|history|হিস্টরি)/i.test(norm);
+          /(দিছি|দিয়েছি|দিসি|দিছে|দিয়াছি|dichi|dise|disi|diyechi|pending|পেন্ডিং|কখন পাব|কবে পাব|kokhon|kobe|pabo|pamu|pai nai|painai|paini|ashe nai|ashe na|asheni|আসে নাই|আসে না|আসেনি|এখনো পাই নাই|এখনো আসেনি|status|স্ট্যাটাস|history|হিস্টরি)/i.test(
+            norm,
+          );
         const withdrawEligibilityQuestion =
           !pendingWithdrawQuestion &&
           /(withdraw|উইথড্র|উঠাব|উঠাতে|তুলতে|claim|ক্লেইম|টাকা)/i.test(norm) &&
-          /(পারব|parbo|পারবো|যাবে|jabe|হবে|hobe|দিতে পারব|নিতে পারব|উঠবে|unblock|আনলক|লক|lock)/i.test(norm);
+          /(পারব|parbo|পারবো|যাবে|jabe|হবে|hobe|দিতে পারব|নিতে পারব|উঠবে|unblock|আনলক|লক|lock)/i.test(
+            norm,
+          );
 
         // ইউজার কোনো সমভাইয়া কথা বললে (যেমন "রি-ভেরিফাই করতে গেলে বলতেছে ১৮
         // বছরের নিচে") সেটা একাউন্ট-হিসাব চাওয়া নয় — তখন UID না চেয়ে সরাসরি
         // সমভাইয়া সমাধান বলতে হবে।
         const reportsProblem =
-          /(bolteche|bolteche|বলতেছে|বলছে|বলতেসে|বলে|dekhacche|দেখাচ্ছে|দেখায়|show korche|hocche na|হচ্ছে না|hoi na|হয় না|হয়না|hocche nah|hoy nai|হয় নাই|হচ্ছে নাহ|parchi na|পারছি না|পারতেছি না|partesi na|somossa|সমস্যা|problem|error|এরর|failed|ফেইল|fail|আটকে|atke|18|১৮|under ?age|বয়স)/i
-            .test(norm);
+          /(bolteche|bolteche|বলতেছে|বলছে|বলতেসে|বলে|dekhacche|দেখাচ্ছে|দেখায়|show korche|hocche na|হচ্ছে না|hoi na|হয় না|হয়না|hocche nah|hoy nai|হয় নাই|হচ্ছে নাহ|parchi na|পারছি না|পারতেছি না|partesi na|somossa|সমস্যা|problem|error|এরর|failed|ফেইল|fail|আটকে|atke|18|১৮|under ?age|বয়স)/i.test(
+            norm,
+          );
 
         // "আমার কয়টা রেফার হয়েছে?", "আমার ব্যালেন্স কত?", "কয়টা ভেরিফাই হয়েছে?"
         // → এগুলোর উত্তর একাউন্ট ডেটা থেকেই দিতে হবে, তাই UID চেয়ে কার্ড দেখাই।
@@ -1099,45 +1270,67 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           !pendingWithdrawQuestion &&
           !reportsProblem &&
           !howToTopic &&
-          (
-            (/(আমার|amar|amr|my|আমি|ami|nijer|নিজের|acount|account|একাউন্ট|অ্যাকাউন্ট)/i.test(norm) &&
-              /(refer|reffer|রেফার|ব্যালেন্স|balance|verify|ভেরিফাই|verification|ভেরিফিকেশন|face|ফেস|slot|স্লট|mining|মাইনিং|bonus|বোনাস|টাকা|taka|tk|income|ইনকাম|status|স্ট্যাটাস|details|ডিটেইলস|koto|কত|koita|কয়টা|kota|hoyeche|hoyche|hoise|আছে|ache|list|লিস্ট|তালিকা)/i.test(norm)) ||
-            /(refer|reffer|referral|রেফার|রেফারেল)[^\n]{0,30}(list|লিস্ট|তালিকা|koita|কয়টা|koyta|koto|কত|hisab|হিসাব)/i.test(norm)
-          );
+          ((/(আমার|amar|amr|my|আমি|ami|nijer|নিজের|acount|account|একাউন্ট|অ্যাকাউন্ট)/i.test(
+            norm,
+          ) &&
+            /(refer|reffer|রেফার|ব্যালেন্স|balance|verify|ভেরিফাই|verification|ভেরিফিকেশন|face|ফেস|slot|স্লট|mining|মাইনিং|bonus|বোনাস|টাকা|taka|tk|income|ইনকাম|status|স্ট্যাটাস|details|ডিটেইলস|koto|কত|koita|কয়টা|kota|hoyeche|hoyche|hoise|আছে|ache|list|লিস্ট|তালিকা)/i.test(
+              norm,
+            )) ||
+            /(refer|reffer|referral|রেফার|রেফারেল)[^\n]{0,30}(list|লিস্ট|তালিকা|koita|কয়টা|koyta|koto|কত|hisab|হিসাব)/i.test(
+              norm,
+            ));
 
         const asksReverifyStatus =
-          /(re\s*-?verify|reverify|রি\s*-?ভেরিফাই|রি ভেরিফাই|রি-ভেরিফাই)[^\n]{0,90}(চায় না|চাই না|চাচ্ছে না|আসে না|আসেনি|ashe na|chay na|chai na|hocche na|hoy na|হয় না|কেন|keno|kn|কবে|kokhon|কখন|status|স্ট্যাটাস)/i.test(norm) ||
-          /(3|৩|4|৪)\s*(din|দিন|day)[^\n]{0,120}(first|1st|প্রথম|১ম|verify|ভেরিফাই)[^\n]{0,120}(re\s*-?verify|reverify|রি\s*-?ভেরিফাই|রি-ভেরিফাই)/i.test(norm);
+          /(re\s*-?verify|reverify|রি\s*-?ভেরিফাই|রি ভেরিফাই|রি-ভেরিফাই)[^\n]{0,90}(চায় না|চাই না|চাচ্ছে না|আসে না|আসেনি|ashe na|chay na|chai na|hocche na|hoy na|হয় না|কেন|keno|kn|কবে|kokhon|কখন|status|স্ট্যাটাস)/i.test(
+            norm,
+          ) ||
+          /(3|৩|4|৪)\s*(din|দিন|day)[^\n]{0,120}(first|1st|প্রথম|১ম|verify|ভেরিফাই)[^\n]{0,120}(re\s*-?verify|reverify|রি\s*-?ভেরিফাই|রি-ভেরিফাই)/i.test(
+            norm,
+          );
 
         const asksFacePrivacy =
-          /(face|ফেস|mukh|মুখ|scan|স্ক্যান|ছবি|photo|ফটো|pic|পিক)[^\n]{0,120}(ki koren|ki koro|কী করেন|কি করেন|কি করো|কি করেন|নিয়ে.*করেন|নিয়া.*করেন|use|ব্যবহার|sell|বিক্রি|share|শেয়ার|data|ডাটা|তথ্য)/i.test(norm) ||
-          /(fau fau|ফাউ ফাউ|free|ফ্রি|tk|টাকা|payment|পেমেন্ট)[^\n]{0,120}(dicche|দিচ্ছে|dei|দেয়|দেন|দেয়)[^\n]{0,160}(face|ফেস|mukh|মুখ|ছবি|photo|ফটো)/i.test(norm);
+          /(face|ফেস|mukh|মুখ|scan|স্ক্যান|ছবি|photo|ফটো|pic|পিক)[^\n]{0,120}(ki koren|ki koro|কী করেন|কি করেন|কি করো|কি করেন|নিয়ে.*করেন|নিয়া.*করেন|use|ব্যবহার|sell|বিক্রি|share|শেয়ার|data|ডাটা|তথ্য)/i.test(
+            norm,
+          ) ||
+          /(fau fau|ফাউ ফাউ|free|ফ্রি|tk|টাকা|payment|পেমেন্ট)[^\n]{0,120}(dicche|দিচ্ছে|dei|দেয়|দেন|দেয়)[^\n]{0,160}(face|ফেস|mukh|মুখ|ছবি|photo|ফটো)/i.test(
+            norm,
+          );
 
         // "কত টাকা পাব / বোনাস কত" — এটা হিসাব/নিয়মের প্রশ্ন, কারো রেফারার খোঁজা নয়।
         // ভয়েস ট্রান্সক্রিপ্ট এলোমেলো হলে আগে ভুল করে UID চেয়ে বসত।
         const asksReferralAmount =
-          /(koto|কত|kto|how much|kotota|কতটা)[^\n]{0,40}(tk|taka|টাকা|৳|bonus|বোনাস|pabo|paabo|পাব|পাবো|income|ইনকাম|commission|কমিশন)/i.test(norm) ||
+          /(koto|কত|kto|how much|kotota|কতটা)[^\n]{0,40}(tk|taka|টাকা|৳|bonus|বোনাস|pabo|paabo|পাব|পাবো|income|ইনকাম|commission|কমিশন)/i.test(
+            norm,
+          ) ||
           /(bonus|বোনাস)[^\n]{0,40}(koto|কত|pabo|পাব|পাবো|kemne|কিভাবে|kivabe)/i.test(norm) ||
           /(pabo|paabo|পাব|পাবো|pai|পাই)\s*\??$/i.test(norm.trim());
 
         const asksReferralJoin =
-          !asksReferralAmount && (
-          /(kar|কার|kaar|jar|যার|kon|কোন|which|who|ke|কে|kader|কাদের)[^\n]{0,90}(refer|reffer|refar|refr|রেফার|referral|রেফারে|রেফারার|under|আন্ডার)/i.test(norm) ||
-          /(refer|reffer|refar|refr|রেফার|referral|রেফারে|রেফারার|under|আন্ডার)[^\n]{0,90}(join|জয়েন|joined|asche|আসছে|ashche|aishe|hoise|হইছে|hoyeche|হয়েছে|ache|আছে|kar|কার|কে|ke|korche|করছে|kore|করে|account|একাউন্ট|অ্যাকাউন্ট|id|আইডি)/i.test(norm) ||
-          /(ke|কে|কার)[^\n]{0,60}(eneche|এনেছে|anse|আনছে|niye asche|নিয়ে আসছে)/i.test(norm));
-
-
+          !asksReferralAmount &&
+          (/(kar|কার|kaar|jar|যার|kon|কোন|which|who|ke|কে|kader|কাদের)[^\n]{0,90}(refer|reffer|refar|refr|রেফার|referral|রেফারে|রেফারার|under|আন্ডার)/i.test(
+            norm,
+          ) ||
+            /(refer|reffer|refar|refr|রেফার|referral|রেফারে|রেফারার|under|আন্ডার)[^\n]{0,90}(join|জয়েন|joined|asche|আসছে|ashche|aishe|hoise|হইছে|hoyeche|হয়েছে|ache|আছে|kar|কার|কে|ke|korche|করছে|kore|করে|account|একাউন্ট|অ্যাকাউন্ট|id|আইডি)/i.test(
+              norm,
+            ) ||
+            /(ke|কে|কার)[^\n]{0,60}(eneche|এনেছে|anse|আনছে|niye asche|নিয়ে আসছে)/i.test(norm));
 
         // "রেফার করেছি কিন্তু রেফার বাড়ে না / কমে গেছে" → রেফার হিস্টরি + কারণ
         const complainsReferralCount =
           /(refer|reffer|refar|রেফার|referral|রেফারেল)/i.test(norm) &&
-          /(bare na|বাড়ে না|barche na|বাড়ছে না|bad?he na|kome|কমে|kome gese|কমে গেছে|komeche|কমেছে|jog hoi na|যোগ হয় না|jog hoy nai|যোগ হয় নাই|add hoi na|অ্যাড হয় না|add hocche na|dekhachhe na|দেখাচ্ছে না|dekhai na|দেখায় না|count hoi na|কাউন্ট হয় না|kmi|কমি)/i.test(norm);
+          /(bare na|বাড়ে না|barche na|বাড়ছে না|bad?he na|kome|কমে|kome gese|কমে গেছে|komeche|কমেছে|jog hoi na|যোগ হয় না|jog hoy nai|যোগ হয় নাই|add hoi na|অ্যাড হয় না|add hocche na|dekhachhe na|দেখাচ্ছে না|dekhai na|দেখায় না|count hoi na|কাউন্ট হয় না|kmi|কমি)/i.test(
+            norm,
+          );
 
         // "যেগুলো রি-ভেরিফাই হয় না ওগুলো রিমুভ/ডিলিট করা যাবে?" → হিসাব নয়,
         // সরাসরি স্লট রিসেটের অফার (UID + স্লট নম্বর নিয়ে)।
         const wantsSlotRemoval =
-          /(remove|রিমুভ|delete|ডিলিট|muche|মুছ|bad de|বাদ দ|clear|ক্লিয়ার|reset|রিসেট|খালি|khali|katte|kete|kate|kata|kaita|কাটতে|কেটে|কাটা|কাটাই|কাইটা)/i.test(norm) &&
-          /(slot|স্লট|face|ফেস|verify|ভেরিফাই|verification|ভেরিফিকেশন|oigula|ওইগুলো|ওগুলো|ogulo|eigula|এইগুলো|egula|account|একাউন্ট)/i.test(norm);
+          /(remove|রিমুভ|delete|ডিলিট|muche|মুছ|bad de|বাদ দ|clear|ক্লিয়ার|reset|রিসেট|খালি|khali|katte|kete|kate|kata|kaita|কাটতে|কেটে|কাটা|কাটাই|কাইটা)/i.test(
+            norm,
+          ) &&
+          /(slot|স্লট|face|ফেস|verify|ভেরিফাই|verification|ভেরিফিকেশন|oigula|ওইগুলো|ওগুলো|ogulo|eigula|এইগুলো|egula|account|একাউন্ট)/i.test(
+            norm,
+          );
 
         const walletResetProvider = /(?:nagad|নগদ)/i.test(norm)
           ? "nagad"
@@ -1147,12 +1340,16 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         const wantsWalletReset =
           /(nagad|নগদ|bkash|b\s*kash|বিকাশ|payment|পেমেন্ট|wallet|ওয়ালেট)/i.test(norm) &&
           /(number|নম্বর|নাম্বার|নং)/i.test(norm) &&
-          /(change|চেঞ্জ|bodla|বদলা|বদল|poriborton|পরিবর্তন|reset|রিসেট|remove|রিমুভ|delete|ডিলিট|muche|মুছ|ভুল|wrong)/i.test(norm);
+          /(change|চেঞ্জ|bodla|বদলা|বদল|poriborton|পরিবর্তন|reset|রিসেট|remove|রিমুভ|delete|ডিলিট|muche|মুছ|ভুল|wrong)/i.test(
+            norm,
+          );
 
         // "আমার রেফার হয় না / রেফার লিংক কাজ করে না" → নিজের ৫টি স্লট ভেরিফাই লাগবে
         const asksReferralUnlock =
           /(refer|reffer|refar|রেফার|referral|রেফারেল)/i.test(norm) &&
-          /(hoi na|hoy na|হয় না|হয়না|hocche na|হচ্ছে না|kaj kore na|কাজ করে না|lock|লক|block|ব্লক|link|লিংক|korte parchi na|করতে পারছি না|parchi na|পারছি না|open hoi na|খোলে না|unlock|আনলক)/i.test(norm) &&
+          /(hoi na|hoy na|হয় না|হয়না|hocche na|হচ্ছে না|kaj kore na|কাজ করে না|lock|লক|block|ব্লক|link|লিংক|korte parchi na|করতে পারছি না|parchi na|পারছি না|open hoi na|খোলে না|unlock|আনলক)/i.test(
+            norm,
+          ) &&
           !/(kome|কমে|bare na|বাড়ে না)/i.test(norm);
 
         // "৫টা স্লট কি প্রথমবার ভেরিফাই করলেই হবে?" → হ্যাঁ
@@ -1163,21 +1360,27 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         // "আমি তো প্রথম ১০টার বোনাস নিয়েছি, এখন আরও ১০টা করলে কি আবার বোনাস পাবো?"
         const asksExtraSlotBonus =
           /(bonus|বোনাস)/i.test(norm) &&
-          /(aro|আরও|আরো|abar|আবার|extra|এক্সট্রা|notun|নতুন|porer|পরের|second|dwitiyo|দ্বিতীয়|20|২০|30|৩০|50|৫০|barale|বাড়ালে|barai|বাড়াই|add kori|যোগ কর)/i.test(norm) &&
+          /(aro|আরও|আরো|abar|আবার|extra|এক্সট্রা|notun|নতুন|porer|পরের|second|dwitiyo|দ্বিতীয়|20|২০|30|৩০|50|৫০|barale|বাড়ালে|barai|বাড়াই|add kori|যোগ কর)/i.test(
+            norm,
+          ) &&
           /(slot|স্লট)/i.test(norm);
 
-
-
-
-
         const verificationDateKind = (s: string): "first" | "reverify" | "all" | null => {
-          if (/(kotodin|koto\s*din|কতদিন|কত\s*দিন)[^\n]{0,30}(por|pore|পর|পরে)[^\n]{0,30}(re\s*-?\s*verify|reverify|রি\s*-?\s*ভেরিফাই)/i.test(s)) {
+          if (
+            /(kotodin|koto\s*din|কতদিন|কত\s*দিন)[^\n]{0,30}(por|pore|পর|পরে)[^\n]{0,30}(re\s*-?\s*verify|reverify|রি\s*-?\s*ভেরিফাই)/i.test(
+              s,
+            )
+          ) {
             return null;
           }
-          const asksDate = /(তারিখ|কবে|কতদিন|kotodin|kobe|kokhon|koto\s*(?:tarikh|ratikh|date|din)|tarikh|ratikh|date|when|hoise|hoyche|hoyeche|korche|kora\s*hoyche)/i.test(s);
+          const asksDate =
+            /(তারিখ|কবে|কতদিন|kotodin|kobe|kokhon|koto\s*(?:tarikh|ratikh|date|din)|tarikh|ratikh|date|when|hoise|hoyche|hoyeche|korche|kora\s*hoyche)/i.test(
+              s,
+            );
           const asksVerify = /(verify|verification|ভেরিফাই|ভেরিফিকেশন|face|ফেস)/i.test(s);
           if (!asksDate || !asksVerify) return null;
-          if (/(re\s*-?\s*verify|reverify|রি\s*-?\s*ভেরিফাই|রি-ভেরিফাই)/i.test(s)) return "reverify";
+          if (/(re\s*-?\s*verify|reverify|রি\s*-?\s*ভেরিফাই|রি-ভেরিফাই)/i.test(s))
+            return "reverify";
           if (/(1st|first|১ম|প্রথম|prothom)/i.test(s)) return "first";
           return "all";
         };
@@ -1186,41 +1389,59 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           const explicitUid = s.match(/(?:uid|ইউআইডি|আইডি|id)\s*[:#-]?\s*([A-Za-z0-9]{2,10})/i);
 
           if (explicitUid) return explicitUid[1].trim();
-          const namedUser = s.match(/(?:user\s*\d+\s+)?([A-Za-z][A-Za-z .]{1,35})\s*(?:er|এর|র)\s+(?:face|ফেস|1st|first|verify|verification|ভেরিফাই)/i);
+          const namedUser = s.match(
+            /(?:user\s*\d+\s+)?([A-Za-z][A-Za-z .]{1,35})\s*(?:er|এর|র)\s+(?:face|ফেস|1st|first|verify|verification|ভেরিফাই)/i,
+          );
           if (namedUser) return namedUser[1].trim();
-          const banglaName = s.match(/([\u0980-\u09FF]{2,}(?:\s+[\u0980-\u09FF]{2,})?)\s*(?:এর|র)\s+(?:ফেস|ভেরিফাই|ভেরিফিকেশন)/i);
+          const banglaName = s.match(
+            /([\u0980-\u09FF]{2,}(?:\s+[\u0980-\u09FF]{2,})?)\s*(?:এর|র)\s+(?:ফেস|ভেরিফাই|ভেরিফিকেশন)/i,
+          );
           if (banglaName) return banglaName[1].trim();
           const only = s.trim().match(/^[#\s]*(\d{2,10}|[A-Za-z0-9]{6,10})[\s.]*$/);
           if (only) return only[1].trim();
           return null;
         };
 
-        const logMessage = async (verdict: string, action: string, reply: string | null, uid: string | null) => {
-          await supabaseAdmin.from("tg_messages").update({
-            text: text.slice(0, 2000),
-            has_photo: !!photos?.length,
-            verdict,
-            action,
-            bot_reply: reply,
-            matched_uid: uid,
-          }).eq("update_id", update.update_id);
+        const logMessage = async (
+          verdict: string,
+          action: string,
+          reply: string | null,
+          uid: string | null,
+        ) => {
+          await supabaseAdmin
+            .from("tg_messages")
+            .update({
+              text: text.slice(0, 2000),
+              has_photo: !!photos?.length,
+              verdict,
+              action,
+              bot_reply: reply,
+              matched_uid: uid,
+            })
+            .eq("update_id", update.update_id);
         };
 
         const clearSession = async () => {
           if (!msg.from?.id) return;
-          await supabaseAdmin.from("tg_sessions").delete()
-            .eq("tg_user_id", msg.from.id).eq("chat_id", msg.chat.id);
+          await supabaseAdmin
+            .from("tg_sessions")
+            .delete()
+            .eq("tg_user_id", msg.from.id)
+            .eq("chat_id", msg.chat.id);
         };
         const saveSession = async (row: Record<string, unknown>) => {
           if (!msg.from?.id) return;
-          await supabaseAdmin.from("tg_sessions").upsert({
-            tg_user_id: msg.from.id,
-            chat_id: msg.chat.id,
-            intent: "slot_reset",
-            expires_at: new Date(Date.now() + 20 * 60 * 1000).toISOString(),
-            updated_at: new Date().toISOString(),
-            ...row,
-          } as any, { onConflict: "tg_user_id,chat_id" });
+          await supabaseAdmin.from("tg_sessions").upsert(
+            {
+              tg_user_id: msg.from.id,
+              chat_id: msg.chat.id,
+              intent: "slot_reset",
+              expires_at: new Date(Date.now() + 20 * 60 * 1000).toISOString(),
+              updated_at: new Date().toISOString(),
+              ...row,
+            } as any,
+            { onConflict: "tg_user_id,chat_id" },
+          );
         };
 
         // অ্যাপ থেকে "শুরু করুন" চাপলে টেলিগ্রাম + UID লিংক হয়ে যায় — তাই
@@ -1230,8 +1451,10 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           if (_linkedUid !== undefined) return _linkedUid;
           if (!msg.from?.id) return (_linkedUid = null);
           const { data } = await supabaseAdmin
-            .from("profiles").select("uid_seq")
-            .eq("telegram_user_id", msg.from.id).maybeSingle();
+            .from("profiles")
+            .select("uid_seq")
+            .eq("telegram_user_id", msg.from.id)
+            .maybeSingle();
           const uid = (data as { uid_seq?: number | null } | null)?.uid_seq;
           return (_linkedUid = uid != null ? String(uid) : null);
         };
@@ -1240,7 +1463,10 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         // আগে বট @handle-টাকে "নাম" ধরে ডেটাবেজে খুঁজত, তাই কিছুই পেত না।
         // এখন mention/reply করা ইউজারের Telegram ID থেকেই আসল UID বের করি।
         {
-          const ents: any[] = [...((msg as any).entities ?? []), ...((msg as any).caption_entities ?? [])];
+          const ents: any[] = [
+            ...((msg as any).entities ?? []),
+            ...((msg as any).caption_entities ?? []),
+          ];
           const textMention = ents.find((e) => e?.type === "text_mention" && e?.user?.id);
           const repliedUser =
             msg.reply_to_message?.from?.id && !msg.reply_to_message.from?.is_bot
@@ -1280,7 +1506,8 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
             if (!tgId && handleIsOther) {
               const { data: seen } = await supabaseAdmin
-                .from("tg_messages").select("tg_user_id")
+                .from("tg_messages")
+                .select("tg_user_id")
                 .ilike("username", handle!)
                 .not("tg_user_id", "is", null)
                 .order("created_at", { ascending: false })
@@ -1291,8 +1518,10 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
             if (tgId) {
               const { data: prof } = await supabaseAdmin
-                .from("profiles").select("uid_seq, display_name")
-                .eq("telegram_user_id", tgId).maybeSingle();
+                .from("profiles")
+                .select("uid_seq, display_name")
+                .eq("telegram_user_id", tgId)
+                .maybeSingle();
               uidSeq = (prof as any)?.uid_seq ?? null;
               name = (prof as any)?.display_name ?? null;
             }
@@ -1319,7 +1548,6 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             return Response.json({ ok: true, flow: "mention-uid-unlinked" });
           }
         }
-
 
         if (settings.auto_reply_enabled && isThanksOnly(norm)) {
           await clearSession();
@@ -1362,9 +1590,13 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               `✅ অনুমোদন দেওয়ার সাথে সাথেই স্লটটি রিসেট হবে এবং আমি এখানে রিপোর্ট দিয়ে জানিয়ে দেব 💙`,
             msg.message_id,
           );
-          await logMessage("question", `slot-reset-request:${res.slots.join("|")}`, "reset approval requested", uid);
+          await logMessage(
+            "question",
+            `slot-reset-request:${res.slots.join("|")}`,
+            "reset approval requested",
+            uid,
+          );
           return true;
-
         };
 
         // একই ইউজারের একটা রিসেট অনুরোধ pending থাকলে আবার UID চাইব না —
@@ -1381,19 +1613,24 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             .maybeSingle();
           if (!data) return null;
           const { data: prof } = await supabaseAdmin
-            .from("profiles").select("uid_seq, display_name").eq("id", data.user_id).maybeSingle();
+            .from("profiles")
+            .select("uid_seq, display_name")
+            .eq("id", data.user_id)
+            .maybeSingle();
           return {
-            slots: ((data.slots as number[]) ?? []),
+            slots: (data.slots as number[]) ?? [],
             uid: prof?.uid_seq != null ? String(prof.uid_seq) : "",
             name: prof?.display_name || "ইউজার",
           };
         };
 
-        const sendPendingResetNotice = async (p: { slots: number[]; uid: string; name: string }) => {
+        const sendPendingResetNotice = async (p: {
+          slots: number[];
+          uid: string;
+          name: string;
+        }) => {
           await clearSession();
-          const slotText = p.slots.length
-            ? p.slots.map((s) => `${s} নম্বর`).join(", ")
-            : "সব";
+          const slotText = p.slots.length ? p.slots.map((s) => `${s} নম্বর`).join(", ") : "সব";
           await sendMessage(
             chatId,
             `✅ <b>আপনার স্লট রিসেটের অনুরোধ আগেই পাঠানো হয়েছে</b> — নতুন করে UID দেওয়ার দরকার নেই 🙂\n\n` +
@@ -1406,7 +1643,12 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               `✅ অনুমোদন দিলেই স্লটটি রিসেট হবে এবং আমি এখানেই রিপোর্ট দিয়ে জানাব 💙`,
             msg.message_id,
           );
-          await logMessage("question", `slot-reset-pending:${p.slots.join("|")}`, "pending reset reminder", p.uid || null);
+          await logMessage(
+            "question",
+            `slot-reset-pending:${p.slots.join("|")}`,
+            "pending reset reminder",
+            p.uid || null,
+          );
         };
 
         // ইউজার কোনো নির্দিষ্ট স্লট নিয়ে সমভাইয়া কথা বললে ("৩ নম্বর স্লটে
@@ -1414,7 +1656,9 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         // দেব কি না। রাজি হলে UID চেয়ে সাথে সাথেই রিসেট করে দেব।
         const mentionedSlot: number | null = (() => {
           const m =
-            norm.match(/(\d{1,3})\s*(?:no|nombor|number|নম্বর|নাম্বার|নং)?\s*(?:er|এর)?\s*(?:slot|স্লট)/i) ||
+            norm.match(
+              /(\d{1,3})\s*(?:no|nombor|number|নম্বর|নাম্বার|নং)?\s*(?:er|এর)?\s*(?:slot|স্লট)/i,
+            ) ||
             norm.match(/(?:slot|স্লট)\s*(?:no|number|নম্বর|নাম্বার|নং)?\s*[:#-]?\s*(\d{1,3})/i);
           const n = m ? Number(m[1]) : NaN;
           return Number.isInteger(n) && n >= 1 && n <= 500 ? n : null;
@@ -1426,15 +1670,16 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
          * যেই স্ক্রিনশট দিয়েছে, উত্তরটাও ঠিক সেটারই হবে।
          */
         const otherErrorHit = (): boolean =>
-          /(camera|ক্যামেরা|permission|পারমিশন|access your camera|device settings|expired|no longer valid|লিংক এক্সপায়ার|twin|already verified|network|internet|something went wrong)/i
-            .test(`${norm} ${shotText || ""}`);
+          /(camera|ক্যামেরা|permission|পারমিশন|access your camera|device settings|expired|no longer valid|লিংক এক্সপায়ার|twin|already verified|network|internet|something went wrong)/i.test(
+            `${norm} ${shotText || ""}`,
+          );
 
         /** স্ক্রিনশটে/লেখায় "১৮ বছরের নিচে" ধরনের বার্তা আছে কি না। */
         const underAgeHit = (): boolean =>
           !otherErrorHit() &&
-          /(18|১৮)\s*(\+|বছর|bochor|years?)?[^\n]{0,40}(niche|নিচে|under|kom|কম|below)|under\s*-?\s*age|আপনার বয়স|too young|minimum age/i
-            .test(`${norm} ${shotText || ""}`);
-
+          /(18|১৮)\s*(\+|বছর|bochor|years?)?[^\n]{0,40}(niche|নিচে|under|kom|কম|below)|under\s*-?\s*age|আপনার বয়স|too young|minimum age/i.test(
+            `${norm} ${shotText || ""}`,
+          );
 
         const offerSlotResetSuffix = async (): Promise<string> => {
           if (!msg.from?.id) return "";
@@ -1470,9 +1715,6 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           );
         };
 
-
-
-
         // ---- open commands: no password needed ------------------------------
         if (/^\/(start|help|admin)\b/i.test(norm)) {
           await sendMessage(
@@ -1494,13 +1736,14 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return Response.json({ ok: true, flow: "admin-reset" });
         }
 
-
-
         // ---- continue an in-progress slot-reset conversation -------------------
         if (msg.from?.id) {
           const { data: sess } = await supabaseAdmin
-            .from("tg_sessions").select("*")
-            .eq("tg_user_id", msg.from.id).eq("chat_id", msg.chat.id).maybeSingle();
+            .from("tg_sessions")
+            .select("*")
+            .eq("tg_user_id", msg.from.id)
+            .eq("chat_id", msg.chat.id)
+            .maybeSingle();
 
           const aliveRaw = sess && new Date(sess.expires_at).getTime() > Date.now();
           if (sess && !aliveRaw) await clearSession();
@@ -1509,16 +1752,21 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           // answer what they actually asked now.
           const answering =
             sess?.step === "offer_reset"
-              ? isAffirmation(norm) || looksLikeUidAnswer ||
+              ? isAffirmation(norm) ||
+                looksLikeUidAnswer ||
                 /(রিসেট|reset|হ্যাঁ|হা|জি|করে দিন|kore din|kore den|chai|চাই)/i.test(norm)
               : sess?.intent === "slot_restore"
                 ? looksLikeSlotAnswer || looksLikeUidAnswer || wantsAll
-              : sess?.intent === "withdraw_status" || sess?.intent === "verification_dates" || sess?.intent === "account_info" || sess?.intent === "referral_join" || sess?.intent === "referral_history" || sess?.intent === "wallet_reset"
-                ? looksLikeUidAnswer
-                : sess?.step === "await_slot"
-                  ? looksLikeSlotAnswer
-                  : looksLikeUidAnswer || looksLikeSlotAnswer;
-
+                : sess?.intent === "withdraw_status" ||
+                    sess?.intent === "verification_dates" ||
+                    sess?.intent === "account_info" ||
+                    sess?.intent === "referral_join" ||
+                    sess?.intent === "referral_history" ||
+                    sess?.intent === "wallet_reset"
+                  ? looksLikeUidAnswer
+                  : sess?.step === "await_slot"
+                    ? looksLikeSlotAnswer
+                    : looksLikeUidAnswer || looksLikeSlotAnswer;
 
           if (aliveRaw && sess && !answering && !isCancel && questionish) {
             await clearSession();
@@ -1528,14 +1776,19 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           if (alive && sess) {
             if (isCancel) {
               await clearSession();
-              await sendMessage(chatId, "ঠিক আছে, রিসেটের অনুরোধটি বাতিল করা হলো। 🙂", msg.message_id);
+              await sendMessage(
+                chatId,
+                "ঠিক আছে, রিসেটের অনুরোধটি বাতিল করা হলো। 🙂",
+                msg.message_id,
+              );
               await logMessage("question", "slot-reset-cancel", null, sess.uid);
               return Response.json({ ok: true, flow: "cancelled" });
             }
 
             // ---- স্লট ফিরিয়ে আনার কথাবার্তা চলছে ----------------------------
             if (sess.intent === "slot_restore") {
-              const uid = (sess.uid as string | null) || pickUidFromCurrentOrReply() || (await linkedUid());
+              const uid =
+                (sess.uid as string | null) || pickUidFromCurrentOrReply() || (await linkedUid());
               if (!uid) {
                 await sendMessage(
                   chatId,
@@ -1545,16 +1798,23 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
                 return Response.json({ ok: true, flow: "slot-restore-await-uid" });
               }
 
-              const { listRestorableForUid, restoreSlotsForUid } = await import("@/lib/telegram-slot-restore.server");
+              const { listRestorableForUid, restoreSlotsForUid } =
+                await import("@/lib/telegram-slot-restore.server");
               const wanted = wantsAll ? [] : pickSlots(norm.replace(uid, " "));
 
               if (!wanted.length && !wantsAll) {
                 const list = await listRestorableForUid(uid);
-                const reply = list.found && list.slots.length
-                  ? `🗂️ <b>${list.name}</b> (UID <code>${list.uid}</code>) — যেসব স্লট রিসেট করা হয়েছিল 👇\n\n` +
-                    list.slots.map((s) => `• <b>স্লট ${s.slot}</b> — ${new Date(s.created_at).toLocaleDateString("bn-BD")}`).join("\n") +
-                    `\n\n🔢 কোন কোন স্লট ফিরিয়ে আনবো? নম্বর লিখুন (যেমন: 4 অথবা 2,5) — সবগুলোর জন্য লিখুন <b>সব</b>।`
-                  : `🙂 এই একাউন্টে ফিরিয়ে আনার মতো কোনো রিসেট করা স্লট পাওয়া যায়নি।`;
+                const reply =
+                  list.found && list.slots.length
+                    ? `🗂️ <b>${list.name}</b> (UID <code>${list.uid}</code>) — যেসব স্লট রিসেট করা হয়েছিল 👇\n\n` +
+                      list.slots
+                        .map(
+                          (s) =>
+                            `• <b>স্লট ${s.slot}</b> — ${new Date(s.created_at).toLocaleDateString("bn-BD")}`,
+                        )
+                        .join("\n") +
+                      `\n\n🔢 কোন কোন স্লট ফিরিয়ে আনবো? নম্বর লিখুন (যেমন: 4 অথবা 2,5) — সবগুলোর জন্য লিখুন <b>সব</b>।`
+                    : `🙂 এই একাউন্টে ফিরিয়ে আনার মতো কোনো রিসেট করা স্লট পাওয়া যায়নি।`;
                 await saveSession({ intent: "slot_restore", step: "await_slot", uid } as any);
                 await sendMessage(chatId, reply, msg.message_id);
                 await logMessage("question", "slot-restore-list", reply, uid);
@@ -1577,18 +1837,28 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               return Response.json({ ok: true, flow: "slot-restore" });
             }
 
-
             if (sess.intent === "wallet_reset") {
-              const rememberedProvider = (sess.data as any)?.provider as "bkash" | "nagad" | undefined;
+              const rememberedProvider = (sess.data as any)?.provider as
+                | "bkash"
+                | "nagad"
+                | undefined;
               const provider = rememberedProvider || walletResetProvider;
               if (sess.step === "await_provider" && !provider) {
-                await sendMessage(chatId, "কোন নম্বরটি বদলাতে চান—<b>বিকাশ</b> নাকি <b>নগদ</b>?", msg.message_id);
+                await sendMessage(
+                  chatId,
+                  "কোন নম্বরটি বদলাতে চান—<b>বিকাশ</b> নাকি <b>নগদ</b>?",
+                  msg.message_id,
+                );
                 return Response.json({ ok: true, flow: "wallet-reset-await-provider" });
               }
 
               const uid = pickUidFromCurrentOrReply();
               if (!uid) {
-                await saveSession({ intent: "wallet_reset", step: "await_uid", data: { provider } });
+                await saveSession({
+                  intent: "wallet_reset",
+                  step: "await_uid",
+                  data: { provider },
+                });
                 await sendMessage(
                   chatId,
                   `${provider === "nagad" ? "নগদ" : "বিকাশ"} নম্বরটি রিসেট করে দিচ্ছি। শুধু আপনার <b>UID</b> লিখুন।`,
@@ -1597,12 +1867,18 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
                 return Response.json({ ok: true, flow: "wallet-reset-await-uid" });
               }
 
-              const { resetPaymentNumbersForUid, walletResetReply } = await import("@/lib/telegram-wallet.server");
+              const { resetPaymentNumbersForUid, walletResetReply } =
+                await import("@/lib/telegram-wallet.server");
               const result = await resetPaymentNumbersForUid(uid, provider);
               const reply = walletResetReply(result);
               if (result.ok) await clearSession();
               await sendMessage(chatId, reply, msg.message_id);
-              await logMessage("question", `wallet-reset:${provider ?? "all"}`, reply, result.ok ? uid : null);
+              await logMessage(
+                "question",
+                `wallet-reset:${provider ?? "all"}`,
+                reply,
+                result.ok ? uid : null,
+              );
               return Response.json({ ok: true, flow: "wallet-reset-complete" });
             }
 
@@ -1692,9 +1968,6 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               return Response.json({ ok: true, flow: "referral-history-session" });
             }
 
-
-
-
             if (sess.intent === "verification_dates" && sess.step === "await_uid") {
               const query = pickVerificationQuery(norm) || pickUidFromCurrentOrReply();
               if (!query) {
@@ -1706,11 +1979,17 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
                 return Response.json({ ok: true, flow: "verification-date-await-uid" });
               }
 
-              const { buildVerificationDateReport, buildReverifyStatusReport } = await import("@/lib/telegram-lookup.server");
-              const kind = ((sess.data as any)?.kind || "first") as "first" | "reverify" | "all" | "reverify_status";
-              const res = kind === "reverify_status"
-                ? await buildReverifyStatusReport(query)
-                : await buildVerificationDateReport(query, kind);
+              const { buildVerificationDateReport, buildReverifyStatusReport } =
+                await import("@/lib/telegram-lookup.server");
+              const kind = ((sess.data as any)?.kind || "first") as
+                | "first"
+                | "reverify"
+                | "all"
+                | "reverify_status";
+              const res =
+                kind === "reverify_status"
+                  ? await buildReverifyStatusReport(query)
+                  : await buildVerificationDateReport(query, kind);
               if (res.found) {
                 await clearSession();
                 await sendMessage(chatId, res.card, msg.message_id);
@@ -1729,25 +2008,40 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             // বট নিজে থেকে "স্লটটি রিসেট করে দেব?" জিজ্ঞেস করেছিল — এখানে
             // হ্যাঁ/না এর উত্তর নেওয়া হয়।
             if (sess.step === "offer_reset") {
-              const pending = (((sess.data as any)?.slots ?? []) as number[]).filter((n) => Number(n) > 0);
+              const pending = (((sess.data as any)?.slots ?? []) as number[]).filter(
+                (n) => Number(n) > 0,
+              );
               const slotLabel = pending.length ? `${pending.join(", ")} নম্বর স্লট` : "স্লটটি";
               const said = norm;
               const saidNo = /(না|na\b|no\b|lagbe na|লাগবে না|চাই না|chai na|থাক)/i.test(said);
               const saidYes =
-                isAffirmation(said) || /(হ্যাঁ|হা\b|জি|রিসেট|reset|করে দিন|kore din|kore den|chai|চাই|dao|দাও)/i.test(said);
+                isAffirmation(said) ||
+                /(হ্যাঁ|হা\b|জি|রিসেট|reset|করে দিন|kore din|kore den|chai|চাই|dao|দাও)/i.test(
+                  said,
+                );
 
               if (saidNo && !saidYes) {
                 await clearSession();
-                await sendMessage(chatId, "ঠিক আছে, রিসেট করা হলো না 🙂 অন্য কোনো সাহায্য লাগলে নির্দ্বিধায় বলবেন 💙", msg.message_id);
+                await sendMessage(
+                  chatId,
+                  "ঠিক আছে, রিসেট করা হলো না 🙂 অন্য কোনো সাহায্য লাগলে নির্দ্বিধায় বলবেন 💙",
+                  msg.message_id,
+                );
                 return Response.json({ ok: true, flow: "offer-reset-declined" });
               }
 
-              const uidNow = pickUid(said) || (replyNorm ? pickUid(replyNorm) : null) || (await linkedUid());
+              const uidNow =
+                pickUid(said) || (replyNorm ? pickUid(replyNorm) : null) || (await linkedUid());
               if (uidNow) {
                 const { findProfileByUid } = await import("@/lib/telegram-slot.server");
                 const prof = await findProfileByUid(uidNow);
                 if (prof) {
-                  await saveSession({ step: "await_slot", uid: uidNow, app_user_id: prof.id, data: { slots: pending } });
+                  await saveSession({
+                    step: "await_slot",
+                    uid: uidNow,
+                    app_user_id: prof.id,
+                    data: { slots: pending },
+                  });
                   await doReset(uidNow, pending);
                   return Response.json({ ok: true, flow: "offer-reset-done" });
                 }
@@ -1792,9 +2086,16 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
                 );
                 return Response.json({ ok: true, flow: "uid-notfound" });
               }
-              const remembered = (((sess.data as any)?.slots ?? []) as number[]).filter((n) => Number(n) > 0);
+              const remembered = (((sess.data as any)?.slots ?? []) as number[]).filter(
+                (n) => Number(n) > 0,
+              );
               if (remembered.length) {
-                await saveSession({ step: "await_slot", uid, app_user_id: prof.id, data: { slots: remembered } });
+                await saveSession({
+                  step: "await_slot",
+                  uid,
+                  app_user_id: prof.id,
+                  data: { slots: remembered },
+                });
                 await doReset(uid, remembered);
                 return Response.json({ ok: true, flow: "reset" });
               }
@@ -1812,7 +2113,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               await sendMessage(
                 chatId,
                 `✅ একাউন্ট পাওয়া গেছে: <b>${prof.display_name || "ইউজার"}</b> (UID <code>${uid}</code>)\n\n` +
-                  `🔢 ${settings.ask_slot_message || "কোন কোন স্লট রিসেট করতে চান? এক বা একাধিক নম্বর লিখুন (যেমন: 3 অথবা 2,5,7 অথবা 2-6, সবগুলোর জন্য লিখুন \"সব\")"}`,
+                  `🔢 ${settings.ask_slot_message || 'কোন কোন স্লট রিসেট করতে চান? এক বা একাধিক নম্বর লিখুন (যেমন: 3 অথবা 2,5,7 অথবা 2-6, সবগুলোর জন্য লিখুন "সব")'}`,
                 msg.message_id,
               );
               await logMessage("question", "asked-slot", null, uid);
@@ -1832,16 +2133,17 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               await doReset(sess.uid, wantsAll ? [] : slots);
               return Response.json({ ok: true, flow: "reset" });
             }
-
-
           }
         }
 
         // ---- "রিসেট করা স্লটগুলো ফিরিয়ে দিন" → কোনগুলো ফেরানো যাবে দেখাই ------
         if (
-          settings.auto_reply_enabled && msg.from?.id &&
+          settings.auto_reply_enabled &&
+          msg.from?.id &&
           /(slot|স্লট)/i.test(norm) &&
-          /(back|ব্যাক|ফিরি|ফিরে|ফেরত|ফিরায়|firay|ferot|firiye|restore|রিস্টোর|আগের অবস্থা|ফেরান|ফিরিয়ে)/i.test(norm)
+          /(back|ব্যাক|ফিরি|ফিরে|ফেরত|ফিরায়|firay|ferot|firiye|restore|রিস্টোর|আগের অবস্থা|ফেরান|ফিরিয়ে)/i.test(
+            norm,
+          )
         ) {
           const uid = pickUidFromCurrentOrReply() || (await linkedUid());
           const { listRestorableForUid } = await import("@/lib/telegram-slot-restore.server");
@@ -1860,7 +2162,12 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             await saveSession({ intent: "slot_restore", step: "await_slot", uid } as any);
             const reply =
               `🗂️ <b>${list.name}</b> (UID <code>${list.uid}</code>) — যেসব স্লট রিসেট করা হয়েছিল 👇\n\n` +
-              list.slots.map((s) => `• <b>স্লট ${s.slot}</b> — ${new Date(s.created_at).toLocaleDateString("bn-BD")}`).join("\n") +
+              list.slots
+                .map(
+                  (s) =>
+                    `• <b>স্লট ${s.slot}</b> — ${new Date(s.created_at).toLocaleDateString("bn-BD")}`,
+                )
+                .join("\n") +
               `\n\n🔢 কোন কোন স্লট ফিরিয়ে আনবো? নম্বর লিখুন (যেমন: 4 অথবা 2,5) — সবগুলোর জন্য লিখুন <b>সব</b>।`;
             await sendMessage(chatId, reply, msg.message_id);
             await logMessage("question", "slot-restore-list", reply, uid);
@@ -1875,11 +2182,14 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return Response.json({ ok: true, flow: "slot-restore-none" });
         }
 
-
         // ---- ইউজার শুধু UID লিখলে (আগেই যা চেয়েছিল সেটাই) সাথে সাথে হিসাব -----
         // আগে আবার "কী চেক করে দেব?" জিজ্ঞেস করা হতো — সেটা বিরক্তিকর, তাই
         // খালি নম্বর পেলেই সরাসরি পুরো একাউন্টের হিসাব পাঠিয়ে দিই।
-        if (settings.auto_reply_enabled && !(photos?.length ?? 0) && /^(?:uid|ইউআইডি|আইডি)?\s*[:#-]?\s*\d{1,9}\s*$/i.test(norm)) {
+        if (
+          settings.auto_reply_enabled &&
+          !(photos?.length ?? 0) &&
+          /^(?:uid|ইউআইডি|আইডি)?\s*[:#-]?\s*\d{1,9}\s*$/i.test(norm)
+        ) {
           const bareUid = (norm.match(/\d{1,9}/) || [""])[0];
           if (bareUid) {
             const { buildUserCard } = await import("@/lib/telegram-lookup.server");
@@ -1897,33 +2207,45 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         if (
           settings.auto_reply_enabled &&
           /(admin|অ্যাডমিন|এডমিন|এ্যাডমিন)/i.test(norm) &&
-          /(kothai|kothay|কোথায়|kotha|নাই|nai|ase na|আসেন না|কে\b|ke\b|koi|কই|dakun|ডাকুন|call)/i.test(norm)
+          /(kothai|kothay|কোথায়|kotha|নাই|nai|ase na|আসেন না|কে\b|ke\b|koi|কই|dakun|ডাকুন|call)/i.test(
+            norm,
+          )
         ) {
           const { adminWhereReply } = await import("@/lib/telegram-bot.server");
-          const reply = adminWhereReply(senderName, (settings as any).support_username || "@anamulmunni");
+          const reply = adminWhereReply(
+            senderName,
+            (settings as any).support_username || "@anamulmunni",
+          );
           await sendMessage(chatId, reply, msg.message_id);
           await logMessage("question", "admin-where", reply, null);
           return Response.json({ ok: true, flow: "admin-where" });
         }
 
-
         const bannedWords: string[] = settings.banned_words ?? [];
         const lower = text.toLowerCase();
         const hardHit = bannedWords.find((w) => w && lower.includes(w.toLowerCase()));
 
-
         const [{ data: faqRows }, { data: videoRows }, { data: voiceRows }] = await Promise.all([
           supabaseAdmin
-            .from("tg_faq").select("topic, answer, keywords, image_path, updated_at").eq("is_active", true)
-            .order("priority", { ascending: false }).order("updated_at", { ascending: false }).order("id"),
+            .from("tg_faq")
+            .select("topic, answer, keywords, image_path, updated_at")
+            .eq("is_active", true)
+            .order("priority", { ascending: false })
+            .order("updated_at", { ascending: false })
+            .order("id"),
           (supabaseAdmin as any)
-            .from("tg_videos").select("topic, url, keywords, note").eq("is_active", true)
-            .order("priority", { ascending: false }).order("id"),
+            .from("tg_videos")
+            .select("topic, url, keywords, note")
+            .eq("is_active", true)
+            .order("priority", { ascending: false })
+            .order("id"),
           (supabaseAdmin as any)
-            .from("tg_voices").select("topic, keywords, note, audio_path").eq("is_active", true)
-            .order("priority", { ascending: false }).order("id"),
+            .from("tg_voices")
+            .select("topic, keywords, note, audio_path")
+            .eq("is_active", true)
+            .order("priority", { ascending: false })
+            .order("id"),
         ]);
-
 
         // Problem replies get the matching tutorial video link appended (if the
         // admin saved one for that topic) so users can watch instead of asking again.
@@ -1935,25 +2257,38 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           const list = (videoRows ?? []) as any[];
           if (!list.length) return null;
           const hay = `${norm} ${(extra || "").toLowerCase()}`;
-          const byKeyword = list.find((v: any) =>
-            (v.keywords ?? []).some((k: string) => k && hay.includes(String(k).toLowerCase()))
-            || (v.topic && hay.includes(String(v.topic).toLowerCase())),
+          const byKeyword = list.find(
+            (v: any) =>
+              (v.keywords ?? []).some((k: string) => k && hay.includes(String(k).toLowerCase())) ||
+              (v.topic && hay.includes(String(v.topic).toLowerCase())),
           );
           if (byKeyword) return byKeyword;
 
           const topicOf = (re: RegExp) => list.find((v: any) => re.test(String(v.topic || "")));
           // ১) দূরে থাকা বন্ধুকে দিয়ে রি-ভেরিফাই
-          if (/(dure|দূরে|dur|far|onno jaygay|অন্য জায়গায়|bideshe|বিদেশ|chole gese|চলে গেছে|kache nei|কাছে নেই)/i.test(hay)) {
+          if (
+            /(dure|দূরে|dur|far|onno jaygay|অন্য জায়গায়|bideshe|বিদেশ|chole gese|চলে গেছে|kache nei|কাছে নেই)/i.test(
+              hay,
+            )
+          ) {
             const v = topicOf(/(dure|দূরে|friend|বন্ধু|re ?-?verify)/i);
             if (v) return v;
           }
           // ২) ভেরিফাই হচ্ছে না / something went wrong / ব্রাউজার সমস্যা
-          if (/(hocche na|হচ্ছে না|hoi na|হয় না|something went wrong|error|এরর|somossa|সমস্যা|browser|ব্রাউজার|camera|ক্যামেরা|fail|ফেইল)/i.test(hay)) {
+          if (
+            /(hocche na|হচ্ছে না|hoi na|হয় না|something went wrong|error|এরর|somossa|সমস্যা|browser|ব্রাউজার|camera|ক্যামেরা|fail|ফেইল)/i.test(
+              hay,
+            )
+          ) {
             const v = topicOf(/(hoi na|হয় না|verification|verify|ভেরিফা|wrong|problem|সমস্যা)/i);
             if (v) return v;
           }
           // ৩) কিভাবে কাজ করবেন
-          if (/(kivabe|কিভাবে|কীভাবে|kemne|কেমনে|kaj|কাজ|shuru|শুরু|new|নতুন|tutorial|টিউটোরিয়াল|video|ভিডিও)/i.test(hay)) {
+          if (
+            /(kivabe|কিভাবে|কীভাবে|kemne|কেমনে|kaj|কাজ|shuru|শুরু|new|নতুন|tutorial|টিউটোরিয়াল|video|ভিডিও)/i.test(
+              hay,
+            )
+          ) {
             const v = topicOf(/(kivabe|কিভাবে|কাজ|kaj|tutorial|শুরু)/i);
             if (v) return v;
           }
@@ -1972,7 +2307,6 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           `২️⃣ Withdraw পেজে মাধ্যম ও টাকার পরিমাণ দিন\n` +
           `৩️⃣ রিকোয়েস্ট Submit করুন — সাধারণত ৫–১০ মিনিটে পেমেন্ট পাবেন ✅`;
 
-
         let shotText = "";
         let photoBase64: string | null = null;
         if (settings.photo_analysis_enabled && photos?.length) {
@@ -1988,14 +2322,22 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             imageBase64 = await faqImageBase64((f as any).image_path);
             if (imageBase64) imgBudget--;
           }
-          faq.push({ topic: f.topic, answer: f.answer, keywords: (f as any).keywords, imageBase64 });
+          faq.push({
+            topic: f.topic,
+            answer: f.answer,
+            keywords: (f as any).keywords,
+            imageBase64,
+          });
         }
 
         // Built-in answers (always available) — admin rows above take priority.
         {
           const { BUILTIN_FAQS } = await import("@/lib/telegram-builtin-faq.server");
           for (const b of BUILTIN_FAQS) {
-            if (faq.some((f) => String(f.topic).trim().toLowerCase() === b.topic.trim().toLowerCase())) continue;
+            if (
+              faq.some((f) => String(f.topic).trim().toLowerCase() === b.topic.trim().toLowerCase())
+            )
+              continue;
             faq.push({
               topic: b.topic,
               answer: b.answer,
@@ -2037,35 +2379,50 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           }
         };
 
-
         if (photoBase64 && settings.auto_reply_enabled) {
           // স্ক্রিনশটে ঠিক ঐ সমভাইয়া লেখা থাকলেই সেভ করা ভয়েস যাবে।
           // "try again" / "face verification" এর মতো সাধারণ শব্দ সব এররেই থাকে,
           // তাই ওগুলো দিয়ে ম্যাচ করা হয় না — শুধু নির্দিষ্ট বাক্যাংশ দিয়ে।
           try {
-            const { readScreenshotText, voiceBytes, sendVoice } = await import("@/lib/telegram-bot.server");
+            const { readScreenshotText, voiceBytes, sendVoice } =
+              await import("@/lib/telegram-bot.server");
             shotText = shotText || (await readScreenshotText(photoBase64)) || "";
             const shotLower = shotText.toLowerCase();
             // Twin / duplicate-face errors must never trigger another topic's voice.
-            const isDuplicateShot = /(already|duplicate|twin|someone else|another account|onno account|ডুপ্লিকেট|আগে.*ভেরিফাই)/i.test(shotLower);
+            const isDuplicateShot =
+              /(already|duplicate|twin|someone else|another account|onno account|ডুপ্লিকেট|আগে.*ভেরিফাই)/i.test(
+                shotLower,
+              );
             const GENERIC = [
-              "try again", "face verification", "face verification error", "ভেরিফিকেশন এরর",
-              "verification error", "verify", "camera", "error", "সমস্যা",
+              "try again",
+              "face verification",
+              "face verification error",
+              "ভেরিফিকেশন এরর",
+              "verification error",
+              "verify",
+              "camera",
+              "error",
+              "সমস্যা",
             ];
-            const vMatch = shotLower && !isDuplicateShot
-              ? ((voiceRows as any[]) ?? []).find((v: any) =>
-                  [...(Array.isArray(v.keywords) ? v.keywords : []), String(v.topic ?? "")]
-                    .map((k: any) => String(k).trim().toLowerCase())
-                    // distinctive phrases only: long, multi-word, not generic
-                    .filter((k: string) => k.length >= 14 && k.includes(" ") && !GENERIC.includes(k))
-                    .some((k: string) => shotLower.includes(k)),
-                )
-              : null;
+            const vMatch =
+              shotLower && !isDuplicateShot
+                ? ((voiceRows as any[]) ?? []).find((v: any) =>
+                    [...(Array.isArray(v.keywords) ? v.keywords : []), String(v.topic ?? "")]
+                      .map((k: any) => String(k).trim().toLowerCase())
+                      // distinctive phrases only: long, multi-word, not generic
+                      .filter(
+                        (k: string) => k.length >= 14 && k.includes(" ") && !GENERIC.includes(k),
+                      )
+                      .some((k: string) => shotLower.includes(k)),
+                  )
+                : null;
             if (vMatch?.audio_path) {
               const bytes = await voiceBytes(vMatch.audio_path);
               if (bytes) {
                 await sendVoice(
-                  chatId, bytes, String(vMatch.audio_path).split("/").pop() || "voice.mp3",
+                  chatId,
+                  bytes,
+                  String(vMatch.audio_path).split("/").pop() || "voice.mp3",
                   undefined,
                   msg.message_id,
                 );
@@ -2075,29 +2432,41 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             console.error("[tg] screenshot voice match failed", e);
           }
 
-
           try {
-
             const { matchFaqImage, humanizeReply } = await import("@/lib/telegram-bot.server");
             const imageMatch = await matchFaqImage({ photoBase64, faq });
             if (imageMatch) {
               const matchedFaq = faq.find(
-                (f) => String(f.topic).trim().toLowerCase() === imageMatch.topic.trim().toLowerCase(),
+                (f) =>
+                  String(f.topic).trim().toLowerCase() === imageMatch.topic.trim().toLowerCase(),
               );
-              const answerText = matchedFaq ? await faqAnswerFor(matchedFaq, text || shotText) : null;
+              const answerText = matchedFaq
+                ? await faqAnswerFor(matchedFaq, text || shotText)
+                : null;
               if (answerText) {
                 let recent: string[] = [];
                 if (msg.from?.id) {
                   const { data: prev } = await supabaseAdmin
-                    .from("tg_messages").select("bot_reply")
+                    .from("tg_messages")
+                    .select("bot_reply")
                     .eq("tg_user_id", msg.from.id)
-                    .order("created_at", { ascending: false }).limit(3);
+                    .order("created_at", { ascending: false })
+                    .limit(3);
                   recent = (prev ?? []).map((p: any) => p.bot_reply).filter(Boolean);
                 }
                 const reply = await humanizeReply(answerText.trim(), text, recent);
                 await sendMessage(chatId, reply, msg.message_id);
-                await logMessage("question", `faq-image:${imageMatch.topic}:${imageMatch.confidence.toFixed(2)}`, reply, null);
-                return Response.json({ ok: true, flow: "faq-image-match", topic: imageMatch.topic });
+                await logMessage(
+                  "question",
+                  `faq-image:${imageMatch.topic}:${imageMatch.confidence.toFixed(2)}`,
+                  reply,
+                  null,
+                );
+                return Response.json({
+                  ok: true,
+                  flow: "faq-image-match",
+                  topic: imageMatch.topic,
+                });
               }
             }
           } catch (e) {
@@ -2111,13 +2480,13 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             const { readScreenshotText, humanizeReply } = await import("@/lib/telegram-bot.server");
             shotText = shotText || (await readScreenshotText(photoBase64)) || "";
             if (shotText) {
-
-
               const hay = shotText.toLowerCase();
               const scored = faq
                 .map((f) => {
                   const keys: string[] = [
-                    ...(Array.isArray(f.keywords) ? f.keywords : String(f.keywords ?? "").split(/[,\n]/)),
+                    ...(Array.isArray(f.keywords)
+                      ? f.keywords
+                      : String(f.keywords ?? "").split(/[,\n]/)),
                     String(f.topic ?? ""),
                   ]
                     .map((k) => String(k).trim().toLowerCase())
@@ -2126,9 +2495,8 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
                   return { f, score };
                 })
                 .sort((a, b) => b.score - a.score)[0];
-              const ocrAnswer = scored && scored.score > 0
-                ? await faqAnswerFor(scored.f, text || shotText)
-                : null;
+              const ocrAnswer =
+                scored && scored.score > 0 ? await faqAnswerFor(scored.f, text || shotText) : null;
               if (ocrAnswer) {
                 const base = ocrAnswer.trim();
                 const reply = (await humanizeReply(base, text || shotText, [])) || base;
@@ -2150,9 +2518,18 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             shotText = shotText || (await readScreenshotText(photoBase64)) || "";
             const hay = shotText.toLowerCase();
             const rules: { re: RegExp; topic: string }[] = [
-              { re: /(found your twin|your twin|duplicate|already (been )?verified|same face)/i, topic: "twin" },
-              { re: /(18 years or older|must be 18|under 18|under age|underage|years of age)/i, topic: "18+" },
-              { re: /(something went wrong|oops|try again later|unexpected error)/i, topic: "something went wrong" },
+              {
+                re: /(found your twin|your twin|duplicate|already (been )?verified|same face)/i,
+                topic: "twin",
+              },
+              {
+                re: /(18 years or older|must be 18|under 18|under age|underage|years of age)/i,
+                topic: "18+",
+              },
+              {
+                re: /(something went wrong|oops|try again later|unexpected error)/i,
+                topic: "something went wrong",
+              },
               { re: /(access your camera|camera permission|allow camera)/i, topic: "ক্যামেরা" },
               { re: /(no longer valid|link is|expired|session)/i, topic: "এক্সপায়ার" },
             ];
@@ -2163,7 +2540,10 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
                 const f = BUILTIN_FAQS.find((b) =>
                   b.topic.toLowerCase().includes(r.topic.toLowerCase()),
                 );
-                if (f) { hit = { topic: f.topic, answer: f.answer }; break; }
+                if (f) {
+                  hit = { topic: f.topic, answer: f.answer };
+                  break;
+                }
               }
             }
             if (hit) {
@@ -2181,7 +2561,8 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           // No admin screenshot matched → try the built-in problem library
           // (e.g. GoodDollar "We found your twin" duplicate-face page).
           try {
-            const { matchBuiltinFaqPhoto, humanizeReply } = await import("@/lib/telegram-bot.server");
+            const { matchBuiltinFaqPhoto, humanizeReply } =
+              await import("@/lib/telegram-bot.server");
             const answer = await matchBuiltinFaqPhoto(photoBase64);
             if (answer) {
               const reply = (await humanizeReply(answer, text, [])) || answer;
@@ -2194,7 +2575,6 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           }
         }
 
-
         // ---- follow-up about the screenshot they JUST sent ---------------------
         // "Eta kn ashe?" right after a screenshot must explain THAT problem,
         // never the generic 3-reason list and never ask for a screenshot again.
@@ -2202,7 +2582,9 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           const t = text.trim();
           const vague =
             t.length <= 80 &&
-            /(\bkn\b|\bken\b|\bkno\b|keno|কেন|\bকন\b|\bwhy\b|eta ki|eita ki|এটা কি|এইটা কি|ki problem|ki hoise|কি সমস্যা|কি হইছে|somadhan|সমাধান|solution|ki korbo|কি করবো)/i.test(t);
+            /(\bkn\b|\bken\b|\bkno\b|keno|কেন|\bকন\b|\bwhy\b|eta ki|eita ki|এটা কি|এইটা কি|ki problem|ki hoise|কি সমস্যা|কি হইছে|somadhan|সমাধান|solution|ki korbo|কি করবো)/i.test(
+              t,
+            );
           if (vague) {
             try {
               const { data: prevShots } = await supabaseAdmin
@@ -2244,7 +2626,12 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             return Response.json({ ok: true, flow: "referral_join_early" });
           }
           if (msg.from?.id) {
-            await saveSession({ intent: "referral_join", step: "await_uid", uid: null, app_user_id: null });
+            await saveSession({
+              intent: "referral_join",
+              step: "await_uid",
+              uid: null,
+              app_user_id: null,
+            });
           }
           const askReply =
             `🔗 কোন একাউন্ট কার রেফারে join করেছে সেটা দেখে দিচ্ছি।\n` +
@@ -2254,7 +2641,6 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return Response.json({ ok: true, flow: "referral_join_ask_uid_early" });
         }
 
-
         // Recent bot replies for this user — used to avoid repeating the same
         // wording and to detect "I already did that, still not working".
         let recentReplies: string[] = [];
@@ -2263,13 +2649,19 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         if (msg.from?.id) {
           try {
             const { data: prevN } = await supabaseAdmin
-              .from("tg_messages").select("action, bot_reply, created_at")
+              .from("tg_messages")
+              .select("action, bot_reply, created_at")
               .eq("tg_user_id", msg.from.id)
-              .order("created_at", { ascending: false }).limit(4);
+              .order("created_at", { ascending: false })
+              .limit(4);
             recentReplies = (prevN ?? []).map((p: any) => p.bot_reply).filter(Boolean);
             const last: any = (prevN ?? []).find((p: any) => p.bot_reply);
             if (last && Date.now() - new Date(last.created_at).getTime() < 6 * 60 * 60 * 1000) {
-              lastTopic = String(last.action ?? "").split(":").slice(1).join(":").trim();
+              lastTopic = String(last.action ?? "")
+                .split(":")
+                .slice(1)
+                .join(":")
+                .trim();
               lastBase = String(last.bot_reply ?? "");
             }
           } catch (e) {
@@ -2291,9 +2683,14 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             /(bondhu|bondu|বন্ধু|friend|jake|যাকে|jaka|kauke|কাউকে|jodi she|যদি সে|se jodi|সে যদি|amar under|আমার আন্ডার|আমার নিচে|downline|team|টিম|amar lok|আমার লোক|amar member|নতুন কেউ|keu jodi|কেউ যদি)/i.test(
               bnDigits,
             );
-          const selfGain = /(ami koto|আমি কত|amake koto|আমাকে কত|ami ki pabo|আমি কি পাবো|amar ki|আমার কত)/i.test(bnDigits);
+          const selfGain =
+            /(ami koto|আমি কত|amake koto|আমাকে কত|ami ki pabo|আমি কি পাবো|amar ki|আমার কত)/i.test(
+              bnDigits,
+            );
           const referCtx =
-            /(refer|reffer|refar|রেফার|রেফারেল|referral|রেফারে|আমাকে কত|amake koto)/i.test(bnDigits) ||
+            /(refer|reffer|refar|রেফার|রেফারেল|referral|রেফারে|আমাকে কত|amake koto)/i.test(
+              bnDigits,
+            ) ||
             (thirdParty && selfGain);
 
           // ---- "টাকা কেটে নিলো কেন" → উইথড্র ফি (ছোট, নিশ্চিত উত্তর) ----
@@ -2307,7 +2704,8 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             !earnAskCtx &&
             /(fee|ফি|charge|চার্জ|kete|কেটে|কাটে|kate|katse|কাটল|কেটেছে|kom pelam|কম পেলাম|kom paisi|কম পাইছি|deduct)/i.test(
               bnDigits,
-            ) && /(withdraw|উইথড্র|tk|টাকা|taka|৳|bkash|বিকাশ|nagad|নগদ)/i.test(bnDigits);
+            ) &&
+            /(withdraw|উইথড্র|tk|টাকা|taka|৳|bkash|বিকাশ|nagad|নগদ)/i.test(bnDigits);
           if (feeCtx) {
             const m = bnDigits.match(/(\d{2,6})\s*(tk|টাকা|taka|৳)?/);
 
@@ -2329,11 +2727,9 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           }
 
           if (money && referCtx) {
-
             try {
-              const { loadRates, referralEarningReply } = await import(
-                "@/lib/telegram-knowledge.server"
-              );
+              const { loadRates, referralEarningReply } =
+                await import("@/lib/telegram-knowledge.server");
               const rates = await loadRates();
               const reply = referralEarningReply(senderName, rates);
               await sendMessage(chatId, reply, msg.message_id);
@@ -2345,9 +2741,10 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           }
           const slotCtx =
             miningCtx ||
-            /(slot|স্লট|re verify|re-verify|reverify|রি ভেরিফ|রি-ভেরিফ|verification|ভেরিফিকেশন|face)/i.test(bnDigits);
+            /(slot|স্লট|re verify|re-verify|reverify|রি ভেরিফ|রি-ভেরিফ|verification|ভেরিফিকেশন|face)/i.test(
+              bnDigits,
+            );
           if (money && slotCtx) {
-
             try {
               const m = bnDigits.match(/(\d{1,4})\s*(ta|টা|টি|ti|slot|স্লট)?/);
               const n = m ? Number(m[1]) : null;
@@ -2356,7 +2753,8 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
                 miningCtx ||
                 /(mase|মাসে|monthly|মাসিক|per month|প্রতি মাস|mas e|প্রতিমাসে)/i.test(bnDigits);
 
-              const { loadRates, slotEarningReply } = await import("@/lib/telegram-knowledge.server");
+              const { loadRates, slotEarningReply } =
+                await import("@/lib/telegram-knowledge.server");
               const rates = await loadRates();
               const reply = slotEarningReply(senderName, rates, slots, monthly);
               await sendMessage(chatId, reply, msg.message_id);
@@ -2391,9 +2789,12 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         if (!photoBase64 && settings.auto_reply_enabled && text.trim()) {
           const gmailHelpQuery =
             /\b(gmail|g-mail|email|e-mail)\b/i.test(text) &&
-            /(add|ad |যোগ|যুক্ত|connect|conn?act|ভেরিফ|verify|dib|দিব|kivabe|kemne|কিভাবে|কেমনে|কোথায়|kothay)/i.test(text);
+            /(add|ad |যোগ|যুক্ত|connect|conn?act|ভেরিফ|verify|dib|দিব|kivabe|kemne|কিভাবে|কেমনে|কোথায়|kothay)/i.test(
+              text,
+            );
           if (gmailHelpQuery) {
-            const { builtinFaqByTopic, builtinFaqReply, fillLiveRates } = await import("@/lib/telegram-builtin-faq.server");
+            const { builtinFaqByTopic, builtinFaqReply, fillLiveRates } =
+              await import("@/lib/telegram-builtin-faq.server");
             const gmailFaq = builtinFaqByTopic("Gmail যুক্ত");
             if (gmailFaq) {
               const reply = await fillLiveRates(builtinFaqReply(senderName, gmailFaq));
@@ -2409,7 +2810,9 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           const t = text.trim();
           const stillFailing =
             t.length <= 160 &&
-            /(tao hoi na|tao hoy na|tao hocche na|tao hoche na|তবুও হয় না|তবু হয় না|তাও হয় না|তাও হচ্ছে না|তবুও হচ্ছে না|korchi tao|korlam tao|kore o hoy na|kore dekhsi|করেছি তবুও|করলাম তবুও|same problem|ekhono hoy na|এখনো হয় না|এখনও হচ্ছে না|abaro same|আবারও একই|hocche na vai|hoy nai)/i.test(t);
+            /(tao hoi na|tao hoy na|tao hocche na|tao hoche na|তবুও হয় না|তবু হয় না|তাও হয় না|তাও হচ্ছে না|তবুও হচ্ছে না|korchi tao|korlam tao|kore o hoy na|kore dekhsi|করেছি তবুও|করলাম তবুও|same problem|ekhono hoy na|এখনো হয় না|এখনও হচ্ছে না|abaro same|আবারও একই|hocche na vai|hoy nai)/i.test(
+              t,
+            );
           if (stillFailing) {
             try {
               const { smartAnswer } = await import("@/lib/telegram-bot.server");
@@ -2449,10 +2852,47 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             // Matching one of these alone must NEVER pick an FAQ row (that is how
             // "Gmail add korbo kemne" used to get the "apps link" answer).
             const STOP = new Set([
-              "korbo", "korbo?", "kivabe", "kemne", "kore", "korte", "koro", "den", "dan", "dio",
-              "dibo", "ki", "kib", "koi", "kothay", "please", "plz", "vai", "bhai", "apps", "app",
-              "amar", "ami", "eta", "eita", "hoi", "hoy", "na", "the", "and", "for",
-              "করবো", "কিভাবে", "কেমনে", "করতে", "দেন", "দিন", "কোথায়", "আমার", "আমি", "কি",
+              "korbo",
+              "korbo?",
+              "kivabe",
+              "kemne",
+              "kore",
+              "korte",
+              "koro",
+              "den",
+              "dan",
+              "dio",
+              "dibo",
+              "ki",
+              "kib",
+              "koi",
+              "kothay",
+              "please",
+              "plz",
+              "vai",
+              "bhai",
+              "apps",
+              "app",
+              "amar",
+              "ami",
+              "eta",
+              "eita",
+              "hoi",
+              "hoy",
+              "na",
+              "the",
+              "and",
+              "for",
+              "করবো",
+              "কিভাবে",
+              "কেমনে",
+              "করতে",
+              "দেন",
+              "দিন",
+              "কোথায়",
+              "আমার",
+              "আমি",
+              "কি",
             ]);
             const scoredAdmin = (faqRows ?? [])
               .map((f: any) => {
@@ -2478,9 +2918,10 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               })
               .sort((a, b) => b.score - a.score)[0];
             // Need at least a real phrase hit or two distinct meaningful words.
-            const adminAnswer = scoredAdmin && scoredAdmin.score >= 2
-              ? await faqAnswerFor(scoredAdmin.f, text)
-              : null;
+            const adminAnswer =
+              scoredAdmin && scoredAdmin.score >= 2
+                ? await faqAnswerFor(scoredAdmin.f, text)
+                : null;
 
             if (adminAnswer) {
               const { humanizeReply } = await import("@/lib/telegram-bot.server");
@@ -2500,11 +2941,16 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         // keeps credit usage at zero for common questions.
         if (!photoBase64 && settings.auto_reply_enabled && text.trim()) {
           try {
-            const { matchBuiltinFaqText, builtinFaqReply, fillLiveRates } = await import("@/lib/telegram-builtin-faq.server");
+            const { matchBuiltinFaqText, builtinFaqReply, fillLiveRates } =
+              await import("@/lib/telegram-builtin-faq.server");
             const hit = matchBuiltinFaqText(text);
             if (hit) {
               const reply = await fillLiveRates(builtinFaqReply(senderName, hit));
-              await sendMessage(chatId, reply + videoSuffix(text) + (await offerSlotResetSuffix()), msg.message_id);
+              await sendMessage(
+                chatId,
+                reply + videoSuffix(text) + (await offerSlotResetSuffix()),
+                msg.message_id,
+              );
               await logMessage("question", `faq-builtin:${hit.topic}`, reply, null);
               return Response.json({ ok: true, flow: "faq-builtin-text" });
             }
@@ -2528,13 +2974,15 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           }
         }
 
-
-
-
         let decision = {
-          verdict: "ok" as const, reply: null as string | null,
-          should_delete: false, should_warn: false, uid: null as string | null,
-          needs_uid: false, intent: null, slot: null,
+          verdict: "ok" as const,
+          reply: null as string | null,
+          should_delete: false,
+          should_warn: false,
+          uid: null as string | null,
+          needs_uid: false,
+          intent: null,
+          slot: null,
         } as Awaited<ReturnType<typeof decide>>;
 
         // Conversation context reused by every later answer path (smartAnswer,
@@ -2545,11 +2993,15 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
         if (hardHit) {
           decision = {
-            verdict: "abuse", reply: null,
-            should_delete: !!settings.delete_bad_messages, should_warn: true, uid: null,
-            needs_uid: false, intent: null, slot: null,
+            verdict: "abuse",
+            reply: null,
+            should_delete: !!settings.delete_bad_messages,
+            should_warn: true,
+            uid: null,
+            needs_uid: false,
+            intent: null,
+            slot: null,
           };
-
         } else if (text.trim() || photoBase64) {
           // Everything this user said before — used both for smarter answers and
           // for finding the UID they gave earlier when they start misbehaving.
@@ -2561,20 +3013,33 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           let knownUid: string | null = msg.from?.id ? await linkedUid() : null;
           if (msg.from?.id) {
             const { data: past } = await supabaseAdmin
-              .from("tg_messages").select("text, bot_reply, matched_uid, created_at")
+              .from("tg_messages")
+              .select("text, bot_reply, matched_uid, created_at")
               .eq("tg_user_id", msg.from.id)
-              .order("created_at", { ascending: false }).limit(12);
-            history = (past ?? []).map((p: any) => p.text).filter(Boolean).reverse().slice(-8);
-            pastReplies = (past ?? []).map((p: any) => p.bot_reply).filter(Boolean).slice(0, 4);
+              .order("created_at", { ascending: false })
+              .limit(12);
+            history = (past ?? [])
+              .map((p: any) => p.text)
+              .filter(Boolean)
+              .reverse()
+              .slice(-8);
+            pastReplies = (past ?? [])
+              .map((p: any) => p.bot_reply)
+              .filter(Boolean)
+              .slice(0, 4);
             if (!knownUid) knownUid = (offender as any)?.known_uid ?? null;
-            if (!knownUid) knownUid = (past ?? []).find((p: any) => p.matched_uid)?.matched_uid ?? null;
+            if (!knownUid)
+              knownUid = (past ?? []).find((p: any) => p.matched_uid)?.matched_uid ?? null;
           }
 
           // A full unrelated history makes the model answer the previous topic
           // instead of the user's current question. Only carry context for an
           // explicit reply/follow-up; standalone questions are self-contained.
-          const isShortFollowUp = norm.length <= 90 &&
-            /^(তাহলে|তাইলে|তারপর|এরপর|এটা|ওটা|ঐটা|সেটা|আর|কিন্তু|হ্যাঁ|না|কেন|কিভাবে|কীভাবে|কেমনে|then|so|but|why|how|eta|oita|seta|tarpor|erpor|taile|tahole)\b/i.test(norm);
+          const isShortFollowUp =
+            norm.length <= 90 &&
+            /^(তাহলে|তাইলে|তারপর|এরপর|এটা|ওটা|ঐটা|সেটা|আর|কিন্তু|হ্যাঁ|না|কেন|কিভাবে|কীভাবে|কেমনে|then|so|but|why|how|eta|oita|seta|tarpor|erpor|taile|tahole)\b/i.test(
+              norm,
+            );
           const keepContext = repliedToBot || isShortFollowUp || !!quotedRaw;
           convoHistory = keepContext ? history : [];
           convoReplies = pastReplies;
@@ -2597,7 +3062,9 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               faq,
               videos: (videoRows ?? []) as any[],
               voices: ((voiceRows ?? []) as any[]).map((v: any) => ({
-                topic: v.topic, keywords: v.keywords, note: v.note,
+                topic: v.topic,
+                keywords: v.keywords,
+                note: v.note,
               })),
               bannedWords,
               text,
@@ -2614,18 +3081,20 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             console.error("[tg] decide failed", e);
           }
 
-          
           (decision as any)._knownUid = knownUid;
         }
-
-
 
         const actions: string[] = [];
 
         // অ্যাপ-সংক্রান্ত স্ক্রিনশট/ছবি কখনোই অটো-ডিলিট হবে না — গালিগালাজ
         // (hardHit) ছাড়া ছবিসহ মেসেজ সবসময় সাপোর্ট প্রশ্ন হিসেবে ধরা হবে।
         const photoProtected = (photos?.length ?? 0) > 0 && !hardHit;
-        if (settings.moderation_enabled && decision.should_delete && settings.delete_bad_messages && !photoProtected) {
+        if (
+          settings.moderation_enabled &&
+          decision.should_delete &&
+          settings.delete_bad_messages &&
+          !photoProtected
+        ) {
           await deleteMessage(chatId, msg.message_id);
           actions.push("deleted");
         }
@@ -2633,9 +3102,10 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         let banRequested = false;
         let matchedUid: string | null = decision.uid;
         let appUserId: string | null = null;
-        const previousKnownUid = typeof (decision as any)._knownUid === "string"
-          ? String((decision as any)._knownUid)
-          : null;
+        const previousKnownUid =
+          typeof (decision as any)._knownUid === "string"
+            ? String((decision as any)._knownUid)
+            : null;
         const isUidLikeValue = (v: string | null) =>
           !!v && (/^\d{2,9}$/.test(v) || (/\d/.test(v) && /^[A-Za-z0-9]{6,9}$/.test(v)));
         const bareUidFrom = (s: string): string | null => {
@@ -2647,7 +3117,10 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           if (hasExplicitUid) return pickUid(norm);
           const bare = bareUidFrom(norm);
           if (bare) return bare;
-          if (replyNorm && /(\buid\b|\bid\s*no\b|ইউআইডি|আইডি|আই ডি|আইডি নাম্বার)/i.test(replyNorm)) {
+          if (
+            replyNorm &&
+            /(\buid\b|\bid\s*no\b|ইউআইডি|আইডি|আই ডি|আইডি নাম্বার)/i.test(replyNorm)
+          ) {
             return pickUid(replyNorm);
           }
           return null;
@@ -2669,19 +3142,31 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             decision.uid || (decision as any)._knownUid || (offender as any)?.known_uid || null;
           if (!uidForWarn) {
             const { data: past } = await supabaseAdmin
-              .from("tg_messages").select("matched_uid")
-              .eq("tg_user_id", msg.from.id).not("matched_uid", "is", null)
-              .order("created_at", { ascending: false }).limit(1);
+              .from("tg_messages")
+              .select("matched_uid")
+              .eq("tg_user_id", msg.from.id)
+              .not("matched_uid", "is", null)
+              .order("created_at", { ascending: false })
+              .limit(1);
             uidForWarn = (past ?? [])[0]?.matched_uid ?? null;
           }
           if (!uidForWarn) {
             const { data: linked } = await supabaseAdmin
-              .from("profiles").select("id, uid_seq").eq("telegram_user_id", msg.from.id).maybeSingle();
-            if (linked) { appUserId = linked.id; uidForWarn = String(linked.uid_seq ?? "") || null; }
+              .from("profiles")
+              .select("id, uid_seq")
+              .eq("telegram_user_id", msg.from.id)
+              .maybeSingle();
+            if (linked) {
+              appUserId = linked.id;
+              uidForWarn = String(linked.uid_seq ?? "") || null;
+            }
           }
           if (!appUserId && uidForWarn && /^\d+$/.test(uidForWarn)) {
             const { data: byUid } = await supabaseAdmin
-              .from("profiles").select("id").eq("uid_seq", Number(uidForWarn)).maybeSingle();
+              .from("profiles")
+              .select("id")
+              .eq("uid_seq", Number(uidForWarn))
+              .maybeSingle();
             if (byUid) appUserId = byUid.id;
           }
           matchedUid = matchedUid || uidForWarn;
@@ -2730,11 +3215,12 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           }
         }
 
-
-
         // ---- someone asked for a stored photo / key: never share, always deny -
-        if (decision.intent === "photo_request" && !decision.should_delete
-            && (settings as any).photo_privacy_enabled !== false) {
+        if (
+          decision.intent === "photo_request" &&
+          !decision.should_delete &&
+          (settings as any).photo_privacy_enabled !== false
+        ) {
           const { photoRefusalReply } = await import("@/lib/telegram-bot.server");
           const reply = photoRefusalReply(senderName);
           await sendMessage(chatId, reply, msg.message_id);
@@ -2746,9 +3232,13 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         // ---- "উইথড্র দিতে পারব?" → answer rules, never show old UID card -----
         if (withdrawEligibilityQuestion && !decision.should_delete && settings.auto_reply_enabled) {
           const { withdrawEligibilityReply } = await import("@/lib/telegram-knowledge.server");
-          const reply = decision.reply && !photoBase64 && !decision.needs_uid && decision.intent !== "withdraw_status"
-            ? decision.reply
-            : withdrawEligibilityReply(senderName);
+          const reply =
+            decision.reply &&
+            !photoBase64 &&
+            !decision.needs_uid &&
+            decision.intent !== "withdraw_status"
+              ? decision.reply
+              : withdrawEligibilityReply(senderName);
           await sendMessage(chatId, reply, msg.message_id);
           actions.push("withdraw-eligibility");
           await logMessage(decision.verdict, actions.join(","), reply, null);
@@ -2766,11 +3256,21 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               : `❌ UID <code>${uid}</code> দিয়ে কোনো একাউন্ট পাওয়া যায়নি। সঠিক UID টি লিখুন।`;
             await sendMessage(chatId, reply, msg.message_id);
             actions.push("referral-join");
-            await logMessage(decision.verdict, actions.join(","), reply, res.found ? res.uid : null);
+            await logMessage(
+              decision.verdict,
+              actions.join(","),
+              reply,
+              res.found ? res.uid : null,
+            );
             return Response.json({ ok: true, flow: "referral_join", actions });
           }
           if (msg.from?.id) {
-            await saveSession({ intent: "referral_join", step: "await_uid", uid: null, app_user_id: null });
+            await saveSession({
+              intent: "referral_join",
+              step: "await_uid",
+              uid: null,
+              app_user_id: null,
+            });
           }
           const reply = `🔗 কোন ইউজার কার রেফারে join করেছে সেটা দেখে দিচ্ছি।\nতার <b>UID</b> নম্বরটি লিখুন — যেমন <code>72</code>।`;
           await sendMessage(chatId, reply, msg.message_id);
@@ -2783,7 +3283,9 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         if (
           senderIsOwner &&
           /(withdraw|উইথড্র|balance|ব্যালেন্স|taka|টাকা)/i.test(text) &&
-          /(kivabe|kivbe|kibhabe|কিভাবে|কীভাবে|kotha theke|kothe theke|kothay theke|কোথা\s*থেকে|কোথায়\s*থেকে|source|উৎস|earn|ইনকাম|income)/i.test(text)
+          /(kivabe|kivbe|kibhabe|কিভাবে|কীভাবে|kotha theke|kothe theke|kothay theke|কোথা\s*থেকে|কোথায়\s*থেকে|source|উৎস|earn|ইনকাম|income)/i.test(
+            text,
+          )
         ) {
           const uid = explicitOrBareUid() || previousKnownUid;
           if (uid) {
@@ -2802,9 +3304,11 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         }
 
         // ---- "উইথড্র দিয়েছি টাকা আসে নাই" → show pending requests with time ---
-        if ((decision.intent === "withdraw_status" || pendingWithdrawQuestion) && !decision.should_delete
-
-            && settings.auto_reply_enabled) {
+        if (
+          (decision.intent === "withdraw_status" || pendingWithdrawQuestion) &&
+          !decision.should_delete &&
+          settings.auto_reply_enabled
+        ) {
           const uid = explicitOrBareUid() || (await linkedUid()) || previousKnownUid;
           if (uid) {
             const { buildWithdrawStatusCard } = await import("@/lib/telegram-withdraw.server");
@@ -2823,7 +3327,12 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               `দয়া করে আপনার <b>UID</b> নম্বরটি লিখুন।\nUID পেলেই আমি আপনার pending/paid withdraw request, সময় ও status দেখে জানিয়ে দেব।`
             : withdrawEligibilityReply(senderName);
           if (pendingWithdrawQuestion && msg.from?.id) {
-            await saveSession({ intent: "withdraw_status", step: "await_uid", uid: null, app_user_id: null });
+            await saveSession({
+              intent: "withdraw_status",
+              step: "await_uid",
+              uid: null,
+              app_user_id: null,
+            });
           }
           await sendMessage(chatId, ask, msg.message_id);
           actions.push(pendingWithdrawQuestion ? "withdraw-ask-uid" : "withdraw-rule");
@@ -2832,8 +3341,11 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         }
 
         // ---- "কিভাবে টাকা পাবো" → full earning guide -------------------------
-        if (decision.intent === "earning_info" && !decision.should_delete
-            && settings.auto_reply_enabled) {
+        if (
+          decision.intent === "earning_info" &&
+          !decision.should_delete &&
+          settings.auto_reply_enabled
+        ) {
           const { loadRates, earningGuideReply } = await import("@/lib/telegram-knowledge.server");
           const reply = decision.reply
             ? `${decision.reply}\n\n${earningGuideReply(senderName, await loadRates())}`
@@ -2846,7 +3358,11 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
         // ---- "১ম verify কবে/কত তারিখে হয়েছে?" → ask UID, then report dates --
         if (asksReverifyStatus && !decision.should_delete && settings.auto_reply_enabled) {
-          const query = pickVerificationQuery(norm) || explicitOrBareUid() || (await linkedUid()) || previousKnownUid;
+          const query =
+            pickVerificationQuery(norm) ||
+            explicitOrBareUid() ||
+            (await linkedUid()) ||
+            previousKnownUid;
           if (query) {
             const { buildReverifyStatusReport } = await import("@/lib/telegram-lookup.server");
             const res = await buildReverifyStatusReport(query);
@@ -2857,7 +3373,12 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
                 : `❌ <code>${query}</code> দিয়ে কোনো ইউজার পাওয়া যায়নি। সঠিক UID লিখুন।`;
             await sendMessage(chatId, reply, msg.message_id);
             actions.push("reverify-status");
-            await logMessage(decision.verdict, actions.join(","), reply, res.found ? res.uid : null);
+            await logMessage(
+              decision.verdict,
+              actions.join(","),
+              reply,
+              res.found ? res.uid : null,
+            );
             return Response.json({ ok: true, flow: "reverify-status", actions });
           }
 
@@ -2879,7 +3400,11 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
         const dateKind = verificationDateKind(norm);
         if (dateKind && !decision.should_delete && settings.auto_reply_enabled) {
-          const query = pickVerificationQuery(norm) || explicitOrBareUid() || (await linkedUid()) || previousKnownUid;
+          const query =
+            pickVerificationQuery(norm) ||
+            explicitOrBareUid() ||
+            (await linkedUid()) ||
+            previousKnownUid;
           if (query) {
             const { buildVerificationDateReport } = await import("@/lib/telegram-lookup.server");
             const res = await buildVerificationDateReport(query, dateKind);
@@ -2890,7 +3415,12 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
                 : `❌ <code>${query}</code> দিয়ে কোনো ইউজার পাওয়া যায়নি। সঠিক UID লিখুন।`;
             await sendMessage(chatId, reply, msg.message_id);
             actions.push(`verification-date:${dateKind}`);
-            await logMessage(decision.verdict, actions.join(","), reply, res.found ? res.uid : null);
+            await logMessage(
+              decision.verdict,
+              actions.join(","),
+              reply,
+              res.found ? res.uid : null,
+            );
             return Response.json({ ok: true, flow: "verification-date", actions });
           }
 
@@ -2901,7 +3431,12 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             uid: null,
             app_user_id: null,
           });
-          const label = dateKind === "reverify" ? "রি-ভেরিফাই" : dateKind === "all" ? "ভেরিফিকেশন" : "১ম ভেরিফাই";
+          const label =
+            dateKind === "reverify"
+              ? "রি-ভেরিফাই"
+              : dateKind === "all"
+                ? "ভেরিফিকেশন"
+                : "১ম ভেরিফাই";
           const reply = `🗓️ ${label} তারিখ দেখে দিচ্ছি।\nযার রিপোর্ট চান, তার <b>UID</b> লিখুন (যেমন: 4100)।`;
           await sendMessage(chatId, reply, msg.message_id);
           actions.push(`verification-date-ask-uid:${dateKind}`);
@@ -2911,7 +3446,8 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
         // ---- "আরও ১০টা স্লট করলে কি আবার বোনাস পাবো?" → না, বোনাস শুধু ১ম ১০টায় --
         if (asksExtraSlotBonus && !decision.should_delete && settings.auto_reply_enabled) {
-          const { builtinFaqByTopic, BUILTIN_FAQS, fillLiveRates } = await import("@/lib/telegram-builtin-faq.server");
+          const { builtinFaqByTopic, BUILTIN_FAQS, fillLiveRates } =
+            await import("@/lib/telegram-builtin-faq.server");
           const reply = await fillLiveRates(
             (builtinFaqByTopic("আরও স্লট") ?? builtinFaqByTopic("বোনাস") ?? BUILTIN_FAQS[0]).answer,
           );
@@ -2923,9 +3459,20 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         }
 
         // ---- বিকাশ/নগদ নম্বর বদলানো → provider মনে রেখে UID নিয়ে reset --------
-        if (wantsWalletReset && !decision.should_delete && settings.auto_reply_enabled && msg.from?.id) {
+        if (
+          wantsWalletReset &&
+          !decision.should_delete &&
+          settings.auto_reply_enabled &&
+          msg.from?.id
+        ) {
           if (!walletResetProvider) {
-            await saveSession({ intent: "wallet_reset", step: "await_provider", uid: null, app_user_id: null, data: {} });
+            await saveSession({
+              intent: "wallet_reset",
+              step: "await_provider",
+              uid: null,
+              app_user_id: null,
+              data: {},
+            });
             const ask = "অবশ্যই—কোন নম্বরটি বদলাতে চান, <b>বিকাশ</b> নাকি <b>নগদ</b>?";
             await sendMessage(chatId, ask, msg.message_id);
             await logMessage("question", "wallet-reset-ask-provider", ask, null);
@@ -2934,11 +3481,17 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
           const uid = pickUidFromCurrentOrReply();
           if (uid) {
-            const { resetPaymentNumbersForUid, walletResetReply } = await import("@/lib/telegram-wallet.server");
+            const { resetPaymentNumbersForUid, walletResetReply } =
+              await import("@/lib/telegram-wallet.server");
             const result = await resetPaymentNumbersForUid(uid, walletResetProvider);
             const reply = walletResetReply(result);
             await sendMessage(chatId, reply, msg.message_id);
-            await logMessage("question", `wallet-reset:${walletResetProvider}`, reply, result.ok ? uid : null);
+            await logMessage(
+              "question",
+              `wallet-reset:${walletResetProvider}`,
+              reply,
+              result.ok ? uid : null,
+            );
             return Response.json({ ok: true, flow: "wallet-reset-complete" });
           }
 
@@ -2958,8 +3511,13 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
         // ---- "যেগুলো হয় না ওগুলো রিমুভ করা যাবে?" → UID + স্লট নিয়ে রিসেট -----
 
-        if (wantsSlotRemoval && !decision.should_delete && settings.auto_reply_enabled
-            && (settings as any).slot_reset_enabled !== false && msg.from?.id) {
+        if (
+          wantsSlotRemoval &&
+          !decision.should_delete &&
+          settings.auto_reply_enabled &&
+          (settings as any).slot_reset_enabled !== false &&
+          msg.from?.id
+        ) {
           const uid = explicitOrBareUid() || pickUid(norm) || (await linkedUid());
           if (!uid) {
             const already = await pendingResetInfo();
@@ -3003,14 +3561,18 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         }
 
         // ---- "আমার রেফার হয় না কেন?" → রেফার লিংক আনলকের নিয়ম ----------------
-        if ((asksReferralUnlock || asksFiveSlotFirstVerify) && !decision.should_delete
-            && settings.auto_reply_enabled) {
-          const reply = asksFiveSlotFirstVerify && !asksReferralUnlock
-            ? `হ্যাঁ ভাইয়া ✅ প্রথমবারের ফেস ভেরিফিকেশন দিয়েই হবে — নিজের <b>৫টি স্লটে ১ম ভেরিফাই</b> সম্পন্ন হলেই আপনার রেফার লিংক আনলক হয়ে যাবে 💙`
-            : `${senderName}, রেফার লিংক আনলক করার নিয়মটি হলো —\n\n` +
-              `👉 আপনি অন্য বন্ধুদের রেফার করতে চাইলে আগে <b>নিজের ৫টি স্লট ভেরিফাই</b> করতে হবে।\n` +
-              `৫টি স্লট হয়ে গেলেই আপনার রেফার লিংকটি সাথে সাথে আনলক হয়ে যাবে, তখন যত খুশি রেফার করতে পারবেন 💙\n\n` +
-              `(৫টি স্লট প্রথমবারের ফেস ভেরিফিকেশন করলেই হবে।)`;
+        if (
+          (asksReferralUnlock || asksFiveSlotFirstVerify) &&
+          !decision.should_delete &&
+          settings.auto_reply_enabled
+        ) {
+          const reply =
+            asksFiveSlotFirstVerify && !asksReferralUnlock
+              ? `হ্যাঁ ভাইয়া ✅ প্রথমবারের ফেস ভেরিফিকেশন দিয়েই হবে — নিজের <b>৫টি স্লটে ১ম ভেরিফাই</b> সম্পন্ন হলেই আপনার রেফার লিংক আনলক হয়ে যাবে 💙`
+              : `${senderName}, রেফার লিংক আনলক করার নিয়মটি হলো —\n\n` +
+                `👉 আপনি অন্য বন্ধুদের রেফার করতে চাইলে আগে <b>নিজের ৫টি স্লট ভেরিফাই</b> করতে হবে।\n` +
+                `৫টি স্লট হয়ে গেলেই আপনার রেফার লিংকটি সাথে সাথে আনলক হয়ে যাবে, তখন যত খুশি রেফার করতে পারবেন 💙\n\n` +
+                `(৫টি স্লট প্রথমবারের ফেস ভেরিফিকেশন করলেই হবে।)`;
           await sendMessage(chatId, reply, msg.message_id);
           actions.push("referral-unlock");
           await logMessage(decision.verdict, actions.join(","), reply, null);
@@ -3018,11 +3580,17 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         }
 
         // ---- "আগে ভেরিফাই করেছিলাম, এখন রি-ভেরিফাই নিচ্ছে না" → স্ক্রিনশট চাই --
-        if (!photos?.length && !decision.should_delete && settings.auto_reply_enabled
-            && /(age|আগে|প্রথমে|prothome)/i.test(norm)
-            && /(verify|ভেরিফাই|verification|ভেরিফিকেশন)/i.test(norm)
-            && /(re\s*-?verify|reverify|রি\s*-?ভেরিফাই)/i.test(norm)
-            && /(nicche na|নিচ্ছে না|hocche na|হচ্ছে না|hoi na|হয় না|nei|নেই|ashe na|আসে না)/i.test(norm)) {
+        if (
+          !photos?.length &&
+          !decision.should_delete &&
+          settings.auto_reply_enabled &&
+          /(age|আগে|প্রথমে|prothome)/i.test(norm) &&
+          /(verify|ভেরিফাই|verification|ভেরিফিকেশন)/i.test(norm) &&
+          /(re\s*-?verify|reverify|রি\s*-?ভেরিফাই)/i.test(norm) &&
+          /(nicche na|নিচ্ছে না|hocche na|হচ্ছে না|hoi na|হয় না|nei|নেই|ashe na|আসে না)/i.test(
+            norm,
+          )
+        ) {
           const reply =
             `${senderName}, বিষয়টি দেখে দিচ্ছি 🙂\n` +
             `দয়া করে রি-ভেরিফাই করতে গেলে যে লেখা/এরর আসছে তার একটি <b>স্ক্রিনশট</b> পাঠান।\n` +
@@ -3039,7 +3607,10 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           let uid: string | null = explicitOrBareUid() || (await linkedUid()) || previousKnownUid;
           if (!uid && msg.from?.id) {
             const { data: linked } = await supabaseAdmin
-              .from("profiles").select("uid_seq").eq("telegram_user_id", msg.from.id).maybeSingle();
+              .from("profiles")
+              .select("uid_seq")
+              .eq("telegram_user_id", msg.from.id)
+              .maybeSingle();
             if (linked?.uid_seq != null) uid = String(linked.uid_seq);
           }
           if (uid) {
@@ -3053,7 +3624,12 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             }
           }
           if (msg.from?.id) {
-            await saveSession({ intent: "referral_history", step: "await_uid", uid: null, app_user_id: null });
+            await saveSession({
+              intent: "referral_history",
+              step: "await_uid",
+              uid: null,
+              app_user_id: null,
+            });
           }
           const ask =
             `👥 ${senderName}, আপনার রেফার হিসাবটা দেখে দিচ্ছি।\n\n` +
@@ -3065,10 +3641,8 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return Response.json({ ok: true, flow: "referral_history_ask_uid", actions });
         }
 
-
         // ---- "আমার কয়টা রেফার/ভেরিফাই/ব্যালেন্স?" → UID নিয়ে একাউন্ট কার্ড -----
-        if (asksOwnAccount && !decision.should_delete
-            && settings.auto_reply_enabled) {
+        if (asksOwnAccount && !decision.should_delete && settings.auto_reply_enabled) {
           // ⚠️ কখনোই অনুমান করে অন্য কারো UID দেখানো যাবে না।
           // শুধু (ক) এই টেলিগ্রাম একাউন্টের KYC-লিংক করা UID, অথবা
           // (খ) এই মেসেজেই স্পষ্ট UID লেখা থাকলে।
@@ -3085,9 +3659,8 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               actions.push("account-info");
               // "মোট হিসাব / full details / ধাপে ধাপে" চাইলে পুরো হিসাব + হিসাবের ছবি
               try {
-                const { wantsFullHisab, fullHisabText, hisabImageUrl } = await import(
-                  "@/lib/telegram-hisab.server"
-                );
+                const { wantsFullHisab, fullHisabText, hisabImageUrl } =
+                  await import("@/lib/telegram-hisab.server");
                 if (wantsFullHisab(norm)) {
                   const hisab = await fullHisabText(String(uid));
                   if (hisab) {
@@ -3107,15 +3680,18 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
                 console.error("[tg] full hisab failed", e);
               }
 
-
               await logMessage(decision.verdict, actions.join(","), res.card, String(uid));
               return Response.json({ ok: true, flow: "account_info", actions });
             }
           }
 
-
           if (msg.from?.id) {
-            await saveSession({ intent: "account_info", step: "await_uid", uid: null, app_user_id: null });
+            await saveSession({
+              intent: "account_info",
+              step: "await_uid",
+              uid: null,
+              app_user_id: null,
+            });
           }
           const ask =
             `🆔 ${senderName}, আপনার হিসাবটা এখনই দেখে দিচ্ছি।\n\n` +
@@ -3129,12 +3705,11 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return Response.json({ ok: true, flow: "account_info_ask_uid", actions });
         }
 
-
-
         // ---- "কী কী লাগে / কোনো ডকুমেন্ট লাগে?" → requirements answer --------
         const asksRequirements =
-          /(ki ki lage|কি কি লাগে|কী কী লাগে|ki lage|কি লাগে|কী লাগে|ki dorkar|কি দরকার|কী দরকার|what.*(need|require)|requirement|nid|এনআইডি|জাতীয় পরিচয়|birth certificate|জন্ম নিবন্ধন|passport|পাসপোর্ট|document|ডকুমেন্ট|কাগজ)/i
-            .test(norm);
+          /(ki ki lage|কি কি লাগে|কী কী লাগে|ki lage|কি লাগে|কী লাগে|ki dorkar|কি দরকার|কী দরকার|what.*(need|require)|requirement|nid|এনআইডি|জাতীয় পরিচয়|birth certificate|জন্ম নিবন্ধন|passport|পাসপোর্ট|document|ডকুমেন্ট|কাগজ)/i.test(
+            norm,
+          );
         if (asksRequirements && !decision.should_delete && settings.auto_reply_enabled) {
           const { verifyRequirementsReply } = await import("@/lib/telegram-knowledge.server");
           const reply = verifyRequirementsReply(senderName);
@@ -3145,10 +3720,15 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         }
 
         // ---- "ভিডিও দিন / কিভাবে করবো" → tutorial video link -----------------
-        const howToWork = /(kivabe|kivbe|kibhabe|কিভাবে|কীভাবে|kmne|kemne|কেমনে)[^\n]{0,30}(kaj|কাজ|use|চালাব|করব|করবো|করতে হয়|start|শুরু|verify|ভেরিফাই|verification|ভেরিফিকেশন|face|ফেস|refer|রেফার)/i.test(norm)
-          || /(video|ভিডিও|টিউটোরিয়াল|tutorial|dekhiye|দেখিয়ে)/i.test(norm);
-        if ((decision.intent === "video_request" || howToWork) && !decision.should_delete
-            && settings.auto_reply_enabled) {
+        const howToWork =
+          /(kivabe|kivbe|kibhabe|কিভাবে|কীভাবে|kmne|kemne|কেমনে)[^\n]{0,30}(kaj|কাজ|use|চালাব|করব|করবো|করতে হয়|start|শুরু|verify|ভেরিফাই|verification|ভেরিফিকেশন|face|ফেস|refer|রেফার)/i.test(
+            norm,
+          ) || /(video|ভিডিও|টিউটোরিয়াল|tutorial|dekhiye|দেখিয়ে)/i.test(norm);
+        if (
+          (decision.intent === "video_request" || howToWork) &&
+          !decision.should_delete &&
+          settings.auto_reply_enabled
+        ) {
           const list = (videoRows ?? []) as any[];
           const topic = (decision as any).media_topic as string | null;
           const asksWithdrawVideo = /(withdraw|উইথড্র|টাকা তোলা|টাকা তুলব|টাকা তুলবো)/i.test(norm);
@@ -3158,8 +3738,13 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
                 return /(withdraw|উইথড্র|টাকা তোলা)/i.test(labels);
               })
             : null;
-          const match = withdrawVideo ||
-            (!asksWithdrawVideo && topic && list.find((v) => String(v.topic).trim().toLowerCase() === topic.trim().toLowerCase())) ||
+          const match =
+            withdrawVideo ||
+            (!asksWithdrawVideo &&
+              topic &&
+              list.find(
+                (v) => String(v.topic).trim().toLowerCase() === topic.trim().toLowerCase(),
+              )) ||
             (!asksWithdrawVideo ? pickVideo(shotText) : null) ||
             null;
 
@@ -3184,32 +3769,40 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         // Only fire the fixed tips list when the user really reports a failure;
         // otherwise the AI answers the actual question below.
         const reportsVerifyFailure =
-          /(হয় না|hoy na|hoi na|হচ্ছে না|hocche na|পারছি না|parchi na|parteci na|error|এরর|fail|ফেইল|problem|somossa|সমস্যা|আসে না|ashe na|নিচ্ছে না|niche na|আটকে|atke|wrong|ভুল)/i
-            .test(norm);
-        if (decision.intent === "verify_help" && reportsVerifyFailure && !decision.should_delete
-            && settings.auto_reply_enabled) {
+          /(হয় না|hoy na|hoi na|হচ্ছে না|hocche na|পারছি না|parchi na|parteci na|error|এরর|fail|ফেইল|problem|somossa|সমস্যা|আসে না|ashe na|নিচ্ছে না|niche na|আটকে|atke|wrong|ভুল)/i.test(
+            norm,
+          );
+        if (
+          decision.intent === "verify_help" &&
+          reportsVerifyFailure &&
+          !decision.should_delete &&
+          settings.auto_reply_enabled
+        ) {
           const { verifyTipsReply, loadRates } = await import("@/lib/telegram-knowledge.server");
           const vRates = await loadRates();
-          const reply = verifyTipsReply(senderName, vRates)
-            + (vRates.faceVerifyOn ? videoSuffix(text) : "");
+          const reply =
+            verifyTipsReply(senderName, vRates) + (vRates.faceVerifyOn ? videoSuffix(text) : "");
           await sendMessage(chatId, reply, msg.message_id);
           actions.push("verify-help");
           await logMessage(decision.verdict, actions.join(","), reply, matchedUid);
           return Response.json({ ok: true, flow: "verify_help", actions });
         }
 
-
-
-
-
         // ---- screenshot fallback before normal text reply ---------------------
         // If the AI gives a vague greeting or tries to ask UID for a screenshot,
         // read the screenshot directly and answer from app rules instead.
-        const vaguePhotoReply = !!decision.reply &&
-          /(কীভাবে সাহায্য|কিভাবে সাহায্য|সহায়তা করতে পারি|help করতে পারি|বলুন|জানাতে পারেন|কি সমস্যা)/i.test(decision.reply);
-        if (settings.auto_reply_enabled && photoBase64
-            && !decision.should_delete && decision.intent === null
-            && (!decision.reply || decision.needs_uid || vaguePhotoReply)) {
+        const vaguePhotoReply =
+          !!decision.reply &&
+          /(কীভাবে সাহায্য|কিভাবে সাহায্য|সহায়তা করতে পারি|help করতে পারি|বলুন|জানাতে পারেন|কি সমস্যা)/i.test(
+            decision.reply,
+          );
+        if (
+          settings.auto_reply_enabled &&
+          photoBase64 &&
+          !decision.should_delete &&
+          decision.intent === null &&
+          (!decision.reply || decision.needs_uid || vaguePhotoReply)
+        ) {
           const { analyzeScreenshotReply } = await import("@/lib/telegram-bot.server");
           const { loadRates, knowledgeText } = await import("@/lib/telegram-knowledge.server");
           const reply = await analyzeScreenshotReply({
@@ -3219,7 +3812,11 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             knowledge: knowledgeText(await loadRates()),
           });
           if (reply) {
-            await sendMessage(chatId, reply + videoSuffix(shotText) + (await offerSlotResetSuffix()), msg.message_id);
+            await sendMessage(
+              chatId,
+              reply + videoSuffix(shotText) + (await offerSlotResetSuffix()),
+              msg.message_id,
+            );
             actions.push("photo-analysis");
             await logMessage("question", actions.join(","), reply, null);
             return Response.json({ ok: true, flow: "photo-analysis", actions });
@@ -3229,7 +3826,8 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         // ---- pick a saved voice note for this topic, if the admin recorded one -
         const voiceMatch = (() => {
           const list = (voiceRows ?? []) as any[];
-          if (!list.length || decision.should_delete || decision.intent === "slot_reset") return null;
+          if (!list.length || decision.should_delete || decision.intent === "slot_reset")
+            return null;
           const topic = (decision as any).media_topic as string | null;
           if (topic) {
             const byTopic = list.find(
@@ -3238,22 +3836,37 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             if (byTopic) return byTopic;
           }
           const hay = norm;
-          return list.find((v: any) =>
-            (v.keywords ?? []).some((k: string) => k && hay.includes(String(k).toLowerCase())),
-          ) ?? null;
+          return (
+            list.find((v: any) =>
+              (v.keywords ?? []).some((k: string) => k && hay.includes(String(k).toLowerCase())),
+            ) ?? null
+          );
         })();
 
         // Tiny follow-ups like "?" after a voice/message should not get a
         // generic greeting. Use the agent with recent history instead.
-        const tinyFollowup = /^[?？!！.।\s]+$/.test(norm) ||
+        const tinyFollowup =
+          /^[?？!！.।\s]+$/.test(norm) ||
           /^(ki|কি|keno|কেন|kn|mane|মানে|bujhi nai|বুঝি নাই)[\s.!?।]*$/i.test(norm);
-        const genericSupportReply = !!decision.reply &&
-          /(কীভাবে সাহায্য|কিভাবে সাহায্য|সহায়তা করতে পারি|help করতে পারি|বলুন|জানাবেন|কি সমস্যা|কোনো প্রশ্ন|স্বাগতম)/i.test(decision.reply);
+        const genericSupportReply =
+          !!decision.reply &&
+          /(কীভাবে সাহায্য|কিভাবে সাহায্য|সহায়তা করতে পারি|help করতে পারি|বলুন|জানাবেন|কি সমস্যা|কোনো প্রশ্ন|স্বাগতম)/i.test(
+            decision.reply,
+          );
         const bypassDecisionReply = genericSupportReply && (tinyFollowup || !!voiceHeard);
 
-        if (settings.auto_reply_enabled && decision.reply && !decision.should_delete
-            && decision.intent !== "slot_reset" && !bypassDecisionReply) {
-          await sendMessage(chatId, decision.reply + videoSuffix(text) + (await offerSlotResetSuffix()), msg.message_id);
+        if (
+          settings.auto_reply_enabled &&
+          decision.reply &&
+          !decision.should_delete &&
+          decision.intent !== "slot_reset" &&
+          !bypassDecisionReply
+        ) {
+          await sendMessage(
+            chatId,
+            decision.reply + videoSuffix(text) + (await offerSlotResetSuffix()),
+            msg.message_id,
+          );
           actions.push("replied");
         }
 
@@ -3262,7 +3875,9 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           const bytes = await voiceBytes(voiceMatch.audio_path);
           if (bytes) {
             await sendVoice(
-              chatId, bytes, voiceMatch.audio_path.split("/").pop() || "voice.ogg",
+              chatId,
+              bytes,
+              voiceMatch.audio_path.split("/").pop() || "voice.ogg",
               undefined,
               msg.message_id,
             );
@@ -3272,8 +3887,14 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         }
 
         // ---- screenshot with no FAQ match → read the screenshot and explain ----
-        if (settings.auto_reply_enabled && photoBase64 && !decision.reply && !voiceMatch
-            && !decision.should_delete && decision.intent === null) {
+        if (
+          settings.auto_reply_enabled &&
+          photoBase64 &&
+          !decision.reply &&
+          !voiceMatch &&
+          !decision.should_delete &&
+          decision.intent === null
+        ) {
           const { analyzeScreenshotReply } = await import("@/lib/telegram-bot.server");
           const { loadRates, knowledgeText } = await import("@/lib/telegram-knowledge.server");
           const reply = await analyzeScreenshotReply({
@@ -3283,7 +3904,11 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             knowledge: knowledgeText(await loadRates()),
           });
           if (reply) {
-            await sendMessage(chatId, reply + videoSuffix(shotText) + (await offerSlotResetSuffix()), msg.message_id);
+            await sendMessage(
+              chatId,
+              reply + videoSuffix(shotText) + (await offerSlotResetSuffix()),
+              msg.message_id,
+            );
             actions.push("photo-analysis");
             await logMessage("question", actions.join(","), reply, matchedUid);
             return Response.json({ ok: true, flow: "photo-analysis", actions });
@@ -3291,10 +3916,17 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         }
 
         // ---- nothing matched → let the AI analyse the app and answer ---------
-        if (settings.auto_reply_enabled && (!decision.reply || bypassDecisionReply) && !voiceMatch
-            && !decision.should_delete && !decision.needs_uid && !matchedUid
-            && decision.intent === null && !decision.escalate
-            && (decision.verdict === "question" || !!photoBase64 || !!voiceHeard)) {
+        if (
+          settings.auto_reply_enabled &&
+          (!decision.reply || bypassDecisionReply) &&
+          !voiceMatch &&
+          !decision.should_delete &&
+          !decision.needs_uid &&
+          !matchedUid &&
+          decision.intent === null &&
+          !decision.escalate &&
+          (decision.verdict === "question" || !!photoBase64 || !!voiceHeard)
+        ) {
           const { smartAnswer, escalateReply } = await import("@/lib/telegram-bot.server");
           const { loadRates, knowledgeText } = await import("@/lib/telegram-knowledge.server");
           const { appRulebook } = await import("@/lib/telegram-app-rules.server");
@@ -3306,9 +3938,10 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           const rates = await loadRates();
           const base = {
             name: senderName,
-            question: (bypassDecisionReply
-              ? `${text}\n\nএটা আগের কথার/ভয়েসের ফলোআপ। history দেখে আগের প্রশ্ন বা ভয়েসের বিষয়টা বুঝে সরাসরি উত্তর দাও; generic greeting দেবে না।`
-              : text) + quotedContext,
+            question:
+              (bypassDecisionReply
+                ? `${text}\n\nএটা আগের কথার/ভয়েসের ফলোআপ। history দেখে আগের প্রশ্ন বা ভয়েসের বিষয়টা বুঝে সরাসরি উত্তর দাও; generic greeting দেবে না।`
+                : text) + quotedContext,
 
             knowledge: knowledgeText(rates),
             faqs: faqText,
@@ -3317,10 +3950,13 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             recall: recallText,
           };
           const smart =
-            (await agentAnswer({ ...base, rulebook: appRulebook(rates), isAdmin: senderIsAdmin }))
-            ?? (await smartAnswer(base));
-          const mention = (settings as any).admin_mention
-            || (settings as any).support_username || "@anamulmunni";
+            (await agentAnswer({
+              ...base,
+              rulebook: appRulebook(rates),
+              isAdmin: senderIsAdmin,
+            })) ?? (await smartAnswer(base));
+          const mention =
+            (settings as any).admin_mention || (settings as any).support_username || "@anamulmunni";
           // কোটা শেষ/কী নেই → অজানা প্রশ্নে চুপ থাকবে, কাউকে মেনশনও করবে না।
           if (!smart) {
             const { aiOutOfQuota } = await import("@/lib/ai-free.server");
@@ -3336,7 +3972,6 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           actions.push(smart ? "smart-answer" : "escalated");
           await logMessage(decision.verdict, actions.join(","), reply, matchedUid);
           return Response.json({ ok: true, flow: smart ? "smart-answer" : "escalated", actions });
-
         }
 
         // ---- স্ক্রিনশট এলো কিন্তু কিছুই ম্যাচ করলো না → AI নিজে দেখে উত্তর দেবে --
@@ -3373,12 +4008,16 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return Response.json({ ok: true, flow: "photo-fallback", actions });
         }
 
-
-
         // ---- bot genuinely doesn't know → hand off to the human admin --------
-        if ((!decision.reply || bypassDecisionReply) && decision.escalate && !decision.should_delete
-            && !decision.needs_uid && decision.intent === null
-            && settings.auto_reply_enabled && (settings as any).escalate_enabled !== false) {
+        if (
+          (!decision.reply || bypassDecisionReply) &&
+          decision.escalate &&
+          !decision.should_delete &&
+          !decision.needs_uid &&
+          decision.intent === null &&
+          settings.auto_reply_enabled &&
+          (settings as any).escalate_enabled !== false
+        ) {
           const { escalateReply, smartAnswer } = await import("@/lib/telegram-bot.server");
           const { loadRates, knowledgeText } = await import("@/lib/telegram-knowledge.server");
           const { appRulebook } = await import("@/lib/telegram-app-rules.server");
@@ -3386,9 +4025,10 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           const rates2 = await loadRates();
           const base2 = {
             name: senderName,
-            question: (bypassDecisionReply
-              ? `${text}\n\nএটা আগের কথার/ভয়েসের ফলোআপ। history দেখে আগের প্রশ্ন বা ভয়েসের বিষয়টা বুঝে সরাসরি উত্তর দাও; generic greeting দেবে না।`
-              : text) + quotedContext,
+            question:
+              (bypassDecisionReply
+                ? `${text}\n\nএটা আগের কথার/ভয়েসের ফলোআপ। history দেখে আগের প্রশ্ন বা ভয়েসের বিষয়টা বুঝে সরাসরি উত্তর দাও; generic greeting দেবে না।`
+                : text) + quotedContext,
 
             knowledge: knowledgeText(rates2),
             history: convoHistory,
@@ -3396,10 +4036,13 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             recall: recallText,
           };
           const smart =
-            (await agentAnswer({ ...base2, rulebook: appRulebook(rates2), isAdmin: senderIsAdmin }))
-            ?? (await smartAnswer(base2));
-          const mention = (settings as any).admin_mention
-            || (settings as any).support_username || "@anamulmunni";
+            (await agentAnswer({
+              ...base2,
+              rulebook: appRulebook(rates2),
+              isAdmin: senderIsAdmin,
+            })) ?? (await smartAnswer(base2));
+          const mention =
+            (settings as any).admin_mention || (settings as any).support_username || "@anamulmunni";
           if (!smart) {
             const { aiOutOfQuota } = await import("@/lib/ai-free.server");
             if (aiOutOfQuota()) {
@@ -3417,10 +4060,13 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return Response.json({ ok: true, flow: "escalated", actions });
         }
 
-
         // ---- guided slot reset: ask UID → ask slot → reset --------------------
-        if (decision.intent === "slot_reset" && (settings as any).slot_reset_enabled !== false
-            && !decision.should_delete && msg.from?.id) {
+        if (
+          decision.intent === "slot_reset" &&
+          (settings as any).slot_reset_enabled !== false &&
+          !decision.should_delete &&
+          msg.from?.id
+        ) {
           // AI মাঝে মাঝে স্লট নম্বরটাকেই UID ভেবে বসে ("৬ নাম্বার সোলট মুছে দে" →
           // uid 6)। তাই স্লট হিসেবে বলা নম্বরটি কখনোই UID হিসেবে নেওয়া হবে না;
           // চেনা ইউজারের KYC-লিংক করা UID-ই আগে ব্যবহার হবে।
@@ -3431,7 +4077,6 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               ? decision.uid
               : null;
           const uid = aiUid || pickUid(norm) || (await linkedUid());
-
 
           if (!uid) {
             const already = await pendingResetInfo();
@@ -3464,7 +4109,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
                 await sendMessage(
                   chatId,
                   `✅ একাউন্ট পাওয়া গেছে: <b>${prof.display_name || "ইউজার"}</b> (UID <code>${uid}</code>)\n\n` +
-                    `🔢 ${settings.ask_slot_message || "কোন কোন স্লট রিসেট করতে চান? এক বা একাধিক নম্বর লিখুন (যেমন: 3 অথবা 2,5,7 অথবা 2-6, সবগুলোর জন্য লিখুন \"সব\")"}`,
+                    `🔢 ${settings.ask_slot_message || 'কোন কোন স্লট রিসেট করতে চান? এক বা একাধিক নম্বর লিখুন (যেমন: 3 অথবা 2,5,7 অথবা 2-6, সবগুলোর জন্য লিখুন "সব")'}`,
                   msg.message_id,
                 );
                 actions.push("slot-reset:asked-slot");
@@ -3483,13 +4128,17 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             actions.push("slot-reset:asked-uid");
           }
 
-          await logMessage(decision.verdict, actions.join(",") || "none", decision.reply, matchedUid);
+          await logMessage(
+            decision.verdict,
+            actions.join(",") || "none",
+            decision.reply,
+            matchedUid,
+          );
           return Response.json({ ok: true, flow: "slot_reset", actions });
         }
 
         // ---- UID lookup: instant account card in the group --------------------
         if ((settings as any).uid_lookup_enabled !== false && !decision.should_delete) {
-
           // Only look an account up when the user really meant a UID —
           // never because a general question happened to contain a number
           // (e.g. "10 ta verify korar por kotodin por re verify?").
@@ -3500,11 +4149,14 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           const isUidLike = (v: string | null) =>
             !!v && (/^\d{2,9}$/.test(v) || (/\d/.test(v) && /^[A-Za-z0-9]{6,9}$/.test(v)));
           const onlyValue = isUidLike(bareToken) ? bareToken : null;
-          const explicitUidValue = norm.match(/(?:uid|ইউআইডি|আইডি|আই ডি|id\s*no|আইডি নাম্বার)\s*[:#-]?\s*([A-Za-z0-9]{2,10})/i)?.[1] ?? null;
-          const rawCandidate = explicitUid ? (explicitUidValue || decision.uid || pickUid(norm)) : onlyValue;
+          const explicitUidValue =
+            norm.match(
+              /(?:uid|ইউআইডি|আইডি|আই ডি|id\s*no|আইডি নাম্বার)\s*[:#-]?\s*([A-Za-z0-9]{2,10})/i,
+            )?.[1] ?? null;
+          const rawCandidate = explicitUid
+            ? explicitUidValue || decision.uid || pickUid(norm)
+            : onlyValue;
           const candidate = isUidLike(rawCandidate) ? rawCandidate : null;
-
-
 
           if (candidate) {
             const { buildUserCard } = await import("@/lib/telegram-lookup.server");
@@ -3539,16 +4191,25 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         const repliedSomething = actions.some((a) =>
           /replied|answer|voice|video|card|escalat|account|withdraw|verify|photo|asked/i.test(a),
         );
-        if (settings.auto_reply_enabled && !repliedSomething && !decision.should_delete
-            && (text.trim() || photoBase64)) {
+        if (
+          settings.auto_reply_enabled &&
+          !repliedSomething &&
+          !decision.should_delete &&
+          (text.trim() || photoBase64)
+        ) {
           const { smartAnswer, escalateReply } = await import("@/lib/telegram-bot.server");
           const { loadRates, knowledgeText } = await import("@/lib/telegram-knowledge.server");
-          const mention = (settings as any).admin_mention
-            || (settings as any).support_username || "@anamulmunni";
+          const mention =
+            (settings as any).admin_mention || (settings as any).support_username || "@anamulmunni";
           let reply: string | null = null;
           if (decision.needs_uid) {
             if (msg.from?.id) {
-              await saveSession({ intent: "account_info", step: "await_uid", uid: null, app_user_id: null });
+              await saveSession({
+                intent: "account_info",
+                step: "await_uid",
+                uid: null,
+                app_user_id: null,
+              });
             }
             reply =
               `🆔 ${senderName}, আপনার একাউন্টের তথ্য দেখে জানাতে আপনার <b>UID</b> নম্বরটি দরকার।\n` +
@@ -3559,9 +4220,10 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             const rates3 = await loadRates();
             const base3 = {
               name: senderName,
-              question: (bypassDecisionReply
-                ? `${text}\n\nএটা আগের কথার/ভয়েসের ফলোআপ। history দেখে আগের প্রশ্ন বা ভয়েসের বিষয়টা বুঝে সরাসরি উত্তর দাও; generic greeting দেবে না।`
-                : text) + quotedContext,
+              question:
+                (bypassDecisionReply
+                  ? `${text}\n\nএটা আগের কথার/ভয়েসের ফলোআপ। history দেখে আগের প্রশ্ন বা ভয়েসের বিষয়টা বুঝে সরাসরি উত্তর দাও; generic greeting দেবে না।`
+                  : text) + quotedContext,
 
               knowledge: knowledgeText(rates3),
               history: convoHistory,
@@ -3569,8 +4231,11 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               recall: recallText,
             };
             reply =
-              (await agentAnswer({ ...base3, rulebook: appRulebook(rates3), isAdmin: senderIsAdmin }))
-              ?? (await smartAnswer(base3));
+              (await agentAnswer({
+                ...base3,
+                rulebook: appRulebook(rates3),
+                isAdmin: senderIsAdmin,
+              })) ?? (await smartAnswer(base3));
           }
           const escalated = !reply;
           if (!reply) {
@@ -3598,18 +4263,17 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           }
         }
 
-
-
-
-
-        await supabaseAdmin.from("tg_messages").update({
-          text: text.slice(0, 2000),
-          has_photo: !!photos?.length,
-          verdict: decision.verdict,
-          action: actions.join(",") || "none",
-          bot_reply: decision.reply,
-          matched_uid: matchedUid,
-        }).eq("update_id", update.update_id);
+        await supabaseAdmin
+          .from("tg_messages")
+          .update({
+            text: text.slice(0, 2000),
+            has_photo: !!photos?.length,
+            verdict: decision.verdict,
+            action: actions.join(",") || "none",
+            bot_reply: decision.reply,
+            matched_uid: matchedUid,
+          })
+          .eq("update_id", update.update_id);
 
         return Response.json({ ok: true, verdict: decision.verdict, actions, banRequested });
       },
