@@ -12,9 +12,20 @@
 const bnNum = (s: string) => String(s ?? "").replace(/[০-৯]/g, (d) => String("০১২৩৪৫৬৭৮৯".indexOf(d)));
 
 /** এই টেলিগ্রাম ইউজারনেমটি অ্যাপের মালিকের কি না। */
-export function isOwnerUsername(username: string | null | undefined, supportUsername?: string | null): boolean {
+export function isOwnerIdentity(
+  username: string | null | undefined,
+  telegramUserId: number | string | null | undefined,
+  supportUsername?: string | null,
+  adminChatId?: string | number | null,
+): boolean {
   const owner = String(supportUsername || "@anamulmunni").replace(/^@/, "").toLowerCase();
-  return !!username && username.toLowerCase() === owner;
+  const usernameMatches = !!username && username.toLowerCase() === owner;
+  const savedId = String(adminChatId ?? "").trim();
+  return usernameMatches || (!!savedId && savedId === String(telegramUserId ?? ""));
+}
+
+export function isOwnerUsername(username: string | null | undefined, supportUsername?: string | null): boolean {
+  return isOwnerIdentity(username, null, supportUsername, null);
 }
 
 export type OwnerResult = { handled: boolean; reply: string | null; flow: string };

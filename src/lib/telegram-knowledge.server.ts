@@ -25,6 +25,7 @@ export type AppRates = {
   /** স্লট ফেস ভেরিফিকেশন (First verify + Re-verify) এখন চালু আছে কি না। */
   faceVerifyOn: boolean;
   faceVerifyOffMsg: string | null;
+  bonusEnabled: boolean;
 };
 
 export async function loadRates(): Promise<AppRates> {
@@ -43,10 +44,11 @@ export async function loadRates(): Promise<AppRates> {
   const pauseExpired = offUntil !== null && offUntil <= now;
   const withdrawOn = !(b.withdraw_enabled === false && !pauseExpired);
 
+  const bonusEnabled = b.bonus_enabled === true;
   return {
-    firstVerify: Number(b.first_verify_bonus ?? 50),
-    reVerify: Number(b.reverify_bonus ?? 200),
-    referrer: Number(b.referrer_bonus ?? 100),
+    firstVerify: bonusEnabled ? Number(b.first_verify_bonus ?? 50) : 0,
+    reVerify: bonusEnabled ? Number(b.reverify_bonus ?? 200) : 0,
+    referrer: bonusEnabled ? Number(b.referrer_bonus ?? 100) : 0,
     promo,
     promoTitle: promo ? (b.promo_title ?? null) : null,
     promoEndAt: promo ? (b.promo_end_at ?? null) : null,
@@ -62,6 +64,7 @@ export async function loadRates(): Promise<AppRates> {
     usdtOn: b.usdt_enabled !== false,
     faceVerifyOn: b.face_verify_enabled !== false,
     faceVerifyOffMsg: b.face_verify_enabled === false ? (b.face_verify_off_message ?? null) : null,
+    bonusEnabled,
   };
 }
 
@@ -151,20 +154,20 @@ export function earningGuideReply(name: string, r: AppRates): string {
     return (
       `${faceVerifyPausedReply(name, r)}\n\n` +
       `নিয়মটা জেনে রাখুন — চালু হলেই কাজে লাগবে 👇\n` +
-      (first > 0
+      (r.bonusEnabled && first > 0
         ? `<b>১️⃣</b> ১০টি স্লট ফেস ভেরিফাই → <b>${tk(first)}</b>\n`
         : `<b>১️⃣</b> ১০টি স্লট ফেস ভেরিফাই → এখন এই ধাপে <b>কোনো বোনাস নেই</b>\n`) +
-      `<b>২️⃣</b> ১টি স্লট রি-ভেরিফাই করলেই ওই ১টির মাইনিং চালু ⛏️ · ১০টি সম্পূর্ণ হলে <b>${tk(re)}</b> বোনাস\n` +
-      `<b>৩️⃣</b> রেফার সফল হলে এককালীন <b>${tk(ref)}</b> + মাইনিংয়ের ১০% মাসিক কমিশন 💵`
+      `<b>২️⃣</b> ১টি স্লট রি-ভেরিফাই করলেই ওই ১টির মাইনিং চালু ⛏️${r.bonusEnabled ? ` · ১০টি সম্পূর্ণ হলে <b>${tk(re)}</b> বোনাস` : ` · এককালীন বোনাস অফার এখন বন্ধ`}\n` +
+      `<b>৩️⃣</b> ${r.bonusEnabled ? `রেফার সফল হলে এককালীন <b>${tk(ref)}</b> + ` : ""}মাইনিংয়ের ১০% মাসিক কমিশন 💵`
     );
   }
   return (
     `${pick(openers)}\n\n` +
-    (first > 0
+    (r.bonusEnabled && first > 0
       ? `<b>১️⃣ প্রথম ধাপ:</b> ১০টি স্লটে ফেস ভেরিফিকেশন করুন → আপনি পাবেন <b>${tk(first)}</b>\n`
       : `<b>১️⃣ প্রথম ধাপ:</b> ১০টি স্লটে ফেস ভেরিফিকেশন করুন → এই ধাপে <b>এখন কোনো বোনাস নেই</b>, তবে এটা করলেই পরের ধাপের দরজা খুলে যায় 🙂\n`) +
-    `<b>২️⃣ দ্বিতীয় ধাপ:</b> ৪ দিন পর স্লট <b>রি-ভেরিফাই</b> করুন — <b>স্লটের কোনো লিমিট নেই</b>, ১টি করলেই ওই ১টির মাইনিং চালু (প্রতি স্লট <b>৫০৳/মাস</b>) ⛏️। ১০টি সম্পূর্ণ করলে <b>${tk(re)}</b> বোনাস, আর আগে রি-ভেরিফাই করা স্লট আবার করলে <b>প্রতি স্লটে ১০৳</b> সাথে সাথে 🎁\n` +
-    `<b>৩️⃣ রেফার:</b> আপনার রেফারে কেউ ১০টি ১ম ভেরিফাই করলে আপনি এককালীন <b>${tk(ref)}</b> পাবেন। সে ১০টি রি-ভেরিফাই করলে তার মাইনিংয়ের <b>১০%</b> আপনি প্রতি মাসে পাবেন 💵\n\n` +
+    `<b>২️⃣ দ্বিতীয় ধাপ:</b> ৪ দিন পর স্লট <b>রি-ভেরিফাই</b> করুন — ১টি করলেই ওই ১টির মাইনিং চালু (প্রতি স্লট <b>৫০৳/মাস</b>) ⛏️। ${r.bonusEnabled ? `১০টি সম্পূর্ণ করলে <b>${tk(re)}</b> বোনাস, আর ` : `এককালীন বোনাস অফার এখন বন্ধ; তবে `}আগে রি-ভেরিফাই করা স্লট আবার করলে <b>প্রতি স্লটে ১০৳</b> claim পাবেন 🎁\n` +
+    `<b>৩️⃣ রেফার:</b> ${r.bonusEnabled ? `রেফারির ১০টি ১ম ভেরিফাই হলে এককালীন <b>${tk(ref)}</b> পাবেন। ` : `এককালীন referral offer এখন বন্ধ। `}রেফারির সক্রিয় মাইনিংয়ের <b>১০%</b> প্রতি মাসে পাবেন 💵\n\n` +
     `🏦 <b>উইথড্র:</b> তারিখের নিয়ম আর নেই — মেইন ব্যালেন্স ও আনলক হওয়া মাইনিং ব্যালেন্স <b>যেকোনো সময়</b> তোলা যাবে। কোনো স্লটের মাইনিং টাকা লক থাকলে সেই স্লট রি-ভেরিফাই করলেই আনলক হয়ে যাবে 🔓\n` +
     (r.promo && r.promoTitle ? `\n🎊 ${r.promoTitle}\n` : "") +
     `\nকোনো ধাপে আটকে গেলে বলুন, আমি সাথে সাথে দেখে দিচ্ছি 💙`
