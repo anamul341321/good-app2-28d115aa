@@ -202,10 +202,13 @@ async function runTool(name: string, args: any): Promise<string> {
       ]);
       const s: any = settings ?? {};
       const onOff = (v: any) => (v === false ? "বন্ধ" : "চালু");
+      const liveBonus = s.bonus_enabled === true
+        ? `বোনাস অফার চালু: ১ম ভেরিফাই ${rates.firstVerify}৳, রি-ভেরিফাই ${rates.reVerify}৳, রেফারার ${rates.referrer}৳`
+        : "এককালীন First verify/Re-verify/Referral বোনাস অফার বন্ধ; পুরোনো rate প্রযোজ্য নয়";
       const live =
         `পেমেন্ট মেথড: বিকাশ ${onOff(s.bkash_enabled)}, নগদ ${onOff(s.nagad_enabled)}, ` +
         `মোবাইল রিচার্জ ${onOff(s.recharge_enabled)}, USDT ${onOff(s.usdt_enabled)}\n` +
-        `বোনাস: ১ম ভেরিফাই ${s.first_verify_bonus ?? "-"}৳, রি-ভেরিফাই ${s.reverify_bonus ?? "-"}৳, রেফারার ${s.referrer_bonus ?? "-"}৳` +
+        liveBonus +
         (s.promo_active
           ? ` | প্রমো চালু: ${s.promo_title ?? ""}${s.promo_end_at
               ? ` | অফার শেষ: ${new Intl.DateTimeFormat("bn-BD", {
