@@ -19,7 +19,14 @@ const pick = (a: string[]) => a[Math.floor(Math.random() * a.length)];
  */
 export function fillRates(
   text: string,
-  r: { firstVerify: number; reVerify: number; referrer: number; promoFirst?: number | null; promoRe?: number | null; promoRef?: number | null },
+  r: {
+    firstVerify: number;
+    reVerify: number;
+    referrer: number;
+    promoFirst?: number | null;
+    promoRe?: number | null;
+    promoRef?: number | null;
+  },
 ): string {
   const tk = (n: number) => `${Math.round(n)}৳`;
   const first = r.promoFirst ?? r.firstVerify;
@@ -42,18 +49,28 @@ export async function fillLiveRates(text: string): Promise<string> {
   }
 }
 
-
 export const BUILTIN_FAQS: BuiltinFaq[] = [
   {
     topic: "নির্দিষ্ট নাম্বারের স্লট ভেরিফাই হচ্ছে না",
     screenshot: [],
     keywords: [
-      "number verify hocche na", "nomber verify hocche na", "nambar verify hocche na",
-      "number ta verify hoi na", "slot verify hocche na", "slot verify hoi na",
-      "slot verify hocche na keno", "ei slot verify hocche na", "verify hocche na",
-      "নাম্বার ভেরিফাই হচ্ছে না", "নাম্বারের ভেরিফাই হচ্ছে না", "নম্বর ভেরিফাই হচ্ছে না",
-      "স্লট ভেরিফাই হচ্ছে না", "ভেরিফাই হচ্ছে না কেন", "স্লট ভেরিফাই হয় না",
-      "verify hocche na kn", "verify hoi na kn",
+      "number verify hocche na",
+      "nomber verify hocche na",
+      "nambar verify hocche na",
+      "number ta verify hoi na",
+      "slot verify hocche na",
+      "slot verify hoi na",
+      "slot verify hocche na keno",
+      "ei slot verify hocche na",
+      "verify hocche na",
+      "নাম্বার ভেরিফাই হচ্ছে না",
+      "নাম্বারের ভেরিফাই হচ্ছে না",
+      "নম্বর ভেরিফাই হচ্ছে না",
+      "স্লট ভেরিফাই হচ্ছে না",
+      "ভেরিফাই হচ্ছে না কেন",
+      "স্লট ভেরিফাই হয় না",
+      "verify hocche na kn",
+      "verify hoi na kn",
     ],
     answer:
       `🙂 চিন্তার কিছু নেই ভাইয়া — কোনো একটি স্লট ভেরিফাই না হওয়ার কারণ সাধারণত এই ৩টি 👇\n\n` +
@@ -67,11 +84,24 @@ export const BUILTIN_FAQS: BuiltinFaq[] = [
     topic: "বোনাস অফার বন্ধ থাকলে কী হবে",
     screenshot: [],
     keywords: [
-      "11 tarikher por bonus", "11 tarikh er por", "11 tarikh por bonus",
-      "campaign ses", "campaign shesh", "offer ses", "offer shesh",
-      "bonus ki ar pabo", "bonus ar pabo na", "bonus bondho", "bonus off hobe",
-      "১১ তারিখের পর", "১১ তারিখ এর পর", "ক্যাম্পেইন শেষ", "অফার শেষ",
-      "বোনাস কি আর পাবো", "বোনাস আর পাবো না", "বোনাস বন্ধ",
+      "11 tarikher por bonus",
+      "11 tarikh er por",
+      "11 tarikh por bonus",
+      "campaign ses",
+      "campaign shesh",
+      "offer ses",
+      "offer shesh",
+      "bonus ki ar pabo",
+      "bonus ar pabo na",
+      "bonus bondho",
+      "bonus off hobe",
+      "১১ তারিখের পর",
+      "১১ তারিখ এর পর",
+      "ক্যাম্পেইন শেষ",
+      "অফার শেষ",
+      "বোনাস কি আর পাবো",
+      "বোনাস আর পাবো না",
+      "বোনাস বন্ধ",
     ],
     answer:
       `🎁 <b>এই মুহূর্তে এককালীন First verify/Re-verify/Referral বোনাস অফার বন্ধ আছে।</b> অ্যাডমিন আবার চালু করলে, চালু হওয়ার পর যারা শর্ত পূরণ করবেন শুধু তারাই live rate অনুযায়ী পাবেন।\n\n` +
@@ -82,11 +112,29 @@ export const BUILTIN_FAQS: BuiltinFaq[] = [
     topic: "অ্যাপের অফিসিয়াল লিংক",
     screenshot: [],
     keywords: [
-      "apps link", "app link", "apper link", "apps er link", "app er link",
-      "link den", "link dan", "link dio", "link ta den", "website link",
-      "official link", "site link", "link kothay", "link please", "link plz",
-      "অ্যাপের লিংক", "অ্যাপ লিংক", "লিংক দেন", "লিংক দিন", "লিংক টা দেন",
-      "ওয়েবসাইট লিংক", "অফিসিয়াল লিংক", "লিংক কোথায়",
+      "apps link",
+      "app link",
+      "apper link",
+      "apps er link",
+      "app er link",
+      "link den",
+      "link dan",
+      "link dio",
+      "link ta den",
+      "website link",
+      "official link",
+      "site link",
+      "link kothay",
+      "link please",
+      "link plz",
+      "অ্যাপের লিংক",
+      "অ্যাপ লিংক",
+      "লিংক দেন",
+      "লিংক দিন",
+      "লিংক টা দেন",
+      "ওয়েবসাইট লিংক",
+      "অফিসিয়াল লিংক",
+      "লিংক কোথায়",
     ],
     answer:
       `🔗 <b>আমাদের অফিসিয়াল লিংক</b> 👇\n\n` +
@@ -95,24 +143,53 @@ export const BUILTIN_FAQS: BuiltinFaq[] = [
       `⚠️ শুধু এই একটাই অফিসিয়াল লিংক — অন্য কোনো লিংক ব্যবহার করবেন না।`,
   },
 
-
   {
-
     topic: "অ্যাপ ডাউনলোড / ইনস্টল করার নিয়ম",
     screenshot: [
-      "Download App", "অ্যাপ ডাউনলোড করুন", "goodapp2-release.apk",
-      "Downloads", "Open", "Install", "ইনস্টল",
+      "Download App",
+      "অ্যাপ ডাউনলোড করুন",
+      "goodapp2-release.apk",
+      "Downloads",
+      "Open",
+      "Install",
+      "ইনস্টল",
     ],
     keywords: [
-      "apps download", "app download", "download korbo", "download kivabe",
-      "apps kivabe download", "install korbo", "install kivabe", "apps install",
-      "app install", "apk", "play store", "playstore", "home screen",
-      "install bujhi na", "install buji na", "install bujtasi na", "download bujhi na",
-      "download buji na", "kivabe install", "kemne install", "kemne download",
-      "install kore dite parben", "install hocche na", "install hoi na",
-      "অ্যাপ ডাউনলোড", "অ্যাপস ডাউনলোড", "ডাউনলোড করবো", "ডাউনলোড কিভাবে",
-      "ইনস্টল করবো", "ইনস্টল কিভাবে", "অ্যাপ ইনস্টল", "এপস ডাউনলোড",
-      "ইনস্টল বুঝি না", "ইনস্টল বুঝতে পারছি না", "ইনস্টল হচ্ছে না",
+      "apps download",
+      "app download",
+      "download korbo",
+      "download kivabe",
+      "apps kivabe download",
+      "install korbo",
+      "install kivabe",
+      "apps install",
+      "app install",
+      "apk",
+      "play store",
+      "playstore",
+      "home screen",
+      "install bujhi na",
+      "install buji na",
+      "install bujtasi na",
+      "download bujhi na",
+      "download buji na",
+      "kivabe install",
+      "kemne install",
+      "kemne download",
+      "install kore dite parben",
+      "install hocche na",
+      "install hoi na",
+      "অ্যাপ ডাউনলোড",
+      "অ্যাপস ডাউনলোড",
+      "ডাউনলোড করবো",
+      "ডাউনলোড কিভাবে",
+      "ইনস্টল করবো",
+      "ইনস্টল কিভাবে",
+      "অ্যাপ ইনস্টল",
+      "এপস ডাউনলোড",
+      "ইনস্টল বুঝি না",
+      "ইনস্টল বুঝতে পারছি না",
+      "ইনস্টল হচ্ছে না",
     ],
 
     answer:
@@ -128,14 +205,31 @@ export const BUILTIN_FAQS: BuiltinFaq[] = [
   {
     topic: "Play Protect / harmful app warning দেখাচ্ছে (স্ক্রিনশট)",
     screenshot: [
-      "Play Protect", "harmful", "Unsafe app blocked", "This app may be unsafe",
-      "Blocked by Play Protect", "More details", "Install anyway",
-      "Don't install", "Send app for scanning", "unsafe app",
+      "Play Protect",
+      "harmful",
+      "Unsafe app blocked",
+      "This app may be unsafe",
+      "Blocked by Play Protect",
+      "More details",
+      "Install anyway",
+      "Don't install",
+      "Send app for scanning",
+      "unsafe app",
     ],
     keywords: [
-      "play protect", "harmful", "harmful apps bole", "unsafe", "virus bole",
-      "blocked", "block kore dey", "install anyway", "scan kore",
-      "প্লে প্রোটেক্ট", "ক্ষতিকর", "ভাইরাস বলে", "ব্লক করে",
+      "play protect",
+      "harmful",
+      "harmful apps bole",
+      "unsafe",
+      "virus bole",
+      "blocked",
+      "block kore dey",
+      "install anyway",
+      "scan kore",
+      "প্লে প্রোটেক্ট",
+      "ক্ষতিকর",
+      "ভাইরাস বলে",
+      "ব্লক করে",
     ],
     answer:
       `😊 ভয়ের কিছু নেই — এই মেসেজটা <b>ভাইরাসের কারণে আসেনি</b>। যেসব অ্যাপ Play Store-এর বাইরে থেকে ইনস্টল হয়, Google সব সময় এমন একটা সতর্কবার্তা দেখায় (এটা তাদের নিয়ম) ✅\n\n` +
@@ -149,13 +243,23 @@ export const BUILTIN_FAQS: BuiltinFaq[] = [
   {
     topic: "App not installed / ইনস্টল ফেইল হচ্ছে (স্ক্রিনশট)",
     screenshot: [
-      "App not installed", "Package appears to be invalid", "There was a problem parsing the package",
-      "App not installed as package conflicts", "install failed", "Try again",
+      "App not installed",
+      "Package appears to be invalid",
+      "There was a problem parsing the package",
+      "App not installed as package conflicts",
+      "install failed",
+      "Try again",
     ],
     keywords: [
-      "app not installed", "package invalid", "parsing the package", "install failed",
-      "install hoy na", "install hocche na", "install fail",
-      "ইনস্টল হয় না", "ইনস্টল ফেইল",
+      "app not installed",
+      "package invalid",
+      "parsing the package",
+      "install failed",
+      "install hoy na",
+      "install hocche na",
+      "install fail",
+      "ইনস্টল হয় না",
+      "ইনস্টল ফেইল",
     ],
     answer:
       `🙂 এটা ছোট সমস্যা, সহজে ঠিক হয় 👇\n\n` +
@@ -170,8 +274,14 @@ export const BUILTIN_FAQS: BuiltinFaq[] = [
     topic: "ডাউনলোড করা ফাইলটা zip / কোথায় পাবো (স্ক্রিনশট)",
     screenshot: ["release-apk.zip", ".zip", "Downloads", "My files", "goodapp2-release.apk"],
     keywords: [
-      "zip", "zip file", "file kothay", "download kothay gelo", "downloads folder",
-      "file paitesi na", "জিপ", "ফাইল কোথায়",
+      "zip",
+      "zip file",
+      "file kothay",
+      "download kothay gelo",
+      "downloads folder",
+      "file paitesi na",
+      "জিপ",
+      "ফাইল কোথায়",
     ],
     answer:
       `📁 আপনি ঠিক জায়গাতেই আছেন 👇\n\n` +
@@ -180,22 +290,44 @@ export const BUILTIN_FAQS: BuiltinFaq[] = [
       `ফাইল খুঁজে না পেলে ফোনের <b>Notification বার</b> নামিয়ে "Download complete" এ ট্যাপ করুন 🙂`,
   },
 
-
-
-
   {
     topic: "Gmail যুক্ত / Gmail ভেরিফিকেশন কিভাবে করবো",
     // শুধু Gmail-নির্দিষ্ট লেখা — "verify/ভেরিফাই" রাখা যাবে না, নইলে অন্য
     // সমস্যার স্ক্রিনশটেও Gmail-এর উত্তর চলে যায়।
-    screenshot: ["Gmail যোগ করুন", "Gmail সিকিউরিটি", "কোড পাঠান", "gmail verification", "gmail verify"],
+    screenshot: [
+      "Gmail যোগ করুন",
+      "Gmail সিকিউরিটি",
+      "কোড পাঠান",
+      "gmail verification",
+      "gmail verify",
+    ],
 
     keywords: [
-      "gmail add", "gmail add korbo", "gmail add kemne", "gmail add kivabe",
-      "gmail jukto", "gmail verify", "gmail verification", "gmail kivabe",
-      "gmail dibo", "gmail kothay", "email add", "email verify", "email verification",
-      "gmail code", "gmail otp", "gmail suraksha", "gmail security",
-      "জিমেইল যোগ", "জিমেইল কিভাবে", "জিমেইল দিব", "জিমেইল ভেরিফাই",
-      "জিমেইল ভেরিফিকেশন", "ইমেইল যোগ", "ইমেইল ভেরিফাই", "জিমেইল যুক্ত",
+      "gmail add",
+      "gmail add korbo",
+      "gmail add kemne",
+      "gmail add kivabe",
+      "gmail jukto",
+      "gmail verify",
+      "gmail verification",
+      "gmail kivabe",
+      "gmail dibo",
+      "gmail kothay",
+      "email add",
+      "email verify",
+      "email verification",
+      "gmail code",
+      "gmail otp",
+      "gmail suraksha",
+      "gmail security",
+      "জিমেইল যোগ",
+      "জিমেইল কিভাবে",
+      "জিমেইল দিব",
+      "জিমেইল ভেরিফাই",
+      "জিমেইল ভেরিফিকেশন",
+      "ইমেইল যোগ",
+      "ইমেইল ভেরিফাই",
+      "জিমেইল যুক্ত",
     ],
     answer:
       `📧 <b>Gmail যুক্ত করার নিয়ম</b> — ১ মিনিটের কাজ, একদম সহজ 😊👇\n\n` +
@@ -207,16 +339,28 @@ export const BUILTIN_FAQS: BuiltinFaq[] = [
       `🔒 লাভ: পাসওয়ার্ড ভুলে গেলে নিজেই রিসেট করতে পারবেন, নতুন ফোনে সহজে লগইন, আর একাউন্ট অন্য কেউ নিতে পারবে না। সম্পূর্ণ <b>ফ্রি</b> 👍`,
   },
 
-
   {
     topic: "পেমেন্ট করতে কত সময় লাগে?",
     screenshot: [],
     keywords: [
-      "payment korte koto somoy", "payment koto somoy", "koto somoy lage",
-      "kotokkhon por taka", "kotokkhon lage", "taka koto somoy", "taka kokhon asbe",
-      "withdraw koto somoy", "payment kokhon", "koto somoy pore taka",
-      "পেমেন্ট করতে কতো সময়", "পেমেন্ট করতে কত সময়", "কত সময় লাগে", "কতো সময় লাগে",
-      "কতক্ষণ পর টাকা", "টাকা কখন আসবে", "কতক্ষণ লাগে", "পেমেন্ট কখন",
+      "payment korte koto somoy",
+      "payment koto somoy",
+      "koto somoy lage",
+      "kotokkhon por taka",
+      "kotokkhon lage",
+      "taka koto somoy",
+      "taka kokhon asbe",
+      "withdraw koto somoy",
+      "payment kokhon",
+      "koto somoy pore taka",
+      "পেমেন্ট করতে কতো সময়",
+      "পেমেন্ট করতে কত সময়",
+      "কত সময় লাগে",
+      "কতো সময় লাগে",
+      "কতক্ষণ পর টাকা",
+      "টাকা কখন আসবে",
+      "কতক্ষণ লাগে",
+      "পেমেন্ট কখন",
     ],
     answer:
       `⏱️ উইথড্র রিকোয়েস্ট দেওয়ার পর সাধারণত <b>৫ থেকে ১০ মিনিটের</b> মধ্যেই টাকা আপনার bKash/Nagad নম্বরে চলে আসে ✅\n\n` +
@@ -229,10 +373,20 @@ export const BUILTIN_FAQS: BuiltinFaq[] = [
     topic: "১০টার পর আরও স্লট যোগ করলে কি আবার বোনাস পাওয়া যাবে?",
     screenshot: [],
     keywords: [
-      "aro slot add korle bonus", "aro 10 ta korle bonus", "notun slot bonus",
-      "second 10 bonus", "20 ta slot bonus", "extra slot bonus", "slot barale bonus",
-      "আরও স্লট বোনাস", "আরো ১০ টা", "নতুন স্লট বোনাস", "২০ টা স্লট বোনাস",
-      "porer 10 ta bonus", "পরের ১০ টা বোনাস", "slot barale ki hobe",
+      "aro slot add korle bonus",
+      "aro 10 ta korle bonus",
+      "notun slot bonus",
+      "second 10 bonus",
+      "20 ta slot bonus",
+      "extra slot bonus",
+      "slot barale bonus",
+      "আরও স্লট বোনাস",
+      "আরো ১০ টা",
+      "নতুন স্লট বোনাস",
+      "২০ টা স্লট বোনাস",
+      "porer 10 ta bonus",
+      "পরের ১০ টা বোনাস",
+      "slot barale ki hobe",
     ],
     answer:
       `খুব ভালো প্রশ্ন ভাইয়া 👏 পরিষ্কার করে বলি —\n\n` +
@@ -241,7 +395,6 @@ export const BUILTIN_FAQS: BuiltinFaq[] = [
       `• সেই ১০টি স্লট <b>রি-ভেরিফাই</b> সম্পন্ন হলে → <b>{{REVERIFY_BONUS}} বোনাস</b> ✅\n` +
       `• মাইনিং চালু হতে ১০টির দরকার নেই — <b>১টি স্লট রি-ভেরিফাই করলেই ওই ১টির মাইনিং চালু</b> ⛏️\n` +
       `• আগে রি-ভেরিফাই করা স্লট আবার করলে <b>প্রতি স্লটে ১০৳</b> সাথে সাথে মেইন ব্যালেন্সে 🎁\n\n` +
-
       `➕ <b>এরপর আরও ১০টি স্লট যোগ করলে?</b>\n` +
       `• সেগুলোও ফার্স্ট ভেরিফাই + রি-ভেরিফাই করতেই হবে (নিয়ম একই)\n` +
       `• কিন্তু বাকি স্লটগুলোর জন্য <b>আলাদা কোনো বোনাস পাবেন না</b>\n` +
@@ -255,9 +408,19 @@ export const BUILTIN_FAQS: BuiltinFaq[] = [
     topic: "এই অ্যাপ/ইনকাম কতদিন থাকবে? কখন বন্ধ হবে?",
     screenshot: [],
     keywords: [
-      "kotodin thakbe", "koto din cholbe", "kobe bondho hobe", "eta bondho hobe ki",
-      "apps kotodin", "কতদিন থাকবে", "কতদিন চলবে", "কবে বন্ধ হবে", "বন্ধ হয়ে যাবে",
-      "offer kotodin", "permanent ki na", "সাইট কতদিন", "site kotodin",
+      "kotodin thakbe",
+      "koto din cholbe",
+      "kobe bondho hobe",
+      "eta bondho hobe ki",
+      "apps kotodin",
+      "কতদিন থাকবে",
+      "কতদিন চলবে",
+      "কবে বন্ধ হবে",
+      "বন্ধ হয়ে যাবে",
+      "offer kotodin",
+      "permanent ki na",
+      "সাইট কতদিন",
+      "site kotodin",
     ],
     answer:
       `ভাইয়া, এটা কোনো অফার সাইট বা প্রমোশন ওয়েবসাইট <b>নয়</b> 🙂\n\n` +
@@ -271,11 +434,22 @@ export const BUILTIN_FAQS: BuiltinFaq[] = [
     topic: "রি-ভেরিফাই একবার করলে পরে আবার লাগবে কি না",
     screenshot: [],
     keywords: [
-      "porobortite abar re verify", "abar re verify korte hobe", "abar reverify lagbe",
-      "re verify korle abar lagbe", "reverify abar lagbe", "আবার রি-ভেরিফাই লাগবে",
-      "আবার রি ভেরিফাই করতে হবে", "পরবর্তীতে আবার রি-ভেরিফাই", "বারবার রি-ভেরিফাই",
-      "kotodin por re verify", "কতদিন পর রি-ভেরিফাই", "koto din por abar",
-      "re verify keno chai", "রি-ভেরিফাই কেন চায়", "reverify kn lage", "বার বার কেন",
+      "porobortite abar re verify",
+      "abar re verify korte hobe",
+      "abar reverify lagbe",
+      "re verify korle abar lagbe",
+      "reverify abar lagbe",
+      "আবার রি-ভেরিফাই লাগবে",
+      "আবার রি ভেরিফাই করতে হবে",
+      "পরবর্তীতে আবার রি-ভেরিফাই",
+      "বারবার রি-ভেরিফাই",
+      "kotodin por re verify",
+      "কতদিন পর রি-ভেরিফাই",
+      "koto din por abar",
+      "re verify keno chai",
+      "রি-ভেরিফাই কেন চায়",
+      "reverify kn lage",
+      "বার বার কেন",
     ],
     answer:
       `জি ভাইয়া, <b>পরবর্তীতে আবার রি-ভেরিফাই চাওয়া হতে পারে</b> — এটা কোনো সমস্যা নয়, এটা আমাদের নিয়মিত নিরাপত্তা যাচাই 🙂\n\n` +
@@ -298,8 +472,16 @@ export const BUILTIN_FAQS: BuiltinFaq[] = [
       "If this is your only active account - please contact support",
     ],
     keywords: [
-      "twin", "found your twin", "only one wallet", "same face", "একই ফেস", "টুইন",
-      "duplicate face", "already verified face", "identity will expire", "ফেস আগে করা",
+      "twin",
+      "found your twin",
+      "only one wallet",
+      "same face",
+      "একই ফেস",
+      "টুইন",
+      "duplicate face",
+      "already verified face",
+      "identity will expire",
+      "ফেস আগে করা",
     ],
     answer:
       `ভাইয়া, আপনি যে ফেস দিয়ে ভেরিফিকেশন করার চেষ্টা করছেন, সেই ফেস দিয়ে আমাদের অ্যাপে <b>আগে থেকেই একটি ফেস ভেরিফিকেশন করা আছে</b> ✅\n\n` +
@@ -323,13 +505,47 @@ export const BUILTIN_FAQS: BuiltinFaq[] = [
     topic: "বয়স ১৮/২০+ তবুও ফেস ভেরিফিকেশন হচ্ছে না (দেখতে কম বয়সী লাগে)",
     screenshot: [],
     keywords: [
-      "boyos beshi", "boyos besi", "বয়স বেশি", "বয়স ২০", "বয়স 20", "বয়স ২১", "বয়স ২২",
-      "বয়স ১৯", "বয়স 19", "boyos 20", "boyos 21", "boyos 22", "boyos 19", "boyos 18",
-      "বয়স ১৮ থেকে বেশি", "boyos 18 theke beshi", "age 20", "age 21", "age 22", "age 19",
-      "বয়স ২৫", "বয়স 25", "boyos 25", "age 25", "25 bochor", "২৫ বছর", "তার বয়স ২৫",
-      "20 bochor", "২০ বছর", "২১ বছর", "২২ বছর", "20 years", "tar boyos 20",
-      "তবুও এই সমস্যা", "tao hocche na", "tao hoy na", "tao hocche na", "boyos beshi tao",
-      "প্রাপ্তবয়স্ক তবুও", "বড় মানুষের ফেস দিয়েও", "boro manusher face diyeo",
+      "boyos beshi",
+      "boyos besi",
+      "বয়স বেশি",
+      "বয়স ২০",
+      "বয়স 20",
+      "বয়স ২১",
+      "বয়স ২২",
+      "বয়স ১৯",
+      "বয়স 19",
+      "boyos 20",
+      "boyos 21",
+      "boyos 22",
+      "boyos 19",
+      "boyos 18",
+      "বয়স ১৮ থেকে বেশি",
+      "boyos 18 theke beshi",
+      "age 20",
+      "age 21",
+      "age 22",
+      "age 19",
+      "বয়স ২৫",
+      "বয়স 25",
+      "boyos 25",
+      "age 25",
+      "25 bochor",
+      "২৫ বছর",
+      "তার বয়স ২৫",
+      "20 bochor",
+      "২০ বছর",
+      "২১ বছর",
+      "২২ বছর",
+      "20 years",
+      "tar boyos 20",
+      "তবুও এই সমস্যা",
+      "tao hocche na",
+      "tao hoy na",
+      "tao hocche na",
+      "boyos beshi tao",
+      "প্রাপ্তবয়স্ক তবুও",
+      "বড় মানুষের ফেস দিয়েও",
+      "boro manusher face diyeo",
     ],
     answer:
       `আসলে ফেস ভেরিফিকেশন <b>জন্মতারিখ দেখে হয় না</b> 🙂 সিস্টেম মুখের গঠন দেখে আনুমানিক বয়স বোঝার চেষ্টা করে।\n\n` +
@@ -340,10 +556,26 @@ export const BUILTIN_FAQS: BuiltinFaq[] = [
     topic: "18+ / বয়স কম — ফেস গ্রহণ হচ্ছে না",
     screenshot: ["18", "age", "You must be 18", "under age", "18 years or older"],
     keywords: [
-      "18+", "18 plus", "boyos", "বয়স", "age problem", "kid face", "ছোট ফেস",
-      "kom boyos", "under 18", "choto chele", "বাচ্চার ফেস",
-      "১৮ বছর", "18 bochor", "18 bosor", "বছরের নিচে", "bochorer niche",
-      "18 years", "১৮ বছরের নিচে", "niche boyos", "কম বয়স",
+      "18+",
+      "18 plus",
+      "boyos",
+      "বয়স",
+      "age problem",
+      "kid face",
+      "ছোট ফেস",
+      "kom boyos",
+      "under 18",
+      "choto chele",
+      "বাচ্চার ফেস",
+      "১৮ বছর",
+      "18 bochor",
+      "18 bosor",
+      "বছরের নিচে",
+      "bochorer niche",
+      "18 years",
+      "১৮ বছরের নিচে",
+      "niche boyos",
+      "কম বয়স",
     ],
 
     answer:
@@ -352,12 +584,18 @@ export const BUILTIN_FAQS: BuiltinFaq[] = [
       `প্রথমবার হয়ে যাওয়া মানেই ফেসটি স্থায়ীভাবে অনুমোদিত নয়; সিস্টেম সন্দেহ করলে <b>যাচাইয়ের জন্য আবার ফেস (রি-ভেরিফাই) চাইতে পারে</b> এবং তখন কম বয়সী ফেস আটকে যায়।\n\n` +
       `✅ আর <b>প্রাপ্তবয়স্ক (১৮+) ফেস</b> দিয়ে করলে পরবর্তীতে সাধারণত কোনো সমস্যা হয় না — একবার হয়ে গেলে নিশ্চিন্ত।\n\n` +
       `👉 তাই এখনই বড় কারো (১৮+) ফেস দিয়ে স্লটটি করে নিন, মুখে ভালো আলো রাখুন এবং চশমা/টুপি খুলে নিন 💙`,
-
   },
 
   {
     topic: "ক্যামেরা পারমিশন / We can't access your camera",
-    screenshot: ["camera", "permission", "allow camera", "can't access your camera", "enable camera permission", "device settings"],
+    screenshot: [
+      "camera",
+      "permission",
+      "allow camera",
+      "can't access your camera",
+      "enable camera permission",
+      "device settings",
+    ],
     keywords: ["camera", "ক্যামেরা", "permission", "পারমিশন", "cam kaj kore na", "camera access"],
     answer:
       `ভাইয়া, আগে একবার ক্যামেরার পারমিশন <b>Allow</b> না দেওয়ায় ব্রাউজারটি ক্যামেরা ব্লক করে রেখেছে 📷\n\n` +
@@ -377,9 +615,21 @@ export const BUILTIN_FAQS: BuiltinFaq[] = [
     topic: "KYC কী / কিভাবে করবো",
     screenshot: [],
     keywords: [
-      "kyc", "kyc ki", "kyc কি", "kyc কী", "কেওয়াইসি", "kyc korbo", "kyc kivabe",
-      "kyc kore", "kyc lagbe", "kyc verified", "kyc verify", "kyc mane",
-      "kyc কিভাবে", "কেওয়াইসি কি", "কেওয়াইসি কিভাবে",
+      "kyc",
+      "kyc ki",
+      "kyc কি",
+      "kyc কী",
+      "কেওয়াইসি",
+      "kyc korbo",
+      "kyc kivabe",
+      "kyc kore",
+      "kyc lagbe",
+      "kyc verified",
+      "kyc verify",
+      "kyc mane",
+      "kyc কিভাবে",
+      "কেওয়াইসি কি",
+      "কেওয়াইসি কিভাবে",
     ],
     answer:
       `📌 <b>KYC মানে আপনার একাউন্টটি আপনারই — এই নিশ্চয়তা</b> 🙂\n` +
@@ -395,15 +645,38 @@ export const BUILTIN_FAQS: BuiltinFaq[] = [
     topic: "রি-ভেরিফাই করা যাচ্ছে না / “এখনো সময় হয়নি”",
     screenshot: [],
     keywords: [
-      "re verify hocche na", "re verify hoi na", "reverify hocche na", "reverify hoi na",
-      "re verify kora jai na", "reverify kora jai na", "re verify korte parchi na",
-      "reverify korte parchi na", "re verify button asche na", "reverify button nai",
-      "re verify ene dao", "reverify ene dao", "re verify dao", "somoy hoy nai",
-      "somoy hoyni", "ekhono somoy", "রি ভেরিফাই হচ্ছে না", "রি-ভেরিফাই হচ্ছে না",
-      "রি ভেরিফাই করা যায় না", "রি-ভেরিফাই করা যায় না", "রি ভেরিফাই করতে পারছি না",
-      "রি ভেরিফাই এনে দাও", "রি-ভেরিফাই এনে দাও", "রি ভেরিফাই বাটন",
-      "এখনো সময় হয়নি", "সময় হয় নাই", "রি ভেরিফাই কখন", "রি-ভেরিফাই কখন",
-      "kokhon re verify", "re verify kokhon", "kobe re verify", "re verify kobe",
+      "re verify hocche na",
+      "re verify hoi na",
+      "reverify hocche na",
+      "reverify hoi na",
+      "re verify kora jai na",
+      "reverify kora jai na",
+      "re verify korte parchi na",
+      "reverify korte parchi na",
+      "re verify button asche na",
+      "reverify button nai",
+      "re verify ene dao",
+      "reverify ene dao",
+      "re verify dao",
+      "somoy hoy nai",
+      "somoy hoyni",
+      "ekhono somoy",
+      "রি ভেরিফাই হচ্ছে না",
+      "রি-ভেরিফাই হচ্ছে না",
+      "রি ভেরিফাই করা যায় না",
+      "রি-ভেরিফাই করা যায় না",
+      "রি ভেরিফাই করতে পারছি না",
+      "রি ভেরিফাই এনে দাও",
+      "রি-ভেরিফাই এনে দাও",
+      "রি ভেরিফাই বাটন",
+      "এখনো সময় হয়নি",
+      "সময় হয় নাই",
+      "রি ভেরিফাই কখন",
+      "রি-ভেরিফাই কখন",
+      "kokhon re verify",
+      "re verify kokhon",
+      "kobe re verify",
+      "re verify kobe",
     ],
     answer:
       `চিন্তার কিছু নেই ভাইয়া 🙂 রি-ভেরিফাই <b>জোর করে আনা যায় না</b> — সময় হলে নিজে থেকেই চলে আসে।\n\n` +
@@ -415,7 +688,6 @@ export const BUILTIN_FAQS: BuiltinFaq[] = [
       `📌 মনে রাখবেন: Good-App নিজে থেকে ফেস না চাইলে আমাদের অ্যাপও চাইবে না — এতে আপনার স্লট বা ইনকামের কোনো ক্ষতি হয় না, মাসিক মাইনিং ঠিকঠাক চলতেই থাকবে 💙`,
   },
   {
-
     topic: "Whitelist হচ্ছে না / pending দেখাচ্ছে",
     screenshot: ["not whitelisted", "pending", "whitelist"],
     keywords: ["whitelist", "হোয়াইটলিস্ট", "pending", "check hoy na"],
@@ -425,11 +697,15 @@ export const BUILTIN_FAQS: BuiltinFaq[] = [
   },
 ];
 
-
 /** Compact text block so the AI (and screenshot analyzer) knows these answers. */
-export function builtinFaqKnowledge(
-  rates?: { firstVerify: number; reVerify: number; referrer: number; promoFirst?: number | null; promoRe?: number | null; promoRef?: number | null },
-): string {
+export function builtinFaqKnowledge(rates?: {
+  firstVerify: number;
+  reVerify: number;
+  referrer: number;
+  promoFirst?: number | null;
+  promoRe?: number | null;
+  promoRef?: number | null;
+}): string {
   const body =
     `\n\n🧠 সাধারণ সমভাইয়া নির্ধারিত উত্তর (স্ক্রিনশট বা প্রশ্ন মিললে হুবহু এই তথ্য দিয়ে উত্তর দেবে):\n` +
     BUILTIN_FAQS.map(
@@ -438,7 +714,6 @@ export function builtinFaqKnowledge(
     ).join("\n");
   return rates ? fillRates(body, rates) : body;
 }
-
 
 /**
  * ইনটেন্ট লেয়ার — হুবহু শব্দ না মিললেও প্রশ্নের "মানে" ধরে ফেলে।
@@ -449,9 +724,29 @@ export function builtinFaqKnowledge(
 type IntentRule = { topic: string; groups: string[][] };
 
 const TIME_WORDS = [
-  "koto somoy", "kotosomoy", "kotokkhon", "koto khon", "kotdin", "koto din",
-  "kobe", "kokhon", "koto deri", "deri", "late", "somoy lagbe", "lagbe",
-  "কত সময়", "কতো সময়", "কতক্ষণ", "কতোক্ষণ", "কত ক্ষণ", "কবে", "কখন", "দেরি", "লাগবে", "কতদিন",
+  "koto somoy",
+  "kotosomoy",
+  "kotokkhon",
+  "koto khon",
+  "kotdin",
+  "koto din",
+  "kobe",
+  "kokhon",
+  "koto deri",
+  "deri",
+  "late",
+  "somoy lagbe",
+  "lagbe",
+  "কত সময়",
+  "কতো সময়",
+  "কতক্ষণ",
+  "কতোক্ষণ",
+  "কত ক্ষণ",
+  "কবে",
+  "কখন",
+  "দেরি",
+  "লাগবে",
+  "কতদিন",
 ];
 
 const INTENT_RULES: IntentRule[] = [
@@ -459,8 +754,19 @@ const INTENT_RULES: IntentRule[] = [
     topic: "পেমেন্ট করতে কত সময়",
     groups: [
       [
-        "withdraw", "withdrow", "withdraw request", "payment", "poyment", "taka tulsi",
-        "taka tulechi", "taka nisi", "cash out", "উইথড্র", "উইথড্রো", "পেমেন্ট", "টাকা",
+        "withdraw",
+        "withdrow",
+        "withdraw request",
+        "payment",
+        "poyment",
+        "taka tulsi",
+        "taka tulechi",
+        "taka nisi",
+        "cash out",
+        "উইথড্র",
+        "উইথড্রো",
+        "পেমেন্ট",
+        "টাকা",
       ],
       TIME_WORDS,
     ],
@@ -470,8 +776,19 @@ const INTENT_RULES: IntentRule[] = [
     groups: [
       ["re verify", "re-verify", "reverify", "রি ভেরিফাই", "রি-ভেরিফাই", "রিভেরিফাই"],
       [
-        ...TIME_WORDS, "hocche na", "hoi na", "hoy na", "asche na", "ase na", "parchi na",
-        "button", "হচ্ছে না", "হয় না", "আসছে না", "পারছি না", "বাটন",
+        ...TIME_WORDS,
+        "hocche na",
+        "hoi na",
+        "hoy na",
+        "asche na",
+        "ase na",
+        "parchi na",
+        "button",
+        "হচ্ছে না",
+        "হয় না",
+        "আসছে না",
+        "পারছি না",
+        "বাটন",
       ],
     ],
   },
@@ -480,8 +797,18 @@ const INTENT_RULES: IntentRule[] = [
     groups: [
       ["whitelist", "white list", "হোয়াইটলিস্ট", "হোয়াইট লিস্ট"],
       [
-        ...TIME_WORDS, "hocche na", "hoi na", "hoy na", "pending", "atke", "হচ্ছে না",
-        "হয় না", "পেন্ডিং", "আটকে", "check", "চেক",
+        ...TIME_WORDS,
+        "hocche na",
+        "hoi na",
+        "hoy na",
+        "pending",
+        "atke",
+        "হচ্ছে না",
+        "হয় না",
+        "পেন্ডিং",
+        "আটকে",
+        "check",
+        "চেক",
       ],
     ],
   },
@@ -490,8 +817,24 @@ const INTENT_RULES: IntentRule[] = [
     groups: [
       ["gmail", "g mail", "email", "e-mail", "জিমেইল", "ইমেইল", "মেইল"],
       [
-        "add", "jukto", "kivabe", "kemne", "kemon", "korbo", "dibo", "verify", "verification",
-        "যোগ", "যুক্ত", "কিভাবে", "কেমনে", "করবো", "দিব", "দিবো", "ভেরিফাই", "ভেরিফিকেশন",
+        "add",
+        "jukto",
+        "kivabe",
+        "kemne",
+        "kemon",
+        "korbo",
+        "dibo",
+        "verify",
+        "verification",
+        "যোগ",
+        "যুক্ত",
+        "কিভাবে",
+        "কেমনে",
+        "করবো",
+        "দিব",
+        "দিবো",
+        "ভেরিফাই",
+        "ভেরিফিকেশন",
       ],
     ],
   },
@@ -505,7 +848,17 @@ const INTENT_RULES: IntentRule[] = [
   {
     topic: "১০টার পর আরও স্লট",
     groups: [
-      ["aro slot", "aro 10", "extra slot", "notun slot", "slot barale", "আরও স্লট", "আরো স্লট", "আরো ১০", "নতুন স্লট"],
+      [
+        "aro slot",
+        "aro 10",
+        "extra slot",
+        "notun slot",
+        "slot barale",
+        "আরও স্লট",
+        "আরো স্লট",
+        "আরো ১০",
+        "নতুন স্লট",
+      ],
       ["bonus", "বোনাস", "taka pabo", "টাকা পাবো", "pabo", "পাবো"],
     ],
   },
@@ -527,9 +880,7 @@ function matchIntent(text: string): BuiltinFaq | null {
   const hay = normText(text);
   if (!hay) return null;
   for (const rule of INTENT_RULES) {
-    const ok = rule.groups.every((group) =>
-      group.some((w) => hay.includes(normText(w))),
-    );
+    const ok = rule.groups.every((group) => group.some((w) => hay.includes(normText(w))));
     if (ok) {
       const f = builtinFaqByTopic(rule.topic);
       if (f) return f;
@@ -569,14 +920,11 @@ export function matchBuiltinFaqText(text: string): BuiltinFaq | null {
   return best ?? matchIntent(text);
 }
 
-
-
 /** Find a built-in answer by its topic label (safer than an array index). */
 export function builtinFaqByTopic(fragment: string): BuiltinFaq | null {
   const q = fragment.toLowerCase();
   return BUILTIN_FAQS.find((f) => f.topic.toLowerCase().includes(q)) ?? null;
 }
-
 
 export function builtinFaqReply(name: string, f: BuiltinFaq): string {
   const openers = [

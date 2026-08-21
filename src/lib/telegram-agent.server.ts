@@ -7,7 +7,12 @@ import { aiFetch } from "./ai-free.server";
 const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const MODEL = "google/gemini-2.5-flash";
 
-type Msg = { role: "system" | "user" | "assistant" | "tool"; content: string; tool_calls?: any[]; tool_call_id?: string };
+type Msg = {
+  role: "system" | "user" | "assistant" | "tool";
+  content: string;
+  tool_calls?: any[];
+  tool_call_id?: string;
+};
 
 const TOOLS = [
   {
@@ -18,7 +23,9 @@ const TOOLS = [
         "অ্যাপের ডেটাবেজ থেকে একজন ইউজারের পূর্ণ কার্ড (নাম, UID, ব্যালেন্স, স্লট, রেফারেল, মাইনিং, বকেয়া) আনে। query হিসেবে UID, ফোন নম্বর, রেফারেল কোড বা নাম দেওয়া যায়।",
       parameters: {
         type: "object",
-        properties: { query: { type: "string", description: "UID / phone / referral code / name" } },
+        properties: {
+          query: { type: "string", description: "UID / phone / referral code / name" },
+        },
         required: ["query"],
       },
     },
@@ -55,8 +62,13 @@ const TOOLS = [
     type: "function",
     function: {
       name: "reverify_status",
-      description: "কোন স্লটে রি-ভেরিফাই চাওয়া হয়েছে/বাকি আছে, whitelist অবস্থা কী — সেই রিপোর্ট।",
-      parameters: { type: "object", properties: { query: { type: "string" } }, required: ["query"] },
+      description:
+        "কোন স্লটে রি-ভেরিফাই চাওয়া হয়েছে/বাকি আছে, whitelist অবস্থা কী — সেই রিপোর্ট।",
+      parameters: {
+        type: "object",
+        properties: { query: { type: "string" } },
+        required: ["query"],
+      },
     },
   },
   {
@@ -133,8 +145,6 @@ const TOOLS = [
   },
 ];
 
-
-
 async function runTool(name: string, args: any): Promise<string> {
   try {
     if (name === "lookup_user") {
@@ -151,7 +161,10 @@ async function runTool(name: string, args: any): Promise<string> {
     }
     if (name === "verification_dates") {
       const { buildVerificationDateReport } = await import("./telegram-lookup.server");
-      const r: any = await buildVerificationDateReport(String(args?.query ?? ""), args?.kind ?? "all");
+      const r: any = await buildVerificationDateReport(
+        String(args?.query ?? ""),
+        args?.kind ?? "all",
+      );
       return r?.found ? r.card : "একাউন্ট পাওয়া যায়নি বা একাধিক মিল পাওয়া গেছে।";
     }
     if (name === "reverify_status") {
@@ -174,7 +187,8 @@ async function runTool(name: string, args: any): Promise<string> {
       return await listPaymentNumbers(String(args?.uid ?? ""));
     }
     if (name === "reset_payment_numbers") {
-      const { resetPaymentNumbersForUid, walletResetReply } = await import("./telegram-wallet.server");
+      const { resetPaymentNumbersForUid, walletResetReply } =
+        await import("./telegram-wallet.server");
       const res = await resetPaymentNumbersForUid(String(args?.uid ?? ""), args?.provider ?? null);
       return walletResetReply(res);
     }
@@ -189,7 +203,6 @@ async function runTool(name: string, args: any): Promise<string> {
       const feeRate = withdrawFeeRate(amount);
       const fee = withdrawFee(amount);
       return `উইথড্র ${Math.floor(amount)}৳ → ফি ${fee}৳ (${Math.round(feeRate * 100)}%) → হাতে আসবে ${Math.floor(amount) - fee}৳। (পয়সা withdraw হয় না — পূর্ণ টাকাই যাবে, বাকি পয়সা মেইন ব্যালেন্সে থাকবে)`;
-
     }
     if (name === "bonus_settings" || name === "app_status") {
       const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
@@ -198,28 +211,34 @@ async function runTool(name: string, args: any): Promise<string> {
       const [{ data: settings }, users, verified] = await Promise.all([
         db.from("bonus_settings").select("*").eq("id", "default").maybeSingle(),
         db.from("profiles").select("id", { count: "exact", head: true }),
-        db.from("tasks").select("id", { count: "exact", head: true }).not("initial_verify_at", "is", null),
+        db
+          .from("tasks")
+          .select("id", { count: "exact", head: true })
+          .not("initial_verify_at", "is", null),
       ]);
       const s: any = settings ?? {};
       const onOff = (v: any) => (v === false ? "বন্ধ" : "চালু");
-      const liveBonus = s.bonus_enabled === true
-        ? `বোনাস অফার চালু: ১ম ভেরিফাই ${rates.firstVerify}৳, রি-ভেরিফাই ${rates.reVerify}৳, রেফারার ${rates.referrer}৳`
-        : "এককালীন First verify/Re-verify/Referral বোনাস অফার বন্ধ; পুরোনো rate প্রযোজ্য নয়";
+      const liveBonus =
+        s.bonus_enabled === true
+          ? `বোনাস অফার চালু: ১ম ভেরিফাই ${rates.firstVerify}৳, রি-ভেরিফাই ${rates.reVerify}৳, রেফারার ${rates.referrer}৳`
+          : "এককালীন First verify/Re-verify/Referral বোনাস অফার বন্ধ; পুরোনো rate প্রযোজ্য নয়";
       const live =
         `পেমেন্ট মেথড: বিকাশ ${onOff(s.bkash_enabled)}, নগদ ${onOff(s.nagad_enabled)}, ` +
         `মোবাইল রিচার্জ ${onOff(s.recharge_enabled)}, USDT ${onOff(s.usdt_enabled)}\n` +
         liveBonus +
         (s.promo_active
-          ? ` | প্রমো চালু: ${s.promo_title ?? ""}${s.promo_end_at
-              ? ` | অফার শেষ: ${new Intl.DateTimeFormat("bn-BD", {
-                  timeZone: "Asia/Dhaka",
-                  day: "numeric",
-                  month: "long",
-                  year: "numeric",
-                  hour: "numeric",
-                  minute: "2-digit",
-                }).format(new Date(s.promo_end_at))}`
-              : ""}`
+          ? ` | প্রমো চালু: ${s.promo_title ?? ""}${
+              s.promo_end_at
+                ? ` | অফার শেষ: ${new Intl.DateTimeFormat("bn-BD", {
+                    timeZone: "Asia/Dhaka",
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                    hour: "numeric",
+                    minute: "2-digit",
+                  }).format(new Date(s.promo_end_at))}`
+                : ""
+            }`
           : "");
       if (name === "bonus_settings") return live;
       return (
@@ -228,7 +247,6 @@ async function runTool(name: string, args: any): Promise<string> {
         live
       );
     }
-
   } catch (e) {
     console.error("[tg-agent] tool error", name, e);
     return "টুল চালাতে সমস্যা হয়েছে।";
@@ -267,13 +285,13 @@ export async function agentAnswer(opts: {
     `• উইথড্রে কত ফি কাটবে/কত হাতে আসবে জিজ্ঞেস করলে fee_quote টুল দিয়ে হিসাব করবে, নিজে আন্দাজে অংক বলবে না।\n` +
     `• ⚠️ কখনো আন্দাজ/অনুমান করে উত্তর দেবে না। যে তথ্য ডেটাবেজে আছে (একাউন্ট, স্লট, ভেরিফাই, রেফার, ব্যালেন্স, উইথড্র, সেটিংস, ফি) সেটা সবসময় টুল কল করে দেখে নিয়ে তারপর বলবে।\n` +
     `• কোনো আইডেন্টিফায়ার না থাকলে ভদ্রভাবে UID চাইবে।\n` +
-
-    (opts.isAdmin ? `• এই ব্যক্তি অ্যাডমিন — যেকোনো একাউন্টের রিপোর্ট দেখাতে পারো।\n`
-                  : `• অন্য কারো ব্যক্তিগত ডেটা দেখাবে না; ইউজার নিজের UID দিলে তবেই দেখাবে।\n`) +
+    (opts.isAdmin
+      ? `• এই ব্যক্তি অ্যাডমিন — যেকোনো একাউন্টের রিপোর্ট দেখাতে পারো।\n`
+      : `• অন্য কারো ব্যক্তিগত ডেটা দেখাবে না; ইউজার নিজের UID দিলে তবেই দেখাবে।\n`) +
     `• কখনোই private key, wallet key বা ফেসের ছবি দেখাবে না; ছবি/কী কোথায় বা কীভাবে সংরক্ষণ হয় সেটাও কখনো বলবে না — শুধু বলবে তথ্য সুরক্ষিত ও নিরাপত্তা যাচাইয়ের কাজে ব্যবহৃত হয়।\n` +
-    (opts.isAdmin ? "" :
-      `• সাধারণ ইউজার ব্যালেন্স বাড়াতে/কমাতে, সেটিং বদলাতে, ভেরিফাই/হোয়াইটলিস্ট করে দিতে বা কোনো এডিট করতে বললে ভদ্রভাবে না বলবে — এসব শুধু অ্যাডমিন করতে পারেন।\n`) +
-
+    (opts.isAdmin
+      ? ""
+      : `• সাধারণ ইউজার ব্যালেন্স বাড়াতে/কমাতে, সেটিং বদলাতে, ভেরিফাই/হোয়াইটলিস্ট করে দিতে বা কোনো এডিট করতে বললে ভদ্রভাবে না বলবে — এসব শুধু অ্যাডমিন করতে পারেন।\n`) +
     `\n💳 ভুল পেমেন্ট নম্বর প্রসঙ্গে:\n` +
     `• কেউ বলে "ভুল বিকাশ/নগদ নম্বর সেভ হয়ে গেছে / নম্বর বদলাতে চাই / নম্বর রিসেট করে দিন" — "পারব না" বলবে না। ` +
     `UID নিয়ে reset_payment_numbers টুল চালিয়ে নম্বর মুছে দেবে, তারপর বলবে অ্যাপে গিয়ে সঠিক নম্বরটি নতুন করে যোগ করতে।\n` +
@@ -284,7 +302,6 @@ export async function agentAnswer(opts: {
     `\n🧑 ১৮+ ফেস সমস্যায়:\n` +
     `• ১৮+ স্ক্রিনশটের পরে ইউজার যদি বলে তার আসল বয়স ২৫/১৮-এর বেশি, পরিষ্কার বলবে: জন্মতারিখ দেখে ফেস ভেরিফিকেশন হয় না; মুখের গঠন দেখে আনুমানিক বয়স বোঝা হয়। তাই আসল বয়স ২৫ হলেও মুখ কম বয়সী মনে হলে এই সমস্যা আসতে পারে। অন্য প্রসঙ্গে এই ব্যাখ্যা নিজে থেকে দেবে না।\n` +
     `\n🔄 স্লট রিসেট/ডিলিট প্রসঙ্গে (খুব গুরুত্বপূর্ণ):\n` +
-
     `• "সাপোর্ট বটের স্লট রিসেট করার ক্ষমতা নেই" — এই কথা কখনোই বলবে না। ইউজার UID ও স্লট নম্বর দিলে স্লট রিসেট করে দেওয়া যায়।\n` +
     `• আগে lookup_user/list_slots টুল দিয়ে দেখে নেবে ঐ স্লটটির অবস্থা কী।\n` +
     `• স্লটটি যদি এখনো খালি/ভেরিফিকেশন শুরুই করা হয়নি — তাহলে সরাসরি "পারব না" বলবে না; সুন্দর করে বোঝাবে: ` +
@@ -301,7 +318,6 @@ export async function agentAnswer(opts: {
     `১০০৳ এর কম উইথড্রে ফি ২০%, ১০০৳ বা তার বেশি হলে ১০%। তাই ১০০৳ → ফি ১০৳ → হাতে ৯০৳, ৬৩৳ → ফি ১২.৬০৳ → হাতে ৫০৳ (০.৪০৳ ব্যালেন্সে থাকে)। এটা কোনো ভুল নয়। ২–৩ লাইনেই বোঝাবে।\n` +
     `• Telegram HTML <b> ব্যবহার করতে পারো, Markdown নয়।\n` +
     `• GoodDollar/GD নাম কখনো লিখবে না — শুধু Good-App।\n` +
-
     `\n💰 আয়ের নিয়ম (এটাই একমাত্র সঠিক হিসাব, নিজে বানাবে না):\n` +
     `  ১) নিজের মাইনিং: ১০ স্লট রি-ভেরিফাই = মাসে ৫০০৳ → ১ স্লট = ৫০৳/মাস। যত স্লট, তত গুণ (২০ স্লট=১০০০৳/মাস)।\n` +
     `  ২) রেফারেল কমিশন: আপনি যাকে রেফার করেছেন তার মাসিক মাইনিংয়ের ১০% আপনি প্রতি মাসে পাবেন। ` +
@@ -312,7 +328,6 @@ export async function agentAnswer(opts: {
     `  ⚠️ প্রশ্নটি "আমার বন্ধু/আমি যাকে রেফার করেছি সে ১০টা রি-ভেরিফাই করলে আমি কত পাবো?" হলে উত্তর হবে — ` +
     `প্রতি মাসে ১০% কমিশন (৫০৳/মাস), এককালীন ৫০০৳ নয়। নিজের স্লটের হিসাব আর রেফারেলের হিসাব কখনো মিলিয়ে ফেলবে না।\n` +
     `• টুল দিয়েও উত্তর বের করা অসম্ভব হলে শুধু লিখবে: NO_ANSWER\n\n` +
-
     `${opts.knowledge}\n${opts.rulebook ?? ""}\n${opts.recall ?? ""}\n` +
     (opts.faqs ? `\nসেভ করা প্রশ্নোত্তর:\n${opts.faqs}` : "");
 
@@ -322,9 +337,20 @@ export async function agentAnswer(opts: {
       role: "user",
       content:
         `আগের কথোপকথন (পুরোনো → নতুন):\n` +
-        opts.history.slice(-6).map((h) => `- ${String(h).slice(0, 300)}`).join("\n") +
+        opts.history
+          .slice(-6)
+          .map((h) => `- ${String(h).slice(0, 300)}`)
+          .join("\n") +
         (opts.pastReplies?.length
-          ? `\nবট আগে বলেছিল:\n${opts.pastReplies.slice(0, 2).map((r) => `- ${String(r).replace(/<[^>]+>/g, "").slice(0, 200)}`).join("\n")}`
+          ? `\nবট আগে বলেছিল:\n${opts.pastReplies
+              .slice(0, 2)
+              .map(
+                (r) =>
+                  `- ${String(r)
+                    .replace(/<[^>]+>/g, "")
+                    .slice(0, 200)}`,
+              )
+              .join("\n")}`
           : ""),
     });
   }
@@ -380,7 +406,11 @@ export async function agentAnswer(opts: {
         messages2.push({ role: "assistant", content: m.content ?? "", tool_calls: calls });
         for (const c of calls) {
           let args: any = {};
-          try { args = JSON.parse(c.function?.arguments || "{}"); } catch { /* ignore */ }
+          try {
+            args = JSON.parse(c.function?.arguments || "{}");
+          } catch {
+            /* ignore */
+          }
           const out = await runTool(c.function?.name, args);
           messages2.push({ role: "tool", tool_call_id: c.id, content: out.slice(0, 4000) });
         }

@@ -16,7 +16,12 @@ export function isCacheableQuestion(text: string): boolean {
   const n = normalizeQuestion(text);
   if (n.length < 8 || n.length > 240) return false;
   if (/\d/.test(n)) return false; // UID, slot number, amount → user-specific
-  if (/(bonus|বোনাস|offer|অফার|verify|ভেরিফাই|reverify|রি ভেরিফাই|রিভেরিফাই|refer|রেফার|commission|কমিশন|rate|রেট)/i.test(n)) return false;
+  if (
+    /(bonus|বোনাস|offer|অফার|verify|ভেরিফাই|reverify|রি ভেরিফাই|রিভেরিফাই|refer|রেফার|commission|কমিশন|rate|রেট)/i.test(
+      n,
+    )
+  )
+    return false;
   return true;
 }
 
@@ -47,17 +52,15 @@ export async function saveCachedReply(text: string, reply: string): Promise<void
   if (!reply || reply.trim().length < 20) return;
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    await supabaseAdmin
-      .from("tg_reply_cache")
-      .upsert(
-        {
-          question_key: normalizeQuestion(text),
-          question: text.slice(0, 500),
-          reply,
-          updated_at: new Date().toISOString(),
-        } as any,
-        { onConflict: "question_key" },
-      );
+    await supabaseAdmin.from("tg_reply_cache").upsert(
+      {
+        question_key: normalizeQuestion(text),
+        question: text.slice(0, 500),
+        reply,
+        updated_at: new Date().toISOString(),
+      } as any,
+      { onConflict: "question_key" },
+    );
   } catch (e) {
     console.error("[tg] reply cache write failed", e);
   }
