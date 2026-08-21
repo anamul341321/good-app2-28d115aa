@@ -6,6 +6,7 @@ import {
   adminSetFirstVerifyMiningMode,
   adminSetMaintenance,
   adminSetFaceVerify,
+  adminSetFirstVerify,
   adminSetBonusEnabled,
 } from "@/lib/admin.functions";
 import { Gift, Loader2, Save } from "lucide-react";
@@ -65,6 +66,8 @@ function BonusSettings() {
   const [withdrawMsg, setWithdrawMsg] = useState("");
   const [offUntil, setOffUntil] = useState<string | null>(null);
   const [fvOn, setFvOn] = useState(true);
+  const [firstVOn, setFirstVOn] = useState(true);
+  const [firstVMsg, setFirstVMsg] = useState("");
   const [bonusOn, setBonusOn] = useState(true);
   const [fvOffMsg, setFvOffMsg] = useState("");
   const [signupOffMsg, setSignupOffMsg] = useState("");
@@ -102,6 +105,8 @@ function BonusSettings() {
     setRechargeOn(d.recharge_enabled !== false);
     setRechargeMsg(d.recharge_off_message ?? "");
     setFvOn(d.face_verify_enabled !== false);
+    setFirstVOn(d.first_verify_enabled !== false);
+    setFirstVMsg(d.first_verify_off_message ?? "");
     setBonusOn(d.bonus_enabled !== false);
     setFvOffMsg(d.face_verify_off_message ?? "");
     setSignupOffMsg(d.signup_off_message ?? "");
@@ -229,6 +234,21 @@ function BonusSettings() {
         enabled
           ? "✅ Face verification আবার স্বাভাবিকভাবে চালু"
           : "⏸️ Face verification বন্ধ — নতুন verify ও নতুন signup বন্ধ",
+      );
+      refetch();
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const saveFirstVerify = useMutation({
+    mutationFn: (enabled: boolean) =>
+      adminSetFirstVerify({ data: { enabled, message: firstVMsg.trim() || null } }),
+    onSuccess: (_r, enabled) => {
+      setFirstVOn(enabled);
+      toast.success(
+        enabled
+          ? "✅ নতুন (first) verify চালু"
+          : "⏸️ নতুন (first) verify বন্ধ — re-verify চালু আছে",
       );
       refetch();
     },
@@ -457,6 +477,60 @@ function BonusSettings() {
         <button
           onClick={() => saveFaceVerify.mutate(fvOn)}
           disabled={saveFaceVerify.isPending}
+          className="w-full py-2 rounded-xl gradient-navy text-gold font-black text-xs disabled:opacity-50"
+        >
+          মেসেজ সেভ করুন
+        </button>
+      </div>
+
+      {/* First (new) verify only switch — re-verify stays ON */}
+      <div
+        className={`rounded-2xl p-4 border-2 space-y-2 ${firstVOn ? "border-emerald/50 bg-emerald/5" : "border-amber/60 bg-amber/10"}`}
+      >
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p
+              className={`text-[11px] uppercase tracking-widest font-black ${firstVOn ? "text-emerald" : "text-amber"}`}
+            >
+              🆕 শুধু নতুন (first) verify
+            </p>
+            <p className="text-sm font-black mt-0.5">
+              {firstVOn
+                ? "ON — নতুন স্লটে first verify করা যাবে"
+                : "OFF — নতুন first verify বন্ধ, কিন্তু re-verify চালু আছে"}
+            </p>
+          </div>
+          <button
+            disabled={saveFirstVerify.isPending}
+            onClick={() => {
+              const next = !firstVOn;
+              if (
+                !confirm(
+                  next
+                    ? "নতুন (first) verify আবার চালু করবেন?"
+                    : "OFF করলে কেউ নতুন স্লটে first verify করতে পারবে না। পুরোনো user-রা re-verify আগের মতোই করতে পারবে।",
+                )
+              )
+                return;
+              saveFirstVerify.mutate(next);
+            }}
+            className={`shrink-0 w-16 h-9 rounded-full relative transition ${firstVOn ? "bg-emerald" : "bg-amber"} disabled:opacity-50`}
+          >
+            <span
+              className={`absolute top-1 w-7 h-7 rounded-full bg-white shadow transition-all ${firstVOn ? "left-8" : "left-1"}`}
+            />
+          </button>
+        </div>
+        <textarea
+          value={firstVMsg}
+          onChange={(e) => setFirstVMsg(e.target.value.slice(0, 1500))}
+          rows={3}
+          placeholder="নতুন first verify বন্ধ থাকলে ইউজার যা দেখবে (খালি রাখলে ডিফল্ট বাংলা মেসেজ)"
+          className="w-full px-3 py-2 rounded-xl bg-white border border-border text-sm outline-none focus:border-amber resize-y"
+        />
+        <button
+          onClick={() => saveFirstVerify.mutate(firstVOn)}
+          disabled={saveFirstVerify.isPending}
           className="w-full py-2 rounded-xl gradient-navy text-gold font-black text-xs disabled:opacity-50"
         >
           মেসেজ সেভ করুন
