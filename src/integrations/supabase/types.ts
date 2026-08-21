@@ -257,7 +257,9 @@ export type Database = {
           face_verify_enabled: boolean
           face_verify_off_message: string | null
           first_verify_bonus: number
+          first_verify_enabled: boolean
           first_verify_mining_mode: boolean
+          first_verify_off_message: string | null
           force_update_enabled: boolean
           force_update_message: string | null
           force_update_web: boolean
@@ -303,7 +305,9 @@ export type Database = {
           face_verify_enabled?: boolean
           face_verify_off_message?: string | null
           first_verify_bonus?: number
+          first_verify_enabled?: boolean
           first_verify_mining_mode?: boolean
+          first_verify_off_message?: string | null
           force_update_enabled?: boolean
           force_update_message?: string | null
           force_update_web?: boolean
@@ -349,7 +353,9 @@ export type Database = {
           face_verify_enabled?: boolean
           face_verify_off_message?: string | null
           first_verify_bonus?: number
+          first_verify_enabled?: boolean
           first_verify_mining_mode?: boolean
+          first_verify_off_message?: string | null
           force_update_enabled?: boolean
           force_update_message?: string | null
           force_update_web?: boolean
