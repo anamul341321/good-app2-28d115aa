@@ -27,8 +27,8 @@ export function fillRates(
   const ref = r.promoRef ?? r.referrer;
   return text
     .replace(/\{\{FIRST_BONUS\}\}/g, first > 0 ? tk(first) : "কোনো বোনাস নেই")
-    .replace(/\{\{REVERIFY_BONUS\}\}/g, tk(re))
-    .replace(/\{\{REFERRER_BONUS\}\}/g, tk(ref));
+    .replace(/\{\{REVERIFY_BONUS\}\}/g, re > 0 ? tk(re) : "অফার বন্ধ")
+    .replace(/\{\{REFERRER_BONUS\}\}/g, ref > 0 ? tk(ref) : "অফার বন্ধ");
 }
 
 /** Same as fillRates but loads the live rates itself. */
@@ -64,7 +64,7 @@ export const BUILTIN_FAQS: BuiltinFaq[] = [
   },
 
   {
-    topic: "বোনাস ক্যাম্পেইন শেষ হলে কী হবে (১১ তারিখের পর)",
+    topic: "বোনাস অফার বন্ধ থাকলে কী হবে",
     screenshot: [],
     keywords: [
       "11 tarikher por bonus", "11 tarikh er por", "11 tarikh por bonus",
@@ -74,11 +74,8 @@ export const BUILTIN_FAQS: BuiltinFaq[] = [
       "বোনাস কি আর পাবো", "বোনাস আর পাবো না", "বোনাস বন্ধ",
     ],
     answer:
-      `😊 <b>জি, অবশ্যই পাবেন!</b>\n\n` +
-      `🎁 এখন যে <b>৩০০৳ বোনাস ক্যাম্পেইন</b> চলছে সেটি <b>১১ তারিখ পর্যন্ত</b>।\n` +
-      `📅 ১১ তারিখের পর <b>অ্যাডমিন সিদ্ধান্ত নেবেন</b> বোনাস চালু থাকবে কি না — যদি চালু রাখেন, তাহলে আপনি অবশ্যই বোনাসটি পাবেন ✅\n\n` +
-      `⛏️ তবে একটা কথা নিশ্চিত — <b>মাইনিং কখনোই বন্ধ হবে না</b>। ১০টি স্লট ফার্স্ট ভেরিফাই + রি-ভেরিফাই শেষ করলে আপনার মাইনিং <b>স্থায়ীভাবে</b> চালু থাকবে এবং প্রতি মাসেই ইনকাম পেতে থাকবেন 💙\n\n` +
-      `👉 তাই দেরি না করে এখনই কাজটা শেষ করে ফেলুন — ক্যাম্পেইনের ভেতরে শেষ করলে বোনাসটাও নিশ্চিত 🎉`,
+      `🎁 <b>এই মুহূর্তে এককালীন First verify/Re-verify/Referral বোনাস অফার বন্ধ আছে।</b> অ্যাডমিন আবার চালু করলে, চালু হওয়ার পর যারা শর্ত পূরণ করবেন শুধু তারাই live rate অনুযায়ী পাবেন।\n\n` +
+      `✅ তবে repeat re-verify-এর <b>প্রতি স্লট ১০৳ claim</b>, প্রতি স্লটের <b>মাইনিং</b> এবং referral-এর <b>১০% মাসিক কমিশন</b> আলাদা নিয়ম — এগুলো চালু আছে 💙`,
   },
 
   {
