@@ -287,8 +287,15 @@ function HomePage() {
           <p className="text-[11px] text-white/90 mt-0.5">{t("মাত্র ১ ধাপ (টেলিগ্রামে START) · KYC ছাড়া উইথড্র করা যাবে না", "Just 1 step (START in Telegram) · withdraw locked without KYC")}</p>
         </Link>
       )}
-      {appStatus?.faceVerifyEnabled === false && (
-        <FaceVerifyPausedNotice message={appStatus?.faceVerifyMessage} variant="banner" />
+      {(appStatus?.faceVerifyEnabled === false || appStatus?.firstVerifyEnabled === false) && (
+        <FaceVerifyPausedNotice
+          message={
+            appStatus?.faceVerifyEnabled === false
+              ? appStatus?.faceVerifyMessage
+              : appStatus?.firstVerifyMessage
+          }
+          variant="banner"
+        />
       )}
       <KycAlertBanner />
 

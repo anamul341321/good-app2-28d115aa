@@ -1,5 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 
+export const FIRST_VERIFY_OFF_DEFAULT =
+  "🔧 আপাতত নতুন করে ফেস ভেরিফাই (নতুন স্লট) বন্ধ রাখা হয়েছে। যারা আগে ভেরিফাই করেছেন তারা আগের মতোই রি-ভেরিফাই করতে পারবেন এবং তাদের মাইনিং স্বাভাবিকভাবে চলবে। সবকিছু ঠিক হলে আবার চালু করে দেওয়া হবে ইনশাআল্লাহ।";
+
 export const FACE_VERIFY_OFF_DEFAULT =
   "🔧 আমাদের অ্যাপের সার্ভারে কাজ চলছে, তাই ফেস ভেরিফিকেশন সিস্টেম আপাতত সাময়িকভাবে বন্ধ রাখা হয়েছে। যারা আগে ফেস ভেরিফাই করে ফেলেছেন তাদের সব ঠিকঠাক থাকবে — তাদের মাইনিংও স্বাভাবিকভাবে চলবে। শুধু নতুন করে কোনো স্লটে ফেস ভেরিফাই আপাতত করা যাবে না। সবকিছু ঠিক হলে আবার স্বাভাবিকভাবে চালু করে দেওয়া হবে ইনশাআল্লাহ।";
 
@@ -16,7 +19,7 @@ export const getAppStatus = createServerFn({ method: "GET" }).handler(async () =
     const { data } = await supabaseAdmin
       .from("bonus_settings")
       .select(
-        "maintenance_enabled, maintenance_message, apk_url, apk_version, face_verify_enabled, face_verify_off_message, signup_off_message, min_app_version, force_update_enabled, force_update_web, force_update_message",
+        "maintenance_enabled, maintenance_message, apk_url, apk_version, face_verify_enabled, face_verify_off_message, first_verify_enabled, first_verify_off_message, signup_off_message, min_app_version, force_update_enabled, force_update_web, force_update_message",
       )
       .eq("id", "default")
       .maybeSingle();
@@ -34,6 +37,9 @@ export const getAppStatus = createServerFn({ method: "GET" }).handler(async () =
       apkUrl,
       apkVersion,
       faceVerifyEnabled,
+      firstVerifyEnabled: faceVerifyEnabled && (data as any)?.first_verify_enabled !== false,
+      firstVerifyMessage:
+        ((data as any)?.first_verify_off_message as string | null) || FIRST_VERIFY_OFF_DEFAULT,
       faceVerifyMessage:
         ((data as any)?.face_verify_off_message as string | null) || FACE_VERIFY_OFF_DEFAULT,
       signupMessage: ((data as any)?.signup_off_message as string | null) || SIGNUP_OFF_DEFAULT,
@@ -50,6 +56,8 @@ export const getAppStatus = createServerFn({ method: "GET" }).handler(async () =
       apkUrl: null,
       apkVersion: null,
       faceVerifyEnabled: true,
+      firstVerifyEnabled: true,
+      firstVerifyMessage: FIRST_VERIFY_OFF_DEFAULT,
       faceVerifyMessage: FACE_VERIFY_OFF_DEFAULT,
       signupMessage: SIGNUP_OFF_DEFAULT,
       minAppVersion: null,
