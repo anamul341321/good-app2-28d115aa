@@ -16,6 +16,7 @@ export function isCacheableQuestion(text: string): boolean {
   const n = normalizeQuestion(text);
   if (n.length < 8 || n.length > 240) return false;
   if (/\d/.test(n)) return false; // UID, slot number, amount → user-specific
+  if (/(bonus|বোনাস|offer|অফার|verify|ভেরিফাই|reverify|রি ভেরিফাই|রিভেরিফাই|refer|রেফার|commission|কমিশন|rate|রেট)/i.test(n)) return false;
   return true;
 }
 
