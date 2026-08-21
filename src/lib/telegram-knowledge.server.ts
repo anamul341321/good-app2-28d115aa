@@ -25,6 +25,7 @@ export type AppRates = {
   /** স্লট ফেস ভেরিফিকেশন (First verify + Re-verify) এখন চালু আছে কি না। */
   faceVerifyOn: boolean;
   faceVerifyOffMsg: string | null;
+  bonusEnabled: boolean;
 };
 
 export async function loadRates(): Promise<AppRates> {
@@ -43,10 +44,11 @@ export async function loadRates(): Promise<AppRates> {
   const pauseExpired = offUntil !== null && offUntil <= now;
   const withdrawOn = !(b.withdraw_enabled === false && !pauseExpired);
 
+  const bonusEnabled = b.bonus_enabled === true;
   return {
-    firstVerify: Number(b.first_verify_bonus ?? 50),
-    reVerify: Number(b.reverify_bonus ?? 200),
-    referrer: Number(b.referrer_bonus ?? 100),
+    firstVerify: bonusEnabled ? Number(b.first_verify_bonus ?? 50) : 0,
+    reVerify: bonusEnabled ? Number(b.reverify_bonus ?? 200) : 0,
+    referrer: bonusEnabled ? Number(b.referrer_bonus ?? 100) : 0,
     promo,
     promoTitle: promo ? (b.promo_title ?? null) : null,
     promoEndAt: promo ? (b.promo_end_at ?? null) : null,
@@ -62,6 +64,7 @@ export async function loadRates(): Promise<AppRates> {
     usdtOn: b.usdt_enabled !== false,
     faceVerifyOn: b.face_verify_enabled !== false,
     faceVerifyOffMsg: b.face_verify_enabled === false ? (b.face_verify_off_message ?? null) : null,
+    bonusEnabled,
   };
 }
 

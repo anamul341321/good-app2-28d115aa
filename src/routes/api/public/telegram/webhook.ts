@@ -78,6 +78,13 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           .split(/[,\s]+/).map((s) => s.trim()).filter(Boolean);
         // প্রাইভেট চ্যাট (KYC/সাপোর্ট DM) সবসময় অনুমোদিত — গ্রুপ হোয়াইটলিস্ট শুধু গ্রুপের জন্য
         const isPrivateChat = msg.chat?.type === "private";
+        const { isOwnerIdentity } = await import("@/lib/telegram-owner.server");
+        const senderIsOwnerIdentity = isOwnerIdentity(
+          msg.from?.username,
+          msg.from?.id,
+          (settings as any).support_username,
+          (settings as any).admin_chat_id,
+        );
         const chatAllowed = isPrivateChat || allowedChats.length === 0 || allowedChats.includes(chatId);
 
         // Claim the Telegram update before voice transcription / screenshot OCR.
@@ -251,7 +258,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         const captionText = text.trim();
         // KYC (প্রাইভেট চ্যাট) কখনোই AI/ক্রেডিটের উপর নির্ভর করবে না — DM-এ ভয়েস এলে
         // ট্রান্সক্রিপশন না করে সরাসরি UID লিখে পাঠাতে বলা হবে।
-        if (audioMsg?.file_id && isPrivateChat && !captionText) {
+        if (audioMsg?.file_id && isPrivateChat && !captionText && !senderIsOwnerIdentity) {
           const kycVoiceReply =
             `🔐 এখানে শুধু <b>KYC</b> হয়।\nআপনার <b>UID নম্বরটি লিখে</b> পাঠান — সাথে সাথে KYC হয়ে যাবে 💙`;
           await sendMessage(
@@ -266,7 +273,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           }).eq("update_id", update.update_id);
           return Response.json({ ok: true, flow: "dm-voice-kyc-hint" });
         }
-        if (audioMsg?.file_id && !isPrivateChat) {
+        if (audioMsg?.file_id && (!isPrivateChat || senderIsOwnerIdentity)) {
           const { getFileBase64, transcribeAudio } = await import("@/lib/telegram-bot.server");
           const file = await getFileBase64(audioMsg.file_id).catch(() => null);
           if (file) {
@@ -323,8 +330,8 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         if (msg.chat?.type === "private" && msg.from?.id) {
           // ---- মালিক (support_username) ইনবক্সে লিখলে পূর্ণ অ্যাডমিন ক্ষমতা --
           // স্লট/ওয়ালেট রিসেট, সেটিংস পরিবর্তন, UID/হিসাব — সব এখানেই করা যাবে।
-          const { isOwnerUsername, runOwnerCommand } = await import("@/lib/telegram-owner.server");
-          if (isOwnerUsername(msg.from?.username, (settings as any).support_username)) {
+          const { runOwnerCommand } = await import("@/lib/telegram-owner.server");
+          if (senderIsOwnerIdentity) {
             const res = await runOwnerCommand(text);
             if (res.handled && res.reply) {
               await sendMessage(chatId, res.reply, msg.message_id);
@@ -347,8 +354,9 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               answer ??
               `🙏 জি স্যার — এখন উত্তর তৈরি করা যাচ্ছে না। একটু পরে আবার বলুন, অথবা সরাসরি কমান্ড দিন (যেমন: <code>uid 4100 এর ৪ নম্বর স্লট রিসেট করো</code>) 💙`;
             await sendMessage(chatId, reply, msg.message_id);
-            await finalizeLog("question", "owner-dm-answer", reply);
-            return Response.json({ ok: true, flow: "owner-dm-answer" });
+            const flow = res.flow === "owner-unhandled" ? "owner-unhandled-ai-fallback" : "owner-dm-answer";
+            await finalizeLog("question", flow, reply);
+            return Response.json({ ok: true, flow });
           }
 
           const bare = /^\s*(?:uid|আইডি)?\s*[:#-]?\s*(\d{2,9})\s*$/i.exec(text.trim());
@@ -2005,7 +2013,11 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         // অ্যাপের নিয়ম ও ডেটাবেজ দেখে উত্তরটা লিখে দেবে।
         const faqAnswerFor = async (f: any, userText?: string): Promise<string | null> => {
           const saved = String(f?.answer ?? "").trim();
-          if (saved) return saved;
+          if (saved) {
+            const { fillRates } = await import("@/lib/telegram-builtin-faq.server");
+            const { loadRates } = await import("@/lib/telegram-knowledge.server");
+            return fillRates(saved, await loadRates());
+          }
           try {
             const { composeFaqAnswer } = await import("@/lib/telegram-agent.server");
             const { knowledgeText, loadRates } = await import("@/lib/telegram-knowledge.server");
