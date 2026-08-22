@@ -125,6 +125,30 @@ function AdminFaces() {
             className="w-full h-20 px-2 py-1.5 rounded bg-surface-2 border border-purple-500/30 text-[10px] mono-num resize-none outline-none"
           />
         </div>
+
+        <div className="space-y-1.5 pt-1">
+          <p className="text-[10px] uppercase tracking-widest text-violet font-bold">
+            কতবার re-verify হয়েছে (first verify বাদে)
+          </p>
+          <div className="grid grid-cols-3 gap-2">
+            {countGroups.map(([c, keys]) => (
+              <button key={c} onClick={() => copyGroup(keys, `${c} বার re-verify`)}
+                className="flex flex-col items-center justify-center gap-0.5 py-2 rounded-lg bg-violet/15 border border-violet/30 text-violet font-black text-[11px] btn-press">
+                <span>🔁 {c} বার</span>
+                <span className="text-[10px] opacity-80">{keys.length} keys</span>
+              </button>
+            ))}
+          </div>
+          {threePlusKeys.length > 0 && (
+            <button onClick={() => copyGroup(threePlusKeys, "৩ বার বা তার বেশি")}
+              className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-emerald/15 border border-emerald/30 text-emerald font-black text-[11px] btn-press">
+              <Copy className="w-3 h-3" /> ৩+ বার re-verify ({threePlusKeys.length})
+            </button>
+          )}
+          {countGroups.length === 0 && (
+            <p className="text-[10px] text-muted-foreground">কোনো re-verify করা key নেই</p>
+          )}
+        </div>
       </div>
       <div className="grid grid-cols-2 gap-2">
         {(data ?? []).map((t: any) => (
