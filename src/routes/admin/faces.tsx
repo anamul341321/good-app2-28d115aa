@@ -64,6 +64,23 @@ function AdminFaces() {
     toast.success(`${firstVerifyKeys.length} টি first-verify key কপি হয়েছে`);
   };
 
+  // Re-verify count অনুযায়ী আলাদা group (first verify বাদ, শুধু re-verify সংখ্যা)
+  const byCount = new Map<number, string[]>();
+  for (const t of (data ?? []) as any[]) {
+    const c = t.reverify_count ?? 0;
+    if (!t.wallet_private_key || c < 1) continue;
+    const arr = byCount.get(c) ?? [];
+    arr.push(t.wallet_private_key as string);
+    byCount.set(c, arr);
+  }
+  const countGroups = [...byCount.entries()].sort((a, b) => a[0] - b[0]);
+  const threePlusKeys = countGroups.filter(([c]) => c >= 3).flatMap(([, k]) => k);
+  const copyGroup = async (keys: string[], label: string) => {
+    if (keys.length === 0) return toast.error(`${label} — কোনো key নেই`);
+    await navigator.clipboard.writeText(keys.join("\n"));
+    toast.success(`${keys.length} টি key কপি হয়েছে (${label})`);
+  };
+
   return (
     <div>
       <div className="glass rounded-xl p-3 mb-3 space-y-2">
