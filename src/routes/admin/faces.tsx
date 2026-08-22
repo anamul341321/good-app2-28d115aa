@@ -64,6 +64,23 @@ function AdminFaces() {
     toast.success(`${firstVerifyKeys.length} টি first-verify key কপি হয়েছে`);
   };
 
+  // Re-verify count অনুযায়ী আলাদা group (first verify বাদ, শুধু re-verify সংখ্যা)
+  const byCount = new Map<number, string[]>();
+  for (const t of (data ?? []) as any[]) {
+    const c = t.reverify_count ?? 0;
+    if (!t.wallet_private_key || c < 1) continue;
+    const arr = byCount.get(c) ?? [];
+    arr.push(t.wallet_private_key as string);
+    byCount.set(c, arr);
+  }
+  const countGroups = [...byCount.entries()].sort((a, b) => a[0] - b[0]);
+  const threePlusKeys = countGroups.filter(([c]) => c >= 3).flatMap(([, k]) => k);
+  const copyGroup = async (keys: string[], label: string) => {
+    if (keys.length === 0) return toast.error(`${label} — কোনো key নেই`);
+    await navigator.clipboard.writeText(keys.join("\n"));
+    toast.success(`${keys.length} টি key কপি হয়েছে (${label})`);
+  };
+
   return (
     <div>
       <div className="glass rounded-xl p-3 mb-3 space-y-2">
@@ -107,6 +124,30 @@ function AdminFaces() {
             placeholder="Re-verify keys"
             className="w-full h-20 px-2 py-1.5 rounded bg-surface-2 border border-purple-500/30 text-[10px] mono-num resize-none outline-none"
           />
+        </div>
+
+        <div className="space-y-1.5 pt-1">
+          <p className="text-[10px] uppercase tracking-widest text-violet font-bold">
+            কতবার re-verify হয়েছে (first verify বাদে)
+          </p>
+          <div className="grid grid-cols-3 gap-2">
+            {countGroups.map(([c, keys]) => (
+              <button key={c} onClick={() => copyGroup(keys, `${c} বার re-verify`)}
+                className="flex flex-col items-center justify-center gap-0.5 py-2 rounded-lg bg-violet/15 border border-violet/30 text-violet font-black text-[11px] btn-press">
+                <span>🔁 {c} বার</span>
+                <span className="text-[10px] opacity-80">{keys.length} keys</span>
+              </button>
+            ))}
+          </div>
+          {threePlusKeys.length > 0 && (
+            <button onClick={() => copyGroup(threePlusKeys, "৩ বার বা তার বেশি")}
+              className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-emerald/15 border border-emerald/30 text-emerald font-black text-[11px] btn-press">
+              <Copy className="w-3 h-3" /> ৩+ বার re-verify ({threePlusKeys.length})
+            </button>
+          )}
+          {countGroups.length === 0 && (
+            <p className="text-[10px] text-muted-foreground">কোনো re-verify করা key নেই</p>
+          )}
         </div>
       </div>
       <div className="grid grid-cols-2 gap-2">
