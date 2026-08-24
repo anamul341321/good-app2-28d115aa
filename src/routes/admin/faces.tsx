@@ -175,6 +175,50 @@ function AdminFaces() {
             <p className="text-[10px] text-muted-foreground">কোনো re-verify করা key নেই</p>
           )}
         </div>
+
+        <div className="space-y-1.5 pt-2 border-t border-white/10">
+          <p className="text-[10px] uppercase tracking-widest text-cyan font-bold">
+            re-verify হয়েছে ও এখনো ✅ whitelist আছে
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            <button onClick={() => copyGroup(onceKeys, "১ বার re-verify + WL")}
+              className="flex flex-col items-center justify-center gap-0.5 py-2 rounded-lg bg-cyan/15 border border-cyan/30 text-cyan font-black text-[11px] btn-press">
+              <span>🔁 ১ বার + ✅WL</span>
+              <span className="text-[10px] opacity-80">{onceKeys.length} keys</span>
+            </button>
+            <button onClick={() => copyGroup(anyReverifyWlKeys, "re-verify + WL (সব)")}
+              className="flex flex-col items-center justify-center gap-0.5 py-2 rounded-lg bg-emerald/15 border border-emerald/30 text-emerald font-black text-[11px] btn-press">
+              <span>🔁 সব + ✅WL</span>
+              <span className="text-[10px] opacity-80">{anyReverifyWlKeys.length} keys</span>
+            </button>
+          </div>
+          <textarea
+            readOnly
+            value={onceKeys.join("\n")}
+            placeholder="১ বার re-verify + এখনো whitelist"
+            className="w-full h-20 px-2 py-1.5 rounded bg-surface-2 border border-cyan/30 text-[10px] mono-num resize-none outline-none"
+          />
+        </div>
+
+        <div className="space-y-1.5 pt-2 border-t border-white/10">
+          <p className="text-[10px] uppercase tracking-widest text-amber font-bold">
+            শেষ first-verify দিনের অ্যাকাউন্ট {lastDay ? `(${lastDay})` : ""}
+          </p>
+          <p className="text-[10px] text-muted-foreground leading-relaxed">
+            মোট {lastDayRows.length} টি · re-verify হয়েছে ও এখনো ✅WL: {lastDayReverifyWl.length} · re-verify করেও ❌ not-WL: {lastDayLostWl.length}
+          </p>
+          <button onClick={() => copyGroup(lastDayReverifyWlKeys, `${lastDay} — re-verify + WL`)}
+            className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-amber/15 border border-amber/30 text-amber font-black text-[11px] btn-press">
+            <Copy className="w-3 h-3" /> ওইদিনের re-verify + ✅WL ({lastDayReverifyWlKeys.length})
+          </button>
+          <textarea
+            readOnly
+            value={lastDayReverifyWlKeys.join("\n")}
+            placeholder="শেষ দিনের re-verify + whitelist keys"
+            className="w-full h-20 px-2 py-1.5 rounded bg-surface-2 border border-amber/30 text-[10px] mono-num resize-none outline-none"
+          />
+        </div>
+
       </div>
       <div className="grid grid-cols-2 gap-2">
         {(data ?? []).map((t: any) => (
