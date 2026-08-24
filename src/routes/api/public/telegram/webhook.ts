@@ -79,9 +79,11 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         // লাগে না — শুধু ডাটাবেসে টেলিগ্রাম ↔ UID লিংক হয়, তাই ক্রেডিট শেষ হলেও চলবে।
         const kycAllowed = (settings as any).kyc_enabled !== false;
         const isKycStart = kycAllowed && msg.chat?.type === "private";
-        if (!settings.enabled && !isKycStart) {
-          return Response.json({ ok: true, disabled: true });
-        }
+        // বট বন্ধ থাকলেও গ্রুপের নিরাপত্তা গার্ড সবসময় চালু থাকবে — গালি/লিংক/খারাপ
+        // ছবি সাথে সাথে ডিলিট + ৩০ মিনিট ফ্রিজ, আর Good-App নিয়ে বাজে মন্তব্য হলে
+        // UID জানা থাকলে অ্যাপ অ্যাকাউন্টও ব্লক।
+        const botOff = !settings.enabled && !isKycStart;
+
 
         const chatId = String(msg.chat.id);
         // group_chat_id এ কমা দিয়ে একাধিক গ্রুপ আইডি রাখা যায়; ফাঁকা থাকলে সব গ্রুপে কাজ করবে।
@@ -127,6 +129,59 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           console.error("[tg] update claim failed", claimError.message);
           return Response.json({ ok: false, error: "update-claim-failed" }, { status: 500 });
         }
+
+        // ---- সবসময় চালু নিরাপত্তা গার্ড (গ্রুপে, বট বন্ধ থাকলেও) ----------------
+        if (msg.chat?.type === "group" || msg.chat?.type === "supergroup") {
+          const guardAdmin =
+            senderIsOwnerIdentity || (await isChatAdmin(chatId, msg.from?.id).catch(() => false));
+          let guardVoiceText: string | null = null;
+          const guardAudio = msg.voice ?? msg.audio ?? msg.video_note ?? null;
+          if (!guardAdmin && guardAudio?.file_id) {
+            try {
+              const { getFileBase64, transcribeAudio } = await import(
+                "@/lib/telegram-bot.server"
+              );
+              const file = await getFileBase64(guardAudio.file_id).catch(() => null);
+              if (file) {
+                const ext = (file.path.split(".").pop() || "ogg").toLowerCase();
+                const fmt = ["wav", "mp3", "webm", "m4a", "ogg", "aac", "flac"].includes(ext)
+                  ? ext
+                  : msg.video_note
+                    ? "mp4"
+                    : "ogg";
+                guardVoiceText = await Promise.race([
+                  transcribeAudio(file.base64, fmt).catch(() => null),
+                  new Promise<null>((r) => setTimeout(() => r(null), 12_000)),
+                ]);
+              }
+            } catch {
+              /* transcription failure must not skip moderation of the text part */
+            }
+          }
+          const { groupSafetyGuard } = await import("@/lib/telegram-safety.server");
+          const guarded = await groupSafetyGuard({
+            chatId,
+            msg,
+            settings,
+            senderIsAdmin: guardAdmin,
+            voiceText: guardVoiceText,
+            updateId: update.update_id,
+          }).catch((e) => {
+            console.error("[tg] safety guard failed", (e as Error)?.message);
+            return { handled: false } as const;
+          });
+          if (guarded.handled) return Response.json({ ok: true, flow: "safety-guard", ...guarded });
+        }
+
+        if (botOff) {
+          await supabaseAdmin
+            .from("tg_messages")
+            .update({ verdict: "ignored", action: "bot-off" })
+            .eq("update_id", update.update_id);
+          return Response.json({ ok: true, disabled: true });
+        }
+
+
 
         /**
          * অ্যাডমিন প্যানেলের লগে যেন কোনো মেসেজ চিরকাল "processing" হয়ে পড়ে
