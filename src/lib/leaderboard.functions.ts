@@ -274,7 +274,8 @@ export const getLeaderboards = createServerFn({ method: "GET" }).handler(async (
   // Fake withdraw feed rows — highest amount stays under 1000৳.
   // Pending rows auto-flip to Paid after 5–8 minutes; rotate every minute
   // so fresh pending names keep appearing continuously.
-  const nowMs = Date.now();
+  const nowMs = feedNow;
+  // While withdraw is off the minute bucket is frozen, so no new rows rotate in.
   const minuteBucket = Math.floor(nowMs / (60 * 1000));
   const rnd2 = seedRand(dayKey * 9301 + 49297 + minuteBucket);
   // Display-only amounts. These MUST match what a real user can actually
@@ -293,8 +294,10 @@ export const getLeaderboards = createServerFn({ method: "GET" }).handler(async (
       ? Math.floor(rnd2() * pendingLifespanMs)
       : Math.floor(rnd() * (24 * 3600 * 1000));
     const created = new Date(nowMs - createdOffset).toISOString();
-    const isPending = createdOffset < pendingLifespanMs;
+    // No pending rows at all while withdraw is off.
+    const isPending = !withdrawOff && createdOffset < pendingLifespanMs;
     const status = isPending ? "pending" : "paid";
+
     // Once lifespan passes, mark as paid at created + lifespan (auto-flip).
     const processed = status === "paid"
       ? new Date(nowMs - createdOffset + pendingLifespanMs).toISOString()
