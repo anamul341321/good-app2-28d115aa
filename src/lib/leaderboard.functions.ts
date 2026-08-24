@@ -181,10 +181,29 @@ export const getLeaderboards = createServerFn({ method: "GET" }).handler(async (
   // UI-ONLY fake population to make the app look busy on the public
   // dashboard. Admin panels do NOT call getLeaderboards; they read the
   // real tables directly, so accounting stays correct there.
-  // Deterministic per-day so numbers feel stable within a session but
-  // shift daily.
+  //
+  // FREEZE RULE: while withdraw is switched OFF, the feed must stop moving —
+  // no new pending, no new paid. Everything is generated against the moment
+  // withdraw was turned off, so only the older rows keep showing.
   // ============================================================
-  const dayKey = Math.floor(Date.now() / (24 * 3600 * 1000));
+  const { data: wSettings } = await supabaseAdmin
+    .from("bonus_settings")
+    .select("withdraw_enabled, withdraw_off_until, updated_at")
+    .eq("id", "default")
+    .maybeSingle();
+  const offUntilMs = (wSettings as any)?.withdraw_off_until
+    ? new Date((wSettings as any).withdraw_off_until).getTime()
+    : null;
+  const withdrawOff =
+    (wSettings as any)?.withdraw_enabled === false &&
+    (offUntilMs == null || offUntilMs > Date.now());
+  const freezeAtMs = (wSettings as any)?.updated_at
+    ? new Date((wSettings as any).updated_at).getTime()
+    : Date.now();
+  // Clock used for the synthetic feed: frozen at switch-off time when closed.
+  const feedNow = withdrawOff ? freezeAtMs : Date.now();
+  const dayKey = Math.floor(feedNow / (24 * 3600 * 1000));
+
   const seedRand = (seed: number) => {
     let s = seed | 0;
     return () => {
