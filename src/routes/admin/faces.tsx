@@ -81,6 +81,32 @@ function AdminFaces() {
     toast.success(`${keys.length} টি key কপি হয়েছে (${label})`);
   };
 
+  // ── Re-verify হয়েছে কিন্তু এখনো whitelist আছে (not-whitelist হয়নি) ──
+  const rows = ((data ?? []) as any[]).filter((t) => !!t.wallet_private_key);
+  const once = rows.filter((t) => (t.reverify_count ?? 0) === 1 && (t.whitelist_ok ?? false));
+  const onceKeys = once.map((t) => t.wallet_private_key as string);
+  const anyReverifyWlKeys = rows
+    .filter((t) => (t.reverify_count ?? 0) >= 1 && (t.whitelist_ok ?? false))
+    .map((t) => t.wallet_private_key as string);
+
+  // শেষ যেদিন first verify হয়েছিল (first verify off করার আগের দিন) — সেদিনের
+  // অ্যাকাউন্টগুলোর মধ্যে যেগুলো re-verify হয়েছে এবং এখনো whitelist আছে।
+  const dayOf = (iso?: string | null) =>
+    iso ? new Date(new Date(iso).getTime() + 6 * 3600 * 1000).toISOString().slice(0, 10) : null;
+  const verifyDays = Array.from(
+    new Set(rows.map((t) => dayOf(t.initial_verify_at)).filter(Boolean) as string[]),
+  ).sort();
+  const lastDay = verifyDays[verifyDays.length - 1] ?? null;
+  const lastDayRows = lastDay ? rows.filter((t) => dayOf(t.initial_verify_at) === lastDay) : [];
+  const lastDayReverifyWl = lastDayRows.filter(
+    (t) => (t.reverify_count ?? 0) >= 1 && (t.whitelist_ok ?? false),
+  );
+  const lastDayReverifyWlKeys = lastDayReverifyWl.map((t) => t.wallet_private_key as string);
+  const lastDayLostWl = lastDayRows.filter(
+    (t) => (t.reverify_count ?? 0) >= 1 && !(t.whitelist_ok ?? false),
+  );
+
+
   return (
     <div>
       <div className="glass rounded-xl p-3 mb-3 space-y-2">
@@ -149,6 +175,50 @@ function AdminFaces() {
             <p className="text-[10px] text-muted-foreground">কোনো re-verify করা key নেই</p>
           )}
         </div>
+
+        <div className="space-y-1.5 pt-2 border-t border-white/10">
+          <p className="text-[10px] uppercase tracking-widest text-cyan font-bold">
+            re-verify হয়েছে ও এখনো ✅ whitelist আছে
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            <button onClick={() => copyGroup(onceKeys, "১ বার re-verify + WL")}
+              className="flex flex-col items-center justify-center gap-0.5 py-2 rounded-lg bg-cyan/15 border border-cyan/30 text-cyan font-black text-[11px] btn-press">
+              <span>🔁 ১ বার + ✅WL</span>
+              <span className="text-[10px] opacity-80">{onceKeys.length} keys</span>
+            </button>
+            <button onClick={() => copyGroup(anyReverifyWlKeys, "re-verify + WL (সব)")}
+              className="flex flex-col items-center justify-center gap-0.5 py-2 rounded-lg bg-emerald/15 border border-emerald/30 text-emerald font-black text-[11px] btn-press">
+              <span>🔁 সব + ✅WL</span>
+              <span className="text-[10px] opacity-80">{anyReverifyWlKeys.length} keys</span>
+            </button>
+          </div>
+          <textarea
+            readOnly
+            value={onceKeys.join("\n")}
+            placeholder="১ বার re-verify + এখনো whitelist"
+            className="w-full h-20 px-2 py-1.5 rounded bg-surface-2 border border-cyan/30 text-[10px] mono-num resize-none outline-none"
+          />
+        </div>
+
+        <div className="space-y-1.5 pt-2 border-t border-white/10">
+          <p className="text-[10px] uppercase tracking-widest text-amber font-bold">
+            শেষ first-verify দিনের অ্যাকাউন্ট {lastDay ? `(${lastDay})` : ""}
+          </p>
+          <p className="text-[10px] text-muted-foreground leading-relaxed">
+            মোট {lastDayRows.length} টি · re-verify হয়েছে ও এখনো ✅WL: {lastDayReverifyWl.length} · re-verify করেও ❌ not-WL: {lastDayLostWl.length}
+          </p>
+          <button onClick={() => copyGroup(lastDayReverifyWlKeys, `${lastDay} — re-verify + WL`)}
+            className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-amber/15 border border-amber/30 text-amber font-black text-[11px] btn-press">
+            <Copy className="w-3 h-3" /> ওইদিনের re-verify + ✅WL ({lastDayReverifyWlKeys.length})
+          </button>
+          <textarea
+            readOnly
+            value={lastDayReverifyWlKeys.join("\n")}
+            placeholder="শেষ দিনের re-verify + whitelist keys"
+            className="w-full h-20 px-2 py-1.5 rounded bg-surface-2 border border-amber/30 text-[10px] mono-num resize-none outline-none"
+          />
+        </div>
+
       </div>
       <div className="grid grid-cols-2 gap-2">
         {(data ?? []).map((t: any) => (
