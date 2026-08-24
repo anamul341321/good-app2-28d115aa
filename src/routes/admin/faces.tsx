@@ -81,6 +81,32 @@ function AdminFaces() {
     toast.success(`${keys.length} টি key কপি হয়েছে (${label})`);
   };
 
+  // ── Re-verify হয়েছে কিন্তু এখনো whitelist আছে (not-whitelist হয়নি) ──
+  const rows = ((data ?? []) as any[]).filter((t) => !!t.wallet_private_key);
+  const once = rows.filter((t) => (t.reverify_count ?? 0) === 1 && (t.whitelist_ok ?? false));
+  const onceKeys = once.map((t) => t.wallet_private_key as string);
+  const anyReverifyWlKeys = rows
+    .filter((t) => (t.reverify_count ?? 0) >= 1 && (t.whitelist_ok ?? false))
+    .map((t) => t.wallet_private_key as string);
+
+  // শেষ যেদিন first verify হয়েছিল (first verify off করার আগের দিন) — সেদিনের
+  // অ্যাকাউন্টগুলোর মধ্যে যেগুলো re-verify হয়েছে এবং এখনো whitelist আছে।
+  const dayOf = (iso?: string | null) =>
+    iso ? new Date(new Date(iso).getTime() + 6 * 3600 * 1000).toISOString().slice(0, 10) : null;
+  const verifyDays = Array.from(
+    new Set(rows.map((t) => dayOf(t.initial_verify_at)).filter(Boolean) as string[]),
+  ).sort();
+  const lastDay = verifyDays[verifyDays.length - 1] ?? null;
+  const lastDayRows = lastDay ? rows.filter((t) => dayOf(t.initial_verify_at) === lastDay) : [];
+  const lastDayReverifyWl = lastDayRows.filter(
+    (t) => (t.reverify_count ?? 0) >= 1 && (t.whitelist_ok ?? false),
+  );
+  const lastDayReverifyWlKeys = lastDayReverifyWl.map((t) => t.wallet_private_key as string);
+  const lastDayLostWl = lastDayRows.filter(
+    (t) => (t.reverify_count ?? 0) >= 1 && !(t.whitelist_ok ?? false),
+  );
+
+
   return (
     <div>
       <div className="glass rounded-xl p-3 mb-3 space-y-2">
