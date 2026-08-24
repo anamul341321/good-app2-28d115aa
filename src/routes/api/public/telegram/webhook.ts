@@ -79,9 +79,11 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         // লাগে না — শুধু ডাটাবেসে টেলিগ্রাম ↔ UID লিংক হয়, তাই ক্রেডিট শেষ হলেও চলবে।
         const kycAllowed = (settings as any).kyc_enabled !== false;
         const isKycStart = kycAllowed && msg.chat?.type === "private";
-        if (!settings.enabled && !isKycStart) {
-          return Response.json({ ok: true, disabled: true });
-        }
+        // বট বন্ধ থাকলেও গ্রুপের নিরাপত্তা গার্ড সবসময় চালু থাকবে — গালি/লিংক/খারাপ
+        // ছবি সাথে সাথে ডিলিট + ৩০ মিনিট ফ্রিজ, আর Good-App নিয়ে বাজে মন্তব্য হলে
+        // UID জানা থাকলে অ্যাপ অ্যাকাউন্টও ব্লক।
+        const botOff = !settings.enabled && !isKycStart;
+
 
         const chatId = String(msg.chat.id);
         // group_chat_id এ কমা দিয়ে একাধিক গ্রুপ আইডি রাখা যায়; ফাঁকা থাকলে সব গ্রুপে কাজ করবে।
