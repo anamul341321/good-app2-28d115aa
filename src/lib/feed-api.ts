@@ -514,6 +514,7 @@ export async function getUploadedLongVideos(
   page = 1,
   rows = 10,
   searchQuery?: string,
+  uploaderUserId?: string,
 ): Promise<{ videos: ExternalReelVideo[]; hasMore: boolean }> {
   const from = Math.max(0, (page - 1) * rows);
   const to = from + rows - 1;
@@ -526,11 +527,16 @@ export async function getUploadedLongVideos(
     .order("created_at", { ascending: false })
     .range(from, to);
 
+  if (uploaderUserId) {
+    query = query.eq("user_id", uploaderUserId);
+  }
+
   if (searchQuery?.trim()) {
     query = query.ilike("content", `%${searchQuery.trim()}%`);
   }
 
   const { data: posts, count } = await query;
+
   if (!posts || posts.length === 0) return { videos: [], hasMore: false };
 
   const userMap = await fetchProfilesMap(posts.map((p: any) => p.user_id));
