@@ -490,6 +490,130 @@ async function getYouTubeSuggestions(query: string): Promise<string[]> {
   } catch { return []; }
 }
 
+// ── Channel feed + channel search (no API key needed) ───────────────────
+async function fetchChannelVideos(
+  channelId: string,
+  pageToken?: string,
+): Promise<{ channel: any; results: any[]; nextPageToken?: string; source: string }> {
+  // Piped first (gives nextpage token), then Invidious.
+  for (const instance of PIPED_INSTANCES) {
+    try {
+      const endpoint = pageToken
+        ? `${instance}/nextpage/channel/${encodeURIComponent(channelId)}?nextpage=${encodeURIComponent(pageToken)}`
+        : `${instance}/channel/${encodeURIComponent(channelId)}`;
+      const res = await withTimeout(fetch(endpoint), 8000);
+      if (!res.ok) { await res.text().catch(() => {}); continue; }
+      const data: any = await res.json();
+      const items = Array.isArray(data?.relatedStreams) ? data.relatedStreams : [];
+      const results = items
+        .filter((item: any) => item?.url && item?.title)
+        .map((item: any) => {
+          const videoId = String(item.url).replace("/watch?v=", "");
+          return {
+            videoId,
+            title: item.title || "",
+            author: item.uploaderName || data?.name || "",
+            channelId,
+            thumbnail: item.thumbnail || `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+            publishedAt: item.uploadedDate || "",
+            lengthSeconds: item.duration || 0,
+            viewCount: Number(item.views || 0) || undefined,
+          };
+        })
+        .filter((r: any) => r.videoId);
+      if (results.length > 0) {
+        return {
+          channel: {
+            channel_id: channelId,
+            name: data?.name || "",
+            avatar_url: data?.avatarUrl || null,
+            subscribers_text: data?.subscriberCount ? `${Number(data.subscriberCount).toLocaleString()}` : null,
+          },
+          results,
+          nextPageToken: data?.nextpage || undefined,
+          source: "piped",
+        };
+      }
+    } catch { continue; }
+  }
+
+  for (const instance of INVIDIOUS_INSTANCES) {
+    try {
+      const res = await withTimeout(fetch(`${instance}/api/v1/channels/${encodeURIComponent(channelId)}/videos`), 8000);
+      if (!res.ok) { await res.text().catch(() => {}); continue; }
+      const data: any = await res.json();
+      const items = Array.isArray(data?.videos) ? data.videos : Array.isArray(data) ? data : [];
+      const results = items
+        .filter((item: any) => item?.videoId)
+        .map((item: any) => ({
+          videoId: item.videoId,
+          title: item.title || "",
+          author: item.author || "",
+          channelId,
+          thumbnail: item.videoThumbnails?.[0]?.url || `https://i.ytimg.com/vi/${item.videoId}/hqdefault.jpg`,
+          publishedAt: item.publishedText || "",
+          lengthSeconds: item.lengthSeconds || 0,
+          viewCount: Number(item.viewCount || 0) || undefined,
+        }));
+      if (results.length > 0) {
+        return {
+          channel: { channel_id: channelId, name: results[0].author || "", avatar_url: null, subscribers_text: null },
+          results,
+          source: "invidious",
+        };
+      }
+    } catch { continue; }
+  }
+
+  return { channel: null, results: [], source: "none" };
+}
+
+async function searchChannels(query: string): Promise<any[]> {
+  const trimmed = query.trim();
+  if (!trimmed) return [];
+  for (const instance of PIPED_INSTANCES) {
+    try {
+      const res = await withTimeout(fetch(`${instance}/search?q=${encodeURIComponent(trimmed)}&filter=channels`), 7000);
+      if (!res.ok) { await res.text().catch(() => {}); continue; }
+      const data: any = await res.json();
+      const items = Array.isArray(data?.items) ? data.items : [];
+      const channels = items
+        .filter((item: any) => item?.url && item?.name)
+        .slice(0, 10)
+        .map((item: any) => ({
+          channel_id: String(item.url).replace("/channel/", ""),
+          name: item.name || "",
+          avatar_url: item.thumbnail || null,
+          subscribers_text: item.subscribers && item.subscribers > 0 ? Number(item.subscribers).toLocaleString() : null,
+        }))
+        .filter((c: any) => c.channel_id);
+      if (channels.length > 0) return channels;
+    } catch { continue; }
+  }
+
+  for (const instance of INVIDIOUS_INSTANCES) {
+    try {
+      const res = await withTimeout(
+        fetch(`${instance}/api/v1/search?q=${encodeURIComponent(trimmed)}&type=channel`),
+        7000,
+      );
+      if (!res.ok) { await res.text().catch(() => {}); continue; }
+      const data: any = await res.json();
+      const channels = (Array.isArray(data) ? data : [])
+        .filter((item: any) => item?.authorId)
+        .slice(0, 10)
+        .map((item: any) => ({
+          channel_id: item.authorId,
+          name: item.author || "",
+          avatar_url: item.authorThumbnails?.[0]?.url || null,
+          subscribers_text: item.subCount ? Number(item.subCount).toLocaleString() : null,
+        }));
+      if (channels.length > 0) return channels;
+    } catch { continue; }
+  }
+  return [];
+}
+
 const jsonHeaders = { "Content-Type": "application/json" };
 
 async function handle(request: Request): Promise<Response> {
