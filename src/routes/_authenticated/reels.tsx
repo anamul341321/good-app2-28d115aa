@@ -108,6 +108,7 @@ function useCombinedReels() {
 
 function ReelsPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { items, isLoading, isError } = useCombinedReels();
   const containerRef = useRef<HTMLDivElement>(null);
