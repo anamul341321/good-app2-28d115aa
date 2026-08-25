@@ -10,7 +10,7 @@ import {
   tgGetSettings, tgSaveSettings, tgRegisterWebhook,
   tgListFaq, tgUpsertFaq, tgDeleteFaq, tgLookupUid, tgSendToGroup, tgReplyToUser,
   tgListBanRequests, tgResolveBanRequest, tgUnban, tgRecentMessages,
-  tgListBlocked, tgSetBlocked, tgListVideos, tgUpsertVideo, tgDeleteVideo,
+  tgListBlocked, tgSetBlocked, tgUnfreeze, tgListVideos, tgUpsertVideo, tgDeleteVideo,
   tgListVoices, tgUpsertVoice, tgDeleteVoice,
   tgBroadcast, tgBroadcastAudience, tgListLinkedProfiles,
   tgListAiKeys, tgAddAiKey, tgSetAiKeyActive, tgDeleteAiKey,
@@ -752,6 +752,27 @@ function BlockedPanel() {
 
   const rows = ((data as any[]) ?? []).filter((r) => (onlyBlocked ? r.blocked : true));
 
+  const [freezeKey, setFreezeKey] = useState("");
+  const unfreeze = useMutation({
+    mutationFn: (v: { tg_user_id?: number; username?: string; uid?: string }) => tgUnfreeze({ data: v }),
+    onSuccess: (r: any) => {
+      if (r.ok) {
+        toast.success("ফ্রিজ খুলে দেওয়া হয়েছে ✅ — এখন গ্রুপে লিখতে পারবে");
+        setFreezeKey("");
+        qc.invalidateQueries({ queryKey: ["tg-blocked"] });
+      } else toast.error(r.error);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const submitFreeze = () => {
+    const v = freezeKey.trim();
+    if (!v) return;
+    if (v.startsWith("@")) unfreeze.mutate({ username: v });
+    else if (/^\d{5,}$/.test(v)) unfreeze.mutate({ tg_user_id: Number(v) });
+    else unfreeze.mutate({ uid: v.replace(/\D/g, "") });
+  };
+
   return (
     <div className="space-y-3">
       <div className="glass rounded-2xl p-4">
@@ -764,6 +785,30 @@ function BlockedPanel() {
         </p>
         <div className="mt-2">
           <Toggle label="শুধু ব্লক করা ইউজার দেখাও" value={onlyBlocked} onChange={setOnlyBlocked} />
+        </div>
+      </div>
+
+      <div className="glass rounded-2xl p-4 space-y-2">
+        <h3 className="font-black text-sm">❄️ গ্রুপ ফ্রিজ (mute) খুলে দিন</h3>
+        <p className="text-[11px] text-muted-foreground">
+          কেউ গ্রুপে “you are currently restricted from posting” দেখলে এখানে তার
+          <b> TG ID</b>, <b>@username</b> বা অ্যাপের <b>UID</b> দিয়ে সাথে সাথেই ফ্রিজ খুলে দিতে পারবেন।
+          লিস্টে না থাকলেও কাজ করবে।
+        </p>
+        <div className="flex gap-2">
+          <input
+            value={freezeKey}
+            onChange={(e) => setFreezeKey(e.target.value)}
+            placeholder="TG ID / @username / UID"
+            className="flex-1 bg-surface-2 border border-border rounded-xl h-10 px-3 text-xs font-bold outline-none"
+          />
+          <button
+            onClick={submitFreeze}
+            disabled={unfreeze.isPending || !freezeKey.trim()}
+            className="gradient-cta rounded-xl px-4 text-xs font-black disabled:opacity-50"
+          >
+            {unfreeze.isPending ? "..." : "খুলে দিন"}
+          </button>
         </div>
       </div>
 
@@ -800,6 +845,13 @@ function BlockedPanel() {
                   : "bg-rose-500/15 border-rose-500/50 text-rose-300"
               }`}>
               {r.blocked ? "আনব্লক করুন" : "ব্লক করুন"}
+            </button>
+            <button
+              onClick={() => unfreeze.mutate({ tg_user_id: r.tg_user_id })}
+              disabled={unfreeze.isPending}
+              className="mt-2 w-full py-2 rounded-xl text-xs font-black border bg-cyan/15 border-cyan/50 text-cyan disabled:opacity-50"
+            >
+              ❄️ ফ্রিজ খুলে দিন (গ্রুপে লিখতে পারবে)
             </button>
           </div>
         ))
