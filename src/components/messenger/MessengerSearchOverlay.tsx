@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { searchPeople } from "@/lib/friends.functions";
+import { searchPeopleFull } from "@/lib/friends.functions";
 import { useState } from "react";
 import { Search, X, MessageSquare, Loader2 } from "lucide-react";
 import { MessengerAvatar } from "./MessengerAvatar";
@@ -12,7 +12,7 @@ export function MessengerSearchOverlay({ onClose }: { onClose: () => void }) {
   
   const { data, isLoading } = useQuery({
     queryKey: ["messenger-search", query],
-    queryFn: () => searchPeople({ data: { query } }),
+    queryFn: () => searchPeopleFull({ data: { query } }),
 
     enabled: query.trim().length > 0,
     staleTime: 5000,
@@ -86,7 +86,7 @@ export function MessengerSearchOverlay({ onClose }: { onClose: () => void }) {
                   <p className="truncate text-sm font-black text-foreground">{user.display_name}</p>
                   <div className="flex items-center gap-2 mt-0.5">
                     <p className="truncate text-[10px] font-bold text-muted-foreground uppercase tracking-tight">
-                      UID {user.uid_seq}
+                      UID {user.uid_seq ?? "—"}
                     </p>
                     {user.mutualCount > 0 && (
                       <span className="text-[10px] font-black text-primary px-1.5 py-0.5 bg-primary/10 rounded-full">
