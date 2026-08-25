@@ -7,7 +7,7 @@ import { claimVoucher } from "@/lib/vouchers.functions";
 import { getLeaderboards } from "@/lib/leaderboard.functions";
 import { MiningCounter } from "@/components/MiningCounter";
 import bonusGirl from "@/assets/bonus-girl.png";
-import { CheckCircle2, Camera, Lock, Sparkles, Loader2, X, Plus, Crown, Users, User, ShieldCheck, BadgeCheck, ChevronDown, Gift, RefreshCcw, MessageSquare, MessageCircle, ChevronRight, ArrowUpRight, Wallet } from "lucide-react";
+import { CheckCircle2, Camera, Lock, Sparkles, Loader2, X, Plus, Crown, Users, User, ShieldCheck, BadgeCheck, ChevronDown, Gift, RefreshCcw, MessageSquare, MessageCircle, ChevronRight, ArrowUpRight, Wallet, Newspaper } from "lucide-react";
 import { AnnouncementTicker } from "@/components/AnnouncementTicker";
 import { ApkDownloadCard } from "@/components/ApkDownloadCard";
 import { HeroBanner } from "@/components/HeroBanner";
@@ -304,6 +304,28 @@ function HomePage() {
 
 
 
+      {/* News Feed Entry Button */}
+      <Link to="/feed"
+        className="block rounded-3xl p-5 relative overflow-hidden btn-press border border-white/20 shadow-[0_25px_50px_-12px_rgba(24,119,242,0.5)]"
+        style={{ background: "linear-gradient(135deg, #1877F2 0%, #42a5f5 55%, #0d47a1 100%)" }}>
+        <div className="absolute -top-10 -right-10 w-48 h-48 rounded-full bg-white/20 blur-3xl" />
+        <div className="relative flex items-center gap-4 text-white">
+          <div className="w-16 h-16 rounded-2xl bg-white/25 backdrop-blur border border-white/40 shrink-0 flex items-center justify-center shadow-lg">
+            <Newspaper className="w-8 h-8" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] uppercase tracking-[0.3em] font-black text-white/90">Good-App Social</p>
+            <p className="text-2xl font-black leading-tight drop-shadow-lg mt-1">{t("নিউজ ফিড", "News Feed")}</p>
+            <p className="text-xs text-white/90 font-bold mt-1 leading-relaxed">
+              {t("পোস্ট · স্টোরি · রিলস · ভিডিও", "Posts · Stories · Reels · Videos")}
+            </p>
+          </div>
+          <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+            <ChevronRight className="w-5 h-5 text-white" />
+          </div>
+        </div>
+      </Link>
+
       {/* Messenger Entry Button */}
       <Link to="/social/messenger"
         className="block rounded-3xl p-6 relative overflow-hidden btn-press border border-white/20 shadow-[0_25px_50px_-12px_rgba(59,130,246,0.5)]"
@@ -378,61 +400,6 @@ function HomePage() {
         </button>
       )}
 
-
-      {/* Main identity card — premium hero */}
-      {mainTask && (
-        <Link to="/profile" data-tour="main-identity" data-voice="home.main"
-             className="relative overflow-hidden rounded-2xl p-4 border-2 shadow-[0_18px_40px_-12px_rgba(245,158,11,0.55)] block active:scale-[0.98] transition-transform"
-             style={{
-               borderColor: "rgba(255,255,255,0.25)",
-               background: "linear-gradient(135deg, #7c3aed 0%, #ec4899 45%, #f59e0b 100%)",
-             }}>
-          {/* decorative glow blobs */}
-          <div className="pointer-events-none absolute -top-10 -right-10 w-40 h-40 rounded-full opacity-40 blur-2xl"
-               style={{ background: "radial-gradient(circle, #fde047, transparent 65%)" }} />
-          <div className="pointer-events-none absolute -bottom-12 -left-10 w-40 h-40 rounded-full opacity-35 blur-2xl"
-               style={{ background: "radial-gradient(circle, #22d3ee, transparent 65%)" }} />
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_15%,rgba(255,255,255,0.35),transparent_55%)]" />
-
-          <div className="relative flex items-center gap-3">
-            <div className="shrink-0 rounded-2xl p-1 bg-white/25 backdrop-blur-sm shadow-lg overflow-hidden w-20 h-20 flex items-center justify-center border border-white/30">
-              {(data as any).avatar_signed ? (
-                <img src={(data as any).avatar_signed} className="w-full h-full object-cover rounded-xl" alt="avatar" />
-              ) : (
-                <div className="flex flex-col items-center justify-center">
-                  <User className="w-8 h-8 text-white/80" />
-                  <p className="text-[7px] font-black text-white/60 uppercase">No Photo</p>
-                </div>
-              )}
-            </div>
-            <div className="min-w-0 flex-1 text-white">
-              <div className="flex items-center gap-1.5">
-                <p className="text-[10px] uppercase tracking-[0.25em] font-black text-white/90 drop-shadow flex items-center gap-1.5">
-                  <BadgeCheck className="w-3.5 h-3.5" /> {t("আমার পরিচয়", "My Identity")}
-                </p>
-                {data.profile && (data.profile as any).kyc_verified && (
-                  <span className="bg-emerald-400/30 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider border border-emerald-400/40">VERIFIED</span>
-                )}
-              </div>
-              <p className="text-2xl font-black mt-1.5 leading-tight drop-shadow-xl truncate" translate="no">
-                {data.profile?.display_name || "ইউজার"}
-              </p>
-              <div className="flex items-center gap-2 mt-2">
-                <div className="h-1 w-12 rounded-full bg-white/30 overflow-hidden">
-                  <div className="h-full bg-white w-2/3" />
-                </div>
-                <p className="text-[11px] font-bold text-white/90 drop-shadow">
-                  {t("আপনার ডিজিটাল আইডি ও পার্সোনাল প্রোফাইল", "Personal Profile & Digital ID")}
-                </p>
-
-              </div>
-            </div>
-            <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
-              <ChevronRight className="w-5 h-5 text-white" />
-            </div>
-          </div>
-        </Link>
-      )}
 
       {/* নিজের ছবি — Slot #1 (আগের মতো ড্যাশবোর্ডেই দেখা ও রি-ভেরিফাই করা যাবে) */}
       {mainTask && (
