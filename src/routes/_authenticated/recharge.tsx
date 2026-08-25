@@ -76,8 +76,9 @@ function RechargePage() {
   const amtInput = Math.floor(Number(amount) || 0);
   const rechargeFee = Math.floor(amtInput * 0.2);
   const totalCost = amtInput + rechargeFee;
-  // মেইন (বোনাস) ব্যালেন্স আগে খরচ হয়, বাকিটা মাইনিং ব্যালেন্স থেকে যায়
+  // রিচার্জ/কার্ড শুধু মেইন ব্যালেন্স দিয়ে — মাইনিং ব্যালেন্স আগে মেইনে ক্লেইম করতে হবে।
   const mainPart = Math.floor(Number((dash as any)?.balanceBreakdown?.bonus_part ?? 0));
+  const miningPart = Math.floor(Number((dash as any)?.balanceBreakdown?.mining_part ?? 0));
   const miningNeeded = Math.max(totalCost - mainPart, 0);
 
   const mut = useMutation({
@@ -119,7 +120,7 @@ function RechargePage() {
 
   const amt = Math.floor(Number(amount) || 0);
   const mob = mobile.replace(/\D/g, "");
-  const canSubmit = /^0?1\d{9,10}$/.test(mob) && !!operator && amt >= MIN_RECHARGE && totalCost <= balance && miningNeeded <= 50 && !mut.isPending;
+  const canSubmit = /^0?1\d{9,10}$/.test(mob) && !!operator && amt >= MIN_RECHARGE && totalCost <= mainPart && !mut.isPending;
 
   const selectedOp = OPERATORS.find((o) => o.id === operator);
 
@@ -144,10 +145,15 @@ function RechargePage() {
               <Zap className="w-3 h-3" /> LIVE
             </div>
           </div>
-          <p className="text-[10px] uppercase tracking-widest opacity-90 font-black">{t("উপলব্ধ ব্যালেন্স", "Available Balance")}</p>
+          <p className="text-[10px] uppercase tracking-widest opacity-90 font-black">{t("উপলব্ধ মেইন ব্যালেন্স", "Available Main Balance")}</p>
           <p className="mono-num text-5xl font-black leading-none mt-1 drop-shadow-lg" translate="no">
-            {balance}<span className="text-2xl ml-0.5">৳</span>
+            {mainPart}<span className="text-2xl ml-0.5">৳</span>
           </p>
+          {miningPart > 0 && (
+            <p className="text-[11px] font-bold mt-1 opacity-90" translate="no">
+              {t("মাইনিং ব্যালেন্স", "Mining balance")} {miningPart}৳ · {t("আগে মেইনে ক্লেইম করুন", "claim to Main first")} ⛏️
+            </p>
+          )}
           <p className="text-[10px] opacity-90 mt-2 flex items-center gap-1">
             <Sparkles className="w-3 h-3" /> {t(`মিনিমাম ${MIN_RECHARGE}৳ থেকে রিচার্জ · সাথে সাথে টাকা যাবে`, `Recharge from ${MIN_RECHARGE}৳ · instant delivery`)}
           </p>
@@ -246,10 +252,8 @@ function RechargePage() {
               <span className="mono-num font-black text-cyan-600">{totalCost}৳</span>
             </div>
             {miningNeeded > 0 && (
-              <p className={`text-[11px] font-bold leading-snug pt-1 ${miningNeeded > 50 ? "text-rose" : "text-amber-600"}`}>
-                {miningNeeded > 50
-                  ? t("মাইনিং ব্যালেন্স দিয়ে সর্বোচ্চ ৫০৳ রিচার্জ করা যাবে — বোনাস ব্যালেন্স দিয়ে বেশি নিতে পারবেন।", "Mining balance covers at most 50৳ per recharge — use bonus balance for more.")
-                  : t(`এই রিচার্জে মাইনিং ব্যালেন্স থেকে ${miningNeeded}৳ কাটবে · মাইনিং দিয়ে দিনে মাত্র ১ বার রিচার্জ করা যাবে।`, `${miningNeeded}৳ will come from mining balance · only 1 mining-funded recharge per day.`)}
+              <p className="text-[11px] font-bold leading-snug pt-1 text-rose">
+                {t(`মেইন ব্যালেন্স ${miningNeeded}৳ কম। রিচার্জ শুধু মেইন ব্যালেন্স দিয়ে হয় — মাইনিং টাকা আগে মেইন ব্যালেন্সে ক্লেইম করুন।`, `Main balance is short by ${miningNeeded}৳. Recharge uses Main balance only — claim mining into Main balance first.`)}
               </p>
             )}
           </div>
@@ -305,7 +309,7 @@ function RechargePage() {
       </div>
       </>
       ) : (
-        <CardStore balance={balance} onDone={() => { refetch(); }} />
+        <CardStore balance={mainPart} onDone={() => { refetch(); }} />
       )}
     </div>
   );
