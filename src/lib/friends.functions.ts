@@ -195,3 +195,154 @@ export const notifyIncomingCall = createServerFn({ method: "POST" })
     });
     return { ok: true };
   });
+
+type PublicPerson = {
+  id: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  uid_seq: number | null;
+  is_verified_badge: boolean | null;
+  status: "none" | "pending_sent" | "pending_received" | "accepted";
+  linkId: string | null;
+};
+
+const PUBLIC_COLS = "id, display_name, avatar_url, uid_seq, is_verified_badge";
+
+async function attachLinkStatus(
+  supabase: any,
+  me: string,
+  rows: Array<Record<string, any>>,
+): Promise<PublicPerson[]> {
+  if (!rows.length) return [];
+  const { data: links } = await supabase
+    .from("friend_links")
+    .select("id, requester_id, addressee_id, status");
+  const byUser = new Map<string, any>();
+  for (const l of (links ?? []) as any[]) {
+    const other = l.requester_id === me ? l.addressee_id : l.requester_id;
+    byUser.set(other, l);
+  }
+  return rows.map((p) => {
+    const l = byUser.get(p.id);
+    let status: PublicPerson["status"] = "none";
+    if (l) {
+      if (l.status === "accepted") status = "accepted";
+      else if (l.status === "pending")
+        status = l.requester_id === me ? "pending_sent" : "pending_received";
+    }
+    return {
+      id: p.id,
+      display_name: p.display_name ?? null,
+      avatar_url: p.avatar_url ?? null,
+      uid_seq: p.uid_seq ?? null,
+      is_verified_badge: p.is_verified_badge ?? null,
+      status,
+      linkId: l?.id ?? null,
+    };
+  });
+}
+
+/** Facebook-style people search — নাম, UID অথবা ফোন নম্বর দিয়ে */
+export const searchPeopleFull = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { query: string }) => ({
+    query: String(input?.query ?? "").trim().slice(0, 60),
+  }))
+  .handler(async ({ data, context }) => {
+    const q = data.query;
+    if (q.length < 1) return { people: [] as PublicPerson[] };
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const digits = q.replace(/\D/g, "");
+    const isNumeric = digits.length > 0 && /^\D*[\d\s+-]+\D*$/.test(q);
+
+    const found = new Map<string, any>();
+    const push = (rows: any[] | null) => {
+      for (const r of rows ?? []) if (r.id !== context.userId) found.set(r.id, r);
+    };
+
+    if (q.length >= 1) {
+      const { data: byName } = await supabaseAdmin
+        .from("profiles")
+        .select(PUBLIC_COLS)
+        .ilike("display_name", `%${q}%`)
+        .limit(20);
+      push(byName as any[]);
+    }
+    if (isNumeric && digits.length > 0) {
+      const numeric = Number(digits);
+      if (Number.isFinite(numeric) && numeric > 0) {
+        const { data: byUid } = await supabaseAdmin
+          .from("profiles")
+          .select(PUBLIC_COLS)
+          .eq("uid_seq", numeric)
+          .limit(5);
+        push(byUid as any[]);
+      }
+      const tail = digits.slice(-9);
+      if (tail.length >= 6) {
+        const { data: byPhone } = await supabaseAdmin
+          .from("profiles")
+          .select(PUBLIC_COLS)
+          .ilike("phone_number", `%${tail}%`)
+          .limit(10);
+        push(byPhone as any[]);
+      }
+    }
+
+    const people = await attachLinkStatus(context.supabase, context.userId, Array.from(found.values()));
+    return { people: people.slice(0, 20) };
+  });
+
+/** Suggested friends — যাদের সাথে এখনো কোনো সংযোগ নেই (mutual অনুযায়ী সাজানো) */
+export const getSuggestedPeople = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input?: { limit?: number }) => ({
+    limit: Math.min(Math.max(Number(input?.limit ?? 10), 1), 30),
+  }))
+  .handler(async ({ data, context }) => {
+    const me = context.userId;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: myLinks } = await (context.supabase as any)
+      .from("friend_links")
+      .select("requester_id, addressee_id, status");
+    const linked = new Set<string>([me]);
+    const myFriends = new Set<string>();
+    for (const l of (myLinks ?? []) as any[]) {
+      const other = l.requester_id === me ? l.addressee_id : l.requester_id;
+      linked.add(other);
+      if (l.status === "accepted") myFriends.add(other);
+    }
+
+    const { data: rows } = await supabaseAdmin
+      .from("profiles")
+      .select(PUBLIC_COLS)
+      .order("created_at", { ascending: false })
+      .limit(200);
+
+    const candidates = ((rows ?? []) as any[]).filter((p) => !linked.has(p.id));
+
+    // mutual friend count (admin read of accepted links between candidates & my friends)
+    let mutualMap = new Map<string, number>();
+    if (candidates.length && myFriends.size) {
+      const ids = candidates.map((c) => c.id);
+      const { data: theirLinks } = await (supabaseAdmin as any)
+        .from("friend_links")
+        .select("requester_id, addressee_id, status")
+        .eq("status", "accepted");
+      for (const l of (theirLinks ?? []) as any[]) {
+        for (const [a, b] of [
+          [l.requester_id, l.addressee_id],
+          [l.addressee_id, l.requester_id],
+        ]) {
+          if (ids.includes(a) && myFriends.has(b)) mutualMap.set(a, (mutualMap.get(a) ?? 0) + 1);
+        }
+      }
+    }
+
+    candidates.sort((a, b) => (mutualMap.get(b.id) ?? 0) - (mutualMap.get(a.id) ?? 0));
+    const people = (await attachLinkStatus(context.supabase, me, candidates.slice(0, data.limit))).map(
+      (p) => ({ ...p, mutualCount: mutualMap.get(p.id) ?? 0 }),
+    );
+    return { people };
+  });
