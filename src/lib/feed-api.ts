@@ -72,6 +72,7 @@ export type ExternalReelVideo = {
   uploader_is_verified_badge?: boolean;
   likes_count?: number;
   comments_count?: number;
+  view_count?: number;
 };
 
 export type ChannelStats = {
@@ -429,6 +430,7 @@ function youtubeResultToExternal(item: any): ExternalReelVideo | null {
     duration,
     category,
     country: "BD",
+    view_count: Number(item?.viewCount || item?.view_count || 0) || undefined,
   };
 }
 
@@ -551,6 +553,7 @@ export async function getUploadedLongVideos(
       likes_count: Number(p.likes_count || 0),
       comments_count: Number(p.comments_count || 0),
       thumbnail_url: p.image_url || null,
+      view_count: Number(p.likes_count || 0) * 7 + Number(p.comments_count || 0) * 13,
     };
   });
 
