@@ -172,7 +172,11 @@ export async function recomputePristine() {
   const updates = all.map((r) => {
     const senders = ((r.in_senders as string[]) ?? []).filter((s) => !isSystem(s));
     const external = senders.length > 0;
-    const pristine = r.nonce === 0 && r.token_out_count === 0 && !external;
+    // Every verified wallet self-sends its own whitelist/claim transactions, so
+    // nonce is never 0. "Pristine" therefore means: no token ever sent OUT of
+    // this wallet and no funding from an outside (non-faucet) wallet.
+    const pristine = r.token_out_count === 0 && !external;
+
     if (pristine) pristineCount += 1;
     return {
       wallet_address: r.wallet_address,
