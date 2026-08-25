@@ -1,8 +1,8 @@
-import { createFileRoute, Link, useParams } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useParams } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Loader2, Video, Users, Play } from "lucide-react";
+import { Loader2, Video, Users, Play, ArrowLeft, UploadCloud } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   getChannelStats,
@@ -13,6 +13,7 @@ import {
 import { useFeedMedia } from "@/lib/feed-media";
 import { MessengerAvatar } from "@/components/messenger/MessengerAvatar";
 import { Button } from "@/components/ui/button";
+
 
 export const Route = createFileRoute("/_authenticated/channel/$userId")({
   component: ChannelPage,
@@ -36,7 +37,9 @@ export const Route = createFileRoute("/_authenticated/channel/$userId")({
 function ChannelPage() {
   const { userId } = useParams({ from: "/_authenticated/channel/$userId" });
   const { user } = useAuth();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const isOwner = user?.id === userId;
 
   const { data: profile, isLoading: profileLoading } = useQuery({
     queryKey: ["channel-profile", userId],
@@ -57,10 +60,10 @@ function ChannelPage() {
 
   const { data: videosResult, isLoading: videosLoading } = useQuery({
     queryKey: ["channel-videos", userId],
-    queryFn: () => getUploadedLongVideos(1, 50),
+    queryFn: () => getUploadedLongVideos(1, 50, undefined, userId),
   });
 
-  const channelVideos = (videosResult?.videos || []).filter((v) => v.uploader_user_id === userId);
+  const channelVideos = videosResult?.videos || [];
 
   const subscribeMutation = useMutation({
     mutationFn: async () => {
@@ -73,6 +76,11 @@ function ChannelPage() {
 
   const avatarUrl = useFeedMedia(profile?.avatar_url || undefined);
 
+  const goBack = () => {
+    if (typeof window !== "undefined" && window.history.length > 1) window.history.back();
+    else void navigate({ to: "/feed" });
+  };
+
   if (profileLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
@@ -83,19 +91,41 @@ function ChannelPage() {
 
   if (!profile) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-background">
         <p className="text-sm font-bold text-muted-foreground">চ্যানেল পাওয়া যায়নি</p>
+        <Button variant="secondary" onClick={goBack}>
+          <ArrowLeft className="mr-1 h-4 w-4" /> ফিরে যান
+        </Button>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-background pb-24">
+      <header className="sticky top-0 z-40 flex items-center justify-between border-b border-border/40 bg-background/95 px-3 py-2 backdrop-blur">
+        <button
+          type="button"
+          onClick={goBack}
+          aria-label="ফিরে যান"
+          className="grid h-9 w-9 place-items-center rounded-full bg-secondary text-foreground"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </button>
+        <span className="text-sm font-black tracking-tight text-foreground">good-app চ্যানেল</span>
+        <Button
+          size="sm"
+          className="h-9 rounded-full bg-red-600 px-3 text-[12.5px] font-black text-white hover:bg-red-700"
+          onClick={() => navigate({ to: "/studio" })}
+        >
+          <UploadCloud className="mr-1 h-4 w-4" /> আপলোড
+        </Button>
+      </header>
+
       <div className="h-28 w-full bg-gradient-to-r from-primary/30 to-primary/10" />
       <div className="mx-auto max-w-3xl px-4">
         <div className="-mt-10 flex items-end justify-between">
           <MessengerAvatar name={profile.display_name || "User"} src={avatarUrl} size="xl" className="ring-4 ring-background" />
-          {user && user.id !== userId && (
+          {user && !isOwner && (
             <Button
               variant={stats?.is_subscribed ? "secondary" : "default"}
               onClick={() => subscribeMutation.mutate()}
@@ -112,18 +142,40 @@ function ChannelPage() {
             <Users className="h-3.5 w-3.5" /> {(stats?.subscriber_count ?? 0).toLocaleString()} সাবস্ক্রাইবার
           </span>
           <span className="flex items-center gap-1">
-            <Video className="h-3.5 w-3.5" /> {stats?.total_videos ?? 0} ভিডিও
+            <Video className="h-3.5 w-3.5" /> {channelVideos.length || stats?.total_videos || 0} ভিডিও
           </span>
         </div>
 
         <section className="mt-6">
-          <h2 className="mb-3 text-sm font-black text-foreground">ভিডিওসমূহ</h2>
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-sm font-black text-foreground">ভিডিওসমূহ</h2>
+            {isOwner ? (
+              <Button
+                size="sm"
+                variant="secondary"
+                className="h-8 rounded-full px-3 text-[12px] font-black"
+                onClick={() => navigate({ to: "/studio" })}
+              >
+                <UploadCloud className="mr-1 h-4 w-4" /> নতুন ভিডিও
+              </Button>
+            ) : null}
+          </div>
           {videosLoading ? (
             <div className="flex justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
           ) : channelVideos.length === 0 ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">এখনো কোনো ভিডিও নেই</p>
+            <div className="flex flex-col items-center gap-3 py-10">
+              <p className="text-sm text-muted-foreground">এখনো কোনো ভিডিও নেই</p>
+              {isOwner ? (
+                <Button
+                  className="rounded-full bg-red-600 px-5 font-black text-white hover:bg-red-700"
+                  onClick={() => navigate({ to: "/studio" })}
+                >
+                  <UploadCloud className="mr-1 h-4 w-4" /> ভিডিও আপলোড করুন
+                </Button>
+              ) : null}
+            </div>
           ) : (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               {channelVideos.map((v) => (
@@ -132,6 +184,7 @@ function ChannelPage() {
             </div>
           )}
         </section>
+
       </div>
     </div>
   );

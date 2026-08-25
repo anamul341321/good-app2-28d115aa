@@ -1,9 +1,25 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { Loader2, MoreVertical, Play, Search, Mic, X, ThumbsUp, UploadCloud, User, ArrowLeft } from "lucide-react";
+import {
+  Loader2,
+  MoreVertical,
+  Play,
+  Search,
+  Mic,
+  X,
+  ThumbsUp,
+  UploadCloud,
+  User,
+  ArrowLeft,
+  MessageCircle,
+  Share2,
+  Send,
+  Bell,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { MessengerAvatar } from "@/components/messenger/MessengerAvatar";
 import { useAuth } from "@/hooks/useAuth";
 import {
   getBangladeshExternalVideos,
@@ -11,9 +27,15 @@ import {
   fetchYouTubeSuggestions,
   trackVideoPreference,
   toggleLike,
+  getLocalVideoEngagement,
+  getChannelStats,
+  toggleChannelSubscription,
+  getPostComments,
+  addComment,
   type ExternalReelVideo,
 } from "@/lib/feed-api";
 import { useFeedMedia } from "@/lib/feed-media";
+
 
 const LIKE_KEY = "goodapp_video_likes";
 
@@ -317,9 +339,16 @@ export default function VideoTab() {
 }
 
 function InlinePlayer({ video, userId, onClose }: { video: ExternalReelVideo; userId?: string; onClose: () => void }) {
-  const source = useFeedMedia(video.source === "good-app" ? video.video_url : undefined);
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const isLocal = video.source === "good-app";
+  const postId = video.local_post_id || "";
+  const source = useFeedMedia(isLocal ? video.video_url : undefined);
+  const avatar = useFeedMedia(video.uploader_avatar_url || undefined);
   const viewLabel = formatViews(video.view_count);
   const [liked, setLiked] = useState<boolean>(() => !!readLikes()[video.id]);
+  const [showComments, setShowComments] = useState(false);
+  const [commentText, setCommentText] = useState("");
 
   useEffect(() => {
     try {
@@ -332,63 +361,246 @@ function InlinePlayer({ video, userId, onClose }: { video: ExternalReelVideo; us
     };
   }, [video.id]);
 
+  const { data: engagement } = useQuery({
+    queryKey: ["video-engagement", postId],
+    queryFn: () => getLocalVideoEngagement(postId),
+    enabled: isLocal && !!postId,
+  });
+
+  const { data: channelStats } = useQuery({
+    queryKey: ["video-channel", video.uploader_user_id, userId],
+    queryFn: () => getChannelStats(video.uploader_user_id as string, userId),
+    enabled: isLocal && !!video.uploader_user_id,
+  });
+
+  const { data: comments, isLoading: commentsLoading } = useQuery({
+    queryKey: ["video-comments", postId],
+    queryFn: () => getPostComments(postId, userId),
+    enabled: isLocal && !!postId && showComments,
+  });
+
+  const subscribeMutation = useMutation({
+    mutationFn: async () => {
+      if (!userId || !video.uploader_user_id) throw new Error("invalid");
+      return toggleChannelSubscription(userId, video.uploader_user_id);
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["video-channel", video.uploader_user_id, userId] }),
+    onError: () => toast.error("সাবস্ক্রাইব করা যায়নি"),
+  });
+
+  const commentMutation = useMutation({
+    mutationFn: async () => {
+      if (!userId || !postId || !commentText.trim()) throw new Error("invalid");
+      return addComment(postId, userId, commentText.trim());
+    },
+    onSuccess: () => {
+      setCommentText("");
+      queryClient.invalidateQueries({ queryKey: ["video-comments", postId] });
+      queryClient.invalidateQueries({ queryKey: ["video-engagement", postId] });
+    },
+    onError: () => toast.error("মন্তব্য যোগ করা যায়নি"),
+  });
+
   const onLike = async () => {
     const next = !liked;
     setLiked(next);
     writeLike(video.id, next);
-    if (video.source === "good-app" && userId) {
+    if (isLocal && postId && userId) {
       try {
-        await toggleLike(video.id, userId);
+        await toggleLike(postId, userId);
+        queryClient.invalidateQueries({ queryKey: ["video-engagement", postId] });
       } catch {
         // like still tracked locally
       }
     }
   };
 
+  const onShare = async () => {
+    const url = isLocal && postId
+      ? `${window.location.origin}/watch/${postId}`
+      : video.watch_url || video.video_url;
+    try {
+      if (navigator.share) await navigator.share({ title: video.title, url });
+      else {
+        await navigator.clipboard.writeText(url);
+        toast.success("লিংক কপি হয়েছে");
+      }
+    } catch {
+      // user cancelled
+    }
+  };
+
+  const likeCount = isLocal ? engagement?.likes_count ?? video.likes_count ?? 0 : 0;
+  const commentCount = isLocal ? engagement?.comments_count ?? video.comments_count ?? 0 : 0;
+
   return (
     <div className="bg-white dark:bg-card border-b border-gray-100 dark:border-border/30">
-      <div className="aspect-video w-full bg-black">
-        {video.source === "good-app" ? (
+      {/* good-app player header */}
+      <div className="flex items-center justify-between bg-black px-2 py-1.5">
+        <button
+          type="button"
+          aria-label="ফিরে যান"
+          onClick={onClose}
+          className="grid h-8 w-8 place-items-center rounded-full text-white active:bg-white/15"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </button>
+        <span className="text-[13px] font-black tracking-tight text-white">good-app</span>
+        <button
+          type="button"
+          aria-label="শেয়ার"
+          onClick={onShare}
+          className="grid h-8 w-8 place-items-center rounded-full text-white active:bg-white/15"
+        >
+          <Share2 className="h-4 w-4" />
+        </button>
+      </div>
+
+      <div className="relative aspect-video w-full overflow-hidden bg-black">
+        {isLocal ? (
           <video src={source} controls autoPlay playsInline className="h-full w-full" />
         ) : (
-          <iframe
-            src={`${video.video_url}${video.video_url.includes("?") ? "&" : "?"}autoplay=1&playsinline=1&rel=0&modestbranding=1`}
-            title={video.title}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-            allowFullScreen
-            className="h-full w-full border-0"
-          />
+          <>
+            <iframe
+              src={`${video.video_url}${video.video_url.includes("?") ? "&" : "?"}autoplay=1&playsinline=1&rel=0&modestbranding=1&showinfo=0&iv_load_policy=3&fs=1&color=white`}
+              title={video.title}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+              className="h-full w-full border-0"
+            />
+            {/* Cover external branding: top title/logo strip + bottom-right logo button */}
+            <div className="pointer-events-auto absolute left-0 right-0 top-0 h-8 bg-black" />
+            <div className="pointer-events-auto absolute bottom-0 right-0 h-10 w-14 bg-transparent" />
+            <span className="absolute left-2 top-1 text-[11px] font-black tracking-tight text-white/90">good-app player</span>
+          </>
         )}
       </div>
+
       <div className="px-3 py-3">
         <h2 className="text-[17px] font-black leading-snug text-gray-950 dark:text-foreground">{video.title}</h2>
         <p className="mt-1 text-[12.5px] font-semibold text-gray-500 dark:text-muted-foreground">
-          {viewLabel ? `${viewLabel} views · ` : ""}{video.creator || "YouTube"}
+          {viewLabel ? `${viewLabel} views · ` : ""}{video.creator || "good-app"}
         </p>
-        <div className="mt-2 flex items-center gap-2">
+
+        {isLocal && video.uploader_user_id ? (
+          <div className="mt-3 flex items-center justify-between border-y border-gray-100 dark:border-border/30 py-2.5">
+            <button
+              type="button"
+              className="flex items-center gap-2 text-left"
+              onClick={() => navigate({ to: "/channel/$userId", params: { userId: video.uploader_user_id as string } })}
+            >
+              <MessengerAvatar name={video.creator || "Channel"} src={avatar} size="md" />
+              <span className="block">
+                <span className="block text-[13.5px] font-black text-gray-950 dark:text-foreground">{video.creator || "Channel"}</span>
+                <span className="block text-[11.5px] font-semibold text-gray-500 dark:text-muted-foreground">
+                  {(channelStats?.subscriber_count ?? 0).toLocaleString()} সাবস্ক্রাইবার
+                </span>
+              </span>
+            </button>
+            {userId && userId !== video.uploader_user_id ? (
+              <Button
+                size="sm"
+                variant={channelStats?.is_subscribed ? "secondary" : "default"}
+                className="h-8 rounded-full px-3 text-[12px] font-black"
+                onClick={() => subscribeMutation.mutate()}
+                disabled={subscribeMutation.isPending}
+              >
+                <Bell className="mr-1 h-4 w-4" />
+                {channelStats?.is_subscribed ? "সাবস্ক্রাইব করা আছে" : "সাবস্ক্রাইব"}
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
+
+        <div className="mt-2.5 flex items-center gap-2 overflow-x-auto scrollbar-hide">
           <Button
             type="button"
             size="sm"
             variant={liked ? "default" : "secondary"}
-            className="h-8 rounded-full px-3 text-[12.5px] font-black"
+            className="h-8 shrink-0 rounded-full px-3 text-[12.5px] font-black"
             onClick={onLike}
           >
-            <ThumbsUp className="mr-1 h-4 w-4" /> {liked ? "লাইক করা হয়েছে" : "লাইক"}
+            <ThumbsUp className="mr-1 h-4 w-4" /> {isLocal ? likeCount : liked ? "লাইক করা হয়েছে" : "লাইক"}
+          </Button>
+          {isLocal ? (
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              className="h-8 shrink-0 rounded-full px-3 text-[12.5px] font-black"
+              onClick={() => setShowComments((prev) => !prev)}
+            >
+              <MessageCircle className="mr-1 h-4 w-4" /> {commentCount} মন্তব্য
+            </Button>
+          ) : null}
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            className="h-8 shrink-0 rounded-full px-3 text-[12.5px] font-black"
+            onClick={onShare}
+          >
+            <Share2 className="mr-1 h-4 w-4" /> শেয়ার
           </Button>
           <Button
             type="button"
             size="sm"
             variant="secondary"
-            className="h-8 rounded-full px-3 text-[12.5px] font-black"
+            className="h-8 shrink-0 rounded-full px-3 text-[12.5px] font-black"
             onClick={onClose}
           >
             <ArrowLeft className="mr-1 h-4 w-4" /> আরও খুঁজুন
           </Button>
         </div>
+
+        {isLocal && showComments ? (
+          <div className="mt-3 border-t border-gray-100 dark:border-border/30 pt-3">
+            {userId ? (
+              <div className="mb-3 flex items-center gap-2">
+                <input
+                  value={commentText}
+                  onChange={(event) => setCommentText(event.target.value)}
+                  placeholder="মন্তব্য লিখুন..."
+                  className="flex-1 rounded-full bg-gray-100 dark:bg-secondary px-3 py-2 text-sm outline-none"
+                />
+                <Button
+                  size="icon"
+                  className="h-9 w-9 rounded-full"
+                  onClick={() => commentMutation.mutate()}
+                  disabled={!commentText.trim() || commentMutation.isPending}
+                >
+                  {commentMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                </Button>
+              </div>
+            ) : null}
+            {commentsLoading ? (
+              <div className="flex justify-center py-3">
+                <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+              </div>
+            ) : (comments || []).length === 0 ? (
+              <p className="py-2 text-xs font-semibold text-gray-500">এখনো কোনো মন্তব্য নেই</p>
+            ) : (
+              <div className="space-y-3">
+                {(comments || []).map((comment: any) => (
+                  <div key={comment.id} className="flex items-start gap-2">
+                    <MessengerAvatar name={comment.user?.display_name || "User"} size="sm" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[12px] font-black text-gray-950 dark:text-foreground">
+                        {comment.user?.display_name || "User"}
+                      </p>
+                      <p className="text-[13.5px] text-gray-800 dark:text-foreground">{comment.content}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : null}
       </div>
     </div>
   );
 }
+
 
 function VideoCard({ video, onPlay }: { video: ExternalReelVideo; onPlay: () => void }) {
   const thumb = useFeedMedia(video.thumbnail_url || undefined);
