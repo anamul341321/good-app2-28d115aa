@@ -858,6 +858,48 @@ function FeedPage() {
               )}
             </div>
           </div>
+
+          <div className="bg-white dark:bg-card mt-2 rounded-lg mx-1 pb-3">
+            <h3 className="px-3 pt-3 pb-2 text-[16px] font-bold text-gray-900 dark:text-foreground">
+              যাদের চেনেন (সাজেশন)
+            </h3>
+            <div className="space-y-0">
+              {(suggestedPeople as any[]).map((sp) => (
+                <div key={sp.id} className="flex items-center gap-3 px-3 py-2.5">
+                  <Link to="/feed/user/$userId" params={{ userId: sp.id }}
+                    className="w-14 h-14 rounded-full bg-gray-200 dark:bg-primary/20 flex items-center justify-center overflow-hidden shrink-0">
+                    <Avatar path={sp.avatar_url} className="w-full h-full object-cover" fallback={sp.display_name?.[0]?.toUpperCase() || "?"} />
+                  </Link>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[14px] font-bold text-gray-900 dark:text-foreground truncate">
+                      <NameWithBadge name={sp.display_name || "User"} isVerified={sp.is_verified_badge} />
+                    </p>
+                    <p className="text-[11px] text-gray-500 dark:text-muted-foreground">
+                      UID {sp.uid_seq ?? "—"}{sp.mutualCount > 0 ? ` · ${sp.mutualCount} mutual` : ""}
+                    </p>
+                    <div className="mt-1.5 flex gap-2">
+                      {sp.status === "pending_sent" ? (
+                        <span className="px-3 py-1.5 bg-gray-100 dark:bg-secondary text-gray-600 dark:text-muted-foreground text-[12px] font-semibold rounded-md">রিকুয়েস্ট পাঠানো হয়েছে</span>
+                      ) : (
+                        <button onClick={() => friendRequestMutation.mutate(sp.id)}
+                          disabled={friendRequestMutation.isPending}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white text-[12px] font-semibold rounded-md disabled:opacity-60">
+                          <UserPlus className="w-3.5 h-3.5" /> Add friend
+                        </button>
+                      )}
+                      <button onClick={() => startChatWith(sp.id)}
+                        className="px-3 py-1.5 bg-blue-50 dark:bg-primary/10 text-blue-600 dark:text-primary text-[12px] font-semibold rounded-md">
+                        মেসেজ
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {(suggestedPeople as any[]).length === 0 && (
+                <p className="text-sm text-gray-500 text-center py-6">সাজেশন নেই</p>
+              )}
+            </div>
+          </div>
         </div>
       )}
 
