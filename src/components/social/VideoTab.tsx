@@ -91,12 +91,13 @@ export default function VideoTab() {
     fetchNextPage,
     hasNextPage,
   } = useInfiniteQuery({
-    queryKey: ["feed-videos", search],
+    queryKey: ["feed-videos", search, freshness],
     initialPageParam: { page: 1, token: undefined as string | undefined },
     queryFn: async ({ pageParam }) => {
       const [local, external] = await Promise.all([
         getUploadedLongVideos(pageParam.page, pageParam.page === 1 ? 8 : 3, search || undefined),
-        getBangladeshExternalVideos(pageParam.page, 18, undefined, search || undefined, "long", 0, pageParam.token),
+        getBangladeshExternalVideos(pageParam.page, 18, undefined, search || undefined, "long", freshness, pageParam.token),
+
       ]);
       const videos = [...local.videos, ...external.videos].sort((a, b) => Number(b.view_count || 0) - Number(a.view_count || 0));
       return { videos, page: pageParam.page, nextPageToken: external.nextPageToken };
