@@ -16,6 +16,8 @@ export const submitRecharge = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => RechargeInput.parse(input))
   .handler(async ({ data, context }) => {
+    const { assertBalanceNotFrozen } = await import("./freeze-guard.server");
+    await assertBalanceNotFrozen(context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const mobile = data.mobile.replace(/\D/g, "");
 
