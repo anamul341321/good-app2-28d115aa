@@ -189,6 +189,7 @@ function AdminFaces() {
 
   return (
     <div>
+      <OnchainAudit />
       <div className="glass rounded-xl p-3 mb-3 space-y-2">
         <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
           Faces: {data?.length ?? 0} · Keys: {allKeys.length} · First: {firstVerifyKeys.length} · Re-verify: {reverifyKeys.length} · WL: {whitelistedKeys.length} · Not-WL: {notWhitelistedKeys.length}
