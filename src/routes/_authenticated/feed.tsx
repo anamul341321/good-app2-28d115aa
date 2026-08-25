@@ -7,7 +7,7 @@ import {
   getFeedPosts, createPost, notifyPostShared, toggleReaction, getUserReactions,
   getPostComments, addComment, uploadPostMedia, getActiveStories,
   createStory, uploadStoryMedia,
-  deletePost, deleteStory, deleteComment, toggleCommentLike,
+  deletePost, deleteStory, deleteComment, toggleCommentLike, updatePost,
   getUnreadNotificationCount, getNotifications, markNotificationsRead,
   REACTION_EMOJIS, type Post, type PostComment, type Story,
 } from "@/lib/feed-api";
@@ -17,7 +17,7 @@ import { getUnreadMessageCount } from "@/lib/chat.functions";
 import { usePresence } from "@/lib/presence";
 import {
   Heart, MessageCircle, Send, Image, X, Home, Users, Bell, Menu,
-  Plus, User, Search, Phone, Share2, Loader2, MoreHorizontal, Trash2, Globe, UserPlus, ChevronRight, ThumbsUp, Video, Check, ArrowLeft, Film,
+  Plus, User, Search, Phone, Share2, Loader2, MoreHorizontal, Trash2, Globe, UserPlus, ChevronRight, ThumbsUp, Video, Check, ArrowLeft, Film, Pencil, Lock,
 } from "lucide-react";
 import { toast } from "sonner";
 import StoryEditor from "@/components/social/StoryEditor";
@@ -84,6 +84,8 @@ function FeedPage() {
   const [showSearch, setShowSearch] = useState(false);
   const [viewingStory, setViewingStory] = useState<Story | null>(null);
   const [showPostMenu, setShowPostMenu] = useState<string | null>(null);
+  const [editingPost, setEditingPost] = useState<Post | null>(null);
+  const [editText, setEditText] = useState("");
   const [viewingImage, setViewingImage] = useState<string | null>(null);
   const [doubleTapTimer, setDoubleTapTimer] = useState<Record<string, number>>({});
   const [showLoveAnimation, setShowLoveAnimation] = useState<string | null>(null);
@@ -115,7 +117,7 @@ function FeedPage() {
   const { isLoading: postsLoading } = useQuery({
     queryKey: ["feed-posts", searchQuery, page],
     queryFn: async () => {
-      const newPosts = await getFeedPosts(POSTS_PER_PAGE, searchQuery, page * POSTS_PER_PAGE);
+      const newPosts = await getFeedPosts(POSTS_PER_PAGE, searchQuery, page * POSTS_PER_PAGE, user?.id);
       setHasMore(newPosts.length >= POSTS_PER_PAGE);
       if (page === 0) {
         setAllPosts((prev) => {
@@ -278,6 +280,34 @@ function FeedPage() {
       toast.success("পোস্ট মুছে ফেলা হয়েছে 🗑️");
       setShowPostMenu(null);
     },
+  });
+
+  const editPostMutation = useMutation({
+    mutationFn: async ({ postId, content }: { postId: string; content: string }) => {
+      if (!user) throw new Error("Login");
+      await updatePost(postId, user.id, { content });
+    },
+    onSuccess: (_d, vars) => {
+      setAllPosts((prev) => prev.map((p) => (p.id === vars.postId ? { ...p, content: vars.content } : p)));
+      setEditingPost(null);
+      queryClient.invalidateQueries({ queryKey: ["feed-posts"] });
+      toast.success("পোস্ট আপডেট হয়েছে ✅");
+    },
+    onError: () => toast.error("পোস্ট এডিট করা যায়নি"),
+  });
+
+  const visibilityMutation = useMutation({
+    mutationFn: async ({ postId, visibility }: { postId: string; visibility: "public" | "private" }) => {
+      if (!user) throw new Error("Login");
+      await updatePost(postId, user.id, { visibility });
+      return { postId, visibility };
+    },
+    onSuccess: ({ postId, visibility }) => {
+      setAllPosts((prev) => prev.map((p) => (p.id === postId ? ({ ...p, visibility } as any) : p)));
+      setShowPostMenu(null);
+      toast.success(visibility === "private" ? "পোস্ট এখন শুধু আপনি দেখবেন 🔒" : "পোস্ট এখন সবাই দেখবে 🌐");
+    },
+    onError: () => toast.error("প্রাইভেসি বদলানো যায়নি"),
   });
 
   const deleteStoryMutation = useMutation({
@@ -597,7 +627,9 @@ function FeedPage() {
               <div className="flex items-center gap-1 text-[12px] text-gray-500 dark:text-muted-foreground">
                 <span>{timeAgo(post.created_at)}</span>
                 <span>·</span>
-                <Globe className="w-3 h-3" />
+                {(post as any).visibility === "private"
+                  ? <Lock className="w-3 h-3" />
+                  : <Globe className="w-3 h-3" />}
               </div>
             </div>
             <div className="flex items-center gap-0.5">
@@ -609,10 +641,26 @@ function FeedPage() {
                 {showPostMenu === post.id && (
                   <div className="absolute right-0 top-full mt-1 bg-white dark:bg-card border border-gray-200 dark:border-border rounded-lg shadow-xl z-50 overflow-hidden min-w-[180px] animate-in fade-in zoom-in-95 duration-150">
                     {post.user_id === user.id ? (
-                      <button onClick={() => deletePostMutation.mutate(post.id)}
-                        className="w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 dark:hover:bg-destructive/10 text-sm font-medium transition-colors">
-                        <Trash2 className="w-4 h-4" /> পোস্ট মুছুন
-                      </button>
+                      <>
+                        <button onClick={() => { setEditingPost(post); setEditText(post.content || ""); setShowPostMenu(null); }}
+                          className="w-full flex items-center gap-3 px-4 py-3 text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-secondary text-sm font-medium transition-colors">
+                          <Pencil className="w-4 h-4" /> পোস্ট এডিট করুন
+                        </button>
+                        <button
+                          onClick={() => visibilityMutation.mutate({
+                            postId: post.id,
+                            visibility: (post as any).visibility === "private" ? "public" : "private",
+                          })}
+                          disabled={visibilityMutation.isPending}
+                          className="w-full flex items-center gap-3 px-4 py-3 text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-secondary text-sm font-medium transition-colors">
+                          {(post as any).visibility === "private" ? <Globe className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+                          {(post as any).visibility === "private" ? "সবার জন্য (Public) করুন" : "প্রাইভেট করুন (শুধু আমি)"}
+                        </button>
+                        <button onClick={() => deletePostMutation.mutate(post.id)}
+                          className="w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 dark:hover:bg-destructive/10 text-sm font-medium transition-colors">
+                          <Trash2 className="w-4 h-4" /> পোস্ট মুছুন
+                        </button>
+                      </>
                     ) : (
                       <>
                         <button onClick={() => { navigate({ to: "/feed/user/$userId", params: { userId: post.user_id } }); setShowPostMenu(null); }}
@@ -1332,6 +1380,32 @@ function FeedPage() {
           <FeedImg path={viewingImage} className="max-w-full max-h-full object-contain p-4" onClick={(e: any) => e.stopPropagation()} />
         </div>
       )}
+
+      {editingPost && (
+        <div className="fixed inset-0 z-[200] bg-black/60 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => setEditingPost(null)}>
+          <div className="w-full sm:max-w-lg bg-white dark:bg-card rounded-t-2xl sm:rounded-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-100 dark:border-border/30">
+              <button onClick={() => setEditingPost(null)} className="p-1"><X className="w-5 h-5" /></button>
+              <p className="flex-1 text-[16px] font-bold">পোস্ট এডিট করুন</p>
+              <button
+                onClick={() => editPostMutation.mutate({ postId: editingPost.id, content: editText })}
+                disabled={editPostMutation.isPending || !editText.trim()}
+                className="px-4 py-1.5 rounded-lg bg-blue-600 text-white text-[14px] font-bold disabled:opacity-50"
+              >
+                {editPostMutation.isPending ? "…" : "সেভ"}
+              </button>
+            </div>
+            <textarea
+              value={editText}
+              onChange={(e) => setEditText(e.target.value)}
+              rows={6}
+              className="w-full p-4 bg-transparent text-[16px] outline-none resize-none"
+              placeholder="কিছু লিখুন…"
+            />
+          </div>
+        </div>
+      )}
+
 
       {storyEditorFile && (
         <StoryEditor imageFile={storyEditorFile} onClose={() => setStoryEditorFile(null)} onPublish={handleStoryPublish} isPending={storyMutation.isPending} />

@@ -74,6 +74,14 @@ export type ExternalReelVideo = {
   comments_count?: number;
   view_count?: number;
   uploaded_at_text?: string | null;
+  channel_id?: string | null;
+};
+
+export type ExternalChannel = {
+  channel_id: string;
+  name: string;
+  avatar_url?: string | null;
+  subscribers_text?: string | null;
 };
 
 export type ChannelStats = {
@@ -473,7 +481,44 @@ function youtubeResultToExternal(item: any): ExternalReelVideo | null {
     country: "BD",
     view_count: Number(item?.viewCount || item?.view_count || 0) || undefined,
     uploaded_at_text: item?.publishedAt || item?.uploadedDate || item?.publishedText || null,
+    channel_id: item?.channelId || null,
   };
+}
+
+/** কারও চ্যানেলে ঢুকে তার সব ভিডিও/গান — YouTube channel feed */
+export async function fetchExternalChannelVideos(
+  channelId: string,
+  pageToken?: string,
+): Promise<{ channel: ExternalChannel | null; videos: ExternalReelVideo[]; nextPageToken?: string }> {
+  if (!channelId) return { channel: null, videos: [] };
+  try {
+    const params = new URLSearchParams({ action: "channel", channelId });
+    if (pageToken) params.set("pageToken", pageToken);
+    const res = await fetch(`/api/youtube-search?${params}`, { signal: AbortSignal.timeout(12000) });
+    if (!res.ok) return { channel: null, videos: [] };
+    const data: any = await res.json();
+    const videos = (Array.isArray(data?.results) ? data.results : [])
+      .map(youtubeResultToExternal)
+      .filter(Boolean) as ExternalReelVideo[];
+    return { channel: data?.channel ?? null, videos, nextPageToken: data?.nextPageToken };
+  } catch {
+    return { channel: null, videos: [] };
+  }
+}
+
+/** সার্চ করে চ্যানেল খোঁজা (Facebook/YouTube স্টাইল) */
+export async function searchExternalChannels(query: string): Promise<ExternalChannel[]> {
+  const trimmed = query.trim();
+  if (!trimmed) return [];
+  try {
+    const params = new URLSearchParams({ action: "channel-search", q: trimmed });
+    const res = await fetch(`/api/youtube-search?${params}`, { signal: AbortSignal.timeout(9000) });
+    if (!res.ok) return [];
+    const data: any = await res.json();
+    return Array.isArray(data?.channels) ? data.channels : [];
+  } catch {
+    return [];
+  }
 }
 
 async function fetchYouTubeVideos(
@@ -846,10 +891,14 @@ export async function hasUserPosted(userId: string): Promise<boolean> {
 }
 
 // Get feed posts with user info - paginated for performance
-export async function getFeedPosts(limit = 50, searchQuery?: string, offset = 0): Promise<Post[]> {
-  const query = db.from("posts").select("*")
+export async function getFeedPosts(limit = 50, searchQuery?: string, offset = 0, viewerId?: string): Promise<Post[]> {
+  // Private posts শুধু নিজের কাছে দেখাবে, বাকিরা শুধু public দেখবে
+  let query = db.from("posts").select("*")
     .order("created_at", { ascending: false })
     .range(offset, offset + limit - 1);
+  query = viewerId
+    ? query.or(`visibility.eq.public,user_id.eq.${viewerId}`)
+    : query.eq("visibility", "public");
 
   const { data: posts } = await query;
   if (!posts || posts.length === 0) return [];
@@ -1226,6 +1275,26 @@ export async function deletePost(postId: string, userId: string): Promise<void> 
   // Clean up reactions and comments
   await db.from("post_reactions").delete().eq("post_id", postId);
   await db.from("post_comments").delete().eq("post_id", postId);
+}
+
+export type PostVisibility = "public" | "private";
+
+/** পোস্ট এডিট (লেখা + প্রাইভেসি) — শুধু নিজের পোস্ট */
+export async function updatePost(
+  postId: string,
+  userId: string,
+  patch: { content?: string; visibility?: PostVisibility },
+): Promise<void> {
+  const payload: Record<string, any> = { edited_at: new Date().toISOString() };
+  if (typeof patch.content === "string") payload.content = patch.content;
+  if (patch.visibility) payload.visibility = patch.visibility;
+  const { error } = await db.from("posts").update(payload).eq("id", postId).eq("user_id", userId);
+  if (error) throw error;
+}
+
+/** পোস্টের প্রাইভেসি বদলানো — public ↔ private */
+export async function setPostVisibility(postId: string, userId: string, visibility: PostVisibility): Promise<void> {
+  return updatePost(postId, userId, { visibility });
 }
 
 // Delete a story (only owner)

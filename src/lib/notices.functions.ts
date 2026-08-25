@@ -17,68 +17,39 @@ export const getMyNotices = createServerFn({ method: "GET" })
     return (data ?? []) as Array<{ id: string; title: string | null; body: string; created_at: string }>;
   });
 
-/** নোটিফিকেশন সেন্টার — পড়া/অপঠিত সব নোটিফিকেশন */
+/**
+ * ড্যাশবোর্ডের নোটিফিকেশন সেন্টার — শুধু অ্যাডমিন/সিস্টেম নোটিশ।
+ * Feed (লাইক/কমেন্ট/মেনশন/ফ্রেন্ড) নোটিফিকেশন এখানে আসবে না,
+ * সেগুলো শুধু News Feed-এর নিজের নোটিফিকেশনে দেখা যাবে।
+ */
 export const getMyNotifications = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
-    const [{ data: notices }, { data: social }] = await Promise.all([
-      supabase
+    const { data: notices } = await supabase
       .from("user_notices")
       .select("id, title, body, created_at, read_at")
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
-        .limit(40),
-      (supabase as any)
-        .from("feed_notifications")
-        .select("id, type, content, created_at, is_read")
-        .eq("user_id", userId)
-        .order("created_at", { ascending: false })
-        .limit(40),
-    ]);
+      .limit(60);
     const noticeRows = (notices ?? []) as Array<{
       id: string; title: string | null; body: string; created_at: string; read_at: string | null;
     }>;
-    const socialRows = (social ?? []) as Array<{
-      id: string; type: string; content: string | null; created_at: string; is_read: boolean;
-    }>;
-    const items = [
-      ...noticeRows.map((r) => ({
-        id: `notice-${r.id}`,
-        rawId: r.id,
-        source: "notice" as const,
-        type: "notice",
-        title: r.title,
-        body: r.body,
-        createdAt: r.created_at,
-        read: !!r.read_at,
-      })),
-      ...socialRows.map((r) => ({
-        id: `social-${r.id}`,
-        rawId: r.id,
-        source: "social" as const,
-        type: r.type,
-        title: socialTitle(r.type),
-        body: r.content ?? socialTitle(r.type),
-        createdAt: r.created_at,
-        read: !!r.is_read,
-      })),
-    ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 60);
+    const items = noticeRows.map((r) => ({
+      id: `notice-${r.id}`,
+      rawId: r.id,
+      source: "notice" as const,
+      type: "notice",
+      title: r.title,
+      body: r.body,
+      createdAt: r.created_at,
+      read: !!r.read_at,
+    }));
     return {
       unread: items.filter((r) => !r.read).length,
       items,
     };
   });
-
-function socialTitle(type: string) {
-  if (type === "friend_request") return "ফ্রেন্ড রিকুয়েস্ট";
-  if (type === "friend_accept") return "নতুন বন্ধু";
-  if (type === "mention") return "মেন্টশন";
-  if (type === "comment") return "মন্তব্য";
-  if (type === "reply") return "রিপ্লাই";
-  if (type === "like") return "রিঅ্যাকশন";
-  return "নোটিফিকেশন";
-}
 
 /** সব নোটিফিকেশন পড়া হিসেবে মার্ক করো */
 export const markAllNoticesRead = createServerFn({ method: "POST" })
