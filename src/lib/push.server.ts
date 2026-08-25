@@ -125,7 +125,7 @@ export async function sendPushToTokens(
                 data: { ...(payload.data ?? {}), ...(payload.url ? { url: payload.url } : {}) },
                 android: {
                   priority: "HIGH",
-                  ttl: payload.call ? "45s" : undefined,
+                  ttl: payload.call ? "60s" : undefined,
                   collapseKey: payload.collapseKey,
                   notification: payload.call
                     ? undefined

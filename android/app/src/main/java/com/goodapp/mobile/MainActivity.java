@@ -13,6 +13,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.PowerManager;
 import android.provider.Settings;
 import android.media.AudioManager;
 import android.media.AudioDeviceInfo;
@@ -187,7 +188,7 @@ public class MainActivity extends BridgeActivity {
                 audio.requestAudioFocus(
                     callAudioFocus,
                     AudioManager.STREAM_VOICE_CALL,
-                    AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE
+                    AudioManager.AUDIOFOCUS_GAIN
                 );
                 audio.setMode(AudioManager.MODE_IN_COMMUNICATION);
                 audio.setMicrophoneMute(false);
@@ -205,6 +206,7 @@ public class MainActivity extends BridgeActivity {
                     audio.setSpeakerphoneOn(video);
                 }
                 getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                allowOverLockScreen(Uri.parse(APP_URL + "/chat?call=active"));
             });
         }
 
