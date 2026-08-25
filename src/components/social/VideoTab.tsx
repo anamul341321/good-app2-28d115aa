@@ -26,6 +26,7 @@ import {
   getUploadedLongVideos,
   fetchYouTubeSuggestions,
   trackVideoPreference,
+  notifyPostShared,
   toggleLike,
   getLocalVideoEngagement,
   getChannelStats,
@@ -470,6 +471,7 @@ function InlinePlayer({
         await navigator.clipboard.writeText(url);
         toast.success("লিংক কপি হয়েছে");
       }
+      if (isLocal && postId && userId) void notifyPostShared(postId, userId);
     } catch {
       // user cancelled
     }

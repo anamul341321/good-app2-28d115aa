@@ -1047,6 +1047,27 @@ export async function addComment(postId: string, userId: string, content: string
   return data;
 }
 
+// পোস্ট/ভিডিও শেয়ার করলে মালিককে নোটিফিকেশন
+export async function notifyPostShared(postId: string, userId: string): Promise<void> {
+  if (!postId || !userId) return;
+  try {
+    const [{ data: postOwner }, { data: senderData }] = await Promise.all([
+      db.from("posts").select("user_id").eq("id", postId).single(),
+      db.from("profiles").select("display_name").eq("id", userId).single(),
+    ]);
+    if (!postOwner?.user_id || postOwner.user_id === userId) return;
+    await db.from("feed_notifications").insert({
+      user_id: postOwner.user_id,
+      from_user_id: userId,
+      type: "share",
+      reference_id: postId,
+      content: `${senderData?.display_name || "কেউ"} আপনার পোস্ট/ভিডিও শেয়ার করেছে`,
+    });
+  } catch {
+    // no-op
+  }
+}
+
 // Delete comment
 export async function deleteComment(commentId: string, userId: string): Promise<void> {
   const { error } = await db.from("post_comments").delete().eq("id", commentId).eq("user_id", userId);
