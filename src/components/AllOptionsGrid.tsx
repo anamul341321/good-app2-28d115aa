@@ -12,7 +12,11 @@ import {
   User,
   Settings,
   Camera,
+  Newspaper,
+  Clapperboard,
+  Youtube,
   ChevronRight,
+
   type LucideIcon,
 } from "lucide-react";
 
