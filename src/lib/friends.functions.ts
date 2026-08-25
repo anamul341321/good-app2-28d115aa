@@ -5,6 +5,8 @@ type PersonRow = {
   id: string;
   display_name: string | null;
   uid_seq: number | null;
+  avatar_url?: string | null;
+  is_verified_badge?: boolean | null;
 };
 
 /** ইউজার খোঁজা — UID নম্বর অথবা নাম দিয়ে */
@@ -20,7 +22,7 @@ export const searchPeople = createServerFn({ method: "POST" })
     if (!isUid && data.query.length < 2) return { people: [] as PersonRow[] };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const numeric = Number(digits);
-    let builder = supabaseAdmin.from("profiles").select("id, display_name, uid_seq").limit(15);
+    let builder = supabaseAdmin.from("profiles").select("id, display_name, uid_seq, avatar_url, is_verified_badge").limit(15);
     builder =
       isUid && Number.isFinite(numeric) && numeric > 0
         ? builder.eq("uid_seq", numeric)
@@ -58,7 +60,7 @@ export const listFriends = createServerFn({ method: "GET" })
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const { data: profiles } = await supabaseAdmin
         .from("profiles")
-        .select("id, display_name, uid_seq")
+        .select("id, display_name, uid_seq, avatar_url, is_verified_badge")
         .in("id", ids);
       names = new Map(((profiles ?? []) as PersonRow[]).map((p) => [p.id, p]));
     }
@@ -71,6 +73,8 @@ export const listFriends = createServerFn({ method: "GET" })
         userId: otherId,
         name: person?.display_name ?? "ইউজার",
         uid: person?.uid_seq ?? null,
+        avatar_url: person?.avatar_url ?? null,
+        is_verified_badge: person?.is_verified_badge ?? null,
         status: r.status,
         incoming: r.addressee_id === me,
       };
