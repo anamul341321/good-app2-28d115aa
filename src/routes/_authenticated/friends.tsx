@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Check, Search, UserPlus, Users, X, Loader2, PhoneCall, MessageCircle, ChevronLeft } from "lucide-react";
 import {
@@ -9,6 +9,8 @@ import {
   searchPeople,
   sendFriendRequest,
   removeFriend,
+  getSuggestedPeople,
+  searchPeopleFull,
 } from "@/lib/friends.functions";
 import { CallButtons } from "@/components/CallProvider";
 import { MessengerAvatar } from "@/components/messenger/MessengerAvatar";
@@ -32,6 +34,10 @@ export const Route = createFileRoute("/_authenticated/friends")({
 
 function FriendsPage() {
   const [q, setQ] = useState("");
+  const [suggestedOffset, setSuggestedOffset] = useState(0);
+  const [suggestedPeople, setSuggestedPeople] = useState<any[]>([]);
+  const [suggestedHasMore, setSuggestedHasMore] = useState(true);
+  const queryClient = useQueryClient();
   const onlineIds = usePresence();
   const { data, refetch, isLoading } = useQuery({
     queryKey: ["friends"],
@@ -40,12 +46,30 @@ function FriendsPage() {
   });
 
   const search = useMutation({
-    mutationFn: (query: string) => searchPeople({ data: { query } }),
+    mutationFn: (query: string) => searchPeopleFull({ data: { query } }),
   });
+  const suggested = useQuery({
+    queryKey: ["suggested-people", suggestedOffset],
+    queryFn: () => getSuggestedPeople({ data: { limit: 20, offset: suggestedOffset } }),
+    staleTime: 60_000,
+  });
+
+  useEffect(() => {
+    if (!suggested.data) return;
+    const next = (suggested.data as any).people ?? [];
+    setSuggestedHasMore(Boolean((suggested.data as any).hasMore));
+    setSuggestedPeople((prev) => {
+      if (suggestedOffset === 0) return next;
+      const seen = new Set(prev.map((person: any) => person.id));
+      return [...prev, ...next.filter((person: any) => !seen.has(person.id))];
+    });
+  }, [suggested.data, suggestedOffset]);
   const add = useMutation({
     mutationFn: (userId: string) => sendFriendRequest({ data: { userId } }),
     onSuccess: (r: any) => {
       toast.success(r?.already ? "আগেই রিকোয়েস্ট আছে" : "ফ্রেন্ড রিকোয়েস্ট পাঠানো হয়েছে");
+      setSuggestedOffset(0);
+      queryClient.invalidateQueries({ queryKey: ["suggested-people"] });
       void refetch();
     },
     onError: () => toast.error("রিকোয়েস্ট পাঠানো যায়নি"),
@@ -106,12 +130,22 @@ function FriendsPage() {
                     <p className="truncate text-sm font-black">{p.display_name ?? "User"}</p>
                     <p className="text-[10px] font-bold text-muted-foreground uppercase">UID {p.uid_seq ?? "-"}</p>
                   </div>
-                  <button
-                    onClick={() => add.mutate(p.id)}
-                    className="btn-press flex items-center gap-1.5 rounded-full bg-surface-2 px-4 py-2 text-[11px] font-black text-foreground"
-                  >
-                    <UserPlus className="h-3.5 w-3.5" /> Add
-                  </button>
+                  {p.status === "accepted" ? (
+                    <Link to="/chat/$peerId" params={{ peerId: p.id }} className="btn-press flex items-center gap-1.5 rounded-full bg-primary/10 px-4 py-2 text-[11px] font-black text-primary">
+                      <MessageCircle className="h-3.5 w-3.5" /> Chat
+                    </Link>
+                  ) : p.status === "pending_sent" ? (
+                    <span className="rounded-full bg-surface-2 px-4 py-2 text-[11px] font-black text-muted-foreground">Sent</span>
+                  ) : p.status === "pending_received" ? (
+                    <button onClick={() => p.linkId && respond.mutate({ linkId: p.linkId, accept: true })} className="btn-press rounded-full bg-primary px-4 py-2 text-[11px] font-black text-white">Confirm</button>
+                  ) : (
+                    <button
+                      onClick={() => add.mutate(p.id)}
+                      className="btn-press flex items-center gap-1.5 rounded-full bg-surface-2 px-4 py-2 text-[11px] font-black text-foreground"
+                    >
+                      <UserPlus className="h-3.5 w-3.5" /> Add
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
@@ -188,6 +222,45 @@ function FriendsPage() {
               ))}
             </div>
           )}
+        </div>
+
+        {/* Suggested Friends */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between pl-1">
+            <h2 className="text-xs font-black uppercase text-muted-foreground tracking-wider">Suggested Friends</h2>
+          </div>
+          <div className="space-y-1">
+            {suggestedPeople.map((p: any) => (
+              <div key={p.id} className="flex items-center gap-3 py-2">
+                <MessengerAvatar name={p.display_name ?? "User"} online={onlineIds.has(p.id)} size="lg" />
+                <div className="flex-1 min-w-0">
+                  <p className="truncate text-sm font-black">{p.display_name ?? "User"}</p>
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase">
+                    UID {p.uid_seq ?? "-"}{p.mutualCount ? ` · ${p.mutualCount} mutual` : ""}
+                  </p>
+                </div>
+                <button
+                  onClick={() => add.mutate(p.id)}
+                  disabled={add.isPending || p.status === "pending_sent"}
+                  className="btn-press flex items-center gap-1.5 rounded-full bg-primary/10 px-4 py-2 text-[11px] font-black text-primary disabled:opacity-60"
+                >
+                  <UserPlus className="h-3.5 w-3.5" /> {p.status === "pending_sent" ? "Sent" : "Add"}
+                </button>
+              </div>
+            ))}
+            {suggested.isLoading && (
+              <div className="flex justify-center py-4"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>
+            )}
+            {suggestedHasMore && (
+              <button
+                onClick={() => setSuggestedOffset((value) => value + 20)}
+                disabled={suggested.isFetching}
+                className="btn-press w-full rounded-2xl bg-surface-2 py-3 text-sm font-black text-foreground disabled:opacity-60"
+              >
+                {suggested.isFetching ? "Loading..." : "আরও দেখুন"}
+              </button>
+            )}
+          </div>
         </div>
       </main>
 

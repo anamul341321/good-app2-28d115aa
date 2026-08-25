@@ -73,6 +73,7 @@ export type ExternalReelVideo = {
   likes_count?: number;
   comments_count?: number;
   view_count?: number;
+  uploaded_at_text?: string | null;
 };
 
 export type ChannelStats = {
@@ -431,6 +432,7 @@ function youtubeResultToExternal(item: any): ExternalReelVideo | null {
     category,
     country: "BD",
     view_count: Number(item?.viewCount || item?.view_count || 0) || undefined,
+    uploaded_at_text: item?.publishedAt || item?.uploadedDate || item?.publishedText || null,
   };
 }
 
@@ -954,12 +956,20 @@ export async function addComment(postId: string, userId: string, content: string
   } catch {}
 
   // Parse @mentions and create notifications
-  const mentions = content.match(/@([\w\s]+?)(?=\s@|\s*$|[.,!?])/g);
+  const mentions = content.match(/@([\w\s.-]+?)(?=\s@|\s*$|[.,!?])/g);
   if (mentions) {
     for (const mention of mentions) {
       const name = mention.slice(1).trim();
       if (!name) continue;
-      const { data: mentionedUsers } = await db.from("profiles").select("id").ilike("display_name", name).limit(1);
+      const digits = name.replace(/\D/g, "");
+      let mentionedUsers: Array<{ id: string }> | null = null;
+      if (digits && /^\d+$/.test(name)) {
+        const { data } = await db.from("profiles").select("id").eq("uid_seq", Number(digits)).limit(1);
+        mentionedUsers = data;
+      } else {
+        const { data } = await db.from("profiles").select("id").ilike("display_name", `%${name}%`).limit(1);
+        mentionedUsers = data;
+      }
       const mentioned = mentionedUsers && mentionedUsers.length > 0 ? mentionedUsers[0] : null;
       if (mentioned && mentioned.id !== userId && !notifiedUserIds.has(mentioned.id)) {
         await db.from("feed_notifications").insert({

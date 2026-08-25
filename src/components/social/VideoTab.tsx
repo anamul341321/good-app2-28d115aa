@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { Loader2, Play, Search } from "lucide-react";
+import { Loader2, MoreVertical, Play, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   getBangladeshExternalVideos,
@@ -18,6 +18,15 @@ export default function VideoTab() {
   const [search, setSearch] = useState("");
   const [playingId, setPlayingId] = useState<string | null>(null);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const chips = [
+    { label: "All", value: "" },
+    { label: "Music", value: "bangla new song" },
+    { label: "Mixes", value: "bangla mashup remix" },
+    { label: "Bangla", value: "bangla trending video" },
+    { label: "Natok", value: "bangla natok" },
+    { label: "News", value: "bangladesh news" },
+    { label: "Live", value: "bangla live song" },
+  ];
 
   const {
     data,
@@ -48,7 +57,7 @@ export default function VideoTab() {
     });
   }, [data]);
 
-  const playing = videos.find((video) => video.id === playingId) || videos[0] || null;
+  const playing = videos.find((video) => video.id === playingId) || null;
   const suggestedVideos = playing ? videos.filter((video) => video.id !== playing.id) : videos;
 
   useEffect(() => {
@@ -69,8 +78,9 @@ export default function VideoTab() {
   };
 
   return (
-    <div className="mx-auto max-w-3xl pb-6">
-      <div className="bg-white dark:bg-card mt-2 mx-1 rounded-lg p-3">
+    <div className="mx-auto max-w-lg pb-6 bg-white dark:bg-background min-h-screen">
+      <div className="sticky top-[96px] z-30 bg-white dark:bg-card border-b border-gray-100 dark:border-border/30">
+        <div className="px-3 py-2">
         <form
           onSubmit={(event) => {
             event.preventDefault();
@@ -87,6 +97,28 @@ export default function VideoTab() {
             className="w-full bg-gray-100 dark:bg-secondary text-gray-900 dark:text-foreground rounded-full pl-10 pr-4 py-2 text-sm border-none outline-none placeholder:text-gray-400"
           />
         </form>
+        </div>
+        <div className="flex gap-2 overflow-x-auto px-3 pb-2 scrollbar-hide">
+          {chips.map((chip) => {
+            const active = search === chip.value || (!search && chip.value === "");
+            return (
+              <Button
+                key={chip.label}
+                type="button"
+                variant={active ? "default" : "secondary"}
+                size="sm"
+                className="h-8 shrink-0 rounded-lg px-3 text-[13px] font-bold"
+                onClick={() => {
+                  setQuery(chip.value);
+                  setSearch(chip.value);
+                  setPlayingId(null);
+                }}
+              >
+                {chip.label}
+              </Button>
+            );
+          })}
+        </div>
       </div>
 
       {isLoading ? (
@@ -96,12 +128,8 @@ export default function VideoTab() {
       ) : videos.length === 0 ? (
         <p className="py-16 text-center text-sm font-bold text-gray-500">কোনো ভিডিও পাওয়া যায়নি</p>
       ) : (
-        <div className="mt-2 space-y-2">
+        <div className="space-y-1">
           {playing && <InlinePlayer video={playing} />}
-
-          <div className="px-2 pt-1">
-            <p className="text-[14px] font-black text-gray-900 dark:text-foreground">Suggested videos</p>
-          </div>
 
           {suggestedVideos.map((video) => (
             <VideoCard key={video.id} video={video} onPlay={() => playVideo(video)} />
@@ -124,8 +152,19 @@ function InlinePlayer({ video }: { video: ExternalReelVideo }) {
   const source = useFeedMedia(video.source === "good-app" ? video.video_url : undefined);
   const viewLabel = formatViews(video.view_count);
 
+  useEffect(() => {
+    try {
+      (window as any).GoodAppDownloader?.beginMediaPlayback?.();
+    } catch {}
+    return () => {
+      try {
+        (window as any).GoodAppDownloader?.endMediaPlayback?.();
+      } catch {}
+    };
+  }, [video.id]);
+
   return (
-    <div className="bg-white dark:bg-card">
+    <div className="bg-white dark:bg-card border-b border-gray-100 dark:border-border/30">
       <div className="aspect-video w-full bg-black">
         {video.source === "good-app" ? (
           <video src={source} controls autoPlay playsInline className="h-full w-full" />
@@ -155,8 +194,8 @@ function VideoCard({ video, onPlay }: { video: ExternalReelVideo; onPlay: () => 
 
   return (
     <Button variant="ghost" onClick={onPlay} className="block h-auto w-full rounded-none p-0 text-left hover:bg-transparent">
-      <span className="flex w-full gap-3 bg-white dark:bg-card p-2 active:scale-[0.99] transition">
-        <span className="relative aspect-video w-[42%] max-w-[190px] shrink-0 overflow-hidden rounded-lg bg-gray-200 dark:bg-secondary">
+      <span className="block w-full bg-white dark:bg-card pb-3 active:scale-[0.995] transition">
+        <span className="relative block aspect-video w-full overflow-hidden bg-gray-200 dark:bg-secondary">
           {thumb ? <img src={thumb} alt={video.title} className="h-full w-full object-cover" /> : null}
           <span className="absolute inset-0 flex items-center justify-center">
             <span className="flex h-9 w-9 items-center justify-center rounded-full bg-black/55">
@@ -169,10 +208,18 @@ function VideoCard({ video, onPlay }: { video: ExternalReelVideo; onPlay: () => 
             </span>
           ) : null}
         </span>
-        <span className="min-w-0 flex-1">
-          <span className="line-clamp-2 text-[14px] font-black leading-snug text-gray-900 dark:text-foreground">{video.title}</span>
-          <span className="mt-1 block truncate text-[12px] font-semibold text-gray-500 dark:text-muted-foreground">
-            {video.creator || "Unknown"} · {viewLabel ? `${viewLabel} views` : video.source === "good-app" ? "good-app" : "YouTube"}
+        <span className="flex gap-3 px-3 pt-2.5">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-gray-200 dark:bg-secondary text-[13px] font-black text-gray-600 dark:text-muted-foreground">
+            {(video.creator || "Y").slice(0, 1).toUpperCase()}
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="line-clamp-2 text-[15px] font-black leading-snug text-gray-950 dark:text-foreground">{video.title}</span>
+            <span className="mt-1 block truncate text-[12px] font-semibold text-gray-500 dark:text-muted-foreground">
+              {video.creator || "YouTube"} · {viewLabel ? `${viewLabel} views` : video.source === "good-app" ? "Good-App" : "Suggested"}
+            </span>
+          </span>
+          <span className="mt-0.5 shrink-0 text-gray-500 dark:text-muted-foreground">
+            <MoreVertical className="h-5 w-5" />
           </span>
         </span>
       </span>
