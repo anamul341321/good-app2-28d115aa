@@ -495,6 +495,7 @@ function FeedPage() {
     try {
       const shareContent = post.content ? `শেয়ার করেছে: "${post.content}"` : "একটি পোস্ট শেয়ার করেছে";
       await createPost(user.id, shareContent, post.image_url || undefined, post.video_url || undefined);
+      void notifyPostShared(post.id, user.id);
       queryClient.invalidateQueries({ queryKey: ["feed-posts"] });
       toast.success("আপনার প্রোফাইলে শেয়ার করা হয়েছে! ✅");
     } catch {
