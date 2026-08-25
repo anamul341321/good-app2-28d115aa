@@ -74,6 +74,14 @@ export type ExternalReelVideo = {
   comments_count?: number;
   view_count?: number;
   uploaded_at_text?: string | null;
+  channel_id?: string | null;
+};
+
+export type ExternalChannel = {
+  channel_id: string;
+  name: string;
+  avatar_url?: string | null;
+  subscribers_text?: string | null;
 };
 
 export type ChannelStats = {
