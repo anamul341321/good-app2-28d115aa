@@ -630,6 +630,13 @@ const ROTATING_QUERIES = [
   "bangla song remix", "rabindra sangeet", "nazrul geeti",
 ];
 
+// Short-form only queries for the reels feed
+const SHORTS_QUERIES = [
+  "bangla shorts", "bangla funny shorts", "bangla song shorts",
+  "bangladeshi shorts video", "bangla dance shorts", "bangla comedy shorts",
+  "bangla reels shorts", "bangla status video shorts", "bangla tiktok shorts",
+];
+
 export async function getBangladeshExternalVideos(
   page = 1,
   rows = 10,
@@ -640,13 +647,17 @@ export async function getBangladeshExternalVideos(
   pageToken?: string,
 ): Promise<{ videos: ExternalReelVideo[]; hasMore: boolean; categories?: string[]; nextPageToken?: string }> {
   const trimmedQuery = searchQuery?.trim();
+  const isShort = mode === "short";
 
   // Use YouTube only - with viewCount order for trending feel when no query
   const order = trimmedQuery ? "relevance" : "viewCount";
 
   // If no pageToken and page > 1 and no user query, use rotating queries for variety
   let effectiveQuery = trimmedQuery;
-  if (!trimmedQuery && !pageToken && page > 1) {
+  if (isShort) {
+    const base = trimmedQuery || SHORTS_QUERIES[(page + freshnessToken) % SHORTS_QUERIES.length];
+    effectiveQuery = /#?shorts/i.test(base) ? base : `${base} #shorts`;
+  } else if (!trimmedQuery && !pageToken && page > 1) {
     const idx = (page + freshnessToken) % ROTATING_QUERIES.length;
     effectiveQuery = ROTATING_QUERIES[idx];
   }
@@ -654,6 +665,14 @@ export async function getBangladeshExternalVideos(
   const ytResult = await fetchYouTubeVideos(effectiveQuery, Math.max(rows, 30), order, pageToken);
 
   let videos = ytResult.videos;
+
+  if (isShort) {
+    // Reels must only contain short-form clips — drop long videos entirely
+    videos = videos.filter((v) => {
+      if (typeof v.duration === "number" && v.duration > 0) return v.duration <= 180;
+      return /#?shorts/i.test(v.title || "");
+    });
+  }
 
   // Avoid repeating recently shown videos
   const recentIds = readRecentVideoIds();

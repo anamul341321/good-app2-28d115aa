@@ -29,6 +29,7 @@ import {
   type Post,
   type ExternalReelVideo,
   type PostComment,
+  LONG_VIDEO_MARKER,
 } from "@/lib/feed-api";
 import { useFeedMedia } from "@/lib/feed-media";
 import { MessengerAvatar } from "@/components/messenger/MessengerAvatar";
@@ -75,7 +76,9 @@ function useCombinedReels() {
   });
 
   const items = useMemo<ReelItem[]>(() => {
-    const localVideos = (localQuery.data || []).filter((p) => !!p.video_url);
+    const localVideos = (localQuery.data || []).filter(
+      (p) => !!p.video_url && !(p.content || "").startsWith(LONG_VIDEO_MARKER),
+    );
     const external = externalQuery.data?.videos || [];
     const merged: ReelItem[] = [];
     const maxLen = Math.max(localVideos.length, external.length);
