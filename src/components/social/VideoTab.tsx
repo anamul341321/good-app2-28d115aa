@@ -378,11 +378,13 @@ function InlinePlayer({
   const [commentText, setCommentText] = useState("");
 
   const relatedSearch = useMemo(() => buildRelatedSearchTerm(video), [video]);
+  const relatedFreshness = useMemo(() => Math.floor(Date.now() / (3 * 60 * 1000)) % 9973, [video.id]);
   const { data: relatedData, isLoading: relatedLoading } = useQuery({
-    queryKey: ["video-related", video.id, relatedSearch],
-    queryFn: () => getBangladeshExternalVideos(1, 18, undefined, relatedSearch, "long"),
-    staleTime: 15 * 60 * 1000,
+    queryKey: ["video-related", video.id, relatedSearch, relatedFreshness],
+    queryFn: () => getBangladeshExternalVideos(1, 18, undefined, relatedSearch, "long", relatedFreshness),
+    staleTime: 3 * 60 * 1000,
   });
+
 
   const visibleSuggestedVideos = useMemo(() => {
     const seen = new Set([video.id]);
