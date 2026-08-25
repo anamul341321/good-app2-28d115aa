@@ -630,6 +630,36 @@ const ROTATING_QUERIES = [
   "bangla song remix", "rabindra sangeet", "nazrul geeti",
 ];
 
+// Fresh / viral discovery queries — always new uploads, movies, natok
+const FRESH_QUERIES = [
+  "new bangla song this week", "bangla viral song 2026", "bangla new natok 2026",
+  "bangla new movie song", "bangla trending video today", "new bengali movie trailer",
+  "bangla new album 2026", "bangla viral video 2026", "bangla new drama",
+  "bangla new music video release", "bangla short film new", "bengali new web series",
+  "bangla new gaan 2026", "bangla viral reels song", "bangladeshi new natok full",
+];
+
+// Taste based queries — driven by what the user watches most
+const CATEGORY_QUERIES: Record<string, string[]> = {
+  romantic: ["bangla new romantic song 2026", "bengali love song new"],
+  sad: ["bangla new sad song 2026", "bangla kosto song new"],
+  slowed: ["bangla slowed reverb new", "bangla lofi song new"],
+  live: ["bangla live stage new", "bangla concert 2026"],
+  natok: ["bangla new natok 2026", "bengali new movie 2026", "bangla new drama full"],
+  comedy: ["bangla new funny video 2026", "bangla comedy natok new"],
+  music: ["bangla new song 2026", "bangla new music video"],
+  general: ["bangla trending video today", "bangla viral video 2026"],
+};
+
+function tasteQueries(): string[] {
+  const preferred = topPreferredCategories(3);
+  const out: string[] = [];
+  for (const key of preferred) {
+    for (const q of CATEGORY_QUERIES[key] || []) out.push(q);
+  }
+  return out;
+}
+
 // Short-form only queries for the reels feed
 const SHORTS_QUERIES = [
   "bangla shorts", "bangla funny shorts", "bangla song shorts",
@@ -649,18 +679,22 @@ export async function getBangladeshExternalVideos(
   const trimmedQuery = searchQuery?.trim();
   const isShort = mode === "short";
 
-  // Use YouTube only - with viewCount order for trending feel when no query
-  const order = trimmedQuery ? "relevance" : "viewCount";
+  // No query → alternate between most-viewed and newest uploads so the list
+  // keeps bringing new/viral content instead of the same rows every time.
+  const rotationIndex = page + freshnessToken;
+  const order = trimmedQuery ? "relevance" : (rotationIndex % 2 === 0 ? "viewCount" : "date");
 
-  // If no pageToken and page > 1 and no user query, use rotating queries for variety
   let effectiveQuery = trimmedQuery;
   if (isShort) {
-    const base = trimmedQuery || SHORTS_QUERIES[(page + freshnessToken) % SHORTS_QUERIES.length];
+    const base = trimmedQuery || SHORTS_QUERIES[rotationIndex % SHORTS_QUERIES.length];
     effectiveQuery = /#?shorts/i.test(base) ? base : `${base} #shorts`;
-  } else if (!trimmedQuery && !pageToken && page > 1) {
-    const idx = (page + freshnessToken) % ROTATING_QUERIES.length;
-    effectiveQuery = ROTATING_QUERIES[idx];
+  } else if (!trimmedQuery && !pageToken) {
+    // Mix: what the user watches most + always-fresh viral/movie/natok queries
+    const taste = tasteQueries();
+    const pool = [...taste, ...FRESH_QUERIES, ...ROTATING_QUERIES];
+    effectiveQuery = pool.length > 0 ? pool[rotationIndex % pool.length] : undefined;
   }
+
 
   const ytResult = await fetchYouTubeVideos(effectiveQuery, Math.max(rows, 30), order, pageToken);
 
