@@ -200,9 +200,10 @@ function ReelsPage() {
       ) : (
         <div
           ref={containerRef}
-          className="h-full w-full snap-y snap-mandatory overflow-y-scroll scroll-smooth"
-          style={{ scrollbarWidth: "none" }}
+          className="h-full w-full snap-y snap-mandatory overflow-y-scroll overscroll-contain scroll-smooth"
+          style={{ scrollbarWidth: "none", touchAction: "pan-y" }}
         >
+
           {items.map((item) => (
             <ReelSlide
               key={item.id}
