@@ -20,6 +20,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as CardUidRouteImport } from './routes/card.$uid'
+import { Route as ApiYoutubeSearchRouteImport } from './routes/api/youtube-search'
 import { Route as AdminWithdrawalsRouteImport } from './routes/admin/withdrawals'
 import { Route as AdminWalletsRouteImport } from './routes/admin/wallets'
 import { Route as AdminUsersRouteImport } from './routes/admin/users'
@@ -129,6 +130,11 @@ const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
 const CardUidRoute = CardUidRouteImport.update({
   id: '/card/$uid',
   path: '/card/$uid',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiYoutubeSearchRoute = ApiYoutubeSearchRouteImport.update({
+  id: '/api/youtube-search',
+  path: '/api/youtube-search',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminWithdrawalsRoute = AdminWithdrawalsRouteImport.update({
@@ -459,6 +465,7 @@ export interface FileRoutesByFullPath {
   '/admin/users': typeof AdminUsersRoute
   '/admin/wallets': typeof AdminWalletsRoute
   '/admin/withdrawals': typeof AdminWithdrawalsRoute
+  '/api/youtube-search': typeof ApiYoutubeSearchRoute
   '/card/$uid': typeof CardUidRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/admin/': typeof AdminIndexRoute
@@ -526,6 +533,7 @@ export interface FileRoutesByTo {
   '/admin/users': typeof AdminUsersRoute
   '/admin/wallets': typeof AdminWalletsRoute
   '/admin/withdrawals': typeof AdminWithdrawalsRoute
+  '/api/youtube-search': typeof ApiYoutubeSearchRoute
   '/card/$uid': typeof CardUidRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/admin': typeof AdminIndexRoute
@@ -596,6 +604,7 @@ export interface FileRoutesById {
   '/admin/users': typeof AdminUsersRoute
   '/admin/wallets': typeof AdminWalletsRoute
   '/admin/withdrawals': typeof AdminWithdrawalsRoute
+  '/api/youtube-search': typeof ApiYoutubeSearchRoute
   '/card/$uid': typeof CardUidRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/admin/': typeof AdminIndexRoute
@@ -666,6 +675,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/admin/wallets'
     | '/admin/withdrawals'
+    | '/api/youtube-search'
     | '/card/$uid'
     | '/email/unsubscribe'
     | '/admin/'
@@ -733,6 +743,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/admin/wallets'
     | '/admin/withdrawals'
+    | '/api/youtube-search'
     | '/card/$uid'
     | '/email/unsubscribe'
     | '/admin'
@@ -802,6 +813,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/admin/wallets'
     | '/admin/withdrawals'
+    | '/api/youtube-search'
     | '/card/$uid'
     | '/email/unsubscribe'
     | '/admin/'
@@ -841,6 +853,7 @@ export interface RootRouteChildren {
   DataSafetyRoute: typeof DataSafetyRoute
   PrivacyRoute: typeof PrivacyRoute
   TermsRoute: typeof TermsRoute
+  ApiYoutubeSearchRoute: typeof ApiYoutubeSearchRoute
   CardUidRoute: typeof CardUidRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   ApiPublicHisabCardRoute: typeof ApiPublicHisabCardRoute
@@ -941,6 +954,13 @@ declare module '@tanstack/react-router' {
       path: '/card/$uid'
       fullPath: '/card/$uid'
       preLoaderRoute: typeof CardUidRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/youtube-search': {
+      id: '/api/youtube-search'
+      path: '/api/youtube-search'
+      fullPath: '/api/youtube-search'
+      preLoaderRoute: typeof ApiYoutubeSearchRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/withdrawals': {
@@ -1449,6 +1469,7 @@ const rootRouteChildren: RootRouteChildren = {
   DataSafetyRoute: DataSafetyRoute,
   PrivacyRoute: PrivacyRoute,
   TermsRoute: TermsRoute,
+  ApiYoutubeSearchRoute: ApiYoutubeSearchRoute,
   CardUidRoute: CardUidRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   ApiPublicHisabCardRoute: ApiPublicHisabCardRoute,
