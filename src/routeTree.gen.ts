@@ -83,6 +83,7 @@ import { Route as ApiPublicChatReplyRouteImport } from './routes/api/public/chat
 import { Route as ApiPublicCeloSweepRunRouteImport } from './routes/api/public/celo-sweep/run'
 import { Route as ApiPublicBroadcastRunRouteImport } from './routes/api/public/broadcast/run'
 import { Route as ApiPublicAppDownloadRouteImport } from './routes/api/public/app/download'
+import { Route as AuthenticatedFeedUserUserIdRouteImport } from './routes/_authenticated/feed/user.$userId'
 import { Route as AuthenticatedChatGroupGroupIdRouteImport } from './routes/_authenticated/chat.group.$groupId'
 
 const TermsRoute = TermsRouteImport.update({
@@ -463,6 +464,12 @@ const ApiPublicAppDownloadRoute = ApiPublicAppDownloadRouteImport.update({
   path: '/api/public/app/download',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedFeedUserUserIdRoute =
+  AuthenticatedFeedUserUserIdRouteImport.update({
+    id: '/user/$userId',
+    path: '/user/$userId',
+    getParentRoute: () => AuthenticatedFeedRoute,
+  } as any)
 const AuthenticatedChatGroupGroupIdRoute =
   AuthenticatedChatGroupGroupIdRouteImport.update({
     id: '/chat/group/$groupId',
@@ -479,7 +486,7 @@ export interface FileRoutesByFullPath {
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
   '/earnings': typeof AuthenticatedEarningsRoute
-  '/feed': typeof AuthenticatedFeedRoute
+  '/feed': typeof AuthenticatedFeedRouteWithChildren
   '/friends': typeof AuthenticatedFriendsRoute
   '/history': typeof AuthenticatedHistoryRoute
   '/home': typeof AuthenticatedHomeRoute
@@ -532,6 +539,7 @@ export interface FileRoutesByFullPath {
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/chat/': typeof AuthenticatedChatIndexRoute
   '/chat/group/$groupId': typeof AuthenticatedChatGroupGroupIdRoute
+  '/feed/user/$userId': typeof AuthenticatedFeedUserUserIdRoute
   '/api/public/app/download': typeof ApiPublicAppDownloadRoute
   '/api/public/broadcast/run': typeof ApiPublicBroadcastRunRoute
   '/api/public/celo-sweep/run': typeof ApiPublicCeloSweepRunRoute
@@ -554,7 +562,7 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
   '/earnings': typeof AuthenticatedEarningsRoute
-  '/feed': typeof AuthenticatedFeedRoute
+  '/feed': typeof AuthenticatedFeedRouteWithChildren
   '/friends': typeof AuthenticatedFriendsRoute
   '/history': typeof AuthenticatedHistoryRoute
   '/home': typeof AuthenticatedHomeRoute
@@ -607,6 +615,7 @@ export interface FileRoutesByTo {
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/chat': typeof AuthenticatedChatIndexRoute
   '/chat/group/$groupId': typeof AuthenticatedChatGroupGroupIdRoute
+  '/feed/user/$userId': typeof AuthenticatedFeedUserUserIdRoute
   '/api/public/app/download': typeof ApiPublicAppDownloadRoute
   '/api/public/broadcast/run': typeof ApiPublicBroadcastRunRoute
   '/api/public/celo-sweep/run': typeof ApiPublicCeloSweepRunRoute
@@ -632,7 +641,7 @@ export interface FileRoutesById {
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
   '/_authenticated/earnings': typeof AuthenticatedEarningsRoute
-  '/_authenticated/feed': typeof AuthenticatedFeedRoute
+  '/_authenticated/feed': typeof AuthenticatedFeedRouteWithChildren
   '/_authenticated/friends': typeof AuthenticatedFriendsRoute
   '/_authenticated/history': typeof AuthenticatedHistoryRoute
   '/_authenticated/home': typeof AuthenticatedHomeRoute
@@ -685,6 +694,7 @@ export interface FileRoutesById {
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/_authenticated/chat/': typeof AuthenticatedChatIndexRoute
   '/_authenticated/chat/group/$groupId': typeof AuthenticatedChatGroupGroupIdRoute
+  '/_authenticated/feed/user/$userId': typeof AuthenticatedFeedUserUserIdRoute
   '/api/public/app/download': typeof ApiPublicAppDownloadRoute
   '/api/public/broadcast/run': typeof ApiPublicBroadcastRunRoute
   '/api/public/celo-sweep/run': typeof ApiPublicCeloSweepRunRoute
@@ -763,6 +773,7 @@ export interface FileRouteTypes {
     | '/lovable/email/suppression'
     | '/chat/'
     | '/chat/group/$groupId'
+    | '/feed/user/$userId'
     | '/api/public/app/download'
     | '/api/public/broadcast/run'
     | '/api/public/celo-sweep/run'
@@ -838,6 +849,7 @@ export interface FileRouteTypes {
     | '/lovable/email/suppression'
     | '/chat'
     | '/chat/group/$groupId'
+    | '/feed/user/$userId'
     | '/api/public/app/download'
     | '/api/public/broadcast/run'
     | '/api/public/celo-sweep/run'
@@ -915,6 +927,7 @@ export interface FileRouteTypes {
     | '/lovable/email/suppression'
     | '/_authenticated/chat/'
     | '/_authenticated/chat/group/$groupId'
+    | '/_authenticated/feed/user/$userId'
     | '/api/public/app/download'
     | '/api/public/broadcast/run'
     | '/api/public/celo-sweep/run'
@@ -1485,6 +1498,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAppDownloadRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/feed/user/$userId': {
+      id: '/_authenticated/feed/user/$userId'
+      path: '/user/$userId'
+      fullPath: '/feed/user/$userId'
+      preLoaderRoute: typeof AuthenticatedFeedUserUserIdRouteImport
+      parentRoute: typeof AuthenticatedFeedRoute
+    }
     '/_authenticated/chat/group/$groupId': {
       id: '/_authenticated/chat/group/$groupId'
       path: '/chat/group/$groupId'
@@ -1494,6 +1514,17 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface AuthenticatedFeedRouteChildren {
+  AuthenticatedFeedUserUserIdRoute: typeof AuthenticatedFeedUserUserIdRoute
+}
+
+const AuthenticatedFeedRouteChildren: AuthenticatedFeedRouteChildren = {
+  AuthenticatedFeedUserUserIdRoute: AuthenticatedFeedUserUserIdRoute,
+}
+
+const AuthenticatedFeedRouteWithChildren =
+  AuthenticatedFeedRoute._addFileChildren(AuthenticatedFeedRouteChildren)
 
 interface AuthenticatedSocialRouteChildren {
   AuthenticatedSocialMessengerRoute: typeof AuthenticatedSocialMessengerRoute
@@ -1508,7 +1539,7 @@ const AuthenticatedSocialRouteWithChildren =
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedEarningsRoute: typeof AuthenticatedEarningsRoute
-  AuthenticatedFeedRoute: typeof AuthenticatedFeedRoute
+  AuthenticatedFeedRoute: typeof AuthenticatedFeedRouteWithChildren
   AuthenticatedFriendsRoute: typeof AuthenticatedFriendsRoute
   AuthenticatedHistoryRoute: typeof AuthenticatedHistoryRoute
   AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
@@ -1536,7 +1567,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedEarningsRoute: AuthenticatedEarningsRoute,
-  AuthenticatedFeedRoute: AuthenticatedFeedRoute,
+  AuthenticatedFeedRoute: AuthenticatedFeedRouteWithChildren,
   AuthenticatedFriendsRoute: AuthenticatedFriendsRoute,
   AuthenticatedHistoryRoute: AuthenticatedHistoryRoute,
   AuthenticatedHomeRoute: AuthenticatedHomeRoute,

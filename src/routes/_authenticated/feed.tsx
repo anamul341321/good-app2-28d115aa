@@ -44,7 +44,7 @@ function Avatar({ path, className, fallback }: { path?: string | null; className
   return <span className="text-blue-600 dark:text-primary font-bold text-sm">{fallback}</span>;
 }
 
-function FeedImg({ path, className, onClick }: { path: string; className?: string; onClick?: () => void }) {
+function FeedImg({ path, className, onClick }: { path: string; className?: string; onClick?: (e: React.MouseEvent<HTMLImageElement>) => void }) {
   const url = useFeedMedia(path);
   return <img src={url} alt="" className={className} onClick={onClick} />;
 }
