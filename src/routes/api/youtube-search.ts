@@ -511,6 +511,27 @@ async function handle(request: Request): Promise<Response> {
       return new Response(JSON.stringify(response), { headers: jsonHeaders });
     }
 
+    if (action === "channel") {
+      const channelId = String(url.searchParams.get("channelId") || "").trim().slice(0, 60);
+      if (!channelId) return new Response(JSON.stringify({ channel: null, results: [] }), { headers: jsonHeaders });
+      const cacheKey = `${CACHE_VERSION}:channel:${channelId}:${pageToken || ""}`;
+      const cached = getCached(cacheKey, CACHE_TTL_SEARCH);
+      if (cached) return new Response(JSON.stringify(cached), { headers: jsonHeaders });
+      const response = await fetchChannelVideos(channelId, pageToken);
+      if (response.results.length > 0) setCache(cacheKey, response);
+      return new Response(JSON.stringify(response), { headers: jsonHeaders });
+    }
+
+    if (action === "channel-search") {
+      const cacheKey = `${CACHE_VERSION}:channelsearch:${query}`;
+      const cached = getCached(cacheKey, CACHE_TTL_SEARCH);
+      if (cached) return new Response(JSON.stringify(cached), { headers: jsonHeaders });
+      const channels = await searchChannels(query);
+      const response = { channels };
+      if (channels.length > 0) setCache(cacheKey, response);
+      return new Response(JSON.stringify(response), { headers: jsonHeaders });
+    }
+
     if (action === "key-status") {
       const keys = await getAllApiKeys();
       const shouldProbe = url.searchParams.get("probe") === "1";
