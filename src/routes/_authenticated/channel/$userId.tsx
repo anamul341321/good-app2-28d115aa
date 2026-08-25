@@ -1,8 +1,8 @@
-import { createFileRoute, Link, useParams } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useParams } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Loader2, Video, Users, Play } from "lucide-react";
+import { Loader2, Video, Users, Play, ArrowLeft, UploadCloud } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   getChannelStats,
@@ -13,6 +13,7 @@ import {
 import { useFeedMedia } from "@/lib/feed-media";
 import { MessengerAvatar } from "@/components/messenger/MessengerAvatar";
 import { Button } from "@/components/ui/button";
+
 
 export const Route = createFileRoute("/_authenticated/channel/$userId")({
   component: ChannelPage,
