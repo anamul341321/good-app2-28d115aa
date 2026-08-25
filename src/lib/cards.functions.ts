@@ -24,6 +24,8 @@ export const purchaseCard = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => z.object({ productId: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
+    const { assertBalanceNotFrozen } = await import("./freeze-guard.server");
+    await assertBalanceNotFrozen(context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: res, error } = await supabaseAdmin.rpc("purchase_card", {
       _user_id: context.userId,

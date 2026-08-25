@@ -12,6 +12,8 @@ export const sendBalance = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => SendInput.parse(input))
   .handler(async ({ data, context }) => {
+    const { assertBalanceNotFrozen } = await import("./freeze-guard.server");
+    await assertBalanceNotFrozen(context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const fee = Math.floor(data.amount * 0.2);
     const { data: res, error } = await supabaseAdmin.rpc("send_balance_transfer", {

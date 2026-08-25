@@ -136,6 +136,15 @@ function UserDetail() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  // অন্য account (যে টাকা পেয়েছে) সরাসরি এখান থেকেই freeze/unfreeze করা যায়।
+  const setFrozenOther = useMutation({
+    mutationFn: (v: { userId: string; frozen: boolean; reason?: string }) =>
+      adminSetBalanceFrozen({ data: { userId: v.userId, frozen: v.frozen, reason: v.reason ?? null } }),
+    onSuccess: (_r, v) => { toast.success(v.frozen ? "🧊 ওই account-এর ব্যালেন্স freeze হলো" : "✅ ওই account আবার চালু"); refetch(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+
   const setUnlock = useMutation({
     mutationFn: (unlocked: boolean) => adminSetReferralUnlock({ data: { userId, unlocked } }),
     onSuccess: (_r, unlocked) => { toast.success(unlocked ? "🔓 Referral link unlock করা হলো" : "🔒 Referral link lock করা হলো"); refetch(); },
@@ -1262,6 +1271,83 @@ function UserDetail() {
           </div>
         );
       })()}
+
+      {/* কে টাকা পাঠিয়েছে ও কোন account-এ টাকা গেছে — নাম/UID সহ */}
+      {(() => {
+        const d = data as any;
+        const out = (d.transfersOut ?? []) as any[];
+        const inn = (d.transfersIn ?? []) as any[];
+        if (!out.length && !inn.length) return null;
+        const Row = ({ t, dir }: { t: any; dir: "in" | "out" }) => {
+          const p = dir === "in" ? t.sender : t.receiver;
+          return (
+            <div className="rounded-xl bg-background/60 border border-border p-2.5 space-y-1">
+              <div className="flex items-center justify-between gap-2">
+                {p?.id ? (
+                  <Link to="/admin/user/$userId" params={{ userId: p.id }}
+                    className="text-[11px] font-black truncate hover:text-cyan">
+                    {p.display_name ?? "User"}
+                    {p.uid_seq != null && <span className="mono-num text-muted-foreground ml-1">#{p.uid_seq}</span>}
+                    {p.balance_frozen && <span className="ml-1">🧊</span>}
+                  </Link>
+                ) : (
+                  <span className="text-[11px] font-black text-muted-foreground">অজানা account</span>
+                )}
+                <span className={`mono-num font-black text-sm ${dir === "in" ? "text-emerald" : "text-rose"}`} translate="no">
+                  {dir === "in" ? "+" : "−"}{Math.floor(Number(t.amount))}৳
+                </span>
+              </div>
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[9px] text-muted-foreground">{new Date(t.created_at).toLocaleString()}</span>
+                {p?.phone_number && <span className="text-[9px] mono-num text-muted-foreground">{p.phone_number}</span>}
+              </div>
+              {t.note && <p className="text-[10px] italic text-muted-foreground">"{t.note}"</p>}
+              {dir === "out" && p?.id && (
+                <button
+                  disabled={setFrozenOther.isPending}
+                  onClick={() => {
+                    const next = !p.balance_frozen;
+                    if (next) {
+                      const r = prompt("এই account freeze করার কারণ (user দেখতে পাবে):",
+                        "সন্দেহজনক টাকা লেনদেন — যাচাই চলছে");
+                      if (r === null) return;
+                      setFrozenOther.mutate({ userId: p.id, frozen: true, reason: r });
+                    } else {
+                      if (!confirm("এই account-এর ব্যালেন্স আবার চালু করবেন?")) return;
+                      setFrozenOther.mutate({ userId: p.id, frozen: false });
+                    }
+                  }}
+                  className={`w-full py-1.5 rounded-lg font-black text-[10px] disabled:opacity-50 ${
+                    p.balance_frozen ? "bg-emerald/20 text-emerald" : "bg-sky-500/20 text-sky-400"
+                  }`}>
+                  {p.balance_frozen ? "✅ এই account unfreeze করুন" : "🧊 এই account-এর ব্যালেন্স freeze করুন"}
+                </button>
+              )}
+            </div>
+          );
+        };
+        return (
+          <div className="glass rounded-2xl p-4 space-y-3 border border-rose/30">
+            <p className="text-[10px] uppercase tracking-widest text-rose font-black">
+              টাকা কোথায় গেছে / কোথা থেকে এসেছে
+            </p>
+            {out.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-[10px] font-black text-rose">📤 এই user যাদের কাছে পাঠিয়েছে ({out.length})</p>
+                {out.map((t) => <Row key={t.id} t={t} dir="out" />)}
+              </div>
+            )}
+            {inn.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-[10px] font-black text-emerald">📥 এই user যাদের কাছ থেকে পেয়েছে ({inn.length})</p>
+                {inn.map((t) => <Row key={t.id} t={t} dir="in" />)}
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
+
 
       {/* Step-by-step reconciliation of bonus + mining */}
       {(data as any).breakdown && (
