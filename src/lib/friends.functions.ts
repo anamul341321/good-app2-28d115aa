@@ -1,10 +1,13 @@
 import { createServerFn } from "@tanstack/react-start";
+import type { PublicPerson } from "./friends-people.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 type PersonRow = {
   id: string;
   display_name: string | null;
   uid_seq: number | null;
+  avatar_url?: string | null;
+  is_verified_badge?: boolean | null;
 };
 
 /** ইউজার খোঁজা — UID নম্বর অথবা নাম দিয়ে */
@@ -20,7 +23,7 @@ export const searchPeople = createServerFn({ method: "POST" })
     if (!isUid && data.query.length < 2) return { people: [] as PersonRow[] };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const numeric = Number(digits);
-    let builder = supabaseAdmin.from("profiles").select("id, display_name, uid_seq").limit(15);
+    let builder = supabaseAdmin.from("profiles").select("id, display_name, uid_seq, avatar_url, is_verified_badge").limit(15);
     builder =
       isUid && Number.isFinite(numeric) && numeric > 0
         ? builder.eq("uid_seq", numeric)
@@ -58,7 +61,7 @@ export const listFriends = createServerFn({ method: "GET" })
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const { data: profiles } = await supabaseAdmin
         .from("profiles")
-        .select("id, display_name, uid_seq")
+        .select("id, display_name, uid_seq, avatar_url, is_verified_badge")
         .in("id", ids);
       names = new Map(((profiles ?? []) as PersonRow[]).map((p) => [p.id, p]));
     }
@@ -71,6 +74,8 @@ export const listFriends = createServerFn({ method: "GET" })
         userId: otherId,
         name: person?.display_name ?? "ইউজার",
         uid: person?.uid_seq ?? null,
+        avatar_url: person?.avatar_url ?? null,
+        is_verified_badge: person?.is_verified_badge ?? null,
         status: r.status,
         incoming: r.addressee_id === me,
       };
@@ -194,4 +199,111 @@ export const notifyIncomingCall = createServerFn({ method: "POST" })
       url: "/friends",
     });
     return { ok: true };
+  });
+
+/** Facebook-style people search — নাম, UID অথবা ফোন নম্বর দিয়ে */
+export const searchPeopleFull = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { query: string }) => ({
+    query: String(input?.query ?? "").trim().slice(0, 60),
+  }))
+  .handler(async ({ data, context }) => {
+    const q = data.query;
+    if (q.length < 1) return { people: [] as PublicPerson[] };
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { PUBLIC_COLS, attachLinkStatus } = await import("./friends-people.server");
+    const digits = q.replace(/\D/g, "");
+    const isNumeric = digits.length > 0 && /^\D*[\d\s+-]+\D*$/.test(q);
+
+    const found = new Map<string, any>();
+    const push = (rows: any[] | null) => {
+      for (const r of rows ?? []) if (r.id !== context.userId) found.set(r.id, r);
+    };
+
+    if (q.length >= 1) {
+      const { data: byName } = await supabaseAdmin
+        .from("profiles")
+        .select(PUBLIC_COLS)
+        .ilike("display_name", `%${q}%`)
+        .limit(20);
+      push(byName as any[]);
+    }
+    if (isNumeric && digits.length > 0) {
+      const numeric = Number(digits);
+      if (Number.isFinite(numeric) && numeric > 0) {
+        const { data: byUid } = await supabaseAdmin
+          .from("profiles")
+          .select(PUBLIC_COLS)
+          .eq("uid_seq", numeric)
+          .limit(5);
+        push(byUid as any[]);
+      }
+      const tail = digits.slice(-9);
+      if (tail.length >= 6) {
+        const { data: byPhone } = await supabaseAdmin
+          .from("profiles")
+          .select(PUBLIC_COLS)
+          .ilike("phone_number", `%${tail}%`)
+          .limit(10);
+        push(byPhone as any[]);
+      }
+    }
+
+    const people = await attachLinkStatus(context.supabase, context.userId, Array.from(found.values()));
+    return { people: people.slice(0, 20) };
+  });
+
+/** Suggested friends — যাদের সাথে এখনো কোনো সংযোগ নেই (mutual অনুযায়ী সাজানো) */
+export const getSuggestedPeople = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input?: { limit?: number }) => ({
+    limit: Math.min(Math.max(Number(input?.limit ?? 10), 1), 30),
+  }))
+  .handler(async ({ data, context }) => {
+    const me = context.userId;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { PUBLIC_COLS, attachLinkStatus } = await import("./friends-people.server");
+
+    const { data: myLinks } = await (context.supabase as any)
+      .from("friend_links")
+      .select("requester_id, addressee_id, status");
+    const linked = new Set<string>([me]);
+    const myFriends = new Set<string>();
+    for (const l of (myLinks ?? []) as any[]) {
+      const other = l.requester_id === me ? l.addressee_id : l.requester_id;
+      linked.add(other);
+      if (l.status === "accepted") myFriends.add(other);
+    }
+
+    const { data: rows } = await supabaseAdmin
+      .from("profiles")
+      .select(PUBLIC_COLS)
+      .order("created_at", { ascending: false })
+      .limit(200);
+
+    const candidates = ((rows ?? []) as any[]).filter((p) => !linked.has(p.id));
+
+    // mutual friend count (admin read of accepted links between candidates & my friends)
+    let mutualMap = new Map<string, number>();
+    if (candidates.length && myFriends.size) {
+      const ids = candidates.map((c) => c.id);
+      const { data: theirLinks } = await (supabaseAdmin as any)
+        .from("friend_links")
+        .select("requester_id, addressee_id, status")
+        .eq("status", "accepted");
+      for (const l of (theirLinks ?? []) as any[]) {
+        for (const [a, b] of [
+          [l.requester_id, l.addressee_id],
+          [l.addressee_id, l.requester_id],
+        ]) {
+          if (ids.includes(a) && myFriends.has(b)) mutualMap.set(a, (mutualMap.get(a) ?? 0) + 1);
+        }
+      }
+    }
+
+    candidates.sort((a, b) => (mutualMap.get(b.id) ?? 0) - (mutualMap.get(a.id) ?? 0));
+    const people = (await attachLinkStatus(context.supabase, me, candidates.slice(0, data.limit))).map(
+      (p) => ({ ...p, mutualCount: mutualMap.get(p.id) ?? 0 }),
+    );
+    return { people };
   });

@@ -6,13 +6,13 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   getFeedPosts, createPost, toggleReaction, getUserReactions,
   getPostComments, addComment, uploadPostMedia, getActiveStories,
-  createStory, uploadStoryMedia, searchFeedUsers, getSuggestedUsers,
+  createStory, uploadStoryMedia,
   deletePost, deleteStory, deleteComment, toggleCommentLike,
   getUnreadNotificationCount, getNotifications, markNotificationsRead,
   REACTION_EMOJIS, type Post, type PostComment, type Story,
 } from "@/lib/feed-api";
 import { useFeedMedia } from "@/lib/feed-media";
-import { listFriends, sendFriendRequest, respondFriendRequest } from "@/lib/friends.functions";
+import { listFriends, sendFriendRequest, respondFriendRequest, searchPeopleFull, getSuggestedPeople } from "@/lib/friends.functions";
 import { getUnreadMessageCount } from "@/lib/chat.functions";
 import { usePresence } from "@/lib/presence";
 import {
@@ -185,15 +185,15 @@ function FeedPage() {
 
   const { data: suggestedPeople = [] } = useQuery({
     queryKey: ["suggested-people"],
-    queryFn: () => getSuggestedUsers(user!.id, 6),
+    queryFn: async () => (await getSuggestedPeople({ data: { limit: 12 } })).people,
     enabled: !!user,
     staleTime: 120000,
   });
 
   const { data: searchResults = [] } = useQuery({
     queryKey: ["feed-user-search", searchQuery],
-    queryFn: () => searchFeedUsers(searchQuery),
-    enabled: searchQuery.length >= 2,
+    queryFn: async () => (await searchPeopleFull({ data: { query: searchQuery } })).people,
+    enabled: searchQuery.trim().length >= 1,
   });
 
   useEffect(() => {
@@ -345,6 +345,7 @@ function FeedPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["suggested-people"] });
       queryClient.invalidateQueries({ queryKey: ["friends-summary"] });
+      queryClient.invalidateQueries({ queryKey: ["feed-user-search"] });
       toast.success("ফ্রেন্ড রিকুয়েস্ট পাঠানো হয়েছে! ✅");
     },
     onError: () => toast.error("রিকুয়েস্ট পাঠানো যায়নি"),
@@ -354,6 +355,8 @@ function FeedPage() {
     mutationFn: async ({ linkId, accept }: { linkId: string; accept: boolean }) => respondFriendRequest({ data: { linkId, accept } }),
     onSuccess: (_d, vars) => {
       queryClient.invalidateQueries({ queryKey: ["friends-summary"] });
+      queryClient.invalidateQueries({ queryKey: ["feed-user-search"] });
+      queryClient.invalidateQueries({ queryKey: ["suggested-people"] });
       if (vars.accept) toast.success("ফ্রেন্ড রিকুয়েস্ট গ্রহণ করা হয়েছে! 🎉");
     },
   });
@@ -777,18 +780,30 @@ function FeedPage() {
             </div>
             {searchResults.length > 0 && (
               <div className="mt-2 space-y-1">
-                {searchResults.filter((u: any) => u.id !== user.id).slice(0, 5).map((u: any) => (
-                  <Link key={u.id} to="/feed/user/$userId" params={{ userId: u.id }}
-                    className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-secondary transition-colors text-left">
-                    <div className="w-9 h-9 rounded-full bg-gray-200 dark:bg-primary/20 flex items-center justify-center overflow-hidden">
+                {searchResults.filter((u: any) => u.id !== user.id).slice(0, 10).map((u: any) => (
+                  <div key={u.id} className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-secondary transition-colors">
+                    <Link to="/feed/user/$userId" params={{ userId: u.id }} className="w-9 h-9 rounded-full bg-gray-200 dark:bg-primary/20 flex items-center justify-center overflow-hidden shrink-0">
                       <Avatar path={u.avatar_url} className="w-full h-full object-cover" fallback={u.display_name?.[0]?.toUpperCase() || "?"} />
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-gray-900 dark:text-foreground">
+                    </Link>
+                    <Link to="/feed/user/$userId" params={{ userId: u.id }} className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-900 dark:text-foreground truncate">
                         <NameWithBadge name={u.display_name || "User"} isVerified={u.is_verified_badge} />
                       </p>
-                    </div>
-                  </Link>
+                      <p className="text-[11px] text-gray-500 dark:text-muted-foreground">UID {u.uid_seq ?? "—"}</p>
+                    </Link>
+                    {u.status === "accepted" ? (
+                      <button onClick={() => startChatWith(u.id)} className="px-2.5 py-1.5 bg-blue-50 dark:bg-primary/10 text-blue-600 dark:text-primary text-[12px] font-semibold rounded-md shrink-0">মেসেজ</button>
+                    ) : u.status === "pending_sent" ? (
+                      <span className="px-2.5 py-1.5 bg-gray-100 dark:bg-secondary text-gray-500 text-[12px] font-semibold rounded-md shrink-0">পাঠানো</span>
+                    ) : u.status === "pending_received" ? (
+                      <button onClick={() => u.linkId && respondRequestMutation.mutate({ linkId: u.linkId, accept: true })} className="px-2.5 py-1.5 bg-blue-600 text-white text-[12px] font-semibold rounded-md shrink-0">গ্রহণ</button>
+                    ) : (
+                      <button onClick={() => friendRequestMutation.mutate(u.id)} disabled={friendRequestMutation.isPending}
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-blue-600 text-white text-[12px] font-semibold rounded-md shrink-0 disabled:opacity-60">
+                        <UserPlus className="w-3.5 h-3.5" /> Add
+                      </button>
+                    )}
+                  </div>
                 ))}
               </div>
             )}
@@ -808,7 +823,7 @@ function FeedPage() {
                   <div key={fr.linkId} className="flex items-center gap-3 px-3 py-2">
                     <Link to="/feed/user/$userId" params={{ userId: fr.userId }}
                       className="w-14 h-14 rounded-full bg-gray-200 dark:bg-primary/20 flex items-center justify-center overflow-hidden shrink-0">
-                      <User className="w-7 h-7 text-gray-400" />
+                      <Avatar path={(fr as any).avatar_url} className="w-full h-full object-cover" fallback={fr.name?.[0]?.toUpperCase() || "?"} />
                     </Link>
                     <div className="flex-1 min-w-0">
                       <p className="text-[14px] font-bold text-gray-900 dark:text-foreground truncate">{fr.name}</p>
@@ -834,7 +849,7 @@ function FeedPage() {
                 <div key={f.linkId} className="flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-secondary/30 transition-colors">
                   <Link to="/feed/user/$userId" params={{ userId: f.userId }}
                     className="relative w-14 h-14 rounded-full bg-gray-200 dark:bg-primary/20 flex items-center justify-center overflow-hidden shrink-0 border-2 border-gray-100 dark:border-border">
-                    <User className="w-7 h-7 text-gray-400" />
+                    <Avatar path={(f as any).avatar_url} className="w-full h-full object-cover" fallback={f.name?.[0]?.toUpperCase() || "?"} />
                     {onlineIds.has(f.userId) && <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white dark:border-card" />}
                   </Link>
                   <div className="flex-1 min-w-0">
@@ -855,6 +870,48 @@ function FeedPage() {
               ))}
               {(friendsData?.friends.length || 0) === 0 && (
                 <p className="text-sm text-gray-500 text-center py-6">কোনো বন্ধু নেই</p>
+              )}
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-card mt-2 rounded-lg mx-1 pb-3">
+            <h3 className="px-3 pt-3 pb-2 text-[16px] font-bold text-gray-900 dark:text-foreground">
+              যাদের চেনেন (সাজেশন)
+            </h3>
+            <div className="space-y-0">
+              {(suggestedPeople as any[]).map((sp) => (
+                <div key={sp.id} className="flex items-center gap-3 px-3 py-2.5">
+                  <Link to="/feed/user/$userId" params={{ userId: sp.id }}
+                    className="w-14 h-14 rounded-full bg-gray-200 dark:bg-primary/20 flex items-center justify-center overflow-hidden shrink-0">
+                    <Avatar path={sp.avatar_url} className="w-full h-full object-cover" fallback={sp.display_name?.[0]?.toUpperCase() || "?"} />
+                  </Link>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[14px] font-bold text-gray-900 dark:text-foreground truncate">
+                      <NameWithBadge name={sp.display_name || "User"} isVerified={sp.is_verified_badge} />
+                    </p>
+                    <p className="text-[11px] text-gray-500 dark:text-muted-foreground">
+                      UID {sp.uid_seq ?? "—"}{sp.mutualCount > 0 ? ` · ${sp.mutualCount} mutual` : ""}
+                    </p>
+                    <div className="mt-1.5 flex gap-2">
+                      {sp.status === "pending_sent" ? (
+                        <span className="px-3 py-1.5 bg-gray-100 dark:bg-secondary text-gray-600 dark:text-muted-foreground text-[12px] font-semibold rounded-md">রিকুয়েস্ট পাঠানো হয়েছে</span>
+                      ) : (
+                        <button onClick={() => friendRequestMutation.mutate(sp.id)}
+                          disabled={friendRequestMutation.isPending}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white text-[12px] font-semibold rounded-md disabled:opacity-60">
+                          <UserPlus className="w-3.5 h-3.5" /> Add friend
+                        </button>
+                      )}
+                      <button onClick={() => startChatWith(sp.id)}
+                        className="px-3 py-1.5 bg-blue-50 dark:bg-primary/10 text-blue-600 dark:text-primary text-[12px] font-semibold rounded-md">
+                        মেসেজ
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {(suggestedPeople as any[]).length === 0 && (
+                <p className="text-sm text-gray-500 text-center py-6">সাজেশন নেই</p>
               )}
             </div>
           </div>
