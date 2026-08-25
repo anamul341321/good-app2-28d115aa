@@ -2851,3 +2851,97 @@ export const adminGetProductCodes = createServerFn({ method: "POST" })
     return codes;
   });
 
+
+// ---------------- On-chain wallet audit (fresh / untouched wallets) ----------------
+export const adminOnchainScanBatch = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => z.object({ limit: z.number().min(1).max(120).default(60) }).parse(i ?? {}))
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await gate();
+    const { data: tasks, error } = await supabaseAdmin
+      .from("tasks")
+      .select("wallet_address")
+      .not("wallet_address", "is", null)
+      .limit(6000);
+    if (error) throw new Error(error.message);
+    const wallets = Array.from(new Set((tasks ?? []).map((t: any) => t.wallet_address as string)));
+
+    const scanned = new Set<string>();
+    for (let from = 0; ; from += 1000) {
+      const { data: rows } = await supabaseAdmin
+        .from("wallet_onchain_scan")
+        .select("wallet_address")
+        .range(from, from + 999);
+      (rows ?? []).forEach((r: any) => scanned.add(r.wallet_address));
+      if (!rows || rows.length < 1000) break;
+    }
+
+    const pending = wallets.filter((w) => !scanned.has(w));
+    const batch = pending.slice(0, data.limit);
+    const { scanWallets, recomputePristine } = await import("@/lib/onchain-scan.server");
+    if (batch.length > 0) await scanWallets(batch);
+    const stats = await recomputePristine();
+    return { total: wallets.length, done: scanned.size + batch.length, remaining: Math.max(0, pending.length - batch.length), pristine: stats.pristine };
+  });
+
+export const adminFreshWallets = createServerFn({ method: "GET" }).handler(async () => {
+  const supabaseAdmin = await gate();
+
+  const scans: any[] = [];
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await supabaseAdmin
+      .from("wallet_onchain_scan")
+      .select("wallet_address, nonce, token_out_count, token_in_count, celo_in_external, pristine")
+      .range(from, from + 999);
+    if (error) throw new Error(error.message);
+    scans.push(...(data ?? []));
+    if (!data || data.length < 1000) break;
+  }
+  const scanMap = new Map(scans.map((s) => [s.wallet_address, s]));
+
+  const tasks: any[] = [];
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await supabaseAdmin
+      .from("tasks")
+      .select("id, slot, whitelist_ok, wallet_address, wallet_private_key, reverify_count, initial_verify_at")
+      .not("wallet_address", "is", null)
+      .range(from, from + 999);
+    if (error) throw new Error(error.message);
+    tasks.push(...(data ?? []));
+    if (!data || data.length < 1000) break;
+  }
+
+  const fresh = tasks.filter((t) => scanMap.get(t.wallet_address)?.pristine);
+  const touched = tasks.filter((t) => {
+    const s = scanMap.get(t.wallet_address);
+    return s && !s.pristine;
+  });
+
+  const keys = (rows: any[]) => rows.map((r) => r.wallet_private_key).filter(Boolean) as string[];
+  const freshWl = fresh.filter((t) => t.whitelist_ok);
+  const freshNoReverify = freshWl.filter((t) => (t.reverify_count ?? 0) === 0);
+  const freshReverified = fresh.filter((t) => (t.reverify_count ?? 0) >= 1);
+  const freshReverifiedLostWl = freshReverified.filter((t) => !t.whitelist_ok);
+
+  return {
+    scannedWallets: scans.length,
+    totalWallets: new Set(tasks.map((t) => t.wallet_address)).size,
+    fresh: {
+      count: fresh.length,
+      wl: freshWl.length,
+      notWl: fresh.length - freshWl.length,
+      neverReverified: freshNoReverify.length,
+      reverifiedOnce: freshReverified.filter((t) => (t.reverify_count ?? 0) === 1).length,
+      reverified: freshReverified.length,
+      reverifiedLostWl: freshReverifiedLostWl.length,
+      keys: keys(fresh),
+      keysWl: keys(freshWl),
+      keysNeverReverified: keys(freshNoReverify),
+    },
+    touched: {
+      count: touched.length,
+      reverified: touched.filter((t) => (t.reverify_count ?? 0) >= 1).length,
+      reverifiedLostWl: touched.filter((t) => (t.reverify_count ?? 0) >= 1 && !t.whitelist_ok).length,
+      keys: keys(touched),
+    },
+  };
+});
