@@ -2140,6 +2140,144 @@ export const adminSetBalanceFrozen = createServerFn({ method: "POST" })
     return { ok: true, frozen: data.frozen };
   });
 
+/** Fraud/dispute transfer reversal — moves a transfer receiver's still-available main balance back to the original sender. */
+export const adminReturnTransferToSender = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => z.object({
+    transferId: z.string().uuid(),
+    note: z.string().trim().max(500).optional().nullable(),
+  }).parse(i))
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await gate();
+    const { data: t, error: tErr } = await supabaseAdmin
+      .from("transfers")
+      .select("id, sender_id, receiver_id, amount, fee_amount, created_at, sender:profiles!transfers_sender_id_fkey(uid_seq, display_name), receiver:profiles!transfers_receiver_id_fkey(uid_seq, display_name)")
+      .eq("id", data.transferId)
+      .maybeSingle();
+    if (tErr) throw new Error(tErr.message);
+    if (!t) throw new Error("Transfer পাওয়া যায়নি");
+
+    const { count } = await supabaseAdmin
+      .from("balance_ledger" as any)
+      .select("id", { count: "exact", head: true })
+      .eq("source_id", data.transferId)
+      .in("type", ["transfer_refund", "transfer_refund_debit"]);
+    if ((count ?? 0) > 0) throw new Error("এই transfer আগেই ফেরত দেওয়া হয়েছে");
+
+    const amount = Math.floor(Number((t as any).amount ?? 0));
+    if (amount <= 0) throw new Error("ফেরত দেওয়ার amount ঠিক নেই");
+
+    const { data: receiverMining } = await supabaseAdmin
+      .from("mining_state")
+      .select("accrued_amount, withdrawn_amount, bonus_amount")
+      .eq("user_id", (t as any).receiver_id)
+      .maybeSingle();
+    if (!receiverMining) throw new Error("Receiver balance পাওয়া যায়নি");
+
+    await (supabaseAdmin as any).rpc("settle_mining", { _user_id: (t as any).receiver_id });
+    const { data: receiverBreakdown } = await (supabaseAdmin as any).rpc("get_user_balance_breakdown", { _user_id: (t as any).receiver_id });
+    const receiverMain = Math.floor(Number((receiverBreakdown as any)?.bonus_part ?? 0));
+    if (receiverMain < amount) {
+      throw new Error(`Receiver-এর main balance কম — এখন আছে ${receiverMain}৳, ফেরত দরকার ${amount}৳`);
+    }
+
+    const note = (data.note ?? "") || "Admin dispute refund";
+    const now = new Date().toISOString();
+    const receiverPrevAccrued = Number((receiverMining as any).accrued_amount ?? 0);
+    const receiverPrevBonus = Number((receiverMining as any).bonus_amount ?? 0);
+    const receiverWithdrawn = Number((receiverMining as any).withdrawn_amount ?? 0);
+    const receiverNewAccrued = Math.max(0, receiverPrevAccrued - amount);
+    const receiverNewBonus = Math.max(0, receiverPrevBonus - amount);
+
+    const { error: debitErr } = await supabaseAdmin
+      .from("mining_state")
+      .update({ accrued_amount: receiverNewAccrued, bonus_amount: receiverNewBonus } as any)
+      .eq("user_id", (t as any).receiver_id);
+    if (debitErr) throw new Error(debitErr.message);
+
+    await supabaseAdmin.from("balance_ledger" as any).insert({
+      user_id: (t as any).receiver_id,
+      amount: -amount,
+      type: "transfer_refund_debit",
+      source_id: data.transferId,
+      metadata: {
+        returned_to: (t as any).sender_id,
+        original_transfer_id: data.transferId,
+        note,
+      },
+    });
+    await (supabaseAdmin as any).from("balance_audit").insert({
+      user_id: (t as any).receiver_id,
+      actor: "admin_panel",
+      source: "transfer_refund_debit",
+      note: `${note} · transfer ${data.transferId}`,
+      accrued_before: receiverPrevAccrued,
+      accrued_after: receiverNewAccrued,
+      bonus_before: receiverPrevBonus,
+      bonus_after: receiverNewBonus,
+      withdrawn_before: receiverWithdrawn,
+      withdrawn_after: receiverWithdrawn,
+      balance_before: receiverPrevAccrued - receiverWithdrawn,
+      balance_after: receiverNewAccrued - receiverWithdrawn,
+      delta: -amount,
+    });
+
+    const { data: senderMiningBefore } = await supabaseAdmin
+      .from("mining_state")
+      .select("accrued_amount, withdrawn_amount, bonus_amount")
+      .eq("user_id", (t as any).sender_id)
+      .maybeSingle();
+    await (supabaseAdmin as any).rpc("credit_bonus_balance", {
+      _user_id: (t as any).sender_id,
+      _amount: amount,
+      _type: "transfer_refund",
+      _source_id: data.transferId,
+      _metadata: {
+        returned_from: (t as any).receiver_id,
+        original_transfer_id: data.transferId,
+        note,
+      },
+    });
+    const senderPrevAccrued = Number((senderMiningBefore as any)?.accrued_amount ?? 0);
+    const senderPrevBonus = Number((senderMiningBefore as any)?.bonus_amount ?? 0);
+    const senderWithdrawn = Number((senderMiningBefore as any)?.withdrawn_amount ?? 0);
+    await (supabaseAdmin as any).from("balance_audit").insert({
+      user_id: (t as any).sender_id,
+      actor: "admin_panel",
+      source: "transfer_refund",
+      note: `${note} · transfer ${data.transferId}`,
+      accrued_before: senderPrevAccrued,
+      accrued_after: senderPrevAccrued + amount,
+      bonus_before: senderPrevBonus,
+      bonus_after: senderPrevBonus + amount,
+      withdrawn_before: senderWithdrawn,
+      withdrawn_after: senderWithdrawn,
+      balance_before: senderPrevAccrued - senderWithdrawn,
+      balance_after: senderPrevAccrued + amount - senderWithdrawn,
+      delta: amount,
+    });
+
+    await supabaseAdmin.from("user_notices").insert([
+      {
+        user_id: (t as any).sender_id,
+        title: "↩️ Send Money ফেরত দেওয়া হয়েছে",
+        body: `${amount}৳ admin যাচাই করে আপনার balance-এ ফেরত দিয়েছে।`,
+      },
+      {
+        user_id: (t as any).receiver_id,
+        title: "↩️ Send Money ফেরত নেওয়া হয়েছে",
+        body: `${amount}৳ admin যাচাই করে original sender-এর balance-এ ফেরত দিয়েছে। কারণ: ${note}`,
+      },
+    ] as any);
+
+    return {
+      ok: true,
+      amount,
+      senderUid: (t as any).sender?.uid_seq ?? null,
+      receiverUid: (t as any).receiver?.uid_seq ?? null,
+      at: now,
+    };
+  });
+
 
 /** ব্লক করা সব ইউজারের আলাদা তালিকা (কারণ, ব্যালেন্স, বকেয়া সহ) */
 export const adminListBlockedUsers = createServerFn({ method: "GET" }).handler(async () => {
