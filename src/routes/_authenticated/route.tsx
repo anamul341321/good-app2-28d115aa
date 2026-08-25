@@ -176,7 +176,7 @@ function AuthedLayout() {
 
   return (
     <CallProvider>
-    <div className="min-h-screen pb-24">
+    <div className={isSocialRoute ? "min-h-screen" : "min-h-screen pb-24"}>
       {appStatus?.faceVerifyEnabled === false ? (
         <SlotPausedModal message={appStatus?.faceVerifyMessage} />
       ) : (
