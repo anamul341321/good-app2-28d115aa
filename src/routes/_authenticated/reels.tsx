@@ -75,7 +75,9 @@ function useCombinedReels() {
   });
 
   const items = useMemo<ReelItem[]>(() => {
-    const localVideos = (localQuery.data || []).filter((p) => !!p.video_url);
+    const localVideos = (localQuery.data || []).filter(
+      (p) => !!p.video_url && !(p.content || "").startsWith(LONG_VIDEO_MARKER),
+    );
     const external = externalQuery.data?.videos || [];
     const merged: ReelItem[] = [];
     const maxLen = Math.max(localVideos.length, external.length);
