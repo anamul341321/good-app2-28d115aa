@@ -16,7 +16,6 @@ const SYSTEM_SENDERS = new Set<string>([
   "0x62b8b11039fcfe5ab0c56e502b1c372a3d2a9c7a", // GoodDollar faucet
   "0xc361a6e67822a0edc17d899227dd9fc50bd62f42", // Identity
   "0x43d72ff17701b2da814620735c39c620ce0ea4a1", // G$ token (celo)
-  "0x03d3dab843e6c03b3d271eff9178neverusedplaceholder",
 ]);
 
 // A sender seen funding this many of our wallets is a faucet/system address,
