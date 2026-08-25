@@ -5,7 +5,7 @@ const cache = new Map<string, { data: any; ts: number }>();
 const CACHE_TTL_TRENDING = 60 * 60 * 1000;
 const CACHE_TTL_SEARCH = 30 * 60 * 1000;
 const YT_KEY_REGEX = /^AIza[0-9A-Za-z_-]{20,}$/;
-const CACHE_VERSION = "v3";
+const CACHE_VERSION = "v4";
 
 const INVIDIOUS_INSTANCES = [
   "https://inv.nadeko.net",
@@ -121,6 +121,20 @@ function parseDurationText(text: string): number {
   return parts[0] || 0;
 }
 
+function parseCompactCount(text?: string): number | undefined {
+  if (!text) return undefined;
+  const normalized = text.toLowerCase().replace(/,/g, "").trim();
+  const match = normalized.match(/([\d.]+)\s*([kmb])?/i);
+  if (!match) return undefined;
+  const base = Number(match[1]);
+  if (!Number.isFinite(base)) return undefined;
+  const suffix = match[2]?.toLowerCase();
+  if (suffix === "b") return Math.round(base * 1_000_000_000);
+  if (suffix === "m") return Math.round(base * 1_000_000);
+  if (suffix === "k") return Math.round(base * 1_000);
+  return Math.round(base);
+}
+
 function parseISO8601Duration(iso: string): number {
   if (!iso) return 0;
   const match = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
@@ -168,6 +182,7 @@ async function searchViaPiped(query: string, maxResults = 25): Promise<{ results
             thumbnail: item.thumbnail || `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
             publishedAt: item.uploadedDate || "",
             lengthSeconds: item.duration || 0,
+            viewCount: Number(item.views || item.viewCount || 0) || parseCompactCount(item.viewsText),
           };
         })
         .filter((r: any) => r.videoId);
@@ -206,6 +221,7 @@ async function searchViaInvidious(query: string, maxResults = 25): Promise<{ res
           thumbnail: item.videoThumbnails?.[0]?.url || `https://i.ytimg.com/vi/${item.videoId}/hqdefault.jpg`,
           publishedAt: item.publishedText || "",
           lengthSeconds: item.lengthSeconds || 0,
+          viewCount: Number(item.viewCount || 0) || parseCompactCount(item.viewCountText),
         }));
 
       if (results.length > 0) {
@@ -259,6 +275,7 @@ async function searchViaYouTubeHTML(query: string, maxResults = 25): Promise<{ r
           thumbnail: `https://i.ytimg.com/vi/${vr.videoId}/hqdefault.jpg`,
           publishedAt: vr.publishedTimeText?.simpleText || "",
           lengthSeconds: parseDurationText(vr.lengthText?.simpleText || ""),
+          viewCount: parseCompactCount(vr.viewCountText?.simpleText || vr.shortViewCountText?.simpleText),
         });
         if (results.length >= maxResults) break;
       }
@@ -287,6 +304,43 @@ async function searchFallback(query: string, maxResults = 25): Promise<{ results
 async function youtubeApiFetch(url: string, apiKey: string): Promise<Response> {
   const separator = url.includes("?") ? "&" : "?";
   return withTimeout(fetch(`${url}${separator}key=${apiKey}`), 8000);
+}
+
+async function enrichYouTubeResults(apiKey: string, results: any[]): Promise<any[]> {
+  const ids = results.map((item) => item.videoId).filter(Boolean).slice(0, 50);
+  if (ids.length === 0) return results;
+
+  try {
+    const params = new URLSearchParams({
+      part: "snippet,contentDetails,statistics",
+      id: ids.join(","),
+      maxResults: String(ids.length),
+    });
+    const res = await youtubeApiFetch(`https://www.googleapis.com/youtube/v3/videos?${params}`, apiKey);
+    if (!res.ok) return results;
+    const data: any = await res.json();
+    const byId = new Map<string, any>();
+    for (const item of Array.isArray(data?.items) ? data.items : []) {
+      if (item?.id) byId.set(item.id, item);
+    }
+
+    return results.map((result) => {
+      const full = byId.get(result.videoId);
+      if (!full) return result;
+      return {
+        ...result,
+        title: full.snippet?.title || result.title,
+        author: full.snippet?.channelTitle || result.author,
+        channelId: full.snippet?.channelId || result.channelId,
+        thumbnail: full.snippet?.thumbnails?.high?.url || result.thumbnail,
+        publishedAt: full.snippet?.publishedAt || result.publishedAt,
+        lengthSeconds: parseISO8601Duration(full.contentDetails?.duration || "") || result.lengthSeconds,
+        viewCount: Number(full.statistics?.viewCount || 0) || result.viewCount,
+      };
+    });
+  } catch {
+    return results;
+  }
 }
 
 async function searchYouTubeWithRotation(
@@ -328,7 +382,7 @@ async function searchYouTubeWithRotation(
         thumbnail: item.snippet?.thumbnails?.high?.url || `https://i.ytimg.com/vi/${item.id.videoId}/hqdefault.jpg`,
         publishedAt: item.snippet?.publishedAt || "",
       }));
-      return { results, nextPageToken: data?.nextPageToken, source: "youtube" };
+      return { results: await enrichYouTubeResults(apiKey, results), nextPageToken: data?.nextPageToken, source: "youtube" };
     } catch (e) {
       if (String(e).includes("timeout")) continue;
       throw e;
@@ -347,7 +401,7 @@ async function getTrendingWithRotation(
 
   for (const catId of categories) {
     const params = new URLSearchParams({
-      part: "snippet,contentDetails", chart: "mostPopular",
+      part: "snippet,contentDetails,statistics", chart: "mostPopular",
       regionCode: "BD", maxResults: String(perCategory), videoCategoryId: catId,
     });
     const baseUrl = `https://www.googleapis.com/youtube/v3/videos?${params}`;
@@ -381,6 +435,7 @@ async function getTrendingWithRotation(
           thumbnail: item.snippet?.thumbnails?.high?.url || `https://i.ytimg.com/vi/${item.id}/hqdefault.jpg`,
           publishedAt: item.snippet?.publishedAt || "",
           lengthSeconds: parseISO8601Duration(item.contentDetails?.duration || ""),
+          viewCount: Number(item.statistics?.viewCount || 0) || undefined,
         })));
         break;
       } catch {

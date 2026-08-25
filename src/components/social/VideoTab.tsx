@@ -1,49 +1,88 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
-import { Loader2, Play, Search, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useInfiniteQuery } from "@tanstack/react-query";
+import { Loader2, Play, Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   getBangladeshExternalVideos,
   getUploadedLongVideos,
+  trackVideoPreference,
   type ExternalReelVideo,
 } from "@/lib/feed-api";
 import { useFeedMedia } from "@/lib/feed-media";
 
 /**
- * "ভিডিও দেখুন" tab — YouTube (external) + good-app uploaded long videos.
+ * "ভিডিও দেখুন" tab — YouTube-style inline player + endless suggested videos.
  */
 export default function VideoTab() {
   const [query, setQuery] = useState("");
   const [search, setSearch] = useState("");
-  const [playing, setPlaying] = useState<ExternalReelVideo | null>(null);
+  const [playingId, setPlayingId] = useState<string | null>(null);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
 
-  const { data, isLoading } = useQuery({
+  const {
+    data,
+    isLoading,
+    isFetchingNextPage,
+    fetchNextPage,
+    hasNextPage,
+  } = useInfiniteQuery({
     queryKey: ["feed-videos", search],
-    queryFn: async () => {
+    initialPageParam: { page: 1, token: undefined as string | undefined },
+    queryFn: async ({ pageParam }) => {
       const [local, external] = await Promise.all([
-        getUploadedLongVideos(1, 12),
-        getBangladeshExternalVideos(1, 24, undefined, search || undefined, "long"),
+        getUploadedLongVideos(pageParam.page, pageParam.page === 1 ? 8 : 3, search || undefined),
+        getBangladeshExternalVideos(pageParam.page, 18, undefined, search || undefined, "long", 0, pageParam.token),
       ]);
-      return [...local.videos, ...external.videos];
+      const videos = [...local.videos, ...external.videos].sort((a, b) => Number(b.view_count || 0) - Number(a.view_count || 0));
+      return { videos, page: pageParam.page, nextPageToken: external.nextPageToken };
     },
+    getNextPageParam: (lastPage) => ({ page: lastPage.page + 1, token: lastPage.nextPageToken }),
   });
 
-  const videos = data || [];
+  const videos = useMemo(() => {
+    const seen = new Set<string>();
+    return (data?.pages.flatMap((page) => page.videos) || []).filter((video) => {
+      if (seen.has(video.id)) return false;
+      seen.add(video.id);
+      return true;
+    });
+  }, [data]);
+
+  const playing = videos.find((video) => video.id === playingId) || videos[0] || null;
+  const suggestedVideos = playing ? videos.filter((video) => video.id !== playing.id) : videos;
+
+  useEffect(() => {
+    if (!sentinelRef.current) return;
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0]?.isIntersecting && hasNextPage && !isFetchingNextPage) {
+        void fetchNextPage();
+      }
+    }, { rootMargin: "700px 0px" });
+    observer.observe(sentinelRef.current);
+    return () => observer.disconnect();
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage, videos.length]);
+
+  const playVideo = (video: ExternalReelVideo) => {
+    setPlayingId(video.id);
+    trackVideoPreference({ title: video.title, category: video.category });
+    window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
+  };
 
   return (
-    <div className="max-w-lg mx-auto pb-6">
+    <div className="mx-auto max-w-3xl pb-6">
       <div className="bg-white dark:bg-card mt-2 mx-1 rounded-lg p-3">
         <form
-          onSubmit={(e) => {
-            e.preventDefault();
+          onSubmit={(event) => {
+            event.preventDefault();
             setSearch(query.trim());
+            setPlayingId(null);
           }}
           className="relative"
         >
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(event) => setQuery(event.target.value)}
             placeholder="ইউটিউব ভিডিও খুঁজুন (গান, নাটক, খবর...)"
             className="w-full bg-gray-100 dark:bg-secondary text-gray-900 dark:text-foreground rounded-full pl-10 pr-4 py-2 text-sm border-none outline-none placeholder:text-gray-400"
           />
@@ -58,81 +97,107 @@ export default function VideoTab() {
         <p className="py-16 text-center text-sm font-bold text-gray-500">কোনো ভিডিও পাওয়া যায়নি</p>
       ) : (
         <div className="mt-2 space-y-2">
-          {videos.map((v) => (
-            <VideoCard key={v.id} video={v} onPlay={() => setPlaying(v)} />
-          ))}
-        </div>
-      )}
+          {playing && <InlinePlayer video={playing} />}
 
-      {playing && (
-        <div className="fixed inset-0 z-[200] bg-black/90 flex flex-col">
-          <div className="flex items-center justify-between p-3">
-            <p className="line-clamp-1 flex-1 text-sm font-bold text-white">{playing.title}</p>
-            <button onClick={() => setPlaying(null)} className="ml-2 w-9 h-9 rounded-full bg-white/20 flex items-center justify-center">
-              <X className="w-5 h-5 text-white" />
-            </button>
+          <div className="px-2 pt-1">
+            <p className="text-[14px] font-black text-gray-900 dark:text-foreground">Suggested videos</p>
           </div>
-          <div className="flex-1 flex items-center justify-center">
-            <div className="w-full aspect-video bg-black">
-              <iframe
-                src={`${playing.video_url}${playing.video_url.includes("?") ? "&" : "?"}autoplay=1`}
-                title={playing.title}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                className="h-full w-full border-0"
-              />
-            </div>
+
+          {suggestedVideos.map((video) => (
+            <VideoCard key={video.id} video={video} onPlay={() => playVideo(video)} />
+          ))}
+
+          <div ref={sentinelRef} className="flex justify-center py-5">
+            {isFetchingNextPage ? (
+              <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+            ) : (
+              <span className="text-xs font-bold text-gray-400">আরও ভিডিও আসছে...</span>
+            )}
           </div>
-          {playing.watch_url && (
-            <a
-              href={playing.watch_url}
-              target="_blank"
-              rel="noreferrer"
-              className="m-3 rounded-xl bg-white/15 py-2.5 text-center text-sm font-black text-white"
-            >
-              ইউটিউবে খুলুন
-            </a>
-          )}
         </div>
       )}
     </div>
   );
 }
 
-function VideoCard({ video, onPlay }: { video: ExternalReelVideo; onPlay: () => void }) {
-  const thumb = useFeedMedia(video.thumbnail_url || undefined);
-  const isLocal = video.source === "good-app" && video.local_post_id;
+function InlinePlayer({ video }: { video: ExternalReelVideo }) {
+  const source = useFeedMedia(video.source === "good-app" ? video.video_url : undefined);
+  const viewLabel = formatViews(video.view_count);
 
-  const body = (
-    <div className="flex gap-3 bg-white dark:bg-card mx-1 rounded-lg p-2 active:scale-[0.99] transition">
-      <div className="relative h-[72px] w-[124px] shrink-0 overflow-hidden rounded-lg bg-gray-200 dark:bg-secondary">
-        {thumb ? <img src={thumb} alt={video.title} className="h-full w-full object-cover" /> : null}
-        <span className="absolute inset-0 flex items-center justify-center">
-          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-black/55">
-            <Play className="h-4 w-4 text-white" />
-          </span>
-        </span>
+  return (
+    <div className="bg-white dark:bg-card">
+      <div className="aspect-video w-full bg-black">
+        {video.source === "good-app" ? (
+          <video src={source} controls autoPlay playsInline className="h-full w-full" />
+        ) : (
+          <iframe
+            src={`${video.video_url}${video.video_url.includes("?") ? "&" : "?"}autoplay=1&playsinline=1&rel=0&modestbranding=1`}
+            title={video.title}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowFullScreen
+            className="h-full w-full border-0"
+          />
+        )}
       </div>
-      <div className="min-w-0 flex-1">
-        <p className="line-clamp-2 text-[13.5px] font-bold text-gray-900 dark:text-foreground">{video.title}</p>
-        <p className="mt-1 text-[12px] text-gray-500 dark:text-muted-foreground truncate">
-          {video.creator || "Unknown"} · {isLocal ? "good-app" : "YouTube"}
+      <div className="px-3 py-3">
+        <h2 className="text-[17px] font-black leading-snug text-gray-950 dark:text-foreground">{video.title}</h2>
+        <p className="mt-1 text-[12.5px] font-semibold text-gray-500 dark:text-muted-foreground">
+          {viewLabel ? `${viewLabel} views · ` : ""}{video.creator || "YouTube"}
         </p>
       </div>
     </div>
   );
+}
 
-  if (isLocal) {
-    return (
-      <Link to="/watch/$postId" params={{ postId: video.local_post_id as string }} className="block">
-        {body}
-      </Link>
-    );
-  }
+function VideoCard({ video, onPlay }: { video: ExternalReelVideo; onPlay: () => void }) {
+  const thumb = useFeedMedia(video.thumbnail_url || undefined);
+  const viewLabel = formatViews(video.view_count);
 
   return (
-    <button onClick={onPlay} className="block w-full text-left">
-      {body}
-    </button>
+    <Button variant="ghost" onClick={onPlay} className="block h-auto w-full rounded-none p-0 text-left hover:bg-transparent">
+      <span className="flex w-full gap-3 bg-white dark:bg-card p-2 active:scale-[0.99] transition">
+        <span className="relative aspect-video w-[42%] max-w-[190px] shrink-0 overflow-hidden rounded-lg bg-gray-200 dark:bg-secondary">
+          {thumb ? <img src={thumb} alt={video.title} className="h-full w-full object-cover" /> : null}
+          <span className="absolute inset-0 flex items-center justify-center">
+            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-black/55">
+              <Play className="h-4 w-4 text-white" />
+            </span>
+          </span>
+          {video.duration ? (
+            <span className="absolute bottom-1 right-1 rounded bg-black/75 px-1.5 py-0.5 text-[10px] font-black text-white">
+              {formatDuration(video.duration)}
+            </span>
+          ) : null}
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="line-clamp-2 text-[14px] font-black leading-snug text-gray-900 dark:text-foreground">{video.title}</span>
+          <span className="mt-1 block truncate text-[12px] font-semibold text-gray-500 dark:text-muted-foreground">
+            {video.creator || "Unknown"} · {viewLabel ? `${viewLabel} views` : video.source === "good-app" ? "good-app" : "YouTube"}
+          </span>
+        </span>
+      </span>
+    </Button>
   );
+}
+
+function formatViews(value?: number): string {
+  const views = Number(value || 0);
+  if (!Number.isFinite(views) || views <= 0) return "";
+  if (views >= 1_000_000_000) return `${trimNumber(views / 1_000_000_000)}B`;
+  if (views >= 1_000_000) return `${trimNumber(views / 1_000_000)}M`;
+  if (views >= 1_000) return `${trimNumber(views / 1_000)}K`;
+  return String(Math.round(views));
+}
+
+function trimNumber(value: number): string {
+  return value >= 10 ? String(Math.round(value)) : value.toFixed(1).replace(/\.0$/, "");
+}
+
+function formatDuration(seconds: number): string {
+  const total = Math.max(0, Math.floor(seconds));
+  const hrs = Math.floor(total / 3600);
+  const mins = Math.floor((total % 3600) / 60);
+  const secs = total % 60;
+  if (hrs > 0) return `${hrs}:${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+  return `${mins}:${String(secs).padStart(2, "0")}`;
 }
