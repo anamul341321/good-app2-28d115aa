@@ -688,9 +688,14 @@ function FeedPage() {
       <header className="sticky top-0 z-50 shadow-lg" style={{ background: "linear-gradient(135deg, #1877F2, #0d47a1, #1565c0)" }}>
         <div className="max-w-lg mx-auto px-3 py-2 flex items-center justify-between">
           <div className="flex items-center gap-1">
-            <button onClick={() => navigate({ to: "/home" })} className="h-9 pl-1.5 pr-3 rounded-full bg-white/20 flex items-center gap-1 mr-1 active:scale-95 transition" title="Dashboard">
-              <ArrowLeft className="w-5 h-5 text-white" />
-              <span className="text-[11px] font-black text-white whitespace-nowrap">ড্যাশবোর্ড</span>
+            <button
+              onClick={() => navigate({ to: "/home" })}
+              className="h-9 pl-1.5 pr-3 rounded-full flex items-center gap-1 mr-1 active:scale-95 transition ring-2 ring-white/80 shadow-[0_4px_14px_rgba(255,193,7,0.55)] animate-pulse"
+              style={{ background: "linear-gradient(135deg,#ffd600,#ff9100,#f4511e)" }}
+              title="Dashboard"
+            >
+              <ArrowLeft className="w-5 h-5 text-[#1a1a1a]" />
+              <span className="text-[11.5px] font-black text-[#1a1a1a] whitespace-nowrap">ড্যাশবোর্ড</span>
             </button>
             <h1 className="text-[24px] font-black text-white tracking-tight" style={{ letterSpacing: "-0.02em" }}>
               <span>good</span>
