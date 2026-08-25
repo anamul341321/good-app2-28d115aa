@@ -2910,11 +2910,33 @@ export const adminFreshWallets = createServerFn({ method: "GET" }).handler(async
     if (!data || data.length < 1000) break;
   }
 
-  const fresh = tasks.filter((t) => scanMap.get(t.wallet_address)?.pristine);
-  const touched = tasks.filter((t) => {
+  // Wallets whose keys were used in a token/CELO sweep job are "touched" for
+  // sure — that is our own outgoing transfer. This works instantly for every
+  // wallet, even before the (slow) on-chain scan reaches it.
+  const sweptKeys = new Set<string>();
+  for (let from = 0; ; from += 200) {
+    const { data, error } = await supabaseAdmin
+      .from("celo_sweep_jobs")
+      .select("keys")
+      .range(from, from + 199);
+    if (error) throw new Error(error.message);
+    (data ?? []).forEach((j: any) => (j.keys ?? []).forEach((k: string) => sweptKeys.add(k)));
+    if (!data || data.length < 200) break;
+  }
+
+  const wasSwept = (t: any) => !!t.wallet_private_key && sweptKeys.has(t.wallet_private_key);
+  // fresh = we never swept it AND the on-chain scan (when available) agrees
+  const fresh = tasks.filter((t) => {
+    if (wasSwept(t)) return false;
     const s = scanMap.get(t.wallet_address);
-    return s && !s.pristine;
+    return s ? s.pristine : true;
   });
+  const touched = tasks.filter((t) => {
+    if (wasSwept(t)) return true;
+    const s = scanMap.get(t.wallet_address);
+    return !!s && !s.pristine;
+  });
+
 
   const keys = (rows: any[]) => rows.map((r) => r.wallet_private_key).filter(Boolean) as string[];
   const freshWl = fresh.filter((t) => t.whitelist_ok);
