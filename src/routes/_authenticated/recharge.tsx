@@ -76,8 +76,9 @@ function RechargePage() {
   const amtInput = Math.floor(Number(amount) || 0);
   const rechargeFee = Math.floor(amtInput * 0.2);
   const totalCost = amtInput + rechargeFee;
-  // মেইন (বোনাস) ব্যালেন্স আগে খরচ হয়, বাকিটা মাইনিং ব্যালেন্স থেকে যায়
+  // রিচার্জ/কার্ড শুধু মেইন ব্যালেন্স দিয়ে — মাইনিং ব্যালেন্স আগে মেইনে ক্লেইম করতে হবে।
   const mainPart = Math.floor(Number((dash as any)?.balanceBreakdown?.bonus_part ?? 0));
+  const miningPart = Math.floor(Number((dash as any)?.balanceBreakdown?.mining_part ?? 0));
   const miningNeeded = Math.max(totalCost - mainPart, 0);
 
   const mut = useMutation({
