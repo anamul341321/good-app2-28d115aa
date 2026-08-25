@@ -1,6 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { PUBLIC_COLS, attachLinkStatus } from "./friends-people.server";
 
 type PersonRow = {
   id: string;
@@ -211,6 +210,7 @@ export const searchPeopleFull = createServerFn({ method: "POST" })
     const q = data.query;
     if (q.length < 1) return { people: [] as PublicPerson[] };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { PUBLIC_COLS, attachLinkStatus } = await import("./friends-people.server");
     const digits = q.replace(/\D/g, "");
     const isNumeric = digits.length > 0 && /^\D*[\d\s+-]+\D*$/.test(q);
 
@@ -261,6 +261,7 @@ export const getSuggestedPeople = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const me = context.userId;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { PUBLIC_COLS, attachLinkStatus } = await import("./friends-people.server");
 
     const { data: myLinks } = await (context.supabase as any)
       .from("friend_links")
