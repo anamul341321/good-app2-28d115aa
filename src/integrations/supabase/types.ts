@@ -1355,6 +1355,7 @@ export type Database = {
           comments_count: number
           content: string | null
           created_at: string
+          edited_at: string | null
           id: string
           image_url: string | null
           likes_count: number
@@ -1364,12 +1365,14 @@ export type Database = {
           updated_at: string
           user_id: string
           video_url: string | null
+          visibility: string
         }
         Insert: {
           body?: string | null
           comments_count?: number
           content?: string | null
           created_at?: string
+          edited_at?: string | null
           id?: string
           image_url?: string | null
           likes_count?: number
@@ -1379,12 +1382,14 @@ export type Database = {
           updated_at?: string
           user_id: string
           video_url?: string | null
+          visibility?: string
         }
         Update: {
           body?: string | null
           comments_count?: number
           content?: string | null
           created_at?: string
+          edited_at?: string | null
           id?: string
           image_url?: string | null
           likes_count?: number
@@ -1394,6 +1399,7 @@ export type Database = {
           updated_at?: string
           user_id?: string
           video_url?: string | null
+          visibility?: string
         }
         Relationships: [
           {
