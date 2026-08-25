@@ -304,6 +304,28 @@ function HomePage() {
 
 
 
+      {/* News Feed Entry Button */}
+      <Link to="/feed"
+        className="block rounded-3xl p-5 relative overflow-hidden btn-press border border-white/20 shadow-[0_25px_50px_-12px_rgba(24,119,242,0.5)]"
+        style={{ background: "linear-gradient(135deg, #1877F2 0%, #42a5f5 55%, #0d47a1 100%)" }}>
+        <div className="absolute -top-10 -right-10 w-48 h-48 rounded-full bg-white/20 blur-3xl" />
+        <div className="relative flex items-center gap-4 text-white">
+          <div className="w-16 h-16 rounded-2xl bg-white/25 backdrop-blur border border-white/40 shrink-0 flex items-center justify-center shadow-lg">
+            <Newspaper className="w-8 h-8" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] uppercase tracking-[0.3em] font-black text-white/90">Good-App Social</p>
+            <p className="text-2xl font-black leading-tight drop-shadow-lg mt-1">{t("নিউজ ফিড", "News Feed")}</p>
+            <p className="text-xs text-white/90 font-bold mt-1 leading-relaxed">
+              {t("পোস্ট · স্টোরি · রিলস · ভিডিও", "Posts · Stories · Reels · Videos")}
+            </p>
+          </div>
+          <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+            <ChevronRight className="w-5 h-5 text-white" />
+          </div>
+        </div>
+      </Link>
+
       {/* Messenger Entry Button */}
       <Link to="/social/messenger"
         className="block rounded-3xl p-6 relative overflow-hidden btn-press border border-white/20 shadow-[0_25px_50px_-12px_rgba(59,130,246,0.5)]"
