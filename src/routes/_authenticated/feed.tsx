@@ -17,7 +17,7 @@ import { getUnreadMessageCount } from "@/lib/chat.functions";
 import { usePresence } from "@/lib/presence";
 import {
   Heart, MessageCircle, Send, Image, X, Home, Users, Bell, Menu,
-  Plus, User, Search, Phone, Share2, Loader2, MoreHorizontal, Trash2, Globe, UserPlus, ChevronRight, ThumbsUp, Video, Check, ArrowLeft,
+  Plus, User, Search, Phone, Share2, Loader2, MoreHorizontal, Trash2, Globe, UserPlus, ChevronRight, ThumbsUp, Video, Check, ArrowLeft, Film,
 } from "lucide-react";
 import { toast } from "sonner";
 import StoryEditor from "@/components/social/StoryEditor";
@@ -776,6 +776,11 @@ function FeedPage() {
             className={`relative flex-1 h-full flex items-center justify-center border-b-[3px] transition-colors ${activeTab === "video" ? "border-red-600 text-red-600" : "border-transparent text-gray-500 dark:text-muted-foreground"}`}>
             <Video className="w-6 h-6" />
           </button>
+          <button onClick={() => navigate({ to: "/reels" })} title="রিলস"
+            className="relative flex-1 h-full flex items-center justify-center border-b-[3px] border-transparent text-pink-600">
+            <Film className="w-6 h-6" />
+          </button>
+
           <button onClick={() => navigate({ to: "/chat" })}
             className="relative flex-1 h-full flex items-center justify-center border-b-[3px] border-transparent text-gray-500 dark:text-muted-foreground">
             <MessageCircle className="w-6 h-6" />
@@ -985,6 +990,11 @@ function FeedPage() {
                   <Video className="w-5 h-5 text-red-500" />
                   <span className="text-[10px] text-gray-500 font-medium">ভিডিও</span>
                 </button>
+                <button onClick={() => navigate({ to: "/reels" })} className="flex flex-col items-center gap-0.5 px-2">
+                  <Film className="w-5 h-5 text-pink-500" />
+                  <span className="text-[10px] text-gray-500 font-medium">রিলস</span>
+                </button>
+
               </div>
             </div>
           )}
