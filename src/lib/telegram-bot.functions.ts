@@ -621,14 +621,6 @@ export const tgUnfreeze = createServerFn({ method: "POST" })
         .ilike("username", uname)
         .maybeSingle();
       tgId = (row as any)?.tg_user_id ?? null;
-      if (!tgId) {
-        const { data: p } = await db
-          .from("profiles")
-          .select("telegram_user_id")
-          .ilike("telegram_username", uname)
-          .maybeSingle();
-        tgId = Number((p as any)?.telegram_user_id) || null;
-      }
     }
 
     if (!tgId && data.uid) {
