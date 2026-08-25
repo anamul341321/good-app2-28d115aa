@@ -211,6 +211,29 @@ function ReelsPage() {
         </div>
       )}
 
+      {/* Top bar — dashboard back + upload (everyone can upload, TikTok style) */}
+      <div className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between p-3">
+        <button
+          onClick={() => navigate({ to: "/home" })}
+          className="btn-press h-9 pl-1.5 pr-3 rounded-full flex items-center gap-1 ring-2 ring-white/80 shadow-[0_4px_14px_rgba(255,193,7,0.55)]"
+          style={{ background: "linear-gradient(135deg,#ffd600,#ff9100,#f4511e)" }}
+        >
+          <ArrowLeft className="h-5 w-5 text-[#1a1a1a]" />
+          <span className="text-[11.5px] font-black text-[#1a1a1a] whitespace-nowrap">ড্যাশবোর্ড</span>
+        </button>
+        {user && (
+          <button
+            onClick={handlePickFile}
+            disabled={uploading}
+            className="btn-press h-9 px-3 rounded-full flex items-center gap-1.5 text-white font-black text-[12px] shadow-lg"
+            style={{ background: "linear-gradient(135deg,#e11d48,#f97316)" }}
+          >
+            {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+            <span>রিল আপলোড</span>
+          </button>
+        )}
+      </div>
+
       {user && (
         <button
           onClick={handlePickFile}
