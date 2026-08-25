@@ -111,6 +111,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
 
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const localStream = useRef<MediaStream | null>(null);
+  const remoteStream = useRef<MediaStream | null>(null);
   const pendingOffer = useRef<any>(null);
   const pendingIce = useRef<any[]>([]);
   const currentCallId = useRef<string | null>(null);
@@ -167,6 +168,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     pcRef.current = null;
     localStream.current?.getTracks().forEach((t) => t.stop());
     localStream.current = null;
+    remoteStream.current = null;
     pendingOffer.current = null;
     pendingIce.current = [];
     currentCallId.current = null;
@@ -225,6 +227,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const attachRemote = useCallback((stream: MediaStream) => {
+    remoteStream.current = stream;
     if (remoteVideo.current) {
       remoteVideo.current.srcObject = stream;
       remoteVideo.current.muted = false;
@@ -470,11 +473,42 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       currentCallId.current = call.id;
       setCallSessionId(call.id);
       pendingOffer.current = call.offer;
+      try {
+        (window as any).GoodAppDownloader?.beginCall?.(call.video);
+      } catch {}
       setPeer({ id: call.callerId, name: call.otherName });
       setWithVideo(call.video);
       setState("ringing");
     });
   }, [myId, state]);
+
+  useEffect(() => {
+    if (state !== "connecting" && state !== "active") return;
+    const video = remoteVideo.current;
+    const stream = remoteStream.current;
+    if (!video || !stream) return;
+    video.srcObject = stream;
+    video.muted = false;
+    video.volume = 1;
+    void video.play().catch(() => {});
+  }, [state, peer?.id, withVideo]);
+
+  useEffect(() => {
+    const replay = () => {
+      if (stateRef.current !== "connecting" && stateRef.current !== "active") return;
+      if (!remoteVideo.current || !remoteStream.current) return;
+      remoteVideo.current.srcObject = remoteStream.current;
+      remoteVideo.current.muted = false;
+      remoteVideo.current.volume = 1;
+      void remoteVideo.current.play().catch(() => {});
+    };
+    window.addEventListener("focus", replay);
+    document.addEventListener("visibilitychange", replay);
+    return () => {
+      window.removeEventListener("focus", replay);
+      document.removeEventListener("visibilitychange", replay);
+    };
+  }, []);
 
   // Screen share bridge events
   useEffect(() => {

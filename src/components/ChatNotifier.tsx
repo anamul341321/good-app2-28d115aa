@@ -34,6 +34,7 @@ export function ChatNotifier() {
             const peerId = String(payload?.new?.sender_id ?? "");
             playMessageTone();
             void qc.invalidateQueries({ queryKey: ["unread-msgs"] });
+            void qc.invalidateQueries({ queryKey: ["chat-unread-count"] });
             void qc.invalidateQueries({ queryKey: ["chats"] });
             void qc.invalidateQueries({ queryKey: ["thread", peerId] });
             const onThread = window.location.pathname.includes(`/chat/${peerId}`);
@@ -45,6 +46,37 @@ export function ChatNotifier() {
                   onClick: () => router.navigate({ to: "/chat/$peerId", params: { peerId } }),
                 },
               });
+            }
+          },
+        )
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "friend_links", filter: `addressee_id=eq.${me}` },
+          () => {
+            void qc.invalidateQueries({ queryKey: ["friends-summary"] });
+            void qc.invalidateQueries({ queryKey: ["friends"] });
+            void qc.invalidateQueries({ queryKey: ["suggested-people"] });
+            toast("নতুন ফ্রেন্ড রিকুয়েস্ট", { description: "Feed-এর Friends ট্যাবে দেখুন" });
+          },
+        )
+        .on(
+          "postgres_changes",
+          { event: "UPDATE", schema: "public", table: "friend_links", filter: `requester_id=eq.${me}` },
+          () => {
+            void qc.invalidateQueries({ queryKey: ["friends-summary"] });
+            void qc.invalidateQueries({ queryKey: ["friends"] });
+            void qc.invalidateQueries({ queryKey: ["suggested-people"] });
+          },
+        )
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "feed_notifications", filter: `user_id=eq.${me}` },
+          (payload: any) => {
+            void qc.invalidateQueries({ queryKey: ["notif-count"] });
+            void qc.invalidateQueries({ queryKey: ["notifications-list"] });
+            const type = String(payload?.new?.type ?? "");
+            if (type === "comment" || type === "reply" || type === "mention") {
+              toast("নতুন নোটিফিকেশন", { description: String(payload?.new?.content ?? "").slice(0, 90) });
             }
           },
         )

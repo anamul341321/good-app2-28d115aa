@@ -110,6 +110,31 @@ export const sendFriendRequest = createServerFn({ method: "POST" })
       status: "pending",
     });
     if (error) throw new Error("রিকোয়েস্ট পাঠানো যায়নি");
+
+    try {
+      const [{ data: profile }, { supabaseAdmin }] = await Promise.all([
+        (context.supabase as any).from("profiles").select("display_name").eq("id", context.userId).maybeSingle(),
+        import("@/integrations/supabase/client.server"),
+      ]);
+      const senderName = (profile as any)?.display_name || "একজন ইউজার";
+      await (supabaseAdmin as any).from("feed_notifications").insert({
+        user_id: data.userId,
+        from_user_id: context.userId,
+        type: "friend_request",
+        reference_id: null,
+        content: `${senderName} আপনাকে ফ্রেন্ড রিকুয়েস্ট পাঠিয়েছে`,
+      });
+      const { sendPushToUser } = await import("./push.server");
+      await sendPushToUser(data.userId, {
+        title: "নতুন ফ্রেন্ড রিকুয়েস্ট",
+        body: `${senderName} আপনাকে বন্ধু হতে চায়`,
+        url: "/feed",
+        data: { type: "friend_request", from_user_id: context.userId },
+        collapseKey: `friend-${context.userId}`,
+      });
+    } catch {
+      // Notification delivery is best-effort; the friend request itself is saved.
+    }
     return { ok: true, already: false as const };
   });
 
@@ -121,17 +146,50 @@ export const respondFriendRequest = createServerFn({ method: "POST" })
     accept: !!input?.accept,
   }))
   .handler(async ({ data, context }) => {
+    const { data: link } = await (context.supabase as any)
+      .from("friend_links")
+      .select("id, requester_id, addressee_id, status")
+      .eq("id", data.linkId)
+      .maybeSingle();
+    if (!link) throw new Error("রিকোয়েস্ট পাওয়া যায়নি");
+
     if (data.accept) {
       const { error } = await (context.supabase as any)
         .from("friend_links")
         .update({ status: "accepted", updated_at: new Date().toISOString() })
-        .eq("id", data.linkId);
+        .eq("id", data.linkId)
+        .eq("addressee_id", context.userId);
       if (error) throw new Error("গ্রহণ করা যায়নি");
+      try {
+        const [{ data: profile }, { supabaseAdmin }] = await Promise.all([
+          (context.supabase as any).from("profiles").select("display_name").eq("id", context.userId).maybeSingle(),
+          import("@/integrations/supabase/client.server"),
+        ]);
+        const accepterName = (profile as any)?.display_name || "একজন ইউজার";
+        await (supabaseAdmin as any).from("feed_notifications").insert({
+          user_id: (link as any).requester_id,
+          from_user_id: context.userId,
+          type: "friend_accept",
+          reference_id: null,
+          content: `${accepterName} আপনার ফ্রেন্ড রিকুয়েস্ট গ্রহণ করেছে`,
+        });
+        const { sendPushToUser } = await import("./push.server");
+        await sendPushToUser((link as any).requester_id, {
+          title: "ফ্রেন্ড রিকুয়েস্ট গ্রহণ হয়েছে",
+          body: `${accepterName} এখন আপনার বন্ধু`,
+          url: "/feed",
+          data: { type: "friend_accept", from_user_id: context.userId },
+          collapseKey: `friend-accept-${context.userId}`,
+        });
+      } catch {
+        // Notification delivery is best-effort.
+      }
     } else {
       const { error } = await (context.supabase as any)
         .from("friend_links")
         .delete()
-        .eq("id", data.linkId);
+        .eq("id", data.linkId)
+        .eq("addressee_id", context.userId);
       if (error) throw new Error("বাতিল করা যায়নি");
     }
     return { ok: true };
@@ -256,8 +314,9 @@ export const searchPeopleFull = createServerFn({ method: "POST" })
 /** Suggested friends — যাদের সাথে এখনো কোনো সংযোগ নেই (mutual অনুযায়ী সাজানো) */
 export const getSuggestedPeople = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input?: { limit?: number }) => ({
-    limit: Math.min(Math.max(Number(input?.limit ?? 10), 1), 30),
+  .inputValidator((input?: { limit?: number; offset?: number }) => ({
+    limit: Math.min(Math.max(Number(input?.limit ?? 10), 1), 50),
+    offset: Math.max(Number(input?.offset ?? 0), 0),
   }))
   .handler(async ({ data, context }) => {
     const me = context.userId;
@@ -279,7 +338,7 @@ export const getSuggestedPeople = createServerFn({ method: "POST" })
       .from("profiles")
       .select(PUBLIC_COLS)
       .order("created_at", { ascending: false })
-      .limit(200);
+      .range(data.offset, data.offset + Math.max(data.limit * 4, 80));
 
     const candidates = ((rows ?? []) as any[]).filter((p) => !linked.has(p.id));
 
@@ -302,8 +361,9 @@ export const getSuggestedPeople = createServerFn({ method: "POST" })
     }
 
     candidates.sort((a, b) => (mutualMap.get(b.id) ?? 0) - (mutualMap.get(a.id) ?? 0));
-    const people = (await attachLinkStatus(context.supabase, me, candidates.slice(0, data.limit))).map(
+    const page = candidates.slice(0, data.limit);
+    const people = (await attachLinkStatus(context.supabase, me, page)).map(
       (p) => ({ ...p, mutualCount: mutualMap.get(p.id) ?? 0 }),
     );
-    return { people };
+    return { people, hasMore: candidates.length > data.limit };
   });

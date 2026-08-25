@@ -92,10 +92,14 @@ function FeedPage() {
   const [storyEditorFile, setStoryEditorFile] = useState<File | null>(null);
   const [replyingTo, setReplyingTo] = useState<{ id: string; name: string } | null>(null);
   const [expandedReplies, setExpandedReplies] = useState<Set<string>>(new Set());
+  const [suggestedOffset, setSuggestedOffset] = useState(0);
+  const [suggestedPeople, setSuggestedPeople] = useState<any[]>([]);
+  const [suggestedHasMore, setSuggestedHasMore] = useState(true);
   const [page, setPage] = useState(0);
   const [allPosts, setAllPosts] = useState<Post[]>([]);
   const [hasMore, setHasMore] = useState(true);
   const POSTS_PER_PAGE = 20;
+  const SUGGESTED_PAGE_SIZE = 20;
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
@@ -155,10 +159,11 @@ function FeedPage() {
   });
 
   const { data: unreadData } = useQuery({
-    queryKey: ["chat-unread-count"],
+    queryKey: ["unread-msgs"],
     queryFn: () => getUnreadMessageCount(),
     enabled: !!user,
-    staleTime: 30000,
+    refetchInterval: 6000,
+    staleTime: 5000,
   });
   const unreadCount = unreadData?.unread || 0;
 
@@ -183,17 +188,37 @@ function FeedPage() {
     enabled: !!user && activeTab === "notif",
   });
 
-  const { data: suggestedPeople = [] } = useQuery({
-    queryKey: ["suggested-people"],
-    queryFn: async () => (await getSuggestedPeople({ data: { limit: 12 } })).people,
+  const { data: suggestedPageData, isFetching: suggestedFetching } = useQuery({
+    queryKey: ["suggested-people", suggestedOffset],
+    queryFn: () => getSuggestedPeople({ data: { limit: SUGGESTED_PAGE_SIZE, offset: suggestedOffset } }),
     enabled: !!user,
     staleTime: 120000,
   });
+
+  useEffect(() => {
+    if (!suggestedPageData) return;
+    const nextPeople = (suggestedPageData as any).people ?? [];
+    setSuggestedHasMore(Boolean((suggestedPageData as any).hasMore));
+    setSuggestedPeople((prev) => {
+      if (suggestedOffset === 0) return nextPeople;
+      const existing = new Set(prev.map((person: any) => person.id));
+      return [...prev, ...nextPeople.filter((person: any) => !existing.has(person.id))];
+    });
+  }, [suggestedPageData, suggestedOffset]);
 
   const { data: searchResults = [] } = useQuery({
     queryKey: ["feed-user-search", searchQuery],
     queryFn: async () => (await searchPeopleFull({ data: { query: searchQuery } })).people,
     enabled: searchQuery.trim().length >= 1,
+  });
+
+  const mentionMatch = commentText.match(/(?:^|\s)@([^@\s]{1,30})$/);
+  const mentionQuery = mentionMatch?.[1] ?? "";
+  const { data: mentionResults = [] } = useQuery({
+    queryKey: ["comment-mention-search", mentionQuery],
+    queryFn: async () => (await searchPeopleFull({ data: { query: mentionQuery } })).people,
+    enabled: !!commentingPostId && mentionQuery.length >= 1,
+    staleTime: 30_000,
   });
 
   useEffect(() => {
@@ -213,6 +238,11 @@ function FeedPage() {
       })
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "feed_notifications" }, () => {
         queryClient.invalidateQueries({ queryKey: ["notif-count"] });
+        queryClient.invalidateQueries({ queryKey: ["notifications-list"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "friend_links" }, () => {
+        queryClient.invalidateQueries({ queryKey: ["friends-summary"] });
+        queryClient.invalidateQueries({ queryKey: ["suggested-people"] });
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
@@ -343,6 +373,7 @@ function FeedPage() {
   const friendRequestMutation = useMutation({
     mutationFn: async (targetUserId: string) => { await sendFriendRequest({ data: { userId: targetUserId } }); },
     onSuccess: () => {
+      setSuggestedOffset(0);
       queryClient.invalidateQueries({ queryKey: ["suggested-people"] });
       queryClient.invalidateQueries({ queryKey: ["friends-summary"] });
       queryClient.invalidateQueries({ queryKey: ["feed-user-search"] });
@@ -354,6 +385,7 @@ function FeedPage() {
   const respondRequestMutation = useMutation({
     mutationFn: async ({ linkId, accept }: { linkId: string; accept: boolean }) => respondFriendRequest({ data: { linkId, accept } }),
     onSuccess: (_d, vars) => {
+      setSuggestedOffset(0);
       queryClient.invalidateQueries({ queryKey: ["friends-summary"] });
       queryClient.invalidateQueries({ queryKey: ["feed-user-search"] });
       queryClient.invalidateQueries({ queryKey: ["suggested-people"] });
@@ -453,6 +485,11 @@ function FeedPage() {
     navigate({ to: "/chat/$peerId", params: { peerId: targetUserId } });
   };
 
+  const insertMention = (person: any) => {
+    const label = person.display_name || (person.uid_seq ? String(person.uid_seq) : "User");
+    setCommentText((prev) => prev.replace(/(^|\s)@([^@\s]*)$/, `$1@${label} `));
+  };
+
   const sharePost = async (post: Post) => {
     if (!user) return;
     try {
@@ -511,7 +548,7 @@ function FeedPage() {
               <h3 className="text-[15px] font-bold text-gray-900 dark:text-foreground">People You May Know</h3>
             </div>
             <div className="flex gap-2.5 overflow-x-auto px-3 pb-2 scrollbar-hide">
-              {suggestedPeople.map((sp: any) => (
+              {suggestedPeople.slice(0, 12).map((sp: any) => (
                 <div key={sp.id} className="min-w-[160px] max-w-[160px] rounded-lg border border-gray-200 dark:border-border overflow-hidden bg-white dark:bg-card shrink-0 shadow-sm">
                   <Link to="/feed/user/$userId" params={{ userId: sp.id }} className="h-[140px] w-full relative bg-gray-100 dark:bg-secondary block">
                     {sp.avatar_url ? (
@@ -913,6 +950,17 @@ function FeedPage() {
               {(suggestedPeople as any[]).length === 0 && (
                 <p className="text-sm text-gray-500 text-center py-6">সাজেশন নেই</p>
               )}
+              {suggestedHasMore && (
+                <div className="px-3 pt-2">
+                  <button
+                    onClick={() => setSuggestedOffset((value) => value + SUGGESTED_PAGE_SIZE)}
+                    disabled={suggestedFetching}
+                    className="w-full rounded-lg bg-blue-50 dark:bg-primary/10 py-2.5 text-[13px] font-black text-blue-600 dark:text-primary disabled:opacity-60"
+                  >
+                    {suggestedFetching ? "লোড হচ্ছে..." : "আরও দেখুন"}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -1028,14 +1076,15 @@ function FeedPage() {
                 {notificationsList.map((n: any) => (
                   <button key={n.id}
                     onClick={() => {
-                      if (n.reference_id) { setActiveTab("home"); setTimeout(() => openComments(n.reference_id), 100); }
+                      if (n.type === "friend_request" || n.type === "friend_accept") setActiveTab("friends");
+                      else if (n.reference_id) { setActiveTab("home"); setTimeout(() => openComments(n.reference_id), 100); }
                       else if (n.from_user_id) navigate({ to: "/feed/user/$userId", params: { userId: n.from_user_id } });
                     }}
                     className={`w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-secondary/30 transition-colors ${!n.is_read ? "bg-blue-50/60 dark:bg-primary/5" : ""}`}>
                     <div className="w-14 h-14 rounded-full bg-gray-200 dark:bg-primary/20 flex items-center justify-center overflow-hidden shrink-0 relative">
                       <Avatar path={n.from_user?.avatar_url} className="w-full h-full object-cover" fallback="?" />
-                      <div className={`absolute -bottom-0.5 -right-0.5 w-6 h-6 rounded-full flex items-center justify-center text-white text-[11px] ${n.type === "like" ? "bg-blue-600" : n.type === "comment" || n.type === "reply" ? "bg-green-500" : n.type === "mention" ? "bg-orange-500" : "bg-gray-400"}`}>
-                        {n.type === "like" ? "👍" : n.type === "comment" ? "💬" : n.type === "reply" ? "↩️" : n.type === "mention" ? "@" : "🔔"}
+                       <div className={`absolute -bottom-0.5 -right-0.5 w-6 h-6 rounded-full flex items-center justify-center text-white text-[11px] ${n.type === "like" ? "bg-blue-600" : n.type === "comment" || n.type === "reply" ? "bg-green-500" : n.type === "mention" ? "bg-orange-500" : n.type === "friend_request" || n.type === "friend_accept" ? "bg-blue-600" : "bg-gray-400"}`}>
+                         {n.type === "like" ? "👍" : n.type === "comment" ? "💬" : n.type === "reply" ? "↩️" : n.type === "mention" ? "@" : n.type === "friend_request" || n.type === "friend_accept" ? "👥" : "🔔"}
                       </div>
                     </div>
                     <div className="flex-1 min-w-0">
@@ -1045,6 +1094,8 @@ function FeedPage() {
                         {n.type === "like" && " আপনার পোস্টে লাইক দিয়েছে"}
                         {n.type === "comment" && " আপনার পোস্টে মন্তব্য করেছে"}
                         {n.type === "reply" && " আপনার মন্তব্যে রিপ্লাই দিয়েছে"}
+                        {n.type === "friend_request" && " আপনাকে ফ্রেন্ড রিকুয়েস্ট পাঠিয়েছে"}
+                        {n.type === "friend_accept" && " আপনার ফ্রেন্ড রিকুয়েস্ট গ্রহণ করেছে"}
                       </p>
                       {n.content && <p className="text-[13px] text-gray-500 dark:text-muted-foreground truncate mt-0.5">"{n.content}"</p>}
                       <p className="text-[12px] text-blue-500 mt-0.5">{timeAgo(n.created_at)}</p>
@@ -1168,6 +1219,26 @@ function FeedPage() {
                 <div className="flex items-center justify-between px-2 py-1.5 mb-1.5 bg-gray-100 dark:bg-secondary rounded-lg text-[12px]">
                   <span className="text-gray-600 dark:text-muted-foreground">Replying to <b>{replyingTo.name}</b></span>
                   <button onClick={() => setReplyingTo(null)}><X className="w-3.5 h-3.5 text-gray-500" /></button>
+                </div>
+              )}
+              {mentionResults.length > 0 && (
+                <div className="mb-2 max-h-40 overflow-y-auto rounded-xl border border-gray-200 dark:border-border/30 bg-white dark:bg-card shadow-lg">
+                  {mentionResults.slice(0, 6).map((person: any) => (
+                    <button
+                      key={person.id}
+                      type="button"
+                      onClick={() => insertMention(person)}
+                      className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-gray-50 dark:hover:bg-secondary/50"
+                    >
+                      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-blue-50 dark:bg-primary/10 text-[12px] font-black text-blue-600 dark:text-primary">
+                        {(person.display_name || "U").slice(0, 1).toUpperCase()}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[13px] font-black text-gray-900 dark:text-foreground">{person.display_name || "User"}</span>
+                        <span className="block text-[11px] font-semibold text-gray-500 dark:text-muted-foreground">UID {person.uid_seq ?? "—"}</span>
+                      </span>
+                    </button>
+                  ))}
                 </div>
               )}
               <div className="flex items-center gap-2">

@@ -40,6 +40,8 @@ public class MainActivity extends BridgeActivity {
     private String updateFileName = "Good-App-latest.apk";
     private boolean waitingForInstallPermission = false;
     private final AudioManager.OnAudioFocusChangeListener callAudioFocus = focusChange -> {};
+    private PowerManager.WakeLock callWakeLock;
+    private PowerManager.WakeLock mediaWakeLock;
 
     private final BroadcastReceiver downloadReceiver = new BroadcastReceiver() {
         @Override
@@ -174,6 +176,13 @@ public class MainActivity extends BridgeActivity {
         @JavascriptInterface
         public void beginCall(boolean video) {
             runOnUiThread(() -> {
+                try {
+                    PowerManager power = (PowerManager) getSystemService(Context.POWER_SERVICE);
+                    if (callWakeLock == null) {
+                        callWakeLock = power.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "GoodApp:ActiveCall");
+                    }
+                    if (!callWakeLock.isHeld()) callWakeLock.acquire(60 * 60 * 1000L);
+                } catch (Exception ignored) {}
                 AudioManager audio = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
                 audio.requestAudioFocus(
                     callAudioFocus,
@@ -202,6 +211,9 @@ public class MainActivity extends BridgeActivity {
         @JavascriptInterface
         public void endCall() {
             runOnUiThread(() -> {
+                try {
+                    if (callWakeLock != null && callWakeLock.isHeld()) callWakeLock.release();
+                } catch (Exception ignored) {}
                 AudioManager audio = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
                 audio.abandonAudioFocus(callAudioFocus);
                 audio.setMicrophoneMute(false);
@@ -209,6 +221,34 @@ public class MainActivity extends BridgeActivity {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) audio.clearCommunicationDevice();
                 else audio.setSpeakerphoneOn(false);
                 getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            });
+        }
+
+        @JavascriptInterface
+        public void beginMediaPlayback() {
+            runOnUiThread(() -> {
+                try {
+                    PowerManager power = (PowerManager) getSystemService(Context.POWER_SERVICE);
+                    if (mediaWakeLock == null) {
+                        mediaWakeLock = power.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "GoodApp:MediaPlayback");
+                    }
+                    if (!mediaWakeLock.isHeld()) mediaWakeLock.acquire(2 * 60 * 60 * 1000L);
+                    AudioManager audio = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+                    audio.requestAudioFocus(
+                        callAudioFocus,
+                        AudioManager.STREAM_MUSIC,
+                        AudioManager.AUDIOFOCUS_GAIN
+                    );
+                } catch (Exception ignored) {}
+            });
+        }
+
+        @JavascriptInterface
+        public void endMediaPlayback() {
+            runOnUiThread(() -> {
+                try {
+                    if (mediaWakeLock != null && mediaWakeLock.isHeld()) mediaWakeLock.release();
+                } catch (Exception ignored) {}
             });
         }
 
@@ -479,6 +519,10 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onDestroy() {
         stopCapture();
+        try {
+            if (callWakeLock != null && callWakeLock.isHeld()) callWakeLock.release();
+            if (mediaWakeLock != null && mediaWakeLock.isHeld()) mediaWakeLock.release();
+        } catch (Exception ignored) {}
         try {
             unregisterReceiver(downloadReceiver);
         } catch (Exception ignored) {}

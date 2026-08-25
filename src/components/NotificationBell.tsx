@@ -18,7 +18,8 @@ const BAD_WORDS = [
   "warning", "ওয়ার্নিং", "সতর্ক", "ব্যান", "banned", "block", "ব্লক", "বাতিল",
   "reject", "ব্যর্থ", "failed", "ঋণ", "debt", "জরিমানা", "ফ্রিজ", "freeze", "সমস্যা",
 ];
-function severityOf(text: string): "bad" | "good" {
+function severityOf(text: string, type?: string): "bad" | "good" {
+  if (["friend_request", "friend_accept", "comment", "reply", "mention", "like"].includes(type ?? "")) return "bad";
   const t = text.toLowerCase();
   return BAD_WORDS.some((w) => t.includes(w.toLowerCase())) ? "bad" : "good";
 }
@@ -40,7 +41,7 @@ export function NotificationBell() {
   const unread = data?.unread ?? 0;
   const items = data?.items ?? [];
   const hasUnreadWarning = items.some(
-    (n) => !n.read && severityOf(`${n.title ?? ""} ${n.body}`) === "bad",
+    (n) => !n.read && severityOf(`${n.title ?? ""} ${n.body}`, n.type) === "bad",
   );
 
   return (
@@ -96,7 +97,7 @@ export function NotificationBell() {
                 </p>
               )}
               {items.map((n) => {
-                const bad = severityOf(`${n.title ?? ""} ${n.body}`) === "bad";
+                const bad = severityOf(`${n.title ?? ""} ${n.body}`, n.type) === "bad";
                 return (
                 <div
                   key={n.id}
