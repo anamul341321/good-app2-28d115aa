@@ -1,11 +1,91 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { adminListFaces, adminResetTask } from "@/lib/admin.functions";
-import { Copy, Loader2, RefreshCw, X } from "lucide-react";
+import { adminListFaces, adminResetTask, adminFreshWallets, adminOnchainScanBatch } from "@/lib/admin.functions";
+import { Copy, Loader2, RefreshCw, X, Radar } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
 
 export const Route = createFileRoute("/admin/faces")({ component: AdminFaces });
+
+function OnchainAudit() {
+  const { data, isLoading, refetch } = useQuery({ queryKey: ["fresh-wallets"], queryFn: () => adminFreshWallets() });
+  const [scanning, setScanning] = useState(false);
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
+
+  const copyKeys = async (keys: string[] | undefined, label: string) => {
+    if (!keys || keys.length === 0) return toast.error(`${label} — কোনো key নেই`);
+    await navigator.clipboard.writeText(keys.join("\n"));
+    toast.success(`${keys.length} টি key কপি হয়েছে (${label})`);
+  };
+
+  const runScan = async () => {
+    setScanning(true);
+    try {
+      for (let i = 0; i < 200; i++) {
+        const r = await adminOnchainScanBatch({ data: { limit: 60 } });
+        setProgress({ done: r.done, total: r.total });
+        if (r.remaining === 0) break;
+      }
+      toast.success("Blockchain scan শেষ");
+      await refetch();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Scan ব্যর্থ");
+    } finally {
+      setScanning(false);
+    }
+  };
+
+  const f = data?.fresh;
+  return (
+    <div className="glass rounded-xl p-3 mb-3 space-y-2">
+      <p className="text-[10px] uppercase tracking-widest text-emerald font-bold">
+        Blockchain audit — একদম fresh wallet (কোনো token/CELO transfer হয়নি)
+      </p>
+      <button onClick={runScan} disabled={scanning}
+        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-emerald/15 border border-emerald/30 text-emerald font-black text-xs btn-press disabled:opacity-50">
+        {scanning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Radar className="w-3.5 h-3.5" />}
+        {scanning ? `Scan চলছে… ${progress?.done ?? 0}/${progress?.total ?? "?"}` : "🔍 Blockchain scan চালাও"}
+      </button>
+
+      {isLoading ? (
+        <div className="py-3 flex justify-center"><Loader2 className="w-4 h-4 animate-spin text-cyan" /></div>
+      ) : (
+        <>
+          <p className="text-[10px] text-muted-foreground leading-relaxed">
+            Scan হয়েছে {data?.scannedWallets ?? 0}/{data?.totalWallets ?? 0} wallet · Fresh: {f?.count ?? 0}
+            {" "}(✅WL {f?.wl ?? 0} · ❌ {f?.notWl ?? 0})
+          </p>
+          <p className="text-[10px] text-muted-foreground leading-relaxed">
+            Fresh wallet-এর মধ্যে re-verify চেয়েছে: {f?.reverified ?? 0} (১ বার: {f?.reverifiedOnce ?? 0}) · re-verify করেও আবার ❌not-WL: {f?.reverifiedLostWl ?? 0} · কখনো re-verify চায়নি: {f?.neverReverified ?? 0}
+          </p>
+          <p className="text-[10px] text-muted-foreground leading-relaxed">
+            Token/CELO সরানো হয়েছে এমন wallet: {data?.touched.count ?? 0} · এর মধ্যে re-verify: {data?.touched.reverified ?? 0} · আবার ❌not-WL: {data?.touched.reverifiedLostWl ?? 0}
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            <button onClick={() => copyKeys(f?.keysNeverReverified, "Fresh + ✅WL + কখনো re-verify হয়নি")}
+              className="flex flex-col items-center justify-center gap-0.5 py-2 rounded-lg bg-emerald/15 border border-emerald/30 text-emerald font-black text-[11px] btn-press">
+              <span>🌱 Fresh + ✅WL (no re-verify)</span>
+              <span className="text-[10px] opacity-80">{f?.neverReverified ?? 0} keys</span>
+            </button>
+            <button onClick={() => copyKeys(f?.keysWl, "Fresh + ✅WL (সব)")}
+              className="flex flex-col items-center justify-center gap-0.5 py-2 rounded-lg bg-cyan/15 border border-cyan/30 text-cyan font-black text-[11px] btn-press">
+              <span>🌱 Fresh + ✅WL (সব)</span>
+              <span className="text-[10px] opacity-80">{f?.wl ?? 0} keys</span>
+            </button>
+          </div>
+          <button onClick={() => copyKeys(f?.keys, "সব fresh wallet")}
+            className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-violet/15 border border-violet/30 text-violet font-black text-[11px] btn-press">
+            <Copy className="w-3 h-3" /> সব fresh wallet key ({f?.count ?? 0})
+          </button>
+          <textarea readOnly value={(f?.keysNeverReverified ?? []).join("\n")}
+            placeholder="Fresh + whitelist + কখনো re-verify চায়নি — keys"
+            className="w-full h-20 px-2 py-1.5 rounded bg-surface-2 border border-emerald/30 text-[10px] mono-num resize-none outline-none" />
+        </>
+      )}
+    </div>
+  );
+}
+
 
 function AdminFaces() {
   const [zoom, setZoom] = useState<{ url: string; label: string } | null>(null);
