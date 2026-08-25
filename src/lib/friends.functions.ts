@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import type { PublicPerson } from "./friends-people.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 type PersonRow = {
