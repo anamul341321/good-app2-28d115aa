@@ -145,10 +145,15 @@ function RechargePage() {
               <Zap className="w-3 h-3" /> LIVE
             </div>
           </div>
-          <p className="text-[10px] uppercase tracking-widest opacity-90 font-black">{t("উপলব্ধ ব্যালেন্স", "Available Balance")}</p>
+          <p className="text-[10px] uppercase tracking-widest opacity-90 font-black">{t("উপলব্ধ মেইন ব্যালেন্স", "Available Main Balance")}</p>
           <p className="mono-num text-5xl font-black leading-none mt-1 drop-shadow-lg" translate="no">
-            {balance}<span className="text-2xl ml-0.5">৳</span>
+            {mainPart}<span className="text-2xl ml-0.5">৳</span>
           </p>
+          {miningPart > 0 && (
+            <p className="text-[11px] font-bold mt-1 opacity-90" translate="no">
+              {t("মাইনিং ব্যালেন্স", "Mining balance")} {miningPart}৳ · {t("আগে মেইনে ক্লেইম করুন", "claim to Main first")} ⛏️
+            </p>
+          )}
           <p className="text-[10px] opacity-90 mt-2 flex items-center gap-1">
             <Sparkles className="w-3 h-3" /> {t(`মিনিমাম ${MIN_RECHARGE}৳ থেকে রিচার্জ · সাথে সাথে টাকা যাবে`, `Recharge from ${MIN_RECHARGE}৳ · instant delivery`)}
           </p>
