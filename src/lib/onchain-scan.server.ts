@@ -132,7 +132,7 @@ export async function scanWallets(addresses: string[]) {
         in_senders: r.in_senders,
         // provisional; recomputePristine() finalises using sender frequency
         celo_in_external: false,
-        pristine: r.nonce === 0 && r.token_out_count === 0,
+        pristine: r.token_out_count === 0,
         scanned_at: new Date().toISOString(),
       })),
       { onConflict: "wallet_address" },
