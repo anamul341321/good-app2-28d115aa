@@ -14,6 +14,7 @@ import {
   Send,
   X,
   ExternalLink,
+  ArrowLeft,
 } from "lucide-react";
 import {
   getFeedPosts,
