@@ -26,6 +26,7 @@ import {
   getUploadedLongVideos,
   fetchYouTubeSuggestions,
   trackVideoPreference,
+  notifyPostShared,
   toggleLike,
   getLocalVideoEngagement,
   getChannelStats,
@@ -73,7 +74,10 @@ export default function VideoTab() {
   const [showSuggest, setShowSuggest] = useState(false);
   const [listening, setListening] = useState(false);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
+  // প্রতি ৩ মিনিটে নতুন rotation — একই ভিডিও বারবার আসবে না
+  const freshness = useMemo(() => Math.floor(Date.now() / (3 * 60 * 1000)) % 9973, []);
   const inputRef = useRef<HTMLInputElement | null>(null);
+
   const chips = [
     { label: "All", value: "" },
     { label: "Music", value: "bangla new song" },
@@ -91,12 +95,13 @@ export default function VideoTab() {
     fetchNextPage,
     hasNextPage,
   } = useInfiniteQuery({
-    queryKey: ["feed-videos", search],
+    queryKey: ["feed-videos", search, freshness],
     initialPageParam: { page: 1, token: undefined as string | undefined },
     queryFn: async ({ pageParam }) => {
       const [local, external] = await Promise.all([
         getUploadedLongVideos(pageParam.page, pageParam.page === 1 ? 8 : 3, search || undefined),
-        getBangladeshExternalVideos(pageParam.page, 18, undefined, search || undefined, "long", 0, pageParam.token),
+        getBangladeshExternalVideos(pageParam.page, 18, undefined, search || undefined, "long", freshness, pageParam.token),
+
       ]);
       const videos = [...local.videos, ...external.videos].sort((a, b) => Number(b.view_count || 0) - Number(a.view_count || 0));
       return { videos, page: pageParam.page, nextPageToken: external.nextPageToken };
@@ -374,11 +379,13 @@ function InlinePlayer({
   const [commentText, setCommentText] = useState("");
 
   const relatedSearch = useMemo(() => buildRelatedSearchTerm(video), [video]);
+  const relatedFreshness = useMemo(() => Math.floor(Date.now() / (3 * 60 * 1000)) % 9973, [video.id]);
   const { data: relatedData, isLoading: relatedLoading } = useQuery({
-    queryKey: ["video-related", video.id, relatedSearch],
-    queryFn: () => getBangladeshExternalVideos(1, 18, undefined, relatedSearch, "long"),
-    staleTime: 15 * 60 * 1000,
+    queryKey: ["video-related", video.id, relatedSearch, relatedFreshness],
+    queryFn: () => getBangladeshExternalVideos(1, 18, undefined, relatedSearch, "long", relatedFreshness),
+    staleTime: 3 * 60 * 1000,
   });
+
 
   const visibleSuggestedVideos = useMemo(() => {
     const seen = new Set([video.id]);
@@ -464,6 +471,7 @@ function InlinePlayer({
         await navigator.clipboard.writeText(url);
         toast.success("লিংক কপি হয়েছে");
       }
+      if (isLocal && postId && userId) void notifyPostShared(postId, userId);
     } catch {
       // user cancelled
     }

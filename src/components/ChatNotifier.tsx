@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { playMessageTone } from "@/lib/msg-sound";
 import { toast } from "sonner";
 import { useRouter } from "@tanstack/react-router";
+import { MessageReplyToast } from "@/components/MessageReplyToast";
 
 /**
  * পুরো অ্যাপ জুড়ে নতুন মেসেজ শোনে — শব্দ বাজায়, টোস্ট দেখায় এবং
@@ -38,14 +39,42 @@ export function ChatNotifier() {
             void qc.invalidateQueries({ queryKey: ["chats"] });
             void qc.invalidateQueries({ queryKey: ["thread", peerId] });
             const onThread = window.location.pathname.includes(`/chat/${peerId}`);
-            if (!onThread) {
-              toast("💬 নতুন মেসেজ", {
-                description: body.slice(0, 90),
-                action: {
-                  label: "দেখুন",
-                  onClick: () => router.navigate({ to: "/chat/$peerId", params: { peerId } }),
-                },
-              });
+            if (!onThread && peerId) {
+              void (async () => {
+                let name = "নতুন মেসেজ";
+                let avatarUrl: string | null = null;
+                try {
+                  const { data: prof } = await supabase
+                    .from("profiles")
+                    .select("display_name, avatar_url")
+                    .eq("id", peerId)
+                    .maybeSingle();
+                  if (prof?.display_name) name = prof.display_name;
+                  avatarUrl = (prof as any)?.avatar_url ?? null;
+                } catch {
+                  // no-op
+                }
+                toast.custom(
+                  (id) => (
+                    <MessageReplyToast
+                      toastId={id}
+                      peerId={peerId}
+                      name={name}
+                      avatarUrl={avatarUrl}
+                      body={body}
+                      onOpen={() => {
+                        toast.dismiss(id);
+                        router.navigate({ to: "/chat/$peerId", params: { peerId } });
+                      }}
+                      onSent={() => {
+                        void qc.invalidateQueries({ queryKey: ["thread", peerId] });
+                        void qc.invalidateQueries({ queryKey: ["chats"] });
+                      }}
+                    />
+                  ),
+                  { duration: 9000 },
+                );
+              })();
             }
           },
         )
@@ -75,8 +104,14 @@ export function ChatNotifier() {
             void qc.invalidateQueries({ queryKey: ["notif-count"] });
             void qc.invalidateQueries({ queryKey: ["notifications-list"] });
             const type = String(payload?.new?.type ?? "");
-            if (type === "comment" || type === "reply" || type === "mention") {
-              toast("নতুন নোটিফিকেশন", { description: String(payload?.new?.content ?? "").slice(0, 90) });
+            if (["comment", "reply", "mention", "like", "share", "follow", "subscribe"].includes(type)) {
+              const label =
+                type === "like" ? "❤️ নতুন লাইক"
+                : type === "share" ? "🔗 কেউ শেয়ার করেছে"
+                : type === "mention" ? "@ আপনাকে মেনশন করা হয়েছে"
+                : type === "subscribe" || type === "follow" ? "🔔 নতুন সাবস্ক্রাইবার"
+                : "💬 নতুন কমেন্ট";
+              toast(label, { description: String(payload?.new?.content ?? "").slice(0, 90) });
             }
           },
         )
