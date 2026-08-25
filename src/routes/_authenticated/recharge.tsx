@@ -309,7 +309,7 @@ function RechargePage() {
       </div>
       </>
       ) : (
-        <CardStore balance={balance} onDone={() => { refetch(); }} />
+        <CardStore balance={mainPart} onDone={() => { refetch(); }} />
       )}
     </div>
   );
