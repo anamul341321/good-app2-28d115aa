@@ -731,6 +731,10 @@ function FeedPage() {
               </span>
             )}
           </button>
+          <button onClick={() => setActiveTab("video")} title="ভিডিও দেখুন"
+            className={`relative flex-1 h-full flex items-center justify-center border-b-[3px] transition-colors ${activeTab === "video" ? "border-red-600 text-red-600" : "border-transparent text-gray-500 dark:text-muted-foreground"}`}>
+            <Video className="w-6 h-6" />
+          </button>
           <button onClick={() => navigate({ to: "/chat" })}
             className="relative flex-1 h-full flex items-center justify-center border-b-[3px] border-transparent text-gray-500 dark:text-muted-foreground">
             <MessageCircle className="w-6 h-6" />
