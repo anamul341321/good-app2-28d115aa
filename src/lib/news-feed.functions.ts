@@ -90,12 +90,13 @@ export const reactToPost = createServerFn({ method: "POST" })
     // Notify post owner if it's a new reaction or change
     const { data: post } = await supabase.from("posts").select("user_id").eq("id", data.postId).single();
     if (post && post.user_id !== userId) {
-      await supabase.from("user_notices").insert({
+      await (supabase as any).from("feed_notifications").insert({
         user_id: post.user_id,
-        title: "Reaction",
-        body: `Someone reacted to your post`,
-        metadata: { type: "post_reaction", post_id: data.postId }
-      } as any);
+        from_user_id: userId,
+        type: "like",
+        content: "আপনার পোস্টে রিঅ্যাকশন পড়েছে",
+        reference_id: data.postId,
+      });
     }
 
     return { ok: true };
@@ -124,12 +125,13 @@ export const addComment = createServerFn({ method: "POST" })
     // Notify post owner
     const { data: post } = await supabase.from("posts").select("user_id").eq("id", data.postId).single();
     if (post && post.user_id !== userId) {
-      await supabase.from("user_notices").insert({
+      await (supabase as any).from("feed_notifications").insert({
         user_id: post.user_id,
-        title: "New Comment",
-        body: `Someone commented on your post`,
-        metadata: { type: "post_comment", post_id: data.postId }
-      } as any);
+        from_user_id: userId,
+        type: "comment",
+        content: "আপনার পোস্টে নতুন মন্তব্য",
+        reference_id: data.postId,
+      });
     }
 
     return { ok: true };
@@ -217,8 +219,8 @@ export const listNotifications = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
-    const { data, error } = await supabase
-      .from("user_notices")
+    const { data, error } = await (supabase as any)
+      .from("feed_notifications")
       .select("*")
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
@@ -233,9 +235,9 @@ export const markNotificationRead = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const { error } = await supabase
-      .from("user_notices")
-      .update({ read_at: new Date().toISOString() } as any)
+    const { error } = await (supabase as any)
+      .from("feed_notifications")
+      .update({ is_read: true })
       .eq("id", data.id)
       .eq("user_id", userId);
 

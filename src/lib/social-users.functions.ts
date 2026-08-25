@@ -157,12 +157,13 @@ export const sendFriendRequest = createServerFn({ method: "POST" })
 
     if (error) throw new Error(error.message);
 
-    await supabase.from("user_notices").insert({
+    await (supabase as any).from("feed_notifications").insert({
       user_id: data.friendId,
-      title: "Friend Request",
-      body: "Someone sent you a friend request",
-      metadata: { type: "friend_request", sender_id: userId }
-    } as any);
+      from_user_id: userId,
+      type: "friend_request",
+      content: "আপনাকে ফ্রেন্ড রিকুয়েস্ট পাঠানো হয়েছে",
+      reference_id: userId,
+    });
 
     return { ok: true };
   });
@@ -191,12 +192,13 @@ export const acceptFriendRequest = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
 
     const senderId = (request as any).user_id === userId ? (request as any).friend_id : (request as any).user_id;
-    await supabase.from("user_notices").insert({
+    await (supabase as any).from("feed_notifications").insert({
       user_id: senderId,
-      title: "Friend Request Accepted",
-      body: "Your friend request was accepted",
-      metadata: { type: "friend_request_accepted", friend_id: userId }
-    } as any);
+      from_user_id: userId,
+      type: "friend_accept",
+      content: "আপনার ফ্রেন্ড রিকুয়েস্ট গ্রহণ করা হয়েছে",
+      reference_id: userId,
+    });
 
     return { ok: true };
   });
