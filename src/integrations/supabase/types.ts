@@ -695,6 +695,27 @@ export type Database = {
         }
         Relationships: []
       }
+      channel_subscriptions: {
+        Row: {
+          channel_user_id: string
+          created_at: string
+          id: string
+          subscriber_user_id: string
+        }
+        Insert: {
+          channel_user_id: string
+          created_at?: string
+          id?: string
+          subscriber_user_id: string
+        }
+        Update: {
+          channel_user_id?: string
+          created_at?: string
+          id?: string
+          subscriber_user_id?: string
+        }
+        Relationships: []
+      }
       chat_group_members: {
         Row: {
           group_id: string
@@ -753,6 +774,35 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      comment_likes: {
+        Row: {
+          comment_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          comment_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          comment_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comment_likes_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "post_comments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       email_send_log: {
         Row: {
@@ -870,6 +920,39 @@ export type Database = {
           expires_at?: string
           id?: string
           used_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      feed_notifications: {
+        Row: {
+          content: string | null
+          created_at: string
+          from_user_id: string | null
+          id: string
+          is_read: boolean
+          reference_id: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          from_user_id?: string | null
+          id?: string
+          is_read?: boolean
+          reference_id?: string | null
+          type?: string
+          user_id: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          from_user_id?: string | null
+          id?: string
+          is_read?: boolean
+          reference_id?: string | null
+          type?: string
           user_id?: string
         }
         Relationships: []
@@ -1135,33 +1218,46 @@ export type Database = {
       }
       post_comments: {
         Row: {
-          body: string
+          body: string | null
+          content: string | null
           created_at: string
           id: string
+          parent_comment_id: string | null
           parent_id: string | null
           post_id: string
           updated_at: string
           user_id: string
         }
         Insert: {
-          body: string
+          body?: string | null
+          content?: string | null
           created_at?: string
           id?: string
+          parent_comment_id?: string | null
           parent_id?: string | null
           post_id: string
           updated_at?: string
           user_id: string
         }
         Update: {
-          body?: string
+          body?: string | null
+          content?: string | null
           created_at?: string
           id?: string
+          parent_comment_id?: string | null
           parent_id?: string | null
           post_id?: string
           updated_at?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "post_comments_parent_comment_id_fkey"
+            columns: ["parent_comment_id"]
+            isOneToOne: false
+            referencedRelation: "post_comments"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "post_comments_parent_id_fkey"
             columns: ["parent_id"]
@@ -1181,6 +1277,35 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      post_likes: {
+        Row: {
+          created_at: string
+          id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_likes_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
             referencedColumns: ["id"]
           },
         ]
@@ -1227,30 +1352,48 @@ export type Database = {
       posts: {
         Row: {
           body: string | null
+          comments_count: number
+          content: string | null
           created_at: string
           id: string
+          image_url: string | null
+          likes_count: number
           media_type: string | null
           media_urls: string[] | null
+          thumbnail_url: string | null
           updated_at: string
           user_id: string
+          video_url: string | null
         }
         Insert: {
           body?: string | null
+          comments_count?: number
+          content?: string | null
           created_at?: string
           id?: string
+          image_url?: string | null
+          likes_count?: number
           media_type?: string | null
           media_urls?: string[] | null
+          thumbnail_url?: string | null
           updated_at?: string
           user_id: string
+          video_url?: string | null
         }
         Update: {
           body?: string | null
+          comments_count?: number
+          content?: string | null
           created_at?: string
           id?: string
+          image_url?: string | null
+          likes_count?: number
           media_type?: string | null
           media_urls?: string[] | null
+          thumbnail_url?: string | null
           updated_at?: string
           user_id?: string
+          video_url?: string | null
         }
         Relationships: [
           {
@@ -1274,6 +1417,7 @@ export type Database = {
           bonus_first_verify_claimed: boolean
           bonus_first_verify_self_claimed: boolean
           bonus_reverify_claimed: boolean
+          cover_url: string | null
           created_at: string
           date_of_birth: string | null
           display_name: string | null
@@ -1284,11 +1428,13 @@ export type Database = {
           father_name: string | null
           full_address: string | null
           id: string
+          is_verified_badge: boolean
           kyc_nid_back_url: string | null
           kyc_nid_front_url: string | null
           kyc_photo_url: string | null
           kyc_verified: boolean
           kyc_verified_at: string | null
+          last_reels_seen_at: string | null
           mother_name: string | null
           nid_number: string | null
           onboarded_at: string | null
@@ -1315,6 +1461,7 @@ export type Database = {
           bonus_first_verify_claimed?: boolean
           bonus_first_verify_self_claimed?: boolean
           bonus_reverify_claimed?: boolean
+          cover_url?: string | null
           created_at?: string
           date_of_birth?: string | null
           display_name?: string | null
@@ -1325,11 +1472,13 @@ export type Database = {
           father_name?: string | null
           full_address?: string | null
           id: string
+          is_verified_badge?: boolean
           kyc_nid_back_url?: string | null
           kyc_nid_front_url?: string | null
           kyc_photo_url?: string | null
           kyc_verified?: boolean
           kyc_verified_at?: string | null
+          last_reels_seen_at?: string | null
           mother_name?: string | null
           nid_number?: string | null
           onboarded_at?: string | null
@@ -1356,6 +1505,7 @@ export type Database = {
           bonus_first_verify_claimed?: boolean
           bonus_first_verify_self_claimed?: boolean
           bonus_reverify_claimed?: boolean
+          cover_url?: string | null
           created_at?: string
           date_of_birth?: string | null
           display_name?: string | null
@@ -1366,11 +1516,13 @@ export type Database = {
           father_name?: string | null
           full_address?: string | null
           id?: string
+          is_verified_badge?: boolean
           kyc_nid_back_url?: string | null
           kyc_nid_front_url?: string | null
           kyc_photo_url?: string | null
           kyc_verified?: boolean
           kyc_verified_at?: string | null
+          last_reels_seen_at?: string | null
           mother_name?: string | null
           nid_number?: string | null
           onboarded_at?: string | null
@@ -1614,24 +1766,30 @@ export type Database = {
           created_at: string
           expires_at: string
           id: string
+          image_url: string | null
           media_type: string
-          media_url: string
+          media_url: string | null
+          music_name: string | null
           user_id: string
         }
         Insert: {
           created_at?: string
           expires_at?: string
           id?: string
+          image_url?: string | null
           media_type?: string
-          media_url: string
+          media_url?: string | null
+          music_name?: string | null
           user_id: string
         }
         Update: {
           created_at?: string
           expires_at?: string
           id?: string
+          image_url?: string | null
           media_type?: string
-          media_url?: string
+          media_url?: string | null
+          music_name?: string | null
           user_id?: string
         }
         Relationships: [
@@ -1640,6 +1798,67 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      story_reactions: {
+        Row: {
+          created_at: string
+          id: string
+          reaction_type: string
+          story_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          reaction_type?: string
+          story_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          reaction_type?: string
+          story_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "story_reactions_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: false
+            referencedRelation: "stories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      story_views: {
+        Row: {
+          id: string
+          story_id: string
+          viewed_at: string
+          viewer_user_id: string
+        }
+        Insert: {
+          id?: string
+          story_id: string
+          viewed_at?: string
+          viewer_user_id: string
+        }
+        Update: {
+          id?: string
+          story_id?: string
+          viewed_at?: string
+          viewer_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "story_views_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: false
+            referencedRelation: "stories"
             referencedColumns: ["id"]
           },
         ]
@@ -2216,6 +2435,39 @@ export type Database = {
           priority?: number
           topic?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      tiktok_videos: {
+        Row: {
+          added_by: string
+          caption: string | null
+          category: string
+          created_at: string
+          id: string
+          is_active: boolean
+          video_id: string
+          video_url: string
+        }
+        Insert: {
+          added_by?: string
+          caption?: string | null
+          category?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          video_id: string
+          video_url: string
+        }
+        Update: {
+          added_by?: string
+          caption?: string | null
+          category?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          video_id?: string
+          video_url?: string
         }
         Relationships: []
       }

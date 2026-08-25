@@ -1,0 +1,1203 @@
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useAuth } from "@/hooks/useAuth";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  getFeedPosts, createPost, toggleReaction, getUserReactions,
+  getPostComments, addComment, uploadPostMedia, getActiveStories,
+  createStory, uploadStoryMedia, searchFeedUsers, getSuggestedUsers,
+  deletePost, deleteStory, deleteComment, toggleCommentLike,
+  getUnreadNotificationCount, getNotifications, markNotificationsRead,
+  REACTION_EMOJIS, type Post, type PostComment, type Story,
+} from "@/lib/feed-api";
+import { useFeedMedia } from "@/lib/feed-media";
+import { listFriends, sendFriendRequest, respondFriendRequest } from "@/lib/friends.functions";
+import { getUnreadMessageCount } from "@/lib/chat.functions";
+import { usePresence } from "@/lib/presence";
+import {
+  Heart, MessageCircle, Send, Image, X, Home, Users, Bell, Menu,
+  Plus, User, Search, Phone, Share2, Loader2, MoreHorizontal, Trash2, Globe, UserPlus, ChevronRight, ThumbsUp, Video, Check, ArrowLeft,
+} from "lucide-react";
+import { toast } from "sonner";
+import StoryEditor from "@/components/social/StoryEditor";
+import StoryViewer from "@/components/social/StoryViewer";
+import { playUiSound } from "@/lib/ui-sounds";
+import VerifiedBadge from "@/components/VerifiedBadge";
+
+export const Route = createFileRoute("/_authenticated/feed")({
+  component: FeedPage,
+  head: () => ({
+    meta: [
+      { title: "নিউজ ফিড — Good-App" },
+      { name: "description", content: "বন্ধুদের পোস্ট, স্টোরি ও আপডেট দেখুন — Good-App নিউজ ফিড।" },
+      { property: "og:title", content: "নিউজ ফিড — Good-App" },
+      { property: "og:description", content: "বন্ধুদের পোস্ট, স্টোরি ও আপডেট দেখুন — Good-App নিউজ ফিড।" },
+      { property: "og:type", content: "website" },
+    ],
+  }),
+});
+
+function Avatar({ path, className, fallback }: { path?: string | null; className?: string; fallback: string }) {
+  const url = useFeedMedia(path);
+  if (path && url) return <img src={url} className={className} alt="" />;
+  return <span className="text-blue-600 dark:text-primary font-bold text-sm">{fallback}</span>;
+}
+
+function FeedImg({ path, className, onClick }: { path: string; className?: string; onClick?: (e: React.MouseEvent<HTMLImageElement>) => void }) {
+  const url = useFeedMedia(path);
+  return <img src={url} alt="" className={className} onClick={onClick} />;
+}
+
+function FeedVideo({ path, className, videoRef, onPlay }: { path: string; className?: string; videoRef?: (el: HTMLVideoElement | null) => void; onPlay?: () => void }) {
+  const url = useFeedMedia(path);
+  return <video ref={videoRef} onPlay={onPlay} src={url} controls playsInline preload="metadata" className={className} />;
+}
+
+const NameWithBadge = ({ name, isVerified, className = "" }: { name: string; isVerified?: boolean; className?: string }) => (
+  <span className={`inline-flex items-center gap-1 ${className}`}>
+    <span>{name}</span>
+    {isVerified && <VerifiedBadge className="h-3.5 w-3.5" />}
+  </span>
+);
+
+function FeedPage() {
+  const { user, loading: isLoading } = useAuth();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const onlineIds = usePresence();
+
+  const [showCreatePost, setShowCreatePost] = useState(false);
+  const [postContent, setPostContent] = useState("");
+  const [postImageFiles, setPostImageFiles] = useState<File[]>([]);
+  const [postImagePreviews, setPostImagePreviews] = useState<string[]>([]);
+  const [postVideoFile, setPostVideoFile] = useState<File | null>(null);
+  const [postVideoPreview, setPostVideoPreview] = useState<string | null>(null);
+  const [userReactions, setUserReactions] = useState<Record<string, string>>({});
+  const [commentingPostId, setCommentingPostId] = useState<string | null>(null);
+  const [commentText, setCommentText] = useState("");
+  const [comments, setComments] = useState<PostComment[]>([]);
+  const [loadingComments, setLoadingComments] = useState(false);
+  const [showReactionPicker, setShowReactionPicker] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showSearch, setShowSearch] = useState(false);
+  const [viewingStory, setViewingStory] = useState<Story | null>(null);
+  const [showPostMenu, setShowPostMenu] = useState<string | null>(null);
+  const [viewingImage, setViewingImage] = useState<string | null>(null);
+  const [doubleTapTimer, setDoubleTapTimer] = useState<Record<string, number>>({});
+  const [showLoveAnimation, setShowLoveAnimation] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"home" | "friends" | "notif">("home");
+  const [hiddenPosts, setHiddenPosts] = useState<Set<string>>(new Set());
+  const [storyEditorFile, setStoryEditorFile] = useState<File | null>(null);
+  const [replyingTo, setReplyingTo] = useState<{ id: string; name: string } | null>(null);
+  const [expandedReplies, setExpandedReplies] = useState<Set<string>>(new Set());
+  const [page, setPage] = useState(0);
+  const [allPosts, setAllPosts] = useState<Post[]>([]);
+  const [hasMore, setHasMore] = useState(true);
+  const POSTS_PER_PAGE = 20;
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
+  const storyInputRef = useRef<HTMLInputElement>(null);
+  const tapTimerRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const feedVideoRefs = useRef<Record<string, HTMLVideoElement | null>>({});
+
+  useEffect(() => {
+    if (!isLoading && !user) navigate({ to: "/" });
+  }, [user, isLoading, navigate]);
+
+  const { isLoading: postsLoading } = useQuery({
+    queryKey: ["feed-posts", searchQuery, page],
+    queryFn: async () => {
+      const newPosts = await getFeedPosts(POSTS_PER_PAGE, searchQuery, page * POSTS_PER_PAGE);
+      setHasMore(newPosts.length >= POSTS_PER_PAGE);
+      if (page === 0) {
+        setAllPosts((prev) => {
+          if (prev.length === 0) return newPosts;
+          const existingIds = new Set(prev.map((p) => p.id));
+          const brandNew = newPosts.filter((p) => !existingIds.has(p.id));
+          if (brandNew.length === 0) return prev;
+          return [...brandNew, ...prev];
+        });
+      } else {
+        setAllPosts((prev) => {
+          const existingIds = new Set(prev.map((p) => p.id));
+          const unique = newPosts.filter((p) => !existingIds.has(p.id));
+          return [...prev, ...unique];
+        });
+      }
+      return newPosts;
+    },
+    enabled: !!user,
+    staleTime: 60000,
+  });
+
+  useEffect(() => { setPage(0); setAllPosts([]); setHasMore(true); }, [searchQuery]);
+
+  const posts = allPosts.filter((p) => !hiddenPosts.has(p.id));
+
+  useEffect(() => {
+    if (!sentinelRef.current || !hasMore || postsLoading) return;
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) setPage((p) => p + 1);
+    }, { threshold: 0.1 });
+    observer.observe(sentinelRef.current);
+    return () => observer.disconnect();
+  }, [hasMore, postsLoading, posts.length]);
+
+  const { data: stories = [] } = useQuery({
+    queryKey: ["stories"],
+    queryFn: getActiveStories,
+    enabled: !!user,
+    staleTime: 60000,
+  });
+
+  const { data: unreadData } = useQuery({
+    queryKey: ["chat-unread-count"],
+    queryFn: () => getUnreadMessageCount(),
+    enabled: !!user,
+    staleTime: 30000,
+  });
+  const unreadCount = unreadData?.unread || 0;
+
+  const { data: friendsData } = useQuery({
+    queryKey: ["friends-summary"],
+    queryFn: () => listFriends(),
+    enabled: !!user,
+    staleTime: 30000,
+  });
+  const friendRequestCount = friendsData?.incoming.length || 0;
+
+  const { data: notifCount = 0 } = useQuery({
+    queryKey: ["notif-count", user?.id],
+    queryFn: () => getUnreadNotificationCount(user!.id),
+    enabled: !!user,
+    staleTime: 30000,
+  });
+
+  const { data: notificationsList = [] } = useQuery({
+    queryKey: ["notifications-list", user?.id],
+    queryFn: () => getNotifications(user!.id),
+    enabled: !!user && activeTab === "notif",
+  });
+
+  const { data: suggestedPeople = [] } = useQuery({
+    queryKey: ["suggested-people"],
+    queryFn: () => getSuggestedUsers(user!.id, 6),
+    enabled: !!user,
+    staleTime: 120000,
+  });
+
+  const { data: searchResults = [] } = useQuery({
+    queryKey: ["feed-user-search", searchQuery],
+    queryFn: () => searchFeedUsers(searchQuery),
+    enabled: searchQuery.length >= 2,
+  });
+
+  useEffect(() => {
+    if (user && posts.length > 0) {
+      const visibleIds = posts.map((p) => p.id);
+      getUserReactions(user.id, visibleIds).then(setUserReactions);
+    }
+  }, [user, posts.length]);
+
+  useEffect(() => {
+    const channel = supabase.channel("feed-realtime")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "posts" }, () => {
+        queryClient.invalidateQueries({ queryKey: ["feed-posts"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "stories" }, () => {
+        queryClient.invalidateQueries({ queryKey: ["stories"] });
+      })
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "feed_notifications" }, () => {
+        queryClient.invalidateQueries({ queryKey: ["notif-count"] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [queryClient, user?.id]);
+
+  const createPostMutation = useMutation({
+    mutationFn: async () => {
+      if (!user) throw new Error("Login required");
+      let imageUrl: string | undefined;
+      let videoUrl: string | undefined;
+      if (postImageFiles.length > 0) {
+        const urls: string[] = [];
+        for (const file of postImageFiles) urls.push(await uploadPostMedia(file, file.name, user.id));
+        imageUrl = urls.join(",");
+      }
+      if (postVideoFile) videoUrl = await uploadPostMedia(postVideoFile, postVideoFile.name, user.id);
+      return createPost(user.id, postContent, imageUrl, videoUrl);
+    },
+    onSuccess: () => {
+      setPostContent(""); setPostImageFiles([]); setPostImagePreviews([]);
+      setPostVideoFile(null); setPostVideoPreview(null); setShowCreatePost(false);
+      setPage(0); setAllPosts([]); setHasMore(true);
+      queryClient.invalidateQueries({ queryKey: ["feed-posts"] });
+      toast.success("পোস্ট প্রকাশিত! 🎉");
+    },
+    onError: (e: Error) => toast.error(e.message || "পোস্ট করা যায়নি"),
+  });
+
+  const deletePostMutation = useMutation({
+    mutationFn: async (postId: string) => { if (!user) throw new Error("Login"); await deletePost(postId, user.id); },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["feed-posts"] });
+      toast.success("পোস্ট মুছে ফেলা হয়েছে 🗑️");
+      setShowPostMenu(null);
+    },
+  });
+
+  const deleteStoryMutation = useMutation({
+    mutationFn: async (storyId: string) => { if (!user) throw new Error("Login"); await deleteStory(storyId, user.id); },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["stories"] });
+      setViewingStory(null);
+      toast.success("স্টোরি মুছে ফেলা হয়েছে");
+    },
+  });
+
+  const reactionMutation = useMutation({
+    mutationFn: async ({ postId, type }: { postId: string; type: string }) => {
+      if (!user) throw new Error("Login");
+      return { postId, ...(await toggleReaction(postId, user.id, type)) };
+    },
+    onMutate: async ({ postId, type }) => {
+      const prev = userReactions[postId];
+      const isSameReaction = prev === type;
+      if (!isSameReaction) playUiSound("like");
+      setUserReactions((r) => {
+        const next = { ...r };
+        if (isSameReaction) delete next[postId];
+        else next[postId] = type;
+        return next;
+      });
+      setShowReactionPicker(null);
+    },
+    onSettled: () => { queryClient.invalidateQueries({ queryKey: ["feed-posts", searchQuery] }); },
+  });
+
+  const commentMutation = useMutation({
+    mutationFn: async ({ text }: { text: string }) => {
+      if (!user || !commentingPostId) throw new Error("Error");
+      return addComment(commentingPostId, user.id, text, replyingTo?.id);
+    },
+    onMutate: async ({ text }) => {
+      if (!user || !commentingPostId) return;
+      const tc: PostComment = {
+        id: `temp-${Date.now()}`,
+        post_id: commentingPostId,
+        user_id: user.id,
+        content: text,
+        created_at: new Date().toISOString(),
+        parent_comment_id: replyingTo?.id || null,
+        user: { display_name: (user.user_metadata as any)?.display_name || "You", avatar_url: null },
+      };
+      if (replyingTo) {
+        setComments((prev) => prev.map((c) => c.id === replyingTo.id ? { ...c, replies: [...(c.replies || []), tc] } : c));
+      } else {
+        setComments((prev) => [...prev, tc]);
+      }
+      setCommentText("");
+      setReplyingTo(null);
+    },
+    onSuccess: () => {
+      if (commentingPostId) loadComments(commentingPostId);
+      queryClient.invalidateQueries({ queryKey: ["feed-posts", searchQuery] });
+    },
+    onError: () => { if (commentingPostId) loadComments(commentingPostId); },
+  });
+
+  const deleteCommentMutation = useMutation({
+    mutationFn: async (commentId: string) => { if (!user) throw new Error("Login"); await deleteComment(commentId, user.id); },
+    onSuccess: () => { if (commentingPostId) loadComments(commentingPostId); queryClient.invalidateQueries({ queryKey: ["feed-posts", searchQuery] }); },
+  });
+
+  const commentLikeMutation = useMutation({
+    mutationFn: async (commentId: string) => { if (!user) throw new Error("Login"); return toggleCommentLike(commentId, user.id); },
+    onMutate: async (commentId) => {
+      setComments((prev) => prev.map((c) => {
+        if (c.id === commentId) return { ...c, liked_by_me: !c.liked_by_me, likes_count: (c.likes_count || 0) + (c.liked_by_me ? -1 : 1) };
+        if (c.replies) return { ...c, replies: c.replies.map((r) => r.id === commentId ? { ...r, liked_by_me: !r.liked_by_me, likes_count: (r.likes_count || 0) + (r.liked_by_me ? -1 : 1) } : r) };
+        return c;
+      }));
+    },
+  });
+
+  const storyMutation = useMutation({
+    mutationFn: async ({ files, musicName }: { files: File[]; musicName?: string }) => {
+      if (!user) throw new Error("Login");
+      for (const file of files) {
+        const url = await uploadStoryMedia(file, user.id);
+        await createStory(user.id, url, musicName);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["stories"] });
+      toast.success("স্টোরি যোগ হয়েছে! ✨");
+    },
+  });
+
+  const friendRequestMutation = useMutation({
+    mutationFn: async (targetUserId: string) => { await sendFriendRequest({ data: { userId: targetUserId } }); },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["suggested-people"] });
+      queryClient.invalidateQueries({ queryKey: ["friends-summary"] });
+      toast.success("ফ্রেন্ড রিকুয়েস্ট পাঠানো হয়েছে! ✅");
+    },
+    onError: () => toast.error("রিকুয়েস্ট পাঠানো যায়নি"),
+  });
+
+  const respondRequestMutation = useMutation({
+    mutationFn: async ({ linkId, accept }: { linkId: string; accept: boolean }) => respondFriendRequest({ data: { linkId, accept } }),
+    onSuccess: (_d, vars) => {
+      queryClient.invalidateQueries({ queryKey: ["friends-summary"] });
+      if (vars.accept) toast.success("ফ্রেন্ড রিকুয়েস্ট গ্রহণ করা হয়েছে! 🎉");
+    },
+  });
+
+  const loadComments = async (postId: string) => {
+    setLoadingComments(true);
+    setComments(await getPostComments(postId, user?.id));
+    setLoadingComments(false);
+  };
+
+  const openComments = (postId: string) => {
+    if (commentingPostId === postId) { setCommentingPostId(null); setReplyingTo(null); return; }
+    setCommentingPostId(postId);
+    setReplyingTo(null);
+    setCommentText("");
+    loadComments(postId);
+  };
+
+  const commentingPost = useMemo(() => allPosts.find((p) => p.id === commentingPostId) || null, [allPosts, commentingPostId]);
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    const newFiles = Array.from(files);
+    setPostImageFiles((prev) => [...prev, ...newFiles]);
+    newFiles.forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = () => setPostImagePreviews((prev) => [...prev, reader.result as string]);
+      reader.readAsDataURL(file);
+    });
+    e.target.value = "";
+  };
+
+  const handleVideoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const video = document.createElement("video");
+    video.preload = "metadata";
+    video.src = URL.createObjectURL(file);
+    video.onloadedmetadata = () => {
+      if (video.duration > 120) {
+        toast.error("নিউজ ফিডে সর্বোচ্চ ২ মিনিটের ভিডিও আপলোড করা যাবে");
+        return;
+      }
+      setPostVideoFile(file);
+      setPostVideoPreview(video.src);
+    };
+  };
+
+  const handleStorySelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    if (files.length === 1) {
+      setStoryEditorFile(files[0]);
+    } else {
+      const fileArr = Array.from(files).slice(0, 5);
+      storyMutation.mutate({ files: fileArr });
+    }
+    if (e.target) e.target.value = "";
+  };
+
+  const handleStoryPublish = (editedFile: File, musicName?: string) => {
+    storyMutation.mutate({ files: [editedFile], musicName });
+    setStoryEditorFile(null);
+  };
+
+  const handleFeedVideoPlay = (activePostId: string) => {
+    Object.entries(feedVideoRefs.current).forEach(([postId, videoEl]) => {
+      if (!videoEl || postId === activePostId) return;
+      if (!videoEl.paused) videoEl.pause();
+      videoEl.muted = true;
+    });
+    const activeVideo = feedVideoRefs.current[activePostId];
+    if (activeVideo) activeVideo.muted = false;
+  };
+
+  const handleImageTap = (postId: string, imageUrl: string) => {
+    const now = Date.now();
+    const lastTap = doubleTapTimer[postId] || 0;
+    if (now - lastTap < 300) {
+      clearTimeout(tapTimerRef.current[postId]);
+      if (!userReactions[postId]) reactionMutation.mutate({ postId, type: "love" });
+      setShowLoveAnimation(postId);
+      setTimeout(() => setShowLoveAnimation(null), 1000);
+      setDoubleTapTimer((prev) => ({ ...prev, [postId]: 0 }));
+    } else {
+      setDoubleTapTimer((prev) => ({ ...prev, [postId]: now }));
+      tapTimerRef.current[postId] = setTimeout(() => setViewingImage(imageUrl), 320);
+    }
+  };
+
+  const startChatWith = (targetUserId: string) => {
+    if (!user || targetUserId === user.id) return;
+    navigate({ to: "/chat/$peerId", params: { peerId: targetUserId } });
+  };
+
+  const sharePost = async (post: Post) => {
+    if (!user) return;
+    try {
+      const shareContent = post.content ? `শেয়ার করেছে: "${post.content}"` : "একটি পোস্ট শেয়ার করেছে";
+      await createPost(user.id, shareContent, post.image_url || undefined, post.video_url || undefined);
+      queryClient.invalidateQueries({ queryKey: ["feed-posts"] });
+      toast.success("আপনার প্রোফাইলে শেয়ার করা হয়েছে! ✅");
+    } catch {
+      toast.error("শেয়ার করা যায়নি");
+    }
+  };
+
+  const timeAgo = (dateStr: string | null) => {
+    if (!dateStr) return "";
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return "এইমাত্র";
+    if (mins < 60) return `${mins} মি.`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs} ঘ.`;
+    return `${Math.floor(hrs / 24)} দি.`;
+  };
+
+  const storyGroups = stories.reduce<Record<string, Story[]>>((acc, s) => {
+    (acc[s.user_id] = acc[s.user_id] || []).push(s);
+    return acc;
+  }, {});
+  const sortedStoryEntries = Object.entries(storyGroups).sort(([aId, aStories], [bId, bStories]) => {
+    if (aId === user?.id) return -1;
+    if (bId === user?.id) return 1;
+    const aTime = new Date(aStories[0].created_at || 0).getTime();
+    const bTime = new Date(bStories[0].created_at || 0).getTime();
+    return bTime - aTime;
+  });
+
+  const renderMentionText = (text: string) => {
+    const parts = text.split(/(@[\w\s]+?)(?=\s@|\s*$|[.,!?])/g);
+    return parts.map((part, i) => {
+      if (part.startsWith("@")) {
+        const name = part.slice(1).trim();
+        return <span key={i} className="text-blue-600 dark:text-primary font-bold">@{name}</span>;
+      }
+      return <span key={i}>{part}</span>;
+    });
+  };
+
+  if (isLoading || !user) return null;
+
+  const renderPosts = () => {
+    const elements: React.ReactNode[] = [];
+    posts.forEach((post, index) => {
+      if (index === 3 && suggestedPeople.length > 0) {
+        elements.push(
+          <div key="people-suggest" className="bg-white dark:bg-card py-3">
+            <div className="px-3 pb-2 flex items-center justify-between">
+              <h3 className="text-[15px] font-bold text-gray-900 dark:text-foreground">People You May Know</h3>
+            </div>
+            <div className="flex gap-2.5 overflow-x-auto px-3 pb-2 scrollbar-hide">
+              {suggestedPeople.map((sp: any) => (
+                <div key={sp.id} className="min-w-[160px] max-w-[160px] rounded-lg border border-gray-200 dark:border-border overflow-hidden bg-white dark:bg-card shrink-0 shadow-sm">
+                  <Link to="/feed/user/$userId" params={{ userId: sp.id }} className="h-[140px] w-full relative bg-gray-100 dark:bg-secondary block">
+                    {sp.avatar_url ? (
+                      <FeedImg path={sp.avatar_url} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-b from-blue-100 to-blue-50 dark:from-primary/20 dark:to-secondary">
+                        <User className="w-12 h-12 text-gray-400" />
+                      </div>
+                    )}
+                  </Link>
+                  <div className="p-2.5">
+                    <Link to="/feed/user/$userId" params={{ userId: sp.id }} className="w-full text-left block">
+                      <p className="text-[13px] font-bold text-gray-900 dark:text-foreground truncate">{sp.display_name || "User"}</p>
+                    </Link>
+                    <button
+                      onClick={() => friendRequestMutation.mutate(sp.id)}
+                      disabled={friendRequestMutation.isPending}
+                      className="mt-2 w-full flex items-center justify-center gap-1.5 py-2 bg-blue-50 dark:bg-primary/10 text-blue-600 dark:text-primary rounded-md text-[13px] font-semibold hover:bg-blue-100 dark:hover:bg-primary/20 transition-colors">
+                      <UserPlus className="w-4 h-4" /> Add friend
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <button onClick={() => setActiveTab("friends")}
+              className="mx-3 mt-1 flex items-center justify-center gap-1 text-blue-600 dark:text-primary text-[13px] font-semibold py-1.5">
+              See all <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        );
+      }
+
+      const myReaction = userReactions[post.id];
+      elements.push(
+        <div key={post.id} className="bg-white dark:bg-card">
+          <div className="flex items-center gap-2.5 px-3 pt-3 pb-1.5">
+            <Link to="/feed/user/$userId" params={{ userId: post.user_id }}
+              className="w-10 h-10 rounded-full bg-gray-200 dark:bg-primary/20 flex items-center justify-center overflow-hidden shrink-0">
+              <Avatar path={post.user?.avatar_url} className="w-full h-full object-cover" fallback={post.user?.display_name?.[0]?.toUpperCase() || "?"} />
+            </Link>
+            <div className="flex-1 min-w-0">
+              <Link to="/feed/user/$userId" params={{ userId: post.user_id }} className="font-bold text-[15px] text-gray-900 dark:text-foreground hover:underline block">
+                <NameWithBadge name={post.user?.display_name || "User"} isVerified={post.user?.is_verified_badge} />
+              </Link>
+              <div className="flex items-center gap-1 text-[12px] text-gray-500 dark:text-muted-foreground">
+                <span>{timeAgo(post.created_at)}</span>
+                <span>·</span>
+                <Globe className="w-3 h-3" />
+              </div>
+            </div>
+            <div className="flex items-center gap-0.5">
+              <div className="relative">
+                <button onClick={() => setShowPostMenu(showPostMenu === post.id ? null : post.id)}
+                  className="p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-secondary transition-colors text-gray-500 dark:text-muted-foreground">
+                  <MoreHorizontal className="w-5 h-5" />
+                </button>
+                {showPostMenu === post.id && (
+                  <div className="absolute right-0 top-full mt-1 bg-white dark:bg-card border border-gray-200 dark:border-border rounded-lg shadow-xl z-50 overflow-hidden min-w-[180px] animate-in fade-in zoom-in-95 duration-150">
+                    {post.user_id === user.id ? (
+                      <button onClick={() => deletePostMutation.mutate(post.id)}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 dark:hover:bg-destructive/10 text-sm font-medium transition-colors">
+                        <Trash2 className="w-4 h-4" /> পোস্ট মুছুন
+                      </button>
+                    ) : (
+                      <>
+                        <button onClick={() => { navigate({ to: "/feed/user/$userId", params: { userId: post.user_id } }); setShowPostMenu(null); }}
+                          className="w-full flex items-center gap-3 px-4 py-3 text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-secondary text-sm transition-colors">
+                          <User className="w-4 h-4" /> প্রোফাইল দেখুন
+                        </button>
+                        <button onClick={() => { startChatWith(post.user_id); setShowPostMenu(null); }}
+                          className="w-full flex items-center gap-3 px-4 py-3 text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-secondary text-sm transition-colors">
+                          <MessageCircle className="w-4 h-4" /> মেসেজ পাঠান
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+              <button onClick={() => setHiddenPosts((prev) => new Set(prev).add(post.id))}
+                className="p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-secondary transition-colors text-gray-500 dark:text-muted-foreground">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+
+          {post.content && (
+            <p className="text-[16px] text-gray-900 dark:text-foreground leading-relaxed px-3 pb-2 whitespace-pre-wrap">{renderMentionText(post.content)}</p>
+          )}
+
+          {post.image_url && (() => {
+            const imageUrls = post.image_url!.split(",").map((u) => u.trim()).filter(Boolean);
+            return (
+              <div className={imageUrls.length === 1 ? "" : "grid grid-cols-2 gap-0.5"}>
+                {imageUrls.map((url, imgIdx) => (
+                  <div key={imgIdx} className="relative cursor-pointer" onClick={() => handleImageTap(post.id, url)}>
+                    <FeedImg path={url} className={`w-full object-cover ${imageUrls.length === 1 ? "max-h-[500px]" : "max-h-[250px]"}`} />
+                    {showLoveAnimation === post.id && imgIdx === 0 && (
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none animate-in zoom-in-50 fade-out duration-700">
+                        <span className="text-7xl">❤️</span>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
+
+          {post.video_url && (
+            <div className="relative bg-black">
+              <FeedVideo path={post.video_url} videoRef={(el) => { feedVideoRefs.current[post.id] = el; }} onPlay={() => handleFeedVideoPlay(post.id)} className="w-full max-h-[500px] object-contain" />
+            </div>
+          )}
+
+          <div className="px-3 py-2 flex items-center justify-between text-[13px] text-gray-500 dark:text-muted-foreground">
+            <div className="flex items-center gap-1">
+              <span className="flex items-center -space-x-0.5">
+                <span className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center text-[11px]">👍</span>
+                {myReaction && myReaction !== "like" && (
+                  <span className="w-5 h-5 rounded-full bg-red-500 flex items-center justify-center text-[11px]">{REACTION_EMOJIS[myReaction]}</span>
+                )}
+              </span>
+              <span className="text-[13px]">{post.likes_count || 0}</span>
+            </div>
+            {post.comments_count > 0 ? (
+              <button onClick={() => openComments(post.id)} className="hover:underline text-[13px]">{post.comments_count} মন্তব্য</button>
+            ) : (
+              <span className="text-[13px]">0 মন্তব্য</span>
+            )}
+          </div>
+
+          <div className="px-1 py-1 border-t border-gray-200 dark:border-border/20 grid grid-cols-3 relative select-none" style={{ WebkitUserSelect: "none", userSelect: "none" }}>
+            <div className="relative">
+              <button
+                onClick={() => reactionMutation.mutate({ postId: post.id, type: myReaction || "like" })}
+                onContextMenu={(e) => { e.preventDefault(); setShowReactionPicker(showReactionPicker === post.id ? null : post.id); }}
+                onTouchStart={() => {
+                  const timer = setTimeout(() => setShowReactionPicker(showReactionPicker === post.id ? null : post.id), 500);
+                  const cleanup = () => { clearTimeout(timer); document.removeEventListener("touchend", cleanup); };
+                  document.addEventListener("touchend", cleanup);
+                }}
+                className={`flex items-center justify-center gap-2 py-2.5 w-full rounded-lg transition-colors select-none ${myReaction ? "text-blue-600 dark:text-primary" : "text-gray-600 dark:text-muted-foreground"}`}>
+                {myReaction ? <span className="text-xl">{REACTION_EMOJIS[myReaction]}</span> : <ThumbsUp className="w-5 h-5" />}
+                <span className="text-[13px] font-semibold select-none">{myReaction ? (myReaction === "like" ? "পছন্দ" : REACTION_EMOJIS[myReaction]) : "পছন্দ"}</span>
+              </button>
+
+              {showReactionPicker === post.id && (
+                <div className="absolute bottom-full left-0 mb-2 bg-white dark:bg-card border border-gray-200 dark:border-border rounded-full shadow-xl px-2 py-1.5 flex gap-0.5 z-50 animate-in fade-in zoom-in-90 duration-150">
+                  {Object.entries(REACTION_EMOJIS).map(([type, emoji]) => (
+                    <button key={type} onClick={() => reactionMutation.mutate({ postId: post.id, type })}
+                      className={`text-2xl p-1 rounded-full hover:bg-gray-100 dark:hover:bg-secondary transition-transform hover:scale-125 ${myReaction === type ? "bg-blue-50 dark:bg-primary/20" : ""}`} title={type}>
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <button onClick={() => openComments(post.id)}
+              className="flex items-center justify-center gap-2 py-2.5 text-gray-600 dark:text-muted-foreground hover:bg-gray-50 dark:hover:bg-secondary/50 rounded-lg transition-colors select-none">
+              <MessageCircle className="w-5 h-5" />
+              <span className="text-[13px] font-semibold select-none">মন্তব্য</span>
+            </button>
+
+            <button onClick={() => sharePost(post)}
+              className="flex items-center justify-center gap-2 py-2.5 text-gray-600 dark:text-muted-foreground hover:bg-gray-50 dark:hover:bg-secondary/50 rounded-lg transition-colors select-none">
+              <Share2 className="w-5 h-5" />
+              <span className="text-[13px] font-semibold select-none">শেয়ার</span>
+            </button>
+          </div>
+        </div>
+      );
+    });
+    return elements;
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-100 dark:bg-background pb-14">
+      <header className="sticky top-0 z-50 shadow-lg" style={{ background: "linear-gradient(135deg, #1877F2, #0d47a1, #1565c0)" }}>
+        <div className="max-w-lg mx-auto px-3 py-2 flex items-center justify-between">
+          <div className="flex items-center gap-1">
+            <button onClick={() => navigate({ to: "/home" })} className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center mr-1" title="Dashboard">
+              <ArrowLeft className="w-5 h-5 text-white" />
+            </button>
+            <h1 className="text-[24px] font-black text-white tracking-tight" style={{ letterSpacing: "-0.02em" }}>
+              <span>good</span>
+              <span style={{ color: "#ffd600" }}>-app</span>
+            </h1>
+          </div>
+          <div className="flex items-center gap-0.5">
+            <button onClick={() => setShowCreatePost(true)} className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center">
+              <Plus className="w-5 h-5 text-white" />
+            </button>
+            <button onClick={() => setShowSearch(!showSearch)} className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center">
+              <Search className="w-5 h-5 text-white" />
+            </button>
+            <button onClick={() => navigate({ to: "/home" })} className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center">
+              <Menu className="w-5 h-5 text-white" />
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <nav className="sticky top-[52px] z-40 bg-white dark:bg-card border-b border-gray-200 dark:border-border/40">
+        <div className="max-w-lg mx-auto flex items-center justify-around h-[44px]">
+          <button onClick={() => setActiveTab("home")}
+            className={`relative flex-1 h-full flex items-center justify-center border-b-[3px] transition-colors ${activeTab === "home" ? "border-blue-600 text-blue-600 dark:border-primary dark:text-primary" : "border-transparent text-gray-500 dark:text-muted-foreground"}`}>
+            <Home className="w-6 h-6" />
+          </button>
+          <button onClick={() => setActiveTab("friends")}
+            className={`relative flex-1 h-full flex items-center justify-center border-b-[3px] transition-colors ${activeTab === "friends" ? "border-blue-600 text-blue-600 dark:border-primary dark:text-primary" : "border-transparent text-gray-500 dark:text-muted-foreground"}`}>
+            <Users className="w-6 h-6" />
+            {friendRequestCount > 0 && (
+              <span className="absolute top-0.5 right-[calc(50%-20px)] min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
+                {friendRequestCount > 99 ? "99+" : friendRequestCount}
+              </span>
+            )}
+          </button>
+          <button onClick={() => navigate({ to: "/chat" })}
+            className="relative flex-1 h-full flex items-center justify-center border-b-[3px] border-transparent text-gray-500 dark:text-muted-foreground">
+            <MessageCircle className="w-6 h-6" />
+            {unreadCount > 0 && (
+              <span className="absolute top-0.5 right-[calc(50%-20px)] min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </span>
+            )}
+          </button>
+          <button onClick={() => { setActiveTab("notif"); if (user) markNotificationsRead(user.id).then(() => queryClient.invalidateQueries({ queryKey: ["notif-count"] })); }}
+            className={`relative flex-1 h-full flex items-center justify-center border-b-[3px] transition-colors ${activeTab === "notif" ? "border-blue-600 text-blue-600 dark:border-primary dark:text-primary" : "border-transparent text-gray-500 dark:text-muted-foreground"}`}>
+            <Bell className="w-6 h-6" />
+            {notifCount > 0 && (
+              <span className="absolute top-0.5 right-[calc(50%-20px)] min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
+                {notifCount > 99 ? "99+" : notifCount}
+              </span>
+            )}
+          </button>
+          <button onClick={() => navigate({ to: "/home" })}
+            className="relative flex-1 h-full flex items-center justify-center border-b-[3px] border-transparent text-gray-500 dark:text-muted-foreground">
+            <Menu className="w-6 h-6" />
+          </button>
+        </div>
+      </nav>
+
+      {showSearch && (
+        <div className="overflow-hidden bg-white dark:bg-card border-b border-gray-200 dark:border-border/30 shadow-sm animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="max-w-lg mx-auto px-3 py-2.5">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="পোস্ট বা ইউজার খুঁজুন..."
+                className="w-full bg-gray-100 dark:bg-secondary text-gray-900 dark:text-foreground rounded-full pl-10 pr-10 py-2 text-sm border-none outline-none placeholder:text-gray-400" autoFocus />
+              {searchQuery && (
+                <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <X className="w-4 h-4 text-gray-400" />
+                </button>
+              )}
+            </div>
+            {searchResults.length > 0 && (
+              <div className="mt-2 space-y-1">
+                {searchResults.filter((u: any) => u.id !== user.id).slice(0, 5).map((u: any) => (
+                  <Link key={u.id} to="/feed/user/$userId" params={{ userId: u.id }}
+                    className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-secondary transition-colors text-left">
+                    <div className="w-9 h-9 rounded-full bg-gray-200 dark:bg-primary/20 flex items-center justify-center overflow-hidden">
+                      <Avatar path={u.avatar_url} className="w-full h-full object-cover" fallback={u.display_name?.[0]?.toUpperCase() || "?"} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-foreground">
+                        <NameWithBadge name={u.display_name || "User"} isVerified={u.is_verified_badge} />
+                      </p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {activeTab === "friends" && (
+        <div className="max-w-lg mx-auto pb-4">
+          {(friendsData?.incoming.length || 0) > 0 && (
+            <div className="bg-white dark:bg-card mt-2 rounded-lg mx-1">
+              <h3 className="px-3 pt-3 pb-2 text-[16px] font-bold text-gray-900 dark:text-foreground">
+                ফ্রেন্ড রিকুয়েস্ট <span className="text-blue-600">({friendsData?.incoming.length})</span>
+              </h3>
+              <div className="space-y-1 pb-2">
+                {friendsData?.incoming.map((fr) => (
+                  <div key={fr.linkId} className="flex items-center gap-3 px-3 py-2">
+                    <Link to="/feed/user/$userId" params={{ userId: fr.userId }}
+                      className="w-14 h-14 rounded-full bg-gray-200 dark:bg-primary/20 flex items-center justify-center overflow-hidden shrink-0">
+                      <User className="w-7 h-7 text-gray-400" />
+                    </Link>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[14px] font-bold text-gray-900 dark:text-foreground truncate">{fr.name}</p>
+                      <div className="flex gap-2 mt-1.5">
+                        <button onClick={() => respondRequestMutation.mutate({ linkId: fr.linkId, accept: true })}
+                          className="flex-1 py-1.5 bg-blue-600 text-white text-[13px] font-semibold rounded-md">Confirm</button>
+                        <button onClick={() => respondRequestMutation.mutate({ linkId: fr.linkId, accept: false })}
+                          className="flex-1 py-1.5 bg-gray-200 dark:bg-secondary text-gray-700 dark:text-foreground text-[13px] font-semibold rounded-md">Delete</button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="bg-white dark:bg-card mt-2 rounded-lg mx-1 pb-3">
+            <h3 className="px-3 pt-3 pb-2 text-[16px] font-bold text-gray-900 dark:text-foreground">
+              বন্ধুরা ({friendsData?.friends.length || 0})
+            </h3>
+            <div className="space-y-0">
+              {(friendsData?.friends || []).map((f) => (
+                <div key={f.linkId} className="flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-secondary/30 transition-colors">
+                  <Link to="/feed/user/$userId" params={{ userId: f.userId }}
+                    className="relative w-14 h-14 rounded-full bg-gray-200 dark:bg-primary/20 flex items-center justify-center overflow-hidden shrink-0 border-2 border-gray-100 dark:border-border">
+                    <User className="w-7 h-7 text-gray-400" />
+                    {onlineIds.has(f.userId) && <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white dark:border-card" />}
+                  </Link>
+                  <div className="flex-1 min-w-0">
+                    <Link to="/feed/user/$userId" params={{ userId: f.userId }} className="text-left w-full block">
+                      <p className="text-[14px] font-bold text-gray-900 dark:text-foreground truncate">{f.name}</p>
+                    </Link>
+                    <div className="mt-1.5 flex gap-2">
+                      <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-100 dark:bg-secondary text-gray-600 dark:text-muted-foreground text-[12px] font-semibold rounded-md">
+                        <Check className="w-3.5 h-3.5" /> বন্ধু
+                      </span>
+                      <button onClick={() => startChatWith(f.userId)}
+                        className="px-3 py-1.5 bg-blue-50 dark:bg-primary/10 text-blue-600 dark:text-primary text-[12px] font-semibold rounded-md">
+                        মেসেজ
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {(friendsData?.friends.length || 0) === 0 && (
+                <p className="text-sm text-gray-500 text-center py-6">কোনো বন্ধু নেই</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === "home" && (
+        <>
+          {!showSearch && (
+            <div className="bg-white dark:bg-card border-b border-gray-200 dark:border-border/30">
+              <div className="max-w-lg mx-auto px-3 py-2.5 flex items-center gap-3">
+                <button onClick={() => navigate({ to: "/profile" })} className="w-10 h-10 rounded-full bg-gray-200 dark:bg-primary/20 flex items-center justify-center overflow-hidden shrink-0">
+                  <User className="w-5 h-5 text-gray-400" />
+                </button>
+                <button onClick={() => setShowCreatePost(true)} className="flex-1 bg-gray-100 dark:bg-secondary rounded-full px-4 py-2.5 text-left">
+                  <span className="text-sm text-gray-400 dark:text-muted-foreground">কি মনে হচ্ছে?</span>
+                </button>
+                <button onClick={() => { setShowCreatePost(true); setTimeout(() => fileInputRef.current?.click(), 300); }} className="flex flex-col items-center gap-0.5 px-2">
+                  <Image className="w-5 h-5 text-green-600" />
+                  <span className="text-[10px] text-gray-500 font-medium">ছবি</span>
+                </button>
+                <button onClick={() => { setShowCreatePost(true); setTimeout(() => videoInputRef.current?.click(), 300); }} className="flex flex-col items-center gap-0.5 px-2">
+                  <Video className="w-5 h-5 text-red-500" />
+                  <span className="text-[10px] text-gray-500 font-medium">ভিডিও</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {!showSearch && (
+            <div className="bg-white dark:bg-card border-b border-gray-200 dark:border-border/30">
+              <div className="max-w-lg mx-auto px-3 py-3">
+                <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                  <button onClick={() => storyInputRef.current?.click()}
+                    className="relative min-w-[110px] h-[170px] rounded-xl overflow-hidden bg-gray-100 dark:bg-secondary border border-gray-200 dark:border-border flex flex-col shrink-0">
+                    <div className="flex-1 bg-gradient-to-b from-blue-100 to-gray-100 dark:from-secondary dark:to-card flex items-center justify-center">
+                      <Image className="w-8 h-8 text-blue-400" />
+                    </div>
+                    <div className="relative flex items-center justify-center py-4">
+                      <div className="absolute -top-4 w-8 h-8 rounded-full bg-blue-600 border-[3px] border-white dark:border-card flex items-center justify-center">
+                        {storyMutation.isPending ? <Loader2 className="w-4 h-4 text-white animate-spin" /> : <Plus className="w-4 h-4 text-white" />}
+                      </div>
+                      <span className="text-[11px] font-semibold text-gray-900 dark:text-foreground mt-1">Create story</span>
+                    </div>
+                  </button>
+                  <input ref={storyInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleStorySelect} />
+
+                  {sortedStoryEntries.map(([uid, userStories]) => {
+                    const storyUser = userStories[0].user;
+                    return (
+                      <button key={uid} onClick={() => setViewingStory(userStories[0])} className="relative min-w-[110px] h-[170px] rounded-xl overflow-hidden shrink-0">
+                        <FeedImg path={userStories[0].image_url} className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/20" />
+                        <span className="absolute top-2 right-2 min-w-[20px] h-[20px] bg-blue-600 text-white text-[10px] font-bold rounded-md flex items-center justify-center px-1">
+                          {userStories.length}
+                        </span>
+                        <div className="absolute top-2 left-2 w-9 h-9 rounded-full p-[2px] bg-blue-600">
+                          <div className="w-full h-full rounded-full overflow-hidden bg-white flex items-center justify-center">
+                            <Avatar path={storyUser?.avatar_url} className="w-full h-full object-cover" fallback={storyUser?.display_name?.[0]?.toUpperCase() || "?"} />
+                          </div>
+                        </div>
+                        <div className="absolute bottom-0 left-0 right-0 p-2">
+                          <p className="text-white text-xs font-bold drop-shadow-lg inline-flex items-center gap-1">
+                            <span>{uid === user.id ? "Your story" : storyUser?.display_name || "User"}</span>
+                            {storyUser?.is_verified_badge && <VerifiedBadge className="h-3 w-3" />}
+                          </p>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="max-w-lg mx-auto">
+            {postsLoading ? (
+              <div className="flex justify-center py-20">
+                <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+              </div>
+            ) : posts.length === 0 ? (
+              <div className="flex flex-col items-center py-20 text-gray-500 bg-white dark:bg-card mt-2 rounded-lg mx-3">
+                <MessageCircle className="w-12 h-12 text-gray-300 mb-3" />
+                <p className="font-bold text-gray-700 dark:text-foreground">{searchQuery ? "কিছু পাওয়া যায়নি" : "কোনো পোস্ট নেই"}</p>
+                <p className="text-sm mt-1">{searchQuery ? "অন্য কিছু খুঁজুন" : "প্রথম পোস্ট করুন! ✨"}</p>
+              </div>
+            ) : (
+              <div className="space-y-2 mt-2">
+                {renderPosts()}
+                {hasMore && (
+                  <div ref={sentinelRef} className="flex justify-center py-4">
+                    <Loader2 className="w-6 h-6 text-blue-600 animate-spin" />
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
+      {activeTab === "notif" && (
+        <div className="max-w-lg mx-auto mt-2 px-2">
+          <div className="bg-white dark:bg-card rounded-lg">
+            <h3 className="px-4 pt-3 pb-2 text-[16px] font-bold text-gray-900 dark:text-foreground">নোটিফিকেশন</h3>
+            {notificationsList.length === 0 ? (
+              <div className="p-6 text-center">
+                <Bell className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                <p className="text-sm text-gray-500">কোনো নোটিফিকেশন নেই</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-gray-100 dark:divide-border/20">
+                {notificationsList.map((n: any) => (
+                  <button key={n.id}
+                    onClick={() => {
+                      if (n.reference_id) { setActiveTab("home"); setTimeout(() => openComments(n.reference_id), 100); }
+                      else if (n.from_user_id) navigate({ to: "/feed/user/$userId", params: { userId: n.from_user_id } });
+                    }}
+                    className={`w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-secondary/30 transition-colors ${!n.is_read ? "bg-blue-50/60 dark:bg-primary/5" : ""}`}>
+                    <div className="w-14 h-14 rounded-full bg-gray-200 dark:bg-primary/20 flex items-center justify-center overflow-hidden shrink-0 relative">
+                      <Avatar path={n.from_user?.avatar_url} className="w-full h-full object-cover" fallback="?" />
+                      <div className={`absolute -bottom-0.5 -right-0.5 w-6 h-6 rounded-full flex items-center justify-center text-white text-[11px] ${n.type === "like" ? "bg-blue-600" : n.type === "comment" || n.type === "reply" ? "bg-green-500" : n.type === "mention" ? "bg-orange-500" : "bg-gray-400"}`}>
+                        {n.type === "like" ? "👍" : n.type === "comment" ? "💬" : n.type === "reply" ? "↩️" : n.type === "mention" ? "@" : "🔔"}
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[14px] text-gray-900 dark:text-foreground leading-snug">
+                        <span className="font-bold">{n.from_user?.display_name || "কেউ"}</span>
+                        {n.type === "mention" && " আপনাকে একটি মন্তব্যে মেন্টশন করেছে"}
+                        {n.type === "like" && " আপনার পোস্টে লাইক দিয়েছে"}
+                        {n.type === "comment" && " আপনার পোস্টে মন্তব্য করেছে"}
+                        {n.type === "reply" && " আপনার মন্তব্যে রিপ্লাই দিয়েছে"}
+                      </p>
+                      {n.content && <p className="text-[13px] text-gray-500 dark:text-muted-foreground truncate mt-0.5">"{n.content}"</p>}
+                      <p className="text-[12px] text-blue-500 mt-0.5">{timeAgo(n.created_at)}</p>
+                    </div>
+                    {!n.is_read && <div className="w-3 h-3 rounded-full bg-blue-600 shrink-0 mt-2" />}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {commentingPostId && (
+        <div className="fixed inset-0 z-[150] bg-black/50 animate-in fade-in duration-150" onClick={() => { setCommentingPostId(null); setReplyingTo(null); }}>
+          <div onClick={(e) => e.stopPropagation()}
+            className="absolute bottom-0 left-0 right-0 bg-white dark:bg-card rounded-t-2xl max-h-[85vh] flex flex-col animate-in slide-in-from-bottom duration-300">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-border/30">
+              <h3 className="text-[17px] font-bold text-gray-900 dark:text-foreground">মন্তব্য</h3>
+              <button onClick={() => { setCommentingPostId(null); setReplyingTo(null); }} className="w-8 h-8 rounded-full bg-gray-100 dark:bg-secondary flex items-center justify-center">
+                <X className="w-5 h-5 text-gray-600" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
+              {commentingPost && (
+                <div className="rounded-2xl border border-gray-200 dark:border-border/30 p-3 bg-white dark:bg-card">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Link to="/feed/user/$userId" params={{ userId: commentingPost.user_id }} className="text-[13px] font-bold text-gray-900 dark:text-foreground hover:underline">
+                      <NameWithBadge name={commentingPost.user?.display_name || "User"} isVerified={commentingPost.user?.is_verified_badge} />
+                    </Link>
+                    <span className="text-[11px] text-gray-500">{timeAgo(commentingPost.created_at)}</span>
+                  </div>
+                  {commentingPost.content && <p className="text-[14px] text-gray-900 dark:text-foreground whitespace-pre-wrap break-words">{renderMentionText(commentingPost.content)}</p>}
+                </div>
+              )}
+
+              {loadingComments ? (
+                <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 text-blue-600 animate-spin" /></div>
+              ) : comments.length === 0 ? (
+                <div className="text-center py-10">
+                  <MessageCircle className="w-12 h-12 text-gray-300 mx-auto mb-2" />
+                  <p className="text-[15px] text-gray-500">এখনো কোনো মন্তব্য নেই</p>
+                  <p className="text-[13px] text-gray-400 mt-1">প্রথম মন্তব্য করুন!</p>
+                </div>
+              ) : (
+                comments.map((c) => (
+                  <div key={c.id} className="space-y-2">
+                    <div className="flex gap-2.5">
+                      <Link to="/feed/user/$userId" params={{ userId: c.user_id }} className="w-9 h-9 rounded-full bg-gray-200 dark:bg-primary/15 flex items-center justify-center shrink-0 overflow-hidden">
+                        <Avatar path={c.user?.avatar_url} className="w-full h-full object-cover" fallback={c.user?.display_name?.[0]?.toUpperCase() || "?"} />
+                      </Link>
+                      <div className="flex-1 min-w-0">
+                        <div className="bg-gray-100 dark:bg-secondary rounded-2xl px-3 py-2.5">
+                          <Link to="/feed/user/$userId" params={{ userId: c.user_id }} className="text-[14px] font-bold text-gray-900 dark:text-foreground hover:underline block">
+                            <NameWithBadge name={c.user?.display_name || "User"} isVerified={c.user?.is_verified_badge} />
+                          </Link>
+                          <p className="text-[15px] leading-relaxed text-gray-900 dark:text-foreground mt-0.5 break-words whitespace-pre-wrap">{renderMentionText(c.content)}</p>
+                        </div>
+                        <div className="flex items-center gap-4 px-1 mt-1">
+                          <span className="text-[12px] text-gray-500">{timeAgo(c.created_at)}</span>
+                          <button onClick={() => commentLikeMutation.mutate(c.id)} className={`text-[12px] font-bold ${c.liked_by_me ? "text-blue-600" : "text-gray-500"}`}>
+                            পছন্দ {(c.likes_count || 0) > 0 ? `(${c.likes_count})` : ""}
+                          </button>
+                          <button onClick={() => setReplyingTo({ id: c.id, name: c.user?.display_name || "User" })} className="text-[12px] font-bold text-gray-500">Reply</button>
+                          {c.user_id === user.id && (
+                            <button onClick={() => deleteCommentMutation.mutate(c.id)} className="text-[12px] font-bold text-red-500">মুছুন</button>
+                          )}
+                        </div>
+                        {c.replies && c.replies.length > 0 && (
+                          <div className="ml-5 mt-1.5">
+                            {!expandedReplies.has(c.id) ? (
+                              <button onClick={() => setExpandedReplies((prev) => new Set(prev).add(c.id))}
+                                className="flex items-center gap-1.5 text-[13px] font-bold text-gray-600 dark:text-muted-foreground hover:text-blue-600 dark:hover:text-primary py-1">
+                                <span className="w-6 h-0 border-t-2 border-gray-300 dark:border-border/50" />
+                                {c.replies.length === 1 ? "১টি রিপ্লাই দেখুন" : `${c.replies.length}টি রিপ্লাই দেখুন`}
+                              </button>
+                            ) : (
+                              <>
+                                <button onClick={() => setExpandedReplies((prev) => { const s = new Set(prev); s.delete(c.id); return s; })}
+                                  className="flex items-center gap-1.5 text-[13px] font-bold text-gray-600 dark:text-muted-foreground hover:text-blue-600 dark:hover:text-primary py-1 mb-1.5">
+                                  <span className="w-6 h-0 border-t-2 border-gray-300 dark:border-border/50" />
+                                  রিপ্লাই লুকান
+                                </button>
+                                <div className="space-y-2 border-l-2 border-gray-200 dark:border-border/30 pl-3">
+                                  {c.replies.map((r) => (
+                                    <div key={r.id} className="flex gap-2">
+                                      <Link to="/feed/user/$userId" params={{ userId: r.user_id }} className="w-7 h-7 rounded-full bg-gray-200 dark:bg-primary/15 flex items-center justify-center shrink-0 overflow-hidden">
+                                        <Avatar path={r.user?.avatar_url} className="w-full h-full object-cover" fallback={r.user?.display_name?.[0]?.toUpperCase() || "?"} />
+                                      </Link>
+                                      <div className="flex-1 min-w-0">
+                                        <div className="bg-gray-100 dark:bg-secondary rounded-xl px-2.5 py-2">
+                                          <Link to="/feed/user/$userId" params={{ userId: r.user_id }} className="text-[13px] font-bold text-gray-900 dark:text-foreground">
+                                            <NameWithBadge name={r.user?.display_name || "User"} isVerified={r.user?.is_verified_badge} />
+                                          </Link>
+                                          <p className="text-[14px] leading-relaxed text-gray-900 dark:text-foreground break-words">{renderMentionText(r.content)}</p>
+                                        </div>
+                                        <div className="flex items-center gap-3 px-1 mt-0.5">
+                                          <span className="text-[11px] text-gray-500">{timeAgo(r.created_at)}</span>
+                                          <button onClick={() => commentLikeMutation.mutate(r.id)} className={`text-[11px] font-bold ${r.liked_by_me ? "text-blue-600" : "text-gray-500"}`}>
+                                            পছন্দ {(r.likes_count || 0) > 0 ? `(${r.likes_count})` : ""}
+                                          </button>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="border-t border-gray-200 dark:border-border/30 p-3">
+              {replyingTo && (
+                <div className="flex items-center justify-between px-2 py-1.5 mb-1.5 bg-gray-100 dark:bg-secondary rounded-lg text-[12px]">
+                  <span className="text-gray-600 dark:text-muted-foreground">Replying to <b>{replyingTo.name}</b></span>
+                  <button onClick={() => setReplyingTo(null)}><X className="w-3.5 h-3.5 text-gray-500" /></button>
+                </div>
+              )}
+              <div className="flex items-center gap-2">
+                <input value={commentText} onChange={(e) => setCommentText(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter" && commentText.trim()) commentMutation.mutate({ text: commentText.trim() }); }}
+                  placeholder="মন্তব্য লিখুন..."
+                  className="flex-1 bg-gray-100 dark:bg-secondary text-gray-900 dark:text-foreground rounded-full px-4 py-2.5 text-sm border-none outline-none placeholder:text-gray-400" />
+                <button onClick={() => commentText.trim() && commentMutation.mutate({ text: commentText.trim() })}
+                  disabled={!commentText.trim()}
+                  className="w-9 h-9 bg-blue-600 rounded-full flex items-center justify-center disabled:opacity-40 shrink-0">
+                  <Send className="w-4 h-4 text-white" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showCreatePost && (
+        <div className="fixed inset-0 z-[150] bg-black/50 flex items-end sm:items-center justify-center animate-in fade-in duration-150" onClick={() => setShowCreatePost(false)}>
+          <div onClick={(e) => e.stopPropagation()} className="bg-white dark:bg-card rounded-t-2xl sm:rounded-2xl w-full sm:max-w-lg max-h-[90vh] flex flex-col animate-in slide-in-from-bottom duration-300">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-border/30">
+              <h3 className="text-[17px] font-bold text-gray-900 dark:text-foreground">পোস্ট তৈরি করুন</h3>
+              <button onClick={() => setShowCreatePost(false)} className="w-8 h-8 rounded-full bg-gray-100 dark:bg-secondary flex items-center justify-center">
+                <X className="w-5 h-5 text-gray-600" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              <textarea value={postContent} onChange={(e) => setPostContent(e.target.value)} placeholder="কি মনে হচ্ছে?" rows={4}
+                className="w-full resize-none text-[16px] text-gray-900 dark:text-foreground bg-transparent outline-none placeholder:text-gray-400" autoFocus />
+              {postImagePreviews.length > 0 && (
+                <div className="grid grid-cols-2 gap-2">
+                  {postImagePreviews.map((src, i) => (
+                    <div key={i} className="relative">
+                      <img src={src} className="w-full h-32 object-cover rounded-lg" />
+                      <button onClick={() => { setPostImageFiles((p) => p.filter((_, idx) => idx !== i)); setPostImagePreviews((p) => p.filter((_, idx) => idx !== i)); }}
+                        className="absolute top-1 right-1 w-6 h-6 bg-black/60 rounded-full flex items-center justify-center">
+                        <X className="w-3.5 h-3.5 text-white" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {postVideoPreview && (
+                <div className="relative">
+                  <video src={postVideoPreview} controls className="w-full max-h-64 rounded-lg" />
+                  <button onClick={() => { setPostVideoFile(null); setPostVideoPreview(null); }}
+                    className="absolute top-1 right-1 w-6 h-6 bg-black/60 rounded-full flex items-center justify-center">
+                    <X className="w-3.5 h-3.5 text-white" />
+                  </button>
+                </div>
+              )}
+              <div className="flex items-center gap-3 border border-gray-200 dark:border-border rounded-lg p-3">
+                <button onClick={() => fileInputRef.current?.click()} className="flex items-center gap-1.5 text-green-600 text-sm font-semibold">
+                  <Image className="w-5 h-5" /> ছবি
+                </button>
+                <button onClick={() => videoInputRef.current?.click()} className="flex items-center gap-1.5 text-red-500 text-sm font-semibold">
+                  <Video className="w-5 h-5" /> ভিডিও
+                </button>
+              </div>
+              <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleImageSelect} />
+              <input ref={videoInputRef} type="file" accept="video/*" className="hidden" onChange={handleVideoSelect} />
+            </div>
+            <div className="p-4 border-t border-gray-200 dark:border-border/30">
+              <button onClick={() => createPostMutation.mutate()}
+                disabled={createPostMutation.isPending || (!postContent.trim() && postImageFiles.length === 0 && !postVideoFile)}
+                className="w-full py-2.5 bg-blue-600 text-white rounded-lg font-bold disabled:opacity-40 flex items-center justify-center gap-2">
+                {createPostMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : "পোস্ট করুন"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {viewingImage && (
+        <div className="fixed inset-0 z-[200] bg-black/95 flex items-center justify-center animate-in fade-in duration-150" onClick={() => setViewingImage(null)}>
+          <button onClick={() => setViewingImage(null)} className="absolute top-4 right-4 z-10 text-white/80 hover:text-white">
+            <X size={28} />
+          </button>
+          <FeedImg path={viewingImage} className="max-w-full max-h-full object-contain p-4" onClick={(e: any) => e.stopPropagation()} />
+        </div>
+      )}
+
+      {storyEditorFile && (
+        <StoryEditor imageFile={storyEditorFile} onClose={() => setStoryEditorFile(null)} onPublish={handleStoryPublish} isPending={storyMutation.isPending} />
+      )}
+
+      {viewingStory && (
+        <StoryViewer
+          story={viewingStory}
+          allStories={storyGroups[viewingStory.user_id]}
+          userId={user.id}
+          onClose={() => setViewingStory(null)}
+          onDelete={(id) => deleteStoryMutation.mutate(id)}
+          onMessage={(uid) => { setViewingStory(null); startChatWith(uid); }}
+          onCall={() => {}}
+          onProfile={(uid) => { setViewingStory(null); navigate({ to: "/feed/user/$userId", params: { userId: uid } }); }}
+          timeAgo={timeAgo}
+        />
+      )}
+    </div>
+  );
+}
