@@ -406,17 +406,35 @@ function LocalReel({
   onOpenComments: (postId: string) => void;
 }) {
   const { user } = useAuth();
-  const queryClient = useQueryClient();
   const videoUrl = useFeedMedia(post.video_url);
   const avatarUrl = useFeedMedia(post.user?.avatar_url || undefined);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [liked, setLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(post.likes_count || 0);
+  const [paused, setPaused] = useState(false);
+  const [burst, setBurst] = useState(false);
+  const lastTapRef = useRef(0);
+  const singleTapTimer = useRef<number | null>(null);
+
+  // আগে লাইক দেওয়া আছে কি না
+  useEffect(() => {
+    if (!user?.id) return;
+    let alive = true;
+    getUserLikes(user.id, [post.id])
+      .then((set) => {
+        if (alive) setLiked(set.has(post.id));
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [user?.id, post.id]);
 
   useEffect(() => {
     const el = videoRef.current;
     if (!el) return;
     if (isActive) {
+      setPaused(false);
       el.play().catch(() => {});
     } else {
       el.pause();
@@ -428,17 +446,63 @@ function LocalReel({
       if (!user) throw new Error("no user");
       return toggleLike(post.id, user.id);
     },
-    onMutate: () => {
-      setLiked((prev) => {
-        const next = !prev;
-        setLikesCount((c) => (next ? c + 1 : Math.max(0, c - 1)));
-        return next;
-      });
-    },
     onError: () => {
       setLiked((prev) => !prev);
+      setLikesCount((c) => (liked ? c + 1 : Math.max(0, c - 1)));
     },
   });
+
+  const applyLike = (forceLove: boolean) => {
+    if (!user) {
+      toast.error("লাইক দিতে লগইন করুন");
+      return;
+    }
+    if (forceLove && liked) {
+      // ডাবল ট্যাপে শুধু লাভ দেবে, তুলে নেবে না
+      setBurst(true);
+      window.setTimeout(() => setBurst(false), 700);
+      return;
+    }
+    const next = !liked;
+    setLiked(next);
+    setLikesCount((c) => (next ? c + 1 : Math.max(0, c - 1)));
+    if (next) {
+      setBurst(true);
+      window.setTimeout(() => setBurst(false), 700);
+    }
+    likeMutation.mutate();
+  };
+
+  const togglePlay = () => {
+    const el = videoRef.current;
+    if (!el) return;
+    if (el.paused) {
+      el.play().catch(() => {});
+      setPaused(false);
+    } else {
+      el.pause();
+      setPaused(true);
+    }
+  };
+
+  // এক ট্যাপ = পজ/প্লে, ডাবল ট্যাপ = লাভ (TikTok স্টাইল)
+  const handleTap = () => {
+    const now = Date.now();
+    if (now - lastTapRef.current < 280) {
+      lastTapRef.current = 0;
+      if (singleTapTimer.current) {
+        window.clearTimeout(singleTapTimer.current);
+        singleTapTimer.current = null;
+      }
+      applyLike(true);
+      return;
+    }
+    lastTapRef.current = now;
+    singleTapTimer.current = window.setTimeout(() => {
+      singleTapTimer.current = null;
+      togglePlay();
+    }, 280);
+  };
 
   return (
     <div className="relative h-full w-full">
@@ -446,16 +510,29 @@ function LocalReel({
         <video
           ref={videoRef}
           src={videoUrl}
-          poster={undefined}
           className="h-full w-full object-contain bg-black"
           loop
           playsInline
           muted={muted}
-          onClick={() => setMuted(!muted)}
         />
       ) : (
         <div className="flex h-full w-full items-center justify-center bg-black">
           <Loader2 className="h-6 w-6 animate-spin text-white" />
+        </div>
+      )}
+
+      {/* ট্যাপ লেয়ার — এক ট্যাপে পজ, ডাবল ট্যাপে লাভ */}
+      <div className="absolute inset-0 z-10" onClick={handleTap} />
+
+      {paused && (
+        <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+          <Play className="h-16 w-16 text-white/80 drop-shadow-lg" />
+        </div>
+      )}
+
+      {burst && (
+        <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
+          <Heart className="h-24 w-24 animate-ping fill-red-500 text-red-500 drop-shadow-2xl" />
         </div>
       )}
 
@@ -477,14 +554,18 @@ function LocalReel({
       <ReelActionBar
         likesCount={likesCount}
         liked={liked}
-        onLike={user ? () => likeMutation.mutate() : undefined}
+        onLike={() => applyLike(false)}
         commentsCount={post.comments_count}
         onComment={() => onOpenComments(post.id)}
-        onShare={() => shareUrl(`${window.location.origin}/watch/${post.id}`, post.content || "good-app reel")}
+        onShare={() => {
+          shareUrl(`${window.location.origin}/watch/${post.id}`, post.content || "good-app reel");
+          if (user) notifyPostShared(post.id, user.id).catch(() => {});
+        }}
       />
     </div>
   );
 }
+
 
 function ExternalReel({
   video,
