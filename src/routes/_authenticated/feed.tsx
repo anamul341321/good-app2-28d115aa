@@ -954,6 +954,8 @@ function FeedPage() {
         </>
       )}
 
+      {activeTab === "video" && <VideoTab />}
+
       {activeTab === "notif" && (
         <div className="max-w-lg mx-auto mt-2 px-2">
           <div className="bg-white dark:bg-card rounded-lg">
