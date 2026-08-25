@@ -771,7 +771,7 @@ export async function getBangladeshExternalVideos(
     videos: finalVideos,
     // Always allow more loading - never stop
     hasMore: true,
-    nextPageToken: ytResult.nextPageToken,
+    nextPageToken: "nextPageToken" in ytResult ? ytResult.nextPageToken : undefined,
   };
 }
 

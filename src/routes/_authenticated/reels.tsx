@@ -130,16 +130,20 @@ function ReelsPage() {
     const root = containerRef.current;
     if (!root) return;
     const center = root.scrollTop + root.clientHeight / 2;
-    let best: { id: string; distance: number } | null = null;
+    let bestId: string | null = null;
+    let bestDistance = Number.POSITIVE_INFINITY;
     Array.from(root.children).forEach((child) => {
       const el = child as HTMLElement;
       const id = el.dataset.reelId;
       if (!id) return;
       const childCenter = el.offsetTop + el.offsetHeight / 2;
       const distance = Math.abs(childCenter - center);
-      if (!best || distance < best.distance) best = { id, distance };
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        bestId = id;
+      }
     });
-    if (best && best.id !== activeId) setActiveId(best.id);
+    if (bestId && bestId !== activeId) setActiveId(bestId);
   }, [activeId]);
 
   useEffect(() => {

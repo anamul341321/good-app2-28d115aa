@@ -21,7 +21,9 @@ export const Route = createFileRoute("/_authenticated/chat/")({
         content: "Good-App Messenger এ বন্ধুদের সাথে চ্যাট ও কল করুন।",
       },
       { property: "og:title", content: "Good-App Messenger" },
+      { property: "og:description", content: "Good-App Messenger এ বন্ধুদের সাথে চ্যাট, গ্রুপ ও কল করুন।" },
       { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
 
