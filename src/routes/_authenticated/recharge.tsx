@@ -252,10 +252,8 @@ function RechargePage() {
               <span className="mono-num font-black text-cyan-600">{totalCost}৳</span>
             </div>
             {miningNeeded > 0 && (
-              <p className={`text-[11px] font-bold leading-snug pt-1 ${miningNeeded > 50 ? "text-rose" : "text-amber-600"}`}>
-                {miningNeeded > 50
-                  ? t("মাইনিং ব্যালেন্স দিয়ে সর্বোচ্চ ৫০৳ রিচার্জ করা যাবে — বোনাস ব্যালেন্স দিয়ে বেশি নিতে পারবেন।", "Mining balance covers at most 50৳ per recharge — use bonus balance for more.")
-                  : t(`এই রিচার্জে মাইনিং ব্যালেন্স থেকে ${miningNeeded}৳ কাটবে · মাইনিং দিয়ে দিনে মাত্র ১ বার রিচার্জ করা যাবে।`, `${miningNeeded}৳ will come from mining balance · only 1 mining-funded recharge per day.`)}
+              <p className="text-[11px] font-bold leading-snug pt-1 text-rose">
+                {t(`মেইন ব্যালেন্স ${miningNeeded}৳ কম। রিচার্জ শুধু মেইন ব্যালেন্স দিয়ে হয় — মাইনিং টাকা আগে মেইন ব্যালেন্সে ক্লেইম করুন।`, `Main balance is short by ${miningNeeded}৳. Recharge uses Main balance only — claim mining into Main balance first.`)}
               </p>
             )}
           </div>
