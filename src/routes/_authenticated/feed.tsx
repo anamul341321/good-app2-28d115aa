@@ -24,6 +24,7 @@ import StoryEditor from "@/components/social/StoryEditor";
 import StoryViewer from "@/components/social/StoryViewer";
 import { playUiSound } from "@/lib/ui-sounds";
 import VerifiedBadge from "@/components/VerifiedBadge";
+import VideoTab from "@/components/social/VideoTab";
 
 export const Route = createFileRoute("/_authenticated/feed")({
   component: FeedPage,
