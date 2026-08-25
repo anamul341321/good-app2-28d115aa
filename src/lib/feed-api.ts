@@ -1277,6 +1277,26 @@ export async function deletePost(postId: string, userId: string): Promise<void> 
   await db.from("post_comments").delete().eq("post_id", postId);
 }
 
+export type PostVisibility = "public" | "private";
+
+/** পোস্ট এডিট (লেখা + প্রাইভেসি) — শুধু নিজের পোস্ট */
+export async function updatePost(
+  postId: string,
+  userId: string,
+  patch: { content?: string; visibility?: PostVisibility },
+): Promise<void> {
+  const payload: Record<string, any> = { edited_at: new Date().toISOString() };
+  if (typeof patch.content === "string") payload.content = patch.content;
+  if (patch.visibility) payload.visibility = patch.visibility;
+  const { error } = await db.from("posts").update(payload).eq("id", postId).eq("user_id", userId);
+  if (error) throw error;
+}
+
+/** পোস্টের প্রাইভেসি বদলানো — public ↔ private */
+export async function setPostVisibility(postId: string, userId: string, visibility: PostVisibility): Promise<void> {
+  return updatePost(postId, userId, { visibility });
+}
+
 // Delete a story (only owner)
 export async function deleteStory(storyId: string, userId: string): Promise<void> {
   const { error } = await db.from("stories").delete().eq("id", storyId).eq("user_id", userId);
