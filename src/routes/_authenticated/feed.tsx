@@ -86,7 +86,7 @@ function FeedPage() {
   const [viewingImage, setViewingImage] = useState<string | null>(null);
   const [doubleTapTimer, setDoubleTapTimer] = useState<Record<string, number>>({});
   const [showLoveAnimation, setShowLoveAnimation] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"home" | "friends" | "notif">("home");
+  const [activeTab, setActiveTab] = useState<"home" | "friends" | "notif" | "video">("home");
   const [hiddenPosts, setHiddenPosts] = useState<Set<string>>(new Set());
   const [storyEditorFile, setStoryEditorFile] = useState<File | null>(null);
   const [replyingTo, setReplyingTo] = useState<{ id: string; name: string } | null>(null);
