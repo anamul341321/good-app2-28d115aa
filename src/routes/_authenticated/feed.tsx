@@ -345,6 +345,7 @@ function FeedPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["suggested-people"] });
       queryClient.invalidateQueries({ queryKey: ["friends-summary"] });
+      queryClient.invalidateQueries({ queryKey: ["feed-user-search"] });
       toast.success("ফ্রেন্ড রিকুয়েস্ট পাঠানো হয়েছে! ✅");
     },
     onError: () => toast.error("রিকুয়েস্ট পাঠানো যায়নি"),
@@ -354,6 +355,8 @@ function FeedPage() {
     mutationFn: async ({ linkId, accept }: { linkId: string; accept: boolean }) => respondFriendRequest({ data: { linkId, accept } }),
     onSuccess: (_d, vars) => {
       queryClient.invalidateQueries({ queryKey: ["friends-summary"] });
+      queryClient.invalidateQueries({ queryKey: ["feed-user-search"] });
+      queryClient.invalidateQueries({ queryKey: ["suggested-people"] });
       if (vars.accept) toast.success("ফ্রেন্ড রিকুয়েস্ট গ্রহণ করা হয়েছে! 🎉");
     },
   });
@@ -777,18 +780,30 @@ function FeedPage() {
             </div>
             {searchResults.length > 0 && (
               <div className="mt-2 space-y-1">
-                {searchResults.filter((u: any) => u.id !== user.id).slice(0, 5).map((u: any) => (
-                  <Link key={u.id} to="/feed/user/$userId" params={{ userId: u.id }}
-                    className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-secondary transition-colors text-left">
-                    <div className="w-9 h-9 rounded-full bg-gray-200 dark:bg-primary/20 flex items-center justify-center overflow-hidden">
+                {searchResults.filter((u: any) => u.id !== user.id).slice(0, 10).map((u: any) => (
+                  <div key={u.id} className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-secondary transition-colors">
+                    <Link to="/feed/user/$userId" params={{ userId: u.id }} className="w-9 h-9 rounded-full bg-gray-200 dark:bg-primary/20 flex items-center justify-center overflow-hidden shrink-0">
                       <Avatar path={u.avatar_url} className="w-full h-full object-cover" fallback={u.display_name?.[0]?.toUpperCase() || "?"} />
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-gray-900 dark:text-foreground">
+                    </Link>
+                    <Link to="/feed/user/$userId" params={{ userId: u.id }} className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-900 dark:text-foreground truncate">
                         <NameWithBadge name={u.display_name || "User"} isVerified={u.is_verified_badge} />
                       </p>
-                    </div>
-                  </Link>
+                      <p className="text-[11px] text-gray-500 dark:text-muted-foreground">UID {u.uid_seq ?? "—"}</p>
+                    </Link>
+                    {u.status === "accepted" ? (
+                      <button onClick={() => startChatWith(u.id)} className="px-2.5 py-1.5 bg-blue-50 dark:bg-primary/10 text-blue-600 dark:text-primary text-[12px] font-semibold rounded-md shrink-0">মেসেজ</button>
+                    ) : u.status === "pending_sent" ? (
+                      <span className="px-2.5 py-1.5 bg-gray-100 dark:bg-secondary text-gray-500 text-[12px] font-semibold rounded-md shrink-0">পাঠানো</span>
+                    ) : u.status === "pending_received" ? (
+                      <button onClick={() => u.linkId && respondRequestMutation.mutate({ linkId: u.linkId, accept: true })} className="px-2.5 py-1.5 bg-blue-600 text-white text-[12px] font-semibold rounded-md shrink-0">গ্রহণ</button>
+                    ) : (
+                      <button onClick={() => friendRequestMutation.mutate(u.id)} disabled={friendRequestMutation.isPending}
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-blue-600 text-white text-[12px] font-semibold rounded-md shrink-0 disabled:opacity-60">
+                        <UserPlus className="w-3.5 h-3.5" /> Add
+                      </button>
+                    )}
+                  </div>
                 ))}
               </div>
             )}
@@ -808,7 +823,7 @@ function FeedPage() {
                   <div key={fr.linkId} className="flex items-center gap-3 px-3 py-2">
                     <Link to="/feed/user/$userId" params={{ userId: fr.userId }}
                       className="w-14 h-14 rounded-full bg-gray-200 dark:bg-primary/20 flex items-center justify-center overflow-hidden shrink-0">
-                      <User className="w-7 h-7 text-gray-400" />
+                      <Avatar path={(fr as any).avatar_url} className="w-full h-full object-cover" fallback={fr.name?.[0]?.toUpperCase() || "?"} />
                     </Link>
                     <div className="flex-1 min-w-0">
                       <p className="text-[14px] font-bold text-gray-900 dark:text-foreground truncate">{fr.name}</p>
@@ -834,7 +849,7 @@ function FeedPage() {
                 <div key={f.linkId} className="flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-secondary/30 transition-colors">
                   <Link to="/feed/user/$userId" params={{ userId: f.userId }}
                     className="relative w-14 h-14 rounded-full bg-gray-200 dark:bg-primary/20 flex items-center justify-center overflow-hidden shrink-0 border-2 border-gray-100 dark:border-border">
-                    <User className="w-7 h-7 text-gray-400" />
+                    <Avatar path={(f as any).avatar_url} className="w-full h-full object-cover" fallback={f.name?.[0]?.toUpperCase() || "?"} />
                     {onlineIds.has(f.userId) && <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white dark:border-card" />}
                   </Link>
                   <div className="flex-1 min-w-0">
