@@ -579,22 +579,57 @@ function ExternalReel({
   setMuted: (v: boolean) => void;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [paused, setPaused] = useState(false);
   const isDirectVideo = /\.(mp4|webm|ogg)(\?|$)/i.test(video.video_url || "");
+  const embedSrc = `${video.video_url}${video.video_url.includes("?") ? "&" : "?"}autoplay=${isActive ? 1 : 0}&mute=${muted ? 1 : 0}&playsinline=1&enablejsapi=1&controls=0&modestbranding=1&rel=0`;
 
   useEffect(() => {
     trackVideoPreference({ title: video.title, category: video.category });
   }, [video.id]);
 
   useEffect(() => {
-    if (!isDirectVideo) return;
-    const el = videoRef.current;
-    if (!el) return;
-    if (isActive) {
-      el.play().catch(() => {});
-    } else {
-      el.pause();
+    if (isDirectVideo) {
+      const el = videoRef.current;
+      if (!el) return;
+      if (isActive) {
+        setPaused(false);
+        el.play().catch(() => {});
+      } else {
+        el.pause();
+      }
+      return;
     }
+    // YouTube ইফ্রেম — postMessage দিয়ে প্লে/পজ
+    const win = iframeRef.current?.contentWindow;
+    if (!win) return;
+    const cmd = isActive ? "playVideo" : "pauseVideo";
+    setPaused(false);
+    win.postMessage(JSON.stringify({ event: "command", func: cmd, args: [] }), "*");
   }, [isActive, isDirectVideo]);
+
+  const togglePlay = () => {
+    if (isDirectVideo) {
+      const el = videoRef.current;
+      if (!el) return;
+      if (el.paused) {
+        el.play().catch(() => {});
+        setPaused(false);
+      } else {
+        el.pause();
+        setPaused(true);
+      }
+      return;
+    }
+    const win = iframeRef.current?.contentWindow;
+    if (!win) return;
+    const next = !paused;
+    win.postMessage(
+      JSON.stringify({ event: "command", func: next ? "pauseVideo" : "playVideo", args: [] }),
+      "*",
+    );
+    setPaused(next);
+  };
 
   return (
     <div className="relative h-full w-full">
@@ -607,17 +642,35 @@ function ExternalReel({
           loop
           playsInline
           muted={muted}
-          onClick={() => setMuted(!muted)}
         />
       ) : (
+        // pointer-events-none — না হলে ইফ্রেম টাচ খেয়ে ফেলে, স্ক্রল/সোয়াইপ কাজ করে না
         <iframe
-          src={`${video.video_url}${video.video_url.includes("?") ? "&" : "?"}autoplay=${isActive ? 1 : 0}&mute=1&playsinline=1`}
-          className="h-full w-full border-0"
+          ref={iframeRef}
+          src={embedSrc}
+          className="pointer-events-none h-full w-full border-0"
           allow="autoplay; encrypted-media; picture-in-picture"
-          allowFullScreen
           title={video.title}
         />
       )}
+
+      {/* স্ক্রল ও ট্যাপ লেয়ার */}
+      <div className="absolute inset-0 z-10" onClick={togglePlay} />
+
+      {paused && (
+        <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+          <Play className="h-16 w-16 text-white/80 drop-shadow-lg" />
+        </div>
+      )}
+
+      <button
+        onClick={() => setMuted(!muted)}
+        className="absolute right-3 top-16 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-black/40 text-white"
+      >
+        {muted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+      </button>
+
+
 
       <div className="absolute bottom-6 left-3 z-20 max-w-[75%] text-white">
         <span className="mb-1 inline-block rounded bg-white/10 px-2 py-0.5 text-[10px] font-bold uppercase">
