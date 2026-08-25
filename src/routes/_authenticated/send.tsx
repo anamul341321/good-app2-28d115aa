@@ -137,11 +137,11 @@ function SendPage() {
 
       {miningLocked && (
         <div className="rounded-2xl p-3.5 border-2 border-amber-500/40 bg-amber-500/10">
-          <p className="text-xs font-black text-amber-600">⛏️🔒 {t("মাইনিং ব্যালেন্স এখন লক", "Mining balance is locked now")}</p>
+          <p className="text-xs font-black text-amber-600">⛏️ {t("মাইনিং ব্যালেন্স দিয়ে পাঠানো যাবে না", "Mining balance can't be sent")}</p>
           <p className="text-[11px] text-muted-foreground font-bold mt-1 leading-relaxed">
             {t(
-              `আপনার ${miningLockedAmount}৳ মাইনিং ব্যালেন্স এখনো লক। যে স্লট রি-ভেরিফাই করবেন, সেই স্লটের মাইনিং টাকা সাথে সাথেই আনলক হবে। এখন পাঠাতে পারবেন ${sendable}৳।`,
-              `${miningLockedAmount}৳ of your mining balance is still locked. Re-verify a slot and that slot's mining earnings unlock instantly. You can send ${sendable}৳ now.`,
+              `আপনার ${miningLockedAmount}৳ মাইনিং ব্যালেন্স আছে। সেন্ড/উইথড্র/রিচার্জ শুধু মেইন ব্যালেন্স দিয়ে হবে — আগে মাইনিং টাকা "মেইন ব্যালেন্সে ক্লেইম" করুন। এখন পাঠাতে পারবেন ${sendable}৳।`,
+              `You have ${miningLockedAmount}৳ mining balance. Send/withdraw/recharge use Main balance only — claim mining into Main balance first. You can send ${sendable}৳ now.`,
             )}
           </p>
         </div>
