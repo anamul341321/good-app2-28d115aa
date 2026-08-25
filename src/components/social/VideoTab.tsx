@@ -434,49 +434,49 @@ function InlinePlayer({ video, userId, onClose }: { video: ExternalReelVideo; us
   const commentCount = isLocal ? engagement?.comments_count ?? video.comments_count ?? 0 : 0;
 
   return (
-    <div className="bg-white dark:bg-card border-b border-gray-100 dark:border-border/30">
+    <div className="fixed inset-0 z-[70] flex flex-col overflow-y-auto bg-black">
       {/* good-app player header */}
-      <div className="flex items-center justify-between bg-black px-2 py-1.5">
+      <div className="sticky top-0 z-10 flex shrink-0 items-center justify-between bg-black px-2 py-1.5">
         <button
           type="button"
           aria-label="ফিরে যান"
           onClick={onClose}
-          className="grid h-8 w-8 place-items-center rounded-full text-white active:bg-white/15"
+          className="grid h-9 w-9 place-items-center rounded-full text-white active:bg-white/15"
         >
           <ArrowLeft className="h-5 w-5" />
         </button>
-        <span className="text-[13px] font-black tracking-tight text-white">good-app</span>
+        <span className="text-[14px] font-black tracking-tight text-white">good-app</span>
         <button
           type="button"
           aria-label="শেয়ার"
           onClick={onShare}
-          className="grid h-8 w-8 place-items-center rounded-full text-white active:bg-white/15"
+          className="grid h-9 w-9 place-items-center rounded-full text-white active:bg-white/15"
         >
           <Share2 className="h-4 w-4" />
         </button>
       </div>
 
-      <div className="relative aspect-video w-full overflow-hidden bg-black">
+      <div className="relative aspect-video w-full shrink-0 overflow-hidden bg-black">
         {isLocal ? (
           <video src={source} controls autoPlay playsInline className="h-full w-full" />
         ) : (
           <>
             <iframe
-              src={`${video.video_url}${video.video_url.includes("?") ? "&" : "?"}autoplay=1&playsinline=1&rel=0&modestbranding=1&showinfo=0&iv_load_policy=3&fs=1&color=white`}
+              src={`${video.video_url}${video.video_url.includes("?") ? "&" : "?"}autoplay=1&playsinline=1&rel=0&modestbranding=1&showinfo=0&iv_load_policy=3&fs=0&controls=1&disablekb=1&color=white`}
               title={video.title}
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              allowFullScreen
               className="h-full w-full border-0"
             />
-            {/* Cover external branding: top title/logo strip + bottom-right logo button */}
-            <div className="pointer-events-auto absolute left-0 right-0 top-0 h-8 bg-black" />
-            <div className="pointer-events-auto absolute bottom-0 right-0 h-10 w-14 bg-transparent" />
-            <span className="absolute left-2 top-1 text-[11px] font-black tracking-tight text-white/90">good-app player</span>
+            {/* Hide external branding: top title/channel/logo strip */}
+            <div className="absolute left-0 right-0 top-0 h-11 bg-black" />
+            {/* Hide bottom branding row + extra buttons, keep the seek bar visible above it */}
+            <div className="absolute bottom-0 left-0 right-0 h-9 bg-black" />
+            <span className="absolute left-2 top-2 text-[11px] font-black tracking-tight text-white/90">good-app player</span>
           </>
         )}
       </div>
 
-      <div className="px-3 py-3">
+      <div className="min-h-0 flex-1 bg-white px-3 py-3 dark:bg-card">
         <h2 className="text-[17px] font-black leading-snug text-gray-950 dark:text-foreground">{video.title}</h2>
         <p className="mt-1 text-[12.5px] font-semibold text-gray-500 dark:text-muted-foreground">
           {viewLabel ? `${viewLabel} views · ` : ""}{video.creator || "good-app"}
