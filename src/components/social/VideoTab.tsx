@@ -452,7 +452,7 @@ function InlinePlayer({ video, userId, onClose }: { video: ExternalReelVideo; us
           onClick={onShare}
           className="grid h-8 w-8 place-items-center rounded-full text-white active:bg-white/15"
         >
-          <Share2 className="h-4.5 w-4.5" />
+          <Share2 className="h-4 w-4" />
         </button>
       </div>
 
