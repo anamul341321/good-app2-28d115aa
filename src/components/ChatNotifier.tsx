@@ -80,6 +80,44 @@ export function ChatNotifier() {
         )
         .on(
           "postgres_changes",
+          { event: "INSERT", schema: "public", table: "friend_messages" },
+          (payload: any) => {
+            const row = payload?.new;
+            const groupId = String(row?.group_id ?? "");
+            const senderId = String(row?.sender_id ?? "");
+            if (!groupId || senderId === me) return;
+            void (async () => {
+              const { data: member } = await supabase
+                .from("chat_group_members")
+                .select("group_id")
+                .eq("group_id", groupId)
+                .eq("user_id", me)
+                .maybeSingle();
+              if (!member) return;
+              playMessageTone();
+              void qc.invalidateQueries({ queryKey: ["chats"] });
+              void qc.invalidateQueries({ queryKey: ["group-thread", groupId] });
+              let groupName = "গ্রুপ মেসেজ";
+              try {
+                const { data: group } = await supabase.from("chat_groups").select("name").eq("id", groupId).maybeSingle();
+                if (group?.name) groupName = group.name;
+              } catch {
+                // no-op
+              }
+              if (!window.location.pathname.includes(`/chat/group/${groupId}`)) {
+                toast(`👥 ${groupName}`, {
+                  description: String(row?.body ?? "নতুন মেসেজ").slice(0, 100),
+                  action: {
+                    label: "খুলুন",
+                    onClick: () => router.navigate({ to: "/chat/group/$groupId", params: { groupId } }),
+                  },
+                });
+              }
+            })();
+          },
+        )
+        .on(
+          "postgres_changes",
           { event: "INSERT", schema: "public", table: "friend_links", filter: `addressee_id=eq.${me}` },
           () => {
             void qc.invalidateQueries({ queryKey: ["friends-summary"] });
