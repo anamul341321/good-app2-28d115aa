@@ -29,6 +29,7 @@ import {
   type Post,
   type ExternalReelVideo,
   type PostComment,
+  LONG_VIDEO_MARKER,
 } from "@/lib/feed-api";
 import { useFeedMedia } from "@/lib/feed-media";
 import { MessengerAvatar } from "@/components/messenger/MessengerAvatar";
