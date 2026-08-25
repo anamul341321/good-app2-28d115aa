@@ -24,6 +24,7 @@ import StoryEditor from "@/components/social/StoryEditor";
 import StoryViewer from "@/components/social/StoryViewer";
 import { playUiSound } from "@/lib/ui-sounds";
 import VerifiedBadge from "@/components/VerifiedBadge";
+import VideoTab from "@/components/social/VideoTab";
 
 export const Route = createFileRoute("/_authenticated/feed")({
   component: FeedPage,
@@ -86,7 +87,7 @@ function FeedPage() {
   const [viewingImage, setViewingImage] = useState<string | null>(null);
   const [doubleTapTimer, setDoubleTapTimer] = useState<Record<string, number>>({});
   const [showLoveAnimation, setShowLoveAnimation] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"home" | "friends" | "notif">("home");
+  const [activeTab, setActiveTab] = useState<"home" | "friends" | "notif" | "video">("home");
   const [hiddenPosts, setHiddenPosts] = useState<Set<string>>(new Set());
   const [storyEditorFile, setStoryEditorFile] = useState<File | null>(null);
   const [replyingTo, setReplyingTo] = useState<{ id: string; name: string } | null>(null);
@@ -688,9 +689,14 @@ function FeedPage() {
       <header className="sticky top-0 z-50 shadow-lg" style={{ background: "linear-gradient(135deg, #1877F2, #0d47a1, #1565c0)" }}>
         <div className="max-w-lg mx-auto px-3 py-2 flex items-center justify-between">
           <div className="flex items-center gap-1">
-            <button onClick={() => navigate({ to: "/home" })} className="h-9 pl-1.5 pr-3 rounded-full bg-white/20 flex items-center gap-1 mr-1 active:scale-95 transition" title="Dashboard">
-              <ArrowLeft className="w-5 h-5 text-white" />
-              <span className="text-[11px] font-black text-white whitespace-nowrap">ড্যাশবোর্ড</span>
+            <button
+              onClick={() => navigate({ to: "/home" })}
+              className="h-9 pl-1.5 pr-3 rounded-full flex items-center gap-1 mr-1 active:scale-95 transition ring-2 ring-white/80 shadow-[0_4px_14px_rgba(255,193,7,0.55)] animate-pulse"
+              style={{ background: "linear-gradient(135deg,#ffd600,#ff9100,#f4511e)" }}
+              title="Dashboard"
+            >
+              <ArrowLeft className="w-5 h-5 text-[#1a1a1a]" />
+              <span className="text-[11.5px] font-black text-[#1a1a1a] whitespace-nowrap">ড্যাশবোর্ড</span>
             </button>
             <h1 className="text-[24px] font-black text-white tracking-tight" style={{ letterSpacing: "-0.02em" }}>
               <span>good</span>
@@ -725,6 +731,10 @@ function FeedPage() {
                 {friendRequestCount > 99 ? "99+" : friendRequestCount}
               </span>
             )}
+          </button>
+          <button onClick={() => setActiveTab("video")} title="ভিডিও দেখুন"
+            className={`relative flex-1 h-full flex items-center justify-center border-b-[3px] transition-colors ${activeTab === "video" ? "border-red-600 text-red-600" : "border-transparent text-gray-500 dark:text-muted-foreground"}`}>
+            <Video className="w-6 h-6" />
           </button>
           <button onClick={() => navigate({ to: "/chat" })}
             className="relative flex-1 h-full flex items-center justify-center border-b-[3px] border-transparent text-gray-500 dark:text-muted-foreground">
@@ -944,6 +954,8 @@ function FeedPage() {
           </div>
         </>
       )}
+
+      {activeTab === "video" && <VideoTab />}
 
       {activeTab === "notif" && (
         <div className="max-w-lg mx-auto mt-2 px-2">
