@@ -41,6 +41,11 @@ function OnchainAudit() {
       <p className="text-[10px] uppercase tracking-widest text-emerald font-bold">
         Blockchain audit — একদম fresh wallet (কোনো token/CELO transfer হয়নি)
       </p>
+      <p className="text-[10px] text-muted-foreground leading-relaxed">
+        Fresh হিসাব সাথে সাথেই দেখায় (যেসব key কখনো sweep/gas transfer-এ যায়নি)। নিচের
+        scan button শুধু blockchain থেকে extra confirmation যোগ করে — ধীরে চলে, চালু না করলেও হিসাব ঠিক থাকে।
+      </p>
+
       <button onClick={runScan} disabled={scanning}
         className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-emerald/15 border border-emerald/30 text-emerald font-black text-xs btn-press disabled:opacity-50">
         {scanning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Radar className="w-3.5 h-3.5" />}
