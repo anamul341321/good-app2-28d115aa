@@ -6,13 +6,13 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   getFeedPosts, createPost, toggleReaction, getUserReactions,
   getPostComments, addComment, uploadPostMedia, getActiveStories,
-  createStory, uploadStoryMedia, searchFeedUsers, getSuggestedUsers,
+  createStory, uploadStoryMedia,
   deletePost, deleteStory, deleteComment, toggleCommentLike,
   getUnreadNotificationCount, getNotifications, markNotificationsRead,
   REACTION_EMOJIS, type Post, type PostComment, type Story,
 } from "@/lib/feed-api";
 import { useFeedMedia } from "@/lib/feed-media";
-import { listFriends, sendFriendRequest, respondFriendRequest } from "@/lib/friends.functions";
+import { listFriends, sendFriendRequest, respondFriendRequest, searchPeopleFull, getSuggestedPeople } from "@/lib/friends.functions";
 import { getUnreadMessageCount } from "@/lib/chat.functions";
 import { usePresence } from "@/lib/presence";
 import {
@@ -185,15 +185,15 @@ function FeedPage() {
 
   const { data: suggestedPeople = [] } = useQuery({
     queryKey: ["suggested-people"],
-    queryFn: () => getSuggestedUsers(user!.id, 6),
+    queryFn: async () => (await getSuggestedPeople({ data: { limit: 12 } })).people,
     enabled: !!user,
     staleTime: 120000,
   });
 
   const { data: searchResults = [] } = useQuery({
     queryKey: ["feed-user-search", searchQuery],
-    queryFn: () => searchFeedUsers(searchQuery),
-    enabled: searchQuery.length >= 2,
+    queryFn: async () => (await searchPeopleFull({ data: { query: searchQuery } })).people,
+    enabled: searchQuery.trim().length >= 1,
   });
 
   useEffect(() => {
