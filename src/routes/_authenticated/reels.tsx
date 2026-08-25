@@ -15,6 +15,7 @@ import {
   X,
   ExternalLink,
   ArrowLeft,
+  Play,
 } from "lucide-react";
 import {
   getFeedPosts,
@@ -22,6 +23,8 @@ import {
   trackVideoPreference,
   markReelsSeen,
   toggleLike,
+  getUserLikes,
+  notifyPostShared,
   getPostComments,
   addComment,
   uploadPostMedia,
@@ -31,6 +34,7 @@ import {
   type PostComment,
   LONG_VIDEO_MARKER,
 } from "@/lib/feed-api";
+
 import { useFeedMedia } from "@/lib/feed-media";
 import { MessengerAvatar } from "@/components/messenger/MessengerAvatar";
 import {
@@ -90,15 +94,16 @@ function useCombinedReels() {
         li++;
       }
       if (ei < external.length) {
-        merged.push({ kind: "external", id: external[ei].id, video: external[ei] });
+        merged.push({ kind: "external", id: `ext-${ei}-${external[ei].id}`, video: external[ei] });
         ei++;
       }
       // add an extra external item to boost density
       if (ei < external.length) {
-        merged.push({ kind: "external", id: external[ei].id, video: external[ei] });
+        merged.push({ kind: "external", id: `ext-${ei}-${external[ei].id}`, video: external[ei] });
         ei++;
       }
     }
+
     return merged;
   }, [localQuery.data, externalQuery.data]);
 
@@ -199,9 +204,10 @@ function ReelsPage() {
       ) : (
         <div
           ref={containerRef}
-          className="h-full w-full snap-y snap-mandatory overflow-y-scroll scroll-smooth"
-          style={{ scrollbarWidth: "none" }}
+          className="h-full w-full snap-y snap-mandatory overflow-y-scroll overscroll-contain scroll-smooth"
+          style={{ scrollbarWidth: "none", touchAction: "pan-y" }}
         >
+
           {items.map((item) => (
             <ReelSlide
               key={item.id}
@@ -344,23 +350,51 @@ function ReelActionBar({
   );
 }
 
-async function shareUrl(url: string, title: string) {
+function legacyCopy(text: string): boolean {
   try {
-    if (navigator.share) {
-      await navigator.share({ title, url });
-      return;
-    }
-    await navigator.clipboard.writeText(url);
-    toast.success("লিংক কপি হয়েছে");
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.setAttribute("readonly", "");
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    ta.setSelectionRange(0, text.length);
+    const ok = document.execCommand("copy");
+    document.body.removeChild(ta);
+    return ok;
   } catch {
-    try {
-      await navigator.clipboard.writeText(url);
-      toast.success("লিংক কপি হয়েছে");
-    } catch {
-      toast.error("শেয়ার করা যায়নি");
-    }
+    return false;
   }
 }
+
+/** শেয়ার — নেটিভ শেয়ার শিট, না থাকলে ক্লিপবোর্ড, তাও না হলে লিংক দেখানো */
+async function shareUrl(url: string, title: string) {
+  try {
+    if (typeof navigator !== "undefined" && navigator.share) {
+      await navigator.share({ title, url, text: title });
+      return;
+    }
+  } catch (err: any) {
+    // ইউজার বাতিল করলে চুপচাপ থামি
+    if (err?.name === "AbortError") return;
+  }
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(url);
+      toast.success("লিংক কপি হয়েছে");
+      return;
+    }
+  } catch {
+    // fallthrough
+  }
+  if (legacyCopy(url)) {
+    toast.success("লিংক কপি হয়েছে");
+    return;
+  }
+  toast.info(url, { duration: 10000, description: "লিংকটি কপি করে শেয়ার করুন" });
+}
+
 
 function LocalReel({
   post,
@@ -376,17 +410,35 @@ function LocalReel({
   onOpenComments: (postId: string) => void;
 }) {
   const { user } = useAuth();
-  const queryClient = useQueryClient();
   const videoUrl = useFeedMedia(post.video_url);
   const avatarUrl = useFeedMedia(post.user?.avatar_url || undefined);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [liked, setLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(post.likes_count || 0);
+  const [paused, setPaused] = useState(false);
+  const [burst, setBurst] = useState(false);
+  const lastTapRef = useRef(0);
+  const singleTapTimer = useRef<number | null>(null);
+
+  // আগে লাইক দেওয়া আছে কি না
+  useEffect(() => {
+    if (!user?.id) return;
+    let alive = true;
+    getUserLikes(user.id, [post.id])
+      .then((set) => {
+        if (alive) setLiked(set.has(post.id));
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [user?.id, post.id]);
 
   useEffect(() => {
     const el = videoRef.current;
     if (!el) return;
     if (isActive) {
+      setPaused(false);
       el.play().catch(() => {});
     } else {
       el.pause();
@@ -398,17 +450,63 @@ function LocalReel({
       if (!user) throw new Error("no user");
       return toggleLike(post.id, user.id);
     },
-    onMutate: () => {
-      setLiked((prev) => {
-        const next = !prev;
-        setLikesCount((c) => (next ? c + 1 : Math.max(0, c - 1)));
-        return next;
-      });
-    },
     onError: () => {
       setLiked((prev) => !prev);
+      setLikesCount((c) => (liked ? c + 1 : Math.max(0, c - 1)));
     },
   });
+
+  const applyLike = (forceLove: boolean) => {
+    if (!user) {
+      toast.error("লাইক দিতে লগইন করুন");
+      return;
+    }
+    if (forceLove && liked) {
+      // ডাবল ট্যাপে শুধু লাভ দেবে, তুলে নেবে না
+      setBurst(true);
+      window.setTimeout(() => setBurst(false), 700);
+      return;
+    }
+    const next = !liked;
+    setLiked(next);
+    setLikesCount((c) => (next ? c + 1 : Math.max(0, c - 1)));
+    if (next) {
+      setBurst(true);
+      window.setTimeout(() => setBurst(false), 700);
+    }
+    likeMutation.mutate();
+  };
+
+  const togglePlay = () => {
+    const el = videoRef.current;
+    if (!el) return;
+    if (el.paused) {
+      el.play().catch(() => {});
+      setPaused(false);
+    } else {
+      el.pause();
+      setPaused(true);
+    }
+  };
+
+  // এক ট্যাপ = পজ/প্লে, ডাবল ট্যাপ = লাভ (TikTok স্টাইল)
+  const handleTap = () => {
+    const now = Date.now();
+    if (now - lastTapRef.current < 280) {
+      lastTapRef.current = 0;
+      if (singleTapTimer.current) {
+        window.clearTimeout(singleTapTimer.current);
+        singleTapTimer.current = null;
+      }
+      applyLike(true);
+      return;
+    }
+    lastTapRef.current = now;
+    singleTapTimer.current = window.setTimeout(() => {
+      singleTapTimer.current = null;
+      togglePlay();
+    }, 280);
+  };
 
   return (
     <div className="relative h-full w-full">
@@ -416,16 +514,29 @@ function LocalReel({
         <video
           ref={videoRef}
           src={videoUrl}
-          poster={undefined}
           className="h-full w-full object-contain bg-black"
           loop
           playsInline
           muted={muted}
-          onClick={() => setMuted(!muted)}
         />
       ) : (
         <div className="flex h-full w-full items-center justify-center bg-black">
           <Loader2 className="h-6 w-6 animate-spin text-white" />
+        </div>
+      )}
+
+      {/* ট্যাপ লেয়ার — এক ট্যাপে পজ, ডাবল ট্যাপে লাভ */}
+      <div className="absolute inset-0 z-10" onClick={handleTap} />
+
+      {paused && (
+        <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+          <Play className="h-16 w-16 text-white/80 drop-shadow-lg" />
+        </div>
+      )}
+
+      {burst && (
+        <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
+          <Heart className="h-24 w-24 animate-ping fill-red-500 text-red-500 drop-shadow-2xl" />
         </div>
       )}
 
@@ -447,14 +558,18 @@ function LocalReel({
       <ReelActionBar
         likesCount={likesCount}
         liked={liked}
-        onLike={user ? () => likeMutation.mutate() : undefined}
+        onLike={() => applyLike(false)}
         commentsCount={post.comments_count}
         onComment={() => onOpenComments(post.id)}
-        onShare={() => shareUrl(`${window.location.origin}/watch/${post.id}`, post.content || "good-app reel")}
+        onShare={() => {
+          shareUrl(`${window.location.origin}/watch/${post.id}`, post.content || "good-app reel");
+          if (user) notifyPostShared(post.id, user.id).catch(() => {});
+        }}
       />
     </div>
   );
 }
+
 
 function ExternalReel({
   video,
@@ -468,22 +583,57 @@ function ExternalReel({
   setMuted: (v: boolean) => void;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [paused, setPaused] = useState(false);
   const isDirectVideo = /\.(mp4|webm|ogg)(\?|$)/i.test(video.video_url || "");
+  const embedSrc = `${video.video_url}${video.video_url.includes("?") ? "&" : "?"}autoplay=${isActive ? 1 : 0}&mute=${muted ? 1 : 0}&playsinline=1&enablejsapi=1&controls=0&modestbranding=1&rel=0`;
 
   useEffect(() => {
     trackVideoPreference({ title: video.title, category: video.category });
   }, [video.id]);
 
   useEffect(() => {
-    if (!isDirectVideo) return;
-    const el = videoRef.current;
-    if (!el) return;
-    if (isActive) {
-      el.play().catch(() => {});
-    } else {
-      el.pause();
+    if (isDirectVideo) {
+      const el = videoRef.current;
+      if (!el) return;
+      if (isActive) {
+        setPaused(false);
+        el.play().catch(() => {});
+      } else {
+        el.pause();
+      }
+      return;
     }
+    // YouTube ইফ্রেম — postMessage দিয়ে প্লে/পজ
+    const win = iframeRef.current?.contentWindow;
+    if (!win) return;
+    const cmd = isActive ? "playVideo" : "pauseVideo";
+    setPaused(false);
+    win.postMessage(JSON.stringify({ event: "command", func: cmd, args: [] }), "*");
   }, [isActive, isDirectVideo]);
+
+  const togglePlay = () => {
+    if (isDirectVideo) {
+      const el = videoRef.current;
+      if (!el) return;
+      if (el.paused) {
+        el.play().catch(() => {});
+        setPaused(false);
+      } else {
+        el.pause();
+        setPaused(true);
+      }
+      return;
+    }
+    const win = iframeRef.current?.contentWindow;
+    if (!win) return;
+    const next = !paused;
+    win.postMessage(
+      JSON.stringify({ event: "command", func: next ? "pauseVideo" : "playVideo", args: [] }),
+      "*",
+    );
+    setPaused(next);
+  };
 
   return (
     <div className="relative h-full w-full">
@@ -496,17 +646,35 @@ function ExternalReel({
           loop
           playsInline
           muted={muted}
-          onClick={() => setMuted(!muted)}
         />
       ) : (
+        // pointer-events-none — না হলে ইফ্রেম টাচ খেয়ে ফেলে, স্ক্রল/সোয়াইপ কাজ করে না
         <iframe
-          src={`${video.video_url}${video.video_url.includes("?") ? "&" : "?"}autoplay=${isActive ? 1 : 0}&mute=1&playsinline=1`}
-          className="h-full w-full border-0"
+          ref={iframeRef}
+          src={embedSrc}
+          className="pointer-events-none h-full w-full border-0"
           allow="autoplay; encrypted-media; picture-in-picture"
-          allowFullScreen
           title={video.title}
         />
       )}
+
+      {/* স্ক্রল ও ট্যাপ লেয়ার */}
+      <div className="absolute inset-0 z-10" onClick={togglePlay} />
+
+      {paused && (
+        <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+          <Play className="h-16 w-16 text-white/80 drop-shadow-lg" />
+        </div>
+      )}
+
+      <button
+        onClick={() => setMuted(!muted)}
+        className="absolute right-3 top-16 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-black/40 text-white"
+      >
+        {muted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+      </button>
+
+
 
       <div className="absolute bottom-6 left-3 z-20 max-w-[75%] text-white">
         <span className="mb-1 inline-block rounded bg-white/10 px-2 py-0.5 text-[10px] font-bold uppercase">
