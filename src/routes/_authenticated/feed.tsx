@@ -1381,6 +1381,32 @@ function FeedPage() {
         </div>
       )}
 
+      {editingPost && (
+        <div className="fixed inset-0 z-[200] bg-black/60 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => setEditingPost(null)}>
+          <div className="w-full sm:max-w-lg bg-white dark:bg-card rounded-t-2xl sm:rounded-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-100 dark:border-border/30">
+              <button onClick={() => setEditingPost(null)} className="p-1"><X className="w-5 h-5" /></button>
+              <p className="flex-1 text-[16px] font-bold">পোস্ট এডিট করুন</p>
+              <button
+                onClick={() => editPostMutation.mutate({ postId: editingPost.id, content: editText })}
+                disabled={editPostMutation.isPending || !editText.trim()}
+                className="px-4 py-1.5 rounded-lg bg-blue-600 text-white text-[14px] font-bold disabled:opacity-50"
+              >
+                {editPostMutation.isPending ? "…" : "সেভ"}
+              </button>
+            </div>
+            <textarea
+              value={editText}
+              onChange={(e) => setEditText(e.target.value)}
+              rows={6}
+              className="w-full p-4 bg-transparent text-[16px] outline-none resize-none"
+              placeholder="কিছু লিখুন…"
+            />
+          </div>
+        </div>
+      )}
+
+
       {storyEditorFile && (
         <StoryEditor imageFile={storyEditorFile} onClose={() => setStoryEditorFile(null)} onPublish={handleStoryPublish} isPending={storyMutation.isPending} />
       )}
