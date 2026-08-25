@@ -891,10 +891,14 @@ export async function hasUserPosted(userId: string): Promise<boolean> {
 }
 
 // Get feed posts with user info - paginated for performance
-export async function getFeedPosts(limit = 50, searchQuery?: string, offset = 0): Promise<Post[]> {
-  const query = db.from("posts").select("*")
+export async function getFeedPosts(limit = 50, searchQuery?: string, offset = 0, viewerId?: string): Promise<Post[]> {
+  // Private posts শুধু নিজের কাছে দেখাবে, বাকিরা শুধু public দেখবে
+  let query = db.from("posts").select("*")
     .order("created_at", { ascending: false })
     .range(offset, offset + limit - 1);
+  query = viewerId
+    ? query.or(`visibility.eq.public,user_id.eq.${viewerId}`)
+    : query.eq("visibility", "public");
 
   const { data: posts } = await query;
   if (!posts || posts.length === 0) return [];
