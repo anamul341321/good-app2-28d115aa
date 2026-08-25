@@ -90,15 +90,16 @@ function useCombinedReels() {
         li++;
       }
       if (ei < external.length) {
-        merged.push({ kind: "external", id: external[ei].id, video: external[ei] });
+        merged.push({ kind: "external", id: `ext-${ei}-${external[ei].id}`, video: external[ei] });
         ei++;
       }
       // add an extra external item to boost density
       if (ei < external.length) {
-        merged.push({ kind: "external", id: external[ei].id, video: external[ei] });
+        merged.push({ kind: "external", id: `ext-${ei}-${external[ei].id}`, video: external[ei] });
         ei++;
       }
     }
+
     return merged;
   }, [localQuery.data, externalQuery.data]);
 
