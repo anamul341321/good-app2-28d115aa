@@ -346,23 +346,51 @@ function ReelActionBar({
   );
 }
 
-async function shareUrl(url: string, title: string) {
+function legacyCopy(text: string): boolean {
   try {
-    if (navigator.share) {
-      await navigator.share({ title, url });
-      return;
-    }
-    await navigator.clipboard.writeText(url);
-    toast.success("লিংক কপি হয়েছে");
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.setAttribute("readonly", "");
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    ta.setSelectionRange(0, text.length);
+    const ok = document.execCommand("copy");
+    document.body.removeChild(ta);
+    return ok;
   } catch {
-    try {
-      await navigator.clipboard.writeText(url);
-      toast.success("লিংক কপি হয়েছে");
-    } catch {
-      toast.error("শেয়ার করা যায়নি");
-    }
+    return false;
   }
 }
+
+/** শেয়ার — নেটিভ শেয়ার শিট, না থাকলে ক্লিপবোর্ড, তাও না হলে লিংক দেখানো */
+async function shareUrl(url: string, title: string) {
+  try {
+    if (typeof navigator !== "undefined" && navigator.share) {
+      await navigator.share({ title, url, text: title });
+      return;
+    }
+  } catch (err: any) {
+    // ইউজার বাতিল করলে চুপচাপ থামি
+    if (err?.name === "AbortError") return;
+  }
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(url);
+      toast.success("লিংক কপি হয়েছে");
+      return;
+    }
+  } catch {
+    // fallthrough
+  }
+  if (legacyCopy(url)) {
+    toast.success("লিংক কপি হয়েছে");
+    return;
+  }
+  toast.info(url, { duration: 10000, description: "লিংকটি কপি করে শেয়ার করুন" });
+}
+
 
 function LocalReel({
   post,
