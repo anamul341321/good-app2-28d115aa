@@ -2452,6 +2452,39 @@ export type Database = {
         }
         Relationships: []
       }
+      wallet_onchain_scan: {
+        Row: {
+          celo_in_external: boolean
+          in_senders: Json
+          nonce: number
+          pristine: boolean
+          scanned_at: string
+          token_in_count: number
+          token_out_count: number
+          wallet_address: string
+        }
+        Insert: {
+          celo_in_external?: boolean
+          in_senders?: Json
+          nonce?: number
+          pristine?: boolean
+          scanned_at?: string
+          token_in_count?: number
+          token_out_count?: number
+          wallet_address: string
+        }
+        Update: {
+          celo_in_external?: boolean
+          in_senders?: Json
+          nonce?: number
+          pristine?: boolean
+          scanned_at?: string
+          token_in_count?: number
+          token_out_count?: number
+          wallet_address?: string
+        }
+        Relationships: []
+      }
       wallets: {
         Row: {
           created_at: string
