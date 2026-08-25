@@ -565,9 +565,10 @@ export async function getUploadedLongVideos(
     };
   });
 
-  const strictDefaultVideos = searchQuery?.trim()
+  const strictDefaultVideos = searchQuery?.trim() || uploaderUserId
     ? videos
     : videos.filter((video) => isBanglaDefaultSuggestion(video.title, video.country));
+
 
   const safeDefaultVideos = searchQuery?.trim()
     ? strictDefaultVideos
