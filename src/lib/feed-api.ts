@@ -630,6 +630,13 @@ const ROTATING_QUERIES = [
   "bangla song remix", "rabindra sangeet", "nazrul geeti",
 ];
 
+// Short-form only queries for the reels feed
+const SHORTS_QUERIES = [
+  "bangla shorts", "bangla funny shorts", "bangla song shorts",
+  "bangladeshi shorts video", "bangla dance shorts", "bangla comedy shorts",
+  "bangla reels shorts", "bangla status video shorts", "bangla tiktok shorts",
+];
+
 export async function getBangladeshExternalVideos(
   page = 1,
   rows = 10,
