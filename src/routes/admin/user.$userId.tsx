@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { adminUserDetail, adminAdjustBalance, adminBalanceAudit, adminToggleMining, adminResetTask, adminমুছুনUser, adminResetUserPassword, adminClearMiningOverride, adminCreateVoucher, adminListVouchersForUser, adminSetReferralUnlock, adminResetWallet, adminMarkAsReverified, adminAddDebt, adminResolveDebt, adminDeleteDebt, adminDirectPayout, adminSetUserBlocked, adminSetBalanceFrozen, adminUserDailyReport, adminListTaskBackups, adminRestoreTask } from "@/lib/admin.functions";
+import { adminUserDetail, adminAdjustBalance, adminBalanceAudit, adminToggleMining, adminResetTask, adminমুছুনUser, adminResetUserPassword, adminClearMiningOverride, adminCreateVoucher, adminListVouchersForUser, adminSetReferralUnlock, adminResetWallet, adminMarkAsReverified, adminAddDebt, adminResolveDebt, adminDeleteDebt, adminDirectPayout, adminSetUserBlocked, adminSetBalanceFrozen, adminReturnTransferToSender, adminUserDailyReport, adminListTaskBackups, adminRestoreTask } from "@/lib/admin.functions";
 import { ArrowLeft, Loader2, Power, Plus, Minus, RefreshCw, Trash2, Copy, KeyRound, Gift, ScanFace, Share2, Lock, Unlock, Wallet, CheckCircle2, AlertTriangle, CheckCheck, Send, TrendingUp, Ban, ShieldOff } from "lucide-react";
 import { computeLiveBalance, splitBalance } from "@/lib/mining";
 import { toast } from "sonner";
@@ -141,6 +141,17 @@ function UserDetail() {
     mutationFn: (v: { userId: string; frozen: boolean; reason?: string }) =>
       adminSetBalanceFrozen({ data: { userId: v.userId, frozen: v.frozen, reason: v.reason ?? null } }),
     onSuccess: (_r, v) => { toast.success(v.frozen ? "🧊 ওই account-এর ব্যালেন্স freeze হলো" : "✅ ওই account আবার চালু"); refetch(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const returnTransfer = useMutation({
+    mutationFn: (v: { transferId: string; note?: string }) =>
+      adminReturnTransferToSender({ data: { transferId: v.transferId, note: v.note ?? null } }),
+    onSuccess: (r: any) => {
+      toast.success(`↩️ ${Math.floor(Number(r.amount ?? 0))}৳ original sender-এর balance-এ back হয়েছে`);
+      refetch();
+      auditQ.refetch();
+    },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -1321,6 +1332,23 @@ function UserDetail() {
                     p.balance_frozen ? "bg-emerald/20 text-emerald" : "bg-sky-500/20 text-sky-400"
                   }`}>
                   {p.balance_frozen ? "✅ এই account unfreeze করুন" : "🧊 এই account-এর ব্যালেন্স freeze করুন"}
+                </button>
+              )}
+              {p?.id && (
+                <button
+                  disabled={returnTransfer.isPending}
+                  onClick={() => {
+                    const otherLabel = p.uid_seq != null ? `#${p.uid_seq}` : (p.display_name ?? "other account");
+                    const msg = dir === "out"
+                      ? `${Math.floor(Number(t.amount))}৳ ${otherLabel}-এর balance থেকে এই user-এর কাছে back করবেন?`
+                      : `${Math.floor(Number(t.amount))}৳ এই user-এর balance থেকে ${otherLabel}-এর কাছে back করবেন?`;
+                    if (!confirm(`${msg}\n\nশুধু receiver-এর main balance থাকলে ফেরত হবে।`)) return;
+                    const note = prompt("Refund/back করার কারণ লিখুন:", "Payment না দেওয়ার অভিযোগ যাচাই করে টাকা ফেরত") ?? "";
+                    returnTransfer.mutate({ transferId: t.id, note });
+                  }}
+                  className="w-full py-1.5 rounded-lg font-black text-[10px] disabled:opacity-50 bg-amber/20 text-amber"
+                >
+                  {returnTransfer.isPending ? "ফেরত হচ্ছে..." : "↩️ টাকা original sender-এ back দিন"}
                 </button>
               )}
             </div>
