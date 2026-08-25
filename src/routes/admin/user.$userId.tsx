@@ -136,6 +136,15 @@ function UserDetail() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  // অন্য account (যে টাকা পেয়েছে) সরাসরি এখান থেকেই freeze/unfreeze করা যায়।
+  const setFrozenOther = useMutation({
+    mutationFn: (v: { userId: string; frozen: boolean; reason?: string }) =>
+      adminSetBalanceFrozen({ data: { userId: v.userId, frozen: v.frozen, reason: v.reason ?? null } }),
+    onSuccess: (_r, v) => { toast.success(v.frozen ? "🧊 ওই account-এর ব্যালেন্স freeze হলো" : "✅ ওই account আবার চালু"); refetch(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+
   const setUnlock = useMutation({
     mutationFn: (unlocked: boolean) => adminSetReferralUnlock({ data: { userId, unlocked } }),
     onSuccess: (_r, unlocked) => { toast.success(unlocked ? "🔓 Referral link unlock করা হলো" : "🔒 Referral link lock করা হলো"); refetch(); },
