@@ -73,7 +73,10 @@ export default function VideoTab() {
   const [showSuggest, setShowSuggest] = useState(false);
   const [listening, setListening] = useState(false);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
+  // প্রতি ৩ মিনিটে নতুন rotation — একই ভিডিও বারবার আসবে না
+  const freshness = useMemo(() => Math.floor(Date.now() / (3 * 60 * 1000)) % 9973, []);
   const inputRef = useRef<HTMLInputElement | null>(null);
+
   const chips = [
     { label: "All", value: "" },
     { label: "Music", value: "bangla new song" },
