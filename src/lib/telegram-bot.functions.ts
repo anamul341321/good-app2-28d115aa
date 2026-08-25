@@ -592,3 +592,83 @@ export const tgDeleteAiKey = createServerFn({ method: "POST" })
     const { deleteKey } = await import("@/lib/ai-keys.server");
     return deleteKey(data.id);
   });
+
+// ---- গ্রুপ ফ্রিজ (mute) খুলে দেওয়া --------------------------------------
+/**
+ * টেলিগ্রাম গ্রুপে কেউ "you are currently restricted from posting" দেখলে —
+ * TG ID / @username / অ্যাপের UID যেকোনো একটা দিয়ে ফ্রিজ খুলে দেওয়া যায়।
+ */
+export const tgUnfreeze = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        tg_user_id: z.number().optional(),
+        username: z.string().trim().max(64).optional(),
+        uid: z.string().trim().max(30).optional(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data }) => {
+    const db = await guard();
+
+    let tgId: number | null = data.tg_user_id ?? null;
+
+    if (!tgId && data.username) {
+      const uname = data.username.replace(/^@/, "");
+      const { data: row } = await db
+        .from("tg_offenders")
+        .select("tg_user_id")
+        .ilike("username", uname)
+        .maybeSingle();
+      tgId = (row as any)?.tg_user_id ?? null;
+      if (!tgId) {
+        const { data: p } = await db
+          .from("profiles")
+          .select("telegram_user_id")
+          .ilike("telegram_username", uname)
+          .maybeSingle();
+        tgId = Number((p as any)?.telegram_user_id) || null;
+      }
+    }
+
+    if (!tgId && data.uid) {
+      const { data: p } = await db
+        .from("profiles")
+        .select("telegram_user_id")
+        .eq("uid_seq", Number(data.uid))
+        .maybeSingle();
+      tgId = Number((p as any)?.telegram_user_id) || null;
+    }
+
+    if (!tgId) return { ok: false as const, error: "টেলিগ্রাম ইউজার পাওয়া যায়নি (TG ID/@username/UID যাচাই করুন)" };
+
+    const { data: off } = await db
+      .from("tg_offenders")
+      .select("chat_id")
+      .eq("tg_user_id", tgId)
+      .maybeSingle();
+    const { data: s } = await db
+      .from("tg_bot_settings")
+      .select("group_chat_id")
+      .eq("id", "default")
+      .maybeSingle();
+    const chat = (off as any)?.chat_id ?? (s as any)?.group_chat_id ?? null;
+    if (!chat) return { ok: false as const, error: "গ্রুপ chat_id সেট করা নেই" };
+
+    const { unrestrictUser, unbanChatMember } = await import("@/lib/telegram-bot.server");
+    try {
+      await unbanChatMember(chat, tgId);
+    } catch { /* best-effort */ }
+    try {
+      await unrestrictUser(chat, tgId);
+    } catch (e: any) {
+      return { ok: false as const, error: e?.message ?? "Telegram unrestrict ব্যর্থ" };
+    }
+
+    await db
+      .from("tg_offenders")
+      .update({ blocked: false, warn_count: 0, unblocked_at: new Date().toISOString() } as any)
+      .eq("tg_user_id", tgId);
+
+    return { ok: true as const, tg_user_id: tgId };
+  });
