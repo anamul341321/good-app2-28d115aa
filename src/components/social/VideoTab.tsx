@@ -542,15 +542,6 @@ function InlinePlayer({ video, userId, onClose }: { video: ExternalReelVideo; us
           >
             <Share2 className="mr-1 h-4 w-4" /> শেয়ার
           </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="secondary"
-            className="h-8 shrink-0 rounded-full px-3 text-[12.5px] font-black"
-            onClick={onClose}
-          >
-            <ArrowLeft className="mr-1 h-4 w-4" /> আরও খুঁজুন
-          </Button>
         </div>
 
         {isLocal && showComments ? (
