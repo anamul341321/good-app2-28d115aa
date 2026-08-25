@@ -15,16 +15,11 @@ let cachedApiKeys: string[] = [];
 let apiKeysFetchedAt = 0;
 
 const FALLBACK_SHORTS = [
-  { videoId: "BddP6PYo2gs", title: "Mon Majhi Re", author: "Arijit Singh" },
-  { videoId: "hT_nvWreIhg", title: "Counting Stars", author: "OneRepublic" },
-  { videoId: "60ItHLz5WEA", title: "Faded", author: "Alan Walker" },
-  { videoId: "PT2_F-1esPk", title: "The Nights", author: "Avicii" },
-  { videoId: "YQHsXMglC9A", title: "Hello", author: "Adele" },
-  { videoId: "AtKZKl7Bgu0", title: "Manike Mage Hithe", author: "Yohani" },
-  { videoId: "bo_efYhYU2A", title: "Tum Hi Ho", author: "Arijit Singh" },
-  { videoId: "nfs8NYg7yQM", title: "Perfect", author: "Ed Sheeran" },
-  { videoId: "koJlIGDImiU", title: "Radioactive", author: "Imagine Dragons" },
-  { videoId: "CevxZvSJLk8", title: "Roar", author: "Katy Perry" },
+  { videoId: "AtKZKl7Bgu0", title: "Bangla viral reels song Bangladesh #shorts", author: "BD Reels" },
+  { videoId: "BddP6PYo2gs", title: "Bangla song status Bangladesh #shorts", author: "Bangla Music" },
+  { videoId: "bo_efYhYU2A", title: "Bangladeshi romantic song reels #shorts", author: "Bangla Hits" },
+  { videoId: "PT2_F-1esPk", title: "Bangla dance reels Bangladesh #shorts", author: "BD Viral" },
+  { videoId: "60ItHLz5WEA", title: "Bangla sad status video #shorts", author: "Bangla Status" },
 ];
 
 const INVIDIOUS_INSTANCES = [
@@ -90,6 +85,18 @@ function shuffleWithSeed<T>(items: T[], seed: string): T[] {
   }
 
   return arr;
+}
+
+function hasBlockedLocale(value: string): boolean {
+  return /[\u3400-\u9fff\u3040-\u30ff\uac00-\ud7af]/.test(value)
+    || /(china|chinese|mandarin|cantonese|中文|中国|korean|japanese|thai|vietnamese)/i.test(value);
+}
+
+function isBangladeshResult(item: any): boolean {
+  const value = `${item?.title || ""} ${item?.author || ""}`;
+  if (hasBlockedLocale(value)) return false;
+  return /[\u0980-\u09ff]/.test(value)
+    || /(bangla|বাংলা|bengali|bangladesh|bangladeshi|\bbd\b|dhaka|sylhet|chittagong|ctg|gaan|gan|গান|natok|deshi|dhallywood|tiktok bangladesh|bd tiktok|bd viral)/i.test(value);
 }
 
 async function getAllApiKeys(): Promise<string[]> {
@@ -361,16 +368,16 @@ async function getStreamUrl(videoId: string): Promise<string | null> {
 function getSearchQueries(category: string, userQuery: string, seed: string): string[] {
   const categoryQueries: Record<string, string[]> = {
     mixed: [
-      "bangla tiktok viral video 2025",
-      "bd tiktok trending reels",
-      "bangla funny tiktok short",
-      "tiktok bangladesh viral",
-      "bangla romantic short video tiktok",
-      "bangla attitude short video",
-      "bangla new tiktok 2025",
-      "bd viral reels trending",
-      "bangla emotional short video",
-      "bangla likee viral video",
+      "bangladesh viral reels 2026",
+      "bd tiktok trending reels bangla",
+      "bangla funny reels bangladesh",
+      "tiktok bangladesh viral bangla",
+      "bangla romantic short video bangladesh",
+      "bangla attitude short video bd",
+      "bangladeshi new tiktok 2026",
+      "bd viral reels trending bangla",
+      "bangla emotional short video bd",
+      "bangla likee viral video bangladesh",
     ],
     gajal: [
       "bangla gojol tiktok 2025",
@@ -389,10 +396,9 @@ function getSearchQueries(category: string, userQuery: string, seed: string): st
       "bangla hasir video short",
     ],
     dance: [
-      "bangla dance tiktok viral 2025",
+      "bangla dance tiktok viral bangladesh 2026",
       "bd tiktok dance trending",
       "bangla dance reels viral",
-      "hindi dance tiktok short",
       "viral dance shorts bangladesh",
       "bangla dj dance short video",
     ],
@@ -489,9 +495,14 @@ async function handle(request: Request): Promise<Response> {
       const seen = new Set<string>();
       results = results.filter((item) => {
         if (!item?.videoId || seen.has(item.videoId)) return false;
+      if (!isBangladeshResult(item)) return false;
         seen.add(item.videoId);
         return true;
       });
+
+    if (results.length === 0) {
+      results = getFallbackShorts(RESPONSE_LIMIT, seed).filter(isBangladeshResult);
+    }
 
       results = shuffleWithSeed(results, seed).slice(0, RESPONSE_LIMIT);
       const response = { results };

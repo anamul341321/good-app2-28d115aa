@@ -222,19 +222,29 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
        window.setTimeout(() => {
         pc.removeEventListener("icegatheringstatechange", done);
         resolve();
-       }, 2000);
+       }, 4000);
     });
+  }, []);
+
+  const resumeRemoteMedia = useCallback(() => {
+    const video = remoteVideo.current;
+    const stream = remoteStream.current;
+    if (!video || !stream) return;
+    video.srcObject = stream;
+    video.muted = false;
+    video.volume = 1;
+    const tryPlay = (left: number) => {
+      void video.play().catch(() => {
+        if (left > 0) window.setTimeout(() => tryPlay(left - 1), 220);
+      });
+    };
+    tryPlay(8);
   }, []);
 
   const attachRemote = useCallback((stream: MediaStream) => {
     remoteStream.current = stream;
-    if (remoteVideo.current) {
-      remoteVideo.current.srcObject = stream;
-      remoteVideo.current.muted = false;
-      remoteVideo.current.volume = 1;
-      void remoteVideo.current.play().catch(() => {});
-    }
-  }, []);
+    resumeRemoteMedia();
+  }, [resumeRemoteMedia]);
 
   const flushPendingIce = useCallback(async (pc: RTCPeerConnection) => {
     const candidates = pendingIce.current.splice(0);
@@ -366,8 +376,8 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         const sender = pc.getSenders().find((x) => x.track?.kind === "video");
         if (sender) {
           const params = sender.getParameters();
-          params.degradationPreference = "maintain-framerate";
-          params.encodings = [{ maxBitrate: 1_500_000, maxFramerate: 30, scaleResolutionDownBy: 1 }];
+          params.degradationPreference = "balanced";
+          params.encodings = [{ maxBitrate: 2_400_000, maxFramerate: 30, scaleResolutionDownBy: 1 }];
           void sender.setParameters(params);
         }
       } catch {}
@@ -448,6 +458,11 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       await pc.setLocalDescription(answer);
        const immediateAnswer = pc.localDescription?.toJSON() ?? answer;
        await sendTo(peer.id, { kind: "answer", from: myId, sdp: immediateAnswer });
+       if (currentCallId.current) {
+         await updateCall({
+           data: { callId: currentCallId.current, status: "accepted", answer: immediateAnswer },
+         });
+       }
        // Realtime answer immediately starts media. The completed ICE answer is then
        // persisted as a durable fallback for a caller that briefly lost realtime.
        await waitForIce(pc);
@@ -484,31 +499,25 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (state !== "connecting" && state !== "active") return;
-    const video = remoteVideo.current;
-    const stream = remoteStream.current;
-    if (!video || !stream) return;
-    video.srcObject = stream;
-    video.muted = false;
-    video.volume = 1;
-    void video.play().catch(() => {});
-  }, [state, peer?.id, withVideo]);
+    resumeRemoteMedia();
+  }, [state, peer?.id, withVideo, resumeRemoteMedia]);
 
   useEffect(() => {
     const replay = () => {
       if (stateRef.current !== "connecting" && stateRef.current !== "active") return;
-      if (!remoteVideo.current || !remoteStream.current) return;
-      remoteVideo.current.srcObject = remoteStream.current;
-      remoteVideo.current.muted = false;
-      remoteVideo.current.volume = 1;
-      void remoteVideo.current.play().catch(() => {});
+      resumeRemoteMedia();
     };
     window.addEventListener("focus", replay);
+    window.addEventListener("pointerdown", replay);
+    window.addEventListener("touchend", replay);
     document.addEventListener("visibilitychange", replay);
     return () => {
       window.removeEventListener("focus", replay);
+      window.removeEventListener("pointerdown", replay);
+      window.removeEventListener("touchend", replay);
       document.removeEventListener("visibilitychange", replay);
     };
-  }, []);
+  }, [resumeRemoteMedia]);
 
   // Screen share bridge events
   useEffect(() => {
@@ -540,7 +549,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
 
       if (!shareTrack.current) {
-        const stream = (canvas as any).captureStream(10) as MediaStream;
+        const stream = (canvas as any).captureStream(30) as MediaStream;
         shareStream.current = stream;
         const track = stream.getVideoTracks()[0];
         shareTrack.current = track;
@@ -658,7 +667,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
           }
         })
         .catch(() => {});
-    }, 2000);
+    }, 1000);
     return () => window.clearInterval(timer);
   }, [state, callSessionId, cleanup, flushPendingIce]);
 
@@ -806,12 +815,12 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     ring.current?.stop();
     ring.current = null;
     if (state === "ringing" && !isNativeApp) ring.current = playIncomingRing();
-    else if (state === "calling") ring.current = playRingback();
+    else if (state === "calling") ring.current = playRingback(withVideo);
     return () => {
       ring.current?.stop();
       ring.current = null;
     };
-  }, [state, isNativeApp]);
+  }, [state, isNativeApp, withVideo]);
 
   // কলের সময় গণনা
   useEffect(() => {
@@ -853,7 +862,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         return;
       }
       const ds = await (navigator.mediaDevices as any).getDisplayMedia?.({
-        video: { frameRate: 15 },
+        video: { frameRate: 30 },
         audio: false,
       });
       if (!ds) throw new Error("no-display");

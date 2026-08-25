@@ -126,6 +126,26 @@ function ReelsPage() {
   const uploadInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
 
+  const updateActiveFromScroll = useCallback(() => {
+    const root = containerRef.current;
+    if (!root) return;
+    const center = root.scrollTop + root.clientHeight / 2;
+    let bestId: string | null = null;
+    let bestDistance = Number.POSITIVE_INFINITY;
+    Array.from(root.children).forEach((child) => {
+      const el = child as HTMLElement;
+      const id = el.dataset.reelId;
+      if (!id) return;
+      const childCenter = el.offsetTop + el.offsetHeight / 2;
+      const distance = Math.abs(childCenter - center);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        bestId = id;
+      }
+    });
+    if (bestId && bestId !== activeId) setActiveId(bestId);
+  }, [activeId]);
+
   useEffect(() => {
     if (user?.id) {
       markReelsSeen(user.id).catch(() => {});
@@ -204,8 +224,9 @@ function ReelsPage() {
       ) : (
         <div
           ref={containerRef}
-          className="h-full w-full snap-y snap-mandatory overflow-y-scroll overscroll-contain scroll-smooth"
-          style={{ scrollbarWidth: "none", touchAction: "pan-y" }}
+          onScroll={updateActiveFromScroll}
+          className="h-full w-full snap-y snap-mandatory overflow-y-auto overscroll-contain"
+          style={{ scrollbarWidth: "none", touchAction: "pan-y", WebkitOverflowScrolling: "touch" as any }}
         >
 
           {items.map((item) => (
@@ -299,7 +320,11 @@ function ReelSlide({
   }, [onVisible]);
 
   return (
-    <div ref={wrapperRef} className="relative flex h-full w-full snap-start items-center justify-center">
+    <div
+      ref={wrapperRef}
+      data-reel-id={item.id}
+      className="relative flex h-[100dvh] min-h-[100dvh] w-full shrink-0 snap-start snap-always items-center justify-center"
+    >
       {item.kind === "local" ? (
         <LocalReel post={item.post} isActive={isActive} muted={muted} setMuted={setMuted} onOpenComments={onOpenComments} />
       ) : (
@@ -647,7 +672,7 @@ function ExternalReel({
           playsInline
           muted={muted}
         />
-      ) : (
+      ) : isActive ? (
         // pointer-events-none — না হলে ইফ্রেম টাচ খেয়ে ফেলে, স্ক্রল/সোয়াইপ কাজ করে না
         <iframe
           ref={iframeRef}
@@ -656,6 +681,16 @@ function ExternalReel({
           allow="autoplay; encrypted-media; picture-in-picture"
           title={video.title}
         />
+      ) : (
+        <div className="h-full w-full bg-black">
+          {video.thumbnail_url ? (
+            <img src={video.thumbnail_url} alt={video.title} className="h-full w-full object-contain" loading="lazy" />
+          ) : (
+            <div className="grid h-full w-full place-items-center bg-black text-white/60">
+              <Play className="h-12 w-12" />
+            </div>
+          )}
+        </div>
       )}
 
       {/* স্ক্রল ও ট্যাপ লেয়ার */}

@@ -132,8 +132,8 @@ public class ScreenShareService extends Service {
         WindowManager windowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
         windowManager.getDefaultDisplay().getMetrics(metrics);
 
-        // Keep the captured surface small: base64 frames travel through the WebView bridge.
-        float scale = Math.min(1f, 640f / Math.max(metrics.widthPixels, metrics.heightPixels));
+        // Keep it clear but still light enough for the WebView bridge.
+        float scale = Math.min(1f, 960f / Math.max(metrics.widthPixels, metrics.heightPixels));
         final int width = Math.max(160, (int) (metrics.widthPixels * scale) / 2 * 2);
         final int height = Math.max(160, (int) (metrics.heightPixels * scale) / 2 * 2);
 
@@ -154,7 +154,7 @@ public class ScreenShareService extends Service {
                 image = r.acquireLatestImage();
                 if (image == null) return;
                 long now = System.currentTimeMillis();
-                if (now - lastFrameAt < 110L) return; // ~9 fps
+                if (now - lastFrameAt < 55L) return; // ~18 fps
                 lastFrameAt = now;
                 emitFrame(image, width, height);
             } catch (Exception ignored) {
@@ -175,7 +175,7 @@ public class ScreenShareService extends Service {
         Bitmap cropped = Bitmap.createBitmap(bitmap, 0, 0, width, height);
         bitmap.recycle();
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        cropped.compress(Bitmap.CompressFormat.JPEG, 45, out);
+        cropped.compress(Bitmap.CompressFormat.JPEG, 68, out);
         cropped.recycle();
         String base64 = Base64.encodeToString(out.toByteArray(), Base64.NO_WRAP);
         FrameSink current = sink;

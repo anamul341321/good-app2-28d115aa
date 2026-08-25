@@ -152,6 +152,18 @@ function isBanglaDefaultSuggestion(title: string, country?: string | null): bool
   return (fromBangladesh || hasBanglaMarker) && hasSongMarker && !hasNonBanglaMarker && !hasNonMusicMarker;
 }
 
+function hasCjkOrChineseMarker(value: string): boolean {
+  return /[\u3400-\u9fff\u3040-\u30ff\uac00-\ud7af]/.test(value)
+    || /(china|chinese|mandarin|cantonese|中文|中国|korean|japanese|thai|vietnamese)/i.test(value);
+}
+
+function isBangladeshShortCandidate(video: ExternalReelVideo): boolean {
+  const value = `${video.title || ""} ${video.creator || ""}`;
+  if (hasCjkOrChineseMarker(value)) return false;
+  return /[\u0980-\u09ff]/.test(value)
+    || /(bangla|বাংলা|bengali|bangladesh|bangladeshi|\bbd\b|dhaka|sylhet|chittagong|ctg|natok|gaan|gan|গান|deshi|dhallywood|tiktok bangladesh|bd tiktok|bd viral)/i.test(value);
+}
+
 function getQueryCoverage(queryWords: string[], normalizedTitle: string): number {
   if (queryWords.length === 0) return 0;
   const matched = queryWords.reduce((acc, word) => acc + (normalizedTitle.includes(word) ? 1 : 0), 0);
@@ -411,6 +423,34 @@ async function fetchYouTubeViaEdge(query: string, action = "search", order = "re
   }
 }
 
+async function fetchYouTubeShortsViaEdge(
+  query: string,
+  maxResults = 30,
+  seed = 0,
+): Promise<{ videos: ExternalReelVideo[]; hasMore: boolean }> {
+  try {
+    const params = new URLSearchParams({
+      action: "search",
+      q: query,
+      category: "mixed",
+      seed: `${seed}-${query}`,
+    });
+    const res = await fetch(`/api/youtube-shorts?${params}`, {
+      headers: { "Content-Type": "application/json" },
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!res.ok) return { videos: [], hasMore: true };
+    const data = await res.json();
+    const videos = (Array.isArray(data?.results) ? data.results : [])
+      .slice(0, Math.max(maxResults, 30))
+      .map(youtubeResultToExternal)
+      .filter(Boolean) as ExternalReelVideo[];
+    return { videos, hasMore: true };
+  } catch {
+    return { videos: [], hasMore: true };
+  }
+}
+
 function youtubeResultToExternal(item: any): ExternalReelVideo | null {
   const videoId = item?.videoId;
   if (!videoId) return null;
@@ -662,9 +702,9 @@ function tasteQueries(): string[] {
 
 // Short-form only queries for the reels feed
 const SHORTS_QUERIES = [
-  "bangla shorts", "bangla funny shorts", "bangla song shorts",
-  "bangladeshi shorts video", "bangla dance shorts", "bangla comedy shorts",
-  "bangla reels shorts", "bangla status video shorts", "bangla tiktok shorts",
+  "bangladesh viral reels", "bd tiktok viral short", "bangla viral short video",
+  "bangladeshi reels song", "bangla funny reels bd", "bangla song reels bangladesh",
+  "dhaka viral shorts", "bangla status video bd", "bangladeshi tiktok trending",
 ];
 
 export async function getBangladeshExternalVideos(
@@ -696,16 +736,22 @@ export async function getBangladeshExternalVideos(
   }
 
 
-  const ytResult = await fetchYouTubeVideos(effectiveQuery, Math.max(rows, 30), order, pageToken);
+  const ytResult = isShort
+    ? await fetchYouTubeShortsViaEdge(effectiveQuery || "bangladesh viral reels", Math.max(rows, 40), rotationIndex)
+    : await fetchYouTubeVideos(effectiveQuery, Math.max(rows, 30), order, pageToken);
 
   let videos = ytResult.videos;
 
   if (isShort) {
-    // Reels must only contain short-form clips — drop long videos entirely
-    videos = videos.filter((v) => {
+    // Reels must be Bangladesh/Bangla short-form clips — never mix long/Chinese results.
+    const shortOnly = videos.filter((v) => {
       if (typeof v.duration === "number" && v.duration > 0) return v.duration <= 180;
       return /#?shorts/i.test(v.title || "");
     });
+    const bangladeshOnly = shortOnly.filter(isBangladeshShortCandidate);
+    videos = bangladeshOnly.length >= Math.min(rows, 3)
+      ? bangladeshOnly
+      : shortOnly.filter((v) => !hasCjkOrChineseMarker(`${v.title || ""} ${v.creator || ""}`));
   }
 
   // Avoid repeating recently shown videos
@@ -725,7 +771,9 @@ export async function getBangladeshExternalVideos(
     videos: finalVideos,
     // Always allow more loading - never stop
     hasMore: true,
-    nextPageToken: ytResult.nextPageToken,
+    nextPageToken: "nextPageToken" in ytResult && typeof ytResult.nextPageToken === "string"
+      ? ytResult.nextPageToken
+      : undefined,
   };
 }
 

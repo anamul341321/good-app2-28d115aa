@@ -69,8 +69,8 @@ export function playIncomingRing(): Ring {
   };
 }
 
-/** কল দেওয়ার সময় নিজের পাশে হালকা রিং-ব্যাক টোন */
-export function playRingback(): Ring {
+/** কল দেওয়ার সময় নিজের পাশে হালকা রিং-ব্যাক টোন — ভিডিও কলে আলাদা দুই-নোট */
+export function playRingback(video = false): Ring {
   const ac = ctx();
   let stopped = false;
   let timer: number | undefined;
@@ -78,16 +78,24 @@ export function playRingback(): Ring {
   const beep = (t0: number) => {
     if (!ac) return;
     try {
-      const osc = ac.createOscillator();
-      const gain = ac.createGain();
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(440, t0);
-      gain.gain.setValueAtTime(0.0001, t0);
-      gain.gain.exponentialRampToValueAtTime(0.12, t0 + 0.08);
-      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + 1.0);
-      osc.connect(gain).connect(ac.destination);
-      osc.start(t0);
-      osc.stop(t0 + 1.05);
+      const notes = video
+        ? [
+            { f: 659.25, at: 0, dur: 0.16, gain: 0.14 },
+            { f: 880, at: 0.19, dur: 0.22, gain: 0.13 },
+          ]
+        : [{ f: 440, at: 0, dur: 1.0, gain: 0.12 }];
+      notes.forEach(({ f, at, dur, gain: level }) => {
+        const osc = ac.createOscillator();
+        const gain = ac.createGain();
+        osc.type = video ? "triangle" : "sine";
+        osc.frequency.setValueAtTime(f, t0 + at);
+        gain.gain.setValueAtTime(0.0001, t0 + at);
+        gain.gain.exponentialRampToValueAtTime(level, t0 + at + 0.04);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t0 + at + dur);
+        osc.connect(gain).connect(ac.destination);
+        osc.start(t0 + at);
+        osc.stop(t0 + at + dur + 0.05);
+      });
     } catch {}
   };
 
@@ -98,7 +106,7 @@ export function playRingback(): Ring {
         if (!stopped) beep(ac.currentTime + 0.02);
       }).catch(() => {});
     }
-    timer = window.setTimeout(loop, 3000);
+    timer = window.setTimeout(loop, video ? 1800 : 3000);
   };
   loop();
 
