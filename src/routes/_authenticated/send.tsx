@@ -70,9 +70,9 @@ function SendPage() {
     withdrawn: Number((mining as any)?.withdrawn_amount ?? 0),
     miningWithdrawn: Number((mining as any)?.mining_withdrawn ?? 0),
   }).main);
-  const miningAvailable = Math.floor(bd?.mining_available ?? 0);
-  const miningLockedAmount = Math.floor(bd?.mining_locked ?? 0);
-  const sendable = Math.min(balance, bonusAvailable + miningAvailable);
+  // শুধু মেইন ব্যালেন্স দিয়ে পাঠানো যাবে — মাইনিং ব্যালেন্স আগে মেইনে ক্লেইম করতে হবে।
+  const miningLockedAmount = Math.floor(bd?.mining_part ?? 0);
+  const sendable = Math.min(balance, bonusAvailable);
 
   const miningLocked = miningLockedAmount > 0;
 
