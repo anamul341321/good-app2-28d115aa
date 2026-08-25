@@ -449,6 +449,11 @@ export const tgSetBlocked = createServerFn({ method: "POST" })
       } catch { /* telegram side is best-effort */ }
     }
 
+    if (chat && !data.blocked) {
+      const { unrestrictUser } = await import("@/lib/telegram-bot.server");
+      try { await unrestrictUser(chat, data.tg_user_id); } catch { /* best-effort */ }
+    }
+
     await db.from("tg_offenders").update({
       blocked: data.blocked,
       blocked_at: data.blocked ? new Date().toISOString() : (row as any).blocked_at,
