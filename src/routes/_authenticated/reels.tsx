@@ -15,6 +15,7 @@ import {
   X,
   ExternalLink,
   ArrowLeft,
+  Play,
 } from "lucide-react";
 import {
   getFeedPosts,
@@ -22,6 +23,8 @@ import {
   trackVideoPreference,
   markReelsSeen,
   toggleLike,
+  getUserLikes,
+  notifyPostShared,
   getPostComments,
   addComment,
   uploadPostMedia,
@@ -31,6 +34,7 @@ import {
   type PostComment,
   LONG_VIDEO_MARKER,
 } from "@/lib/feed-api";
+
 import { useFeedMedia } from "@/lib/feed-media";
 import { MessengerAvatar } from "@/components/messenger/MessengerAvatar";
 import {
