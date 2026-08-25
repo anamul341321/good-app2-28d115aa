@@ -317,6 +317,11 @@ export default function VideoTab() {
               key={playing.id}
               video={playing}
               userId={user?.id}
+              suggestedVideos={suggestedVideos}
+              onPlaySuggested={playVideo}
+              hasMoreSuggested={Boolean(hasNextPage)}
+              loadingMoreSuggested={isFetchingNextPage}
+              onLoadMoreSuggested={() => void fetchNextPage()}
               onClose={() => setPlayingId(null)}
             />
           )}
@@ -338,7 +343,25 @@ export default function VideoTab() {
   );
 }
 
-function InlinePlayer({ video, userId, onClose }: { video: ExternalReelVideo; userId?: string; onClose: () => void }) {
+function InlinePlayer({
+  video,
+  userId,
+  suggestedVideos,
+  onPlaySuggested,
+  hasMoreSuggested,
+  loadingMoreSuggested,
+  onLoadMoreSuggested,
+  onClose,
+}: {
+  video: ExternalReelVideo;
+  userId?: string;
+  suggestedVideos: ExternalReelVideo[];
+  onPlaySuggested: (video: ExternalReelVideo) => void;
+  hasMoreSuggested: boolean;
+  loadingMoreSuggested: boolean;
+  onLoadMoreSuggested: () => void;
+  onClose: () => void;
+}) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const isLocal = video.source === "good-app";
@@ -349,6 +372,22 @@ function InlinePlayer({ video, userId, onClose }: { video: ExternalReelVideo; us
   const [liked, setLiked] = useState<boolean>(() => !!readLikes()[video.id]);
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState("");
+
+  const relatedSearch = useMemo(() => buildRelatedSearchTerm(video), [video]);
+  const { data: relatedData, isLoading: relatedLoading } = useQuery({
+    queryKey: ["video-related", video.id, relatedSearch],
+    queryFn: () => getBangladeshExternalVideos(1, 18, undefined, relatedSearch, "long"),
+    staleTime: 15 * 60 * 1000,
+  });
+
+  const visibleSuggestedVideos = useMemo(() => {
+    const seen = new Set([video.id]);
+    return [...suggestedVideos, ...(relatedData?.videos || [])].filter((item) => {
+      if (seen.has(item.id)) return false;
+      seen.add(item.id);
+      return true;
+    });
+  }, [relatedData?.videos, suggestedVideos, video.id]);
 
   useEffect(() => {
     try {
@@ -587,9 +626,50 @@ function InlinePlayer({ video, userId, onClose }: { video: ExternalReelVideo; us
             )}
           </div>
         ) : null}
+
+        <div className="mt-4 border-t border-gray-100 pt-3 dark:border-border/30">
+          <div className="mb-2 flex items-center justify-between">
+            <h3 className="text-[15px] font-black text-gray-950 dark:text-foreground">এরকম আরও ভিডিও</h3>
+            {relatedLoading ? <Loader2 className="h-4 w-4 animate-spin text-gray-400" /> : null}
+          </div>
+          <div className="-mx-3 space-y-1">
+            {visibleSuggestedVideos.length > 0 ? (
+              visibleSuggestedVideos.map((item) => (
+                <VideoCard key={item.id} video={item} onPlay={() => onPlaySuggested(item)} />
+              ))
+            ) : relatedLoading ? (
+              <div className="flex justify-center py-10">
+                <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+              </div>
+            ) : (
+              <p className="px-3 py-8 text-center text-xs font-bold text-gray-500 dark:text-muted-foreground">
+                আরও ভিডিও লোড হচ্ছে...
+              </p>
+            )}
+          </div>
+          {hasMoreSuggested ? (
+            <Button
+              type="button"
+              variant="secondary"
+              className="mt-2 h-10 w-full rounded-full text-[13px] font-black"
+              onClick={onLoadMoreSuggested}
+              disabled={loadingMoreSuggested}
+            >
+              {loadingMoreSuggested ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              আরও ভিডিও দেখুন
+            </Button>
+          ) : null}
+        </div>
       </div>
     </div>
   );
+}
+
+function buildRelatedSearchTerm(video: ExternalReelVideo): string {
+  const title = (video.title || "").replace(/[#|।].*$/g, " ").replace(/\s+/g, " ").trim();
+  if (title.length >= 4) return title.slice(0, 90);
+  if (video.category === "music") return "bangla new song 2026";
+  return "bangla trending video";
 }
 
 
