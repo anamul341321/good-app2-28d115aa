@@ -1,9 +1,25 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { Loader2, MoreVertical, Play, Search, Mic, X, ThumbsUp, UploadCloud, User, ArrowLeft } from "lucide-react";
+import {
+  Loader2,
+  MoreVertical,
+  Play,
+  Search,
+  Mic,
+  X,
+  ThumbsUp,
+  UploadCloud,
+  User,
+  ArrowLeft,
+  MessageCircle,
+  Share2,
+  Send,
+  Bell,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { MessengerAvatar } from "@/components/messenger/MessengerAvatar";
 import { useAuth } from "@/hooks/useAuth";
 import {
   getBangladeshExternalVideos,
@@ -11,9 +27,15 @@ import {
   fetchYouTubeSuggestions,
   trackVideoPreference,
   toggleLike,
+  getLocalVideoEngagement,
+  getChannelStats,
+  toggleChannelSubscription,
+  getPostComments,
+  addComment,
   type ExternalReelVideo,
 } from "@/lib/feed-api";
 import { useFeedMedia } from "@/lib/feed-media";
+
 
 const LIKE_KEY = "goodapp_video_likes";
 
