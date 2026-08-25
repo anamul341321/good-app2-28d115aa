@@ -92,9 +92,9 @@ function WithdrawPage() {
   const bonusAvailable = Math.floor(breakdown.bonus_part);
   const miningPart = Math.floor(breakdown.mining_part);
   const miningAvailable = Math.floor(breakdown.mining_available ?? breakdown.mining_part ?? 0);
-  const miningLockedAmount = Math.floor(breakdown.mining_locked ?? 0);
-  // যেকোনো সময় তোলা যাবে: মেইন ব্যালেন্স + আনলক হওয়া মাইনিং ব্যালেন্স
-  const claimable = bonusAvailable + miningAvailable;
+  // শুধু মেইন ব্যালেন্স উইথড্র করা যাবে — মাইনিং ব্যালেন্স আগে মেইনে ক্লেইম করতে হবে।
+  const miningLockedAmount = miningPart;
+  const claimable = bonusAvailable;
   const miningLocked = miningLockedAmount > 0;
 
   const chosenWallet = provider === "bkash" ? walletBkash : provider === "nagad" ? walletNagad : null;
