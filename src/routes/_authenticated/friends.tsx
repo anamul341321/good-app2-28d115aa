@@ -6,7 +6,6 @@ import { Check, Search, UserPlus, Users, X, Loader2, PhoneCall, MessageCircle, C
 import {
   listFriends,
   respondFriendRequest,
-  searchPeople,
   sendFriendRequest,
   removeFriend,
   getSuggestedPeople,
