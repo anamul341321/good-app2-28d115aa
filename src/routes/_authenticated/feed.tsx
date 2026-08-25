@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  getFeedPosts, createPost, toggleReaction, getUserReactions,
+  getFeedPosts, createPost, notifyPostShared, toggleReaction, getUserReactions,
   getPostComments, addComment, uploadPostMedia, getActiveStories,
   createStory, uploadStoryMedia,
   deletePost, deleteStory, deleteComment, toggleCommentLike,
