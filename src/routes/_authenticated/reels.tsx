@@ -538,13 +538,13 @@ function LocalReel({
 
   useEffect(() => {
     const el = videoRef.current;
-    if (!el || !videoUrl || !isActive || muted || mediaFailed) return;
+    if (!el || !videoUrl || !isActive || mediaFailed) return;
     return attachBackgroundAudio(el, videoUrl, {
       title: post.content || "good-app reel",
       artist: post.user?.display_name || "good-app",
       artwork: post.image_url || undefined,
     });
-  }, [isActive, mediaFailed, muted, post.content, post.image_url, post.user?.display_name, videoUrl]);
+  }, [isActive, mediaFailed, post.content, post.image_url, post.user?.display_name, videoUrl]);
 
 
   const likeMutation = useMutation({

@@ -79,8 +79,8 @@ public class MediaPlaybackService extends Service {
     @Override
     public void onTaskRemoved(Intent rootIntent) {
         // The player lives in this foreground service, not the WebView task. Keep
-        // it alive when the user minimizes or swipes the app away.
-        if (player == null) stopSelf();
+        // it alive when the user minimizes or swipes the app away. The URL may
+        // still be preparing, so a null player is not a reason to stop here.
         super.onTaskRemoved(rootIntent);
     }
 
