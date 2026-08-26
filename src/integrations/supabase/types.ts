@@ -1365,6 +1365,7 @@ export type Database = {
           updated_at: string
           user_id: string
           video_url: string | null
+          views_count: number
           visibility: string
         }
         Insert: {
@@ -1382,6 +1383,7 @@ export type Database = {
           updated_at?: string
           user_id: string
           video_url?: string | null
+          views_count?: number
           visibility?: string
         }
         Update: {
@@ -1399,6 +1401,7 @@ export type Database = {
           updated_at?: string
           user_id?: string
           video_url?: string | null
+          views_count?: number
           visibility?: string
         }
         Relationships: [
@@ -3001,6 +3004,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_post_view: { Args: { _post_id: string }; Returns: number }
       is_group_admin: {
         Args: { _group: string; _user: string }
         Returns: boolean
