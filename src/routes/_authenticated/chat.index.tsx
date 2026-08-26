@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { usePresence } from "@/lib/presence";
 import { StoryRow } from "@/components/messenger/StoryRow";
 import { ChatRow } from "@/components/messenger/ChatRow";
+import { MessengerAvatar } from "@/components/messenger/MessengerAvatar";
 import { MessengerSearchOverlay } from "@/components/messenger/MessengerSearchOverlay";
 import { Button } from "@/components/ui/button";
 import type { ReactNode } from "react";
