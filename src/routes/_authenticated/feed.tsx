@@ -742,11 +742,16 @@ function FeedPage() {
           <div className="px-1 py-1 border-t border-gray-200 dark:border-border/20 grid grid-cols-3 relative select-none" style={{ WebkitUserSelect: "none", userSelect: "none", WebkitTouchCallout: "none" } as React.CSSProperties}>
             <div className="relative">
               <button
-                onClick={() => reactionMutation.mutate({ postId: post.id, type: myReaction || "like" })}
-                onContextMenu={(e) => { e.preventDefault(); setShowReactionPicker(showReactionPicker === post.id ? null : post.id); }}
+                onClick={() => {
+                  if (longPressFiredRef.current) { longPressFiredRef.current = false; return; }
+                  reactionMutation.mutate({ postId: post.id, type: myReaction || "like" });
+                }}
+                onContextMenu={(e) => { e.preventDefault(); longPressFiredRef.current = true; setShowReactionPicker(post.id); }}
                 onTouchStart={() => {
+                  longPressFiredRef.current = false;
                   const timer = setTimeout(() => {
-                    setShowReactionPicker(showReactionPicker === post.id ? null : post.id);
+                    longPressFiredRef.current = true;
+                    setShowReactionPicker(post.id);
                     if (navigator.vibrate) navigator.vibrate(15);
                   }, 400);
                   const cleanup = () => {
