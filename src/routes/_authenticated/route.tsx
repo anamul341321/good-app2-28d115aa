@@ -13,7 +13,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { getProfileHistory } from "@/lib/profile.functions";
 import { useEffect, useState } from "react";
-import logo from "@/assets/logo.png";
+import logo from "@/assets/goodapp-logo.png";
 import { GuidedTour } from "@/components/GuidedTour";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { LanguagePicker } from "@/components/LanguagePicker";
