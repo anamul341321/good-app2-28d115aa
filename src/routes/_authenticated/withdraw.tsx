@@ -12,8 +12,9 @@ import bkashLogo from "@/assets/bkash-logo.png";
 import nagadLogo from "@/assets/nagad-logo.png";
 import usdtLogo from "@/assets/usdt-logo.png";
 import { useLang } from "@/lib/i18n";
-import { withdrawWindowInfo } from "@/lib/withdraw-window";
+import { withdrawWindowInfo, withdrawCountdownInfo } from "@/lib/withdraw-window";
 import { WithdrawClosedBanner } from "@/components/WithdrawClosedBanner";
+import { WithdrawCountdown } from "@/components/WithdrawCountdown";
 import { WithdrawRejectDetails } from "@/components/WithdrawRejectDetails";
 
 
@@ -102,7 +103,8 @@ function WithdrawPage() {
   const chosenOffMsg  = provider === "bkash" ? payout.bkashOffMessage : payout.nagadOffMessage;
 
   const adminWithdrawOff = (data as any)?.payoutSettings?.withdrawEnabled === false;
-  const withdrawClosed = withdrawWindowInfo(now).isClosed || adminWithdrawOff;
+  const monthlyWindow = withdrawCountdownInfo(now);
+  const withdrawClosed = withdrawWindowInfo(now).isClosed || adminWithdrawOff || !monthlyWindow.isOpen;
 
   return (
     <div className="space-y-4 pt-2">
@@ -111,6 +113,8 @@ function WithdrawPage() {
         <ArrowDownToLine className="w-8 h-8 text-rose mx-auto" />
         <h1 className="text-2xl font-black mt-1">{t("উইথড্র", "Withdraw")}</h1>
       </div>
+
+      <WithdrawCountdown />
 
       <WithdrawClosedBanner
         adminOff={adminWithdrawOff}
@@ -220,7 +224,7 @@ function WithdrawPage() {
               </div>
             </div>
             <ul className="space-y-2 text-[12px] text-navy/90 leading-relaxed font-bold">
-              <li className="flex gap-2"><span className="text-emerald shrink-0">🕒</span><span>তারিখের কোনো নিয়ম নেই — <b className="text-emerald">যেকোনো সময়</b> withdraw করা যাবে।</span></li>
+              <li className="flex gap-2"><span className="text-emerald shrink-0">📅</span><span>প্রতি মাসের <b className="text-emerald">১ তারিখ</b> উইথড্র চালু থাকবে — বাকি সময় কাউন্টডাউন দেখাবে।</span></li>
               <li className="flex gap-2"><span className="text-cyan shrink-0">⛏️</span><span>প্রতিটি স্লট আলাদাভাবে মাইনিং করে (<b>৫০৳/মাস</b> প্রতি স্লট) — ১টি স্লট রি-ভেরিফাই করলেই ওই স্লটের মাইনিং চালু।</span></li>
               <li className="flex gap-2"><span className="text-amber shrink-0">🔒</span><span>যে স্লট রি-ভেরিফাই করবেন, <b>সেই স্লটের জমা মাইনিং টাকাই</b> আনলক হবে। সব স্লট রি-ভেরিফাই করলে পুরো টাকা আনলক।</span></li>
               <li className="flex gap-2"><span className="text-violet shrink-0">🎁</span><span>আগে রি-ভেরিফাই করা স্লট আবার রি-ভেরিফাই করলে <b>প্রতি স্লটে ১০৳</b> বোনাস (মেইন ব্যালেন্সে)।</span></li>
