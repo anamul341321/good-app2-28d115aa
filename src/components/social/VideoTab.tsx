@@ -712,14 +712,14 @@ function InlinePlayer({
       className={
         playerMode === "mini"
           ? "fixed inset-x-2 bottom-[calc(78px+env(safe-area-inset-bottom))] z-[70] mx-auto max-w-lg pointer-events-none"
-          : "fixed inset-0 z-[70] flex flex-col overflow-y-auto bg-white dark:bg-background"
+          : "fixed inset-0 z-[70] flex flex-col overflow-hidden bg-white dark:bg-background"
       }
     >
       <div
         className={
           playerMode === "mini"
             ? "pointer-events-auto flex h-20 overflow-hidden rounded-2xl border border-border/40 bg-card shadow-[0_12px_40px_rgba(15,23,42,0.28)]"
-            : "flex min-h-screen flex-col bg-white dark:bg-background"
+            : "flex h-screen flex-col bg-white dark:bg-background"
         }
       >
         {playerMode === "expanded" ? (
@@ -806,7 +806,7 @@ function InlinePlayer({
         ) : (
           <>
 
-      <div className="min-h-0 flex-1 bg-white px-3 py-3 dark:bg-card">
+      <div className="min-h-0 flex-1 overflow-y-auto bg-white px-3 py-3 dark:bg-card">
         <h2 className="text-[17px] font-black leading-snug text-gray-950 dark:text-foreground">{video.title}</h2>
         <p className="mt-1 text-[12.5px] font-semibold text-gray-500 dark:text-muted-foreground">
           {viewLabel ? `${viewLabel} views · ` : ""}{video.creator || "good-app"}
