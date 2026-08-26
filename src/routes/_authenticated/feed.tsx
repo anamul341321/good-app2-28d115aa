@@ -13,12 +13,11 @@ import {
   REACTION_EMOJIS, type Post, type PostComment, type Story,
 } from "@/lib/feed-api";
 import { useFeedMedia } from "@/lib/feed-media";
-import { listFriends, sendFriendRequest, respondFriendRequest, searchPeopleFull, getSuggestedPeople } from "@/lib/friends.functions";
+import { listFriends, sendFriendRequest, respondFriendRequest, searchPeopleFull } from "@/lib/friends.functions";
 import { getUnreadMessageCount } from "@/lib/chat.functions";
-import { usePresence } from "@/lib/presence";
 import {
   Heart, MessageCircle, Send, Image, X, Home, Users, Bell,
-  Plus, User, Search, Phone, Share2, Loader2, MoreHorizontal, Trash2, Globe, UserPlus, ChevronRight, ThumbsUp, Video, Check, ArrowLeft, Film, Pencil, Lock,
+  Plus, User, Search, Phone, Share2, Loader2, MoreHorizontal, Trash2, Globe, UserPlus, ThumbsUp, Video, ArrowLeft, Film, Pencil, Lock,
   Eye,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -75,7 +74,6 @@ function FeedPage() {
   const { user, loading: isLoading } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const onlineIds = usePresence();
 
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [postContent, setPostContent] = useState("");
@@ -103,14 +101,10 @@ function FeedPage() {
   const [storyEditorFile, setStoryEditorFile] = useState<File | null>(null);
   const [replyingTo, setReplyingTo] = useState<{ id: string; name: string } | null>(null);
   const [expandedReplies, setExpandedReplies] = useState<Set<string>>(new Set());
-  const [suggestedOffset, setSuggestedOffset] = useState(0);
-  const [suggestedPeople, setSuggestedPeople] = useState<any[]>([]);
-  const [suggestedHasMore, setSuggestedHasMore] = useState(true);
   const [page, setPage] = useState(0);
   const [allPosts, setAllPosts] = useState<Post[]>([]);
   const [hasMore, setHasMore] = useState(true);
   const POSTS_PER_PAGE = 20;
-  const SUGGESTED_PAGE_SIZE = 20;
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
@@ -198,24 +192,6 @@ function FeedPage() {
     queryFn: () => getNotifications(user!.id),
     enabled: !!user && activeTab === "notif",
   });
-
-  const { data: suggestedPageData, isFetching: suggestedFetching } = useQuery({
-    queryKey: ["suggested-people", suggestedOffset],
-    queryFn: () => getSuggestedPeople({ data: { limit: SUGGESTED_PAGE_SIZE, offset: suggestedOffset } }),
-    enabled: !!user,
-    staleTime: 120000,
-  });
-
-  useEffect(() => {
-    if (!suggestedPageData) return;
-    const nextPeople = (suggestedPageData as any).people ?? [];
-    setSuggestedHasMore(Boolean((suggestedPageData as any).hasMore));
-    setSuggestedPeople((prev) => {
-      if (suggestedOffset === 0) return nextPeople;
-      const existing = new Set(prev.map((person: any) => person.id));
-      return [...prev, ...nextPeople.filter((person: any) => !existing.has(person.id))];
-    });
-  }, [suggestedPageData, suggestedOffset]);
 
   const { data: searchResults = [], isFetching: searchPeopleLoading } = useQuery({
     queryKey: ["feed-user-search", searchQuery],
@@ -1003,7 +979,7 @@ function FeedPage() {
                 {notificationsList.map((n: any) => (
                   <button key={n.id}
                     onClick={() => {
-                      if (n.type === "friend_request" || n.type === "friend_accept") setActiveTab("friends");
+                      if (n.type === "friend_request" || n.type === "friend_accept") navigate({ to: "/friends" });
                       else if (n.reference_id) { setActiveTab("home"); setTimeout(() => openComments(n.reference_id), 100); }
                       else if (n.from_user_id) navigate({ to: "/feed/user/$userId", params: { userId: n.from_user_id } });
                     }}
