@@ -25,35 +25,37 @@ export function TestApkUploadCard() {
   const [version, setVersion] = useState(CURRENT_ANDROID_VERSION);
   const [progress, setProgress] = useState<number | null>(null);
   const [doneUrl, setDoneUrl] = useState<string | null>(null);
-  
+
   const { data: settings } = useQuery({
     queryKey: ["admin-bonus-settings"],
     queryFn: () => adminGetBonusSettings(),
   });
-  
+
   const activeTestVersion = (settings as any)?.test_apk_version as string | null | undefined;
 
   const upload = useMutation({
     mutationFn: async (picked: File) => {
       const releaseVersion = normalizeAndroidVersion(version);
       if (!releaseVersion) throw new Error("সঠিক ভার্সন দিন—যেমন 1.18");
-      
+
       setProgress(0);
       const { unzipSync } = await import("fflate");
       const buf = new Uint8Array(await picked.arrayBuffer());
       const files = unzipSync(buf);
-      
+
       const apkName = Object.keys(files).find((n) => /\.apk$/i.test(n));
       if (!apkName) throw new Error("ZIP ফাইলের ভিতরে কোনো .apk পাওয়া যায়নি");
-      
+
       const file = new File(
         [files[apkName] as any],
         apkName.split("/").pop() || "app-test-release.apk",
-        { type: "application/vnd.android.package-archive" }
+        { type: "application/vnd.android.package-archive" },
       );
-      
-      const { path, signedUrl } = await adminCreateTestApkUpload({ data: { version: releaseVersion } });
-      
+
+      const { path, signedUrl } = await adminCreateTestApkUpload({
+        data: { version: releaseVersion },
+      });
+
       await new Promise<void>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.open("PUT", signedUrl);
@@ -61,11 +63,12 @@ export function TestApkUploadCard() {
         xhr.upload.onprogress = (e) => {
           if (e.lengthComputable) setProgress(Math.round((e.loaded / e.total) * 100));
         };
-        xhr.onload = () => xhr.status < 300 ? resolve() : reject(new Error(`আপলোড ব্যর্থ (${xhr.status})`));
+        xhr.onload = () =>
+          xhr.status < 300 ? resolve() : reject(new Error(`আপলোড ব্যর্থ (${xhr.status})`));
         xhr.onerror = () => reject(new Error("নেটওয়ার্ক সমস্যা"));
         xhr.send(file);
       });
-      
+
       return adminSetTestApkRelease({ data: { path, version: releaseVersion } });
     },
     onSuccess: (res) => {
@@ -80,7 +83,10 @@ export function TestApkUploadCard() {
     },
   });
 
-  const fullUrl = typeof window !== "undefined" && doneUrl ? `${window.location.origin}/api/public/app/download?test=1` : null;
+  const fullUrl =
+    typeof window !== "undefined" && doneUrl
+      ? `${window.location.origin}/api/public/app/download?test=1`
+      : null;
 
   return (
     <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-4 space-y-3">
@@ -89,7 +95,8 @@ export function TestApkUploadCard() {
         <p className="font-black text-sm">টেস্ট APK আপলোড (শুধুমাত্র নিজের জন্য)</p>
       </div>
       <p className="text-[11px] text-muted-foreground leading-snug">
-        এটি আপলোড করলে সাধারণ ইউজাররা নোটিশ পাবে না। আপনি আপলোড করে নিচের <b>টেস্ট লিংক</b> কপি করে আপনার ফোনে ডাউনলোড করে পরীক্ষা করতে পারবেন। সব ঠিক থাকলে তবেই মেইন APK আপলোড করবেন।
+        এটি আপলোড করলে সাধারণ ইউজাররা নোটিশ পাবে না। আপনি আপলোড করে নিচের <b>টেস্ট লিংক</b> কপি করে
+        আপনার ফোনে ডাউনলোড করে পরীক্ষা করতে পারবেন। সব ঠিক থাকলে তবেই মেইন APK আপলোড করবেন।
       </p>
 
       <div className="flex items-center justify-between rounded-xl border border-amber-500/30 bg-background px-3 py-2 text-xs">
@@ -120,14 +127,20 @@ export function TestApkUploadCard() {
           disabled={upload.isPending}
           className="flex-1 py-2.5 rounded-xl gradient-amber text-xs font-black btn-press flex items-center justify-center gap-2 text-navy"
         >
-          {upload.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+          {upload.isPending ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Upload className="w-4 h-4" />
+          )}
           {upload.isPending ? `আপলোড হচ্ছে… ${progress}%` : "টেস্ট ZIP আপলোড"}
         </button>
       </div>
 
       {fullUrl && (
         <div className="space-y-2">
-          <p className="text-[10px] font-black text-amber-600 uppercase">পরীক্ষা করার লিংক (ফোনের ব্রাউজারে ওপেন করুন):</p>
+          <p className="text-[10px] font-black text-amber-600 uppercase">
+            পরীক্ষা করার লিংক (ফোনের ব্রাউজারে ওপেন করুন):
+          </p>
           <button
             onClick={() => {
               navigator.clipboard?.writeText(fullUrl);
