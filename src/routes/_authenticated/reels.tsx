@@ -16,6 +16,7 @@ import {
   ExternalLink,
   ArrowLeft,
   Play,
+  Eye,
 } from "lucide-react";
 import {
   getFeedPosts,
@@ -25,6 +26,7 @@ import {
   toggleLike,
   getUserLikes,
   notifyPostShared,
+  incrementPostView,
   getPostComments,
   addComment,
   uploadPostMedia,
@@ -428,6 +430,14 @@ async function shareUrl(url: string, title: string) {
 }
 
 
+/** ভিউ কাউন্ট সংক্ষেপে (1.2K, 3.4M) */
+function formatViews(n: number): string {
+  const v = Number(n || 0);
+  if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`;
+  if (v >= 1_000) return `${(v / 1_000).toFixed(1).replace(/\.0$/, "")}K`;
+  return String(v);
+}
+
 function LocalReel({
   post,
   isActive,
@@ -447,6 +457,8 @@ function LocalReel({
   const videoRef = useRef<HTMLVideoElement>(null);
   const [liked, setLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(post.likes_count || 0);
+  const [viewsCount, setViewsCount] = useState(Number(post.views_count || 0));
+  const viewCountedRef = useRef(false);
   const [paused, setPaused] = useState(false);
   const [burst, setBurst] = useState(false);
   const lastTapRef = useRef(0);
@@ -472,6 +484,11 @@ function LocalReel({
     if (isActive) {
       setPaused(false);
       el.play().catch(() => {});
+      if (!viewCountedRef.current) {
+        viewCountedRef.current = true;
+        setViewsCount((c) => c + 1);
+        incrementPostView(post.id).then((v) => { if (v > 0) setViewsCount(v); }).catch(() => {});
+      }
     } else {
       el.pause();
     }
@@ -583,6 +600,10 @@ function LocalReel({
         <div className="mb-2 flex items-center gap-2">
           <MessengerAvatar name={post.user?.display_name || "User"} src={avatarUrl} size="sm" />
           <span className="text-sm font-black">{post.user?.display_name || "User"}</span>
+          <span className="flex items-center gap-1 rounded-full bg-black/40 px-2 py-0.5 text-[11px] font-bold">
+            <Eye className="h-3 w-3" />
+            {formatViews(viewsCount)}
+          </span>
         </div>
         {post.content && <p className="line-clamp-3 text-sm">{post.content}</p>}
       </div>

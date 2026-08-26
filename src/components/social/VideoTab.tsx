@@ -29,6 +29,7 @@ import {
   getUploadedLongVideos,
   fetchYouTubeSuggestions,
   trackVideoPreference,
+  incrementPostView,
   notifyPostShared,
   toggleLike,
   getLocalVideoEngagement,
@@ -241,6 +242,7 @@ export default function VideoTab() {
     setPlayedIds((current) => new Set(current).add(video.id));
     setHistory(addWatchHistory(video));
     trackVideoPreference({ id: video.id, title: video.title, category: video.category });
+    if (video.local_post_id) incrementPostView(video.local_post_id).catch(() => {});
     window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
   };
 

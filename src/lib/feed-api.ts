@@ -19,6 +19,7 @@ export type Post = {
   video_url: string | null;
   likes_count: number;
   comments_count: number;
+  views_count?: number;
   created_at: string | null;
   user?: FeedProfile | null;
 };
@@ -607,7 +608,7 @@ export async function getUploadedLongVideos(
 
   let query = db
     .from("posts")
-    .select("id,user_id,video_url,content,created_at,likes_count,comments_count,image_url", { count: "exact" })
+    .select("id,user_id,video_url,content,created_at,likes_count,comments_count,views_count,image_url", { count: "exact" })
     .not("video_url", "is", null)
     .like("content", `${LONG_VIDEO_MARKER}%`)
     .order("created_at", { ascending: false })
@@ -647,7 +648,7 @@ export async function getUploadedLongVideos(
       likes_count: Number(p.likes_count || 0),
       comments_count: Number(p.comments_count || 0),
       thumbnail_url: p.image_url || null,
-      view_count: Number(p.likes_count || 0) * 7 + Number(p.comments_count || 0) * 13,
+      view_count: Number(p.views_count || 0),
     };
   });
 
@@ -669,7 +670,7 @@ export async function getUploadedLongVideos(
 export async function getUploadedLongVideoByPostId(postId: string): Promise<ExternalReelVideo | null> {
   const { data: post } = await db
     .from("posts")
-    .select("id,user_id,video_url,content,created_at,likes_count,comments_count,image_url")
+    .select("id,user_id,video_url,content,created_at,likes_count,comments_count,views_count,image_url")
     .eq("id", postId)
     .not("video_url", "is", null)
     .like("content", `${LONG_VIDEO_MARKER}%`)
@@ -702,7 +703,18 @@ export async function getUploadedLongVideoByPostId(postId: string): Promise<Exte
     likes_count: Number(post.likes_count || 0),
     comments_count: Number(post.comments_count || 0),
     thumbnail_url: post.image_url || null,
+    view_count: Number((post as any).views_count || 0),
   };
+}
+
+// Count one real view for a good-app uploaded post (reel / video)
+export async function incrementPostView(postId: string): Promise<number> {
+  try {
+    const { data } = await (db as any).rpc("increment_post_view", { _post_id: postId });
+    return Number(data || 0);
+  } catch {
+    return 0;
+  }
 }
 
 // Rotating queries for endless feed when no user search query
