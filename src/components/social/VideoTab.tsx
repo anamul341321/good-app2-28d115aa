@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
+import { listUsers } from "@/lib/social-users.functions";
 import {
   Loader2,
   MoreVertical,
@@ -237,6 +238,14 @@ export default function VideoTab() {
     }
   }, [runSearch]);
 
+  // সার্চ করলে ভিডিওর সাথে মিলিয়ে চ্যানেলও (ইউজার) দেখাবে — YouTube-এর মতো
+  const { data: channelHits } = useQuery({
+    queryKey: ["video-channel-search", search],
+    queryFn: () => listUsers({ data: { page: 1, limit: 6, query: search } }),
+    enabled: !!search && !showHistory,
+    staleTime: 60_000,
+  });
+
   const playVideo = (video: ExternalReelVideo) => {
     setPlayingId(video.id);
     setPlayedIds((current) => new Set(current).add(video.id));
@@ -369,7 +378,44 @@ export default function VideoTab() {
             })}
           </div>
         ) : null}
+
+        {search && !showHistory ? (
+          <div className="flex items-center justify-between gap-2 px-3 pb-2">
+            <button
+              type="button"
+              onClick={() => { setQuery(""); setSuggestions([]); setShowSuggest(false); runSearch(""); }}
+              className="flex items-center gap-1 rounded-full bg-gray-100 dark:bg-secondary px-3 py-1.5 text-[12.5px] font-black text-gray-800 dark:text-foreground"
+            >
+              <ArrowLeft className="h-4 w-4" /> হোমে ফিরুন
+            </button>
+            <span className="truncate text-[11.5px] font-bold text-gray-500">“{search}” — ফলাফল</span>
+          </div>
+        ) : null}
       </div>
+
+      {search && !showHistory && (channelHits?.users?.length ?? 0) > 0 ? (
+        <div className="border-b border-gray-100 dark:border-border/30 px-3 py-2">
+          <p className="mb-1 text-[11px] font-black uppercase tracking-widest text-gray-500">চ্যানেল</p>
+          <div className="space-y-1">
+            {(channelHits?.users ?? []).map((u: any) => (
+              <button
+                key={u.id}
+                type="button"
+                onClick={() => navigate({ to: "/channel/$userId", params: { userId: u.id } })}
+                className="flex w-full items-center gap-2 rounded-xl px-1 py-1.5 text-left hover:bg-gray-50 dark:hover:bg-secondary"
+              >
+                <MessengerAvatar name={u.display_name || "User"} src={u.avatar_url ?? undefined} size="md" />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[13.5px] font-black text-gray-900 dark:text-foreground">
+                    {u.display_name || "User"}
+                  </span>
+                  <span className="block text-[11px] text-gray-500">চ্যানেল দেখুন</span>
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       {playing && (
         <InlinePlayer

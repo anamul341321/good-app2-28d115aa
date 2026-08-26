@@ -26,11 +26,12 @@ import { PageVoice } from "@/components/PageVoice";
 import { VideoTutorialButton } from "@/components/VideoTutorialButton";
 import { ApkDownloadCard } from "@/components/ApkDownloadCard";
 import { QrScanner } from "@/components/QrScanner";
+import { FaceAuthFlow } from "@/components/FaceAuthFlow";
 import { ForgotPasswordDialog } from "@/components/ForgotPasswordDialog";
 import { getSharedSession } from "@/lib/auth-session";
 import { getDeviceId } from "@/hooks/useDeviceGuard";
 
-import { QrCode as QrCodeIcon } from "lucide-react";
+import { ScanFace } from "lucide-react";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -170,6 +171,7 @@ export function AuthPage() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [scanOpen, setScanOpen] = useState(false);
+  const [faceMode, setFaceMode] = useState<null | "signup" | "login">(null);
   const [forgotOpen, setForgotOpen] = useState(false);
   const [loginId, setLoginId] = useState("");
   const [otpOpen, setOtpOpen] = useState(false);
@@ -271,6 +273,13 @@ export function AuthPage() {
       return null;
     }
     return cleanPhone;
+  };
+
+  const startFaceSignup2 = () => {
+    const ok = validateForm();
+    if (!ok) return;
+    setPhone(ok);
+    setFaceMode("signup");
   };
 
   const onFormNext = (e: React.FormEvent) => {
@@ -759,16 +768,32 @@ export function AuthPage() {
               )}
             </button>
 
+            {mode === "signup" && (
+              <button
+                type="button"
+                onClick={startFaceSignup2}
+                className="w-full py-3 rounded-xl font-black text-sm flex flex-col items-center justify-center gap-0.5 text-white btn-press shadow-lg"
+                style={{ background: "linear-gradient(120deg,#10b981,#06b6d4,#8b5cf6)" }}
+              >
+                <span className="flex items-center gap-2">
+                  <ScanFace className="w-4 h-4" /> ফেস দিয়ে রেজিস্ট্রেশন (সুপারিশকৃত)
+                </span>
+                <span className="text-[10px] font-bold opacity-90">
+                  key অটো তৈরি হবে → সাথে সাথে ফেস ভেরিফিকেশন খুলবে
+                </span>
+              </button>
+            )}
+
             {mode === "login" && (
               <>
                 <button
                   type="button"
-                  onClick={() => setScanOpen(true)}
-                  data-voice="auth.qr.scan"
+                  onClick={() => setFaceMode("login")}
+                  data-voice="auth.face.login"
                   className="w-full py-3 rounded-xl font-black text-sm flex items-center justify-center gap-2 text-white btn-press shadow-lg"
                   style={{ background: "linear-gradient(120deg,#06b6d4,#8b5cf6,#ef476f)" }}
                 >
-                  <QrCodeIcon className="w-4 h-4" /> QR কার্ড স্ক্যান করে লগইন
+                  <ScanFace className="w-4 h-4" /> ফেস দিয়ে লগইন
                 </button>
                 {/* যাদের Gmail যোগ করা আছে তারা নিজেই রিসেট করতে পারবে;
                     Gmail না থাকলে সার্ভার থেকেই অ্যাডমিনের সাথে যোগাযোগের মেসেজ যাবে। */}
@@ -789,6 +814,30 @@ export function AuthPage() {
         </div>
 
         {scanOpen && <QrScanner onResult={handleScan} onClose={() => setScanOpen(false)} />}
+
+        {faceMode && (
+          <FaceAuthFlow
+            mode={faceMode}
+            name={name.trim()}
+            phone={phone.replace(/\D/g, "").slice(0, 11)}
+            password={password}
+            gmail={gmail.trim() || null}
+            referralCode={referralCode.trim() || null}
+            onClose={() => setFaceMode(null)}
+            onSignedUp={() => {
+              setFaceMode(null);
+              setMode("login");
+              setLoginId(phone.replace(/\D/g, "").slice(0, 11));
+              toast.success("একাউন্ট তৈরি হয়েছে — এখন লগইন করুন");
+            }}
+            onResolved={(p) => {
+              setFaceMode(null);
+              setMode("login");
+              setLoginId(p);
+              toast.success("ফেস চেনা গেছে — এখন পাসওয়ার্ড দিন");
+            }}
+          />
+        )}
 
         {otpOpen && (
           <div className="fixed inset-0 z-[95] overflow-y-auto overscroll-contain p-4 bg-black/75 backdrop-blur-sm flex items-start justify-center">

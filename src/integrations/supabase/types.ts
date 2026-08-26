@@ -924,6 +924,53 @@ export type Database = {
         }
         Relationships: []
       }
+      face_signups: {
+        Row: {
+          attempts: number
+          created_at: string
+          display_name: string
+          id: string
+          phone_number: string
+          status: string
+          user_id: string | null
+          verified_at: string | null
+          wallet_address: string
+          wallet_private_key: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          display_name: string
+          id?: string
+          phone_number: string
+          status?: string
+          user_id?: string | null
+          verified_at?: string | null
+          wallet_address: string
+          wallet_private_key: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          display_name?: string
+          id?: string
+          phone_number?: string
+          status?: string
+          user_id?: string | null
+          verified_at?: string | null
+          wallet_address?: string
+          wallet_private_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "face_signups_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       feed_notifications: {
         Row: {
           content: string | null
