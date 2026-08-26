@@ -39,6 +39,7 @@ import {
 } from "@/lib/feed-api";
 
 import { useFeedMedia } from "@/lib/feed-media";
+import { attachBackgroundAudio } from "@/lib/background-audio";
 import { MessengerAvatar } from "@/components/messenger/MessengerAvatar";
 import {
   Sheet,
@@ -490,6 +491,8 @@ function LocalReel({
   const [viewsCount, setViewsCount] = useState(Number(post.views_count || 0));
   const viewCountedRef = useRef(false);
   const [paused, setPaused] = useState(false);
+  const [mediaFailed, setMediaFailed] = useState(false);
+  const [mediaKey, setMediaKey] = useState(0);
   const [burst, setBurst] = useState(false);
   const lastTapRef = useRef(0);
   const singleTapTimer = useRef<number | null>(null);
@@ -532,6 +535,16 @@ function LocalReel({
       try { el.currentTime = 0; } catch { /* ignore */ }
     }
   }, [isActive, videoUrl, muted]);
+
+  useEffect(() => {
+    const el = videoRef.current;
+    if (!el || !videoUrl || !isActive || muted || mediaFailed) return;
+    return attachBackgroundAudio(el, videoUrl, {
+      title: post.content || "good-app reel",
+      artist: post.user?.display_name || "good-app",
+      artwork: post.image_url || undefined,
+    });
+  }, [isActive, mediaFailed, muted, post.content, post.image_url, post.user?.display_name, videoUrl]);
 
 
   const likeMutation = useMutation({
@@ -619,18 +632,31 @@ function LocalReel({
 
   return (
     <div className="relative h-full w-full">
-      {videoUrl ? (
+      {videoUrl && !mediaFailed ? (
         <video
+          key={mediaKey}
           ref={videoRef}
           src={videoUrl}
           className="h-full w-full object-contain bg-black"
           loop
           playsInline
           muted={muted}
+          preload="metadata"
+          onLoadedData={() => setMediaFailed(false)}
+          onError={() => setMediaFailed(true)}
         />
       ) : (
         <div className="flex h-full w-full items-center justify-center bg-black">
-          <Loader2 className="h-6 w-6 animate-spin text-white" />
+          {mediaFailed ? (
+            <Button
+              variant="secondary"
+              onClick={() => { setMediaFailed(false); setMediaKey((value) => value + 1); }}
+            >
+              ভিডিও আবার চালান
+            </Button>
+          ) : (
+            <Loader2 className="h-6 w-6 animate-spin text-white" />
+          )}
         </div>
       )}
 

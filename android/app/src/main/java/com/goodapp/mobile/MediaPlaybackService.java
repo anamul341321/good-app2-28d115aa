@@ -8,6 +8,9 @@ import android.app.Service;
 import android.content.Intent;
 import android.os.Build;
 import android.os.IBinder;
+import android.media.AudioAttributes;
+import android.media.MediaPlayer;
+import android.os.PowerManager;
 
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
@@ -15,12 +18,15 @@ import androidx.core.app.NotificationCompat;
 public class MediaPlaybackService extends Service {
     public static final String ACTION_START = "com.goodapp.mobile.MEDIA_START";
     public static final String ACTION_STOP = "com.goodapp.mobile.MEDIA_STOP";
+    public static final String ACTION_PLAY_URL = "com.goodapp.mobile.MEDIA_PLAY_URL";
     private static final String CHANNEL = "goodapp_media_playback";
     private static final int NOTIFICATION_ID = 7312;
+    private MediaPlayer player;
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent != null && ACTION_STOP.equals(intent.getAction())) {
+            releasePlayer();
             stopForeground(true);
             stopSelf();
             return START_NOT_STICKY;
@@ -32,7 +38,46 @@ public class MediaPlaybackService extends Service {
             title == null || title.trim().isEmpty() ? "Good-App audio" : title,
             artist == null || artist.trim().isEmpty() ? "Playing in background" : artist
         );
+        if (intent != null && ACTION_PLAY_URL.equals(intent.getAction())) {
+            playUrl(
+                intent.getStringExtra("url"),
+                Math.max(0, intent.getIntExtra("position_ms", 0))
+            );
+        }
         return START_STICKY;
+    }
+
+    private void playUrl(String url, int positionMs) {
+        if (url == null || url.trim().isEmpty()) return;
+        releasePlayer();
+        try {
+            player = new MediaPlayer();
+            player.setAudioAttributes(new AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_MEDIA)
+                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                .build());
+            player.setWakeMode(getApplicationContext(), PowerManager.PARTIAL_WAKE_LOCK);
+            player.setDataSource(url);
+            player.setOnPreparedListener(mediaPlayer -> {
+                if (positionMs > 0) mediaPlayer.seekTo(positionMs);
+                mediaPlayer.start();
+            });
+            player.setOnCompletionListener(mediaPlayer -> stopSelf());
+            player.setOnErrorListener((mediaPlayer, what, extra) -> {
+                stopSelf();
+                return true;
+            });
+            player.prepareAsync();
+        } catch (Exception ignored) {
+            releasePlayer();
+        }
+    }
+
+    private void releasePlayer() {
+        if (player == null) return;
+        try { player.stop(); } catch (Exception ignored) {}
+        player.release();
+        player = null;
     }
 
     private void startForegroundNotification(String title, String artist) {
@@ -82,5 +127,11 @@ public class MediaPlaybackService extends Service {
     @Override
     public IBinder onBind(Intent intent) {
         return null;
+    }
+
+    @Override
+    public void onDestroy() {
+        releasePlayer();
+        super.onDestroy();
     }
 }

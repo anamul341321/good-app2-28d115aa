@@ -192,6 +192,20 @@ public class MainActivity extends BridgeActivity {
         } catch (Exception ignored) {}
     }
 
+    private void playNativeMediaUrl(String url, int positionMs, String title, String artist) {
+        startNativeMediaPlayback(title, artist);
+        try {
+            Intent service = new Intent(this, MediaPlaybackService.class);
+            service.setAction(MediaPlaybackService.ACTION_PLAY_URL);
+            service.putExtra("url", url);
+            service.putExtra("position_ms", Math.max(0, positionMs));
+            service.putExtra("title", title);
+            service.putExtra("artist", artist);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(service);
+            else startService(service);
+        } catch (Exception ignored) {}
+    }
+
     private void stopNativeMediaPlayback() {
         mediaPlaybackActive = false;
         try {
@@ -205,15 +219,6 @@ public class MainActivity extends BridgeActivity {
             Intent service = new Intent(this, MediaPlaybackService.class);
             service.setAction(MediaPlaybackService.ACTION_STOP);
             startService(service);
-        } catch (Exception ignored) {}
-    }
-
-    private void keepWebMediaAlive() {
-        if (!mediaPlaybackActive || bridge == null) return;
-        try {
-            WebView webView = bridge.getWebView();
-            webView.onResume();
-            webView.resumeTimers();
         } catch (Exception ignored) {}
     }
 
@@ -283,6 +288,11 @@ public class MainActivity extends BridgeActivity {
         @JavascriptInterface
         public void beginMediaPlaybackInfo(String title, String artist) {
             runOnUiThread(() -> startNativeMediaPlayback(title, artist));
+        }
+
+        @JavascriptInterface
+        public void playMediaUrl(String url, int positionMs, String title, String artist) {
+            runOnUiThread(() -> playNativeMediaUrl(url, positionMs, title, artist));
         }
 
         @JavascriptInterface
@@ -572,14 +582,12 @@ public class MainActivity extends BridgeActivity {
     // BridgeActivity exposes these lifecycle callbacks publicly.
     public void onPause() {
         super.onPause();
-        keepWebMediaAlive();
     }
 
     @Override
     // Keep the same visibility as BridgeActivity to satisfy Java overrides.
     public void onStop() {
         super.onStop();
-        keepWebMediaAlive();
     }
 
     @Override
