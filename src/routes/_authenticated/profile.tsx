@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { PageVoice } from "@/components/PageVoice";
 import { QrCode } from "@/components/QrCode";
 import { useAuth } from "@/hooks/useAuth";
+import { PageBackHeader } from "@/components/PageBackHeader";
 
 export const Route = createFileRoute("/_authenticated/profile")({ component: OwnSocialProfileRedirect });
 
