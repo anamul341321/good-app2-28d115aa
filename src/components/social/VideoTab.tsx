@@ -148,10 +148,14 @@ export default function VideoTab() {
     });
   }, [data]);
 
-  const playing = videos.find((video) => video.id === playingId) || null;
+  const playing =
+    videos.find((video) => video.id === playingId) ||
+    history.find((video) => video.id === playingId) ||
+    null;
   const suggestedVideos = playing
     ? videos.filter((video) => video.id !== playing.id && !playedIds.has(video.id))
     : videos;
+
 
   // Autocomplete: fetch YouTube suggestions while typing (debounced).
   useEffect(() => {
