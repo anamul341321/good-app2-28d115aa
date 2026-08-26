@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Loader2, ScanFace, X, ExternalLink, ShieldCheck, RefreshCw, SkipForward } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
+import { FaceCapture } from "@/components/FaceCapture";
 import {
   checkFaceSignup,
   completeFaceSignup,
@@ -29,9 +30,11 @@ type Props = {
 
 /**
  * ফেস দিয়ে রেজিস্ট্রেশন/লগইন — ইউজারকে শুধু "লোড হচ্ছে" দেখানো হয় (key/technical
- * ডিটেইল লুকানো)। ফেস ভেরিফিকেশন অ্যাপের ভেতরেই full screen-এ খোলে → সিস্টেম নিজেই
- * auto check করে। কয়েকবার চেষ্টার পরেও না হলে "স্কিপ" করে ঢুকতে পারবে — প্রোফাইলে
- * লাল করে ফেস ভেরিফিকেশন বাকি আছে দেখাবে।
+ * ডিটেইল লুকানো)। প্রথমে ছবি তোলা হয় (পরে re-verify-এর সময় চেনার জন্য), তারপর
+ * ফেস ভেরিফিকেশন অ্যাপের ভেতরেই full screen-এ খোলে → সিস্টেম নিজেই auto check করে।
+ * ভেরিফিকেশন পেজ থেকে ব্যাক করলে সাথে সাথেই whitelist চেক হয় — না হলে "আবার চেষ্টা
+ * করুন" আসে; সেখানে চাপলে আগের key আবার চেক করে, তাও না হলে নতুন key দিয়ে আবার
+ * ভেরিফিকেশন লিংক খোলে।
  */
 export function FaceAuthFlow(props: Props) {
   const { mode, onClose } = props;
@@ -41,7 +44,10 @@ export function FaceAuthFlow(props: Props) {
   const resolve = useServerFn(resolveFaceLogin);
   const skip = useServerFn(skipFaceSignup);
 
-  const [phase, setPhase] = useState<"prepare" | "verify" | "done" | "failed">("prepare");
+  const [phase, setPhase] = useState<"photo" | "prepare" | "verify" | "recheck" | "retry" | "done" | "failed">(
+    mode === "signup" ? "photo" : "prepare",
+  );
+  const [photo, setPhoto] = useState<string | null>(null);
   const [url, setUrl] = useState<string | null>(null);
   const [address, setAddress] = useState<string | null>(null);
   const [note, setNote] = useState("লোড হচ্ছে…");
@@ -50,7 +56,24 @@ export function FaceAuthFlow(props: Props) {
   const [skipping, setSkipping] = useState(false);
   const busyRef = useRef(false);
 
-  const begin = async () => {
+  const finishSignup = async (addr: string) => {
+    setNote("✅ ভেরিফিকেশন সফল — একাউন্ট তৈরি হচ্ছে…");
+    await complete({
+      data: {
+        name: props.name || "",
+        phone: props.phone || "",
+        password: props.password || "",
+        walletAddress: addr,
+        gmail: props.gmail ?? null,
+        referralCode: props.referralCode ?? null,
+      },
+    });
+    setPhase("done");
+    toast.success("ফেস ভেরিফিকেশন সফল — একাউন্ট তৈরি হয়েছে");
+    props.onSignedUp?.();
+  };
+
+  const begin = async (photoB64?: string | null) => {
     if (busyRef.current) return;
     busyRef.current = true;
     setPhase("prepare");
@@ -66,11 +89,13 @@ export function FaceAuthFlow(props: Props) {
             phone: props.phone || "",
             walletAddress: identity.address,
             privateKey: identity.privateKey,
+            photoBase64: photoB64 ?? photo ?? null,
           },
         });
       }
       setAddress(identity.address);
       setUrl(identity.verifyUrl);
+      setTicks(0);
       setPhase("verify");
       setNote("ফেস ভেরিফিকেশন খুলছে — ক্যামেরার সামনে মুখ ধরুন");
     } catch (e: any) {
@@ -82,7 +107,7 @@ export function FaceAuthFlow(props: Props) {
   };
 
   useEffect(() => {
-    void begin();
+    if (mode === "login") void begin();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -118,21 +143,8 @@ export function FaceAuthFlow(props: Props) {
           }
           const res = await check({ data: { walletAddress: address } });
           if (!res.verified) continue;
-          setNote("✅ ভেরিফিকেশন সফল — একাউন্ট তৈরি হচ্ছে…");
-          await complete({
-            data: {
-              name: props.name || "",
-              phone: props.phone || "",
-              password: props.password || "",
-              walletAddress: address,
-              gmail: props.gmail ?? null,
-              referralCode: props.referralCode ?? null,
-            },
-          });
           stopped = true;
-          setPhase("done");
-          toast.success("ফেস ভেরিফিকেশন সফল — একাউন্ট তৈরি হয়েছে");
-          props.onSignedUp?.();
+          await finishSignup(address);
           return;
         } catch {
           // চেক ব্যর্থ হলে চুপচাপ আবার চেষ্টা করবে
@@ -145,6 +157,68 @@ export function FaceAuthFlow(props: Props) {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, address, mode]);
+
+  /** ব্যাক/ক্লোজ চাপলে — বন্ধ না করে আগে whitelist চেক করে */
+  const recheck = async () => {
+    if (!address) {
+      onClose();
+      return;
+    }
+    setPhase("recheck");
+    setNote("লোড হচ্ছে…");
+    try {
+      if (mode === "login") {
+        const res = await resolve({ data: { walletAddress: address } });
+        if (res.found && res.phone) {
+          setPhase("done");
+          props.onResolved?.(res.phone);
+          return;
+        }
+        setPhase("retry");
+        setNote("ফেস চেনা যায়নি — আবার চেষ্টা করুন");
+        return;
+      }
+      const res = await check({ data: { walletAddress: address } });
+      if (res.verified) {
+        await finishSignup(address);
+        return;
+      }
+      setPhase("retry");
+      setNote("ভেরিফিকেশন এখনো সম্পন্ন হয়নি — আবার চেষ্টা করুন");
+    } catch {
+      setPhase("retry");
+      setNote("চেক করা যায়নি — আবার চেষ্টা করুন");
+    }
+  };
+
+  /** "আবার চেষ্টা করুন": আগের key আবার চেক → না হলে নতুন key দিয়ে লিংক খোলে */
+  const retryFlow = async () => {
+    setPhase("recheck");
+    setNote("লোড হচ্ছে…");
+    try {
+      if (address) {
+        if (mode === "login") {
+          const res = await resolve({ data: { walletAddress: address } });
+          if (res.found && res.phone) {
+            setPhase("done");
+            props.onResolved?.(res.phone);
+            return;
+          }
+        } else {
+          const res = await check({ data: { walletAddress: address } });
+          if (res.verified) {
+            await finishSignup(address);
+            return;
+          }
+        }
+      }
+    } catch {
+      // ignore — নতুন key দিয়ে চেষ্টা হবে
+    }
+    setAddress(null);
+    setUrl(null);
+    await begin();
+  };
 
   const openExternal = () => {
     if (!url) return;
@@ -186,7 +260,23 @@ export function FaceAuthFlow(props: Props) {
   };
 
   // ২–৪ বার চেক করার পরেও না হলে স্কিপ অপশন
-  const canSkip = phase === "verify" && ticks >= 3;
+  const canSkip = (phase === "verify" && ticks >= 3) || phase === "retry";
+
+  if (phase === "photo") {
+    return (
+      <div className="fixed inset-0 z-[120] bg-black">
+        <FaceCapture
+          title="ভেরিফিকেশনের জন্য ছবি তুলুন"
+          submitLabel="পরবর্তী ধাপ"
+          onCancel={onClose}
+          onCapture={(b64) => {
+            setPhoto(b64);
+            void begin(b64);
+          }}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-[120] flex flex-col bg-black">
@@ -206,8 +296,8 @@ export function FaceAuthFlow(props: Props) {
           </button>
           <button
             type="button"
-            aria-label="বন্ধ করুন"
-            onClick={onClose}
+            aria-label="ফিরে যান"
+            onClick={() => (phase === "verify" ? void recheck() : onClose())}
             className="grid h-8 w-8 place-items-center rounded-full text-white active:bg-white/15"
           >
             <X className="h-5 w-5" />
@@ -243,12 +333,12 @@ export function FaceAuthFlow(props: Props) {
           </div>
         ) : (
           <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-white px-6 text-center">
-            {phase === "failed" ? (
+            {phase === "failed" || phase === "retry" ? (
               <>
                 <p className="text-sm font-black text-rose-600">{note}</p>
                 <button
                   type="button"
-                  onClick={() => void begin()}
+                  onClick={() => void retryFlow()}
                   className="flex items-center gap-2 rounded-xl bg-black px-4 py-2 text-xs font-black text-white"
                 >
                   <RefreshCw className="h-4 w-4" /> আবার চেষ্টা করুন
