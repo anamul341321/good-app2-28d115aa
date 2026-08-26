@@ -31,7 +31,7 @@ import { ForgotPasswordDialog } from "@/components/ForgotPasswordDialog";
 import { getSharedSession } from "@/lib/auth-session";
 import { getDeviceId } from "@/hooks/useDeviceGuard";
 
-import { QrCode as QrCodeIcon } from "lucide-react";
+import { ScanFace } from "lucide-react";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
