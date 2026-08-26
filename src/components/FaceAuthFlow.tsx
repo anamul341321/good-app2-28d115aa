@@ -428,9 +428,34 @@ export function FaceAuthFlow(props: Props) {
                     className="mt-1 w-full rounded-xl border-2 border-border bg-white px-4 py-3 text-sm text-navy outline-none focus:border-violet"
                   />
                 </div>
+                <div>
+                  <label className="text-[11px] font-black uppercase tracking-wider text-rose">
+                    📧 Gmail (ঐচ্ছিক — সিকিউরিটির জন্য)
+                  </label>
+                  <input
+                    type="email"
+                    inputMode="email"
+                    value={fGmail}
+                    onChange={(e) => setFGmail(e.target.value.trim())}
+                    placeholder="yourname@gmail.com"
+                    className="mt-1 w-full rounded-xl border-2 border-border bg-white px-4 py-3 text-sm text-navy outline-none focus:border-rose"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] font-black uppercase tracking-wider text-amber">
+                    রেফার কোড (ঐচ্ছিক)
+                  </label>
+                  <input
+                    value={fRef}
+                    onChange={(e) => setFRef(e.target.value.trim().toUpperCase())}
+                    placeholder="থাকলে দিন"
+                    className="mono-num mt-1 w-full rounded-xl border-2 border-border bg-white px-4 py-3 text-sm text-navy outline-none focus:border-amber"
+                  />
+                </div>
                 <p className="text-[10.5px] leading-snug text-muted-foreground">
                   লগইনের সময় ফেস স্ক্যানের পর এই পাসওয়ার্ডটিই লাগবে — মনে রাখুন।
                 </p>
+
                 <div className="flex gap-2">
                   <button
                     type="button"
