@@ -331,23 +331,13 @@ export const faceLoginMatch = createServerFn({ method: "POST" })
       return { found: false as const, phone: null, walletAddress: null, whitelisted: false };
     }
 
-    // ভুল ম্যাচ এড়াতে ২য় ধাপে ১-১ করে কঠোর যাচাই — দুইবারই একমত হলেই গ্রহণ
-    let agrees = 0;
-    for (let attempt = 0; attempt < 2; attempt++) {
-      try {
-        const one = await matchSingleReference(clean, {
-          id: candidate.id,
-          base64: candidate.base64,
-        });
-        if (!one.matches) break;
-        agrees++;
-      } catch {
-        break;
-      }
-    }
-    const confirmed = agrees === 2;
+    // ভুল ম্যাচ এড়াতে ২য় ধাপে কঠোর multi-model যাচাই — সব পাস একমত হলেই গ্রহণ
+    const strict = await verifyIdentityStrict(clean, {
+      id: candidate.id,
+      base64: candidate.base64,
+    }).catch(() => ({ matches: false, confidence: 0, votes: 0 }));
 
-    if (!confirmed) {
+    if (!strict.matches) {
       return { found: false as const, phone: null, walletAddress: null, whitelisted: false };
     }
 
