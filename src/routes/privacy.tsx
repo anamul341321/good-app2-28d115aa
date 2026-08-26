@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ShieldCheck, Database, Eye, Trash2, Lock, Mail, ArrowLeft, Baby, Share2, Clock, UserCheck } from "lucide-react";
+import { ShieldCheck, Database, Eye, Trash2, Lock, Mail, ArrowLeft, Baby, Share2, Clock, UserCheck, ScanFace } from "lucide-react";
 
 export const Route = createFileRoute("/privacy")({
   head: () => ({
@@ -70,7 +70,7 @@ const SECTIONS: { icon: React.ElementType; title: string; points: string[] }[] =
 
   {
     icon: Share2,
-    title: "৪. তৃতীয় পক্ষের সেবা",
+    title: "৫. তৃতীয় পক্ষের সেবা",
     points: [
       "ডাটাবেস, লগইন ও ফাইল সংরক্ষণ: Supabase (Lovable Cloud) — সুরক্ষিত ক্লাউড সার্ভার।",
       "ফেস যাচাইয়ের স্বয়ংক্রিয় প্রক্রিয়া ও GoodDollar পরিচয় যাচাই সেবা।",
@@ -82,7 +82,7 @@ const SECTIONS: { icon: React.ElementType; title: string; points: string[] }[] =
   },
   {
     icon: Clock,
-    title: "৫. ডেটা কতদিন রাখা হয়",
+    title: "৬. ডেটা কতদিন রাখা হয়",
     points: [
       "একাউন্ট তথ্য: একাউন্ট চালু থাকা পর্যন্ত।",
       "ফেস ভেরিফিকেশনের ছবি: সংশ্লিষ্ট স্লট সক্রিয় থাকা পর্যন্ত; স্লট রিসেট বা একাউন্ট ডিলিট করলে মুছে যায়।",
@@ -93,7 +93,7 @@ const SECTIONS: { icon: React.ElementType; title: string; points: string[] }[] =
   },
   {
     icon: Trash2,
-    title: "৬. একাউন্ট ও ডেটা ডিলিট",
+    title: "৭. একাউন্ট ও ডেটা ডিলিট",
     points: [
       "অ্যাপের ভেতরেই ডিলিট করতে পারবেন: সেটিংস → “একাউন্ট ডিলিট করুন” → DELETE লিখে নিশ্চিত করুন।",
       "ডিলিট করলে প্রোফাইল, ফেস ছবি, স্লট, ব্যালেন্স ও সব হিসাব সাথে সাথেই স্থায়ীভাবে মুছে যায় — এটি ফেরানো যায় না।",
@@ -104,7 +104,7 @@ const SECTIONS: { icon: React.ElementType; title: string; points: string[] }[] =
   },
   {
     icon: UserCheck,
-    title: "৭. আপনার অধিকার",
+    title: "৮. আপনার অধিকার",
     points: [
       "আপনার সংরক্ষিত তথ্য দেখা ও ভুল থাকলে সংশোধন করার অধিকার।",
       "আপনার আয় ও হিসাবের বিবরণী অ্যাপ থেকেই ডাউনলোড/প্রিন্ট করার সুবিধা।",
@@ -114,7 +114,7 @@ const SECTIONS: { icon: React.ElementType; title: string; points: string[] }[] =
   },
   {
     icon: Baby,
-    title: "৮. বয়স সীমা",
+    title: "৯. বয়স সীমা",
     points: [
       "এই অ্যাপ প্রাপ্তবয়স্ক ব্যবহারকারীদের জন্য তৈরি; আমরা জেনেশুনে শিশুদের তথ্য সংগ্রহ করি না।",
       "ভুলবশত শিশুর তথ্য পাওয়া গেলে সাথে সাথেই মুছে ফেলা হয় — অভিভাবক জানালে দ্রুত ব্যবস্থা নেওয়া হয়।",
@@ -122,7 +122,7 @@ const SECTIONS: { icon: React.ElementType; title: string; points: string[] }[] =
   },
   {
     icon: Mail,
-    title: "৯. যোগাযোগ",
+    title: "১০. যোগাযোগ",
     points: [
       "গোপনীয়তা সংক্রান্ত যেকোনো প্রশ্ন বা ডেটা মুছে ফেলার অনুরোধে অ্যাপের সাপোর্টে যোগাযোগ করুন।",
       "যোগাযোগ ইমেইল: support@goodapp2.live",
