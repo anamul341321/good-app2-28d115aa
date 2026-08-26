@@ -813,11 +813,23 @@ function FeedPage() {
     <div className="min-h-screen bg-gray-100 dark:bg-background pb-14">
       <header className="sticky top-0 z-50 safe-top border-b border-gray-200 bg-white/95 shadow-sm backdrop-blur dark:border-border/40 dark:bg-card/95">
         <div className="max-w-lg mx-auto px-3 py-2.5 flex items-center justify-between">
-          <div className="flex min-w-0 items-center gap-2.5">
+          <div className="flex min-w-0 items-center gap-2">
+            <button
+              type="button"
+              aria-label="পিছনে যান"
+              onClick={() => {
+                if (typeof window !== "undefined" && window.history.length > 1) window.history.back();
+                else navigate({ to: "/home" });
+              }}
+              className="btn-press grid h-10 w-10 shrink-0 place-items-center rounded-full bg-gray-100 text-gray-700 dark:bg-secondary dark:text-foreground"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </button>
             <Link to="/home" aria-label="ড্যাশবোর্ডে ফিরুন" className="gradient-amber btn-press flex h-10 shrink-0 items-center gap-1.5 rounded-full px-3 text-[12px] font-black ring-1 ring-card/70">
               <Home className="h-5 w-5" />
               <span>Dashboard</span>
             </Link>
+
             <Link to="/user/$userId" params={{ userId: user.id }} className="w-10 h-10 rounded-full bg-gray-200 dark:bg-primary/20 flex items-center justify-center overflow-hidden shrink-0">
               <Avatar path={myProfile?.avatar_url} className="w-full h-full object-cover" fallback={myProfile?.display_name?.[0]?.toUpperCase() || "?"} />
             </Link>
