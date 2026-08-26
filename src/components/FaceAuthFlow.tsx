@@ -22,7 +22,7 @@ type Props = {
   referralCode?: string | null;
   onClose: () => void;
   /** signup সফল হলে (nothing to do — parent sign-in করবে) */
-  onSignedUp?: () => void;
+  onSignedUp?: (phone: string) => void;
   /** ভেরিফিকেশন ছাড়াই একাউন্ট তৈরি হলে (পরে প্রোফাইল থেকে করতে হবে) */
   onSkipped?: () => void;
   /** login mode: ফেস চেনা গেলে নম্বর ফেরত */
@@ -83,7 +83,7 @@ export function FaceAuthFlow(props: Props) {
     });
     setPhase("done");
     toast.success("ফেস ভেরিফিকেশন সফল — একাউন্ট তৈরি হয়েছে");
-    props.onSignedUp?.();
+    props.onSignedUp?.(fPhone.trim());
   };
 
   const begin = async (photoB64?: string | null) => {

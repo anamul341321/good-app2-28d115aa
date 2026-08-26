@@ -275,13 +275,6 @@ export function AuthPage() {
     return cleanPhone;
   };
 
-  const startFaceSignup2 = () => {
-    const ok = validateForm();
-    if (!ok) return;
-    setPhone(ok);
-    setFaceMode("signup");
-  };
-
   const onFormNext = (e: React.FormEvent) => {
     e.preventDefault();
     if (mode === "login") {
@@ -830,11 +823,11 @@ export function AuthPage() {
               setLoginId(phone.replace(/\D/g, "").slice(0, 11));
               toast.info("লগইন করুন — প্রোফাইলে ফেস ভেরিফিকেশন বাকি আছে দেখাবে");
             }}
-            onSignedUp={() => {
+            onSignedUp={(p) => {
               setFaceMode(null);
               setMode("login");
-              setLoginId(phone.replace(/\D/g, "").slice(0, 11));
-              toast.success("একাউন্ট তৈরি হয়েছে — এখন লগইন করুন");
+              setLoginId(p || phone.replace(/\D/g, "").slice(0, 11));
+              toast.success("একাউন্ট তৈরি হয়েছে — এখন পাসওয়ার্ড দিয়ে লগইন করুন");
             }}
             onResolved={(p) => {
               setFaceMode(null);
