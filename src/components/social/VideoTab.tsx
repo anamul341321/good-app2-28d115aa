@@ -528,6 +528,7 @@ function InlinePlayer({
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const playerBoxRef = useRef<HTMLDivElement | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [cssFullscreen, setCssFullscreen] = useState(false);
   const dragStartY = useRef<number | null>(null);
   const playerModeRef = useRef(playerMode);
 
@@ -731,23 +732,32 @@ function InlinePlayer({
 
   const toggleFullscreen = useCallback(async () => {
     const active = !!(document.fullscreenElement || (document as any).webkitFullscreenElement);
-    try {
-      if (active) {
-        if (document.exitFullscreen) await document.exitFullscreen();
+    if (active || cssFullscreen) {
+      try {
+        if (document.exitFullscreen && active) await document.exitFullscreen();
         else (document as any).webkitExitFullscreen?.();
-        return;
-      }
-      setPlayerMode("expanded");
-      const el: any = playerBoxRef.current;
-      const videoEl: any = localVideoRef.current;
-      if (el?.requestFullscreen) await el.requestFullscreen();
-      else if (el?.webkitRequestFullscreen) el.webkitRequestFullscreen();
-      else if (videoEl?.webkitEnterFullscreen) videoEl.webkitEnterFullscreen();
-      try { await (screen.orientation as any)?.lock?.("landscape"); } catch { /* ignore */ }
-    } catch {
-      toast.error("ফুল স্ক্রিন করা যায়নি");
+      } catch { /* ignore */ }
+      setCssFullscreen(false);
+      try { (screen.orientation as any)?.unlock?.(); } catch { /* ignore */ }
+      return;
     }
-  }, []);
+    setPlayerMode("expanded");
+    const el: any = playerBoxRef.current;
+    const videoEl: any = localVideoRef.current;
+    let nativeOk = false;
+    try {
+      if (el?.requestFullscreen) { await el.requestFullscreen(); nativeOk = true; }
+      else if (el?.webkitRequestFullscreen) { el.webkitRequestFullscreen(); nativeOk = true; }
+    } catch { nativeOk = false; }
+    if (!nativeOk && videoEl?.webkitEnterFullscreen) {
+      try { videoEl.webkitEnterFullscreen(); nativeOk = true; } catch { /* ignore */ }
+    }
+    // Android WebView-এ native fullscreen প্রায়ই কাজ করে না — তখন CSS ফুলস্ক্রিন
+    if (!nativeOk) setCssFullscreen(true);
+    try { await (screen.orientation as any)?.lock?.("landscape"); } catch { /* ignore */ }
+  }, [cssFullscreen]);
+
+  const effectiveFullscreen = isFullscreen || cssFullscreen;
 
   const beginCollapseDrag = (event: PointerEvent) => {
     if (playerMode !== "expanded") return;
@@ -798,11 +808,11 @@ function InlinePlayer({
               <div className="flex items-center">
                 <button
                   type="button"
-                  aria-label={isFullscreen ? "ফুল স্ক্রিন বন্ধ" : "ফুল স্ক্রিন"}
+                  aria-label={effectiveFullscreen ? "ফুল স্ক্রিন বন্ধ" : "ফুল স্ক্রিন"}
                   onClick={toggleFullscreen}
                   className="grid h-9 w-9 place-items-center rounded-full text-white active:bg-white/15"
                 >
-                  {isFullscreen ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
+                  {effectiveFullscreen ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
                 </button>
                 <button
                   type="button"
@@ -823,8 +833,8 @@ function InlinePlayer({
         className={
           playerMode === "mini"
             ? "relative h-20 w-36 shrink-0 overflow-hidden bg-black"
-            : isFullscreen
-              ? "relative h-full w-full shrink-0 overflow-hidden bg-black"
+            : effectiveFullscreen
+              ? "fixed inset-0 z-[999] flex h-[100dvh] w-screen items-center justify-center overflow-hidden bg-black"
               : "relative aspect-video w-full shrink-0 overflow-hidden bg-black"
         }
       >
@@ -840,7 +850,7 @@ function InlinePlayer({
             onLoadedData={() => setLocalMediaFailed(false)}
             onError={() => setLocalMediaFailed(true)}
             onEnded={playNext}
-            className={isFullscreen ? "h-full w-full object-contain" : "h-full w-full"}
+            className={effectiveFullscreen ? "h-full w-full object-contain" : "h-full w-full object-contain"}
           />
         ) : isLocal ? (
           <div className="grid h-full w-full place-items-center bg-black">
@@ -866,11 +876,11 @@ function InlinePlayer({
         {playerMode === "expanded" ? (
           <button
             type="button"
-            aria-label={isFullscreen ? "ফুল স্ক্রিন বন্ধ করুন" : "ফুল স্ক্রিন করুন"}
+            aria-label={effectiveFullscreen ? "ফুল স্ক্রিন বন্ধ করুন" : "ফুল স্ক্রিন করুন"}
             onClick={toggleFullscreen}
             className="absolute bottom-2 right-2 z-20 grid h-10 w-10 place-items-center rounded-full bg-black/60 text-white backdrop-blur active:bg-black/80"
           >
-            {isFullscreen ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
+            {effectiveFullscreen ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
           </button>
         ) : null}
       </div>
