@@ -292,7 +292,7 @@ function ReelsPage() {
       )}
 
       {/* Top bar — dashboard back + upload (everyone can upload, TikTok style) */}
-      <div className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between p-3">
+      <div className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between safe-top px-3 pb-3">
         <button
           onClick={() => navigate({ to: "/home" })}
           className="btn-press gradient-amber h-9 rounded-full px-3 flex items-center gap-1.5 ring-2 ring-white/80"
@@ -662,7 +662,7 @@ function LocalReel({
         type="button"
         aria-label={muted ? "সাউন্ড চালু করুন" : "সাউন্ড বন্ধ করুন"}
         onClick={toggleMute}
-        className="absolute right-3 top-[calc(env(safe-area-inset-top)+4rem)] z-40 flex h-10 items-center justify-center gap-1.5 rounded-full bg-black/65 px-3 text-white shadow-lg backdrop-blur"
+        className="absolute right-3 top-[calc(max(env(safe-area-inset-top),1.75rem)+3.75rem)] z-40 flex h-10 items-center justify-center gap-1.5 rounded-full bg-black/65 px-3 text-white shadow-lg backdrop-blur"
       >
         {muted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
         <span className="text-[11px] font-black">{muted ? "Unmute" : "Mute"}</span>
@@ -856,7 +856,7 @@ function ExternalReel({
         type="button"
         aria-label={muted ? "সাউন্ড চালু করুন" : "সাউন্ড বন্ধ করুন"}
         onClick={toggleMute}
-        className="absolute right-3 top-[calc(env(safe-area-inset-top)+4rem)] z-40 flex h-10 items-center justify-center gap-1.5 rounded-full bg-black/65 px-3 text-white shadow-lg backdrop-blur"
+        className="absolute right-3 top-[calc(max(env(safe-area-inset-top),1.75rem)+3.75rem)] z-40 flex h-10 items-center justify-center gap-1.5 rounded-full bg-black/65 px-3 text-white shadow-lg backdrop-blur"
       >
         {muted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
         <span className="text-[11px] font-black">{muted ? "Unmute" : "Mute"}</span>
