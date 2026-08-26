@@ -77,7 +77,6 @@ export const checkFaceSignup = createServerFn({ method: "POST" })
     await supabaseAdmin
       .from("face_signups")
       .update({
-        attempts: undefined as never,
         status: ok ? "verified" : "pending",
         verified_at: ok ? new Date().toISOString() : null,
       } as never)
