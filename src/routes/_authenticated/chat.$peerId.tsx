@@ -191,16 +191,22 @@ function ThreadPage() {
           </div>
         ) : (
           <div className="flex flex-col gap-2">
-            {messages.map((m) => (
+            {messages.map((m, i) => (
               <MessageBubble
                 key={m.id}
                 m={m}
                 mine={m.senderId === me}
                 onDelete={(id) => del.mutate(id)}
+                seenBy={
+                  i === lastSeenIndex && data?.peer
+                    ? { name: data.peer.name ?? "User", avatarUrl: (data.peer as any)?.avatarUrl ?? null }
+                    : null
+                }
               />
             ))}
             <div ref={endRef} />
           </div>
+
         )}
       </main>
 
