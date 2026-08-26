@@ -4,9 +4,12 @@
 
 const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const MODEL = "google/gemini-2.5-flash";
+const STRONG_MODEL = "google/gemini-2.5-pro";
 
 export const DUPLICATE_THRESHOLD = 0.92;
 export const REVERIFY_THRESHOLD = 0.85;
+/** লগইনের মতো ঝুঁকিপূর্ণ যাচাইয়ের জন্য কঠোর থ্রেশহোল্ড */
+export const STRICT_THRESHOLD = 0.9;
 
 type RefPhoto = { id: string; base64: string };
 
@@ -16,7 +19,7 @@ function extractJsonObject(text: string): any | null {
   try { return JSON.parse(m[0]); } catch { return null; }
 }
 
-async function callAi(content: any[]): Promise<string> {
+async function callAi(content: any[], model: string = MODEL): Promise<string> {
   const key = process.env.LOVABLE_API_KEY;
   if (!key) throw new Error("LOVABLE_API_KEY not configured");
 
@@ -27,7 +30,7 @@ async function callAi(content: any[]): Promise<string> {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: MODEL,
+      model,
       messages: [{ role: "user", content }],
     }),
   });
@@ -94,16 +97,36 @@ Respond with ONLY a JSON object:
 export async function matchSingleReference(
   capturedBase64: string,
   reference: RefPhoto,
+  opts?: { model?: string; threshold?: number },
 ): Promise<{ matches: boolean; confidence: number }> {
-  const prompt = `You are a strict biometric face matching system. I will show you a captured selfie (labeled "SELFIE") and one reference photo (labeled "REF").
+  const prompt = `You are a forensic-grade biometric face verification system. I will show you a captured selfie (labeled "SELFIE") and one reference photo (labeled "REF").
 
-Your task: Decide whether the SELFIE and the REF show the SAME human.
+Your task: Decide whether the SELFIE and the REF show the SAME human being.
 
-CRITICAL RULES:
-- IGNORE clothing, background, lighting, camera angle, pose, hairstyle, beard growth/trim, glasses on/off, accessories, mild weight change, mild aging.
-- Compare stable facial biometrics: eye spacing/shape, nose bridge/tip, mouth/lip shape, jaw/chin structure, cheekbones, face proportions, ears.
-- Only return matches=true when you are highly confident from multiple stable facial features.
-- If there is any real doubt, return matches=false. A false positive is dangerous.
+STEP 1 — describe silently (do not output) the stable, hard-to-change geometry of each face:
+- inter-pupillary distance relative to face width
+- eye shape, eyelid crease type, eyebrow shape/arch and brow-to-eye distance
+- nose bridge width, nose length, nostril shape, nose tip shape
+- philtrum length, lip thickness and lip-line shape, mouth width vs nose width
+- chin shape, jaw angle/width, cheekbone height and projection
+- ear shape, lobe attachment (if visible), hairline shape, forehead height
+- any permanent marks: moles, scars, birthmarks, asymmetries
+
+STEP 2 — decide using ONLY that geometry.
+
+MUST-IGNORE (these change often and must never affect the decision):
+- FACIAL HAIR: full beard vs shaved vs trimmed vs moustache-only — a beard hides jaw/chin skin but does NOT change eye/nose/brow geometry. Judge the upper face (eyes, brows, nose, inter-pupillary ratio) when the lower face is covered by a beard or mask.
+- hairstyle, hair length, hair colour, cap/hijab/head cover
+- glasses on/off, mild makeup, skin tone shift from lighting, tan, sweat
+- clothing, background, camera quality, blur, compression, resolution
+- pose/angle (up to ~30 degrees), smiling vs neutral, mouth open/closed
+- mild weight change, mild aging (a few years)
+
+DECISION RULES:
+- matches=true only when at least 4 independent stable geometric features agree AND no stable feature clearly contradicts.
+- If the two faces differ in a stable feature (e.g. clearly different inter-pupillary ratio, nose shape, or ear shape), return matches=false even if they look similar overall.
+- Similar-looking relatives or same-region people are NOT a match. Default to false when in real doubt.
+- confidence must reflect the geometry agreement, not overall "vibe".
 
 Respond with ONLY a JSON object like {"matches": true, "confidence": 0.0 to 1.0} or {"matches": false, "confidence": 0.0 to 1.0}. No other text.`;
 
@@ -115,9 +138,43 @@ Respond with ONLY a JSON object like {"matches": true, "confidence": 0.0 to 1.0}
     { type: "image_url", image_url: { url: `data:image/jpeg;base64,${reference.base64}` } },
   ];
 
-  const text = await callAi(content);
+  const text = await callAi(content, opts?.model ?? MODEL);
   const parsed = extractJsonObject(text);
   const matches = !!parsed?.matches;
   const confidence = Number(parsed?.confidence) || 0;
-  return { matches: matches && confidence >= REVERIFY_THRESHOLD, confidence };
+  const threshold = opts?.threshold ?? REVERIFY_THRESHOLD;
+  return { matches: matches && confidence >= threshold, confidence };
+}
+
+/**
+ * লগইনের মতো high-risk যাচাই: একাধিক মডেল + একাধিক পাসে ভোট নেওয়া হয়।
+ * সব ভোট (majority নয়) একমত হলেই accept — ভুল ম্যাচে অন্যের একাউন্টে ঢোকা আটকাতে।
+ * দাড়ি থাকা/না থাকা, চশমা, hairstyle ইত্যাদি prompt-এই ignore করা হয়েছে।
+ */
+export async function verifyIdentityStrict(
+  capturedBase64: string,
+  reference: RefPhoto,
+): Promise<{ matches: boolean; confidence: number; votes: number }> {
+  const passes: { model: string; threshold: number }[] = [
+    { model: MODEL, threshold: REVERIFY_THRESHOLD },
+    { model: STRONG_MODEL, threshold: STRICT_THRESHOLD },
+    { model: MODEL, threshold: STRICT_THRESHOLD },
+  ];
+
+  let votes = 0;
+  let sum = 0;
+  for (const p of passes) {
+    let res: { matches: boolean; confidence: number };
+    try {
+      res = await matchSingleReference(capturedBase64, reference, p);
+    } catch {
+      // AI ব্যর্থ হলে নিরাপদ দিক — reject
+      return { matches: false, confidence: 0, votes };
+    }
+    if (!res.matches) return { matches: false, confidence: res.confidence, votes };
+    votes++;
+    sum += res.confidence;
+  }
+  const confidence = sum / passes.length;
+  return { matches: confidence >= STRICT_THRESHOLD, confidence, votes };
 }

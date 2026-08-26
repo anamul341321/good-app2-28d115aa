@@ -847,11 +847,27 @@ export function AuthPage() {
                 toast.success("একাউন্ট তৈরি হয়েছে — এখন পাসওয়ার্ড দিয়ে লগইন করুন");
               }
             }}
-            onResolved={(p) => {
-              setFaceMode(null);
+            onResolved={async (p, pw) => {
               setMode("login");
               setLoginId(p);
-              toast.success("ফেস চেনা গেছে — এখন পাসওয়ার্ড দিন");
+              if (!pw) {
+                setFaceMode(null);
+                toast.success("ফেস চেনা গেছে — এখন পাসওয়ার্ড দিন");
+                return;
+              }
+              // ফেস ম্যাচ + পাসওয়ার্ড — দুইটাই মিললেই লগইন
+              try {
+                const { error } = await supabase.auth.signInWithPassword({
+                  email: phoneToEmail(p),
+                  password: pw,
+                });
+                if (error) throw error;
+                setFaceMode(null);
+                toast.success("লগইন সফল — স্বাগতম!");
+                nav({ to: "/home" });
+              } catch {
+                toast.error("পাসওয়ার্ড ভুল — আবার চেষ্টা করুন");
+              }
             }}
           />
         )}

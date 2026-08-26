@@ -117,7 +117,7 @@ export async function photoToBase64(path: string): Promise<string | null> {
 
 /** লাইভ স্ক্যানকে ইউজারের নিজের স্লট ছবিগুলোর সাথে মিলিয়ে দেখা */
 export async function findMatchingSlot(userId: string, capturedBase64: string) {
-  const { matchSingleReference } = await import("./face-match.server");
+  const { verifyIdentityStrict } = await import("./face-match.server");
   const slots = await listSlotFaces(userId);
   if (slots.length === 0) return null;
 
@@ -125,7 +125,7 @@ export async function findMatchingSlot(userId: string, capturedBase64: string) {
     const ref = await photoToBase64(s.photoPath);
     if (!ref) continue;
     try {
-      const one = await matchSingleReference(capturedBase64, { id: s.taskId, base64: ref });
+      const one = await verifyIdentityStrict(capturedBase64, { id: s.taskId, base64: ref });
       if (one.matches) return s;
     } catch {
       // এই স্লট বাদ দিয়ে পরেরটা দেখা হবে

@@ -26,8 +26,8 @@ type Props = {
   onSignedUp?: (phone: string, password?: string) => void;
   /** ভেরিফিকেশন ছাড়াই একাউন্ট তৈরি হলে (পরে প্রোফাইল থেকে করতে হবে) */
   onSkipped?: () => void;
-  /** login mode: ফেস চেনা গেলে নম্বর ফেরত */
-  onResolved?: (phone: string) => void;
+  /** login mode: ফেস চেনা গেলে নম্বর (+ ইউজারের দেওয়া পাসওয়ার্ড) ফেরত */
+  onResolved?: (phone: string, password?: string) => void;
 };
 
 /**
@@ -48,7 +48,7 @@ export function FaceAuthFlow(props: Props) {
   const reverify = useServerFn(reverifyFaceLogin);
 
   const [phase, setPhase] = useState<
-    "info" | "secure" | "photo" | "confirm" | "prepare" | "verify" | "recheck" | "retry" | "done" | "failed"
+    | "info" | "secure" | "photo" | "confirm" | "prepare" | "verify" | "recheck" | "retry" | "done" | "failed" | "password"
   >(mode === "signup" ? "info" : "photo");
   const [fName, setFName] = useState(props.name ?? "");
   const [fPhone, setFPhone] = useState(props.phone ?? "");
@@ -68,6 +68,7 @@ export function FaceAuthFlow(props: Props) {
   const retriesRef = useRef(0);
   const pkRef = useRef<string | null>(null);
   const loginPhoneRef = useRef<string | null>(null);
+  const [loginPass, setLoginPass] = useState("");
 
 
   const finishSignup = async (addr: string) => {
@@ -136,8 +137,9 @@ export function FaceAuthFlow(props: Props) {
       }
       loginPhoneRef.current = res.phone;
       if (res.whitelisted) {
-        setPhase("done");
-        props.onResolved?.(res.phone);
+        // ফেস ম্যাচ ১০০% নিশ্চিত নয় — তাই পাসওয়ার্ড ছাড়া কোনো একাউন্টে ঢোকা যাবে না
+        setLoginPass("");
+        setPhase("password");
         return;
       }
       toast.info("ভেরিফিকেশন মেয়াদ শেষ — আবার ফেস ভেরিফিকেশন করতে হবে");
@@ -156,8 +158,8 @@ export function FaceAuthFlow(props: Props) {
       data: { phone, walletAddress: addr, privateKey: pkRef.current },
     });
     if (!res.verified) return false;
-    setPhase("done");
-    props.onResolved?.(phone);
+    setLoginPass("");
+    setPhase("password");
     return true;
   };
 
@@ -333,7 +335,14 @@ export function FaceAuthFlow(props: Props) {
     setPhase("photo");
   };
 
-  const wizard = phase === "info" || phase === "secure" || phase === "photo" || phase === "confirm";
+  const submitLoginPassword = () => {
+    const phone = loginPhoneRef.current;
+    if (!phone) return;
+    if (loginPass.length < 4) return toast.error("আপনার পাসওয়ার্ড দিন");
+    props.onResolved?.(phone, loginPass);
+  };
+
+  const wizard = phase === "password" || phase === "info" || phase === "secure" || phase === "photo" || phase === "confirm";
 
   // Auth page-এর animated/positioned parent যেন full-screen flow-কে নিচে ঠেলে না দেয়।
   // সরাসরি body-তে render করলে mobile viewport-ই এর একমাত্র positioning context হয়।
@@ -363,6 +372,8 @@ export function FaceAuthFlow(props: Props) {
                     : phase === "photo"
                     ? "ধাপ ৩/৪ — লাইভ ক্যামেরায় নিজের ছবি তুলুন"
                     : "ধাপ ৪/৪ — সব ঠিক থাকলে রেজিস্ট্রেশন করুন"
+                  : phase === "password"
+                  ? "ফেস চেনা গেছে — এখন নিরাপত্তার জন্য পাসওয়ার্ড দিন"
                   : "লাইভ ক্যামেরায় মুখ স্ক্যান করলেই একাউন্ট চিনে নেবে"}
               </p>
             </div>
@@ -481,6 +492,52 @@ export function FaceAuthFlow(props: Props) {
                     পরবর্তী ধাপ →
                   </button>
                 </div>
+              </>
+            )}
+
+            {phase === "password" && (
+              <>
+                <div className="rounded-2xl border border-emerald/25 bg-emerald/10 p-3.5 text-[12px] font-bold text-white/85">
+                  ✅ ফেস চেনা গেছে
+                  <p className="mono-num mt-1 text-[13px] text-cyan">
+                    {loginPhoneRef.current?.replace(/^(\d{5})\d{4}(\d{2})$/, "$1****$2")}
+                  </p>
+                  <p className="mt-1.5 text-[11px] font-semibold leading-snug text-white/60">
+                    ফেস ম্যাচ ভুল হতে পারে — তাই একাউন্টে ঢোকার আগে অবশ্যই আপনার পাসওয়ার্ড দিতে হবে।
+                  </p>
+                </div>
+                <div>
+                  <label className="mb-1 block text-[11.5px] font-black text-white/70">পাসওয়ার্ড</label>
+                  <input
+                    autoFocus
+                    type="password"
+                    value={loginPass}
+                    onChange={(e) => setLoginPass(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") submitLoginPassword();
+                    }}
+                    placeholder="আপনার পাসওয়ার্ড"
+                    className="w-full rounded-xl border border-white/12 bg-white/5 px-3.5 py-3.5 text-sm font-bold text-white outline-none placeholder:text-white/30 focus:border-emerald/60"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={submitLoginPassword}
+                  className="w-full rounded-xl py-3.5 text-sm font-black text-white btn-press"
+                  style={{ background: "linear-gradient(120deg,#10b981,#06b6d4,#8b5cf6)" }}
+                >
+                  লগইন করুন →
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLoginPass("");
+                    setPhase("photo");
+                  }}
+                  className="w-full rounded-xl border border-white/15 py-3 text-[11.5px] font-black text-white/70"
+                >
+                  ← আবার ফেস স্ক্যান করুন
+                </button>
               </>
             )}
 
