@@ -21,7 +21,7 @@ import {
   History,
   Maximize2,
   Minimize2,
-  RotateCw,
+  
 
   Plus,
   Trash2,
