@@ -17,7 +17,7 @@ import { getUnreadMessageCount } from "@/lib/chat.functions";
 import {
   Heart, MessageCircle, Send, Image, X, Home, Users, Bell,
   Plus, User, Search, Phone, Share2, Loader2, MoreHorizontal, Trash2, Globe, UserPlus, ThumbsUp, Video, Film, Pencil, Lock,
-  Eye, Play,
+  Eye, Play, ArrowLeft,
 } from "lucide-react";
 import { toast } from "sonner";
 import StoryEditor from "@/components/social/StoryEditor";
