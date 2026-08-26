@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import brandLogo from "@/assets/goodapp-logo.png";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -18,6 +19,7 @@ import { usePresence } from "@/lib/presence";
 import {
   Heart, MessageCircle, Send, Image, X, Home, Users, Bell, Menu,
   Plus, User, Search, Phone, Share2, Loader2, MoreHorizontal, Trash2, Globe, UserPlus, ChevronRight, ThumbsUp, Video, Check, ArrowLeft, Film, Pencil, Lock,
+  Eye,
 } from "lucide-react";
 import { toast } from "sonner";
 import StoryEditor from "@/components/social/StoryEditor";
@@ -61,6 +63,14 @@ const NameWithBadge = ({ name, isVerified, className = "" }: { name: string; isV
     {isVerified && <VerifiedBadge className="h-3.5 w-3.5" />}
   </span>
 );
+
+/** সংখ্যা সংক্ষেপে দেখানো (1.2K / 3.4M) */
+function formatCount(n: number): string {
+  const v = Number(n || 0);
+  if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`;
+  if (v >= 1_000) return `${(v / 1_000).toFixed(1).replace(/\.0$/, "")}K`;
+  return String(v);
+}
 
 function FeedPage() {
   const { user, loading: isLoading } = useAuth();
@@ -721,11 +731,19 @@ function FeedPage() {
               </span>
               <span className="text-[13px]">{post.likes_count || 0}</span>
             </div>
-            {post.comments_count > 0 ? (
-              <button onClick={() => openComments(post.id)} className="hover:underline text-[13px]">{post.comments_count} মন্তব্য</button>
-            ) : (
-              <span className="text-[13px]">0 মন্তব্য</span>
-            )}
+            <div className="flex items-center gap-3">
+              {post.video_url && (
+                <span className="flex items-center gap-1 text-[13px]">
+                  <Eye className="w-4 h-4" />
+                  {formatCount(post.views_count || 0)} ভিউ
+                </span>
+              )}
+              {post.comments_count > 0 ? (
+                <button onClick={() => openComments(post.id)} className="hover:underline text-[13px]">{post.comments_count} মন্তব্য</button>
+              ) : (
+                <span className="text-[13px]">0 মন্তব্য</span>
+              )}
+            </div>
           </div>
 
           <div className="px-1 py-1 border-t border-gray-200 dark:border-border/20 grid grid-cols-3 relative select-none" style={{ WebkitUserSelect: "none", userSelect: "none" }}>
@@ -775,7 +793,7 @@ function FeedPage() {
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-background pb-14">
-      <header className="sticky top-0 z-50 shadow-lg" style={{ background: "linear-gradient(135deg, #1877F2, #0d47a1, #1565c0)" }}>
+      <header className="sticky top-0 z-50 shadow-lg" style={{ background: "linear-gradient(135deg, #6d28d9, #8b5cf6, #db2777)" }}>
         <div className="max-w-lg mx-auto px-3 py-2 flex items-center justify-between">
           <div className="flex items-center gap-1">
             <button
@@ -787,6 +805,7 @@ function FeedPage() {
               <ArrowLeft className="w-5 h-5 text-[#1a1a1a]" />
               <span className="text-[11.5px] font-black text-[#1a1a1a] whitespace-nowrap">ড্যাশবোর্ড</span>
             </button>
+            <img src={brandLogo} alt="good-app logo" width={36} height={36} loading="lazy" className="w-8 h-8 rounded-[10px] mr-1 shadow-[0_2px_10px_rgba(0,0,0,0.35)]" />
             <h1 className="text-[24px] font-black text-white tracking-tight" style={{ letterSpacing: "-0.02em" }}>
               <span>good</span>
               <span style={{ color: "#ffd600" }}>-app</span>
