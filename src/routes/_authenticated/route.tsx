@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet, Link, useRouter, useRouterState } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
-import { Home, Wallet, ArrowDownToLine, LogOut, Loader2, RefreshCcw, User, Users, Settings, MoreVertical, PhoneCall, FileText, ShieldCheck, ScrollText, LayoutGrid } from "lucide-react";
+import { Home, Wallet, ArrowDownToLine, ArrowLeft, LogOut, Loader2, RefreshCcw, User, Users, Settings, MoreVertical, PhoneCall, FileText, ShieldCheck, ScrollText, LayoutGrid } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
