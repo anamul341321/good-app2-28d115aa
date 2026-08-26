@@ -102,7 +102,7 @@ function ChannelPage() {
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      <header className="sticky top-0 z-40 flex items-center justify-between border-b border-border/40 bg-background/95 px-3 py-2 backdrop-blur">
+      <header className="sticky top-0 z-40 safe-top flex items-center justify-between border-b border-border/40 bg-background/95 px-3 py-2 backdrop-blur">
         <button
           type="button"
           onClick={goBack}

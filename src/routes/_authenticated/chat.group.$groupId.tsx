@@ -97,7 +97,7 @@ function GroupThreadPage() {
 
   return (
     <div className="flex min-h-[70vh] flex-col pb-6">
-      <div className="glass sticky top-0 z-10 -mx-1 mb-3 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-2xl px-3 py-2.5">
+      <div className="glass sticky top-0 z-10 safe-top -mx-1 mb-3 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-2xl px-3 py-2.5">
         <Link
           to="/chat"
           className="btn-press grid h-10 w-10 place-items-center rounded-xl bg-surface-2"

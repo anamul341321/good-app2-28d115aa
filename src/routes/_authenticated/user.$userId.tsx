@@ -256,7 +256,7 @@ function UserProfilePage() {
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-background pb-8">
-      <header className="sticky top-0 z-50 bg-blue-600 shadow-md">
+      <header className="sticky top-0 z-50 safe-top bg-blue-600 shadow-md">
         <div className="max-w-lg mx-auto px-3 py-2.5 flex items-center gap-3">
           <button onClick={() => navigate({ to: "/feed" })} className="text-white">
             <ArrowLeft size={22} />

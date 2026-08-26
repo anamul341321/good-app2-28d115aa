@@ -19,7 +19,7 @@ export const Route = createFileRoute("/_authenticated/videos")({
 function VideosPage() {
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-50 border-b border-border/40 bg-card/95 backdrop-blur">
+      <header className="sticky top-0 z-50 safe-top border-b border-border/40 bg-card/95 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-lg items-center gap-3 px-3">
           <Link to="/feed" aria-label="ফিডে ফিরুন" className="grid h-9 w-9 place-items-center rounded-full bg-secondary text-foreground">
             <ArrowLeft className="h-5 w-5" />

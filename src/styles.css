@@ -1269,8 +1269,11 @@ input, textarea, select { touch-action: manipulation; }
 /* Status-bar safe top padding — Android WebView often reports 0 inset,
    so we enforce a minimum tappable offset for fixed/sticky headers. */
 @utility safe-top {
-  padding-top: max(env(safe-area-inset-top, 0px), 1.75rem);
+  padding-top: max(env(safe-area-inset-top, 0px), 3rem);
 }
 @utility safe-top-nav {
-  top: calc(max(env(safe-area-inset-top, 0px), 1.75rem) + 52px);
+  top: calc(max(env(safe-area-inset-top, 0px), 3rem) + 60px);
+}
+@utility safe-top-video-search {
+  top: calc(max(env(safe-area-inset-top, 0px), 3rem) + 100px);
 }

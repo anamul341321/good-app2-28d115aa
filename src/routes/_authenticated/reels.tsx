@@ -305,8 +305,7 @@ function ReelsPage() {
           <button
             onClick={handlePickFile}
             disabled={uploading}
-            className="btn-press h-9 px-3 rounded-full flex items-center gap-1.5 text-white font-black text-[12px] shadow-lg"
-            style={{ background: "linear-gradient(135deg,#e11d48,#f97316)" }}
+            className="btn-press h-9 px-3 rounded-full flex items-center gap-1.5 bg-rose text-white font-black text-[12px] shadow-lg"
           >
             {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
             <span>শর্ট আপলোড</span>
@@ -662,7 +661,7 @@ function LocalReel({
         type="button"
         aria-label={muted ? "সাউন্ড চালু করুন" : "সাউন্ড বন্ধ করুন"}
         onClick={toggleMute}
-        className="absolute right-3 top-[calc(max(env(safe-area-inset-top),1.75rem)+3.75rem)] z-40 flex h-10 items-center justify-center gap-1.5 rounded-full bg-black/65 px-3 text-white shadow-lg backdrop-blur"
+        className="absolute right-3 top-[calc(max(env(safe-area-inset-top),3rem)+3.75rem)] z-40 flex h-10 items-center justify-center gap-1.5 rounded-full bg-black/65 px-3 text-white shadow-lg backdrop-blur"
       >
         {muted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
         <span className="text-[11px] font-black">{muted ? "Unmute" : "Mute"}</span>
@@ -856,7 +855,7 @@ function ExternalReel({
         type="button"
         aria-label={muted ? "সাউন্ড চালু করুন" : "সাউন্ড বন্ধ করুন"}
         onClick={toggleMute}
-        className="absolute right-3 top-[calc(max(env(safe-area-inset-top),1.75rem)+3.75rem)] z-40 flex h-10 items-center justify-center gap-1.5 rounded-full bg-black/65 px-3 text-white shadow-lg backdrop-blur"
+        className="absolute right-3 top-[calc(max(env(safe-area-inset-top),3rem)+3.75rem)] z-40 flex h-10 items-center justify-center gap-1.5 rounded-full bg-black/65 px-3 text-white shadow-lg backdrop-blur"
       >
         {muted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
         <span className="text-[11px] font-black">{muted ? "Unmute" : "Mute"}</span>

@@ -207,7 +207,7 @@ export default function StoryViewer({ story, allStories, userId, onClose, onDele
 
   return (
     <div className="fixed inset-0 z-[200] bg-black flex flex-col animate-in fade-in duration-200">
-      <div className="absolute top-0 left-0 right-0 z-30 flex gap-1 px-2 pt-2">
+      <div className="absolute top-0 left-0 right-0 z-30 flex gap-1 px-2 safe-top">
         {stories.map((_, i) => (
           <div key={i} className="flex-1 h-[3px] rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.3)" }}>
             <div className="h-full rounded-full transition-none" style={{
@@ -218,7 +218,7 @@ export default function StoryViewer({ story, allStories, userId, onClose, onDele
         ))}
       </div>
 
-      <div className="p-4 pt-6 flex items-center gap-3 relative z-20">
+      <div className="px-4 pb-4 safe-top flex items-center gap-3 relative z-20">
         <button onClick={(e) => { e.stopPropagation(); onProfile(currentStory.user_id); }}
           className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center overflow-hidden">
           {currentStory.user?.avatar_url ? <StoryAvatarImg path={currentStory.user.avatar_url} /> :
