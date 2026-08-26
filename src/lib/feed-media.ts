@@ -98,6 +98,7 @@ export async function resolveFeedMedia(pathOrUrl: string): Promise<string> {
             url: data.signedUrl,
             expiresAt: Date.now() + (SIGNED_URL_TTL_SECONDS - 60) * 1000,
           });
+          persistSoon();
           return data.signedUrl;
         }
         if (attempt === 0) {
@@ -120,9 +121,7 @@ export async function resolveFeedMedia(pathOrUrl: string): Promise<string> {
 import { useEffect, useState } from "react";
 
 export function useFeedMedia(pathOrUrl?: string | null): string | undefined {
-  const [resolved, setResolved] = useState<string | undefined>(
-    pathOrUrl && isHttpUrl(pathOrUrl) ? pathOrUrl : undefined,
-  );
+  const [resolved, setResolved] = useState<string | undefined>(() => peekFeedMedia(pathOrUrl));
 
   useEffect(() => {
     let cancelled = false;
@@ -134,7 +133,8 @@ export function useFeedMedia(pathOrUrl?: string | null): string | undefined {
       setResolved(pathOrUrl);
       return;
     }
-    setResolved(undefined);
+    const known = peekFeedMedia(pathOrUrl);
+    setResolved(known);
     resolveFeedMedia(pathOrUrl)
       .then((url) => {
         if (!cancelled) setResolved(url);
