@@ -683,7 +683,7 @@ function LocalReel({
           : "relative h-full w-full"
       }
     >
-      {videoUrl && !mediaFailed ? (
+      {videoUrl && !mediaFailed && isNear ? (
         <video
           key={mediaKey}
           ref={videoRef}
@@ -692,7 +692,8 @@ function LocalReel({
           loop
           playsInline
           muted={muted}
-          preload="metadata"
+          poster={posterUrl}
+          preload="auto"
           onLoadedData={() => setMediaFailed(false)}
           onError={() => setMediaFailed(true)}
         />
