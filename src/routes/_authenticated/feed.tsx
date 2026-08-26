@@ -941,7 +941,10 @@ function FeedPage() {
             </div>
           )}
 
+          {!showSearch && <PeopleYouMayKnow />}
+
           <div className="max-w-lg mx-auto">
+
             {postsLoading ? (
               <div className="flex justify-center py-20">
                 <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
