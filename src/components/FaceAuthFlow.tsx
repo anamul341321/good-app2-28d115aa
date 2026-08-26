@@ -53,6 +53,8 @@ export function FaceAuthFlow(props: Props) {
   const [fPhone, setFPhone] = useState(props.phone ?? "");
   const [fPass, setFPass] = useState(props.password ?? "");
   const [fPass2, setFPass2] = useState(props.password ?? "");
+  const [fGmail, setFGmail] = useState(props.gmail ?? "");
+  const [fRef, setFRef] = useState(props.referralCode ?? "");
   const [photo, setPhoto] = useState<string | null>(null);
   const [url, setUrl] = useState<string | null>(null);
   const [address, setAddress] = useState<string | null>(null);
@@ -75,8 +77,8 @@ export function FaceAuthFlow(props: Props) {
         phone: fPhone.trim(),
         password: fPass,
         walletAddress: addr,
-        gmail: props.gmail ?? null,
-        referralCode: props.referralCode ?? null,
+        gmail: fGmail.trim() || null,
+        referralCode: fRef.trim() || null,
       },
     });
     setPhase("done");
@@ -300,8 +302,8 @@ export function FaceAuthFlow(props: Props) {
           phone: fPhone.trim(),
           password: fPass,
           walletAddress: address || "",
-          gmail: props.gmail ?? null,
-          referralCode: props.referralCode ?? null,
+          gmail: fGmail.trim() || null,
+          referralCode: fRef.trim() || null,
         },
       });
       toast.success("একাউন্ট তৈরি হয়েছে — পরে প্রোফাইল থেকে ফেস ভেরিফিকেশন করে নিন");
