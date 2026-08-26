@@ -498,11 +498,16 @@ function UserProfilePage() {
                   >
                     <div className="relative flex-1">
                       <button
-                        onClick={() => reactionMutation.mutate({ postId: post.id, type: myReaction || "like" })}
-                        onContextMenu={(e) => { e.preventDefault(); setShowReactionPicker(showReactionPicker === post.id ? null : post.id); }}
+                        onClick={() => {
+                          if (longPressFiredRef.current) { longPressFiredRef.current = false; return; }
+                          reactionMutation.mutate({ postId: post.id, type: myReaction || "like" });
+                        }}
+                        onContextMenu={(e) => { e.preventDefault(); longPressFiredRef.current = true; setShowReactionPicker(post.id); }}
                         onTouchStart={() => {
+                          longPressFiredRef.current = false;
                           const timer = setTimeout(() => {
-                            setShowReactionPicker(showReactionPicker === post.id ? null : post.id);
+                            longPressFiredRef.current = true;
+                            setShowReactionPicker(post.id);
                             if (navigator.vibrate) navigator.vibrate(15);
                           }, 400);
                           const cleanup = () => {
