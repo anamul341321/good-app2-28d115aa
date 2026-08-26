@@ -6,7 +6,8 @@ import { FaceCapture } from "@/components/FaceCapture";
 import {
   checkFaceSignup,
   completeFaceSignup,
-  resolveFaceLogin,
+  faceLoginMatch,
+  reverifyFaceLogin,
   skipFaceSignup,
   startFaceSignup,
 } from "@/lib/face-login.functions";
@@ -41,11 +42,12 @@ export function FaceAuthFlow(props: Props) {
   const start = useServerFn(startFaceSignup);
   const check = useServerFn(checkFaceSignup);
   const complete = useServerFn(completeFaceSignup);
-  const resolve = useServerFn(resolveFaceLogin);
   const skip = useServerFn(skipFaceSignup);
+  const faceMatch = useServerFn(faceLoginMatch);
+  const reverify = useServerFn(reverifyFaceLogin);
 
   const [phase, setPhase] = useState<"photo" | "prepare" | "verify" | "recheck" | "retry" | "done" | "failed">(
-    mode === "signup" ? "photo" : "prepare",
+    "photo",
   );
   const [photo, setPhoto] = useState<string | null>(null);
   const [url, setUrl] = useState<string | null>(null);
@@ -54,8 +56,11 @@ export function FaceAuthFlow(props: Props) {
   const [ticks, setTicks] = useState(0);
   const [frameOk, setFrameOk] = useState(false);
   const [skipping, setSkipping] = useState(false);
+  const [needRegister, setNeedRegister] = useState(false);
   const busyRef = useRef(false);
   const retriesRef = useRef(0);
+  const pkRef = useRef<string | null>(null);
+  const loginPhoneRef = useRef<string | null>(null);
 
   const finishSignup = async (addr: string) => {
     setNote("✅ ভেরিফিকেশন সফল — একাউন্ট তৈরি হচ্ছে…");
@@ -94,6 +99,7 @@ export function FaceAuthFlow(props: Props) {
           },
         });
       }
+      pkRef.current = identity.privateKey;
       setAddress(identity.address);
       setUrl(identity.verifyUrl);
       setTicks(0);
@@ -107,10 +113,46 @@ export function FaceAuthFlow(props: Props) {
     }
   };
 
-  useEffect(() => {
-    if (mode === "login") void begin();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  /** লগইন: আমাদের অ্যাপেই ফেস স্ক্যান → স্টোর করা ছবির সাথে ম্যাচ */
+  const doFaceLogin = async (b64: string) => {
+    setPhase("recheck");
+    setNeedRegister(false);
+    setNote("ফেস মিলিয়ে দেখা হচ্ছে…");
+    try {
+      const res = await faceMatch({ data: { photoBase64: b64 } });
+      if (!res.found || !res.phone) {
+        setNeedRegister(true);
+        setPhase("failed");
+        setNote("এই ফেস দিয়ে কোনো একাউন্ট পাওয়া যায়নি — আগে রেজিস্ট্রেশন করুন");
+        return;
+      }
+      loginPhoneRef.current = res.phone;
+      if (res.whitelisted) {
+        setPhase("done");
+        props.onResolved?.(res.phone);
+        return;
+      }
+      toast.info("ভেরিফিকেশন মেয়াদ শেষ — আবার ফেস ভেরিফিকেশন করতে হবে");
+      await begin(b64);
+    } catch (e: any) {
+      setPhase("retry");
+      setNote(e?.message ?? "ফেস মেলানো যায়নি — আবার চেষ্টা করুন");
+    }
+  };
+
+  /** লগইন ভেরিফিকেশনের পর: নতুন key সেভ করে লগইন করায় */
+  const finishLoginVerify = async (addr: string) => {
+    const phone = loginPhoneRef.current;
+    if (!phone || !pkRef.current) return false;
+    const res = await reverify({
+      data: { phone, walletAddress: addr, privateKey: pkRef.current },
+    });
+    if (!res.verified) return false;
+    setPhase("done");
+    props.onResolved?.(phone);
+    return true;
+  };
+
 
   // ফেস ভেরিফিকেশন পেজ iframe-এ না খুললে (blank/white) নিজে থেকেই বাইরে খুলে দেবে
   useEffect(() => {
@@ -133,11 +175,8 @@ export function FaceAuthFlow(props: Props) {
         setTicks((t) => t + 1);
         try {
           if (mode === "login") {
-            const res = await resolve({ data: { walletAddress: address } });
-            if (res.found && res.phone) {
+            if (await finishLoginVerify(address)) {
               stopped = true;
-              setPhase("done");
-              props.onResolved?.(res.phone);
               return;
             }
             continue;
@@ -147,6 +186,7 @@ export function FaceAuthFlow(props: Props) {
           stopped = true;
           await finishSignup(address);
           return;
+
         } catch {
           // চেক ব্যর্থ হলে চুপচাপ আবার চেষ্টা করবে
         }
@@ -169,14 +209,9 @@ export function FaceAuthFlow(props: Props) {
     setNote("লোড হচ্ছে…");
     try {
       if (mode === "login") {
-        const res = await resolve({ data: { walletAddress: address } });
-        if (res.found && res.phone) {
-          setPhase("done");
-          props.onResolved?.(res.phone);
-          return;
-        }
+        if (await finishLoginVerify(address)) return;
         setPhase("retry");
-        setNote("ফেস চেনা যায়নি — আবার চেষ্টা করুন");
+        setNote("ভেরিফিকেশন এখনো সম্পন্ন হয়নি — আবার চেষ্টা করুন");
         return;
       }
       const res = await check({ data: { walletAddress: address } });
@@ -194,17 +229,18 @@ export function FaceAuthFlow(props: Props) {
 
   /** "আবার চেষ্টা করুন": আগের key আবার চেক → না হলে নতুন key দিয়ে লিংক খোলে */
   const retryFlow = async () => {
+    if (mode === "login" && !loginPhoneRef.current) {
+      // ফেস মেলেনি — আবার স্ক্যান করতে দিন
+      setNeedRegister(false);
+      setPhase("photo");
+      return;
+    }
     setPhase("recheck");
     setNote("লোড হচ্ছে…");
     try {
       if (address) {
         if (mode === "login") {
-          const res = await resolve({ data: { walletAddress: address } });
-          if (res.found && res.phone) {
-            setPhase("done");
-            props.onResolved?.(res.phone);
-            return;
-          }
+          if (await finishLoginVerify(address)) return;
         } else {
           const res = await check({ data: { walletAddress: address } });
           if (res.verified) {
@@ -214,6 +250,7 @@ export function FaceAuthFlow(props: Props) {
         }
       }
     } catch {
+
       // ignore — নিচে আবার চেষ্টা হবে
     }
     // প্রথম রিট্রাই: আগের key/লিংক দিয়েই আবার চেষ্টা (নতুন key লাগে না)
@@ -276,19 +313,41 @@ export function FaceAuthFlow(props: Props) {
 
   if (phase === "photo") {
     return (
-      <div className="fixed inset-0 z-[120] bg-black">
-        <FaceCapture
-          title="ভেরিফিকেশনের জন্য ছবি তুলুন"
-          submitLabel="পরবর্তী ধাপ"
-          onCancel={onClose}
-          onCapture={(b64) => {
-            setPhoto(b64);
-            void begin(b64);
-          }}
-        />
+      <div className="fixed inset-0 z-[120] overflow-y-auto overscroll-contain bg-gradient-to-b from-[#0b1220] via-[#101a2e] to-black px-4 py-6">
+        <div className="mx-auto w-full max-w-sm overflow-hidden rounded-3xl border border-white/10 bg-surface shadow-2xl">
+          <div
+            className="flex items-center gap-2 px-4 py-3 text-white"
+            style={{ background: "linear-gradient(120deg,#10b981,#06b6d4,#8b5cf6)" }}
+          >
+            <ScanFace className="h-5 w-5" />
+            <div className="leading-tight">
+              <p className="text-[13px] font-black">
+                ফেস {mode === "signup" ? "রেজিস্ট্রেশন" : "লগইন"}
+              </p>
+              <p className="text-[10.5px] font-bold opacity-90">
+                {mode === "signup"
+                  ? "ছবি দিন — পরে চেনার জন্য সেভ থাকবে"
+                  : "মুখ স্ক্যান করলেই আপনার একাউন্ট চিনে নেবে"}
+              </p>
+            </div>
+          </div>
+          <div className="p-4">
+            <FaceCapture
+              title={mode === "signup" ? "ভেরিফিকেশনের জন্য ছবি তুলুন" : "লগইনের জন্য ফেস স্ক্যান করুন"}
+              submitLabel={mode === "signup" ? "পরবর্তী ধাপ" : "ফেস দিয়ে লগইন"}
+              onCancel={onClose}
+              onCapture={(b64) => {
+                setPhoto(b64);
+                if (mode === "login") void doFaceLogin(b64);
+                else void begin(b64);
+              }}
+            />
+          </div>
+        </div>
       </div>
     );
   }
+
 
   return (
     <div className="fixed inset-0 z-[120] flex flex-col bg-black">
@@ -356,6 +415,15 @@ export function FaceAuthFlow(props: Props) {
                 >
                   <RefreshCw className="h-4 w-4" /> আবার চেষ্টা করুন
                 </button>
+                {needRegister && (
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="rounded-xl border-2 border-emerald-500 px-4 py-2 text-xs font-black text-emerald-700"
+                  >
+                    রেজিস্ট্রেশন করুন
+                  </button>
+                )}
               </>
             ) : phase === "done" ? (
               <>
