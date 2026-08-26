@@ -21,6 +21,7 @@ public class MediaPlaybackService extends Service {
     public static final String ACTION_STOP = "com.goodapp.mobile.MEDIA_STOP";
     public static final String ACTION_PLAY_URL = "com.goodapp.mobile.MEDIA_PLAY_URL";
     public static final String ACTION_PREPARE_URL = "com.goodapp.mobile.MEDIA_PREPARE_URL";
+    public static final String ACTION_TOGGLE = "com.goodapp.mobile.MEDIA_TOGGLE";
     private static final String CHANNEL = "goodapp_media_playback";
     private static final int NOTIFICATION_ID = 7312;
     private MediaPlayer player;
@@ -29,6 +30,8 @@ public class MediaPlaybackService extends Service {
     private boolean prepared;
     private boolean playWhenPrepared;
     private int requestedPositionMs;
+    private String currentTitle = "Good-App audio";
+    private String currentArtist = "Playing in background";
     private final AudioManager.OnAudioFocusChangeListener audioFocusListener = focusChange -> {
         if (player == null) return;
         if (focusChange == AudioManager.AUDIOFOCUS_LOSS) {
@@ -52,12 +55,16 @@ public class MediaPlaybackService extends Service {
             return START_NOT_STICKY;
         }
 
+        if (intent != null && ACTION_TOGGLE.equals(intent.getAction())) {
+            togglePlayback();
+            return START_STICKY;
+        }
+
         String title = intent == null ? null : intent.getStringExtra("title");
         String artist = intent == null ? null : intent.getStringExtra("artist");
-        startForegroundNotification(
-            title == null || title.trim().isEmpty() ? "Good-App audio" : title,
-            artist == null || artist.trim().isEmpty() ? "Playing in background" : artist
-        );
+        currentTitle = title == null || title.trim().isEmpty() ? currentTitle : title;
+        currentArtist = artist == null || artist.trim().isEmpty() ? currentArtist : artist;
+        startForegroundNotification(currentTitle, currentArtist);
         if (intent != null && ACTION_PREPARE_URL.equals(intent.getAction())) {
             prepareUrl(intent.getStringExtra("url"));
         } else if (intent != null && ACTION_PLAY_URL.equals(intent.getAction())) {
@@ -132,9 +139,19 @@ public class MediaPlaybackService extends Service {
         try {
             if (requestedPositionMs > 0) player.seekTo(requestedPositionMs);
             player.start();
+            startForegroundNotification(currentTitle, currentArtist);
         } catch (Exception ignored) {
             releasePlayer();
         }
+    }
+
+    private void togglePlayback() {
+        if (player == null || !prepared) return;
+        try {
+            if (player.isPlaying()) player.pause();
+            else player.start();
+            startForegroundNotification(currentTitle, currentArtist);
+        } catch (Exception ignored) {}
     }
 
     private void releasePlayer() {
@@ -178,6 +195,24 @@ public class MediaPlaybackService extends Service {
             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
 
+        Intent toggleIntent = new Intent(this, MediaPlaybackService.class);
+        toggleIntent.setAction(ACTION_TOGGLE);
+        PendingIntent togglePendingIntent = PendingIntent.getService(
+            this,
+            NOTIFICATION_ID + 1,
+            toggleIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+        Intent stopIntent = new Intent(this, MediaPlaybackService.class);
+        stopIntent.setAction(ACTION_STOP);
+        PendingIntent stopPendingIntent = PendingIntent.getService(
+            this,
+            NOTIFICATION_ID + 2,
+            stopIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+        boolean isPlaying = player != null && prepared && player.isPlaying();
+
         Notification notification = new NotificationCompat.Builder(this, CHANNEL)
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle(title)
@@ -187,6 +222,12 @@ public class MediaPlaybackService extends Service {
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
+            .addAction(
+                isPlaying ? android.R.drawable.ic_media_pause : android.R.drawable.ic_media_play,
+                isPlaying ? "Pause" : "Play",
+                togglePendingIntent
+            )
+            .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Stop", stopPendingIntent)
             .build();
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
