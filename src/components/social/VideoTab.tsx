@@ -702,6 +702,42 @@ function InlinePlayer({
     return () => window.removeEventListener("popstate", onPop);
   }, [onClose, video.id]);
 
+  useEffect(() => {
+    const onFsChange = () => {
+      const active = !!(document.fullscreenElement || (document as any).webkitFullscreenElement);
+      setIsFullscreen(active);
+      if (!active) {
+        try { (screen.orientation as any)?.unlock?.(); } catch { /* ignore */ }
+      }
+    };
+    document.addEventListener("fullscreenchange", onFsChange);
+    document.addEventListener("webkitfullscreenchange", onFsChange as EventListener);
+    return () => {
+      document.removeEventListener("fullscreenchange", onFsChange);
+      document.removeEventListener("webkitfullscreenchange", onFsChange as EventListener);
+    };
+  }, []);
+
+  const toggleFullscreen = useCallback(async () => {
+    const active = !!(document.fullscreenElement || (document as any).webkitFullscreenElement);
+    try {
+      if (active) {
+        if (document.exitFullscreen) await document.exitFullscreen();
+        else (document as any).webkitExitFullscreen?.();
+        return;
+      }
+      setPlayerMode("expanded");
+      const el: any = playerBoxRef.current;
+      const videoEl: any = localVideoRef.current;
+      if (el?.requestFullscreen) await el.requestFullscreen();
+      else if (el?.webkitRequestFullscreen) el.webkitRequestFullscreen();
+      else if (videoEl?.webkitEnterFullscreen) videoEl.webkitEnterFullscreen();
+      try { await (screen.orientation as any)?.lock?.("landscape"); } catch { /* ignore */ }
+    } catch {
+      toast.error("ফুল স্ক্রিন করা যায়নি");
+    }
+  }, []);
+
   const beginCollapseDrag = (event: PointerEvent) => {
     if (playerMode !== "expanded") return;
     dragStartY.current = event.clientY;
