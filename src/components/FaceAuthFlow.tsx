@@ -22,8 +22,8 @@ type Props = {
   gmail?: string | null;
   referralCode?: string | null;
   onClose: () => void;
-  /** signup সফল হলে (nothing to do — parent sign-in করবে) */
-  onSignedUp?: (phone: string) => void;
+  /** signup সফল হলে — parent চাইলে এই পাসওয়ার্ড দিয়েই auto sign-in করতে পারে */
+  onSignedUp?: (phone: string, password?: string) => void;
   /** ভেরিফিকেশন ছাড়াই একাউন্ট তৈরি হলে (পরে প্রোফাইল থেকে করতে হবে) */
   onSkipped?: () => void;
   /** login mode: ফেস চেনা গেলে নম্বর ফেরত */
@@ -84,7 +84,7 @@ export function FaceAuthFlow(props: Props) {
     });
     setPhase("done");
     toast.success("ফেস ভেরিফিকেশন সফল — একাউন্ট তৈরি হয়েছে");
-    props.onSignedUp?.(fPhone.trim());
+    props.onSignedUp?.(fPhone.trim(), fPass);
   };
 
   const begin = async (photoB64?: string | null) => {
