@@ -46,6 +46,14 @@ export function NotificationBell() {
     (n) => !n.read && severityOf(`${n.title ?? ""} ${n.body}`, n.type) === "bad",
   );
 
+  // নতুন নোটিফিকেশন এলে মেসেজ থেকে আলাদা শব্দ বাজবে
+  const lastUnread = useRef<number | null>(null);
+  useEffect(() => {
+    if (lastUnread.current !== null && unread > lastUnread.current) playNotifyTone();
+    lastUnread.current = unread;
+  }, [unread]);
+
+
   return (
     <>
       <button
