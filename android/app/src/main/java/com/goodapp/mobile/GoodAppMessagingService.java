@@ -268,6 +268,7 @@ public class GoodAppMessagingService extends FirebaseMessagingService {
             .setContentTitle(senderName)
             .setContentText(body)
             .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+            .setGroup("goodapp-chat-" + senderId)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
             .setContentIntent(openChat)
@@ -284,6 +285,7 @@ public class GoodAppMessagingService extends FirebaseMessagingService {
 
                 Intent bubbleIntent = new Intent(this, BubbleChatActivity.class);
                 bubbleIntent.setAction(Intent.ACTION_VIEW);
+                bubbleIntent.setData(Uri.parse("goodapp://chat/" + Uri.encode(senderId)));
                 bubbleIntent.putExtra("peer_id", senderId);
                 bubbleIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_DOCUMENT | Intent.FLAG_ACTIVITY_MULTIPLE_TASK);
                 PendingIntent bubblePending = PendingIntent.getActivity(
@@ -299,7 +301,9 @@ public class GoodAppMessagingService extends FirebaseMessagingService {
                         .setShortLabel(senderName)
                         .setIcon(icon)
                         .setLongLived(true)
-                        .setIntent(bubbleIntent)
+                        .setIntent(new Intent(this, MainActivity.class)
+                            .setAction(Intent.ACTION_VIEW)
+                            .setData(Uri.parse("https://www.goodapp2.live/chat/" + Uri.encode(senderId))))
                         .setPerson(person)
                         .setIsConversation()
                         .build();

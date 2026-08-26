@@ -3,7 +3,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Heart, Loader2, Send, ThumbsUp, Users } from "lucide-react";
+import { Heart, Loader2, Maximize2, Minimize2, Send, ThumbsUp, Users } from "lucide-react";
 import { PageBackHeader } from "@/components/PageBackHeader";
 import {
   getUploadedLongVideoByPostId,
@@ -23,6 +23,7 @@ import { attachBackgroundAudio } from "@/lib/background-audio";
 import { MessengerAvatar } from "@/components/messenger/MessengerAvatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { useMediaFullscreen } from "@/hooks/use-media-fullscreen";
 
 export const Route = createFileRoute("/_authenticated/watch/$postId")({
   component: WatchPage,
@@ -60,6 +61,8 @@ function WatchPage() {
   const thumbUrl = useFeedMedia(video?.thumbnail_url || undefined);
   const avatarUrl = useFeedMedia(video?.uploader_avatar_url || undefined);
   const playerRef = useRef<HTMLVideoElement | null>(null);
+  const playerBoxRef = useRef<HTMLDivElement | null>(null);
+  const { isFullscreen, fallbackFullscreen, toggleFullscreen } = useMediaFullscreen(playerBoxRef);
 
   useEffect(() => {
     const el = playerRef.current;
@@ -157,7 +160,12 @@ function WatchPage() {
       <div className="px-4">
         <PageBackHeader fallbackTo="/videos" />
       </div>
-      <div className="sticky top-0 z-20 w-full bg-black">
+      <div
+        ref={playerBoxRef}
+        className={fallbackFullscreen
+          ? "fixed inset-0 z-[999] flex h-[100dvh] w-screen items-center justify-center bg-black"
+          : "sticky top-0 z-20 w-full bg-black"}
+      >
 
         {videoUrl && !mediaFailed ? (
           <video
@@ -170,7 +178,9 @@ function WatchPage() {
             preload="metadata"
             onLoadedData={() => setMediaFailed(false)}
             onError={() => setMediaFailed(true)}
-            className="mx-auto max-h-[60vh] w-full bg-black"
+            className={fallbackFullscreen
+              ? "h-full w-full object-contain bg-black"
+              : "mx-auto aspect-video max-h-[60vh] w-full object-contain bg-black"}
           />
         ) : (
           <div className="flex h-[40vh] w-full items-center justify-center">
@@ -183,6 +193,16 @@ function WatchPage() {
             )}
           </div>
         )}
+        <Button
+          type="button"
+          size="icon"
+          variant="ghost"
+          aria-label={isFullscreen ? "ফুল স্ক্রিন বন্ধ করুন" : "ফুল স্ক্রিন করুন"}
+          onClick={() => void toggleFullscreen()}
+          className="absolute bottom-3 right-3 z-30 text-white hover:bg-black/60 hover:text-white"
+        >
+          {isFullscreen ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
+        </Button>
       </div>
 
       <div className="mx-auto max-w-3xl px-4 py-4">

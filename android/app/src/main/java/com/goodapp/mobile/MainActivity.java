@@ -319,6 +319,33 @@ public class MainActivity extends BridgeActivity {
         }
 
         @JavascriptInterface
+        public boolean areBubblesAllowed() {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return false;
+            try {
+                NotificationManager manager =
+                    (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+                return manager != null && manager.areBubblesAllowed();
+            } catch (Exception ignored) {
+                return false;
+            }
+        }
+
+        @JavascriptInterface
+        public void openBubbleSettings() {
+            runOnUiThread(() -> {
+                try {
+                    Intent settings = new Intent(Settings.ACTION_APP_NOTIFICATION_BUBBLE_SETTINGS);
+                    settings.putExtra(Settings.EXTRA_APP_PACKAGE, getPackageName());
+                    startActivity(settings);
+                } catch (Exception unavailable) {
+                    Intent settings = new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS);
+                    settings.putExtra(Settings.EXTRA_APP_PACKAGE, getPackageName());
+                    startActivity(settings);
+                }
+            });
+        }
+
+        @JavascriptInterface
         public void enterVideoFullscreen() {
             runOnUiThread(() -> {
                 orientationBeforeVideoFullscreen = getRequestedOrientation();

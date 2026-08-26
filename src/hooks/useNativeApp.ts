@@ -82,6 +82,19 @@ export function useNativeApp() {
           perm = await PushNotifications.requestPermissions();
         }
         if (perm.receive === "granted") await PushNotifications.register();
+        const bridge = (window as any).GoodAppDownloader;
+        if (perm.receive === "granted" && bridge?.areBubblesAllowed?.() === false) {
+          window.setTimeout(() => {
+            toast("মেসেঞ্জার বাবল বন্ধ আছে", {
+              description: "ভাসমান মেসেজ পেতে Android সেটিংসে বাবল চালু করুন।",
+              duration: 12_000,
+              action: {
+                label: "চালু করুন",
+                onClick: () => bridge.openBubbleSettings?.(),
+              },
+            });
+          }, 1_500);
+        }
       }),
     ]).catch(() => {
       // Native APIs are best-effort; the web app must keep working regardless.

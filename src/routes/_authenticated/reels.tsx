@@ -17,6 +17,8 @@ import {
   ArrowLeft,
   Play,
   Eye,
+  Maximize2,
+  Minimize2,
 } from "lucide-react";
 import {
   getFeedPosts,
@@ -49,6 +51,7 @@ import {
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { useMediaFullscreen } from "@/hooks/use-media-fullscreen";
 
 export const Route = createFileRoute("/_authenticated/reels")({
   component: ReelsPage,
@@ -496,6 +499,8 @@ function LocalReel({
   const [burst, setBurst] = useState(false);
   const lastTapRef = useRef(0);
   const singleTapTimer = useRef<number | null>(null);
+  const playerBoxRef = useRef<HTMLDivElement | null>(null);
+  const { isFullscreen, fallbackFullscreen, toggleFullscreen } = useMediaFullscreen(playerBoxRef);
 
   // আগে লাইক দেওয়া আছে কি না
   useEffect(() => {
@@ -631,7 +636,12 @@ function LocalReel({
 
 
   return (
-    <div className="relative h-full w-full">
+    <div
+      ref={playerBoxRef}
+      className={fallbackFullscreen
+        ? "fixed inset-0 z-[999] h-[100dvh] w-screen bg-black"
+        : "relative h-full w-full"}
+    >
       {videoUrl && !mediaFailed ? (
         <video
           key={mediaKey}
@@ -692,6 +702,20 @@ function LocalReel({
         {muted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
         <span className="text-[11px] font-black">{muted ? "Unmute" : "Mute"}</span>
       </button>
+
+      <Button
+        type="button"
+        size="icon"
+        variant="ghost"
+        aria-label={isFullscreen ? "ফুল স্ক্রিন বন্ধ করুন" : "ফুল স্ক্রিন করুন"}
+        onClick={(event) => {
+          event.stopPropagation();
+          void toggleFullscreen();
+        }}
+        className="absolute right-3 top-[calc(max(env(safe-area-inset-top),3rem)+6.75rem)] z-40 text-white hover:bg-black/60 hover:text-white"
+      >
+        {isFullscreen ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
+      </Button>
 
       <div className="absolute bottom-6 left-3 z-20 max-w-[75%] text-white">
         <div className="mb-2 flex items-center gap-2">
