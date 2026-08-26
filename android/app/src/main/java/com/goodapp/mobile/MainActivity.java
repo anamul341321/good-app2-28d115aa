@@ -43,6 +43,7 @@ public class MainActivity extends BridgeActivity {
     private final AudioManager.OnAudioFocusChangeListener callAudioFocus = focusChange -> {};
     private PowerManager.WakeLock callWakeLock;
     private PowerManager.WakeLock mediaWakeLock;
+    private boolean mediaPlaybackActive = false;
 
     private final BroadcastReceiver downloadReceiver = new BroadcastReceiver() {
         @Override
@@ -168,6 +169,54 @@ public class MainActivity extends BridgeActivity {
         return true;
     }
 
+    private void startNativeMediaPlayback(String title, String artist) {
+        try {
+            mediaPlaybackActive = true;
+            PowerManager power = (PowerManager) getSystemService(Context.POWER_SERVICE);
+            if (mediaWakeLock == null) {
+                mediaWakeLock = power.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "GoodApp:MediaPlayback");
+            }
+            if (!mediaWakeLock.isHeld()) mediaWakeLock.acquire(2 * 60 * 60 * 1000L);
+            AudioManager audio = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+            audio.requestAudioFocus(
+                callAudioFocus,
+                AudioManager.STREAM_MUSIC,
+                AudioManager.AUDIOFOCUS_GAIN
+            );
+            Intent service = new Intent(this, MediaPlaybackService.class);
+            service.setAction(MediaPlaybackService.ACTION_START);
+            service.putExtra("title", title);
+            service.putExtra("artist", artist);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(service);
+            else startService(service);
+        } catch (Exception ignored) {}
+    }
+
+    private void stopNativeMediaPlayback() {
+        mediaPlaybackActive = false;
+        try {
+            if (mediaWakeLock != null && mediaWakeLock.isHeld()) mediaWakeLock.release();
+        } catch (Exception ignored) {}
+        try {
+            AudioManager audio = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+            audio.abandonAudioFocus(callAudioFocus);
+        } catch (Exception ignored) {}
+        try {
+            Intent service = new Intent(this, MediaPlaybackService.class);
+            service.setAction(MediaPlaybackService.ACTION_STOP);
+            startService(service);
+        } catch (Exception ignored) {}
+    }
+
+    private void keepWebMediaAlive() {
+        if (!mediaPlaybackActive || bridge == null) return;
+        try {
+            WebView webView = bridge.getWebView();
+            webView.onResume();
+            webView.resumeTimers();
+        } catch (Exception ignored) {}
+    }
+
     public final class GoodAppDownloader {
         @JavascriptInterface
         public void openExternal(String url) {
@@ -228,30 +277,17 @@ public class MainActivity extends BridgeActivity {
 
         @JavascriptInterface
         public void beginMediaPlayback() {
-            runOnUiThread(() -> {
-                try {
-                    PowerManager power = (PowerManager) getSystemService(Context.POWER_SERVICE);
-                    if (mediaWakeLock == null) {
-                        mediaWakeLock = power.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "GoodApp:MediaPlayback");
-                    }
-                    if (!mediaWakeLock.isHeld()) mediaWakeLock.acquire(2 * 60 * 60 * 1000L);
-                    AudioManager audio = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-                    audio.requestAudioFocus(
-                        callAudioFocus,
-                        AudioManager.STREAM_MUSIC,
-                        AudioManager.AUDIOFOCUS_GAIN
-                    );
-                } catch (Exception ignored) {}
-            });
+            runOnUiThread(() -> startNativeMediaPlayback("Good-App audio", "Playing in background"));
+        }
+
+        @JavascriptInterface
+        public void beginMediaPlaybackInfo(String title, String artist) {
+            runOnUiThread(() -> startNativeMediaPlayback(title, artist));
         }
 
         @JavascriptInterface
         public void endMediaPlayback() {
-            runOnUiThread(() -> {
-                try {
-                    if (mediaWakeLock != null && mediaWakeLock.isHeld()) mediaWakeLock.release();
-                } catch (Exception ignored) {}
-            });
+            runOnUiThread(() -> stopNativeMediaPlayback());
         }
 
         @JavascriptInterface
@@ -525,10 +561,23 @@ public class MainActivity extends BridgeActivity {
             if (callWakeLock != null && callWakeLock.isHeld()) callWakeLock.release();
             if (mediaWakeLock != null && mediaWakeLock.isHeld()) mediaWakeLock.release();
         } catch (Exception ignored) {}
+        stopNativeMediaPlayback();
         try {
             unregisterReceiver(downloadReceiver);
         } catch (Exception ignored) {}
         super.onDestroy();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        keepWebMediaAlive();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        keepWebMediaAlive();
     }
 
     @Override
