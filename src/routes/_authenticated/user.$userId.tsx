@@ -542,6 +542,94 @@ function UserProfilePage() {
         )}
       </div>
 
+      {commentingPost && (
+        <div className="fixed inset-0 z-[90] flex flex-col bg-white dark:bg-background">
+          <div className="safe-top flex items-center gap-3 border-b border-gray-200 px-3 py-2.5 dark:border-border/40">
+            <button onClick={() => setCommentingPostId(null)} className="text-gray-700 dark:text-foreground">
+              <ArrowLeft size={22} />
+            </button>
+            <h2 className="text-[17px] font-bold text-gray-900 dark:text-foreground">মন্তব্যসমূহ</h2>
+          </div>
+
+          <div className="flex-1 overflow-y-auto">
+            <div className="border-b border-gray-200 pb-2 dark:border-border/30">
+              <div className="flex items-center gap-2.5 px-3 pt-3 pb-1.5">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gray-200 dark:bg-primary/20">
+                  <Avatar path={commentingPost.user?.avatar_url} className="h-full w-full object-cover" fallback={commentingPost.user?.display_name?.[0]?.toUpperCase() || "?"} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[14px] font-bold text-gray-900 dark:text-foreground">{commentingPost.user?.display_name || "User"}</p>
+                  <span className="text-[11px] text-gray-500 dark:text-muted-foreground">{timeAgo(commentingPost.created_at)}</span>
+                </div>
+              </div>
+              {commentingPost.content && (
+                <p className="whitespace-pre-wrap px-3 pb-2 text-[15px] leading-relaxed text-gray-900 dark:text-foreground">{commentingPost.content}</p>
+              )}
+              {commentingPost.image_url && (() => {
+                const urls = commentingPost.image_url!.split(",").map((u) => u.trim()).filter(Boolean);
+                return (
+                  <div className={urls.length === 1 ? "" : "grid grid-cols-2 gap-0.5"}>
+                    {urls.map((u, i) => (
+                      <PostImage key={i} path={u} className="max-h-[320px] w-full object-cover" onClick={() => setViewingImage(u)} />
+                    ))}
+                  </div>
+                );
+              })()}
+              {commentingPost.video_url && (
+                <div className="bg-black">
+                  <PostVideo path={commentingPost.video_url} className="max-h-[320px] w-full object-contain" />
+                </div>
+              )}
+              <div className="flex items-center gap-3 px-3 pt-2 text-[13px] text-gray-500 dark:text-muted-foreground">
+                <span>{commentingPost.likes_count || 0} লাইক</span>
+                <span>{commentingPost.comments_count || 0} মন্তব্য</span>
+              </div>
+            </div>
+
+            <div className="space-y-3 px-3 py-3">
+              {loadingComments ? (
+                <div className="flex justify-center py-6">
+                  <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+                </div>
+              ) : comments.length === 0 ? (
+                <p className="py-6 text-center text-[13px] text-gray-500">এখনো কোনো মন্তব্য নেই</p>
+              ) : (
+                comments.map((c) => (
+                  <div key={c.id} className="flex items-start gap-2">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gray-200 dark:bg-primary/15">
+                      <Avatar path={c.user?.avatar_url} className="h-full w-full object-cover" fallback={c.user?.display_name?.[0]?.toUpperCase() || "?"} />
+                    </div>
+                    <div className="flex-1 rounded-2xl bg-gray-100 px-3 py-2 dark:bg-secondary">
+                      <p className="text-[13px] font-bold text-gray-900 dark:text-foreground">{c.user?.display_name || "User"}</p>
+                      <p className="text-[14px] text-gray-800 dark:text-foreground">{c.content}</p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 border-t border-gray-200 px-3 py-2.5 pb-[calc(0.625rem+env(safe-area-inset-bottom))] dark:border-border/40">
+            <input
+              value={commentText}
+              onChange={(e) => setCommentText(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter" && commentText.trim()) commentMutation.mutate(); }}
+              placeholder="মন্তব্য লিখুন..."
+              autoFocus
+              className="flex-1 rounded-full bg-gray-100 px-4 py-2.5 text-[14px] text-gray-900 outline-none dark:bg-secondary dark:text-foreground"
+            />
+            <button
+              onClick={() => commentText.trim() && commentMutation.mutate()}
+              disabled={!commentText.trim() || commentMutation.isPending}
+              className="text-[14px] font-bold text-blue-600 disabled:opacity-40"
+            >
+              পাঠান
+            </button>
+          </div>
+        </div>
+      )}
+
+
       <AnimatePresence>
         {viewingImage && (
           <motion.div
