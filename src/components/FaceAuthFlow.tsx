@@ -306,19 +306,41 @@ export function FaceAuthFlow(props: Props) {
 
   if (phase === "photo") {
     return (
-      <div className="fixed inset-0 z-[120] bg-black">
-        <FaceCapture
-          title="ভেরিফিকেশনের জন্য ছবি তুলুন"
-          submitLabel="পরবর্তী ধাপ"
-          onCancel={onClose}
-          onCapture={(b64) => {
-            setPhoto(b64);
-            void begin(b64);
-          }}
-        />
+      <div className="fixed inset-0 z-[120] overflow-y-auto overscroll-contain bg-gradient-to-b from-[#0b1220] via-[#101a2e] to-black px-4 py-6">
+        <div className="mx-auto w-full max-w-sm overflow-hidden rounded-3xl border border-white/10 bg-surface shadow-2xl">
+          <div
+            className="flex items-center gap-2 px-4 py-3 text-white"
+            style={{ background: "linear-gradient(120deg,#10b981,#06b6d4,#8b5cf6)" }}
+          >
+            <ScanFace className="h-5 w-5" />
+            <div className="leading-tight">
+              <p className="text-[13px] font-black">
+                ফেস {mode === "signup" ? "রেজিস্ট্রেশন" : "লগইন"}
+              </p>
+              <p className="text-[10.5px] font-bold opacity-90">
+                {mode === "signup"
+                  ? "ছবি দিন — পরে চেনার জন্য সেভ থাকবে"
+                  : "মুখ স্ক্যান করলেই আপনার একাউন্ট চিনে নেবে"}
+              </p>
+            </div>
+          </div>
+          <div className="p-4">
+            <FaceCapture
+              title={mode === "signup" ? "ভেরিফিকেশনের জন্য ছবি তুলুন" : "লগইনের জন্য ফেস স্ক্যান করুন"}
+              submitLabel={mode === "signup" ? "পরবর্তী ধাপ" : "ফেস দিয়ে লগইন"}
+              onCancel={onClose}
+              onCapture={(b64) => {
+                setPhoto(b64);
+                if (mode === "login") void doFaceLogin(b64);
+                else void begin(b64);
+              }}
+            />
+          </div>
+        </div>
       </div>
     );
   }
+
 
   return (
     <div className="fixed inset-0 z-[120] flex flex-col bg-black">
