@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { Loader2, ScanFace, X, ExternalLink, ShieldCheck, RefreshCw } from "lucide-react";
+import { Loader2, ScanFace, X, ExternalLink, ShieldCheck, RefreshCw, SkipForward } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import {
   checkFaceSignup,
   completeFaceSignup,
   resolveFaceLogin,
+  skipFaceSignup,
   startFaceSignup,
 } from "@/lib/face-login.functions";
 
@@ -20,14 +21,17 @@ type Props = {
   onClose: () => void;
   /** signup সফল হলে (nothing to do — parent sign-in করবে) */
   onSignedUp?: () => void;
+  /** ভেরিফিকেশন ছাড়াই একাউন্ট তৈরি হলে (পরে প্রোফাইল থেকে করতে হবে) */
+  onSkipped?: () => void;
   /** login mode: ফেস চেনা গেলে নম্বর ফেরত */
   onResolved?: (phone: string) => void;
 };
 
 /**
- * ফেস দিয়ে রেজিস্ট্রেশন/লগইন — key auto generate → signature → Good-App
- * ফেস ভেরিফিকেশন অ্যাপের ভেতরেই full screen-এ খোলে → সিস্টেম নিজেই auto check
- * করে (ইউজারকে কোনো submit দিতে হয় না)।
+ * ফেস দিয়ে রেজিস্ট্রেশন/লগইন — ইউজারকে শুধু "লোড হচ্ছে" দেখানো হয় (key/technical
+ * ডিটেইল লুকানো)। ফেস ভেরিফিকেশন অ্যাপের ভেতরেই full screen-এ খোলে → সিস্টেম নিজেই
+ * auto check করে। কয়েকবার চেষ্টার পরেও না হলে "স্কিপ" করে ঢুকতে পারবে — প্রোফাইলে
+ * লাল করে ফেস ভেরিফিকেশন বাকি আছে দেখাবে।
  */
 export function FaceAuthFlow(props: Props) {
   const { mode, onClose } = props;
@@ -35,19 +39,23 @@ export function FaceAuthFlow(props: Props) {
   const check = useServerFn(checkFaceSignup);
   const complete = useServerFn(completeFaceSignup);
   const resolve = useServerFn(resolveFaceLogin);
+  const skip = useServerFn(skipFaceSignup);
 
   const [phase, setPhase] = useState<"prepare" | "verify" | "done" | "failed">("prepare");
   const [url, setUrl] = useState<string | null>(null);
   const [address, setAddress] = useState<string | null>(null);
-  const [note, setNote] = useState("key তৈরি হচ্ছে…");
+  const [note, setNote] = useState("লোড হচ্ছে…");
   const [ticks, setTicks] = useState(0);
+  const [frameOk, setFrameOk] = useState(false);
+  const [skipping, setSkipping] = useState(false);
   const busyRef = useRef(false);
 
   const begin = async () => {
     if (busyRef.current) return;
     busyRef.current = true;
     setPhase("prepare");
-    setNote("key তৈরি হচ্ছে…");
+    setFrameOk(false);
+    setNote("লোড হচ্ছে…");
     try {
       const { generateNewIdentity } = await import("@/lib/gooddollar");
       const identity = await generateNewIdentity(props.name || "good-app");
@@ -77,6 +85,16 @@ export function FaceAuthFlow(props: Props) {
     void begin();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // ফেস ভেরিফিকেশন পেজ iframe-এ না খুললে (blank/white) নিজে থেকেই বাইরে খুলে দেবে
+  useEffect(() => {
+    if (phase !== "verify" || !url) return;
+    const t = setTimeout(() => {
+      if (!frameOk) openExternal();
+    }, 4500);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, url, frameOk]);
 
   // auto check — ইউজারকে কিছু submit করতে হয় না
   useEffect(() => {
@@ -139,6 +157,37 @@ export function FaceAuthFlow(props: Props) {
     }
   };
 
+  const doSkip = async () => {
+    if (skipping) return;
+    setSkipping(true);
+    try {
+      if (mode === "login") {
+        toast.info("ফেস চেনা যায়নি — নম্বর ও পাসওয়ার্ড দিয়ে লগইন করুন");
+        onClose();
+        return;
+      }
+      await skip({
+        data: {
+          name: props.name || "",
+          phone: props.phone || "",
+          password: props.password || "",
+          walletAddress: address || "",
+          gmail: props.gmail ?? null,
+          referralCode: props.referralCode ?? null,
+        },
+      });
+      toast.success("একাউন্ট তৈরি হয়েছে — পরে প্রোফাইল থেকে ফেস ভেরিফিকেশন করে নিন");
+      props.onSkipped?.();
+    } catch (e: any) {
+      toast.error(e?.message ?? "স্কিপ করা যায়নি");
+    } finally {
+      setSkipping(false);
+    }
+  };
+
+  // ২–৪ বার চেক করার পরেও না হলে স্কিপ অপশন
+  const canSkip = phase === "verify" && ticks >= 3;
+
   return (
     <div className="fixed inset-0 z-[120] flex flex-col bg-black">
       <div className="flex shrink-0 items-center justify-between px-3 py-2 text-white">
@@ -168,12 +217,28 @@ export function FaceAuthFlow(props: Props) {
 
       <div className="relative flex-1 overflow-hidden bg-white">
         {phase === "verify" && url ? (
-          <iframe
-            src={url}
-            title="Good-App face verification"
-            allow="camera; microphone; fullscreen"
-            className="h-full w-full border-0"
-          />
+          <>
+            <iframe
+              src={url}
+              title="Good-App face verification"
+              allow="camera; microphone; fullscreen"
+              onLoad={() => setFrameOk(true)}
+              className="h-full w-full border-0"
+            />
+            {!frameOk && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-white px-6 text-center">
+                <Loader2 className="h-8 w-8 animate-spin text-cyan-600" />
+                <p className="text-sm font-black text-gray-700">লোড হচ্ছে…</p>
+                <button
+                  type="button"
+                  onClick={openExternal}
+                  className="flex items-center gap-2 rounded-xl bg-black px-4 py-2 text-xs font-black text-white"
+                >
+                  <ExternalLink className="h-4 w-4" /> ফেস ভেরিফিকেশন খুলুন
+                </button>
+              </div>
+            )}
+          </>
         ) : (
           <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center">
             {phase === "failed" ? (
@@ -195,19 +260,30 @@ export function FaceAuthFlow(props: Props) {
             ) : (
               <>
                 <Loader2 className="h-8 w-8 animate-spin text-cyan-600" />
-                <p className="text-sm font-black text-gray-700">{note}</p>
+                <p className="text-sm font-black text-gray-700">লোড হচ্ছে…</p>
               </>
             )}
           </div>
         )}
       </div>
 
-      <div className="shrink-0 bg-black px-4 py-3 text-center text-[11.5px] font-bold leading-snug text-white/80">
-        {phase === "verify"
-          ? `ফেস স্ক্যান শেষ হলে সিস্টেম নিজেই চেক করবে — কিছু চাপতে হবে না${ticks > 0 ? ` (চেক ${ticks})` : ""}`
-          : note}
-        <br />
-        ভেরিফিকেশন না হলে আবার চেষ্টা করুন — এই স্ক্রিন খোলা রাখুন।
+      <div className="shrink-0 space-y-2 bg-black px-4 py-3 text-center">
+        <p className="text-[11.5px] font-bold leading-snug text-white/80">
+          {phase === "verify"
+            ? "ফেস স্ক্যান শেষ হলে সিস্টেম নিজেই চেক করবে — কিছু চাপতে হবে না"
+            : note}
+        </p>
+        {canSkip && (
+          <button
+            type="button"
+            onClick={() => void doSkip()}
+            disabled={skipping}
+            className="mx-auto flex items-center gap-2 rounded-xl bg-white/15 px-4 py-2 text-[12px] font-black text-white disabled:opacity-60"
+          >
+            {skipping ? <Loader2 className="h-4 w-4 animate-spin" /> : <SkipForward className="h-4 w-4" />}
+            স্কিপ করে ঢুকুন (পরে প্রোফাইল থেকে করবেন)
+          </button>
+        )}
       </div>
     </div>
   );
