@@ -48,7 +48,16 @@ function Avatar({ path, className, fallback }: { path?: string | null; className
 
 function FeedImg({ path, className, onClick }: { path: string; className?: string; onClick?: (e: React.MouseEvent<HTMLImageElement>) => void }) {
   const url = useFeedMedia(path);
-  return <img src={url} alt="" className={className} onClick={onClick} />;
+  return (
+    <img
+      src={url}
+      alt=""
+      loading="eager"
+      decoding="async"
+      className={`${className ?? ""} bg-gray-100 dark:bg-secondary`}
+      onClick={onClick}
+    />
+  );
 }
 
 function CommentImg({ path, className }: { path: string; className?: string }) {
