@@ -482,60 +482,59 @@ function UserProfilePage() {
                     </div>
                   </div>
 
-                  <div className="border-t border-gray-100 dark:border-border/30 flex items-center px-1">
-                    <button
-                      onClick={() => reactionMutation.mutate({ postId: post.id, type: "like" })}
-                      className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-[13px] font-semibold rounded ${myReaction ? "text-blue-600" : "text-gray-600 dark:text-muted-foreground"}`}
-                    >
-                      {myReaction ? REACTION_EMOJIS[myReaction] : "👍"} লাইক
-                    </button>
+                  <div
+                    className="border-t border-gray-100 dark:border-border/30 flex items-center px-1 relative select-none"
+                    style={{ WebkitUserSelect: "none", userSelect: "none", WebkitTouchCallout: "none" } as React.CSSProperties}
+                  >
+                    <div className="relative flex-1">
+                      <button
+                        onClick={() => reactionMutation.mutate({ postId: post.id, type: myReaction || "like" })}
+                        onContextMenu={(e) => { e.preventDefault(); setShowReactionPicker(showReactionPicker === post.id ? null : post.id); }}
+                        onTouchStart={() => {
+                          const timer = setTimeout(() => {
+                            setShowReactionPicker(showReactionPicker === post.id ? null : post.id);
+                            if (navigator.vibrate) navigator.vibrate(15);
+                          }, 400);
+                          const cleanup = () => {
+                            clearTimeout(timer);
+                            document.removeEventListener("touchend", cleanup);
+                            document.removeEventListener("touchmove", cleanup);
+                            document.removeEventListener("touchcancel", cleanup);
+                          };
+                          document.addEventListener("touchend", cleanup);
+                          document.addEventListener("touchmove", cleanup);
+                          document.addEventListener("touchcancel", cleanup);
+                        }}
+                        style={{ WebkitTouchCallout: "none", WebkitUserSelect: "none" } as React.CSSProperties}
+                        className={`w-full flex items-center justify-center gap-1.5 py-2 text-[13px] font-semibold rounded select-none ${myReaction ? "text-blue-600" : "text-gray-600 dark:text-muted-foreground"}`}
+                      >
+                        <span className="text-[17px] leading-none">{myReaction ? REACTION_EMOJIS[myReaction] : "👍"}</span>
+                        <span className="select-none">{myReaction && myReaction !== "like" ? "রিঅ্যাক্ট" : "লাইক"}</span>
+                      </button>
+
+                      {showReactionPicker === post.id && (
+                        <div className="absolute bottom-full left-0 mb-2 bg-white dark:bg-card border border-gray-200 dark:border-border rounded-full shadow-xl px-2 py-1.5 flex gap-0.5 z-50 animate-in fade-in zoom-in-90 duration-150">
+                          {Object.entries(REACTION_EMOJIS).map(([type, emoji]) => (
+                            <button
+                              key={type}
+                              onClick={() => reactionMutation.mutate({ postId: post.id, type })}
+                              className={`text-2xl p-1 rounded-full transition-transform hover:scale-125 ${myReaction === type ? "bg-blue-50 dark:bg-primary/20" : ""}`}
+                              title={type}
+                            >
+                              {emoji}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                     <button
                       onClick={() => openComments(post.id)}
-                      className="flex-1 flex items-center justify-center gap-1.5 py-2 text-[13px] font-semibold text-gray-600 dark:text-muted-foreground rounded"
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2 text-[13px] font-semibold text-gray-600 dark:text-muted-foreground rounded select-none"
                     >
                       <MessageCircle className="w-4 h-4" /> মন্তব্য
                     </button>
                   </div>
 
-                  {commentingPostId === post.id && (
-                    <div className="px-3 pb-3 border-t border-gray-100 dark:border-border/30 pt-2">
-                      {loadingComments ? (
-                        <div className="flex justify-center py-3">
-                          <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
-                        </div>
-                      ) : (
-                        <div className="space-y-2 mb-2">
-                          {comments.map((c) => (
-                            <div key={c.id} className="flex items-start gap-2">
-                              <div className="w-7 h-7 rounded-full bg-gray-200 dark:bg-primary/15 flex items-center justify-center overflow-hidden shrink-0">
-                                <Avatar path={c.user?.avatar_url} className="w-full h-full object-cover" fallback={c.user?.display_name?.[0]?.toUpperCase() || "?"} />
-                              </div>
-                              <div className="bg-gray-100 dark:bg-secondary rounded-2xl px-3 py-1.5 flex-1">
-                                <p className="text-[13px] font-bold text-gray-900 dark:text-foreground">{c.user?.display_name || "User"}</p>
-                                <p className="text-[13px] text-gray-800 dark:text-foreground">{c.content}</p>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      <div className="flex items-center gap-2">
-                        <input
-                          value={commentText}
-                          onChange={(e) => setCommentText(e.target.value)}
-                          onKeyDown={(e) => { if (e.key === "Enter" && commentText.trim()) commentMutation.mutate(); }}
-                          placeholder="মন্তব্য লিখুন..."
-                          className="flex-1 bg-gray-100 dark:bg-secondary rounded-full px-3 py-1.5 text-[13px] outline-none text-gray-900 dark:text-foreground"
-                        />
-                        <button
-                          onClick={() => commentText.trim() && commentMutation.mutate()}
-                          disabled={!commentText.trim() || commentMutation.isPending}
-                          className="text-blue-600 font-semibold text-[13px] disabled:opacity-40"
-                        >
-                          পাঠান
-                        </button>
-                      </div>
-                    </div>
-                  )}
                 </div>
               );
             })}
