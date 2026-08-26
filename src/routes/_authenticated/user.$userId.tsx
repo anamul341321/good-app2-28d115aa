@@ -96,6 +96,7 @@ function UserProfilePage() {
   const [uploading, setUploading] = useState<"cover" | "avatar" | null>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
+  const longPressFiredRef = useRef(false);
 
   const handleImageUpload = async (file: File, kind: "cover" | "avatar") => {
     if (!file.type.startsWith("image/")) return toast.error("শুধু ছবি দেওয়া যাবে");
