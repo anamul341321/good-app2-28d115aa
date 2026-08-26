@@ -14,6 +14,7 @@ import { listMyDevices, revokeDevice, revokeOtherDevices } from "@/lib/sessions.
 import { requestEmailVerifyOtp, confirmEmailVerifyOtp } from "@/lib/email-verify.functions";
 import { requestPasswordChangeOtp, changePasswordWithOtp } from "@/lib/password-change.functions";
 import { getDeviceId } from "@/hooks/useDeviceGuard";
+import { FaceLoginBindCard } from "@/components/FaceLoginBindCard";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   ssr: false,
@@ -201,6 +202,8 @@ function SettingsPage() {
         <SettingsIcon className="w-5 h-5 text-cyan" />
         <h1 className="text-lg font-black text-navy">সেটিংস</h1>
       </div>
+
+      <FaceLoginBindCard />
 
       <Card
         icon={<KeyRound className="w-4 h-4 text-gold" />}
