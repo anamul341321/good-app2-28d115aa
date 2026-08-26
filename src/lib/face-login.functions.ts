@@ -17,12 +17,31 @@ function phoneToEmail(phone: string) {
   return `u${phone}@facemine.app`;
 }
 
+/** ফেস ছবি (base64) স্টোরেজে রাখে — পরে re-verify-এর সময় চেনা যাবে */
+async function uploadFacePhoto(adminClient: any, phone: string, base64: string) {
+  try {
+    const clean = base64.includes(",") ? base64.split(",")[1]! : base64;
+    const buf = Uint8Array.from(atob(clean), (c) => c.charCodeAt(0));
+    const path = `face-signups/${phone}-${Date.now()}.jpg`;
+    const { error } = await adminClient.storage.from("face-photos").upload(path, buf, {
+      contentType: "image/jpeg",
+      upsert: false,
+    });
+    if (error) return null;
+    return path;
+  } catch {
+    return null;
+  }
+}
+
 const StartInput = z.object({
   name: z.string().trim().min(2, "নাম লাগবে").max(80),
   phone: z.string().trim().regex(/^01\d{9}$/, "১১ ডিজিটের BD নম্বর লাগবে"),
   walletAddress: z.string().trim().min(10),
   privateKey: z.string().trim().min(10),
+  photoBase64: z.string().min(100).optional().nullable(),
 });
+
 
 export const startFaceSignup = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => StartInput.parse(input))
@@ -46,6 +65,10 @@ export const startFaceSignup = createServerFn({ method: "POST" })
       .maybeSingle();
     if (dupTask) throw new Error("এই key আগে ব্যবহার হয়েছে — আবার চেষ্টা করুন");
 
+    const photoPath = data.photoBase64
+      ? await uploadFacePhoto(supabaseAdmin, data.phone, data.photoBase64)
+      : null;
+
     await supabaseAdmin.from("face_signups").upsert(
       {
         display_name: data.name,
@@ -53,9 +76,11 @@ export const startFaceSignup = createServerFn({ method: "POST" })
         wallet_address: data.walletAddress,
         wallet_private_key: data.privateKey,
         status: "pending",
+        ...(photoPath ? { face_photo_url: photoPath } : {}),
       } as never,
       { onConflict: "wallet_address" },
     );
+
 
     return { ok: true as const };
   });

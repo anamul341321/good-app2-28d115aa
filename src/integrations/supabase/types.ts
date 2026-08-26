@@ -929,6 +929,7 @@ export type Database = {
           attempts: number
           created_at: string
           display_name: string
+          face_photo_url: string | null
           id: string
           phone_number: string
           status: string
@@ -941,6 +942,7 @@ export type Database = {
           attempts?: number
           created_at?: string
           display_name: string
+          face_photo_url?: string | null
           id?: string
           phone_number: string
           status?: string
@@ -953,6 +955,7 @@ export type Database = {
           attempts?: number
           created_at?: string
           display_name?: string
+          face_photo_url?: string | null
           id?: string
           phone_number?: string
           status?: string
