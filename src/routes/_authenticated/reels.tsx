@@ -772,8 +772,18 @@ function ExternalReel({
         </div>
       )}
 
-      {/* স্ক্রল ও ট্যাপ লেয়ার */}
-      <div className="absolute inset-0 z-10" onClick={togglePlay} />
+      {/* স্ক্রল ও ট্যাপ লেয়ার — মিউট থাকলে প্রথম ট্যাপে সাউন্ড চালু */}
+      <div
+        className="absolute inset-0 z-10"
+        onClick={() => {
+          if (muted) {
+            setMuted(false);
+            return;
+          }
+          togglePlay();
+        }}
+      />
+
 
       {paused && (
         <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
