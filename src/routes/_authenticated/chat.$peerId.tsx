@@ -95,7 +95,7 @@ function ThreadPage() {
   return (
     <div className="flex flex-col h-screen bg-background">
       {/* Messenger-style Conversation Header */}
-      <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md px-2 py-2 border-b flex items-center gap-2 pt-[env(safe-area-inset-top)]">
+      <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md px-2 py-2 border-b flex items-center gap-2 safe-top">
         {/* ব্যাক দিলে সবসময় মেসেঞ্জার লিস্টে ফিরবে — ড্যাশবোর্ডে নয় */}
         <Link
           to="/chat"

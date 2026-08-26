@@ -130,7 +130,7 @@ export function ChatListPage() {
   return (
     <div className="flex min-h-[100dvh] flex-col bg-background text-foreground">
       {/* Messenger Header */}
-      <header className="sticky top-0 z-40 border-b border-border/40 bg-background/95 px-4 pb-2 pt-[max(env(safe-area-inset-top),0.75rem)] backdrop-blur-md">
+      <header className="sticky top-0 z-40 border-b border-border/40 bg-background/95 px-4 pb-2 safe-top backdrop-blur-md">
         <div className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
             {user?.id && (
