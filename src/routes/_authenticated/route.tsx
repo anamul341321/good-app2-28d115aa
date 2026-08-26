@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet, Link, useRouter, useRouterState } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
-import { Home, Wallet, ArrowDownToLine, LogOut, Loader2, RefreshCcw, User, Users, Settings, MoreVertical, PhoneCall, FileText, ShieldCheck, ScrollText, LayoutGrid } from "lucide-react";
+import { Home, Wallet, ArrowDownToLine, ArrowLeft, LogOut, Loader2, RefreshCcw, User, Users, Settings, MoreVertical, PhoneCall, FileText, ShieldCheck, ScrollText, LayoutGrid } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -189,7 +189,21 @@ function AuthedLayout() {
         <header className="sticky top-0 z-30 glass safe-top">
         <div className="max-w-md mx-auto px-3 pt-4 pb-3 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2.5">
+            {pathname !== "/home" && (
+              <button
+                type="button"
+                aria-label={t("পিছনে যান", "Go back")}
+                onClick={() => {
+                  if (typeof window !== "undefined" && window.history.length > 1) router.history.back();
+                  else router.navigate({ to: "/home" });
+                }}
+                className="btn-press flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-muted/60 text-foreground active:scale-95"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </button>
+            )}
             <div data-tour="profile"><ProfileButton /></div>
+
           <Link to="/home" className="flex items-center gap-2 btn-press">
             <img src={logo} alt="good-app logo" className="w-9 h-9 rounded-xl shadow-lg" />
             <span className="font-black text-lg tracking-tight bg-gradient-to-r from-violet-500 via-cyan-500 to-amber-500 bg-clip-text text-transparent">

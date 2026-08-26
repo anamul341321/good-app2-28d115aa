@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Heart, Loader2, Send, ThumbsUp, Users } from "lucide-react";
+import { PageBackHeader } from "@/components/PageBackHeader";
 import {
   getUploadedLongVideoByPostId,
   getUploadedLongVideos,
@@ -153,7 +154,11 @@ function WatchPage() {
 
   return (
     <div className="min-h-screen bg-background pb-24">
+      <div className="px-4">
+        <PageBackHeader fallbackTo="/videos" />
+      </div>
       <div className="sticky top-0 z-20 w-full bg-black">
+
         {videoUrl && !mediaFailed ? (
           <video
             key={mediaKey}
