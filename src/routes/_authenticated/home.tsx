@@ -17,6 +17,7 @@ import { DashSection } from "@/components/DashSection";
 import { SlotClaimButton, type SlotClaim } from "@/components/SlotClaimButton";
 import { listSlotClaims } from "@/lib/slot-claims.functions";
 import { getUnreadMessageCount } from "@/lib/chat.functions";
+import { NewUpdateBanner } from "@/components/NewUpdateBanner";
 
 
 import { useLang } from "@/lib/i18n";
@@ -149,7 +150,7 @@ function HomePage() {
           </span>
         )}
         <div className="relative text-white">
-          <p className="text-[9px] uppercase tracking-[0.2em] font-black text-white/85">Messenger</p>
+          <p className="text-[9px] tracking-[0.2em] font-black text-white/85">মেসেঞ্জার</p>
           <p className="text-base font-black leading-tight mt-0.5">
             {unreadMsgs > 0 ? t("নতুন মেসেজ", "New message") : t("মেসেঞ্জার", "Messenger")}
           </p>
@@ -163,7 +164,7 @@ function HomePage() {
           <Newspaper className="w-6 h-6" />
         </div>
         <div className="relative text-white">
-          <p className="text-[9px] uppercase tracking-[0.2em] font-black text-white/85">Feed</p>
+          <p className="text-[9px] tracking-[0.2em] font-black text-white/85">ফিড</p>
           <p className="text-base font-black leading-tight mt-0.5">{t("নিউজ ফিড", "News Feed")}</p>
         </div>
       </Link>
@@ -260,6 +261,9 @@ function HomePage() {
         <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[40%] rounded-full bg-cyan-500 blur-[120px]" />
         <div className="absolute bottom-[20%] left-[-10%] w-[40%] h-[30%] rounded-full bg-purple-500 blur-[100px]" />
       </div>
+
+      {/* নতুন আপডেটের ঘোষণা */}
+      <NewUpdateBanner />
 
       {/* দুইটি প্রধান বাটন — মেসেঞ্জার ও নিউজ ফিড */}
       {socialEntryCards}

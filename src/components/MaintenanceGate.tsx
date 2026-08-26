@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Wrench, Loader2 } from "lucide-react";
 import { getAppStatus } from "@/lib/app-status.functions";
-import logo from "@/assets/logo.png";
+import logo from "@/assets/goodapp-logo.png";
 
 /** Admin switch ON করলে পুরো অ্যাপ বন্ধ — শুধু এই সুন্দর বাংলা মেসেজ দেখাবে। */
 export function MaintenanceScreen({ message }: { message?: string | null }) {

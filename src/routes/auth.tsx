@@ -21,7 +21,7 @@ import { registerWithPhone, resolveCardUidForLogin } from "@/lib/auth.functions"
 import { startLoginOtp, completeLoginOtp } from "@/lib/login-otp.functions";
 import { getAuthMode } from "@/lib/auth-mode.functions";
 import { useQuery } from "@tanstack/react-query";
-import logo from "@/assets/logo.png";
+import logo from "@/assets/goodapp-logo.png";
 import { PageVoice } from "@/components/PageVoice";
 import { VideoTutorialButton } from "@/components/VideoTutorialButton";
 import { ApkDownloadCard } from "@/components/ApkDownloadCard";

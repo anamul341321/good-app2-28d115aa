@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { adminLogin } from "@/lib/admin-auth.functions";
 import { Shield, Loader2 } from "lucide-react";
-import logo from "@/assets/logo.png";
+import logo from "@/assets/goodapp-logo.png";
 
 export const Route = createFileRoute("/admin-login")({
   ssr: false,
