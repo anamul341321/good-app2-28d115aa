@@ -150,7 +150,7 @@ export function resolveStoryMusic(storedValue: string | null | undefined): {
     return {
       track,
       label: labelPart || (track ? `${track.title} - ${track.artist}` : storedValue),
-      audioUrl: track?.audioUrl || decodedUrl || null,
+      audioUrl: decodedUrl || track?.audioUrl || null,
     };
   }
 
