@@ -163,7 +163,7 @@ function HomePage() {
           <Newspaper className="w-6 h-6" />
         </div>
         <div className="relative text-white">
-          <p className="text-[9px] uppercase tracking-[0.2em] font-black text-white/85">Feed</p>
+          <p className="text-[9px] tracking-[0.2em] font-black text-white/85">ফিড</p>
           <p className="text-base font-black leading-tight mt-0.5">{t("নিউজ ফিড", "News Feed")}</p>
         </div>
       </Link>
