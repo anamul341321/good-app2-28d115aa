@@ -94,13 +94,18 @@ export function AppUpdateBanner() {
     queryFn: () => getAppStatus(),
     staleTime: 30 * 1000,
     refetchOnMount: "always",
-    enabled: native,
+    enabled: true,
   });
 
   const url = (data as any)?.apkUrl as string | null | undefined;
   const latest = (data as any)?.apkVersion as string | null | undefined;
 
-  if (!native || !url || !installed || !isNewer(latest, installed)) return null;
+  // নেটিভ অ্যাপ: ইনস্টল করা ভার্সন পুরোনো হলেই বড় করে আপডেট চাইবে।
+  // ওয়েবসাইট: অ্যাপ ইনস্টল/আপডেট করার জন্য প্রতিবার ঢুকলেই বড় ব্যানার দেখাবে।
+  const needsUpdate = native ? !!installed && isNewer(latest, url ? latest : latest) && isNewer(latest, installed) : true;
+  if (!url) return null;
+  if (native && (!installed || !isNewer(latest, installed))) return null;
+  if (!needsUpdate) return null;
   if (/play\.google\.com/i.test(url)) return null;
   if (hidden) return null;
 
@@ -166,7 +171,7 @@ export function AppUpdateBanner() {
   return (
     <div className="sticky top-0 z-50 px-3 pt-3">
       <div
-        className="relative overflow-hidden rounded-2xl border border-white/20 p-3 shadow-xl"
+        className="relative overflow-hidden rounded-2xl border border-white/20 p-4 shadow-2xl ring-2 ring-cyan-400/30"
         style={{ background: "linear-gradient(120deg,#0b1224 0%,#16215a 55%,#3b0764 100%)" }}
       >
         <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent animate-[shimmer_2.4s_linear_infinite]" />
@@ -178,9 +183,21 @@ export function AppUpdateBanner() {
             <Rocket className="h-5 w-5" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-black leading-tight">🚀 নতুন ভার্সন এসেছে</p>
-            <p className="text-[11px] text-white/75">
-              v{installed} → <span className="font-bold text-cyan-300">v{latest}</span> • আপডেট করুন
+            <p className="text-base font-black leading-tight">
+              🚀 {native ? "নতুন ভার্সন এসেছে — এখনই আপডেট করুন" : "গুড অ্যাপ ইনস্টল / আপডেট করুন"}
+            </p>
+            <p className="text-[12px] text-white/80">
+              {native ? (
+                <>
+                  v{installed} → <span className="font-bold text-cyan-300">v{latest}</span> • আপডেট
+                  না করলে নতুন সুবিধা কাজ করবে না
+                </>
+              ) : (
+                <>
+                  সর্বশেষ ভার্সন <span className="font-bold text-cyan-300">v{latest}</span> — অ্যাপে
+                  সবকিছু দ্রুত ও ঝামেলাহীন চলে
+                </>
+              )}
             </p>
           </div>
           <Button
