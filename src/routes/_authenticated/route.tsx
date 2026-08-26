@@ -218,14 +218,14 @@ function AuthedLayout() {
                 <div className="grid grid-cols-2 gap-2 py-2">
                   <BigMenuLink to="/settings" icon={<Settings className="h-6 w-6" />} label={t("সেটিংস", "Settings")} tone="text-gold" />
                   <BigMenuLink to="/profile" icon={<User className="h-6 w-6" />} label={t("প্রোফাইল", "Profile")} tone="text-cyan" />
-                  <BigMenuLink to="/home" icon={<ScrollText className="h-6 w-6" />} label={t("নিউজ ফিড", "News Feed")} tone="text-blue-500" />
+                  <BigMenuLink to="/feed" icon={<ScrollText className="h-6 w-6" />} label={t("নিউজ ফিড", "News Feed")} tone="text-blue-500" />
                   <BigMenuLink to="/chat" icon={<PhoneCall className="h-6 w-6" />} label={t("মেসেজ ও কল", "Chat & calls")} tone="text-emerald-400" />
                   <BigMenuLink to="/earnings" icon={<FileText className="h-6 w-6" />} label={t("আয়ের হিসাব", "Earnings")} tone="text-emerald-400" />
                   <BigMenuLink to="/kyc" icon={<ShieldCheck className="h-6 w-6" />} label={t("কেওয়াইসি", "KYC")} tone="text-violet-400" />
-                  <BigMenuLink to="/friends" icon={<Users className="h-6 w-6" />} label={t("বন্ধু", "Friends")} tone="text-cyan" />
-                  <BigMenuLink to="/privacy" icon={<Lock className="h-6 w-6" />} label={t("প্রাইভেসি", "Privacy")} tone="text-cyan" />
                   <BigMenuLink to="/reverify" search={{ taskId: undefined }} icon={<RefreshCcw className="h-6 w-6" />} label={t("রি-ভেরিফাই", "Re-verify")} tone="text-violet-400" />
+                  <BigMenuLink to="/menu" icon={<LayoutGrid className="h-6 w-6" />} label={t("সব অপশন", "All options")} tone="text-amber-400" />
                 </div>
+
 
                 <DropdownMenuSeparator className="bg-gold/20" />
                 <DropdownMenuItem
