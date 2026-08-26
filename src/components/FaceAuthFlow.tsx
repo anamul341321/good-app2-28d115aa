@@ -338,29 +338,31 @@ export function FaceAuthFlow(props: Props) {
     return (
       <div className="fixed inset-0 z-[120] flex flex-col bg-gradient-to-b from-[#0b1220] via-[#101a2e] to-black">
         <div className="mx-auto flex h-full w-full max-w-md flex-col">
-          <div
-            className="flex shrink-0 items-center gap-2 px-5 pb-4 pt-[max(1rem,env(safe-area-inset-top))] text-white"
-            style={{ background: "linear-gradient(120deg,#10b981,#06b6d4,#8b5cf6)" }}
-          >
-            <ScanFace className="h-5 w-5" />
+          <div className="flex shrink-0 items-center gap-3 px-5 pb-1 pt-[max(1.25rem,env(safe-area-inset-top))] text-white">
+            <div
+              className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl shadow-lg"
+              style={{ background: "linear-gradient(120deg,#10b981,#06b6d4,#8b5cf6)" }}
+            >
+              <ScanFace className="h-6 w-6" />
+            </div>
             <div className="leading-tight">
-              <p className="text-[13px] font-black">
+              <p className="text-[17px] font-black">
                 ফেস {mode === "signup" ? "রেজিস্ট্রেশন" : "লগইন"}
-                {mode === "signup" ? ` — ধাপ ${["১", "২", "৩", "৪"][stepIndex - 1]}/৪` : ""}
               </p>
-              <p className="text-[10.5px] font-bold opacity-90">
+              <p className="text-[11.5px] font-bold text-white/60">
                 {mode === "signup"
                   ? phase === "info"
-                    ? "নাম ও মোবাইল নম্বর দিন"
+                    ? "ধাপ ১/৪ — নাম ও মোবাইল নম্বর দিন"
                     : phase === "secure"
-                    ? "পাসওয়ার্ড সেট করুন"
+                    ? "ধাপ ২/৪ — পাসওয়ার্ড সেট করুন"
                     : phase === "photo"
-                    ? "লাইভ ক্যামেরায় নিজের ছবি তুলুন"
-                    : "সব ঠিক থাকলে রেজিস্ট্রেশন করুন"
+                    ? "ধাপ ৩/৪ — লাইভ ক্যামেরায় নিজের ছবি তুলুন"
+                    : "ধাপ ৪/৪ — সব ঠিক থাকলে রেজিস্ট্রেশন করুন"
                   : "লাইভ ক্যামেরায় মুখ স্ক্যান করলেই একাউন্ট চিনে নেবে"}
               </p>
             </div>
           </div>
+
 
           {mode === "signup" && (
             <div className="flex shrink-0 gap-1.5 px-5 pt-4">
