@@ -792,33 +792,8 @@ export function AuthPage() {
               )}
             </button>
 
-            {mode === "signup" && (
-              <button
-                type="button"
-                onClick={startFaceSignup2}
-                className="w-full py-3 rounded-xl font-black text-sm flex flex-col items-center justify-center gap-0.5 text-white btn-press shadow-lg"
-                style={{ background: "linear-gradient(120deg,#10b981,#06b6d4,#8b5cf6)" }}
-              >
-                <span className="flex items-center gap-2">
-                  <ScanFace className="w-4 h-4" /> ফেস দিয়ে রেজিস্ট্রেশন (সুপারিশকৃত)
-                </span>
-                <span className="text-[10px] font-bold opacity-90">
-                  key অটো তৈরি হবে → সাথে সাথে ফেস ভেরিফিকেশন খুলবে
-                </span>
-              </button>
-            )}
-
             {mode === "login" && (
               <>
-                <button
-                  type="button"
-                  onClick={() => setFaceMode("login")}
-                  data-voice="auth.face.login"
-                  className="w-full py-3 rounded-xl font-black text-sm flex items-center justify-center gap-2 text-white btn-press shadow-lg"
-                  style={{ background: "linear-gradient(120deg,#06b6d4,#8b5cf6,#ef476f)" }}
-                >
-                  <ScanFace className="w-4 h-4" /> ফেস দিয়ে লগইন
-                </button>
                 {/* যাদের Gmail যোগ করা আছে তারা নিজেই রিসেট করতে পারবে;
                     Gmail না থাকলে সার্ভার থেকেই অ্যাডমিনের সাথে যোগাযোগের মেসেজ যাবে। */}
                 <button
