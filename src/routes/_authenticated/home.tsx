@@ -149,7 +149,7 @@ function HomePage() {
           </span>
         )}
         <div className="relative text-white">
-          <p className="text-[9px] uppercase tracking-[0.2em] font-black text-white/85">Messenger</p>
+          <p className="text-[9px] tracking-[0.2em] font-black text-white/85">মেসেঞ্জার</p>
           <p className="text-base font-black leading-tight mt-0.5">
             {unreadMsgs > 0 ? t("নতুন মেসেজ", "New message") : t("মেসেঞ্জার", "Messenger")}
           </p>
