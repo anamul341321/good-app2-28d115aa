@@ -520,6 +520,7 @@ function LocalReel({
 }) {
   const { user } = useAuth();
   const videoUrl = useFeedMedia(post.video_url);
+  const posterUrl = useFeedMedia(post.image_url || undefined);
   const avatarUrl = useFeedMedia(post.user?.avatar_url || undefined);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [liked, setLiked] = useState(false);
