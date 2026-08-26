@@ -724,6 +724,21 @@ export async function getUploadedLongVideoByPostId(postId: string): Promise<Exte
   };
 }
 
+export async function getShortVideoPostById(postId: string): Promise<Post | null> {
+  if (!postId) return null;
+  const { data: post } = await db
+    .from("posts")
+    .select("*")
+    .eq("id", postId)
+    .not("video_url", "is", null)
+    .single();
+
+  if (!post || isLongVideoPostContent(post.content)) return null;
+
+  const userMap = await fetchProfilesMap([post.user_id]);
+  return { ...post, user: userMap[post.user_id] || null } as Post;
+}
+
 // Count one real view for a good-app uploaded post (reel / video)
 export async function incrementPostView(postId: string): Promise<number> {
   try {

@@ -17,7 +17,7 @@ import { getUnreadMessageCount } from "@/lib/chat.functions";
 import {
   Heart, MessageCircle, Send, Image, X, Home, Users, Bell,
   Plus, User, Search, Phone, Share2, Loader2, MoreHorizontal, Trash2, Globe, UserPlus, ThumbsUp, Video, Film, Pencil, Lock,
-  Eye,
+  Eye, Play,
 } from "lucide-react";
 import { toast } from "sonner";
 import StoryEditor from "@/components/social/StoryEditor";
@@ -51,9 +51,9 @@ function FeedImg({ path, className, onClick }: { path: string; className?: strin
   return <img src={url} alt="" className={className} onClick={onClick} />;
 }
 
-function FeedVideo({ path, className, videoRef, onPlay }: { path: string; className?: string; videoRef?: (el: HTMLVideoElement | null) => void; onPlay?: () => void }) {
+function FeedVideo({ path, className, videoRef }: { path: string; className?: string; videoRef?: (el: HTMLVideoElement | null) => void }) {
   const url = useFeedMedia(path);
-  return <video ref={videoRef} onPlay={onPlay} src={url} controls playsInline preload="metadata" className={className} />;
+  return <video ref={videoRef} src={url} muted playsInline preload="metadata" className={className} />;
 }
 
 const NameWithBadge = ({ name, isVerified, className = "" }: { name: string; isVerified?: boolean; className?: string }) => (
@@ -664,9 +664,22 @@ function FeedPage() {
           })()}
 
           {post.video_url && (
-            <div className="relative bg-black">
-              <FeedVideo path={post.video_url} videoRef={(el) => { feedVideoRefs.current[post.id] = el; }} onPlay={() => handleFeedVideoPlay(post.id)} className="w-full max-h-[500px] object-contain" />
-            </div>
+            <button
+              type="button"
+              onClick={() => navigate({ to: "/reels", search: { postId: post.id } as any })}
+              className="relative block w-full bg-black text-left"
+              aria-label="Short এ ভিডিও খুলুন"
+            >
+              <FeedVideo path={post.video_url} videoRef={(el) => { feedVideoRefs.current[post.id] = el; }} className="w-full max-h-[500px] object-contain opacity-90" />
+              <span className="absolute inset-0 grid place-items-center bg-black/10">
+                <span className="grid h-16 w-16 place-items-center rounded-full bg-card/90 text-primary shadow-xl backdrop-blur">
+                  <Play className="ml-1 h-8 w-8 fill-current" />
+                </span>
+              </span>
+              <span className="absolute bottom-3 left-3 rounded-full bg-primary px-3 py-1.5 text-[12px] font-black text-primary-foreground shadow-lg">
+                Short এ দেখুন
+              </span>
+            </button>
           )}
 
           <div className="px-3 py-2 flex items-center justify-between text-[13px] text-gray-500 dark:text-muted-foreground">
@@ -744,8 +757,9 @@ function FeedPage() {
       <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/95 shadow-sm backdrop-blur dark:border-border/40 dark:bg-card/95">
         <div className="max-w-lg mx-auto px-3 py-2.5 flex items-center justify-between">
           <div className="flex min-w-0 items-center gap-2.5">
-            <Link to="/home" aria-label="ড্যাশবোর্ডে ফিরুন" className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-gray-100 text-gray-700 transition-colors hover:bg-gray-200 dark:bg-secondary dark:text-foreground">
+            <Link to="/home" aria-label="ড্যাশবোর্ডে ফিরুন" className="gradient-amber btn-press flex h-10 shrink-0 items-center gap-1.5 rounded-full px-3 text-[12px] font-black ring-1 ring-card/70">
               <Home className="h-5 w-5" />
+              <span>Dashboard</span>
             </Link>
             <Link to="/user/$userId" params={{ userId: user.id }} className="w-10 h-10 rounded-full bg-gray-200 dark:bg-primary/20 flex items-center justify-center overflow-hidden shrink-0">
               <Avatar path={myProfile?.avatar_url} className="w-full h-full object-cover" fallback={myProfile?.display_name?.[0]?.toUpperCase() || "?"} />
@@ -767,7 +781,7 @@ function FeedPage() {
         <div className="max-w-lg mx-auto flex items-center gap-1.5 px-2.5 py-2 overflow-x-auto no-scrollbar">
           <button onClick={() => setActiveTab("home")}
             className={`shrink-0 flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[11px] font-black transition-all active:scale-95 ${activeTab === "home" ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-[0_8px_18px_-8px_rgba(37,99,235,0.8)]" : "bg-gray-100 dark:bg-secondary text-gray-600 dark:text-muted-foreground"}`}>
-            <Home className="w-4 h-4" /> হোম
+            <Home className="w-4 h-4" /> ফিড
           </button>
 
           <Link to="/friends"
@@ -785,7 +799,7 @@ function FeedPage() {
             <Video className="w-4 h-4" /> ভিডিও
           </Link>
 
-          <button onClick={() => navigate({ to: "/reels" })} title="Short"
+          <button onClick={() => navigate({ to: "/reels", search: {} })} title="Short"
             className="shrink-0 flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[11px] font-black text-white bg-gradient-to-r from-pink-600 via-fuchsia-500 to-violet-500 shadow-[0_8px_18px_-8px_rgba(219,39,119,0.8)] active:scale-95 transition-all">
             <Film className="w-4 h-4" /> Short
           </button>
@@ -886,7 +900,7 @@ function FeedPage() {
                   <Video className="w-5 h-5 text-red-500" />
                   <span className="text-[10px] text-gray-500 font-medium">ভিডিও</span>
                 </button>
-                <button onClick={() => navigate({ to: "/reels" })} className="flex flex-col items-center gap-0.5 px-2">
+                <button onClick={() => navigate({ to: "/reels", search: {} })} className="flex flex-col items-center gap-0.5 px-2">
                   <Film className="w-5 h-5 text-pink-500" />
                   <span className="text-[10px] text-gray-500 font-medium">Short</span>
                 </button>
