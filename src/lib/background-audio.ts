@@ -220,6 +220,7 @@ export function attachBackgroundAudio(
   document.addEventListener("visibilitychange", onVisibility);
   window.addEventListener("pagehide", onNativeBackground);
   window.addEventListener("goodapp-background", onNativeBackground);
+  window.addEventListener("goodapp-foreground", toForeground);
   video.addEventListener("play", rememberPlaying);
   video.addEventListener("pause", rememberPaused);
   audio?.addEventListener("ended", onEnded);
@@ -230,6 +231,7 @@ export function attachBackgroundAudio(
     document.removeEventListener("visibilitychange", onVisibility);
     window.removeEventListener("pagehide", onNativeBackground);
     window.removeEventListener("goodapp-background", onNativeBackground);
+    window.removeEventListener("goodapp-foreground", toForeground);
     video.removeEventListener("play", rememberPlaying);
     video.removeEventListener("pause", rememberPaused);
     audio?.removeEventListener("ended", onEnded);
@@ -368,6 +370,7 @@ export function attachBackgroundEmbed(
   document.addEventListener("visibilitychange", onVisibility);
   window.addEventListener("pagehide", onHide);
   window.addEventListener("goodapp-background", onHide);
+  window.addEventListener("goodapp-foreground", toForeground);
   audio?.addEventListener("ended", onEnded);
   beginNativeMediaPlayback(info);
 
@@ -377,6 +380,7 @@ export function attachBackgroundEmbed(
     document.removeEventListener("visibilitychange", onVisibility);
     window.removeEventListener("pagehide", onHide);
     window.removeEventListener("goodapp-background", onHide);
+    window.removeEventListener("goodapp-foreground", toForeground);
     audio?.removeEventListener("ended", onEnded);
     if (audio) {
       audio.pause();

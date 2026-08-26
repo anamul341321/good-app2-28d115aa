@@ -30,7 +30,7 @@ public class GoodAppMessagingService extends FirebaseMessagingService {
     // Notification channel settings are immutable after creation. A new ID makes
     // sure phones that received the old silent channel get the corrected ringtone.
     public static final String CALL_CHANNEL = "goodapp_incoming_calls_v3";
-    public static final String MESSAGE_CHANNEL = "goodapp_messages_v3";
+    public static final String MESSAGE_CHANNEL = "goodapp_messages_v4";
     public static final String SOCIAL_CHANNEL = "goodapp_social_notifications_v1";
 
     @Override
@@ -298,6 +298,9 @@ public class GoodAppMessagingService extends FirebaseMessagingService {
                 androidx.core.content.pm.ShortcutInfoCompat shortcut =
                     new androidx.core.content.pm.ShortcutInfoCompat.Builder(this, shortcutId)
                         .setLocusId(new androidx.core.content.LocusIdCompat(shortcutId))
+                        .setCategories(java.util.Collections.singleton(
+                            android.content.pm.ShortcutInfo.SHORTCUT_CATEGORY_CONVERSATION
+                        ))
                         .setShortLabel(senderName)
                         .setIcon(icon)
                         .setLongLived(true)

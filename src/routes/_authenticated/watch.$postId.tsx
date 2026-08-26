@@ -83,7 +83,11 @@ function WatchPage() {
 
   const { data: channelStats } = useQuery({
     queryKey: ["watch-channel-stats", video?.uploader_user_id, user?.id],
-    queryFn: () => getChannelStats(video!.uploader_user_id as string, user?.id),
+    queryFn: () => {
+      const uploaderId = video?.uploader_user_id;
+      if (!uploaderId) throw new Error("ভিডিও আপলোডার পাওয়া যায়নি");
+      return getChannelStats(uploaderId, user?.id);
+    },
     enabled: !!video?.uploader_user_id,
   });
 
