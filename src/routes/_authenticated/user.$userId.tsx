@@ -239,22 +239,53 @@ function UserProfilePage() {
 
       <div className="bg-white dark:bg-card">
         <div
-          className="h-[150px] bg-gradient-to-br from-blue-400 to-blue-600 overflow-hidden relative cursor-pointer"
+          className="h-[180px] bg-gradient-to-br from-blue-400 to-blue-600 overflow-hidden relative cursor-pointer"
           onClick={() => targetUser.cover_url && setViewingImage(targetUser.cover_url)}
         >
           <CoverImg path={targetUser.cover_url} className="w-full h-full object-cover object-center" />
+          {isOwnProfile && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); coverInputRef.current?.click(); }}
+              disabled={uploading === "cover"}
+              className="absolute bottom-2 right-2 z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/55 text-white text-[12px] font-semibold backdrop-blur-sm"
+            >
+              {uploading === "cover" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
+              কভার ফটো
+            </button>
+          )}
         </div>
         <div className="px-4 pb-4 pt-3">
-          <button
-            onClick={() => targetUser.avatar_url && setViewingImage(targetUser.avatar_url)}
-            className="w-[100px] h-[100px] rounded-full overflow-hidden border-4 border-white dark:border-card bg-gray-200 dark:bg-primary/20 flex items-center justify-center shadow-lg -mt-14"
-          >
-            {targetUser.avatar_url ? (
-              <Avatar path={targetUser.avatar_url} className="w-full h-full object-cover" fallback={targetUser.display_name?.[0]?.toUpperCase() || "?"} />
-            ) : (
-              <User className="w-12 h-12 text-gray-400" />
+          <div className="relative w-[110px] -mt-16 z-10">
+            <button
+              onClick={() => targetUser.avatar_url && setViewingImage(targetUser.avatar_url)}
+              className="w-[110px] h-[110px] rounded-full overflow-hidden border-4 border-white dark:border-card bg-gray-200 dark:bg-primary/20 flex items-center justify-center shadow-lg"
+            >
+              {targetUser.avatar_url ? (
+                <Avatar path={targetUser.avatar_url} className="w-full h-full object-cover" fallback={targetUser.display_name?.[0]?.toUpperCase() || "?"} />
+              ) : (
+                <User className="w-12 h-12 text-gray-400" />
+              )}
+            </button>
+            {isOwnProfile && (
+              <button
+                type="button"
+                onClick={() => avatarInputRef.current?.click()}
+                disabled={uploading === "avatar"}
+                className="absolute bottom-1 right-1 w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center border-2 border-white dark:border-card shadow"
+              >
+                {uploading === "avatar" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
+              </button>
             )}
-          </button>
+          </div>
+          {isOwnProfile && (
+            <>
+              <input ref={coverInputRef} type="file" accept="image/*" hidden
+                onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) handleImageUpload(f, "cover"); }} />
+              <input ref={avatarInputRef} type="file" accept="image/*" hidden
+                onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) handleImageUpload(f, "avatar"); }} />
+            </>
+          )}
           <h2 className="text-[22px] font-black text-gray-900 dark:text-foreground mt-2 inline-flex items-center gap-1.5">
             <span>{targetUser.display_name || "User"}</span>
             {targetUser.is_verified_badge && <VerifiedBadge className="h-5 w-5" />}
