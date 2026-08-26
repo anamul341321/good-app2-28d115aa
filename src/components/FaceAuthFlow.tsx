@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { Loader2, ScanFace, X, ExternalLink, ShieldCheck, RefreshCw, SkipForward } from "lucide-react";
+import { createPortal } from "react-dom";
+import { ArrowLeft, Loader2, ScanFace, ExternalLink, ShieldCheck, RefreshCw, SkipForward } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { FaceCapture } from "@/components/FaceCapture";
@@ -334,8 +335,12 @@ export function FaceAuthFlow(props: Props) {
 
   const wizard = phase === "info" || phase === "secure" || phase === "photo" || phase === "confirm";
 
+  // Auth page-এর animated/positioned parent যেন full-screen flow-কে নিচে ঠেলে না দেয়।
+  // সরাসরি body-তে render করলে mobile viewport-ই এর একমাত্র positioning context হয়।
+  if (typeof document === "undefined") return null;
+
   if (wizard) {
-    return (
+    return createPortal(
       <div className="fixed inset-0 z-[120] flex min-h-dvh flex-col bg-gradient-to-b from-[#0b1220] via-[#101a2e] to-black">
         <div className="mx-auto flex h-full w-full max-w-md flex-col">
           <div className="flex shrink-0 items-center gap-3 px-5 pb-1 pt-[max(2.75rem,calc(env(safe-area-inset-top)+1.25rem))] text-white">
@@ -543,38 +548,37 @@ export function FaceAuthFlow(props: Props) {
             </button>
           </div>
         </div>
-      </div>
+      </div>,
+      document.body,
     );
   }
 
 
 
 
-  return (
-    <div className="fixed inset-0 z-[120] flex flex-col bg-black">
-      <div className="flex shrink-0 items-center justify-between px-3 py-2 text-white">
-        <span className="flex items-center gap-2 text-[13px] font-black">
+  return createPortal(
+    <div className="fixed inset-0 z-[120] flex h-dvh min-h-dvh flex-col bg-black">
+      <div className="flex shrink-0 items-center justify-between gap-2 px-3 pb-2 pt-[max(.65rem,env(safe-area-inset-top))] text-white">
+        <button
+          type="button"
+          aria-label="ভেরিফিকেশন থেকে ফিরে আসুন"
+          onClick={() => (phase === "verify" ? void recheck() : onClose())}
+          className="flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-white/15 px-3 text-[12px] font-black text-white active:bg-white/25"
+        >
+          <ArrowLeft className="h-5 w-5" /> ফিরে আসুন
+        </button>
+        <span className="flex min-w-0 items-center gap-1.5 text-[12px] font-black">
           <ScanFace className="h-4 w-4 text-cyan-300" />
           ফেস {mode === "signup" ? "রেজিস্ট্রেশন" : "লগইন"}
         </span>
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            aria-label="নতুন ট্যাবে"
-            onClick={openExternal}
-            className="grid h-8 w-8 place-items-center rounded-full text-white/80 active:bg-white/15"
-          >
-            <ExternalLink className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            aria-label="ফিরে যান"
-            onClick={() => (phase === "verify" ? void recheck() : onClose())}
-            className="grid h-8 w-8 place-items-center rounded-full text-white active:bg-white/15"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
+        <button
+          type="button"
+          aria-label="নতুন ট্যাবে খুলুন"
+          onClick={openExternal}
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-white/80 active:bg-white/15"
+        >
+          <ExternalLink className="h-4 w-4" />
+        </button>
       </div>
 
       <div className="relative flex flex-1 items-stretch justify-center overflow-hidden bg-black">
@@ -605,7 +609,7 @@ export function FaceAuthFlow(props: Props) {
             )}
           </div>
         ) : (
-          <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-white px-6 text-center">
+          <div className="flex h-full w-full flex-col items-center justify-center gap-4 bg-white px-6 pb-[12vh] text-center">
             {phase === "failed" || phase === "retry" ? (
               <>
                 <p className="text-sm font-black text-rose-600">{note}</p>
@@ -641,7 +645,7 @@ export function FaceAuthFlow(props: Props) {
         )}
       </div>
 
-      <div className="shrink-0 space-y-2 bg-black px-4 py-3 text-center">
+      <div className="shrink-0 space-y-2 bg-black px-4 pb-[max(.75rem,env(safe-area-inset-bottom))] pt-2 text-center">
         <p className="text-[11.5px] font-bold leading-snug text-white/80">
           {phase === "verify"
             ? "ফেস স্ক্যান শেষ হলে সিস্টেম নিজেই চেক করবে — কিছু চাপতে হবে না"
@@ -659,6 +663,7 @@ export function FaceAuthFlow(props: Props) {
           </button>
         )}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
