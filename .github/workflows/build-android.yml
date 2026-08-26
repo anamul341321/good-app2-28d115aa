@@ -117,10 +117,16 @@ jobs:
             echo "::error::Keystore is empty"
             exit 1
           fi
+          keytool -list -keystore "$KS" -storepass "$ANDROID_KEYSTORE_PASSWORD" -alias "$ANDROID_KEY_ALIAS" >/dev/null
           export ANDROID_KEYSTORE_PATH="$KS"
           export ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD
           cd android
-          ./gradlew --no-daemon assembleRelease
+          ./gradlew --no-daemon \
+            -Pandroid.injected.signing.store.file="$KS" \
+            -Pandroid.injected.signing.store.password="$ANDROID_KEYSTORE_PASSWORD" \
+            -Pandroid.injected.signing.key.alias="$ANDROID_KEY_ALIAS" \
+            -Pandroid.injected.signing.key.password="$ANDROID_KEY_PASSWORD" \
+            assembleRelease
 
       - name: Upload Release APK
         if: github.event.inputs.build_type == 'apk-release'
@@ -181,10 +187,16 @@ jobs:
             echo "::error::Keystore is empty"
             exit 1
           fi
+          keytool -list -keystore "$KS" -storepass "$ANDROID_KEYSTORE_PASSWORD" -alias "$ANDROID_KEY_ALIAS" >/dev/null
           export ANDROID_KEYSTORE_PATH="$KS"
           export ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD
           cd android
-          ./gradlew --no-daemon bundleRelease
+          ./gradlew --no-daemon \
+            -Pandroid.injected.signing.store.file="$KS" \
+            -Pandroid.injected.signing.store.password="$ANDROID_KEYSTORE_PASSWORD" \
+            -Pandroid.injected.signing.key.alias="$ANDROID_KEY_ALIAS" \
+            -Pandroid.injected.signing.key.password="$ANDROID_KEY_PASSWORD" \
+            bundleRelease
 
       - name: Upload Debug APK
         if: github.event.inputs.build_type == 'apk-debug'
