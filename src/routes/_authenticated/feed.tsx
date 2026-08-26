@@ -23,6 +23,7 @@ import {
 import { toast } from "sonner";
 import StoryEditor from "@/components/social/StoryEditor";
 import StoryViewer from "@/components/social/StoryViewer";
+import { PeopleYouMayKnow } from "@/components/social/PeopleYouMayKnow";
 import { playUiSound } from "@/lib/ui-sounds";
 import VerifiedBadge from "@/components/VerifiedBadge";
 
