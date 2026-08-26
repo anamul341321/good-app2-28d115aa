@@ -367,9 +367,10 @@ function writeRecentVideoIds(newIds: string[]): void {
   }
 }
 
-export function trackVideoPreference(input: { title?: string; category?: string | null }): void {
+export function trackVideoPreference(input: { id?: string; title?: string; category?: string | null }): void {
   if (typeof window === "undefined") return;
   try {
+    if (input.id) writeRecentVideoIds([input.id]);
     const prefs = readVideoPreferences();
     const key = (input.category || inferCategoryFromTitle(input.title)).toLowerCase();
     if (!key) return;
@@ -778,6 +779,11 @@ export async function getBangladeshExternalVideos(
     const taste = tasteQueries();
     const pool = [...taste, ...FRESH_QUERIES, ...ROTATING_QUERIES];
     effectiveQuery = pool.length > 0 ? pool[rotationIndex % pool.length] : undefined;
+  } else if (trimmedQuery && page > 1 && !pageToken) {
+    // Keyless providers do not always expose pagination. Vary later searches
+    // instead of requesting the identical first page in an endless loop.
+    const discoveryTerms = ["latest", "live", "acoustic", "playlist", "new release", "cover"];
+    effectiveQuery = `${trimmedQuery} ${discoveryTerms[rotationIndex % discoveryTerms.length]}`;
   }
 
 
@@ -785,7 +791,7 @@ export async function getBangladeshExternalVideos(
     ? await fetchYouTubeShortsViaEdge(effectiveQuery || "bangladesh viral reels", Math.max(rows, 40), rotationIndex)
     : await fetchYouTubeVideos(effectiveQuery, Math.max(rows, 30), order, pageToken);
 
-  let videos = ytResult.videos;
+  let videos = dedupeExternalVideos(ytResult.videos);
 
   if (isShort) {
     // Reels must be Bangladesh/Bangla short-form clips — never mix long/Chinese results.
@@ -799,18 +805,31 @@ export async function getBangladeshExternalVideos(
       : shortOnly.filter((v) => !hasCjkOrChineseMarker(`${v.title || ""} ${v.creator || ""}`));
   }
 
-  // Avoid repeating recently shown videos
+  // Avoid repeating videos the user actually played. Merely rendering a card
+  // must not poison the history, otherwise every refresh can hide a whole page.
   const recentIds = readRecentVideoIds();
   const recentArray = Array.from(recentIds);
   const hardBlock = new Set(recentArray.slice(0, 220));
 
   const unseen = videos.filter((v) => !hardBlock.has(v.id));
-  if (unseen.length >= Math.min(rows, 3)) {
-    videos = unseen;
+  const previouslyPlayed = videos.filter((v) => hardBlock.has(v.id));
+
+  // Preference is only a gentle relevance signal; creator diversity prevents
+  // one artist/channel from filling the complete sequence.
+  const preferenceRanked = [...unseen].sort((a, b) =>
+    scorePreferredCategory(b.title, b.category) - scorePreferredCategory(a.title, a.category)
+  );
+  const diverseUnseen = diversifyByCreator(preferenceRanked, 3);
+  const diversePlayed = diversifyByCreator(previouslyPlayed, 2);
+  videos = [...diverseUnseen, ...diversePlayed];
+
+  // The provider can return an identical relevance order for keyless requests.
+  // Rotate only the tail so the strongest first recommendations remain stable.
+  if (!trimmedQuery && videos.length > 5) {
+    videos = [...videos.slice(0, 3), ...seededShuffle(videos.slice(3), rotationIndex)];
   }
 
   const finalVideos = videos.slice(0, rows);
-  writeRecentVideoIds(finalVideos.map((v) => v.id));
 
   return {
     videos: finalVideos,
