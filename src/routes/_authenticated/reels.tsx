@@ -626,6 +626,14 @@ function LocalReel({
         </div>
       )}
 
+      {muted && isActive && (
+        <div className="pointer-events-none absolute left-1/2 top-1/2 z-20 -translate-x-1/2 -translate-y-1/2 rounded-full bg-black/60 px-4 py-2 text-[12px] font-black text-white">
+          ট্যাপ করে সাউন্ড চালু করুন
+        </div>
+      )}
+
+
+
       {burst && (
         <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
           <Heart className="h-24 w-24 animate-ping fill-red-500 text-red-500 drop-shadow-2xl" />
