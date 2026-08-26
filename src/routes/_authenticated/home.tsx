@@ -566,31 +566,8 @@ function HomePage() {
         )}
       </div>
       </DashSection>
-      <div className="grid grid-cols-2 gap-4">
-        <Link to="/menu"
-          className="rounded-2xl p-4 flex flex-col justify-between h-32 relative overflow-hidden border border-white/10 shadow-sm active:scale-95 transition-all"
-          style={{ background: "linear-gradient(135deg, #4f46e5, #8b5cf6)" }}>
-          <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-white/10 blur-xl" />
-          <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur border border-white/30 flex items-center justify-center text-xl shrink-0 relative">☰</div>
-          <div className="relative">
-            <p className="text-[10px] uppercase tracking-[0.2em] font-black text-white/90">Menu</p>
-            <p className="text-sm font-black text-white leading-tight mt-0.5">{t("সব অপশন", "All Options")}</p>
-          </div>
-        </Link>
-        <WithdrawFeedMini />
-      </div>
 
 
-
-      {!data.wallet && (
-        <Link to="/wallet" className="block premium-panel rounded-2xl p-3 border-l-4" style={{ borderLeftColor: "var(--color-amber)" }}>
-          <p className="text-sm font-black text-amber">⚠️ {t("ওয়ালেট সেট করুন", "Set up wallet")}</p>
-          <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">
-            {t("টাকা তোলার আগে bKash / Nagad নম্বর সেট করতে হবে — একবার সেট করলে আর পরিবর্তন হবে না।",
-               "Set a bKash / Nagad number before withdrawing — once set, it cannot be changed.")}
-          </p>
-        </Link>
-      )}
 
 
 
