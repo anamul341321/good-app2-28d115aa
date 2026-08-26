@@ -26,8 +26,8 @@ type Props = {
   onSignedUp?: (phone: string, password?: string) => void;
   /** ভেরিফিকেশন ছাড়াই একাউন্ট তৈরি হলে (পরে প্রোফাইল থেকে করতে হবে) */
   onSkipped?: () => void;
-  /** login mode: ফেস চেনা গেলে নম্বর ফেরত */
-  onResolved?: (phone: string) => void;
+  /** login mode: ফেস চেনা গেলে নম্বর (+ ইউজারের দেওয়া পাসওয়ার্ড) ফেরত */
+  onResolved?: (phone: string, password?: string) => void;
 };
 
 /**
@@ -48,7 +48,7 @@ export function FaceAuthFlow(props: Props) {
   const reverify = useServerFn(reverifyFaceLogin);
 
   const [phase, setPhase] = useState<
-    "info" | "secure" | "photo" | "confirm" | "prepare" | "verify" | "recheck" | "retry" | "done" | "failed"
+    | "info" | "secure" | "photo" | "confirm" | "prepare" | "verify" | "recheck" | "retry" | "done" | "failed" | "password"
   >(mode === "signup" ? "info" : "photo");
   const [fName, setFName] = useState(props.name ?? "");
   const [fPhone, setFPhone] = useState(props.phone ?? "");
@@ -68,6 +68,7 @@ export function FaceAuthFlow(props: Props) {
   const retriesRef = useRef(0);
   const pkRef = useRef<string | null>(null);
   const loginPhoneRef = useRef<string | null>(null);
+  const [loginPass, setLoginPass] = useState("");
 
 
   const finishSignup = async (addr: string) => {
@@ -136,8 +137,9 @@ export function FaceAuthFlow(props: Props) {
       }
       loginPhoneRef.current = res.phone;
       if (res.whitelisted) {
-        setPhase("done");
-        props.onResolved?.(res.phone);
+        // ফেস ম্যাচ ১০০% নিশ্চিত নয় — তাই পাসওয়ার্ড ছাড়া কোনো একাউন্টে ঢোকা যাবে না
+        setLoginPass("");
+        setPhase("password");
         return;
       }
       toast.info("ভেরিফিকেশন মেয়াদ শেষ — আবার ফেস ভেরিফিকেশন করতে হবে");
@@ -156,8 +158,8 @@ export function FaceAuthFlow(props: Props) {
       data: { phone, walletAddress: addr, privateKey: pkRef.current },
     });
     if (!res.verified) return false;
-    setPhase("done");
-    props.onResolved?.(phone);
+    setLoginPass("");
+    setPhase("password");
     return true;
   };
 
@@ -333,7 +335,14 @@ export function FaceAuthFlow(props: Props) {
     setPhase("photo");
   };
 
-  const wizard = phase === "info" || phase === "secure" || phase === "photo" || phase === "confirm";
+  const submitLoginPassword = () => {
+    const phone = loginPhoneRef.current;
+    if (!phone) return;
+    if (loginPass.length < 4) return toast.error("আপনার পাসওয়ার্ড দিন");
+    props.onResolved?.(phone, loginPass);
+  };
+
+  const wizard = phase === "password" || phase === "info" || phase === "secure" || phase === "photo" || phase === "confirm";
 
   // Auth page-এর animated/positioned parent যেন full-screen flow-কে নিচে ঠেলে না দেয়।
   // সরাসরি body-তে render করলে mobile viewport-ই এর একমাত্র positioning context হয়।
