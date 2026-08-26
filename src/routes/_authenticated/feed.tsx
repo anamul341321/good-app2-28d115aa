@@ -567,12 +567,12 @@ function FeedPage() {
       elements.push(
         <div key={post.id} className="bg-white dark:bg-card">
           <div className="flex items-center gap-2.5 px-3 pt-3 pb-1.5">
-            <Link to="/feed/user/$userId" params={{ userId: post.user_id }}
+            <Link to="/user/$userId" params={{ userId: post.user_id }}
               className="w-10 h-10 rounded-full bg-gray-200 dark:bg-primary/20 flex items-center justify-center overflow-hidden shrink-0">
               <Avatar path={post.user?.avatar_url} className="w-full h-full object-cover" fallback={post.user?.display_name?.[0]?.toUpperCase() || "?"} />
             </Link>
             <div className="flex-1 min-w-0">
-              <Link to="/feed/user/$userId" params={{ userId: post.user_id }} className="font-bold text-[15px] text-gray-900 dark:text-foreground hover:underline block">
+              <Link to="/user/$userId" params={{ userId: post.user_id }} className="font-bold text-[15px] text-gray-900 dark:text-foreground hover:underline block">
                 <NameWithBadge name={post.user?.display_name || "User"} isVerified={post.user?.is_verified_badge} />
               </Link>
               <div className="flex items-center gap-1 text-[12px] text-gray-500 dark:text-muted-foreground">
@@ -614,7 +614,7 @@ function FeedPage() {
                       </>
                     ) : (
                       <>
-                        <button onClick={() => { navigate({ to: "/feed/user/$userId", params: { userId: post.user_id } }); setShowPostMenu(null); }}
+                        <button onClick={() => { navigate({ to: "/user/$userId", params: { userId: post.user_id } }); setShowPostMenu(null); }}
                           className="w-full flex items-center gap-3 px-4 py-3 text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-secondary text-sm transition-colors">
                           <User className="w-4 h-4" /> প্রোফাইল দেখুন
                         </button>
@@ -835,10 +835,10 @@ function FeedPage() {
                 )}
                 {searchResults.filter((u: any) => u.id !== user.id).slice(0, 10).map((u: any) => (
                   <div key={u.id} className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-secondary transition-colors">
-                    <Link to="/feed/user/$userId" params={{ userId: u.id }} className="w-9 h-9 rounded-full bg-gray-200 dark:bg-primary/20 flex items-center justify-center overflow-hidden shrink-0">
+                    <Link to="/user/$userId" params={{ userId: u.id }} className="w-9 h-9 rounded-full bg-gray-200 dark:bg-primary/20 flex items-center justify-center overflow-hidden shrink-0">
                       <Avatar path={u.avatar_url} className="w-full h-full object-cover" fallback={u.display_name?.[0]?.toUpperCase() || "?"} />
                     </Link>
-                    <Link onClick={() => setShowSearch(false)} to="/feed/user/$userId" params={{ userId: u.id }} className="flex-1 min-w-0">
+                    <Link onClick={() => setShowSearch(false)} to="/user/$userId" params={{ userId: u.id }} className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-gray-900 dark:text-foreground truncate">
                         <NameWithBadge name={u.display_name || "User"} isVerified={u.is_verified_badge} />
                       </p>
@@ -986,7 +986,7 @@ function FeedPage() {
                     onClick={() => {
                       if (n.type === "friend_request" || n.type === "friend_accept") navigate({ to: "/friends" });
                       else if (n.reference_id) { setActiveTab("home"); setTimeout(() => openComments(n.reference_id), 100); }
-                      else if (n.from_user_id) navigate({ to: "/feed/user/$userId", params: { userId: n.from_user_id } });
+                      else if (n.from_user_id) navigate({ to: "/user/$userId", params: { userId: n.from_user_id } });
                     }}
                     className={`w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-secondary/30 transition-colors ${!n.is_read ? "bg-blue-50/60 dark:bg-primary/5" : ""}`}>
                     <div className="w-14 h-14 rounded-full bg-gray-200 dark:bg-primary/20 flex items-center justify-center overflow-hidden shrink-0 relative">
@@ -1032,7 +1032,7 @@ function FeedPage() {
               {commentingPost && (
                 <div className="rounded-2xl border border-gray-200 dark:border-border/30 p-3 bg-white dark:bg-card">
                   <div className="flex items-center gap-2 mb-2">
-                    <Link to="/feed/user/$userId" params={{ userId: commentingPost.user_id }} className="text-[13px] font-bold text-gray-900 dark:text-foreground hover:underline">
+                    <Link to="/user/$userId" params={{ userId: commentingPost.user_id }} className="text-[13px] font-bold text-gray-900 dark:text-foreground hover:underline">
                       <NameWithBadge name={commentingPost.user?.display_name || "User"} isVerified={commentingPost.user?.is_verified_badge} />
                     </Link>
                     <span className="text-[11px] text-gray-500">{timeAgo(commentingPost.created_at)}</span>
@@ -1053,12 +1053,12 @@ function FeedPage() {
                 comments.map((c) => (
                   <div key={c.id} className="space-y-2">
                     <div className="flex gap-2.5">
-                      <Link to="/feed/user/$userId" params={{ userId: c.user_id }} className="w-9 h-9 rounded-full bg-gray-200 dark:bg-primary/15 flex items-center justify-center shrink-0 overflow-hidden">
+                      <Link to="/user/$userId" params={{ userId: c.user_id }} className="w-9 h-9 rounded-full bg-gray-200 dark:bg-primary/15 flex items-center justify-center shrink-0 overflow-hidden">
                         <Avatar path={c.user?.avatar_url} className="w-full h-full object-cover" fallback={c.user?.display_name?.[0]?.toUpperCase() || "?"} />
                       </Link>
                       <div className="flex-1 min-w-0">
                         <div className="bg-gray-100 dark:bg-secondary rounded-2xl px-3 py-2.5">
-                          <Link to="/feed/user/$userId" params={{ userId: c.user_id }} className="text-[14px] font-bold text-gray-900 dark:text-foreground hover:underline block">
+                          <Link to="/user/$userId" params={{ userId: c.user_id }} className="text-[14px] font-bold text-gray-900 dark:text-foreground hover:underline block">
                             <NameWithBadge name={c.user?.display_name || "User"} isVerified={c.user?.is_verified_badge} />
                           </Link>
                           <p className="text-[15px] leading-relaxed text-gray-900 dark:text-foreground mt-0.5 break-words whitespace-pre-wrap">{renderMentionText(c.content)}</p>
@@ -1091,12 +1091,12 @@ function FeedPage() {
                                 <div className="space-y-2 border-l-2 border-gray-200 dark:border-border/30 pl-3">
                                   {c.replies.map((r) => (
                                     <div key={r.id} className="flex gap-2">
-                                      <Link to="/feed/user/$userId" params={{ userId: r.user_id }} className="w-7 h-7 rounded-full bg-gray-200 dark:bg-primary/15 flex items-center justify-center shrink-0 overflow-hidden">
+                                      <Link to="/user/$userId" params={{ userId: r.user_id }} className="w-7 h-7 rounded-full bg-gray-200 dark:bg-primary/15 flex items-center justify-center shrink-0 overflow-hidden">
                                         <Avatar path={r.user?.avatar_url} className="w-full h-full object-cover" fallback={r.user?.display_name?.[0]?.toUpperCase() || "?"} />
                                       </Link>
                                       <div className="flex-1 min-w-0">
                                         <div className="bg-gray-100 dark:bg-secondary rounded-xl px-2.5 py-2">
-                                          <Link to="/feed/user/$userId" params={{ userId: r.user_id }} className="text-[13px] font-bold text-gray-900 dark:text-foreground">
+                                          <Link to="/user/$userId" params={{ userId: r.user_id }} className="text-[13px] font-bold text-gray-900 dark:text-foreground">
                                             <NameWithBadge name={r.user?.display_name || "User"} isVerified={r.user?.is_verified_badge} />
                                           </Link>
                                           <p className="text-[14px] leading-relaxed text-gray-900 dark:text-foreground break-words">{renderMentionText(r.content)}</p>
@@ -1269,7 +1269,7 @@ function FeedPage() {
           onDelete={(id) => deleteStoryMutation.mutate(id)}
           onMessage={(uid) => { setViewingStory(null); startChatWith(uid); }}
           onCall={() => {}}
-          onProfile={(uid) => { setViewingStory(null); navigate({ to: "/feed/user/$userId", params: { userId: uid } }); }}
+          onProfile={(uid) => { setViewingStory(null); navigate({ to: "/user/$userId", params: { userId: uid } }); }}
           timeAgo={timeAgo}
         />
       )}

@@ -223,3 +223,29 @@ export const getProfileStats = createServerFn({ method: "GET" })
 
     return { verifiedCount, monthlyRate };
   });
+
+// Public (limited) profile of any user — profiles RLS is own-row only,
+// so this reads via admin and returns only non-sensitive display fields.
+export const getPublicProfile = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({
+    userId: z.string().uuid(),
+  }).parse(i))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row } = await supabaseAdmin
+      .from("profiles")
+      .select("id, display_name, avatar_url, cover_url, uid_seq, is_verified_badge, created_at")
+      .eq("id", data.userId)
+      .maybeSingle();
+    if (!row) return null;
+    return {
+      id: row.id as string,
+      display_name: (row as any).display_name ?? null,
+      avatar_url: (row as any).avatar_url ?? null,
+      cover_url: (row as any).cover_url ?? null,
+      uid_seq: (row as any).uid_seq ?? null,
+      is_verified_badge: (row as any).is_verified_badge ?? null,
+      created_at: (row as any).created_at ?? null,
+    };
+  });

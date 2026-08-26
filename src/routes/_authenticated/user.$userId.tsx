@@ -9,6 +9,7 @@ import {
 } from "@/lib/feed-api";
 import { useFeedMedia } from "@/lib/feed-media";
 import { listFriends, sendFriendRequest, respondFriendRequest } from "@/lib/friends.functions";
+import { getPublicProfile } from "@/lib/social-users.functions";
 import {
   ArrowLeft, User, MessageCircle, Calendar, Globe, MoreHorizontal,
   UserPlus, Loader2, Check,
@@ -19,7 +20,7 @@ import VerifiedBadge from "@/components/VerifiedBadge";
 
 const db = supabase as any;
 
-export const Route = createFileRoute("/_authenticated/feed/user/$userId")({
+export const Route = createFileRoute("/_authenticated/user/$userId")({
   component: UserProfilePage,
   head: () => ({
     meta: [
@@ -76,7 +77,7 @@ function timeAgo(dateStr: string | null): string {
 }
 
 function UserProfilePage() {
-  const { userId } = useParams({ from: "/_authenticated/feed/user/$userId" });
+  const { userId } = useParams({ from: "/_authenticated/user/$userId" });
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -95,16 +96,10 @@ function UserProfilePage() {
 
   const { data: targetUser, isLoading: userLoading } = useQuery({
     queryKey: ["feed-user-profile", userId],
-    queryFn: async () => {
-      const { data } = await db
-        .from("profiles")
-        .select("id, display_name, avatar_url, cover_url, uid_seq, is_verified_badge, created_at")
-        .eq("id", userId)
-        .maybeSingle();
-      return data as ProfileRow | null;
-    },
+    queryFn: async () => (await getPublicProfile({ data: { userId } })) as ProfileRow | null,
     enabled: !!userId,
   });
+
 
   const { data: posts = [], isLoading: postsLoading } = useQuery({
     queryKey: ["feed-user-posts", userId],

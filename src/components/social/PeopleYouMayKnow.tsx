@@ -56,7 +56,7 @@ export function PeopleYouMayKnow() {
               <div
                 key={p.id}
                 className="min-w-[150px] max-w-[150px] shrink-0 overflow-hidden rounded-xl border border-gray-200 dark:border-border bg-white dark:bg-secondary">
-                <Link to="/feed/user/$userId" params={{ userId: p.id }} className="block h-[150px] w-full">
+                <Link to="/user/$userId" params={{ userId: p.id }} className="block h-[150px] w-full">
                   <CardAvatar path={p.avatar_url} name={name} />
                 </Link>
                 <div className="p-2">
