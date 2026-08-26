@@ -305,12 +305,13 @@ function UserProfilePage() {
               </button>
             </div>
           ) : (
-            <Link
-              to="/profile"
+            <button
+              type="button"
+              onClick={() => navigate({ to: "/feed" })}
               className="w-full mt-3 py-2 bg-gray-200 dark:bg-secondary text-gray-700 dark:text-foreground rounded-md text-[13px] font-semibold block text-center"
             >
-              প্রোফাইল এডিট করুন
-            </Link>
+              নিজের ফিডে ফিরুন
+            </button>
           )}
 
           <Link
