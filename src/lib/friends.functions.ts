@@ -337,13 +337,37 @@ export const getSuggestedPeople = createServerFn({ method: "POST" })
       if (l.status === "accepted") myFriends.add(other);
     }
 
-    const { data: rows } = await (supabaseAdmin as any)
-      .from("profiles")
-      .select(PUBLIC_COLS)
-      .order("uid_seq", { ascending: true, nullsFirst: false })
-      .limit(2000);
-
     const myUid = Number((myProfile as any)?.uid_seq ?? 0);
+    const candidateRows = new Map<string, any>();
+    if (myUid > 0) {
+      const [nearAbove, nearBelow] = await Promise.all([
+        (supabaseAdmin as any)
+          .from("profiles")
+          .select(PUBLIC_COLS)
+          .gte("uid_seq", myUid)
+          .order("uid_seq", { ascending: true, nullsFirst: false })
+          .limit(500),
+        (supabaseAdmin as any)
+          .from("profiles")
+          .select(PUBLIC_COLS)
+          .lt("uid_seq", myUid)
+          .order("uid_seq", { ascending: false, nullsFirst: false })
+          .limit(500),
+      ]);
+      for (const row of [...((nearAbove.data ?? []) as any[]), ...((nearBelow.data ?? []) as any[])]) {
+        candidateRows.set(row.id, row);
+      }
+    }
+
+    if (candidateRows.size < data.offset + data.limit) {
+      const { data: recentRows } = await (supabaseAdmin as any)
+        .from("profiles")
+        .select(PUBLIC_COLS)
+        .order("created_at", { ascending: false })
+        .limit(500);
+      for (const row of (recentRows ?? []) as any[]) candidateRows.set(row.id, row);
+    }
+
     const candidates = ((rows ?? []) as any[])
       .filter((p) => !linked.has(p.id))
       .map((p) => ({
