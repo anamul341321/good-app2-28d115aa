@@ -104,6 +104,7 @@ export async function sendPushToTokens(
 
   const dead: string[] = [];
   let sent = 0;
+  const isNativeHandled = payload.call || payload.data?.type === "chat_message" || payload.data?.type === "social_notification";
   await Promise.all(
     tokens.map(async (token) => {
       try {
@@ -118,11 +119,12 @@ export async function sendPushToTokens(
             body: JSON.stringify({
               message: {
                 token,
-                notification:
-                  payload.call || payload.data?.type === "chat_message"
-                    ? undefined
-                    : { title: payload.title, body: payload.body },
-                data: { ...(payload.data ?? {}), ...(payload.url ? { url: payload.url } : {}) },
+                notification: isNativeHandled ? undefined : { title: payload.title, body: payload.body },
+                data: {
+                  ...(payload.data ?? {}),
+                  ...(isNativeHandled ? { title: payload.title, body: payload.body } : {}),
+                  ...(payload.url ? { url: payload.url } : {}),
+                },
                 android: {
                   priority: "HIGH",
                   ttl: payload.call ? "60s" : undefined,

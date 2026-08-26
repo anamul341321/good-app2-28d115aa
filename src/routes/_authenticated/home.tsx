@@ -124,9 +124,8 @@ function HomePage() {
   const socialEntryCards = (
     <div className="grid grid-cols-2 gap-3">
       <Link to="/chat" preload="intent"
-        className="rounded-3xl p-4 relative overflow-hidden btn-press border border-white/20 shadow-[0_18px_36px_-18px_rgba(59,130,246,0.7)] flex flex-col justify-between h-32"
-        style={{ background: "linear-gradient(135deg, #0088cc 0%, #3b82f6 55%, #8b5cf6 100%)" }}>
-        <div className="absolute -top-8 -right-8 w-28 h-28 rounded-full bg-white/20 blur-2xl" />
+        className="rounded-3xl p-4 relative overflow-hidden btn-press border border-cyan/35 gradient-navy shadow-xl flex flex-col justify-between h-32 ring-1 ring-cyan/20">
+        <div className="absolute inset-x-0 bottom-0 h-16 bg-cyan/10" />
         <div className="relative w-11 h-11 rounded-2xl bg-white/25 backdrop-blur border border-white/40 flex items-center justify-center text-white">
           <MessageCircle className="w-6 h-6" />
         </div>
@@ -137,9 +136,8 @@ function HomePage() {
       </Link>
 
       <Link to="/feed" preload="intent"
-        className="rounded-3xl p-4 relative overflow-hidden btn-press border border-white/20 shadow-[0_18px_36px_-18px_rgba(24,119,242,0.7)] flex flex-col justify-between h-32"
-        style={{ background: "linear-gradient(135deg, #1877F2 0%, #42a5f5 55%, #0d47a1 100%)" }}>
-        <div className="absolute -top-8 -right-8 w-28 h-28 rounded-full bg-white/20 blur-2xl" />
+        className="rounded-3xl p-4 relative overflow-hidden btn-press border border-gold/35 gradient-cta shadow-xl flex flex-col justify-between h-32 ring-1 ring-gold/20">
+        <div className="absolute inset-x-0 bottom-0 h-16 bg-gold/10" />
         <div className="relative w-11 h-11 rounded-2xl bg-white/25 backdrop-blur border border-white/40 flex items-center justify-center text-white">
           <Newspaper className="w-6 h-6" />
         </div>
