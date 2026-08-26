@@ -132,21 +132,33 @@ export function attachBackgroundAudio(
   let usingNative = false;
   let backgroundStartedAt = 0;
   let backgroundStartPosition = 0;
+  let wasPlaying = !video.paused;
+
+  const rememberPlaying = () => {
+    wasPlaying = true;
+    // Start the foreground service while the Activity is still visible. Android
+    // 12+ can reject a brand-new foreground service after the app is hidden.
+    beginNativeMediaPlayback(info);
+  };
+  const rememberPaused = () => {
+    if (!usingAudio && !usingNative) wasPlaying = false;
+  };
 
   const toBackground = () => {
-    if (usingAudio || usingNative || video.paused || !src) return;
+    if (usingAudio || usingNative || !wasPlaying || !src) return;
     backgroundStartPosition = video.currentTime;
     backgroundStartedAt = Date.now();
+    // Pause WebView playback before handing the same timestamp to Android, so
+    // the two players never overlap during the lifecycle transition.
+    video.pause();
     if (beginNativeUrlPlayback(src, video.currentTime, info)) {
       usingNative = true;
-      video.pause();
       return;
     }
     if (!audio) return;
     usingAudio = true;
     if (audio.src !== src) audio.src = src;
     audio.currentTime = video.currentTime;
-    video.pause();
     audio.play().catch(() => {});
     setMediaSessionMetadata(info);
   };
@@ -175,13 +187,25 @@ export function attachBackgroundAudio(
     else toForeground();
   };
 
+  const onNativeBackground = () => toBackground();
+
   const onEnded = () => handlers.onNext?.();
 
   document.addEventListener("visibilitychange", onVisibility);
+  window.addEventListener("pagehide", onNativeBackground);
+  window.addEventListener("goodapp-background", onNativeBackground);
+  video.addEventListener("play", rememberPlaying);
+  video.addEventListener("pause", rememberPaused);
   audio?.addEventListener("ended", onEnded);
+
+  if (!video.paused) rememberPlaying();
 
   return () => {
     document.removeEventListener("visibilitychange", onVisibility);
+    window.removeEventListener("pagehide", onNativeBackground);
+    window.removeEventListener("goodapp-background", onNativeBackground);
+    video.removeEventListener("play", rememberPlaying);
+    video.removeEventListener("pause", rememberPaused);
     audio?.removeEventListener("ended", onEnded);
     if (audio) {
       audio.pause();

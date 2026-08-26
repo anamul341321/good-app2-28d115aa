@@ -193,7 +193,6 @@ public class MainActivity extends BridgeActivity {
     }
 
     private void playNativeMediaUrl(String url, int positionMs, String title, String artist) {
-        startNativeMediaPlayback(title, artist);
         try {
             Intent service = new Intent(this, MediaPlaybackService.class);
             service.setAction(MediaPlaybackService.ACTION_PLAY_URL);
@@ -201,7 +200,11 @@ public class MainActivity extends BridgeActivity {
             service.putExtra("position_ms", Math.max(0, positionMs));
             service.putExtra("title", title);
             service.putExtra("artist", artist);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(service);
+            // attachBackgroundAudio starts the foreground service while this
+            // Activity is visible. Once it exists, a normal startService call
+            // is allowed even after Android has moved the Activity to background.
+            if (mediaPlaybackActive) startService(service);
+            else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(service);
             else startService(service);
         } catch (Exception ignored) {}
     }
@@ -396,24 +399,10 @@ public class MainActivity extends BridgeActivity {
                 NOTIFICATION_PERMISSION_REQUEST
             );
         }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            NotificationManager notificationManager =
-                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-            if (!notificationManager.canUseFullScreenIntent()) {
-                try {
-                    Intent fullScreenPermission = new Intent(
-                        Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT,
-                        Uri.parse("package:" + getPackageName())
-                    );
-                    startActivity(fullScreenPermission);
-                    Toast.makeText(
-                        this,
-                        "Screen বন্ধ থাকলেও কল পেতে Full-screen call অনুমতি চালু করুন",
-                        Toast.LENGTH_LONG
-                    ).show();
-                } catch (Exception ignored) {}
-            }
-        }
+        // Never open Android settings during cold start. On some Android 14/15
+        // devices ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT is unavailable or the
+        // activity transition races WebView startup, which can terminate the app.
+        // Incoming-call notifications continue to work without forcing this screen.
         IntentFilter downloadFilter = new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(downloadReceiver, downloadFilter, Context.RECEIVER_NOT_EXPORTED);
@@ -571,7 +560,9 @@ public class MainActivity extends BridgeActivity {
             if (callWakeLock != null && callWakeLock.isHeld()) callWakeLock.release();
             if (mediaWakeLock != null && mediaWakeLock.isHeld()) mediaWakeLock.release();
         } catch (Exception ignored) {}
-        stopNativeMediaPlayback();
+        // Do not stop the foreground player here. Android may recreate the
+        // Activity while the app is minimized or the screen is off; playback
+        // must only stop through the explicit endMediaPlayback bridge action.
         try {
             unregisterReceiver(downloadReceiver);
         } catch (Exception ignored) {}
@@ -581,6 +572,7 @@ public class MainActivity extends BridgeActivity {
     @Override
     // BridgeActivity exposes these lifecycle callbacks publicly.
     public void onPause() {
+        emit("window.dispatchEvent(new Event('goodapp-background'))");
         super.onPause();
     }
 
@@ -593,6 +585,7 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onResume() {
         super.onResume();
+        emit("window.dispatchEvent(new Event('goodapp-foreground'))");
         if (waitingForInstallPermission
             && (Build.VERSION.SDK_INT < Build.VERSION_CODES.O
                 || getPackageManager().canRequestPackageInstalls())) {
