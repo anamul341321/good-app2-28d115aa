@@ -43,25 +43,29 @@ export function useNativeApp() {
     // Dynamic imports so the browser bundle never tries to load Capacitor modules.
     Promise.all([
       import("@capacitor/splash-screen").then((m) => m.SplashScreen.hide({ fadeOutDuration: 450 })),
-      import("@capacitor/app").then((m) => m.App.addListener("backButton", () => {
-        const path = window.location.pathname.replace(/\/+$/, "") || "/";
-        if (!EXIT_ROUTES.has(path)) {
-          window.history.back();
-          return;
-        }
+      import("@capacitor/app").then((m) =>
+        m.App.addListener("backButton", () => {
+          const path = window.location.pathname.replace(/\/+$/, "") || "/";
+          if (!EXIT_ROUTES.has(path)) {
+            window.history.back();
+            return;
+          }
 
-        const now = Date.now();
-        if (now - lastRootBackPress < 2_000) {
-          m.App.exitApp();
-          return;
-        }
-        lastRootBackPress = now;
-        toast("অ্যাপ বন্ধ করতে আবার Back চাপুন");
-      })),
-      import("@capacitor/device").then((m) => m.Device.getInfo().then((info) => {
-        // eslint-disable-next-line no-console
-        console.log("[Good-App] native device:", info.model, info.platform, info.osVersion);
-      })),
+          const now = Date.now();
+          if (now - lastRootBackPress < 2_000) {
+            m.App.exitApp();
+            return;
+          }
+          lastRootBackPress = now;
+          toast("অ্যাপ বন্ধ করতে আবার Back চাপুন");
+        }),
+      ),
+      import("@capacitor/device").then((m) =>
+        m.Device.getInfo().then((info) => {
+          // eslint-disable-next-line no-console
+          console.log("[Good-App] native device:", info.model, info.platform, info.osVersion);
+        }),
+      ),
       // ফোনের push notification — permission নিয়ে token সার্ভারে পাঠায়
       import("@capacitor/push-notifications").then(async (m) => {
         const { PushNotifications } = m;
@@ -82,6 +86,19 @@ export function useNativeApp() {
           perm = await PushNotifications.requestPermissions();
         }
         if (perm.receive === "granted") await PushNotifications.register();
+        const bridge = (window as any).GoodAppDownloader;
+        if (perm.receive === "granted" && bridge?.areBubblesAllowed?.() === false) {
+          window.setTimeout(() => {
+            toast("মেসেঞ্জার বাবল বন্ধ আছে", {
+              description: "ভাসমান মেসেজ পেতে Android সেটিংসে বাবল চালু করুন।",
+              duration: 12_000,
+              action: {
+                label: "চালু করুন",
+                onClick: () => bridge.openBubbleSettings?.(),
+              },
+            });
+          }, 1_500);
+        }
       }),
     ]).catch(() => {
       // Native APIs are best-effort; the web app must keep working regardless.

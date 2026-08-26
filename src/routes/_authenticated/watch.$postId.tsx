@@ -3,7 +3,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Heart, Loader2, Send, ThumbsUp, Users } from "lucide-react";
+import { Heart, Loader2, Maximize2, Minimize2, Send, ThumbsUp, Users } from "lucide-react";
 import { PageBackHeader } from "@/components/PageBackHeader";
 import {
   getUploadedLongVideoByPostId,
@@ -23,6 +23,7 @@ import { attachBackgroundAudio } from "@/lib/background-audio";
 import { MessengerAvatar } from "@/components/messenger/MessengerAvatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { useMediaFullscreen } from "@/hooks/use-media-fullscreen";
 
 export const Route = createFileRoute("/_authenticated/watch/$postId")({
   component: WatchPage,
@@ -51,7 +52,11 @@ function WatchPage() {
   const [mediaFailed, setMediaFailed] = useState(false);
   const [mediaKey, setMediaKey] = useState(0);
 
-  const { data: video, isLoading, isError } = useQuery({
+  const {
+    data: video,
+    isLoading,
+    isError,
+  } = useQuery({
     queryKey: ["watch-video", postId],
     queryFn: () => getUploadedLongVideoByPostId(postId),
   });
@@ -60,6 +65,8 @@ function WatchPage() {
   const thumbUrl = useFeedMedia(video?.thumbnail_url || undefined);
   const avatarUrl = useFeedMedia(video?.uploader_avatar_url || undefined);
   const playerRef = useRef<HTMLVideoElement | null>(null);
+  const playerBoxRef = useRef<HTMLDivElement | null>(null);
+  const { isFullscreen, fallbackFullscreen, toggleFullscreen } = useMediaFullscreen(playerBoxRef);
 
   useEffect(() => {
     const el = playerRef.current;
@@ -71,7 +78,6 @@ function WatchPage() {
     });
   }, [videoUrl, thumbUrl, video?.title, video?.creator]);
 
-
   const { data: engagement } = useQuery({
     queryKey: ["watch-engagement", postId],
     queryFn: () => getLocalVideoEngagement(postId),
@@ -80,7 +86,11 @@ function WatchPage() {
 
   const { data: channelStats } = useQuery({
     queryKey: ["watch-channel-stats", video?.uploader_user_id, user?.id],
-    queryFn: () => getChannelStats(video!.uploader_user_id as string, user?.id),
+    queryFn: () => {
+      const uploaderId = video?.uploader_user_id;
+      if (!uploaderId) throw new Error("ভিডিও আপলোডার পাওয়া যায়নি");
+      return getChannelStats(uploaderId, user?.id);
+    },
     enabled: !!video?.uploader_user_id,
   });
 
@@ -117,7 +127,9 @@ function WatchPage() {
       return toggleChannelSubscription(user.id, video.uploader_user_id);
     },
     onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ["watch-channel-stats", video?.uploader_user_id, user?.id] }),
+      queryClient.invalidateQueries({
+        queryKey: ["watch-channel-stats", video?.uploader_user_id, user?.id],
+      }),
     onError: () => toast.error("সাবস্ক্রাইব করা যায়নি"),
   });
 
@@ -157,8 +169,14 @@ function WatchPage() {
       <div className="px-4">
         <PageBackHeader fallbackTo="/videos" />
       </div>
-      <div className="sticky top-0 z-20 w-full bg-black">
-
+      <div
+        ref={playerBoxRef}
+        className={
+          fallbackFullscreen
+            ? "fixed inset-0 z-[999] flex h-[100dvh] w-screen items-center justify-center bg-black"
+            : "sticky top-0 z-20 w-full bg-black"
+        }
+      >
         {videoUrl && !mediaFailed ? (
           <video
             key={mediaKey}
@@ -170,12 +188,22 @@ function WatchPage() {
             preload="metadata"
             onLoadedData={() => setMediaFailed(false)}
             onError={() => setMediaFailed(true)}
-            className="mx-auto max-h-[60vh] w-full bg-black"
+            className={
+              fallbackFullscreen
+                ? "h-full w-full object-contain bg-black"
+                : "mx-auto aspect-video max-h-[60vh] w-full object-contain bg-black"
+            }
           />
         ) : (
           <div className="flex h-[40vh] w-full items-center justify-center">
             {mediaFailed ? (
-              <Button variant="secondary" onClick={() => { setMediaFailed(false); setMediaKey((value) => value + 1); }}>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setMediaFailed(false);
+                  setMediaKey((value) => value + 1);
+                }}
+              >
                 ভিডিও আবার চালান
               </Button>
             ) : (
@@ -183,12 +211,24 @@ function WatchPage() {
             )}
           </div>
         )}
+        <Button
+          type="button"
+          size="icon"
+          variant="ghost"
+          aria-label={isFullscreen ? "ফুল স্ক্রিন বন্ধ করুন" : "ফুল স্ক্রিন করুন"}
+          onClick={() => void toggleFullscreen()}
+          className="absolute bottom-3 right-3 z-30 text-white hover:bg-black/60 hover:text-white"
+        >
+          {isFullscreen ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
+        </Button>
       </div>
 
       <div className="mx-auto max-w-3xl px-4 py-4">
         <h1 className="text-lg font-black text-foreground">{video.title}</h1>
         {video.duration ? (
-          <p className="mt-1 text-xs text-muted-foreground">দৈর্ঘ্য: {Math.round(video.duration)} সেকেন্ড</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            দৈর্ঘ্য: {Math.round(video.duration)} সেকেন্ড
+          </p>
         ) : null}
 
         <div className="mt-4 flex items-center justify-between border-y border-border py-3">
@@ -265,7 +305,9 @@ function WatchPage() {
                 <div key={c.id} className="flex items-start gap-2">
                   <MessengerAvatar name={c.user?.display_name || "User"} size="sm" />
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs font-black text-foreground">{c.user?.display_name || "User"}</p>
+                    <p className="text-xs font-black text-foreground">
+                      {c.user?.display_name || "User"}
+                    </p>
                     <p className="text-sm text-foreground">{c.content}</p>
                   </div>
                 </div>
@@ -311,7 +353,11 @@ function SuggestedCard({ video }: { video: ExternalReelVideo }) {
 
   if (isLocal) {
     return (
-      <Link to="/watch/$postId" params={{ postId: video.local_post_id as string }} className="block">
+      <Link
+        to="/watch/$postId"
+        params={{ postId: video.local_post_id as string }}
+        className="block"
+      >
         {content}
       </Link>
     );

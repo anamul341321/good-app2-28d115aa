@@ -20,6 +20,7 @@ type Handlers = {
 };
 
 let audioEl: HTMLAudioElement | null = null;
+let nativeOwner = 0;
 
 function beginNativeMediaPlayback(info: BackgroundMediaInfo) {
   try {
@@ -34,11 +35,20 @@ function beginNativeMediaPlayback(info: BackgroundMediaInfo) {
   }
 }
 
-function beginNativeUrlPlayback(src: string, positionSeconds: number, info: BackgroundMediaInfo): boolean {
+function beginNativeUrlPlayback(
+  src: string,
+  positionSeconds: number,
+  info: BackgroundMediaInfo,
+): boolean {
   try {
     const bridge = (window as any).GoodAppDownloader;
     if (!bridge?.playMediaUrl) return false;
-    bridge.playMediaUrl(src, Math.max(0, Math.floor(positionSeconds * 1000)), info.title, info.artist || "good-app");
+    bridge.playMediaUrl(
+      src,
+      Math.max(0, Math.floor(positionSeconds * 1000)),
+      info.title,
+      info.artist || "good-app",
+    );
     return true;
   } catch {
     return false;
@@ -62,6 +72,16 @@ function endNativeMediaPlayback() {
   } catch {
     // native bridge optional
   }
+}
+
+function claimNativePlayback() {
+  nativeOwner += 1;
+  return nativeOwner;
+}
+
+function releaseNativePlayback(owner: number) {
+  if (owner !== nativeOwner) return;
+  endNativeMediaPlayback();
 }
 
 function getAudio(): HTMLAudioElement | null {
@@ -135,6 +155,7 @@ export function attachBackgroundAudio(
   info: BackgroundMediaInfo,
   handlers: Handlers = {},
 ): () => void {
+  const nativePlaybackOwner = claimNativePlayback();
   const audio = getAudio();
   setMediaSessionMetadata(info);
   setMediaSessionHandlers(video, handlers);
@@ -208,6 +229,7 @@ export function attachBackgroundAudio(
   document.addEventListener("visibilitychange", onVisibility);
   window.addEventListener("pagehide", onNativeBackground);
   window.addEventListener("goodapp-background", onNativeBackground);
+  window.addEventListener("goodapp-foreground", toForeground);
   video.addEventListener("play", rememberPlaying);
   video.addEventListener("pause", rememberPaused);
   audio?.addEventListener("ended", onEnded);
@@ -218,6 +240,7 @@ export function attachBackgroundAudio(
     document.removeEventListener("visibilitychange", onVisibility);
     window.removeEventListener("pagehide", onNativeBackground);
     window.removeEventListener("goodapp-background", onNativeBackground);
+    window.removeEventListener("goodapp-foreground", toForeground);
     video.removeEventListener("play", rememberPlaying);
     video.removeEventListener("pause", rememberPaused);
     audio?.removeEventListener("ended", onEnded);
@@ -229,7 +252,7 @@ export function attachBackgroundAudio(
     usingAudio = false;
     usingNative = false;
     setMediaSessionHandlers(null, {});
-    endNativeMediaPlayback();
+    releaseNativePlayback(nativePlaybackOwner);
   };
 }
 
@@ -250,6 +273,7 @@ export function attachBackgroundEmbed(
     getPosition?: () => number;
   } = {},
 ): () => void {
+  const nativePlaybackOwner = claimNativePlayback();
   setMediaSessionMetadata(info);
   setMediaSessionHandlers(null, handlers);
 
@@ -355,6 +379,7 @@ export function attachBackgroundEmbed(
   document.addEventListener("visibilitychange", onVisibility);
   window.addEventListener("pagehide", onHide);
   window.addEventListener("goodapp-background", onHide);
+  window.addEventListener("goodapp-foreground", toForeground);
   audio?.addEventListener("ended", onEnded);
   beginNativeMediaPlayback(info);
 
@@ -364,6 +389,7 @@ export function attachBackgroundEmbed(
     document.removeEventListener("visibilitychange", onVisibility);
     window.removeEventListener("pagehide", onHide);
     window.removeEventListener("goodapp-background", onHide);
+    window.removeEventListener("goodapp-foreground", toForeground);
     audio?.removeEventListener("ended", onEnded);
     if (audio) {
       audio.pause();
@@ -373,7 +399,6 @@ export function attachBackgroundEmbed(
     usingNative = false;
     usingAudio = false;
     setMediaSessionHandlers(null, {});
-    endNativeMediaPlayback();
+    releaseNativePlayback(nativePlaybackOwner);
   };
 }
-

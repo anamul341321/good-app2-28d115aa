@@ -4,7 +4,7 @@ import { Link } from "@tanstack/react-router";
 import logo from "@/assets/goodapp-logo.png";
 
 /** এই ভার্সনের ব্যানার একবার বন্ধ করলে আর দেখাবে না */
-const VERSION_KEY = "new-update-banner-v1.28";
+const VERSION_KEY = "new-update-banner-v1.29";
 
 const FEATURES = [
   { icon: "💬", text: "মেসেজ এলে ভাসমান বাবল — অ্যাপ বন্ধ থাকলেও নোটিফিকেশন আসবে" },
@@ -60,14 +60,21 @@ export function NewUpdateBanner() {
             <Sparkles className="h-3.5 w-3.5" /> নতুন আপডেট
           </p>
           <p className="mt-0.5 text-lg font-black leading-tight text-white">
-            গুড-অ্যাপ <span className="text-amber-300" translate="no">v1.28</span> চলে এসেছে
+            গুড-অ্যাপ{" "}
+            <span className="text-amber-300" translate="no">
+              v1.29
+            </span>{" "}
+            চলে এসেছে
           </p>
         </div>
       </div>
 
       <ul className="relative mt-3 space-y-1.5">
         {FEATURES.map((f) => (
-          <li key={f.text} className="flex items-start gap-2 text-[12px] font-semibold leading-snug text-white/90">
+          <li
+            key={f.text}
+            className="flex items-start gap-2 text-[12px] font-semibold leading-snug text-white/90"
+          >
             <span className="shrink-0">{f.icon}</span>
             <span>{f.text}</span>
           </li>
