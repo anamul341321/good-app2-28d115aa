@@ -127,7 +127,9 @@ export async function sendPushToTokens(
                 },
                 android: {
                   priority: "HIGH",
-                  ttl: payload.call ? "60s" : undefined,
+                  // Chat/social pushes must survive a sleeping or offline phone,
+                  // otherwise FCM drops them and nothing ever arrives.
+                  ttl: payload.call ? "60s" : "86400s",
                   collapseKey: payload.collapseKey,
                   notification: isNativeHandled
                     ? undefined
