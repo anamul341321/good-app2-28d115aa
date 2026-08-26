@@ -90,6 +90,33 @@ function UserProfilePage() {
   const [loadingComments, setLoadingComments] = useState(false);
   const [showPostMenu, setShowPostMenu] = useState<string | null>(null);
   const [viewingImage, setViewingImage] = useState<string | null>(null);
+  const [uploading, setUploading] = useState<"cover" | "avatar" | null>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImageUpload = async (file: File, kind: "cover" | "avatar") => {
+    if (!file.type.startsWith("image/")) return toast.error("শুধু ছবি দেওয়া যাবে");
+    if (file.size > 8 * 1024 * 1024) return toast.error("ছবি ৮MB-এর কম হতে হবে");
+    setUploading(kind);
+    try {
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result).split(",")[1] || "");
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      const payload = { data: { base64, contentType: file.type } };
+      if (kind === "cover") await uploadCoverPhoto(payload);
+      else await uploadAvatar(payload);
+      await queryClient.invalidateQueries({ queryKey: ["feed-user-profile", userId] });
+      toast.success(kind === "cover" ? "কভার ফটো আপডেট হয়েছে" : "প্রোফাইল ছবি আপডেট হয়েছে");
+    } catch {
+      toast.error("আপলোড করা যায়নি");
+    } finally {
+      setUploading(null);
+    }
+  };
+
 
   useEffect(() => {
     if (!authLoading && !user) navigate({ to: "/" });
