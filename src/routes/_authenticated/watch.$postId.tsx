@@ -153,7 +153,11 @@ function WatchPage() {
 
   return (
     <div className="min-h-screen bg-background pb-24">
+      <div className="px-4">
+        <PageBackHeader fallbackTo="/videos" />
+      </div>
       <div className="sticky top-0 z-20 w-full bg-black">
+
         {videoUrl && !mediaFailed ? (
           <video
             key={mediaKey}
