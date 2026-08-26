@@ -593,6 +593,28 @@ function InlinePlayer({
     playNextRef.current();
   }, []);
 
+  // এমবেড প্লেয়ারের বর্তমান পজিশন — background handoff-এ ঠিক জায়গা থেকে চালু হবে
+  const embedPositionRef = useRef(0);
+
+  const youtubeId = useMemo(() => {
+    if (isLocal) return null;
+    if (video.video_id) return String(video.video_id);
+    const match = String(video.video_url || "").match(/embed\/([A-Za-z0-9_-]{6,})/);
+    return match?.[1] ?? null;
+  }, [isLocal, video.video_id, video.video_url]);
+
+  const { data: bgAudio } = useQuery({
+    queryKey: ["yt-audio-stream", youtubeId],
+    queryFn: () => getYoutubeAudioStream({ data: { videoId: youtubeId as string } }),
+    enabled: !!youtubeId,
+    staleTime: 30 * 60 * 1000,
+    retry: 1,
+  });
+  const bgAudioRef = useRef<string | null>(null);
+  useEffect(() => {
+    bgAudioRef.current = bgAudio?.url ?? null;
+  }, [bgAudio?.url]);
+
   useEffect(() => {
     if (isLocal) return;
     const onPlayerMessage = (event: MessageEvent) => {
@@ -601,6 +623,8 @@ function InlinePlayer({
       if (typeof payload === "string") {
         try { payload = JSON.parse(payload); } catch { return; }
       }
+      const current = payload?.info?.currentTime;
+      if (typeof current === "number" && Number.isFinite(current)) embedPositionRef.current = current;
       if (payload?.event === "onStateChange" && Number(payload?.info) === 0) playNext();
     };
     window.addEventListener("message", onPlayerMessage);
@@ -632,8 +656,13 @@ function InlinePlayer({
       "https://www.youtube-nocookie.com",
       info,
       { onNext: playNext },
+      {
+        getAudioSrc: () => bgAudioRef.current,
+        getPosition: () => embedPositionRef.current,
+      },
     );
   }, [isLocal, source, video.id, video.title, video.creator, video.thumbnail_url, playNext]);
+
 
 
 
