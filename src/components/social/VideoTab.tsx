@@ -836,7 +836,7 @@ function InlinePlayer({
                   onClick={toggleFullscreen}
                   className="grid h-9 w-9 place-items-center rounded-full text-white active:bg-white/15"
                 >
-                  {effectiveFullscreen ? <Minimize2 className="h-5 w-5" /> : <RotateCw className="h-5 w-5" />}
+                  {effectiveFullscreen ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
                 </button>
                 <button
                   type="button"
