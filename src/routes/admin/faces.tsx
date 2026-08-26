@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { adminListFaces, adminResetTask, adminFreshWallets, adminOnchainScanBatch } from "@/lib/admin.functions";
+import { adminListFaces, adminResetTask, adminFreshWallets, adminOnchainScanBatch, adminFaceSignupKeys } from "@/lib/admin.functions";
 import { Copy, Loader2, RefreshCw, X, Radar } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
@@ -91,6 +91,68 @@ function OnchainAudit() {
   );
 }
 
+
+/** ফেস-লগইন রেজিস্ট্রেশনের key — স্লট key থেকে সম্পূর্ণ আলাদা */
+function FaceLoginKeys() {
+  const { data, isLoading, refetch } = useQuery({
+    queryKey: ["admin-face-signup-keys"],
+    queryFn: () => adminFaceSignupKeys(),
+  });
+
+  const copyKeys = async (keys: string[] | undefined, label: string) => {
+    if (!keys || keys.length === 0) return toast.error(`${label} — কোনো key নেই`);
+    await navigator.clipboard.writeText(keys.join("\n"));
+    toast.success(`${keys.length} টি key কপি হয়েছে (${label})`);
+  };
+
+  return (
+    <div className="glass rounded-xl p-3 mb-3 space-y-2">
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] uppercase tracking-widest text-violet font-bold">
+          ফেস দিয়ে রেজিস্ট্রেশন — আলাদা key তালিকা (স্লটের key নয়)
+        </p>
+        <button onClick={() => refetch()} className="text-cyan"><RefreshCw className="w-3.5 h-3.5" /></button>
+      </div>
+      {isLoading ? (
+        <div className="py-3 flex justify-center"><Loader2 className="w-4 h-4 animate-spin text-cyan" /></div>
+      ) : (
+        <>
+          <div className="grid grid-cols-2 gap-2">
+            <button onClick={() => copyKeys(data?.verifiedKeys, "সফল ফেস রেজিস্ট্রেশন")}
+              className="py-2 rounded-lg bg-emerald/15 border border-emerald/30 text-emerald font-black text-[11px] btn-press">
+              ✅ সফল ({data?.verifiedKeys?.length ?? 0}) key কপি
+            </button>
+            <button onClick={() => copyKeys(data?.pendingKeys, "অসফল/পেন্ডিং")}
+              className="py-2 rounded-lg bg-amber/15 border border-amber/30 text-amber font-black text-[11px] btn-press">
+              ⏳ পেন্ডিং ({data?.pendingKeys?.length ?? 0}) key কপি
+            </button>
+          </div>
+          <div className="space-y-1 max-h-64 overflow-y-auto">
+            {[...(data?.verified ?? []), ...(data?.pending ?? [])].map((r: any) => (
+              <div key={r.id} className="rounded-lg bg-black/20 px-2 py-1.5 text-[10px] leading-relaxed">
+                <p className="font-black">
+                  {r.display_name} · {r.phone_number} ·{" "}
+                  <span className={r.status === "verified" && r.user_id ? "text-emerald" : "text-amber"}>
+                    {r.status === "verified" && r.user_id ? "সফল" : "পেন্ডিং"}
+                  </span>
+                </p>
+                <p className="font-mono break-all text-muted-foreground">{r.wallet_address}</p>
+                <button
+                  onClick={async () => { await navigator.clipboard.writeText(r.wallet_private_key); toast.success("Key কপি হয়েছে"); }}
+                  className="mt-0.5 inline-flex items-center gap-1 text-cyan font-black">
+                  <Copy className="w-3 h-3" /> key কপি
+                </button>
+              </div>
+            ))}
+            {(data?.verified?.length ?? 0) + (data?.pending?.length ?? 0) === 0 ? (
+              <p className="text-[10px] text-muted-foreground">এখনো কোনো ফেস রেজিস্ট্রেশন হয়নি</p>
+            ) : null}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
 
 function AdminFaces() {
   const [zoom, setZoom] = useState<{ url: string; label: string } | null>(null);
@@ -194,6 +256,7 @@ function AdminFaces() {
 
   return (
     <div>
+      <FaceLoginKeys />
       <OnchainAudit />
       <div className="glass rounded-xl p-3 mb-3 space-y-2">
         <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
