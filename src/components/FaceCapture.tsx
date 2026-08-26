@@ -92,15 +92,23 @@ export function FaceCapture({
       }, 30);
     } catch (err: any) {
       const name = err?.name || "";
+      const gallery = cameraOnly ? "" : ", বা গ্যালারি ব্যবহার করুন";
       const msg =
         name === "NotAllowedError" || name === "PermissionDeniedError"
-          ? "ক্যামেরা অনুমতি দেওয়া হয়নি — ব্রাউজার সেটিংস থেকে অনুমতি দিন, বা গ্যালারি ব্যবহার করুন"
+          ? `ক্যামেরা অনুমতি দেওয়া হয়নি — ব্রাউজার সেটিংস থেকে অনুমতি দিন${gallery}`
           : name === "NotFoundError" || name === "DevicesNotFoundError"
-          ? "ক্যামেরা পাওয়া যায়নি — গ্যালারি থেকে ছবি আপলোড করুন"
-          : "ক্যামেরা চালু হয়নি — গ্যালারি ব্যবহার করুন";
+          ? `ক্যামেরা পাওয়া যায়নি${cameraOnly ? " — লাইভ ক্যামেরা ছাড়া এই ধাপ সম্পন্ন হবে না" : " — গ্যালারি থেকে ছবি আপলোড করুন"}`
+          : `ক্যামেরা চালু হয়নি${cameraOnly ? " — আবার চেষ্টা করুন" : " — গ্যালারি ব্যবহার করুন"}`;
       setCameraError(msg);
     }
-  }, []);
+  }, [cameraOnly]);
+
+  // লাইভ-only হলে সরাসরি ক্যামেরা চালু হবে (গ্যালারি অপশন নেই)
+  useEffect(() => {
+    if (cameraOnly && mode === "choice") void startCamera();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cameraOnly, mode]);
+
 
   const onPickFile = useCallback((file: File) => {
     if (!file.type.startsWith("image/")) return;
