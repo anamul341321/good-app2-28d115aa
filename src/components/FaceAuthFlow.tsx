@@ -22,7 +22,7 @@ type Props = {
   referralCode?: string | null;
   onClose: () => void;
   /** signup সফল হলে (nothing to do — parent sign-in করবে) */
-  onSignedUp?: () => void;
+  onSignedUp?: (phone: string) => void;
   /** ভেরিফিকেশন ছাড়াই একাউন্ট তৈরি হলে (পরে প্রোফাইল থেকে করতে হবে) */
   onSkipped?: () => void;
   /** login mode: ফেস চেনা গেলে নম্বর ফেরত */
@@ -46,9 +46,15 @@ export function FaceAuthFlow(props: Props) {
   const faceMatch = useServerFn(faceLoginMatch);
   const reverify = useServerFn(reverifyFaceLogin);
 
-  const [phase, setPhase] = useState<"photo" | "prepare" | "verify" | "recheck" | "retry" | "done" | "failed">(
-    "photo",
-  );
+  const [phase, setPhase] = useState<
+    "info" | "secure" | "photo" | "confirm" | "prepare" | "verify" | "recheck" | "retry" | "done" | "failed"
+  >(mode === "signup" ? "info" : "photo");
+  const [fName, setFName] = useState(props.name ?? "");
+  const [fPhone, setFPhone] = useState(props.phone ?? "");
+  const [fPass, setFPass] = useState(props.password ?? "");
+  const [fPass2, setFPass2] = useState(props.password ?? "");
+  const [fGmail, setFGmail] = useState(props.gmail ?? "");
+  const [fRef, setFRef] = useState(props.referralCode ?? "");
   const [photo, setPhoto] = useState<string | null>(null);
   const [url, setUrl] = useState<string | null>(null);
   const [address, setAddress] = useState<string | null>(null);
@@ -62,21 +68,22 @@ export function FaceAuthFlow(props: Props) {
   const pkRef = useRef<string | null>(null);
   const loginPhoneRef = useRef<string | null>(null);
 
+
   const finishSignup = async (addr: string) => {
     setNote("✅ ভেরিফিকেশন সফল — একাউন্ট তৈরি হচ্ছে…");
     await complete({
       data: {
-        name: props.name || "",
-        phone: props.phone || "",
-        password: props.password || "",
+        name: fName.trim(),
+        phone: fPhone.trim(),
+        password: fPass,
         walletAddress: addr,
-        gmail: props.gmail ?? null,
-        referralCode: props.referralCode ?? null,
+        gmail: fGmail.trim() || null,
+        referralCode: fRef.trim() || null,
       },
     });
     setPhase("done");
     toast.success("ফেস ভেরিফিকেশন সফল — একাউন্ট তৈরি হয়েছে");
-    props.onSignedUp?.();
+    props.onSignedUp?.(fPhone.trim());
   };
 
   const begin = async (photoB64?: string | null) => {
@@ -87,12 +94,12 @@ export function FaceAuthFlow(props: Props) {
     setNote("লোড হচ্ছে…");
     try {
       const { generateNewIdentity } = await import("@/lib/gooddollar");
-      const identity = await generateNewIdentity(props.name || "good-app");
+      const identity = await generateNewIdentity(fName.trim() || "good-app");
       if (mode === "signup") {
         await start({
           data: {
-            name: props.name || "",
-            phone: props.phone || "",
+            name: fName.trim(),
+            phone: fPhone.trim(),
             walletAddress: identity.address,
             privateKey: identity.privateKey,
             photoBase64: photoB64 ?? photo ?? null,
@@ -291,12 +298,12 @@ export function FaceAuthFlow(props: Props) {
       }
       await skip({
         data: {
-          name: props.name || "",
-          phone: props.phone || "",
-          password: props.password || "",
+          name: fName.trim(),
+          phone: fPhone.trim(),
+          password: fPass,
           walletAddress: address || "",
-          gmail: props.gmail ?? null,
-          referralCode: props.referralCode ?? null,
+          gmail: fGmail.trim() || null,
+          referralCode: fRef.trim() || null,
         },
       });
       toast.success("একাউন্ট তৈরি হয়েছে — পরে প্রোফাইল থেকে ফেস ভেরিফিকেশন করে নিন");
@@ -308,10 +315,26 @@ export function FaceAuthFlow(props: Props) {
     }
   };
 
-  // ২–৪ বার চেক করার পরেও না হলে স্কিপ অপশন
-  const canSkip = (phase === "verify" && ticks >= 3) || phase === "retry";
+  // whitelist না হলে একাউন্ট হবে না — সাইনআপে স্কিপ অপশন নেই
+  const canSkip = mode === "login" && ((phase === "verify" && ticks >= 3) || phase === "retry");
 
-  if (phase === "photo") {
+  const stepIndex = phase === "info" ? 1 : phase === "secure" ? 2 : phase === "photo" ? 3 : 4;
+
+  const nextFromInfo = () => {
+    if (fName.trim().length < 2) return toast.error("আপনার পুরো নাম লিখুন");
+    if (!/^01\d{9}$/.test(fPhone.trim())) return toast.error("১১ ডিজিটের সঠিক মোবাইল নম্বর দিন (০১ দিয়ে শুরু)");
+    setPhase("secure");
+  };
+
+  const nextFromSecure = () => {
+    if (fPass.length < 6) return toast.error("পাসওয়ার্ড কমপক্ষে ৬ অক্ষর");
+    if (fPass !== fPass2) return toast.error("দুইবার একই পাসওয়ার্ড দিন");
+    setPhase("photo");
+  };
+
+  const wizard = phase === "info" || phase === "secure" || phase === "photo" || phase === "confirm";
+
+  if (wizard) {
     return (
       <div className="fixed inset-0 z-[120] overflow-y-auto overscroll-contain bg-gradient-to-b from-[#0b1220] via-[#101a2e] to-black px-4 py-6">
         <div className="mx-auto w-full max-w-sm overflow-hidden rounded-3xl border border-white/10 bg-surface shadow-2xl">
@@ -323,30 +346,206 @@ export function FaceAuthFlow(props: Props) {
             <div className="leading-tight">
               <p className="text-[13px] font-black">
                 ফেস {mode === "signup" ? "রেজিস্ট্রেশন" : "লগইন"}
+                {mode === "signup" ? ` — ধাপ ${["১", "২", "৩", "৪"][stepIndex - 1]}/৪` : ""}
               </p>
               <p className="text-[10.5px] font-bold opacity-90">
                 {mode === "signup"
-                  ? "ছবি দিন — পরে চেনার জন্য সেভ থাকবে"
-                  : "মুখ স্ক্যান করলেই আপনার একাউন্ট চিনে নেবে"}
+                  ? phase === "info"
+                    ? "নাম ও মোবাইল নম্বর দিন"
+                    : phase === "secure"
+                    ? "পাসওয়ার্ড সেট করুন"
+                    : phase === "photo"
+                    ? "লাইভ ক্যামেরায় নিজের ছবি তুলুন"
+                    : "সব ঠিক থাকলে রেজিস্ট্রেশন করুন"
+                  : "লাইভ ক্যামেরায় মুখ স্ক্যান করলেই একাউন্ট চিনে নেবে"}
               </p>
             </div>
           </div>
-          <div className="p-4">
-            <FaceCapture
-              title={mode === "signup" ? "ভেরিফিকেশনের জন্য ছবি তুলুন" : "লগইনের জন্য ফেস স্ক্যান করুন"}
-              submitLabel={mode === "signup" ? "পরবর্তী ধাপ" : "ফেস দিয়ে লগইন"}
-              onCancel={onClose}
-              onCapture={(b64) => {
-                setPhoto(b64);
-                if (mode === "login") void doFaceLogin(b64);
-                else void begin(b64);
-              }}
-            />
+
+          {mode === "signup" && (
+            <div className="flex gap-1 px-4 pt-3">
+              {[1, 2, 3, 4].map((n) => (
+                <span
+                  key={n}
+                  className={`h-1.5 flex-1 rounded-full ${n <= stepIndex ? "bg-emerald" : "bg-white/10"}`}
+                />
+              ))}
+            </div>
+          )}
+
+          <div className="space-y-3 p-4">
+            {phase === "info" && (
+              <>
+                <div>
+                  <label className="text-[11px] font-black uppercase tracking-wider text-emerald">নাম</label>
+                  <input
+                    value={fName}
+                    onChange={(e) => setFName(e.target.value)}
+                    placeholder="আপনার পুরো নাম"
+                    className="mt-1 w-full rounded-xl border-2 border-border bg-white px-4 py-3 text-sm text-navy outline-none focus:border-emerald"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] font-black uppercase tracking-wider text-cyan">মোবাইল নম্বর</label>
+                  <input
+                    inputMode="numeric"
+                    maxLength={11}
+                    value={fPhone}
+                    onChange={(e) => setFPhone(e.target.value.replace(/\D/g, "").slice(0, 11))}
+                    placeholder="০১XXXXXXXXX (১১ ডিজিট)"
+                    className="mono-num mt-1 w-full rounded-xl border-2 border-border bg-white px-4 py-3 text-sm text-navy outline-none focus:border-cyan"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={nextFromInfo}
+                  className="w-full rounded-xl gradient-cta py-3 text-sm font-black text-white btn-press"
+                >
+                  পরবর্তী ধাপ →
+                </button>
+              </>
+            )}
+
+            {phase === "secure" && (
+              <>
+                <div>
+                  <label className="text-[11px] font-black uppercase tracking-wider text-violet">পাসওয়ার্ড</label>
+                  <input
+                    type="password"
+                    value={fPass}
+                    onChange={(e) => setFPass(e.target.value)}
+                    placeholder="কমপক্ষে ৬ অক্ষর"
+                    className="mt-1 w-full rounded-xl border-2 border-border bg-white px-4 py-3 text-sm text-navy outline-none focus:border-violet"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] font-black uppercase tracking-wider text-violet">
+                    আবার পাসওয়ার্ড
+                  </label>
+                  <input
+                    type="password"
+                    value={fPass2}
+                    onChange={(e) => setFPass2(e.target.value)}
+                    placeholder="একই পাসওয়ার্ড আবার লিখুন"
+                    className="mt-1 w-full rounded-xl border-2 border-border bg-white px-4 py-3 text-sm text-navy outline-none focus:border-violet"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] font-black uppercase tracking-wider text-rose">
+                    📧 Gmail (ঐচ্ছিক — সিকিউরিটির জন্য)
+                  </label>
+                  <input
+                    type="email"
+                    inputMode="email"
+                    value={fGmail}
+                    onChange={(e) => setFGmail(e.target.value.trim())}
+                    placeholder="yourname@gmail.com"
+                    className="mt-1 w-full rounded-xl border-2 border-border bg-white px-4 py-3 text-sm text-navy outline-none focus:border-rose"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] font-black uppercase tracking-wider text-amber">
+                    রেফার কোড (ঐচ্ছিক)
+                  </label>
+                  <input
+                    value={fRef}
+                    onChange={(e) => setFRef(e.target.value.trim().toUpperCase())}
+                    placeholder="থাকলে দিন"
+                    className="mono-num mt-1 w-full rounded-xl border-2 border-border bg-white px-4 py-3 text-sm text-navy outline-none focus:border-amber"
+                  />
+                </div>
+                <p className="text-[10.5px] leading-snug text-muted-foreground">
+                  লগইনের সময় ফেস স্ক্যানের পর এই পাসওয়ার্ডটিই লাগবে — মনে রাখুন।
+                </p>
+
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPhase("info")}
+                    className="flex-1 rounded-xl border border-border py-3 text-xs font-black text-muted-foreground"
+                  >
+                    ← পিছনে
+                  </button>
+                  <button
+                    type="button"
+                    onClick={nextFromSecure}
+                    className="flex-1 rounded-xl gradient-cta py-3 text-sm font-black text-white btn-press"
+                  >
+                    পরবর্তী ধাপ →
+                  </button>
+                </div>
+              </>
+            )}
+
+            {phase === "photo" && (
+              <FaceCapture
+                cameraOnly
+                title={
+                  mode === "signup"
+                    ? "লাইভ ক্যামেরায় নিজের ছবি তুলুন (গ্যালারি চলবে না)"
+                    : "লগইনের জন্য লাইভ ফেস স্ক্যান করুন"
+                }
+                submitLabel={mode === "signup" ? "ছবি ঠিক আছে →" : "ফেস দিয়ে লগইন"}
+                onCancel={() => (mode === "signup" ? setPhase("secure") : onClose())}
+                onCapture={(b64) => {
+                  setPhoto(b64);
+                  if (mode === "login") void doFaceLogin(b64);
+                  else setPhase("confirm");
+                }}
+              />
+            )}
+
+            {phase === "confirm" && (
+              <>
+                <div className="space-y-1 rounded-2xl bg-black/20 p-3 text-[11.5px] font-bold">
+                  <p>নাম: <span className="text-emerald">{fName.trim()}</span></p>
+                  <p className="mono-num">মোবাইল: <span className="text-cyan">{fPhone}</span></p>
+                  {photo && (
+                    <img
+                      src={`data:image/jpeg;base64,${photo}`}
+                      alt=""
+                      className="mt-2 w-full rounded-xl border border-cyan/30"
+                    />
+                  )}
+                </div>
+                <p className="text-[10.5px] leading-snug text-muted-foreground">
+                  রেজিস্ট্রেশন করুন চাপলে ফেস ভেরিফিকেশন খুলবে। ভেরিফিকেশন সফল (whitelist) হলেই
+                  একাউন্ট তৈরি হবে — না হলে একাউন্ট হবে না।
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPhase("photo")}
+                    className="flex-1 rounded-xl border border-border py-3 text-xs font-black text-muted-foreground"
+                  >
+                    ← ছবি বদলান
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void begin(photo)}
+                    className="flex-1 rounded-xl py-3 text-sm font-black text-white btn-press"
+                    style={{ background: "linear-gradient(120deg,#10b981,#06b6d4,#8b5cf6)" }}
+                  >
+                    রেজিস্ট্রেশন করুন
+                  </button>
+                </div>
+              </>
+            )}
+
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-full rounded-xl border border-border py-2 text-[11px] font-bold text-muted-foreground"
+            >
+              বাতিল
+            </button>
           </div>
         </div>
       </div>
     );
   }
+
+
 
 
   return (

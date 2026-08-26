@@ -275,13 +275,6 @@ export function AuthPage() {
     return cleanPhone;
   };
 
-  const startFaceSignup2 = () => {
-    const ok = validateForm();
-    if (!ok) return;
-    setPhone(ok);
-    setFaceMode("signup");
-  };
-
   const onFormNext = (e: React.FormEvent) => {
     e.preventDefault();
     if (mode === "login") {
@@ -618,7 +611,7 @@ export function AuthPage() {
             </p>
             <button
               type="button"
-              onClick={() => (mode === "login" ? setFaceMode("login") : startFaceSignup2())}
+              onClick={() => setFaceMode(mode === "login" ? "login" : "signup")}
               data-voice={mode === "login" ? "auth.face.login" : undefined}
               className="w-full py-3 rounded-xl font-black text-sm flex flex-col items-center justify-center gap-0.5 text-white btn-press shadow-lg"
               style={{ background: "linear-gradient(120deg,#10b981,#06b6d4,#8b5cf6)" }}
@@ -629,9 +622,10 @@ export function AuthPage() {
               </span>
               <span className="text-[10px] font-bold opacity-90">
                 {mode === "login"
-                  ? "মুখ দেখালেই আপনার একাউন্ট চিনে নেবে"
-                  : "নিচের তথ্য পূরণ করে এখানে চাপুন — সাথে সাথে ফেস ভেরিফিকেশন খুলবে"}
+                  ? "লাইভ ক্যামেরায় মুখ স্ক্যান করলেই একাউন্ট চিনে নেবে"
+                  : "ধাপে ধাপে তথ্য দিন — শেষে ফেস ভেরিফিকেশন খুলবে"}
               </span>
+
             </button>
           </div>
 
@@ -829,11 +823,11 @@ export function AuthPage() {
               setLoginId(phone.replace(/\D/g, "").slice(0, 11));
               toast.info("লগইন করুন — প্রোফাইলে ফেস ভেরিফিকেশন বাকি আছে দেখাবে");
             }}
-            onSignedUp={() => {
+            onSignedUp={(p) => {
               setFaceMode(null);
               setMode("login");
-              setLoginId(phone.replace(/\D/g, "").slice(0, 11));
-              toast.success("একাউন্ট তৈরি হয়েছে — এখন লগইন করুন");
+              setLoginId(p || phone.replace(/\D/g, "").slice(0, 11));
+              toast.success("একাউন্ট তৈরি হয়েছে — এখন পাসওয়ার্ড দিয়ে লগইন করুন");
             }}
             onResolved={(p) => {
               setFaceMode(null);
