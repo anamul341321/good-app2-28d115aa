@@ -90,11 +90,6 @@ public class MediaPlaybackService extends Service {
         releasePlayer();
         try {
             audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
-            audioManager.requestAudioFocus(
-                audioFocusListener,
-                AudioManager.STREAM_MUSIC,
-                AudioManager.AUDIOFOCUS_GAIN
-            );
             player = new MediaPlayer();
             player.setAudioAttributes(new AudioAttributes.Builder()
                 .setUsage(AudioAttributes.USAGE_MEDIA)
@@ -137,6 +132,13 @@ public class MediaPlaybackService extends Service {
     private void startPreparedPlayer() {
         if (player == null || !prepared) return;
         try {
+            if (audioManager != null) {
+                audioManager.requestAudioFocus(
+                    audioFocusListener,
+                    AudioManager.STREAM_MUSIC,
+                    AudioManager.AUDIOFOCUS_GAIN
+                );
+            }
             if (requestedPositionMs > 0) player.seekTo(requestedPositionMs);
             player.start();
             startForegroundNotification(currentTitle, currentArtist);

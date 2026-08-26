@@ -130,7 +130,7 @@ function setMediaSessionHandlers(target: HTMLMediaElement | null, handlers: Hand
  * background. Returns a cleanup function.
  */
 export function attachBackgroundAudio(
-  video: HTMLVideoElement,
+  video: HTMLMediaElement,
   src: string,
   info: BackgroundMediaInfo,
   handlers: Handlers = {},
