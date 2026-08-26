@@ -121,20 +121,62 @@ function HomePage() {
     sessionStorage.setItem("welcome-bonus-seen", "1");
   }, [data, appStatus?.faceVerifyEnabled]);
 
+  const socialEntryCards = (
+    <div className="grid grid-cols-2 gap-3">
+      <Link to="/social/messenger"
+        className="rounded-3xl p-4 relative overflow-hidden btn-press border border-white/20 shadow-[0_18px_36px_-18px_rgba(59,130,246,0.7)] flex flex-col justify-between h-32"
+        style={{ background: "linear-gradient(135deg, #0088cc 0%, #3b82f6 55%, #8b5cf6 100%)" }}>
+        <div className="absolute -top-8 -right-8 w-28 h-28 rounded-full bg-white/20 blur-2xl" />
+        <div className="relative w-11 h-11 rounded-2xl bg-white/25 backdrop-blur border border-white/40 flex items-center justify-center text-white">
+          <MessageCircle className="w-6 h-6" />
+        </div>
+        <div className="relative text-white">
+          <p className="text-[9px] uppercase tracking-[0.2em] font-black text-white/85">Messenger</p>
+          <p className="text-base font-black leading-tight mt-0.5">{t("মেসেঞ্জার", "Messenger")}</p>
+        </div>
+      </Link>
+
+      <Link to="/feed"
+        className="rounded-3xl p-4 relative overflow-hidden btn-press border border-white/20 shadow-[0_18px_36px_-18px_rgba(24,119,242,0.7)] flex flex-col justify-between h-32"
+        style={{ background: "linear-gradient(135deg, #1877F2 0%, #42a5f5 55%, #0d47a1 100%)" }}>
+        <div className="absolute -top-8 -right-8 w-28 h-28 rounded-full bg-white/20 blur-2xl" />
+        <div className="relative w-11 h-11 rounded-2xl bg-white/25 backdrop-blur border border-white/40 flex items-center justify-center text-white">
+          <Newspaper className="w-6 h-6" />
+        </div>
+        <div className="relative text-white">
+          <p className="text-[9px] uppercase tracking-[0.2em] font-black text-white/85">Feed</p>
+          <p className="text-base font-black leading-tight mt-0.5">{t("নিউজ ফিড", "News Feed")}</p>
+        </div>
+      </Link>
+    </div>
+  );
+
   if (isError) {
     return (
-      <div className="py-16 text-center space-y-3">
-        <RefreshCcw className="mx-auto h-7 w-7 text-amber" />
-        <p className="text-sm font-black">{t("তথ্য লোড হয়নি", "Data could not be loaded")}</p>
-        <p className="text-xs text-muted-foreground">{t("ইন্টারনেট চালু আছে কি না দেখে আবার চেষ্টা করুন।", "Check your connection and try again.")}</p>
-        <button type="button" className="gradient-cta rounded-xl px-4 py-2 text-xs font-black" onClick={() => refetch()}>
-          {t("আবার চেষ্টা করুন", "Try again")}
-        </button>
-      </div>
+      <NowProvider>
+        <div className="space-y-4 pt-1 pb-6 relative">
+          {socialEntryCards}
+          <div className="py-16 text-center space-y-3">
+            <RefreshCcw className="mx-auto h-7 w-7 text-amber" />
+            <p className="text-sm font-black">{t("তথ্য লোড হয়নি", "Data could not be loaded")}</p>
+            <p className="text-xs text-muted-foreground">{t("ইন্টারনেট চালু আছে কি না দেখে আবার চেষ্টা করুন।", "Check your connection and try again.")}</p>
+            <button type="button" className="gradient-cta rounded-xl px-4 py-2 text-xs font-black" onClick={() => refetch()}>
+              {t("আবার চেষ্টা করুন", "Try again")}
+            </button>
+          </div>
+        </div>
+      </NowProvider>
     );
   }
   if (isLoading || !data) {
-    return <div className="py-20 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-cyan" /></div>;
+    return (
+      <NowProvider>
+        <div className="space-y-4 pt-1 pb-6 relative">
+          {socialEntryCards}
+          <div className="py-16 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-cyan" /></div>
+        </div>
+      </NowProvider>
+    );
   }
 
   const allClaims = (slotClaims ?? []) as SlotClaim[];
@@ -201,33 +243,7 @@ function HomePage() {
       </div>
 
       {/* দুইটি প্রধান বাটন — মেসেঞ্জার ও নিউজ ফিড */}
-      <div className="grid grid-cols-2 gap-3">
-        <Link to="/social/messenger"
-          className="rounded-3xl p-4 relative overflow-hidden btn-press border border-white/20 shadow-[0_18px_36px_-18px_rgba(59,130,246,0.7)] flex flex-col justify-between h-32"
-          style={{ background: "linear-gradient(135deg, #0088cc 0%, #3b82f6 55%, #8b5cf6 100%)" }}>
-          <div className="absolute -top-8 -right-8 w-28 h-28 rounded-full bg-white/20 blur-2xl" />
-          <div className="relative w-11 h-11 rounded-2xl bg-white/25 backdrop-blur border border-white/40 flex items-center justify-center text-white">
-            <MessageCircle className="w-6 h-6" />
-          </div>
-          <div className="relative text-white">
-            <p className="text-[9px] uppercase tracking-[0.2em] font-black text-white/85">Messenger</p>
-            <p className="text-base font-black leading-tight mt-0.5">{t("মেসেঞ্জার", "Messenger")}</p>
-          </div>
-        </Link>
-
-        <Link to="/feed"
-          className="rounded-3xl p-4 relative overflow-hidden btn-press border border-white/20 shadow-[0_18px_36px_-18px_rgba(24,119,242,0.7)] flex flex-col justify-between h-32"
-          style={{ background: "linear-gradient(135deg, #1877F2 0%, #42a5f5 55%, #0d47a1 100%)" }}>
-          <div className="absolute -top-8 -right-8 w-28 h-28 rounded-full bg-white/20 blur-2xl" />
-          <div className="relative w-11 h-11 rounded-2xl bg-white/25 backdrop-blur border border-white/40 flex items-center justify-center text-white">
-            <Newspaper className="w-6 h-6" />
-          </div>
-          <div className="relative text-white">
-            <p className="text-[9px] uppercase tracking-[0.2em] font-black text-white/85">Feed</p>
-            <p className="text-base font-black leading-tight mt-0.5">{t("নিউজ ফিড", "News Feed")}</p>
-          </div>
-        </Link>
-      </div>
+      {socialEntryCards}
 
       {/* মাইনিং কার্ড */}
       <div data-tour="mining" data-voice="home.mining" className="relative">
