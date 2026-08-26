@@ -140,6 +140,23 @@ function ProfilePage() {
         <p className="text-xs text-muted-foreground mt-1">সম্পূর্ণ তথ্য, কার্ড ও হিস্ট্রি</p>
       </div>
 
+      {doneCount === 0 && (
+        <Link
+          to="/task/$slot"
+          params={{ slot: "1" }}
+          className="no-print block rounded-2xl border-2 border-rose bg-rose/10 p-4 text-center animate-pulse"
+        >
+          <p className="text-sm font-black text-rose">🔴 ফেস ভেরিফিকেশন বাকি আছে</p>
+          <p className="mt-1 text-[11px] font-bold text-rose/80">
+            এখনই ফেস ভেরিফিকেশন করুন — ছবি ক্যামেরা দিয়ে তুলতে পারবেন অথবা গ্যালারি থেকেও দিতে
+            পারবেন। ভেরিফিকেশনের মেয়াদ শেষ হলে আবার করতে বলা হবে।
+          </p>
+          <span className="mt-2 inline-block rounded-xl bg-rose px-4 py-1.5 text-[11px] font-black text-white">
+            ফেস ভেরিফিকেশন করুন →
+          </span>
+        </Link>
+      )}
+
       <div className="glass rounded-2xl p-5 flex flex-col items-center gap-3 no-print">
         <div className="relative">
           <div className="w-24 h-24 rounded-2xl overflow-hidden shimmer-border bg-surface-2 flex items-center justify-center">
