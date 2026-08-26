@@ -368,7 +368,7 @@ export const getSuggestedPeople = createServerFn({ method: "POST" })
       for (const row of (recentRows ?? []) as any[]) candidateRows.set(row.id, row);
     }
 
-    const candidates = ((rows ?? []) as any[])
+    const candidates = Array.from(candidateRows.values())
       .filter((p) => !linked.has(p.id))
       .map((p) => ({
         ...p,
