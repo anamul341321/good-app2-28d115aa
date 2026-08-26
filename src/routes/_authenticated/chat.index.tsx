@@ -1,8 +1,8 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Search, Edit, ChevronLeft, Plus, Users, Check } from "lucide-react";
+import { Search, Edit, Plus, Users, Check, MessageCircle, Menu, Home, UserRound } from "lucide-react";
 import { createGroup, listChats } from "@/lib/chat.functions";
 import { listFriends } from "@/lib/friends.functions";
 import { usePresence } from "@/lib/presence";
@@ -10,6 +10,7 @@ import { StoryRow } from "@/components/messenger/StoryRow";
 import { ChatRow } from "@/components/messenger/ChatRow";
 import { MessengerSearchOverlay } from "@/components/messenger/MessengerSearchOverlay";
 import { Button } from "@/components/ui/button";
+import type { ReactNode } from "react";
 
 export const Route = createFileRoute("/_authenticated/chat/")({
   component: ChatListPage,
@@ -31,7 +32,6 @@ export const Route = createFileRoute("/_authenticated/chat/")({
 
 export function ChatListPage() {
   const qc = useQueryClient();
-  const navigate = useNavigate();
   const onlineIds = usePresence();
   const [showSearch, setShowSearch] = useState(false);
   const [showGroup, setShowGroup] = useState(false);
@@ -62,7 +62,6 @@ export function ChatListPage() {
       setGroupName("");
       setSelectedMembers([]);
       void qc.invalidateQueries({ queryKey: ["chats"] });
-      if (res.groupId) navigate({ to: "/chat/group/$groupId", params: { groupId: res.groupId } });
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : "গ্রুপ তৈরি হয়নি"),
   });
@@ -80,56 +79,47 @@ export function ChatListPage() {
       .map(f => ({
         userId: f.userId,
         name: f.name,
-        online: true,
-        avatar: null, // Profile pics will be handled by MessengerAvatar fallback
+        online: onlineIds.has(f.userId),
+        avatar: f.avatar_url ?? null,
+        hasStory: onlineIds.has(f.userId),
       }));
   }, [friendList, onlineIds]);
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
+    <div className="flex min-h-[100dvh] flex-col bg-background text-foreground">
       {/* Messenger Header */}
-      <header className="sticky top-0 z-40 bg-background/85 backdrop-blur-md px-4 py-3 flex flex-col gap-3 pt-[env(safe-area-inset-top)]">
+      <header className="sticky top-0 z-40 border-b border-border/40 bg-background/95 px-4 pb-2 pt-[max(env(safe-area-inset-top),0.75rem)] backdrop-blur-md">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl font-black text-foreground tracking-tight">Messenger</h1>
-          </div>
-          <div className="flex items-center gap-2">
-            {/* যারা ড্যাশবোর্ডে যেতে চান শুধু তারাই এই বাটনে ট্যাপ করবেন */}
-            <Link
-              to="/home"
-              className="btn-press h-9 px-3 flex items-center gap-1.5 rounded-full bg-surface-2 text-[11px] font-black text-foreground"
-            >
-              <ChevronLeft className="h-4 w-4" /> ড্যাশবোর্ড
-            </Link>
-            <button 
-              onClick={() => navigate({ to: "/chat" as any, search: { new: true } as any })}
-              className="h-9 w-9 flex items-center justify-center rounded-full bg-surface-2 btn-press"
+          <h1 className="font-sans text-[34px] font-black leading-none tracking-normal text-messenger-blue">messenger</h1>
+          <div className="flex items-center gap-2.5">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowSearch(true)}
+              className="h-10 w-10 rounded-full text-foreground hover:bg-surface-2"
               aria-label="নতুন মেসেজ"
             >
-              <Edit className="h-5 w-5 text-foreground" />
-            </button>
-            <Button
-              size="icon"
-              onClick={() => setShowGroup(true)}
-              aria-label="গ্রুপ তৈরি"
-              className="h-9 w-9 rounded-full"
-            >
-              <Plus className="h-5 w-5" />
+              <Edit className="h-6 w-6" />
+            </Button>
+            <Button asChild variant="ghost" size="icon" className="h-10 w-10 rounded-full text-foreground hover:bg-surface-2" aria-label="নিউজ ফিড">
+              <Link to="/feed">
+                <span className="grid h-7 w-7 place-items-center rounded-full bg-foreground text-[19px] font-black leading-none text-background">f</span>
+              </Link>
             </Button>
           </div>
         </div>
 
         {/* Search Bar (Triggers Overlay) */}
-        <button
+        <Button
+          type="button"
+          variant="ghost"
           onClick={() => setShowSearch(true)}
-          className="relative w-full text-left"
+          className="relative mt-5 h-12 w-full justify-start rounded-full bg-surface-2 px-4 text-left text-muted-foreground hover:bg-surface-2"
         >
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <div className="w-full h-10 bg-surface-2 rounded-full pl-10 pr-4 flex items-center text-sm font-bold text-muted-foreground">
-            খুঁজুন (নাম, UID বা ফোন)
-
-          </div>
-        </button>
+          <Search className="h-6 w-6 text-muted-foreground" />
+          <span className="text-[17px] font-medium">Search Messenger</span>
+        </Button>
       </header>
 
       {showSearch && <MessengerSearchOverlay onClose={() => setShowSearch(false)} />}
@@ -202,19 +192,23 @@ export function ChatListPage() {
 
 
       {/* Stories Row */}
-      <section className="mt-1">
+      <section className="border-b border-border/35 bg-background">
         <StoryRow activeUsers={activeUsers} />
       </section>
 
       {/* Conversation List */}
-      <main className="flex-1 mt-2">
+      <main className="flex-1 overflow-y-auto pb-24">
         {isLoading && allConversations.length === 0 ? (
-          <div className="flex items-center justify-center py-10">
-            <div className="h-6 w-6 border-2 border-primary border-t-transparent animate-spin rounded-full" />
+          <div className="flex items-center justify-center py-12">
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-messenger-blue border-t-transparent" />
           </div>
         ) : allConversations.length === 0 ? (
           <div className="px-10 py-20 text-center">
+            <MessageCircle className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
             <p className="text-sm font-bold text-muted-foreground">No conversations found</p>
+            <Button type="button" onClick={() => setShowSearch(true)} className="mt-4 rounded-full bg-messenger-blue px-5 font-black text-primary-foreground">
+              নতুন চ্যাট শুরু করুন
+            </Button>
           </div>
         ) : (
           <div className="flex flex-col">
@@ -223,8 +217,10 @@ export function ChatListPage() {
                 key={'groupId' in conv ? conv.groupId : conv.peerId}
                 id={'groupId' in conv ? conv.groupId : conv.peerId}
                 name={conv.name}
+                avatar={'avatar_url' in conv ? conv.avatar_url : null}
+                uid={'uid' in conv ? conv.uid : null}
                 lastMessage={'mine' in conv && conv.mine ? `You: ${conv.lastBody}` : conv.lastBody}
-                time={new Date(conv.lastAt).toLocaleTimeString("bn-BD", { hour: "2-digit", minute: "2-digit" })}
+                time={formatChatTime(conv.lastAt)}
                 unreadCount={conv.unread}
                 online={'peerId' in conv ? onlineIds.has(conv.peerId) : false}
                 isGroup={'groupId' in conv}
@@ -234,6 +230,59 @@ export function ChatListPage() {
         )}
       </main>
 
+      <nav className="fixed bottom-0 inset-x-0 z-40 border-t border-border/50 bg-background/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_-20px_var(--color-foreground)] backdrop-blur-md">
+        <div className="mx-auto grid max-w-lg grid-cols-3 px-6 py-2">
+          <MessengerTab to="/chat" icon={<MessageCircle className="h-6 w-6" />} label="Chats" active badge={data?.unreadTotal ?? 0} />
+          <MessengerTab to="/friends" icon={<Users className="h-6 w-6" />} label="People" />
+          <MessengerTab to="/menu" icon={<Menu className="h-6 w-6" />} label="Menu" />
+        </div>
+      </nav>
+
     </div>
   );
+}
+
+function MessengerTab({
+  to,
+  icon,
+  label,
+  active,
+  badge,
+}: {
+  to: string;
+  icon: ReactNode;
+  label: string;
+  active?: boolean;
+  badge?: number;
+}) {
+  return (
+    <Link
+      to={to as any}
+      className={`btn-press relative flex flex-col items-center justify-center gap-1 rounded-2xl py-1.5 text-[13px] font-semibold ${active ? "text-messenger-blue" : "text-muted-foreground"}`}
+    >
+      <span className="relative">
+        {icon}
+        {!!badge && badge > 0 && (
+          <span className="absolute -right-2.5 -top-2 grid min-w-5 place-items-center rounded-full bg-destructive px-1 text-[11px] font-black leading-5 text-destructive-foreground">
+            {badge > 99 ? "99+" : badge}
+          </span>
+        )}
+      </span>
+      <span>{label}</span>
+    </Link>
+  );
+}
+
+function formatChatTime(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const now = new Date();
+  const today = date.toDateString() === now.toDateString();
+  if (today) return date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }).toLowerCase();
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  if (date.toDateString() === yesterday.toDateString()) return "Yesterday";
+  const withinWeek = now.getTime() - date.getTime() < 7 * 24 * 60 * 60 * 1000;
+  if (withinWeek) return date.toLocaleDateString("en-US", { weekday: "short" });
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }

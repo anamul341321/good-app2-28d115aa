@@ -40,6 +40,7 @@
   --color-gold: var(--gold);
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
+  --color-messenger-blue: var(--messenger-blue);
   --color-success: var(--emerald);
   --color-warning: var(--amber);
   --font-display: "Baloo Da 2", "Noto Sans Bengali", "Plus Jakarta Sans", system-ui, sans-serif;
@@ -80,6 +81,7 @@
   --amber:   oklch(0.70 0.17 68);
   --rose:    oklch(0.60 0.22 18);
   --violet:  oklch(0.55 0.22 300);
+  --messenger-blue: oklch(0.58 0.22 255);
 }
 
 @layer base {
