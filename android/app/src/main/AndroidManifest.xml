@@ -64,6 +64,18 @@
 
         </activity>
 
+        <!-- Floating chat bubble window (Messenger style). Bubbles require an
+             embeddable, resizeable, document-launched activity. -->
+        <activity
+            android:name=".BubbleChatActivity"
+            android:exported="false"
+            android:allowEmbedded="true"
+            android:resizeableActivity="true"
+            android:documentLaunchMode="always"
+            android:taskAffinity=""
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density"
+            android:theme="@style/AppTheme.NoActionBar" />
+
         <activity
             android:name=".IncomingCallActivity"
             android:excludeFromRecents="true"

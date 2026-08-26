@@ -277,9 +277,40 @@ public class GoodAppMessagingService extends FirebaseMessagingService {
         if (replyAction != null) builder.addAction(replyAction);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             try {
+                // A bubble is only allowed when a matching long-lived shortcut exists
+                // and the notification is tied to it via shortcutId + locusId.
+                String shortcutId = "chat-" + senderId;
+                IconCompat icon = IconCompat.createWithResource(this, R.mipmap.ic_launcher);
+
+                Intent bubbleIntent = new Intent(this, BubbleChatActivity.class);
+                bubbleIntent.setAction(Intent.ACTION_VIEW);
+                bubbleIntent.putExtra("peer_id", senderId);
+                bubbleIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_DOCUMENT | Intent.FLAG_ACTIVITY_MULTIPLE_TASK);
+                PendingIntent bubblePending = PendingIntent.getActivity(
+                    this,
+                    shortcutId.hashCode(),
+                    bubbleIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE
+                );
+
+                androidx.core.content.pm.ShortcutInfoCompat shortcut =
+                    new androidx.core.content.pm.ShortcutInfoCompat.Builder(this, shortcutId)
+                        .setLocusId(new androidx.core.content.LocusIdCompat(shortcutId))
+                        .setShortLabel(senderName)
+                        .setIcon(icon)
+                        .setLongLived(true)
+                        .setIntent(bubbleIntent)
+                        .setPerson(person)
+                        .setIsConversation()
+                        .build();
+                androidx.core.content.pm.ShortcutManagerCompat.pushDynamicShortcut(this, shortcut);
+
+                builder.setShortcutId(shortcutId)
+                    .setLocusId(new androidx.core.content.LocusIdCompat(shortcutId));
+
                 NotificationCompat.BubbleMetadata bubble = new NotificationCompat.BubbleMetadata.Builder(
-                    openChat,
-                    IconCompat.createWithResource(this, R.mipmap.ic_launcher)
+                    bubblePending,
+                    icon
                 )
                     .setDesiredHeight(640)
                     .setAutoExpandBubble(false)
