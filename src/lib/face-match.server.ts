@@ -4,9 +4,12 @@
 
 const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const MODEL = "google/gemini-2.5-flash";
+const STRONG_MODEL = "google/gemini-2.5-pro";
 
 export const DUPLICATE_THRESHOLD = 0.92;
 export const REVERIFY_THRESHOLD = 0.85;
+/** লগইনের মতো ঝুঁকিপূর্ণ যাচাইয়ের জন্য কঠোর থ্রেশহোল্ড */
+export const STRICT_THRESHOLD = 0.9;
 
 type RefPhoto = { id: string; base64: string };
 
