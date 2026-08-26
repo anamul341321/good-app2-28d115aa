@@ -1,4 +1,4 @@
-import { Plus } from "lucide-react";
+import { Loader2, Plus } from "lucide-react";
 import { MessengerAvatar } from "./MessengerAvatar";
 import { Link } from "@tanstack/react-router";
 
@@ -14,10 +14,12 @@ export function StoryRow({
   activeUsers,
   activeCount,
   onCreateStory,
+  creatingStory,
 }: {
   activeUsers: StoryItem[];
   activeCount?: number;
   onCreateStory?: () => void;
+  creatingStory?: boolean;
 }) {
   const users = activeUsers.slice(0, 18);
 
@@ -32,10 +34,12 @@ export function StoryRow({
         <div className="flex shrink-0 flex-col items-center gap-1.5 w-20">
           <button
             onClick={onCreateStory}
+            disabled={creatingStory}
             className="relative flex h-16 w-16 items-center justify-center rounded-full bg-surface-2 transition-colors hover:bg-surface-2/80"
+            aria-label="স্টোরি তৈরি করুন"
           >
             <div className="flex h-full w-full items-center justify-center rounded-full bg-surface-2">
-              <Plus className="h-6 w-6 text-foreground" />
+              {creatingStory ? <Loader2 className="h-6 w-6 animate-spin text-foreground" /> : <Plus className="h-6 w-6 text-foreground" />}
             </div>
             <span className="absolute bottom-0 right-0 flex h-6 w-6 items-center justify-center rounded-full border-2 border-background bg-messenger-blue text-primary-foreground">
               <Plus className="h-3 w-3" />

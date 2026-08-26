@@ -123,7 +123,7 @@ function HomePage() {
 
   const socialEntryCards = (
     <div className="grid grid-cols-2 gap-3">
-      <Link to="/social/messenger"
+      <Link to="/chat" preload="intent"
         className="rounded-3xl p-4 relative overflow-hidden btn-press border border-white/20 shadow-[0_18px_36px_-18px_rgba(59,130,246,0.7)] flex flex-col justify-between h-32"
         style={{ background: "linear-gradient(135deg, #0088cc 0%, #3b82f6 55%, #8b5cf6 100%)" }}>
         <div className="absolute -top-8 -right-8 w-28 h-28 rounded-full bg-white/20 blur-2xl" />
@@ -136,7 +136,7 @@ function HomePage() {
         </div>
       </Link>
 
-      <Link to="/feed"
+      <Link to="/feed" preload="intent"
         className="rounded-3xl p-4 relative overflow-hidden btn-press border border-white/20 shadow-[0_18px_36px_-18px_rgba(24,119,242,0.7)] flex flex-col justify-between h-32"
         style={{ background: "linear-gradient(135deg, #1877F2 0%, #42a5f5 55%, #0d47a1 100%)" }}>
         <div className="absolute -top-8 -right-8 w-28 h-28 rounded-full bg-white/20 blur-2xl" />

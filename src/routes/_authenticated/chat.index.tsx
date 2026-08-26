@@ -1,17 +1,19 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Search, Edit, Users, Check, MessageCircle, Menu } from "lucide-react";
+import { Search, Users, Check, MessageCircle, Home, Loader2 } from "lucide-react";
 import { createGroup, listChats } from "@/lib/chat.functions";
 import { listFriends } from "@/lib/friends.functions";
 import { getPublicProfile } from "@/lib/social-users.functions";
+import { createStory, uploadStoryMedia } from "@/lib/feed-api";
 import { useAuth } from "@/hooks/useAuth";
 import { usePresence } from "@/lib/presence";
 import { StoryRow } from "@/components/messenger/StoryRow";
 import { ChatRow } from "@/components/messenger/ChatRow";
 import { MessengerAvatar } from "@/components/messenger/MessengerAvatar";
 import { MessengerSearchOverlay } from "@/components/messenger/MessengerSearchOverlay";
+import StoryEditor from "@/components/social/StoryEditor";
 import { Button } from "@/components/ui/button";
 import type { ReactNode } from "react";
 
@@ -41,6 +43,8 @@ export function ChatListPage() {
   const [showGroup, setShowGroup] = useState(false);
   const [groupName, setGroupName] = useState("");
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
+  const [storyEditorFile, setStoryEditorFile] = useState<File | null>(null);
+  const storyInputRef = useRef<HTMLInputElement>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["chats"],
@@ -76,6 +80,31 @@ export function ChatListPage() {
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : "গ্রুপ তৈরি হয়নি"),
   });
+
+  const storyMutation = useMutation({
+    mutationFn: async ({ file, musicName }: { file: File; musicName?: string }) => {
+      if (!user?.id) throw new Error("Login");
+      const url = await uploadStoryMedia(file, user.id);
+      await createStory(user.id, url, musicName);
+    },
+    onSuccess: () => {
+      setStoryEditorFile(null);
+      void qc.invalidateQueries({ queryKey: ["stories"] });
+      toast.success("স্টোরি যোগ হয়েছে");
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : "স্টোরি যোগ হয়নি"),
+  });
+
+  const handleStorySelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setStoryEditorFile(file);
+    event.target.value = "";
+  };
+
+  const handleStoryPublish = (editedFile: File, musicName?: string) => {
+    storyMutation.mutate({ file: editedFile, musicName });
+  };
 
   const allConversations = useMemo(() => {
     return [...chats, ...groups].sort((a, b) => 
@@ -115,24 +144,15 @@ export function ChatListPage() {
               </Link>
             )}
             <div className="min-w-0">
-              <h1 className="font-sans text-[34px] font-black leading-none tracking-normal text-messenger-blue">messenger</h1>
+              <h1 className="font-sans text-[31px] font-black leading-none tracking-normal text-messenger-blue">goodapp massage</h1>
               <p className="mt-0.5 text-[12px] font-bold text-muted-foreground">{activeCount} জন active now</p>
             </div>
           </div>
           <div className="flex items-center gap-2.5">
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={() => setShowSearch(true)}
-              className="h-10 w-10 rounded-full text-foreground hover:bg-surface-2"
-              aria-label="নতুন মেসেজ"
-            >
-              <Edit className="h-6 w-6" />
-            </Button>
-            <Button asChild variant="ghost" size="icon" className="h-10 w-10 rounded-full text-foreground hover:bg-surface-2" aria-label="নিউজ ফিড">
-              <Link to="/feed">
-                <span className="grid h-7 w-7 place-items-center rounded-full bg-foreground text-[19px] font-black leading-none text-background">f</span>
+            <Button asChild variant="secondary" size="sm" className="h-10 rounded-full px-3 font-black" aria-label="ড্যাশবোর্ডে ফিরুন">
+              <Link to="/home">
+                <Home className="h-4 w-4" />
+                হোম
               </Link>
             </Button>
           </div>
@@ -221,7 +241,8 @@ export function ChatListPage() {
 
       {/* Stories Row */}
       <section className="border-b border-border/35 bg-background">
-        <StoryRow activeUsers={activeUsers} activeCount={activeCount} />
+        <StoryRow activeUsers={activeUsers} activeCount={activeCount} onCreateStory={() => storyInputRef.current?.click()} creatingStory={storyMutation.isPending} />
+        <input ref={storyInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleStorySelect} />
       </section>
 
       {/* Conversation List */}
@@ -262,9 +283,13 @@ export function ChatListPage() {
         <div className="mx-auto grid max-w-lg grid-cols-3 px-6 py-2">
           <MessengerTab to="/chat" icon={<MessageCircle className="h-6 w-6" />} label="Chats" active badge={data?.unreadTotal ?? 0} />
           <MessengerTab to="/friends" icon={<Users className="h-6 w-6" />} label="People" />
-          <MessengerTab to="/menu" icon={<Menu className="h-6 w-6" />} label="Menu" />
+          <MessengerTab to="/home" icon={<Home className="h-6 w-6" />} label="Home" />
         </div>
       </nav>
+
+      {storyEditorFile && (
+        <StoryEditor imageFile={storyEditorFile} onClose={() => setStoryEditorFile(null)} onPublish={handleStoryPublish} isPending={storyMutation.isPending} />
+      )}
 
     </div>
   );
