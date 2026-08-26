@@ -833,8 +833,8 @@ function InlinePlayer({
         className={
           playerMode === "mini"
             ? "relative h-20 w-36 shrink-0 overflow-hidden bg-black"
-            : isFullscreen
-              ? "relative h-full w-full shrink-0 overflow-hidden bg-black"
+            : effectiveFullscreen
+              ? "fixed inset-0 z-[999] flex h-[100dvh] w-screen items-center justify-center overflow-hidden bg-black"
               : "relative aspect-video w-full shrink-0 overflow-hidden bg-black"
         }
       >
@@ -850,7 +850,7 @@ function InlinePlayer({
             onLoadedData={() => setLocalMediaFailed(false)}
             onError={() => setLocalMediaFailed(true)}
             onEnded={playNext}
-            className={isFullscreen ? "h-full w-full object-contain" : "h-full w-full"}
+            className={effectiveFullscreen ? "h-full w-full object-contain" : "h-full w-full object-contain"}
           />
         ) : isLocal ? (
           <div className="grid h-full w-full place-items-center bg-black">
