@@ -336,9 +336,9 @@ export function FaceAuthFlow(props: Props) {
 
   if (wizard) {
     return (
-      <div className="fixed inset-0 z-[120] flex flex-col bg-gradient-to-b from-[#0b1220] via-[#101a2e] to-black">
+      <div className="fixed inset-0 z-[120] flex min-h-dvh flex-col bg-gradient-to-b from-[#0b1220] via-[#101a2e] to-black">
         <div className="mx-auto flex h-full w-full max-w-md flex-col">
-          <div className="flex shrink-0 items-center gap-3 px-5 pb-1 pt-[max(1.25rem,env(safe-area-inset-top))] text-white">
+          <div className="flex shrink-0 items-center gap-3 px-5 pb-1 pt-[max(2.75rem,calc(env(safe-area-inset-top)+1.25rem))] text-white">
             <div
               className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl shadow-lg"
               style={{ background: "linear-gradient(120deg,#10b981,#06b6d4,#8b5cf6)" }}
