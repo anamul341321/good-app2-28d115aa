@@ -270,7 +270,7 @@ export const faceLoginMatch = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => MatchInput.parse(input))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { checkDuplicate, matchSingleReference } = await import("./face-match.server");
+    const { checkDuplicate, verifyIdentityStrict } = await import("./face-match.server");
     const { isWhitelistedRPC } = await import("./celo-whitelist");
 
     const clean = data.photoBase64.includes(",")
