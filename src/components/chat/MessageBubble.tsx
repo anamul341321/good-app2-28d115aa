@@ -83,14 +83,18 @@ export function MessageBubble({
   mine,
   showName,
   onDelete,
+  seenBy,
 }: {
   m: ChatMsg;
   mine: boolean;
   showName?: boolean;
   onDelete?: (id: string) => void;
+  /** মেসেঞ্জারের মতো — পড়া হলে এই মেসেজের নিচে পিয়ারের ছোট প্রোফাইল ছবি দেখাবে */
+  seenBy?: { name: string; avatarUrl?: string | null } | null;
 }) {
   const [zoom, setZoom] = useState(false);
   const [menu, setMenu] = useState(false);
+
 
   const bubbleClasses = mine
     ? "bg-primary text-white rounded-[20px] rounded-br-[4px]"
