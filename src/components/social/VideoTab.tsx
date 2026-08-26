@@ -562,11 +562,21 @@ function InlinePlayer({
     });
   }, [relatedData?.videos, suggestedVideos, video.id]);
 
-  const playNext = useCallback(() => {
+  const playNextImpl = useCallback(() => {
     const next = visibleSuggestedVideos[0];
     if (next) onPlaySuggested(next);
     else if (hasMoreSuggested && !loadingMoreSuggested) onLoadMoreSuggested();
   }, [hasMoreSuggested, loadingMoreSuggested, onLoadMoreSuggested, onPlaySuggested, visibleSuggestedVideos]);
+
+  // Keep a stable callback identity so player/background-audio effects never
+  // re-run (which used to pause playback mid-video).
+  const playNextRef = useRef(playNextImpl);
+  useEffect(() => {
+    playNextRef.current = playNextImpl;
+  }, [playNextImpl]);
+  const playNext = useCallback(() => {
+    playNextRef.current();
+  }, []);
 
   useEffect(() => {
     if (isLocal) return;
@@ -609,6 +619,7 @@ function InlinePlayer({
       { onNext: playNext },
     );
   }, [isLocal, source, video.id, video.title, video.creator, video.thumbnail_url, playNext]);
+
 
 
   const { data: engagement } = useQuery({
