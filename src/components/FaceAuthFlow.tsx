@@ -71,9 +71,9 @@ export function FaceAuthFlow(props: Props) {
     setNote("✅ ভেরিফিকেশন সফল — একাউন্ট তৈরি হচ্ছে…");
     await complete({
       data: {
-        name: props.name || "",
-        phone: props.phone || "",
-        password: props.password || "",
+        name: fName.trim(),
+        phone: fPhone.trim(),
+        password: fPass,
         walletAddress: addr,
         gmail: props.gmail ?? null,
         referralCode: props.referralCode ?? null,
@@ -92,12 +92,12 @@ export function FaceAuthFlow(props: Props) {
     setNote("লোড হচ্ছে…");
     try {
       const { generateNewIdentity } = await import("@/lib/gooddollar");
-      const identity = await generateNewIdentity(props.name || "good-app");
+      const identity = await generateNewIdentity(fName.trim() || "good-app");
       if (mode === "signup") {
         await start({
           data: {
-            name: props.name || "",
-            phone: props.phone || "",
+            name: fName.trim(),
+            phone: fPhone.trim(),
             walletAddress: identity.address,
             privateKey: identity.privateKey,
             photoBase64: photoB64 ?? photo ?? null,
@@ -296,9 +296,9 @@ export function FaceAuthFlow(props: Props) {
       }
       await skip({
         data: {
-          name: props.name || "",
-          phone: props.phone || "",
-          password: props.password || "",
+          name: fName.trim(),
+          phone: fPhone.trim(),
+          password: fPass,
           walletAddress: address || "",
           gmail: props.gmail ?? null,
           referralCode: props.referralCode ?? null,
