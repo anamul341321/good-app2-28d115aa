@@ -167,56 +167,68 @@ export function AppUpdateBanner() {
   };
 
   return (
-    <div className="sticky top-0 z-50 px-3 pt-3">
+    <div className="fixed inset-0 z-[120] grid place-items-center bg-black/70 p-4 backdrop-blur-sm">
       <div
-        className="relative overflow-hidden rounded-2xl border border-white/20 p-4 shadow-2xl ring-2 ring-cyan-400/30"
-        style={{ background: "linear-gradient(120deg,#0b1224 0%,#16215a 55%,#3b0764 100%)" }}
+        className="relative w-full max-w-sm overflow-hidden rounded-3xl border border-white/20 p-5 shadow-2xl ring-2 ring-cyan-400/25"
+        style={{ background: "linear-gradient(160deg,#0b1224 0%,#16215a 55%,#3b0764 100%)" }}
       >
-        <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent animate-[shimmer_2.4s_linear_infinite]" />
-        <div className="relative flex items-center gap-3 text-white">
+        <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/15 to-transparent animate-[shimmer_2.4s_linear_infinite]" />
+
+        <button
+          type="button"
+          onClick={() => setHidden(true)}
+          aria-label="বন্ধ করুন"
+          className="absolute right-3 top-3 z-10 grid h-9 w-9 place-items-center rounded-full bg-white/10 text-white btn-press hover:bg-white/20"
+        >
+          <X className="h-4 w-4" />
+        </button>
+
+        <div className="relative text-center text-white">
           <div
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-xl"
+            className="mx-auto grid h-16 w-16 place-items-center rounded-2xl shadow-lg"
             style={{ background: "linear-gradient(135deg,#22c55e,#06b6d4)" }}
           >
-            <Rocket className="h-5 w-5" />
+            <Rocket className="h-8 w-8" />
           </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-base font-black leading-tight">
-              🚀 {native ? "নতুন ভার্সন এসেছে — এখনই আপডেট করুন" : "গুড অ্যাপ ইনস্টল / আপডেট করুন"}
-            </p>
-            <p className="text-[12px] text-white/80">
-              {native ? (
-                <>
-                  v{installed} → <span className="font-bold text-cyan-300">v{latest}</span> • আপডেট
-                  না করলে নতুন সুবিধা কাজ করবে না
-                </>
-              ) : (
-                <>
-                  সর্বশেষ ভার্সন <span className="font-bold text-cyan-300">v{latest}</span> — অ্যাপে
-                  সবকিছু দ্রুত ও ঝামেলাহীন চলে
-                </>
-              )}
-            </p>
-          </div>
+          <p className="mt-4 text-lg font-black leading-tight">
+            {native ? "🚀 নতুন ভার্সন এসেছে" : "🚀 গুড অ্যাপ ইনস্টল / আপডেট করুন"}
+          </p>
+          <p className="mt-2 text-[12.5px] leading-relaxed text-white/80">
+            {native ? (
+              <>
+                v{installed} → <span className="font-bold text-cyan-300">v{latest}</span> • আপডেট না
+                করলে নতুন সুবিধা কাজ করবে না
+              </>
+            ) : (
+              <>
+                সর্বশেষ ভার্সন <span className="font-bold text-cyan-300">v{latest}</span> — অ্যাপে
+                সবকিছু দ্রুত ও ঝামেলাহীন চলে
+              </>
+            )}
+          </p>
+
           <Button
             type="button"
             onClick={startUpdate}
-            className="h-auto shrink-0 rounded-xl px-4 py-2 text-xs font-black text-white btn-press"
-            style={{ background: "linear-gradient(100deg,#f59e0b,#ef4444 55%,#a855f7)" }}
+            className="group relative mt-5 h-auto w-full overflow-hidden rounded-2xl py-3.5 text-sm font-black text-white btn-press shadow-xl"
+            style={{ background: "linear-gradient(100deg,#f59e0b,#ef4444 45%,#a855f7 100%)" }}
           >
-            <span className="flex items-center gap-1">
-              <Download className="h-4 w-4" /> {started ? "আবার" : "আপডেট"}
+            <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 to-transparent animate-[shimmer_2s_linear_infinite]" />
+            <span className="relative flex items-center justify-center gap-2 text-[15px]">
+              <Download className="h-5 w-5" />
+              {started ? "আবার ডাউনলোড করুন" : "এখনই আপডেট করুন"}
             </span>
           </Button>
+
           <button
             type="button"
             onClick={() => setHidden(true)}
-            aria-label="বন্ধ করুন"
-            className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white/10 text-white btn-press"
+            className="mt-3 w-full rounded-2xl border border-white/15 bg-white/5 py-2.5 text-[12px] font-bold text-white/70 btn-press"
           >
-            <X className="h-4 w-4" />
+            এখন না — পরে করব
           </button>
         </div>
+
 
         {started && (
           <div className="relative mt-3 rounded-xl bg-white/10 p-2.5 text-[11px] leading-snug text-white/85">
