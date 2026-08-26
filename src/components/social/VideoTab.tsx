@@ -17,7 +17,9 @@ import {
   Share2,
   Send,
   Bell,
+  ChevronDown,
   History,
+  Maximize2,
   Plus,
   Trash2,
 } from "lucide-react";
@@ -528,7 +530,9 @@ function InlinePlayer({
   const [liked, setLiked] = useState<boolean>(() => !!readLikes()[video.id]);
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState("");
+  const [playerMode, setPlayerMode] = useState<"expanded" | "mini">("expanded");
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
+  const dragStartY = useRef<number | null>(null);
 
   const relatedSearch = useMemo(() => buildRelatedSearchTerm(video), [video]);
   const [relatedFreshness, setRelatedFreshness] = useState(() => Math.floor(Date.now() / (3 * 60 * 1000)) % 9973);
@@ -682,50 +686,120 @@ function InlinePlayer({
   const likeCount = isLocal ? engagement?.likes_count ?? video.likes_count ?? 0 : 0;
   const commentCount = isLocal ? engagement?.comments_count ?? video.comments_count ?? 0 : 0;
 
-  return (
-    <div className="fixed inset-0 z-[70] flex flex-col overflow-y-auto bg-black">
-      {/* good-app player header */}
-      <div className="sticky top-0 z-10 flex shrink-0 items-center justify-between bg-black px-2 py-1.5">
-        <button
-          type="button"
-          aria-label="ফিরে যান"
-          onClick={onClose}
-          className="grid h-9 w-9 place-items-center rounded-full text-white active:bg-white/15"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </button>
-        <span className="text-[14px] font-black tracking-tight text-white">good-app</span>
-        <button
-          type="button"
-          aria-label="শেয়ার"
-          onClick={onShare}
-          className="grid h-9 w-9 place-items-center rounded-full text-white active:bg-white/15"
-        >
-          <Share2 className="h-4 w-4" />
-        </button>
-      </div>
+  useEffect(() => {
+    setPlayerMode("expanded");
+  }, [video.id]);
 
-      <div className="relative aspect-video w-full shrink-0 overflow-hidden bg-black">
+  const beginCollapseDrag = (event: React.PointerEvent) => {
+    if (playerMode !== "expanded") return;
+    dragStartY.current = event.clientY;
+  };
+
+  const finishCollapseDrag = (event: React.PointerEvent) => {
+    if (dragStartY.current === null) return;
+    const distance = event.clientY - dragStartY.current;
+    dragStartY.current = null;
+    if (distance > 56) setPlayerMode("mini");
+  };
+
+  return (
+    <div
+      className={
+        playerMode === "mini"
+          ? "fixed inset-x-2 bottom-[calc(78px+env(safe-area-inset-bottom))] z-[70] mx-auto max-w-lg pointer-events-none"
+          : "fixed inset-0 z-[70] flex flex-col overflow-y-auto bg-white dark:bg-background"
+      }
+    >
+      <div
+        className={
+          playerMode === "mini"
+            ? "pointer-events-auto flex h-20 overflow-hidden rounded-2xl border border-border/40 bg-card shadow-[0_12px_40px_rgba(15,23,42,0.28)]"
+            : "flex min-h-screen flex-col bg-white dark:bg-background"
+        }
+      >
+        {playerMode === "expanded" ? (
+          <div
+            className="sticky top-0 z-10 shrink-0 bg-black pt-[env(safe-area-inset-top)]"
+            onPointerDown={beginCollapseDrag}
+            onPointerUp={finishCollapseDrag}
+            onPointerCancel={() => {
+              dragStartY.current = null;
+            }}
+          >
+            <div className="flex h-11 items-center justify-between px-2">
+              <button
+                type="button"
+                aria-label="ছোট করুন"
+                onClick={() => setPlayerMode("mini")}
+                className="grid h-9 w-9 place-items-center rounded-full text-white active:bg-white/15"
+              >
+                <ChevronDown className="h-6 w-6" />
+              </button>
+              <span className="text-[14px] font-black tracking-tight text-white">good-app player</span>
+              <button
+                type="button"
+                aria-label="বন্ধ করুন"
+                onClick={onClose}
+                className="grid h-9 w-9 place-items-center rounded-full text-white active:bg-white/15"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+        ) : null}
+
+      <div
+        className={
+          playerMode === "mini"
+            ? "relative h-20 w-36 shrink-0 overflow-hidden bg-black"
+            : "relative aspect-video w-full shrink-0 overflow-hidden bg-black"
+        }
+      >
         {isLocal ? (
           <video ref={localVideoRef} src={source} controls autoPlay playsInline onEnded={playNext} className="h-full w-full" />
         ) : (
-          <>
-            <iframe
-              ref={iframeRef}
-              id={`goodapp-player-${video.video_id || video.id}`}
-              src={`${video.video_url}${video.video_url.includes("?") ? "&" : "?"}autoplay=1&playsinline=1&rel=0&modestbranding=1&showinfo=0&iv_load_policy=3&fs=0&controls=1&disablekb=1&color=white&enablejsapi=1${typeof window !== "undefined" ? `&origin=${encodeURIComponent(window.location.origin)}` : ""}`}
-              title={video.title}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              className="h-full w-full border-0"
-            />
-            {/* Hide external branding: top title/channel/logo strip */}
-            <div className="absolute left-0 right-0 top-0 h-11 bg-black" />
-            {/* Hide bottom branding row + extra buttons, keep the seek bar visible above it */}
-            <div className="absolute bottom-0 left-0 right-0 h-9 bg-black" />
-            <span className="absolute left-2 top-2 text-[11px] font-black tracking-tight text-white/90">good-app player</span>
-          </>
+          <iframe
+            ref={iframeRef}
+            id={`goodapp-player-${video.video_id || video.id}`}
+            src={`${video.video_url}${video.video_url.includes("?") ? "&" : "?"}autoplay=1&playsinline=1&rel=0&modestbranding=1&showinfo=0&iv_load_policy=3&fs=0&controls=1&color=white&enablejsapi=1${typeof window !== "undefined" ? `&origin=${encodeURIComponent(window.location.origin)}` : ""}`}
+            title={video.title}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            className="h-full w-full border-0"
+          />
         )}
       </div>
+
+        {playerMode === "mini" ? (
+          <div className="flex min-w-0 flex-1 items-center gap-1 px-2">
+            <button
+              type="button"
+              onClick={() => setPlayerMode("expanded")}
+              className="min-w-0 flex-1 text-left"
+            >
+              <span className="line-clamp-1 text-[12.5px] font-black leading-tight text-foreground">{video.title}</span>
+              <span className="mt-0.5 block truncate text-[11px] font-semibold text-muted-foreground">
+                {video.creator || "good-app"}
+              </span>
+            </button>
+            <button
+              type="button"
+              aria-label="বড় করুন"
+              onClick={() => setPlayerMode("expanded")}
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-foreground active:bg-secondary"
+            >
+              <Maximize2 className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              aria-label="বন্ধ করুন"
+              onClick={onClose}
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-foreground active:bg-secondary"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+        ) : (
+          <>
 
       <div className="min-h-0 flex-1 bg-white px-3 py-3 dark:bg-card">
         <h2 className="text-[17px] font-black leading-snug text-gray-950 dark:text-foreground">{video.title}</h2>
@@ -872,6 +946,9 @@ function InlinePlayer({
             </Button>
           ) : null}
         </div>
+      </div>
+          </>
+        )}
       </div>
     </div>
   );
