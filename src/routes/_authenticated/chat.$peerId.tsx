@@ -105,12 +105,18 @@ function ThreadPage() {
         </Link>
         
         <div className="flex flex-1 items-center gap-2 min-w-0">
-          <MessengerAvatar
-            name={data?.peer?.name ?? "User"}
-            src={(data?.peer as any)?.avatarUrl ?? null}
-            online={online}
-            size="md"
-          />
+          {data?.peer ? (
+            <Link to="/user/$userId" params={{ userId: data.peer.userId }} className="btn-press rounded-full" aria-label={`${data.peer.name} profile`}>
+              <MessengerAvatar
+                name={data.peer.name ?? "User"}
+                src={(data.peer as any)?.avatarUrl ?? null}
+                online={online}
+                size="md"
+              />
+            </Link>
+          ) : (
+            <MessengerAvatar name="User" online={online} size="md" />
+          )}
           <div className="flex flex-col min-w-0">
             <h1 className="truncate text-sm font-black text-foreground">{data?.peer?.name ?? "Chat"}</h1>
             <p className="truncate text-[10px] font-bold text-muted-foreground uppercase tracking-tight">

@@ -31,12 +31,29 @@ export function ChatRow({
       params={isGroup ? { groupId: id } : { peerId: id }}
       className="btn-press flex min-h-[76px] items-center gap-3 px-4 py-2.5 transition-colors hover:bg-surface-2/70"
     >
-      <MessengerAvatar
-        name={name}
-        src={avatar}
-        online={online}
-        size="xl"
-      />
+      {!isGroup ? (
+        <Link
+          to="/user/$userId"
+          params={{ userId: id }}
+          onClick={(event) => event.stopPropagation()}
+          className="btn-press rounded-full"
+          aria-label={`${name} profile`}
+        >
+          <MessengerAvatar
+            name={name}
+            src={avatar}
+            online={online}
+            size="xl"
+          />
+        </Link>
+      ) : (
+        <MessengerAvatar
+          name={name}
+          src={avatar}
+          online={online}
+          size="xl"
+        />
+      )}
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between gap-2">
           <span className={cn(
