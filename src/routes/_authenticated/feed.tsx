@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/useAuth";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
   getFeedPosts, createPost, notifyPostShared, toggleReaction, getUserReactions, incrementPostView,
@@ -110,7 +110,6 @@ function FeedPage() {
   const [storyEditorFile, setStoryEditorFile] = useState<File | null>(null);
   const [replyingTo, setReplyingTo] = useState<{ id: string; name: string } | null>(null);
   const [expandedReplies, setExpandedReplies] = useState<Set<string>>(new Set());
-  const [hiddenPosts2, setHiddenPosts2] = useState<Set<string>>(new Set());
   const POSTS_PER_PAGE = 20;
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -269,7 +268,6 @@ function FeedPage() {
     onSuccess: () => {
       setPostContent(""); setPostImageFiles([]); setPostImagePreviews([]);
       setPostVideoFile(null); setPostVideoPreview(null); setShowCreatePost(false);
-      setPage(0); setAllPosts([]); setHasMore(true);
       queryClient.invalidateQueries({ queryKey: ["feed-posts"] });
       toast.success("পোস্ট প্রকাশিত! 🎉");
     },
@@ -445,7 +443,7 @@ function FeedPage() {
     loadComments(postId);
   };
 
-  const commentingPost = useMemo(() => allPosts.find((p) => p.id === commentingPostId) || null, [allPosts, commentingPostId]);
+  const commentingPost = useMemo(() => posts.find((p) => p.id === commentingPostId) || null, [posts, commentingPostId]);
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
