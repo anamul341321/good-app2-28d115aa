@@ -40,7 +40,7 @@ import {
   LONG_VIDEO_MARKER,
 } from "@/lib/feed-api";
 
-import { useFeedMedia } from "@/lib/feed-media";
+import { useFeedMedia, prefetchFeedMedia } from "@/lib/feed-media";
 import { attachBackgroundAudio } from "@/lib/background-audio";
 import { MessengerAvatar } from "@/components/messenger/MessengerAvatar";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -205,6 +205,22 @@ function ReelsPage() {
     }
   }, [items, selectedReelId]);
 
+  const activeIndex = useMemo(() => {
+    const idx = items.findIndex((item) => item.id === activeId);
+    return idx < 0 ? 0 : idx;
+  }, [items, activeId]);
+
+  // signed URL গুলো আগেই তৈরি করে রাখি — তাই স্ক্রল করলেই ভিডিও সাথে সাথে চলে
+  useEffect(() => {
+    const paths = items
+      .slice(Math.max(0, activeIndex - 1), activeIndex + 4)
+      .flatMap((item) =>
+        item.kind === "local" ? [item.post.video_url, item.post.user?.avatar_url] : [],
+      );
+    prefetchFeedMedia(paths).catch(() => {});
+  }, [items, activeIndex]);
+
+
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
       if (!user) throw new Error("no user");
@@ -283,11 +299,12 @@ function ReelsPage() {
             WebkitOverflowScrolling: "touch" as any,
           }}
         >
-          {items.map((item) => (
+          {items.map((item, index) => (
             <ReelSlide
               key={item.id}
               item={item}
               isActive={activeId === item.id}
+              isNear={Math.abs(index - activeIndex) <= 1}
               muted={muted}
               setMuted={setMuted}
               onVisible={() => setActiveId(item.id)}
@@ -336,6 +353,7 @@ function ReelsPage() {
 function ReelSlide({
   item,
   isActive,
+  isNear,
   muted,
   setMuted,
   onVisible,
@@ -343,6 +361,7 @@ function ReelSlide({
 }: {
   item: ReelItem;
   isActive: boolean;
+  isNear: boolean;
   muted: boolean;
   setMuted: (v: boolean) => void;
   onVisible: () => void;
@@ -378,6 +397,7 @@ function ReelSlide({
         <LocalReel
           post={item.post}
           isActive={isActive}
+          isNear={isNear}
           muted={muted}
           setMuted={setMuted}
           onOpenComments={onOpenComments}
@@ -486,18 +506,21 @@ function formatViews(n: number): string {
 function LocalReel({
   post,
   isActive,
+  isNear = true,
   muted,
   setMuted,
   onOpenComments,
 }: {
   post: Post;
   isActive: boolean;
+  isNear?: boolean;
   muted: boolean;
   setMuted: (v: boolean) => void;
   onOpenComments: (postId: string) => void;
 }) {
   const { user } = useAuth();
   const videoUrl = useFeedMedia(post.video_url);
+  const posterUrl = useFeedMedia(post.image_url || undefined);
   const avatarUrl = useFeedMedia(post.user?.avatar_url || undefined);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [liked, setLiked] = useState(false);
@@ -661,7 +684,7 @@ function LocalReel({
           : "relative h-full w-full"
       }
     >
-      {videoUrl && !mediaFailed ? (
+      {videoUrl && !mediaFailed && isNear ? (
         <video
           key={mediaKey}
           ref={videoRef}
@@ -670,12 +693,20 @@ function LocalReel({
           loop
           playsInline
           muted={muted}
-          preload="metadata"
+          poster={posterUrl}
+          preload="auto"
           onLoadedData={() => setMediaFailed(false)}
           onError={() => setMediaFailed(true)}
         />
       ) : (
-        <div className="flex h-full w-full items-center justify-center bg-black">
+        <div className="relative flex h-full w-full items-center justify-center bg-black">
+          {posterUrl && (
+            <img
+              src={posterUrl}
+              alt=""
+              className="absolute inset-0 h-full w-full object-contain opacity-60"
+            />
+          )}
           {mediaFailed ? (
             <Button
               variant="secondary"

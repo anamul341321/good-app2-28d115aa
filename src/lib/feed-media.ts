@@ -117,6 +117,29 @@ export async function resolveFeedMedia(pathOrUrl: string): Promise<string> {
 
 
 
+/**
+ * অনেকগুলো মিডিয়া পাথ আগেই sign করে রাখে, তাই যখন ভিডিও দেখানো হয় তখন
+ * আর নেটওয়ার্ক রাউন্ড-ট্রিপের জন্য অপেক্ষা করতে হয় না (লোডিং কমে যায়)।
+ */
+export async function prefetchFeedMedia(paths: Array<string | null | undefined>, limit = 6) {
+  const pending = Array.from(
+    new Set(
+      paths.filter(
+        (p): p is string => !!p && !isHttpUrl(p) && !peekFeedMedia(p) && !inFlight.has(p),
+      ),
+    ),
+  ).slice(0, 30);
+  if (pending.length === 0) return;
+  let cursor = 0;
+  const workers = Array.from({ length: Math.min(limit, pending.length) }, async () => {
+    while (cursor < pending.length) {
+      const path = pending[cursor++];
+      await resolveFeedMedia(path).catch(() => undefined);
+    }
+  });
+  await Promise.all(workers);
+}
+
 // React hook wrapper is defined below; kept in the same file per spec.
 import { useEffect, useState } from "react";
 
