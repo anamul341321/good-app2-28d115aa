@@ -266,7 +266,7 @@ function AuthedLayout() {
 
       <GuidedTour />
 
-      <LanguagePicker />
+      {!isSocialRoute && <LanguagePicker />}
       <SlotResetApproval />
 
       <ProfileCompleteGate />
