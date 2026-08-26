@@ -9,6 +9,7 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
@@ -117,6 +118,8 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const isSocialRoute = /^\/(social|chat|feed|friends|videos|reels|watch|studio|channel|user)(\/|$)/.test(pathname);
   useNativeApp();
   useEffect(() => {
     // After a redeploy, old chunk hashes 404. Auto-reload once so users never
@@ -146,11 +149,11 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <LanguageProvider>
         <SplashScreen />
-        <AppUpdateBanner />
-        <ForceUpdateGate />
+        {!isSocialRoute && <AppUpdateBanner />}
+        {!isSocialRoute && <ForceUpdateGate />}
         <Outlet />
 
-        <InstallPrompt />
+        {!isSocialRoute && <InstallPrompt />}
         <Toaster theme="dark" position="top-center" richColors />
       </LanguageProvider>
     </QueryClientProvider>
