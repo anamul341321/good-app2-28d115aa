@@ -49,6 +49,7 @@ import {
   type WatchHistoryItem,
 } from "@/lib/video-history";
 import { useFeedMedia } from "@/lib/feed-media";
+import { attachBackgroundAudio, attachBackgroundEmbed } from "@/lib/background-audio";
 
 
 
@@ -706,7 +707,7 @@ function InlinePlayer({
 
       <div className="relative aspect-video w-full shrink-0 overflow-hidden bg-black">
         {isLocal ? (
-          <video src={source} controls autoPlay playsInline onEnded={playNext} className="h-full w-full" />
+          <video ref={localVideoRef} src={source} controls autoPlay playsInline onEnded={playNext} className="h-full w-full" />
         ) : (
           <>
             <iframe

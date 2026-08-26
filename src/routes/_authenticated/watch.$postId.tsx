@@ -18,6 +18,7 @@ import {
   type PostComment,
 } from "@/lib/feed-api";
 import { useFeedMedia } from "@/lib/feed-media";
+import { attachBackgroundAudio } from "@/lib/background-audio";
 import { MessengerAvatar } from "@/components/messenger/MessengerAvatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -141,6 +142,7 @@ function WatchPage() {
       <div className="w-full bg-black">
         {videoUrl ? (
           <video
+            ref={playerRef}
             src={videoUrl}
             poster={thumbUrl}
             controls
