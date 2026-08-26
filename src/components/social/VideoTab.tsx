@@ -731,23 +731,32 @@ function InlinePlayer({
 
   const toggleFullscreen = useCallback(async () => {
     const active = !!(document.fullscreenElement || (document as any).webkitFullscreenElement);
-    try {
-      if (active) {
-        if (document.exitFullscreen) await document.exitFullscreen();
+    if (active || cssFullscreen) {
+      try {
+        if (document.exitFullscreen && active) await document.exitFullscreen();
         else (document as any).webkitExitFullscreen?.();
-        return;
-      }
-      setPlayerMode("expanded");
-      const el: any = playerBoxRef.current;
-      const videoEl: any = localVideoRef.current;
-      if (el?.requestFullscreen) await el.requestFullscreen();
-      else if (el?.webkitRequestFullscreen) el.webkitRequestFullscreen();
-      else if (videoEl?.webkitEnterFullscreen) videoEl.webkitEnterFullscreen();
-      try { await (screen.orientation as any)?.lock?.("landscape"); } catch { /* ignore */ }
-    } catch {
-      toast.error("ফুল স্ক্রিন করা যায়নি");
+      } catch { /* ignore */ }
+      setCssFullscreen(false);
+      try { (screen.orientation as any)?.unlock?.(); } catch { /* ignore */ }
+      return;
     }
-  }, []);
+    setPlayerMode("expanded");
+    const el: any = playerBoxRef.current;
+    const videoEl: any = localVideoRef.current;
+    let nativeOk = false;
+    try {
+      if (el?.requestFullscreen) { await el.requestFullscreen(); nativeOk = true; }
+      else if (el?.webkitRequestFullscreen) { el.webkitRequestFullscreen(); nativeOk = true; }
+    } catch { nativeOk = false; }
+    if (!nativeOk && videoEl?.webkitEnterFullscreen) {
+      try { videoEl.webkitEnterFullscreen(); nativeOk = true; } catch { /* ignore */ }
+    }
+    // Android WebView-এ native fullscreen প্রায়ই কাজ করে না — তখন CSS ফুলস্ক্রিন
+    if (!nativeOk) setCssFullscreen(true);
+    try { await (screen.orientation as any)?.lock?.("landscape"); } catch { /* ignore */ }
+  }, [cssFullscreen]);
+
+  const effectiveFullscreen = isFullscreen || cssFullscreen;
 
   const beginCollapseDrag = (event: PointerEvent) => {
     if (playerMode !== "expanded") return;
