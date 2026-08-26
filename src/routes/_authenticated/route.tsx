@@ -173,8 +173,8 @@ function AuthedLayout() {
 
   if (appStatus?.maintenance) return <MaintenanceScreen message={appStatus.message} />;
 
-  // মেসেঞ্জার (chat), social, নিউজ ফিড, রিলস, ভিডিও — সবই ফুল-স্ক্রিন, ড্যাশবোর্ড হেডার/নেভ দেখাবে না
-  const isSocialRoute = /^\/(social|chat|feed|friends|videos|reels|watch|studio|channel)/.test(pathname);
+  // Messenger/Feed/Profile side is a separate full-screen area: no dashboard chrome or dashboard-only queries/UI.
+  const isSocialRoute = /^\/(social|chat|feed|friends|videos|reels|watch|studio|channel|user)(\/|$)/.test(pathname);
 
   return (
     <CallProvider>
@@ -264,13 +264,13 @@ function AuthedLayout() {
       </nav>
       )}
 
-      <GuidedTour />
+      {!isSocialRoute && <GuidedTour />}
 
       {!isSocialRoute && <LanguagePicker />}
-      <SlotResetApproval />
+      {!isSocialRoute && <SlotResetApproval />}
 
-      <ProfileCompleteGate />
-      <EmailVerifyGate />
+      {!isSocialRoute && <ProfileCompleteGate />}
+      {!isSocialRoute && <EmailVerifyGate />}
       <ChatNotifier />
 
 
