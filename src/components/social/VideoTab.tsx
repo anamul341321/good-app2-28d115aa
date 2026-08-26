@@ -808,11 +808,11 @@ function InlinePlayer({
               <div className="flex items-center">
                 <button
                   type="button"
-                  aria-label={isFullscreen ? "ফুল স্ক্রিন বন্ধ" : "ফুল স্ক্রিন"}
+                  aria-label={effectiveFullscreen ? "ফুল স্ক্রিন বন্ধ" : "ফুল স্ক্রিন"}
                   onClick={toggleFullscreen}
                   className="grid h-9 w-9 place-items-center rounded-full text-white active:bg-white/15"
                 >
-                  {isFullscreen ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
+                  {effectiveFullscreen ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
                 </button>
                 <button
                   type="button"
@@ -876,11 +876,11 @@ function InlinePlayer({
         {playerMode === "expanded" ? (
           <button
             type="button"
-            aria-label={isFullscreen ? "ফুল স্ক্রিন বন্ধ করুন" : "ফুল স্ক্রিন করুন"}
+            aria-label={effectiveFullscreen ? "ফুল স্ক্রিন বন্ধ করুন" : "ফুল স্ক্রিন করুন"}
             onClick={toggleFullscreen}
             className="absolute bottom-2 right-2 z-20 grid h-10 w-10 place-items-center rounded-full bg-black/60 text-white backdrop-blur active:bg-black/80"
           >
-            {isFullscreen ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
+            {effectiveFullscreen ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
           </button>
         ) : null}
       </div>
