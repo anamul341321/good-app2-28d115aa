@@ -96,6 +96,7 @@ function UserProfilePage() {
   const [uploading, setUploading] = useState<"cover" | "avatar" | null>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
+  const longPressFiredRef = useRef(false);
 
   const handleImageUpload = async (file: File, kind: "cover" | "avatar") => {
     if (!file.type.startsWith("image/")) return toast.error("শুধু ছবি দেওয়া যাবে");
@@ -498,11 +499,16 @@ function UserProfilePage() {
                   >
                     <div className="relative flex-1">
                       <button
-                        onClick={() => reactionMutation.mutate({ postId: post.id, type: myReaction || "like" })}
-                        onContextMenu={(e) => { e.preventDefault(); setShowReactionPicker(showReactionPicker === post.id ? null : post.id); }}
+                        onClick={() => {
+                          if (longPressFiredRef.current) { longPressFiredRef.current = false; return; }
+                          reactionMutation.mutate({ postId: post.id, type: myReaction || "like" });
+                        }}
+                        onContextMenu={(e) => { e.preventDefault(); longPressFiredRef.current = true; setShowReactionPicker(post.id); }}
                         onTouchStart={() => {
+                          longPressFiredRef.current = false;
                           const timer = setTimeout(() => {
-                            setShowReactionPicker(showReactionPicker === post.id ? null : post.id);
+                            longPressFiredRef.current = true;
+                            setShowReactionPicker(post.id);
                             if (navigator.vibrate) navigator.vibrate(15);
                           }, 400);
                           const cleanup = () => {
@@ -523,18 +529,21 @@ function UserProfilePage() {
                       </button>
 
                       {showReactionPicker === post.id && (
-                        <div className="absolute bottom-full left-0 mb-2 bg-white dark:bg-card border border-gray-200 dark:border-border rounded-full shadow-xl px-2 py-1.5 flex gap-0.5 z-50 animate-in fade-in zoom-in-90 duration-150">
-                          {Object.entries(REACTION_EMOJIS).map(([type, emoji]) => (
-                            <button
-                              key={type}
-                              onClick={() => reactionMutation.mutate({ postId: post.id, type })}
-                              className={`text-2xl p-1 rounded-full transition-transform hover:scale-125 ${myReaction === type ? "bg-blue-50 dark:bg-primary/20" : ""}`}
-                              title={type}
-                            >
-                              {emoji}
-                            </button>
-                          ))}
-                        </div>
+                        <>
+                          <div className="fixed inset-0 z-40" onClick={() => setShowReactionPicker(null)} />
+                          <div className="absolute bottom-full left-0 mb-2 bg-white dark:bg-card border border-gray-200 dark:border-border rounded-full shadow-xl px-2 py-1.5 flex gap-0.5 z-50 animate-in fade-in zoom-in-90 duration-150">
+                            {Object.entries(REACTION_EMOJIS).map(([type, emoji]) => (
+                              <button
+                                key={type}
+                                onClick={() => reactionMutation.mutate({ postId: post.id, type })}
+                                className={`text-2xl p-1 rounded-full transition-transform hover:scale-125 ${myReaction === type ? "bg-blue-50 dark:bg-primary/20" : ""}`}
+                                title={type}
+                              >
+                                {emoji}
+                              </button>
+                            ))}
+                          </div>
+                        </>
                       )}
                     </div>
                     <button
