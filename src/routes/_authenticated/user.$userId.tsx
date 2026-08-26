@@ -18,6 +18,7 @@ import { uploadAvatar, uploadCoverPhoto } from "@/lib/profile.functions";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import VerifiedBadge from "@/components/VerifiedBadge";
+import { playUiSound } from "@/lib/ui-sounds";
 
 const db = supabase as any;
 
@@ -88,7 +89,9 @@ function UserProfilePage() {
   const [commentText, setCommentText] = useState("");
   const [comments, setComments] = useState<PostComment[]>([]);
   const [loadingComments, setLoadingComments] = useState(false);
+  const [showReactionPicker, setShowReactionPicker] = useState<string | null>(null);
   const [showPostMenu, setShowPostMenu] = useState<string | null>(null);
+
   const [viewingImage, setViewingImage] = useState<string | null>(null);
   const [uploading, setUploading] = useState<"cover" | "avatar" | null>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
@@ -169,6 +172,10 @@ function UserProfilePage() {
       if (!user) throw new Error("Login");
       return toggleReaction(postId, user.id, type);
     },
+    onMutate: ({ postId, type }) => {
+      if (userReactions[postId] !== type) playUiSound("like");
+      setShowReactionPicker(null);
+    },
     onSuccess: (result, { postId, type }) => {
       if (result.reacted) {
         setUserReactions((prev) => ({ ...prev, [postId]: type }));
@@ -178,6 +185,7 @@ function UserProfilePage() {
       queryClient.invalidateQueries({ queryKey: ["feed-user-posts", userId] });
     },
   });
+
 
   const commentMutation = useMutation({
     mutationFn: async () => {
@@ -223,6 +231,8 @@ function UserProfilePage() {
     setComments(await getPostComments(postId, user?.id));
     setLoadingComments(false);
   };
+
+  const commentingPost = commentingPostId ? posts.find((p) => p.id === commentingPostId) || null : null;
 
   const openComments = (postId: string) => {
     if (commentingPostId === postId) { setCommentingPostId(null); return; }
@@ -482,66 +492,153 @@ function UserProfilePage() {
                     </div>
                   </div>
 
-                  <div className="border-t border-gray-100 dark:border-border/30 flex items-center px-1">
-                    <button
-                      onClick={() => reactionMutation.mutate({ postId: post.id, type: "like" })}
-                      className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-[13px] font-semibold rounded ${myReaction ? "text-blue-600" : "text-gray-600 dark:text-muted-foreground"}`}
-                    >
-                      {myReaction ? REACTION_EMOJIS[myReaction] : "👍"} লাইক
-                    </button>
+                  <div
+                    className="border-t border-gray-100 dark:border-border/30 flex items-center px-1 relative select-none"
+                    style={{ WebkitUserSelect: "none", userSelect: "none", WebkitTouchCallout: "none" } as React.CSSProperties}
+                  >
+                    <div className="relative flex-1">
+                      <button
+                        onClick={() => reactionMutation.mutate({ postId: post.id, type: myReaction || "like" })}
+                        onContextMenu={(e) => { e.preventDefault(); setShowReactionPicker(showReactionPicker === post.id ? null : post.id); }}
+                        onTouchStart={() => {
+                          const timer = setTimeout(() => {
+                            setShowReactionPicker(showReactionPicker === post.id ? null : post.id);
+                            if (navigator.vibrate) navigator.vibrate(15);
+                          }, 400);
+                          const cleanup = () => {
+                            clearTimeout(timer);
+                            document.removeEventListener("touchend", cleanup);
+                            document.removeEventListener("touchmove", cleanup);
+                            document.removeEventListener("touchcancel", cleanup);
+                          };
+                          document.addEventListener("touchend", cleanup);
+                          document.addEventListener("touchmove", cleanup);
+                          document.addEventListener("touchcancel", cleanup);
+                        }}
+                        style={{ WebkitTouchCallout: "none", WebkitUserSelect: "none" } as React.CSSProperties}
+                        className={`w-full flex items-center justify-center gap-1.5 py-2 text-[13px] font-semibold rounded select-none ${myReaction ? "text-blue-600" : "text-gray-600 dark:text-muted-foreground"}`}
+                      >
+                        <span className="text-[17px] leading-none">{myReaction ? REACTION_EMOJIS[myReaction] : "👍"}</span>
+                        <span className="select-none">{myReaction && myReaction !== "like" ? "রিঅ্যাক্ট" : "লাইক"}</span>
+                      </button>
+
+                      {showReactionPicker === post.id && (
+                        <div className="absolute bottom-full left-0 mb-2 bg-white dark:bg-card border border-gray-200 dark:border-border rounded-full shadow-xl px-2 py-1.5 flex gap-0.5 z-50 animate-in fade-in zoom-in-90 duration-150">
+                          {Object.entries(REACTION_EMOJIS).map(([type, emoji]) => (
+                            <button
+                              key={type}
+                              onClick={() => reactionMutation.mutate({ postId: post.id, type })}
+                              className={`text-2xl p-1 rounded-full transition-transform hover:scale-125 ${myReaction === type ? "bg-blue-50 dark:bg-primary/20" : ""}`}
+                              title={type}
+                            >
+                              {emoji}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                     <button
                       onClick={() => openComments(post.id)}
-                      className="flex-1 flex items-center justify-center gap-1.5 py-2 text-[13px] font-semibold text-gray-600 dark:text-muted-foreground rounded"
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2 text-[13px] font-semibold text-gray-600 dark:text-muted-foreground rounded select-none"
                     >
                       <MessageCircle className="w-4 h-4" /> মন্তব্য
                     </button>
                   </div>
 
-                  {commentingPostId === post.id && (
-                    <div className="px-3 pb-3 border-t border-gray-100 dark:border-border/30 pt-2">
-                      {loadingComments ? (
-                        <div className="flex justify-center py-3">
-                          <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
-                        </div>
-                      ) : (
-                        <div className="space-y-2 mb-2">
-                          {comments.map((c) => (
-                            <div key={c.id} className="flex items-start gap-2">
-                              <div className="w-7 h-7 rounded-full bg-gray-200 dark:bg-primary/15 flex items-center justify-center overflow-hidden shrink-0">
-                                <Avatar path={c.user?.avatar_url} className="w-full h-full object-cover" fallback={c.user?.display_name?.[0]?.toUpperCase() || "?"} />
-                              </div>
-                              <div className="bg-gray-100 dark:bg-secondary rounded-2xl px-3 py-1.5 flex-1">
-                                <p className="text-[13px] font-bold text-gray-900 dark:text-foreground">{c.user?.display_name || "User"}</p>
-                                <p className="text-[13px] text-gray-800 dark:text-foreground">{c.content}</p>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      <div className="flex items-center gap-2">
-                        <input
-                          value={commentText}
-                          onChange={(e) => setCommentText(e.target.value)}
-                          onKeyDown={(e) => { if (e.key === "Enter" && commentText.trim()) commentMutation.mutate(); }}
-                          placeholder="মন্তব্য লিখুন..."
-                          className="flex-1 bg-gray-100 dark:bg-secondary rounded-full px-3 py-1.5 text-[13px] outline-none text-gray-900 dark:text-foreground"
-                        />
-                        <button
-                          onClick={() => commentText.trim() && commentMutation.mutate()}
-                          disabled={!commentText.trim() || commentMutation.isPending}
-                          className="text-blue-600 font-semibold text-[13px] disabled:opacity-40"
-                        >
-                          পাঠান
-                        </button>
-                      </div>
-                    </div>
-                  )}
                 </div>
               );
             })}
           </div>
         )}
       </div>
+
+      {commentingPost && (
+        <div className="fixed inset-0 z-[90] flex flex-col bg-white dark:bg-background">
+          <div className="safe-top flex items-center gap-3 border-b border-gray-200 px-3 py-2.5 dark:border-border/40">
+            <button onClick={() => setCommentingPostId(null)} className="text-gray-700 dark:text-foreground">
+              <ArrowLeft size={22} />
+            </button>
+            <h2 className="text-[17px] font-bold text-gray-900 dark:text-foreground">মন্তব্যসমূহ</h2>
+          </div>
+
+          <div className="flex-1 overflow-y-auto">
+            <div className="border-b border-gray-200 pb-2 dark:border-border/30">
+              <div className="flex items-center gap-2.5 px-3 pt-3 pb-1.5">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gray-200 dark:bg-primary/20">
+                  <Avatar path={commentingPost.user?.avatar_url} className="h-full w-full object-cover" fallback={commentingPost.user?.display_name?.[0]?.toUpperCase() || "?"} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[14px] font-bold text-gray-900 dark:text-foreground">{commentingPost.user?.display_name || "User"}</p>
+                  <span className="text-[11px] text-gray-500 dark:text-muted-foreground">{timeAgo(commentingPost.created_at)}</span>
+                </div>
+              </div>
+              {commentingPost.content && (
+                <p className="whitespace-pre-wrap px-3 pb-2 text-[15px] leading-relaxed text-gray-900 dark:text-foreground">{commentingPost.content}</p>
+              )}
+              {commentingPost.image_url && (() => {
+                const urls = commentingPost.image_url!.split(",").map((u) => u.trim()).filter(Boolean);
+                return (
+                  <div className={urls.length === 1 ? "" : "grid grid-cols-2 gap-0.5"}>
+                    {urls.map((u, i) => (
+                      <PostImage key={i} path={u} className="max-h-[320px] w-full object-cover" onClick={() => setViewingImage(u)} />
+                    ))}
+                  </div>
+                );
+              })()}
+              {commentingPost.video_url && (
+                <div className="bg-black">
+                  <PostVideo path={commentingPost.video_url} className="max-h-[320px] w-full object-contain" />
+                </div>
+              )}
+              <div className="flex items-center gap-3 px-3 pt-2 text-[13px] text-gray-500 dark:text-muted-foreground">
+                <span>{commentingPost.likes_count || 0} লাইক</span>
+                <span>{commentingPost.comments_count || 0} মন্তব্য</span>
+              </div>
+            </div>
+
+            <div className="space-y-3 px-3 py-3">
+              {loadingComments ? (
+                <div className="flex justify-center py-6">
+                  <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+                </div>
+              ) : comments.length === 0 ? (
+                <p className="py-6 text-center text-[13px] text-gray-500">এখনো কোনো মন্তব্য নেই</p>
+              ) : (
+                comments.map((c) => (
+                  <div key={c.id} className="flex items-start gap-2">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gray-200 dark:bg-primary/15">
+                      <Avatar path={c.user?.avatar_url} className="h-full w-full object-cover" fallback={c.user?.display_name?.[0]?.toUpperCase() || "?"} />
+                    </div>
+                    <div className="flex-1 rounded-2xl bg-gray-100 px-3 py-2 dark:bg-secondary">
+                      <p className="text-[13px] font-bold text-gray-900 dark:text-foreground">{c.user?.display_name || "User"}</p>
+                      <p className="text-[14px] text-gray-800 dark:text-foreground">{c.content}</p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 border-t border-gray-200 px-3 py-2.5 pb-[calc(0.625rem+env(safe-area-inset-bottom))] dark:border-border/40">
+            <input
+              value={commentText}
+              onChange={(e) => setCommentText(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter" && commentText.trim()) commentMutation.mutate(); }}
+              placeholder="মন্তব্য লিখুন..."
+              autoFocus
+              className="flex-1 rounded-full bg-gray-100 px-4 py-2.5 text-[14px] text-gray-900 outline-none dark:bg-secondary dark:text-foreground"
+            />
+            <button
+              onClick={() => commentText.trim() && commentMutation.mutate()}
+              disabled={!commentText.trim() || commentMutation.isPending}
+              className="text-[14px] font-bold text-blue-600 disabled:opacity-40"
+            >
+              পাঠান
+            </button>
+          </div>
+        </div>
+      )}
+
 
       <AnimatePresence>
         {viewingImage && (
