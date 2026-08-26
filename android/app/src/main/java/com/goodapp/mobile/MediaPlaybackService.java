@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.os.Build;
 import android.os.IBinder;
 import android.media.AudioAttributes;
+import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.PowerManager;
 
@@ -22,6 +23,20 @@ public class MediaPlaybackService extends Service {
     private static final String CHANNEL = "goodapp_media_playback";
     private static final int NOTIFICATION_ID = 7312;
     private MediaPlayer player;
+    private AudioManager audioManager;
+    private final AudioManager.OnAudioFocusChangeListener audioFocusListener = focusChange -> {
+        if (player == null) return;
+        if (focusChange == AudioManager.AUDIOFOCUS_LOSS) {
+            releasePlayer();
+            stopForeground(true);
+            stopSelf();
+        } else if (focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT
+            || focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK) {
+            try { player.pause(); } catch (Exception ignored) {}
+        } else if (focusChange == AudioManager.AUDIOFOCUS_GAIN) {
+            try { player.start(); } catch (Exception ignored) {}
+        }
+    };
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -47,10 +62,24 @@ public class MediaPlaybackService extends Service {
         return START_STICKY;
     }
 
+    @Override
+    public void onTaskRemoved(Intent rootIntent) {
+        // The player lives in this foreground service, not the WebView task. Keep
+        // it alive when the user minimizes or swipes the app away.
+        if (player == null) stopSelf();
+        super.onTaskRemoved(rootIntent);
+    }
+
     private void playUrl(String url, int positionMs) {
         if (url == null || url.trim().isEmpty()) return;
         releasePlayer();
         try {
+            audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
+            audioManager.requestAudioFocus(
+                audioFocusListener,
+                AudioManager.STREAM_MUSIC,
+                AudioManager.AUDIOFOCUS_GAIN
+            );
             player = new MediaPlayer();
             player.setAudioAttributes(new AudioAttributes.Builder()
                 .setUsage(AudioAttributes.USAGE_MEDIA)
@@ -74,14 +103,23 @@ public class MediaPlaybackService extends Service {
     }
 
     private void releasePlayer() {
-        if (player == null) return;
-        try { player.stop(); } catch (Exception ignored) {}
-        player.release();
-        player = null;
+        if (player != null) {
+            try { player.stop(); } catch (Exception ignored) {}
+            try { player.release(); } catch (Exception ignored) {}
+            player = null;
+        }
+        if (audioManager != null) {
+            try { audioManager.abandonAudioFocus(audioFocusListener); } catch (Exception ignored) {}
+            audioManager = null;
+        }
     }
 
     private void startForegroundNotification(String title, String artist) {
         NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        if (manager == null) {
+            stopSelf();
+            return;
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(
                 CHANNEL,
