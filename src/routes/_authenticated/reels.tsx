@@ -570,7 +570,7 @@ function LocalReel({
     }
   };
 
-  // এক ট্যাপ = পজ/প্লে, ডাবল ট্যাপ = লাভ (TikTok স্টাইল)
+  // এক ট্যাপ = সাউন্ড চালু / পজ-প্লে, ডাবল ট্যাপ = লাভ (TikTok স্টাইল)
   const handleTap = () => {
     const now = Date.now();
     if (now - lastTapRef.current < 280) {
@@ -585,9 +585,20 @@ function LocalReel({
     lastTapRef.current = now;
     singleTapTimer.current = window.setTimeout(() => {
       singleTapTimer.current = null;
+      if (muted) {
+        // প্রথম ট্যাপে সাউন্ড চালু হবে
+        const el = videoRef.current;
+        setMuted(false);
+        if (el) {
+          el.muted = false;
+          el.play().catch(() => {});
+        }
+        return;
+      }
       togglePlay();
     }, 280);
   };
+
 
   return (
     <div className="relative h-full w-full">
