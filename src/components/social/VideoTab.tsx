@@ -718,7 +718,10 @@ function InlinePlayer({
     const onFsChange = () => {
       const active = !!(document.fullscreenElement || (document as any).webkitFullscreenElement);
       setIsFullscreen(active);
-      if (!active) {
+      if (active) {
+        try { (window as any).GoodAppDownloader?.enterVideoFullscreen?.(); } catch { /* web preview */ }
+        try { void (screen.orientation as any)?.lock?.("landscape"); } catch { /* unsupported */ }
+      } else {
         try { (window as any).GoodAppDownloader?.exitVideoFullscreen?.(); } catch { /* web preview */ }
         try { (screen.orientation as any)?.unlock?.(); } catch { /* ignore */ }
       }
