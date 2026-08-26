@@ -45,6 +45,17 @@ function beginNativeUrlPlayback(src: string, positionSeconds: number, info: Back
   }
 }
 
+function prepareNativeUrlPlayback(src: string, info: BackgroundMediaInfo): boolean {
+  try {
+    const bridge = (window as any).GoodAppDownloader;
+    if (!bridge?.prepareMediaUrl) return false;
+    bridge.prepareMediaUrl(src, info.title, info.artist || "good-app");
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function endNativeMediaPlayback() {
   try {
     (window as any).GoodAppDownloader?.endMediaPlayback?.();
@@ -138,7 +149,10 @@ export function attachBackgroundAudio(
     wasPlaying = true;
     // Start the foreground service while the Activity is still visible. Android
     // 12+ can reject a brand-new foreground service after the app is hidden.
+    // Prepare the URL here too: once the screen turns off Android may freeze the
+    // WebView before its background event can finish a fresh network handoff.
     beginNativeMediaPlayback(info);
+    prepareNativeUrlPlayback(src, info);
   };
   const rememberPaused = () => {
     if (!usingAudio && !usingNative) wasPlaying = false;

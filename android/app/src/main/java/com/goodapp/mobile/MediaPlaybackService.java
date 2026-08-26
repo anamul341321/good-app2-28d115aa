@@ -20,10 +20,15 @@ public class MediaPlaybackService extends Service {
     public static final String ACTION_START = "com.goodapp.mobile.MEDIA_START";
     public static final String ACTION_STOP = "com.goodapp.mobile.MEDIA_STOP";
     public static final String ACTION_PLAY_URL = "com.goodapp.mobile.MEDIA_PLAY_URL";
+    public static final String ACTION_PREPARE_URL = "com.goodapp.mobile.MEDIA_PREPARE_URL";
     private static final String CHANNEL = "goodapp_media_playback";
     private static final int NOTIFICATION_ID = 7312;
     private MediaPlayer player;
     private AudioManager audioManager;
+    private String preparedUrl;
+    private boolean prepared;
+    private boolean playWhenPrepared;
+    private int requestedPositionMs;
     private final AudioManager.OnAudioFocusChangeListener audioFocusListener = focusChange -> {
         if (player == null) return;
         if (focusChange == AudioManager.AUDIOFOCUS_LOSS) {
@@ -53,8 +58,10 @@ public class MediaPlaybackService extends Service {
             title == null || title.trim().isEmpty() ? "Good-App audio" : title,
             artist == null || artist.trim().isEmpty() ? "Playing in background" : artist
         );
-        if (intent != null && ACTION_PLAY_URL.equals(intent.getAction())) {
-            playUrl(
+        if (intent != null && ACTION_PREPARE_URL.equals(intent.getAction())) {
+            prepareUrl(intent.getStringExtra("url"));
+        } else if (intent != null && ACTION_PLAY_URL.equals(intent.getAction())) {
+            playPreparedUrl(
                 intent.getStringExtra("url"),
                 Math.max(0, intent.getIntExtra("position_ms", 0))
             );
@@ -70,8 +77,9 @@ public class MediaPlaybackService extends Service {
         super.onTaskRemoved(rootIntent);
     }
 
-    private void playUrl(String url, int positionMs) {
+    private void prepareUrl(String url) {
         if (url == null || url.trim().isEmpty()) return;
+        if (url.equals(preparedUrl) && player != null) return;
         releasePlayer();
         try {
             audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
@@ -87,9 +95,13 @@ public class MediaPlaybackService extends Service {
                 .build());
             player.setWakeMode(getApplicationContext(), PowerManager.PARTIAL_WAKE_LOCK);
             player.setDataSource(url);
+            preparedUrl = url;
+            prepared = false;
+            playWhenPrepared = false;
+            requestedPositionMs = 0;
             player.setOnPreparedListener(mediaPlayer -> {
-                if (positionMs > 0) mediaPlayer.seekTo(positionMs);
-                mediaPlayer.start();
+                prepared = true;
+                if (playWhenPrepared) startPreparedPlayer();
             });
             player.setOnCompletionListener(mediaPlayer -> stopSelf());
             player.setOnErrorListener((mediaPlayer, what, extra) -> {
@@ -102,12 +114,39 @@ public class MediaPlaybackService extends Service {
         }
     }
 
+    private void playPreparedUrl(String url, int positionMs) {
+        if (url == null || url.trim().isEmpty()) return;
+        requestedPositionMs = positionMs;
+        playWhenPrepared = true;
+        if (!url.equals(preparedUrl) || player == null) {
+            prepareUrl(url);
+            playWhenPrepared = true;
+            requestedPositionMs = positionMs;
+            return;
+        }
+        if (prepared) startPreparedPlayer();
+    }
+
+    private void startPreparedPlayer() {
+        if (player == null || !prepared) return;
+        try {
+            if (requestedPositionMs > 0) player.seekTo(requestedPositionMs);
+            player.start();
+        } catch (Exception ignored) {
+            releasePlayer();
+        }
+    }
+
     private void releasePlayer() {
         if (player != null) {
             try { player.stop(); } catch (Exception ignored) {}
             try { player.release(); } catch (Exception ignored) {}
             player = null;
         }
+        preparedUrl = null;
+        prepared = false;
+        playWhenPrepared = false;
+        requestedPositionMs = 0;
         if (audioManager != null) {
             try { audioManager.abandonAudioFocus(audioFocusListener); } catch (Exception ignored) {}
             audioManager = null;

@@ -212,6 +212,19 @@ public class MainActivity extends BridgeActivity {
         } catch (Exception ignored) {}
     }
 
+    private void prepareNativeMediaUrl(String url, String title, String artist) {
+        try {
+            mediaPlaybackActive = true;
+            Intent service = new Intent(this, MediaPlaybackService.class);
+            service.setAction(MediaPlaybackService.ACTION_PREPARE_URL);
+            service.putExtra("url", url);
+            service.putExtra("title", title);
+            service.putExtra("artist", artist);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(service);
+            else startService(service);
+        } catch (Exception ignored) {}
+    }
+
     private void stopNativeMediaPlayback() {
         mediaPlaybackActive = false;
         try {
@@ -299,6 +312,11 @@ public class MainActivity extends BridgeActivity {
         @JavascriptInterface
         public void playMediaUrl(String url, int positionMs, String title, String artist) {
             runOnUiThread(() -> playNativeMediaUrl(url, positionMs, title, artist));
+        }
+
+        @JavascriptInterface
+        public void prepareMediaUrl(String url, String title, String artist) {
+            runOnUiThread(() -> prepareNativeMediaUrl(url, title, artist));
         }
 
         @JavascriptInterface
