@@ -100,7 +100,6 @@ export default function StoryEditor({ imageFile, onClose, onPublish, isPending }
     backgroundAudioCleanupRef.current = attachBackgroundAudio(audio as HTMLAudioElement, song.audioUrl, {
       title: song.title,
       artist: song.artist,
-      artwork: song.artwork || undefined,
     });
     audio.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
     audio.onended = () => setIsPlaying(false);
