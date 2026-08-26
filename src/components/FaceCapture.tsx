@@ -34,6 +34,8 @@ export function FaceCapture({
   retryVoice = "task.photo.retry",
   cancelVoice = "common.cancel",
   skipConsent = false,
+  cameraOnly = false,
+
 }: FaceCaptureProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
