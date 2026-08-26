@@ -205,6 +205,22 @@ function ReelsPage() {
     }
   }, [items, selectedReelId]);
 
+  const activeIndex = useMemo(() => {
+    const idx = items.findIndex((item) => item.id === activeId);
+    return idx < 0 ? 0 : idx;
+  }, [items, activeId]);
+
+  // signed URL গুলো আগেই তৈরি করে রাখি — তাই স্ক্রল করলেই ভিডিও সাথে সাথে চলে
+  useEffect(() => {
+    const paths = items
+      .slice(Math.max(0, activeIndex - 1), activeIndex + 4)
+      .flatMap((item) =>
+        item.kind === "local" ? [item.post.video_url, item.post.user?.avatar_url] : [],
+      );
+    prefetchFeedMedia(paths).catch(() => {});
+  }, [items, activeIndex]);
+
+
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
       if (!user) throw new Error("no user");
