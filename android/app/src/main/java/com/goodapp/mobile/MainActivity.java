@@ -569,13 +569,15 @@ public class MainActivity extends BridgeActivity {
     }
 
     @Override
-    protected void onPause() {
+    // BridgeActivity exposes these lifecycle callbacks publicly.
+    public void onPause() {
         super.onPause();
         keepWebMediaAlive();
     }
 
     @Override
-    protected void onStop() {
+    // Keep the same visibility as BridgeActivity to satisfy Java overrides.
+    public void onStop() {
         super.onStop();
         keepWebMediaAlive();
     }
