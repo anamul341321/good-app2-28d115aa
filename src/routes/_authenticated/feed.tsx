@@ -744,17 +744,20 @@ function FeedPage() {
       <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/95 shadow-sm backdrop-blur dark:border-border/40 dark:bg-card/95">
         <div className="max-w-lg mx-auto px-3 py-2.5 flex items-center justify-between">
           <div className="flex min-w-0 items-center gap-2.5">
+            <Link to="/home" aria-label="ড্যাশবোর্ডে ফিরুন" className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-gray-100 text-gray-700 transition-colors hover:bg-gray-200 dark:bg-secondary dark:text-foreground">
+              <Home className="h-5 w-5" />
+            </Link>
             <Link to="/user/$userId" params={{ userId: user.id }} className="w-10 h-10 rounded-full bg-gray-200 dark:bg-primary/20 flex items-center justify-center overflow-hidden shrink-0">
               <Avatar path={myProfile?.avatar_url} className="w-full h-full object-cover" fallback={myProfile?.display_name?.[0]?.toUpperCase() || "?"} />
             </Link>
             <h1 className="text-[28px] font-black tracking-normal text-blue-600">good-app</h1>
           </div>
           <div className="flex items-center gap-0.5">
-            <button onClick={() => setShowCreatePost(true)} className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center">
-              <Plus className="w-5 h-5 text-white" />
+            <button onClick={() => setShowCreatePost(true)} className="w-9 h-9 rounded-full bg-gray-100 text-gray-700 flex items-center justify-center transition-colors hover:bg-gray-200 dark:bg-secondary dark:text-foreground">
+              <Plus className="w-5 h-5" />
             </button>
-            <button onClick={() => setShowSearch(!showSearch)} className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center">
-              <Search className="w-5 h-5 text-white" />
+            <button onClick={() => setShowSearch(!showSearch)} className="w-9 h-9 rounded-full bg-gray-100 text-gray-700 flex items-center justify-center transition-colors hover:bg-gray-200 dark:bg-secondary dark:text-foreground">
+              <Search className="w-5 h-5" />
             </button>
           </div>
         </div>
