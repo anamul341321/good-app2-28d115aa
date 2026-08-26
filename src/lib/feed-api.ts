@@ -578,22 +578,39 @@ export async function createLongVideoUploadWithThumbnail(userId: string, videoUr
 }
 
 // Fetch profiles for a set of user ids and return a lookup map.
+// profiles RLS own-row only, তাই server fn দিয়ে public ফিল্ড আনা হয়।
 async function fetchProfilesMap(userIds: string[]): Promise<Record<string, FeedProfile>> {
   const uniqueIds = [...new Set(userIds.filter(Boolean))];
   if (uniqueIds.length === 0) return {};
-  const { data } = await db
-    .from("profiles")
-    .select("id, display_name, avatar_url, uid_seq, is_verified_badge")
-    .in("id", uniqueIds);
   const map: Record<string, FeedProfile> = {};
-  (data || []).forEach((p: any) => {
-    map[p.id] = {
-      display_name: p.display_name ?? null,
-      avatar_url: p.avatar_url ?? null,
-      uid_seq: p.uid_seq ?? null,
-      is_verified_badge: Boolean(p.is_verified_badge),
-    };
-  });
+  try {
+    const { getPublicProfiles } = await import("./social-users.functions");
+    for (let i = 0; i < uniqueIds.length; i += 300) {
+      const chunk = uniqueIds.slice(i, i + 300);
+      const res = await getPublicProfiles({ data: { userIds: chunk } });
+      (res?.profiles ?? []).forEach((p: any) => {
+        map[p.id] = {
+          display_name: p.display_name ?? null,
+          avatar_url: p.avatar_url ?? null,
+          uid_seq: p.uid_seq ?? null,
+          is_verified_badge: Boolean(p.is_verified_badge),
+        };
+      });
+    }
+  } catch {
+    const { data } = await db
+      .from("profiles")
+      .select("id, display_name, avatar_url, uid_seq, is_verified_badge")
+      .in("id", uniqueIds);
+    (data || []).forEach((p: any) => {
+      map[p.id] = {
+        display_name: p.display_name ?? null,
+        avatar_url: p.avatar_url ?? null,
+        uid_seq: p.uid_seq ?? null,
+        is_verified_badge: Boolean(p.is_verified_badge),
+      };
+    });
+  }
   return map;
 }
 
