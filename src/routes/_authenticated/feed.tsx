@@ -298,7 +298,6 @@ function FeedPage() {
       await updatePost(postId, user.id, { content });
     },
     onSuccess: (_d, vars) => {
-      setAllPosts((prev) => prev.map((p) => (p.id === vars.postId ? { ...p, content: vars.content } : p)));
       setEditingPost(null);
       queryClient.invalidateQueries({ queryKey: ["feed-posts"] });
       toast.success("পোস্ট আপডেট হয়েছে ✅");
@@ -313,7 +312,7 @@ function FeedPage() {
       return { postId, visibility };
     },
     onSuccess: ({ postId, visibility }) => {
-      setAllPosts((prev) => prev.map((p) => (p.id === postId ? ({ ...p, visibility } as any) : p)));
+      queryClient.invalidateQueries({ queryKey: ["feed-posts"] });
       setShowPostMenu(null);
       toast.success(visibility === "private" ? "পোস্ট এখন শুধু আপনি দেখবেন 🔒" : "পোস্ট এখন সবাই দেখবে 🌐");
     },
