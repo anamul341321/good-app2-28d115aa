@@ -243,38 +243,137 @@ export function attachBackgroundEmbed(
   origin: string,
   info: BackgroundMediaInfo,
   handlers: Handlers = {},
+  opts: {
+    /** Direct audio stream URL for the embedded video (if resolved). */
+    getAudioSrc?: () => string | null | undefined;
+    /** Current playback position of the embed, in seconds. */
+    getPosition?: () => number;
+  } = {},
 ): () => void {
   setMediaSessionMetadata(info);
   setMediaSessionHandlers(null, handlers);
 
-  const command = (func: "playVideo" | "pauseVideo") => {
+  const command = (func: "playVideo" | "pauseVideo", args: unknown[] = []) => {
     try {
-      getWindow()?.postMessage(JSON.stringify({ event: "command", func, args: [] }), origin);
+      getWindow()?.postMessage(JSON.stringify({ event: "command", func, args }), origin);
+    } catch {
+      // embed not ready
+    }
+  };
+
+  const seek = (seconds: number) => {
+    try {
+      getWindow()?.postMessage(
+        JSON.stringify({ event: "command", func: "seekTo", args: [seconds, true] }),
+        origin,
+      );
     } catch {
       // embed not ready
     }
   };
 
   let timer: number | null = null;
+  let usingNative = false;
+  let usingAudio = false;
+  let backgroundStartedAt = 0;
+  let backgroundStartPosition = 0;
+  let lastPreparedSrc: string | null = null;
 
-  const onVisibility = () => {
-    if (document.visibilityState === "hidden") {
+  const audio = getAudio();
+
+  const prepare = () => {
+    const src = opts.getAudioSrc?.();
+    if (!src || src === lastPreparedSrc) return;
+    lastPreparedSrc = src;
+    beginNativeMediaPlayback(info);
+    prepareNativeUrlPlayback(src, info);
+  };
+
+  const toBackground = () => {
+    if (usingNative || usingAudio) return;
+    const src = opts.getAudioSrc?.();
+    if (!src) {
+      // No direct stream: keep nudging the embed (best effort, web only).
       command("playVideo");
       if (timer) window.clearInterval(timer);
       timer = window.setInterval(() => command("playVideo"), 1500);
-    } else if (timer) {
+      return;
+    }
+    backgroundStartPosition = Math.max(0, opts.getPosition?.() ?? 0);
+    backgroundStartedAt = Date.now();
+    command("pauseVideo");
+    if (beginNativeUrlPlayback(src, backgroundStartPosition, info)) {
+      usingNative = true;
+      return;
+    }
+    if (!audio) return;
+    usingAudio = true;
+    if (audio.src !== src) audio.src = src;
+    try {
+      audio.currentTime = backgroundStartPosition;
+    } catch {
+      // seek before metadata is fine
+    }
+    audio.play().catch(() => {});
+    setMediaSessionMetadata(info);
+  };
+
+  const toForeground = () => {
+    if (timer) {
       window.clearInterval(timer);
       timer = null;
     }
+    if (usingNative) {
+      usingNative = false;
+      endNativeMediaPlayback();
+      const elapsed = Math.max(0, (Date.now() - backgroundStartedAt) / 1000);
+      seek(backgroundStartPosition + elapsed);
+      command("playVideo");
+      return;
+    }
+    if (usingAudio && audio) {
+      usingAudio = false;
+      const at = audio.currentTime;
+      audio.pause();
+      if (at > 0) seek(at);
+      command("playVideo");
+    }
   };
 
+  const onVisibility = () => {
+    if (document.visibilityState === "hidden") toBackground();
+    else toForeground();
+  };
+
+  const onHide = () => toBackground();
+  const onEnded = () => handlers.onNext?.();
+
+  // Keep the native player primed while the app is still in the foreground.
+  prepare();
+  const prepareTimer = window.setInterval(prepare, 2000);
+
   document.addEventListener("visibilitychange", onVisibility);
+  window.addEventListener("pagehide", onHide);
+  window.addEventListener("goodapp-background", onHide);
+  audio?.addEventListener("ended", onEnded);
   beginNativeMediaPlayback(info);
 
   return () => {
     if (timer) window.clearInterval(timer);
+    window.clearInterval(prepareTimer);
     document.removeEventListener("visibilitychange", onVisibility);
+    window.removeEventListener("pagehide", onHide);
+    window.removeEventListener("goodapp-background", onHide);
+    audio?.removeEventListener("ended", onEnded);
+    if (audio) {
+      audio.pause();
+      audio.removeAttribute("src");
+      audio.load();
+    }
+    usingNative = false;
+    usingAudio = false;
     setMediaSessionHandlers(null, {});
     endNativeMediaPlayback();
   };
 }
+
