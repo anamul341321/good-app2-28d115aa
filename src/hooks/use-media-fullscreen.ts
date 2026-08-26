@@ -61,23 +61,26 @@ export function useMediaFullscreen(ref: RefObject<HTMLElement | null>) {
     const element = ref.current as FullscreenElement | null;
     const video = element?.querySelector("video") as FullscreenVideo | null;
     let requested = false;
-    try {
-      if (element?.requestFullscreen) {
-        await element.requestFullscreen();
-        requested = true;
-      } else if (element?.webkitRequestFullscreen) {
-        await element.webkitRequestFullscreen();
-        requested = true;
-      } else if (video?.webkitEnterFullscreen) {
-        video.webkitEnterFullscreen();
-        requested = true;
+    const nativeBridge = (window as any).GoodAppDownloader;
+    if (!nativeBridge?.enterVideoFullscreen) {
+      try {
+        if (element?.requestFullscreen) {
+          await element.requestFullscreen();
+          requested = true;
+        } else if (element?.webkitRequestFullscreen) {
+          await element.webkitRequestFullscreen();
+          requested = true;
+        } else if (video?.webkitEnterFullscreen) {
+          video.webkitEnterFullscreen();
+          requested = true;
+        }
+      } catch {
+        requested = false;
       }
-    } catch {
-      requested = false;
     }
     if (!requested) setFallbackFullscreen(true);
     try {
-      (window as any).GoodAppDownloader?.enterVideoFullscreen?.();
+      nativeBridge?.enterVideoFullscreen?.();
     } catch {
       /* browser */
     }
