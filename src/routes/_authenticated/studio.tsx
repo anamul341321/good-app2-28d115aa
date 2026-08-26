@@ -95,7 +95,8 @@ function StudioPage() {
   return (
     <div className="min-h-screen bg-background pb-24">
       <div className="mx-auto max-w-xl px-4 py-6">
-        <h1 className="mb-6 text-xl font-black text-foreground">নতুন ভিডিও আপলোড করুন</h1>
+        <PageBackHeader title="নতুন ভিডিও আপলোড করুন" fallbackTo="/videos" />
+
 
         <div className="space-y-4">
           <div>
