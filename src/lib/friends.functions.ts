@@ -393,12 +393,29 @@ export const getSuggestedPeople = createServerFn({ method: "POST" })
       }
     }
 
+    // deterministic per-viewer shuffle key so প্রতিটি ইউজার আলাদা ক্রম দেখে
+    // (UID 1,2,3... এর মতো সিরিয়াল লিস্ট আর আসবে না)
+    const mixKey = (id: string) => {
+      let h = 2166136261;
+      const s = `${me}:${id}`;
+      for (let i = 0; i < s.length; i++) {
+        h ^= s.charCodeAt(i);
+        h = Math.imul(h, 16777619);
+      }
+      return (h >>> 0) / 4294967295;
+    };
+
     candidates.sort((a, b) => {
-      const distance = (a._uidDistance ?? Number.MAX_SAFE_INTEGER) - (b._uidDistance ?? Number.MAX_SAFE_INTEGER);
-      if (distance !== 0) return distance;
+      // ১) mutual friend আগে — যাদের সাথে পরিচিত থাকার সম্ভাবনা বেশি
       const mutual = (mutualMap.get(b.id) ?? 0) - (mutualMap.get(a.id) ?? 0);
       if (mutual !== 0) return mutual;
-      return Number(a.uid_seq ?? 0) - Number(b.uid_seq ?? 0);
+      // ২) কাছাকাছি UID, কিন্তু bucket আকারে — যাতে হুবহু সিরিয়াল না হয়
+      const bucket = (d?: number) =>
+        d == null || d === Number.MAX_SAFE_INTEGER ? 9999 : Math.floor(d / 50);
+      const bucketDiff = bucket(a._uidDistance) - bucket(b._uidDistance);
+      if (bucketDiff !== 0) return bucketDiff;
+      // ৩) একই bucket-এর ভেতরে viewer-ভিত্তিক র‍্যান্ডম মিক্স
+      return mixKey(a.id) - mixKey(b.id);
     });
     const page = candidates.slice(data.offset, data.offset + data.limit);
     const people = (await attachLinkStatus(context.supabase, me, page)).map(
