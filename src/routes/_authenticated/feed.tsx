@@ -119,6 +119,7 @@ function FeedPage() {
   const videoInputRef = useRef<HTMLInputElement>(null);
   const storyInputRef = useRef<HTMLInputElement>(null);
   const commentImageInputRef = useRef<HTMLInputElement>(null);
+  const longPressFiredRef = useRef(false);
   const tapTimerRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const sentinelRef = useRef<HTMLDivElement>(null);
   const feedVideoRefs = useRef<Record<string, HTMLVideoElement | null>>({});
