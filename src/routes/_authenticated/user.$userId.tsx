@@ -95,16 +95,10 @@ function UserProfilePage() {
 
   const { data: targetUser, isLoading: userLoading } = useQuery({
     queryKey: ["feed-user-profile", userId],
-    queryFn: async () => {
-      const { data } = await db
-        .from("profiles")
-        .select("id, display_name, avatar_url, cover_url, uid_seq, is_verified_badge, created_at")
-        .eq("id", userId)
-        .maybeSingle();
-      return data as ProfileRow | null;
-    },
+    queryFn: async () => (await getPublicProfile({ data: { userId } })) as ProfileRow | null,
     enabled: !!userId,
   });
+
 
   const { data: posts = [], isLoading: postsLoading } = useQuery({
     queryKey: ["feed-user-posts", userId],
