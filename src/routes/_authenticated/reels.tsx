@@ -352,8 +352,10 @@ function ReelSlide({
     <div
       ref={wrapperRef}
       data-reel-id={item.id}
-      className="relative flex h-[100dvh] min-h-[100dvh] w-full shrink-0 snap-start snap-always items-center justify-center"
+      className="relative flex h-full w-full shrink-0 grow-0 basis-full snap-start snap-always items-center justify-center"
+      style={{ scrollSnapStop: "always" }}
     >
+
       {item.kind === "local" ? (
         <LocalReel post={item.post} isActive={isActive} muted={muted} setMuted={setMuted} onOpenComments={onOpenComments} />
       ) : (
@@ -503,16 +505,26 @@ function LocalReel({
     if (!el) return;
     if (isActive) {
       setPaused(false);
-      el.play().catch(() => {});
+      el.muted = muted;
+      el.play().catch(() => {
+        // ব্রাউজার সাউন্ড সহ অটোপ্লে ব্লক করলে মিউট করে চালাই
+        el.muted = true;
+        setMuted(true);
+        el.play().catch(() => {});
+      });
       if (!viewCountedRef.current) {
         viewCountedRef.current = true;
         setViewsCount((c) => c + 1);
         incrementPostView(post.id).then((v) => { if (v > 0) setViewsCount(v); }).catch(() => {});
       }
     } else {
+      // শুধু current ভিডিওই বাজবে — বাকিগুলো পজ ও মিউট
       el.pause();
+      el.muted = true;
+      try { el.currentTime = 0; } catch { /* ignore */ }
     }
-  }, [isActive, videoUrl]);
+  }, [isActive, videoUrl, muted]);
+
 
   const likeMutation = useMutation({
     mutationFn: async () => {
@@ -558,7 +570,7 @@ function LocalReel({
     }
   };
 
-  // এক ট্যাপ = পজ/প্লে, ডাবল ট্যাপ = লাভ (TikTok স্টাইল)
+  // এক ট্যাপ = সাউন্ড চালু / পজ-প্লে, ডাবল ট্যাপ = লাভ (TikTok স্টাইল)
   const handleTap = () => {
     const now = Date.now();
     if (now - lastTapRef.current < 280) {
@@ -573,9 +585,20 @@ function LocalReel({
     lastTapRef.current = now;
     singleTapTimer.current = window.setTimeout(() => {
       singleTapTimer.current = null;
+      if (muted) {
+        // প্রথম ট্যাপে সাউন্ড চালু হবে
+        const el = videoRef.current;
+        setMuted(false);
+        if (el) {
+          el.muted = false;
+          el.play().catch(() => {});
+        }
+        return;
+      }
       togglePlay();
     }, 280);
   };
+
 
   return (
     <div className="relative h-full w-full">
@@ -602,6 +625,14 @@ function LocalReel({
           <Play className="h-16 w-16 text-white/80 drop-shadow-lg" />
         </div>
       )}
+
+      {muted && isActive && (
+        <div className="pointer-events-none absolute left-1/2 top-1/2 z-20 -translate-x-1/2 -translate-y-1/2 rounded-full bg-black/60 px-4 py-2 text-[12px] font-black text-white">
+          ট্যাপ করে সাউন্ড চালু করুন
+        </div>
+      )}
+
+
 
       {burst && (
         <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
@@ -741,8 +772,18 @@ function ExternalReel({
         </div>
       )}
 
-      {/* স্ক্রল ও ট্যাপ লেয়ার */}
-      <div className="absolute inset-0 z-10" onClick={togglePlay} />
+      {/* স্ক্রল ও ট্যাপ লেয়ার — মিউট থাকলে প্রথম ট্যাপে সাউন্ড চালু */}
+      <div
+        className="absolute inset-0 z-10"
+        onClick={() => {
+          if (muted) {
+            setMuted(false);
+            return;
+          }
+          togglePlay();
+        }}
+      />
+
 
       {paused && (
         <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">

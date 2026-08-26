@@ -17,7 +17,7 @@ import { getUnreadMessageCount } from "@/lib/chat.functions";
 import {
   Heart, MessageCircle, Send, Image, X, Home, Users, Bell,
   Plus, User, Search, Phone, Share2, Loader2, MoreHorizontal, Trash2, Globe, UserPlus, ThumbsUp, Video, Film, Pencil, Lock,
-  Eye, Play,
+  Eye, Play, ArrowLeft,
 } from "lucide-react";
 import { toast } from "sonner";
 import StoryEditor from "@/components/social/StoryEditor";
@@ -1032,28 +1032,64 @@ function FeedPage() {
       )}
 
       {commentingPostId && (
-        <div className="fixed inset-0 z-[150] bg-black/50 animate-in fade-in duration-150" onClick={() => { setCommentingPostId(null); setReplyingTo(null); }}>
-          <div onClick={(e) => e.stopPropagation()}
-            className="absolute bottom-0 left-0 right-0 bg-white dark:bg-card rounded-t-2xl max-h-[85vh] flex flex-col animate-in slide-in-from-bottom duration-300">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-border/30">
-              <h3 className="text-[17px] font-bold text-gray-900 dark:text-foreground">মন্তব্য</h3>
-              <button onClick={() => { setCommentingPostId(null); setReplyingTo(null); }} className="w-8 h-8 rounded-full bg-gray-100 dark:bg-secondary flex items-center justify-center">
-                <X className="w-5 h-5 text-gray-600" />
+        <div className="fixed inset-0 z-[150] bg-white dark:bg-background animate-in fade-in duration-150">
+          <div className="absolute inset-0 flex flex-col">
+            <div className="flex items-center gap-2 px-3 py-3 border-b border-gray-200 dark:border-border/30 shrink-0">
+              <button onClick={() => { setCommentingPostId(null); setReplyingTo(null); }} className="w-9 h-9 rounded-full bg-gray-100 dark:bg-secondary flex items-center justify-center">
+                <ArrowLeft className="w-5 h-5 text-gray-700 dark:text-foreground" />
               </button>
+              <h3 className="text-[18px] font-black text-gray-900 dark:text-foreground">পোস্ট</h3>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
+            <div className="flex-1 overflow-y-auto pb-3 space-y-4">
               {commentingPost && (
-                <div className="rounded-2xl border border-gray-200 dark:border-border/30 p-3 bg-white dark:bg-card">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Link to="/user/$userId" params={{ userId: commentingPost.user_id }} className="text-[13px] font-bold text-gray-900 dark:text-foreground hover:underline">
-                      <NameWithBadge name={commentingPost.user?.display_name || "User"} isVerified={commentingPost.user?.is_verified_badge} />
+                <div className="border-b border-gray-200 dark:border-border/30 pb-3">
+                  <div className="flex items-center gap-2.5 px-3 py-3">
+                    <Link to="/user/$userId" params={{ userId: commentingPost.user_id }} className="w-10 h-10 rounded-full bg-gray-200 dark:bg-primary/15 overflow-hidden shrink-0">
+                      <Avatar path={commentingPost.user?.avatar_url} className="w-full h-full object-cover" fallback={commentingPost.user?.display_name?.[0]?.toUpperCase() || "?"} />
                     </Link>
-                    <span className="text-[11px] text-gray-500">{timeAgo(commentingPost.created_at)}</span>
+                    <div className="min-w-0">
+                      <Link to="/user/$userId" params={{ userId: commentingPost.user_id }} className="text-[15px] font-bold text-gray-900 dark:text-foreground hover:underline block truncate">
+                        <NameWithBadge name={commentingPost.user?.display_name || "User"} isVerified={commentingPost.user?.is_verified_badge} />
+                      </Link>
+                      <span className="text-[12px] text-gray-500">{timeAgo(commentingPost.created_at)}</span>
+                    </div>
                   </div>
-                  {commentingPost.content && <p className="text-[14px] text-gray-900 dark:text-foreground whitespace-pre-wrap break-words">{renderMentionText(commentingPost.content)}</p>}
+                  {commentingPost.content && (
+                    <p className="px-3 pb-2 text-[16px] leading-relaxed text-gray-900 dark:text-foreground whitespace-pre-wrap break-words">{renderMentionText(commentingPost.content)}</p>
+                  )}
+                  {commentingPost.image_url && (() => {
+                    const urls = commentingPost.image_url!.split(",").map((u) => u.trim()).filter(Boolean);
+                    return (
+                      <div className={urls.length === 1 ? "" : "grid grid-cols-2 gap-0.5"}>
+                        {urls.map((url, i) => (
+                          <FeedImg key={i} path={url} className={`w-full object-cover ${urls.length === 1 ? "max-h-[420px]" : "max-h-[220px]"}`} />
+                        ))}
+                      </div>
+                    );
+                  })()}
+                  {commentingPost.video_url && (
+                    <button
+                      type="button"
+                      onClick={() => navigate({ to: "/reels", search: { postId: commentingPost.id } as any })}
+                      className="relative block w-full bg-black text-left"
+                    >
+                      <FeedVideo path={commentingPost.video_url} className="w-full max-h-[420px] object-contain opacity-90" />
+                      <span className="absolute inset-0 grid place-items-center">
+                        <span className="grid h-14 w-14 place-items-center rounded-full bg-card/90 text-primary shadow-xl">
+                          <Play className="ml-1 h-7 w-7 fill-current" />
+                        </span>
+                      </span>
+                    </button>
+                  )}
+                  <div className="px-3 pt-2 flex items-center gap-4 text-[13px] text-gray-500 dark:text-muted-foreground">
+                    <span>{commentingPost.likes_count || 0} লাইক</span>
+                    <span>{commentingPost.comments_count || 0} মন্তব্য</span>
+                  </div>
                 </div>
               )}
+              <div className="px-4 space-y-4">
+
 
               {loadingComments ? (
                 <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 text-blue-600 animate-spin" /></div>
@@ -1134,7 +1170,9 @@ function FeedPage() {
                   </div>
                 ))
               )}
+              </div>
             </div>
+
 
             <div className="border-t border-gray-200 dark:border-border/30 p-3">
               {replyingTo && (
