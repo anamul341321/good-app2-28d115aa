@@ -171,6 +171,10 @@ function UserProfilePage() {
       if (!user) throw new Error("Login");
       return toggleReaction(postId, user.id, type);
     },
+    onMutate: ({ postId, type }) => {
+      if (userReactions[postId] !== type) playUiSound("like");
+      setShowReactionPicker(null);
+    },
     onSuccess: (result, { postId, type }) => {
       if (result.reacted) {
         setUserReactions((prev) => ({ ...prev, [postId]: type }));
@@ -180,6 +184,7 @@ function UserProfilePage() {
       queryClient.invalidateQueries({ queryKey: ["feed-user-posts", userId] });
     },
   });
+
 
   const commentMutation = useMutation({
     mutationFn: async () => {
