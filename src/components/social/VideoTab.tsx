@@ -784,14 +784,25 @@ function InlinePlayer({
                 <ChevronDown className="h-6 w-6" />
               </button>
               <span className="text-[14px] font-black tracking-tight text-white">good-app player</span>
-              <button
-                type="button"
-                aria-label="বন্ধ করুন"
-                onClick={onClose}
-                className="grid h-9 w-9 place-items-center rounded-full text-white active:bg-white/15"
-              >
-                <X className="h-5 w-5" />
-              </button>
+              <div className="flex items-center">
+                <button
+                  type="button"
+                  aria-label={isFullscreen ? "ফুল স্ক্রিন বন্ধ" : "ফুল স্ক্রিন"}
+                  onClick={toggleFullscreen}
+                  className="grid h-9 w-9 place-items-center rounded-full text-white active:bg-white/15"
+                >
+                  {isFullscreen ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
+                </button>
+                <button
+                  type="button"
+                  aria-label="বন্ধ করুন"
+                  onClick={onClose}
+                  className="grid h-9 w-9 place-items-center rounded-full text-white active:bg-white/15"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
             </div>
           </div>
         ) : null}
