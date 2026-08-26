@@ -72,7 +72,6 @@ public class NotificationReplyReceiver extends BroadcastReceiver {
                         .setConversationTitle(senderName == null ? "মেসেজ" : senderName)
                         .addMessage(body, System.currentTimeMillis(), me);
                 NotificationCompat.Builder builder =
-                    new NotificationCompat.Builder(context, "goodapp_messages_v2")
                     new NotificationCompat.Builder(context, GoodAppMessagingService.MESSAGE_CHANNEL)
                         .setSmallIcon(R.mipmap.ic_launcher)
                         .setContentTitle(senderName == null ? "মেসেজ" : senderName)

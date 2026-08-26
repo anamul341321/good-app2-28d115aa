@@ -129,7 +129,7 @@ export async function sendPushToTokens(
                   priority: "HIGH",
                   ttl: payload.call ? "60s" : undefined,
                   collapseKey: payload.collapseKey,
-                  notification: payload.call
+                  notification: isNativeHandled
                     ? undefined
                     : { sound: "default", default_vibrate_timings: true },
                 },
