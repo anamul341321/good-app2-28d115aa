@@ -772,14 +772,17 @@ function FeedPage() {
 
 
               {showReactionPicker === post.id && (
-                <div className="absolute bottom-full left-0 mb-2 bg-white dark:bg-card border border-gray-200 dark:border-border rounded-full shadow-xl px-2 py-1.5 flex gap-0.5 z-50 animate-in fade-in zoom-in-90 duration-150">
-                  {Object.entries(REACTION_EMOJIS).map(([type, emoji]) => (
-                    <button key={type} onClick={() => reactionMutation.mutate({ postId: post.id, type })}
-                      className={`text-2xl p-1 rounded-full hover:bg-gray-100 dark:hover:bg-secondary transition-transform hover:scale-125 ${myReaction === type ? "bg-blue-50 dark:bg-primary/20" : ""}`} title={type}>
-                      {emoji}
-                    </button>
-                  ))}
-                </div>
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowReactionPicker(null)} />
+                  <div className="absolute bottom-full left-0 mb-2 bg-white dark:bg-card border border-gray-200 dark:border-border rounded-full shadow-xl px-2 py-1.5 flex gap-0.5 z-50 animate-in fade-in zoom-in-90 duration-150">
+                    {Object.entries(REACTION_EMOJIS).map(([type, emoji]) => (
+                      <button key={type} onClick={() => reactionMutation.mutate({ postId: post.id, type })}
+                        className={`text-2xl p-1 rounded-full hover:bg-gray-100 dark:hover:bg-secondary transition-transform hover:scale-125 ${myReaction === type ? "bg-blue-50 dark:bg-primary/20" : ""}`} title={type}>
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
+                </>
               )}
             </div>
 
