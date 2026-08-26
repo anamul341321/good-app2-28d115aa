@@ -21,7 +21,7 @@ import {
   History,
   Maximize2,
   Minimize2,
-  RotateCw,
+  
 
   Plus,
   Trash2,
@@ -836,7 +836,7 @@ function InlinePlayer({
                   onClick={toggleFullscreen}
                   className="grid h-9 w-9 place-items-center rounded-full text-white active:bg-white/15"
                 >
-                  {effectiveFullscreen ? <Minimize2 className="h-5 w-5" /> : <RotateCw className="h-5 w-5" />}
+                  {effectiveFullscreen ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
                 </button>
                 <button
                   type="button"
@@ -901,15 +901,25 @@ function InlinePlayer({
           />
         )}
         {playerMode === "expanded" ? (
-          <button
-            type="button"
-            aria-label={effectiveFullscreen ? "ফুল স্ক্রিন বন্ধ করুন" : "রোটেট করে ফুল স্ক্রিন"}
-            onClick={toggleFullscreen}
-            className="absolute bottom-2 right-2 z-20 grid h-10 w-10 place-items-center rounded-full bg-black/60 text-white backdrop-blur active:bg-black/80"
-          >
-            {effectiveFullscreen ? <Minimize2 className="h-5 w-5" /> : <RotateCw className="h-5 w-5" />}
-          </button>
+          <>
+            {/* YouTube ব্র্যান্ডিং ঢেকে দিতে good-app ওয়াটারমার্ক — ভিডিও চলার পুরো সময় দেখা যাবে */}
+            <div className="pointer-events-none absolute bottom-0 right-0 z-20 flex h-12 w-[132px] items-center justify-center bg-black/85">
+              <span className="text-[13px] font-black tracking-tight text-white">good-app</span>
+            </div>
+            <div className="pointer-events-none absolute right-0 top-0 z-20 flex h-12 w-[76px] items-center justify-center bg-black/85">
+              <span className="text-[11px] font-black tracking-tight text-white">good-app</span>
+            </div>
+            <button
+              type="button"
+              aria-label={effectiveFullscreen ? "ফুল স্ক্রিন বন্ধ করুন" : "ফুল স্ক্রিন"}
+              onClick={toggleFullscreen}
+              className="absolute bottom-[52px] right-1 z-30 grid h-10 w-10 place-items-center rounded-sm text-white/95 active:opacity-70"
+            >
+              {effectiveFullscreen ? <Minimize2 className="h-7 w-7 drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]" /> : <Maximize2 className="h-7 w-7 drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]" />}
+            </button>
+          </>
         ) : null}
+
         </div>
       </div>
 
