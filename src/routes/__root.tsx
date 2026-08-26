@@ -1,4 +1,3 @@
-import { InstallPrompt } from "@/components/InstallPrompt";
 import { AppUpdateBanner } from "@/components/AppUpdateBanner";
 import { ForceUpdateGate } from "@/components/ForceUpdateGate";
 
@@ -153,7 +152,6 @@ function RootComponent() {
         {!isSocialRoute && <ForceUpdateGate />}
         <Outlet />
 
-        {!isSocialRoute && <InstallPrompt />}
         <Toaster theme="dark" position="top-center" richColors />
       </LanguageProvider>
     </QueryClientProvider>

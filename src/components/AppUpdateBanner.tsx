@@ -101,16 +101,25 @@ export function AppUpdateBanner() {
 
   const url = (data as any)?.apkUrl as string | null | undefined;
   const latest = (data as any)?.apkVersion as string | null | undefined;
+  const required = ((data as any)?.minAppVersion ?? latest) as string | null | undefined;
+  const forceBlocked =
+    (data as any)?.forceUpdate === true &&
+    (native ? isNewer(required, installed) : (data as any)?.forceUpdateWeb === true && !!required);
   const isSocialRoute = /^\/(social|chat|feed|friends|videos|reels|watch|studio|channel|user)(\/|$)/.test(pathname);
+  const shouldShow = !!url && !!latest && !forceBlocked && !isSocialRoute && !hidden && (!native || (!!installed && isNewer(latest, installed))) && !/play\.google\.com/i.test(url);
 
-  if (isSocialRoute) return null;
+  useEffect(() => {
+    if (!shouldShow) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [shouldShow]);
 
   // নেটিভ অ্যাপ: ইনস্টল করা ভার্সন পুরোনো হলেই বড় করে আপডেট চাইবে।
   // ওয়েবসাইট: অ্যাপ ইনস্টল/আপডেট করার জন্য প্রতিবার ঢুকলেই বড় ব্যানার দেখাবে।
-  if (!url || !latest) return null;
-  if (native && (!installed || !isNewer(latest, installed))) return null;
-  if (/play\.google\.com/i.test(url)) return null;
-  if (hidden) return null;
+  if (!shouldShow) return null;
 
   const absolute = /^https?:\/\//i.test(url)
     ? url
@@ -172,9 +181,9 @@ export function AppUpdateBanner() {
   };
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[120] flex justify-center px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/70 px-4 py-[max(1.25rem,env(safe-area-inset-top))] backdrop-blur-sm">
       <div
-        className="pointer-events-auto relative w-full max-w-sm overflow-hidden rounded-3xl border border-white/20 p-5 shadow-2xl ring-2 ring-cyan-400/25"
+        className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/20 p-6 shadow-2xl ring-2 ring-cyan-400/25 sm:p-7"
         style={{ background: "linear-gradient(160deg,#0b1224 0%,#16215a 55%,#3b0764 100%)" }}
       >
         <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/15 to-transparent animate-[shimmer_2.4s_linear_infinite]" />
@@ -190,15 +199,15 @@ export function AppUpdateBanner() {
 
         <div className="relative text-center text-white">
           <div
-            className="mx-auto grid h-16 w-16 place-items-center rounded-2xl shadow-lg"
+            className="mx-auto grid h-20 w-20 place-items-center rounded-3xl shadow-lg"
             style={{ background: "linear-gradient(135deg,#22c55e,#06b6d4)" }}
           >
-            <Rocket className="h-8 w-8" />
+            <Rocket className="h-10 w-10" />
           </div>
-          <p className="mt-4 text-lg font-black leading-tight">
+          <p className="mt-5 text-2xl font-black leading-tight">
             {native ? "🚀 নতুন ভার্সন এসেছে" : "🚀 গুড অ্যাপ ইনস্টল / আপডেট করুন"}
           </p>
-          <p className="mt-2 text-[12.5px] leading-relaxed text-white/80">
+          <p className="mx-auto mt-3 max-w-[18rem] text-sm font-semibold leading-relaxed text-white/80">
             {native ? (
               <>
                 v{installed} → <span className="font-bold text-cyan-300">v{latest}</span> • আপডেট না
@@ -215,12 +224,12 @@ export function AppUpdateBanner() {
           <Button
             type="button"
             onClick={startUpdate}
-            className="group relative mt-5 h-auto w-full overflow-hidden rounded-2xl py-3.5 text-sm font-black text-white btn-press shadow-xl"
+            className="group relative mt-6 h-auto w-full overflow-hidden rounded-2xl py-4 text-base font-black text-white btn-press shadow-xl"
             style={{ background: "linear-gradient(100deg,#f59e0b,#ef4444 45%,#a855f7 100%)" }}
           >
             <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 to-transparent animate-[shimmer_2s_linear_infinite]" />
-            <span className="relative flex items-center justify-center gap-2 text-[15px]">
-              <Download className="h-5 w-5" />
+            <span className="relative flex items-center justify-center gap-2 text-base">
+              <Download className="h-6 w-6" />
               {started ? "আবার ডাউনলোড করুন" : "এখনই আপডেট করুন"}
             </span>
           </Button>
@@ -228,7 +237,7 @@ export function AppUpdateBanner() {
           <button
             type="button"
             onClick={() => setHidden(true)}
-            className="mt-3 w-full rounded-2xl border border-white/15 bg-white/5 py-2.5 text-[12px] font-bold text-white/70 btn-press"
+            className="mt-3 w-full rounded-2xl border border-white/15 bg-white/5 py-3 text-sm font-bold text-white/70 btn-press"
           >
             এখন না — পরে করব
           </button>
