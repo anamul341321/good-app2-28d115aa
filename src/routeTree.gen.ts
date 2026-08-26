@@ -80,6 +80,7 @@ import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/em
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
 import { Route as ApiPublicPushNoticeRouteImport } from './routes/api/public/push/notice'
+import { Route as ApiPublicPushFeedNotificationRouteImport } from './routes/api/public/push/feed-notification'
 import { Route as ApiPublicPayoutBridgeRouteImport } from './routes/api/public/payout/bridge'
 import { Route as ApiPublicOnchainScanRunRouteImport } from './routes/api/public/onchain-scan/run'
 import { Route as ApiPublicChatReplyRouteImport } from './routes/api/public/chat/reply'
@@ -452,6 +453,12 @@ const ApiPublicPushNoticeRoute = ApiPublicPushNoticeRouteImport.update({
   path: '/api/public/push/notice',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicPushFeedNotificationRoute =
+  ApiPublicPushFeedNotificationRouteImport.update({
+    id: '/api/public/push/feed-notification',
+    path: '/api/public/push/feed-notification',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicPayoutBridgeRoute = ApiPublicPayoutBridgeRouteImport.update({
   id: '/api/public/payout/bridge',
   path: '/api/public/payout/bridge',
@@ -560,6 +567,7 @@ export interface FileRoutesByFullPath {
   '/api/public/chat/reply': typeof ApiPublicChatReplyRoute
   '/api/public/onchain-scan/run': typeof ApiPublicOnchainScanRunRoute
   '/api/public/payout/bridge': typeof ApiPublicPayoutBridgeRoute
+  '/api/public/push/feed-notification': typeof ApiPublicPushFeedNotificationRoute
   '/api/public/push/notice': typeof ApiPublicPushNoticeRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -637,6 +645,7 @@ export interface FileRoutesByTo {
   '/api/public/chat/reply': typeof ApiPublicChatReplyRoute
   '/api/public/onchain-scan/run': typeof ApiPublicOnchainScanRunRoute
   '/api/public/payout/bridge': typeof ApiPublicPayoutBridgeRoute
+  '/api/public/push/feed-notification': typeof ApiPublicPushFeedNotificationRoute
   '/api/public/push/notice': typeof ApiPublicPushNoticeRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -718,6 +727,7 @@ export interface FileRoutesById {
   '/api/public/chat/reply': typeof ApiPublicChatReplyRoute
   '/api/public/onchain-scan/run': typeof ApiPublicOnchainScanRunRoute
   '/api/public/payout/bridge': typeof ApiPublicPayoutBridgeRoute
+  '/api/public/push/feed-notification': typeof ApiPublicPushFeedNotificationRoute
   '/api/public/push/notice': typeof ApiPublicPushNoticeRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -799,6 +809,7 @@ export interface FileRouteTypes {
     | '/api/public/chat/reply'
     | '/api/public/onchain-scan/run'
     | '/api/public/payout/bridge'
+    | '/api/public/push/feed-notification'
     | '/api/public/push/notice'
     | '/api/public/telegram/webhook'
     | '/lovable/email/auth/preview'
@@ -876,6 +887,7 @@ export interface FileRouteTypes {
     | '/api/public/chat/reply'
     | '/api/public/onchain-scan/run'
     | '/api/public/payout/bridge'
+    | '/api/public/push/feed-notification'
     | '/api/public/push/notice'
     | '/api/public/telegram/webhook'
     | '/lovable/email/auth/preview'
@@ -956,6 +968,7 @@ export interface FileRouteTypes {
     | '/api/public/chat/reply'
     | '/api/public/onchain-scan/run'
     | '/api/public/payout/bridge'
+    | '/api/public/push/feed-notification'
     | '/api/public/push/notice'
     | '/api/public/telegram/webhook'
     | '/lovable/email/auth/preview'
@@ -991,6 +1004,7 @@ export interface RootRouteChildren {
   ApiPublicChatReplyRoute: typeof ApiPublicChatReplyRoute
   ApiPublicOnchainScanRunRoute: typeof ApiPublicOnchainScanRunRoute
   ApiPublicPayoutBridgeRoute: typeof ApiPublicPayoutBridgeRoute
+  ApiPublicPushFeedNotificationRoute: typeof ApiPublicPushFeedNotificationRoute
   ApiPublicPushNoticeRoute: typeof ApiPublicPushNoticeRoute
   ApiPublicTelegramWebhookRoute: typeof ApiPublicTelegramWebhookRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
@@ -1499,6 +1513,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPushNoticeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/push/feed-notification': {
+      id: '/api/public/push/feed-notification'
+      path: '/api/public/push/feed-notification'
+      fullPath: '/api/public/push/feed-notification'
+      preLoaderRoute: typeof ApiPublicPushFeedNotificationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/payout/bridge': {
       id: '/api/public/payout/bridge'
       path: '/api/public/payout/bridge'
@@ -1695,6 +1716,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicChatReplyRoute: ApiPublicChatReplyRoute,
   ApiPublicOnchainScanRunRoute: ApiPublicOnchainScanRunRoute,
   ApiPublicPayoutBridgeRoute: ApiPublicPayoutBridgeRoute,
+  ApiPublicPushFeedNotificationRoute: ApiPublicPushFeedNotificationRoute,
   ApiPublicPushNoticeRoute: ApiPublicPushNoticeRoute,
   ApiPublicTelegramWebhookRoute: ApiPublicTelegramWebhookRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,

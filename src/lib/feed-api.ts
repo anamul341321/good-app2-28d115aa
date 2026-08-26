@@ -29,6 +29,7 @@ export type PostComment = {
   post_id: string;
   user_id: string;
   content: string;
+  image_url?: string | null;
   created_at: string | null;
   parent_comment_id?: string | null;
   likes_count?: number;
@@ -1126,9 +1127,16 @@ export async function getPostComments(postId: string, currentUserId?: string): P
 }
 
 // Add comment
-export async function addComment(postId: string, userId: string, content: string, parentCommentId?: string): Promise<PostComment> {
+export async function addComment(
+  postId: string,
+  userId: string,
+  content: string,
+  parentCommentId?: string,
+  imageUrl?: string,
+): Promise<PostComment> {
   const insertData: any = { post_id: postId, user_id: userId, content };
   if (parentCommentId) insertData.parent_comment_id = parentCommentId;
+  if (imageUrl) insertData.image_url = imageUrl;
   const { data, error } = await db.from("post_comments").insert(insertData).select().single();
   if (error) throw error;
 

@@ -307,7 +307,25 @@ export const searchPeopleFull = createServerFn({ method: "POST" })
       }
     }
 
-    const people = await attachLinkStatus(context.supabase, context.userId, Array.from(found.values()));
+    const score = (p: any) => {
+      const name = String(p.display_name ?? "").toLowerCase();
+      const uid = String(p.uid_seq ?? "");
+      const query = q.toLowerCase();
+      if (isNumeric && uid === digits) return 0;
+      if (name === query) return 1;
+      if (name.startsWith(query)) return 2;
+      if (uid.startsWith(digits) && digits.length >= 2) return 3;
+      if (name.includes(query)) return 4;
+      return 9;
+    };
+    const sorted = Array.from(found.values()).sort((a, b) => {
+      const byScore = score(a) - score(b);
+      if (byScore !== 0) return byScore;
+      const aUid = Number(a.uid_seq ?? Number.MAX_SAFE_INTEGER);
+      const bUid = Number(b.uid_seq ?? Number.MAX_SAFE_INTEGER);
+      return aUid - bUid;
+    });
+    const people = await attachLinkStatus(context.supabase, context.userId, sorted);
     return { people: people.slice(0, 20) };
   });
 

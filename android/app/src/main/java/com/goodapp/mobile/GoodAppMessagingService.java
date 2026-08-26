@@ -30,6 +30,8 @@ public class GoodAppMessagingService extends FirebaseMessagingService {
     // Notification channel settings are immutable after creation. A new ID makes
     // sure phones that received the old silent channel get the corrected ringtone.
     public static final String CALL_CHANNEL = "goodapp_incoming_calls_v3";
+    public static final String MESSAGE_CHANNEL = "goodapp_messages_v3";
+    public static final String SOCIAL_CHANNEL = "goodapp_social_notifications_v1";
 
     @Override
     public void onMessageReceived(@NonNull RemoteMessage message) {
@@ -56,6 +58,10 @@ public class GoodAppMessagingService extends FirebaseMessagingService {
         }
         if ("chat_message".equals(data.get("type"))) {
             showChatMessage(data, message.getNotification());
+            return;
+        }
+        if ("social_notification".equals(data.get("type"))) {
+            showSocialNotification(data, message.getNotification());
             return;
         }
         PushNotificationsPlugin.sendRemoteMessage(message);
@@ -179,7 +185,7 @@ public class GoodAppMessagingService extends FirebaseMessagingService {
     }
 
     private void showChatMessage(Map<String, String> data, RemoteMessage.Notification remoteNotification) {
-        final String channelId = "goodapp_messages_v2";
+        final String channelId = MESSAGE_CHANNEL;
         NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(
@@ -280,6 +286,70 @@ public class GoodAppMessagingService extends FirebaseMessagingService {
             builder.setBubbleMetadata(bubble);
         }
         manager.notify(("chat-" + senderId).hashCode(), builder.build());
+    }
+
+    private void showSocialNotification(Map<String, String> data, RemoteMessage.Notification remoteNotification) {
+        createSocialChannel();
+        String title = value(
+            data,
+            "title",
+            remoteNotification == null || remoteNotification.getTitle() == null
+                ? "Good-App"
+                : remoteNotification.getTitle()
+        );
+        String body = value(
+            data,
+            "body",
+            remoteNotification == null || remoteNotification.getBody() == null
+                ? "নতুন নোটিফিকেশন"
+                : remoteNotification.getBody()
+        );
+        String url = value(data, "url", "/feed");
+        Intent open = new Intent(this, MainActivity.class);
+        open.setAction(Intent.ACTION_VIEW);
+        open.setData(Uri.parse("https://www.goodapp2.live" + (url.startsWith("/") ? url : "/feed")));
+        open.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        PendingIntent pending = PendingIntent.getActivity(
+            this,
+            ("social-" + value(data, "reference_id", title)).hashCode(),
+            open,
+            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+        Notification notification = new NotificationCompat.Builder(this, SOCIAL_CHANNEL)
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setContentTitle(title)
+            .setContentText(body)
+            .setStyle(new NotificationCompat.BigTextStyle().bigText(body))
+            .setCategory(NotificationCompat.CATEGORY_SOCIAL)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setAutoCancel(true)
+            .setContentIntent(pending)
+            .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM))
+            .setVibrate(new long[] {0, 90, 70, 90, 70, 140})
+            .build();
+        NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        manager.notify(("social-" + value(data, "reference_id", title)).hashCode(), notification);
+    }
+
+    private void createSocialChannel() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
+        NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        Uri sound = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
+        AudioAttributes audio = new AudioAttributes.Builder()
+            .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+            .build();
+        NotificationChannel channel = new NotificationChannel(
+            SOCIAL_CHANNEL,
+            "Social notifications",
+            NotificationManager.IMPORTANCE_DEFAULT
+        );
+        channel.setDescription("Comments, mentions, likes and friend alerts");
+        channel.enableVibration(true);
+        channel.setVibrationPattern(new long[] {0, 90, 70, 90, 70, 140});
+        channel.setSound(sound, audio);
+        channel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
+        manager.createNotificationChannel(channel);
     }
 
     private String value(Map<String, String> data, String key, String fallback) {
