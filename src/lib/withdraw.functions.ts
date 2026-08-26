@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { MIN_WITHDRAW_BDT, MIN_PAYOUT_BDT, withdrawPayout, withdrawFee, withdrawDebit } from "./constants";
 import { computeLiveBalance } from "./mining";
+import { withdrawCountdownInfo } from "./withdraw-window";
 
 const CELO_ADDR_RE = /^0x[a-fA-F0-9]{40}$/;
 
@@ -94,6 +95,11 @@ export const requestWithdraw = createServerFn({ method: "POST" })
     const pauseExpired = offUntil !== null && offUntil <= Date.now();
     if ((settings as any)?.withdraw_enabled === false && !pauseExpired) {
       throw new Error((settings as any)?.withdraw_off_message || "উইথড্র রিকোয়েস্ট আপাতত বন্ধ আছে — একটু পরে আবার চেষ্টা করুন।");
+    }
+
+    // Monthly withdraw window: only open on the 1st of every month (Asia/Dhaka).
+    if (!withdrawCountdownInfo(Date.now()).isOpen) {
+      throw new Error("উইথড্র প্রতি মাসের ১ তারিখে চালু হয় — আগামী ১ তারিখ পর্যন্ত অপেক্ষা করুন");
     }
 
     const { data: userWallets } = await supabase.from("wallets").select("*").eq("user_id", userId);
