@@ -372,6 +372,8 @@ export function FaceAuthFlow(props: Props) {
                     : phase === "photo"
                     ? "ধাপ ৩/৪ — লাইভ ক্যামেরায় নিজের ছবি তুলুন"
                     : "ধাপ ৪/৪ — সব ঠিক থাকলে রেজিস্ট্রেশন করুন"
+                  : phase === "password"
+                  ? "ফেস চেনা গেছে — এখন নিরাপত্তার জন্য পাসওয়ার্ড দিন"
                   : "লাইভ ক্যামেরায় মুখ স্ক্যান করলেই একাউন্ট চিনে নেবে"}
               </p>
             </div>
@@ -490,6 +492,52 @@ export function FaceAuthFlow(props: Props) {
                     পরবর্তী ধাপ →
                   </button>
                 </div>
+              </>
+            )}
+
+            {phase === "password" && (
+              <>
+                <div className="rounded-2xl border border-emerald/25 bg-emerald/10 p-3.5 text-[12px] font-bold text-white/85">
+                  ✅ ফেস চেনা গেছে
+                  <p className="mono-num mt-1 text-[13px] text-cyan">
+                    {loginPhoneRef.current?.replace(/^(\d{5})\d{4}(\d{2})$/, "$1****$2")}
+                  </p>
+                  <p className="mt-1.5 text-[11px] font-semibold leading-snug text-white/60">
+                    ফেস ম্যাচ ভুল হতে পারে — তাই একাউন্টে ঢোকার আগে অবশ্যই আপনার পাসওয়ার্ড দিতে হবে।
+                  </p>
+                </div>
+                <div>
+                  <label className="mb-1 block text-[11.5px] font-black text-white/70">পাসওয়ার্ড</label>
+                  <input
+                    autoFocus
+                    type="password"
+                    value={loginPass}
+                    onChange={(e) => setLoginPass(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") submitLoginPassword();
+                    }}
+                    placeholder="আপনার পাসওয়ার্ড"
+                    className="w-full rounded-xl border border-white/12 bg-white/5 px-3.5 py-3.5 text-sm font-bold text-white outline-none placeholder:text-white/30 focus:border-emerald/60"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={submitLoginPassword}
+                  className="w-full rounded-xl py-3.5 text-sm font-black text-white btn-press"
+                  style={{ background: "linear-gradient(120deg,#10b981,#06b6d4,#8b5cf6)" }}
+                >
+                  লগইন করুন →
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLoginPass("");
+                    setPhase("photo");
+                  }}
+                  className="w-full rounded-xl border border-white/15 py-3 text-[11.5px] font-black text-white/70"
+                >
+                  ← আবার ফেস স্ক্যান করুন
+                </button>
               </>
             )}
 
