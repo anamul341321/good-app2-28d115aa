@@ -84,7 +84,7 @@ export function FaceAuthFlow(props: Props) {
     });
     setPhase("done");
     toast.success("ফেস ভেরিফিকেশন সফল — একাউন্ট তৈরি হয়েছে");
-    props.onSignedUp?.(fPhone.trim());
+    props.onSignedUp?.(fPhone.trim(), fPass);
   };
 
   const begin = async (photoB64?: string | null) => {
