@@ -270,7 +270,7 @@ export const faceLoginMatch = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => MatchInput.parse(input))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { checkDuplicate } = await import("./face-match.server");
+    const { checkDuplicate, matchSingleReference } = await import("./face-match.server");
     const { isWhitelistedRPC } = await import("./celo-whitelist");
 
     const clean = data.photoBase64.includes(",")
@@ -283,7 +283,7 @@ export const faceLoginMatch = createServerFn({ method: "POST" })
       .not("face_photo_url", "is", null)
       .not("user_id", "is", null)
       .order("created_at", { ascending: false })
-      .limit(30);
+      .limit(60);
 
     const candidates = (rows ?? []) as any[];
     if (candidates.length === 0) {
@@ -311,26 +311,45 @@ export const faceLoginMatch = createServerFn({ method: "POST" })
     }
 
     // ছোট ছোট ব্যাচে তুলনা (AI payload ছোট রাখতে)
-    let matched: any = null;
-    for (let i = 0; i < refs.length && !matched; i += 5) {
-      const batch = refs.slice(i, i + 5);
+    let candidate: { id: string; base64: string; row: any } | null = null;
+    for (let i = 0; i < refs.length && !candidate; i += 4) {
+      const batch = refs.slice(i, i + 4);
       try {
         const res = await checkDuplicate(
           clean,
           batch.map((r) => ({ id: r.id, base64: r.base64 })),
         );
         if (res.isDuplicate && res.matchedId) {
-          matched = batch.find((r) => r.id === res.matchedId)?.row ?? null;
+          candidate = batch.find((r) => r.id === res.matchedId) ?? null;
         }
       } catch {
         // ব্যাচ ফেল হলে পরের ব্যাচ
       }
     }
 
-    if (!matched) {
+    if (!candidate) {
       return { found: false as const, phone: null, walletAddress: null, whitelisted: false };
     }
 
+    // ভুল ম্যাচ এড়াতে ২য় ধাপে ১-১ করে কঠোর যাচাই (দুইবার একমত হলেই গ্রহণ)
+    let confirmed = false;
+    for (let attempt = 0; attempt < 2 && !confirmed; attempt++) {
+      try {
+        const one = await matchSingleReference(clean, {
+          id: candidate.id,
+          base64: candidate.base64,
+        });
+        confirmed = one.matches;
+        if (!confirmed) break;
+      } catch {
+        break;
+      }
+    }
+    if (!confirmed) {
+      return { found: false as const, phone: null, walletAddress: null, whitelisted: false };
+    }
+
+    const matched = candidate.row;
     const whitelisted = await isWhitelistedRPC(matched.wallet_address as string).catch(() => false);
     return {
       found: true as const,
@@ -339,6 +358,7 @@ export const faceLoginMatch = createServerFn({ method: "POST" })
       whitelisted,
     };
   });
+
 
 const ReverifyInput = z.object({
   phone: z.string().trim().regex(/^01\d{9}$/),
