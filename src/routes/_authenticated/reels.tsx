@@ -51,9 +51,10 @@ import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_authenticated/reels")({
   component: ReelsPage,
-  validateSearch: (search: Record<string, unknown>) => ({
-    postId: typeof search.postId === "string" ? search.postId : undefined,
-  }),
+  validateSearch: (search: Record<string, unknown>): { postId?: string } => {
+    const postId = typeof search.postId === "string" ? search.postId : undefined;
+    return postId ? { postId } : {};
+  },
   head: () => ({
     meta: [
       { title: "রিলস — good-app" },
