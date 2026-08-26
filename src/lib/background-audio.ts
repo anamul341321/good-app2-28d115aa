@@ -1,0 +1,206 @@
+/**
+ * Background audio playback support.
+ *
+ * Mobile browsers pause <video> elements when the tab/screen goes to the
+ * background. To keep songs playing (with a media notification and lock-screen
+ * controls) we mirror the playing media into a hidden shared <audio> element
+ * whenever the page becomes hidden, and hand control back to the video when
+ * the user returns.
+ */
+
+export type BackgroundMediaInfo = {
+  title: string;
+  artist?: string;
+  artwork?: string;
+};
+
+type Handlers = {
+  onNext?: () => void;
+  onPrev?: () => void;
+};
+
+let audioEl: HTMLAudioElement | null = null;
+
+function getAudio(): HTMLAudioElement | null {
+  if (typeof document === "undefined") return null;
+  if (audioEl) return audioEl;
+  const el = document.createElement("audio");
+  el.setAttribute("playsinline", "true");
+  el.preload = "auto";
+  el.style.display = "none";
+  el.id = "goodapp-background-audio";
+  document.body.appendChild(el);
+  audioEl = el;
+  return el;
+}
+
+export function setMediaSessionMetadata(info: BackgroundMediaInfo) {
+  if (typeof navigator === "undefined" || !("mediaSession" in navigator)) return;
+  try {
+    const MM = (window as any).MediaMetadata;
+    if (!MM) return;
+    (navigator as any).mediaSession.metadata = new MM({
+      title: info.title,
+      artist: info.artist || "good-app",
+      album: "good-app",
+      artwork: info.artwork
+        ? [{ src: info.artwork, sizes: "512x512", type: "image/jpeg" }]
+        : [{ src: "/icon-512.png", sizes: "512x512", type: "image/png" }],
+    });
+  } catch {
+    // metadata is best-effort
+  }
+}
+
+function setMediaSessionHandlers(target: HTMLMediaElement | null, handlers: Handlers) {
+  if (typeof navigator === "undefined" || !("mediaSession" in navigator)) return;
+  const ms = (navigator as any).mediaSession;
+  const safe = (action: string, fn: (() => void) | null) => {
+    try {
+      ms.setActionHandler(action, fn);
+    } catch {
+      // unsupported action
+    }
+  };
+  safe("play", () => {
+    void (audioEl && !audioEl.paused ? null : audioEl?.play().catch(() => {}));
+    void target?.play?.().catch(() => {});
+  });
+  safe("pause", () => {
+    audioEl?.pause();
+    target?.pause?.();
+  });
+  safe("nexttrack", handlers.onNext ? () => handlers.onNext?.() : null);
+  safe("previoustrack", handlers.onPrev ? () => handlers.onPrev?.() : null);
+  safe("seekbackward", () => {
+    const el = audioEl && !audioEl.paused ? audioEl : target;
+    if (el) el.currentTime = Math.max(0, el.currentTime - 10);
+  });
+  safe("seekforward", () => {
+    const el = audioEl && !audioEl.paused ? audioEl : target;
+    if (el) el.currentTime = el.currentTime + 10;
+  });
+}
+
+/**
+ * Keeps the given <video> element's audio playing when the app goes to the
+ * background. Returns a cleanup function.
+ */
+export function attachBackgroundAudio(
+  video: HTMLVideoElement,
+  src: string,
+  info: BackgroundMediaInfo,
+  handlers: Handlers = {},
+): () => void {
+  const audio = getAudio();
+  setMediaSessionMetadata(info);
+  setMediaSessionHandlers(video, handlers);
+
+  let usingAudio = false;
+
+  const toBackground = () => {
+    if (!audio || usingAudio || video.paused || !src) return;
+    usingAudio = true;
+    if (audio.src !== src) audio.src = src;
+    audio.currentTime = video.currentTime;
+    video.pause();
+    audio.play().catch(() => {});
+    setMediaSessionMetadata(info);
+  };
+
+  const toForeground = () => {
+    if (!audio || !usingAudio) return;
+    usingAudio = false;
+    const at = audio.currentTime;
+    audio.pause();
+    if (at > 0) video.currentTime = at;
+    video.play().catch(() => {});
+  };
+
+  const onVisibility = () => {
+    if (document.visibilityState === "hidden") toBackground();
+    else toForeground();
+  };
+
+  const onEnded = () => handlers.onNext?.();
+
+  document.addEventListener("visibilitychange", onVisibility);
+  audio?.addEventListener("ended", onEnded);
+
+  try {
+    (window as any).GoodAppDownloader?.beginMediaPlayback?.();
+  } catch {
+    // native bridge optional
+  }
+
+  return () => {
+    document.removeEventListener("visibilitychange", onVisibility);
+    audio?.removeEventListener("ended", onEnded);
+    if (audio) {
+      audio.pause();
+      audio.removeAttribute("src");
+      audio.load();
+    }
+    usingAudio = false;
+    setMediaSessionHandlers(null, {});
+    try {
+      (window as any).GoodAppDownloader?.endMediaPlayback?.();
+    } catch {
+      // native bridge optional
+    }
+  };
+}
+
+/**
+ * For embedded (iframe) players we cannot mirror the audio stream, so we keep
+ * asking the embed to resume playback while the app is in the background and
+ * publish media metadata so a notification is shown.
+ */
+export function attachBackgroundEmbed(
+  getWindow: () => Window | null | undefined,
+  origin: string,
+  info: BackgroundMediaInfo,
+  handlers: Handlers = {},
+): () => void {
+  setMediaSessionMetadata(info);
+  setMediaSessionHandlers(null, handlers);
+
+  const command = (func: "playVideo" | "pauseVideo") => {
+    try {
+      getWindow()?.postMessage(JSON.stringify({ event: "command", func, args: [] }), origin);
+    } catch {
+      // embed not ready
+    }
+  };
+
+  let timer: number | null = null;
+
+  const onVisibility = () => {
+    if (document.visibilityState === "hidden") {
+      command("playVideo");
+      if (timer) window.clearInterval(timer);
+      timer = window.setInterval(() => command("playVideo"), 1500);
+    } else if (timer) {
+      window.clearInterval(timer);
+      timer = null;
+    }
+  };
+
+  document.addEventListener("visibilitychange", onVisibility);
+  try {
+    (window as any).GoodAppDownloader?.beginMediaPlayback?.();
+  } catch {
+    // native bridge optional
+  }
+
+  return () => {
+    if (timer) window.clearInterval(timer);
+    document.removeEventListener("visibilitychange", onVisibility);
+    setMediaSessionHandlers(null, {});
+    try {
+      (window as any).GoodAppDownloader?.endMediaPlayback?.();
+    } catch {
+      // native bridge optional
+    }
+  };
+}

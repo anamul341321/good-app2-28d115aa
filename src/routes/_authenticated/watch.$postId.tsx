@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/useAuth";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Heart, Loader2, Send, ThumbsUp, Users } from "lucide-react";
@@ -18,6 +18,7 @@ import {
   type PostComment,
 } from "@/lib/feed-api";
 import { useFeedMedia } from "@/lib/feed-media";
+import { attachBackgroundAudio } from "@/lib/background-audio";
 import { MessengerAvatar } from "@/components/messenger/MessengerAvatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -55,6 +56,18 @@ function WatchPage() {
   const videoUrl = useFeedMedia(video?.video_url);
   const thumbUrl = useFeedMedia(video?.thumbnail_url || undefined);
   const avatarUrl = useFeedMedia(video?.uploader_avatar_url || undefined);
+  const playerRef = useRef<HTMLVideoElement | null>(null);
+
+  useEffect(() => {
+    const el = playerRef.current;
+    if (!el || !videoUrl) return;
+    return attachBackgroundAudio(el, videoUrl, {
+      title: video?.title || "good-app",
+      artist: video?.creator || "good-app",
+      artwork: thumbUrl || undefined,
+    });
+  }, [videoUrl, thumbUrl, video?.title, video?.creator]);
+
 
   const { data: engagement } = useQuery({
     queryKey: ["watch-engagement", postId],
@@ -141,6 +154,7 @@ function WatchPage() {
       <div className="w-full bg-black">
         {videoUrl ? (
           <video
+            ref={playerRef}
             src={videoUrl}
             poster={thumbUrl}
             controls

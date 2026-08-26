@@ -49,6 +49,7 @@ import {
   type WatchHistoryItem,
 } from "@/lib/video-history";
 import { useFeedMedia } from "@/lib/feed-media";
+import { attachBackgroundAudio, attachBackgroundEmbed } from "@/lib/background-audio";
 
 
 
@@ -586,16 +587,27 @@ function InlinePlayer({
     };
   }, [isLocal, playNext, video.id]);
 
+  const localVideoRef = useRef<HTMLVideoElement | null>(null);
+
   useEffect(() => {
-    try {
-      (window as any).GoodAppDownloader?.beginMediaPlayback?.();
-    } catch {}
-    return () => {
-      try {
-        (window as any).GoodAppDownloader?.endMediaPlayback?.();
-      } catch {}
+    const info = {
+      title: video.title,
+      artist: video.creator || "good-app",
+      artwork: video.thumbnail_url || undefined,
     };
-  }, [video.id]);
+    if (isLocal) {
+      const el = localVideoRef.current;
+      if (!el || !source) return;
+      return attachBackgroundAudio(el, source, info, { onNext: playNext });
+    }
+    return attachBackgroundEmbed(
+      () => iframeRef.current?.contentWindow,
+      "https://www.youtube-nocookie.com",
+      info,
+      { onNext: playNext },
+    );
+  }, [isLocal, source, video.id, video.title, video.creator, video.thumbnail_url, playNext]);
+
 
   const { data: engagement } = useQuery({
     queryKey: ["video-engagement", postId],
@@ -695,7 +707,7 @@ function InlinePlayer({
 
       <div className="relative aspect-video w-full shrink-0 overflow-hidden bg-black">
         {isLocal ? (
-          <video src={source} controls autoPlay playsInline onEnded={playNext} className="h-full w-full" />
+          <video ref={localVideoRef} src={source} controls autoPlay playsInline onEnded={playNext} className="h-full w-full" />
         ) : (
           <>
             <iframe
