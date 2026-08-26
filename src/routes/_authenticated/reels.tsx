@@ -698,7 +698,14 @@ function LocalReel({
           onError={() => setMediaFailed(true)}
         />
       ) : (
-        <div className="flex h-full w-full items-center justify-center bg-black">
+        <div className="relative flex h-full w-full items-center justify-center bg-black">
+          {posterUrl && (
+            <img
+              src={posterUrl}
+              alt=""
+              className="absolute inset-0 h-full w-full object-contain opacity-60"
+            />
+          )}
           {mediaFailed ? (
             <Button
               variant="secondary"
