@@ -41,11 +41,12 @@ export function FaceAuthFlow(props: Props) {
   const start = useServerFn(startFaceSignup);
   const check = useServerFn(checkFaceSignup);
   const complete = useServerFn(completeFaceSignup);
-  const resolve = useServerFn(resolveFaceLogin);
   const skip = useServerFn(skipFaceSignup);
+  const faceMatch = useServerFn(faceLoginMatch);
+  const reverify = useServerFn(reverifyFaceLogin);
 
   const [phase, setPhase] = useState<"photo" | "prepare" | "verify" | "recheck" | "retry" | "done" | "failed">(
-    mode === "signup" ? "photo" : "prepare",
+    "photo",
   );
   const [photo, setPhoto] = useState<string | null>(null);
   const [url, setUrl] = useState<string | null>(null);
@@ -54,8 +55,11 @@ export function FaceAuthFlow(props: Props) {
   const [ticks, setTicks] = useState(0);
   const [frameOk, setFrameOk] = useState(false);
   const [skipping, setSkipping] = useState(false);
+  const [needRegister, setNeedRegister] = useState(false);
   const busyRef = useRef(false);
   const retriesRef = useRef(0);
+  const pkRef = useRef<string | null>(null);
+  const loginPhoneRef = useRef<string | null>(null);
 
   const finishSignup = async (addr: string) => {
     setNote("✅ ভেরিফিকেশন সফল — একাউন্ট তৈরি হচ্ছে…");
@@ -94,6 +98,7 @@ export function FaceAuthFlow(props: Props) {
           },
         });
       }
+      pkRef.current = identity.privateKey;
       setAddress(identity.address);
       setUrl(identity.verifyUrl);
       setTicks(0);
@@ -107,10 +112,46 @@ export function FaceAuthFlow(props: Props) {
     }
   };
 
-  useEffect(() => {
-    if (mode === "login") void begin();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  /** লগইন: আমাদের অ্যাপেই ফেস স্ক্যান → স্টোর করা ছবির সাথে ম্যাচ */
+  const doFaceLogin = async (b64: string) => {
+    setPhase("recheck");
+    setNeedRegister(false);
+    setNote("ফেস মিলিয়ে দেখা হচ্ছে…");
+    try {
+      const res = await faceMatch({ data: { photoBase64: b64 } });
+      if (!res.found || !res.phone) {
+        setNeedRegister(true);
+        setPhase("failed");
+        setNote("এই ফেস দিয়ে কোনো একাউন্ট পাওয়া যায়নি — আগে রেজিস্ট্রেশন করুন");
+        return;
+      }
+      loginPhoneRef.current = res.phone;
+      if (res.whitelisted) {
+        setPhase("done");
+        props.onResolved?.(res.phone);
+        return;
+      }
+      toast.info("ভেরিফিকেশন মেয়াদ শেষ — আবার ফেস ভেরিফিকেশন করতে হবে");
+      await begin(b64);
+    } catch (e: any) {
+      setPhase("retry");
+      setNote(e?.message ?? "ফেস মেলানো যায়নি — আবার চেষ্টা করুন");
+    }
+  };
+
+  /** লগইন ভেরিফিকেশনের পর: নতুন key সেভ করে লগইন করায় */
+  const finishLoginVerify = async (addr: string) => {
+    const phone = loginPhoneRef.current;
+    if (!phone || !pkRef.current) return false;
+    const res = await reverify({
+      data: { phone, walletAddress: addr, privateKey: pkRef.current },
+    });
+    if (!res.verified) return false;
+    setPhase("done");
+    props.onResolved?.(phone);
+    return true;
+  };
+
 
   // ফেস ভেরিফিকেশন পেজ iframe-এ না খুললে (blank/white) নিজে থেকেই বাইরে খুলে দেবে
   useEffect(() => {
