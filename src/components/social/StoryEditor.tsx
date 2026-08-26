@@ -3,6 +3,7 @@ import { X, Type, Music, Check, Search, Loader2, Palette, AlignCenter, Pause, Pl
 import { motion, AnimatePresence } from "framer-motion";
 import { STORY_MUSIC_LIBRARY, StoryMusicTrack, buildStoredMusicValue } from "@/lib/story-music";
 import { searchStoryMusic } from "@/lib/story-music.functions";
+import { attachBackgroundAudio } from "@/lib/background-audio";
 
 const TEXT_COLORS = [
   "#FFFFFF", "#000000", "#FF0000", "#00FF00", "#0000FF",
@@ -35,6 +36,7 @@ export default function StoryEditor({ imageFile, onClose, onPublish, isPending }
   const imgRef = useRef<HTMLImageElement | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const backgroundAudioCleanupRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     const url = URL.createObjectURL(imageFile);
@@ -51,6 +53,8 @@ export default function StoryEditor({ imageFile, onClose, onPublish, isPending }
         audioRef.current.pause();
         audioRef.current = null;
       }
+      backgroundAudioCleanupRef.current?.();
+      backgroundAudioCleanupRef.current = null;
     };
   }, []);
 
@@ -83,6 +87,8 @@ export default function StoryEditor({ imageFile, onClose, onPublish, isPending }
     : localMatches;
 
   const playPreview = (song: StoryMusicTrack) => {
+    backgroundAudioCleanupRef.current?.();
+    backgroundAudioCleanupRef.current = null;
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current = null;
@@ -91,11 +97,17 @@ export default function StoryEditor({ imageFile, onClose, onPublish, isPending }
     const audio = new Audio(song.audioUrl);
     audio.volume = 0.55;
     audioRef.current = audio;
+    backgroundAudioCleanupRef.current = attachBackgroundAudio(audio as HTMLAudioElement, song.audioUrl, {
+      title: song.title,
+      artist: song.artist,
+    });
     audio.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
     audio.onended = () => setIsPlaying(false);
   };
 
   const stopPreview = () => {
+    backgroundAudioCleanupRef.current?.();
+    backgroundAudioCleanupRef.current = null;
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current = null;

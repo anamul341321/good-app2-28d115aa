@@ -180,12 +180,6 @@ public class MainActivity extends BridgeActivity {
                 mediaWakeLock = power.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "GoodApp:MediaPlayback");
             }
             if (!mediaWakeLock.isHeld()) mediaWakeLock.acquire(2 * 60 * 60 * 1000L);
-            AudioManager audio = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-            audio.requestAudioFocus(
-                callAudioFocus,
-                AudioManager.STREAM_MUSIC,
-                AudioManager.AUDIOFOCUS_GAIN
-            );
             Intent service = new Intent(this, MediaPlaybackService.class);
             service.setAction(MediaPlaybackService.ACTION_START);
             service.putExtra("title", title);
@@ -208,6 +202,19 @@ public class MainActivity extends BridgeActivity {
             // is allowed even after Android has moved the Activity to background.
             if (mediaPlaybackActive) startService(service);
             else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(service);
+            else startService(service);
+        } catch (Exception ignored) {}
+    }
+
+    private void prepareNativeMediaUrl(String url, String title, String artist) {
+        try {
+            mediaPlaybackActive = true;
+            Intent service = new Intent(this, MediaPlaybackService.class);
+            service.setAction(MediaPlaybackService.ACTION_PREPARE_URL);
+            service.putExtra("url", url);
+            service.putExtra("title", title);
+            service.putExtra("artist", artist);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(service);
             else startService(service);
         } catch (Exception ignored) {}
     }
@@ -299,6 +306,11 @@ public class MainActivity extends BridgeActivity {
         @JavascriptInterface
         public void playMediaUrl(String url, int positionMs, String title, String artist) {
             runOnUiThread(() -> playNativeMediaUrl(url, positionMs, title, artist));
+        }
+
+        @JavascriptInterface
+        public void prepareMediaUrl(String url, String title, String artist) {
+            runOnUiThread(() -> prepareNativeMediaUrl(url, title, artist));
         }
 
         @JavascriptInterface

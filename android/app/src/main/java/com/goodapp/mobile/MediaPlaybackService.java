@@ -20,10 +20,18 @@ public class MediaPlaybackService extends Service {
     public static final String ACTION_START = "com.goodapp.mobile.MEDIA_START";
     public static final String ACTION_STOP = "com.goodapp.mobile.MEDIA_STOP";
     public static final String ACTION_PLAY_URL = "com.goodapp.mobile.MEDIA_PLAY_URL";
+    public static final String ACTION_PREPARE_URL = "com.goodapp.mobile.MEDIA_PREPARE_URL";
+    public static final String ACTION_TOGGLE = "com.goodapp.mobile.MEDIA_TOGGLE";
     private static final String CHANNEL = "goodapp_media_playback";
     private static final int NOTIFICATION_ID = 7312;
     private MediaPlayer player;
     private AudioManager audioManager;
+    private String preparedUrl;
+    private boolean prepared;
+    private boolean playWhenPrepared;
+    private int requestedPositionMs;
+    private String currentTitle = "Good-App audio";
+    private String currentArtist = "Playing in background";
     private final AudioManager.OnAudioFocusChangeListener audioFocusListener = focusChange -> {
         if (player == null) return;
         if (focusChange == AudioManager.AUDIOFOCUS_LOSS) {
@@ -47,14 +55,20 @@ public class MediaPlaybackService extends Service {
             return START_NOT_STICKY;
         }
 
+        if (intent != null && ACTION_TOGGLE.equals(intent.getAction())) {
+            togglePlayback();
+            return START_STICKY;
+        }
+
         String title = intent == null ? null : intent.getStringExtra("title");
         String artist = intent == null ? null : intent.getStringExtra("artist");
-        startForegroundNotification(
-            title == null || title.trim().isEmpty() ? "Good-App audio" : title,
-            artist == null || artist.trim().isEmpty() ? "Playing in background" : artist
-        );
-        if (intent != null && ACTION_PLAY_URL.equals(intent.getAction())) {
-            playUrl(
+        currentTitle = title == null || title.trim().isEmpty() ? currentTitle : title;
+        currentArtist = artist == null || artist.trim().isEmpty() ? currentArtist : artist;
+        startForegroundNotification(currentTitle, currentArtist);
+        if (intent != null && ACTION_PREPARE_URL.equals(intent.getAction())) {
+            prepareUrl(intent.getStringExtra("url"));
+        } else if (intent != null && ACTION_PLAY_URL.equals(intent.getAction())) {
+            playPreparedUrl(
                 intent.getStringExtra("url"),
                 Math.max(0, intent.getIntExtra("position_ms", 0))
             );
@@ -65,21 +79,17 @@ public class MediaPlaybackService extends Service {
     @Override
     public void onTaskRemoved(Intent rootIntent) {
         // The player lives in this foreground service, not the WebView task. Keep
-        // it alive when the user minimizes or swipes the app away.
-        if (player == null) stopSelf();
+        // it alive when the user minimizes or swipes the app away. The URL may
+        // still be preparing, so a null player is not a reason to stop here.
         super.onTaskRemoved(rootIntent);
     }
 
-    private void playUrl(String url, int positionMs) {
+    private void prepareUrl(String url) {
         if (url == null || url.trim().isEmpty()) return;
+        if (url.equals(preparedUrl) && player != null) return;
         releasePlayer();
         try {
             audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
-            audioManager.requestAudioFocus(
-                audioFocusListener,
-                AudioManager.STREAM_MUSIC,
-                AudioManager.AUDIOFOCUS_GAIN
-            );
             player = new MediaPlayer();
             player.setAudioAttributes(new AudioAttributes.Builder()
                 .setUsage(AudioAttributes.USAGE_MEDIA)
@@ -87,9 +97,13 @@ public class MediaPlaybackService extends Service {
                 .build());
             player.setWakeMode(getApplicationContext(), PowerManager.PARTIAL_WAKE_LOCK);
             player.setDataSource(url);
+            preparedUrl = url;
+            prepared = false;
+            playWhenPrepared = false;
+            requestedPositionMs = 0;
             player.setOnPreparedListener(mediaPlayer -> {
-                if (positionMs > 0) mediaPlayer.seekTo(positionMs);
-                mediaPlayer.start();
+                prepared = true;
+                if (playWhenPrepared) startPreparedPlayer();
             });
             player.setOnCompletionListener(mediaPlayer -> stopSelf());
             player.setOnErrorListener((mediaPlayer, what, extra) -> {
@@ -102,12 +116,56 @@ public class MediaPlaybackService extends Service {
         }
     }
 
+    private void playPreparedUrl(String url, int positionMs) {
+        if (url == null || url.trim().isEmpty()) return;
+        requestedPositionMs = positionMs;
+        playWhenPrepared = true;
+        if (!url.equals(preparedUrl) || player == null) {
+            prepareUrl(url);
+            playWhenPrepared = true;
+            requestedPositionMs = positionMs;
+            return;
+        }
+        if (prepared) startPreparedPlayer();
+    }
+
+    private void startPreparedPlayer() {
+        if (player == null || !prepared) return;
+        try {
+            if (audioManager != null) {
+                audioManager.requestAudioFocus(
+                    audioFocusListener,
+                    AudioManager.STREAM_MUSIC,
+                    AudioManager.AUDIOFOCUS_GAIN
+                );
+            }
+            if (requestedPositionMs > 0) player.seekTo(requestedPositionMs);
+            player.start();
+            startForegroundNotification(currentTitle, currentArtist);
+        } catch (Exception ignored) {
+            releasePlayer();
+        }
+    }
+
+    private void togglePlayback() {
+        if (player == null || !prepared) return;
+        try {
+            if (player.isPlaying()) player.pause();
+            else player.start();
+            startForegroundNotification(currentTitle, currentArtist);
+        } catch (Exception ignored) {}
+    }
+
     private void releasePlayer() {
         if (player != null) {
             try { player.stop(); } catch (Exception ignored) {}
             try { player.release(); } catch (Exception ignored) {}
             player = null;
         }
+        preparedUrl = null;
+        prepared = false;
+        playWhenPrepared = false;
+        requestedPositionMs = 0;
         if (audioManager != null) {
             try { audioManager.abandonAudioFocus(audioFocusListener); } catch (Exception ignored) {}
             audioManager = null;
@@ -139,6 +197,24 @@ public class MediaPlaybackService extends Service {
             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
 
+        Intent toggleIntent = new Intent(this, MediaPlaybackService.class);
+        toggleIntent.setAction(ACTION_TOGGLE);
+        PendingIntent togglePendingIntent = PendingIntent.getService(
+            this,
+            NOTIFICATION_ID + 1,
+            toggleIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+        Intent stopIntent = new Intent(this, MediaPlaybackService.class);
+        stopIntent.setAction(ACTION_STOP);
+        PendingIntent stopPendingIntent = PendingIntent.getService(
+            this,
+            NOTIFICATION_ID + 2,
+            stopIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+        boolean isPlaying = player != null && prepared && player.isPlaying();
+
         Notification notification = new NotificationCompat.Builder(this, CHANNEL)
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle(title)
@@ -148,6 +224,12 @@ public class MediaPlaybackService extends Service {
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
+            .addAction(
+                isPlaying ? android.R.drawable.ic_media_pause : android.R.drawable.ic_media_play,
+                isPlaying ? "Pause" : "Play",
+                togglePendingIntent
+            )
+            .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Stop", stopPendingIntent)
             .build();
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
