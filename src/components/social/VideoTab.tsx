@@ -75,9 +75,16 @@ export default function VideoTab() {
   const [showSuggest, setShowSuggest] = useState(false);
   const [listening, setListening] = useState(false);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
-  // প্রতি ৩ মিনিটে নতুন rotation — একই ভিডিও বারবার আসবে না
-  const freshness = useMemo(() => Math.floor(Date.now() / (3 * 60 * 1000)) % 9973, []);
+  // Advance the recommendation query while the tab stays open.
+  const [freshness, setFreshness] = useState(() => Math.floor(Date.now() / (3 * 60 * 1000)) % 9973);
   const inputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setFreshness(Math.floor(Date.now() / (3 * 60 * 1000)) % 9973);
+    }, 30_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const chips = [
     { label: "All", value: "" },
@@ -387,7 +394,14 @@ function InlinePlayer({
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
 
   const relatedSearch = useMemo(() => buildRelatedSearchTerm(video), [video]);
-  const relatedFreshness = useMemo(() => Math.floor(Date.now() / (3 * 60 * 1000)) % 9973, [video.id]);
+  const [relatedFreshness, setRelatedFreshness] = useState(() => Math.floor(Date.now() / (3 * 60 * 1000)) % 9973);
+  useEffect(() => {
+    setRelatedFreshness(Math.floor(Date.now() / (3 * 60 * 1000)) % 9973);
+    const timer = window.setInterval(() => {
+      setRelatedFreshness(Math.floor(Date.now() / (3 * 60 * 1000)) % 9973);
+    }, 30_000);
+    return () => window.clearInterval(timer);
+  }, [video.id]);
   const { data: relatedData, isLoading: relatedLoading } = useQuery({
     queryKey: ["video-related", video.id, relatedSearch, relatedFreshness],
     queryFn: () => getBangladeshExternalVideos(1, 18, undefined, relatedSearch, "long", relatedFreshness),

@@ -791,7 +791,7 @@ export async function getBangladeshExternalVideos(
     ? await fetchYouTubeShortsViaEdge(effectiveQuery || "bangladesh viral reels", Math.max(rows, 40), rotationIndex)
     : await fetchYouTubeVideos(effectiveQuery, Math.max(rows, 30), order, pageToken);
 
-  let videos = ytResult.videos;
+  let videos = dedupeExternalVideos(ytResult.videos);
 
   if (isShort) {
     // Reels must be Bangladesh/Bangla short-form clips — never mix long/Chinese results.
@@ -812,8 +812,21 @@ export async function getBangladeshExternalVideos(
   const hardBlock = new Set(recentArray.slice(0, 220));
 
   const unseen = videos.filter((v) => !hardBlock.has(v.id));
-  if (unseen.length >= Math.min(rows, 3)) {
-    videos = unseen;
+  const previouslyPlayed = videos.filter((v) => hardBlock.has(v.id));
+
+  // Preference is only a gentle relevance signal; creator diversity prevents
+  // one artist/channel from filling the complete sequence.
+  const preferenceRanked = [...unseen].sort((a, b) =>
+    scorePreferredCategory(b.title, b.category) - scorePreferredCategory(a.title, a.category)
+  );
+  const diverseUnseen = diversifyByCreator(preferenceRanked, 3);
+  const diversePlayed = diversifyByCreator(previouslyPlayed, 2);
+  videos = [...diverseUnseen, ...diversePlayed];
+
+  // The provider can return an identical relevance order for keyless requests.
+  // Rotate only the tail so the strongest first recommendations remain stable.
+  if (!trimmedQuery && videos.length > 5) {
+    videos = [...videos.slice(0, 3), ...seededShuffle(videos.slice(3), rotationIndex)];
   }
 
   const finalVideos = videos.slice(0, rows);
