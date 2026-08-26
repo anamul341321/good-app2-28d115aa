@@ -110,9 +110,7 @@ function FeedPage() {
   const [storyEditorFile, setStoryEditorFile] = useState<File | null>(null);
   const [replyingTo, setReplyingTo] = useState<{ id: string; name: string } | null>(null);
   const [expandedReplies, setExpandedReplies] = useState<Set<string>>(new Set());
-  const [page, setPage] = useState(0);
-  const [allPosts, setAllPosts] = useState<Post[]>([]);
-  const [hasMore, setHasMore] = useState(true);
+  const [hiddenPosts2, setHiddenPosts2] = useState<Set<string>>(new Set());
   const POSTS_PER_PAGE = 20;
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -128,44 +126,45 @@ function FeedPage() {
     if (!isLoading && !user) navigate({ to: "/" });
   }, [user, isLoading, navigate]);
 
-  const { isLoading: postsLoading } = useQuery({
-    queryKey: ["feed-posts", searchQuery, page],
-    queryFn: async () => {
-      const newPosts = await getFeedPosts(POSTS_PER_PAGE, searchQuery, page * POSTS_PER_PAGE, user?.id);
-      setHasMore(newPosts.length >= POSTS_PER_PAGE);
-      if (page === 0) {
-        setAllPosts((prev) => {
-          if (prev.length === 0) return newPosts;
-          const existingIds = new Set(prev.map((p) => p.id));
-          const brandNew = newPosts.filter((p) => !existingIds.has(p.id));
-          if (brandNew.length === 0) return prev;
-          return [...brandNew, ...prev];
-        });
-      } else {
-        setAllPosts((prev) => {
-          const existingIds = new Set(prev.map((p) => p.id));
-          const unique = newPosts.filter((p) => !existingIds.has(p.id));
-          return [...prev, ...unique];
-        });
-      }
-      return newPosts;
-    },
+  const {
+    data: postPages,
+    isLoading: postsLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
+    queryKey: ["feed-posts", searchQuery, user?.id],
+    initialPageParam: 0,
+    queryFn: ({ pageParam }) =>
+      getFeedPosts(POSTS_PER_PAGE, searchQuery, (pageParam as number) * POSTS_PER_PAGE, user?.id),
+    getNextPageParam: (lastPage, allPages) =>
+      lastPage.length > 0 ? allPages.length : undefined,
     enabled: !!user,
     staleTime: 60000,
   });
 
-  useEffect(() => { setPage(0); setAllPosts([]); setHasMore(true); }, [searchQuery]);
+  const posts = useMemo(() => {
+    const flat = (postPages?.pages ?? []).flat() as Post[];
+    const seen = new Set<string>();
+    return flat.filter((p) => {
+      if (seen.has(p.id) || hiddenPosts.has(p.id)) return false;
+      seen.add(p.id);
+      return true;
+    });
+  }, [postPages, hiddenPosts]);
 
-  const posts = allPosts.filter((p) => !hiddenPosts.has(p.id));
+  const hasMore = !!hasNextPage;
 
   useEffect(() => {
-    if (!sentinelRef.current || !hasMore || postsLoading) return;
+    const node = sentinelRef.current;
+    if (!node || !hasNextPage || isFetchingNextPage) return;
     const observer = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting) setPage((p) => p + 1);
-    }, { threshold: 0.1 });
-    observer.observe(sentinelRef.current);
+      if (entries[0].isIntersecting) void fetchNextPage();
+    }, { threshold: 0.1, rootMargin: "600px" });
+    observer.observe(node);
     return () => observer.disconnect();
-  }, [hasMore, postsLoading, posts.length]);
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage, posts.length]);
+
 
   const { data: stories = [] } = useQuery({
     queryKey: ["stories"],
