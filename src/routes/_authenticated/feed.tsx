@@ -13,12 +13,11 @@ import {
   REACTION_EMOJIS, type Post, type PostComment, type Story,
 } from "@/lib/feed-api";
 import { useFeedMedia } from "@/lib/feed-media";
-import { listFriends, sendFriendRequest, respondFriendRequest, searchPeopleFull, getSuggestedPeople } from "@/lib/friends.functions";
+import { listFriends, sendFriendRequest, respondFriendRequest, searchPeopleFull } from "@/lib/friends.functions";
 import { getUnreadMessageCount } from "@/lib/chat.functions";
-import { usePresence } from "@/lib/presence";
 import {
-  Heart, MessageCircle, Send, Image, X, Home, Users, Bell, Menu,
-  Plus, User, Search, Phone, Share2, Loader2, MoreHorizontal, Trash2, Globe, UserPlus, ChevronRight, ThumbsUp, Video, Check, ArrowLeft, Film, Pencil, Lock,
+  Heart, MessageCircle, Send, Image, X, Home, Users, Bell,
+  Plus, User, Search, Phone, Share2, Loader2, MoreHorizontal, Trash2, Globe, UserPlus, ThumbsUp, Video, ArrowLeft, Film, Pencil, Lock,
   Eye,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -26,7 +25,6 @@ import StoryEditor from "@/components/social/StoryEditor";
 import StoryViewer from "@/components/social/StoryViewer";
 import { playUiSound } from "@/lib/ui-sounds";
 import VerifiedBadge from "@/components/VerifiedBadge";
-import VideoTab from "@/components/social/VideoTab";
 
 export const Route = createFileRoute("/_authenticated/feed")({
   component: FeedPage,
@@ -76,7 +74,6 @@ function FeedPage() {
   const { user, loading: isLoading } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const onlineIds = usePresence();
 
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [postContent, setPostContent] = useState("");
@@ -99,19 +96,15 @@ function FeedPage() {
   const [viewingImage, setViewingImage] = useState<string | null>(null);
   const [doubleTapTimer, setDoubleTapTimer] = useState<Record<string, number>>({});
   const [showLoveAnimation, setShowLoveAnimation] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"home" | "friends" | "notif" | "video">("home");
+  const [activeTab, setActiveTab] = useState<"home" | "notif">("home");
   const [hiddenPosts, setHiddenPosts] = useState<Set<string>>(new Set());
   const [storyEditorFile, setStoryEditorFile] = useState<File | null>(null);
   const [replyingTo, setReplyingTo] = useState<{ id: string; name: string } | null>(null);
   const [expandedReplies, setExpandedReplies] = useState<Set<string>>(new Set());
-  const [suggestedOffset, setSuggestedOffset] = useState(0);
-  const [suggestedPeople, setSuggestedPeople] = useState<any[]>([]);
-  const [suggestedHasMore, setSuggestedHasMore] = useState(true);
   const [page, setPage] = useState(0);
   const [allPosts, setAllPosts] = useState<Post[]>([]);
   const [hasMore, setHasMore] = useState(true);
   const POSTS_PER_PAGE = 20;
-  const SUGGESTED_PAGE_SIZE = 20;
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
@@ -200,28 +193,11 @@ function FeedPage() {
     enabled: !!user && activeTab === "notif",
   });
 
-  const { data: suggestedPageData, isFetching: suggestedFetching } = useQuery({
-    queryKey: ["suggested-people", suggestedOffset],
-    queryFn: () => getSuggestedPeople({ data: { limit: SUGGESTED_PAGE_SIZE, offset: suggestedOffset } }),
-    enabled: !!user,
-    staleTime: 120000,
-  });
-
-  useEffect(() => {
-    if (!suggestedPageData) return;
-    const nextPeople = (suggestedPageData as any).people ?? [];
-    setSuggestedHasMore(Boolean((suggestedPageData as any).hasMore));
-    setSuggestedPeople((prev) => {
-      if (suggestedOffset === 0) return nextPeople;
-      const existing = new Set(prev.map((person: any) => person.id));
-      return [...prev, ...nextPeople.filter((person: any) => !existing.has(person.id))];
-    });
-  }, [suggestedPageData, suggestedOffset]);
-
-  const { data: searchResults = [] } = useQuery({
+  const { data: searchResults = [], isFetching: searchPeopleLoading } = useQuery({
     queryKey: ["feed-user-search", searchQuery],
-    queryFn: async () => (await searchPeopleFull({ data: { query: searchQuery } })).people,
+    queryFn: async () => (await searchPeopleFull({ data: { query: searchQuery.trim() } })).people,
     enabled: searchQuery.trim().length >= 1,
+    staleTime: 30_000,
   });
 
   const mentionMatch = commentText.match(/(?:^|\s)@([^@\s]{1,30})$/);
@@ -413,7 +389,6 @@ function FeedPage() {
   const friendRequestMutation = useMutation({
     mutationFn: async (targetUserId: string) => { await sendFriendRequest({ data: { userId: targetUserId } }); },
     onSuccess: () => {
-      setSuggestedOffset(0);
       queryClient.invalidateQueries({ queryKey: ["suggested-people"] });
       queryClient.invalidateQueries({ queryKey: ["friends-summary"] });
       queryClient.invalidateQueries({ queryKey: ["feed-user-search"] });
@@ -425,7 +400,6 @@ function FeedPage() {
   const respondRequestMutation = useMutation({
     mutationFn: async ({ linkId, accept }: { linkId: string; accept: boolean }) => respondFriendRequest({ data: { linkId, accept } }),
     onSuccess: (_d, vars) => {
-      setSuggestedOffset(0);
       queryClient.invalidateQueries({ queryKey: ["friends-summary"] });
       queryClient.invalidateQueries({ queryKey: ["feed-user-search"] });
       queryClient.invalidateQueries({ queryKey: ["suggested-people"] });
@@ -588,46 +562,6 @@ function FeedPage() {
   const renderPosts = () => {
     const elements: React.ReactNode[] = [];
     posts.forEach((post, index) => {
-      if (index === 3 && suggestedPeople.length > 0) {
-        elements.push(
-          <div key="people-suggest" className="bg-white dark:bg-card py-3">
-            <div className="px-3 pb-2 flex items-center justify-between">
-              <h3 className="text-[15px] font-bold text-gray-900 dark:text-foreground">People You May Know</h3>
-            </div>
-            <div className="flex gap-2.5 overflow-x-auto px-3 pb-2 scrollbar-hide">
-              {suggestedPeople.slice(0, 12).map((sp: any) => (
-                <div key={sp.id} className="min-w-[160px] max-w-[160px] rounded-lg border border-gray-200 dark:border-border overflow-hidden bg-white dark:bg-card shrink-0 shadow-sm">
-                  <Link to="/feed/user/$userId" params={{ userId: sp.id }} className="h-[140px] w-full relative bg-gray-100 dark:bg-secondary block">
-                    {sp.avatar_url ? (
-                      <FeedImg path={sp.avatar_url} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-b from-blue-100 to-blue-50 dark:from-primary/20 dark:to-secondary">
-                        <User className="w-12 h-12 text-gray-400" />
-                      </div>
-                    )}
-                  </Link>
-                  <div className="p-2.5">
-                    <Link to="/feed/user/$userId" params={{ userId: sp.id }} className="w-full text-left block">
-                      <p className="text-[13px] font-bold text-gray-900 dark:text-foreground truncate">{sp.display_name || "User"}</p>
-                    </Link>
-                    <button
-                      onClick={() => friendRequestMutation.mutate(sp.id)}
-                      disabled={friendRequestMutation.isPending}
-                      className="mt-2 w-full flex items-center justify-center gap-1.5 py-2 bg-blue-50 dark:bg-primary/10 text-blue-600 dark:text-primary rounded-md text-[13px] font-semibold hover:bg-blue-100 dark:hover:bg-primary/20 transition-colors">
-                      <UserPlus className="w-4 h-4" /> Add friend
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <button onClick={() => setActiveTab("friends")}
-              className="mx-3 mt-1 flex items-center justify-center gap-1 text-blue-600 dark:text-primary text-[13px] font-semibold py-1.5">
-              See all <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-        );
-      }
-
       const myReaction = userReactions[post.id];
       elements.push(
         <div key={post.id} className="bg-white dark:bg-card">
@@ -824,9 +758,6 @@ function FeedPage() {
             <button onClick={() => setShowSearch(!showSearch)} className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center">
               <Search className="w-5 h-5 text-white" />
             </button>
-            <button onClick={() => navigate({ to: "/home" })} className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center">
-              <Menu className="w-5 h-5 text-white" />
-            </button>
           </div>
         </div>
       </header>
@@ -837,19 +768,19 @@ function FeedPage() {
             className={`relative flex-1 h-full flex items-center justify-center border-b-[3px] transition-colors ${activeTab === "home" ? "border-blue-600 text-blue-600 dark:border-primary dark:text-primary" : "border-transparent text-gray-500 dark:text-muted-foreground"}`}>
             <Home className="w-6 h-6" />
           </button>
-          <button onClick={() => setActiveTab("friends")}
-            className={`relative flex-1 h-full flex items-center justify-center border-b-[3px] transition-colors ${activeTab === "friends" ? "border-blue-600 text-blue-600 dark:border-primary dark:text-primary" : "border-transparent text-gray-500 dark:text-muted-foreground"}`}>
+          <Link to="/friends"
+            className="relative flex-1 h-full flex items-center justify-center border-b-[3px] border-transparent text-gray-500 dark:text-muted-foreground">
             <Users className="w-6 h-6" />
             {friendRequestCount > 0 && (
               <span className="absolute top-0.5 right-[calc(50%-20px)] min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
                 {friendRequestCount > 99 ? "99+" : friendRequestCount}
               </span>
             )}
-          </button>
-          <button onClick={() => setActiveTab("video")} title="ভিডিও দেখুন"
-            className={`relative flex-1 h-full flex items-center justify-center border-b-[3px] transition-colors ${activeTab === "video" ? "border-red-600 text-red-600" : "border-transparent text-gray-500 dark:text-muted-foreground"}`}>
+          </Link>
+          <Link to="/videos" title="ভিডিও দেখুন"
+            className="relative flex-1 h-full flex items-center justify-center border-b-[3px] border-transparent text-gray-500 dark:text-muted-foreground">
             <Video className="w-6 h-6" />
-          </button>
+          </Link>
           <button onClick={() => navigate({ to: "/reels" })} title="Short"
             className="relative flex-1 h-full flex flex-col items-center justify-center border-b-[3px] border-transparent text-pink-600">
             <Film className="w-5 h-5" />
@@ -875,10 +806,6 @@ function FeedPage() {
               </span>
             )}
           </button>
-          <button onClick={() => navigate({ to: "/home" })}
-            className="relative flex-1 h-full flex items-center justify-center border-b-[3px] border-transparent text-gray-500 dark:text-muted-foreground">
-            <Menu className="w-6 h-6" />
-          </button>
         </div>
       </nav>
 
@@ -896,14 +823,18 @@ function FeedPage() {
                 </button>
               )}
             </div>
-            {searchResults.length > 0 && (
+            {searchQuery.trim() && (
               <div className="mt-2 space-y-1">
+                <p className="px-2 pb-1 text-[11px] font-black uppercase text-gray-500">ইউজার</p>
+                {searchPeopleLoading && (
+                  <div className="flex justify-center py-4"><Loader2 className="h-5 w-5 animate-spin text-blue-600" /></div>
+                )}
                 {searchResults.filter((u: any) => u.id !== user.id).slice(0, 10).map((u: any) => (
                   <div key={u.id} className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-secondary transition-colors">
                     <Link to="/feed/user/$userId" params={{ userId: u.id }} className="w-9 h-9 rounded-full bg-gray-200 dark:bg-primary/20 flex items-center justify-center overflow-hidden shrink-0">
                       <Avatar path={u.avatar_url} className="w-full h-full object-cover" fallback={u.display_name?.[0]?.toUpperCase() || "?"} />
                     </Link>
-                    <Link to="/feed/user/$userId" params={{ userId: u.id }} className="flex-1 min-w-0">
+                    <Link onClick={() => setShowSearch(false)} to="/feed/user/$userId" params={{ userId: u.id }} className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-gray-900 dark:text-foreground truncate">
                         <NameWithBadge name={u.display_name || "User"} isVerified={u.is_verified_badge} />
                       </p>
@@ -923,126 +854,11 @@ function FeedPage() {
                     )}
                   </div>
                 ))}
+                {!searchPeopleLoading && searchResults.length === 0 && (
+                  <p className="py-4 text-center text-sm font-semibold text-gray-500">কোনো ইউজার পাওয়া যায়নি</p>
+                )}
               </div>
             )}
-          </div>
-        </div>
-      )}
-
-      {activeTab === "friends" && (
-        <div className="max-w-lg mx-auto pb-4">
-          {(friendsData?.incoming.length || 0) > 0 && (
-            <div className="bg-white dark:bg-card mt-2 rounded-lg mx-1">
-              <h3 className="px-3 pt-3 pb-2 text-[16px] font-bold text-gray-900 dark:text-foreground">
-                ফ্রেন্ড রিকুয়েস্ট <span className="text-blue-600">({friendsData?.incoming.length})</span>
-              </h3>
-              <div className="space-y-1 pb-2">
-                {friendsData?.incoming.map((fr) => (
-                  <div key={fr.linkId} className="flex items-center gap-3 px-3 py-2">
-                    <Link to="/feed/user/$userId" params={{ userId: fr.userId }}
-                      className="w-14 h-14 rounded-full bg-gray-200 dark:bg-primary/20 flex items-center justify-center overflow-hidden shrink-0">
-                      <Avatar path={(fr as any).avatar_url} className="w-full h-full object-cover" fallback={fr.name?.[0]?.toUpperCase() || "?"} />
-                    </Link>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[14px] font-bold text-gray-900 dark:text-foreground truncate">{fr.name}</p>
-                      <div className="flex gap-2 mt-1.5">
-                        <button onClick={() => respondRequestMutation.mutate({ linkId: fr.linkId, accept: true })}
-                          className="flex-1 py-1.5 bg-blue-600 text-white text-[13px] font-semibold rounded-md">Confirm</button>
-                        <button onClick={() => respondRequestMutation.mutate({ linkId: fr.linkId, accept: false })}
-                          className="flex-1 py-1.5 bg-gray-200 dark:bg-secondary text-gray-700 dark:text-foreground text-[13px] font-semibold rounded-md">Delete</button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div className="bg-white dark:bg-card mt-2 rounded-lg mx-1 pb-3">
-            <h3 className="px-3 pt-3 pb-2 text-[16px] font-bold text-gray-900 dark:text-foreground">
-              বন্ধুরা ({friendsData?.friends.length || 0})
-            </h3>
-            <div className="space-y-0">
-              {(friendsData?.friends || []).map((f) => (
-                <div key={f.linkId} className="flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-secondary/30 transition-colors">
-                  <Link to="/feed/user/$userId" params={{ userId: f.userId }}
-                    className="relative w-14 h-14 rounded-full bg-gray-200 dark:bg-primary/20 flex items-center justify-center overflow-hidden shrink-0 border-2 border-gray-100 dark:border-border">
-                    <Avatar path={(f as any).avatar_url} className="w-full h-full object-cover" fallback={f.name?.[0]?.toUpperCase() || "?"} />
-                    {onlineIds.has(f.userId) && <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white dark:border-card" />}
-                  </Link>
-                  <div className="flex-1 min-w-0">
-                    <Link to="/feed/user/$userId" params={{ userId: f.userId }} className="text-left w-full block">
-                      <p className="text-[14px] font-bold text-gray-900 dark:text-foreground truncate">{f.name}</p>
-                    </Link>
-                    <div className="mt-1.5 flex gap-2">
-                      <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-100 dark:bg-secondary text-gray-600 dark:text-muted-foreground text-[12px] font-semibold rounded-md">
-                        <Check className="w-3.5 h-3.5" /> বন্ধু
-                      </span>
-                      <button onClick={() => startChatWith(f.userId)}
-                        className="px-3 py-1.5 bg-blue-50 dark:bg-primary/10 text-blue-600 dark:text-primary text-[12px] font-semibold rounded-md">
-                        মেসেজ
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-              {(friendsData?.friends.length || 0) === 0 && (
-                <p className="text-sm text-gray-500 text-center py-6">কোনো বন্ধু নেই</p>
-              )}
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-card mt-2 rounded-lg mx-1 pb-3">
-            <h3 className="px-3 pt-3 pb-2 text-[16px] font-bold text-gray-900 dark:text-foreground">
-              যাদের চেনেন (সাজেশন)
-            </h3>
-            <div className="space-y-0">
-              {(suggestedPeople as any[]).map((sp) => (
-                <div key={sp.id} className="flex items-center gap-3 px-3 py-2.5">
-                  <Link to="/feed/user/$userId" params={{ userId: sp.id }}
-                    className="w-14 h-14 rounded-full bg-gray-200 dark:bg-primary/20 flex items-center justify-center overflow-hidden shrink-0">
-                    <Avatar path={sp.avatar_url} className="w-full h-full object-cover" fallback={sp.display_name?.[0]?.toUpperCase() || "?"} />
-                  </Link>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[14px] font-bold text-gray-900 dark:text-foreground truncate">
-                      <NameWithBadge name={sp.display_name || "User"} isVerified={sp.is_verified_badge} />
-                    </p>
-                    <p className="text-[11px] text-gray-500 dark:text-muted-foreground">
-                      UID {sp.uid_seq ?? "—"}{sp.mutualCount > 0 ? ` · ${sp.mutualCount} mutual` : ""}
-                    </p>
-                    <div className="mt-1.5 flex gap-2">
-                      {sp.status === "pending_sent" ? (
-                        <span className="px-3 py-1.5 bg-gray-100 dark:bg-secondary text-gray-600 dark:text-muted-foreground text-[12px] font-semibold rounded-md">রিকুয়েস্ট পাঠানো হয়েছে</span>
-                      ) : (
-                        <button onClick={() => friendRequestMutation.mutate(sp.id)}
-                          disabled={friendRequestMutation.isPending}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white text-[12px] font-semibold rounded-md disabled:opacity-60">
-                          <UserPlus className="w-3.5 h-3.5" /> Add friend
-                        </button>
-                      )}
-                      <button onClick={() => startChatWith(sp.id)}
-                        className="px-3 py-1.5 bg-blue-50 dark:bg-primary/10 text-blue-600 dark:text-primary text-[12px] font-semibold rounded-md">
-                        মেসেজ
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-              {(suggestedPeople as any[]).length === 0 && (
-                <p className="text-sm text-gray-500 text-center py-6">সাজেশন নেই</p>
-              )}
-              {suggestedHasMore && (
-                <div className="px-3 pt-2">
-                  <button
-                    onClick={() => setSuggestedOffset((value) => value + SUGGESTED_PAGE_SIZE)}
-                    disabled={suggestedFetching}
-                    className="w-full rounded-lg bg-blue-50 dark:bg-primary/10 py-2.5 text-[13px] font-black text-blue-600 dark:text-primary disabled:opacity-60"
-                  >
-                    {suggestedFetching ? "লোড হচ্ছে..." : "আরও দেখুন"}
-                  </button>
-                </div>
-              )}
-            </div>
           </div>
         </div>
       )}
@@ -1147,8 +963,6 @@ function FeedPage() {
         </>
       )}
 
-      {activeTab === "video" && <VideoTab />}
-
       {activeTab === "notif" && (
         <div className="max-w-lg mx-auto mt-2 px-2">
           <div className="bg-white dark:bg-card rounded-lg">
@@ -1163,7 +977,7 @@ function FeedPage() {
                 {notificationsList.map((n: any) => (
                   <button key={n.id}
                     onClick={() => {
-                      if (n.type === "friend_request" || n.type === "friend_accept") setActiveTab("friends");
+                      if (n.type === "friend_request" || n.type === "friend_accept") navigate({ to: "/friends" });
                       else if (n.reference_id) { setActiveTab("home"); setTimeout(() => openComments(n.reference_id), 100); }
                       else if (n.from_user_id) navigate({ to: "/feed/user/$userId", params: { userId: n.from_user_id } });
                     }}
