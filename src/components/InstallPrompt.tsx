@@ -52,7 +52,7 @@ export function InstallPrompt() {
   }, []);
 
   const path = pathname || (typeof window !== "undefined" ? window.location.pathname : "");
-  const isSocialRoute = /^\/(social|chat|feed|friends|videos|reels|watch|studio|channel)/.test(path);
+  const isSocialRoute = /^\/(social|chat|feed|friends|videos|reels|watch|studio|channel|user)(\/|$)/.test(path);
   if (isSocialRoute) return null;
   if (native || !apkUrl || !open || path.startsWith("/admin")) return null;
 
