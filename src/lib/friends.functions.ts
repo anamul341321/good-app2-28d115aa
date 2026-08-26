@@ -311,7 +311,7 @@ export const searchPeopleFull = createServerFn({ method: "POST" })
     return { people: people.slice(0, 20) };
   });
 
-/** Suggested friends — যাদের সাথে এখনো কোনো সংযোগ নেই (mutual অনুযায়ী সাজানো) */
+/** Suggested friends — নিজের UID-এর আশেপাশের একাউন্ট আগে, তারপর mutual অনুযায়ী */
 export const getSuggestedPeople = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input?: { limit?: number; offset?: number }) => ({
@@ -323,9 +323,12 @@ export const getSuggestedPeople = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { PUBLIC_COLS, attachLinkStatus } = await import("./friends-people.server");
 
-    const { data: myLinks } = await (context.supabase as any)
+    const [{ data: myLinks }, { data: myProfile }] = await Promise.all([
+      (context.supabase as any)
       .from("friend_links")
-      .select("requester_id, addressee_id, status");
+      .select("requester_id, addressee_id, status"),
+      (supabaseAdmin as any).from("profiles").select("uid_seq").eq("id", me).maybeSingle(),
+    ]);
     const linked = new Set<string>([me]);
     const myFriends = new Set<string>();
     for (const l of (myLinks ?? []) as any[]) {
@@ -334,13 +337,19 @@ export const getSuggestedPeople = createServerFn({ method: "POST" })
       if (l.status === "accepted") myFriends.add(other);
     }
 
-    const { data: rows } = await supabaseAdmin
+    const { data: rows } = await (supabaseAdmin as any)
       .from("profiles")
       .select(PUBLIC_COLS)
-      .order("created_at", { ascending: false })
-      .range(data.offset, data.offset + Math.max(data.limit * 4, 80));
+      .order("uid_seq", { ascending: true, nullsFirst: false })
+      .limit(2000);
 
-    const candidates = ((rows ?? []) as any[]).filter((p) => !linked.has(p.id));
+    const myUid = Number((myProfile as any)?.uid_seq ?? 0);
+    const candidates = ((rows ?? []) as any[])
+      .filter((p) => !linked.has(p.id))
+      .map((p) => ({
+        ...p,
+        _uidDistance: myUid > 0 && Number(p.uid_seq) > 0 ? Math.abs(Number(p.uid_seq) - myUid) : Number.MAX_SAFE_INTEGER,
+      }));
 
     // mutual friend count (admin read of accepted links between candidates & my friends)
     let mutualMap = new Map<string, number>();
@@ -360,10 +369,16 @@ export const getSuggestedPeople = createServerFn({ method: "POST" })
       }
     }
 
-    candidates.sort((a, b) => (mutualMap.get(b.id) ?? 0) - (mutualMap.get(a.id) ?? 0));
-    const page = candidates.slice(0, data.limit);
+    candidates.sort((a, b) => {
+      const distance = (a._uidDistance ?? Number.MAX_SAFE_INTEGER) - (b._uidDistance ?? Number.MAX_SAFE_INTEGER);
+      if (distance !== 0) return distance;
+      const mutual = (mutualMap.get(b.id) ?? 0) - (mutualMap.get(a.id) ?? 0);
+      if (mutual !== 0) return mutual;
+      return Number(a.uid_seq ?? 0) - Number(b.uid_seq ?? 0);
+    });
+    const page = candidates.slice(data.offset, data.offset + data.limit);
     const people = (await attachLinkStatus(context.supabase, me, page)).map(
       (p) => ({ ...p, mutualCount: mutualMap.get(p.id) ?? 0 }),
     );
-    return { people, hasMore: candidates.length > data.limit };
+    return { people, hasMore: candidates.length > data.offset + data.limit };
   });

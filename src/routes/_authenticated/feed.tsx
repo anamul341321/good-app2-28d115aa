@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import brandLogo from "@/assets/goodapp-logo.png";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -24,6 +23,7 @@ import { toast } from "sonner";
 import StoryEditor from "@/components/social/StoryEditor";
 import StoryViewer from "@/components/social/StoryViewer";
 import { PeopleYouMayKnow } from "@/components/social/PeopleYouMayKnow";
+import { getPublicProfile } from "@/lib/social-users.functions";
 import { playUiSound } from "@/lib/ui-sounds";
 import VerifiedBadge from "@/components/VerifiedBadge";
 
@@ -199,6 +199,13 @@ function FeedPage() {
     queryFn: async () => (await searchPeopleFull({ data: { query: searchQuery.trim() } })).people,
     enabled: searchQuery.trim().length >= 1,
     staleTime: 30_000,
+  });
+
+  const { data: myProfile } = useQuery({
+    queryKey: ["social-profile", user?.id],
+    queryFn: async () => (await getPublicProfile({ data: { userId: user?.id ?? "" } })) as { avatar_url: string | null; display_name: string | null } | null,
+    enabled: !!user?.id,
+    staleTime: 60_000,
   });
 
   const mentionMatch = commentText.match(/(?:^|\s)@([^@\s]{1,30})$/);
@@ -734,23 +741,13 @@ function FeedPage() {
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-background pb-14">
-      <header className="sticky top-0 z-50 shadow-lg" style={{ background: "linear-gradient(135deg, #6d28d9, #8b5cf6, #db2777)" }}>
-        <div className="max-w-lg mx-auto px-3 py-2 flex items-center justify-between">
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => navigate({ to: "/home" })}
-              className="h-9 pl-1.5 pr-3 rounded-full flex items-center gap-1 mr-1 active:scale-95 transition ring-2 ring-white/80 shadow-[0_4px_14px_rgba(255,193,7,0.55)] animate-pulse"
-              style={{ background: "linear-gradient(135deg,#ffd600,#ff9100,#f4511e)" }}
-              title="Dashboard"
-            >
-              <ArrowLeft className="w-5 h-5 text-[#1a1a1a]" />
-              <span className="text-[11.5px] font-black text-[#1a1a1a] whitespace-nowrap">ড্যাশবোর্ড</span>
-            </button>
-            <img src={brandLogo} alt="good-app logo" width={36} height={36} loading="lazy" className="w-8 h-8 rounded-[10px] mr-1 shadow-[0_2px_10px_rgba(0,0,0,0.35)]" />
-            <h1 className="text-[24px] font-black text-white tracking-tight" style={{ letterSpacing: "-0.02em" }}>
-              <span>good</span>
-              <span style={{ color: "#ffd600" }}>-app</span>
-            </h1>
+      <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/95 shadow-sm backdrop-blur dark:border-border/40 dark:bg-card/95">
+        <div className="max-w-lg mx-auto px-3 py-2.5 flex items-center justify-between">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <Link to="/user/$userId" params={{ userId: user.id }} className="w-10 h-10 rounded-full bg-gray-200 dark:bg-primary/20 flex items-center justify-center overflow-hidden shrink-0">
+              <Avatar path={myProfile?.avatar_url} className="w-full h-full object-cover" fallback={myProfile?.display_name?.[0]?.toUpperCase() || "?"} />
+            </Link>
+            <h1 className="text-[28px] font-black tracking-normal text-blue-600">good-app</h1>
           </div>
           <div className="flex items-center gap-0.5">
             <button onClick={() => setShowCreatePost(true)} className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center">
@@ -872,9 +869,9 @@ function FeedPage() {
           {!showSearch && (
             <div className="bg-white dark:bg-card border-b border-gray-200 dark:border-border/30">
               <div className="max-w-lg mx-auto px-3 py-2.5 flex items-center gap-3">
-                <button onClick={() => navigate({ to: "/profile" })} className="w-10 h-10 rounded-full bg-gray-200 dark:bg-primary/20 flex items-center justify-center overflow-hidden shrink-0">
-                  <User className="w-5 h-5 text-gray-400" />
-                </button>
+                <Link to="/user/$userId" params={{ userId: user.id }} className="w-10 h-10 rounded-full bg-gray-200 dark:bg-primary/20 flex items-center justify-center overflow-hidden shrink-0">
+                  <Avatar path={myProfile?.avatar_url} className="w-full h-full object-cover" fallback={myProfile?.display_name?.[0]?.toUpperCase() || "?"} />
+                </Link>
                 <button onClick={() => setShowCreatePost(true)} className="flex-1 bg-gray-100 dark:bg-secondary rounded-full px-4 py-2.5 text-left">
                   <span className="text-sm text-gray-400 dark:text-muted-foreground">কি মনে হচ্ছে?</span>
                 </button>
