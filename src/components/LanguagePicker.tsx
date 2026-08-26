@@ -24,8 +24,8 @@ export function LanguagePicker() {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-sm px-4">
-      <div className="w-full max-w-sm rounded-3xl border border-white/20 p-6 text-white shadow-2xl"
+    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[60] flex items-end justify-center px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+      <div className="pointer-events-auto w-full max-w-sm rounded-3xl border border-white/20 p-6 text-white shadow-2xl"
            style={{ background: "linear-gradient(135deg,#7c3aed 0%,#06b6d4 55%,#10b981 100%)" }}>
         <div className="flex justify-center">
           <div className="w-14 h-14 rounded-2xl bg-white/25 backdrop-blur flex items-center justify-center">

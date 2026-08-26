@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useRouterState } from "@tanstack/react-router";
 import { Download, Rocket, X } from "lucide-react";
 import { toast } from "sonner";
 import { getAppStatus } from "@/lib/app-status.functions";
@@ -36,6 +37,7 @@ function isNewer(latest: string | null | undefined, installed: string | null): b
 
 export function AppUpdateBanner() {
   const native = typeof window !== "undefined" && isNativeApp();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
   const [installed, setInstalled] = useState<string | null>(null);
   const [started, setStarted] = useState(false);
   const [downloadStatus, setDownloadStatus] = useState<"idle" | "started" | "progress" | "complete" | "failed" | "fallback">("idle");
@@ -99,6 +101,9 @@ export function AppUpdateBanner() {
 
   const url = (data as any)?.apkUrl as string | null | undefined;
   const latest = (data as any)?.apkVersion as string | null | undefined;
+  const isSocialRoute = /^\/(social|chat|feed|friends|videos|reels|watch|studio|channel)/.test(pathname);
+
+  if (isSocialRoute) return null;
 
   // নেটিভ অ্যাপ: ইনস্টল করা ভার্সন পুরোনো হলেই বড় করে আপডেট চাইবে।
   // ওয়েবসাইট: অ্যাপ ইনস্টল/আপডেট করার জন্য প্রতিবার ঢুকলেই বড় ব্যানার দেখাবে।
@@ -167,9 +172,9 @@ export function AppUpdateBanner() {
   };
 
   return (
-    <div className="fixed inset-0 z-[120] grid place-items-center bg-black/70 p-4 backdrop-blur-sm">
+    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[120] flex justify-center px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
       <div
-        className="relative w-full max-w-sm overflow-hidden rounded-3xl border border-white/20 p-5 shadow-2xl ring-2 ring-cyan-400/25"
+        className="pointer-events-auto relative w-full max-w-sm overflow-hidden rounded-3xl border border-white/20 p-5 shadow-2xl ring-2 ring-cyan-400/25"
         style={{ background: "linear-gradient(160deg,#0b1224 0%,#16215a 55%,#3b0764 100%)" }}
       >
         <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/15 to-transparent animate-[shimmer_2.4s_linear_infinite]" />
