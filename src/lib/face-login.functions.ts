@@ -154,6 +154,64 @@ export const completeFaceSignup = createServerFn({ method: "POST" })
     return { ok: true as const, email };
   });
 
+/**
+ * ভেরিফিকেশন কয়েকবার চেষ্টা করেও না হলে ইউজার স্কিপ করে ঢুকতে পারবে —
+ * একাউন্ট তৈরি হবে কিন্তু ফেস ভেরিফিকেশন বাকি থাকবে (প্রোফাইলে লাল করে দেখাবে)।
+ */
+export const skipFaceSignup = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => CompleteInput.parse(input))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: taken } = await supabaseAdmin
+      .from("profiles")
+      .select("id")
+      .eq("phone_number", data.phone)
+      .maybeSingle();
+    if (taken) throw new Error("এই নম্বর দিয়ে ইতোমধ্যে একাউন্ট আছে — লগইন করুন");
+
+    const email = phoneToEmail(data.phone);
+    const gmail = (data.gmail ?? "").trim().toLowerCase();
+    const refCode = (data.referralCode ?? "").trim().toUpperCase() || null;
+
+    const { data: created, error } = await supabaseAdmin.auth.admin.createUser({
+      email,
+      password: data.password,
+      email_confirm: true,
+      user_metadata: {
+        display_name: data.name,
+        phone_number: data.phone,
+        contact_email: gmail,
+        face_login: true,
+        face_verify_pending: true,
+        ...(refCode ? { referral_code: refCode } : {}),
+      },
+    });
+    if (error) {
+      if (error.message.toLowerCase().includes("already")) {
+        throw new Error("এই নম্বর দিয়ে ইতোমধ্যে একাউন্ট আছে");
+      }
+      throw new Error(error.message);
+    }
+
+    const userId = created?.user?.id ?? null;
+    if (userId && gmail) {
+      await supabaseAdmin
+        .from("profiles")
+        .update({ email: gmail, email_verified: false } as never)
+        .eq("id", userId);
+    }
+
+    if (data.walletAddress) {
+      await supabaseAdmin
+        .from("face_signups")
+        .update({ user_id: userId, status: "skipped" } as never)
+        .eq("wallet_address", data.walletAddress);
+    }
+
+    return { ok: true as const, email };
+  });
+
 /** ফেস দিয়ে লগইন: ভেরিফাই হওয়া wallet থেকে নম্বর ফেরত দেয় (পাসওয়ার্ড দিয়ে লগইন হবে) */
 export const resolveFaceLogin = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => AddressInput.parse(input))
