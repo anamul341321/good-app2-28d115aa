@@ -808,10 +808,13 @@ function InlinePlayer({
         ) : null}
 
       <div
+        ref={playerBoxRef}
         className={
           playerMode === "mini"
             ? "relative h-20 w-36 shrink-0 overflow-hidden bg-black"
-            : "relative aspect-video w-full shrink-0 overflow-hidden bg-black"
+            : isFullscreen
+              ? "relative h-full w-full shrink-0 overflow-hidden bg-black"
+              : "relative aspect-video w-full shrink-0 overflow-hidden bg-black"
         }
       >
         {isLocal && source && !localMediaFailed ? (
@@ -826,7 +829,7 @@ function InlinePlayer({
             onLoadedData={() => setLocalMediaFailed(false)}
             onError={() => setLocalMediaFailed(true)}
             onEnded={playNext}
-            className="h-full w-full"
+            className={isFullscreen ? "h-full w-full object-contain" : "h-full w-full"}
           />
         ) : isLocal ? (
           <div className="grid h-full w-full place-items-center bg-black">
@@ -842,13 +845,25 @@ function InlinePlayer({
           <iframe
             ref={iframeRef}
             id={`goodapp-player-${video.video_id || video.id}`}
-            src={`${video.video_url}${video.video_url.includes("?") ? "&" : "?"}autoplay=1&playsinline=1&rel=0&modestbranding=1&showinfo=0&iv_load_policy=3&fs=0&controls=1&color=white&enablejsapi=1${typeof window !== "undefined" ? `&origin=${encodeURIComponent(window.location.origin)}` : ""}`}
+            src={`${video.video_url}${video.video_url.includes("?") ? "&" : "?"}autoplay=1&playsinline=1&rel=0&modestbranding=1&showinfo=0&iv_load_policy=3&fs=1&controls=1&color=white&enablejsapi=1${typeof window !== "undefined" ? `&origin=${encodeURIComponent(window.location.origin)}` : ""}`}
             title={video.title}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; fullscreen; gyroscope; picture-in-picture; web-share"
+            allowFullScreen
             className="h-full w-full border-0"
           />
         )}
+        {playerMode === "expanded" ? (
+          <button
+            type="button"
+            aria-label={isFullscreen ? "ফুল স্ক্রিন বন্ধ করুন" : "ফুল স্ক্রিন করুন"}
+            onClick={toggleFullscreen}
+            className="absolute bottom-2 right-2 z-20 grid h-10 w-10 place-items-center rounded-full bg-black/60 text-white backdrop-blur active:bg-black/80"
+          >
+            {isFullscreen ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
+          </button>
+        ) : null}
       </div>
+
 
         {playerMode === "mini" ? (
           <div className="flex min-w-0 flex-1 items-center gap-1 px-2">
