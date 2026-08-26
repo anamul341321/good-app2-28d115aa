@@ -13,8 +13,25 @@ import {
 } from "@/lib/friends.functions";
 import { CallButtons } from "@/components/CallProvider";
 import { MessengerAvatar } from "@/components/messenger/MessengerAvatar";
+import { SocialSwitch } from "@/components/social/SocialSwitch";
+import { useFeedMedia } from "@/lib/feed-media";
 
 import { usePresence } from "@/lib/presence";
+
+/** প্রোফাইল ছবি (স্টোরেজ path হলে signed URL বানিয়ে দেখায়) */
+function PersonAvatar({
+  name,
+  path,
+  online,
+}: {
+  name: string;
+  path?: string | null;
+  online?: boolean;
+}) {
+  const url = useFeedMedia(path);
+  return <MessengerAvatar name={name} src={url ?? null} online={online} size="lg" />;
+}
+
 
 export const Route = createFileRoute("/_authenticated/friends")({
   component: FriendsPage,
@@ -87,16 +104,18 @@ function FriendsPage() {
   return (
     <div className="flex flex-col min-h-screen bg-background pb-20">
       {/* Messenger-style Header */}
-      <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md px-4 py-3 flex flex-col gap-3 pt-[env(safe-area-inset-top)]">
+      <header className="sticky top-0 z-40 bg-background/85 backdrop-blur-md px-4 py-3 flex flex-col gap-3 pt-[env(safe-area-inset-top)] border-b border-border/50">
+        <SocialSwitch active="facebook" />
         <div className="flex items-center gap-2">
           <Link 
-            to="/social"
+            to="/feed"
             className="btn-press h-9 w-9 flex items-center justify-center rounded-full hover:bg-surface-2 transition-colors"
           >
             <ChevronLeft className="h-6 w-6 text-primary" />
           </Link>
           <h1 className="text-2xl font-black text-foreground tracking-tight">People</h1>
         </div>
+
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <input
@@ -123,8 +142,8 @@ function FriendsPage() {
             <h2 className="text-xs font-black uppercase text-muted-foreground tracking-wider pl-1">Search Results</h2>
             <div className="space-y-1">
               {found.map((p: any) => (
-                <div key={p.id} className="flex items-center gap-3 py-2">
-                  <MessengerAvatar name={p.display_name ?? "User"} online={onlineIds.has(p.id)} size="lg" />
+                <div key={p.id} className="flex items-center gap-3 rounded-2xl px-2 py-2.5 transition-colors hover:bg-surface-2/60">
+                  <PersonAvatar name={p.display_name ?? "User"} path={p.avatar_url} online={onlineIds.has(p.id)} />
                   <div className="flex-1 min-w-0">
                     <p className="truncate text-sm font-black">{p.display_name ?? "User"}</p>
                     <p className="text-[10px] font-bold text-muted-foreground uppercase">UID {p.uid_seq ?? "-"}</p>
@@ -158,7 +177,7 @@ function FriendsPage() {
             <div className="space-y-3">
               {data!.incoming.map((r) => (
                 <div key={r.linkId} className="flex items-center gap-3">
-                  <MessengerAvatar name={r.name} size="lg" />
+                  <PersonAvatar name={r.name} path={(r as any).avatar_url} />
                   <div className="flex-1 min-w-0">
                     <p className="truncate text-sm font-black">{r.name}</p>
                     <p className="text-[10px] font-bold text-muted-foreground uppercase">Wants to be friends</p>
@@ -201,8 +220,8 @@ function FriendsPage() {
           ) : (
             <div className="space-y-1">
               {data!.friends.map((f) => (
-                <div key={f.linkId} className="flex items-center gap-3 py-2">
-                  <MessengerAvatar name={f.name} online={onlineIds.has(f.userId)} size="lg" />
+                <div key={f.linkId} className="flex items-center gap-3 rounded-2xl px-2 py-2.5 transition-colors hover:bg-surface-2/60">
+                  <PersonAvatar name={f.name} path={(f as any).avatar_url} online={onlineIds.has(f.userId)} />
                   <div className="flex-1 min-w-0">
                     <p className="truncate text-sm font-black">{f.name}</p>
                     <p className="text-[10px] font-bold text-muted-foreground uppercase">{onlineIds.has(f.userId) ? "Active Now" : `UID ${f.uid ?? "-"}`}</p>
@@ -230,8 +249,8 @@ function FriendsPage() {
           </div>
           <div className="space-y-1">
             {suggestedPeople.map((p: any) => (
-              <div key={p.id} className="flex items-center gap-3 py-2">
-                <MessengerAvatar name={p.display_name ?? "User"} online={onlineIds.has(p.id)} size="lg" />
+              <div key={p.id} className="flex items-center gap-3 rounded-2xl px-2 py-2.5 transition-colors hover:bg-surface-2/60">
+                <PersonAvatar name={p.display_name ?? "User"} path={p.avatar_url} online={onlineIds.has(p.id)} />
                 <div className="flex-1 min-w-0">
                   <p className="truncate text-sm font-black">{p.display_name ?? "User"}</p>
                   <p className="text-[10px] font-bold text-muted-foreground uppercase">

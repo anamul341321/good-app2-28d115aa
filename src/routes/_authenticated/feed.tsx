@@ -25,6 +25,7 @@ import StoryEditor from "@/components/social/StoryEditor";
 import StoryViewer from "@/components/social/StoryViewer";
 import { playUiSound } from "@/lib/ui-sounds";
 import VerifiedBadge from "@/components/VerifiedBadge";
+import { SocialSwitch } from "@/components/social/SocialSwitch";
 
 export const Route = createFileRoute("/_authenticated/feed")({
   component: FeedPage,
@@ -762,7 +763,11 @@ function FeedPage() {
         </div>
       </header>
 
-      <nav className="sticky top-[52px] z-40 bg-white dark:bg-card border-b border-gray-200 dark:border-border/40">
+      <div className="sticky top-[52px] z-40 bg-white/95 dark:bg-card/95 backdrop-blur px-3 py-2 border-b border-gray-200 dark:border-border/40">
+        <div className="max-w-lg mx-auto"><SocialSwitch active="facebook" /></div>
+      </div>
+
+      <nav className="sticky top-[104px] z-40 bg-white dark:bg-card border-b border-gray-200 dark:border-border/40">
         <div className="max-w-lg mx-auto flex items-center justify-around h-[44px]">
           <button onClick={() => setActiveTab("home")}
             className={`relative flex-1 h-full flex items-center justify-center border-b-[3px] transition-colors ${activeTab === "home" ? "border-blue-600 text-blue-600 dark:border-primary dark:text-primary" : "border-transparent text-gray-500 dark:text-muted-foreground"}`}>

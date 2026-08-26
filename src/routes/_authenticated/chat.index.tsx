@@ -10,6 +10,7 @@ import { StoryRow } from "@/components/messenger/StoryRow";
 import { ChatRow } from "@/components/messenger/ChatRow";
 import { MessengerSearchOverlay } from "@/components/messenger/MessengerSearchOverlay";
 import { Button } from "@/components/ui/button";
+import { SocialSwitch } from "@/components/social/SocialSwitch";
 
 export const Route = createFileRoute("/_authenticated/chat/")({
   component: ChatListPage,
@@ -88,7 +89,8 @@ export function ChatListPage() {
   return (
     <div className="flex flex-col min-h-screen bg-background">
       {/* Messenger Header */}
-      <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md px-4 py-3 flex flex-col gap-3 pt-[env(safe-area-inset-top)]">
+      <header className="sticky top-0 z-40 bg-background/85 backdrop-blur-md px-4 py-3 flex flex-col gap-3 pt-[env(safe-area-inset-top)]">
+        <SocialSwitch active="messenger" />
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-black text-foreground tracking-tight">Messenger</h1>
