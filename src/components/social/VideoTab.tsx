@@ -529,8 +529,21 @@ function InlinePlayer({
   const playerBoxRef = useRef<HTMLDivElement | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [cssFullscreen, setCssFullscreen] = useState(false);
+  const [viewportBox, setViewportBox] = useState({ w: 0, h: 0 });
   const dragStartY = useRef<number | null>(null);
   const playerModeRef = useRef(playerMode);
+
+  useEffect(() => {
+    const sync = () => setViewportBox({ w: window.innerWidth, h: window.innerHeight });
+    sync();
+    window.addEventListener("resize", sync);
+    window.addEventListener("orientationchange", sync);
+    return () => {
+      window.removeEventListener("resize", sync);
+      window.removeEventListener("orientationchange", sync);
+    };
+  }, []);
+
 
 
   const relatedSearch = useMemo(() => buildRelatedSearchTerm(video), [video]);
