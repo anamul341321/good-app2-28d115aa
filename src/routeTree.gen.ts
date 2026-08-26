@@ -68,6 +68,7 @@ import { Route as ApiPublicIpaybdWebhookRouteImport } from './routes/api/public/
 import { Route as ApiPublicHisabCardRouteImport } from './routes/api/public/hisab-card'
 import { Route as AdminUserUserIdRouteImport } from './routes/admin/user.$userId'
 import { Route as AuthenticatedWatchPostIdRouteImport } from './routes/_authenticated/watch.$postId'
+import { Route as AuthenticatedUserUserIdRouteImport } from './routes/_authenticated/user.$userId'
 import { Route as AuthenticatedTaskSlotRouteImport } from './routes/_authenticated/task.$slot'
 import { Route as AuthenticatedSocialMessengerRouteImport } from './routes/_authenticated/social/messenger'
 import { Route as AuthenticatedChatPeerIdRouteImport } from './routes/_authenticated/chat.$peerId'
@@ -85,7 +86,6 @@ import { Route as ApiPublicChatReplyRouteImport } from './routes/api/public/chat
 import { Route as ApiPublicCeloSweepRunRouteImport } from './routes/api/public/celo-sweep/run'
 import { Route as ApiPublicBroadcastRunRouteImport } from './routes/api/public/broadcast/run'
 import { Route as ApiPublicAppDownloadRouteImport } from './routes/api/public/app/download'
-import { Route as AuthenticatedFeedUserUserIdRouteImport } from './routes/_authenticated/feed/user.$userId'
 import { Route as AuthenticatedChatGroupGroupIdRouteImport } from './routes/_authenticated/chat.group.$groupId'
 
 const TermsRoute = TermsRouteImport.update({
@@ -386,6 +386,11 @@ const AuthenticatedWatchPostIdRoute =
     path: '/watch/$postId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedUserUserIdRoute = AuthenticatedUserUserIdRouteImport.update({
+  id: '/user/$userId',
+  path: '/user/$userId',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedTaskSlotRoute = AuthenticatedTaskSlotRouteImport.update({
   id: '/task/$slot',
   path: '/task/$slot',
@@ -477,12 +482,6 @@ const ApiPublicAppDownloadRoute = ApiPublicAppDownloadRouteImport.update({
   path: '/api/public/app/download',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedFeedUserUserIdRoute =
-  AuthenticatedFeedUserUserIdRouteImport.update({
-    id: '/user/$userId',
-    path: '/user/$userId',
-    getParentRoute: () => AuthenticatedFeedRoute,
-  } as any)
 const AuthenticatedChatGroupGroupIdRoute =
   AuthenticatedChatGroupGroupIdRouteImport.update({
     id: '/chat/group/$groupId',
@@ -499,7 +498,7 @@ export interface FileRoutesByFullPath {
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
   '/earnings': typeof AuthenticatedEarningsRoute
-  '/feed': typeof AuthenticatedFeedRouteWithChildren
+  '/feed': typeof AuthenticatedFeedRoute
   '/friends': typeof AuthenticatedFriendsRoute
   '/history': typeof AuthenticatedHistoryRoute
   '/home': typeof AuthenticatedHomeRoute
@@ -543,6 +542,7 @@ export interface FileRoutesByFullPath {
   '/chat/$peerId': typeof AuthenticatedChatPeerIdRoute
   '/social/messenger': typeof AuthenticatedSocialMessengerRoute
   '/task/$slot': typeof AuthenticatedTaskSlotRoute
+  '/user/$userId': typeof AuthenticatedUserUserIdRoute
   '/watch/$postId': typeof AuthenticatedWatchPostIdRoute
   '/admin/user/$userId': typeof AdminUserUserIdRoute
   '/api/public/hisab-card': typeof ApiPublicHisabCardRoute
@@ -554,7 +554,6 @@ export interface FileRoutesByFullPath {
   '/chat/': typeof AuthenticatedChatIndexRoute
   '/social/': typeof AuthenticatedSocialIndexRoute
   '/chat/group/$groupId': typeof AuthenticatedChatGroupGroupIdRoute
-  '/feed/user/$userId': typeof AuthenticatedFeedUserUserIdRoute
   '/api/public/app/download': typeof ApiPublicAppDownloadRoute
   '/api/public/broadcast/run': typeof ApiPublicBroadcastRunRoute
   '/api/public/celo-sweep/run': typeof ApiPublicCeloSweepRunRoute
@@ -577,7 +576,7 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
   '/earnings': typeof AuthenticatedEarningsRoute
-  '/feed': typeof AuthenticatedFeedRouteWithChildren
+  '/feed': typeof AuthenticatedFeedRoute
   '/friends': typeof AuthenticatedFriendsRoute
   '/history': typeof AuthenticatedHistoryRoute
   '/home': typeof AuthenticatedHomeRoute
@@ -620,6 +619,7 @@ export interface FileRoutesByTo {
   '/chat/$peerId': typeof AuthenticatedChatPeerIdRoute
   '/social/messenger': typeof AuthenticatedSocialMessengerRoute
   '/task/$slot': typeof AuthenticatedTaskSlotRoute
+  '/user/$userId': typeof AuthenticatedUserUserIdRoute
   '/watch/$postId': typeof AuthenticatedWatchPostIdRoute
   '/admin/user/$userId': typeof AdminUserUserIdRoute
   '/api/public/hisab-card': typeof ApiPublicHisabCardRoute
@@ -631,7 +631,6 @@ export interface FileRoutesByTo {
   '/chat': typeof AuthenticatedChatIndexRoute
   '/social': typeof AuthenticatedSocialIndexRoute
   '/chat/group/$groupId': typeof AuthenticatedChatGroupGroupIdRoute
-  '/feed/user/$userId': typeof AuthenticatedFeedUserUserIdRoute
   '/api/public/app/download': typeof ApiPublicAppDownloadRoute
   '/api/public/broadcast/run': typeof ApiPublicBroadcastRunRoute
   '/api/public/celo-sweep/run': typeof ApiPublicCeloSweepRunRoute
@@ -657,7 +656,7 @@ export interface FileRoutesById {
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
   '/_authenticated/earnings': typeof AuthenticatedEarningsRoute
-  '/_authenticated/feed': typeof AuthenticatedFeedRouteWithChildren
+  '/_authenticated/feed': typeof AuthenticatedFeedRoute
   '/_authenticated/friends': typeof AuthenticatedFriendsRoute
   '/_authenticated/history': typeof AuthenticatedHistoryRoute
   '/_authenticated/home': typeof AuthenticatedHomeRoute
@@ -701,6 +700,7 @@ export interface FileRoutesById {
   '/_authenticated/chat/$peerId': typeof AuthenticatedChatPeerIdRoute
   '/_authenticated/social/messenger': typeof AuthenticatedSocialMessengerRoute
   '/_authenticated/task/$slot': typeof AuthenticatedTaskSlotRoute
+  '/_authenticated/user/$userId': typeof AuthenticatedUserUserIdRoute
   '/_authenticated/watch/$postId': typeof AuthenticatedWatchPostIdRoute
   '/admin/user/$userId': typeof AdminUserUserIdRoute
   '/api/public/hisab-card': typeof ApiPublicHisabCardRoute
@@ -712,7 +712,6 @@ export interface FileRoutesById {
   '/_authenticated/chat/': typeof AuthenticatedChatIndexRoute
   '/_authenticated/social/': typeof AuthenticatedSocialIndexRoute
   '/_authenticated/chat/group/$groupId': typeof AuthenticatedChatGroupGroupIdRoute
-  '/_authenticated/feed/user/$userId': typeof AuthenticatedFeedUserUserIdRoute
   '/api/public/app/download': typeof ApiPublicAppDownloadRoute
   '/api/public/broadcast/run': typeof ApiPublicBroadcastRunRoute
   '/api/public/celo-sweep/run': typeof ApiPublicCeloSweepRunRoute
@@ -782,6 +781,7 @@ export interface FileRouteTypes {
     | '/chat/$peerId'
     | '/social/messenger'
     | '/task/$slot'
+    | '/user/$userId'
     | '/watch/$postId'
     | '/admin/user/$userId'
     | '/api/public/hisab-card'
@@ -793,7 +793,6 @@ export interface FileRouteTypes {
     | '/chat/'
     | '/social/'
     | '/chat/group/$groupId'
-    | '/feed/user/$userId'
     | '/api/public/app/download'
     | '/api/public/broadcast/run'
     | '/api/public/celo-sweep/run'
@@ -859,6 +858,7 @@ export interface FileRouteTypes {
     | '/chat/$peerId'
     | '/social/messenger'
     | '/task/$slot'
+    | '/user/$userId'
     | '/watch/$postId'
     | '/admin/user/$userId'
     | '/api/public/hisab-card'
@@ -870,7 +870,6 @@ export interface FileRouteTypes {
     | '/chat'
     | '/social'
     | '/chat/group/$groupId'
-    | '/feed/user/$userId'
     | '/api/public/app/download'
     | '/api/public/broadcast/run'
     | '/api/public/celo-sweep/run'
@@ -939,6 +938,7 @@ export interface FileRouteTypes {
     | '/_authenticated/chat/$peerId'
     | '/_authenticated/social/messenger'
     | '/_authenticated/task/$slot'
+    | '/_authenticated/user/$userId'
     | '/_authenticated/watch/$postId'
     | '/admin/user/$userId'
     | '/api/public/hisab-card'
@@ -950,7 +950,6 @@ export interface FileRouteTypes {
     | '/_authenticated/chat/'
     | '/_authenticated/social/'
     | '/_authenticated/chat/group/$groupId'
-    | '/_authenticated/feed/user/$userId'
     | '/api/public/app/download'
     | '/api/public/broadcast/run'
     | '/api/public/celo-sweep/run'
@@ -1416,6 +1415,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWatchPostIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/user/$userId': {
+      id: '/_authenticated/user/$userId'
+      path: '/user/$userId'
+      fullPath: '/user/$userId'
+      preLoaderRoute: typeof AuthenticatedUserUserIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/task/$slot': {
       id: '/_authenticated/task/$slot'
       path: '/task/$slot'
@@ -1535,13 +1541,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAppDownloadRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/feed/user/$userId': {
-      id: '/_authenticated/feed/user/$userId'
-      path: '/user/$userId'
-      fullPath: '/feed/user/$userId'
-      preLoaderRoute: typeof AuthenticatedFeedUserUserIdRouteImport
-      parentRoute: typeof AuthenticatedFeedRoute
-    }
     '/_authenticated/chat/group/$groupId': {
       id: '/_authenticated/chat/group/$groupId'
       path: '/chat/group/$groupId'
@@ -1551,17 +1550,6 @@ declare module '@tanstack/react-router' {
     }
   }
 }
-
-interface AuthenticatedFeedRouteChildren {
-  AuthenticatedFeedUserUserIdRoute: typeof AuthenticatedFeedUserUserIdRoute
-}
-
-const AuthenticatedFeedRouteChildren: AuthenticatedFeedRouteChildren = {
-  AuthenticatedFeedUserUserIdRoute: AuthenticatedFeedUserUserIdRoute,
-}
-
-const AuthenticatedFeedRouteWithChildren =
-  AuthenticatedFeedRoute._addFileChildren(AuthenticatedFeedRouteChildren)
 
 interface AuthenticatedSocialRouteChildren {
   AuthenticatedSocialMessengerRoute: typeof AuthenticatedSocialMessengerRoute
@@ -1578,7 +1566,7 @@ const AuthenticatedSocialRouteWithChildren =
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedEarningsRoute: typeof AuthenticatedEarningsRoute
-  AuthenticatedFeedRoute: typeof AuthenticatedFeedRouteWithChildren
+  AuthenticatedFeedRoute: typeof AuthenticatedFeedRoute
   AuthenticatedFriendsRoute: typeof AuthenticatedFriendsRoute
   AuthenticatedHistoryRoute: typeof AuthenticatedHistoryRoute
   AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
@@ -1600,6 +1588,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedChannelUserIdRoute: typeof AuthenticatedChannelUserIdRoute
   AuthenticatedChatPeerIdRoute: typeof AuthenticatedChatPeerIdRoute
   AuthenticatedTaskSlotRoute: typeof AuthenticatedTaskSlotRoute
+  AuthenticatedUserUserIdRoute: typeof AuthenticatedUserUserIdRoute
   AuthenticatedWatchPostIdRoute: typeof AuthenticatedWatchPostIdRoute
   AuthenticatedChatIndexRoute: typeof AuthenticatedChatIndexRoute
   AuthenticatedChatGroupGroupIdRoute: typeof AuthenticatedChatGroupGroupIdRoute
@@ -1607,7 +1596,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedEarningsRoute: AuthenticatedEarningsRoute,
-  AuthenticatedFeedRoute: AuthenticatedFeedRouteWithChildren,
+  AuthenticatedFeedRoute: AuthenticatedFeedRoute,
   AuthenticatedFriendsRoute: AuthenticatedFriendsRoute,
   AuthenticatedHistoryRoute: AuthenticatedHistoryRoute,
   AuthenticatedHomeRoute: AuthenticatedHomeRoute,
@@ -1629,6 +1618,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedChannelUserIdRoute: AuthenticatedChannelUserIdRoute,
   AuthenticatedChatPeerIdRoute: AuthenticatedChatPeerIdRoute,
   AuthenticatedTaskSlotRoute: AuthenticatedTaskSlotRoute,
+  AuthenticatedUserUserIdRoute: AuthenticatedUserUserIdRoute,
   AuthenticatedWatchPostIdRoute: AuthenticatedWatchPostIdRoute,
   AuthenticatedChatIndexRoute: AuthenticatedChatIndexRoute,
   AuthenticatedChatGroupGroupIdRoute: AuthenticatedChatGroupGroupIdRoute,
