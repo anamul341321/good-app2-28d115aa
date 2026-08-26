@@ -1,5 +1,20 @@
 import { useEffect, useRef, useState } from "react";
 import { Play, Pause, Trash2, Ban, PhoneMissed, PhoneIncoming, Video } from "lucide-react";
+import { useFeedMedia } from "@/lib/feed-media";
+
+/** মেসেজ সিন হলে নিচে দেখানো ছোট (১৬px) প্রোফাইল ছবি */
+function SeenAvatar({ name, src }: { name: string; src?: string | null }) {
+  const url = useFeedMedia(src);
+  return (
+    <span
+      className="mr-0.5 mt-1 grid h-4 w-4 place-items-center overflow-hidden rounded-full bg-surface-3 text-[8px] font-black text-foreground/70 ring-1 ring-border/60"
+      title={`${name} দেখেছেন`}
+    >
+      {url ? <img src={url} alt={name} className="h-full w-full object-cover" /> : (name || "U").slice(0, 1).toUpperCase()}
+    </span>
+  );
+}
+
 
 export type ChatMsg = {
   id: string;
