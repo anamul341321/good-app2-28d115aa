@@ -213,12 +213,23 @@ export function FaceAuthFlow(props: Props) {
         }
       }
     } catch {
-      // ignore — নতুন key দিয়ে চেষ্টা হবে
+      // ignore — নিচে আবার চেষ্টা হবে
     }
+    // প্রথম রিট্রাই: আগের key/লিংক দিয়েই আবার চেষ্টা (নতুন key লাগে না)
+    if (url && address && retriesRef.current === 0) {
+      retriesRef.current = 1;
+      setTicks(0);
+      setFrameOk(false);
+      setPhase("verify");
+      setNote("ফেস ভেরিফিকেশন খুলছে — ক্যামেরার সামনে মুখ ধরুন");
+      return;
+    }
+    retriesRef.current = 0;
     setAddress(null);
     setUrl(null);
     await begin();
   };
+
 
   const openExternal = () => {
     if (!url) return;
