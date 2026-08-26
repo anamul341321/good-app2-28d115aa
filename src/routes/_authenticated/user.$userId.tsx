@@ -9,6 +9,7 @@ import {
 } from "@/lib/feed-api";
 import { useFeedMedia } from "@/lib/feed-media";
 import { listFriends, sendFriendRequest, respondFriendRequest } from "@/lib/friends.functions";
+import { getPublicProfile } from "@/lib/social-users.functions";
 import {
   ArrowLeft, User, MessageCircle, Calendar, Globe, MoreHorizontal,
   UserPlus, Loader2, Check,
