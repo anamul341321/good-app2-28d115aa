@@ -40,6 +40,7 @@ import { Route as AdminBonusSettingsRouteImport } from './routes/admin/bonus-set
 import { Route as AdminAnnouncementsRouteImport } from './routes/admin/announcements'
 import { Route as AuthenticatedWithdrawRouteImport } from './routes/_authenticated/withdraw'
 import { Route as AuthenticatedWalletRouteImport } from './routes/_authenticated/wallet'
+import { Route as AuthenticatedVideosRouteImport } from './routes/_authenticated/videos'
 import { Route as AuthenticatedStudioRouteImport } from './routes/_authenticated/studio'
 import { Route as AuthenticatedSocialRouteImport } from './routes/_authenticated/social'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
@@ -238,6 +239,11 @@ const AuthenticatedWithdrawRoute = AuthenticatedWithdrawRouteImport.update({
 const AuthenticatedWalletRoute = AuthenticatedWalletRouteImport.update({
   id: '/wallet',
   path: '/wallet',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedVideosRoute = AuthenticatedVideosRouteImport.update({
+  id: '/videos',
+  path: '/videos',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedStudioRoute = AuthenticatedStudioRouteImport.update({
@@ -502,6 +508,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRoute
   '/social': typeof AuthenticatedSocialRouteWithChildren
   '/studio': typeof AuthenticatedStudioRoute
+  '/videos': typeof AuthenticatedVideosRoute
   '/wallet': typeof AuthenticatedWalletRoute
   '/withdraw': typeof AuthenticatedWithdrawRoute
   '/admin/announcements': typeof AdminAnnouncementsRoute
@@ -578,6 +585,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsRoute
   '/social': typeof AuthenticatedSocialRouteWithChildren
   '/studio': typeof AuthenticatedStudioRoute
+  '/videos': typeof AuthenticatedVideosRoute
   '/wallet': typeof AuthenticatedWalletRoute
   '/withdraw': typeof AuthenticatedWithdrawRoute
   '/admin/announcements': typeof AdminAnnouncementsRoute
@@ -657,6 +665,7 @@ export interface FileRoutesById {
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/social': typeof AuthenticatedSocialRouteWithChildren
   '/_authenticated/studio': typeof AuthenticatedStudioRoute
+  '/_authenticated/videos': typeof AuthenticatedVideosRoute
   '/_authenticated/wallet': typeof AuthenticatedWalletRoute
   '/_authenticated/withdraw': typeof AuthenticatedWithdrawRoute
   '/admin/announcements': typeof AdminAnnouncementsRoute
@@ -736,6 +745,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/social'
     | '/studio'
+    | '/videos'
     | '/wallet'
     | '/withdraw'
     | '/admin/announcements'
@@ -812,6 +822,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/social'
     | '/studio'
+    | '/videos'
     | '/wallet'
     | '/withdraw'
     | '/admin/announcements'
@@ -890,6 +901,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings'
     | '/_authenticated/social'
     | '/_authenticated/studio'
+    | '/_authenticated/videos'
     | '/_authenticated/wallet'
     | '/_authenticated/withdraw'
     | '/admin/announcements'
@@ -1195,6 +1207,13 @@ declare module '@tanstack/react-router' {
       path: '/wallet'
       fullPath: '/wallet'
       preLoaderRoute: typeof AuthenticatedWalletRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/videos': {
+      id: '/_authenticated/videos'
+      path: '/videos'
+      fullPath: '/videos'
+      preLoaderRoute: typeof AuthenticatedVideosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/studio': {
@@ -1555,6 +1574,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedSocialRoute: typeof AuthenticatedSocialRouteWithChildren
   AuthenticatedStudioRoute: typeof AuthenticatedStudioRoute
+  AuthenticatedVideosRoute: typeof AuthenticatedVideosRoute
   AuthenticatedWalletRoute: typeof AuthenticatedWalletRoute
   AuthenticatedWithdrawRoute: typeof AuthenticatedWithdrawRoute
   AuthenticatedChannelUserIdRoute: typeof AuthenticatedChannelUserIdRoute
@@ -1583,6 +1603,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedSocialRoute: AuthenticatedSocialRouteWithChildren,
   AuthenticatedStudioRoute: AuthenticatedStudioRoute,
+  AuthenticatedVideosRoute: AuthenticatedVideosRoute,
   AuthenticatedWalletRoute: AuthenticatedWalletRoute,
   AuthenticatedWithdrawRoute: AuthenticatedWithdrawRoute,
   AuthenticatedChannelUserIdRoute: AuthenticatedChannelUserIdRoute,
