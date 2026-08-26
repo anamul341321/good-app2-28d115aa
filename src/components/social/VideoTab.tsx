@@ -551,7 +551,7 @@ function InlinePlayer({
             <iframe
               ref={iframeRef}
               id={`goodapp-player-${video.video_id || video.id}`}
-              src={`${video.video_url}${video.video_url.includes("?") ? "&" : "?"}autoplay=1&playsinline=1&rel=0&modestbranding=1&showinfo=0&iv_load_policy=3&fs=0&controls=1&disablekb=1&color=white&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}`}
+              src={`${video.video_url}${video.video_url.includes("?") ? "&" : "?"}autoplay=1&playsinline=1&rel=0&modestbranding=1&showinfo=0&iv_load_policy=3&fs=0&controls=1&disablekb=1&color=white&enablejsapi=1${typeof window !== "undefined" ? `&origin=${encodeURIComponent(window.location.origin)}` : ""}`}
               title={video.title}
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               className="h-full w-full border-0"

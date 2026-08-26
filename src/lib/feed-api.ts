@@ -779,6 +779,11 @@ export async function getBangladeshExternalVideos(
     const taste = tasteQueries();
     const pool = [...taste, ...FRESH_QUERIES, ...ROTATING_QUERIES];
     effectiveQuery = pool.length > 0 ? pool[rotationIndex % pool.length] : undefined;
+  } else if (trimmedQuery && page > 1 && !pageToken) {
+    // Keyless providers do not always expose pagination. Vary later searches
+    // instead of requesting the identical first page in an endless loop.
+    const discoveryTerms = ["latest", "live", "acoustic", "playlist", "new release", "cover"];
+    effectiveQuery = `${trimmedQuery} ${discoveryTerms[rotationIndex % discoveryTerms.length]}`;
   }
 
 
