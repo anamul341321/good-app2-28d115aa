@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useRouterState } from "@tanstack/react-router";
 import { Download, Trash2, X, Zap, BellRing, ShieldCheck } from "lucide-react";
 import { getAppStatus } from "@/lib/app-status.functions";
 
@@ -28,6 +29,7 @@ export function InstallPrompt() {
   const [installed, setInstalled] = useState(false);
   const [open, setOpen] = useState(true);
   const native = typeof window !== "undefined" && isNativeApp();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
 
   const { data } = useQuery({
     queryKey: ["app-status-apk"],
@@ -49,13 +51,15 @@ export function InstallPrompt() {
     return () => mq?.removeEventListener?.("change", onMq);
   }, []);
 
-  const path = typeof window !== "undefined" ? window.location.pathname : "";
+  const path = pathname || (typeof window !== "undefined" ? window.location.pathname : "");
+  const isSocialRoute = /^\/(social|chat|feed|friends|videos|reels|watch|studio|channel)/.test(path);
+  if (isSocialRoute) return null;
   if (native || !apkUrl || !open || path.startsWith("/admin")) return null;
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/70 backdrop-blur-sm px-3 pb-4 animate-in fade-in duration-300">
+    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[80] flex items-end justify-center px-3 pb-[max(1rem,env(safe-area-inset-bottom))] animate-in fade-in duration-300">
       <div
-        className="relative w-full max-w-md overflow-hidden rounded-[28px] border border-white/15 shadow-2xl animate-in slide-in-from-bottom-6 duration-400"
+        className="pointer-events-auto relative w-full max-w-md overflow-hidden rounded-[28px] border border-white/15 shadow-2xl animate-in slide-in-from-bottom-6 duration-400"
         style={{ background: "linear-gradient(160deg,#0b1224 0%,#131a3a 55%,#1b1040 100%)" }}
       >
         {/* গ্লো */}

@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, Link, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Outlet, Link, useRouter, useRouterState } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { Home, Wallet, ArrowDownToLine, LogOut, Loader2, RefreshCcw, User, Users, Settings, MoreVertical, PhoneCall, FileText, ShieldCheck, ScrollText, LayoutGrid } from "lucide-react";
 import {
@@ -43,6 +43,7 @@ export const Route = createFileRoute("/_authenticated")({
 
 function AuthedLayout() {
   const router = useRouter();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
   const [authState, setAuthState] = useState<"checking" | "authenticated" | "unauthenticated">(() => {
     if (typeof window === "undefined") return "checking";
     // Quick synchronous check of localStorage to avoid splash screen flash
@@ -173,15 +174,17 @@ function AuthedLayout() {
   if (appStatus?.maintenance) return <MaintenanceScreen message={appStatus.message} />;
 
   // মেসেঞ্জার (chat), social, নিউজ ফিড, রিলস, ভিডিও — সবই ফুল-স্ক্রিন, ড্যাশবোর্ড হেডার/নেভ দেখাবে না
-  const isSocialRoute = /^\/(social|chat|feed|friends|videos|reels|watch|studio|channel)/.test(router.state.location.pathname);
+  const isSocialRoute = /^\/(social|chat|feed|friends|videos|reels|watch|studio|channel)/.test(pathname);
 
   return (
     <CallProvider>
     <div className={isSocialRoute ? "min-h-screen" : "min-h-screen pb-24"}>
-      {appStatus?.faceVerifyEnabled === false ? (
-        <SlotPausedModal message={appStatus?.faceVerifyMessage} />
-      ) : (
-        <NewSystemModal />
+      {!isSocialRoute && (
+        appStatus?.faceVerifyEnabled === false ? (
+          <SlotPausedModal message={appStatus?.faceVerifyMessage} />
+        ) : (
+          <NewSystemModal />
+        )
       )}
 
       {!isSocialRoute && (
@@ -263,7 +266,7 @@ function AuthedLayout() {
 
       <GuidedTour />
 
-      <LanguagePicker />
+      {!isSocialRoute && <LanguagePicker />}
       <SlotResetApproval />
 
       <ProfileCompleteGate />

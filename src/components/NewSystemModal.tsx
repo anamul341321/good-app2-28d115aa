@@ -26,7 +26,7 @@ export function NewSystemModal() {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[95] flex items-center justify-center px-3 py-6 bg-black/85 animate-in fade-in duration-300">
+    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[95] flex items-end justify-center px-3 pb-[max(1rem,env(safe-area-inset-bottom))] animate-in fade-in duration-300">
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         {Array.from({ length: 18 }).map((_, i) => (
           <span
@@ -44,7 +44,7 @@ export function NewSystemModal() {
         ))}
       </div>
 
-      <div className="relative w-full max-w-sm max-h-full overflow-y-auto rounded-3xl border-2 border-emerald bg-surface shadow-[0_0_70px_-10px_rgba(16,185,129,0.55)] animate-in zoom-in-95 slide-in-from-bottom-4 duration-500">
+      <div className="pointer-events-auto relative w-full max-w-sm max-h-[min(78vh,680px)] overflow-y-auto rounded-3xl border-2 border-emerald bg-surface shadow-[0_0_70px_-10px_rgba(16,185,129,0.55)] animate-in zoom-in-95 slide-in-from-bottom-4 duration-500">
         <button
           aria-label="বন্ধ করুন"
           onClick={() => setOpen(false)}
