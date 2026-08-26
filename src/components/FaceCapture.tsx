@@ -15,7 +15,10 @@ type FaceCaptureProps = {
   cancelVoice?: NarrationKey;
   /** If true, skip the explicit consent modal (e.g. re-verification). */
   skipConsent?: boolean;
+  /** লাইভ ক্যামেরা বাধ্যতামূলক — গ্যালারি থেকে আপলোড করা যাবে না */
+  cameraOnly?: boolean;
 };
+
 
 type Mode = "consent" | "choice" | "camera" | "review";
 
