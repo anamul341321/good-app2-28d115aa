@@ -67,6 +67,15 @@ function HomePage() {
     refetchInterval: 60_000,
   });
 
+  const { data: unreadData } = useQuery({
+    queryKey: ["chat-unread-count"],
+    queryFn: () => getUnreadMessageCount(),
+    refetchInterval: 20_000,
+    staleTime: 10_000,
+    refetchOnWindowFocus: true,
+  });
+  const unreadMsgs = unreadData?.unread ?? 0;
+
   const { data: appStatus } = useQuery({
     queryKey: ["app-status"],
     queryFn: () => getAppStatus(),
