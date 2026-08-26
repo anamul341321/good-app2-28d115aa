@@ -611,6 +611,30 @@ export function AuthPage() {
             ))}
           </div>
 
+          {/* সুপারিশকৃত পদ্ধতি — সবার উপরে */}
+          <div className="mb-4 rounded-2xl border-2 border-emerald/40 bg-emerald/5 p-3">
+            <p className="mb-2 text-center text-[11px] font-black uppercase tracking-wider text-emerald">
+              ⭐ সুপারিশকৃত — ফেস দিয়ে {mode === "login" ? "লগইন" : "রেজিস্ট্রেশন"}
+            </p>
+            <button
+              type="button"
+              onClick={() => (mode === "login" ? setFaceMode("login") : startFaceSignup2())}
+              data-voice={mode === "login" ? "auth.face.login" : undefined}
+              className="w-full py-3 rounded-xl font-black text-sm flex flex-col items-center justify-center gap-0.5 text-white btn-press shadow-lg"
+              style={{ background: "linear-gradient(120deg,#10b981,#06b6d4,#8b5cf6)" }}
+            >
+              <span className="flex items-center gap-2">
+                <ScanFace className="w-4 h-4" />
+                {mode === "login" ? "ফেস দিয়ে লগইন করুন" : "ফেস দিয়ে রেজিস্ট্রেশন করুন"}
+              </span>
+              <span className="text-[10px] font-bold opacity-90">
+                {mode === "login"
+                  ? "মুখ দেখালেই আপনার একাউন্ট চিনে নেবে"
+                  : "নিচের তথ্য পূরণ করে এখানে চাপুন — সাথে সাথে ফেস ভেরিফিকেশন খুলবে"}
+              </span>
+            </button>
+          </div>
+
           <form onSubmit={onFormNext} className="space-y-3">
             {mode === "signup" && (
               <div data-voice="auth.name">
