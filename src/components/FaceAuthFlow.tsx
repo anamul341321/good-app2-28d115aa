@@ -55,6 +55,7 @@ export function FaceAuthFlow(props: Props) {
   const [frameOk, setFrameOk] = useState(false);
   const [skipping, setSkipping] = useState(false);
   const busyRef = useRef(false);
+  const retriesRef = useRef(0);
 
   const finishSignup = async (addr: string) => {
     setNote("✅ ভেরিফিকেশন সফল — একাউন্ট তৈরি হচ্ছে…");
