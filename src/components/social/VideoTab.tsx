@@ -251,7 +251,7 @@ export default function VideoTab() {
 
   return (
     <div className="mx-auto max-w-lg pb-6 bg-white dark:bg-background min-h-screen">
-      <div className="sticky top-[96px] z-30 bg-white dark:bg-card border-b border-gray-100 dark:border-border/30">
+      <div className="sticky safe-top-video-search z-30 bg-white dark:bg-card border-b border-gray-100 dark:border-border/30">
         <div className="px-3 py-2">
           <form
             onSubmit={(event) => {

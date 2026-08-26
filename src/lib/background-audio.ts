@@ -21,6 +21,27 @@ type Handlers = {
 
 let audioEl: HTMLAudioElement | null = null;
 
+function beginNativeMediaPlayback(info: BackgroundMediaInfo) {
+  try {
+    const bridge = (window as any).GoodAppDownloader;
+    if (bridge?.beginMediaPlaybackInfo) {
+      bridge.beginMediaPlaybackInfo(info.title, info.artist || "good-app");
+      return;
+    }
+    bridge?.beginMediaPlayback?.();
+  } catch {
+    // native bridge optional
+  }
+}
+
+function endNativeMediaPlayback() {
+  try {
+    (window as any).GoodAppDownloader?.endMediaPlayback?.();
+  } catch {
+    // native bridge optional
+  }
+}
+
 function getAudio(): HTMLAudioElement | null {
   if (typeof document === "undefined") return null;
   if (audioEl) return audioEl;
@@ -127,11 +148,7 @@ export function attachBackgroundAudio(
   document.addEventListener("visibilitychange", onVisibility);
   audio?.addEventListener("ended", onEnded);
 
-  try {
-    (window as any).GoodAppDownloader?.beginMediaPlayback?.();
-  } catch {
-    // native bridge optional
-  }
+  beginNativeMediaPlayback(info);
 
   return () => {
     document.removeEventListener("visibilitychange", onVisibility);
@@ -143,11 +160,7 @@ export function attachBackgroundAudio(
     }
     usingAudio = false;
     setMediaSessionHandlers(null, {});
-    try {
-      (window as any).GoodAppDownloader?.endMediaPlayback?.();
-    } catch {
-      // native bridge optional
-    }
+    endNativeMediaPlayback();
   };
 }
 
@@ -187,20 +200,12 @@ export function attachBackgroundEmbed(
   };
 
   document.addEventListener("visibilitychange", onVisibility);
-  try {
-    (window as any).GoodAppDownloader?.beginMediaPlayback?.();
-  } catch {
-    // native bridge optional
-  }
+  beginNativeMediaPlayback(info);
 
   return () => {
     if (timer) window.clearInterval(timer);
     document.removeEventListener("visibilitychange", onVisibility);
     setMediaSessionHandlers(null, {});
-    try {
-      (window as any).GoodAppDownloader?.endMediaPlayback?.();
-    } catch {
-      // native bridge optional
-    }
+    endNativeMediaPlayback();
   };
 }
