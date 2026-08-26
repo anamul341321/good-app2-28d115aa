@@ -35,11 +35,20 @@ function beginNativeMediaPlayback(info: BackgroundMediaInfo) {
   }
 }
 
-function beginNativeUrlPlayback(src: string, positionSeconds: number, info: BackgroundMediaInfo): boolean {
+function beginNativeUrlPlayback(
+  src: string,
+  positionSeconds: number,
+  info: BackgroundMediaInfo,
+): boolean {
   try {
     const bridge = (window as any).GoodAppDownloader;
     if (!bridge?.playMediaUrl) return false;
-    bridge.playMediaUrl(src, Math.max(0, Math.floor(positionSeconds * 1000)), info.title, info.artist || "good-app");
+    bridge.playMediaUrl(
+      src,
+      Math.max(0, Math.floor(positionSeconds * 1000)),
+      info.title,
+      info.artist || "good-app",
+    );
     return true;
   } catch {
     return false;
@@ -393,4 +402,3 @@ export function attachBackgroundEmbed(
     releaseNativePlayback(nativePlaybackOwner);
   };
 }
-

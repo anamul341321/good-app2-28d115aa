@@ -25,10 +25,11 @@ async function fetchJson(url: string): Promise<any | null> {
 function pickPiped(json: any): string | null {
   const streams = (json?.audioStreams ?? []) as any[];
   if (!streams.length) return null;
-  const best = streams
-    .filter((stream) => stream?.url && String(stream?.mimeType ?? "audio").includes("audio"))
-    .sort((a, b) => Number(b?.bitrate ?? 0) - Number(a?.bitrate ?? 0))
-    .find((stream) => Number(stream?.bitrate ?? 0) <= 160_000) ?? streams[0];
+  const best =
+    streams
+      .filter((stream) => stream?.url && String(stream?.mimeType ?? "audio").includes("audio"))
+      .sort((a, b) => Number(b?.bitrate ?? 0) - Number(a?.bitrate ?? 0))
+      .find((stream) => Number(stream?.bitrate ?? 0) <= 160_000) ?? streams[0];
   return best?.url ? String(best.url) : null;
 }
 
@@ -49,7 +50,9 @@ export async function resolveYoutubeAudioStream(videoId: string): Promise<string
     if (url) return url;
   }
   for (const host of INVIDIOUS_HOSTS) {
-    const json = await fetchJson(`${host}/api/v1/videos/${encodeURIComponent(id)}?fields=adaptiveFormats`);
+    const json = await fetchJson(
+      `${host}/api/v1/videos/${encodeURIComponent(id)}?fields=adaptiveFormats`,
+    );
     const url = json ? pickInvidious(json) : null;
     if (url) return url;
   }

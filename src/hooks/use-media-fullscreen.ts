@@ -39,8 +39,16 @@ export function useMediaFullscreen(ref: RefObject<HTMLElement | null>) {
       // CSS fullscreen remains the reliable WebView fallback.
     }
     setFallbackFullscreen(false);
-    try { (window as any).GoodAppDownloader?.exitVideoFullscreen?.(); } catch { /* browser */ }
-    try { (screen.orientation as any)?.unlock?.(); } catch { /* unsupported */ }
+    try {
+      (window as any).GoodAppDownloader?.exitVideoFullscreen?.();
+    } catch {
+      /* browser */
+    }
+    try {
+      (screen.orientation as any)?.unlock?.();
+    } catch {
+      /* unsupported */
+    }
   }, []);
 
   const toggle = useCallback(async () => {
@@ -68,13 +76,28 @@ export function useMediaFullscreen(ref: RefObject<HTMLElement | null>) {
       requested = false;
     }
     if (!requested) setFallbackFullscreen(true);
-    try { (window as any).GoodAppDownloader?.enterVideoFullscreen?.(); } catch { /* browser */ }
-    try { await (screen.orientation as any)?.lock?.("landscape"); } catch { /* unsupported */ }
+    try {
+      (window as any).GoodAppDownloader?.enterVideoFullscreen?.();
+    } catch {
+      /* browser */
+    }
+    try {
+      await (screen.orientation as any)?.lock?.("landscape");
+    } catch {
+      /* unsupported */
+    }
   }, [exit, fallbackFullscreen, ref]);
 
-  useEffect(() => () => {
-    try { (window as any).GoodAppDownloader?.exitVideoFullscreen?.(); } catch { /* browser */ }
-  }, []);
+  useEffect(
+    () => () => {
+      try {
+        (window as any).GoodAppDownloader?.exitVideoFullscreen?.();
+      } catch {
+        /* browser */
+      }
+    },
+    [],
+  );
 
   return {
     isFullscreen: fallbackFullscreen || nativeFullscreen,

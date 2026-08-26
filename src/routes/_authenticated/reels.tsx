@@ -43,12 +43,7 @@ import {
 import { useFeedMedia } from "@/lib/feed-media";
 import { attachBackgroundAudio } from "@/lib/background-audio";
 import { MessengerAvatar } from "@/components/messenger/MessengerAvatar";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useMediaFullscreen } from "@/hooks/use-media-fullscreen";
@@ -103,7 +98,6 @@ function useCombinedReels(selectedPostId?: string) {
     enabled: !!selectedPostId,
     staleTime: 60_000,
   });
-
 
   const items = useMemo<ReelItem[]>(() => {
     let localVideos = (localQuery.data || []).filter(
@@ -191,7 +185,11 @@ function ReelsPage() {
   const selectedReelId = selectedPostId ? `local-${selectedPostId}` : null;
 
   useEffect(() => {
-    if (selectedReelId && items.some((item) => item.id === selectedReelId) && selectedScrollHandledRef.current !== selectedReelId) {
+    if (
+      selectedReelId &&
+      items.some((item) => item.id === selectedReelId) &&
+      selectedScrollHandledRef.current !== selectedReelId
+    ) {
       selectedScrollHandledRef.current = selectedReelId;
       setActiveId(selectedReelId);
       containerRef.current?.scrollTo({ top: 0, behavior: "auto" });
@@ -201,7 +199,9 @@ function ReelsPage() {
       selectedScrollHandledRef.current = null;
     }
     if (items.length > 0) {
-      setActiveId((current) => (current && items.some((item) => item.id === current) ? current : items[0].id));
+      setActiveId((current) =>
+        current && items.some((item) => item.id === current) ? current : items[0].id,
+      );
     }
   }, [items, selectedReelId]);
 
@@ -273,14 +273,16 @@ function ReelsPage() {
           )}
         </div>
       ) : (
-
         <div
           ref={containerRef}
           onScroll={updateActiveFromScroll}
           className="h-full w-full snap-y snap-mandatory overflow-y-auto overscroll-contain"
-          style={{ scrollbarWidth: "none", touchAction: "pan-y", WebkitOverflowScrolling: "touch" as any }}
+          style={{
+            scrollbarWidth: "none",
+            touchAction: "pan-y",
+            WebkitOverflowScrolling: "touch" as any,
+          }}
         >
-
           {items.map((item) => (
             <ReelSlide
               key={item.id}
@@ -304,18 +306,23 @@ function ReelsPage() {
           <ArrowLeft className="h-5 w-5" />
           <span className="text-[11.5px] font-black whitespace-nowrap">Dashboard</span>
         </button>
-        <span className="pointer-events-none text-[15px] font-black tracking-tight text-white drop-shadow">Short</span>
+        <span className="pointer-events-none text-[15px] font-black tracking-tight text-white drop-shadow">
+          Short
+        </span>
         {user && (
           <button
             onClick={handlePickFile}
             disabled={uploading}
             className="btn-press h-9 px-3 rounded-full flex items-center gap-1.5 bg-rose text-white font-black text-[12px] shadow-lg"
           >
-            {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+            {uploading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Plus className="h-4 w-4" />
+            )}
             <span>শর্ট আপলোড</span>
           </button>
         )}
-
       </div>
       <CommentsSheet
         postId={commentPostId}
@@ -367,9 +374,14 @@ function ReelSlide({
       className="relative flex h-full w-full shrink-0 grow-0 basis-full snap-start snap-always items-center justify-center"
       style={{ scrollSnapStop: "always" }}
     >
-
       {item.kind === "local" ? (
-        <LocalReel post={item.post} isActive={isActive} muted={muted} setMuted={setMuted} onOpenComments={onOpenComments} />
+        <LocalReel
+          post={item.post}
+          isActive={isActive}
+          muted={muted}
+          setMuted={setMuted}
+          onOpenComments={onOpenComments}
+        />
       ) : (
         <ExternalReel video={item.video} isActive={isActive} muted={muted} setMuted={setMuted} />
       )}
@@ -463,7 +475,6 @@ async function shareUrl(url: string, title: string) {
   toast.info(url, { duration: 10000, description: "লিংকটি কপি করে শেয়ার করুন" });
 }
 
-
 /** ভিউ কাউন্ট সংক্ষেপে (1.2K, 3.4M) */
 function formatViews(n: number): string {
   const v = Number(n || 0);
@@ -531,13 +542,21 @@ function LocalReel({
       if (!viewCountedRef.current) {
         viewCountedRef.current = true;
         setViewsCount((c) => c + 1);
-        incrementPostView(post.id).then((v) => { if (v > 0) setViewsCount(v); }).catch(() => {});
+        incrementPostView(post.id)
+          .then((v) => {
+            if (v > 0) setViewsCount(v);
+          })
+          .catch(() => {});
       }
     } else {
       // শুধু current ভিডিওই বাজবে — বাকিগুলো পজ ও মিউট
       el.pause();
       el.muted = true;
-      try { el.currentTime = 0; } catch { /* ignore */ }
+      try {
+        el.currentTime = 0;
+      } catch {
+        /* ignore */
+      }
     }
   }, [isActive, videoUrl, muted]);
 
@@ -550,7 +569,6 @@ function LocalReel({
       artwork: post.image_url || undefined,
     });
   }, [isActive, mediaFailed, post.content, post.image_url, post.user?.display_name, videoUrl]);
-
 
   const likeMutation = useMutation({
     mutationFn: async () => {
@@ -627,20 +645,21 @@ function LocalReel({
       singleTapTimer.current = null;
       if (muted) {
         // প্রথম ট্যাপে সাউন্ড চালু হবে
-          toggleMute();
+        toggleMute();
         return;
       }
       togglePlay();
     }, 280);
   };
 
-
   return (
     <div
       ref={playerBoxRef}
-      className={fallbackFullscreen
-        ? "fixed inset-0 z-[999] h-[100dvh] w-screen bg-black"
-        : "relative h-full w-full"}
+      className={
+        fallbackFullscreen
+          ? "fixed inset-0 z-[999] h-[100dvh] w-screen bg-black"
+          : "relative h-full w-full"
+      }
     >
       {videoUrl && !mediaFailed ? (
         <video
@@ -660,7 +679,10 @@ function LocalReel({
           {mediaFailed ? (
             <Button
               variant="secondary"
-              onClick={() => { setMediaFailed(false); setMediaKey((value) => value + 1); }}
+              onClick={() => {
+                setMediaFailed(false);
+                setMediaKey((value) => value + 1);
+              }}
             >
               ভিডিও আবার চালান
             </Button>
@@ -684,8 +706,6 @@ function LocalReel({
           ট্যাপ করে সাউন্ড চালু করুন
         </div>
       )}
-
-
 
       {burst && (
         <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
@@ -743,7 +763,6 @@ function LocalReel({
     </div>
   );
 }
-
 
 function ExternalReel({
   video,
@@ -873,7 +892,12 @@ function ExternalReel({
       ) : (
         <div className="h-full w-full bg-black">
           {video.thumbnail_url ? (
-            <img src={video.thumbnail_url} alt={video.title} className="h-full w-full object-contain" loading="lazy" />
+            <img
+              src={video.thumbnail_url}
+              alt={video.title}
+              className="h-full w-full object-contain"
+              loading="lazy"
+            />
           ) : (
             <div className="grid h-full w-full place-items-center bg-black text-white/60">
               <Play className="h-12 w-12" />
@@ -894,7 +918,6 @@ function ExternalReel({
         }}
       />
 
-
       {paused && (
         <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
           <Play className="h-16 w-16 text-white/80 drop-shadow-lg" />
@@ -910,8 +933,6 @@ function ExternalReel({
         {muted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
         <span className="text-[11px] font-black">{muted ? "Unmute" : "Mute"}</span>
       </button>
-
-
 
       <div className="absolute bottom-6 left-3 z-20 max-w-[75%] text-white">
         <span className="mb-1 inline-block rounded bg-white/10 px-2 py-0.5 text-[10px] font-bold uppercase">
@@ -1014,7 +1035,11 @@ function CommentsSheet({
               onClick={() => addMutation.mutate()}
               disabled={!text.trim() || addMutation.isPending}
             >
-              {addMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              {addMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
             </Button>
           </div>
         ) : null}

@@ -52,7 +52,11 @@ function WatchPage() {
   const [mediaFailed, setMediaFailed] = useState(false);
   const [mediaKey, setMediaKey] = useState(0);
 
-  const { data: video, isLoading, isError } = useQuery({
+  const {
+    data: video,
+    isLoading,
+    isError,
+  } = useQuery({
     queryKey: ["watch-video", postId],
     queryFn: () => getUploadedLongVideoByPostId(postId),
   });
@@ -73,7 +77,6 @@ function WatchPage() {
       artwork: thumbUrl || undefined,
     });
   }, [videoUrl, thumbUrl, video?.title, video?.creator]);
-
 
   const { data: engagement } = useQuery({
     queryKey: ["watch-engagement", postId],
@@ -124,7 +127,9 @@ function WatchPage() {
       return toggleChannelSubscription(user.id, video.uploader_user_id);
     },
     onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ["watch-channel-stats", video?.uploader_user_id, user?.id] }),
+      queryClient.invalidateQueries({
+        queryKey: ["watch-channel-stats", video?.uploader_user_id, user?.id],
+      }),
     onError: () => toast.error("সাবস্ক্রাইব করা যায়নি"),
   });
 
@@ -166,11 +171,12 @@ function WatchPage() {
       </div>
       <div
         ref={playerBoxRef}
-        className={fallbackFullscreen
-          ? "fixed inset-0 z-[999] flex h-[100dvh] w-screen items-center justify-center bg-black"
-          : "sticky top-0 z-20 w-full bg-black"}
+        className={
+          fallbackFullscreen
+            ? "fixed inset-0 z-[999] flex h-[100dvh] w-screen items-center justify-center bg-black"
+            : "sticky top-0 z-20 w-full bg-black"
+        }
       >
-
         {videoUrl && !mediaFailed ? (
           <video
             key={mediaKey}
@@ -182,14 +188,22 @@ function WatchPage() {
             preload="metadata"
             onLoadedData={() => setMediaFailed(false)}
             onError={() => setMediaFailed(true)}
-            className={fallbackFullscreen
-              ? "h-full w-full object-contain bg-black"
-              : "mx-auto aspect-video max-h-[60vh] w-full object-contain bg-black"}
+            className={
+              fallbackFullscreen
+                ? "h-full w-full object-contain bg-black"
+                : "mx-auto aspect-video max-h-[60vh] w-full object-contain bg-black"
+            }
           />
         ) : (
           <div className="flex h-[40vh] w-full items-center justify-center">
             {mediaFailed ? (
-              <Button variant="secondary" onClick={() => { setMediaFailed(false); setMediaKey((value) => value + 1); }}>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setMediaFailed(false);
+                  setMediaKey((value) => value + 1);
+                }}
+              >
                 ভিডিও আবার চালান
               </Button>
             ) : (
@@ -212,7 +226,9 @@ function WatchPage() {
       <div className="mx-auto max-w-3xl px-4 py-4">
         <h1 className="text-lg font-black text-foreground">{video.title}</h1>
         {video.duration ? (
-          <p className="mt-1 text-xs text-muted-foreground">দৈর্ঘ্য: {Math.round(video.duration)} সেকেন্ড</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            দৈর্ঘ্য: {Math.round(video.duration)} সেকেন্ড
+          </p>
         ) : null}
 
         <div className="mt-4 flex items-center justify-between border-y border-border py-3">
@@ -289,7 +305,9 @@ function WatchPage() {
                 <div key={c.id} className="flex items-start gap-2">
                   <MessengerAvatar name={c.user?.display_name || "User"} size="sm" />
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs font-black text-foreground">{c.user?.display_name || "User"}</p>
+                    <p className="text-xs font-black text-foreground">
+                      {c.user?.display_name || "User"}
+                    </p>
                     <p className="text-sm text-foreground">{c.content}</p>
                   </div>
                 </div>
@@ -335,7 +353,11 @@ function SuggestedCard({ video }: { video: ExternalReelVideo }) {
 
   if (isLocal) {
     return (
-      <Link to="/watch/$postId" params={{ postId: video.local_post_id as string }} className="block">
+      <Link
+        to="/watch/$postId"
+        params={{ postId: video.local_post_id as string }}
+        className="block"
+      >
         {content}
       </Link>
     );
