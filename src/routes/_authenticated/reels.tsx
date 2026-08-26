@@ -23,6 +23,7 @@ import {
   getBangladeshExternalVideos,
   trackVideoPreference,
   markReelsSeen,
+  getShortVideoPostById,
   toggleLike,
   getUserLikes,
   notifyPostShared,
@@ -50,6 +51,9 @@ import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_authenticated/reels")({
   component: ReelsPage,
+  validateSearch: (search: Record<string, unknown>) => ({
+    postId: typeof search.postId === "string" ? search.postId : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "রিলস — good-app" },
@@ -71,7 +75,7 @@ type ReelItem =
   | { kind: "local"; id: string; post: Post }
   | { kind: "external"; id: string; video: ExternalReelVideo };
 
-function useCombinedReels() {
+function useCombinedReels(selectedPostId?: string) {
   // লোকাল ভিডিও আগে দেখানো হয় — বাইরের (YouTube) লিস্ট ব্যাকগ্রাউন্ডে আসে,
   // তাই Short-এ ঢুকলেই আর দীর্ঘ লোডিং স্ক্রিন দেখতে হবে না।
   const localQuery = useQuery({
@@ -88,11 +92,24 @@ function useCombinedReels() {
     retry: 0,
   });
 
+  const selectedPostQuery = useQuery({
+    queryKey: ["reels-selected-post", selectedPostId],
+    queryFn: () => getShortVideoPostById(selectedPostId || ""),
+    enabled: !!selectedPostId,
+    staleTime: 60_000,
+  });
+
 
   const items = useMemo<ReelItem[]>(() => {
-    const localVideos = (localQuery.data || []).filter(
+    let localVideos = (localQuery.data || []).filter(
       (p) => !!p.video_url && !(p.content || "").startsWith(LONG_VIDEO_MARKER),
     );
+    if (selectedPostQuery.data?.video_url) {
+      localVideos = [
+        selectedPostQuery.data,
+        ...localVideos.filter((post) => post.id !== selectedPostQuery.data?.id),
+      ];
+    }
     const external = externalQuery.data?.videos || [];
     const merged: ReelItem[] = [];
     const maxLen = Math.max(localVideos.length, external.length);
@@ -115,7 +132,7 @@ function useCombinedReels() {
     }
 
     return merged;
-  }, [localQuery.data, externalQuery.data]);
+  }, [localQuery.data, externalQuery.data, selectedPostQuery.data]);
 
   return {
     items,
@@ -128,7 +145,8 @@ function ReelsPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { items, isLoading, isError } = useCombinedReels();
+  const { postId: selectedPostId } = Route.useSearch();
+  const { items, isLoading, isError } = useCombinedReels(selectedPostId);
   const containerRef = useRef<HTMLDivElement>(null);
   const [muted, setMuted] = useState(true);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -162,11 +180,16 @@ function ReelsPage() {
     }
   }, [user?.id]);
 
+  const selectedReelId = selectedPostId ? `local-${selectedPostId}` : null;
+
   useEffect(() => {
-    if (items.length > 0 && !activeId) {
+    if (selectedReelId && items.some((item) => item.id === selectedReelId) && activeId !== selectedReelId) {
+      setActiveId(selectedReelId);
+      containerRef.current?.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
+    } else if (items.length > 0 && !activeId) {
       setActiveId(items[0].id);
     }
-  }, [items, activeId]);
+  }, [items, activeId, selectedReelId]);
 
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
@@ -262,11 +285,10 @@ function ReelsPage() {
       <div className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between p-3">
         <button
           onClick={() => navigate({ to: "/home" })}
-          className="btn-press h-9 pl-1.5 pr-3 rounded-full flex items-center gap-1 ring-2 ring-white/80 shadow-[0_4px_14px_rgba(255,193,7,0.55)]"
-          style={{ background: "linear-gradient(135deg,#ffd600,#ff9100,#f4511e)" }}
+          className="btn-press gradient-amber h-9 rounded-full px-3 flex items-center gap-1.5 ring-2 ring-white/80"
         >
-          <ArrowLeft className="h-5 w-5 text-[#1a1a1a]" />
-          <span className="text-[11.5px] font-black text-[#1a1a1a] whitespace-nowrap">ড্যাশবোর্ড</span>
+          <ArrowLeft className="h-5 w-5" />
+          <span className="text-[11.5px] font-black whitespace-nowrap">Dashboard</span>
         </button>
         <span className="pointer-events-none text-[15px] font-black tracking-tight text-white drop-shadow">Short</span>
         {user && (
@@ -282,17 +304,6 @@ function ReelsPage() {
         )}
 
       </div>
-
-      {user && (
-        <button
-          onClick={handlePickFile}
-          disabled={uploading}
-          className="btn-press fixed bottom-24 right-4 z-30 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg"
-        >
-          {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Plus className="h-6 w-6" />}
-        </button>
-      )}
-
       <CommentsSheet
         postId={commentPostId}
         onClose={() => setCommentPostId(null)}

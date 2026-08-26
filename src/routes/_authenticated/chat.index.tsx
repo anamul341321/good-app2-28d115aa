@@ -149,10 +149,10 @@ export function ChatListPage() {
             </div>
           </div>
           <div className="flex items-center gap-2.5">
-            <Button asChild variant="secondary" size="sm" className="h-10 rounded-full px-3 font-black" aria-label="ড্যাশবোর্ডে ফিরুন">
+            <Button asChild variant="secondary" size="sm" className="gradient-amber h-10 rounded-full px-3 font-black" aria-label="ড্যাশবোর্ডে ফিরুন">
               <Link to="/home">
                 <Home className="h-4 w-4" />
-                হোম
+                Dashboard
               </Link>
             </Button>
           </div>
@@ -283,7 +283,7 @@ export function ChatListPage() {
         <div className="mx-auto grid max-w-lg grid-cols-3 px-6 py-2">
           <MessengerTab to="/chat" icon={<MessageCircle className="h-6 w-6" />} label="Chats" active badge={data?.unreadTotal ?? 0} />
           <MessengerTab to="/friends" icon={<Users className="h-6 w-6" />} label="People" />
-          <MessengerTab to="/home" icon={<Home className="h-6 w-6" />} label="Home" />
+          <MessengerTab to="/home" icon={<Home className="h-6 w-6" />} label="Dashboard" highlight />
         </div>
       </nav>
 
@@ -301,17 +301,19 @@ function MessengerTab({
   label,
   active,
   badge,
+  highlight,
 }: {
   to: string;
   icon: ReactNode;
   label: string;
   active?: boolean;
   badge?: number;
+  highlight?: boolean;
 }) {
   return (
     <Link
       to={to as any}
-      className={`btn-press relative flex flex-col items-center justify-center gap-1 rounded-2xl py-1.5 text-[13px] font-semibold ${active ? "text-messenger-blue" : "text-muted-foreground"}`}
+      className={`btn-press relative flex flex-col items-center justify-center gap-1 rounded-2xl py-1.5 text-[13px] font-semibold ${active ? "text-messenger-blue" : highlight ? "text-amber" : "text-muted-foreground"}`}
     >
       <span className="relative">
         {icon}
