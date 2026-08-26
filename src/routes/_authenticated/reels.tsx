@@ -185,7 +185,7 @@ function ReelsPage() {
   useEffect(() => {
     if (selectedReelId && items.some((item) => item.id === selectedReelId) && activeId !== selectedReelId) {
       setActiveId(selectedReelId);
-      containerRef.current?.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
+      containerRef.current?.scrollTo({ top: 0, behavior: "auto" });
     } else if (items.length > 0 && !activeId) {
       setActiveId(items[0].id);
     }
