@@ -19,7 +19,7 @@ import VerifiedBadge from "@/components/VerifiedBadge";
 
 const db = supabase as any;
 
-export const Route = createFileRoute("/_authenticated/feed/user/$userId")({
+export const Route = createFileRoute("/_authenticated/user/$userId")({
   component: UserProfilePage,
   head: () => ({
     meta: [
@@ -76,7 +76,7 @@ function timeAgo(dateStr: string | null): string {
 }
 
 function UserProfilePage() {
-  const { userId } = useParams({ from: "/_authenticated/feed/user/$userId" });
+  const { userId } = useParams({ from: "/_authenticated/user/$userId" });
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();

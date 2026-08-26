@@ -188,7 +188,7 @@ function FriendsPage() {
                 return (
                   <div key={p.id} className="flex items-center gap-3 rounded-lg px-1 py-2">
                     <RoundPhoto path={p.avatar_url} name={name} online={onlineIds.has(p.id)} />
-                    <Link to="/feed/user/$userId" params={{ userId: p.id }} className="min-w-0 flex-1">
+                    <Link to="/user/$userId" params={{ userId: p.id }} className="min-w-0 flex-1">
                       <p className="truncate text-[15px] font-bold text-gray-900 dark:text-foreground">{name}</p>
                       <p className="text-[12px] text-gray-500 dark:text-muted-foreground">UID {p.uid_seq ?? "-"}</p>
                     </Link>
@@ -280,13 +280,13 @@ function FriendsPage() {
                       return (
                         <div key={p.id} className="flex items-center gap-3 py-3">
                           <Link
-                            to="/feed/user/$userId"
+                            to="/user/$userId"
                             params={{ userId: p.id }}
                             className="h-[76px] w-[76px] shrink-0 overflow-hidden rounded-full bg-gray-200 dark:bg-secondary">
                             <BigPhoto path={p.avatar_url} name={name} />
                           </Link>
                           <div className="min-w-0 flex-1">
-                            <Link to="/feed/user/$userId" params={{ userId: p.id }} className="block">
+                            <Link to="/user/$userId" params={{ userId: p.id }} className="block">
                               <p className="truncate text-[16px] font-bold text-gray-900 dark:text-foreground">{name}</p>
                             </Link>
                             <p className="mb-1.5 truncate text-[12.5px] text-gray-500 dark:text-muted-foreground">
@@ -347,7 +347,7 @@ function FriendsPage() {
                 {friends.map((f: any) => (
                   <div key={f.linkId} className="flex items-center gap-3 py-2.5">
                     <RoundPhoto path={f.avatar_url} name={f.name} online={onlineIds.has(f.userId)} />
-                    <Link to="/feed/user/$userId" params={{ userId: f.userId }} className="min-w-0 flex-1">
+                    <Link to="/user/$userId" params={{ userId: f.userId }} className="min-w-0 flex-1">
                       <p className="truncate text-[15px] font-bold text-gray-900 dark:text-foreground">{f.name}</p>
                       <p className="text-[12px] text-gray-500 dark:text-muted-foreground">
                         {onlineIds.has(f.userId) ? "এখন অনলাইন" : `UID ${f.uid ?? "-"}`}
