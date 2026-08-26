@@ -524,8 +524,11 @@ function InlinePlayer({
   const [localMediaFailed, setLocalMediaFailed] = useState(false);
   const [localMediaKey, setLocalMediaKey] = useState(0);
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
+  const playerBoxRef = useRef<HTMLDivElement | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const dragStartY = useRef<number | null>(null);
   const playerModeRef = useRef(playerMode);
+
 
   const relatedSearch = useMemo(() => buildRelatedSearchTerm(video), [video]);
   const [relatedFreshness, setRelatedFreshness] = useState(() => Math.floor(Date.now() / (3 * 60 * 1000)) % 9973);
