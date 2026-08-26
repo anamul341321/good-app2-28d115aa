@@ -1024,13 +1024,8 @@ export async function toggleReaction(postId: string, userId: string, reactionTyp
     reacted = true;
   }
 
-  try {
-    const { count } = await db.from("post_reactions").select("id", { count: "exact", head: true })
-      .eq("post_id", postId);
-    await db.from("posts").update({ likes_count: count || 0 }).eq("id", postId);
-  } catch {
-    // no-op
-  }
+  // posts.likes_count এখন ডাটাবেজ ট্রিগার (sync_post_likes_count) দিয়ে অটো আপডেট হয় —
+  // ক্লায়েন্ট-সাইড আপডেট RLS-এ ব্যর্থ হতো, তাই সরিয়ে দেওয়া হলো।
 
   if (reacted) {
     try {
