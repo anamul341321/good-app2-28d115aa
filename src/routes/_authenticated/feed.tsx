@@ -25,6 +25,7 @@ import StoryEditor from "@/components/social/StoryEditor";
 import StoryViewer from "@/components/social/StoryViewer";
 import { playUiSound } from "@/lib/ui-sounds";
 import VerifiedBadge from "@/components/VerifiedBadge";
+import { SocialSwitch } from "@/components/social/SocialSwitch";
 
 export const Route = createFileRoute("/_authenticated/feed")({
   component: FeedPage,
