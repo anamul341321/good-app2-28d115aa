@@ -770,7 +770,7 @@ function InlinePlayer({
             controls
             autoPlay
             playsInline
-            preload="auto"
+            preload="metadata"
             onLoadedData={() => setLocalMediaFailed(false)}
             onError={() => setLocalMediaFailed(true)}
             onEnded={playNext}

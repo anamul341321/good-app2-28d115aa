@@ -162,7 +162,7 @@ function WatchPage() {
             poster={thumbUrl}
             controls
             playsInline
-            preload="auto"
+            preload="metadata"
             onLoadedData={() => setMediaFailed(false)}
             onError={() => setMediaFailed(true)}
             className="mx-auto max-h-[60vh] w-full bg-black"

@@ -630,7 +630,7 @@ function LocalReel({
           loop
           playsInline
           muted={muted}
-          preload="auto"
+          preload="metadata"
           onLoadedData={() => setMediaFailed(false)}
           onError={() => setMediaFailed(true)}
         />
