@@ -13,7 +13,6 @@ import {
 } from "@/lib/friends.functions";
 import { CallButtons } from "@/components/CallProvider";
 import { MessengerAvatar } from "@/components/messenger/MessengerAvatar";
-import { SocialSwitch } from "@/components/social/SocialSwitch";
 import { useFeedMedia } from "@/lib/feed-media";
 
 import { usePresence } from "@/lib/presence";
@@ -105,7 +104,6 @@ function FriendsPage() {
     <div className="flex flex-col min-h-screen bg-background pb-20">
       {/* Messenger-style Header */}
       <header className="sticky top-0 z-40 bg-background/85 backdrop-blur-md px-4 py-3 flex flex-col gap-3 pt-[env(safe-area-inset-top)] border-b border-border/50">
-        <SocialSwitch active="facebook" />
         <div className="flex items-center gap-2">
           <Link 
             to="/feed"
