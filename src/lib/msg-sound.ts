@@ -48,3 +48,21 @@ export function playSentTone() {
   if (!ac) return;
   blip(ac.currentTime, 1174.66, 0.1, 0.1);
 }
+
+/**
+ * সাধারণ নোটিফিকেশনের শব্দ (কমেন্ট, রিঅ্যাকশন, মেনশন ইত্যাদি) —
+ * মেসেজের "টিং" থেকে সম্পূর্ণ আলাদা, নিচের দিকে নামা দুই স্তরের ঘণ্টা।
+ */
+export function playNotifyTone() {
+  const ac = audio();
+  if (!ac) return;
+  const t = ac.currentTime;
+  blip(t, 659.25, 0.2, 0.13);
+  blip(t + 0.18, 523.25, 0.3, 0.11);
+  try {
+    navigator.vibrate?.(70);
+  } catch {
+    /* ignore */
+  }
+}
+

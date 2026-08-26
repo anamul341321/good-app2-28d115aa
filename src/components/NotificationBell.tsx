@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Bell, X, CheckCheck } from "lucide-react";
 import { getMyNotifications, markAllNoticesRead } from "@/lib/notices.functions";
+import { playNotifyTone } from "@/lib/msg-sound";
+
 
 function timeAgo(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();
@@ -43,6 +45,14 @@ export function NotificationBell() {
   const hasUnreadWarning = items.some(
     (n) => !n.read && severityOf(`${n.title ?? ""} ${n.body}`, n.type) === "bad",
   );
+
+  // নতুন নোটিফিকেশন এলে মেসেজ থেকে আলাদা শব্দ বাজবে
+  const lastUnread = useRef<number | null>(null);
+  useEffect(() => {
+    if (lastUnread.current !== null && unread > lastUnread.current) playNotifyTone();
+    lastUnread.current = unread;
+  }, [unread]);
+
 
   return (
     <>
