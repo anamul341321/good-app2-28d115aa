@@ -131,7 +131,7 @@ function FriendsPage() {
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-background pb-24">
       {/* ফেসবুক-স্টাইল হেডার */}
-      <header className="sticky top-0 z-40 bg-white dark:bg-card border-b border-gray-200 dark:border-border/30 pt-[env(safe-area-inset-top)]">
+      <header className="sticky top-0 z-40 bg-white dark:bg-card border-b border-gray-200 dark:border-border/30 safe-top">
         <div className="max-w-lg mx-auto px-3 py-2.5 flex items-center gap-2">
           <button
             onClick={() => navigate({ to: "/feed" })}

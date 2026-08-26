@@ -186,7 +186,7 @@ function AuthedLayout() {
       )}
 
       {!isSocialRoute && (
-        <header className="sticky top-0 z-30 glass pt-[env(safe-area-inset-top)]">
+        <header className="sticky top-0 z-30 glass safe-top">
         <div className="max-w-md mx-auto px-3 pt-4 pb-3 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2.5">
             <div data-tour="profile"><ProfileButton /></div>

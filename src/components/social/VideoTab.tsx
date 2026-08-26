@@ -724,7 +724,7 @@ function InlinePlayer({
       >
         {playerMode === "expanded" ? (
           <div
-            className="sticky top-0 z-10 shrink-0 bg-black pt-[env(safe-area-inset-top)]"
+            className="sticky top-0 z-10 shrink-0 bg-black safe-top"
             onPointerDown={beginCollapseDrag}
             onPointerUp={finishCollapseDrag}
             onPointerCancel={() => {
