@@ -823,11 +823,29 @@ export function AuthPage() {
               setLoginId(phone.replace(/\D/g, "").slice(0, 11));
               toast.info("লগইন করুন — প্রোফাইলে ফেস ভেরিফিকেশন বাকি আছে দেখাবে");
             }}
-            onSignedUp={(p) => {
+            onSignedUp={async (p, pw) => {
               setFaceMode(null);
-              setMode("login");
-              setLoginId(p || phone.replace(/\D/g, "").slice(0, 11));
-              toast.success("একাউন্ট তৈরি হয়েছে — এখন পাসওয়ার্ড দিয়ে লগইন করুন");
+              const cleanPhone = (p || phone.replace(/\D/g, "").slice(0, 11)).trim();
+              const pass = pw || password;
+              // ভেরিফিকেশন সফল হলে auto sign-in — ইউজারকে আবার পাসওয়ার্ড দিতে হবে না
+              try {
+                const { error } = await supabase.auth.signInWithPassword({
+                  email: phoneToEmail(cleanPhone),
+                  password: pass,
+                });
+                if (error) throw error;
+                try {
+                  localStorage.removeItem("good-app-tour-v2");
+                  localStorage.setItem("good-app-tour-force", "1");
+                } catch {}
+                toast.success("একাউন্ট তৈরি হয়েছে — স্বাগতম!");
+                nav({ to: "/home" });
+                return;
+              } catch {
+                setMode("login");
+                setLoginId(cleanPhone);
+                toast.success("একাউন্ট তৈরি হয়েছে — এখন পাসওয়ার্ড দিয়ে লগইন করুন");
+              }
             }}
             onResolved={(p) => {
               setFaceMode(null);
