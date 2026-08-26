@@ -367,9 +367,10 @@ function writeRecentVideoIds(newIds: string[]): void {
   }
 }
 
-export function trackVideoPreference(input: { title?: string; category?: string | null }): void {
+export function trackVideoPreference(input: { id?: string; title?: string; category?: string | null }): void {
   if (typeof window === "undefined") return;
   try {
+    if (input.id) writeRecentVideoIds([input.id]);
     const prefs = readVideoPreferences();
     const key = (input.category || inferCategoryFromTitle(input.title)).toLowerCase();
     if (!key) return;
@@ -799,7 +800,8 @@ export async function getBangladeshExternalVideos(
       : shortOnly.filter((v) => !hasCjkOrChineseMarker(`${v.title || ""} ${v.creator || ""}`));
   }
 
-  // Avoid repeating recently shown videos
+  // Avoid repeating videos the user actually played. Merely rendering a card
+  // must not poison the history, otherwise every refresh can hide a whole page.
   const recentIds = readRecentVideoIds();
   const recentArray = Array.from(recentIds);
   const hardBlock = new Set(recentArray.slice(0, 220));
@@ -810,7 +812,6 @@ export async function getBangladeshExternalVideos(
   }
 
   const finalVideos = videos.slice(0, rows);
-  writeRecentVideoIds(finalVideos.map((v) => v.id));
 
   return {
     videos: finalVideos,

@@ -70,6 +70,7 @@ export default function VideoTab() {
   const [query, setQuery] = useState("");
   const [search, setSearch] = useState("");
   const [playingId, setPlayingId] = useState<string | null>(null);
+  const [playedIds, setPlayedIds] = useState<Set<string>>(() => new Set());
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggest, setShowSuggest] = useState(false);
   const [listening, setListening] = useState(false);
@@ -103,7 +104,10 @@ export default function VideoTab() {
         getBangladeshExternalVideos(pageParam.page, 18, undefined, search || undefined, "long", freshness, pageParam.token),
 
       ]);
-      const videos = [...local.videos, ...external.videos].sort((a, b) => Number(b.view_count || 0) - Number(a.view_count || 0));
+      // Keep the recommendation provider's relevance order. Sorting every page
+      // by lifetime views made the same old songs occupy the first rows forever.
+      const videos = [...external.videos];
+      local.videos.forEach((video, index) => videos.splice(Math.min(index * 5 + 2, videos.length), 0, video));
       return { videos, page: pageParam.page, nextPageToken: external.nextPageToken };
     },
     getNextPageParam: (lastPage) => ({ page: lastPage.page + 1, token: lastPage.nextPageToken }),
@@ -119,7 +123,9 @@ export default function VideoTab() {
   }, [data]);
 
   const playing = videos.find((video) => video.id === playingId) || null;
-  const suggestedVideos = playing ? videos.filter((video) => video.id !== playing.id) : videos;
+  const suggestedVideos = playing
+    ? videos.filter((video) => video.id !== playing.id && !playedIds.has(video.id))
+    : videos;
 
   // Autocomplete: fetch YouTube suggestions while typing (debounced).
   useEffect(() => {
@@ -202,7 +208,8 @@ export default function VideoTab() {
 
   const playVideo = (video: ExternalReelVideo) => {
     setPlayingId(video.id);
-    trackVideoPreference({ title: video.title, category: video.category });
+    setPlayedIds((current) => new Set(current).add(video.id));
+    trackVideoPreference({ id: video.id, title: video.title, category: video.category });
     window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
   };
 
@@ -377,6 +384,7 @@ function InlinePlayer({
   const [liked, setLiked] = useState<boolean>(() => !!readLikes()[video.id]);
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState("");
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
 
   const relatedSearch = useMemo(() => buildRelatedSearchTerm(video), [video]);
   const relatedFreshness = useMemo(() => Math.floor(Date.now() / (3 * 60 * 1000)) % 9973, [video.id]);
@@ -389,12 +397,44 @@ function InlinePlayer({
 
   const visibleSuggestedVideos = useMemo(() => {
     const seen = new Set([video.id]);
-    return [...suggestedVideos, ...(relatedData?.videos || [])].filter((item) => {
+    const seenTitles = new Set<string>();
+    const currentTitle = recommendationTitleKey(video.title);
+    return [...(relatedData?.videos || []), ...suggestedVideos].filter((item) => {
       if (seen.has(item.id)) return false;
+      const titleKey = recommendationTitleKey(item.title);
+      if (titleKey && (titleKey === currentTitle || seenTitles.has(titleKey))) return false;
       seen.add(item.id);
+      if (titleKey) seenTitles.add(titleKey);
       return true;
     });
   }, [relatedData?.videos, suggestedVideos, video.id]);
+
+  const playNext = useCallback(() => {
+    const next = visibleSuggestedVideos[0];
+    if (next) onPlaySuggested(next);
+    else if (hasMoreSuggested && !loadingMoreSuggested) onLoadMoreSuggested();
+  }, [hasMoreSuggested, loadingMoreSuggested, onLoadMoreSuggested, onPlaySuggested, visibleSuggestedVideos]);
+
+  useEffect(() => {
+    if (isLocal) return;
+    const onPlayerMessage = (event: MessageEvent) => {
+      if (event.origin !== "https://www.youtube-nocookie.com") return;
+      let payload: any = event.data;
+      if (typeof payload === "string") {
+        try { payload = JSON.parse(payload); } catch { return; }
+      }
+      if (payload?.event === "onStateChange" && Number(payload?.info) === 0) playNext();
+    };
+    window.addEventListener("message", onPlayerMessage);
+    const frame = iframeRef.current;
+    const timer = window.setTimeout(() => {
+      frame?.contentWindow?.postMessage(JSON.stringify({ event: "listening", id: frame.id }), "https://www.youtube-nocookie.com");
+    }, 700);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("message", onPlayerMessage);
+    };
+  }, [isLocal, playNext, video.id]);
 
   useEffect(() => {
     try {
@@ -505,11 +545,13 @@ function InlinePlayer({
 
       <div className="relative aspect-video w-full shrink-0 overflow-hidden bg-black">
         {isLocal ? (
-          <video src={source} controls autoPlay playsInline className="h-full w-full" />
+          <video src={source} controls autoPlay playsInline onEnded={playNext} className="h-full w-full" />
         ) : (
           <>
             <iframe
-              src={`${video.video_url}${video.video_url.includes("?") ? "&" : "?"}autoplay=1&playsinline=1&rel=0&modestbranding=1&showinfo=0&iv_load_policy=3&fs=0&controls=1&disablekb=1&color=white`}
+              ref={iframeRef}
+              id={`goodapp-player-${video.video_id || video.id}`}
+              src={`${video.video_url}${video.video_url.includes("?") ? "&" : "?"}autoplay=1&playsinline=1&rel=0&modestbranding=1&showinfo=0&iv_load_policy=3&fs=0&controls=1&disablekb=1&color=white&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}`}
               title={video.title}
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               className="h-full w-full border-0"
@@ -678,6 +720,17 @@ function buildRelatedSearchTerm(video: ExternalReelVideo): string {
   if (title.length >= 4) return title.slice(0, 90);
   if (video.category === "music") return "bangla new song 2026";
   return "bangla trending video";
+}
+
+function recommendationTitleKey(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/\([^)]*(official|lyrics?|audio|video|৪k|4k|hd)[^)]*\)/gi, " ")
+    .replace(/\[[^\]]*(official|lyrics?|audio|video|৪k|4k|hd)[^\]]*\]/gi, " ")
+    .replace(/\b(official|music|lyric|lyrics|audio|video|full|hd|4k|বাংলা|bangla|bengali)\b/gi, " ")
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .trim()
+    .slice(0, 72);
 }
 
 
