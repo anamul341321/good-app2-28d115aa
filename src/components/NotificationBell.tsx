@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Bell, X, CheckCheck } from "lucide-react";
 import { getMyNotifications, markAllNoticesRead } from "@/lib/notices.functions";
+import { playNotifyTone } from "@/lib/msg-sound";
+
 
 function timeAgo(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();
