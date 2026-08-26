@@ -222,15 +222,6 @@ public class MainActivity extends BridgeActivity {
         } catch (Exception ignored) {}
     }
 
-    private void keepWebMediaAlive() {
-        if (!mediaPlaybackActive || bridge == null) return;
-        try {
-            WebView webView = bridge.getWebView();
-            webView.onResume();
-            webView.resumeTimers();
-        } catch (Exception ignored) {}
-    }
-
     public final class GoodAppDownloader {
         @JavascriptInterface
         public void openExternal(String url) {
@@ -591,14 +582,12 @@ public class MainActivity extends BridgeActivity {
     // BridgeActivity exposes these lifecycle callbacks publicly.
     public void onPause() {
         super.onPause();
-        keepWebMediaAlive();
     }
 
     @Override
     // Keep the same visibility as BridgeActivity to satisfy Java overrides.
     public void onStop() {
         super.onStop();
-        keepWebMediaAlive();
     }
 
     @Override
