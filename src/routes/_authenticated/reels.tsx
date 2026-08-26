@@ -258,6 +258,7 @@ function ReelsPage() {
           <ArrowLeft className="h-5 w-5 text-[#1a1a1a]" />
           <span className="text-[11.5px] font-black text-[#1a1a1a] whitespace-nowrap">ড্যাশবোর্ড</span>
         </button>
+        <span className="pointer-events-none text-[15px] font-black tracking-tight text-white drop-shadow">Short</span>
         {user && (
           <button
             onClick={handlePickFile}
@@ -266,9 +267,10 @@ function ReelsPage() {
             style={{ background: "linear-gradient(135deg,#e11d48,#f97316)" }}
           >
             {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-            <span>রিল আপলোড</span>
+            <span>শর্ট আপলোড</span>
           </button>
         )}
+
       </div>
 
       {user && (
