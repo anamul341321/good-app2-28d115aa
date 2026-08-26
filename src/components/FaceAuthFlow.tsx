@@ -218,13 +218,15 @@ export function FaceAuthFlow(props: Props) {
       <div className="relative flex-1 overflow-hidden bg-white">
         {phase === "verify" && url ? (
           <>
-            <iframe
-              src={url}
-              title="Good-App face verification"
-              allow="camera; microphone; fullscreen"
-              onLoad={() => setFrameOk(true)}
-              className="h-full w-full border-0"
-            />
+            <div className="h-full w-full overflow-auto bg-white">
+              <iframe
+                src={url}
+                title="Good-App face verification"
+                allow="camera; microphone; fullscreen"
+                onLoad={() => setFrameOk(true)}
+                className="h-[125%] w-[125%] origin-top-left scale-80 border-0"
+              />
+            </div>
             {!frameOk && (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-white px-6 text-center">
                 <Loader2 className="h-8 w-8 animate-spin text-cyan-600" />

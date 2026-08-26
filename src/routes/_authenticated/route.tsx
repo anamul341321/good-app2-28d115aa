@@ -29,6 +29,7 @@ import { NotificationBell } from "@/components/NotificationBell";
 import { SlotPausedModal } from "@/components/SlotPausedModal";
 import { NewSystemModal } from "@/components/NewSystemModal";
 import { CallProvider } from "@/components/CallProvider";
+import { DailyFaceVerificationWarning } from "@/components/DailyFaceVerificationWarning";
 
 import { clearSharedSession, getSharedSession } from "@/lib/auth-session";
 
@@ -239,6 +240,8 @@ function AuthedLayout() {
         </div>
       </header>
       )}
+
+      {!isSocialRoute && <DailyFaceVerificationWarning />}
 
       <main className={isSocialRoute ? "" : "max-w-md mx-auto px-4 pt-4"}>
         <Outlet />
