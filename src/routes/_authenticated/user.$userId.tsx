@@ -18,6 +18,7 @@ import { uploadAvatar, uploadCoverPhoto } from "@/lib/profile.functions";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import VerifiedBadge from "@/components/VerifiedBadge";
+import { playUiSound } from "@/lib/ui-sounds";
 
 const db = supabase as any;
 
@@ -230,6 +231,8 @@ function UserProfilePage() {
     setComments(await getPostComments(postId, user?.id));
     setLoadingComments(false);
   };
+
+  const commentingPost = commentingPostId ? posts.find((p) => p.id === commentingPostId) || null : null;
 
   const openComments = (postId: string) => {
     if (commentingPostId === postId) { setCommentingPostId(null); return; }
