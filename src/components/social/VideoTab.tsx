@@ -239,9 +239,11 @@ export default function VideoTab() {
   const playVideo = (video: ExternalReelVideo) => {
     setPlayingId(video.id);
     setPlayedIds((current) => new Set(current).add(video.id));
+    setHistory(addWatchHistory(video));
     trackVideoPreference({ id: video.id, title: video.title, category: video.category });
     window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
   };
+
 
   return (
     <div className="mx-auto max-w-lg pb-6 bg-white dark:bg-background min-h-screen">
