@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { X, Type, Music, Check, Search, Loader2, Palette, AlignCenter, Pause, Play } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { STORY_MUSIC_LIBRARY, StoryMusicTrack, buildStoredMusicValue } from "@/lib/story-music";
+import { searchStoryMusic } from "@/lib/story-music.functions";
 
 const TEXT_COLORS = [
   "#FFFFFF", "#000000", "#FF0000", "#00FF00", "#0000FF",
@@ -27,6 +28,8 @@ export default function StoryEditor({ imageFile, onClose, onPublish, isPending }
   const [showMusicPicker, setShowMusicPicker] = useState(false);
   const [musicQuery, setMusicQuery] = useState("");
   const [selectedMusic, setSelectedMusic] = useState<StoryMusicTrack | null>(null);
+  const [remoteTracks, setRemoteTracks] = useState<StoryMusicTrack[]>([]);
+  const [searching, setSearching] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const imgRef = useRef<HTMLImageElement | null>(null);
@@ -51,11 +54,33 @@ export default function StoryEditor({ imageFile, onClose, onPublish, isPending }
     };
   }, []);
 
-  const filteredMusic = STORY_MUSIC_LIBRARY.filter((m) =>
+  // অনলাইন সার্চ — যেই গানের নাম লিখবে, সেই গানই আসবে (আসল প্রিভিউ)
+  useEffect(() => {
+    const q = musicQuery.trim();
+    if (q.length < 2) { setRemoteTracks([]); setSearching(false); return; }
+    setSearching(true);
+    const timer = setTimeout(async () => {
+      try {
+        const res = await searchStoryMusic({ data: { query: q } });
+        setRemoteTracks((res?.tracks ?? []) as StoryMusicTrack[]);
+      } catch {
+        setRemoteTracks([]);
+      } finally {
+        setSearching(false);
+      }
+    }, 450);
+    return () => clearTimeout(timer);
+  }, [musicQuery]);
+
+  const localMatches = STORY_MUSIC_LIBRARY.filter((m) =>
     m.title.toLowerCase().includes(musicQuery.toLowerCase()) ||
     m.artist.toLowerCase().includes(musicQuery.toLowerCase()) ||
     m.genre.toLowerCase().includes(musicQuery.toLowerCase())
   );
+
+  const filteredMusic = musicQuery.trim().length >= 2
+    ? [...remoteTracks, ...localMatches.filter((l) => !remoteTracks.some((r) => r.title.toLowerCase() === l.title.toLowerCase()))]
+    : localMatches;
 
   const playPreview = (song: StoryMusicTrack) => {
     if (audioRef.current) {
@@ -318,7 +343,13 @@ export default function StoryEditor({ imageFile, onClose, onPublish, isPending }
                 </button>
               ))}
 
-              {filteredMusic.length === 0 && <p className="text-gray-500 text-sm text-center py-6">কোনো গান পাওয়া যায়নি</p>}
+              {searching && (
+                <p className="text-gray-400 text-sm text-center py-4 flex items-center justify-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin" /> গান খোঁজা হচ্ছে...
+                </p>
+              )}
+
+              {!searching && filteredMusic.length === 0 && <p className="text-gray-500 text-sm text-center py-6">কোনো গান পাওয়া যায়নি</p>}
             </div>
           </motion.div>
         )}
