@@ -283,7 +283,7 @@ export const faceLoginMatch = createServerFn({ method: "POST" })
       .not("face_photo_url", "is", null)
       .not("user_id", "is", null)
       .order("created_at", { ascending: false })
-      .limit(60);
+      .limit(150);
 
     const candidates = (rows ?? []) as any[];
     if (candidates.length === 0) {
