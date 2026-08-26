@@ -44,7 +44,7 @@ export const Route = createFileRoute("/_authenticated")({
 function AuthedLayout() {
   const router = useRouter();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
-  const isSocialRoute = /^\/(social|chat|feed|friends|videos|reels|watch|studio|channel|user)(\/|$)/.test(pathname);
+  const isSocialRoute = /^\/(social|chat|feed|friends|videos|reels|watch|studio|channel|user|profile)(\/|$)/.test(pathname);
   const [authState, setAuthState] = useState<"checking" | "authenticated" | "unauthenticated">(() => {
     if (typeof window === "undefined") return "checking";
     // Quick synchronous check of localStorage to avoid splash screen flash
