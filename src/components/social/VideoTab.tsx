@@ -747,11 +747,12 @@ function InlinePlayer({
     };
   }, []);
 
+  // আমাদের নিজের রোটেট বাটন — YouTube এর fullscreen বাটন ব্যবহার হয় না।
   const toggleFullscreen = useCallback(async () => {
-    const active = !!(document.fullscreenElement || (document as any).webkitFullscreenElement);
-    if (active || cssFullscreen) {
+    const nativeActive = !!(document.fullscreenElement || (document as any).webkitFullscreenElement);
+    if (nativeActive || cssFullscreen) {
       try {
-        if (document.exitFullscreen && active) await document.exitFullscreen();
+        if (nativeActive && document.exitFullscreen) await document.exitFullscreen();
         else (document as any).webkitExitFullscreen?.();
       } catch { /* ignore */ }
       setCssFullscreen(false);
@@ -760,23 +761,26 @@ function InlinePlayer({
       return;
     }
     setPlayerMode("expanded");
+    setCssFullscreen(true);
     try { (window as any).GoodAppDownloader?.enterVideoFullscreen?.(); } catch { /* web preview */ }
-    const el: any = playerBoxRef.current;
-    const videoEl: any = localVideoRef.current;
-    let nativeOk = false;
-    try {
-      if (el?.requestFullscreen) { await el.requestFullscreen(); nativeOk = true; }
-      else if (el?.webkitRequestFullscreen) { el.webkitRequestFullscreen(); nativeOk = true; }
-    } catch { nativeOk = false; }
-    if (!nativeOk && videoEl?.webkitEnterFullscreen) {
-      try { videoEl.webkitEnterFullscreen(); nativeOk = true; } catch { /* ignore */ }
-    }
-    // Android WebView-এ native fullscreen প্রায়ই কাজ করে না — তখন CSS ফুলস্ক্রিন
-    if (!nativeOk) setCssFullscreen(true);
-    try { await (screen.orientation as any)?.lock?.("landscape"); } catch { /* ignore */ }
+    try { await (screen.orientation as any)?.lock?.("landscape"); } catch { /* ignore — CSS rotate fallback */ }
   }, [cssFullscreen]);
 
   const effectiveFullscreen = isFullscreen || cssFullscreen;
+  // ফোন যদি ঘুরতে না চায়, তখন প্লেয়ারটাকেই ৯০° ঘুরিয়ে পুরো স্ক্রিন ভরে দেওয়া হয়
+  const rotateStage = effectiveFullscreen && viewportBox.h > viewportBox.w && viewportBox.w > 0;
+  const stageStyle = rotateStage
+    ? {
+        width: `${viewportBox.h}px`,
+        height: `${viewportBox.w}px`,
+        transform: "translate(-50%, -50%) rotate(90deg)",
+        position: "absolute" as const,
+        top: "50%",
+        left: "50%",
+      }
+    : undefined;
+
+
 
   const beginCollapseDrag = (event: PointerEvent) => {
     if (playerMode !== "expanded") return;
