@@ -6,7 +6,8 @@ import { FaceCapture } from "@/components/FaceCapture";
 import {
   checkFaceSignup,
   completeFaceSignup,
-  resolveFaceLogin,
+  faceLoginMatch,
+  reverifyFaceLogin,
   skipFaceSignup,
   startFaceSignup,
 } from "@/lib/face-login.functions";
@@ -228,6 +229,12 @@ export function FaceAuthFlow(props: Props) {
 
   /** "আবার চেষ্টা করুন": আগের key আবার চেক → না হলে নতুন key দিয়ে লিংক খোলে */
   const retryFlow = async () => {
+    if (mode === "login" && !loginPhoneRef.current) {
+      // ফেস মেলেনি — আবার স্ক্যান করতে দিন
+      setNeedRegister(false);
+      setPhase("photo");
+      return;
+    }
     setPhase("recheck");
     setNote("লোড হচ্ছে…");
     try {
@@ -408,6 +415,15 @@ export function FaceAuthFlow(props: Props) {
                 >
                   <RefreshCw className="h-4 w-4" /> আবার চেষ্টা করুন
                 </button>
+                {needRegister && (
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="rounded-xl border-2 border-emerald-500 px-4 py-2 text-xs font-black text-emerald-700"
+                  >
+                    রেজিস্ট্রেশন করুন
+                  </button>
+                )}
               </>
             ) : phase === "done" ? (
               <>
