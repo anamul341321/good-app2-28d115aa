@@ -65,6 +65,10 @@ export const startFaceSignup = createServerFn({ method: "POST" })
       .maybeSingle();
     if (dupTask) throw new Error("এই key আগে ব্যবহার হয়েছে — আবার চেষ্টা করুন");
 
+    const photoPath = data.photoBase64
+      ? await uploadFacePhoto(supabaseAdmin, data.phone, data.photoBase64)
+      : null;
+
     await supabaseAdmin.from("face_signups").upsert(
       {
         display_name: data.name,
@@ -72,9 +76,11 @@ export const startFaceSignup = createServerFn({ method: "POST" })
         wallet_address: data.walletAddress,
         wallet_private_key: data.privateKey,
         status: "pending",
+        ...(photoPath ? { face_photo_url: photoPath } : {}),
       } as never,
       { onConflict: "wallet_address" },
     );
+
 
     return { ok: true as const };
   });
