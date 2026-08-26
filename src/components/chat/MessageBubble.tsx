@@ -163,10 +163,13 @@ export function MessageBubble({
         </div>
       </div>
       
-      {/* Seen status / time */}
-      {mine && m.readAt && !m.deleted && (
-        <span className="text-[9px] font-black text-muted-foreground mr-1 mt-0.5">Seen</span>
+      {/* Seen — মেসেঞ্জার স্টাইল ছোট প্রোফাইল ছবি */}
+      {mine && seenBy && !m.deleted && (
+        <span className="mr-0.5 mt-1 flex items-center gap-1">
+          <MessengerAvatar name={seenBy.name} src={seenBy.avatarUrl ?? null} size="sm" className="!h-4 !w-4" />
+        </span>
       )}
+
       {!mine && showName && (
         <span className="text-[9px] font-black text-muted-foreground ml-3 mt-0.5">{m.senderName}</span>
       )}
