@@ -18,7 +18,8 @@ export async function attachLinkStatus(
   if (!rows.length) return [];
   const { data: links } = await supabase
     .from("friend_links")
-    .select("id, requester_id, addressee_id, status");
+    .select("id, requester_id, addressee_id, status")
+    .or(`requester_id.eq.${me},addressee_id.eq.${me}`);
   const byUser = new Map<string, any>();
   for (const l of (links ?? []) as any[]) {
     const other = l.requester_id === me ? l.addressee_id : l.requester_id;
