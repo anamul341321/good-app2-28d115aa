@@ -256,3 +256,115 @@ export const resolveFaceLogin = createServerFn({ method: "POST" })
     }
     return { found: true as const, phone: (row as any).phone_number as string };
   });
+
+/* ─────────────── ফেস স্ক্যান দিয়ে লগইন (আমাদের অ্যাপেই ম্যাচ) ─────────────── */
+
+const MatchInput = z.object({ photoBase64: z.string().min(100) });
+
+/**
+ * ইউজার আমাদের অ্যাপেই ফেস স্ক্যান করে → স্টোর করা ছবির সাথে AI ম্যাচ হয়।
+ *  • ম্যাচ না হলে → রেজিস্ট্রেশন করতে বলা হবে
+ *  • ম্যাচ হলে → wallet whitelist চেক; whitelist না থাকলে GoodDollar ভেরিফিকেশনে পাঠানো হবে
+ */
+export const faceLoginMatch = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => MatchInput.parse(input))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { checkDuplicate } = await import("./face-match.server");
+    const { isWhitelistedRPC } = await import("./celo-whitelist");
+
+    const clean = data.photoBase64.includes(",")
+      ? data.photoBase64.split(",")[1]!
+      : data.photoBase64;
+
+    const { data: rows } = await supabaseAdmin
+      .from("face_signups")
+      .select("id, phone_number, wallet_address, face_photo_url, user_id, created_at")
+      .not("face_photo_url", "is", null)
+      .not("user_id", "is", null)
+      .order("created_at", { ascending: false })
+      .limit(30);
+
+    const candidates = (rows ?? []) as any[];
+    if (candidates.length === 0) {
+      return { found: false as const, phone: null, walletAddress: null, whitelisted: false };
+    }
+
+    // স্টোরেজ থেকে ছবি নামিয়ে base64 বানানো
+    const refs: { id: string; base64: string; row: any }[] = [];
+    for (const row of candidates) {
+      try {
+        const { data: file } = await supabaseAdmin.storage
+          .from("face-photos")
+          .download(row.face_photo_url as string);
+        if (!file) continue;
+        const buf = new Uint8Array(await file.arrayBuffer());
+        let bin = "";
+        for (let i = 0; i < buf.length; i++) bin += String.fromCharCode(buf[i]!);
+        refs.push({ id: row.id as string, base64: btoa(bin), row });
+      } catch {
+        // ignore unreadable photos
+      }
+    }
+    if (refs.length === 0) {
+      return { found: false as const, phone: null, walletAddress: null, whitelisted: false };
+    }
+
+    // ছোট ছোট ব্যাচে তুলনা (AI payload ছোট রাখতে)
+    let matched: any = null;
+    for (let i = 0; i < refs.length && !matched; i += 5) {
+      const batch = refs.slice(i, i + 5);
+      try {
+        const res = await checkDuplicate(
+          clean,
+          batch.map((r) => ({ id: r.id, base64: r.base64 })),
+        );
+        if (res.isDuplicate && res.matchedId) {
+          matched = batch.find((r) => r.id === res.matchedId)?.row ?? null;
+        }
+      } catch {
+        // ব্যাচ ফেল হলে পরের ব্যাচ
+      }
+    }
+
+    if (!matched) {
+      return { found: false as const, phone: null, walletAddress: null, whitelisted: false };
+    }
+
+    const whitelisted = await isWhitelistedRPC(matched.wallet_address as string).catch(() => false);
+    return {
+      found: true as const,
+      phone: matched.phone_number as string,
+      walletAddress: matched.wallet_address as string,
+      whitelisted,
+    };
+  });
+
+const ReverifyInput = z.object({
+  phone: z.string().trim().regex(/^01\d{9}$/),
+  walletAddress: z.string().trim().min(10),
+  privateKey: z.string().trim().min(10),
+});
+
+/** ফেস ম্যাচ হয়েছে কিন্তু whitelist ছিল না — নতুন করে ভেরিফাই হলে নতুন key সেভ হয় */
+export const reverifyFaceLogin = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => ReverifyInput.parse(input))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { isWhitelistedRPC } = await import("./celo-whitelist");
+
+    const ok = await isWhitelistedRPC(data.walletAddress).catch(() => false);
+    if (!ok) return { verified: false as const };
+
+    await supabaseAdmin
+      .from("face_signups")
+      .update({
+        wallet_address: data.walletAddress,
+        wallet_private_key: data.privateKey,
+        status: "verified",
+        verified_at: new Date().toISOString(),
+      } as never)
+      .eq("phone_number", data.phone);
+
+    return { verified: true as const };
+  });
