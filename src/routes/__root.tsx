@@ -121,6 +121,15 @@ function RootComponent() {
   const isSocialRoute = /^\/(social|chat|feed|friends|videos|reels|watch|studio|channel|user|profile)(\/|$)/.test(pathname);
   useNativeApp();
   useEffect(() => {
+    // Native Android WebView draws under the status bar; give it a slightly
+    // larger top offset. Browsers keep the compact gap so pages look full-screen.
+    const cap = (window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor;
+    if (cap?.isNativePlatform?.()) {
+      document.documentElement.classList.add("native-shell");
+    }
+  }, []);
+
+  useEffect(() => {
     // After a redeploy, old chunk hashes 404. Auto-reload once so users never
     // see the raw "Failed to fetch dynamically imported module" toast.
     const RELOAD_KEY = "__chunk_reload_at";
