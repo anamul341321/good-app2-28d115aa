@@ -24,13 +24,11 @@ export function ChatRow({
   isGroup?: boolean;
 }) {
   const isUnread = unreadCount > 0;
+  const chatTarget = isGroup ? "/chat/group/$groupId" : "/chat/$peerId";
+  const chatParams = isGroup ? { groupId: id } : { peerId: id };
   
   return (
-    <Link
-      to={isGroup ? "/chat/group/$groupId" : "/chat/$peerId"}
-      params={isGroup ? { groupId: id } : { peerId: id }}
-      className="btn-press flex min-h-[76px] items-center gap-3 px-4 py-2.5 transition-colors hover:bg-surface-2/70"
-    >
+    <div className="flex min-h-[76px] items-center gap-3 px-4 py-2.5 transition-colors hover:bg-surface-2/70">
       {!isGroup ? (
         <Link
           to="/user/$userId"
@@ -54,7 +52,11 @@ export function ChatRow({
           size="xl"
         />
       )}
-      <div className="flex-1 min-w-0">
+      <Link
+        to={chatTarget as any}
+        params={chatParams as any}
+        className="btn-press flex-1 min-w-0"
+      >
         <div className="flex items-center justify-between gap-2">
           <span className={cn(
             "truncate text-[17px] font-semibold leading-tight",
@@ -82,7 +84,7 @@ export function ChatRow({
             UID {uid}
           </p>
         )}
-      </div>
-    </Link>
+      </Link>
+    </div>
   );
 }
