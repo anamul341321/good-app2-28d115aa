@@ -1272,6 +1272,7 @@ export type Database = {
           content: string | null
           created_at: string
           id: string
+          image_url: string | null
           parent_comment_id: string | null
           parent_id: string | null
           post_id: string
@@ -1283,6 +1284,7 @@ export type Database = {
           content?: string | null
           created_at?: string
           id?: string
+          image_url?: string | null
           parent_comment_id?: string | null
           parent_id?: string | null
           post_id: string
@@ -1294,6 +1296,7 @@ export type Database = {
           content?: string | null
           created_at?: string
           id?: string
+          image_url?: string | null
           parent_comment_id?: string | null
           parent_id?: string | null
           post_id?: string

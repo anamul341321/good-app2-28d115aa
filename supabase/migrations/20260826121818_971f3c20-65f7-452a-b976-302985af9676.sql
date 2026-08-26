@@ -1,0 +1,1 @@
+ALTER TABLE public.post_comments ADD COLUMN IF NOT EXISTS image_url text;
