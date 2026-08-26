@@ -1,5 +1,5 @@
-// Withdraw is ALWAYS open automatically now — no weekly auto-pause.
-// Admin can pause withdraw manually (optionally for exactly 1 day).
+// Withdraw opens on the 1st of every month (Asia/Dhaka). Before that a
+// countdown is shown. Admin can still pause withdraw manually.
 //
 // The "জুমা মোবারক 🌙" banner is purely visual: it shows every Friday
 // (Asia/Dhaka) and disappears automatically at Friday midnight (12:00 AM).
@@ -31,13 +31,36 @@ export function withdrawWindowInfo(now: number = Date.now()) {
   const nextFriday = dhakaUtc(y, m, day + (daysUntilFriday === 0 ? 7 : daysUntilFriday), 0);
 
   return {
-    // Withdraw is never auto-closed anymore
+    // Withdraw is never auto-closed anymore (admin manual pause still works)
     isClosed: false,
     isFriday,
     showJummaBanner: isFriday,
     msUntilBannerEnd: isFriday ? Math.max(0, midnight - now) : 0,
     nextFridayAt: nextFriday,
     hour,
+  };
+}
+
+/** Returns the next 1st-of-month 00:00 Dhaka and whether today is that day. */
+export function withdrawCountdownInfo(now: number = Date.now()) {
+  const { y, m, day } = dhakaNow(now);
+  const isOpen = day === 1;
+
+  let targetY = y;
+  let targetM = m;
+  if (day > 1) {
+    targetM += 1;
+    if (targetM > 11) {
+      targetM = 0;
+      targetY += 1;
+    }
+  }
+
+  const nextFirstAt = dhakaUtc(targetY, targetM, 1, 0);
+  return {
+    isOpen,
+    nextFirstAt,
+    msUntilOpen: Math.max(0, nextFirstAt - now),
   };
 }
 
