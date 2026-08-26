@@ -12,8 +12,9 @@ import { listFriends, sendFriendRequest, respondFriendRequest } from "@/lib/frie
 import { getPublicProfile } from "@/lib/social-users.functions";
 import {
   ArrowLeft, User, MessageCircle, Calendar, Globe, MoreHorizontal,
-  UserPlus, Loader2, Check,
+  UserPlus, Loader2, Check, Camera,
 } from "lucide-react";
+import { uploadAvatar, uploadCoverPhoto } from "@/lib/profile.functions";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import VerifiedBadge from "@/components/VerifiedBadge";
