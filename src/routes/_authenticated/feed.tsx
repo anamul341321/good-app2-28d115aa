@@ -389,7 +389,6 @@ function FeedPage() {
   const friendRequestMutation = useMutation({
     mutationFn: async (targetUserId: string) => { await sendFriendRequest({ data: { userId: targetUserId } }); },
     onSuccess: () => {
-      setSuggestedOffset(0);
       queryClient.invalidateQueries({ queryKey: ["suggested-people"] });
       queryClient.invalidateQueries({ queryKey: ["friends-summary"] });
       queryClient.invalidateQueries({ queryKey: ["feed-user-search"] });
@@ -401,7 +400,6 @@ function FeedPage() {
   const respondRequestMutation = useMutation({
     mutationFn: async ({ linkId, accept }: { linkId: string; accept: boolean }) => respondFriendRequest({ data: { linkId, accept } }),
     onSuccess: (_d, vars) => {
-      setSuggestedOffset(0);
       queryClient.invalidateQueries({ queryKey: ["friends-summary"] });
       queryClient.invalidateQueries({ queryKey: ["feed-user-search"] });
       queryClient.invalidateQueries({ queryKey: ["suggested-people"] });
