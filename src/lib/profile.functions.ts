@@ -169,3 +169,24 @@ export const getPublicCardDetails = createServerFn({ method: "GET" })
       },
     };
   });
+
+// কভার ফটো আপলোড — avatars bucket-এ রেখে profiles.cover_url আপডেট
+export const uploadCoverPhoto = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { base64: string; contentType: string }) => data)
+  .handler(async ({ context, data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const buf = Buffer.from(data.base64, "base64");
+    const ext = data.contentType.includes("png") ? "png" : "jpg";
+    const path = `${context.userId}/cover-${Date.now()}.${ext}`;
+    const { error: upErr } = await supabaseAdmin.storage
+      .from("avatars")
+      .upload(path, buf, { contentType: data.contentType, upsert: true });
+    if (upErr) throw new Error(upErr.message);
+    const { error: pErr } = await (supabaseAdmin as any)
+      .from("profiles")
+      .update({ cover_url: path })
+      .eq("id", context.userId);
+    if (pErr) throw new Error(pErr.message);
+    return { ok: true, path };
+  });
