@@ -352,8 +352,10 @@ function ReelSlide({
     <div
       ref={wrapperRef}
       data-reel-id={item.id}
-      className="relative flex h-[100dvh] min-h-[100dvh] w-full shrink-0 snap-start snap-always items-center justify-center"
+      className="relative flex h-full w-full shrink-0 grow-0 basis-full snap-start snap-always items-center justify-center"
+      style={{ scrollSnapStop: "always" }}
     >
+
       {item.kind === "local" ? (
         <LocalReel post={item.post} isActive={isActive} muted={muted} setMuted={setMuted} onOpenComments={onOpenComments} />
       ) : (
