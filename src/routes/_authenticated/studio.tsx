@@ -8,6 +8,7 @@ import { createLongVideoUploadWithThumbnail, uploadPostMedia } from "@/lib/feed-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { PageBackHeader } from "@/components/PageBackHeader";
 
 export const Route = createFileRoute("/_authenticated/studio")({
   component: StudioPage,
