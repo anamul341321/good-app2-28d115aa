@@ -149,6 +149,7 @@ function ReelsPage() {
   const { postId: selectedPostId } = Route.useSearch();
   const { items, isLoading, isError } = useCombinedReels(selectedPostId);
   const containerRef = useRef<HTMLDivElement>(null);
+  const selectedScrollHandledRef = useRef<string | null>(null);
   const [muted, setMuted] = useState(true);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [commentPostId, setCommentPostId] = useState<string | null>(null);
@@ -172,8 +173,10 @@ function ReelsPage() {
         bestId = id;
       }
     });
-    if (bestId && bestId !== activeId) setActiveId(bestId);
-  }, [activeId]);
+    if (bestId) {
+      setActiveId((current) => (current === bestId ? current : bestId));
+    }
+  }, []);
 
   useEffect(() => {
     if (user?.id) {
@@ -184,13 +187,19 @@ function ReelsPage() {
   const selectedReelId = selectedPostId ? `local-${selectedPostId}` : null;
 
   useEffect(() => {
-    if (selectedReelId && items.some((item) => item.id === selectedReelId) && activeId !== selectedReelId) {
+    if (selectedReelId && items.some((item) => item.id === selectedReelId) && selectedScrollHandledRef.current !== selectedReelId) {
+      selectedScrollHandledRef.current = selectedReelId;
       setActiveId(selectedReelId);
       containerRef.current?.scrollTo({ top: 0, behavior: "auto" });
-    } else if (items.length > 0 && !activeId) {
-      setActiveId(items[0].id);
+      return;
     }
-  }, [items, activeId, selectedReelId]);
+    if (!selectedReelId) {
+      selectedScrollHandledRef.current = null;
+    }
+    if (items.length > 0) {
+      setActiveId((current) => (current && items.some((item) => item.id === current) ? current : items[0].id));
+    }
+  }, [items, selectedReelId]);
 
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
