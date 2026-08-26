@@ -1186,12 +1186,12 @@ const MOOD_RULES: { match: RegExp; term: string }[] = [
  */
 function buildRelatedSearchTerms(video: ExternalReelVideo): [string, string] {
   const raw = (video.title || "").replace(/\s+/g, " ").trim();
-  const haystack = `${raw} ${video.channel_title || ""} ${video.description || ""}`;
+  const haystack = `${raw} ${video.creator || ""}`;
   const mood = MOOD_RULES.find((rule) => rule.match.test(haystack))?.term;
 
   // Artist/channel gives "more like this creator" without repeating the song.
   const artistFromTitle = raw.includes("-") ? raw.split("-")[0]!.trim() : "";
-  const channel = (video.channel_title || "")
+  const channel = (video.creator || "")
     .replace(/\b(official|music|media|tv|entertainment|studio|bd|bangla)\b/gi, " ")
     .replace(/\s+/g, " ")
     .trim();
