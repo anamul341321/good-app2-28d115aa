@@ -77,6 +77,10 @@ async function refreshWithStored(stored: Stored): Promise<SessionResult> {
  */
 export function getSharedSession(options?: { fresh?: boolean }): Promise<SessionResult> {
   const now = Date.now();
+  // A forced recheck must join an existing refresh instead of starting a
+  // competing refresh with the same single-use refresh token.
+  if (refreshing) return refreshing;
+
   if (!options?.fresh && cached && cached.expiresAt > now) {
     return Promise.resolve(cached.value);
   }

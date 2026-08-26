@@ -1,9 +1,13 @@
 import { useEffect, useState } from "react";
 import { savePushToken } from "@/lib/push.functions";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 let initDone = false;
 let latestPushToken: string | null = null;
+let lastRootBackPress = 0;
+
+const EXIT_ROUTES = new Set(["/", "/home", "/auth"]);
 
 async function persistPushToken() {
   if (!latestPushToken) return;
@@ -39,10 +43,20 @@ export function useNativeApp() {
     // Dynamic imports so the browser bundle never tries to load Capacitor modules.
     Promise.all([
       import("@capacitor/splash-screen").then((m) => m.SplashScreen.hide({ fadeOutDuration: 450 })),
-      import("@capacitor/app").then((m) => m.App.addListener("backButton", ({ canGoBack }) => {
-        if (!canGoBack) {
-          m.App.exitApp();
+      import("@capacitor/app").then((m) => m.App.addListener("backButton", () => {
+        const path = window.location.pathname.replace(/\/+$/, "") || "/";
+        if (!EXIT_ROUTES.has(path)) {
+          window.history.back();
+          return;
         }
+
+        const now = Date.now();
+        if (now - lastRootBackPress < 2_000) {
+          m.App.exitApp();
+          return;
+        }
+        lastRootBackPress = now;
+        toast("অ্যাপ বন্ধ করতে আবার Back চাপুন");
       })),
       import("@capacitor/device").then((m) => m.Device.getInfo().then((info) => {
         // eslint-disable-next-line no-console
