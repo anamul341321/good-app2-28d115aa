@@ -102,10 +102,8 @@ export function AppUpdateBanner() {
 
   // নেটিভ অ্যাপ: ইনস্টল করা ভার্সন পুরোনো হলেই বড় করে আপডেট চাইবে।
   // ওয়েবসাইট: অ্যাপ ইনস্টল/আপডেট করার জন্য প্রতিবার ঢুকলেই বড় ব্যানার দেখাবে।
-  const needsUpdate = native ? !!installed && isNewer(latest, url ? latest : latest) && isNewer(latest, installed) : true;
-  if (!url) return null;
+  if (!url || !latest) return null;
   if (native && (!installed || !isNewer(latest, installed))) return null;
-  if (!needsUpdate) return null;
   if (/play\.google\.com/i.test(url)) return null;
   if (hidden) return null;
 
