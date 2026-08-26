@@ -20,6 +20,8 @@ import {
   ChevronDown,
   History,
   Maximize2,
+  Minimize2,
+
   Plus,
   Trash2,
 } from "lucide-react";
@@ -524,8 +526,11 @@ function InlinePlayer({
   const [localMediaFailed, setLocalMediaFailed] = useState(false);
   const [localMediaKey, setLocalMediaKey] = useState(0);
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
+  const playerBoxRef = useRef<HTMLDivElement | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const dragStartY = useRef<number | null>(null);
   const playerModeRef = useRef(playerMode);
+
 
   const relatedSearch = useMemo(() => buildRelatedSearchTerm(video), [video]);
   const [relatedFreshness, setRelatedFreshness] = useState(() => Math.floor(Date.now() / (3 * 60 * 1000)) % 9973);
@@ -697,6 +702,42 @@ function InlinePlayer({
     return () => window.removeEventListener("popstate", onPop);
   }, [onClose, video.id]);
 
+  useEffect(() => {
+    const onFsChange = () => {
+      const active = !!(document.fullscreenElement || (document as any).webkitFullscreenElement);
+      setIsFullscreen(active);
+      if (!active) {
+        try { (screen.orientation as any)?.unlock?.(); } catch { /* ignore */ }
+      }
+    };
+    document.addEventListener("fullscreenchange", onFsChange);
+    document.addEventListener("webkitfullscreenchange", onFsChange as EventListener);
+    return () => {
+      document.removeEventListener("fullscreenchange", onFsChange);
+      document.removeEventListener("webkitfullscreenchange", onFsChange as EventListener);
+    };
+  }, []);
+
+  const toggleFullscreen = useCallback(async () => {
+    const active = !!(document.fullscreenElement || (document as any).webkitFullscreenElement);
+    try {
+      if (active) {
+        if (document.exitFullscreen) await document.exitFullscreen();
+        else (document as any).webkitExitFullscreen?.();
+        return;
+      }
+      setPlayerMode("expanded");
+      const el: any = playerBoxRef.current;
+      const videoEl: any = localVideoRef.current;
+      if (el?.requestFullscreen) await el.requestFullscreen();
+      else if (el?.webkitRequestFullscreen) el.webkitRequestFullscreen();
+      else if (videoEl?.webkitEnterFullscreen) videoEl.webkitEnterFullscreen();
+      try { await (screen.orientation as any)?.lock?.("landscape"); } catch { /* ignore */ }
+    } catch {
+      toast.error("ফুল স্ক্রিন করা যায়নি");
+    }
+  }, []);
+
   const beginCollapseDrag = (event: PointerEvent) => {
     if (playerMode !== "expanded") return;
     dragStartY.current = event.clientY;
@@ -743,23 +784,37 @@ function InlinePlayer({
                 <ChevronDown className="h-6 w-6" />
               </button>
               <span className="text-[14px] font-black tracking-tight text-white">good-app player</span>
-              <button
-                type="button"
-                aria-label="বন্ধ করুন"
-                onClick={onClose}
-                className="grid h-9 w-9 place-items-center rounded-full text-white active:bg-white/15"
-              >
-                <X className="h-5 w-5" />
-              </button>
+              <div className="flex items-center">
+                <button
+                  type="button"
+                  aria-label={isFullscreen ? "ফুল স্ক্রিন বন্ধ" : "ফুল স্ক্রিন"}
+                  onClick={toggleFullscreen}
+                  className="grid h-9 w-9 place-items-center rounded-full text-white active:bg-white/15"
+                >
+                  {isFullscreen ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
+                </button>
+                <button
+                  type="button"
+                  aria-label="বন্ধ করুন"
+                  onClick={onClose}
+                  className="grid h-9 w-9 place-items-center rounded-full text-white active:bg-white/15"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
             </div>
           </div>
         ) : null}
 
       <div
+        ref={playerBoxRef}
         className={
           playerMode === "mini"
             ? "relative h-20 w-36 shrink-0 overflow-hidden bg-black"
-            : "relative aspect-video w-full shrink-0 overflow-hidden bg-black"
+            : isFullscreen
+              ? "relative h-full w-full shrink-0 overflow-hidden bg-black"
+              : "relative aspect-video w-full shrink-0 overflow-hidden bg-black"
         }
       >
         {isLocal && source && !localMediaFailed ? (
@@ -774,7 +829,7 @@ function InlinePlayer({
             onLoadedData={() => setLocalMediaFailed(false)}
             onError={() => setLocalMediaFailed(true)}
             onEnded={playNext}
-            className="h-full w-full"
+            className={isFullscreen ? "h-full w-full object-contain" : "h-full w-full"}
           />
         ) : isLocal ? (
           <div className="grid h-full w-full place-items-center bg-black">
@@ -790,13 +845,25 @@ function InlinePlayer({
           <iframe
             ref={iframeRef}
             id={`goodapp-player-${video.video_id || video.id}`}
-            src={`${video.video_url}${video.video_url.includes("?") ? "&" : "?"}autoplay=1&playsinline=1&rel=0&modestbranding=1&showinfo=0&iv_load_policy=3&fs=0&controls=1&color=white&enablejsapi=1${typeof window !== "undefined" ? `&origin=${encodeURIComponent(window.location.origin)}` : ""}`}
+            src={`${video.video_url}${video.video_url.includes("?") ? "&" : "?"}autoplay=1&playsinline=1&rel=0&modestbranding=1&showinfo=0&iv_load_policy=3&fs=1&controls=1&color=white&enablejsapi=1${typeof window !== "undefined" ? `&origin=${encodeURIComponent(window.location.origin)}` : ""}`}
             title={video.title}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; fullscreen; gyroscope; picture-in-picture; web-share"
+            allowFullScreen
             className="h-full w-full border-0"
           />
         )}
+        {playerMode === "expanded" ? (
+          <button
+            type="button"
+            aria-label={isFullscreen ? "ফুল স্ক্রিন বন্ধ করুন" : "ফুল স্ক্রিন করুন"}
+            onClick={toggleFullscreen}
+            className="absolute bottom-2 right-2 z-20 grid h-10 w-10 place-items-center rounded-full bg-black/60 text-white backdrop-blur active:bg-black/80"
+          >
+            {isFullscreen ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
+          </button>
+        ) : null}
       </div>
+
 
         {playerMode === "mini" ? (
           <div className="flex min-w-0 flex-1 items-center gap-1 px-2">
