@@ -528,6 +528,7 @@ function InlinePlayer({
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const playerBoxRef = useRef<HTMLDivElement | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [cssFullscreen, setCssFullscreen] = useState(false);
   const dragStartY = useRef<number | null>(null);
   const playerModeRef = useRef(playerMode);
 
