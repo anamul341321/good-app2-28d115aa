@@ -495,6 +495,8 @@ function FeedPage() {
     setStoryEditorFile(null);
   };
 
+  const countedViewsRef = useRef<Set<string>>(new Set());
+
   const handleFeedVideoPlay = (activePostId: string) => {
     Object.entries(feedVideoRefs.current).forEach(([postId, videoEl]) => {
       if (!videoEl || postId === activePostId) return;
@@ -503,6 +505,10 @@ function FeedPage() {
     });
     const activeVideo = feedVideoRefs.current[activePostId];
     if (activeVideo) activeVideo.muted = false;
+    if (!countedViewsRef.current.has(activePostId)) {
+      countedViewsRef.current.add(activePostId);
+      incrementPostView(activePostId).catch(() => {});
+    }
   };
 
   const handleImageTap = (postId: string, imageUrl: string) => {
