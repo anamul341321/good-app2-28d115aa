@@ -344,7 +344,7 @@ export function FaceAuthFlow(props: Props) {
             <div className="leading-tight">
               <p className="text-[13px] font-black">
                 ফেস {mode === "signup" ? "রেজিস্ট্রেশন" : "লগইন"}
-                {mode === "signup" ? ` — ধাপ ${stepIndex}/৪`.replace("1", "১").replace("2", "২").replace("3", "৩").replace("4", "৪") : ""}
+                {mode === "signup" ? ` — ধাপ ${["১", "২", "৩", "৪"][stepIndex - 1]}/৪` : ""}
               </p>
               <p className="text-[10.5px] font-bold opacity-90">
                 {mode === "signup"
