@@ -7,6 +7,7 @@ import android.app.DownloadManager;
 import android.app.NotificationManager;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.content.pm.ActivityInfo;
 import android.content.IntentFilter;
 import android.database.Cursor;
 import android.net.Uri;
@@ -21,6 +22,7 @@ import android.webkit.JavascriptInterface;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebView;
 import android.view.WindowManager;
+import android.view.View;
 import android.widget.Toast;
 
 import com.getcapacitor.BridgeActivity;
@@ -44,6 +46,7 @@ public class MainActivity extends BridgeActivity {
     private PowerManager.WakeLock callWakeLock;
     private PowerManager.WakeLock mediaWakeLock;
     private boolean mediaPlaybackActive = false;
+    private int orientationBeforeVideoFullscreen = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED;
 
     private final BroadcastReceiver downloadReceiver = new BroadcastReceiver() {
         @Override
@@ -301,6 +304,31 @@ public class MainActivity extends BridgeActivity {
         @JavascriptInterface
         public void endMediaPlayback() {
             runOnUiThread(() -> stopNativeMediaPlayback());
+        }
+
+        @JavascriptInterface
+        public void enterVideoFullscreen() {
+            runOnUiThread(() -> {
+                orientationBeforeVideoFullscreen = getRequestedOrientation();
+                setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
+                getWindow().getDecorView().setSystemUiVisibility(
+                    View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                        | View.SYSTEM_UI_FLAG_FULLSCREEN
+                        | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                        | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                );
+            });
+        }
+
+        @JavascriptInterface
+        public void exitVideoFullscreen() {
+            runOnUiThread(() -> {
+                getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_VISIBLE);
+                setRequestedOrientation(orientationBeforeVideoFullscreen);
+                orientationBeforeVideoFullscreen = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED;
+            });
         }
 
         @JavascriptInterface

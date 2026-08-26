@@ -719,6 +719,7 @@ function InlinePlayer({
       const active = !!(document.fullscreenElement || (document as any).webkitFullscreenElement);
       setIsFullscreen(active);
       if (!active) {
+        try { (window as any).GoodAppDownloader?.exitVideoFullscreen?.(); } catch { /* web preview */ }
         try { (screen.orientation as any)?.unlock?.(); } catch { /* ignore */ }
       }
     };
@@ -738,10 +739,12 @@ function InlinePlayer({
         else (document as any).webkitExitFullscreen?.();
       } catch { /* ignore */ }
       setCssFullscreen(false);
+      try { (window as any).GoodAppDownloader?.exitVideoFullscreen?.(); } catch { /* web preview */ }
       try { (screen.orientation as any)?.unlock?.(); } catch { /* ignore */ }
       return;
     }
     setPlayerMode("expanded");
+    try { (window as any).GoodAppDownloader?.enterVideoFullscreen?.(); } catch { /* web preview */ }
     const el: any = playerBoxRef.current;
     const videoEl: any = localVideoRef.current;
     let nativeOk = false;
