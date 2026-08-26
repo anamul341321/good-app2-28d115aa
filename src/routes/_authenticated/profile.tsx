@@ -143,8 +143,10 @@ function ProfilePage() {
   };
 
   return (
-    <div className="space-y-5 pt-2 pop-in profile-print-root">
+    <div className="space-y-5 px-4 pt-2 pop-in profile-print-root">
+      <PageBackHeader title="আমার প্রোফাইল" />
       <PageVoice pageId="profile" steps={["profile.intro","profile.avatar","profile.uid","profile.card","profile.qr","profile.download"]} />
+
       <div className="text-center no-print">
         <h1 className="text-2xl font-black flex items-center justify-center gap-2">
           <Sparkles className="w-5 h-5 text-gold bounce-soft" /> আমার প্রোফাইল
