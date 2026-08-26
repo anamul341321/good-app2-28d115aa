@@ -569,13 +569,13 @@ public class MainActivity extends BridgeActivity {
     }
 
     @Override
-    protected void onPause() {
+    public void onPause() {
         super.onPause();
         keepWebMediaAlive();
     }
 
     @Override
-    protected void onStop() {
+    public void onStop() {
         super.onStop();
         keepWebMediaAlive();
     }
