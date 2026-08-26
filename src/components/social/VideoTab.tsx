@@ -521,6 +521,8 @@ function InlinePlayer({
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState("");
   const [playerMode, setPlayerMode] = useState<"expanded" | "mini">("expanded");
+  const [localMediaFailed, setLocalMediaFailed] = useState(false);
+  const [localMediaKey, setLocalMediaKey] = useState(0);
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const dragStartY = useRef<number | null>(null);
   const playerModeRef = useRef(playerMode);
@@ -760,8 +762,30 @@ function InlinePlayer({
             : "relative aspect-video w-full shrink-0 overflow-hidden bg-black"
         }
       >
-        {isLocal ? (
-          <video ref={localVideoRef} src={source} controls autoPlay playsInline onEnded={playNext} className="h-full w-full" />
+        {isLocal && source && !localMediaFailed ? (
+          <video
+            key={localMediaKey}
+            ref={localVideoRef}
+            src={source}
+            controls
+            autoPlay
+            playsInline
+            preload="auto"
+            onLoadedData={() => setLocalMediaFailed(false)}
+            onError={() => setLocalMediaFailed(true)}
+            onEnded={playNext}
+            className="h-full w-full"
+          />
+        ) : isLocal ? (
+          <div className="grid h-full w-full place-items-center bg-black">
+            {localMediaFailed ? (
+              <Button variant="secondary" onClick={() => { setLocalMediaFailed(false); setLocalMediaKey((value) => value + 1); }}>
+                ভিডিও আবার চালান
+              </Button>
+            ) : (
+              <Loader2 className="h-6 w-6 animate-spin text-white" />
+            )}
+          </div>
         ) : (
           <iframe
             ref={iframeRef}

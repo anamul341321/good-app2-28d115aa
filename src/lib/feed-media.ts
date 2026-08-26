@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { getSharedSession } from "@/lib/auth-session";
 
 const BUCKET = "social_media";
 const SIGNED_URL_TTL_SECONDS = 60 * 60 * 24 * 7; // 7 days
@@ -37,20 +38,26 @@ export async function resolveFeedMedia(pathOrUrl: string): Promise<string> {
 
   const promise = (async () => {
     try {
-      for (const bucket of buckets) {
-        const { data, error } = await supabase.storage
-          .from(bucket)
-          .createSignedUrl(pathOrUrl, SIGNED_URL_TTL_SECONDS);
-        if (error || !data?.signedUrl) continue;
-        signedUrlCache.set(pathOrUrl, {
-          url: data.signedUrl,
-          expiresAt: Date.now() + (SIGNED_URL_TTL_SECONDS - 60) * 1000,
-        });
-        return data.signedUrl;
+      // Private media needs the restored auth session. A cold Android WebView can
+      // mount the feed before the client has finished refreshing its token.
+      await getSharedSession();
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        for (const bucket of buckets) {
+          const { data, error } = await supabase.storage
+            .from(bucket)
+            .createSignedUrl(pathOrUrl, SIGNED_URL_TTL_SECONDS);
+          if (error || !data?.signedUrl) continue;
+          signedUrlCache.set(pathOrUrl, {
+            url: data.signedUrl,
+            expiresAt: Date.now() + (SIGNED_URL_TTL_SECONDS - 60) * 1000,
+          });
+          return data.signedUrl;
+        }
+        if (attempt === 0) {
+          await getSharedSession({ fresh: true });
+        }
       }
-      return pathOrUrl;
-    } catch {
-      return pathOrUrl;
+      throw new Error("Media URL could not be signed");
     } finally {
       inFlight.delete(pathOrUrl);
     }
@@ -81,9 +88,13 @@ export function useFeedMedia(pathOrUrl?: string | null): string | undefined {
       return;
     }
     setResolved(undefined);
-    resolveFeedMedia(pathOrUrl).then((url) => {
-      if (!cancelled) setResolved(url);
-    });
+    resolveFeedMedia(pathOrUrl)
+      .then((url) => {
+        if (!cancelled) setResolved(url);
+      })
+      .catch(() => {
+        if (!cancelled) setResolved(undefined);
+      });
     return () => {
       cancelled = true;
     };

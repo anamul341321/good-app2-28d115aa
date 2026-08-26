@@ -47,6 +47,8 @@ function WatchPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [commentText, setCommentText] = useState("");
+  const [mediaFailed, setMediaFailed] = useState(false);
+  const [mediaKey, setMediaKey] = useState(0);
 
   const { data: video, isLoading, isError } = useQuery({
     queryKey: ["watch-video", postId],
@@ -152,18 +154,28 @@ function WatchPage() {
   return (
     <div className="min-h-screen bg-background pb-24">
       <div className="sticky top-0 z-20 w-full bg-black">
-        {videoUrl ? (
+        {videoUrl && !mediaFailed ? (
           <video
+            key={mediaKey}
             ref={playerRef}
             src={videoUrl}
             poster={thumbUrl}
             controls
             playsInline
+            preload="auto"
+            onLoadedData={() => setMediaFailed(false)}
+            onError={() => setMediaFailed(true)}
             className="mx-auto max-h-[60vh] w-full bg-black"
           />
         ) : (
           <div className="flex h-[40vh] w-full items-center justify-center">
-            <Loader2 className="h-6 w-6 animate-spin text-white" />
+            {mediaFailed ? (
+              <Button variant="secondary" onClick={() => { setMediaFailed(false); setMediaKey((value) => value + 1); }}>
+                ভিডিও আবার চালান
+              </Button>
+            ) : (
+              <Loader2 className="h-6 w-6 animate-spin text-white" />
+            )}
           </div>
         )}
       </div>

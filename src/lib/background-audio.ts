@@ -34,6 +34,17 @@ function beginNativeMediaPlayback(info: BackgroundMediaInfo) {
   }
 }
 
+function beginNativeUrlPlayback(src: string, positionSeconds: number, info: BackgroundMediaInfo): boolean {
+  try {
+    const bridge = (window as any).GoodAppDownloader;
+    if (!bridge?.playMediaUrl) return false;
+    bridge.playMediaUrl(src, Math.max(0, Math.floor(positionSeconds * 1000)), info.title, info.artist || "good-app");
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function endNativeMediaPlayback() {
   try {
     (window as any).GoodAppDownloader?.endMediaPlayback?.();
@@ -118,9 +129,20 @@ export function attachBackgroundAudio(
   setMediaSessionHandlers(video, handlers);
 
   let usingAudio = false;
+  let usingNative = false;
+  let backgroundStartedAt = 0;
+  let backgroundStartPosition = 0;
 
   const toBackground = () => {
-    if (!audio || usingAudio || video.paused || !src) return;
+    if (usingAudio || usingNative || video.paused || !src) return;
+    backgroundStartPosition = video.currentTime;
+    backgroundStartedAt = Date.now();
+    if (beginNativeUrlPlayback(src, video.currentTime, info)) {
+      usingNative = true;
+      video.pause();
+      return;
+    }
+    if (!audio) return;
     usingAudio = true;
     if (audio.src !== src) audio.src = src;
     audio.currentTime = video.currentTime;
@@ -130,6 +152,16 @@ export function attachBackgroundAudio(
   };
 
   const toForeground = () => {
+    if (usingNative) {
+      usingNative = false;
+      endNativeMediaPlayback();
+      const elapsed = Math.max(0, (Date.now() - backgroundStartedAt) / 1000);
+      if (Number.isFinite(video.duration) && video.duration > 0) {
+        video.currentTime = Math.min(video.duration, backgroundStartPosition + elapsed);
+      }
+      video.play().catch(() => {});
+      return;
+    }
     if (!audio || !usingAudio) return;
     usingAudio = false;
     const at = audio.currentTime;
@@ -148,8 +180,6 @@ export function attachBackgroundAudio(
   document.addEventListener("visibilitychange", onVisibility);
   audio?.addEventListener("ended", onEnded);
 
-  beginNativeMediaPlayback(info);
-
   return () => {
     document.removeEventListener("visibilitychange", onVisibility);
     audio?.removeEventListener("ended", onEnded);
@@ -159,6 +189,7 @@ export function attachBackgroundAudio(
       audio.load();
     }
     usingAudio = false;
+    usingNative = false;
     setMediaSessionHandlers(null, {});
     endNativeMediaPlayback();
   };
