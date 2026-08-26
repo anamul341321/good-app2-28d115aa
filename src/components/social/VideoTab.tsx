@@ -549,7 +549,7 @@ function InlinePlayer({
 
 
 
-  const relatedSearch = useMemo(() => buildRelatedSearchTerm(video), [video]);
+  const relatedTerms = useMemo(() => buildRelatedSearchTerms(video), [video]);
   const [relatedFreshness, setRelatedFreshness] = useState(() => Math.floor(Date.now() / (3 * 60 * 1000)) % 9973);
   useEffect(() => {
     setRelatedFreshness(Math.floor(Date.now() / (3 * 60 * 1000)) % 9973);
@@ -559,8 +559,14 @@ function InlinePlayer({
     return () => window.clearInterval(timer);
   }, [video.id]);
   const { data: relatedData, isLoading: relatedLoading } = useQuery({
-    queryKey: ["video-related", video.id, relatedSearch, relatedFreshness],
-    queryFn: () => getBangladeshExternalVideos(1, 18, undefined, relatedSearch, "long", relatedFreshness),
+    queryKey: ["video-related", video.id, relatedTerms[0], relatedFreshness],
+    queryFn: () => getBangladeshExternalVideos(1, 14, undefined, relatedTerms[0], "long", relatedFreshness),
+    staleTime: 3 * 60 * 1000,
+  });
+  const { data: relatedData2 } = useQuery({
+    queryKey: ["video-related-2", video.id, relatedTerms[1], relatedFreshness],
+    queryFn: () => getBangladeshExternalVideos(1, 14, undefined, relatedTerms[1], "long", relatedFreshness),
+    enabled: !!relatedTerms[1] && relatedTerms[1] !== relatedTerms[0],
     staleTime: 3 * 60 * 1000,
   });
 
@@ -569,15 +575,33 @@ function InlinePlayer({
     const seen = new Set([video.id]);
     const seenTitles = new Set<string>();
     const currentTitle = recommendationTitleKey(video.title);
-    return [...(relatedData?.videos || []), ...suggestedVideos].filter((item) => {
+    const currentWords = new Set(currentTitle.split(" ").filter((w) => w.length > 2));
+    // Interleave the two topical result sets so suggestions stay varied.
+    const a = relatedData?.videos || [];
+    const b = relatedData2?.videos || [];
+    const merged: ExternalReelVideo[] = [];
+    for (let i = 0; i < Math.max(a.length, b.length); i++) {
+      if (a[i]) merged.push(a[i]);
+      if (b[i]) merged.push(b[i]);
+    }
+    return [...merged, ...suggestedVideos].filter((item) => {
       if (seen.has(item.id)) return false;
       const titleKey = recommendationTitleKey(item.title);
       if (titleKey && (titleKey === currentTitle || seenTitles.has(titleKey))) return false;
+      // Drop near-duplicates of the playing song (same song, other uploads).
+      if (titleKey && currentWords.size) {
+        const words = titleKey.split(" ").filter((w) => w.length > 2);
+        if (words.length) {
+          const overlap = words.filter((w) => currentWords.has(w)).length / words.length;
+          if (overlap >= 0.7) return false;
+        }
+      }
       seen.add(item.id);
       if (titleKey) seenTitles.add(titleKey);
       return true;
     });
-  }, [relatedData?.videos, suggestedVideos, video.id]);
+  }, [relatedData?.videos, relatedData2?.videos, suggestedVideos, video.id, video.title]);
+
 
   const playNextImpl = useCallback(() => {
     const next = visibleSuggestedVideos[0];
