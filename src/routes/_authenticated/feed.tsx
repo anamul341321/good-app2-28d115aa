@@ -763,56 +763,55 @@ function FeedPage() {
         </div>
       </header>
 
-      <div className="sticky top-[52px] z-40 bg-white/95 dark:bg-card/95 backdrop-blur px-3 py-2 border-b border-gray-200 dark:border-border/40">
-        <div className="max-w-lg mx-auto"><SocialSwitch active="facebook" /></div>
-      </div>
-
-      <nav className="sticky top-[104px] z-40 bg-white dark:bg-card border-b border-gray-200 dark:border-border/40">
-        <div className="max-w-lg mx-auto flex items-center justify-around h-[44px]">
+      <nav className="sticky top-[52px] z-40 bg-white/95 dark:bg-card/95 backdrop-blur border-b border-gray-200 dark:border-border/40">
+        <div className="max-w-lg mx-auto flex items-center gap-1.5 px-2.5 py-2 overflow-x-auto no-scrollbar">
           <button onClick={() => setActiveTab("home")}
-            className={`relative flex-1 h-full flex items-center justify-center border-b-[3px] transition-colors ${activeTab === "home" ? "border-blue-600 text-blue-600 dark:border-primary dark:text-primary" : "border-transparent text-gray-500 dark:text-muted-foreground"}`}>
-            <Home className="w-6 h-6" />
+            className={`shrink-0 flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[11px] font-black transition-all active:scale-95 ${activeTab === "home" ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-[0_8px_18px_-8px_rgba(37,99,235,0.8)]" : "bg-gray-100 dark:bg-secondary text-gray-600 dark:text-muted-foreground"}`}>
+            <Home className="w-4 h-4" /> হোম
           </button>
+
           <Link to="/friends"
-            className="relative flex-1 h-full flex items-center justify-center border-b-[3px] border-transparent text-gray-500 dark:text-muted-foreground">
-            <Users className="w-6 h-6" />
+            className="relative shrink-0 flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[11px] font-black bg-gray-100 dark:bg-secondary text-gray-600 dark:text-muted-foreground active:scale-95 transition-all">
+            <Users className="w-4 h-4" /> বন্ধু
             {friendRequestCount > 0 && (
-              <span className="absolute top-0.5 right-[calc(50%-20px)] min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
+              <span className="absolute -top-1 -right-1 min-w-[17px] h-[17px] bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center px-1">
                 {friendRequestCount > 99 ? "99+" : friendRequestCount}
               </span>
             )}
           </Link>
+
           <Link to="/videos" title="ভিডিও দেখুন"
-            className="relative flex-1 h-full flex items-center justify-center border-b-[3px] border-transparent text-gray-500 dark:text-muted-foreground">
-            <Video className="w-6 h-6" />
+            className="shrink-0 flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[11px] font-black text-white bg-gradient-to-r from-red-600 to-orange-500 shadow-[0_8px_18px_-8px_rgba(239,68,68,0.8)] active:scale-95 transition-all">
+            <Video className="w-4 h-4" /> ভিডিও
           </Link>
+
           <button onClick={() => navigate({ to: "/reels" })} title="Short"
-            className="relative flex-1 h-full flex flex-col items-center justify-center border-b-[3px] border-transparent text-pink-600">
-            <Film className="w-5 h-5" />
-            <span className="text-[9px] font-black leading-none">Short</span>
+            className="shrink-0 flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[11px] font-black text-white bg-gradient-to-r from-pink-600 via-fuchsia-500 to-violet-500 shadow-[0_8px_18px_-8px_rgba(219,39,119,0.8)] active:scale-95 transition-all">
+            <Film className="w-4 h-4" /> Short
           </button>
 
-
           <button onClick={() => navigate({ to: "/chat" })}
-            className="relative flex-1 h-full flex items-center justify-center border-b-[3px] border-transparent text-gray-500 dark:text-muted-foreground">
-            <MessageCircle className="w-6 h-6" />
+            className="relative shrink-0 flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[11px] font-black bg-gray-100 dark:bg-secondary text-gray-600 dark:text-muted-foreground active:scale-95 transition-all">
+            <MessageCircle className="w-4 h-4" /> চ্যাট
             {unreadCount > 0 && (
-              <span className="absolute top-0.5 right-[calc(50%-20px)] min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
+              <span className="absolute -top-1 -right-1 min-w-[17px] h-[17px] bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center px-1">
                 {unreadCount > 99 ? "99+" : unreadCount}
               </span>
             )}
           </button>
+
           <button onClick={() => { setActiveTab("notif"); if (user) markNotificationsRead(user.id).then(() => queryClient.invalidateQueries({ queryKey: ["notif-count"] })); }}
-            className={`relative flex-1 h-full flex items-center justify-center border-b-[3px] transition-colors ${activeTab === "notif" ? "border-blue-600 text-blue-600 dark:border-primary dark:text-primary" : "border-transparent text-gray-500 dark:text-muted-foreground"}`}>
-            <Bell className="w-6 h-6" />
+            className={`relative shrink-0 flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[11px] font-black transition-all active:scale-95 ${activeTab === "notif" ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-[0_8px_18px_-8px_rgba(37,99,235,0.8)]" : "bg-gray-100 dark:bg-secondary text-gray-600 dark:text-muted-foreground"}`}>
+            <Bell className="w-4 h-4" /> নোটিফিকেশন
             {notifCount > 0 && (
-              <span className="absolute top-0.5 right-[calc(50%-20px)] min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
+              <span className="absolute -top-1 -right-1 min-w-[17px] h-[17px] bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center px-1">
                 {notifCount > 99 ? "99+" : notifCount}
               </span>
             )}
           </button>
         </div>
       </nav>
+
 
       {showSearch && (
         <div className="overflow-hidden bg-white dark:bg-card border-b border-gray-200 dark:border-border/30 shadow-sm animate-in fade-in slide-in-from-top-2 duration-200">
