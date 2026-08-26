@@ -21,6 +21,7 @@ import {
   History,
   Maximize2,
   Minimize2,
+  RotateCw,
 
   Plus,
   Trash2,
@@ -831,11 +832,11 @@ function InlinePlayer({
               <div className="flex items-center">
                 <button
                   type="button"
-                  aria-label={effectiveFullscreen ? "ফুল স্ক্রিন বন্ধ" : "ফুল স্ক্রিন"}
+                  aria-label={effectiveFullscreen ? "ফুল স্ক্রিন বন্ধ" : "রোটেট করে ফুল স্ক্রিন"}
                   onClick={toggleFullscreen}
                   className="grid h-9 w-9 place-items-center rounded-full text-white active:bg-white/15"
                 >
-                  {effectiveFullscreen ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
+                  {effectiveFullscreen ? <Minimize2 className="h-5 w-5" /> : <RotateCw className="h-5 w-5" />}
                 </button>
                 <button
                   type="button"
