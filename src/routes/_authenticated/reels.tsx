@@ -119,7 +119,7 @@ function useCombinedReels() {
 
   return {
     items,
-    isLoading: localQuery.isLoading || externalQuery.isLoading,
+    isLoading: localQuery.isLoading && externalQuery.isLoading,
     isError: localQuery.isError && externalQuery.isError,
   };
 }
