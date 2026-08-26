@@ -73,6 +73,7 @@ export const listChats = createServerFn({ method: "GET" })
         ...c,
         name: names.get(c.peerId)?.display_name ?? "ইউজার",
         uid: names.get(c.peerId)?.uid_seq ?? null,
+        avatar_url: names.get(c.peerId)?.avatar_url ?? null,
         isFriend: friendIds.has(c.peerId),
       }))
       .sort((a, b) => (a.lastAt < b.lastAt ? 1 : -1));
@@ -166,6 +167,7 @@ export const getThread = createServerFn({ method: "POST" })
         userId: data.peerId,
         name: p?.display_name ?? "ইউজার",
         uid: p?.uid_seq ?? null,
+        avatarUrl: p?.avatar_url ?? null,
       },
       me,
       friendStatus: (link?.status as string | undefined) ?? "none",

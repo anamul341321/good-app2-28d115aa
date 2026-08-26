@@ -107,6 +107,7 @@ function ThreadPage() {
         <div className="flex flex-1 items-center gap-2 min-w-0">
           <MessengerAvatar
             name={data?.peer?.name ?? "User"}
+            src={(data?.peer as any)?.avatarUrl ?? null}
             online={online}
             size="md"
           />

@@ -17,43 +17,45 @@ export function StoryRow({
   activeUsers: StoryItem[];
   onCreateStory?: () => void;
 }) {
+  const users = activeUsers.slice(0, 18);
+
   return (
-    <div className="flex w-full gap-3 overflow-x-auto px-4 py-2 no-scrollbar">
+    <div className="flex w-full gap-4 overflow-x-auto px-4 py-3 no-scrollbar">
       {/* Create Story */}
-      <div className="flex shrink-0 flex-col items-center gap-1.5 w-16">
+      <div className="flex shrink-0 flex-col items-center gap-1.5 w-20">
         <button
           onClick={onCreateStory}
-          className="relative flex h-14 w-14 items-center justify-center rounded-full bg-surface-2 border-2 border-dashed border-muted-foreground/30 hover:border-primary/50 transition-colors"
+          className="relative flex h-16 w-16 items-center justify-center rounded-full bg-surface-2 transition-colors hover:bg-surface-2/80"
         >
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-surface-3">
-            <Plus className="h-5 w-5 text-muted-foreground" />
+          <div className="flex h-full w-full items-center justify-center rounded-full bg-surface-2">
+            <Plus className="h-6 w-6 text-foreground" />
           </div>
-          <span className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full border-2 border-background bg-primary text-white">
+          <span className="absolute bottom-0 right-0 flex h-6 w-6 items-center justify-center rounded-full border-2 border-background bg-messenger-blue text-primary-foreground">
             <Plus className="h-3 w-3" />
           </span>
         </button>
-        <span className="w-full truncate text-center text-[10px] font-bold text-muted-foreground">
-          Create Story
+        <span className="w-full truncate text-center text-[13px] font-medium text-muted-foreground">
+          Create
         </span>
       </div>
 
       {/* Active Users / Stories */}
-      {activeUsers.map((user) => (
+      {users.map((user) => (
         <Link
           key={user.userId}
           to="/chat/$peerId"
           params={{ peerId: user.userId }}
-          className="btn-press flex shrink-0 flex-col items-center gap-1.5 w-16"
+          className="btn-press flex shrink-0 flex-col items-center gap-1.5 w-20"
         >
-          <div className={user.hasStory ? "rounded-full p-[2px] border-2 border-primary" : ""}>
+          <div className={user.hasStory ? "rounded-full border-2 border-messenger-blue p-[2px]" : ""}>
             <MessengerAvatar
               name={user.name}
               src={user.avatar}
               online={user.online}
-              size="lg"
+              size="xl"
             />
           </div>
-          <span className="w-full truncate text-center text-[10px] font-bold text-muted-foreground">
+          <span className="w-full truncate text-center text-[13px] font-medium text-foreground/80">
             {user.name.split(" ")[0]}
           </span>
         </Link>
