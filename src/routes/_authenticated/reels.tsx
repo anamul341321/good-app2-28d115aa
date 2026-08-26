@@ -40,7 +40,7 @@ import {
   LONG_VIDEO_MARKER,
 } from "@/lib/feed-api";
 
-import { useFeedMedia } from "@/lib/feed-media";
+import { useFeedMedia, prefetchFeedMedia } from "@/lib/feed-media";
 import { attachBackgroundAudio } from "@/lib/background-audio";
 import { MessengerAvatar } from "@/components/messenger/MessengerAvatar";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
