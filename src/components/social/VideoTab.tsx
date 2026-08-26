@@ -16,6 +16,9 @@ import {
   Share2,
   Send,
   Bell,
+  History,
+  Plus,
+  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -35,7 +38,16 @@ import {
   addComment,
   type ExternalReelVideo,
 } from "@/lib/feed-api";
+import {
+  addWatchHistory,
+  clearWatchHistory,
+  readWatchHistory,
+  removeWatchHistory,
+  watchedAgoLabel,
+  type WatchHistoryItem,
+} from "@/lib/video-history";
 import { useFeedMedia } from "@/lib/feed-media";
+
 
 
 const LIKE_KEY = "goodapp_video_likes";
