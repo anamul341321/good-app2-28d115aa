@@ -208,14 +208,9 @@ export function FaceAuthFlow(props: Props) {
     setNote("লোড হচ্ছে…");
     try {
       if (mode === "login") {
-        const res = await resolve({ data: { walletAddress: address } });
-        if (res.found && res.phone) {
-          setPhase("done");
-          props.onResolved?.(res.phone);
-          return;
-        }
+        if (await finishLoginVerify(address)) return;
         setPhase("retry");
-        setNote("ফেস চেনা যায়নি — আবার চেষ্টা করুন");
+        setNote("ভেরিফিকেশন এখনো সম্পন্ন হয়নি — আবার চেষ্টা করুন");
         return;
       }
       const res = await check({ data: { walletAddress: address } });
@@ -238,12 +233,7 @@ export function FaceAuthFlow(props: Props) {
     try {
       if (address) {
         if (mode === "login") {
-          const res = await resolve({ data: { walletAddress: address } });
-          if (res.found && res.phone) {
-            setPhase("done");
-            props.onResolved?.(res.phone);
-            return;
-          }
+          if (await finishLoginVerify(address)) return;
         } else {
           const res = await check({ data: { walletAddress: address } });
           if (res.verified) {
@@ -253,6 +243,7 @@ export function FaceAuthFlow(props: Props) {
         }
       }
     } catch {
+
       // ignore — নিচে আবার চেষ্টা হবে
     }
     // প্রথম রিট্রাই: আগের key/লিংক দিয়েই আবার চেষ্টা (নতুন key লাগে না)
