@@ -86,6 +86,13 @@ export default function VideoTab() {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggest, setShowSuggest] = useState(false);
   const [listening, setListening] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [history, setHistory] = useState<WatchHistoryItem[]>([]);
+
+  useEffect(() => {
+    setHistory(readWatchHistory());
+  }, []);
+
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   // Advance the recommendation query while the tab stays open.
   const [freshness, setFreshness] = useState(() => Math.floor(Date.now() / (3 * 60 * 1000)) % 9973);
