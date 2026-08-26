@@ -353,6 +353,7 @@ function ReelsPage() {
 function ReelSlide({
   item,
   isActive,
+  isNear,
   muted,
   setMuted,
   onVisible,
@@ -360,6 +361,7 @@ function ReelSlide({
 }: {
   item: ReelItem;
   isActive: boolean;
+  isNear: boolean;
   muted: boolean;
   setMuted: (v: boolean) => void;
   onVisible: () => void;
