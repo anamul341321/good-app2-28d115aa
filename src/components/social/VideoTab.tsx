@@ -16,6 +16,9 @@ import {
   Share2,
   Send,
   Bell,
+  History,
+  Plus,
+  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -35,7 +38,16 @@ import {
   addComment,
   type ExternalReelVideo,
 } from "@/lib/feed-api";
+import {
+  addWatchHistory,
+  clearWatchHistory,
+  readWatchHistory,
+  removeWatchHistory,
+  watchedAgoLabel,
+  type WatchHistoryItem,
+} from "@/lib/video-history";
 import { useFeedMedia } from "@/lib/feed-media";
+
 
 
 const LIKE_KEY = "goodapp_video_likes";
@@ -74,6 +86,13 @@ export default function VideoTab() {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggest, setShowSuggest] = useState(false);
   const [listening, setListening] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [history, setHistory] = useState<WatchHistoryItem[]>([]);
+
+  useEffect(() => {
+    setHistory(readWatchHistory());
+  }, []);
+
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   // Advance the recommendation query while the tab stays open.
   const [freshness, setFreshness] = useState(() => Math.floor(Date.now() / (3 * 60 * 1000)) % 9973);
@@ -129,10 +148,14 @@ export default function VideoTab() {
     });
   }, [data]);
 
-  const playing = videos.find((video) => video.id === playingId) || null;
+  const playing =
+    videos.find((video) => video.id === playingId) ||
+    history.find((video) => video.id === playingId) ||
+    null;
   const suggestedVideos = playing
     ? videos.filter((video) => video.id !== playing.id && !playedIds.has(video.id))
     : videos;
+
 
   // Autocomplete: fetch YouTube suggestions while typing (debounced).
   useEffect(() => {
@@ -216,9 +239,11 @@ export default function VideoTab() {
   const playVideo = (video: ExternalReelVideo) => {
     setPlayingId(video.id);
     setPlayedIds((current) => new Set(current).add(video.id));
+    setHistory(addWatchHistory(video));
     trackVideoPreference({ id: video.id, title: video.title, category: video.category });
     window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
   };
+
 
   return (
     <div className="mx-auto max-w-lg pb-6 bg-white dark:bg-background min-h-screen">
@@ -282,48 +307,111 @@ export default function VideoTab() {
           ) : null}
         </div>
 
-        <div className="flex items-center gap-2 px-3 pb-2">
-          <Button
-            type="button"
-            size="sm"
-            className="h-8 rounded-lg bg-red-600 px-3 text-[12.5px] font-black text-white hover:bg-red-700"
-            onClick={() => navigate({ to: "/studio" })}
-          >
-            <UploadCloud className="mr-1 h-4 w-4" /> ভিডিও আপলোড
-          </Button>
+        <div className="flex items-center gap-2 overflow-x-auto px-3 pb-2 scrollbar-hide">
           {user ? (
             <Button
               type="button"
               size="sm"
               variant="secondary"
-              className="h-8 rounded-lg px-3 text-[12.5px] font-black"
+              className="h-8 shrink-0 rounded-lg px-2.5 text-[12.5px] font-black"
               onClick={() => navigate({ to: "/channel/$userId", params: { userId: user.id } })}
             >
               <User className="mr-1 h-4 w-4" /> আমার চ্যানেল
             </Button>
           ) : null}
+          <Button
+            type="button"
+            size="sm"
+            variant={showHistory ? "default" : "secondary"}
+            className="h-8 shrink-0 rounded-lg px-2.5 text-[12.5px] font-black"
+            onClick={() => {
+              setHistory(readWatchHistory());
+              setShowHistory((prev) => !prev);
+            }}
+          >
+            <History className="mr-1 h-4 w-4" /> হিস্টোরি
+          </Button>
+          {showHistory && history.length > 0 ? (
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              className="h-8 shrink-0 rounded-lg px-2.5 text-[12.5px] font-black text-red-600"
+              onClick={() => {
+                clearWatchHistory();
+                setHistory([]);
+                toast.success("হিস্টোরি মুছে ফেলা হয়েছে");
+              }}
+            >
+              <Trash2 className="mr-1 h-4 w-4" /> সব মুছুন
+            </Button>
+          ) : null}
         </div>
 
-        <div className="flex gap-2 overflow-x-auto px-3 pb-2 scrollbar-hide">
-          {chips.map((chip) => {
-            const active = search === chip.value || (!search && chip.value === "");
-            return (
-              <Button
-                key={chip.label}
-                type="button"
-                variant={active ? "default" : "secondary"}
-                size="sm"
-                className="h-8 shrink-0 rounded-lg px-3 text-[13px] font-bold"
-                onClick={() => runSearch(chip.value)}
-              >
-                {chip.label}
-              </Button>
-            );
-          })}
-        </div>
+        {!showHistory ? (
+          <div className="flex gap-2 overflow-x-auto px-3 pb-2 scrollbar-hide">
+            {chips.map((chip) => {
+              const active = search === chip.value || (!search && chip.value === "");
+              return (
+                <Button
+                  key={chip.label}
+                  type="button"
+                  variant={active ? "default" : "secondary"}
+                  size="sm"
+                  className="h-8 shrink-0 rounded-lg px-3 text-[13px] font-bold"
+                  onClick={() => runSearch(chip.value)}
+                >
+                  {chip.label}
+                </Button>
+              );
+            })}
+          </div>
+        ) : null}
       </div>
 
-      {isLoading ? (
+      {playing && (
+        <InlinePlayer
+          key={playing.id}
+          video={playing}
+          userId={user?.id}
+          suggestedVideos={suggestedVideos}
+          onPlaySuggested={playVideo}
+          hasMoreSuggested={Boolean(hasNextPage)}
+          loadingMoreSuggested={isFetchingNextPage}
+          onLoadMoreSuggested={() => void fetchNextPage()}
+          onClose={() => setPlayingId(null)}
+        />
+      )}
+
+      {showHistory ? (
+        <div className="space-y-1">
+          <p className="px-3 pt-3 text-[13px] font-black text-gray-600 dark:text-muted-foreground">
+            আগে যেগুলো দেখেছেন — চাইলে আবার চালান
+          </p>
+          {history.length === 0 ? (
+            <p className="py-16 text-center text-sm font-bold text-gray-500">এখনো কোনো হিস্টোরি নেই</p>
+          ) : (
+            history.map((item) => (
+              <div key={item.id} className="relative">
+                <VideoCard video={item} onPlay={() => playVideo(item)} />
+                <div className="flex items-center justify-between px-3 pb-2">
+                  <span className="text-[11.5px] font-bold text-gray-500 dark:text-muted-foreground">
+                    {watchedAgoLabel(item.watched_at)} দেখা হয়েছে
+                  </span>
+                  <button
+                    type="button"
+                    aria-label="হিস্টোরি থেকে সরান"
+                    onClick={() => setHistory(removeWatchHistory(item.id))}
+                    className="rounded-full p-1 text-gray-400 active:bg-gray-100 dark:active:bg-secondary"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      ) : isLoading ? (
         <div className="flex justify-center py-16">
           <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
         </div>
@@ -331,20 +419,6 @@ export default function VideoTab() {
         <p className="py-16 text-center text-sm font-bold text-gray-500">কোনো ভিডিও পাওয়া যায়নি</p>
       ) : (
         <div className="space-y-1">
-          {playing && (
-            <InlinePlayer
-              key={playing.id}
-              video={playing}
-              userId={user?.id}
-              suggestedVideos={suggestedVideos}
-              onPlaySuggested={playVideo}
-              hasMoreSuggested={Boolean(hasNextPage)}
-              loadingMoreSuggested={isFetchingNextPage}
-              onLoadMoreSuggested={() => void fetchNextPage()}
-              onClose={() => setPlayingId(null)}
-            />
-          )}
-
           {suggestedVideos.map((video) => (
             <VideoCard key={video.id} video={video} onPlay={() => playVideo(video)} />
           ))}
@@ -358,9 +432,23 @@ export default function VideoTab() {
           </div>
         </div>
       )}
+
+      {/* ভিডিও আপলোড — নিচে ভাসমান + বাটন */}
+      <button
+        type="button"
+        aria-label="ভিডিও আপলোড"
+        onClick={() => navigate({ to: "/studio" })}
+        className="fixed bottom-24 right-4 z-40 grid h-14 w-14 place-items-center rounded-full bg-red-600 text-white shadow-[0_10px_28px_rgba(220,38,38,0.5)] active:scale-95 transition"
+      >
+        <Plus className="h-7 w-7" />
+        <span className="sr-only">
+          <UploadCloud className="h-4 w-4" />
+        </span>
+      </button>
     </div>
   );
 }
+
 
 function InlinePlayer({
   video,

@@ -213,15 +213,20 @@ function ReelsPage() {
       />
 
       {items.length === 0 ? (
-        <div className="flex h-full w-full flex-col items-center justify-center gap-3 text-white">
-          <p className="text-sm font-bold">এখনো কোনো রিল নেই</p>
+        <div className="flex h-full w-full flex-col items-center justify-center gap-3 px-8 text-center text-white">
+          <p className="text-lg font-black">Short</p>
+          <p className="text-sm font-bold">এখনো কোনো শর্ট ভিডিও নেই</p>
+          <p className="text-[12px] font-semibold text-white/70">
+            আপনিও শর্ট ভিডিও আপলোড করুন — সবাই দেখতে পাবে, লাভ ও কমেন্ট করতে পারবে।
+          </p>
           {user && (
             <Button onClick={handlePickFile} className="gap-2">
-              <Plus className="h-4 w-4" /> রিল আপলোড করুন
+              <Plus className="h-4 w-4" /> শর্ট ভিডিও আপলোড করুন
             </Button>
           )}
         </div>
       ) : (
+
         <div
           ref={containerRef}
           onScroll={updateActiveFromScroll}
@@ -253,6 +258,7 @@ function ReelsPage() {
           <ArrowLeft className="h-5 w-5 text-[#1a1a1a]" />
           <span className="text-[11.5px] font-black text-[#1a1a1a] whitespace-nowrap">ড্যাশবোর্ড</span>
         </button>
+        <span className="pointer-events-none text-[15px] font-black tracking-tight text-white drop-shadow">Short</span>
         {user && (
           <button
             onClick={handlePickFile}
@@ -261,9 +267,10 @@ function ReelsPage() {
             style={{ background: "linear-gradient(135deg,#e11d48,#f97316)" }}
           >
             {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-            <span>রিল আপলোড</span>
+            <span>শর্ট আপলোড</span>
           </button>
         )}
+
       </div>
 
       {user && (
