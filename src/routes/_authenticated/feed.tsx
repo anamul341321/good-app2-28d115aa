@@ -51,6 +51,12 @@ function FeedImg({ path, className, onClick }: { path: string; className?: strin
   return <img src={url} alt="" className={className} onClick={onClick} />;
 }
 
+function CommentImg({ path, className }: { path: string; className?: string }) {
+  const directUrl = /^(blob:|data:|https?:\/\/)/i.test(path) ? path : undefined;
+  const resolvedUrl = useFeedMedia(directUrl ? undefined : path);
+  return <img src={directUrl || resolvedUrl} alt="" className={className} />;
+}
+
 function FeedVideo({ path, className, videoRef }: { path: string; className?: string; videoRef?: (el: HTMLVideoElement | null) => void }) {
   const url = useFeedMedia(path);
   return <video ref={videoRef} src={url} muted playsInline preload="metadata" className={className} />;
@@ -85,6 +91,8 @@ function FeedPage() {
   const [userReactions, setUserReactions] = useState<Record<string, string>>({});
   const [commentingPostId, setCommentingPostId] = useState<string | null>(null);
   const [commentText, setCommentText] = useState("");
+  const [commentImageFile, setCommentImageFile] = useState<File | null>(null);
+  const [commentImagePreview, setCommentImagePreview] = useState<string | null>(null);
   const [comments, setComments] = useState<PostComment[]>([]);
   const [loadingComments, setLoadingComments] = useState(false);
   const [showReactionPicker, setShowReactionPicker] = useState<string | null>(null);
@@ -110,6 +118,7 @@ function FeedPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
   const storyInputRef = useRef<HTMLInputElement>(null);
+  const commentImageInputRef = useRef<HTMLInputElement>(null);
   const tapTimerRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const sentinelRef = useRef<HTMLDivElement>(null);
   const feedVideoRefs = useRef<Record<string, HTMLVideoElement | null>>({});
@@ -334,9 +343,11 @@ function FeedPage() {
   });
 
   const commentMutation = useMutation({
-    mutationFn: async ({ text }: { text: string }) => {
+    mutationFn: async ({ text, imageFile }: { text: string; imageFile?: File | null }) => {
       if (!user || !commentingPostId) throw new Error("Error");
-      return addComment(commentingPostId, user.id, text, replyingTo?.id);
+      let imageUrl: string | undefined;
+      if (imageFile) imageUrl = await uploadPostMedia(imageFile, imageFile.name, user.id);
+      return addComment(commentingPostId, user.id, text, replyingTo?.id, imageUrl);
     },
     onMutate: async ({ text }) => {
       if (!user || !commentingPostId) return;
@@ -345,6 +356,7 @@ function FeedPage() {
         post_id: commentingPostId,
         user_id: user.id,
         content: text,
+        image_url: commentImagePreview,
         created_at: new Date().toISOString(),
         parent_comment_id: replyingTo?.id || null,
         user: { display_name: (user.user_metadata as any)?.display_name || "You", avatar_url: null },
@@ -355,6 +367,8 @@ function FeedPage() {
         setComments((prev) => [...prev, tc]);
       }
       setCommentText("");
+      setCommentImageFile(null);
+      setCommentImagePreview(null);
       setReplyingTo(null);
     },
     onSuccess: () => {
@@ -426,6 +440,8 @@ function FeedPage() {
     setCommentingPostId(postId);
     setReplyingTo(null);
     setCommentText("");
+    setCommentImageFile(null);
+    setCommentImagePreview(null);
     loadComments(postId);
   };
 
@@ -458,6 +474,21 @@ function FeedPage() {
       setPostVideoFile(file);
       setPostVideoPreview(video.src);
     };
+  };
+
+  const handleCommentImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (commentImagePreview?.startsWith("blob:")) URL.revokeObjectURL(commentImagePreview);
+    setCommentImageFile(file);
+    setCommentImagePreview(URL.createObjectURL(file));
+    e.target.value = "";
+  };
+
+  const clearCommentImage = () => {
+    if (commentImagePreview?.startsWith("blob:")) URL.revokeObjectURL(commentImagePreview);
+    setCommentImageFile(null);
+    setCommentImagePreview(null);
   };
 
   const handleStorySelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1034,7 +1065,7 @@ function FeedPage() {
       {commentingPostId && (
         <div className="fixed inset-0 z-[150] bg-white dark:bg-background animate-in fade-in duration-150">
           <div className="absolute inset-0 flex flex-col">
-            <div className="flex items-center gap-2 px-3 py-3 border-b border-gray-200 dark:border-border/30 shrink-0">
+            <div className="safe-top flex items-center gap-2 px-3 pb-3 border-b border-gray-200 dark:border-border/30 shrink-0">
               <button onClick={() => { setCommentingPostId(null); setReplyingTo(null); }} className="w-9 h-9 rounded-full bg-gray-100 dark:bg-secondary flex items-center justify-center">
                 <ArrowLeft className="w-5 h-5 text-gray-700 dark:text-foreground" />
               </button>
@@ -1111,7 +1142,10 @@ function FeedPage() {
                           <Link to="/user/$userId" params={{ userId: c.user_id }} className="text-[14px] font-bold text-gray-900 dark:text-foreground hover:underline block">
                             <NameWithBadge name={c.user?.display_name || "User"} isVerified={c.user?.is_verified_badge} />
                           </Link>
-                          <p className="text-[15px] leading-relaxed text-gray-900 dark:text-foreground mt-0.5 break-words whitespace-pre-wrap">{renderMentionText(c.content)}</p>
+                          {c.content && <p className="text-[15px] leading-relaxed text-gray-900 dark:text-foreground mt-0.5 break-words whitespace-pre-wrap">{renderMentionText(c.content)}</p>}
+                          {c.image_url && (
+                            <CommentImg path={c.image_url} className="mt-2 max-h-64 w-full rounded-xl object-cover" />
+                          )}
                         </div>
                         <div className="flex items-center gap-4 px-1 mt-1">
                           <span className="text-[12px] text-gray-500">{timeAgo(c.created_at)}</span>
@@ -1149,7 +1183,10 @@ function FeedPage() {
                                           <Link to="/user/$userId" params={{ userId: r.user_id }} className="text-[13px] font-bold text-gray-900 dark:text-foreground">
                                             <NameWithBadge name={r.user?.display_name || "User"} isVerified={r.user?.is_verified_badge} />
                                           </Link>
-                                          <p className="text-[14px] leading-relaxed text-gray-900 dark:text-foreground break-words">{renderMentionText(r.content)}</p>
+                                          {r.content && <p className="text-[14px] leading-relaxed text-gray-900 dark:text-foreground break-words">{renderMentionText(r.content)}</p>}
+                                          {r.image_url && (
+                                            <CommentImg path={r.image_url} className="mt-2 max-h-48 w-full rounded-lg object-cover" />
+                                          )}
                                         </div>
                                         <div className="flex items-center gap-3 px-1 mt-0.5">
                                           <span className="text-[11px] text-gray-500">{timeAgo(r.created_at)}</span>
@@ -1174,7 +1211,7 @@ function FeedPage() {
             </div>
 
 
-            <div className="border-t border-gray-200 dark:border-border/30 p-3">
+            <div className="border-t border-gray-200 dark:border-border/30 p-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
               {replyingTo && (
                 <div className="flex items-center justify-between px-2 py-1.5 mb-1.5 bg-gray-100 dark:bg-secondary rounded-lg text-[12px]">
                   <span className="text-gray-600 dark:text-muted-foreground">Replying to <b>{replyingTo.name}</b></span>
@@ -1201,15 +1238,29 @@ function FeedPage() {
                   ))}
                 </div>
               )}
+              {commentImagePreview && (
+                <div className="mb-2 flex items-end gap-2">
+                  <div className="relative h-24 w-24 overflow-hidden rounded-xl bg-gray-100 dark:bg-secondary">
+                    <img src={commentImagePreview} alt="" className="h-full w-full object-cover" />
+                    <button type="button" onClick={clearCommentImage} className="absolute right-1 top-1 grid h-6 w-6 place-items-center rounded-full bg-black/65 text-white">
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+              )}
               <div className="flex items-center gap-2">
+                <input ref={commentImageInputRef} type="file" accept="image/*" className="hidden" onChange={handleCommentImageSelect} />
+                <button type="button" onClick={() => commentImageInputRef.current?.click()} className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-gray-100 text-green-600 dark:bg-secondary">
+                  <Image className="h-4.5 w-4.5" />
+                </button>
                 <input value={commentText} onChange={(e) => setCommentText(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter" && commentText.trim()) commentMutation.mutate({ text: commentText.trim() }); }}
+                  onKeyDown={(e) => { if (e.key === "Enter" && (commentText.trim() || commentImageFile)) commentMutation.mutate({ text: commentText.trim(), imageFile: commentImageFile }); }}
                   placeholder="মন্তব্য লিখুন..."
                   className="flex-1 bg-gray-100 dark:bg-secondary text-gray-900 dark:text-foreground rounded-full px-4 py-2.5 text-sm border-none outline-none placeholder:text-gray-400" />
-                <button onClick={() => commentText.trim() && commentMutation.mutate({ text: commentText.trim() })}
-                  disabled={!commentText.trim()}
+                <button onClick={() => (commentText.trim() || commentImageFile) && commentMutation.mutate({ text: commentText.trim(), imageFile: commentImageFile })}
+                  disabled={(!commentText.trim() && !commentImageFile) || commentMutation.isPending}
                   className="w-9 h-9 bg-blue-600 rounded-full flex items-center justify-center disabled:opacity-40 shrink-0">
-                  <Send className="w-4 h-4 text-white" />
+                  {commentMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin text-white" /> : <Send className="w-4 h-4 text-white" />}
                 </button>
               </div>
             </div>
