@@ -142,8 +142,8 @@ function FriendsPage() {
             <h2 className="text-xs font-black uppercase text-muted-foreground tracking-wider pl-1">Search Results</h2>
             <div className="space-y-1">
               {found.map((p: any) => (
-                <div key={p.id} className="flex items-center gap-3 py-2">
-                  <MessengerAvatar name={p.display_name ?? "User"} online={onlineIds.has(p.id)} size="lg" />
+                <div key={p.id} className="flex items-center gap-3 rounded-2xl px-2 py-2.5 transition-colors hover:bg-surface-2/60">
+                  <PersonAvatar name={p.display_name ?? "User"} path={p.avatar_url} online={onlineIds.has(p.id)} />
                   <div className="flex-1 min-w-0">
                     <p className="truncate text-sm font-black">{p.display_name ?? "User"}</p>
                     <p className="text-[10px] font-bold text-muted-foreground uppercase">UID {p.uid_seq ?? "-"}</p>
@@ -177,7 +177,7 @@ function FriendsPage() {
             <div className="space-y-3">
               {data!.incoming.map((r) => (
                 <div key={r.linkId} className="flex items-center gap-3">
-                  <MessengerAvatar name={r.name} size="lg" />
+                  <PersonAvatar name={r.name} path={(r as any).avatar_url} />
                   <div className="flex-1 min-w-0">
                     <p className="truncate text-sm font-black">{r.name}</p>
                     <p className="text-[10px] font-bold text-muted-foreground uppercase">Wants to be friends</p>
@@ -220,8 +220,8 @@ function FriendsPage() {
           ) : (
             <div className="space-y-1">
               {data!.friends.map((f) => (
-                <div key={f.linkId} className="flex items-center gap-3 py-2">
-                  <MessengerAvatar name={f.name} online={onlineIds.has(f.userId)} size="lg" />
+                <div key={f.linkId} className="flex items-center gap-3 rounded-2xl px-2 py-2.5 transition-colors hover:bg-surface-2/60">
+                  <PersonAvatar name={f.name} path={(f as any).avatar_url} online={onlineIds.has(f.userId)} />
                   <div className="flex-1 min-w-0">
                     <p className="truncate text-sm font-black">{f.name}</p>
                     <p className="text-[10px] font-bold text-muted-foreground uppercase">{onlineIds.has(f.userId) ? "Active Now" : `UID ${f.uid ?? "-"}`}</p>
@@ -249,8 +249,8 @@ function FriendsPage() {
           </div>
           <div className="space-y-1">
             {suggestedPeople.map((p: any) => (
-              <div key={p.id} className="flex items-center gap-3 py-2">
-                <MessengerAvatar name={p.display_name ?? "User"} online={onlineIds.has(p.id)} size="lg" />
+              <div key={p.id} className="flex items-center gap-3 rounded-2xl px-2 py-2.5 transition-colors hover:bg-surface-2/60">
+                <PersonAvatar name={p.display_name ?? "User"} path={p.avatar_url} online={onlineIds.has(p.id)} />
                 <div className="flex-1 min-w-0">
                   <p className="truncate text-sm font-black">{p.display_name ?? "User"}</p>
                   <p className="text-[10px] font-bold text-muted-foreground uppercase">
