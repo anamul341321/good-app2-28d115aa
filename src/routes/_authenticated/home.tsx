@@ -133,7 +133,9 @@ function HomePage() {
   }, [data, appStatus?.faceVerifyEnabled]);
 
   const socialEntryCards = (
-    <div className="grid grid-cols-2 gap-3">
+    // ড্যাশবোর্ডে স্ক্রল করলেও মেসেঞ্জার ও ফিড বাটন উপরে ভেসে থাকবে
+    <div className="sticky safe-top-nav z-30 -mx-4 grid grid-cols-2 gap-3 border-b border-border/40 bg-background/85 px-4 pb-3 pt-1 backdrop-blur-xl">
+
       <Link to="/chat" preload="intent"
         className={`rounded-3xl p-4 relative overflow-hidden btn-press shadow-xl flex flex-col justify-between h-32 ring-1 ${
           unreadMsgs > 0

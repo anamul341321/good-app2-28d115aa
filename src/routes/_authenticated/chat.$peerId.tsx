@@ -91,6 +91,13 @@ function ThreadPage() {
   const me = data?.me as string | undefined;
   const messages = data?.messages ?? [];
   const status = (data as any)?.friendStatus as string | undefined;
+  // শেষ যে মেসেজটি পিয়ার পড়েছেন — তার নিচেই ছোট প্রোফাইল ছবি বসবে
+  let lastSeenIndex = -1;
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const m = messages[i];
+    if (m.senderId === me && m.readAt && !m.deleted) { lastSeenIndex = i; break; }
+  }
+
 
   return (
     <div className="flex flex-col h-screen bg-background">
@@ -191,16 +198,22 @@ function ThreadPage() {
           </div>
         ) : (
           <div className="flex flex-col gap-2">
-            {messages.map((m) => (
+            {messages.map((m, i) => (
               <MessageBubble
                 key={m.id}
                 m={m}
                 mine={m.senderId === me}
                 onDelete={(id) => del.mutate(id)}
+                seenBy={
+                  i === lastSeenIndex && data?.peer
+                    ? { name: data.peer.name ?? "User", avatarUrl: (data.peer as any)?.avatarUrl ?? null }
+                    : null
+                }
               />
             ))}
             <div ref={endRef} />
           </div>
+
         )}
       </main>
 

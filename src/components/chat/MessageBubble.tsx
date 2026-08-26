@@ -1,5 +1,20 @@
 import { useEffect, useRef, useState } from "react";
 import { Play, Pause, Trash2, Ban, PhoneMissed, PhoneIncoming, Video } from "lucide-react";
+import { useFeedMedia } from "@/lib/feed-media";
+
+/** মেসেজ সিন হলে নিচে দেখানো ছোট (১৬px) প্রোফাইল ছবি */
+function SeenAvatar({ name, src }: { name: string; src?: string | null }) {
+  const url = useFeedMedia(src);
+  return (
+    <span
+      className="mr-0.5 mt-1 grid h-4 w-4 place-items-center overflow-hidden rounded-full bg-surface-3 text-[8px] font-black text-foreground/70 ring-1 ring-border/60"
+      title={`${name} দেখেছেন`}
+    >
+      {url ? <img src={url} alt={name} className="h-full w-full object-cover" /> : (name || "U").slice(0, 1).toUpperCase()}
+    </span>
+  );
+}
+
 
 export type ChatMsg = {
   id: string;
@@ -83,14 +98,18 @@ export function MessageBubble({
   mine,
   showName,
   onDelete,
+  seenBy,
 }: {
   m: ChatMsg;
   mine: boolean;
   showName?: boolean;
   onDelete?: (id: string) => void;
+  /** মেসেঞ্জারের মতো — পড়া হলে এই মেসেজের নিচে পিয়ারের ছোট প্রোফাইল ছবি দেখাবে */
+  seenBy?: { name: string; avatarUrl?: string | null } | null;
 }) {
   const [zoom, setZoom] = useState(false);
   const [menu, setMenu] = useState(false);
+
 
   const bubbleClasses = mine
     ? "bg-primary text-white rounded-[20px] rounded-br-[4px]"
@@ -159,10 +178,12 @@ export function MessageBubble({
         </div>
       </div>
       
-      {/* Seen status / time */}
-      {mine && m.readAt && !m.deleted && (
-        <span className="text-[9px] font-black text-muted-foreground mr-1 mt-0.5">Seen</span>
+      {/* Seen — মেসেঞ্জার স্টাইল ছোট প্রোফাইল ছবি */}
+      {mine && seenBy && !m.deleted && (
+        <SeenAvatar name={seenBy.name} src={seenBy.avatarUrl ?? null} />
       )}
+
+
       {!mine && showName && (
         <span className="text-[9px] font-black text-muted-foreground ml-3 mt-0.5">{m.senderName}</span>
       )}
