@@ -21,6 +21,7 @@ import {
   History,
   Maximize2,
   Minimize2,
+  RotateCw,
 
   Plus,
   Trash2,
@@ -529,8 +530,21 @@ function InlinePlayer({
   const playerBoxRef = useRef<HTMLDivElement | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [cssFullscreen, setCssFullscreen] = useState(false);
+  const [viewportBox, setViewportBox] = useState({ w: 0, h: 0 });
   const dragStartY = useRef<number | null>(null);
   const playerModeRef = useRef(playerMode);
+
+  useEffect(() => {
+    const sync = () => setViewportBox({ w: window.innerWidth, h: window.innerHeight });
+    sync();
+    window.addEventListener("resize", sync);
+    window.addEventListener("orientationchange", sync);
+    return () => {
+      window.removeEventListener("resize", sync);
+      window.removeEventListener("orientationchange", sync);
+    };
+  }, []);
+
 
 
   const relatedSearch = useMemo(() => buildRelatedSearchTerm(video), [video]);
@@ -734,11 +748,12 @@ function InlinePlayer({
     };
   }, []);
 
+  // আমাদের নিজের রোটেট বাটন — YouTube এর fullscreen বাটন ব্যবহার হয় না।
   const toggleFullscreen = useCallback(async () => {
-    const active = !!(document.fullscreenElement || (document as any).webkitFullscreenElement);
-    if (active || cssFullscreen) {
+    const nativeActive = !!(document.fullscreenElement || (document as any).webkitFullscreenElement);
+    if (nativeActive || cssFullscreen) {
       try {
-        if (document.exitFullscreen && active) await document.exitFullscreen();
+        if (nativeActive && document.exitFullscreen) await document.exitFullscreen();
         else (document as any).webkitExitFullscreen?.();
       } catch { /* ignore */ }
       setCssFullscreen(false);
@@ -747,23 +762,26 @@ function InlinePlayer({
       return;
     }
     setPlayerMode("expanded");
+    setCssFullscreen(true);
     try { (window as any).GoodAppDownloader?.enterVideoFullscreen?.(); } catch { /* web preview */ }
-    const el: any = playerBoxRef.current;
-    const videoEl: any = localVideoRef.current;
-    let nativeOk = false;
-    try {
-      if (el?.requestFullscreen) { await el.requestFullscreen(); nativeOk = true; }
-      else if (el?.webkitRequestFullscreen) { el.webkitRequestFullscreen(); nativeOk = true; }
-    } catch { nativeOk = false; }
-    if (!nativeOk && videoEl?.webkitEnterFullscreen) {
-      try { videoEl.webkitEnterFullscreen(); nativeOk = true; } catch { /* ignore */ }
-    }
-    // Android WebView-এ native fullscreen প্রায়ই কাজ করে না — তখন CSS ফুলস্ক্রিন
-    if (!nativeOk) setCssFullscreen(true);
-    try { await (screen.orientation as any)?.lock?.("landscape"); } catch { /* ignore */ }
+    try { await (screen.orientation as any)?.lock?.("landscape"); } catch { /* ignore — CSS rotate fallback */ }
   }, [cssFullscreen]);
 
   const effectiveFullscreen = isFullscreen || cssFullscreen;
+  // ফোন যদি ঘুরতে না চায়, তখন প্লেয়ারটাকেই ৯০° ঘুরিয়ে পুরো স্ক্রিন ভরে দেওয়া হয়
+  const rotateStage = effectiveFullscreen && viewportBox.h > viewportBox.w && viewportBox.w > 0;
+  const stageStyle = rotateStage
+    ? {
+        width: `${viewportBox.h}px`,
+        height: `${viewportBox.w}px`,
+        transform: "translate(-50%, -50%) rotate(90deg)",
+        position: "absolute" as const,
+        top: "50%",
+        left: "50%",
+      }
+    : undefined;
+
+
 
   const beginCollapseDrag = (event: PointerEvent) => {
     if (playerMode !== "expanded") return;
@@ -814,11 +832,11 @@ function InlinePlayer({
               <div className="flex items-center">
                 <button
                   type="button"
-                  aria-label={effectiveFullscreen ? "ফুল স্ক্রিন বন্ধ" : "ফুল স্ক্রিন"}
+                  aria-label={effectiveFullscreen ? "ফুল স্ক্রিন বন্ধ" : "রোটেট করে ফুল স্ক্রিন"}
                   onClick={toggleFullscreen}
                   className="grid h-9 w-9 place-items-center rounded-full text-white active:bg-white/15"
                 >
-                  {effectiveFullscreen ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
+                  {effectiveFullscreen ? <Minimize2 className="h-5 w-5" /> : <RotateCw className="h-5 w-5" />}
                 </button>
                 <button
                   type="button"
@@ -844,6 +862,10 @@ function InlinePlayer({
               : "relative aspect-video w-full shrink-0 overflow-hidden bg-black"
         }
       >
+        <div
+          className={rotateStage ? "overflow-hidden bg-black" : "relative h-full w-full overflow-hidden bg-black"}
+          style={stageStyle}
+        >
         {isLocal && source && !localMediaFailed ? (
           <video
             key={localMediaKey}
@@ -856,7 +878,7 @@ function InlinePlayer({
             onLoadedData={() => setLocalMediaFailed(false)}
             onError={() => setLocalMediaFailed(true)}
             onEnded={playNext}
-            className={effectiveFullscreen ? "h-full w-full object-contain" : "h-full w-full object-contain"}
+            className="h-full w-full object-contain"
           />
         ) : isLocal ? (
           <div className="grid h-full w-full place-items-center bg-black">
@@ -872,24 +894,25 @@ function InlinePlayer({
           <iframe
             ref={iframeRef}
             id={`goodapp-player-${video.video_id || video.id}`}
-            src={`${video.video_url}${video.video_url.includes("?") ? "&" : "?"}autoplay=1&playsinline=1&rel=0&modestbranding=1&showinfo=0&iv_load_policy=3&fs=1&controls=1&color=white&enablejsapi=1${typeof window !== "undefined" ? `&origin=${encodeURIComponent(window.location.origin)}` : ""}`}
+            src={`${video.video_url}${video.video_url.includes("?") ? "&" : "?"}autoplay=1&playsinline=1&rel=0&modestbranding=1&showinfo=0&iv_load_policy=3&fs=0&controls=1&color=white&enablejsapi=1${typeof window !== "undefined" ? `&origin=${encodeURIComponent(window.location.origin)}` : ""}`}
             title={video.title}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; fullscreen; gyroscope; picture-in-picture; web-share"
-            allowFullScreen
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
             className="h-full w-full border-0"
           />
         )}
         {playerMode === "expanded" ? (
           <button
             type="button"
-            aria-label={effectiveFullscreen ? "ফুল স্ক্রিন বন্ধ করুন" : "ফুল স্ক্রিন করুন"}
+            aria-label={effectiveFullscreen ? "ফুল স্ক্রিন বন্ধ করুন" : "রোটেট করে ফুল স্ক্রিন"}
             onClick={toggleFullscreen}
             className="absolute bottom-2 right-2 z-20 grid h-10 w-10 place-items-center rounded-full bg-black/60 text-white backdrop-blur active:bg-black/80"
           >
-            {effectiveFullscreen ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
+            {effectiveFullscreen ? <Minimize2 className="h-5 w-5" /> : <RotateCw className="h-5 w-5" />}
           </button>
         ) : null}
+        </div>
       </div>
+
 
 
         {playerMode === "mini" ? (
