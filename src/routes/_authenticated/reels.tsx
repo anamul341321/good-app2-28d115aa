@@ -505,16 +505,26 @@ function LocalReel({
     if (!el) return;
     if (isActive) {
       setPaused(false);
-      el.play().catch(() => {});
+      el.muted = muted;
+      el.play().catch(() => {
+        // ব্রাউজার সাউন্ড সহ অটোপ্লে ব্লক করলে মিউট করে চালাই
+        el.muted = true;
+        setMuted(true);
+        el.play().catch(() => {});
+      });
       if (!viewCountedRef.current) {
         viewCountedRef.current = true;
         setViewsCount((c) => c + 1);
         incrementPostView(post.id).then((v) => { if (v > 0) setViewsCount(v); }).catch(() => {});
       }
     } else {
+      // শুধু current ভিডিওই বাজবে — বাকিগুলো পজ ও মিউট
       el.pause();
+      el.muted = true;
+      try { el.currentTime = 0; } catch { /* ignore */ }
     }
-  }, [isActive, videoUrl]);
+  }, [isActive, videoUrl, muted]);
+
 
   const likeMutation = useMutation({
     mutationFn: async () => {
