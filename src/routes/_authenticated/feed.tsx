@@ -1170,7 +1170,9 @@ function FeedPage() {
                   </div>
                 ))
               )}
+              </div>
             </div>
+
 
             <div className="border-t border-gray-200 dark:border-border/30 p-3">
               {replyingTo && (
