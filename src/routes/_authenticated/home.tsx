@@ -16,6 +16,7 @@ import { ComplianceDisclaimer } from "@/components/ComplianceDisclaimer";
 import { DashSection } from "@/components/DashSection";
 import { SlotClaimButton, type SlotClaim } from "@/components/SlotClaimButton";
 import { listSlotClaims } from "@/lib/slot-claims.functions";
+import { getUnreadMessageCount } from "@/lib/chat.functions";
 
 
 import { useLang } from "@/lib/i18n";
