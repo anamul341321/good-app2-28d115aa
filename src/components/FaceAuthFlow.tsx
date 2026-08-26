@@ -336,34 +336,36 @@ export function FaceAuthFlow(props: Props) {
 
   if (wizard) {
     return (
-      <div className="fixed inset-0 z-[120] overflow-y-auto overscroll-contain bg-gradient-to-b from-[#0b1220] via-[#101a2e] to-black px-4 py-6">
-        <div className="mx-auto w-full max-w-sm overflow-hidden rounded-3xl border border-white/10 bg-surface shadow-2xl">
-          <div
-            className="flex items-center gap-2 px-4 py-3 text-white"
-            style={{ background: "linear-gradient(120deg,#10b981,#06b6d4,#8b5cf6)" }}
-          >
-            <ScanFace className="h-5 w-5" />
+      <div className="fixed inset-0 z-[120] flex flex-col bg-gradient-to-b from-[#0b1220] via-[#101a2e] to-black">
+        <div className="mx-auto flex h-full w-full max-w-md flex-col">
+          <div className="flex shrink-0 items-center gap-3 px-5 pb-1 pt-[max(1.25rem,env(safe-area-inset-top))] text-white">
+            <div
+              className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl shadow-lg"
+              style={{ background: "linear-gradient(120deg,#10b981,#06b6d4,#8b5cf6)" }}
+            >
+              <ScanFace className="h-6 w-6" />
+            </div>
             <div className="leading-tight">
-              <p className="text-[13px] font-black">
+              <p className="text-[17px] font-black">
                 ফেস {mode === "signup" ? "রেজিস্ট্রেশন" : "লগইন"}
-                {mode === "signup" ? ` — ধাপ ${["১", "২", "৩", "৪"][stepIndex - 1]}/৪` : ""}
               </p>
-              <p className="text-[10.5px] font-bold opacity-90">
+              <p className="text-[11.5px] font-bold text-white/60">
                 {mode === "signup"
                   ? phase === "info"
-                    ? "নাম ও মোবাইল নম্বর দিন"
+                    ? "ধাপ ১/৪ — নাম ও মোবাইল নম্বর দিন"
                     : phase === "secure"
-                    ? "পাসওয়ার্ড সেট করুন"
+                    ? "ধাপ ২/৪ — পাসওয়ার্ড সেট করুন"
                     : phase === "photo"
-                    ? "লাইভ ক্যামেরায় নিজের ছবি তুলুন"
-                    : "সব ঠিক থাকলে রেজিস্ট্রেশন করুন"
+                    ? "ধাপ ৩/৪ — লাইভ ক্যামেরায় নিজের ছবি তুলুন"
+                    : "ধাপ ৪/৪ — সব ঠিক থাকলে রেজিস্ট্রেশন করুন"
                   : "লাইভ ক্যামেরায় মুখ স্ক্যান করলেই একাউন্ট চিনে নেবে"}
               </p>
             </div>
           </div>
 
+
           {mode === "signup" && (
-            <div className="flex gap-1 px-4 pt-3">
+            <div className="flex shrink-0 gap-1.5 px-5 pt-4">
               {[1, 2, 3, 4].map((n) => (
                 <span
                   key={n}
@@ -373,7 +375,7 @@ export function FaceAuthFlow(props: Props) {
             </div>
           )}
 
-          <div className="space-y-3 p-4">
+          <div className="flex-1 space-y-4 overflow-y-auto overscroll-contain px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-5">
             {phase === "info" && (
               <>
                 <div>
@@ -382,7 +384,7 @@ export function FaceAuthFlow(props: Props) {
                     value={fName}
                     onChange={(e) => setFName(e.target.value)}
                     placeholder="আপনার পুরো নাম"
-                    className="mt-1 w-full rounded-xl border-2 border-border bg-white px-4 py-3 text-sm text-navy outline-none focus:border-emerald"
+                    className="mt-1 w-full rounded-xl border-2 border-white/10 bg-white/[0.06] px-4 py-3.5 text-[15px] font-bold text-white placeholder:text-white/35 outline-none focus:border-emerald"
                   />
                 </div>
                 <div>
@@ -393,13 +395,13 @@ export function FaceAuthFlow(props: Props) {
                     value={fPhone}
                     onChange={(e) => setFPhone(e.target.value.replace(/\D/g, "").slice(0, 11))}
                     placeholder="০১XXXXXXXXX (১১ ডিজিট)"
-                    className="mono-num mt-1 w-full rounded-xl border-2 border-border bg-white px-4 py-3 text-sm text-navy outline-none focus:border-cyan"
+                    className="mono-num mt-1 w-full rounded-xl border-2 border-white/10 bg-white/[0.06] px-4 py-3.5 text-[15px] font-bold text-white placeholder:text-white/35 outline-none focus:border-cyan"
                   />
                 </div>
                 <button
                   type="button"
                   onClick={nextFromInfo}
-                  className="w-full rounded-xl gradient-cta py-3 text-sm font-black text-white btn-press"
+                  className="w-full rounded-xl gradient-cta py-3.5 text-sm font-black text-white btn-press"
                 >
                   পরবর্তী ধাপ →
                 </button>
@@ -415,7 +417,7 @@ export function FaceAuthFlow(props: Props) {
                     value={fPass}
                     onChange={(e) => setFPass(e.target.value)}
                     placeholder="কমপক্ষে ৬ অক্ষর"
-                    className="mt-1 w-full rounded-xl border-2 border-border bg-white px-4 py-3 text-sm text-navy outline-none focus:border-violet"
+                    className="mt-1 w-full rounded-xl border-2 border-white/10 bg-white/[0.06] px-4 py-3.5 text-[15px] font-bold text-white placeholder:text-white/35 outline-none focus:border-violet"
                   />
                 </div>
                 <div>
@@ -427,7 +429,7 @@ export function FaceAuthFlow(props: Props) {
                     value={fPass2}
                     onChange={(e) => setFPass2(e.target.value)}
                     placeholder="একই পাসওয়ার্ড আবার লিখুন"
-                    className="mt-1 w-full rounded-xl border-2 border-border bg-white px-4 py-3 text-sm text-navy outline-none focus:border-violet"
+                    className="mt-1 w-full rounded-xl border-2 border-white/10 bg-white/[0.06] px-4 py-3.5 text-[15px] font-bold text-white placeholder:text-white/35 outline-none focus:border-violet"
                   />
                 </div>
                 <div>
@@ -440,7 +442,7 @@ export function FaceAuthFlow(props: Props) {
                     value={fGmail}
                     onChange={(e) => setFGmail(e.target.value.trim())}
                     placeholder="yourname@gmail.com"
-                    className="mt-1 w-full rounded-xl border-2 border-border bg-white px-4 py-3 text-sm text-navy outline-none focus:border-rose"
+                    className="mt-1 w-full rounded-xl border-2 border-white/10 bg-white/[0.06] px-4 py-3.5 text-[15px] font-bold text-white placeholder:text-white/35 outline-none focus:border-rose"
                   />
                 </div>
                 <div>
@@ -451,10 +453,10 @@ export function FaceAuthFlow(props: Props) {
                     value={fRef}
                     onChange={(e) => setFRef(e.target.value.trim().toUpperCase())}
                     placeholder="থাকলে দিন"
-                    className="mono-num mt-1 w-full rounded-xl border-2 border-border bg-white px-4 py-3 text-sm text-navy outline-none focus:border-amber"
+                    className="mono-num mt-1 w-full rounded-xl border-2 border-white/10 bg-white/[0.06] px-4 py-3.5 text-[15px] font-bold text-white placeholder:text-white/35 outline-none focus:border-amber"
                   />
                 </div>
-                <p className="text-[10.5px] leading-snug text-muted-foreground">
+                <p className="text-[11px] leading-snug text-white/55">
                   লগইনের সময় ফেস স্ক্যানের পর এই পাসওয়ার্ডটিই লাগবে — মনে রাখুন।
                 </p>
 
@@ -462,14 +464,14 @@ export function FaceAuthFlow(props: Props) {
                   <button
                     type="button"
                     onClick={() => setPhase("info")}
-                    className="flex-1 rounded-xl border border-border py-3 text-xs font-black text-muted-foreground"
+                    className="flex-1 rounded-xl border border-white/15 py-3.5 text-xs font-black text-white/70"
                   >
                     ← পিছনে
                   </button>
                   <button
                     type="button"
                     onClick={nextFromSecure}
-                    className="flex-1 rounded-xl gradient-cta py-3 text-sm font-black text-white btn-press"
+                    className="flex-1 rounded-xl gradient-cta py-3.5 text-sm font-black text-white btn-press"
                   >
                     পরবর্তী ধাপ →
                   </button>
@@ -508,7 +510,7 @@ export function FaceAuthFlow(props: Props) {
                     />
                   )}
                 </div>
-                <p className="text-[10.5px] leading-snug text-muted-foreground">
+                <p className="text-[11px] leading-snug text-white/55">
                   রেজিস্ট্রেশন করুন চাপলে ফেস ভেরিফিকেশন খুলবে। ভেরিফিকেশন সফল (whitelist) হলেই
                   একাউন্ট তৈরি হবে — না হলে একাউন্ট হবে না।
                 </p>
@@ -516,14 +518,14 @@ export function FaceAuthFlow(props: Props) {
                   <button
                     type="button"
                     onClick={() => setPhase("photo")}
-                    className="flex-1 rounded-xl border border-border py-3 text-xs font-black text-muted-foreground"
+                    className="flex-1 rounded-xl border border-white/15 py-3.5 text-xs font-black text-white/70"
                   >
                     ← ছবি বদলান
                   </button>
                   <button
                     type="button"
                     onClick={() => void begin(photo)}
-                    className="flex-1 rounded-xl py-3 text-sm font-black text-white btn-press"
+                    className="flex-1 rounded-xl py-3.5 text-sm font-black text-white btn-press"
                     style={{ background: "linear-gradient(120deg,#10b981,#06b6d4,#8b5cf6)" }}
                   >
                     রেজিস্ট্রেশন করুন
