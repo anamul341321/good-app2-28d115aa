@@ -1043,8 +1043,9 @@ function FeedPage() {
                 </button>
                 <button onClick={() => navigate({ to: "/reels" })} className="flex flex-col items-center gap-0.5 px-2">
                   <Film className="w-5 h-5 text-pink-500" />
-                  <span className="text-[10px] text-gray-500 font-medium">রিলস</span>
+                  <span className="text-[10px] text-gray-500 font-medium">Short</span>
                 </button>
+
 
               </div>
             </div>
