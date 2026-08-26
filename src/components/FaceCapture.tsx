@@ -227,7 +227,7 @@ export function FaceCapture({
 
       {title && <p className="text-xs font-bold text-cyan text-center">{title}</p>}
 
-      {mode === "choice" && (
+      {mode === "choice" && !cameraOnly && (
         <div className="space-y-2">
           <p className="text-center text-[11px] text-muted-foreground">
             কিভাবে ছবি দিবেন সেটা বেছে নিন
@@ -252,26 +252,45 @@ export function FaceCapture({
         </div>
       )}
 
+      {mode === "choice" && cameraOnly && (
+        <div className="py-6 flex flex-col items-center gap-2">
+          <Loader2 className="w-5 h-5 animate-spin text-cyan" />
+          <p className="text-[11px] text-muted-foreground">ক্যামেরা চালু হচ্ছে…</p>
+        </div>
+      )}
+
       {mode === "camera" && (
         <div className="space-y-2">
           {cameraError ? (
             <div className="rounded-xl bg-rose/10 border border-rose/40 p-4 text-center space-y-2">
               <AlertTriangle className="w-6 h-6 text-rose mx-auto" />
               <p className="text-xs text-rose leading-snug">{cameraError}</p>
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="w-full py-2.5 rounded-xl bg-violet text-white text-xs font-black flex items-center justify-center gap-2"
-              >
-                <ImagePlus className="w-4 h-4" /> গ্যালারি থেকে আপলোড করুন
-              </button>
-              <button
-                type="button"
-                onClick={backToChoice}
-                className="w-full py-2 rounded-xl border border-border text-[11px] text-muted-foreground"
-              >
-                পিছনে যান
-              </button>
+              {cameraOnly ? (
+                <button
+                  type="button"
+                  onClick={startCamera}
+                  className="w-full py-2.5 rounded-xl bg-cyan text-white text-xs font-black flex items-center justify-center gap-2"
+                >
+                  <Camera className="w-4 h-4" /> আবার ক্যামেরা চালু করুন
+                </button>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full py-2.5 rounded-xl bg-violet text-white text-xs font-black flex items-center justify-center gap-2"
+                  >
+                    <ImagePlus className="w-4 h-4" /> গ্যালারি থেকে আপলোড করুন
+                  </button>
+                  <button
+                    type="button"
+                    onClick={backToChoice}
+                    className="w-full py-2 rounded-xl border border-border text-[11px] text-muted-foreground"
+                  >
+                    পিছনে যান
+                  </button>
+                </>
+              )}
             </div>
           ) : (
             <>
@@ -289,17 +308,34 @@ export function FaceCapture({
                   </p>
                 )}
               </div>
-              <button
-                type="button"
-                onClick={backToChoice}
-                className="w-full py-2 rounded-xl border border-border text-[11px] text-muted-foreground"
-              >
-                পিছনে যান / গ্যালারি ব্যবহার করুন
-              </button>
+              {cameraOnly ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={captureNow}
+                    disabled={!cameraReady}
+                    className="w-full py-3 rounded-xl gradient-cta text-white text-xs font-black flex items-center justify-center gap-2 btn-press disabled:opacity-50"
+                  >
+                    <Camera className="w-4 h-4" /> ছবি তুলুন
+                  </button>
+                  <p className="text-[10px] text-center text-muted-foreground leading-snug">
+                    লাইভ ক্যামেরা বাধ্যতামূলক — গ্যালারির ছবি গ্রহণ করা হবে না
+                  </p>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={backToChoice}
+                  className="w-full py-2 rounded-xl border border-border text-[11px] text-muted-foreground"
+                >
+                  পিছনে যান / গ্যালারি ব্যবহার করুন
+                </button>
+              )}
             </>
           )}
         </div>
       )}
+
 
       {mode === "review" && capturedImage && (
         <div className="space-y-2">
