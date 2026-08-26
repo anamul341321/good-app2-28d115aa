@@ -738,20 +738,32 @@ function FeedPage() {
             </div>
           </div>
 
-          <div className="px-1 py-1 border-t border-gray-200 dark:border-border/20 grid grid-cols-3 relative select-none" style={{ WebkitUserSelect: "none", userSelect: "none" }}>
+          <div className="px-1 py-1 border-t border-gray-200 dark:border-border/20 grid grid-cols-3 relative select-none" style={{ WebkitUserSelect: "none", userSelect: "none", WebkitTouchCallout: "none" } as React.CSSProperties}>
             <div className="relative">
               <button
                 onClick={() => reactionMutation.mutate({ postId: post.id, type: myReaction || "like" })}
                 onContextMenu={(e) => { e.preventDefault(); setShowReactionPicker(showReactionPicker === post.id ? null : post.id); }}
                 onTouchStart={() => {
-                  const timer = setTimeout(() => setShowReactionPicker(showReactionPicker === post.id ? null : post.id), 500);
-                  const cleanup = () => { clearTimeout(timer); document.removeEventListener("touchend", cleanup); };
+                  const timer = setTimeout(() => {
+                    setShowReactionPicker(showReactionPicker === post.id ? null : post.id);
+                    if (navigator.vibrate) navigator.vibrate(15);
+                  }, 400);
+                  const cleanup = () => {
+                    clearTimeout(timer);
+                    document.removeEventListener("touchend", cleanup);
+                    document.removeEventListener("touchmove", cleanup);
+                    document.removeEventListener("touchcancel", cleanup);
+                  };
                   document.addEventListener("touchend", cleanup);
+                  document.addEventListener("touchmove", cleanup);
+                  document.addEventListener("touchcancel", cleanup);
                 }}
+                style={{ WebkitTouchCallout: "none", WebkitUserSelect: "none" } as React.CSSProperties}
                 className={`flex items-center justify-center gap-2 py-2.5 w-full rounded-lg transition-colors select-none ${myReaction ? "text-blue-600 dark:text-primary" : "text-gray-600 dark:text-muted-foreground"}`}>
                 {myReaction ? <span className="text-xl">{REACTION_EMOJIS[myReaction]}</span> : <ThumbsUp className="w-5 h-5" />}
                 <span className="text-[13px] font-semibold select-none">{myReaction ? (myReaction === "like" ? "পছন্দ" : REACTION_EMOJIS[myReaction]) : "পছন্দ"}</span>
               </button>
+
 
               {showReactionPicker === post.id && (
                 <div className="absolute bottom-full left-0 mb-2 bg-white dark:bg-card border border-gray-200 dark:border-border rounded-full shadow-xl px-2 py-1.5 flex gap-0.5 z-50 animate-in fade-in zoom-in-90 duration-150">
