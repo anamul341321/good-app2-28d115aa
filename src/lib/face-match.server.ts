@@ -16,7 +16,7 @@ function extractJsonObject(text: string): any | null {
   try { return JSON.parse(m[0]); } catch { return null; }
 }
 
-async function callAi(content: any[]): Promise<string> {
+async function callAi(content: any[], model: string = MODEL): Promise<string> {
   const key = process.env.LOVABLE_API_KEY;
   if (!key) throw new Error("LOVABLE_API_KEY not configured");
 
@@ -27,7 +27,7 @@ async function callAi(content: any[]): Promise<string> {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: MODEL,
+      model,
       messages: [{ role: "user", content }],
     }),
   });
