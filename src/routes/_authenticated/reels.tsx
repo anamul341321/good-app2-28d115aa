@@ -397,6 +397,7 @@ function ReelSlide({
         <LocalReel
           post={item.post}
           isActive={isActive}
+          isNear={isNear}
           muted={muted}
           setMuted={setMuted}
           onOpenComments={onOpenComments}
