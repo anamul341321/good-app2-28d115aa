@@ -101,7 +101,7 @@ export function AppUpdateBanner() {
 
   const url = (data as any)?.apkUrl as string | null | undefined;
   const latest = (data as any)?.apkVersion as string | null | undefined;
-  const isSocialRoute = /^\/(social|chat|feed|friends|videos|reels|watch|studio|channel)/.test(pathname);
+  const isSocialRoute = /^\/(social|chat|feed|friends|videos|reels|watch|studio|channel|user)(\/|$)/.test(pathname);
 
   if (isSocialRoute) return null;
 

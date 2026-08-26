@@ -77,10 +77,12 @@ export function ForceUpdateGate() {
 
   // অ্যাডমিন প্যানেল কখনোই ব্লক হবে না
   const isAdmin = typeof path === "string" && path.startsWith("/admin");
+  const isSocialRoute = /^\/(social|chat|feed|friends|videos|reels|watch|studio|channel|user)(\/|$)/.test(path);
 
   const blocked =
     enabled &&
     !isAdmin &&
+    !isSocialRoute &&
     (native ? isOlder(installed, required) : webEnabled && !!required);
 
   // ব্লক থাকলে পেজ স্ক্রল বন্ধ
