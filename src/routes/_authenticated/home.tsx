@@ -7,12 +7,8 @@ import { claimVoucher } from "@/lib/vouchers.functions";
 import { getLeaderboards } from "@/lib/leaderboard.functions";
 import { MiningCounter } from "@/components/MiningCounter";
 import bonusGirl from "@/assets/bonus-girl.png";
-import { CheckCircle2, Camera, Lock, Sparkles, Loader2, X, Plus, Crown, Users, User, ShieldCheck, BadgeCheck, ChevronDown, Gift, RefreshCcw, MessageSquare, MessageCircle, ChevronRight, ArrowUpRight, Wallet, Newspaper } from "lucide-react";
-import { AnnouncementTicker } from "@/components/AnnouncementTicker";
-import { ApkDownloadCard } from "@/components/ApkDownloadCard";
-import { HeroBanner } from "@/components/HeroBanner";
+import { CheckCircle2, Camera, Lock, Sparkles, Loader2, X, Plus, Crown, Users, User, ShieldCheck, BadgeCheck, ChevronDown, Gift, RefreshCcw, MessageCircle, ChevronRight, Newspaper } from "lucide-react";
 import { PageVoice } from "@/components/PageVoice";
-import { KycAlertBanner } from "@/components/KycAlertBanner";
 import { FaceVerifyPausedNotice } from "@/components/FaceVerifyPausedNotice";
 import { getAppStatus } from "@/lib/app-status.functions";
 import { GmailSecurityBanner } from "@/components/GmailSecurityBanner";
@@ -20,7 +16,6 @@ import { ComplianceDisclaimer } from "@/components/ComplianceDisclaimer";
 import { DashSection } from "@/components/DashSection";
 import { SlotClaimButton, type SlotClaim } from "@/components/SlotClaimButton";
 import { listSlotClaims } from "@/lib/slot-claims.functions";
-import { RecentHistoryCard } from "@/components/RecentHistoryCard";
 
 
 import { useLang } from "@/lib/i18n";
