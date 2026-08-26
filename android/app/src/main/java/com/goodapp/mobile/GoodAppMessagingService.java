@@ -16,7 +16,6 @@ import android.os.PowerManager;
 
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.Person;
-import androidx.core.graphics.drawable.IconCompat;
 
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
@@ -272,19 +271,6 @@ public class GoodAppMessagingService extends FirebaseMessagingService {
             .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
             .setVibrate(new long[] {0, 180, 100, 180});
         if (replyAction != null) builder.addAction(replyAction);
-
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            NotificationCompat.BubbleMetadata bubble = new NotificationCompat.BubbleMetadata.Builder(
-                openChat,
-                IconCompat.createWithResource(this, R.mipmap.ic_launcher)
-            )
-                .setDesiredHeight(640)
-                .setAutoExpandBubble(false)
-                .setSuppressNotification(false)
-                .build();
-            builder.setBubbleMetadata(bubble);
-        }
         manager.notify(("chat-" + senderId).hashCode(), builder.build());
     }
 
