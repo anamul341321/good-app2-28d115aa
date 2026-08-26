@@ -13,8 +13,25 @@ import {
 } from "@/lib/friends.functions";
 import { CallButtons } from "@/components/CallProvider";
 import { MessengerAvatar } from "@/components/messenger/MessengerAvatar";
+import { SocialSwitch } from "@/components/social/SocialSwitch";
+import { useFeedMedia } from "@/lib/feed-media";
 
 import { usePresence } from "@/lib/presence";
+
+/** প্রোফাইল ছবি (স্টোরেজ path হলে signed URL বানিয়ে দেখায়) */
+function PersonAvatar({
+  name,
+  path,
+  online,
+}: {
+  name: string;
+  path?: string | null;
+  online?: boolean;
+}) {
+  const url = useFeedMedia(path);
+  return <MessengerAvatar name={name} src={url ?? null} online={online} size="lg" />;
+}
+
 
 export const Route = createFileRoute("/_authenticated/friends")({
   component: FriendsPage,

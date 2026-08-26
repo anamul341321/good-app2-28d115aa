@@ -58,6 +58,7 @@ import { Route as AuthenticatedHistoryRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedFriendsRouteImport } from './routes/_authenticated/friends'
 import { Route as AuthenticatedFeedRouteImport } from './routes/_authenticated/feed'
 import { Route as AuthenticatedEarningsRouteImport } from './routes/_authenticated/earnings'
+import { Route as AuthenticatedSocialIndexRouteImport } from './routes/_authenticated/social/index'
 import { Route as AuthenticatedChatIndexRouteImport } from './routes/_authenticated/chat.index'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as ApiPublicWhitelistRecheckRouteImport } from './routes/api/public/whitelist-recheck'
@@ -331,6 +332,12 @@ const AuthenticatedEarningsRoute = AuthenticatedEarningsRouteImport.update({
   path: '/earnings',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedSocialIndexRoute =
+  AuthenticatedSocialIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedSocialRoute,
+  } as any)
 const AuthenticatedChatIndexRoute = AuthenticatedChatIndexRouteImport.update({
   id: '/chat/',
   path: '/chat/',
@@ -545,6 +552,7 @@ export interface FileRoutesByFullPath {
   '/api/public/whitelist-recheck': typeof ApiPublicWhitelistRecheckRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/chat/': typeof AuthenticatedChatIndexRoute
+  '/social/': typeof AuthenticatedSocialIndexRoute
   '/chat/group/$groupId': typeof AuthenticatedChatGroupGroupIdRoute
   '/feed/user/$userId': typeof AuthenticatedFeedUserUserIdRoute
   '/api/public/app/download': typeof ApiPublicAppDownloadRoute
@@ -583,7 +591,6 @@ export interface FileRoutesByTo {
   '/reverify': typeof AuthenticatedReverifyRoute
   '/send': typeof AuthenticatedSendRoute
   '/settings': typeof AuthenticatedSettingsRoute
-  '/social': typeof AuthenticatedSocialRouteWithChildren
   '/studio': typeof AuthenticatedStudioRoute
   '/videos': typeof AuthenticatedVideosRoute
   '/wallet': typeof AuthenticatedWalletRoute
@@ -622,6 +629,7 @@ export interface FileRoutesByTo {
   '/api/public/whitelist-recheck': typeof ApiPublicWhitelistRecheckRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/chat': typeof AuthenticatedChatIndexRoute
+  '/social': typeof AuthenticatedSocialIndexRoute
   '/chat/group/$groupId': typeof AuthenticatedChatGroupGroupIdRoute
   '/feed/user/$userId': typeof AuthenticatedFeedUserUserIdRoute
   '/api/public/app/download': typeof ApiPublicAppDownloadRoute
@@ -702,6 +710,7 @@ export interface FileRoutesById {
   '/api/public/whitelist-recheck': typeof ApiPublicWhitelistRecheckRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/_authenticated/chat/': typeof AuthenticatedChatIndexRoute
+  '/_authenticated/social/': typeof AuthenticatedSocialIndexRoute
   '/_authenticated/chat/group/$groupId': typeof AuthenticatedChatGroupGroupIdRoute
   '/_authenticated/feed/user/$userId': typeof AuthenticatedFeedUserUserIdRoute
   '/api/public/app/download': typeof ApiPublicAppDownloadRoute
@@ -782,6 +791,7 @@ export interface FileRouteTypes {
     | '/api/public/whitelist-recheck'
     | '/lovable/email/suppression'
     | '/chat/'
+    | '/social/'
     | '/chat/group/$groupId'
     | '/feed/user/$userId'
     | '/api/public/app/download'
@@ -820,7 +830,6 @@ export interface FileRouteTypes {
     | '/reverify'
     | '/send'
     | '/settings'
-    | '/social'
     | '/studio'
     | '/videos'
     | '/wallet'
@@ -859,6 +868,7 @@ export interface FileRouteTypes {
     | '/api/public/whitelist-recheck'
     | '/lovable/email/suppression'
     | '/chat'
+    | '/social'
     | '/chat/group/$groupId'
     | '/feed/user/$userId'
     | '/api/public/app/download'
@@ -938,6 +948,7 @@ export interface FileRouteTypes {
     | '/api/public/whitelist-recheck'
     | '/lovable/email/suppression'
     | '/_authenticated/chat/'
+    | '/_authenticated/social/'
     | '/_authenticated/chat/group/$groupId'
     | '/_authenticated/feed/user/$userId'
     | '/api/public/app/download'
@@ -1335,6 +1346,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEarningsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/social/': {
+      id: '/_authenticated/social/'
+      path: '/'
+      fullPath: '/social/'
+      preLoaderRoute: typeof AuthenticatedSocialIndexRouteImport
+      parentRoute: typeof AuthenticatedSocialRoute
+    }
     '/_authenticated/chat/': {
       id: '/_authenticated/chat/'
       path: '/chat'
@@ -1547,10 +1565,12 @@ const AuthenticatedFeedRouteWithChildren =
 
 interface AuthenticatedSocialRouteChildren {
   AuthenticatedSocialMessengerRoute: typeof AuthenticatedSocialMessengerRoute
+  AuthenticatedSocialIndexRoute: typeof AuthenticatedSocialIndexRoute
 }
 
 const AuthenticatedSocialRouteChildren: AuthenticatedSocialRouteChildren = {
   AuthenticatedSocialMessengerRoute: AuthenticatedSocialMessengerRoute,
+  AuthenticatedSocialIndexRoute: AuthenticatedSocialIndexRoute,
 }
 
 const AuthenticatedSocialRouteWithChildren =
