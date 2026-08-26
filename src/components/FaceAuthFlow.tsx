@@ -55,6 +55,7 @@ export function FaceAuthFlow(props: Props) {
   const [frameOk, setFrameOk] = useState(false);
   const [skipping, setSkipping] = useState(false);
   const busyRef = useRef(false);
+  const retriesRef = useRef(0);
 
   const finishSignup = async (addr: string) => {
     setNote("✅ ভেরিফিকেশন সফল — একাউন্ট তৈরি হচ্ছে…");
@@ -213,12 +214,23 @@ export function FaceAuthFlow(props: Props) {
         }
       }
     } catch {
-      // ignore — নতুন key দিয়ে চেষ্টা হবে
+      // ignore — নিচে আবার চেষ্টা হবে
     }
+    // প্রথম রিট্রাই: আগের key/লিংক দিয়েই আবার চেষ্টা (নতুন key লাগে না)
+    if (url && address && retriesRef.current === 0) {
+      retriesRef.current = 1;
+      setTicks(0);
+      setFrameOk(false);
+      setPhase("verify");
+      setNote("ফেস ভেরিফিকেশন খুলছে — ক্যামেরার সামনে মুখ ধরুন");
+      return;
+    }
+    retriesRef.current = 0;
     setAddress(null);
     setUrl(null);
     await begin();
   };
+
 
   const openExternal = () => {
     if (!url) return;
@@ -305,18 +317,19 @@ export function FaceAuthFlow(props: Props) {
         </div>
       </div>
 
-      <div className="relative flex flex-1 items-center justify-center overflow-hidden bg-black px-2 py-2 sm:px-4">
+      <div className="relative flex flex-1 items-stretch justify-center overflow-hidden bg-black">
         {phase === "verify" && url ? (
-          <div className="relative h-[min(72dvh,640px)] w-full max-w-md overflow-hidden rounded-lg bg-white">
-            <div className="h-full w-full overflow-hidden bg-white">
+          <div className="relative h-full w-full overflow-hidden bg-white">
+            <div className="h-full w-full overflow-y-auto bg-white">
               <iframe
                 src={url}
                 title="Good-App face verification"
                 allow="camera; microphone; fullscreen"
                 onLoad={() => setFrameOk(true)}
-                className="h-full w-full border-0"
+                className="h-full min-h-full w-full border-0"
               />
             </div>
+
             {!frameOk && (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-white px-6 text-center">
                 <Loader2 className="h-8 w-8 animate-spin text-cyan-600" />
