@@ -253,7 +253,7 @@ function FriendsPage() {
           </section>
         )}
 
-        {/* সাজেশন ট্যাব — ফেসবুকের মতো ২ কলাম বড় কার্ড */}
+        {/* সাজেশন ট্যাব — ফেসবুকের মতো লিস্ট রো */}
         {tab === "suggest" && (
           <section className="rounded-xl bg-white dark:bg-card p-3">
             {incoming.length > 0 && (
@@ -269,33 +269,48 @@ function FriendsPage() {
               <div className="flex justify-center py-10"><Loader2 className="h-6 w-6 animate-spin text-blue-600" /></div>
             ) : (
               <>
-                <div className="grid grid-cols-2 gap-3">
-                  {people.map((p: any) => {
-                    const name = p.display_name ?? "User";
-                    const isSent = sentIds[p.id] || p.status === "pending_sent";
-                    return (
-                      <div key={p.id} className="overflow-hidden rounded-xl border border-gray-200 dark:border-border">
-                        <Link to="/feed/user/$userId" params={{ userId: p.id }} className="block aspect-square w-full">
-                          <BigPhoto path={p.avatar_url} name={name} />
-                        </Link>
-                        <div className="p-2">
-                          <p className="truncate text-[14px] font-bold text-gray-900 dark:text-foreground">{name}</p>
-                          <p className="mb-2 truncate text-[11px] text-gray-500 dark:text-muted-foreground">
-                            {p.mutualCount ? `${p.mutualCount} জন কমন বন্ধু` : `UID ${p.uid_seq ?? "-"}`}
-                          </p>
-                          <button
-                            onClick={() => !isSent && add.mutate(p.id)}
-                            disabled={isSent || add.isPending}
-                            className={`btn-press flex w-full items-center justify-center gap-1.5 rounded-md py-2 text-[13px] font-bold ${
-                              isSent ? "bg-gray-200 dark:bg-muted text-gray-600 dark:text-muted-foreground" : "bg-blue-600 text-white"
-                            }`}>
-                            {isSent ? <><Check className="h-4 w-4" /> পাঠানো</> : <><UserPlus className="h-4 w-4" /> বন্ধু যোগ করুন</>}
-                          </button>
+                <div className="divide-y divide-gray-100 dark:divide-border/20">
+                  {people
+                    .filter((p: any) => !hiddenIds[p.id])
+                    .map((p: any) => {
+                      const name = p.display_name ?? "User";
+                      const isSent = sentIds[p.id] || p.status === "pending_sent";
+                      return (
+                        <div key={p.id} className="flex items-center gap-3 py-3">
+                          <Link
+                            to="/feed/user/$userId"
+                            params={{ userId: p.id }}
+                            className="h-[76px] w-[76px] shrink-0 overflow-hidden rounded-full bg-gray-200 dark:bg-secondary">
+                            <BigPhoto path={p.avatar_url} name={name} />
+                          </Link>
+                          <div className="min-w-0 flex-1">
+                            <Link to="/feed/user/$userId" params={{ userId: p.id }} className="block">
+                              <p className="truncate text-[16px] font-bold text-gray-900 dark:text-foreground">{name}</p>
+                            </Link>
+                            <p className="mb-1.5 truncate text-[12.5px] text-gray-500 dark:text-muted-foreground">
+                              {p.mutualCount ? `${p.mutualCount} জন কমন বন্ধু` : `UID ${p.uid_seq ?? "-"}`}
+                            </p>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => !isSent && add.mutate(p.id)}
+                                disabled={isSent || add.isPending}
+                                className={`btn-press flex flex-1 items-center justify-center gap-1.5 rounded-md py-2 text-[13.5px] font-bold ${
+                                  isSent ? "bg-gray-200 dark:bg-muted text-gray-600 dark:text-muted-foreground" : "bg-blue-600 text-white"
+                                }`}>
+                                {isSent ? <><Check className="h-4 w-4" /> পাঠানো</> : <><UserPlus className="h-4 w-4" /> বন্ধু যোগ</>}
+                              </button>
+                              <button
+                                onClick={() => setHiddenIds((s) => ({ ...s, [p.id]: true }))}
+                                className="btn-press flex-1 rounded-md bg-gray-200 dark:bg-muted py-2 text-[13.5px] font-bold text-gray-800 dark:text-foreground">
+                                সরান
+                              </button>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
                 </div>
+
                 {people.length === 0 && (
                   <p className="py-8 text-center text-sm font-semibold text-gray-500">এখন কোনো সাজেশন নেই</p>
                 )}
