@@ -174,11 +174,8 @@ export function FaceAuthFlow(props: Props) {
         setTicks((t) => t + 1);
         try {
           if (mode === "login") {
-            const res = await resolve({ data: { walletAddress: address } });
-            if (res.found && res.phone) {
+            if (await finishLoginVerify(address)) {
               stopped = true;
-              setPhase("done");
-              props.onResolved?.(res.phone);
               return;
             }
             continue;
@@ -188,6 +185,7 @@ export function FaceAuthFlow(props: Props) {
           stopped = true;
           await finishSignup(address);
           return;
+
         } catch {
           // চেক ব্যর্থ হলে চুপচাপ আবার চেষ্টা করবে
         }
