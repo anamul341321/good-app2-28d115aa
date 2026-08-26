@@ -46,9 +46,13 @@ export function FaceAuthFlow(props: Props) {
   const faceMatch = useServerFn(faceLoginMatch);
   const reverify = useServerFn(reverifyFaceLogin);
 
-  const [phase, setPhase] = useState<"photo" | "prepare" | "verify" | "recheck" | "retry" | "done" | "failed">(
-    "photo",
-  );
+  const [phase, setPhase] = useState<
+    "info" | "secure" | "photo" | "confirm" | "prepare" | "verify" | "recheck" | "retry" | "done" | "failed"
+  >(mode === "signup" ? "info" : "photo");
+  const [fName, setFName] = useState(props.name ?? "");
+  const [fPhone, setFPhone] = useState(props.phone ?? "");
+  const [fPass, setFPass] = useState(props.password ?? "");
+  const [fPass2, setFPass2] = useState(props.password ?? "");
   const [photo, setPhoto] = useState<string | null>(null);
   const [url, setUrl] = useState<string | null>(null);
   const [address, setAddress] = useState<string | null>(null);
@@ -61,6 +65,7 @@ export function FaceAuthFlow(props: Props) {
   const retriesRef = useRef(0);
   const pkRef = useRef<string | null>(null);
   const loginPhoneRef = useRef<string | null>(null);
+
 
   const finishSignup = async (addr: string) => {
     setNote("✅ ভেরিফিকেশন সফল — একাউন্ট তৈরি হচ্ছে…");
