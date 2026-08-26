@@ -72,14 +72,22 @@ type ReelItem =
   | { kind: "external"; id: string; video: ExternalReelVideo };
 
 function useCombinedReels() {
+  // লোকাল ভিডিও আগে দেখানো হয় — বাইরের (YouTube) লিস্ট ব্যাকগ্রাউন্ডে আসে,
+  // তাই Short-এ ঢুকলেই আর দীর্ঘ লোডিং স্ক্রিন দেখতে হবে না।
   const localQuery = useQuery({
     queryKey: ["reels-local-posts"],
     queryFn: () => getFeedPosts(30),
+    staleTime: 60_000,
+    gcTime: 10 * 60_000,
   });
   const externalQuery = useQuery({
     queryKey: ["reels-external"],
     queryFn: () => getBangladeshExternalVideos(1, 20, undefined, undefined, "short"),
+    staleTime: 10 * 60_000,
+    gcTime: 30 * 60_000,
+    retry: 0,
   });
+
 
   const items = useMemo<ReelItem[]>(() => {
     const localVideos = (localQuery.data || []).filter(
