@@ -1,5 +1,6 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
+import { useFeedMedia } from "@/lib/feed-media";
 
 export function MessengerAvatar({
   name,
@@ -14,6 +15,7 @@ export function MessengerAvatar({
   size?: "sm" | "md" | "lg" | "xl";
   className?: string;
 }) {
+  const resolvedSrc = useFeedMedia(src);
   const sizeClasses = {
     sm: "h-8 w-8 text-[10px]",
     md: "h-12 w-12 text-sm",
@@ -31,7 +33,7 @@ export function MessengerAvatar({
   return (
     <div className={cn("relative shrink-0", className)}>
       <Avatar className={cn(sizeClasses[size], "border border-border/50 shadow-sm")}>
-        {src && <AvatarImage src={src} alt={name} className="object-cover" />}
+        {resolvedSrc && <AvatarImage src={resolvedSrc} alt={name} className="object-cover" />}
         <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10 font-black text-primary uppercase">
           {(name || "U").toString().slice(0, 1)}
         </AvatarFallback>

@@ -118,7 +118,7 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
-  const isSocialRoute = /^\/(social|chat|feed|friends|videos|reels|watch|studio|channel|user)(\/|$)/.test(pathname);
+  const isSocialRoute = /^\/(social|chat|feed|friends|videos|reels|watch|studio|channel|user|profile)(\/|$)/.test(pathname);
   useNativeApp();
   useEffect(() => {
     // After a redeploy, old chunk hashes 404. Auto-reload once so users never

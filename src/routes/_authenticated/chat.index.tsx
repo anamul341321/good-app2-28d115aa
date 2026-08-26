@@ -2,12 +2,15 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Search, Edit, Plus, Users, Check, MessageCircle, Menu, Home, UserRound } from "lucide-react";
+import { Search, Edit, Users, Check, MessageCircle, Menu } from "lucide-react";
 import { createGroup, listChats } from "@/lib/chat.functions";
 import { listFriends } from "@/lib/friends.functions";
+import { getPublicProfile } from "@/lib/social-users.functions";
+import { useAuth } from "@/hooks/useAuth";
 import { usePresence } from "@/lib/presence";
 import { StoryRow } from "@/components/messenger/StoryRow";
 import { ChatRow } from "@/components/messenger/ChatRow";
+import { MessengerAvatar } from "@/components/messenger/MessengerAvatar";
 import { MessengerSearchOverlay } from "@/components/messenger/MessengerSearchOverlay";
 import { Button } from "@/components/ui/button";
 import type { ReactNode } from "react";
@@ -32,6 +35,7 @@ export const Route = createFileRoute("/_authenticated/chat/")({
 
 export function ChatListPage() {
   const qc = useQueryClient();
+  const { user } = useAuth();
   const onlineIds = usePresence();
   const [showSearch, setShowSearch] = useState(false);
   const [showGroup, setShowGroup] = useState(false);
@@ -48,6 +52,13 @@ export function ChatListPage() {
     queryKey: ["friends"], 
     queryFn: () => listFriends(), 
     staleTime: 30_000 
+  });
+
+  const meProfile = useQuery({
+    queryKey: ["social-profile", user?.id],
+    queryFn: () => getPublicProfile({ data: { userId: user?.id ?? "" } }),
+    enabled: !!user?.id,
+    staleTime: 60_000,
   });
 
   const chats = data?.chats ?? [];
@@ -73,9 +84,11 @@ export function ChatListPage() {
   }, [chats, groups]);
 
 
+  const activeCount = useMemo(() => friendList.filter((friend) => onlineIds.has(friend.userId)).length, [friendList, onlineIds]);
+
   const activeUsers = useMemo(() => {
-    return friendList
-      .filter(f => onlineIds.has(f.userId))
+    return [...friendList]
+      .sort((a, b) => Number(onlineIds.has(b.userId)) - Number(onlineIds.has(a.userId)))
       .map(f => ({
         userId: f.userId,
         name: f.name,
@@ -89,8 +102,23 @@ export function ChatListPage() {
     <div className="flex min-h-[100dvh] flex-col bg-background text-foreground">
       {/* Messenger Header */}
       <header className="sticky top-0 z-40 border-b border-border/40 bg-background/95 px-4 pb-2 pt-[max(env(safe-area-inset-top),0.75rem)] backdrop-blur-md">
-        <div className="flex items-center justify-between">
-          <h1 className="font-sans text-[34px] font-black leading-none tracking-normal text-messenger-blue">messenger</h1>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            {user?.id && (
+              <Link to="/user/$userId" params={{ userId: user.id }} className="btn-press shrink-0 rounded-full" aria-label="আমার প্রোফাইল">
+                <MessengerAvatar
+                  name={(meProfile.data as any)?.display_name ?? "Me"}
+                  src={(meProfile.data as any)?.avatar_url ?? null}
+                  online
+                  size="md"
+                />
+              </Link>
+            )}
+            <div className="min-w-0">
+              <h1 className="font-sans text-[34px] font-black leading-none tracking-normal text-messenger-blue">messenger</h1>
+              <p className="mt-0.5 text-[12px] font-bold text-muted-foreground">{activeCount} জন active now</p>
+            </div>
+          </div>
           <div className="flex items-center gap-2.5">
             <Button
               type="button"
@@ -193,7 +221,7 @@ export function ChatListPage() {
 
       {/* Stories Row */}
       <section className="border-b border-border/35 bg-background">
-        <StoryRow activeUsers={activeUsers} />
+        <StoryRow activeUsers={activeUsers} activeCount={activeCount} />
       </section>
 
       {/* Conversation List */}
