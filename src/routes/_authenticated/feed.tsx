@@ -836,10 +836,10 @@ function FeedPage() {
           </button>
 
           <button onClick={() => navigate({ to: "/chat" })}
-            className="relative shrink-0 flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[11px] font-black bg-gray-100 dark:bg-secondary text-gray-600 dark:text-muted-foreground active:scale-95 transition-all">
+            className={`relative shrink-0 flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[11px] font-black active:scale-95 transition-all ${unreadCount > 0 ? "bg-destructive text-destructive-foreground shadow-[0_8px_18px_-8px_var(--color-destructive)]" : "bg-gray-100 dark:bg-secondary text-gray-600 dark:text-muted-foreground"}`}>
             <MessageCircle className="w-4 h-4" /> চ্যাট
             {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 min-w-[17px] h-[17px] bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center px-1">
+              <span className="absolute -top-1 -right-1 min-w-[17px] h-[17px] bg-background text-destructive ring-2 ring-destructive text-[9px] font-black rounded-full flex items-center justify-center px-1">
                 {unreadCount > 99 ? "99+" : unreadCount}
               </span>
             )}
