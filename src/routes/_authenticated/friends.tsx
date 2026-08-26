@@ -66,6 +66,8 @@ function FriendsPage() {
   const [people, setPeople] = useState<any[]>([]);
   const [hasMore, setHasMore] = useState(true);
   const [sentIds, setSentIds] = useState<Record<string, boolean>>({});
+  const [hiddenIds, setHiddenIds] = useState<Record<string, boolean>>({});
+
   const queryClient = useQueryClient();
   const onlineIds = usePresence();
 
