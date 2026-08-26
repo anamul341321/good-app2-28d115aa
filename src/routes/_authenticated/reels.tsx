@@ -506,12 +506,14 @@ function formatViews(n: number): string {
 function LocalReel({
   post,
   isActive,
+  isNear = true,
   muted,
   setMuted,
   onOpenComments,
 }: {
   post: Post;
   isActive: boolean;
+  isNear?: boolean;
   muted: boolean;
   setMuted: (v: boolean) => void;
   onOpenComments: (postId: string) => void;
