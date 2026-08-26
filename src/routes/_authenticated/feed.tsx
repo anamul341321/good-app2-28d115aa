@@ -23,6 +23,7 @@ import {
 import { toast } from "sonner";
 import StoryEditor from "@/components/social/StoryEditor";
 import StoryViewer from "@/components/social/StoryViewer";
+import { PeopleYouMayKnow } from "@/components/social/PeopleYouMayKnow";
 import { playUiSound } from "@/lib/ui-sounds";
 import VerifiedBadge from "@/components/VerifiedBadge";
 
@@ -941,7 +942,10 @@ function FeedPage() {
             </div>
           )}
 
+          {!showSearch && <PeopleYouMayKnow />}
+
           <div className="max-w-lg mx-auto">
+
             {postsLoading ? (
               <div className="flex justify-center py-20">
                 <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
