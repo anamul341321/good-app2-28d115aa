@@ -30,7 +30,7 @@ function VideosPage() {
         <nav className="mx-auto grid h-11 max-w-lg grid-cols-4 border-t border-border/30">
           <Link to="/feed" className="grid place-items-center text-muted-foreground" aria-label="ফিড"><Home className="h-5 w-5" /></Link>
           <Link to="/friends" className="grid place-items-center text-muted-foreground" aria-label="বন্ধু"><Users className="h-5 w-5" /></Link>
-          <Link to="/reels" className="grid place-items-center text-muted-foreground" aria-label="Short"><Film className="h-5 w-5" /></Link>
+          <Link to="/reels" search={{}} className="grid place-items-center text-muted-foreground" aria-label="Short"><Film className="h-5 w-5" /></Link>
           <Link to="/chat" className="grid place-items-center text-muted-foreground" aria-label="মেসেঞ্জার"><MessageCircle className="h-5 w-5" /></Link>
         </nav>
       </header>

@@ -799,7 +799,7 @@ function FeedPage() {
             <Video className="w-4 h-4" /> ভিডিও
           </Link>
 
-          <button onClick={() => navigate({ to: "/reels" })} title="Short"
+          <button onClick={() => navigate({ to: "/reels", search: {} })} title="Short"
             className="shrink-0 flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[11px] font-black text-white bg-gradient-to-r from-pink-600 via-fuchsia-500 to-violet-500 shadow-[0_8px_18px_-8px_rgba(219,39,119,0.8)] active:scale-95 transition-all">
             <Film className="w-4 h-4" /> Short
           </button>
@@ -900,7 +900,7 @@ function FeedPage() {
                   <Video className="w-5 h-5 text-red-500" />
                   <span className="text-[10px] text-gray-500 font-medium">ভিডিও</span>
                 </button>
-                <button onClick={() => navigate({ to: "/reels" })} className="flex flex-col items-center gap-0.5 px-2">
+                <button onClick={() => navigate({ to: "/reels", search: {} })} className="flex flex-col items-center gap-0.5 px-2">
                   <Film className="w-5 h-5 text-pink-500" />
                   <span className="text-[10px] text-gray-500 font-medium">Short</span>
                 </button>

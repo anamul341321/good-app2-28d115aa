@@ -129,7 +129,7 @@ function WatchPage() {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-2 bg-background">
         <p className="text-sm font-bold text-muted-foreground">ভিডিওটি পাওয়া যায়নি</p>
-        <Link to="/reels" className="text-sm font-bold text-primary">
+        <Link to="/reels" search={{}} className="text-sm font-bold text-primary">
           রিলসে ফিরে যান
         </Link>
       </div>
