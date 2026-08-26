@@ -158,8 +158,12 @@ export const completeFaceSignup = createServerFn({ method: "POST" })
  * ভেরিফিকেশন কয়েকবার চেষ্টা করেও না হলে ইউজার স্কিপ করে ঢুকতে পারবে —
  * একাউন্ট তৈরি হবে কিন্তু ফেস ভেরিফিকেশন বাকি থাকবে (প্রোফাইলে লাল করে দেখাবে)।
  */
+const SkipInput = CompleteInput.extend({
+  walletAddress: z.string().trim().optional().nullable(),
+});
+
 export const skipFaceSignup = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) => CompleteInput.parse(input))
+  .inputValidator((input: unknown) => SkipInput.parse(input))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
