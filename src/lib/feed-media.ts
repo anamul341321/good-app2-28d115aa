@@ -6,12 +6,59 @@ const SIGNED_URL_TTL_SECONDS = 60 * 60 * 24 * 7; // 7 days
 
 type CacheEntry = { url: string; expiresAt: number };
 
+const STORAGE_KEY = "feed_media_signed_urls_v1";
+
 const signedUrlCache = new Map<string, CacheEntry>();
 const inFlight = new Map<string, Promise<string>>();
+
+/** পেজ রিলোডেও signed URL গুলো ধরে রাখা হয়, তাই ছবি সাথে সাথেই দেখা যায় */
+function loadPersisted() {
+  if (typeof localStorage === "undefined") return;
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const parsed = JSON.parse(raw) as Record<string, CacheEntry>;
+    const now = Date.now();
+    for (const [key, entry] of Object.entries(parsed)) {
+      if (entry?.url && entry.expiresAt > now) signedUrlCache.set(key, entry);
+    }
+  } catch {
+    /* ignore corrupt cache */
+  }
+}
+loadPersisted();
+
+let persistTimer: ReturnType<typeof setTimeout> | undefined;
+function persistSoon() {
+  if (typeof localStorage === "undefined") return;
+  if (persistTimer) return;
+  persistTimer = setTimeout(() => {
+    persistTimer = undefined;
+    try {
+      const now = Date.now();
+      const obj: Record<string, CacheEntry> = {};
+      for (const [key, entry] of signedUrlCache) {
+        if (entry.expiresAt > now) obj[key] = entry;
+      }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(obj));
+    } catch {
+      /* quota — ignore */
+    }
+  }, 500);
+}
+
+/** cache-এ থাকলে সাথে সাথেই URL ফেরত দেয় (কোনো await ছাড়া) */
+export function peekFeedMedia(pathOrUrl?: string | null): string | undefined {
+  if (!pathOrUrl) return undefined;
+  if (isHttpUrl(pathOrUrl)) return pathOrUrl;
+  const cached = signedUrlCache.get(pathOrUrl);
+  return cached && cached.expiresAt > Date.now() ? cached.url : undefined;
+}
 
 function isHttpUrl(value: string): boolean {
   return /^https?:\/\//i.test(value);
 }
+
 
 /**
  * Resolves a stored media path (or already-public URL) to a usable URL.
