@@ -249,3 +249,29 @@ export const getPublicProfile = createServerFn({ method: "GET" })
       created_at: (row as any).created_at ?? null,
     };
   });
+
+// Bulk public profiles — profiles RLS own-row only, তাই feed/story/comment-এ
+// অন্য ইউজারের নাম-ছবি দেখাতে admin দিয়ে শুধু non-sensitive ফিল্ড ফেরত যায়।
+export const getPublicProfiles = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({
+    userIds: z.array(z.string().uuid()).max(300),
+  }).parse(i))
+  .handler(async ({ data }) => {
+    const ids = Array.from(new Set(data.userIds));
+    if (ids.length === 0) return { profiles: [] as any[] };
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: rows } = await supabaseAdmin
+      .from("profiles")
+      .select("id, display_name, avatar_url, uid_seq, is_verified_badge")
+      .in("id", ids);
+    return {
+      profiles: ((rows ?? []) as any[]).map((r) => ({
+        id: r.id as string,
+        display_name: r.display_name ?? null,
+        avatar_url: r.avatar_url ?? null,
+        uid_seq: r.uid_seq ?? null,
+        is_verified_badge: Boolean(r.is_verified_badge),
+      })),
+    };
+  });
