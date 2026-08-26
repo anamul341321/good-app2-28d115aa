@@ -570,6 +570,20 @@ function LocalReel({
     }
   };
 
+  const toggleMute = (event?: React.MouseEvent<HTMLButtonElement>) => {
+    event?.stopPropagation();
+    const nextMuted = !muted;
+    setMuted(nextMuted);
+    const el = videoRef.current;
+    if (!el) return;
+    el.muted = nextMuted;
+    if (!nextMuted) {
+      el.volume = 1;
+      el.play().catch(() => {});
+      setPaused(false);
+    }
+  };
+
   // এক ট্যাপ = সাউন্ড চালু / পজ-প্লে, ডাবল ট্যাপ = লাভ (TikTok স্টাইল)
   const handleTap = () => {
     const now = Date.now();
@@ -587,12 +601,7 @@ function LocalReel({
       singleTapTimer.current = null;
       if (muted) {
         // প্রথম ট্যাপে সাউন্ড চালু হবে
-        const el = videoRef.current;
-        setMuted(false);
-        if (el) {
-          el.muted = false;
-          el.play().catch(() => {});
-        }
+          toggleMute();
         return;
       }
       togglePlay();
@@ -641,10 +650,13 @@ function LocalReel({
       )}
 
       <button
-        onClick={() => setMuted(!muted)}
-        className="absolute right-3 top-4 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-black/40 text-white"
+        type="button"
+        aria-label={muted ? "সাউন্ড চালু করুন" : "সাউন্ড বন্ধ করুন"}
+        onClick={toggleMute}
+        className="absolute right-3 top-[calc(env(safe-area-inset-top)+4rem)] z-40 flex h-10 items-center justify-center gap-1.5 rounded-full bg-black/65 px-3 text-white shadow-lg backdrop-blur"
       >
         {muted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+        <span className="text-[11px] font-black">{muted ? "Unmute" : "Mute"}</span>
       </button>
 
       <div className="absolute bottom-6 left-3 z-20 max-w-[75%] text-white">
@@ -716,6 +728,19 @@ function ExternalReel({
     win.postMessage(JSON.stringify({ event: "command", func: cmd, args: [] }), "*");
   }, [isActive, isDirectVideo]);
 
+  useEffect(() => {
+    if (isDirectVideo) {
+      const el = videoRef.current;
+      if (el) el.muted = muted;
+      return;
+    }
+    if (!isActive) return;
+    iframeRef.current?.contentWindow?.postMessage(
+      JSON.stringify({ event: "command", func: muted ? "mute" : "unMute", args: [] }),
+      "*",
+    );
+  }, [muted, isActive, isDirectVideo]);
+
   const togglePlay = () => {
     if (isDirectVideo) {
       const el = videoRef.current;
@@ -737,6 +762,33 @@ function ExternalReel({
       "*",
     );
     setPaused(next);
+  };
+
+  const toggleMute = (event?: React.MouseEvent<HTMLButtonElement>) => {
+    event?.stopPropagation();
+    const nextMuted = !muted;
+    setMuted(nextMuted);
+    if (isDirectVideo) {
+      const el = videoRef.current;
+      if (!el) return;
+      el.muted = nextMuted;
+      if (!nextMuted) {
+        el.volume = 1;
+        el.play().catch(() => {});
+        setPaused(false);
+      }
+      return;
+    }
+    const win = iframeRef.current?.contentWindow;
+    if (!win) return;
+    win.postMessage(
+      JSON.stringify({ event: "command", func: nextMuted ? "mute" : "unMute", args: [] }),
+      "*",
+    );
+    if (!nextMuted) {
+      win.postMessage(JSON.stringify({ event: "command", func: "playVideo", args: [] }), "*");
+      setPaused(false);
+    }
   };
 
   return (
@@ -777,7 +829,7 @@ function ExternalReel({
         className="absolute inset-0 z-10"
         onClick={() => {
           if (muted) {
-            setMuted(false);
+            toggleMute();
             return;
           }
           togglePlay();
@@ -792,10 +844,13 @@ function ExternalReel({
       )}
 
       <button
-        onClick={() => setMuted(!muted)}
-        className="absolute right-3 top-16 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-black/40 text-white"
+        type="button"
+        aria-label={muted ? "সাউন্ড চালু করুন" : "সাউন্ড বন্ধ করুন"}
+        onClick={toggleMute}
+        className="absolute right-3 top-[calc(env(safe-area-inset-top)+4rem)] z-40 flex h-10 items-center justify-center gap-1.5 rounded-full bg-black/65 px-3 text-white shadow-lg backdrop-blur"
       >
         {muted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+        <span className="text-[11px] font-black">{muted ? "Unmute" : "Mute"}</span>
       </button>
 
 
