@@ -51,11 +51,33 @@ export default function StoryEditor({ imageFile, onClose, onPublish, isPending }
     };
   }, []);
 
-  const filteredMusic = STORY_MUSIC_LIBRARY.filter((m) =>
+  // অনলাইন সার্চ — যেই গানের নাম লিখবে, সেই গানই আসবে (আসল প্রিভিউ)
+  useEffect(() => {
+    const q = musicQuery.trim();
+    if (q.length < 2) { setRemoteTracks([]); setSearching(false); return; }
+    setSearching(true);
+    const timer = setTimeout(async () => {
+      try {
+        const res = await searchStoryMusic({ data: { query: q } });
+        setRemoteTracks((res?.tracks ?? []) as StoryMusicTrack[]);
+      } catch {
+        setRemoteTracks([]);
+      } finally {
+        setSearching(false);
+      }
+    }, 450);
+    return () => clearTimeout(timer);
+  }, [musicQuery]);
+
+  const localMatches = STORY_MUSIC_LIBRARY.filter((m) =>
     m.title.toLowerCase().includes(musicQuery.toLowerCase()) ||
     m.artist.toLowerCase().includes(musicQuery.toLowerCase()) ||
     m.genre.toLowerCase().includes(musicQuery.toLowerCase())
   );
+
+  const filteredMusic = musicQuery.trim().length >= 2
+    ? [...remoteTracks, ...localMatches.filter((l) => !remoteTracks.some((r) => r.title.toLowerCase() === l.title.toLowerCase()))]
+    : localMatches;
 
   const playPreview = (song: StoryMusicTrack) => {
     if (audioRef.current) {
