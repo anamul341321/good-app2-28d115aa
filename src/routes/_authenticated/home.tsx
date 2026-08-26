@@ -205,9 +205,37 @@ function HomePage() {
         <div className="absolute bottom-[20%] left-[-10%] w-[40%] h-[30%] rounded-full bg-purple-500 blur-[100px]" />
       </div>
 
-      <AnnouncementTicker />
+      {/* দুইটি প্রধান বাটন — মেসেঞ্জার ও নিউজ ফিড */}
+      <div className="grid grid-cols-2 gap-3">
+        <Link to="/social/messenger"
+          className="rounded-3xl p-4 relative overflow-hidden btn-press border border-white/20 shadow-[0_18px_36px_-18px_rgba(59,130,246,0.7)] flex flex-col justify-between h-32"
+          style={{ background: "linear-gradient(135deg, #0088cc 0%, #3b82f6 55%, #8b5cf6 100%)" }}>
+          <div className="absolute -top-8 -right-8 w-28 h-28 rounded-full bg-white/20 blur-2xl" />
+          <div className="relative w-11 h-11 rounded-2xl bg-white/25 backdrop-blur border border-white/40 flex items-center justify-center text-white">
+            <MessageCircle className="w-6 h-6" />
+          </div>
+          <div className="relative text-white">
+            <p className="text-[9px] uppercase tracking-[0.2em] font-black text-white/85">Messenger</p>
+            <p className="text-base font-black leading-tight mt-0.5">{t("মেসেঞ্জার", "Messenger")}</p>
+          </div>
+        </Link>
 
-      <div data-tour="mining" data-voice="home.mining" className="relative mb-6">
+        <Link to="/feed"
+          className="rounded-3xl p-4 relative overflow-hidden btn-press border border-white/20 shadow-[0_18px_36px_-18px_rgba(24,119,242,0.7)] flex flex-col justify-between h-32"
+          style={{ background: "linear-gradient(135deg, #1877F2 0%, #42a5f5 55%, #0d47a1 100%)" }}>
+          <div className="absolute -top-8 -right-8 w-28 h-28 rounded-full bg-white/20 blur-2xl" />
+          <div className="relative w-11 h-11 rounded-2xl bg-white/25 backdrop-blur border border-white/40 flex items-center justify-center text-white">
+            <Newspaper className="w-6 h-6" />
+          </div>
+          <div className="relative text-white">
+            <p className="text-[9px] uppercase tracking-[0.2em] font-black text-white/85">Feed</p>
+            <p className="text-base font-black leading-tight mt-0.5">{t("নিউজ ফিড", "News Feed")}</p>
+          </div>
+        </Link>
+      </div>
+
+      {/* মাইনিং কার্ড */}
+      <div data-tour="mining" data-voice="home.mining" className="relative">
         <MiningCounter
           accrued={Number(data.mining?.accrued_amount ?? 0)}
           withdrawn={Number(data.mining?.mining_withdrawn ?? 0)}
@@ -222,71 +250,10 @@ function HomePage() {
           leagueCount={Number((data as any).bonus?.firstVerifyCount ?? 0)}
           balanceBreakdown={(data as any).balanceBreakdown}
         />
-
       </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        {/* Quick Balance/Wallet Mini */}
-        <Link to="/wallet" className="premium-panel rounded-2xl p-4 flex flex-col justify-between h-32 border-l-4 border-l-cyan shadow-sm active:scale-95 transition-all">
-          <div>
-            <p className="text-[10px] uppercase text-muted-foreground tracking-widest font-black">{t("ব্যালেন্স", "Balance")}</p>
-            <p className="text-xl font-black text-navy mt-1" translate="no">{(data as any).balanceBreakdown?.current_balance || 0}৳</p>
-          </div>
-          <div className="flex items-center justify-between mt-2">
-            <p className="text-[10px] font-bold text-cyan flex items-center gap-1">
-              {t("ওয়ালেট", "Wallet")} <ArrowUpRight className="w-3 h-3" />
-            </p>
-            <div className="h-6 w-6 rounded-lg bg-cyan/10 flex items-center justify-center">
-              <Wallet className="w-3.5 h-3.5 text-cyan" />
-            </div>
-          </div>
-        </Link>
-
-        {/* Support/Messenger Mini */}
-        <Link to="/social/messenger" className="premium-panel rounded-2xl p-4 flex flex-col justify-between h-32 border-l-4 border-l-violet shadow-sm active:scale-95 transition-all">
-          <div>
-            <p className="text-[10px] uppercase text-muted-foreground tracking-widest font-black">{t("মেসেঞ্জার", "Messenger")}</p>
-            <p className="text-xs font-black text-navy mt-1">{t("সাপোর্ট ও চ্যাট", "Support & Chat")}</p>
-          </div>
-          <div className="flex items-center justify-between mt-2">
-            <p className="text-[10px] font-bold text-violet flex items-center gap-1">
-              {t("ওপেন", "Open")} <ChevronRight className="w-3 h-3" />
-            </p>
-            <div className="h-6 w-6 rounded-lg bg-violet/10 flex items-center justify-center">
-              <MessageSquare className="w-3.5 h-3.5 text-violet" />
-            </div>
-          </div>
-        </Link>
-      </div>
-
-      {/* সাম্প্রতিক হিসাব — কোন টাকা কোথা থেকে এলো/গেল */}
-      <RecentHistoryCard />
-
-
-
-      {/* Verify progress will be moved inside the network section for better organization */}
-
-
-      <HeroBanner
-        adminOff={(data as any)?.payoutSettings?.withdrawEnabled === false}
-        adminMessage={(data as any)?.payoutSettings?.withdrawOffMessage}
-        rates={(data as any)?.bonus?.rates ?? null}
-      />
-
-      {/* নেটিভ অ্যাপ ডাউনলোড — এক ট্যাপে APK নামবে */}
-      <ApkDownloadCard />
 
       <VoucherPopup vouchers={(data as any).vouchers ?? []} onClaimed={() => refetch()} />
 
-      {!(data.profile as any)?.kyc_verified && (
-        <Link to="/kyc" className="block rounded-2xl p-3 text-center shadow-lg btn-press ring-2 ring-rose-400/70"
-              style={{ background: "linear-gradient(120deg,#e11d48,#f43f5e)" }}>
-          <p className="text-sm font-black text-white flex items-center justify-center gap-1.5">
-            <ShieldCheck className="w-4 h-4" /> {t("KYC করুন — নীল ✔ ব্যাজ ও উইথড্র চালু করুন", "Complete KYC — blue ✔ badge & withdraw")}
-          </p>
-          <p className="text-[11px] text-white/90 mt-0.5">{t("মাত্র ১ ধাপ (টেলিগ্রামে START) · KYC ছাড়া উইথড্র করা যাবে না", "Just 1 step (START in Telegram) · withdraw locked without KYC")}</p>
-        </Link>
-      )}
       {(appStatus?.faceVerifyEnabled === false || appStatus?.firstVerifyEnabled === false) && (
         <FaceVerifyPausedNotice
           message={
@@ -297,60 +264,7 @@ function HomePage() {
           variant="banner"
         />
       )}
-      <KycAlertBanner />
 
-
-
-
-
-
-      {/* News Feed Entry Button */}
-      <Link to="/feed"
-        className="block rounded-3xl p-5 relative overflow-hidden btn-press border border-white/20 shadow-[0_25px_50px_-12px_rgba(24,119,242,0.5)]"
-        style={{ background: "linear-gradient(135deg, #1877F2 0%, #42a5f5 55%, #0d47a1 100%)" }}>
-        <div className="absolute -top-10 -right-10 w-48 h-48 rounded-full bg-white/20 blur-3xl" />
-        <div className="relative flex items-center gap-4 text-white">
-          <div className="w-16 h-16 rounded-2xl bg-white/25 backdrop-blur border border-white/40 shrink-0 flex items-center justify-center shadow-lg">
-            <Newspaper className="w-8 h-8" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-[10px] uppercase tracking-[0.3em] font-black text-white/90">Good-App Social</p>
-            <p className="text-2xl font-black leading-tight drop-shadow-lg mt-1">{t("নিউজ ফিড", "News Feed")}</p>
-            <p className="text-xs text-white/90 font-bold mt-1 leading-relaxed">
-              {t("পোস্ট · স্টোরি · রিলস · ভিডিও", "Posts · Stories · Reels · Videos")}
-            </p>
-          </div>
-          <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
-            <ChevronRight className="w-5 h-5 text-white" />
-          </div>
-        </div>
-      </Link>
-
-      {/* Messenger Entry Button */}
-      <Link to="/social/messenger"
-        className="block rounded-3xl p-6 relative overflow-hidden btn-press border border-white/20 shadow-[0_25px_50px_-12px_rgba(59,130,246,0.5)]"
-        style={{ background: "linear-gradient(135deg, #0088cc 0%, #3b82f6 50%, #8b5cf6 100%)" }}>
-        <div className="absolute -top-10 -right-10 w-48 h-48 rounded-full bg-white/20 blur-3xl" />
-        <div className="absolute -bottom-10 -left-10 w-32 h-32 rounded-full bg-purple-500/20 blur-2xl" />
-        <div className="relative flex items-center gap-5 text-white">
-          <div className="w-16 h-16 p-4 rounded-2xl bg-white/25 backdrop-blur border border-white/40 text-3xl shrink-0 flex items-center justify-center shadow-lg">
-            <MessageCircle className="w-8 h-8" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <p className="text-[10px] uppercase tracking-[0.3em] font-black text-white/90">Good-App Messenger</p>
-              <span className="bg-white/30 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider">PREMIUM</span>
-            </div>
-            <p className="text-2xl font-black leading-tight drop-shadow-lg mt-1">{t("মেসেঞ্জার ও কলিং", "Messenger & Calling")}</p>
-            <p className="text-xs text-white/90 font-bold mt-1.5 leading-relaxed">
-              {t("চ্যাট · অডিও/ভিডিও কল · স্ক্রিন শেয়ারিং", "Chat · Audio/Video Call · Screen Share")}
-            </p>
-          </div>
-          <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
-            <ChevronRight className="w-5 h-5 text-white" />
-          </div>
-        </div>
-      </Link>
 
 
 
