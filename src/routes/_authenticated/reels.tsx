@@ -283,11 +283,12 @@ function ReelsPage() {
             WebkitOverflowScrolling: "touch" as any,
           }}
         >
-          {items.map((item) => (
+          {items.map((item, index) => (
             <ReelSlide
               key={item.id}
               item={item}
               isActive={activeId === item.id}
+              isNear={Math.abs(index - activeIndex) <= 1}
               muted={muted}
               setMuted={setMuted}
               onVisible={() => setActiveId(item.id)}
