@@ -1,0 +1,1 @@
+CREATE POLICY "avatars readable by signed-in users" ON storage.objects FOR SELECT TO authenticated USING (bucket_id = 'avatars');

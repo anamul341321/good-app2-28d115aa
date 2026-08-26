@@ -17,6 +17,9 @@ function isHttpUrl(value: string): boolean {
  * Paths stored under the private `social_media` bucket are converted into
  * time-limited signed URLs, cached in-memory to avoid refetching.
  */
+/** avatar পাথগুলো `avatars` bucket-এ থাকে, পোস্ট/মিডিয়া `social_media`-তে */
+const BUCKET_CHAIN = [BUCKET, "avatars"] as const;
+
 export async function resolveFeedMedia(pathOrUrl: string): Promise<string> {
   if (!pathOrUrl) return pathOrUrl;
   if (isHttpUrl(pathOrUrl)) return pathOrUrl;
@@ -29,19 +32,23 @@ export async function resolveFeedMedia(pathOrUrl: string): Promise<string> {
   const pending = inFlight.get(pathOrUrl);
   if (pending) return pending;
 
+  const looksLikeAvatar = /avatar/i.test(pathOrUrl);
+  const buckets = looksLikeAvatar ? [...BUCKET_CHAIN].reverse() : [...BUCKET_CHAIN];
+
   const promise = (async () => {
     try {
-      const { data, error } = await supabase.storage
-        .from(BUCKET)
-        .createSignedUrl(pathOrUrl, SIGNED_URL_TTL_SECONDS);
-      if (error || !data?.signedUrl) {
-        return pathOrUrl;
+      for (const bucket of buckets) {
+        const { data, error } = await supabase.storage
+          .from(bucket)
+          .createSignedUrl(pathOrUrl, SIGNED_URL_TTL_SECONDS);
+        if (error || !data?.signedUrl) continue;
+        signedUrlCache.set(pathOrUrl, {
+          url: data.signedUrl,
+          expiresAt: Date.now() + (SIGNED_URL_TTL_SECONDS - 60) * 1000,
+        });
+        return data.signedUrl;
       }
-      signedUrlCache.set(pathOrUrl, {
-        url: data.signedUrl,
-        expiresAt: Date.now() + (SIGNED_URL_TTL_SECONDS - 60) * 1000,
-      });
-      return data.signedUrl;
+      return pathOrUrl;
     } catch {
       return pathOrUrl;
     } finally {
@@ -52,6 +59,8 @@ export async function resolveFeedMedia(pathOrUrl: string): Promise<string> {
   inFlight.set(pathOrUrl, promise);
   return promise;
 }
+
+
 
 // React hook wrapper is defined below; kept in the same file per spec.
 import { useEffect, useState } from "react";
