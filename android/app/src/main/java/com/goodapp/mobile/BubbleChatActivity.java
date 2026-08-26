@@ -26,8 +26,9 @@ public class BubbleChatActivity extends BridgeActivity {
     }
 
     private void openChat(String peerId) {
-        if (peerId == null || peerId.isEmpty()) return;
-        final String url = BASE_URL + "/chat/" + android.net.Uri.encode(peerId);
+        final String url = peerId == null || peerId.isEmpty()
+            ? BASE_URL + "/chat"
+            : BASE_URL + "/chat/" + android.net.Uri.encode(peerId);
         try {
             getBridge().getWebView().post(() -> {
                 try {

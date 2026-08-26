@@ -20,6 +20,7 @@ type Handlers = {
 };
 
 let audioEl: HTMLAudioElement | null = null;
+let nativeOwner = 0;
 
 function beginNativeMediaPlayback(info: BackgroundMediaInfo) {
   try {
@@ -62,6 +63,16 @@ function endNativeMediaPlayback() {
   } catch {
     // native bridge optional
   }
+}
+
+function claimNativePlayback() {
+  nativeOwner += 1;
+  return nativeOwner;
+}
+
+function releaseNativePlayback(owner: number) {
+  if (owner !== nativeOwner) return;
+  endNativeMediaPlayback();
 }
 
 function getAudio(): HTMLAudioElement | null {
@@ -135,6 +146,7 @@ export function attachBackgroundAudio(
   info: BackgroundMediaInfo,
   handlers: Handlers = {},
 ): () => void {
+  const nativePlaybackOwner = claimNativePlayback();
   const audio = getAudio();
   setMediaSessionMetadata(info);
   setMediaSessionHandlers(video, handlers);
@@ -229,7 +241,7 @@ export function attachBackgroundAudio(
     usingAudio = false;
     usingNative = false;
     setMediaSessionHandlers(null, {});
-    endNativeMediaPlayback();
+    releaseNativePlayback(nativePlaybackOwner);
   };
 }
 
@@ -250,6 +262,7 @@ export function attachBackgroundEmbed(
     getPosition?: () => number;
   } = {},
 ): () => void {
+  const nativePlaybackOwner = claimNativePlayback();
   setMediaSessionMetadata(info);
   setMediaSessionHandlers(null, handlers);
 
@@ -373,7 +386,7 @@ export function attachBackgroundEmbed(
     usingNative = false;
     usingAudio = false;
     setMediaSessionHandlers(null, {});
-    endNativeMediaPlayback();
+    releaseNativePlayback(nativePlaybackOwner);
   };
 }
 
