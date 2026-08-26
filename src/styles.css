@@ -1266,14 +1266,23 @@ input, textarea, select { touch-action: manipulation; }
   &::-webkit-scrollbar { display: none; }
 }
 
-/* Status-bar safe top padding — Android WebView often reports 0 inset,
-   so we enforce a minimum tappable offset for fixed/sticky headers. */
+/* Status-bar safe top padding. On the web (and inside the Android WebView that
+   already offsets the status bar) we only need a small breathing gap, so the
+   pages fill the screen instead of leaving a big blank strip. Native builds that
+   draw under the status bar get a bigger offset via .native-shell. */
+:root {
+  --safe-top: max(env(safe-area-inset-top, 0px), 0.5rem);
+}
+html.native-shell {
+  --safe-top: max(env(safe-area-inset-top, 0px), 1.75rem);
+}
 @utility safe-top {
-  padding-top: max(env(safe-area-inset-top, 0px), 4.25rem);
+  padding-top: var(--safe-top);
 }
 @utility safe-top-nav {
-  top: calc(max(env(safe-area-inset-top, 0px), 4.25rem) + 60px);
+  top: calc(var(--safe-top) + 60px);
 }
 @utility safe-top-video-search {
-  top: calc(max(env(safe-area-inset-top, 0px), 4.25rem) + 100px);
+  top: calc(var(--safe-top) + 100px);
 }
+
