@@ -194,12 +194,13 @@ export default function StoryViewer({ story, allStories, userId, onClose, onDele
       .order("viewed_at", { ascending: false })
       .limit(100);
     if (data) {
-      const uids = data.map((d: any) => d.viewer_user_id);
-      const { data: users } = uids.length
-        ? await (supabase.from("profiles") as any).select("id, display_name, avatar_url").in("id", uids)
-        : { data: [] };
+      const uids = Array.from(new Set(data.map((d: any) => d.viewer_user_id).filter(Boolean))) as string[];
       const userMap: Record<string, any> = {};
-      (users || []).forEach((u: any) => { userMap[u.id] = u; });
+      if (uids.length) {
+        const { getPublicProfiles } = await import("@/lib/social-users.functions");
+        const res = await getPublicProfiles({ data: { userIds: uids } });
+        (res?.profiles ?? []).forEach((u: any) => { userMap[u.id] = u; });
+      }
       setViewers(data.map((d: any) => ({ ...d, user: userMap[d.viewer_user_id] })));
     }
   };
