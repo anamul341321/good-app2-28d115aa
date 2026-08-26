@@ -393,6 +393,30 @@ export default function VideoTab() {
         ) : null}
       </div>
 
+      {search && !showHistory && (channelHits?.users?.length ?? 0) > 0 ? (
+        <div className="border-b border-gray-100 dark:border-border/30 px-3 py-2">
+          <p className="mb-1 text-[11px] font-black uppercase tracking-widest text-gray-500">চ্যানেল</p>
+          <div className="space-y-1">
+            {(channelHits?.users ?? []).map((u: any) => (
+              <button
+                key={u.id}
+                type="button"
+                onClick={() => navigate({ to: "/channel/$userId", params: { userId: u.id } })}
+                className="flex w-full items-center gap-2 rounded-xl px-1 py-1.5 text-left hover:bg-gray-50 dark:hover:bg-secondary"
+              >
+                <MessengerAvatar name={u.display_name || "User"} src={u.avatar_url ?? undefined} size="md" />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[13.5px] font-black text-gray-900 dark:text-foreground">
+                    {u.display_name || "User"}
+                  </span>
+                  <span className="block text-[11px] text-gray-500">চ্যানেল দেখুন</span>
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
       {playing && (
         <InlinePlayer
           key={playing.id}
