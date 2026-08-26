@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { listUsers } from "@/lib/social-users.functions";
@@ -194,16 +194,6 @@ export default function VideoTab() {
     observer.observe(sentinelRef.current);
     return () => observer.disconnect();
   }, [fetchNextPage, hasNextPage, isFetchingNextPage, videos.length]);
-
-  // Hardware/browser back closes the player instead of leaving the page,
-  // and playback stops because the player unmounts.
-  useEffect(() => {
-    if (!playingId) return;
-    window.history.pushState({ goodAppVideoPlayer: true }, "");
-    const onPop = () => setPlayingId(null);
-    window.addEventListener("popstate", onPop);
-    return () => window.removeEventListener("popstate", onPop);
-  }, [playingId]);
 
   const runSearch = useCallback((term: string) => {
     setQuery(term);
@@ -533,6 +523,7 @@ function InlinePlayer({
   const [playerMode, setPlayerMode] = useState<"expanded" | "mini">("expanded");
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const dragStartY = useRef<number | null>(null);
+  const playerModeRef = useRef(playerMode);
 
   const relatedSearch = useMemo(() => buildRelatedSearchTerm(video), [video]);
   const [relatedFreshness, setRelatedFreshness] = useState(() => Math.floor(Date.now() / (3 * 60 * 1000)) % 9973);
@@ -690,12 +681,26 @@ function InlinePlayer({
     setPlayerMode("expanded");
   }, [video.id]);
 
-  const beginCollapseDrag = (event: React.PointerEvent) => {
+  useEffect(() => {
+    playerModeRef.current = playerMode;
+  }, [playerMode]);
+
+  useEffect(() => {
+    window.history.pushState({ goodAppVideoPlayer: true }, "");
+    const onPop = () => {
+      if (playerModeRef.current === "expanded") setPlayerMode("mini");
+      else onClose();
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, [onClose, video.id]);
+
+  const beginCollapseDrag = (event: PointerEvent) => {
     if (playerMode !== "expanded") return;
     dragStartY.current = event.clientY;
   };
 
-  const finishCollapseDrag = (event: React.PointerEvent) => {
+  const finishCollapseDrag = (event: PointerEvent) => {
     if (dragStartY.current === null) return;
     const distance = event.clientY - dragStartY.current;
     dragStartY.current = null;
