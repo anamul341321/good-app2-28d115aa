@@ -20,6 +20,8 @@ import {
   ChevronDown,
   History,
   Maximize2,
+  Minimize2,
+
   Plus,
   Trash2,
 } from "lucide-react";
