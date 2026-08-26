@@ -6,12 +6,13 @@ on:
       build_type:
         description: "Build type"
         required: true
-        default: "apk-debug"
+        default: "apk-release"
         type: choice
         options:
-          - apk-debug
           - apk-release
           - aab-release
+          - apk-debug
+
 
 concurrency:
   group: android-build-${{ github.ref }}
