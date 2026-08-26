@@ -823,6 +823,12 @@ export function AuthPage() {
             gmail={gmail.trim() || null}
             referralCode={referralCode.trim() || null}
             onClose={() => setFaceMode(null)}
+            onSkipped={() => {
+              setFaceMode(null);
+              setMode("login");
+              setLoginId(phone.replace(/\D/g, "").slice(0, 11));
+              toast.info("লগইন করুন — প্রোফাইলে ফেস ভেরিফিকেশন বাকি আছে দেখাবে");
+            }}
             onSignedUp={() => {
               setFaceMode(null);
               setMode("login");
