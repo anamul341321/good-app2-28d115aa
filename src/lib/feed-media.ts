@@ -61,9 +61,6 @@ export async function resolveFeedMedia(pathOrUrl: string): Promise<string> {
 }
 
 
-  inFlight.set(pathOrUrl, promise);
-  return promise;
-}
 
 // React hook wrapper is defined below; kept in the same file per spec.
 import { useEffect, useState } from "react";
