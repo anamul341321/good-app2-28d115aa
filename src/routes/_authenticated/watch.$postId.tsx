@@ -56,6 +56,18 @@ function WatchPage() {
   const videoUrl = useFeedMedia(video?.video_url);
   const thumbUrl = useFeedMedia(video?.thumbnail_url || undefined);
   const avatarUrl = useFeedMedia(video?.uploader_avatar_url || undefined);
+  const playerRef = useRef<HTMLVideoElement | null>(null);
+
+  useEffect(() => {
+    const el = playerRef.current;
+    if (!el || !videoUrl) return;
+    return attachBackgroundAudio(el, videoUrl, {
+      title: video?.title || "good-app",
+      artist: video?.creator || "good-app",
+      artwork: thumbUrl || undefined,
+    });
+  }, [videoUrl, thumbUrl, video?.title, video?.creator]);
+
 
   const { data: engagement } = useQuery({
     queryKey: ["watch-engagement", postId],
