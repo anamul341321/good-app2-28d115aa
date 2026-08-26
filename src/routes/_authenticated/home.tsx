@@ -261,6 +261,9 @@ function HomePage() {
         <div className="absolute bottom-[20%] left-[-10%] w-[40%] h-[30%] rounded-full bg-purple-500 blur-[100px]" />
       </div>
 
+      {/* নতুন আপডেটের ঘোষণা */}
+      <NewUpdateBanner />
+
       {/* দুইটি প্রধান বাটন — মেসেঞ্জার ও নিউজ ফিড */}
       {socialEntryCards}
 
