@@ -1257,3 +1257,9 @@ input, textarea, select { touch-action: manipulation; }
   0% { transform: translateX(-100%); }
   100% { transform: translateX(100%); }
 }
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar { display: none; }
+}
