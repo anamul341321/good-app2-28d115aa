@@ -10,6 +10,7 @@ import { StoryRow } from "@/components/messenger/StoryRow";
 import { ChatRow } from "@/components/messenger/ChatRow";
 import { MessengerSearchOverlay } from "@/components/messenger/MessengerSearchOverlay";
 import { Button } from "@/components/ui/button";
+import type { ReactNode } from "react";
 
 export const Route = createFileRoute("/_authenticated/chat/")({
   component: ChatListPage,
@@ -192,7 +193,7 @@ export function ChatListPage() {
 
       {/* Stories Row */}
       <section className="border-b border-border/35 bg-background">
-        <StoryRow activeUsers={activeUsers} onCreateStory={() => setShowGroup(true)} />
+        <StoryRow activeUsers={activeUsers} />
       </section>
 
       {/* Conversation List */}
@@ -249,7 +250,7 @@ function MessengerTab({
   badge,
 }: {
   to: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
   label: string;
   active?: boolean;
   badge?: number;
