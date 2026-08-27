@@ -219,23 +219,20 @@ export function AuthPage() {
       }
     }
 
-    // Google (full-page redirect) থেকে ফিরলে URL-এ আসা token দিয়ে সেশন সেট করা
+    // Google full-page redirect থেকে ফিরলে hash token থাকলে session বসাই।
+    // Query-এর `code` Lovable OAuth broker/Supabase client নিজেই consume করে;
+    // এখানে আবার exchange করলে একই code দুইবার ব্যবহৃত হয়ে login ব্যর্থ হয়।
     async function consumeOAuthTokens() {
       if (typeof window === "undefined") return false;
       const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
-      const query = new URLSearchParams(window.location.search);
-      const access = hash.get("access_token") ?? query.get("access_token");
-      const refresh = hash.get("refresh_token") ?? query.get("refresh_token");
-      const codeParam = query.get("code");
+      const access = hash.get("access_token");
+      const refresh = hash.get("refresh_token");
       try {
         if (access && refresh) {
           const { error } = await supabase.auth.setSession({
             access_token: access,
             refresh_token: refresh,
           });
-          if (error) return false;
-        } else if (codeParam) {
-          const { error } = await supabase.auth.exchangeCodeForSession(codeParam);
           if (error) return false;
         } else {
           return false;
@@ -250,8 +247,19 @@ export function AuthPage() {
 
     void (async () => {
       if (await consumeOAuthTokens()) return;
-      const { data } = await getSharedSession();
-      if (data.session) nav({ to: "/home" });
+      // Client/broker callback একটু পরে session লিখতে পারে, তাই callback URL-এ
+      // অল্প সময় অপেক্ষা করি—নিজে authorization code exchange করি না।
+      const hasOAuthCallback = new URLSearchParams(window.location.search).has("code");
+      const attempts = hasOAuthCallback ? 16 : 1;
+      for (let i = 0; i < attempts; i++) {
+        const { data } = await getSharedSession();
+        if (data.session) {
+          window.history.replaceState({}, "", window.location.pathname);
+          nav({ to: "/home" });
+          return;
+        }
+        if (i + 1 < attempts) await new Promise((resolve) => setTimeout(resolve, 250));
+      }
     })();
   }, [nav]);
 
@@ -404,7 +412,9 @@ export function AuthPage() {
       const { lovable } = await import("@/integrations/lovable/index");
 
       const res: any = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: `${window.location.origin}/auth`,
+        // Broker-এর canonical public callback ব্যবহার করি। নির্দিষ্ট auth route
+        // দিলে preview WebView-তে callback code দুবার process হওয়ার ঝুঁকি থাকে।
+        redirect_uri: window.location.origin,
         extraParams: pickedEmail
           ? { login_hint: pickedEmail, prompt: "select_account" }
           : { prompt: "select_account" },
