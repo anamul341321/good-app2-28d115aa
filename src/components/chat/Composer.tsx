@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Image as ImageIcon, Loader2, Mic, Send, Square, Video, Plus, Smile, X, Reply } from "lucide-react";
 import { extOf, uploadChatFile, type UploadKind } from "@/lib/chat-upload";
+import { VoiceRecorder } from "@/lib/voice-record";
 
 export type SendPayload = {
   body?: string;
@@ -28,10 +29,9 @@ export function Composer({
   const [recSec, setRecSec] = useState(0);
   const imgRef = useRef<HTMLInputElement | null>(null);
   const vidRef = useRef<HTMLInputElement | null>(null);
-  const rec = useRef<MediaRecorder | null>(null);
-  const chunks = useRef<Blob[]>([]);
+  const [recording, setRecording] = useState(false);
+  const rec = useRef<VoiceRecorder | null>(null);
   const timer = useRef<number | undefined>(undefined);
-  const elapsed = useRef(0);
 
   const replyMeta = () =>
     replyTo
@@ -66,6 +66,7 @@ export function Composer({
       const recorder = new VoiceRecorder();
       await recorder.start();
       rec.current = recorder;
+      setRecording(true);
       setRecSec(0);
       timer.current = window.setInterval(() => setRecSec(Math.floor(recorder.elapsed)), 250);
     } catch {
@@ -78,6 +79,7 @@ export function Composer({
     rec.current = null;
     window.clearInterval(timer.current);
     setRecSec(0);
+    setRecording(false);
     if (!recorder) return;
     const result = await recorder.stop();
     if (!result) return;
@@ -103,7 +105,6 @@ export function Composer({
   };
 
 
-  const recording = recSec > 0;
 
   return (
     <div className="bg-background px-2 py-2 border-t">
@@ -162,7 +163,7 @@ export function Composer({
             {String(Math.floor(recSec / 60)).padStart(2, "0")}:{String(recSec % 60).padStart(2, "0")}
           </p>
           <button
-            onClick={stopRec}
+            onClick={() => void stopRec()}
             className="btn-press grid h-8 w-8 place-items-center rounded-full bg-rose-500 text-white"
           >
             <Square className="h-4 w-4 fill-white" />
