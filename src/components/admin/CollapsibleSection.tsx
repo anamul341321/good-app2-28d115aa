@@ -28,7 +28,19 @@ export function CollapsibleSection({
         className="w-full flex items-center justify-between gap-2 px-3 py-3 text-left btn-press"
       >
         <span className="min-w-0">
-          <span className={`block text-[11px] font-black uppercase tracking-widest text-${accent}`}>{title}</span>
+          <span
+            className={`block text-[11px] font-black uppercase tracking-widest ${
+              accent === "emerald"
+                ? "text-emerald"
+                : accent === "violet"
+                  ? "text-violet"
+                  : accent === "amber"
+                    ? "text-amber"
+                    : "text-cyan"
+            }`}
+          >
+            {title}
+          </span>
           {subtitle && <span className="block text-[10px] text-muted-foreground truncate">{subtitle}</span>}
         </span>
         <ChevronDown
