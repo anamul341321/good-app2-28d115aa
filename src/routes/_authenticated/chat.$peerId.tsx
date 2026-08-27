@@ -32,6 +32,7 @@ function ThreadPage() {
   const endRef = useRef<HTMLDivElement | null>(null);
   const presenceOnline = useIsOnline(peerId);
   const [showHeaderMenu, setShowHeaderMenu] = useState(false);
+  const [replyTo, setReplyTo] = useState<{ id: string; body?: string; kind?: string; name?: string } | null>(null);
   // বাবল উইন্ডোতে খোলা হলে ফুল স্ক্রিনে যাওয়ার বাটন দেখাবে
   const inBubble = typeof window !== "undefined" && Boolean((window as any).GoodAppBubble);
   const openFullscreen = () => {
@@ -273,6 +274,14 @@ function ThreadPage() {
                 m={m}
                 mine={m.senderId === me}
                 onDelete={(id) => del.mutate(id)}
+                onReply={(msg) =>
+                  setReplyTo({
+                    id: msg.id,
+                    body: msg.body,
+                    kind: msg.kind,
+                    name: msg.senderId === me ? "আপনি" : (data?.peer?.name ?? "User"),
+                  })
+                }
                 seenBy={
                   i === lastSeenIndex && data?.peer
                     ? { name: data.peer.name ?? "User", avatarUrl: (data.peer as any)?.avatarUrl ?? null }
@@ -288,7 +297,12 @@ function ThreadPage() {
 
       {/* Composer */}
       <footer className="pb-safe">
-        <Composer onSend={(p) => send.mutate(p)} sending={send.isPending} />
+        <Composer
+          onSend={(p) => send.mutate(p)}
+          sending={send.isPending}
+          replyTo={replyTo}
+          onCancelReply={() => setReplyTo(null)}
+        />
       </footer>
     </div>
   );
