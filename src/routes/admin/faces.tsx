@@ -175,7 +175,18 @@ function FaceLoginKeys({ open, onToggle }: { open: boolean; onToggle: () => void
 
 function AdminFaces() {
   const [zoom, setZoom] = useState<{ url: string; label: string } | null>(null);
-  const { data, isLoading, refetch } = useQuery({ queryKey: ["admin-faces"], queryFn: () => adminListFaces() });
+  // একবারে সব লোড না করে — যে সেকশন খোলা হবে শুধু সেটিরই ডেটা আসবে
+  const [section, setSection] = useState<"signup" | "onchain" | "keys" | "photos" | null>(null);
+  const [shown, setShown] = useState(24);
+  const toggle = (s: "signup" | "onchain" | "keys" | "photos") =>
+    setSection((prev) => (prev === s ? null : s));
+  const needFaces = section === "keys" || section === "photos";
+  const { data, isLoading, refetch } = useQuery({
+    queryKey: ["admin-faces"],
+    queryFn: () => adminListFaces(),
+    enabled: needFaces,
+    staleTime: 60_000,
+  });
   const reset = useMutation({
     mutationFn: (taskId: string) => adminResetTask({ data: { taskId } }),
     onSuccess: () => { toast.success("Slot reset"); refetch(); },
