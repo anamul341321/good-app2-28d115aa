@@ -82,6 +82,17 @@ function ThreadPage() {
     onSuccess: refresh,
   });
 
+  const deleteAll = useMutation({
+    mutationFn: () => deleteAllMessages({ data: { peerId } }),
+    onSuccess: () => {
+      toast.success("সব মেসেজ মুছে ফেলা হয়েছে");
+      void qc.invalidateQueries({ queryKey: ["chats"] });
+      void qc.invalidateQueries({ queryKey: ["unread-msgs"] });
+      navigate({ to: "/chat" });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "মেসেজ মুছা যায়নি"),
+  });
+
   const addFriend = useMutation({
     mutationFn: () => sendFriendRequest({ data: { userId: peerId } }),
     onSuccess: () => {
