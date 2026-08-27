@@ -92,6 +92,8 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   const [muted, setMuted] = useState(false);
   const [camOff, setCamOff] = useState(false);
   const [sharing, setSharing] = useState(false);
+  // অডিও কলে ইয়ারপিস/স্পিকার বদলের জন্য (Messenger-এর মতো)
+  const [speakerOn, setSpeakerOn] = useState(false);
   // অন্য পাশ থেকে আসা "এখানে চাপুন" নির্দেশনা — শেয়ার করার সময় স্ক্রিনে মার্কার দেখায়
   const [remotePointer, setRemotePointer] = useState<{ x: number; y: number; at: number } | null>(null);
 
