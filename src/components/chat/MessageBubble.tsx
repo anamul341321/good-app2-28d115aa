@@ -234,6 +234,7 @@ export function MessageBubble({
   showName,
   onDelete,
   onReply,
+  onJumpTo,
   seenBy,
 }: {
   m: ChatMsg;
@@ -242,6 +243,8 @@ export function MessageBubble({
   onDelete?: (id: string) => void;
   /** ডান দিকে টান দিলে এই মেসেজ mention করে রিপ্লাই লেখা শুরু হবে */
   onReply?: (m: ChatMsg) => void;
+  /** রিপ্লাই প্রিভিউতে ট্যাপ করলে মূল মেসেজে নিয়ে যাবে */
+  onJumpTo?: (id: string) => void;
   /** মেসেঞ্জারের মতো — পড়া হলে এই মেসেজের নিচে পিয়ারের ছোট প্রোফাইল ছবি দেখাবে */
   seenBy?: { name: string; avatarUrl?: string | null } | null;
 }) {
@@ -253,8 +256,9 @@ export function MessageBubble({
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const bubbleRef = useRef<HTMLDivElement | null>(null);
   const replyTo = (m.mediaMeta as any)?.replyTo as
-    | { body?: string; name?: string; kind?: string }
+    | { id?: string; body?: string; name?: string; kind?: string; mediaUrl?: string | null }
     | undefined;
+
 
   const openMenu = (e: React.MouseEvent | React.TouchEvent) => {
     const clientX = "touches" in e ? e.touches[0]?.clientX || 0 : e.clientX;
@@ -314,7 +318,7 @@ export function MessageBubble({
     : "bg-surface-2 text-foreground rounded-[20px] rounded-bl-[4px]";
 
   return (
-    <div className={`flex flex-col ${mine ? "items-end" : "items-start"} mb-1`}>
+    <div id={`msg-${m.id}`} className={`flex flex-col ${mine ? "items-end" : "items-start"} mb-1 scroll-mt-24 transition-colors duration-500`}>
       <div className="relative max-w-[80%] flex items-end gap-2">
         {drag > 10 && (
           <span
@@ -343,24 +347,47 @@ export function MessageBubble({
         >
           {replyTo && !m.deleted && (
             <div
-              className={`mb-1.5 rounded-xl border-l-4 px-2.5 py-1.5 ${
+              role={replyTo.id ? "button" : undefined}
+              onClick={(e) => {
+                if (!replyTo.id) return;
+                e.stopPropagation();
+                onJumpTo?.(replyTo.id);
+              }}
+              className={`mb-1.5 flex items-center gap-2 rounded-xl border-l-4 px-2.5 py-1.5 ${
                 mine ? "border-white/70 bg-white/15" : "border-primary/70 bg-primary/10"
               }`}
             >
-              <p className="text-[10px] font-black opacity-90">{replyTo.name ?? "মেসেজ"}</p>
-              <p className="line-clamp-2 text-[11px] font-bold opacity-80">
-                {replyTo.body?.trim()
-                  ? replyTo.body
-                  : replyTo.kind === "image"
-                    ? "📷 ছবি"
-                    : replyTo.kind === "video"
-                      ? "🎬 ভিডিও"
-                      : replyTo.kind === "voice"
-                        ? "🎤 ভয়েস"
-                        : "মেসেজ"}
-              </p>
+              {replyTo.mediaUrl && (replyTo.kind === "image" || replyTo.kind === "video") && (
+                <span className="relative h-9 w-9 shrink-0 overflow-hidden rounded-lg bg-black/20">
+                  {replyTo.kind === "image" ? (
+                    <img src={replyTo.mediaUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
+                  ) : (
+                    <>
+                      <video src={replyTo.mediaUrl} className="h-full w-full object-cover" muted />
+                      <span className="absolute inset-0 grid place-items-center">
+                        <Play className="h-3 w-3 fill-white text-white" />
+                      </span>
+                    </>
+                  )}
+                </span>
+              )}
+              <span className="min-w-0 flex-1">
+                <p className="text-[10px] font-black opacity-90">{replyTo.name ?? "মেসেজ"}</p>
+                <p className="line-clamp-2 text-[11px] font-bold opacity-80">
+                  {replyTo.body?.trim()
+                    ? replyTo.body
+                    : replyTo.kind === "image"
+                      ? "📷 ছবি"
+                      : replyTo.kind === "video"
+                        ? "🎬 ভিডিও"
+                        : replyTo.kind === "voice"
+                          ? "🎤 ভয়েস"
+                          : "মেসেজ"}
+                </p>
+              </span>
             </div>
           )}
+
 
           {m.deleted ? (
             <p className="flex items-center gap-1.5 text-xs font-bold italic opacity-80">

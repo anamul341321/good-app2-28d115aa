@@ -39,7 +39,15 @@ function GroupThreadPage() {
   const endRef = useRef<HTMLDivElement | null>(null);
   const onlineIds = usePresence();
   const [showMembers, setShowMembers] = useState(false);
-  const [replyTo, setReplyTo] = useState<{ id: string; body?: string; kind?: string; name?: string } | null>(null);
+  const [replyTo, setReplyTo] = useState<{ id: string; body?: string; kind?: string; name?: string; mediaUrl?: string | null } | null>(null);
+
+  const jumpToMessage = (id: string) => {
+    const el = document.getElementById(`msg-${id}`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.classList.add("bg-primary/10", "rounded-2xl");
+    window.setTimeout(() => el.classList.remove("bg-primary/10", "rounded-2xl"), 1200);
+  };
 
 
   const { data, isLoading } = useQuery({
@@ -163,8 +171,15 @@ function GroupThreadPage() {
               mine={m.senderId === me}
               showName
               onDelete={(id) => del.mutate(id)}
+              onJumpTo={jumpToMessage}
               onReply={(msg) =>
-                setReplyTo({ id: msg.id, body: msg.body, kind: msg.kind, name: msg.senderName ?? "মেসেজ" })
+                setReplyTo({
+                  id: msg.id,
+                  body: msg.body,
+                  kind: msg.kind,
+                  mediaUrl: msg.mediaUrl,
+                  name: msg.senderName ?? "মেসেজ",
+                })
               }
             />
           ))

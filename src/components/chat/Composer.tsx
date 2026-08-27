@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Image as ImageIcon, Loader2, Mic, Send, Square, Video, Plus, Smile, X, Reply } from "lucide-react";
 import { extOf, uploadChatFile, type UploadKind } from "@/lib/chat-upload";
@@ -21,7 +21,7 @@ export function Composer({
   onSend: (p: SendPayload) => void;
   sending: boolean;
   /** মেসেঞ্জারের মতো — যে মেসেজটির রিপ্লাই দেওয়া হচ্ছে */
-  replyTo?: { id: string; body?: string; kind?: string; name?: string } | null;
+  replyTo?: { id: string; body?: string; kind?: string; name?: string; mediaUrl?: string | null } | null;
   onCancelReply?: () => void;
 }) {
   const [text, setText] = useState("");
@@ -32,10 +32,24 @@ export function Composer({
   const [recording, setRecording] = useState(false);
   const rec = useRef<VoiceRecorder | null>(null);
   const timer = useRef<number | undefined>(undefined);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  // মেসেঞ্জারের মতো — রিপ্লাই দিলে সাথে সাথেই কীবোর্ড খুলে যাবে
+  useEffect(() => {
+    if (replyTo) inputRef.current?.focus();
+  }, [replyTo?.id]);
 
   const replyMeta = () =>
     replyTo
-      ? { replyTo: { id: replyTo.id, body: replyTo.body ?? "", kind: replyTo.kind ?? "text", name: replyTo.name ?? "" } }
+      ? {
+          replyTo: {
+            id: replyTo.id,
+            body: replyTo.body ?? "",
+            kind: replyTo.kind ?? "text",
+            name: replyTo.name ?? "",
+            mediaUrl: replyTo.mediaUrl ?? null,
+          },
+        }
       : undefined;
 
   const submitText = () => {
@@ -111,6 +125,15 @@ export function Composer({
       {replyTo && (
         <div className="mb-2 flex items-center gap-2 rounded-2xl border-l-4 border-primary bg-surface-2 px-3 py-2">
           <Reply className="h-4 w-4 shrink-0 text-primary" />
+          {replyTo.mediaUrl && (replyTo.kind === "image" || replyTo.kind === "video") && (
+            <span className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-black/20">
+              {replyTo.kind === "image" ? (
+                <img src={replyTo.mediaUrl} alt="" className="h-full w-full object-cover" />
+              ) : (
+                <video src={replyTo.mediaUrl} className="h-full w-full object-cover" muted />
+              )}
+            </span>
+          )}
           <div className="min-w-0 flex-1">
             <p className="truncate text-[10px] font-black text-primary">
               {replyTo.name ? `${replyTo.name}-কে রিপ্লাই` : "রিপ্লাই দিচ্ছেন"}
@@ -198,6 +221,7 @@ export function Composer({
           
           <div className="flex-1 relative flex items-center">
             <input
+              ref={inputRef}
               value={text}
               onChange={(e) => setText(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && submitText()}
