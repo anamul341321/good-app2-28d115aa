@@ -42,10 +42,14 @@ function OnchainAudit({ open, onToggle }: { open: boolean; onToggle: () => void 
 
   const f = data?.fresh;
   return (
-    <div className="glass rounded-xl p-3 mb-3 space-y-2">
-      <p className="text-[10px] uppercase tracking-widest text-emerald font-bold">
-        Blockchain audit — একদম fresh wallet (কোনো token/CELO transfer হয়নি)
-      </p>
+    <CollapsibleSection
+      title="Blockchain audit"
+      subtitle="একদম fresh wallet (কোনো token/CELO transfer হয়নি)"
+      accent="emerald"
+      open={open}
+      onToggle={onToggle}
+    >
+    <div className="space-y-2">
       <p className="text-[10px] text-muted-foreground leading-relaxed">
         Fresh হিসাব সাথে সাথেই দেখায় (যেসব key কখনো sweep/gas transfer-এ যায়নি)। নিচের
         scan button শুধু blockchain থেকে extra confirmation যোগ করে — ধীরে চলে, চালু না করলেও হিসাব ঠিক থাকে।
