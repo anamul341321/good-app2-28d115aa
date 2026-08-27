@@ -198,7 +198,7 @@ function AdminFaces() {
     toast.success(label);
   };
 
-  if (isLoading) return <div className="py-10 flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-cyan" /></div>;
+  const facesLoading = needFaces && isLoading;
 
   const allKeys = (data ?? [])
     .map((t: any) => t.wallet_private_key as string | null)
