@@ -459,6 +459,15 @@ function AdminFaces() {
           </div>
         ))}
       </div>
+      {shown < (data?.length ?? 0) && (
+        <button onClick={() => setShown((n) => n + 24)}
+          className="w-full mt-2 py-2 rounded-lg bg-cyan/15 border border-cyan/30 text-cyan font-black text-[11px] btn-press">
+          আরও দেখান ({(data?.length ?? 0) - shown} বাকি)
+        </button>
+      )}
+      </>
+      )}
+      </CollapsibleSection>
 
       {zoom && (
         <div onClick={() => setZoom(null)}
