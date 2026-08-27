@@ -428,7 +428,7 @@ function AdminFaces() {
             {t.signed_url ? (
               <button type="button" onClick={() => setZoom({ url: t.signed_url, label: `${t.face_label || t.profiles?.display_name || "মুখ"} · Slot #${t.slot}` })}
                 className="block w-full">
-                <img src={t.signed_url} alt="" className="w-full aspect-square object-cover cursor-zoom-in" />
+                <img src={t.signed_url} alt="" loading="lazy" decoding="async" className="w-full aspect-square object-cover cursor-zoom-in" />
               </button>
             ) : (
               <div className="w-full aspect-square bg-surface-2 flex items-center justify-center text-xs text-muted-foreground">no image</div>
