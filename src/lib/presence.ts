@@ -39,8 +39,18 @@ async function doJoin() {
     .subscribe((status: string) => {
       if (status === "SUBSCRIBED") {
         void channel.track({ at: Date.now() });
+        void touchPresence();
       }
     });
+}
+
+/** ডেটা অন + অ্যাপ খোলা থাকলেই সার্ভারে "last active" আপডেট হবে */
+export async function touchPresence() {
+  try {
+    await (supabase as any).rpc("touch_presence");
+  } catch {
+    /* offline — পরের হার্টবিটে হবে */
+  }
 }
 
 function leave() {
@@ -60,9 +70,18 @@ export function usePresence() {
     listeners.add(setIds);
     void join();
     const beat = window.setInterval(() => {
+      if (document.visibilityState === "hidden") return;
       if (channel) void channel.track({ at: Date.now() });
+      void touchPresence();
     }, 45_000);
+    const onVisible = () => {
+      if (document.visibilityState !== "visible") return;
+      if (channel) void channel.track({ at: Date.now() });
+      void touchPresence();
+    };
+    document.addEventListener("visibilitychange", onVisible);
     return () => {
+      document.removeEventListener("visibilitychange", onVisible);
       window.clearInterval(beat);
       listeners.delete(setIds);
       refCount -= 1;
