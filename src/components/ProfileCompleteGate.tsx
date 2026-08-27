@@ -58,6 +58,14 @@ export function ProfileCompleteGate() {
     }
   }, [data?.suggestedName]);
 
+  useEffect(() => {
+    if (!data?.conflict && data?.existingAccount) {
+      try {
+        localStorage.removeItem("good-app-google-intent");
+      } catch {}
+    }
+  }, [data?.conflict, data?.existingAccount]);
+
   // All hooks above must run on every render. Returning before them when the
   // auth-mode query changed from loading to ready caused React error #310.
   if (modeLoading || mode?.emailOtpEnabled === false) return null;
@@ -72,7 +80,11 @@ export function ProfileCompleteGate() {
 
   if (!data || !data.isGoogle) return null;
 
-  const needsGoogleLoginCode = data.conflict || (intent === "login" && data.existingAccount);
+  // Google provider নিজেই পরিচয় যাচাই করেছে এবং এই identity বর্তমান পুরোনো
+  // account-এর সঙ্গে linked থাকলে আর দ্বিতীয় OTP gate দেখাব না। শুধু Google
+  // callback ভুল/duplicate account বানিয়ে একই Gmail অন্য profile-এ পেলে link
+  // verification দরকার।
+  const needsGoogleLoginCode = data.conflict;
 
   // ---------- একই Gmail-এর পুরোনো/বর্তমান একাউন্টে code দিয়ে login ----------
   if (needsGoogleLoginCode) {
