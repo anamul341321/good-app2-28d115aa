@@ -7,7 +7,11 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Paint;
 import android.media.AudioAttributes;
 import android.media.RingtoneManager;
 import android.net.Uri;
@@ -25,6 +29,8 @@ import com.capacitorjs.plugins.pushnotifications.PushNotificationsPlugin;
 import androidx.annotation.NonNull;
 
 import java.util.Map;
+import java.net.HttpURLConnection;
+import java.net.URL;
 
 public class GoodAppMessagingService extends FirebaseMessagingService {
     // Notification channel settings are immutable after creation. A new ID makes
@@ -217,6 +223,7 @@ public class GoodAppMessagingService extends FirebaseMessagingService {
                 ? "নতুন মেসেজ"
                 : remoteNotification.getBody()
         );
+        IconCompat senderIcon = loadSenderIcon(value(data, "sender_avatar_url", ""), senderName);
         Intent chat = new Intent(this, MainActivity.class);
         chat.setAction(Intent.ACTION_VIEW);
         chat.setData(Uri.parse("https://www.goodapp2.live/chat/" + Uri.encode(senderId)));
@@ -228,7 +235,12 @@ public class GoodAppMessagingService extends FirebaseMessagingService {
             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
 
-        Person person = new Person.Builder().setName(senderName).setImportant(true).build();
+        Person person = new Person.Builder()
+            .setName(senderName)
+            .setKey(senderId)
+            .setIcon(senderIcon)
+            .setImportant(true)
+            .build();
         NotificationCompat.MessagingStyle style = new NotificationCompat.MessagingStyle(person)
             .setConversationTitle(senderName)
             .addMessage(body, System.currentTimeMillis(), person);
@@ -267,6 +279,7 @@ public class GoodAppMessagingService extends FirebaseMessagingService {
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle(senderName)
             .setContentText(body)
+            .setLargeIcon(senderIcon.toIcon(this))
             .setCategory(NotificationCompat.CATEGORY_MESSAGE)
             .setGroup("goodapp-chat-" + senderId)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
@@ -281,7 +294,7 @@ public class GoodAppMessagingService extends FirebaseMessagingService {
                 // A bubble is only allowed when a matching long-lived shortcut exists
                 // and the notification is tied to it via shortcutId + locusId.
                 String shortcutId = "chat-" + senderId;
-                IconCompat icon = IconCompat.createWithResource(this, R.mipmap.ic_launcher);
+                IconCompat icon = senderIcon;
 
                 Intent bubbleIntent = new Intent(this, BubbleChatActivity.class);
                 bubbleIntent.setAction(Intent.ACTION_VIEW);
@@ -327,6 +340,48 @@ public class GoodAppMessagingService extends FirebaseMessagingService {
             } catch (Exception ignored) {}
         }
         manager.notify(("chat-" + senderId).hashCode(), builder.build());
+    }
+
+    /** Download the sender's signed avatar for the conversation bubble. If the
+     * sender has no photo (or the network is unavailable), use their initial so
+     * Android never substitutes the Good-App launcher logo as the chat identity. */
+    private IconCompat loadSenderIcon(String avatarUrl, String senderName) {
+        if (avatarUrl != null && !avatarUrl.isEmpty()) {
+            HttpURLConnection connection = null;
+            try {
+                connection = (HttpURLConnection) new URL(avatarUrl).openConnection();
+                connection.setConnectTimeout(3500);
+                connection.setReadTimeout(3500);
+                connection.setDoInput(true);
+                connection.connect();
+                if (connection.getResponseCode() >= 200 && connection.getResponseCode() < 300) {
+                    Bitmap bitmap = BitmapFactory.decodeStream(connection.getInputStream());
+                    if (bitmap != null) return IconCompat.createWithAdaptiveBitmap(bitmap);
+                }
+            } catch (Exception ignored) {
+                // The initial avatar below remains a stable, person-specific fallback.
+            } finally {
+                if (connection != null) connection.disconnect();
+            }
+        }
+
+        int size = 192;
+        Bitmap fallback = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(fallback);
+        Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        paint.setColor(Color.rgb(37, 99, 235));
+        canvas.drawCircle(size / 2f, size / 2f, size / 2f, paint);
+        String initial = senderName == null || senderName.trim().isEmpty()
+            ? "?"
+            : senderName.trim().substring(0, 1).toUpperCase();
+        paint.setColor(Color.WHITE);
+        paint.setTextAlign(Paint.Align.CENTER);
+        paint.setTextSize(92f);
+        paint.setFakeBoldText(true);
+        Paint.FontMetrics metrics = paint.getFontMetrics();
+        float baseline = size / 2f - (metrics.ascent + metrics.descent) / 2f;
+        canvas.drawText(initial, size / 2f, baseline, paint);
+        return IconCompat.createWithAdaptiveBitmap(fallback);
     }
 
     private void showSocialNotification(Map<String, String> data, RemoteMessage.Notification remoteNotification) {

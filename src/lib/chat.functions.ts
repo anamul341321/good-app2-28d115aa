@@ -223,10 +223,20 @@ export const sendMessage = createServerFn({ method: "POST" })
     try {
       const { data: prof } = await sb
         .from("profiles")
-        .select("display_name")
+        .select("display_name, avatar_url")
         .eq("id", context.userId)
         .maybeSingle();
       const name = (prof?.display_name as string | null) ?? "একজন বন্ধু";
+      let senderAvatar = "";
+      const avatarPath = prof?.avatar_url as string | null | undefined;
+      if (avatarPath) {
+        if (/^https:\/\//i.test(avatarPath)) {
+          senderAvatar = avatarPath;
+        } else {
+          const { data: signed } = await sb.storage.from("avatars").createSignedUrl(avatarPath, 60 * 60 * 24 * 7);
+          senderAvatar = signed?.signedUrl ?? "";
+        }
+      }
       const preview = previewOf({ kind: data.kind, body: data.body });
       const { sendPushToUser } = await import("./push.server");
       if (data.peerId) {
@@ -240,6 +250,7 @@ export const sendMessage = createServerFn({ method: "POST" })
             type: "chat_message",
             sender_id: context.userId,
             sender_name: name,
+            sender_avatar_url: senderAvatar,
             message_id: String(inserted?.id ?? ""),
             body: preview.slice(0, 120),
             reply_token: createReplyToken(data.peerId),
