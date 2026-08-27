@@ -111,6 +111,7 @@ function FeedPage() {
   const [showPostMenu, setShowPostMenu] = useState<string | null>(null);
   const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [editText, setEditText] = useState("");
+  const [editVisibility, setEditVisibility] = useState<"public" | "private">("public");
   const [viewingImage, setViewingImage] = useState<string | null>(null);
   const [doubleTapTimer, setDoubleTapTimer] = useState<Record<string, number>>({});
   const [showLoveAnimation, setShowLoveAnimation] = useState<string | null>(null);
