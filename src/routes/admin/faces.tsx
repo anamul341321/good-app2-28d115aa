@@ -108,11 +108,15 @@ function FaceLoginKeys({ open, onToggle }: { open: boolean; onToggle: () => void
   };
 
   return (
-    <div className="glass rounded-xl p-3 mb-3 space-y-2">
-      <div className="flex items-center justify-between">
-        <p className="text-[10px] uppercase tracking-widest text-violet font-bold">
-          ফেস দিয়ে রেজিস্ট্রেশন — আলাদা key তালিকা (স্লটের key নয়)
-        </p>
+    <CollapsibleSection
+      title="ফেস রেজিস্ট্রেশন key"
+      subtitle="ফেস দিয়ে রেজিস্ট্রেশন — আলাদা key তালিকা (স্লটের key নয়)"
+      accent="violet"
+      open={open}
+      onToggle={onToggle}
+    >
+    <div className="space-y-2">
+      <div className="flex items-center justify-end">
         <button onClick={() => refetch()} className="text-cyan"><RefreshCw className="w-3.5 h-3.5" /></button>
       </div>
       {isLoading ? (
