@@ -1497,6 +1497,7 @@ export type Database = {
           kyc_photo_url: string | null
           kyc_verified: boolean
           kyc_verified_at: string | null
+          last_active_at: string | null
           last_reels_seen_at: string | null
           mother_name: string | null
           nid_number: string | null
@@ -1542,6 +1543,7 @@ export type Database = {
           kyc_photo_url?: string | null
           kyc_verified?: boolean
           kyc_verified_at?: string | null
+          last_active_at?: string | null
           last_reels_seen_at?: string | null
           mother_name?: string | null
           nid_number?: string | null
@@ -1587,6 +1589,7 @@ export type Database = {
           kyc_photo_url?: string | null
           kyc_verified?: boolean
           kyc_verified_at?: string | null
+          last_active_at?: string | null
           last_reels_seen_at?: string | null
           mother_name?: string | null
           nid_number?: string | null
@@ -3114,6 +3117,7 @@ export type Database = {
         Args: { _amount: number; _user_id: string }
         Returns: number
       }
+      touch_presence: { Args: never; Returns: undefined }
       transition_task_whitelist: {
         Args: { _is_whitelisted: boolean; _task_id: string }
         Returns: string
