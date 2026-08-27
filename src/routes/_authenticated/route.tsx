@@ -32,6 +32,7 @@ import { CallProvider } from "@/components/CallProvider";
 import { DailyFaceVerificationWarning } from "@/components/DailyFaceVerificationWarning";
 
 import { clearSharedSession, getSharedSession } from "@/lib/auth-session";
+import { usePresence } from "@/lib/presence";
 
 
 
@@ -42,6 +43,8 @@ export const Route = createFileRoute("/_authenticated")({
 });
 
 function AuthedLayout() {
+  // অ্যাপ খোলা + ডেটা অন থাকলেই "active" হার্টবিট যাবে (পুরো অ্যাপজুড়ে)
+  usePresence();
   const router = useRouter();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const isSocialRoute = /^\/(social|chat|feed|friends|videos|reels|watch|studio|channel|user|profile)(\/|$)/.test(pathname);

@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { MessengerAvatar } from "./MessengerAvatar";
 import { cn } from "@/lib/utils";
 import type { Gender } from "@/lib/default-avatar";
+import { isRecentlyActive, shortLastActive } from "@/lib/last-active";
 
 export function ChatRow({
   id,
@@ -13,6 +14,7 @@ export function ChatRow({
   time,
   unreadCount,
   online,
+  lastActiveAt,
   isGroup,
 }: {
   id: string;
@@ -24,9 +26,12 @@ export function ChatRow({
   time: string;
   unreadCount: number;
   online?: boolean;
+  lastActiveAt?: string | null;
   isGroup?: boolean;
 }) {
   const isUnread = unreadCount > 0;
+  const isOnline = Boolean(online) || isRecentlyActive(lastActiveAt);
+  const awayFor = !isGroup && !isOnline ? shortLastActive(lastActiveAt) : null;
   const chatTarget = isGroup ? "/chat/group/$groupId" : "/chat/$peerId";
   const chatParams = isGroup ? { groupId: id } : { peerId: id };
   
@@ -44,7 +49,7 @@ export function ChatRow({
             name={name}
             src={avatar}
             gender={gender}
-            online={online}
+            online={isOnline}
             size="xl"
           />
         </Link>
@@ -53,7 +58,7 @@ export function ChatRow({
           name={name}
           src={avatar}
           gender={gender}
-          online={online}
+          online={isOnline}
           size="xl"
         />
       )}
@@ -84,9 +89,14 @@ export function ChatRow({
             <div className="shrink-0 h-2.5 w-2.5 rounded-full bg-messenger-blue" />
           )}
         </div>
-        {uid && !isGroup && (
-          <p className="mt-0.5 text-[10px] font-semibold uppercase text-muted-foreground/75" translate="no">
-            UID {uid}
+        {!isGroup && (
+          <p className="mt-0.5 flex items-center gap-1.5 text-[10px] font-semibold uppercase text-muted-foreground/75" translate="no">
+            {uid ? <span>UID {uid}</span> : null}
+            {isOnline ? (
+              <span className="normal-case text-emerald-500">• Active now</span>
+            ) : awayFor ? (
+              <span className="normal-case">• {awayFor} আগে active</span>
+            ) : null}
           </p>
         )}
       </Link>

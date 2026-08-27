@@ -4,7 +4,7 @@
  */
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
-export type Person = { id: string; display_name: string | null; uid_seq: number | null; avatar_url: string | null; gender: "male" | "female" | null };
+export type Person = { id: string; display_name: string | null; uid_seq: number | null; avatar_url: string | null; gender: "male" | "female" | null; last_active_at?: string | null };
 
 export type DbMsg = {
   id: string;
@@ -29,7 +29,7 @@ export async function peopleMap(ids: string[]) {
   if (!clean.length) return map;
   const { data } = await supabaseAdmin
     .from("profiles")
-    .select("id, display_name, uid_seq, avatar_url, gender")
+    .select("id, display_name, uid_seq, avatar_url, gender, last_active_at")
     .in("id", clean);
   for (const p of (data ?? []) as Person[]) map.set(p.id, p);
   return map;
