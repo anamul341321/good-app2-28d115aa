@@ -29,6 +29,15 @@ function ThreadPage() {
   const qc = useQueryClient();
   const endRef = useRef<HTMLDivElement | null>(null);
   const online = useIsOnline(peerId);
+  // বাবল উইন্ডোতে খোলা হলে ফুল স্ক্রিনে যাওয়ার বাটন দেখাবে
+  const inBubble = typeof window !== "undefined" && Boolean((window as any).GoodAppBubble);
+  const openFullscreen = () => {
+    try {
+      (window as any).GoodAppBubble?.openFullscreen?.(peerId);
+    } catch {
+      /* ignore */
+    }
+  };
 
   const { data, isLoading } = useQuery({
     queryKey: ["thread", peerId],
