@@ -74,6 +74,7 @@ export const listChats = createServerFn({ method: "GET" })
         name: names.get(c.peerId)?.display_name ?? "ইউজার",
         uid: names.get(c.peerId)?.uid_seq ?? null,
         avatar_url: names.get(c.peerId)?.avatar_url ?? null,
+        gender: names.get(c.peerId)?.gender ?? null,
         isFriend: friendIds.has(c.peerId),
       }))
       .sort((a, b) => (a.lastAt < b.lastAt ? 1 : -1));
@@ -168,6 +169,7 @@ export const getThread = createServerFn({ method: "POST" })
         name: p?.display_name ?? "ইউজার",
         uid: p?.uid_seq ?? null,
         avatarUrl: p?.avatar_url ?? null,
+        gender: p?.gender ?? null,
       },
       me,
       friendStatus: (link?.status as string | undefined) ?? "none",
@@ -223,7 +225,7 @@ export const sendMessage = createServerFn({ method: "POST" })
     try {
       const { data: prof } = await sb
         .from("profiles")
-        .select("display_name, avatar_url")
+        .select("display_name, avatar_url, gender")
         .eq("id", context.userId)
         .maybeSingle();
       const name = (prof?.display_name as string | null) ?? "একজন বন্ধু";
@@ -236,6 +238,11 @@ export const sendMessage = createServerFn({ method: "POST" })
           const { data: signed } = await sb.storage.from("avatars").createSignedUrl(avatarPath, 60 * 60 * 24 * 7);
           senderAvatar = signed?.signedUrl ?? "";
         }
+      }
+      if (!senderAvatar) {
+        const { defaultAvatarUrl } = await import("./default-avatar");
+        const origin = process.env["PUBLIC_APP_ORIGIN"] || "https://good-app2.lovable.app";
+        senderAvatar = defaultAvatarUrl((prof as any)?.gender ?? null, origin) ?? "";
       }
       const preview = previewOf({ kind: data.kind, body: data.body });
       const { sendPushToUser } = await import("./push.server");

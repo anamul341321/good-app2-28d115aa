@@ -114,9 +114,11 @@ const CompleteInput = z.object({
   phone: z.string().trim().regex(/^01\d{9}$/),
   password: z.string().min(6, "পাসওয়ার্ড কমপক্ষে ৬ অক্ষর"),
   walletAddress: z.string().trim().min(10),
+  gender: z.enum(["male", "female"], { message: "ছেলে অথবা মেয়ে সিলেক্ট করুন" }),
   gmail: z.string().trim().toLowerCase().optional().nullable(),
   referralCode: z.string().trim().max(20).optional().nullable(),
 });
+
 
 /** ভেরিফিকেশন সফল হওয়ার পরেই একাউন্ট তৈরি হয় */
 export const completeFaceSignup = createServerFn({ method: "POST" })
@@ -148,6 +150,7 @@ export const completeFaceSignup = createServerFn({ method: "POST" })
         display_name: data.name,
         phone_number: data.phone,
         contact_email: gmail,
+        gender: data.gender,
         face_login: true,
         ...(refCode ? { referral_code: refCode } : {}),
       },
@@ -160,12 +163,16 @@ export const completeFaceSignup = createServerFn({ method: "POST" })
     }
 
     const userId = created?.user?.id ?? null;
-    if (userId && gmail) {
+    if (userId) {
       await supabaseAdmin
         .from("profiles")
-        .update({ email: gmail, email_verified: false } as never)
+        .update({
+          gender: data.gender,
+          ...(gmail ? { email: gmail, email_verified: false } : {}),
+        } as never)
         .eq("id", userId);
     }
+
 
     await supabaseAdmin
       .from("face_signups")
@@ -211,6 +218,7 @@ export const skipFaceSignup = createServerFn({ method: "POST" })
         display_name: data.name,
         phone_number: data.phone,
         contact_email: gmail,
+        gender: data.gender,
         face_login: true,
         face_verify_pending: true,
         ...(refCode ? { referral_code: refCode } : {}),
@@ -224,12 +232,16 @@ export const skipFaceSignup = createServerFn({ method: "POST" })
     }
 
     const userId = created?.user?.id ?? null;
-    if (userId && gmail) {
+    if (userId) {
       await supabaseAdmin
         .from("profiles")
-        .update({ email: gmail, email_verified: false } as never)
+        .update({
+          gender: data.gender,
+          ...(gmail ? { email: gmail, email_verified: false } : {}),
+        } as never)
         .eq("id", userId);
     }
+
 
     if (data.walletAddress) {
       await supabaseAdmin

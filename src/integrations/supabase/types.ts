@@ -1489,6 +1489,7 @@ export type Database = {
           email_verified_at: string | null
           father_name: string | null
           full_address: string | null
+          gender: string | null
           id: string
           is_verified_badge: boolean
           kyc_nid_back_url: string | null
@@ -1533,6 +1534,7 @@ export type Database = {
           email_verified_at?: string | null
           father_name?: string | null
           full_address?: string | null
+          gender?: string | null
           id: string
           is_verified_badge?: boolean
           kyc_nid_back_url?: string | null
@@ -1577,6 +1579,7 @@ export type Database = {
           email_verified_at?: string | null
           father_name?: string | null
           full_address?: string | null
+          gender?: string | null
           id?: string
           is_verified_badge?: boolean
           kyc_nid_back_url?: string | null

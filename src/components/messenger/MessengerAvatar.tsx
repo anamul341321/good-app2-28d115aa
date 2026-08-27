@@ -1,21 +1,26 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { useFeedMedia } from "@/lib/feed-media";
+import { defaultAvatarPath, type Gender } from "@/lib/default-avatar";
 
 export function MessengerAvatar({
   name,
   src,
+  gender,
   online,
   size = "md",
   className,
 }: {
   name: string;
   src?: string | null;
+  gender?: Gender;
   online?: boolean;
   size?: "sm" | "md" | "lg" | "xl";
   className?: string;
 }) {
   const resolvedSrc = useFeedMedia(src);
+  const fallbackSrc = defaultAvatarPath(gender);
+  const finalSrc = resolvedSrc || fallbackSrc;
   const sizeClasses = {
     sm: "h-8 w-8 text-[10px]",
     md: "h-12 w-12 text-sm",
@@ -33,11 +38,12 @@ export function MessengerAvatar({
   return (
     <div className={cn("relative shrink-0", className)}>
       <Avatar className={cn(sizeClasses[size], "border border-border/50 shadow-sm")}>
-        {resolvedSrc && <AvatarImage src={resolvedSrc} alt={name} className="object-cover" />}
+        {finalSrc && <AvatarImage src={finalSrc} alt={name} className="object-cover" />}
         <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10 font-black text-primary uppercase">
           {(name || "U").toString().slice(0, 1)}
         </AvatarFallback>
       </Avatar>
+
       {online && (
         <span
           className={cn(

@@ -5,9 +5,11 @@ const PhoneSignupInput = z.object({
   name: z.string().trim().min(2, "নাম লাগবে").max(80, "নাম অনেক বড়"),
   phone: z.string().trim().regex(/^01\d{9}$/, "১১ ডিজিটের BD নম্বর লাগবে"),
   password: z.string().min(6, "পাসওয়ার্ড কমপক্ষে ৬ অক্ষর"),
+  gender: z.enum(["male", "female"], { message: "ছেলে অথবা মেয়ে সিলেক্ট করুন" }),
   gmail: z.string().trim().toLowerCase().optional().nullable(),
   referralCode: z.string().trim().max(20).optional().nullable(),
 });
+
 
 function phoneToEmail(phone: string) {
   return `u${phone}@facemine.app`;
@@ -73,6 +75,7 @@ export const registerWithPhone = createServerFn({ method: "POST" })
         display_name: data.name,
         phone_number: data.phone,
         contact_email: gmail,
+        gender: data.gender,
         ...(refCode ? { referral_code: refCode } : {}),
       },
     });
@@ -84,13 +87,17 @@ export const registerWithPhone = createServerFn({ method: "POST" })
       throw new Error(error.message);
     }
 
-    // প্রোফাইলে Gmail সেভ (ভেরিফাই হবে অ্যাপে কোড বসিয়ে)
-    if (created?.user?.id && gmail) {
+    // প্রোফাইলে Gmail + লিঙ্গ সেভ (Gmail ভেরিফাই হবে অ্যাপে কোড বসিয়ে)
+    if (created?.user?.id) {
       await supabaseAdmin
         .from("profiles")
-        .update({ email: gmail, email_verified: false } as any)
+        .update({
+          gender: data.gender,
+          ...(gmail ? { email: gmail, email_verified: false } : {}),
+        } as any)
         .eq("id", created.user.id);
     }
+
 
     return { ok: true, email };
   });

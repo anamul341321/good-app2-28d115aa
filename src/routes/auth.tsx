@@ -167,6 +167,7 @@ export function AuthPage() {
   const [name, setName] = useState("");
   const [referralCode, setReferralCode] = useState("");
   const [gmail, setGmail] = useState("");
+  const [gender, setGender] = useState<"male" | "female" | null>(null);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
@@ -262,6 +263,10 @@ export function AuthPage() {
     }
     if (mode === "signup" && name.trim().length < 2) {
       toast.error("আপনার নাম লিখুন");
+      return null;
+    }
+    if (mode === "signup" && !gender) {
+      toast.error("ছেলে অথবা মেয়ে সিলেক্ট করুন");
       return null;
     }
     if (mode === "signup" && otpEnabled && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(gmail.trim())) {
@@ -418,6 +423,7 @@ export function AuthPage() {
           name,
           phone: cleanPhone,
           password,
+          gender: (gender ?? "male") as "male" | "female",
           gmail: gmail.trim().toLowerCase() || null,
           referralCode: referralCode || null,
         },
@@ -703,6 +709,36 @@ export function AuthPage() {
                 </p>
               </div>
             )}
+            {mode === "signup" && (
+              <div data-voice="auth.gender">
+                <label className="text-[11px] font-black text-violet uppercase tracking-wider">
+                  আপনি ছেলে না মেয়ে?
+                </label>
+                <div className="mt-1 grid grid-cols-2 gap-2">
+                  {([
+                    { key: "male", label: "ছেলে", icon: "/avatar-male.png" },
+                    { key: "female", label: "মেয়ে", icon: "/avatar-female.png" },
+                  ] as const).map((g) => (
+                    <button
+                      key={g.key}
+                      type="button"
+                      onClick={() => setGender(g.key)}
+                      className={`flex items-center justify-center gap-2 rounded-xl border-2 px-3 py-2.5 text-sm font-black transition btn-press ${
+                        gender === g.key
+                          ? "border-violet bg-violet/10 text-violet"
+                          : "border-border bg-white text-navy"
+                      }`}
+                    >
+                      <img src={g.icon} alt="" width={24} height={24} loading="lazy" className="h-6 w-6 rounded-full" />
+                      {g.label}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  ছবি না দিলে এই অনুযায়ী ডিফল্ট প্রোফাইল ছবি দেখাবে।
+                </p>
+              </div>
+            )}
             <div data-voice="auth.password">
               <label className="text-[11px] font-black text-violet uppercase tracking-wider">
                 পাসওয়ার্ড
@@ -814,6 +850,7 @@ export function AuthPage() {
             name={name.trim()}
             phone={phone.replace(/\D/g, "").slice(0, 11)}
             password={password}
+            gender={gender}
             gmail={gmail.trim() || null}
             referralCode={referralCode.trim() || null}
             onClose={() => setFaceMode(null)}
