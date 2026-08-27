@@ -16,7 +16,7 @@ export const getAccountSettings = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data } = await supabaseAdmin
       .from("profiles")
-      .select("display_name, phone_number, email, email_verified")
+      .select("display_name, phone_number, email, email_verified, gender")
       .eq("id", context.userId)
       .maybeSingle();
     return {
@@ -24,8 +24,27 @@ export const getAccountSettings = createServerFn({ method: "GET" })
       phone: ((data as any)?.phone_number ?? "") as string,
       email: ((data as any)?.email ?? "") as string,
       emailVerified: !!(data as any)?.email_verified,
+      gender: (((data as any)?.gender ?? null) as "male" | "female" | null),
     };
   });
+
+/** লিঙ্গ (ছেলে/মেয়ে) সেভ — ছবি না থাকলে এই অনুযায়ী ডিফল্ট অবতার দেখাবে */
+export const setMyGender = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { gender: "male" | "female" }) => d)
+  .handler(async ({ data, context }) => {
+    const gender = data.gender === "female" ? "female" : data.gender === "male" ? "male" : null;
+    if (!gender) throw new Error("ছেলে অথবা মেয়ে সিলেক্ট করুন");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("profiles")
+      .update({ gender } as any)
+      .eq("id", context.userId);
+    if (error) throw new Error("সেভ করা যায়নি — আবার চেষ্টা করুন");
+    await supabaseAdmin.auth.admin.updateUserById(context.userId, { user_metadata: { gender } });
+    return { ok: true as const, gender };
+  });
+
 
 export const changePhoneNumber = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
