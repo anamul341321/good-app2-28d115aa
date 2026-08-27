@@ -274,6 +274,7 @@ export function ChatListPage() {
                 time={formatChatTime(conv.lastAt)}
                 unreadCount={conv.unread}
                 online={'peerId' in conv ? onlineIds.has(conv.peerId) : false}
+                lastActiveAt={'lastActiveAt' in conv ? ((conv as any).lastActiveAt ?? null) : null}
                 isGroup={'groupId' in conv}
               />
             ))}
