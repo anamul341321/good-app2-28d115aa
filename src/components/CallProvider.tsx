@@ -21,6 +21,9 @@ import {
   MonitorOff,
   SwitchCamera,
   Volume2,
+  Volume1,
+  VolumeX,
+
 
 } from "lucide-react";
 import { playIncomingRing, playRingback } from "@/lib/ringtone";
