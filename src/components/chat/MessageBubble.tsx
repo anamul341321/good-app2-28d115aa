@@ -59,6 +59,10 @@ function VoiceMessage({
   peaks?: number[];
 }) {
   const audio = useRef<HTMLAudioElement | null>(null);
+  // Thread polling creates a fresh signed query string every few seconds.
+  // Keep the same source for the lifetime of this message so an in-progress
+  // recording is not reloaded (and stopped) on every poll.
+  const playbackUrl = useRef(url);
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(durationHint ?? 0);
@@ -66,7 +70,7 @@ function VoiceMessage({
 
   useEffect(() => {
     setBars(peaks && peaks.length ? peaks : []);
-  }, [peaks?.length, url]);
+  }, [peaks?.length]);
 
   // পুরোনো মেসেজে peaks নেই — অডিও ডিকোড করে আসল ওয়েভফর্ম বানানো হয়।
   useEffect(() => {
@@ -76,7 +80,7 @@ function VoiceMessage({
       try {
         const Ctor = window.AudioContext || (window as any).webkitAudioContext;
         if (!Ctor) return;
-        const response = await fetch(url);
+        const response = await fetch(playbackUrl.current);
         if (!response.ok) return;
         const buffer = await response.arrayBuffer();
         const ctx = new Ctor();
@@ -92,7 +96,7 @@ function VoiceMessage({
     return () => {
       cancelled = true;
     };
-  }, [url, bars.length]);
+  }, [bars.length]);
 
   useEffect(() => {
     const node = audio.current;
@@ -111,16 +115,20 @@ function VoiceMessage({
       setProgress(0);
       node.currentTime = 0;
     };
+    const started = () => setPlaying(true);
+    const paused = () => setPlaying(false);
     node.addEventListener("timeupdate", sync);
     node.addEventListener("loadedmetadata", loaded);
     node.addEventListener("durationchange", loaded);
-    node.addEventListener("playing", () => setPlaying(true));
-    node.addEventListener("pause", () => setPlaying(false));
+    node.addEventListener("playing", started);
+    node.addEventListener("pause", paused);
     node.addEventListener("ended", ended);
     return () => {
       node.removeEventListener("timeupdate", sync);
       node.removeEventListener("loadedmetadata", loaded);
       node.removeEventListener("durationchange", loaded);
+      node.removeEventListener("playing", started);
+      node.removeEventListener("pause", paused);
       node.removeEventListener("ended", ended);
     };
   }, [durationHint]);
@@ -149,7 +157,7 @@ function VoiceMessage({
 
   return (
     <div className="flex min-w-56 items-center gap-2 py-0.5" onClick={(event) => event.stopPropagation()}>
-      <audio ref={audio} src={url} preload="metadata" />
+      <audio ref={audio} src={playbackUrl.current} preload="auto" playsInline />
       <button onClick={toggle} className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-current/15" aria-label={playing ? "Stop" : "Play"}>
         {playing ? <Pause className="h-4 w-4" /> : <Play className="ml-0.5 h-4 w-4" />}
       </button>
