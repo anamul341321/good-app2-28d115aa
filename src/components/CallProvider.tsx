@@ -1143,7 +1143,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
             className="absolute inset-x-0 bottom-0 px-4"
             style={{ paddingBottom: "calc(env(safe-area-inset-bottom,0px) + 22px)" }}
           >
-            <div className="mx-auto flex max-w-sm items-center justify-between gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-3 backdrop-blur-xl">
+            <div className="mx-auto flex max-w-md flex-wrap items-center justify-center gap-2 rounded-[28px] border border-white/10 bg-white/10 px-3 py-3 backdrop-blur-xl">
               <CallCtl active={muted} onClick={toggleMute} label={muted ? "আনমিউট" : "মিউট"}>
                 {muted ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
               </CallCtl>
