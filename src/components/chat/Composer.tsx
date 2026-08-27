@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { Image as ImageIcon, Loader2, Mic, Send, Square, Video, Plus, Smile } from "lucide-react";
+import { Image as ImageIcon, Loader2, Mic, Send, Square, Video, Plus, Smile, X, Reply } from "lucide-react";
 import { extOf, uploadChatFile, type UploadKind } from "@/lib/chat-upload";
 
 export type SendPayload = {
@@ -14,9 +14,14 @@ export type SendPayload = {
 export function Composer({
   onSend,
   sending,
+  replyTo,
+  onCancelReply,
 }: {
   onSend: (p: SendPayload) => void;
   sending: boolean;
+  /** মেসেঞ্জারের মতো — যে মেসেজটির রিপ্লাই দেওয়া হচ্ছে */
+  replyTo?: { id: string; body?: string; kind?: string; name?: string } | null;
+  onCancelReply?: () => void;
 }) {
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
@@ -28,11 +33,18 @@ export function Composer({
   const timer = useRef<number | undefined>(undefined);
   const elapsed = useRef(0);
 
+  const replyMeta = () =>
+    replyTo
+      ? { replyTo: { id: replyTo.id, body: replyTo.body ?? "", kind: replyTo.kind ?? "text", name: replyTo.name ?? "" } }
+      : undefined;
+
   const submitText = () => {
     const b = text.trim();
     if (!b) return;
     setText("");
-    onSend({ body: b, kind: "text" });
+    const meta = replyMeta();
+    onCancelReply?.();
+    onSend({ body: b, kind: "text", ...(meta ? { mediaMeta: meta } : {}) });
   };
 
   const pick = async (file: File | undefined, kind: UploadKind) => {
@@ -40,7 +52,8 @@ export function Composer({
     setBusy(true);
     try {
       const path = await uploadChatFile(file, kind, extOf(file.name, kind === "image" ? "jpg" : "mp4"));
-      onSend({ kind, mediaPath: path, mediaMeta: { name: file.name, size: file.size } });
+      onSend({ kind, mediaPath: path, mediaMeta: { name: file.name, size: file.size, ...replyMeta() } });
+      onCancelReply?.();
     } catch (e: any) {
       toast.error(e?.message ?? "Upload failed");
     } finally {
@@ -67,7 +80,8 @@ export function Composer({
         setBusy(true);
         try {
           const path = await uploadChatFile(blob, "voice", "webm");
-          onSend({ kind: "voice", mediaPath: path, mediaMeta: { size: blob.size, duration } });
+          onSend({ kind: "voice", mediaPath: path, mediaMeta: { size: blob.size, duration, ...replyMeta() } });
+          onCancelReply?.();
         } catch (e: any) {
           toast.error(e?.message ?? "Failed to send voice");
         } finally {
@@ -97,6 +111,30 @@ export function Composer({
 
   return (
     <div className="bg-background px-2 py-2 border-t">
+      {replyTo && (
+        <div className="mb-2 flex items-center gap-2 rounded-2xl border-l-4 border-primary bg-surface-2 px-3 py-2">
+          <Reply className="h-4 w-4 shrink-0 text-primary" />
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[10px] font-black text-primary">
+              {replyTo.name ? `${replyTo.name}-কে রিপ্লাই` : "রিপ্লাই দিচ্ছেন"}
+            </p>
+            <p className="truncate text-[11px] font-bold text-muted-foreground">
+              {replyTo.body?.trim()
+                ? replyTo.body
+                : replyTo.kind === "image"
+                  ? "📷 ছবি"
+                  : replyTo.kind === "video"
+                    ? "🎬 ভিডিও"
+                    : replyTo.kind === "voice"
+                      ? "🎤 ভয়েস"
+                      : "মেসেজ"}
+            </p>
+          </div>
+          <button onClick={onCancelReply} aria-label="বাতিল" className="btn-press shrink-0 rounded-full p-1 text-muted-foreground">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
       <input
         ref={imgRef}
         type="file"
