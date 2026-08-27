@@ -96,6 +96,17 @@ export function ChatListPage() {
     onError: (error) => toast.error(error instanceof Error ? error.message : "স্টোরি যোগ হয়নি"),
   });
 
+  const deleteChatMutation = useMutation({
+    mutationFn: ({ id, isGroup }: { id: string; isGroup: boolean }) =>
+      deleteAllMessages({ data: isGroup ? { groupId: id } : { peerId: id } }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["chats"] });
+      void qc.invalidateQueries({ queryKey: ["unread-msgs"] });
+      toast.success("চ্যাট মুছে ফেলা হয়েছে");
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : "চ্যাট মুছা যায়নি"),
+  });
+
   const handleStorySelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
