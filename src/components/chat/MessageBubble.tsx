@@ -142,20 +142,28 @@ export function MessageBubble({
   mine,
   showName,
   onDelete,
+  onReply,
   seenBy,
 }: {
   m: ChatMsg;
   mine: boolean;
   showName?: boolean;
   onDelete?: (id: string) => void;
+  /** ডান দিকে টান দিলে এই মেসেজ mention করে রিপ্লাই লেখা শুরু হবে */
+  onReply?: (m: ChatMsg) => void;
   /** মেসেঞ্জারের মতো — পড়া হলে এই মেসেজের নিচে পিয়ারের ছোট প্রোফাইল ছবি দেখাবে */
   seenBy?: { name: string; avatarUrl?: string | null } | null;
 }) {
   const [zoom, setZoom] = useState(false);
   const [menu, setMenu] = useState(false);
   const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
+  const [drag, setDrag] = useState(0);
+  const startRef = useRef<{ x: number; y: number } | null>(null);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const bubbleRef = useRef<HTMLDivElement | null>(null);
+  const replyTo = (m.mediaMeta as any)?.replyTo as
+    | { body?: string; name?: string; kind?: string }
+    | undefined;
 
   const openMenu = (e: React.MouseEvent | React.TouchEvent) => {
     const clientX = "touches" in e ? e.touches[0]?.clientX || 0 : e.clientX;
@@ -167,13 +175,46 @@ export function MessageBubble({
 
   const handlePointerDown = (e: React.MouseEvent | React.TouchEvent) => {
     if (m.deleted) return;
+    if ("touches" in e && e.touches[0]) {
+      startRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    }
     longPressTimer.current = setTimeout(() => openMenu(e), 500);
   };
 
-  const handlePointerUp = () => {
+  const cancelLongPress = () => {
     if (longPressTimer.current) {
       clearTimeout(longPressTimer.current);
       longPressTimer.current = null;
+    }
+  };
+
+  const handlePointerUp = () => {
+    cancelLongPress();
+    if (drag > 45 && onReply && !m.deleted) {
+      onReply(m);
+      if (navigator.vibrate) navigator.vibrate(15);
+    }
+    startRef.current = null;
+    setDrag(0);
+  };
+
+  // ডান দিকে টান — মেসেঞ্জারের মতো রিপ্লাই
+  const handleTouchMove = (e: React.TouchEvent) => {
+    const start = startRef.current;
+    const touch = e.touches[0];
+    if (!start || !touch) return;
+    const dx = touch.clientX - start.x;
+    const dy = Math.abs(touch.clientY - start.y);
+    if (dy > 24) {
+      cancelLongPress();
+      setDrag(0);
+      return;
+    }
+    if (dx > 6) {
+      cancelLongPress();
+      setDrag(Math.min(dx, 72));
+    } else {
+      cancelLongPress();
     }
   };
 
@@ -183,7 +224,15 @@ export function MessageBubble({
 
   return (
     <div className={`flex flex-col ${mine ? "items-end" : "items-start"} mb-1`}>
-      <div className="max-w-[80%] flex items-end gap-2">
+      <div className="relative max-w-[80%] flex items-end gap-2">
+        {drag > 10 && (
+          <span
+            className="pointer-events-none absolute -left-8 top-1/2 -translate-y-1/2 text-primary"
+            style={{ opacity: Math.min(1, drag / 45) }}
+          >
+            <Reply className="h-5 w-5" />
+          </span>
+        )}
         <div
           ref={bubbleRef}
           onMouseDown={handlePointerDown}
@@ -191,13 +240,37 @@ export function MessageBubble({
           onMouseLeave={handlePointerUp}
           onTouchStart={handlePointerDown}
           onTouchEnd={handlePointerUp}
-          onTouchMove={handlePointerUp}
+          onTouchCancel={handlePointerUp}
+          onTouchMove={handleTouchMove}
+          onDoubleClick={() => !m.deleted && onReply?.(m)}
           onContextMenu={(e) => { e.preventDefault(); openMenu(e); }}
           onClick={() => mine && !m.deleted && setMenu((v) => !v)}
-          className={`relative overflow-hidden shadow-sm transition-all ${bubbleClasses} ${
+          style={{ transform: `translateX(${drag}px)`, transition: drag ? "none" : "transform 160ms ease-out" }}
+          className={`relative overflow-hidden shadow-sm ${bubbleClasses} ${
             m.kind === "image" || m.kind === "video" ? "p-1" : "px-3.5 py-2"
           }`}
         >
+          {replyTo && !m.deleted && (
+            <div
+              className={`mb-1.5 rounded-xl border-l-4 px-2.5 py-1.5 ${
+                mine ? "border-white/70 bg-white/15" : "border-primary/70 bg-primary/10"
+              }`}
+            >
+              <p className="text-[10px] font-black opacity-90">{replyTo.name ?? "মেসেজ"}</p>
+              <p className="line-clamp-2 text-[11px] font-bold opacity-80">
+                {replyTo.body?.trim()
+                  ? replyTo.body
+                  : replyTo.kind === "image"
+                    ? "📷 ছবি"
+                    : replyTo.kind === "video"
+                      ? "🎬 ভিডিও"
+                      : replyTo.kind === "voice"
+                        ? "🎤 ভয়েস"
+                        : "মেসেজ"}
+              </p>
+            </div>
+          )}
+
           {m.deleted ? (
             <p className="flex items-center gap-1.5 text-xs font-bold italic opacity-80">
               <Ban className="h-3.5 w-3.5" /> Message deleted
