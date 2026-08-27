@@ -150,6 +150,7 @@ export const completeFaceSignup = createServerFn({ method: "POST" })
         display_name: data.name,
         phone_number: data.phone,
         contact_email: gmail,
+        gender: data.gender,
         face_login: true,
         ...(refCode ? { referral_code: refCode } : {}),
       },
@@ -162,12 +163,16 @@ export const completeFaceSignup = createServerFn({ method: "POST" })
     }
 
     const userId = created?.user?.id ?? null;
-    if (userId && gmail) {
+    if (userId) {
       await supabaseAdmin
         .from("profiles")
-        .update({ email: gmail, email_verified: false } as never)
+        .update({
+          gender: data.gender,
+          ...(gmail ? { email: gmail, email_verified: false } : {}),
+        } as never)
         .eq("id", userId);
     }
+
 
     await supabaseAdmin
       .from("face_signups")
