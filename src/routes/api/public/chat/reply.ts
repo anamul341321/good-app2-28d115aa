@@ -46,9 +46,21 @@ export const Route = createFileRoute("/api/public/chat/reply")({
         try {
           const { data: prof } = await supabaseAdmin
             .from("profiles")
-            .select("display_name")
+            .select("display_name, avatar_url")
             .eq("id", userId)
             .maybeSingle();
+          let senderAvatar = "";
+          const avatarPath = (prof as any)?.avatar_url as string | null | undefined;
+          if (avatarPath) {
+            if (/^https:\/\//i.test(avatarPath)) {
+              senderAvatar = avatarPath;
+            } else {
+              const { data: signed } = await supabaseAdmin.storage
+                .from("avatars")
+                .createSignedUrl(avatarPath, 60 * 60 * 24 * 7);
+              senderAvatar = signed?.signedUrl ?? "";
+            }
+          }
           const { sendPushToUser } = await import("@/lib/push.server");
           const { createReplyToken } = await import("@/lib/chat-reply-token.server");
           await sendPushToUser(parsed.peerId, {
@@ -60,6 +72,7 @@ export const Route = createFileRoute("/api/public/chat/reply")({
               type: "chat_message",
               sender_id: userId,
               sender_name: (prof as any)?.display_name ?? "একজন বন্ধু",
+              sender_avatar_url: senderAvatar,
               body: parsed.body.slice(0, 120),
               reply_token: createReplyToken(parsed.peerId),
             },
