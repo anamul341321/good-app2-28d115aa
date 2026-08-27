@@ -111,6 +111,7 @@ function FeedPage() {
   const [showPostMenu, setShowPostMenu] = useState<string | null>(null);
   const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [editText, setEditText] = useState("");
+  const [editVisibility, setEditVisibility] = useState<"public" | "private">("public");
   const [viewingImage, setViewingImage] = useState<string | null>(null);
   const [doubleTapTimer, setDoubleTapTimer] = useState<Record<string, number>>({});
   const [showLoveAnimation, setShowLoveAnimation] = useState<string | null>(null);
@@ -293,11 +294,11 @@ function FeedPage() {
   });
 
   const editPostMutation = useMutation({
-    mutationFn: async ({ postId, content }: { postId: string; content: string }) => {
+    mutationFn: async ({ postId, content, visibility }: { postId: string; content: string; visibility: "public" | "private" }) => {
       if (!user) throw new Error("Login");
-      await updatePost(postId, user.id, { content });
+      await updatePost(postId, user.id, { content, visibility });
     },
-    onSuccess: (_d, vars) => {
+    onSuccess: () => {
       setEditingPost(null);
       queryClient.invalidateQueries({ queryKey: ["feed-posts"] });
       toast.success("পোস্ট আপডেট হয়েছে ✅");
@@ -637,7 +638,7 @@ function FeedPage() {
                   <div className="absolute right-0 top-full mt-1 bg-white dark:bg-card border border-gray-200 dark:border-border rounded-lg shadow-xl z-50 overflow-hidden min-w-[180px] animate-in fade-in zoom-in-95 duration-150">
                     {post.user_id === user.id ? (
                       <>
-                        <button onClick={() => { setEditingPost(post); setEditText(post.content || ""); setShowPostMenu(null); }}
+                        <button onClick={() => { setEditingPost(post); setEditText(post.content || ""); setEditVisibility(((post as any).visibility || "public") as "public" | "private"); setShowPostMenu(null); }}
                           className="w-full flex items-center gap-3 px-4 py-3 text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-secondary text-sm font-medium transition-colors">
                           <Pencil className="w-4 h-4" /> পোস্ট এডিট করুন
                         </button>
@@ -1378,7 +1379,7 @@ function FeedPage() {
               <button onClick={() => setEditingPost(null)} className="p-1"><X className="w-5 h-5" /></button>
               <p className="flex-1 text-[16px] font-bold">পোস্ট এডিট করুন</p>
               <button
-                onClick={() => editPostMutation.mutate({ postId: editingPost.id, content: editText })}
+                onClick={() => editPostMutation.mutate({ postId: editingPost.id, content: editText, visibility: editVisibility })}
                 disabled={editPostMutation.isPending || !editText.trim()}
                 className="px-4 py-1.5 rounded-lg bg-blue-600 text-white text-[14px] font-bold disabled:opacity-50"
               >
@@ -1392,6 +1393,23 @@ function FeedPage() {
               className="w-full p-4 bg-transparent text-[16px] outline-none resize-none"
               placeholder="কিছু লিখুন…"
             />
+            <div className="px-4 pb-4">
+              <p className="text-[13px] font-bold text-gray-700 dark:text-foreground mb-2">দেখার অনুমতি</p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setEditVisibility("public")}
+                  className={`flex-1 flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-bold transition-colors ${editVisibility === "public" ? "border-blue-600 bg-blue-600/10 text-blue-600" : "border-gray-200 dark:border-border/40 text-gray-700 dark:text-foreground"}`}
+                >
+                  <Globe className="w-4 h-4" /> সবাই দেখবে
+                </button>
+                <button
+                  onClick={() => setEditVisibility("private")}
+                  className={`flex-1 flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-bold transition-colors ${editVisibility === "private" ? "border-blue-600 bg-blue-600/10 text-blue-600" : "border-gray-200 dark:border-border/40 text-gray-700 dark:text-foreground"}`}
+                >
+                  <Lock className="w-4 h-4" /> শুধু আমি
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

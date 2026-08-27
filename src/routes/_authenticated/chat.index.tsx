@@ -3,7 +3,7 @@ import { useState, useMemo, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Search, Users, Check, MessageCircle, Home, Loader2 } from "lucide-react";
-import { createGroup, listChats } from "@/lib/chat.functions";
+import { createGroup, listChats, deleteAllMessages } from "@/lib/chat.functions";
 import { listFriends } from "@/lib/friends.functions";
 import { getPublicProfile } from "@/lib/social-users.functions";
 import { createStory, uploadStoryMedia } from "@/lib/feed-api";
@@ -94,6 +94,17 @@ export function ChatListPage() {
       toast.success("স্টোরি যোগ হয়েছে");
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : "স্টোরি যোগ হয়নি"),
+  });
+
+  const deleteChatMutation = useMutation({
+    mutationFn: ({ id, isGroup }: { id: string; isGroup: boolean }) =>
+      deleteAllMessages({ data: isGroup ? { groupId: id } : { peerId: id } }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["chats"] });
+      void qc.invalidateQueries({ queryKey: ["unread-msgs"] });
+      toast.success("চ্যাট মুছে ফেলা হয়েছে");
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : "চ্যাট মুছা যায়নি"),
   });
 
   const handleStorySelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -278,6 +289,7 @@ export function ChatListPage() {
                 online={'peerId' in conv ? onlineIds.has(conv.peerId) : false}
                 lastActiveAt={'lastActiveAt' in conv ? ((conv as any).lastActiveAt ?? null) : null}
                 isGroup={'groupId' in conv}
+                onDelete={(id, isGroup) => deleteChatMutation.mutate({ id, isGroup })}
               />
             ))}
           </div>

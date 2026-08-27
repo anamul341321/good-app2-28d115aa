@@ -93,6 +93,50 @@ function VoiceMessage({ url, mine, durationHint }: { url: string; mine: boolean;
   );
 }
 
+/** লং-প্রেস মেনু — মেসেঞ্জারের মতো */
+function MessageContextMenu({
+  open,
+  onClose,
+  onDelete,
+  mine,
+  position,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onDelete: () => void;
+  mine: boolean;
+  position: { x: number; y: number };
+}) {
+  if (!open) return null;
+  return (
+    <>
+      <div className="fixed inset-0 z-[80]" onClick={onClose} />
+      <div
+        className="fixed z-[90] min-w-[160px] rounded-xl border border-border/60 bg-card/95 p-1.5 shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-150"
+        style={{ left: position.x, top: position.y }}
+      >
+        {mine && (
+          <button
+            onClick={() => {
+              onClose();
+              onDelete();
+            }}
+            className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm font-black text-rose-500 hover:bg-rose-500/10 transition-colors"
+          >
+            <Trash2 className="h-4 w-4" /> Unsend / মুছুন
+          </button>
+        )}
+        <button
+          onClick={onClose}
+          className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm font-black text-foreground hover:bg-surface-2 transition-colors"
+        >
+          <Ban className="h-4 w-4" /> বন্ধ করুন
+        </button>
+      </div>
+    </>
+  );
+}
+
 export function MessageBubble({
   m,
   mine,
@@ -109,7 +153,29 @@ export function MessageBubble({
 }) {
   const [zoom, setZoom] = useState(false);
   const [menu, setMenu] = useState(false);
+  const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const bubbleRef = useRef<HTMLDivElement | null>(null);
 
+  const openMenu = (e: React.MouseEvent | React.TouchEvent) => {
+    const clientX = "touches" in e ? e.touches[0]?.clientX || 0 : e.clientX;
+    const clientY = "touches" in e ? e.touches[0]?.clientY || 0 : e.clientY;
+    setMenuPos({ x: Math.min(clientX, window.innerWidth - 170), y: Math.min(clientY, window.innerHeight - 120) });
+    setMenu(true);
+    if (navigator.vibrate) navigator.vibrate(20);
+  };
+
+  const handlePointerDown = (e: React.MouseEvent | React.TouchEvent) => {
+    if (m.deleted) return;
+    longPressTimer.current = setTimeout(() => openMenu(e), 500);
+  };
+
+  const handlePointerUp = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  };
 
   const bubbleClasses = mine
     ? "bg-primary text-white rounded-[20px] rounded-br-[4px]"
@@ -119,6 +185,14 @@ export function MessageBubble({
     <div className={`flex flex-col ${mine ? "items-end" : "items-start"} mb-1`}>
       <div className="max-w-[80%] flex items-end gap-2">
         <div
+          ref={bubbleRef}
+          onMouseDown={handlePointerDown}
+          onMouseUp={handlePointerUp}
+          onMouseLeave={handlePointerUp}
+          onTouchStart={handlePointerDown}
+          onTouchEnd={handlePointerUp}
+          onTouchMove={handlePointerUp}
+          onContextMenu={(e) => { e.preventDefault(); openMenu(e); }}
           onClick={() => mine && !m.deleted && setMenu((v) => !v)}
           className={`relative overflow-hidden shadow-sm transition-all ${bubbleClasses} ${
             m.kind === "image" || m.kind === "video" ? "p-1" : "px-3.5 py-2"
@@ -173,7 +247,7 @@ export function MessageBubble({
           ) : m.kind === "voice" && m.mediaUrl ? (
             <VoiceMessage url={m.mediaUrl} mine={mine} durationHint={Number(m.mediaMeta?.duration) || undefined} />
           ) : (
-            <p className="whitespace-pre-wrap break-words text-sm font-bold leading-snug">{m.body}</p>
+            <p className="whitespace-pre-wrap break-words text-sm font-black leading-snug">{m.body}</p>
           )}
         </div>
       </div>
@@ -188,19 +262,13 @@ export function MessageBubble({
         <span className="text-[9px] font-black text-muted-foreground ml-3 mt-0.5">{m.senderName}</span>
       )}
 
-      {menu && mine && !m.deleted && onDelete && (
-        <div className="mt-1 flex justify-end">
-          <button
-            onClick={() => {
-              setMenu(false);
-              onDelete(m.id);
-            }}
-            className="btn-press flex items-center gap-1.5 rounded-full bg-rose-500/10 px-3 py-1 text-[10px] font-black text-rose-500 border border-rose-500/20"
-          >
-            <Trash2 className="h-3 w-3" /> Unsend
-          </button>
-        </div>
-      )}
+      <MessageContextMenu
+        open={menu}
+        onClose={() => setMenu(false)}
+        onDelete={() => onDelete?.(m.id)}
+        mine={mine}
+        position={menuPos}
+      />
 
       {zoom && m.mediaUrl && (
         <Lightbox url={m.mediaUrl} video={m.kind === "video"} onClose={() => setZoom(false)} />
