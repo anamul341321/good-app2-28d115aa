@@ -7,8 +7,13 @@ import { useState } from "react";
 
 export const Route = createFileRoute("/admin/faces")({ component: AdminFaces });
 
-function OnchainAudit() {
-  const { data, isLoading, refetch } = useQuery({ queryKey: ["fresh-wallets"], queryFn: () => adminFreshWallets() });
+function OnchainAudit({ open, onToggle }: { open: boolean; onToggle: () => void }) {
+  const { data, isLoading, refetch } = useQuery({
+    queryKey: ["fresh-wallets"],
+    queryFn: () => adminFreshWallets(),
+    enabled: open,
+    staleTime: 60_000,
+  });
   const [scanning, setScanning] = useState(false);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
 
