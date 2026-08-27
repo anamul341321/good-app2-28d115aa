@@ -117,6 +117,7 @@ function ThreadPage() {
               <MessengerAvatar
                 name={data.peer.name ?? "User"}
                 src={(data.peer as any)?.avatarUrl ?? null}
+                gender={(data.peer as any)?.gender ?? null}
                 online={online}
                 size="md"
               />
