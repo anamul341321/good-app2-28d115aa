@@ -1649,7 +1649,7 @@ function ReactorsModal({ postId, onClose }: { postId: string; onClose: () => voi
           {people.map((p) => (
             <Link
               key={`${p.user_id}-${p.reaction_type}`}
-              to="/profile/$userId"
+              to="/user/$userId"
               params={{ userId: p.user_id }}
               onClick={onClose}
               className="flex items-center gap-3 px-4 py-2.5"
