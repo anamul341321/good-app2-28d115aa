@@ -173,9 +173,39 @@ function ThreadPage() {
             </button>
           )}
           {data?.peer && <CallButtons userId={data.peer.userId} name={data.peer.name} />}
-          <button className="btn-press h-9 w-9 flex items-center justify-center rounded-full hover:bg-surface-2 transition-colors">
-            <Info className="h-5 w-5 text-primary" />
-          </button>
+          <div className="relative">
+            <button
+              onClick={() => setShowHeaderMenu((v) => !v)}
+              className="btn-press h-9 w-9 flex items-center justify-center rounded-full hover:bg-surface-2 transition-colors"
+            >
+              <MoreVertical className="h-5 w-5 text-primary" />
+            </button>
+            {showHeaderMenu && (
+              <>
+                <div className="fixed inset-0 z-[70]" onClick={() => setShowHeaderMenu(false)} />
+                <div className="absolute right-0 top-full mt-1 min-w-[180px] rounded-xl border border-border/60 bg-card/95 p-1.5 shadow-2xl backdrop-blur-md z-[80] animate-in fade-in zoom-in-95 duration-150">
+                  <button
+                    onClick={() => {
+                      setShowHeaderMenu(false);
+                      if (confirm("এই চ্যাটের সব মেসেজ মুছে ফেলবেন?")) {
+                        deleteAll.mutate();
+                      }
+                    }}
+                    disabled={deleteAll.isPending}
+                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm font-black text-rose-500 hover:bg-rose-500/10 transition-colors disabled:opacity-50"
+                  >
+                    <Trash2 className="h-4 w-4" /> {deleteAll.isPending ? "মুছছি..." : "সব মেসেজ ডিলিট"}
+                  </button>
+                  <button
+                    onClick={() => setShowHeaderMenu(false)}
+                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm font-black text-foreground hover:bg-surface-2 transition-colors"
+                  >
+                    <Ban className="h-4 w-4" /> বন্ধ করুন
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </header>
 
