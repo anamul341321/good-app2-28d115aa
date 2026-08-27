@@ -9,6 +9,7 @@ import { getPublicProfile } from "@/lib/social-users.functions";
 import { createStory, uploadStoryMedia } from "@/lib/feed-api";
 import { useAuth } from "@/hooks/useAuth";
 import { usePresence } from "@/lib/presence";
+import { isRecentlyActive } from "@/lib/last-active";
 import { StoryRow } from "@/components/messenger/StoryRow";
 import { ChatRow } from "@/components/messenger/ChatRow";
 import { MessengerAvatar } from "@/components/messenger/MessengerAvatar";
@@ -113,17 +114,18 @@ export function ChatListPage() {
   }, [chats, groups]);
 
 
-  const activeCount = useMemo(() => friendList.filter((friend) => onlineIds.has(friend.userId)).length, [friendList, onlineIds]);
+  const isActive = (f: any) => onlineIds.has(f.userId) || isRecentlyActive(f.last_active_at ?? f.lastActiveAt ?? null);
+  const activeCount = useMemo(() => friendList.filter((friend) => isActive(friend)).length, [friendList, onlineIds]);
 
   const activeUsers = useMemo(() => {
     return [...friendList]
-      .sort((a, b) => Number(onlineIds.has(b.userId)) - Number(onlineIds.has(a.userId)))
+      .sort((a, b) => Number(isActive(b)) - Number(isActive(a)))
       .map(f => ({
         userId: f.userId,
         name: f.name,
-        online: onlineIds.has(f.userId),
+        online: isActive(f),
         avatar: f.avatar_url ?? null,
-        hasStory: onlineIds.has(f.userId),
+        hasStory: isActive(f),
       }));
   }, [friendList, onlineIds]);
 
