@@ -8,7 +8,7 @@ import {
   getPostComments, addComment, uploadPostMedia, getActiveStories,
   createStory, uploadStoryMedia,
   deletePost, deleteStory, deleteComment, toggleCommentLike, updatePost,
-  getUnreadNotificationCount, getNotifications, markNotificationsRead,
+  getUnreadNotificationCount, getNotifications, markNotificationsRead, getPostReactors,
   REACTION_EMOJIS, type Post, type PostComment, type Story,
 } from "@/lib/feed-api";
 import { useFeedMedia } from "@/lib/feed-media";
@@ -261,6 +261,7 @@ function FeedPage() {
   const [comments, setComments] = useState<PostComment[]>([]);
   const [loadingComments, setLoadingComments] = useState(false);
   const [showReactionPicker, setShowReactionPicker] = useState<string | null>(null);
+  const [reactorsPostId, setReactorsPostId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const [viewingStory, setViewingStory] = useState<Story | null>(null);
@@ -858,22 +859,12 @@ function FeedPage() {
           })()}
 
           {post.video_url && (
-            <button
-              type="button"
-              onClick={() => navigate({ to: "/reels", search: { postId: post.id } as any })}
-              className="relative block w-full bg-black text-left"
-              aria-label="Short এ ভিডিও খুলুন"
-            >
-              <FeedVideo path={post.video_url} videoRef={(el) => { feedVideoRefs.current[post.id] = el; }} className="w-full max-h-[500px] object-contain opacity-90" />
-              <span className="absolute inset-0 grid place-items-center bg-black/10">
-                <span className="grid h-16 w-16 place-items-center rounded-full bg-card/90 text-primary shadow-xl backdrop-blur">
-                  <Play className="ml-1 h-8 w-8 fill-current" />
-                </span>
-              </span>
-              <span className="absolute bottom-3 left-3 rounded-full bg-primary px-3 py-1.5 text-[12px] font-black text-primary-foreground shadow-lg">
-                Short এ দেখুন
-              </span>
-            </button>
+            <FeedVideoPlayer
+              path={post.video_url}
+              postId={post.id}
+              videoRef={(el) => { feedVideoRefs.current[post.id] = el; }}
+              onOpenReels={() => navigate({ to: "/reels", search: { postId: post.id } as any })}
+            />
           )}
 
           <div className="px-3 py-2 flex items-center justify-between text-[13px] text-gray-500 dark:text-muted-foreground">
@@ -884,7 +875,9 @@ function FeedPage() {
                   <span className="w-5 h-5 rounded-full bg-red-500 flex items-center justify-center text-[11px]">{REACTION_EMOJIS[myReaction]}</span>
                 )}
               </span>
-              <span className="text-[13px]">{post.likes_count || 0}</span>
+              <button onClick={() => setReactorsPostId(post.id)} className="text-[13px] hover:underline">
+                {post.likes_count || 0}
+              </button>
             </div>
             <div className="flex items-center gap-3">
               {post.video_url && (
@@ -937,9 +930,14 @@ function FeedPage() {
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setShowReactionPicker(null)} />
                   <div className="absolute bottom-full left-0 mb-2 bg-white dark:bg-card border border-gray-200 dark:border-border rounded-full shadow-xl px-2 py-1.5 flex gap-0.5 z-50 animate-in fade-in zoom-in-90 duration-150">
-                    {Object.entries(REACTION_EMOJIS).map(([type, emoji]) => (
-                      <button key={type} onClick={() => reactionMutation.mutate({ postId: post.id, type })}
-                        className={`text-2xl p-1 rounded-full hover:bg-gray-100 dark:hover:bg-secondary transition-transform hover:scale-125 ${myReaction === type ? "bg-blue-50 dark:bg-primary/20" : ""}`} title={type}>
+                    {Object.entries(REACTION_EMOJIS).map(([type, emoji], i) => (
+                      <button
+                        key={type}
+                        onClick={() => { playUiSound("like"); reactionMutation.mutate({ postId: post.id, type }); }}
+                        style={{ animationDelay: `${i * 45}ms` }}
+                        className={`reaction-pop text-3xl p-1 rounded-full transition-transform duration-150 hover:scale-[1.45] active:scale-125 ${myReaction === type ? "bg-blue-50 dark:bg-primary/20" : ""}`}
+                        title={type}
+                      >
                         {emoji}
                       </button>
                     ))}
