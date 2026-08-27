@@ -519,6 +519,57 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     resumeRemoteMedia();
   }, [state, peer?.id, withVideo, resumeRemoteMedia]);
 
+  // কল রিং হওয়ার সময়েই ক্যামেরা/মাইক গরম করে রাখি — রিসিভ করলেই সাথে সাথে ছবি আসে
+  useEffect(() => {
+    if (state !== "ringing") return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const s = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+          video: withVideo
+            ? { facingMode: facing.current, width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } }
+            : false,
+        });
+        if (cancelled) {
+          s.getTracks().forEach((t) => t.stop());
+          return;
+        }
+        warmStream.current?.getTracks().forEach((t) => t.stop());
+        warmStream.current = s;
+        warmVideo.current = withVideo;
+      } catch {
+        /* অনুমতি না থাকলে accept করার সময় আবার চাওয়া হবে */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [state, withVideo]);
+
+  // স্পিকার/ইয়ারপিস — ভিডিও কলে ডিফল্ট স্পিকার, অডিও কলে ইয়ারপিস
+  useEffect(() => {
+    if (state === "connecting" || state === "active") setSpeakerOn(withVideo);
+  }, [state, withVideo]);
+
+  const toggleSpeaker = useCallback(() => {
+    setSpeakerOn((prev) => {
+      const next = !prev;
+      try {
+        (window as any).GoodAppDownloader?.setSpeakerphone?.(next);
+      } catch {}
+      return next;
+    });
+  }, []);
+
+  const bumpVolume = useCallback((up: boolean) => {
+    try {
+      (window as any).GoodAppDownloader?.adjustCallVolume?.(up);
+    } catch {}
+    const v = remoteVideo.current;
+    if (v) v.volume = Math.max(0, Math.min(1, (v.volume ?? 1) + (up ? 0.15 : -0.15)));
+  }, []);
+
   useEffect(() => {
     const replay = () => {
       if (stateRef.current !== "connecting" && stateRef.current !== "active") return;
