@@ -3,7 +3,7 @@ import { useState, useMemo, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Search, Users, Check, MessageCircle, Home, Loader2 } from "lucide-react";
-import { createGroup, listChats } from "@/lib/chat.functions";
+import { createGroup, listChats, deleteAllMessages } from "@/lib/chat.functions";
 import { listFriends } from "@/lib/friends.functions";
 import { getPublicProfile } from "@/lib/social-users.functions";
 import { createStory, uploadStoryMedia } from "@/lib/feed-api";
