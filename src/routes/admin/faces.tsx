@@ -97,8 +97,10 @@ function OnchainAudit({ open, onToggle }: { open: boolean; onToggle: () => void 
         </>
       )}
     </div>
+    </CollapsibleSection>
   );
 }
+
 
 
 /** ফেস-লগইন রেজিস্ট্রেশনের key — স্লট key থেকে সম্পূর্ণ আলাদা */
