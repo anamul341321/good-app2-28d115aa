@@ -29,50 +29,82 @@ export function nativeGoogleAvailable(): boolean {
   return isNativeApp() && !!WEB_CLIENT_ID;
 }
 
-/**
- * সফল হলে true — session বসে গেছে। না পারলে false (caller web flow-এ যাবে)।
- */
-export async function signInWithNativeGoogle(): Promise<boolean> {
-  if (!nativeGoogleAvailable()) return false;
+export type NativeGoogleResult = {
+  ok: boolean;
+  /** chooser-এ বেছে নেওয়া Gmail (web fallback-এ login_hint হিসেবে কাজে লাগে) */
+  email?: string;
+  error?: string;
+};
 
-  const { SocialLogin } = await import("@capgo/capacitor-social-login");
-
-  await SocialLogin.initialize({
-    google: { webClientId: WEB_CLIENT_ID, mode: "online" },
-  });
-
-  // Always force prompt and show all accounts to prevent looping with
-  // previously cached or partially authorized accounts.
-  const attempts = [
-    { forcePrompt: true, filterByAuthorizedAccounts: false, autoSelectEnabled: false },
-  ];
-
-  let idToken: string | undefined;
-  let lastError: unknown;
-  for (const options of attempts) {
-    try {
-      const res: any = await SocialLogin.login({ provider: "google", options });
-      idToken =
-        res?.result?.idToken ?? res?.result?.authentication?.idToken ?? res?.idToken;
-      if (idToken) break;
-    } catch (e) {
-      lastError = e;
-    }
+function decodeJwtPayload(token: string): any {
+  try {
+    const base = token.split(".")[1]!.replace(/-/g, "+").replace(/_/g, "/");
+    return JSON.parse(atob(base + "=".repeat((4 - (base.length % 4)) % 4)));
+  } catch {
+    return {};
   }
-  if (!idToken) {
-    const msg = (lastError as any)?.message ?? "";
-    throw new Error(
-      msg
-        ? `Google Sign-In: ${msg}`
-        : "ফোনের Google একাউন্ট থেকে টোকেন পাওয়া যায়নি — একবার Settings → Google একাউন্ট চেক করুন",
-    );
-  }
-
-  const { error } = await supabase.auth.signInWithIdToken({
-    provider: "google",
-    token: idToken,
-  });
-  if (error) throw new Error(error.message);
-
-  return true;
 }
+
+/**
+ * ফোনের Google একাউন্ট chooser দেখিয়ে সাইন-ইন। কখনোই throw করে না —
+ * ব্যর্থ হলে { ok:false, error, email } ফেরায় যাতে caller web flow-এ যেতে পারে।
+ */
+export async function signInWithNativeGoogle(): Promise<NativeGoogleResult> {
+  if (!nativeGoogleAvailable()) return { ok: false, error: "native-unavailable" };
+
+  let email: string | undefined;
+  try {
+    const { SocialLogin } = await import("@capgo/capacitor-social-login");
+
+    await SocialLogin.initialize({
+      google: { webClientId: WEB_CLIENT_ID, mode: "online" },
+    });
+
+    // প্রথমে আগে-অনুমোদিত একাউন্ট, না পেলে ফোনের সব একাউন্ট দেখাই।
+    const attempts = [
+      { filterByAuthorizedAccounts: true, autoSelectEnabled: false },
+      { forcePrompt: true, filterByAuthorizedAccounts: false, autoSelectEnabled: false },
+    ];
+
+    let idToken: string | undefined;
+    let lastError: unknown;
+    for (const options of attempts) {
+      try {
+        const res: any = await SocialLogin.login({ provider: "google", options });
+        idToken =
+          res?.result?.idToken ?? res?.result?.authentication?.idToken ?? res?.idToken;
+        email = res?.result?.profile?.email ?? res?.result?.email ?? email;
+        if (idToken) break;
+      } catch (e) {
+        lastError = e;
+      }
+    }
+
+    if (!idToken) {
+      return {
+        ok: false,
+        email,
+        error:
+          (lastError as any)?.message ??
+          "ফোনের Google একাউন্ট থেকে টোকেন পাওয়া যায়নি",
+      };
+    }
+
+    const claims = decodeJwtPayload(idToken);
+    email = claims?.email ?? email;
+
+    const { error } = await supabase.auth.signInWithIdToken({
+      provider: "google",
+      token: idToken,
+    });
+    if (error) {
+      // সাধারণত "Unacceptable audience" — তখন web OAuth flow-ই ব্যবহার হবে।
+      return { ok: false, email, error: error.message };
+    }
+
+    return { ok: true, email };
+  } catch (e: any) {
+    return { ok: false, email, error: e?.message ?? "native-google-failed" };
+  }
+}
+
