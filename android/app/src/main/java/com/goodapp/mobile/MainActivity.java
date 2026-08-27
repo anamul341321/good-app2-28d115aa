@@ -509,7 +509,36 @@ public class MainActivity extends BridgeActivity {
                 if (url != null && openApkDownload(Uri.parse(url))) return true;
                 return super.shouldOverrideUrlLoading(view, url);
             }
+
+            /**
+             * কম RAM-এর ফোনে Android WebView-এর render process বন্ধ করে দেয়।
+             * ডিফল্টে এতে পুরো অ্যাপ ক্র্যাশ করে ("Report / OK" ডায়ালগ দিয়ে ইউজারকে বের করে দেয়)।
+             * এখানে আমরা সেটি ধরে ফেলে অ্যাপটি নিজে থেকেই আবার চালু করি — ইউজার বের হয়ে যাবে না।
+             */
+            @Override
+            public boolean onRenderProcessGone(WebView view, RenderProcessGoneDetail detail) {
+                try {
+                    if (view != null) {
+                        view.loadUrl("about:blank");
+                        if (view.getParent() instanceof android.view.ViewGroup) {
+                            ((android.view.ViewGroup) view.getParent()).removeView(view);
+                        }
+                        view.destroy();
+                    }
+                } catch (Exception ignored) {}
+                try {
+                    Toast.makeText(MainActivity.this, "মেমোরি কম ছিল—Good-App আবার চালু হচ্ছে", Toast.LENGTH_SHORT).show();
+                } catch (Exception ignored) {}
+                try {
+                    Intent restart = new Intent(MainActivity.this, MainActivity.class);
+                    restart.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(restart);
+                } catch (Exception ignored) {}
+                finish();
+                return true; // true = অ্যাপ ক্র্যাশ করবে না
+            }
         });
+
 
         // If the app was opened from a deep link (e.g. an OAuth redirect), load that URL.
         // Otherwise load the canonical app URL.
