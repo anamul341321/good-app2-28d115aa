@@ -5,9 +5,11 @@ const PhoneSignupInput = z.object({
   name: z.string().trim().min(2, "নাম লাগবে").max(80, "নাম অনেক বড়"),
   phone: z.string().trim().regex(/^01\d{9}$/, "১১ ডিজিটের BD নম্বর লাগবে"),
   password: z.string().min(6, "পাসওয়ার্ড কমপক্ষে ৬ অক্ষর"),
+  gender: z.enum(["male", "female"], { message: "ছেলে অথবা মেয়ে সিলেক্ট করুন" }),
   gmail: z.string().trim().toLowerCase().optional().nullable(),
   referralCode: z.string().trim().max(20).optional().nullable(),
 });
+
 
 function phoneToEmail(phone: string) {
   return `u${phone}@facemine.app`;
