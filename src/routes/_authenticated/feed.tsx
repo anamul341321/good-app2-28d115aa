@@ -294,11 +294,11 @@ function FeedPage() {
   });
 
   const editPostMutation = useMutation({
-    mutationFn: async ({ postId, content }: { postId: string; content: string }) => {
+    mutationFn: async ({ postId, content, visibility }: { postId: string; content: string; visibility: "public" | "private" }) => {
       if (!user) throw new Error("Login");
-      await updatePost(postId, user.id, { content });
+      await updatePost(postId, user.id, { content, visibility });
     },
-    onSuccess: (_d, vars) => {
+    onSuccess: () => {
       setEditingPost(null);
       queryClient.invalidateQueries({ queryKey: ["feed-posts"] });
       toast.success("পোস্ট আপডেট হয়েছে ✅");
