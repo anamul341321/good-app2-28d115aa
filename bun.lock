@@ -17,7 +17,7 @@
         "@capacitor/splash-screen": "^8.0.2",
         "@capgo/capacitor-social-login": "^8.4.0",
         "@hookform/resolvers": "^5.2.2",
-        "@lovable.dev/cloud-auth-js": "^1.1.2",
+        "@lovable.dev/cloud-auth-js": "^1.2.0",
         "@lovable.dev/email-js": "^0.1.2",
         "@lovable.dev/webhooks-js": "^0.0.2",
         "@radix-ui/react-accordion": "^1.2.12",
@@ -298,7 +298,7 @@
 
     "@jridgewell/trace-mapping": ["@jridgewell/trace-mapping@0.3.31", "", { "dependencies": { "@jridgewell/resolve-uri": "^3.1.0", "@jridgewell/sourcemap-codec": "^1.4.14" } }, "sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw=="],
 
-    "@lovable.dev/cloud-auth-js": ["@lovable.dev/cloud-auth-js@1.1.2", "https://europe-west1-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@lovable.dev/cloud-auth-js/-/cloud-auth-js-1.1.2.tgz", {}, "sha512-xz8ocewsgwkp8giau272/eWWU3XrchCg5uba4yQPPYtevHTXaVU3sD+fO1JjyPBHacVcOcwhmgUiU9TKHt63cg=="],
+    "@lovable.dev/cloud-auth-js": ["@lovable.dev/cloud-auth-js@1.2.0", "https://europe-west1-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@lovable.dev/cloud-auth-js/-/cloud-auth-js-1.2.0.tgz", {}, "sha512-kqBDh8xJpFSXFl3EIyvtpi5/HFYKC+vjlsvjon0H+NC0/rCjOwFlXA/Mtis9LE0zhQ86mTAq7JVWavhVo+ekKg=="],
 
     "@lovable.dev/email-js": ["@lovable.dev/email-js@0.1.2", "https://europe-west1-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@lovable.dev/email-js/-/email-js-0.1.2.tgz", { "dependencies": { "@lovable.dev/webhooks-js": "0.0.1" }, "peerDependencies": { "@react-email/render": ">=1.0.0", "react": ">=18", "react-dom": ">=18" }, "optionalPeers": ["@react-email/render", "react", "react-dom"] }, "sha512-+lYPJl807b9gGBJaeoFd/hElW3/0Ir/K79J8dGZRU/Y0K7FlpEYvaAPQMWL3WDm7gZIUsZY7fZKGPhOb8IWrBA=="],
 
