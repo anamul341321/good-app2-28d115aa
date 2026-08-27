@@ -107,6 +107,10 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   const camTrack = useRef<MediaStreamTrack | null>(null);
   const shareTrack = useRef<MediaStreamTrack | null>(null);
   const shareStream = useRef<MediaStream | null>(null);
+  // ভিডিও কল রিং হওয়ার সময়েই ক্যামেরা/মাইক আগে থেকে চালু করে রাখি — তাই
+  // রিসিভ করার সাথে সাথেই ছবি দেখা যায়, দেরি হয় না।
+  const warmStream = useRef<MediaStream | null>(null);
+  const warmVideo = useRef<boolean>(false);
   // Android অ্যাপে স্ক্রিন ফ্রেম native থেকে আসে, তাই canvas দিয়ে video track বানানো হয়।
   const shareCanvas = useRef<HTMLCanvasElement | null>(null);
   const ring = useRef<{ stop: () => void } | null>(null);
