@@ -32,7 +32,16 @@ function ThreadPage() {
   const endRef = useRef<HTMLDivElement | null>(null);
   const presenceOnline = useIsOnline(peerId);
   const [showHeaderMenu, setShowHeaderMenu] = useState(false);
-  const [replyTo, setReplyTo] = useState<{ id: string; body?: string; kind?: string; name?: string } | null>(null);
+  const [replyTo, setReplyTo] = useState<{ id: string; body?: string; kind?: string; name?: string; mediaUrl?: string | null } | null>(null);
+
+  // রিপ্লাই প্রিভিউতে ট্যাপ করলে মূল মেসেজে স্ক্রল হয়ে হাইলাইট হবে
+  const jumpToMessage = (id: string) => {
+    const el = document.getElementById(`msg-${id}`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.classList.add("bg-primary/10", "rounded-2xl");
+    window.setTimeout(() => el.classList.remove("bg-primary/10", "rounded-2xl"), 1200);
+  };
   // বাবল উইন্ডোতে খোলা হলে ফুল স্ক্রিনে যাওয়ার বাটন দেখাবে
   const inBubble = typeof window !== "undefined" && Boolean((window as any).GoodAppBubble);
   const openFullscreen = () => {
@@ -274,11 +283,13 @@ function ThreadPage() {
                 m={m}
                 mine={m.senderId === me}
                 onDelete={(id) => del.mutate(id)}
+                onJumpTo={jumpToMessage}
                 onReply={(msg) =>
                   setReplyTo({
                     id: msg.id,
                     body: msg.body,
                     kind: msg.kind,
+                    mediaUrl: msg.mediaUrl,
                     name: msg.senderId === me ? "আপনি" : (data?.peer?.name ?? "User"),
                   })
                 }

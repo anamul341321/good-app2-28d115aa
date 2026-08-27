@@ -147,14 +147,13 @@ function FeedVideoPlayer({
         }}
         onLoadedMetadata={(e) => setDuration(e.currentTarget.duration || 0)}
         onClick={() => {
+          // ফিডে অটো চলবে, কিন্তু ক্লিক করলেই Short (reels)-এ ওই ভিডিওটিই বড় করে খুলবে
           const el = ref.current;
-          if (!el) return;
-          if (el.paused) {
-            void el.play().then(() => setPlaying(true)).catch(() => {});
-          } else {
+          if (el) {
             el.pause();
             setPlaying(false);
           }
+          onOpenReels();
         }}
       />
 
