@@ -1,0 +1,1 @@
+revoke execute on function public.delete_expired_stories() from anon, authenticated, public;

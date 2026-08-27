@@ -99,39 +99,49 @@ function useCombinedReels(selectedPostId?: string) {
     staleTime: 60_000,
   });
 
+  // TikTok-এর মতো: প্রতিবার Short খুললে ভিডিওগুলো এলোমেলো (mixed) ক্রমে আসবে,
+  // সিরিয়ালি একের পর এক নয়। সেশনের ভেতরে ক্রম স্থির থাকবে।
+  const seedRef = useRef<number>(Math.floor(Math.random() * 1_000_000) + 1);
+
   const items = useMemo<ReelItem[]>(() => {
     let localVideos = (localQuery.data || []).filter(
       (p) => !!p.video_url && !(p.content || "").startsWith(LONG_VIDEO_MARKER),
     );
+    let pinned: ReelItem | null = null;
     if (selectedPostQuery.data?.video_url) {
-      localVideos = [
-        selectedPostQuery.data,
-        ...localVideos.filter((post) => post.id !== selectedPostQuery.data?.id),
-      ];
+      pinned = {
+        kind: "local",
+        id: `local-${selectedPostQuery.data.id}`,
+        post: selectedPostQuery.data,
+      };
+      localVideos = localVideos.filter((post) => post.id !== selectedPostQuery.data?.id);
     }
     const external = externalQuery.data?.videos || [];
-    const merged: ReelItem[] = [];
-    const maxLen = Math.max(localVideos.length, external.length);
-    let li = 0;
-    let ei = 0;
-    for (let i = 0; i < maxLen; i++) {
-      if (li < localVideos.length) {
-        merged.push({ kind: "local", id: `local-${localVideos[li].id}`, post: localVideos[li] });
-        li++;
-      }
-      if (ei < external.length) {
-        merged.push({ kind: "external", id: `ext-${ei}-${external[ei].id}`, video: external[ei] });
-        ei++;
-      }
-      // add an extra external item to boost density
-      if (ei < external.length) {
-        merged.push({ kind: "external", id: `ext-${ei}-${external[ei].id}`, video: external[ei] });
-        ei++;
-      }
+
+    const pool: ReelItem[] = [
+      ...localVideos.map((post) => ({ kind: "local" as const, id: `local-${post.id}`, post })),
+      ...external.map((video, i) => ({ kind: "external" as const, id: `ext-${i}-${video.id}`, video })),
+    ];
+
+    // seeded shuffle (Fisher–Yates + mulberry32) — র‍্যান্ডম কিন্তু re-render-এ একই
+    let s = seedRef.current;
+    const rand = () => {
+      s = (s + 0x6d2b79f5) | 0;
+      let t = s;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(rand() * (i + 1));
+      const tmp = pool[i]!;
+      pool[i] = pool[j]!;
+      pool[j] = tmp;
     }
 
-    return merged;
+    return pinned ? [pinned, ...pool] : pool;
   }, [localQuery.data, externalQuery.data, selectedPostQuery.data]);
+
 
   return {
     items,
