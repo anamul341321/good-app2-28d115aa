@@ -307,6 +307,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         setWithVideo(false);
         toast("ক্যামেরা পাওয়া যায়নি — অডিও কল চালু হলো");
       }
+      }
       stream.getAudioTracks().forEach((track) => {
         track.contentHint = "speech";
       });
