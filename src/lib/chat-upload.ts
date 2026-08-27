@@ -9,7 +9,7 @@ export type UploadKind = "image" | "video" | "voice";
 const MAX: Record<UploadKind, number> = {
   image: 12 * 1024 * 1024,
   video: 60 * 1024 * 1024,
-  voice: 10 * 1024 * 1024,
+  voice: 25 * 1024 * 1024,
 };
 
 export async function uploadChatFile(file: Blob, kind: UploadKind, ext: string) {

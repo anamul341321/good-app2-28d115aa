@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Image as ImageIcon, Loader2, Mic, Send, Square, Video, Plus, Smile, X, Reply } from "lucide-react";
 import { extOf, uploadChatFile, type UploadKind } from "@/lib/chat-upload";
+import { VoiceRecorder } from "@/lib/voice-record";
 
 export type SendPayload = {
   body?: string;
@@ -28,10 +29,9 @@ export function Composer({
   const [recSec, setRecSec] = useState(0);
   const imgRef = useRef<HTMLInputElement | null>(null);
   const vidRef = useRef<HTMLInputElement | null>(null);
-  const rec = useRef<MediaRecorder | null>(null);
-  const chunks = useRef<Blob[]>([]);
+  const [recording, setRecording] = useState(false);
+  const rec = useRef<VoiceRecorder | null>(null);
   const timer = useRef<number | undefined>(undefined);
-  const elapsed = useRef(0);
 
   const replyMeta = () =>
     replyTo
@@ -63,51 +63,48 @@ export function Composer({
 
   const startRec = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
-      });
-      const mr = new MediaRecorder(stream);
-      chunks.current = [];
-      mr.ondataavailable = (e) => e.data.size && chunks.current.push(e.data);
-      mr.onstop = async () => {
-        stream.getTracks().forEach((t) => t.stop());
-        window.clearInterval(timer.current);
-        const blob = new Blob(chunks.current, { type: mr.mimeType || "audio/webm" });
-        const duration = elapsed.current;
-        elapsed.current = 0;
-        setRecSec(0);
-        if (blob.size < 800) return;
-        setBusy(true);
-        try {
-          const path = await uploadChatFile(blob, "voice", "webm");
-          onSend({ kind: "voice", mediaPath: path, mediaMeta: { size: blob.size, duration, ...replyMeta() } });
-          onCancelReply?.();
-        } catch (e: any) {
-          toast.error(e?.message ?? "Failed to send voice");
-        } finally {
-          setBusy(false);
-        }
-      };
-      mr.start();
-      rec.current = mr;
-      elapsed.current = 1;
-      setRecSec(1);
-      timer.current = window.setInterval(() =>
-        setRecSec((v) => {
-          elapsed.current = v + 1;
-          return v + 1;
-        }), 1000);
+      const recorder = new VoiceRecorder();
+      await recorder.start();
+      rec.current = recorder;
+      setRecording(true);
+      setRecSec(0);
+      timer.current = window.setInterval(() => setRecSec(Math.floor(recorder.elapsed)), 250);
     } catch {
       toast.error("Allow microphone access");
     }
   };
 
-  const stopRec = () => {
-    rec.current?.stop();
+  const stopRec = async () => {
+    const recorder = rec.current;
     rec.current = null;
+    window.clearInterval(timer.current);
+    setRecSec(0);
+    setRecording(false);
+    if (!recorder) return;
+    const result = await recorder.stop();
+    if (!result) return;
+    setBusy(true);
+    try {
+      const path = await uploadChatFile(result.blob, "voice", "wav");
+      onSend({
+        kind: "voice",
+        mediaPath: path,
+        mediaMeta: {
+          size: result.blob.size,
+          duration: Number(result.duration.toFixed(2)),
+          peaks: result.peaks.map((v) => Number(v.toFixed(3))),
+          ...replyMeta(),
+        },
+      });
+      onCancelReply?.();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed to send voice");
+    } finally {
+      setBusy(false);
+    }
   };
 
-  const recording = recSec > 0;
+
 
   return (
     <div className="bg-background px-2 py-2 border-t">
@@ -166,7 +163,7 @@ export function Composer({
             {String(Math.floor(recSec / 60)).padStart(2, "0")}:{String(recSec % 60).padStart(2, "0")}
           </p>
           <button
-            onClick={stopRec}
+            onClick={() => void stopRec()}
             className="btn-press grid h-8 w-8 place-items-center rounded-full bg-rose-500 text-white"
           >
             <Square className="h-4 w-4 fill-white" />

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Play, Pause, Trash2, Ban, PhoneMissed, PhoneIncoming, Video, Reply } from "lucide-react";
 import { useFeedMedia } from "@/lib/feed-media";
+import { computePeaks, VOICE_PEAK_COUNT } from "@/lib/voice-record";
 
 /** মেসেজ সিন হলে নিচে দেখানো ছোট (১৬px) প্রোফাইল ছবি */
 function SeenAvatar({ name, src }: { name: string; src?: string | null }) {
@@ -46,24 +47,80 @@ function Lightbox({ url, video, onClose }: { url: string; video?: boolean; onClo
   );
 }
 
-function VoiceMessage({ url, mine, durationHint }: { url: string; mine: boolean; durationHint?: number }) {
+function VoiceMessage({
+  url,
+  mine,
+  durationHint,
+  peaks,
+}: {
+  url: string;
+  mine: boolean;
+  durationHint?: number;
+  peaks?: number[];
+}) {
   const audio = useRef<HTMLAudioElement | null>(null);
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(durationHint ?? 0);
+  const [bars, setBars] = useState<number[]>(peaks && peaks.length ? peaks : []);
+
+  useEffect(() => {
+    setBars(peaks && peaks.length ? peaks : []);
+  }, [peaks?.length, url]);
+
+  // পুরোনো মেসেজে peaks নেই — অডিও ডিকোড করে আসল ওয়েভফর্ম বানানো হয়।
+  useEffect(() => {
+    if (bars.length) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const Ctor = window.AudioContext || (window as any).webkitAudioContext;
+        if (!Ctor) return;
+        const response = await fetch(url);
+        if (!response.ok) return;
+        const buffer = await response.arrayBuffer();
+        const ctx = new Ctor();
+        const decoded = await ctx.decodeAudioData(buffer.slice(0));
+        await ctx.close().catch(() => {});
+        if (cancelled) return;
+        setBars(computePeaks(decoded.getChannelData(0), VOICE_PEAK_COUNT));
+        if (Number.isFinite(decoded.duration)) setDuration(decoded.duration);
+      } catch {
+        /* ডিকোড না হলে ফ্ল্যাট বার দেখাবে */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [url, bars.length]);
 
   useEffect(() => {
     const node = audio.current;
     if (!node) return;
-    const sync = () => setProgress(node.duration ? node.currentTime / node.duration : 0);
-    const loaded = () => setDuration(Number.isFinite(node.duration) ? Math.round(node.duration) : durationHint ?? 0);
-    const ended = () => { setPlaying(false); setProgress(0); };
+    const total = () => (Number.isFinite(node.duration) && node.duration > 0 ? node.duration : durationHint ?? 0);
+    const sync = () => {
+      const length = total();
+      setProgress(length ? Math.min(1, node.currentTime / length) : 0);
+    };
+    const loaded = () => {
+      const length = total();
+      if (length) setDuration(length);
+    };
+    const ended = () => {
+      setPlaying(false);
+      setProgress(0);
+      node.currentTime = 0;
+    };
     node.addEventListener("timeupdate", sync);
     node.addEventListener("loadedmetadata", loaded);
+    node.addEventListener("durationchange", loaded);
+    node.addEventListener("playing", () => setPlaying(true));
+    node.addEventListener("pause", () => setPlaying(false));
     node.addEventListener("ended", ended);
     return () => {
       node.removeEventListener("timeupdate", sync);
       node.removeEventListener("loadedmetadata", loaded);
+      node.removeEventListener("durationchange", loaded);
       node.removeEventListener("ended", ended);
     };
   }, [durationHint]);
@@ -72,9 +129,23 @@ function VoiceMessage({ url, mine, durationHint }: { url: string; mine: boolean;
     const node = audio.current;
     if (!node) return;
     if (node.paused) void node.play().then(() => setPlaying(true)).catch(() => {});
-    else { node.pause(); setPlaying(false); }
+    else {
+      node.pause();
+      setPlaying(false);
+    }
   };
-  const seconds = Math.max(0, duration);
+  const seconds = Math.max(0, Math.round(duration));
+  const shape = bars.length ? bars : Array.from({ length: VOICE_PEAK_COUNT }, () => 0.35);
+
+  const seek = (event: React.MouseEvent<HTMLDivElement>) => {
+    const node = audio.current;
+    const length = duration;
+    if (!node || !length) return;
+    const box = event.currentTarget.getBoundingClientRect();
+    const ratio = Math.min(1, Math.max(0, (event.clientX - box.left) / box.width));
+    node.currentTime = ratio * length;
+    setProgress(ratio);
+  };
 
   return (
     <div className="flex min-w-56 items-center gap-2 py-0.5" onClick={(event) => event.stopPropagation()}>
@@ -82,16 +153,23 @@ function VoiceMessage({ url, mine, durationHint }: { url: string; mine: boolean;
       <button onClick={toggle} className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-current/15" aria-label={playing ? "Stop" : "Play"}>
         {playing ? <Pause className="h-4 w-4" /> : <Play className="ml-0.5 h-4 w-4" />}
       </button>
-      <div className="flex h-8 flex-1 items-center gap-0.5">
-        {Array.from({ length: 28 }, (_, index) => {
-          const active = index / 28 <= progress;
-          return <span key={index} className={`w-0.5 rounded-full ${active ? "opacity-100" : "opacity-35"} ${mine ? "bg-white" : "bg-foreground"}`} style={{ height: `${7 + ((index * 13) % 20)}px` }} />;
+      <div className="flex h-8 flex-1 cursor-pointer items-center gap-0.5" onClick={seek}>
+        {shape.map((value, index) => {
+          const active = index / shape.length <= progress;
+          return (
+            <span
+              key={index}
+              className={`flex-1 rounded-full ${active ? "opacity-100" : "opacity-35"} ${mine ? "bg-white" : "bg-foreground"}`}
+              style={{ height: `${Math.max(3, Math.round(value * 26))}px` }}
+            />
+          );
         })}
       </div>
       <span className="w-9 text-right text-[10px] font-black opacity-75">{Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, "0")}</span>
     </div>
   );
 }
+
 
 /** লং-প্রেস মেনু — মেসেঞ্জারের মতো */
 function MessageContextMenu({
@@ -331,7 +409,7 @@ export function MessageBubble({
               </span>
             </button>
           ) : m.kind === "voice" && m.mediaUrl ? (
-            <VoiceMessage url={m.mediaUrl} mine={mine} durationHint={Number(m.mediaMeta?.duration) || undefined} />
+            <VoiceMessage url={m.mediaUrl} mine={mine} durationHint={Number(m.mediaMeta?.duration) || undefined} peaks={Array.isArray(m.mediaMeta?.peaks) ? (m.mediaMeta.peaks as number[]) : undefined} />
           ) : (
             <p className="whitespace-pre-wrap break-words text-sm font-black leading-snug">{m.body}</p>
           )}
