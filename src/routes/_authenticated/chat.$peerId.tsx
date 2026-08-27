@@ -1,9 +1,9 @@
-import { createFileRoute, Link, useParams } from "@tanstack/react-router";
-import { useEffect, useRef } from "react";
+import { createFileRoute, Link, useParams, useNavigate } from "@tanstack/react-router";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ChevronLeft, Info, Check, X, UserPlus, Loader2, Maximize2 } from "lucide-react";
-import { deleteMessage, getThread, markChatRead, sendMessage } from "@/lib/chat.functions";
+import { ChevronLeft, Info, Check, X, UserPlus, Loader2, Maximize2, MoreVertical, Trash2, Ban } from "lucide-react";
+import { deleteMessage, deleteAllMessages, getThread, markChatRead, sendMessage } from "@/lib/chat.functions";
 import { respondFriendRequest, sendFriendRequest } from "@/lib/friends.functions";
 import { CallButtons } from "@/components/CallProvider";
 import { playSentTone } from "@/lib/msg-sound";
