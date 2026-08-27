@@ -61,7 +61,7 @@ export const listFriends = createServerFn({ method: "GET" })
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const { data: profiles } = await supabaseAdmin
         .from("profiles")
-        .select("id, display_name, uid_seq, avatar_url, is_verified_badge")
+        .select("id, display_name, uid_seq, avatar_url, is_verified_badge, last_active_at")
         .in("id", ids);
       names = new Map(((profiles ?? []) as PersonRow[]).map((p) => [p.id, p]));
     }
@@ -76,6 +76,7 @@ export const listFriends = createServerFn({ method: "GET" })
         uid: person?.uid_seq ?? null,
         avatar_url: person?.avatar_url ?? null,
         is_verified_badge: person?.is_verified_badge ?? null,
+        last_active_at: (person as any)?.last_active_at ?? null,
         status: r.status,
         incoming: r.addressee_id === me,
       };
