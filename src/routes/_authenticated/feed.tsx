@@ -71,6 +71,162 @@ function FeedVideo({ path, className, videoRef }: { path: string; className?: st
   return <video ref={videoRef} src={url} muted playsInline preload="metadata" className={className} />;
 }
 
+/**
+ * ফিডে ভিডিও — স্ক্রল করে সামনে আসলেই নিজে থেকে চলে (mute),
+ * নিচে টেনে দেখার (seek) বার আছে এবং "Short এ দেখুন" চাপলে reels-এ যায়।
+ */
+function FeedVideoPlayer({
+  path,
+  postId,
+  onOpenReels,
+  videoRef,
+}: {
+  path: string;
+  postId: string;
+  onOpenReels: () => void;
+  videoRef?: (el: HTMLVideoElement | null) => void;
+}) {
+  const url = useFeedMedia(path);
+  const ref = useRef<HTMLVideoElement | null>(null);
+  const [playing, setPlaying] = useState(false);
+  const [muted, setMuted] = useState(true);
+  const [progress, setProgress] = useState(0);
+  const [duration, setDuration] = useState(0);
+
+  const attach = useCallback(
+    (el: HTMLVideoElement | null) => {
+      ref.current = el;
+      videoRef?.(el);
+    },
+    [videoRef],
+  );
+
+  // দেখা গেলেই অটো প্লে, চোখের বাইরে গেলে থামে
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry) return;
+        if (entry.isIntersecting && entry.intersectionRatio > 0.6) {
+          el.muted = muted;
+          void el.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
+        } else {
+          el.pause();
+          setPlaying(false);
+        }
+      },
+      { threshold: [0, 0.6, 1] },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [url, muted]);
+
+  const seek = (clientX: number, bar: HTMLDivElement) => {
+    const el = ref.current;
+    if (!el || !el.duration || !Number.isFinite(el.duration)) return;
+    const rect = bar.getBoundingClientRect();
+    const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
+    el.currentTime = ratio * el.duration;
+    setProgress(ratio * 100);
+  };
+
+  return (
+    <div className="relative w-full bg-black" data-post-video={postId}>
+      <video
+        ref={attach}
+        src={url}
+        muted={muted}
+        loop
+        playsInline
+        preload="metadata"
+        className="w-full max-h-[500px] object-contain"
+        onTimeUpdate={(e) => {
+          const v = e.currentTarget;
+          if (v.duration) setProgress((v.currentTime / v.duration) * 100);
+        }}
+        onLoadedMetadata={(e) => setDuration(e.currentTarget.duration || 0)}
+        onClick={() => {
+          const el = ref.current;
+          if (!el) return;
+          if (el.paused) {
+            void el.play().then(() => setPlaying(true)).catch(() => {});
+          } else {
+            el.pause();
+            setPlaying(false);
+          }
+        }}
+      />
+
+      {!playing && (
+        <span className="pointer-events-none absolute inset-0 grid place-items-center">
+          <span className="grid h-14 w-14 place-items-center rounded-full bg-card/85 text-primary shadow-xl backdrop-blur">
+            <Play className="ml-1 h-7 w-7 fill-current" />
+          </span>
+        </span>
+      )}
+
+      {/* টেনে দেখার বার */}
+      <div
+        className="absolute bottom-0 left-0 right-0 px-3 pb-2"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div
+          className="group h-6 flex items-center cursor-pointer"
+          onPointerDown={(e) => {
+            e.stopPropagation();
+            const bar = e.currentTarget;
+            bar.setPointerCapture(e.pointerId);
+            seek(e.clientX, bar);
+          }}
+          onPointerMove={(e) => {
+            if (e.currentTarget.hasPointerCapture(e.pointerId)) seek(e.clientX, e.currentTarget);
+          }}
+        >
+          <div className="h-1 w-full rounded-full bg-white/30">
+            <div className="relative h-1 rounded-full bg-primary" style={{ width: `${progress}%` }}>
+              <span className="absolute -right-1.5 -top-1 h-3 w-3 rounded-full bg-primary shadow" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          setMuted((v) => {
+            const next = !v;
+            if (ref.current) ref.current.muted = next;
+            return next;
+          });
+        }}
+        aria-label={muted ? "সাউন্ড চালু" : "সাউন্ড বন্ধ"}
+        className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-black/55 text-white backdrop-blur"
+      >
+        <span className="text-sm font-black">{muted ? "🔇" : "🔊"}</span>
+      </button>
+
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onOpenReels();
+        }}
+        className="absolute bottom-8 left-3 rounded-full bg-primary px-3 py-1.5 text-[12px] font-black text-primary-foreground shadow-lg"
+      >
+        Short এ দেখুন
+      </button>
+      {duration > 0 && (
+        <span className="absolute bottom-8 right-3 rounded-full bg-black/60 px-2 py-1 text-[10px] font-black text-white">
+          {Math.floor(duration / 60)}:{String(Math.floor(duration % 60)).padStart(2, "0")}
+        </span>
+      )}
+    </div>
+  );
+}
+
+
 const NameWithBadge = ({ name, isVerified, className = "" }: { name: string; isVerified?: boolean; className?: string }) => (
   <span className={`inline-flex items-center gap-1 ${className}`}>
     <span>{name}</span>
