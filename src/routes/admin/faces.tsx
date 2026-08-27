@@ -286,9 +286,18 @@ function AdminFaces() {
 
   return (
     <div>
-      <FaceLoginKeys />
-      <OnchainAudit />
-      <div className="glass rounded-xl p-3 mb-3 space-y-2">
+      <FaceLoginKeys open={section === "signup"} onToggle={() => toggle("signup")} />
+      <OnchainAudit open={section === "onchain"} onToggle={() => toggle("onchain")} />
+      <CollapsibleSection
+        title="Slot key তালিকা"
+        subtitle="First/Re-verify, whitelist অনুযায়ী key কপি"
+        open={section === "keys"}
+        onToggle={() => toggle("keys")}
+      >
+      {facesLoading ? (
+        <div className="py-6 flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-cyan" /></div>
+      ) : (
+      <div className="space-y-2">
         <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
           Faces: {data?.length ?? 0} · Keys: {allKeys.length} · First: {firstVerifyKeys.length} · Re-verify: {reverifyKeys.length} · WL: {whitelistedKeys.length} · Not-WL: {notWhitelistedKeys.length}
         </p>
