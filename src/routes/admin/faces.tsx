@@ -157,8 +157,10 @@ function FaceLoginKeys({ open, onToggle }: { open: boolean; onToggle: () => void
         </>
       )}
     </div>
+    </CollapsibleSection>
   );
 }
+
 
 function AdminFaces() {
   const [zoom, setZoom] = useState<{ url: string; label: string } | null>(null);
