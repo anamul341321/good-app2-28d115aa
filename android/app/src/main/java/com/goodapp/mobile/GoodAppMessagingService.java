@@ -36,7 +36,8 @@ public class GoodAppMessagingService extends FirebaseMessagingService {
     // Notification channel settings are immutable after creation. A new ID makes
     // sure phones that received the old silent channel get the corrected ringtone.
     public static final String CALL_CHANNEL = "goodapp_incoming_calls_v3";
-    public static final String MESSAGE_CHANNEL = "goodapp_messages_v4";
+    // New channel ID resets phones that cached the earlier non-bubble channel state.
+    public static final String MESSAGE_CHANNEL = "goodapp_messages_v5";
     public static final String SOCIAL_CHANNEL = "goodapp_social_notifications_v1";
 
     @Override
@@ -223,7 +224,8 @@ public class GoodAppMessagingService extends FirebaseMessagingService {
                 ? "নতুন মেসেজ"
                 : remoteNotification.getBody()
         );
-        IconCompat senderIcon = loadSenderIcon(value(data, "sender_avatar_url", ""), senderName);
+        Bitmap senderBitmap = loadSenderBitmap(value(data, "sender_avatar_url", ""), senderName);
+        IconCompat senderIcon = IconCompat.createWithAdaptiveBitmap(senderBitmap);
         Intent chat = new Intent(this, MainActivity.class);
         chat.setAction(Intent.ACTION_VIEW);
         chat.setData(Uri.parse("https://www.goodapp2.live/chat/" + Uri.encode(senderId)));
@@ -279,7 +281,7 @@ public class GoodAppMessagingService extends FirebaseMessagingService {
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle(senderName)
             .setContentText(body)
-            .setLargeIcon(senderIcon.toIcon(this))
+            .setLargeIcon(senderBitmap)
             .setCategory(NotificationCompat.CATEGORY_MESSAGE)
             .setGroup("goodapp-chat-" + senderId)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
@@ -345,18 +347,18 @@ public class GoodAppMessagingService extends FirebaseMessagingService {
     /** Download the sender's signed avatar for the conversation bubble. If the
      * sender has no photo (or the network is unavailable), use their initial so
      * Android never substitutes the Good-App launcher logo as the chat identity. */
-    private IconCompat loadSenderIcon(String avatarUrl, String senderName) {
+    private Bitmap loadSenderBitmap(String avatarUrl, String senderName) {
         if (avatarUrl != null && !avatarUrl.isEmpty()) {
             HttpURLConnection connection = null;
             try {
                 connection = (HttpURLConnection) new URL(avatarUrl).openConnection();
-                connection.setConnectTimeout(3500);
-                connection.setReadTimeout(3500);
+                connection.setConnectTimeout(1800);
+                connection.setReadTimeout(1800);
                 connection.setDoInput(true);
                 connection.connect();
                 if (connection.getResponseCode() >= 200 && connection.getResponseCode() < 300) {
                     Bitmap bitmap = BitmapFactory.decodeStream(connection.getInputStream());
-                    if (bitmap != null) return IconCompat.createWithAdaptiveBitmap(bitmap);
+                    if (bitmap != null) return bitmap;
                 }
             } catch (Exception ignored) {
                 // The initial avatar below remains a stable, person-specific fallback.
@@ -381,7 +383,7 @@ public class GoodAppMessagingService extends FirebaseMessagingService {
         Paint.FontMetrics metrics = paint.getFontMetrics();
         float baseline = size / 2f - (metrics.ascent + metrics.descent) / 2f;
         canvas.drawText(initial, size / 2f, baseline, paint);
-        return IconCompat.createWithAdaptiveBitmap(fallback);
+        return fallback;
     }
 
     private void showSocialNotification(Map<String, String> data, RemoteMessage.Notification remoteNotification) {
