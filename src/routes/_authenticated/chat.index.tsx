@@ -289,6 +289,7 @@ export function ChatListPage() {
                 online={'peerId' in conv ? onlineIds.has(conv.peerId) : false}
                 lastActiveAt={'lastActiveAt' in conv ? ((conv as any).lastActiveAt ?? null) : null}
                 isGroup={'groupId' in conv}
+                onDelete={(id, isGroup) => deleteChatMutation.mutate({ id, isGroup })}
               />
             ))}
           </div>
