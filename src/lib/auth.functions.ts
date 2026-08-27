@@ -75,6 +75,7 @@ export const registerWithPhone = createServerFn({ method: "POST" })
         display_name: data.name,
         phone_number: data.phone,
         contact_email: gmail,
+        gender: data.gender,
         ...(refCode ? { referral_code: refCode } : {}),
       },
     });
@@ -86,13 +87,17 @@ export const registerWithPhone = createServerFn({ method: "POST" })
       throw new Error(error.message);
     }
 
-    // প্রোফাইলে Gmail সেভ (ভেরিফাই হবে অ্যাপে কোড বসিয়ে)
-    if (created?.user?.id && gmail) {
+    // প্রোফাইলে Gmail + লিঙ্গ সেভ (Gmail ভেরিফাই হবে অ্যাপে কোড বসিয়ে)
+    if (created?.user?.id) {
       await supabaseAdmin
         .from("profiles")
-        .update({ email: gmail, email_verified: false } as any)
+        .update({
+          gender: data.gender,
+          ...(gmail ? { email: gmail, email_verified: false } : {}),
+        } as any)
         .eq("id", created.user.id);
     }
+
 
     return { ok: true, email };
   });
