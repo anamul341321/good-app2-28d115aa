@@ -120,6 +120,29 @@ export function buildStoredMusicValue(track: StoryMusicTrack): string {
   return `track:${track.id}|${track.title} - ${track.artist}|url:${encodeURIComponent(track.audioUrl)}`;
 }
 
+/** বাংলা / গজল / ইসলামিক কুয়েরি চিনতে — এই ক্ষেত্রে লোকাল লাইব্রেরি আগে দেখাবে */
+export function isBanglaOrIslamicQuery(query: string): boolean {
+  const q = query.toLowerCase();
+  const bangla = /(bangla|bengali|বাংলা|dhallywood|baul|nazrul|rabindra|bd song|deshi|folk|lalon|bhawaiya|bhromor|palli)/i.test(q);
+  const islamic = /(gajal|gazal|gaajal|গজল|islamic|naat|hamd|nashid|nasheed|kalarab|abu|rayhan|ubayda|madina|allah|muhammad|nabi|rasul|quran|ramadan|roza)/i.test(q);
+  return bangla || islamic;
+}
+
+/** লোকাল লাইব্রেরি থেকে বাংলা/গজল গান বের করা — iTunes-এর চেয়ে নির্ভরযোগ্য */
+export function searchLocalStoryMusic(query: string): StoryMusicTrack[] {
+  const q = query.toLowerCase().trim();
+  if (!q) return STORY_MUSIC_LIBRARY.slice(0, 20);
+  return STORY_MUSIC_LIBRARY.filter((m) =>
+    m.title.toLowerCase().includes(q) ||
+    m.artist.toLowerCase().includes(q) ||
+    m.genre.toLowerCase().includes(q)
+  ).sort((a, b) => {
+    const aTitle = a.title.toLowerCase().startsWith(q) ? 2 : a.title.toLowerCase().includes(q) ? 1 : 0;
+    const bTitle = b.title.toLowerCase().startsWith(q) ? 2 : b.title.toLowerCase().includes(q) ? 1 : 0;
+    return bTitle - aTitle;
+  });
+}
+
 export function resolveStoryMusic(storedValue: string | null | undefined): {
   track: StoryMusicTrack | null;
   label: string | null;
