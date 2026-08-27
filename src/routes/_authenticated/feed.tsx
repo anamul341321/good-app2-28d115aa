@@ -1517,6 +1517,10 @@ function FeedPage() {
         </div>
       )}
 
+      {reactorsPostId && (
+        <ReactorsModal postId={reactorsPostId} onClose={() => setReactorsPostId(null)} />
+      )}
+
       {viewingImage && (
         <div className="fixed inset-0 z-[200] bg-black/95 flex items-center justify-center animate-in fade-in duration-150" onClick={() => setViewingImage(null)}>
           <button onClick={() => setViewingImage(null)} className="absolute top-4 right-4 z-10 text-white/80 hover:text-white">
@@ -1586,6 +1590,79 @@ function FeedPage() {
           timeAgo={timeAgo}
         />
       )}
+    </div>
+  );
+}
+
+/** কে কোন রিঅ্যাকশন দিয়েছে — Facebook-এর মতো তালিকা */
+function ReactorsModal({ postId, onClose }: { postId: string; onClose: () => void }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ["post-reactors", postId],
+    queryFn: () => getPostReactors(postId),
+    staleTime: 15_000,
+  });
+  const [filter, setFilter] = useState<string | null>(null);
+  const people = (data?.people ?? []).filter((p) => !filter || p.reaction_type === filter);
+
+  return (
+    <div className="fixed inset-0 z-[220] bg-black/60 flex items-end sm:items-center justify-center" onClick={onClose}>
+      <div
+        className="w-full sm:max-w-md bg-white dark:bg-card rounded-t-2xl sm:rounded-2xl overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-100 dark:border-border/30">
+          <p className="flex-1 text-sm font-black">রিঅ্যাকশন {data ? `(${data.total})` : ""}</p>
+          <button onClick={onClose} aria-label="বন্ধ" className="p-1">
+            <X className="h-5 w-5 text-gray-500 dark:text-muted-foreground" />
+          </button>
+        </div>
+
+        <div className="flex gap-2 overflow-x-auto px-3 py-2 border-b border-gray-100 dark:border-border/30">
+          <button
+            onClick={() => setFilter(null)}
+            className={`rounded-full px-3 py-1 text-[12px] font-black ${filter === null ? "bg-primary text-primary-foreground" : "bg-gray-100 dark:bg-secondary"}`}
+          >
+            সব {data?.total ?? 0}
+          </button>
+          {Object.entries(data?.counts ?? {}).map(([type, count]) => (
+            <button
+              key={type}
+              onClick={() => setFilter(type)}
+              className={`flex items-center gap-1 rounded-full px-3 py-1 text-[12px] font-black ${filter === type ? "bg-primary text-primary-foreground" : "bg-gray-100 dark:bg-secondary"}`}
+            >
+              <span className="text-base">{REACTION_EMOJIS[type]}</span> {count}
+            </button>
+          ))}
+        </div>
+
+        <div className="max-h-[55vh] overflow-y-auto divide-y divide-gray-100 dark:divide-border/20">
+          {isLoading && (
+            <p className="flex items-center justify-center gap-2 p-5 text-xs font-bold text-gray-500 dark:text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" /> লোড হচ্ছে…
+            </p>
+          )}
+          {!isLoading && people.length === 0 && (
+            <p className="p-6 text-center text-xs font-bold text-gray-500 dark:text-muted-foreground">
+              এখনো কেউ রিঅ্যাক্ট করেনি
+            </p>
+          )}
+          {people.map((p) => (
+            <Link
+              key={`${p.user_id}-${p.reaction_type}`}
+              to="/profile/$userId"
+              params={{ userId: p.user_id }}
+              onClick={onClose}
+              className="flex items-center gap-3 px-4 py-2.5"
+            >
+              <span className="relative grid h-10 w-10 place-items-center overflow-hidden rounded-full bg-blue-100 dark:bg-secondary">
+                <Avatar path={p.avatar_url} className="h-10 w-10 rounded-full object-cover" fallback={(p.display_name ?? "U").charAt(0)} />
+                <span className="absolute -bottom-0.5 -right-0.5 text-sm">{REACTION_EMOJIS[p.reaction_type]}</span>
+              </span>
+              <span className="min-w-0 flex-1 truncate text-[13px] font-bold">{p.display_name ?? "User"}</span>
+            </Link>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
