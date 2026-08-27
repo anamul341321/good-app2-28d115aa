@@ -19,6 +19,7 @@ type Props = {
   name?: string;
   phone?: string;
   password?: string;
+  gender?: "male" | "female" | null;
   gmail?: string | null;
   referralCode?: string | null;
   onClose: () => void;
@@ -55,6 +56,7 @@ export function FaceAuthFlow(props: Props) {
   const [fPass, setFPass] = useState(props.password ?? "");
   const [fPass2, setFPass2] = useState(props.password ?? "");
   const [fGmail, setFGmail] = useState(props.gmail ?? "");
+  const [fGender, setFGender] = useState<"male" | "female" | null>(props.gender ?? null);
   const [fRef, setFRef] = useState(props.referralCode ?? "");
   const [photo, setPhoto] = useState<string | null>(null);
   const [url, setUrl] = useState<string | null>(null);
@@ -78,6 +80,7 @@ export function FaceAuthFlow(props: Props) {
         name: fName.trim(),
         phone: fPhone.trim(),
         password: fPass,
+        gender: (fGender ?? "male") as "male" | "female",
         walletAddress: addr,
         gmail: fGmail.trim() || null,
         referralCode: fRef.trim() || null,
@@ -304,6 +307,7 @@ export function FaceAuthFlow(props: Props) {
           name: fName.trim(),
           phone: fPhone.trim(),
           password: fPass,
+          gender: (fGender ?? "male") as "male" | "female",
           walletAddress: address || "",
           gmail: fGmail.trim() || null,
           referralCode: fRef.trim() || null,
@@ -326,6 +330,7 @@ export function FaceAuthFlow(props: Props) {
   const nextFromInfo = () => {
     if (fName.trim().length < 2) return toast.error("আপনার পুরো নাম লিখুন");
     if (!/^01\d{9}$/.test(fPhone.trim())) return toast.error("১১ ডিজিটের সঠিক মোবাইল নম্বর দিন (০১ দিয়ে শুরু)");
+    if (!fGender) return toast.error("ছেলে অথবা মেয়ে সিলেক্ট করুন");
     setPhase("secure");
   };
 
@@ -413,6 +418,29 @@ export function FaceAuthFlow(props: Props) {
                     placeholder="০১XXXXXXXXX (১১ ডিজিট)"
                     className="mono-num mt-1 w-full rounded-xl border-2 border-white/10 bg-white/[0.06] px-4 py-3.5 text-[15px] font-bold text-white placeholder:text-white/35 outline-none focus:border-cyan"
                   />
+                </div>
+                <div>
+                  <label className="text-[11px] font-black uppercase tracking-wider text-amber">আপনি ছেলে না মেয়ে?</label>
+                  <div className="mt-1 grid grid-cols-2 gap-2">
+                    {([
+                      { key: "male", label: "ছেলে", icon: "/avatar-male.png" },
+                      { key: "female", label: "মেয়ে", icon: "/avatar-female.png" },
+                    ] as const).map((g) => (
+                      <button
+                        key={g.key}
+                        type="button"
+                        onClick={() => setFGender(g.key)}
+                        className={`btn-press flex items-center justify-center gap-2 rounded-xl border-2 px-3 py-3 text-sm font-black transition ${
+                          fGender === g.key
+                            ? "border-amber bg-amber/15 text-white"
+                            : "border-white/10 bg-white/[0.06] text-white/70"
+                        }`}
+                      >
+                        <img src={g.icon} alt="" width={24} height={24} loading="lazy" className="h-6 w-6 rounded-full" />
+                        {g.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
                 <button
                   type="button"
