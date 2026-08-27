@@ -73,7 +73,7 @@ public class NotificationReplyReceiver extends BroadcastReceiver {
                         .addMessage(body, System.currentTimeMillis(), me);
                 NotificationCompat.Builder builder =
                     new NotificationCompat.Builder(context, GoodAppMessagingService.MESSAGE_CHANNEL)
-                        .setSmallIcon(R.mipmap.ic_launcher)
+                        .setSmallIcon(R.drawable.ic_stat_goodapp)
                         .setContentTitle(senderName == null ? "মেসেজ" : senderName)
                         .setContentText(body)
                         .setStyle(style)

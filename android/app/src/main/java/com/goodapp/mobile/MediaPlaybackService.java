@@ -194,7 +194,7 @@ public class MediaPlaybackService extends Service {
         );
         boolean isPlaying = player != null && player.isPlaying();
         return new NotificationCompat.Builder(this, CHANNEL)
-            .setSmallIcon(R.mipmap.ic_launcher)
+            .setSmallIcon(R.drawable.ic_stat_goodapp)
             .setContentTitle(currentTitle)
             .setContentText(currentArtist)
             .setContentIntent(open)

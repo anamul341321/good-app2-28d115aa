@@ -111,7 +111,7 @@ public class ScreenShareService extends Service {
             manager.createNotificationChannel(channel);
         }
         Notification notification = new NotificationCompat.Builder(this, CHANNEL)
-            .setSmallIcon(R.mipmap.ic_launcher)
+            .setSmallIcon(R.drawable.ic_stat_goodapp)
             .setContentTitle("স্ক্রিন শেয়ার চালু")
             .setContentText("Good-App কলে স্ক্রিন শেয়ার হচ্ছে")
             .setOngoing(true)
