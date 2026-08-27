@@ -242,6 +242,44 @@ public class MainActivity extends BridgeActivity {
             runOnUiThread(() -> openApkDownload(Uri.parse(url)));
         }
 
+        /** Messenger-style speaker toggle during an active call. */
+        @JavascriptInterface
+        public void setSpeakerphone(boolean on) {
+            runOnUiThread(() -> {
+                try {
+                    AudioManager audio = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        int type = on
+                            ? AudioDeviceInfo.TYPE_BUILTIN_SPEAKER
+                            : AudioDeviceInfo.TYPE_BUILTIN_EARPIECE;
+                        for (AudioDeviceInfo device : audio.getAvailableCommunicationDevices()) {
+                            if (device.getType() == type) {
+                                audio.setCommunicationDevice(device);
+                                break;
+                            }
+                        }
+                    } else {
+                        audio.setSpeakerphoneOn(on);
+                    }
+                } catch (Exception ignored) {}
+            });
+        }
+
+        /** Raise/lower the in-call volume from the call UI. */
+        @JavascriptInterface
+        public void adjustCallVolume(boolean up) {
+            runOnUiThread(() -> {
+                try {
+                    AudioManager audio = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+                    audio.adjustStreamVolume(
+                        AudioManager.STREAM_VOICE_CALL,
+                        up ? AudioManager.ADJUST_RAISE : AudioManager.ADJUST_LOWER,
+                        AudioManager.FLAG_SHOW_UI
+                    );
+                } catch (Exception ignored) {}
+            });
+        }
+
         @JavascriptInterface
         public void beginCall(boolean video) {
             runOnUiThread(() -> {
