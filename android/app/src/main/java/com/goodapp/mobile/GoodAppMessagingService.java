@@ -30,6 +30,8 @@ import com.capacitorjs.plugins.pushnotifications.PushNotificationsPlugin;
 import androidx.annotation.NonNull;
 
 import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
