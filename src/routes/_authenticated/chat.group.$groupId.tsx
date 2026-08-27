@@ -161,13 +161,21 @@ function GroupThreadPage() {
               mine={m.senderId === me}
               showName
               onDelete={(id) => del.mutate(id)}
+              onReply={(msg) =>
+                setReplyTo({ id: msg.id, body: msg.body, kind: msg.kind, name: msg.senderName ?? "মেসেজ" })
+              }
             />
           ))
         )}
         <div ref={endRef} />
       </div>
 
-      <Composer onSend={(p) => send.mutate(p)} sending={send.isPending} />
+      <Composer
+        onSend={(p) => send.mutate(p)}
+        sending={send.isPending}
+        replyTo={replyTo}
+        onCancelReply={() => setReplyTo(null)}
+      />
     </div>
   );
 }
