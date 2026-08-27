@@ -234,6 +234,7 @@ export function MessageBubble({
   showName,
   onDelete,
   onReply,
+  onJumpTo,
   seenBy,
 }: {
   m: ChatMsg;
@@ -242,6 +243,8 @@ export function MessageBubble({
   onDelete?: (id: string) => void;
   /** ডান দিকে টান দিলে এই মেসেজ mention করে রিপ্লাই লেখা শুরু হবে */
   onReply?: (m: ChatMsg) => void;
+  /** রিপ্লাই প্রিভিউতে ট্যাপ করলে মূল মেসেজে নিয়ে যাবে */
+  onJumpTo?: (id: string) => void;
   /** মেসেঞ্জারের মতো — পড়া হলে এই মেসেজের নিচে পিয়ারের ছোট প্রোফাইল ছবি দেখাবে */
   seenBy?: { name: string; avatarUrl?: string | null } | null;
 }) {
@@ -253,8 +256,9 @@ export function MessageBubble({
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const bubbleRef = useRef<HTMLDivElement | null>(null);
   const replyTo = (m.mediaMeta as any)?.replyTo as
-    | { body?: string; name?: string; kind?: string }
+    | { id?: string; body?: string; name?: string; kind?: string; mediaUrl?: string | null }
     | undefined;
+
 
   const openMenu = (e: React.MouseEvent | React.TouchEvent) => {
     const clientX = "touches" in e ? e.touches[0]?.clientX || 0 : e.clientX;
