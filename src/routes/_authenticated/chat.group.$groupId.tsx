@@ -39,6 +39,8 @@ function GroupThreadPage() {
   const endRef = useRef<HTMLDivElement | null>(null);
   const onlineIds = usePresence();
   const [showMembers, setShowMembers] = useState(false);
+  const [replyTo, setReplyTo] = useState<{ id: string; body?: string; kind?: string; name?: string } | null>(null);
+
 
   const { data, isLoading } = useQuery({
     queryKey: ["group-thread", groupId],
