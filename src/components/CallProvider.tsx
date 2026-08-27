@@ -1144,6 +1144,17 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
               <CallCtl active={muted} onClick={toggleMute} label={muted ? "আনমিউট" : "মিউট"}>
                 {muted ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
               </CallCtl>
+              {/* স্পিকার অন/অফ — Messenger-এর মতো */}
+              <CallCtl active={speakerOn} onClick={toggleSpeaker} label={speakerOn ? "স্পিকার বন্ধ" : "স্পিকার"}>
+                {speakerOn ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
+              </CallCtl>
+              {/* সাউন্ড বাড়ানো/কমানো */}
+              <CallCtl active={false} onClick={() => bumpVolume(false)} label="সাউন্ড কম">
+                <Volume1 className="h-5 w-5" />
+              </CallCtl>
+              <CallCtl active={false} onClick={() => bumpVolume(true)} label="সাউন্ড বেশি">
+                <Volume2 className="h-5 w-5" />
+              </CallCtl>
               {withVideo && (
                 <CallCtl active={camOff} onClick={toggleCam} label="ক্যামেরা">
                   {camOff ? <VideoOff className="h-5 w-5" /> : <Video className="h-5 w-5" />}
