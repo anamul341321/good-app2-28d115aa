@@ -349,6 +349,18 @@ public class GoodAppMessagingService extends FirebaseMessagingService {
         manager.notify(("chat-" + senderId).hashCode(), builder.build());
     }
 
+    /** ডিভাইসের স্ক্রিন অনুযায়ী বাবলের উচ্চতা (dp) — যত বড় সম্ভব। */
+    private int bubbleHeightDp() {
+        try {
+            android.util.DisplayMetrics dm = getResources().getDisplayMetrics();
+            int dp = (int) (dm.heightPixels / dm.density);
+            return Math.max(640, (int) (dp * 0.92f));
+        } catch (Exception e) {
+            return 900;
+        }
+    }
+
+
     /**
      * Push a conversation shortcut, but if the device is near its dynamic-shortcut
      * limit, update the existing shortcut instead and prune the oldest ones.
