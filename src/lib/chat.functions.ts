@@ -310,6 +310,41 @@ export const deleteMessage = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+/** একজন পিয়ারের সাথে পুরো চ্যাট/মেসেজ ডিলিট (শুধু নিজের দৃষ্টিকোণ থেকে) */
+export const deleteAllMessages = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { peerId?: string; groupId?: string }) => ({
+    peerId: input?.peerId ? String(input.peerId) : null,
+    groupId: input?.groupId ? String(input.groupId) : null,
+  }))
+  .handler(async ({ data, context }) => {
+    const sb = context.supabase as any;
+    if (data.peerId) {
+      await sb
+        .from("friend_messages")
+        .delete()
+        .or(
+          `and(sender_id.eq.${context.userId},receiver_id.eq.${data.peerId}),and(sender_id.eq.${data.peerId},receiver_id.eq.${context.userId})`,
+        )
+        .is("group_id", null);
+    } else if (data.groupId) {
+      const { data: membership } = await sb
+        .from("chat_group_members")
+        .select("role")
+        .eq("group_id", data.groupId)
+        .eq("user_id", context.userId)
+        .maybeSingle();
+      if (!membership) throw new Error("আপনি এই গ্রুপের সদস্য নন");
+      await sb
+        .from("friend_messages")
+        .delete()
+        .eq("group_id", data.groupId);
+    } else {
+      return { ok: false };
+    }
+    return { ok: true };
+  });
+
 /** চ্যাট খুললে সব মেসেজ "সিন" */
 export const markChatRead = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
