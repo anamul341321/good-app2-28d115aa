@@ -1379,7 +1379,7 @@ function FeedPage() {
               <button onClick={() => setEditingPost(null)} className="p-1"><X className="w-5 h-5" /></button>
               <p className="flex-1 text-[16px] font-bold">পোস্ট এডিট করুন</p>
               <button
-                onClick={() => editPostMutation.mutate({ postId: editingPost.id, content: editText })}
+                onClick={() => editPostMutation.mutate({ postId: editingPost.id, content: editText, visibility: editVisibility })}
                 disabled={editPostMutation.isPending || !editText.trim()}
                 className="px-4 py-1.5 rounded-lg bg-blue-600 text-white text-[14px] font-bold disabled:opacity-50"
               >
@@ -1393,6 +1393,23 @@ function FeedPage() {
               className="w-full p-4 bg-transparent text-[16px] outline-none resize-none"
               placeholder="কিছু লিখুন…"
             />
+            <div className="px-4 pb-4">
+              <p className="text-[13px] font-bold text-gray-700 dark:text-foreground mb-2">দেখার অনুমতি</p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setEditVisibility("public")}
+                  className={`flex-1 flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-bold transition-colors ${editVisibility === "public" ? "border-blue-600 bg-blue-600/10 text-blue-600" : "border-gray-200 dark:border-border/40 text-gray-700 dark:text-foreground"}`}
+                >
+                  <Globe className="w-4 h-4" /> সবাই দেখবে
+                </button>
+                <button
+                  onClick={() => setEditVisibility("private")}
+                  className={`flex-1 flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-bold transition-colors ${editVisibility === "private" ? "border-blue-600 bg-blue-600/10 text-blue-600" : "border-gray-200 dark:border-border/40 text-gray-700 dark:text-foreground"}`}
+                >
+                  <Lock className="w-4 h-4" /> শুধু আমি
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
