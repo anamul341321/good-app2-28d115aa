@@ -9,7 +9,7 @@ import {
   Shield,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { getAccountSettings, changePhoneNumber, deleteMyAccount } from "@/lib/account.functions";
+import { getAccountSettings, changePhoneNumber, deleteMyAccount, setMyGender } from "@/lib/account.functions";
 import { listMyDevices, revokeDevice, revokeOtherDevices } from "@/lib/sessions.functions";
 import { requestEmailVerifyOtp, confirmEmailVerifyOtp } from "@/lib/email-verify.functions";
 import { requestPasswordChangeOtp, changePasswordWithOtp } from "@/lib/password-change.functions";
@@ -71,6 +71,20 @@ function SettingsPage() {
   const sendEmailOtp = useServerFn(requestEmailVerifyOtp);
   const confirmEmailOtp = useServerFn(confirmEmailVerifyOtp);
   const setPhoneFn = useServerFn(changePhoneNumber);
+  const setGenderFn = useServerFn(setMyGender);
+  const [genderBusy, setGenderBusy] = useState(false);
+  const saveGender = async (g: "male" | "female") => {
+    setGenderBusy(true);
+    try {
+      await setGenderFn({ data: { gender: g } });
+      await qc.invalidateQueries({ queryKey: ["account-settings"] });
+      toast.success(g === "male" ? "সেভ হয়েছে — ছেলে" : "সেভ হয়েছে — মেয়ে");
+    } catch (e: any) {
+      toast.error(e?.message ?? "সেভ করা যায়নি");
+    } finally {
+      setGenderBusy(false);
+    }
+  };
 
   const { data: acc } = useQuery({ queryKey: ["account-settings"], queryFn: () => account() });
   const { data: devices, isLoading: devLoading } = useQuery({
@@ -204,6 +218,34 @@ function SettingsPage() {
       </div>
 
       <FaceLoginBindCard />
+
+      <Card
+        icon={<SettingsIcon className="w-4 h-4 text-violet" />}
+        title="ছেলে / মেয়ে (লিঙ্গ)"
+        desc="প্রোফাইল ছবি না থাকলে এই অনুযায়ী ডিফল্ট অবতার দেখানো হবে।"
+      >
+        <div className="grid grid-cols-2 gap-2">
+          {([
+            { key: "male", label: "ছেলে", icon: "/avatar-male.png" },
+            { key: "female", label: "মেয়ে", icon: "/avatar-female.png" },
+          ] as const).map((g) => (
+            <button
+              key={g.key}
+              type="button"
+              disabled={genderBusy}
+              onClick={() => saveGender(g.key)}
+              className={`btn-press flex items-center justify-center gap-2 rounded-xl border-2 px-3 py-3 text-sm font-black transition disabled:opacity-60 ${
+                (acc as any)?.gender === g.key
+                  ? "border-violet bg-violet/10 text-violet"
+                  : "border-border bg-white text-navy"
+              }`}
+            >
+              <img src={g.icon} alt="" width={24} height={24} loading="lazy" className="h-6 w-6 rounded-full" />
+              {g.label}
+            </button>
+          ))}
+        </div>
+      </Card>
 
       <Card
         icon={<KeyRound className="w-4 h-4 text-gold" />}
