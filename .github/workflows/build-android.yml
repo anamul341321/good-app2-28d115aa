@@ -103,17 +103,6 @@ jobs:
           else
             echo "::error::No signing key found. A temporary key would change the app signature and make Android/Play Protect warn users about a harmful or unverified app."
             exit 1
-            export ANDROID_KEYSTORE_PASSWORD="goodapp2026"
-            export ANDROID_KEY_ALIAS="goodapp"
-            export ANDROID_KEY_PASSWORD="goodapp2026"
-            keytool -genkeypair -v \
-              -keystore "$KS" -alias "$ANDROID_KEY_ALIAS" \
-              -keyalg RSA -keysize 2048 -validity 10000 \
-              -storepass "$ANDROID_KEYSTORE_PASSWORD" -keypass "$ANDROID_KEY_PASSWORD" \
-              -dname "CN=Good-App, OU=Mobile, O=Good-App, L=Dhaka, S=Dhaka, C=BD"
-            mkdir -p "${{ github.workspace }}/signing-key"
-            cp "$KS" "${{ github.workspace }}/signing-key/my-release-key.jks"
-            base64 -w0 "$KS" > "${{ github.workspace }}/signing-key/keystore-base64.txt"
           fi
           if [ ! -s "$KS" ]; then
             echo "::error::Keystore is empty"
