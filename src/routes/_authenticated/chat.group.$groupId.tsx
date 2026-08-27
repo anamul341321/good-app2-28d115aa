@@ -39,6 +39,8 @@ function GroupThreadPage() {
   const endRef = useRef<HTMLDivElement | null>(null);
   const onlineIds = usePresence();
   const [showMembers, setShowMembers] = useState(false);
+  const [replyTo, setReplyTo] = useState<{ id: string; body?: string; kind?: string; name?: string } | null>(null);
+
 
   const { data, isLoading } = useQuery({
     queryKey: ["group-thread", groupId],
@@ -161,13 +163,21 @@ function GroupThreadPage() {
               mine={m.senderId === me}
               showName
               onDelete={(id) => del.mutate(id)}
+              onReply={(msg) =>
+                setReplyTo({ id: msg.id, body: msg.body, kind: msg.kind, name: msg.senderName ?? "মেসেজ" })
+              }
             />
           ))
         )}
         <div ref={endRef} />
       </div>
 
-      <Composer onSend={(p) => send.mutate(p)} sending={send.isPending} />
+      <Composer
+        onSend={(p) => send.mutate(p)}
+        sending={send.isPending}
+        replyTo={replyTo}
+        onCancelReply={() => setReplyTo(null)}
+      />
     </div>
   );
 }

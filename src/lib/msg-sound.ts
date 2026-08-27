@@ -28,15 +28,13 @@ function blip(at: number, freq: number, dur = 0.14, gain = 0.16) {
   osc.stop(at + dur + 0.02);
 }
 
-/** নতুন মেসেজ পাওয়ার শব্দ */
+/** নতুন মেসেজ — মেসেঞ্জারের মতো একটাই ছোট টোন */
 export function playMessageTone() {
   const ac = audio();
   if (!ac) return;
-  const t = ac.currentTime;
-  blip(t, 987.77);
-  blip(t + 0.13, 1318.51, 0.18);
+  blip(ac.currentTime, 1046.5, 0.1, 0.14);
   try {
-    navigator.vibrate?.([0, 40, 60, 40]);
+    navigator.vibrate?.(30);
   } catch {
     /* ignore */
   }
@@ -46,23 +44,19 @@ export function playMessageTone() {
 export function playSentTone() {
   const ac = audio();
   if (!ac) return;
-  blip(ac.currentTime, 1174.66, 0.1, 0.1);
+  blip(ac.currentTime, 1174.66, 0.07, 0.08);
 }
 
-/**
- * সাধারণ নোটিফিকেশনের শব্দ (কমেন্ট, রিঅ্যাকশন, মেনশন ইত্যাদি) —
- * মেসেজের "টিং" থেকে সম্পূর্ণ আলাদা, নিচের দিকে নামা দুই স্তরের ঘণ্টা।
- */
+/** সাধারণ নোটিফিকেশন — একবারই ছোট নরম টোন (ভয় লাগার মতো নয়) */
 export function playNotifyTone() {
   const ac = audio();
   if (!ac) return;
-  const t = ac.currentTime;
-  blip(t, 659.25, 0.2, 0.13);
-  blip(t + 0.18, 523.25, 0.3, 0.11);
+  blip(ac.currentTime, 783.99, 0.1, 0.1);
   try {
-    navigator.vibrate?.(70);
+    navigator.vibrate?.(25);
   } catch {
     /* ignore */
   }
 }
+
 

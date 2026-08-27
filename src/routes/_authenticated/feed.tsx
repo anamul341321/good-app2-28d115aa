@@ -8,7 +8,7 @@ import {
   getPostComments, addComment, uploadPostMedia, getActiveStories,
   createStory, uploadStoryMedia,
   deletePost, deleteStory, deleteComment, toggleCommentLike, updatePost,
-  getUnreadNotificationCount, getNotifications, markNotificationsRead,
+  getUnreadNotificationCount, getNotifications, markNotificationsRead, getPostReactors,
   REACTION_EMOJIS, type Post, type PostComment, type Story,
 } from "@/lib/feed-api";
 import { useFeedMedia } from "@/lib/feed-media";
@@ -71,6 +71,162 @@ function FeedVideo({ path, className, videoRef }: { path: string; className?: st
   return <video ref={videoRef} src={url} muted playsInline preload="metadata" className={className} />;
 }
 
+/**
+ * ফিডে ভিডিও — স্ক্রল করে সামনে আসলেই নিজে থেকে চলে (mute),
+ * নিচে টেনে দেখার (seek) বার আছে এবং "Short এ দেখুন" চাপলে reels-এ যায়।
+ */
+function FeedVideoPlayer({
+  path,
+  postId,
+  onOpenReels,
+  videoRef,
+}: {
+  path: string;
+  postId: string;
+  onOpenReels: () => void;
+  videoRef?: (el: HTMLVideoElement | null) => void;
+}) {
+  const url = useFeedMedia(path);
+  const ref = useRef<HTMLVideoElement | null>(null);
+  const [playing, setPlaying] = useState(false);
+  const [muted, setMuted] = useState(true);
+  const [progress, setProgress] = useState(0);
+  const [duration, setDuration] = useState(0);
+
+  const attach = useCallback(
+    (el: HTMLVideoElement | null) => {
+      ref.current = el;
+      videoRef?.(el);
+    },
+    [videoRef],
+  );
+
+  // দেখা গেলেই অটো প্লে, চোখের বাইরে গেলে থামে
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry) return;
+        if (entry.isIntersecting && entry.intersectionRatio > 0.6) {
+          el.muted = muted;
+          void el.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
+        } else {
+          el.pause();
+          setPlaying(false);
+        }
+      },
+      { threshold: [0, 0.6, 1] },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [url, muted]);
+
+  const seek = (clientX: number, bar: HTMLDivElement) => {
+    const el = ref.current;
+    if (!el || !el.duration || !Number.isFinite(el.duration)) return;
+    const rect = bar.getBoundingClientRect();
+    const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
+    el.currentTime = ratio * el.duration;
+    setProgress(ratio * 100);
+  };
+
+  return (
+    <div className="relative w-full bg-black" data-post-video={postId}>
+      <video
+        ref={attach}
+        src={url}
+        muted={muted}
+        loop
+        playsInline
+        preload="metadata"
+        className="w-full max-h-[500px] object-contain"
+        onTimeUpdate={(e) => {
+          const v = e.currentTarget;
+          if (v.duration) setProgress((v.currentTime / v.duration) * 100);
+        }}
+        onLoadedMetadata={(e) => setDuration(e.currentTarget.duration || 0)}
+        onClick={() => {
+          const el = ref.current;
+          if (!el) return;
+          if (el.paused) {
+            void el.play().then(() => setPlaying(true)).catch(() => {});
+          } else {
+            el.pause();
+            setPlaying(false);
+          }
+        }}
+      />
+
+      {!playing && (
+        <span className="pointer-events-none absolute inset-0 grid place-items-center">
+          <span className="grid h-14 w-14 place-items-center rounded-full bg-card/85 text-primary shadow-xl backdrop-blur">
+            <Play className="ml-1 h-7 w-7 fill-current" />
+          </span>
+        </span>
+      )}
+
+      {/* টেনে দেখার বার */}
+      <div
+        className="absolute bottom-0 left-0 right-0 px-3 pb-2"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div
+          className="group h-6 flex items-center cursor-pointer"
+          onPointerDown={(e) => {
+            e.stopPropagation();
+            const bar = e.currentTarget;
+            bar.setPointerCapture(e.pointerId);
+            seek(e.clientX, bar);
+          }}
+          onPointerMove={(e) => {
+            if (e.currentTarget.hasPointerCapture(e.pointerId)) seek(e.clientX, e.currentTarget);
+          }}
+        >
+          <div className="h-1 w-full rounded-full bg-white/30">
+            <div className="relative h-1 rounded-full bg-primary" style={{ width: `${progress}%` }}>
+              <span className="absolute -right-1.5 -top-1 h-3 w-3 rounded-full bg-primary shadow" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          setMuted((v) => {
+            const next = !v;
+            if (ref.current) ref.current.muted = next;
+            return next;
+          });
+        }}
+        aria-label={muted ? "সাউন্ড চালু" : "সাউন্ড বন্ধ"}
+        className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-black/55 text-white backdrop-blur"
+      >
+        <span className="text-sm font-black">{muted ? "🔇" : "🔊"}</span>
+      </button>
+
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onOpenReels();
+        }}
+        className="absolute bottom-8 left-3 rounded-full bg-primary px-3 py-1.5 text-[12px] font-black text-primary-foreground shadow-lg"
+      >
+        Short এ দেখুন
+      </button>
+      {duration > 0 && (
+        <span className="absolute bottom-8 right-3 rounded-full bg-black/60 px-2 py-1 text-[10px] font-black text-white">
+          {Math.floor(duration / 60)}:{String(Math.floor(duration % 60)).padStart(2, "0")}
+        </span>
+      )}
+    </div>
+  );
+}
+
+
 const NameWithBadge = ({ name, isVerified, className = "" }: { name: string; isVerified?: boolean; className?: string }) => (
   <span className={`inline-flex items-center gap-1 ${className}`}>
     <span>{name}</span>
@@ -105,6 +261,7 @@ function FeedPage() {
   const [comments, setComments] = useState<PostComment[]>([]);
   const [loadingComments, setLoadingComments] = useState(false);
   const [showReactionPicker, setShowReactionPicker] = useState<string | null>(null);
+  const [reactorsPostId, setReactorsPostId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const [viewingStory, setViewingStory] = useState<Story | null>(null);
@@ -702,22 +859,12 @@ function FeedPage() {
           })()}
 
           {post.video_url && (
-            <button
-              type="button"
-              onClick={() => navigate({ to: "/reels", search: { postId: post.id } as any })}
-              className="relative block w-full bg-black text-left"
-              aria-label="Short এ ভিডিও খুলুন"
-            >
-              <FeedVideo path={post.video_url} videoRef={(el) => { feedVideoRefs.current[post.id] = el; }} className="w-full max-h-[500px] object-contain opacity-90" />
-              <span className="absolute inset-0 grid place-items-center bg-black/10">
-                <span className="grid h-16 w-16 place-items-center rounded-full bg-card/90 text-primary shadow-xl backdrop-blur">
-                  <Play className="ml-1 h-8 w-8 fill-current" />
-                </span>
-              </span>
-              <span className="absolute bottom-3 left-3 rounded-full bg-primary px-3 py-1.5 text-[12px] font-black text-primary-foreground shadow-lg">
-                Short এ দেখুন
-              </span>
-            </button>
+            <FeedVideoPlayer
+              path={post.video_url}
+              postId={post.id}
+              videoRef={(el) => { feedVideoRefs.current[post.id] = el; }}
+              onOpenReels={() => navigate({ to: "/reels", search: { postId: post.id } as any })}
+            />
           )}
 
           <div className="px-3 py-2 flex items-center justify-between text-[13px] text-gray-500 dark:text-muted-foreground">
@@ -728,7 +875,9 @@ function FeedPage() {
                   <span className="w-5 h-5 rounded-full bg-red-500 flex items-center justify-center text-[11px]">{REACTION_EMOJIS[myReaction]}</span>
                 )}
               </span>
-              <span className="text-[13px]">{post.likes_count || 0}</span>
+              <button onClick={() => setReactorsPostId(post.id)} className="text-[13px] hover:underline">
+                {post.likes_count || 0}
+              </button>
             </div>
             <div className="flex items-center gap-3">
               {post.video_url && (
@@ -781,9 +930,14 @@ function FeedPage() {
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setShowReactionPicker(null)} />
                   <div className="absolute bottom-full left-0 mb-2 bg-white dark:bg-card border border-gray-200 dark:border-border rounded-full shadow-xl px-2 py-1.5 flex gap-0.5 z-50 animate-in fade-in zoom-in-90 duration-150">
-                    {Object.entries(REACTION_EMOJIS).map(([type, emoji]) => (
-                      <button key={type} onClick={() => reactionMutation.mutate({ postId: post.id, type })}
-                        className={`text-2xl p-1 rounded-full hover:bg-gray-100 dark:hover:bg-secondary transition-transform hover:scale-125 ${myReaction === type ? "bg-blue-50 dark:bg-primary/20" : ""}`} title={type}>
+                    {Object.entries(REACTION_EMOJIS).map(([type, emoji], i) => (
+                      <button
+                        key={type}
+                        onClick={() => { playUiSound("like"); reactionMutation.mutate({ postId: post.id, type }); }}
+                        style={{ animationDelay: `${i * 45}ms` }}
+                        className={`reaction-pop text-3xl p-1 rounded-full transition-transform duration-150 hover:scale-[1.45] active:scale-125 ${myReaction === type ? "bg-blue-50 dark:bg-primary/20" : ""}`}
+                        title={type}
+                      >
                         {emoji}
                       </button>
                     ))}
@@ -1363,6 +1517,10 @@ function FeedPage() {
         </div>
       )}
 
+      {reactorsPostId && (
+        <ReactorsModal postId={reactorsPostId} onClose={() => setReactorsPostId(null)} />
+      )}
+
       {viewingImage && (
         <div className="fixed inset-0 z-[200] bg-black/95 flex items-center justify-center animate-in fade-in duration-150" onClick={() => setViewingImage(null)}>
           <button onClick={() => setViewingImage(null)} className="absolute top-4 right-4 z-10 text-white/80 hover:text-white">
@@ -1432,6 +1590,79 @@ function FeedPage() {
           timeAgo={timeAgo}
         />
       )}
+    </div>
+  );
+}
+
+/** কে কোন রিঅ্যাকশন দিয়েছে — Facebook-এর মতো তালিকা */
+function ReactorsModal({ postId, onClose }: { postId: string; onClose: () => void }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ["post-reactors", postId],
+    queryFn: () => getPostReactors(postId),
+    staleTime: 15_000,
+  });
+  const [filter, setFilter] = useState<string | null>(null);
+  const people = (data?.people ?? []).filter((p) => !filter || p.reaction_type === filter);
+
+  return (
+    <div className="fixed inset-0 z-[220] bg-black/60 flex items-end sm:items-center justify-center" onClick={onClose}>
+      <div
+        className="w-full sm:max-w-md bg-white dark:bg-card rounded-t-2xl sm:rounded-2xl overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-100 dark:border-border/30">
+          <p className="flex-1 text-sm font-black">রিঅ্যাকশন {data ? `(${data.total})` : ""}</p>
+          <button onClick={onClose} aria-label="বন্ধ" className="p-1">
+            <X className="h-5 w-5 text-gray-500 dark:text-muted-foreground" />
+          </button>
+        </div>
+
+        <div className="flex gap-2 overflow-x-auto px-3 py-2 border-b border-gray-100 dark:border-border/30">
+          <button
+            onClick={() => setFilter(null)}
+            className={`rounded-full px-3 py-1 text-[12px] font-black ${filter === null ? "bg-primary text-primary-foreground" : "bg-gray-100 dark:bg-secondary"}`}
+          >
+            সব {data?.total ?? 0}
+          </button>
+          {Object.entries(data?.counts ?? {}).map(([type, count]) => (
+            <button
+              key={type}
+              onClick={() => setFilter(type)}
+              className={`flex items-center gap-1 rounded-full px-3 py-1 text-[12px] font-black ${filter === type ? "bg-primary text-primary-foreground" : "bg-gray-100 dark:bg-secondary"}`}
+            >
+              <span className="text-base">{REACTION_EMOJIS[type]}</span> {count}
+            </button>
+          ))}
+        </div>
+
+        <div className="max-h-[55vh] overflow-y-auto divide-y divide-gray-100 dark:divide-border/20">
+          {isLoading && (
+            <p className="flex items-center justify-center gap-2 p-5 text-xs font-bold text-gray-500 dark:text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" /> লোড হচ্ছে…
+            </p>
+          )}
+          {!isLoading && people.length === 0 && (
+            <p className="p-6 text-center text-xs font-bold text-gray-500 dark:text-muted-foreground">
+              এখনো কেউ রিঅ্যাক্ট করেনি
+            </p>
+          )}
+          {people.map((p) => (
+            <Link
+              key={`${p.user_id}-${p.reaction_type}`}
+              to="/user/$userId"
+              params={{ userId: p.user_id }}
+              onClick={onClose}
+              className="flex items-center gap-3 px-4 py-2.5"
+            >
+              <span className="relative grid h-10 w-10 place-items-center overflow-hidden rounded-full bg-blue-100 dark:bg-secondary">
+                <Avatar path={p.avatar_url} className="h-10 w-10 rounded-full object-cover" fallback={(p.display_name ?? "U").charAt(0)} />
+                <span className="absolute -bottom-0.5 -right-0.5 text-sm">{REACTION_EMOJIS[p.reaction_type]}</span>
+              </span>
+              <span className="min-w-0 flex-1 truncate text-[13px] font-bold">{p.display_name ?? "User"}</span>
+            </Link>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

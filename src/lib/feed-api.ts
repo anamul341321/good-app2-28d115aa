@@ -1084,6 +1084,34 @@ export async function getPostReactionCounts(postId: string): Promise<Record<stri
   return counts;
 }
 
+// কে কোন রিঅ্যাকশন দিয়েছে — Facebook-এর মতো তালিকা
+export async function getPostReactors(postId: string): Promise<{
+  counts: Record<string, number>;
+  total: number;
+  people: Array<{ user_id: string; reaction_type: string; display_name: string | null; avatar_url: string | null }>;
+}> {
+  const { data } = await db
+    .from("post_reactions")
+    .select("user_id, reaction_type, created_at")
+    .eq("post_id", postId)
+    .order("created_at", { ascending: false })
+    .limit(300);
+  const rows = (data || []) as Array<{ user_id: string; reaction_type: string }>;
+  const counts: Record<string, number> = {};
+  rows.forEach((r) => { counts[r.reaction_type] = (counts[r.reaction_type] || 0) + 1; });
+  const profiles = await fetchProfilesMap(rows.map((r) => r.user_id));
+  return {
+    counts,
+    total: rows.length,
+    people: rows.map((r) => ({
+      user_id: r.user_id,
+      reaction_type: r.reaction_type,
+      display_name: profiles[r.user_id]?.display_name ?? null,
+      avatar_url: profiles[r.user_id]?.avatar_url ?? null,
+    })),
+  };
+}
+
 // Get comments for a post
 export async function getPostComments(postId: string, currentUserId?: string): Promise<PostComment[]> {
   const { data: comments } = await db.from("post_comments").select("*, parent_comment_id")
