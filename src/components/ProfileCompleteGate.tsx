@@ -58,6 +58,14 @@ export function ProfileCompleteGate() {
     }
   }, [data?.suggestedName]);
 
+  useEffect(() => {
+    if (!data?.conflict && data?.existingAccount) {
+      try {
+        localStorage.removeItem("good-app-google-intent");
+      } catch {}
+    }
+  }, [data?.conflict, data?.existingAccount]);
+
   // All hooks above must run on every render. Returning before them when the
   // auth-mode query changed from loading to ready caused React error #310.
   if (modeLoading || mode?.emailOtpEnabled === false) return null;
@@ -77,12 +85,6 @@ export function ProfileCompleteGate() {
   // callback ভুল/duplicate account বানিয়ে একই Gmail অন্য profile-এ পেলে link
   // verification দরকার।
   const needsGoogleLoginCode = data.conflict;
-
-  if (intent === "login" && data.existingAccount && !data.conflict) {
-    try {
-      localStorage.removeItem("good-app-google-intent");
-    } catch {}
-  }
 
   // ---------- একই Gmail-এর পুরোনো/বর্তমান একাউন্টে code দিয়ে login ----------
   if (needsGoogleLoginCode) {
