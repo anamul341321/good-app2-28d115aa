@@ -734,7 +734,9 @@ export async function getShortVideoPostById(postId: string): Promise<Post | null
     .not("video_url", "is", null)
     .single();
 
-  if (!post || isLongVideoPostContent(post.content)) return null;
+  // ফিড থেকে যে ভিডিওতে ক্লিক করা হয়েছে, Short-এ ঠিক সেটিই প্রথমে খুলবে —
+  // লম্বা ভিডিও হলেও অন্য কোনো ভিডিও দিয়ে শুরু হবে না।
+  if (!post) return null;
 
   const userMap = await fetchProfilesMap([post.user_id]);
   return { ...post, user: userMap[post.user_id] || null } as Post;
