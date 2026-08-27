@@ -63,49 +63,45 @@ export function Composer({
 
   const startRec = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
-      });
-      const mr = new MediaRecorder(stream);
-      chunks.current = [];
-      mr.ondataavailable = (e) => e.data.size && chunks.current.push(e.data);
-      mr.onstop = async () => {
-        stream.getTracks().forEach((t) => t.stop());
-        window.clearInterval(timer.current);
-        const blob = new Blob(chunks.current, { type: mr.mimeType || "audio/webm" });
-        const duration = elapsed.current;
-        elapsed.current = 0;
-        setRecSec(0);
-        if (blob.size < 800) return;
-        setBusy(true);
-        try {
-          const path = await uploadChatFile(blob, "voice", "webm");
-          onSend({ kind: "voice", mediaPath: path, mediaMeta: { size: blob.size, duration, ...replyMeta() } });
-          onCancelReply?.();
-        } catch (e: any) {
-          toast.error(e?.message ?? "Failed to send voice");
-        } finally {
-          setBusy(false);
-        }
-      };
-      mr.start();
-      rec.current = mr;
-      elapsed.current = 1;
-      setRecSec(1);
-      timer.current = window.setInterval(() =>
-        setRecSec((v) => {
-          elapsed.current = v + 1;
-          return v + 1;
-        }), 1000);
+      const recorder = new VoiceRecorder();
+      await recorder.start();
+      rec.current = recorder;
+      setRecSec(0);
+      timer.current = window.setInterval(() => setRecSec(Math.floor(recorder.elapsed)), 250);
     } catch {
       toast.error("Allow microphone access");
     }
   };
 
-  const stopRec = () => {
-    rec.current?.stop();
+  const stopRec = async () => {
+    const recorder = rec.current;
     rec.current = null;
+    window.clearInterval(timer.current);
+    setRecSec(0);
+    if (!recorder) return;
+    const result = await recorder.stop();
+    if (!result) return;
+    setBusy(true);
+    try {
+      const path = await uploadChatFile(result.blob, "voice", "wav");
+      onSend({
+        kind: "voice",
+        mediaPath: path,
+        mediaMeta: {
+          size: result.blob.size,
+          duration: Number(result.duration.toFixed(2)),
+          peaks: result.peaks.map((v) => Number(v.toFixed(3))),
+          ...replyMeta(),
+        },
+      });
+      onCancelReply?.();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed to send voice");
+    } finally {
+      setBusy(false);
+    }
   };
+
 
   const recording = recSec > 0;
 
