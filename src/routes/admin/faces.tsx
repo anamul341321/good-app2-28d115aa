@@ -93,10 +93,12 @@ function OnchainAudit() {
 
 
 /** ফেস-লগইন রেজিস্ট্রেশনের key — স্লট key থেকে সম্পূর্ণ আলাদা */
-function FaceLoginKeys() {
+function FaceLoginKeys({ open, onToggle }: { open: boolean; onToggle: () => void }) {
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["admin-face-signup-keys"],
     queryFn: () => adminFaceSignupKeys(),
+    enabled: open,
+    staleTime: 60_000,
   });
 
   const copyKeys = async (keys: string[] | undefined, label: string) => {
