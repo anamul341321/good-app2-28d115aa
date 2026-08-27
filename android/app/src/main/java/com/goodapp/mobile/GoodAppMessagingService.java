@@ -17,6 +17,7 @@ import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.PowerManager;
+import android.util.Log;
 
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.Person;
@@ -29,6 +30,8 @@ import com.capacitorjs.plugins.pushnotifications.PushNotificationsPlugin;
 import androidx.annotation.NonNull;
 
 import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
@@ -292,56 +295,98 @@ public class GoodAppMessagingService extends FirebaseMessagingService {
             .setVibrate(new long[] {0, 180, 100, 180});
         if (replyAction != null) builder.addAction(replyAction);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            try {
-                // A bubble is only allowed when a matching long-lived shortcut exists
-                // and the notification is tied to it via shortcutId + locusId.
-                String shortcutId = "chat-" + senderId;
-                IconCompat icon = senderIcon;
+            // A bubble is only allowed when a matching long-lived shortcut exists
+            // and the notification is tied to it via shortcutId + locusId.
+            String shortcutId = "chat-" + senderId;
+            IconCompat icon = senderIcon;
 
-                Intent bubbleIntent = new Intent(this, BubbleChatActivity.class);
-                bubbleIntent.setAction(Intent.ACTION_VIEW);
-                bubbleIntent.setData(Uri.parse("goodapp://chat/" + Uri.encode(senderId)));
-                bubbleIntent.putExtra("peer_id", senderId);
-                bubbleIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_DOCUMENT | Intent.FLAG_ACTIVITY_MULTIPLE_TASK);
-                PendingIntent bubblePending = PendingIntent.getActivity(
-                    this,
-                    shortcutId.hashCode(),
-                    bubbleIntent,
-                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE
-                );
+            Intent bubbleIntent = new Intent(this, BubbleChatActivity.class);
+            bubbleIntent.setAction(Intent.ACTION_VIEW);
+            bubbleIntent.setData(Uri.parse("goodapp://chat/" + Uri.encode(senderId)));
+            bubbleIntent.putExtra("peer_id", senderId);
+            bubbleIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_DOCUMENT | Intent.FLAG_ACTIVITY_MULTIPLE_TASK);
+            PendingIntent bubblePending = PendingIntent.getActivity(
+                this,
+                shortcutId.hashCode(),
+                bubbleIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE
+            );
 
-                androidx.core.content.pm.ShortcutInfoCompat shortcut =
-                    new androidx.core.content.pm.ShortcutInfoCompat.Builder(this, shortcutId)
-                        .setLocusId(new androidx.core.content.LocusIdCompat(shortcutId))
-                        .setCategories(java.util.Collections.singleton(
-                            android.content.pm.ShortcutInfo.SHORTCUT_CATEGORY_CONVERSATION
-                        ))
-                        .setShortLabel(senderName)
-                        .setIcon(icon)
-                        .setLongLived(true)
-                        .setIntent(new Intent(this, MainActivity.class)
-                            .setAction(Intent.ACTION_VIEW)
-                            .setData(Uri.parse("https://www.goodapp2.live/chat/" + Uri.encode(senderId))))
-                        .setPerson(person)
-                        .setIsConversation()
-                        .build();
-                androidx.core.content.pm.ShortcutManagerCompat.pushDynamicShortcut(this, shortcut);
-
-                builder.setShortcutId(shortcutId)
-                    .setLocusId(new androidx.core.content.LocusIdCompat(shortcutId));
-
-                NotificationCompat.BubbleMetadata bubble = new NotificationCompat.BubbleMetadata.Builder(
-                    bubblePending,
-                    icon
-                )
-                    .setDesiredHeight(640)
-                    .setAutoExpandBubble(false)
-                    .setSuppressNotification(false)
+            androidx.core.content.pm.ShortcutInfoCompat shortcut =
+                new androidx.core.content.pm.ShortcutInfoCompat.Builder(this, shortcutId)
+                    .setLocusId(new androidx.core.content.LocusIdCompat(shortcutId))
+                    .setCategories(java.util.Collections.singleton(
+                        android.content.pm.ShortcutInfo.SHORTCUT_CATEGORY_CONVERSATION
+                    ))
+                    .setShortLabel(senderName)
+                    .setIcon(icon)
+                    .setLongLived(true)
+                    .setIntent(new Intent(this, MainActivity.class)
+                        .setAction(Intent.ACTION_VIEW)
+                        .setData(Uri.parse("https://www.goodapp2.live/chat/" + Uri.encode(senderId))))
+                    .setPerson(person)
+                    .setIsConversation()
                     .build();
-                builder.setBubbleMetadata(bubble);
-            } catch (Exception ignored) {}
+
+            // Keep the dynamic-shortcut count well below the device limit so bubbles
+            // never silently fail when many different senders message the user.
+            pushOrUpdateConversationShortcut(shortcut);
+
+            builder.setShortcutId(shortcutId)
+                .setLocusId(new androidx.core.content.LocusIdCompat(shortcutId));
+
+            NotificationCompat.BubbleMetadata bubble = new NotificationCompat.BubbleMetadata.Builder(
+                bubblePending,
+                icon
+            )
+                .setDesiredHeight(640)
+                .setAutoExpandBubble(false)
+                .setSuppressNotification(false)
+                .build();
+            builder.setBubbleMetadata(bubble);
         }
         manager.notify(("chat-" + senderId).hashCode(), builder.build());
+    }
+
+    /**
+     * Push a conversation shortcut, but if the device is near its dynamic-shortcut
+     * limit, update the existing shortcut instead and prune the oldest ones.
+     * This prevents ShortcutManagerCompat.pushDynamicShortcut() from throwing
+     * and silently killing the bubble metadata.
+     */
+    private void pushOrUpdateConversationShortcut(androidx.core.content.pm.ShortcutInfoCompat shortcut) {
+        try {
+            List<androidx.core.content.pm.ShortcutInfoCompat> existing =
+                androidx.core.content.pm.ShortcutManagerCompat.getShortcuts(this, androidx.core.content.pm.ShortcutManagerCompat.FLAG_MATCH_DYNAMIC);
+            boolean alreadyExists = false;
+            for (androidx.core.content.pm.ShortcutInfoCompat s : existing) {
+                if (shortcut.getId().equals(s.getId())) {
+                    alreadyExists = true;
+                    break;
+                }
+            }
+            if (alreadyExists) {
+                List<androidx.core.content.pm.ShortcutInfoCompat> updateList = new ArrayList<>();
+                updateList.add(shortcut);
+                androidx.core.content.pm.ShortcutManagerCompat.updateShortcuts(this, updateList);
+            } else {
+                int max = Math.max(4, androidx.core.content.pm.ShortcutManagerCompat.getMaxShortcutCountPerActivity(this) - 2);
+                if (existing.size() >= max) {
+                    // Remove oldest dynamic shortcuts to make room.
+                    int toRemove = existing.size() - max + 1;
+                    List<String> removeIds = new ArrayList<>();
+                    for (int i = 0; i < toRemove && i < existing.size(); i++) {
+                        removeIds.add(existing.get(i).getId());
+                    }
+                    if (!removeIds.isEmpty()) {
+                        androidx.core.content.pm.ShortcutManagerCompat.removeLongLivedShortcuts(this, removeIds);
+                    }
+                }
+                androidx.core.content.pm.ShortcutManagerCompat.pushDynamicShortcut(this, shortcut);
+            }
+        } catch (Exception e) {
+            Log.w("GoodAppPush", "Failed to maintain conversation shortcut", e);
+        }
     }
 
     /** Download the sender's signed avatar for the conversation bubble. If the
