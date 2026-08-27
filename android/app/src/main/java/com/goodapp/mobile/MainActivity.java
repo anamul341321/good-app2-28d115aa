@@ -20,6 +20,7 @@ import android.media.AudioManager;
 import android.media.AudioDeviceInfo;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebResourceRequest;
+import android.webkit.RenderProcessGoneDetail;
 import android.webkit.WebView;
 import android.view.WindowManager;
 import android.view.View;
