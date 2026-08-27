@@ -4,6 +4,7 @@ import { adminListFaces, adminResetTask, adminFreshWallets, adminOnchainScanBatc
 import { Copy, Loader2, RefreshCw, X, Radar } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
+import { CollapsibleSection } from "@/components/admin/CollapsibleSection";
 
 export const Route = createFileRoute("/admin/faces")({ component: AdminFaces });
 
