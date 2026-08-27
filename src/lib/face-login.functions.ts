@@ -114,9 +114,11 @@ const CompleteInput = z.object({
   phone: z.string().trim().regex(/^01\d{9}$/),
   password: z.string().min(6, "পাসওয়ার্ড কমপক্ষে ৬ অক্ষর"),
   walletAddress: z.string().trim().min(10),
+  gender: z.enum(["male", "female"], { message: "ছেলে অথবা মেয়ে সিলেক্ট করুন" }),
   gmail: z.string().trim().toLowerCase().optional().nullable(),
   referralCode: z.string().trim().max(20).optional().nullable(),
 });
+
 
 /** ভেরিফিকেশন সফল হওয়ার পরেই একাউন্ট তৈরি হয় */
 export const completeFaceSignup = createServerFn({ method: "POST" })
