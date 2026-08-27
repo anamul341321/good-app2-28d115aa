@@ -339,7 +339,8 @@ public class GoodAppMessagingService extends FirebaseMessagingService {
                 bubblePending,
                 icon
             )
-                .setDesiredHeight(640)
+                // বাবল যেন ছোট না খোলে — স্ক্রিনের প্রায় পুরো উচ্চতা চাই
+                .setDesiredHeight(bubbleHeightDp())
                 .setAutoExpandBubble(false)
                 .setSuppressNotification(false)
                 .build();
