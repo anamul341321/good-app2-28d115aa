@@ -343,24 +343,47 @@ export function MessageBubble({
         >
           {replyTo && !m.deleted && (
             <div
-              className={`mb-1.5 rounded-xl border-l-4 px-2.5 py-1.5 ${
+              role={replyTo.id ? "button" : undefined}
+              onClick={(e) => {
+                if (!replyTo.id) return;
+                e.stopPropagation();
+                onJumpTo?.(replyTo.id);
+              }}
+              className={`mb-1.5 flex items-center gap-2 rounded-xl border-l-4 px-2.5 py-1.5 ${
                 mine ? "border-white/70 bg-white/15" : "border-primary/70 bg-primary/10"
               }`}
             >
-              <p className="text-[10px] font-black opacity-90">{replyTo.name ?? "মেসেজ"}</p>
-              <p className="line-clamp-2 text-[11px] font-bold opacity-80">
-                {replyTo.body?.trim()
-                  ? replyTo.body
-                  : replyTo.kind === "image"
-                    ? "📷 ছবি"
-                    : replyTo.kind === "video"
-                      ? "🎬 ভিডিও"
-                      : replyTo.kind === "voice"
-                        ? "🎤 ভয়েস"
-                        : "মেসেজ"}
-              </p>
+              {replyTo.mediaUrl && (replyTo.kind === "image" || replyTo.kind === "video") && (
+                <span className="relative h-9 w-9 shrink-0 overflow-hidden rounded-lg bg-black/20">
+                  {replyTo.kind === "image" ? (
+                    <img src={replyTo.mediaUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
+                  ) : (
+                    <>
+                      <video src={replyTo.mediaUrl} className="h-full w-full object-cover" muted />
+                      <span className="absolute inset-0 grid place-items-center">
+                        <Play className="h-3 w-3 fill-white text-white" />
+                      </span>
+                    </>
+                  )}
+                </span>
+              )}
+              <span className="min-w-0 flex-1">
+                <p className="text-[10px] font-black opacity-90">{replyTo.name ?? "মেসেজ"}</p>
+                <p className="line-clamp-2 text-[11px] font-bold opacity-80">
+                  {replyTo.body?.trim()
+                    ? replyTo.body
+                    : replyTo.kind === "image"
+                      ? "📷 ছবি"
+                      : replyTo.kind === "video"
+                        ? "🎬 ভিডিও"
+                        : replyTo.kind === "voice"
+                          ? "🎤 ভয়েস"
+                          : "মেসেজ"}
+                </p>
+              </span>
             </div>
           )}
+
 
           {m.deleted ? (
             <p className="flex items-center gap-1.5 text-xs font-bold italic opacity-80">
