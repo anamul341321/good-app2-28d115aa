@@ -72,7 +72,17 @@ export function ProfileCompleteGate() {
 
   if (!data || !data.isGoogle) return null;
 
-  const needsGoogleLoginCode = data.conflict || (intent === "login" && data.existingAccount);
+  // Google provider নিজেই পরিচয় যাচাই করেছে এবং এই identity বর্তমান পুরোনো
+  // account-এর সঙ্গে linked থাকলে আর দ্বিতীয় OTP gate দেখাব না। শুধু Google
+  // callback ভুল/duplicate account বানিয়ে একই Gmail অন্য profile-এ পেলে link
+  // verification দরকার।
+  const needsGoogleLoginCode = data.conflict;
+
+  if (intent === "login" && data.existingAccount && !data.conflict) {
+    try {
+      localStorage.removeItem("good-app-google-intent");
+    } catch {}
+  }
 
   // ---------- একই Gmail-এর পুরোনো/বর্তমান একাউন্টে code দিয়ে login ----------
   if (needsGoogleLoginCode) {
