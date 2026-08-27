@@ -2,7 +2,7 @@ import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { useEffect, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ChevronLeft, Info, Check, X, UserPlus, Loader2 } from "lucide-react";
+import { ChevronLeft, Info, Check, X, UserPlus, Loader2, Maximize2 } from "lucide-react";
 import { deleteMessage, getThread, markChatRead, sendMessage } from "@/lib/chat.functions";
 import { respondFriendRequest, sendFriendRequest } from "@/lib/friends.functions";
 import { CallButtons } from "@/components/CallProvider";
@@ -29,6 +29,15 @@ function ThreadPage() {
   const qc = useQueryClient();
   const endRef = useRef<HTMLDivElement | null>(null);
   const online = useIsOnline(peerId);
+  // বাবল উইন্ডোতে খোলা হলে ফুল স্ক্রিনে যাওয়ার বাটন দেখাবে
+  const inBubble = typeof window !== "undefined" && Boolean((window as any).GoodAppBubble);
+  const openFullscreen = () => {
+    try {
+      (window as any).GoodAppBubble?.openFullscreen?.(peerId);
+    } catch {
+      /* ignore */
+    }
+  };
 
   const { data, isLoading } = useQuery({
     queryKey: ["thread", peerId],
@@ -134,6 +143,15 @@ function ThreadPage() {
         </div>
 
         <div className="flex items-center gap-1 pr-1">
+          {inBubble && (
+            <button
+              onClick={openFullscreen}
+              aria-label="ফুল স্ক্রিনে খুলুন"
+              className="btn-press h-9 w-9 flex items-center justify-center rounded-full hover:bg-surface-2 transition-colors"
+            >
+              <Maximize2 className="h-5 w-5 text-primary" />
+            </button>
+          )}
           {data?.peer && <CallButtons userId={data.peer.userId} name={data.peer.name} />}
           <button className="btn-press h-9 w-9 flex items-center justify-center rounded-full hover:bg-surface-2 transition-colors">
             <Info className="h-5 w-5 text-primary" />
