@@ -1,11 +1,13 @@
 import { Link } from "@tanstack/react-router";
 import { MessengerAvatar } from "./MessengerAvatar";
 import { cn } from "@/lib/utils";
+import type { Gender } from "@/lib/default-avatar";
 
 export function ChatRow({
   id,
   name,
   avatar,
+  gender,
   uid,
   lastMessage,
   time,
@@ -16,6 +18,7 @@ export function ChatRow({
   id: string;
   name: string;
   avatar?: string | null;
+  gender?: Gender;
   uid?: number | null;
   lastMessage: string;
   time: string;
@@ -40,6 +43,7 @@ export function ChatRow({
           <MessengerAvatar
             name={name}
             src={avatar}
+            gender={gender}
             online={online}
             size="xl"
           />
@@ -48,6 +52,7 @@ export function ChatRow({
         <MessengerAvatar
           name={name}
           src={avatar}
+          gender={gender}
           online={online}
           size="xl"
         />

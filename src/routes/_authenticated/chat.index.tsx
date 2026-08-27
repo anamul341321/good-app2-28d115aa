@@ -138,6 +138,7 @@ export function ChatListPage() {
                 <MessengerAvatar
                   name={(meProfile.data as any)?.display_name ?? "Me"}
                   src={(meProfile.data as any)?.avatar_url ?? null}
+                  gender={(meProfile.data as any)?.gender ?? null}
                   online
                   size="md"
                 />
@@ -267,6 +268,7 @@ export function ChatListPage() {
                 id={'groupId' in conv ? conv.groupId : conv.peerId}
                 name={conv.name}
                 avatar={'avatar_url' in conv ? conv.avatar_url : null}
+                gender={'gender' in conv ? (conv as any).gender : null}
                 uid={'uid' in conv ? conv.uid : null}
                 lastMessage={'mine' in conv && conv.mine ? `You: ${conv.lastBody}` : conv.lastBody}
                 time={formatChatTime(conv.lastAt)}
