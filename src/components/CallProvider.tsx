@@ -192,6 +192,9 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     setMuted(false);
     setCamOff(false);
     setSharing(false);
+    setSpeakerOn(false);
+    warmStream.current?.getTracks().forEach((t) => t.stop());
+    warmStream.current = null;
     setQuality("good");
     setSeconds(0);
     try {
