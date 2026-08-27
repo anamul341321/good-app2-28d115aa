@@ -377,30 +377,39 @@ export function AuthPage() {
 
       // ১) নেটিভ অ্যাপে প্রথমে Android Credential Manager — ফোনে যুক্ত Gmail
       // একাউন্টগুলো সরাসরি chooser-এ দেখাবে (নতুন করে Gmail লিখতে হবে না)।
+      let pickedEmail: string | undefined;
       try {
         const { nativeGoogleAvailable, signInWithNativeGoogle } = await import(
           "@/lib/native-google"
         );
-        if (nativeGoogleAvailable() && (await signInWithNativeGoogle())) {
-          const { clearSharedSession } = await import("@/lib/auth-session");
-          clearSharedSession();
-          redirecting = true;
-          window.location.href = "/home";
-          return;
+        if (nativeGoogleAvailable()) {
+          const nat = await signInWithNativeGoogle();
+          pickedEmail = nat.email;
+          if (nat.ok) {
+            const { clearSharedSession } = await import("@/lib/auth-session");
+            clearSharedSession();
+            redirecting = true;
+            window.location.href = "/home";
+            return;
+          }
+          console.warn("native google sign-in failed, falling back:", nat.error);
         }
       } catch (nativeErr) {
-        // নেটিভ chooser না পারলে নিচের web OAuth flow-এ যাবে
-        console.warn("native google sign-in failed, falling back", nativeErr);
+        console.warn("native google sign-in crashed, falling back", nativeErr);
       }
 
-      // ২) ফলব্যাক: Lovable-managed Google OAuth (web/browser flow)
+      // ২) ফলব্যাক: Lovable-managed Google OAuth (web/browser flow)।
+      // chooser-এ বেছে নেওয়া Gmail থাকলে সেটাই prefill করি — তখন নতুন করে
+      // Gmail যোগ করতে বলবে না, শুধু কনফার্ম করলেই লগইন হবে।
       const { lovable } = await import("@/integrations/lovable/index");
 
       const res: any = await lovable.auth.signInWithOAuth("google", {
         redirect_uri: `${window.location.origin}/auth`,
-        // ফোনে লগইন করা সব Gmail একাউন্ট দেখাবে — ইউজার বেছে নিতে পারবে
-        extraParams: { prompt: "select_account" },
+        extraParams: pickedEmail
+          ? { login_hint: pickedEmail, prompt: "select_account" }
+          : { prompt: "select_account" },
       });
+
 
       if (res?.error) throw new Error(res.error.message ?? "Google লগইন করা যায়নি");
       if (res?.redirected) {
