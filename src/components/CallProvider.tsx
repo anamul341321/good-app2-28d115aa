@@ -281,6 +281,13 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         video: false as const,
       };
       let stream: MediaStream;
+      // রিং হওয়ার সময় আগেই নেওয়া ক্যামেরা/মাইক থাকলে সেটাই ব্যবহার করি — instant connect
+      const warm = warmStream.current;
+      if (warm && warmVideo.current === video && warm.getTracks().some((t) => t.readyState === "live")) {
+        warmStream.current = null;
+        localStream.current = warm;
+        stream = warm;
+      } else {
       try {
         stream = await navigator.mediaDevices.getUserMedia({
           audio: audioOnly.audio,
