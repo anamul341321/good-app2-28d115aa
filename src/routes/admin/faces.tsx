@@ -408,8 +408,22 @@ function AdminFaces() {
         </div>
 
       </div>
+      )}
+      </CollapsibleSection>
+
+      <CollapsibleSection
+        title="ফেস ছবি গ্যালারি"
+        subtitle="ছবিগুলো ধীরে ধীরে লোড হবে — MB কম খরচ হবে"
+        accent="amber"
+        open={section === "photos"}
+        onToggle={() => { toggle("photos"); setShown(24); }}
+      >
+      {facesLoading ? (
+        <div className="py-6 flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-cyan" /></div>
+      ) : (
+      <>
       <div className="grid grid-cols-2 gap-2">
-        {(data ?? []).map((t: any) => (
+        {((data ?? []) as any[]).slice(0, shown).map((t: any) => (
           <div key={t.id} className="glass rounded-xl overflow-hidden">
             {t.signed_url ? (
               <button type="button" onClick={() => setZoom({ url: t.signed_url, label: `${t.face_label || t.profiles?.display_name || "মুখ"} · Slot #${t.slot}` })}
