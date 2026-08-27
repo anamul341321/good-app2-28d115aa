@@ -143,7 +143,7 @@ public class GoodAppMessagingService extends FirebaseMessagingService {
 
         Uri sound = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CALL_CHANNEL)
-            .setSmallIcon(R.mipmap.ic_launcher)
+            .setSmallIcon(R.drawable.ic_stat_goodapp)
             .setContentTitle(video ? "ভিডিও কল আসছে" : "কল আসছে")
             .setContentText(callerName)
             .setColor(Color.rgb(22, 163, 74))
@@ -281,7 +281,7 @@ public class GoodAppMessagingService extends FirebaseMessagingService {
                 .build();
         }
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, channelId)
-            .setSmallIcon(R.mipmap.ic_launcher)
+            .setSmallIcon(R.drawable.ic_stat_goodapp)
             .setContentTitle(senderName)
             .setContentText(body)
             .setLargeIcon(senderBitmap)
@@ -472,7 +472,8 @@ public class GoodAppMessagingService extends FirebaseMessagingService {
             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
         Notification notification = new NotificationCompat.Builder(this, SOCIAL_CHANNEL)
-            .setSmallIcon(R.mipmap.ic_launcher)
+            .setSmallIcon(R.drawable.ic_stat_goodapp)
+            .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.ic_notif_logo))
             .setContentTitle(title)
             .setContentText(body)
             .setStyle(new NotificationCompat.BigTextStyle().bigText(body))
