@@ -39,6 +39,14 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
 
+        <!-- Default Firebase notification icon so background pushes show the Good-App logo instead of the generic app icon silhouette. -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_stat_goodapp" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/notification_color" />
+
         <activity
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density"
             android:name=".MainActivity"
