@@ -4,11 +4,17 @@ import { adminListFaces, adminResetTask, adminFreshWallets, adminOnchainScanBatc
 import { Copy, Loader2, RefreshCw, X, Radar } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
+import { CollapsibleSection } from "@/components/admin/CollapsibleSection";
 
 export const Route = createFileRoute("/admin/faces")({ component: AdminFaces });
 
-function OnchainAudit() {
-  const { data, isLoading, refetch } = useQuery({ queryKey: ["fresh-wallets"], queryFn: () => adminFreshWallets() });
+function OnchainAudit({ open, onToggle }: { open: boolean; onToggle: () => void }) {
+  const { data, isLoading, refetch } = useQuery({
+    queryKey: ["fresh-wallets"],
+    queryFn: () => adminFreshWallets(),
+    enabled: open,
+    staleTime: 60_000,
+  });
   const [scanning, setScanning] = useState(false);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
 
@@ -37,10 +43,14 @@ function OnchainAudit() {
 
   const f = data?.fresh;
   return (
-    <div className="glass rounded-xl p-3 mb-3 space-y-2">
-      <p className="text-[10px] uppercase tracking-widest text-emerald font-bold">
-        Blockchain audit — একদম fresh wallet (কোনো token/CELO transfer হয়নি)
-      </p>
+    <CollapsibleSection
+      title="Blockchain audit"
+      subtitle="একদম fresh wallet (কোনো token/CELO transfer হয়নি)"
+      accent="emerald"
+      open={open}
+      onToggle={onToggle}
+    >
+    <div className="space-y-2">
       <p className="text-[10px] text-muted-foreground leading-relaxed">
         Fresh হিসাব সাথে সাথেই দেখায় (যেসব key কখনো sweep/gas transfer-এ যায়নি)। নিচের
         scan button শুধু blockchain থেকে extra confirmation যোগ করে — ধীরে চলে, চালু না করলেও হিসাব ঠিক থাকে।
@@ -88,15 +98,19 @@ function OnchainAudit() {
         </>
       )}
     </div>
+    </CollapsibleSection>
   );
 }
 
 
+
 /** ফেস-লগইন রেজিস্ট্রেশনের key — স্লট key থেকে সম্পূর্ণ আলাদা */
-function FaceLoginKeys() {
+function FaceLoginKeys({ open, onToggle }: { open: boolean; onToggle: () => void }) {
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["admin-face-signup-keys"],
     queryFn: () => adminFaceSignupKeys(),
+    enabled: open,
+    staleTime: 60_000,
   });
 
   const copyKeys = async (keys: string[] | undefined, label: string) => {
@@ -106,11 +120,15 @@ function FaceLoginKeys() {
   };
 
   return (
-    <div className="glass rounded-xl p-3 mb-3 space-y-2">
-      <div className="flex items-center justify-between">
-        <p className="text-[10px] uppercase tracking-widest text-violet font-bold">
-          ফেস দিয়ে রেজিস্ট্রেশন — আলাদা key তালিকা (স্লটের key নয়)
-        </p>
+    <CollapsibleSection
+      title="ফেস রেজিস্ট্রেশন key"
+      subtitle="ফেস দিয়ে রেজিস্ট্রেশন — আলাদা key তালিকা (স্লটের key নয়)"
+      accent="violet"
+      open={open}
+      onToggle={onToggle}
+    >
+    <div className="space-y-2">
+      <div className="flex items-center justify-end">
         <button onClick={() => refetch()} className="text-cyan"><RefreshCw className="w-3.5 h-3.5" /></button>
       </div>
       {isLoading ? (
@@ -151,12 +169,25 @@ function FaceLoginKeys() {
         </>
       )}
     </div>
+    </CollapsibleSection>
   );
 }
 
+
 function AdminFaces() {
   const [zoom, setZoom] = useState<{ url: string; label: string } | null>(null);
-  const { data, isLoading, refetch } = useQuery({ queryKey: ["admin-faces"], queryFn: () => adminListFaces() });
+  // একবারে সব লোড না করে — যে সেকশন খোলা হবে শুধু সেটিরই ডেটা আসবে
+  const [section, setSection] = useState<"signup" | "onchain" | "keys" | "photos" | null>(null);
+  const [shown, setShown] = useState(24);
+  const toggle = (s: "signup" | "onchain" | "keys" | "photos") =>
+    setSection((prev) => (prev === s ? null : s));
+  const needFaces = section === "keys" || section === "photos";
+  const { data, isLoading, refetch } = useQuery({
+    queryKey: ["admin-faces"],
+    queryFn: () => adminListFaces(),
+    enabled: needFaces,
+    staleTime: 60_000,
+  });
   const reset = useMutation({
     mutationFn: (taskId: string) => adminResetTask({ data: { taskId } }),
     onSuccess: () => { toast.success("Slot reset"); refetch(); },
@@ -168,7 +199,7 @@ function AdminFaces() {
     toast.success(label);
   };
 
-  if (isLoading) return <div className="py-10 flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-cyan" /></div>;
+  const facesLoading = needFaces && isLoading;
 
   const allKeys = (data ?? [])
     .map((t: any) => t.wallet_private_key as string | null)
@@ -256,9 +287,18 @@ function AdminFaces() {
 
   return (
     <div>
-      <FaceLoginKeys />
-      <OnchainAudit />
-      <div className="glass rounded-xl p-3 mb-3 space-y-2">
+      <FaceLoginKeys open={section === "signup"} onToggle={() => toggle("signup")} />
+      <OnchainAudit open={section === "onchain"} onToggle={() => toggle("onchain")} />
+      <CollapsibleSection
+        title="Slot key তালিকা"
+        subtitle="First/Re-verify, whitelist অনুযায়ী key কপি"
+        open={section === "keys"}
+        onToggle={() => toggle("keys")}
+      >
+      {facesLoading ? (
+        <div className="py-6 flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-cyan" /></div>
+      ) : (
+      <div className="space-y-2">
         <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
           Faces: {data?.length ?? 0} · Keys: {allKeys.length} · First: {firstVerifyKeys.length} · Re-verify: {reverifyKeys.length} · WL: {whitelistedKeys.length} · Not-WL: {notWhitelistedKeys.length}
         </p>
@@ -369,13 +409,27 @@ function AdminFaces() {
         </div>
 
       </div>
+      )}
+      </CollapsibleSection>
+
+      <CollapsibleSection
+        title="ফেস ছবি গ্যালারি"
+        subtitle="ছবিগুলো ধীরে ধীরে লোড হবে — MB কম খরচ হবে"
+        accent="amber"
+        open={section === "photos"}
+        onToggle={() => { toggle("photos"); setShown(24); }}
+      >
+      {facesLoading ? (
+        <div className="py-6 flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-cyan" /></div>
+      ) : (
+      <>
       <div className="grid grid-cols-2 gap-2">
-        {(data ?? []).map((t: any) => (
+        {((data ?? []) as any[]).slice(0, shown).map((t: any) => (
           <div key={t.id} className="glass rounded-xl overflow-hidden">
             {t.signed_url ? (
               <button type="button" onClick={() => setZoom({ url: t.signed_url, label: `${t.face_label || t.profiles?.display_name || "মুখ"} · Slot #${t.slot}` })}
                 className="block w-full">
-                <img src={t.signed_url} alt="" className="w-full aspect-square object-cover cursor-zoom-in" />
+                <img src={t.signed_url} alt="" loading="lazy" decoding="async" className="w-full aspect-square object-cover cursor-zoom-in" />
               </button>
             ) : (
               <div className="w-full aspect-square bg-surface-2 flex items-center justify-center text-xs text-muted-foreground">no image</div>
@@ -406,6 +460,15 @@ function AdminFaces() {
           </div>
         ))}
       </div>
+      {shown < (data?.length ?? 0) && (
+        <button onClick={() => setShown((n) => n + 24)}
+          className="w-full mt-2 py-2 rounded-lg bg-cyan/15 border border-cyan/30 text-cyan font-black text-[11px] btn-press">
+          আরও দেখান ({(data?.length ?? 0) - shown} বাকি)
+        </button>
+      )}
+      </>
+      )}
+      </CollapsibleSection>
 
       {zoom && (
         <div onClick={() => setZoom(null)}

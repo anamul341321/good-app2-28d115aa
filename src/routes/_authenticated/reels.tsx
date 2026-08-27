@@ -142,10 +142,12 @@ function useCombinedReels(selectedPostId?: string) {
     return pinned ? [pinned, ...pool] : pool;
   }, [localQuery.data, externalQuery.data, selectedPostQuery.data]);
 
+  // ফিড থেকে নির্দিষ্ট ভিডিও নিয়ে আসা হলে সেটি লোড হওয়ার আগে অন্য ভিডিও চালু হবে না
+  const waitingForSelected = !!selectedPostId && selectedPostQuery.isPending;
 
   return {
-    items,
-    isLoading: localQuery.isLoading && externalQuery.isLoading,
+    items: waitingForSelected ? [] : items,
+    isLoading: waitingForSelected || (localQuery.isLoading && externalQuery.isLoading),
     isError: localQuery.isError && externalQuery.isError,
   };
 }

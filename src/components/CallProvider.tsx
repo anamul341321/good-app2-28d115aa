@@ -21,6 +21,9 @@ import {
   MonitorOff,
   SwitchCamera,
   Volume2,
+  Volume1,
+  VolumeX,
+
 
 } from "lucide-react";
 import { playIncomingRing, playRingback } from "@/lib/ringtone";
@@ -92,6 +95,8 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   const [muted, setMuted] = useState(false);
   const [camOff, setCamOff] = useState(false);
   const [sharing, setSharing] = useState(false);
+  // অডিও কলে ইয়ারপিস/স্পিকার বদলের জন্য (Messenger-এর মতো)
+  const [speakerOn, setSpeakerOn] = useState(false);
   // অন্য পাশ থেকে আসা "এখানে চাপুন" নির্দেশনা — শেয়ার করার সময় স্ক্রিনে মার্কার দেখায়
   const [remotePointer, setRemotePointer] = useState<{ x: number; y: number; at: number } | null>(null);
 
@@ -105,6 +110,10 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   const camTrack = useRef<MediaStreamTrack | null>(null);
   const shareTrack = useRef<MediaStreamTrack | null>(null);
   const shareStream = useRef<MediaStream | null>(null);
+  // ভিডিও কল রিং হওয়ার সময়েই ক্যামেরা/মাইক আগে থেকে চালু করে রাখি — তাই
+  // রিসিভ করার সাথে সাথেই ছবি দেখা যায়, দেরি হয় না।
+  const warmStream = useRef<MediaStream | null>(null);
+  const warmVideo = useRef<boolean>(false);
   // Android অ্যাপে স্ক্রিন ফ্রেম native থেকে আসে, তাই canvas দিয়ে video track বানানো হয়।
   const shareCanvas = useRef<HTMLCanvasElement | null>(null);
   const ring = useRef<{ stop: () => void } | null>(null);
@@ -190,6 +199,9 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     setMuted(false);
     setCamOff(false);
     setSharing(false);
+    setSpeakerOn(false);
+    warmStream.current?.getTracks().forEach((t) => t.stop());
+    warmStream.current = null;
     setQuality("good");
     setSeconds(0);
     try {
@@ -272,6 +284,13 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         video: false as const,
       };
       let stream: MediaStream;
+      // রিং হওয়ার সময় আগেই নেওয়া ক্যামেরা/মাইক থাকলে সেটাই ব্যবহার করি — instant connect
+      const warm = warmStream.current;
+      if (warm && warmVideo.current === video && warm.getTracks().some((t) => t.readyState === "live")) {
+        warmStream.current = null;
+        localStream.current = warm;
+        stream = warm;
+      } else {
       try {
         stream = await navigator.mediaDevices.getUserMedia({
           audio: audioOnly.audio,
@@ -290,6 +309,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         stream = await navigator.mediaDevices.getUserMedia(audioOnly);
         setWithVideo(false);
         toast("ক্যামেরা পাওয়া যায়নি — অডিও কল চালু হলো");
+      }
       }
       stream.getAudioTracks().forEach((track) => {
         track.contentHint = "speech";
@@ -501,6 +521,57 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     if (state !== "connecting" && state !== "active") return;
     resumeRemoteMedia();
   }, [state, peer?.id, withVideo, resumeRemoteMedia]);
+
+  // কল রিং হওয়ার সময়েই ক্যামেরা/মাইক গরম করে রাখি — রিসিভ করলেই সাথে সাথে ছবি আসে
+  useEffect(() => {
+    if (state !== "ringing") return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const s = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+          video: withVideo
+            ? { facingMode: facing.current, width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } }
+            : false,
+        });
+        if (cancelled) {
+          s.getTracks().forEach((t) => t.stop());
+          return;
+        }
+        warmStream.current?.getTracks().forEach((t) => t.stop());
+        warmStream.current = s;
+        warmVideo.current = withVideo;
+      } catch {
+        /* অনুমতি না থাকলে accept করার সময় আবার চাওয়া হবে */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [state, withVideo]);
+
+  // স্পিকার/ইয়ারপিস — ভিডিও কলে ডিফল্ট স্পিকার, অডিও কলে ইয়ারপিস
+  useEffect(() => {
+    if (state === "connecting" || state === "active") setSpeakerOn(withVideo);
+  }, [state, withVideo]);
+
+  const toggleSpeaker = useCallback(() => {
+    setSpeakerOn((prev) => {
+      const next = !prev;
+      try {
+        (window as any).GoodAppDownloader?.setSpeakerphone?.(next);
+      } catch {}
+      return next;
+    });
+  }, []);
+
+  const bumpVolume = useCallback((up: boolean) => {
+    try {
+      (window as any).GoodAppDownloader?.adjustCallVolume?.(up);
+    } catch {}
+    const v = remoteVideo.current;
+    if (v) v.volume = Math.max(0, Math.min(1, (v.volume ?? 1) + (up ? 0.15 : -0.15)));
+  }, []);
 
   useEffect(() => {
     const replay = () => {
@@ -1072,9 +1143,20 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
             className="absolute inset-x-0 bottom-0 px-4"
             style={{ paddingBottom: "calc(env(safe-area-inset-bottom,0px) + 22px)" }}
           >
-            <div className="mx-auto flex max-w-sm items-center justify-between gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-3 backdrop-blur-xl">
+            <div className="mx-auto flex max-w-md flex-wrap items-center justify-center gap-2 rounded-[28px] border border-white/10 bg-white/10 px-3 py-3 backdrop-blur-xl">
               <CallCtl active={muted} onClick={toggleMute} label={muted ? "আনমিউট" : "মিউট"}>
                 {muted ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+              </CallCtl>
+              {/* স্পিকার অন/অফ — Messenger-এর মতো */}
+              <CallCtl active={speakerOn} onClick={toggleSpeaker} label={speakerOn ? "স্পিকার বন্ধ" : "স্পিকার"}>
+                {speakerOn ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
+              </CallCtl>
+              {/* সাউন্ড বাড়ানো/কমানো */}
+              <CallCtl active={false} onClick={() => bumpVolume(false)} label="সাউন্ড কম">
+                <Volume1 className="h-5 w-5" />
+              </CallCtl>
+              <CallCtl active={false} onClick={() => bumpVolume(true)} label="সাউন্ড বেশি">
+                <Volume2 className="h-5 w-5" />
               </CallCtl>
               {withVideo && (
                 <CallCtl active={camOff} onClick={toggleCam} label="ক্যামেরা">

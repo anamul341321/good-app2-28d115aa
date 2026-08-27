@@ -53,6 +53,23 @@ export function SplashScreen() {
   const [leaving, setLeaving] = useState(false);
 
   useEffect(() => {
+    // বাবল উইন্ডো বা কল রিসিভ/ডিক্লাইন থেকে খুললে কোনো ব্র্যান্ড অ্যানিমেশন দেখাব না —
+    // সাথে সাথেই চ্যাট/কল স্ক্রিন দেখা যাবে (Messenger-এর মতো)।
+    try {
+      const sp = new URLSearchParams(window.location.search);
+      const instant =
+        Boolean((window as any).GoodAppBubble) ||
+        sp.has("bubble") ||
+        sp.has("call") ||
+        sp.has("accept") ||
+        sp.has("decline");
+      if (instant) {
+        try { sessionStorage.setItem(SESSION_KEY, "1"); } catch { /* noop */ }
+        setGone(true);
+        return;
+      }
+    } catch { /* noop */ }
+
     let repeat = false;
     try { repeat = sessionStorage.getItem(SESSION_KEY) === "1"; } catch { /* noop */ }
     try { sessionStorage.setItem(SESSION_KEY, "1"); } catch { /* noop */ }
