@@ -638,7 +638,7 @@ function FeedPage() {
                   <div className="absolute right-0 top-full mt-1 bg-white dark:bg-card border border-gray-200 dark:border-border rounded-lg shadow-xl z-50 overflow-hidden min-w-[180px] animate-in fade-in zoom-in-95 duration-150">
                     {post.user_id === user.id ? (
                       <>
-                        <button onClick={() => { setEditingPost(post); setEditText(post.content || ""); setShowPostMenu(null); }}
+                        <button onClick={() => { setEditingPost(post); setEditText(post.content || ""); setEditVisibility(((post as any).visibility || "public") as "public" | "private"); setShowPostMenu(null); }}
                           className="w-full flex items-center gap-3 px-4 py-3 text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-secondary text-sm font-medium transition-colors">
                           <Pencil className="w-4 h-4" /> পোস্ট এডিট করুন
                         </button>
