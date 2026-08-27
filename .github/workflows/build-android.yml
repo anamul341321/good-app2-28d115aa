@@ -103,7 +103,6 @@ jobs:
           else
             echo "::error::No signing key found. A temporary key would change the app signature and make Android/Play Protect warn users about a harmful or unverified app."
             exit 1
-            echo "unreachable"
             export ANDROID_KEYSTORE_PASSWORD="goodapp2026"
             export ANDROID_KEY_ALIAS="goodapp"
             export ANDROID_KEY_PASSWORD="goodapp2026"
