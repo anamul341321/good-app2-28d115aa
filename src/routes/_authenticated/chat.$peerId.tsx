@@ -10,6 +10,7 @@ import { playSentTone } from "@/lib/msg-sound";
 import { MessageBubble } from "@/components/chat/MessageBubble";
 import { Composer, type SendPayload } from "@/components/chat/Composer";
 import { useIsOnline } from "@/lib/presence";
+import { formatLastActive, isRecentlyActive } from "@/lib/last-active";
 import { MessengerAvatar } from "@/components/messenger/MessengerAvatar";
 
 export const Route = createFileRoute("/_authenticated/chat/$peerId")({
@@ -28,7 +29,7 @@ function ThreadPage() {
   const { peerId } = useParams({ from: "/_authenticated/chat/$peerId" });
   const qc = useQueryClient();
   const endRef = useRef<HTMLDivElement | null>(null);
-  const online = useIsOnline(peerId);
+  const presenceOnline = useIsOnline(peerId);
   // বাবল উইন্ডোতে খোলা হলে ফুল স্ক্রিনে যাওয়ার বাটন দেখাবে
   const inBubble = typeof window !== "undefined" && Boolean((window as any).GoodAppBubble);
   const openFullscreen = () => {
@@ -97,6 +98,12 @@ function ThreadPage() {
     },
   });
 
+  const peerLastActive = (data?.peer as any)?.lastActiveAt as string | null | undefined;
+  const online = presenceOnline || isRecentlyActive(peerLastActive);
+  const activityLabel = online
+    ? "Active now"
+    : (formatLastActive(peerLastActive) ?? `UID ${data?.peer?.uid ?? "-"}`);
+
   const me = data?.me as string | undefined;
   const messages = data?.messages ?? [];
   const status = (data as any)?.friendStatus as string | undefined;
@@ -136,8 +143,8 @@ function ThreadPage() {
           )}
           <div className="flex flex-col min-w-0">
             <h1 className="truncate text-sm font-black text-foreground">{data?.peer?.name ?? "Chat"}</h1>
-            <p className="truncate text-[10px] font-bold text-muted-foreground uppercase tracking-tight">
-              {online ? "Active Now" : `UID ${data?.peer?.uid ?? "-"}`}
+            <p className={`truncate text-[10px] font-bold tracking-tight ${online ? "text-emerald-500" : "text-muted-foreground"}`}>
+              {activityLabel}
             </p>
           </div>
         </div>

@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { MessengerAvatar } from "./MessengerAvatar";
 import { cn } from "@/lib/utils";
 import type { Gender } from "@/lib/default-avatar";
+import { isRecentlyActive, shortLastActive } from "@/lib/last-active";
 
 export function ChatRow({
   id,
@@ -13,6 +14,7 @@ export function ChatRow({
   time,
   unreadCount,
   online,
+  lastActiveAt,
   isGroup,
 }: {
   id: string;
@@ -24,9 +26,12 @@ export function ChatRow({
   time: string;
   unreadCount: number;
   online?: boolean;
+  lastActiveAt?: string | null;
   isGroup?: boolean;
 }) {
   const isUnread = unreadCount > 0;
+  const isOnline = Boolean(online) || isRecentlyActive(lastActiveAt);
+  const awayFor = !isGroup && !isOnline ? shortLastActive(lastActiveAt) : null;
   const chatTarget = isGroup ? "/chat/group/$groupId" : "/chat/$peerId";
   const chatParams = isGroup ? { groupId: id } : { peerId: id };
   
@@ -44,7 +49,7 @@ export function ChatRow({
             name={name}
             src={avatar}
             gender={gender}
-            online={online}
+            online={isOnline}
             size="xl"
           />
         </Link>
@@ -53,7 +58,7 @@ export function ChatRow({
           name={name}
           src={avatar}
           gender={gender}
-          online={online}
+          online={isOnline}
           size="xl"
         />
       )}
