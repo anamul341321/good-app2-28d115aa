@@ -89,9 +89,14 @@ export function ChatRow({
             <div className="shrink-0 h-2.5 w-2.5 rounded-full bg-messenger-blue" />
           )}
         </div>
-        {uid && !isGroup && (
-          <p className="mt-0.5 text-[10px] font-semibold uppercase text-muted-foreground/75" translate="no">
-            UID {uid}
+        {!isGroup && (
+          <p className="mt-0.5 flex items-center gap-1.5 text-[10px] font-semibold uppercase text-muted-foreground/75" translate="no">
+            {uid ? <span>UID {uid}</span> : null}
+            {isOnline ? (
+              <span className="normal-case text-emerald-500">• Active now</span>
+            ) : awayFor ? (
+              <span className="normal-case">• {awayFor} আগে active</span>
+            ) : null}
           </p>
         )}
       </Link>
