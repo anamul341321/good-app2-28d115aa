@@ -27,9 +27,11 @@ export const Route = createFileRoute("/_authenticated/chat/$peerId")({
 
 function ThreadPage() {
   const { peerId } = useParams({ from: "/_authenticated/chat/$peerId" });
+  const navigate = useNavigate();
   const qc = useQueryClient();
   const endRef = useRef<HTMLDivElement | null>(null);
   const presenceOnline = useIsOnline(peerId);
+  const [showHeaderMenu, setShowHeaderMenu] = useState(false);
   // বাবল উইন্ডোতে খোলা হলে ফুল স্ক্রিনে যাওয়ার বাটন দেখাবে
   const inBubble = typeof window !== "undefined" && Boolean((window as any).GoodAppBubble);
   const openFullscreen = () => {
