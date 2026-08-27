@@ -143,6 +143,15 @@ function ThreadPage() {
         </div>
 
         <div className="flex items-center gap-1 pr-1">
+          {inBubble && (
+            <button
+              onClick={openFullscreen}
+              aria-label="ফুল স্ক্রিনে খুলুন"
+              className="btn-press h-9 w-9 flex items-center justify-center rounded-full hover:bg-surface-2 transition-colors"
+            >
+              <Maximize2 className="h-5 w-5 text-primary" />
+            </button>
+          )}
           {data?.peer && <CallButtons userId={data.peer.userId} name={data.peer.name} />}
           <button className="btn-press h-9 w-9 flex items-center justify-center rounded-full hover:bg-surface-2 transition-colors">
             <Info className="h-5 w-5 text-primary" />
