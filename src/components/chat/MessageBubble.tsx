@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Play, Pause, Trash2, Ban, PhoneMissed, PhoneIncoming, Video, Reply } from "lucide-react";
 import { useFeedMedia } from "@/lib/feed-media";
+import { computePeaks, VOICE_PEAK_COUNT } from "@/lib/voice-record";
 
 /** মেসেজ সিন হলে নিচে দেখানো ছোট (১৬px) প্রোফাইল ছবি */
 function SeenAvatar({ name, src }: { name: string; src?: string | null }) {
@@ -408,7 +409,7 @@ export function MessageBubble({
               </span>
             </button>
           ) : m.kind === "voice" && m.mediaUrl ? (
-            <VoiceMessage url={m.mediaUrl} mine={mine} durationHint={Number(m.mediaMeta?.duration) || undefined} />
+            <VoiceMessage url={m.mediaUrl} mine={mine} durationHint={Number(m.mediaMeta?.duration) || undefined} peaks={Array.isArray(m.mediaMeta?.peaks) ? (m.mediaMeta.peaks as number[]) : undefined} />
           ) : (
             <p className="whitespace-pre-wrap break-words text-sm font-black leading-snug">{m.body}</p>
           )}
