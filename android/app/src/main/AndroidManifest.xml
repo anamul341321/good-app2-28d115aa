@@ -5,8 +5,6 @@
     <!-- Network -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <!-- Android 9 and older need this when DownloadManager saves an APK in Downloads. -->
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
     <!-- Allows Android to show the package installer after an APK download finishes. -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
@@ -24,14 +22,15 @@
 
     <!-- Keep screen on during verification capture -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <uses-permission android:name="android.permission.DISABLE_KEYGUARD" />
 
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
 
     <application
+        android:name=".GoodAppApplication"
         android:allowBackup="true"
+        android:usesCleartextTraffic="false"
         android:largeHeap="true"
         android:hardwareAccelerated="true"
         android:icon="@mipmap/ic_launcher"

@@ -13,8 +13,8 @@ android {
         applicationId "com.goodapp.mobile"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 29
-        versionName "1.29"
+        versionCode 30
+        versionName "1.30"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
@@ -30,6 +30,9 @@ android {
                 storePassword releaseKeystorePassword
                 keyAlias releaseKeyAlias
                 keyPassword releaseKeyPassword
+                // Play Protect যেন "harmful app" না বলে — v1/v2/v3 সব স্কিমেই সাইন হবে
+                v1SigningEnabled true
+                v2SigningEnabled true
             }
         }
     }
