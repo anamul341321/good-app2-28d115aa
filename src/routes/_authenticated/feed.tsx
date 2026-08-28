@@ -649,7 +649,20 @@ function FeedPage() {
 
   const respondRequestMutation = useMutation({
     mutationFn: async ({ linkId, accept }: { linkId: string; accept: boolean }) => respondFriendRequest({ data: { linkId, accept } }),
+    // সাথে সাথেই রিকুয়েস্ট লিস্ট থেকে সরে যাবে
+    onMutate: ({ linkId, accept }) => {
+      queryClient.setQueryData(["friends-summary"], (old: any) => {
+        if (!old) return old;
+        const item = (old.incoming ?? []).find((i: any) => (i.linkId ?? i.id) === linkId);
+        return {
+          ...old,
+          incoming: (old.incoming ?? []).filter((i: any) => (i.linkId ?? i.id) !== linkId),
+          friends: accept && item ? [item, ...(old.friends ?? [])] : (old.friends ?? []),
+        };
+      });
+    },
     onSuccess: (_d, vars) => {
+
       queryClient.invalidateQueries({ queryKey: ["friends-summary"] });
       queryClient.invalidateQueries({ queryKey: ["feed-user-search"] });
       queryClient.invalidateQueries({ queryKey: ["suggested-people"] });
