@@ -35,6 +35,7 @@ export function AdsSettingsCard() {
   });
 
   const [on, setOn] = useState(false);
+  const [testMode, setTestMode] = useState(false);
   const [banner, setBanner] = useState(true);
   const [rewarded, setRewarded] = useState(true);
   const [appOpen, setAppOpen] = useState(true);
@@ -45,6 +46,7 @@ export function AdsSettingsCard() {
   useEffect(() => {
     if (!data) return;
     setOn(data.ads_enabled === true);
+    setTestMode(data.ads_test_mode === true);
     setBanner(data.ads_banner_enabled !== false);
     setRewarded(data.ads_rewarded_enabled !== false);
     setAppOpen(data.ads_appopen_enabled !== false);
@@ -53,11 +55,13 @@ export function AdsSettingsCard() {
     setRewardedUnit(data.ads_rewarded_unit ?? "");
   }, [data]);
 
+
   const save = useMutation({
-    mutationFn: (next: { enabled: boolean }) =>
+    mutationFn: (next: { enabled: boolean; testMode?: boolean }) =>
       adminSetAdsSettings({
         data: {
           enabled: next.enabled,
+          testMode: next.testMode ?? testMode,
           banner,
           rewarded,
           appOpen,
@@ -66,6 +70,7 @@ export function AdsSettingsCard() {
           rewardedUnit,
         },
       }),
+
     onSuccess: () => {
       toast.success("অ্যাড সেটিং সেভ হয়েছে");
       refetch();
@@ -110,8 +115,9 @@ export function AdsSettingsCard() {
           />
         </div>
         <p className="text-[9px] text-muted-foreground mt-1">
-          এই সুইচ সাথে সাথেই কাজ করে — AdMob ID না বসালে টেস্ট অ্যাড চলবে (আয় হবে না)।
+          মাস্টার সুইচ ON করলেই কাজ করে — নিচের "Test Mode" ON থাকলে Google-এর demo ID দিয়ে টেস্ট অ্যাড দেখাবে (কোনো আয় হবে না)।
         </p>
+
       </div>
 
       <div className="space-y-2 opacity-100">
