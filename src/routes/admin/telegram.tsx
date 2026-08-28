@@ -765,6 +765,15 @@ function BlockedPanel() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const unfreezeAll = useMutation({
+    mutationFn: () => tgUnfreezeAll(),
+    onSuccess: (r: any) => {
+      toast.success(`${r.unfrozen} জনের ফ্রিজ খুলে দেওয়া হয়েছে ✅`);
+      qc.invalidateQueries({ queryKey: ["tg-blocked"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const submitFreeze = () => {
     const v = freezeKey.trim();
     if (!v) return;
