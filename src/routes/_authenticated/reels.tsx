@@ -53,9 +53,10 @@ import { useMediaFullscreen } from "@/hooks/use-media-fullscreen";
 
 export const Route = createFileRoute("/_authenticated/reels")({
   component: ReelsPage,
-  validateSearch: (search: Record<string, unknown>): { postId?: string } => {
+  validateSearch: (search: Record<string, unknown>): { postId?: string; upload?: boolean } => {
     const postId = typeof search.postId === "string" ? search.postId : undefined;
-    return postId ? { postId } : {};
+    const upload = search["upload"] === true || search["upload"] === "1" || search["upload"] === "true";
+    return { ...(postId ? { postId } : {}), ...(upload ? { upload: true } : {}) };
   },
   head: () => ({
     meta: [
