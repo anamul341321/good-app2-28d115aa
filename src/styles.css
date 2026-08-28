@@ -1329,3 +1329,13 @@ body.ads-banner-on nav.fixed.bottom-0 {
 @media (prefers-reduced-motion: reduce) {
   .coin-float, .coin-spin-slow, .coin-sparkle, .coin-progress-glow { animation: none; }
 }
+
+@keyframes coin-burst-fly {
+  0% { transform: translate(0, 0) scale(0.4); opacity: 0; }
+  25% { opacity: 1; }
+  100% { transform: translate(var(--burst-x, 0px), -72px) scale(1.25); opacity: 0; }
+}
+.coin-burst { animation: coin-burst-fly 0.85s ease-out forwards; }
+@media (prefers-reduced-motion: reduce) {
+  .coin-burst { animation: none; opacity: 0; }
+}
