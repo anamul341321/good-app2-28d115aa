@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import brandLogo from "@/assets/goodapp-logo.png";
 
 /**
  * Branded launch animation. Rendered during SSR too, so users never see a raw
