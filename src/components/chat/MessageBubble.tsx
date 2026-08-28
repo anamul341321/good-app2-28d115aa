@@ -271,6 +271,8 @@ export function MessageBubble({
   onDelete,
   onReply,
   onJumpTo,
+  onReact,
+  meId,
   seenBy,
 }: {
   m: ChatMsg;
@@ -281,6 +283,10 @@ export function MessageBubble({
   onReply?: (m: ChatMsg) => void;
   /** রিপ্লাই প্রিভিউতে ট্যাপ করলে মূল মেসেজে নিয়ে যাবে */
   onJumpTo?: (id: string) => void;
+  /** ইমোজি রিঅ্যাকশন — একই ইমোজি আবার দিলে null পাঠিয়ে সরিয়ে দেয় */
+  onReact?: (id: string, emoji: string | null) => void;
+  /** নিজের user id — নিজের রিঅ্যাকশন হাইলাইট করতে */
+  meId?: string;
   /** মেসেঞ্জারের মতো — পড়া হলে এই মেসেজের নিচে পিয়ারের ছোট প্রোফাইল ছবি দেখাবে */
   seenBy?: { name: string; avatarUrl?: string | null } | null;
 }) {
