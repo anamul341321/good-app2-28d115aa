@@ -1,4 +1,4 @@
-export type UiSoundType = "like" | "message";
+export type UiSoundType = "like" | "message" | "coin";
 
 type Tone = {
   frequency: number;
@@ -20,15 +20,22 @@ const SOUND_MAP: Record<UiSoundType, Tone[]> = {
     { frequency: 880, durationMs: 100, delayMs: 70, gain: 0.25, waveform: "sine" },
     { frequency: 1174.66, durationMs: 130, delayMs: 140, gain: 0.18, waveform: "sine" },
   ],
+  coin: [
+    { frequency: 987.77, durationMs: 70, delayMs: 0, gain: 0.26, waveform: "triangle" },
+    { frequency: 1318.51, durationMs: 90, delayMs: 60, gain: 0.24, waveform: "triangle" },
+    { frequency: 1975.53, durationMs: 140, delayMs: 130, gain: 0.2, waveform: "sine" },
+    { frequency: 2637.02, durationMs: 180, delayMs: 210, gain: 0.14, waveform: "sine" },
+  ],
 };
 
 const COOLDOWN_MS: Record<UiSoundType, number> = {
   like: 120,
   message: 260,
+  coin: 200,
 };
 
 let audioCtx: AudioContext | null = null;
-const lastPlayedAt: Record<UiSoundType, number> = { like: 0, message: 0 };
+const lastPlayedAt: Record<UiSoundType, number> = { like: 0, message: 0, coin: 0 };
 
 function getAudioContext(): AudioContext | null {
   if (typeof window === "undefined") return null;
