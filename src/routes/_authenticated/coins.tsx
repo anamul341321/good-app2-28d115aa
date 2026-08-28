@@ -55,14 +55,16 @@ type EarnItem = {
   color: string;
   bg: string;
   to?: string;
+  search?: Record<string, string | boolean>;
   telegram?: boolean;
 };
 
+// প্রতিটি বাটন ঠিক যে কাজ, সেই কাজের পেজেই সরাসরি নিয়ে যাবে
 const EARN_ITEMS: EarnItem[] = [
   { icon: Send, label: "টেলিগ্রাম গ্রুপে জয়েন", hint: "একবারই — জয়েন করে ক্লেইম করুন", coins: COIN_RATES.telegram, color: "text-sky-300", bg: "bg-sky-500/15", telegram: true },
-  { icon: Film, label: "রিলস আপলোড", hint: "রিলস পেজে গিয়ে ভিডিও দিন", coins: COIN_RATES.reel, color: "text-pink-400", bg: "bg-pink-500/15", to: "/reels" },
-  { icon: ImageIcon, label: "পোস্ট করলে", hint: "ফিডে পোস্ট লিখুন বা ছবি দিন", coins: COIN_RATES.post, color: "text-sky-400", bg: "bg-sky-500/15", to: "/feed" },
-  { icon: Sparkles, label: "স্টোরি দিলে", hint: "স্টুডিও থেকে স্টোরি বানান", coins: COIN_RATES.story, color: "text-violet-400", bg: "bg-violet-500/15", to: "/studio" },
+  { icon: Film, label: "রিলস আপলোড", hint: "সরাসরি ভিডিও সিলেক্ট হবে", coins: COIN_RATES.reel, color: "text-pink-400", bg: "bg-pink-500/15", to: "/reels", search: { upload: "1" } },
+  { icon: ImageIcon, label: "পোস্ট করলে", hint: "সরাসরি পোস্ট লেখার বক্স খুলবে", coins: COIN_RATES.post, color: "text-sky-400", bg: "bg-sky-500/15", to: "/feed", search: { compose: "post" } },
+  { icon: Sparkles, label: "স্টোরি দিলে", hint: "সরাসরি স্টোরির ছবি সিলেক্ট হবে", coins: COIN_RATES.story, color: "text-violet-400", bg: "bg-violet-500/15", to: "/feed", search: { compose: "story" } },
   { icon: MessageCircle, label: "মেসেজ / কমেন্ট", hint: "মেসেঞ্জারে বন্ধুকে মেসেজ দিন", coins: COIN_RATES.message, color: "text-emerald-400", bg: "bg-emerald-500/15", to: "/chat" },
   { icon: Video, label: "ভিডিও দেখলে", hint: "প্রতি ২০ সেকেন্ডে কয়েন", coins: COIN_RATES.watch, color: "text-amber-400", bg: "bg-amber-500/15", to: "/videos" },
 ];
