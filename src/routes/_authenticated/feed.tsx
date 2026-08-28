@@ -446,8 +446,14 @@ function FeedPage() {
   }, [queryClient, user?.id]);
 
   const createPostMutation = useMutation({
+    // পোস্টে দেরি লাগে না — বক্স সাথে সাথে বন্ধ হয়, আপলোড ব্যাকগ্রাউন্ডে চলে
+    onMutate: () => {
+      setShowCreatePost(false);
+      toast.loading("পোস্ট হচ্ছে…", { id: "posting" });
+    },
     mutationFn: async () => {
       if (!user) throw new Error("Login required");
+
       let imageUrl: string | undefined;
       let videoUrl: string | undefined;
       // ছবিগুলো আগে ছোট করে, একসাথে (parallel) আপলোড — স্লো নেটেও দ্রুত পোস্ট হবে
