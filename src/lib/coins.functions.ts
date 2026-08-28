@@ -8,6 +8,7 @@ export type CoinSummary = {
   today: number;
   watch_today: number;
   watch_daily_cap: number;
+  telegram_joined: boolean;
 };
 
 export const getCoinSummary = createServerFn({ method: "GET" })
@@ -21,7 +22,8 @@ export const getCoinSummary = createServerFn({ method: "GET" })
       total_earned: 0,
       today: 0,
       watch_today: 0,
-      watch_daily_cap: 600,
+      watch_daily_cap: 9000,
+      telegram_joined: false,
     }) as CoinSummary;
   });
 
@@ -57,4 +59,13 @@ export const claimWatchCoins = createServerFn({ method: "POST" })
     });
     if (error) throw new Error(error.message);
     return result as { ok: boolean; awarded: number; capped?: boolean; balance?: number; error?: string };
+  });
+
+export const claimTelegramJoin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const { data, error } = await (supabase as any).rpc("claim_telegram_join", { _user_id: userId });
+    if (error) throw new Error(error.message);
+    return data as { ok: boolean; awarded: number; already: boolean; balance: number };
   });

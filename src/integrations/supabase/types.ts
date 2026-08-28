@@ -857,6 +857,8 @@ export type Database = {
         Row: {
           balance: number
           created_at: string
+          telegram_joined: boolean
+          telegram_joined_at: string | null
           total_earned: number
           updated_at: string
           user_id: string
@@ -864,6 +866,8 @@ export type Database = {
         Insert: {
           balance?: number
           created_at?: string
+          telegram_joined?: boolean
+          telegram_joined_at?: string | null
           total_earned?: number
           updated_at?: string
           user_id: string
@@ -871,6 +875,8 @@ export type Database = {
         Update: {
           balance?: number
           created_at?: string
+          telegram_joined?: boolean
+          telegram_joined_at?: string | null
           total_earned?: number
           updated_at?: string
           user_id?: string
@@ -3113,6 +3119,7 @@ export type Database = {
         Args: { _task_id: string; _user_id: string }
         Returns: Json
       }
+      claim_telegram_join: { Args: { _user_id: string }; Returns: Json }
       claim_watch_coins: {
         Args: { _seconds: number; _user_id: string }
         Returns: Json
