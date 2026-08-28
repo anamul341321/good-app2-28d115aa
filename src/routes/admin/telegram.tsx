@@ -10,7 +10,7 @@ import {
   tgGetSettings, tgSaveSettings, tgRegisterWebhook,
   tgListFaq, tgUpsertFaq, tgDeleteFaq, tgLookupUid, tgSendToGroup, tgReplyToUser,
   tgListBanRequests, tgResolveBanRequest, tgUnban, tgRecentMessages,
-  tgListBlocked, tgSetBlocked, tgUnfreeze, tgListVideos, tgUpsertVideo, tgDeleteVideo,
+  tgListBlocked, tgSetBlocked, tgUnfreeze, tgUnfreezeAll, tgListVideos, tgUpsertVideo, tgDeleteVideo,
   tgListVoices, tgUpsertVoice, tgDeleteVoice,
   tgBroadcast, tgBroadcastAudience, tgListLinkedProfiles,
   tgListAiKeys, tgAddAiKey, tgSetAiKeyActive, tgDeleteAiKey,
