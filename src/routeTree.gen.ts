@@ -57,6 +57,7 @@ import { Route as AuthenticatedHistoryRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedFriendsRouteImport } from './routes/_authenticated/friends'
 import { Route as AuthenticatedFeedRouteImport } from './routes/_authenticated/feed'
 import { Route as AuthenticatedEarningsRouteImport } from './routes/_authenticated/earnings'
+import { Route as AuthenticatedCoinsRouteImport } from './routes/_authenticated/coins'
 import { Route as AuthenticatedSocialIndexRouteImport } from './routes/_authenticated/social/index'
 import { Route as AuthenticatedChatIndexRouteImport } from './routes/_authenticated/chat.index'
 import { Route as LovableEmailEventsRouteImport } from './routes/lovable/email/events'
@@ -325,6 +326,11 @@ const AuthenticatedEarningsRoute = AuthenticatedEarningsRouteImport.update({
   path: '/earnings',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCoinsRoute = AuthenticatedCoinsRouteImport.update({
+  id: '/coins',
+  path: '/coins',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedSocialIndexRoute =
   AuthenticatedSocialIndexRouteImport.update({
     id: '/',
@@ -484,6 +490,7 @@ export interface FileRoutesByFullPath {
   '/data-safety': typeof DataSafetyRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
+  '/coins': typeof AuthenticatedCoinsRoute
   '/earnings': typeof AuthenticatedEarningsRoute
   '/feed': typeof AuthenticatedFeedRoute
   '/friends': typeof AuthenticatedFriendsRoute
@@ -560,6 +567,7 @@ export interface FileRoutesByTo {
   '/data-safety': typeof DataSafetyRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
+  '/coins': typeof AuthenticatedCoinsRoute
   '/earnings': typeof AuthenticatedEarningsRoute
   '/feed': typeof AuthenticatedFeedRoute
   '/friends': typeof AuthenticatedFriendsRoute
@@ -638,6 +646,7 @@ export interface FileRoutesById {
   '/data-safety': typeof DataSafetyRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
+  '/_authenticated/coins': typeof AuthenticatedCoinsRoute
   '/_authenticated/earnings': typeof AuthenticatedEarningsRoute
   '/_authenticated/feed': typeof AuthenticatedFeedRoute
   '/_authenticated/friends': typeof AuthenticatedFriendsRoute
@@ -717,6 +726,7 @@ export interface FileRouteTypes {
     | '/data-safety'
     | '/privacy'
     | '/terms'
+    | '/coins'
     | '/earnings'
     | '/feed'
     | '/friends'
@@ -793,6 +803,7 @@ export interface FileRouteTypes {
     | '/data-safety'
     | '/privacy'
     | '/terms'
+    | '/coins'
     | '/earnings'
     | '/feed'
     | '/friends'
@@ -870,6 +881,7 @@ export interface FileRouteTypes {
     | '/data-safety'
     | '/privacy'
     | '/terms'
+    | '/_authenticated/coins'
     | '/_authenticated/earnings'
     | '/_authenticated/feed'
     | '/_authenticated/friends'
@@ -1311,6 +1323,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEarningsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/coins': {
+      id: '/_authenticated/coins'
+      path: '/coins'
+      fullPath: '/coins'
+      preLoaderRoute: typeof AuthenticatedCoinsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/social/': {
       id: '/_authenticated/social/'
       path: '/'
@@ -1524,6 +1543,7 @@ const AuthenticatedSocialRouteWithChildren =
   AuthenticatedSocialRoute._addFileChildren(AuthenticatedSocialRouteChildren)
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedCoinsRoute: typeof AuthenticatedCoinsRoute
   AuthenticatedEarningsRoute: typeof AuthenticatedEarningsRoute
   AuthenticatedFeedRoute: typeof AuthenticatedFeedRoute
   AuthenticatedFriendsRoute: typeof AuthenticatedFriendsRoute
@@ -1554,6 +1574,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedCoinsRoute: AuthenticatedCoinsRoute,
   AuthenticatedEarningsRoute: AuthenticatedEarningsRoute,
   AuthenticatedFeedRoute: AuthenticatedFeedRoute,
   AuthenticatedFriendsRoute: AuthenticatedFriendsRoute,
