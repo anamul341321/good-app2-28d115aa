@@ -8,6 +8,7 @@ import {
   getGroupThread,
   leaveGroup,
   markGroupRead,
+  reactToMessage,
   sendMessage,
 } from "@/lib/chat.functions";
 import { playSentTone } from "@/lib/msg-sound";
@@ -91,6 +92,12 @@ function GroupThreadPage() {
     onSuccess: refresh,
   });
 
+  const react = useMutation({
+    mutationFn: ({ id, emoji }: { id: string; emoji: string | null }) =>
+      reactToMessage({ data: { messageId: id, emoji } }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["group-thread", groupId] }),
+  });
+
   const quit = useMutation({
     mutationFn: () => leaveGroup({ data: { groupId } }),
     onSuccess: () => {
@@ -170,6 +177,8 @@ function GroupThreadPage() {
               m={m}
               mine={m.senderId === me}
               showName
+              meId={me}
+              onReact={(id, emoji) => react.mutate({ id, emoji })}
               onDelete={(id) => del.mutate(id)}
               onJumpTo={jumpToMessage}
               onReply={(msg) =>
