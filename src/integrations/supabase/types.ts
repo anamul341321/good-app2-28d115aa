@@ -3096,6 +3096,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      assert_coin_self: { Args: { _user_id: string }; Returns: undefined }
       award_coin_event: {
         Args: { _event: string; _reference_id?: string; _user_id: string }
         Returns: Json
