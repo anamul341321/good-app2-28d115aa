@@ -33,6 +33,26 @@ export function Composer({
   const rec = useRef<VoiceRecorder | null>(null);
   const timer = useRef<number | undefined>(undefined);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  // মেসেঞ্জারের মতো ডিফল্ট ইমোজি — লং-প্রেস করে বদলানো যায়
+  const [quickEmoji, setQuickEmoji] = useState("👍");
+  const [pickEmoji, setPickEmoji] = useState(false);
+  const pressTimer = useRef<number | undefined>(undefined);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("msgr_quick_emoji");
+      if (saved) setQuickEmoji(saved);
+    } catch {}
+  }, []);
+
+  const chooseEmoji = (e: string) => {
+    setQuickEmoji(e);
+    setPickEmoji(false);
+    try {
+      localStorage.setItem("msgr_quick_emoji", e);
+    } catch {}
+  };
+
 
   // মেসেঞ্জারের মতো — রিপ্লাই দিলে সাথে সাথেই কীবোর্ড খুলে যাবে
   useEffect(() => {
