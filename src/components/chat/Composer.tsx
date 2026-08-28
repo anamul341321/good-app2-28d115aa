@@ -206,10 +206,17 @@ export function Composer({
       />
 
       {recording ? (
-        <div className="flex items-center gap-3 px-3 py-2 bg-surface-2 rounded-full">
+        <div className="flex items-center gap-2 px-2 py-2 bg-surface-2 rounded-full">
+          <button
+            onClick={() => void cancelRec()}
+            aria-label="ভয়েস বাতিল"
+            className="btn-press grid h-8 w-8 shrink-0 place-items-center rounded-full bg-surface-1 text-muted-foreground"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
           <span className="h-2 w-2 animate-pulse rounded-full bg-rose-500" />
           <div className="flex h-6 flex-1 items-center gap-0.5" aria-label="Recording">
-            {Array.from({ length: 24 }, (_, index) => (
+            {Array.from({ length: 20 }, (_, index) => (
               <span
                 key={index}
                 className="w-0.5 animate-pulse rounded-full bg-rose-500"
@@ -222,12 +229,14 @@ export function Composer({
           </p>
           <button
             onClick={() => void stopRec()}
-            className="btn-press grid h-8 w-8 place-items-center rounded-full bg-rose-500 text-white"
+            aria-label="ভয়েস পাঠান"
+            className="btn-press grid h-8 w-8 shrink-0 place-items-center rounded-full bg-rose-500 text-white"
           >
             <Square className="h-4 w-4 fill-white" />
           </button>
         </div>
       ) : (
+
         <div className="flex items-center gap-2">
           {!text.trim() && (
             <div className="flex items-center gap-2">
