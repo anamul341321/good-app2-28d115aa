@@ -9,7 +9,8 @@ export const COIN_RATES = {
   comment: 50,
   message: 50,
   watch: 30,
-  telegram: 1000,
+  telegram: 5000,
+  checkin: 1000,
 } as const;
 
 export type CoinEvent = "reel" | "post" | "story" | "comment" | "message";
