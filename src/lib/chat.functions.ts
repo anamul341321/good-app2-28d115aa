@@ -160,11 +160,14 @@ export const getThread = createServerFn({ method: "POST" })
 
     const names = await peopleMap([data.peerId]);
     const p = names.get(data.peerId);
+    const merged = [
+      ...(await shapeMessages((rows ?? []) as any[])),
+      ...shapeCallMessages((calls ?? []) as any[]),
+    ].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    const { attachReactions } = await import("./chat.server");
+    await attachReactions(sb, merged as any[]);
     return {
-      messages: [
-        ...(await shapeMessages((rows ?? []) as any[])),
-        ...shapeCallMessages((calls ?? []) as any[]),
-      ].sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
+      messages: merged,
       peer: {
         userId: data.peerId,
         name: p?.display_name ?? "ইউজার",
@@ -428,6 +431,8 @@ export const getGroupThread = createServerFn({ method: "POST" })
     const members = (mem ?? []) as any[];
     const names = await peopleMap([...members.map((m) => m.user_id), ...((rows ?? []) as any[]).map((r) => r.sender_id)]);
     const shaped = await shapeMessages((rows ?? []) as any[]);
+    const { attachReactions } = await import("./chat.server");
+    await attachReactions(sb, shaped as any[]);
     return {
       group: { id: g.id as string, name: g.name as string },
       messages: shaped.map((m) => ({
@@ -460,6 +465,32 @@ export const addGroupMembers = createServerFn({ method: "POST" })
         data.memberIds.map((m) => ({ group_id: data.groupId, user_id: m, role: "member" })),
         { onConflict: "group_id,user_id" },
       );
+    return { ok: true };
+  });
+
+/** মেসেঞ্জার-স্টাইল রিঅ্যাকশন — একই ইমোজি আবার দিলে সরে যায় */
+export const reactToMessage = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { messageId: string; emoji?: string | null }) => ({
+    messageId: String(input?.messageId ?? ""),
+    emoji: input?.emoji ? String(input.emoji).slice(0, 16) : null,
+  }))
+  .handler(async ({ data, context }) => {
+    const sb = context.supabase as any;
+    if (!data.messageId || data.messageId.startsWith("call:")) return { ok: false };
+    if (!data.emoji) {
+      await sb
+        .from("message_reactions")
+        .delete()
+        .eq("message_id", data.messageId)
+        .eq("user_id", context.userId);
+      return { ok: true };
+    }
+    const { error } = await sb.from("message_reactions").upsert(
+      { message_id: data.messageId, user_id: context.userId, emoji: data.emoji },
+      { onConflict: "message_id,user_id" },
+    );
+    if (error) throw new Error("রিঅ্যাকশন যায়নি");
     return { ok: true };
   });
 

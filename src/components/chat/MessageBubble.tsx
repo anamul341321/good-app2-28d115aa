@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Play, Pause, Trash2, Ban, PhoneMissed, PhoneIncoming, Video, Reply } from "lucide-react";
 import { useFeedMedia } from "@/lib/feed-media";
 import { computePeaks, VOICE_PEAK_COUNT } from "@/lib/voice-record";
@@ -17,6 +17,8 @@ function SeenAvatar({ name, src }: { name: string; src?: string | null }) {
 }
 
 
+export const REACTION_EMOJIS = ["❤️", "😂", "😮", "😢", "😡", "👍"];
+
 export type ChatMsg = {
   id: string;
   senderId: string;
@@ -28,6 +30,8 @@ export type ChatMsg = {
   readAt: string | null;
   createdAt: string;
   deleted: boolean;
+  /** মেসেঞ্জার-স্টাইল ইমোজি রিঅ্যাকশন */
+  reactions?: { emoji: string; userId: string }[];
 };
 
 function timeOf(iso: string) {
@@ -185,6 +189,8 @@ function MessageContextMenu({
   onClose,
   onDelete,
   onReply,
+  onReact,
+  myReaction,
   mine,
   position,
 }: {
@@ -192,6 +198,8 @@ function MessageContextMenu({
   onClose: () => void;
   onDelete: () => void;
   onReply?: () => void;
+  onReact?: (emoji: string | null) => void;
+  myReaction?: string | null;
   mine: boolean;
   position: { x: number; y: number };
 }) {
@@ -203,6 +211,26 @@ function MessageContextMenu({
         className="fixed z-[90] min-w-[160px] rounded-xl border border-border/60 bg-card/95 p-1.5 shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-150"
         style={{ left: position.x, top: position.y }}
       >
+        {onReact && (
+          <div className="mb-1 flex items-center justify-between gap-0.5 rounded-full border border-border/50 bg-surface-2/80 px-2 py-1.5">
+            {REACTION_EMOJIS.map((emoji) => (
+              <button
+                key={emoji}
+                onClick={() => {
+                  onClose();
+                  onReact(myReaction === emoji ? null : emoji);
+                  if (navigator.vibrate) navigator.vibrate(10);
+                }}
+                aria-label={`React ${emoji}`}
+                className={`grid h-8 w-8 place-items-center rounded-full text-lg transition-transform hover:scale-125 active:scale-110 ${
+                  myReaction === emoji ? "bg-primary/20 ring-1 ring-primary" : ""
+                }`}
+              >
+                {emoji}
+              </button>
+            ))}
+          </div>
+        )}
         {onReply && (
           <button
             onClick={() => {
@@ -243,6 +271,8 @@ export function MessageBubble({
   onDelete,
   onReply,
   onJumpTo,
+  onReact,
+  meId,
   seenBy,
 }: {
   m: ChatMsg;
@@ -253,6 +283,10 @@ export function MessageBubble({
   onReply?: (m: ChatMsg) => void;
   /** রিপ্লাই প্রিভিউতে ট্যাপ করলে মূল মেসেজে নিয়ে যাবে */
   onJumpTo?: (id: string) => void;
+  /** ইমোজি রিঅ্যাকশন — একই ইমোজি আবার দিলে null পাঠিয়ে সরিয়ে দেয় */
+  onReact?: (id: string, emoji: string | null) => void;
+  /** নিজের user id — নিজের রিঅ্যাকশন হাইলাইট করতে */
+  meId?: string;
   /** মেসেঞ্জারের মতো — পড়া হলে এই মেসেজের নিচে পিয়ারের ছোট প্রোফাইল ছবি দেখাবে */
   seenBy?: { name: string; avatarUrl?: string | null } | null;
 }) {
@@ -266,6 +300,17 @@ export function MessageBubble({
   const replyTo = (m.mediaMeta as any)?.replyTo as
     | { id?: string; body?: string; name?: string; kind?: string; mediaUrl?: string | null }
     | undefined;
+
+  // রিঅ্যাকশন সারাংশ — ইমোজি অনুযায়ী গোনা + নিজেরটা কোনটি
+  const myReaction = useMemo(
+    () => (m.reactions ?? []).find((r) => r.userId === meId)?.emoji ?? null,
+    [m.reactions, meId],
+  );
+  const reactionChips = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const r of m.reactions ?? []) counts.set(r.emoji, (counts.get(r.emoji) ?? 0) + 1);
+    return Array.from(counts.entries());
+  }, [m.reactions]);
 
 
   const openMenu = (e: React.MouseEvent | React.TouchEvent) => {
@@ -326,7 +371,7 @@ export function MessageBubble({
     : "bg-surface-2 text-foreground rounded-[20px] rounded-bl-[4px]";
 
   return (
-    <div id={`msg-${m.id}`} className={`flex flex-col ${mine ? "items-end" : "items-start"} mb-1 scroll-mt-24 transition-colors duration-500`}>
+    <div id={`msg-${m.id}`} className={`flex flex-col ${mine ? "items-end" : "items-start"} ${reactionChips.length ? "mb-4" : "mb-1"} scroll-mt-24 transition-colors duration-500`}>
       <div className="relative max-w-[80%] flex items-end gap-2">
         {drag > 10 && (
           <span
@@ -449,7 +494,32 @@ export function MessageBubble({
             <p className="whitespace-pre-wrap break-words text-sm font-black leading-snug">{m.body}</p>
           )}
         </div>
+
+        {/* মেসেঞ্জার-স্টাইল রিঅ্যাকশন ব্যাজ — বাবলের নিচের কোণে ভাসে */}
+        {!m.deleted && reactionChips.length > 0 && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onReact?.(m.id, myReaction);
+            }}
+            aria-label="রিঅ্যাকশন"
+            className={`absolute -bottom-2.5 ${mine ? "left-0" : "right-0"} z-10 flex items-center gap-0.5 rounded-full border border-border/60 bg-card px-1.5 py-0.5 shadow-md ${
+              myReaction ? "ring-1 ring-primary" : ""
+            }`}
+          >
+            {reactionChips.slice(0, 3).map(([emoji]) => (
+              <span key={emoji} className="text-[11px] leading-none">{emoji}</span>
+            ))}
+            {(() => {
+              const total = reactionChips.reduce((s, [, c]) => s + c, 0);
+              return total > 1 ? (
+                <span className="text-[9px] font-black text-muted-foreground">{total}</span>
+              ) : null;
+            })()}
+          </button>
+        )}
       </div>
+      
       
       {/* Seen — মেসেঞ্জার স্টাইল ছোট প্রোফাইল ছবি */}
       {mine && seenBy && !m.deleted && (
@@ -466,6 +536,8 @@ export function MessageBubble({
         onClose={() => setMenu(false)}
         onDelete={() => onDelete?.(m.id)}
         onReply={onReply ? () => onReply(m) : undefined}
+        onReact={onReact && !m.deleted ? (emoji) => onReact(m.id, emoji) : undefined}
+        myReaction={myReaction}
         mine={mine}
         position={menuPos}
       />
