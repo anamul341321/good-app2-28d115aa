@@ -104,7 +104,13 @@ function WithdrawPage() {
 
   const adminWithdrawOff = (data as any)?.payoutSettings?.withdrawEnabled === false;
   const monthlyWindow = withdrawCountdownInfo(now);
-  const withdrawClosed = withdrawWindowInfo(now).isClosed || adminWithdrawOff || !monthlyWindow.isOpen;
+  const boostInfo = adBoostWithdrawInfo({
+    now,
+    nextFirstAt: monthlyWindow.nextFirstAt,
+    isOpen: monthlyWindow.isOpen,
+    boosts: adBoost?.boosts ?? 0,
+  });
+  const withdrawClosed = withdrawWindowInfo(now).isClosed || adminWithdrawOff || !boostInfo.unlocked;
 
   return (
     <div className="space-y-4 pt-2">
