@@ -15,6 +15,9 @@ import { useLang } from "@/lib/i18n";
 import { withdrawWindowInfo, withdrawCountdownInfo } from "@/lib/withdraw-window";
 import { WithdrawClosedBanner } from "@/components/WithdrawClosedBanner";
 import { WithdrawCountdown } from "@/components/WithdrawCountdown";
+import { AdBoostCard } from "@/components/AdBoostCard";
+import { adBoostWithdrawInfo } from "@/lib/ad-boost";
+import { getAdBoostStatus } from "@/lib/ads.functions";
 import { WithdrawRejectDetails } from "@/components/WithdrawRejectDetails";
 
 
@@ -27,6 +30,8 @@ function WithdrawPage() {
   const { data: history, refetch: refetchHistory } = useQuery({
     queryKey: ["withdrawals"], queryFn: () => getMyWithdrawals(),
   });
+
+  const { data: adBoost } = useQuery({ queryKey: ["ad-boost"], queryFn: () => getAdBoostStatus() });
 
   const walletBkash = (data as any)?.walletBkash ?? null;
   const walletNagad = (data as any)?.walletNagad ?? null;
@@ -121,6 +126,8 @@ function WithdrawPage() {
       </div>
 
       <WithdrawCountdown />
+
+      <AdBoostCard />
 
       <WithdrawClosedBanner
         adminOff={adminWithdrawOff}
