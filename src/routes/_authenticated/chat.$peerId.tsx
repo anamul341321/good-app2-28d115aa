@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ChevronLeft, Info, Check, X, UserPlus, Loader2, Maximize2, MoreVertical, Trash2, Ban } from "lucide-react";
-import { deleteMessage, deleteAllMessages, getThread, markChatRead, sendMessage } from "@/lib/chat.functions";
+import { deleteMessage, deleteAllMessages, getThread, markChatRead, reactToMessage, sendMessage } from "@/lib/chat.functions";
 import { awardCoins } from "@/lib/coins";
 import { respondFriendRequest, sendFriendRequest } from "@/lib/friends.functions";
 import { CallButtons } from "@/components/CallProvider";
@@ -92,6 +92,12 @@ function ThreadPage() {
   const del = useMutation({
     mutationFn: (id: string) => deleteMessage({ data: { id } }),
     onSuccess: refresh,
+  });
+
+  const react = useMutation({
+    mutationFn: ({ id, emoji }: { id: string; emoji: string | null }) =>
+      reactToMessage({ data: { messageId: id, emoji } }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["thread", peerId] }),
   });
 
   const deleteAll = useMutation({

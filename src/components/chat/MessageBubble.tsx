@@ -371,7 +371,7 @@ export function MessageBubble({
     : "bg-surface-2 text-foreground rounded-[20px] rounded-bl-[4px]";
 
   return (
-    <div id={`msg-${m.id}`} className={`flex flex-col ${mine ? "items-end" : "items-start"} mb-1 scroll-mt-24 transition-colors duration-500`}>
+    <div id={`msg-${m.id}`} className={`flex flex-col ${mine ? "items-end" : "items-start"} ${reactionChips.length ? "mb-4" : "mb-1"} scroll-mt-24 transition-colors duration-500`}>
       <div className="relative max-w-[80%] flex items-end gap-2">
         {drag > 10 && (
           <span
