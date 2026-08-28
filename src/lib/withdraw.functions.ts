@@ -4,6 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { MIN_WITHDRAW_BDT, MIN_PAYOUT_BDT, withdrawPayout, withdrawFee, withdrawDebit } from "./constants";
 import { computeLiveBalance } from "./mining";
 import { withdrawCountdownInfo } from "./withdraw-window";
+import { AD_BOOST, adBoostWithdrawInfo } from "./ad-boost";
 
 const CELO_ADDR_RE = /^0x[a-fA-F0-9]{40}$/;
 
