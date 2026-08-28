@@ -61,6 +61,7 @@ import { Route as AuthenticatedEarningsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedSocialIndexRouteImport } from './routes/_authenticated/social/index'
 import { Route as AuthenticatedChatIndexRouteImport } from './routes/_authenticated/chat.index'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
+import { Route as LovableEmailEventsRouteImport } from './routes/lovable/email/events'
 import { Route as ApiPublicWhitelistRecheckRouteImport } from './routes/api/public/whitelist-recheck'
 import { Route as ApiPublicTourAudioRouteImport } from './routes/api/public/tour-audio'
 import { Route as ApiPublicReverifyRemindersRouteImport } from './routes/api/public/reverify-reminders'
@@ -349,6 +350,11 @@ const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
   path: '/lovable/email/suppression',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LovableEmailEventsRoute = LovableEmailEventsRouteImport.update({
+  id: '/lovable/email/events',
+  path: '/lovable/email/events',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicWhitelistRecheckRoute =
   ApiPublicWhitelistRecheckRouteImport.update({
     id: '/api/public/whitelist-recheck',
@@ -557,6 +563,7 @@ export interface FileRoutesByFullPath {
   '/api/public/reverify-reminders': typeof ApiPublicReverifyRemindersRoute
   '/api/public/tour-audio': typeof ApiPublicTourAudioRoute
   '/api/public/whitelist-recheck': typeof ApiPublicWhitelistRecheckRoute
+  '/lovable/email/events': typeof LovableEmailEventsRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/chat/': typeof AuthenticatedChatIndexRoute
   '/social/': typeof AuthenticatedSocialIndexRoute
@@ -635,6 +642,7 @@ export interface FileRoutesByTo {
   '/api/public/reverify-reminders': typeof ApiPublicReverifyRemindersRoute
   '/api/public/tour-audio': typeof ApiPublicTourAudioRoute
   '/api/public/whitelist-recheck': typeof ApiPublicWhitelistRecheckRoute
+  '/lovable/email/events': typeof LovableEmailEventsRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/chat': typeof AuthenticatedChatIndexRoute
   '/social': typeof AuthenticatedSocialIndexRoute
@@ -717,6 +725,7 @@ export interface FileRoutesById {
   '/api/public/reverify-reminders': typeof ApiPublicReverifyRemindersRoute
   '/api/public/tour-audio': typeof ApiPublicTourAudioRoute
   '/api/public/whitelist-recheck': typeof ApiPublicWhitelistRecheckRoute
+  '/lovable/email/events': typeof LovableEmailEventsRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/_authenticated/chat/': typeof AuthenticatedChatIndexRoute
   '/_authenticated/social/': typeof AuthenticatedSocialIndexRoute
@@ -799,6 +808,7 @@ export interface FileRouteTypes {
     | '/api/public/reverify-reminders'
     | '/api/public/tour-audio'
     | '/api/public/whitelist-recheck'
+    | '/lovable/email/events'
     | '/lovable/email/suppression'
     | '/chat/'
     | '/social/'
@@ -877,6 +887,7 @@ export interface FileRouteTypes {
     | '/api/public/reverify-reminders'
     | '/api/public/tour-audio'
     | '/api/public/whitelist-recheck'
+    | '/lovable/email/events'
     | '/lovable/email/suppression'
     | '/chat'
     | '/social'
@@ -958,6 +969,7 @@ export interface FileRouteTypes {
     | '/api/public/reverify-reminders'
     | '/api/public/tour-audio'
     | '/api/public/whitelist-recheck'
+    | '/lovable/email/events'
     | '/lovable/email/suppression'
     | '/_authenticated/chat/'
     | '/_authenticated/social/'
@@ -997,6 +1009,7 @@ export interface RootRouteChildren {
   ApiPublicReverifyRemindersRoute: typeof ApiPublicReverifyRemindersRoute
   ApiPublicTourAudioRoute: typeof ApiPublicTourAudioRoute
   ApiPublicWhitelistRecheckRoute: typeof ApiPublicWhitelistRecheckRoute
+  LovableEmailEventsRoute: typeof LovableEmailEventsRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicAppDownloadRoute: typeof ApiPublicAppDownloadRoute
   ApiPublicBroadcastRunRoute: typeof ApiPublicBroadcastRunRoute
@@ -1380,6 +1393,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailSuppressionRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/lovable/email/events': {
+      id: '/lovable/email/events'
+      path: '/lovable/email/events'
+      fullPath: '/lovable/email/events'
+      preLoaderRoute: typeof LovableEmailEventsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/whitelist-recheck': {
       id: '/api/public/whitelist-recheck'
       path: '/api/public/whitelist-recheck'
@@ -1709,6 +1729,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicReverifyRemindersRoute: ApiPublicReverifyRemindersRoute,
   ApiPublicTourAudioRoute: ApiPublicTourAudioRoute,
   ApiPublicWhitelistRecheckRoute: ApiPublicWhitelistRecheckRoute,
+  LovableEmailEventsRoute: LovableEmailEventsRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicAppDownloadRoute: ApiPublicAppDownloadRoute,
   ApiPublicBroadcastRunRoute: ApiPublicBroadcastRunRoute,
