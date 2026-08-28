@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Play, Pause, Trash2, Ban, PhoneMissed, PhoneIncoming, Video, Reply } from "lucide-react";
 import { useFeedMedia } from "@/lib/feed-media";
 import { computePeaks, VOICE_PEAK_COUNT } from "@/lib/voice-record";
@@ -300,6 +300,17 @@ export function MessageBubble({
   const replyTo = (m.mediaMeta as any)?.replyTo as
     | { id?: string; body?: string; name?: string; kind?: string; mediaUrl?: string | null }
     | undefined;
+
+  // রিঅ্যাকশন সারাংশ — ইমোজি অনুযায়ী গোনা + নিজেরটা কোনটি
+  const myReaction = useMemo(
+    () => (m.reactions ?? []).find((r) => r.userId === meId)?.emoji ?? null,
+    [m.reactions, meId],
+  );
+  const reactionChips = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const r of m.reactions ?? []) counts.set(r.emoji, (counts.get(r.emoji) ?? 0) + 1);
+    return Array.from(counts.entries());
+  }, [m.reactions]);
 
 
   const openMenu = (e: React.MouseEvent | React.TouchEvent) => {
