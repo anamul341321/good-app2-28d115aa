@@ -95,20 +95,29 @@ function CoinWalletPage() {
 
   const claimTelegram = async () => {
     if (verifying) return;
+    const uname = tgUsername.trim().replace(/^@/, "");
+    if (!uname || uname.length < 3) {
+      setAskUsername(true);
+      toast.info("আপনার টেলিগ্রাম username দিন (যেমন @yourname)");
+      return;
+    }
     setVerifying(true);
     try {
-      const res = await verifyTelegramJoin();
+      const res = await claimTelegramByUsername({ data: { username: uname } });
       if (res.awarded > 0) {
         celebrate();
+        setAskUsername(false);
         toast.success(`টেলিগ্রাম জয়েন বোনাস +${res.awarded} কয়েন! 🪙`);
       } else if (res.already) {
         toast.info("আপনি আগেই এই বোনাস নিয়েছেন");
-      } else if (!res.linked) {
-        toast.error("প্রথমে টেলিগ্রাম বট (/start) দিয়ে অ্যাকাউন্ট লিংক করুন — তারপরই যাচাই হবে", {
+      } else if (res.error === "duplicate") {
+        toast.error("এই username দিয়ে আগেই ক্লেইম করা হয়েছে — নিজের username দিন");
+      } else if (res.error === "not_found") {
+        toast.error("username টি গ্রুপে খুঁজে পাওয়া যায়নি — গ্রুপে একটি মেসেজ দিন বা বটে /start দিন, তারপর আবার ক্লেইম করুন", {
           action: { label: "গ্রুপে যান", onClick: () => window.open(TELEGRAM_GROUP_URL, "_blank") },
         });
       } else {
-        toast.error("গ্রুপে জয়েন পাওয়া যায়নি — জয়েন করে আবার ক্লেইম করুন", {
+        toast.error("এই username গ্রুপে জয়েন করা নেই — জয়েন করে আবার ক্লেইম করুন", {
           action: { label: "জয়েন", onClick: () => window.open(TELEGRAM_GROUP_URL, "_blank") },
         });
       }
@@ -122,7 +131,13 @@ function CoinWalletPage() {
   };
 
   const goEarn = (item: EarnItem) => {
-    if (item.telegram) return claimTelegram();
+    if (item.telegram) {
+      if (!askUsername && !tgUsername.trim()) {
+        setAskUsername(true);
+        return;
+      }
+      return claimTelegram();
+    }
     playUiSound("coin");
     if (item.to) navigate({ to: item.to });
   };
