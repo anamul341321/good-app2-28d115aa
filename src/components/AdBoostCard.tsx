@@ -62,6 +62,9 @@ export function AdBoostCard() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  // অ্যাডমিন প্যানেলে অ্যাড সিস্টেম বন্ধ থাকলে কার্ডটাই দেখাবে না
+  if (adsCfg && !adsCfg.rewarded) return null;
+
   if (info.unlocked) {
     return (
       <div className="rounded-3xl border-2 border-emerald/40 bg-linear-to-br from-emerald/20 via-cyan/10 to-violet/10 p-4 flex items-center gap-3">
