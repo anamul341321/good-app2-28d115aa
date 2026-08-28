@@ -1,36 +1,43 @@
 import * as React from 'react'
+
 import {
   Body,
+  Button,
   Container,
   Head,
   Heading,
   Html,
   Preview,
-  Section,
   Text,
 } from '@react-email/components'
 
 interface RecoveryEmailProps {
   siteName: string
-  token?: string
+  confirmationUrl: string
 }
 
-export const RecoveryEmail = ({ siteName, token = '000000' }: RecoveryEmailProps) => (
-  <Html lang="bn" dir="ltr">
-    <Head />
-    <Preview>{siteName} পাসওয়ার্ড রিসেট কোড: {token}</Preview>
+export const RecoveryEmail = ({
+  siteName,
+  confirmationUrl,
+}: RecoveryEmailProps) => (
+  <Html lang="en" dir="ltr">
+    <Head>
+      <style>{darkModeCss}</style>
+    </Head>
+    <Preview>Reset your password for {siteName}</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Text style={brand}>{siteName}</Text>
-        <Heading style={h1}>পাসওয়ার্ড রিসেট কোড</Heading>
+        <Heading style={h1}>Reset your password</Heading>
         <Text style={text}>
-          আপনার পাসওয়ার্ড রিসেট করতে নিচের ৬ ডিজিটের কোডটি অ্যাপে বসান।
+          We received a request to reset your password for {siteName}. Click
+          the button below to choose a new password.
         </Text>
-        <Section style={codeBox}>
-          <Text style={codeText}>{token}</Text>
-        </Section>
-        <Text style={muted}>
-          কোডটি ১০ মিনিট পর্যন্ত কাজ করবে। কোডটি কাউকে শেয়ার করবেন না।
+        <Button className="dm-btn" style={button} href={confirmationUrl}>
+          Reset Password
+        </Button>
+        <Text style={footer}>
+          If you didn't request a password reset, you can safely ignore this
+          email. Your password will not be changed.
         </Text>
       </Container>
     </Body>
@@ -39,23 +46,35 @@ export const RecoveryEmail = ({ siteName, token = '000000' }: RecoveryEmailProps
 
 export default RecoveryEmail
 
-const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, Helvetica, sans-serif' }
-const container = { padding: '28px 24px', maxWidth: '480px' }
-const brand = { fontSize: '13px', fontWeight: 700, color: '#0ea5e9', letterSpacing: '1px', margin: '0 0 8px' }
-const h1 = { fontSize: '22px', color: '#0f172a', margin: '0 0 12px' }
-const text = { fontSize: '14px', color: '#334155', lineHeight: '22px', margin: '0 0 16px' }
-const codeBox = {
-  backgroundColor: '#0f172a',
-  borderRadius: '14px',
-  padding: '18px',
-  textAlign: 'center' as const,
-  margin: '0 0 16px',
+const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif' }
+const container = { padding: '20px 25px' }
+const h1 = {
+  fontSize: '22px',
+  fontWeight: 'bold' as const,
+  color: '#000000',
+  margin: '0 0 20px',
 }
-const codeText = {
+const text = {
+  fontSize: '14px',
+  color: '#55575d',
+  lineHeight: '1.5',
+  margin: '0 0 25px',
+}
+const button = {
+  backgroundColor: '#000000',
   color: '#ffffff',
-  fontSize: '30px',
-  fontWeight: 700,
-  letterSpacing: '8px',
-  margin: 0,
+  fontSize: '14px',
+  border: '1px solid #000000',
+  borderRadius: '8px',
+  padding: '12px 20px',
+  textDecoration: 'none',
 }
-const muted = { fontSize: '12px', color: '#64748b', lineHeight: '19px', margin: 0 }
+const footer = { fontSize: '12px', color: '#999999', margin: '30px 0 0' }
+// Rendered as a text child, which React may HTML-escape: keep this CSS free of >, &, and quotes.
+const darkModeCss = `
+  @media (prefers-color-scheme: dark) {
+    .dm-btn { background-color: #ffffff !important; color: #000000 !important; }
+  }
+  [data-ogsc] .dm-btn { background-color: #ffffff !important; color: #000000 !important; }
+  [data-ogsb] .dm-btn { background-color: #ffffff !important; color: #000000 !important; }
+`

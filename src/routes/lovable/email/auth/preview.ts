@@ -18,7 +18,7 @@ const EMAIL_TEMPLATES: Record<string, React.ComponentType<any>> = {
 }
 
 // Configuration
-const SITE_NAME = "Good-App"
+const SITE_NAME = "Good-app"
 const ROOT_DOMAIN = "goodapp2.live"
 
 // Sample data for preview mode ONLY (not used in actual email sending).
