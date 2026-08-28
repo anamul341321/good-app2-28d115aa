@@ -810,6 +810,13 @@ function BlockedPanel() {
             {unfreeze.isPending ? "..." : "খুলে দিন"}
           </button>
         </div>
+        <button
+          onClick={() => unfreezeAll.mutate()}
+          disabled={unfreezeAll.isPending}
+          className="w-full rounded-xl border border-emerald/40 bg-emerald/10 h-10 text-xs font-black text-emerald disabled:opacity-50"
+        >
+          {unfreezeAll.isPending ? "খোলা হচ্ছে..." : "সবার ফ্রিজ একসাথে খুলে দিন"}
+        </button>
       </div>
 
       {isLoading ? (
