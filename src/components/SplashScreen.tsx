@@ -136,7 +136,7 @@ background:linear-gradient(90deg,#fff,oklch(0.85 0.16 320),#fff);background-size
       <div className="ga-mark">
         <span className="ga-mark-ring" />
         <span className="ga-mark-ring two" />
-        <span className="ga-mark-core">G</span>
+        <img src={brandLogo} alt="Good-App" className="ga-mark-core" />
       </div>
       <div className="ga-title">Good-App</div>
       <div className="ga-sub">লোড হচ্ছে, একটু অপেক্ষা করুন…</div>
