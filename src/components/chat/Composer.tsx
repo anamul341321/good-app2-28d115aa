@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Image as ImageIcon, Loader2, Mic, Send, Square, Video, Plus, Smile, X, Reply } from "lucide-react";
+import { Image as ImageIcon, Loader2, Mic, Send, Square, Video, Plus, Smile, X, Reply, Trash2 } from "lucide-react";
 import { extOf, uploadChatFile, type UploadKind } from "@/lib/chat-upload";
 import { VoiceRecorder } from "@/lib/voice-record";
 
