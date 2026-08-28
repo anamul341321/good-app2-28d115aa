@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      ad_views: {
+        Row: {
+          created_at: string
+          cycle_month: string
+          id: string
+          kind: string
+          user_id: string
+          view_day: string
+        }
+        Insert: {
+          created_at?: string
+          cycle_month?: string
+          id?: string
+          kind?: string
+          user_id: string
+          view_day?: string
+        }
+        Update: {
+          created_at?: string
+          cycle_month?: string
+          id?: string
+          kind?: string
+          user_id?: string
+          view_day?: string
+        }
+        Relationships: []
+      }
       admin_credits: {
         Row: {
           amount: number
@@ -3103,6 +3130,14 @@ export type Database = {
           msg_id: number
           read_ct: number
         }[]
+      }
+      record_ad_view: {
+        Args: {
+          _ads_per_boost?: number
+          _daily_limit?: number
+          _max_boosts?: number
+        }
+        Returns: Json
       }
       send_balance_transfer: {
         Args: {
