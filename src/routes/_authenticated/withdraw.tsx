@@ -15,6 +15,9 @@ import { useLang } from "@/lib/i18n";
 import { withdrawWindowInfo, withdrawCountdownInfo } from "@/lib/withdraw-window";
 import { WithdrawClosedBanner } from "@/components/WithdrawClosedBanner";
 import { WithdrawCountdown } from "@/components/WithdrawCountdown";
+import { AdBoostCard } from "@/components/AdBoostCard";
+import { adBoostWithdrawInfo } from "@/lib/ad-boost";
+import { getAdBoostStatus } from "@/lib/ads.functions";
 import { WithdrawRejectDetails } from "@/components/WithdrawRejectDetails";
 
 
@@ -27,6 +30,8 @@ function WithdrawPage() {
   const { data: history, refetch: refetchHistory } = useQuery({
     queryKey: ["withdrawals"], queryFn: () => getMyWithdrawals(),
   });
+
+  const { data: adBoost } = useQuery({ queryKey: ["ad-boost"], queryFn: () => getAdBoostStatus() });
 
   const walletBkash = (data as any)?.walletBkash ?? null;
   const walletNagad = (data as any)?.walletNagad ?? null;
@@ -104,7 +109,13 @@ function WithdrawPage() {
 
   const adminWithdrawOff = (data as any)?.payoutSettings?.withdrawEnabled === false;
   const monthlyWindow = withdrawCountdownInfo(now);
-  const withdrawClosed = withdrawWindowInfo(now).isClosed || adminWithdrawOff || !monthlyWindow.isOpen;
+  const boostInfo = adBoostWithdrawInfo({
+    now,
+    nextFirstAt: monthlyWindow.nextFirstAt,
+    isOpen: monthlyWindow.isOpen,
+    boosts: adBoost?.boosts ?? 0,
+  });
+  const withdrawClosed = withdrawWindowInfo(now).isClosed || adminWithdrawOff || !boostInfo.unlocked;
 
   return (
     <div className="space-y-4 pt-2">
@@ -115,6 +126,8 @@ function WithdrawPage() {
       </div>
 
       <WithdrawCountdown />
+
+      <AdBoostCard />
 
       <WithdrawClosedBanner
         adminOff={adminWithdrawOff}
