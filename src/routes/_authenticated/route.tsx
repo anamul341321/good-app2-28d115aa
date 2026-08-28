@@ -70,6 +70,17 @@ function AuthedLayout() {
   const [authError, setAuthError] = useState(false);
   const [authAttempt, setAuthAttempt] = useState(0);
 
+  // দিনের প্রথমবার লগইনের পর একটি app-open অ্যাড (শুধু Android অ্যাপে)
+  useEffect(() => {
+    if (authState !== "authenticated") return;
+    const timer = window.setTimeout(() => {
+      void import("@/lib/ads").then((m) =>
+        m.initAds().then(() => m.showDailyAppOpenAd()),
+      );
+    }, 2500);
+    return () => window.clearTimeout(timer);
+  }, [authState]);
+
   useEffect(() => {
     let active = true;
     if (authState !== "authenticated" || authAttempt > 0) setAuthState("checking");
