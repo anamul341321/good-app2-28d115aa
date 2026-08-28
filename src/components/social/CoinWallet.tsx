@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Coins, X, Clock, Sparkles, Repeat, Film, Image as ImageIcon, MessageCircle, Video } from "lucide-react";
 import { getCoinSummary, type CoinSummary } from "@/lib/coins.functions";
-import { claimWatchSeconds, isWatching, formatCoins, COIN_RATES } from "@/lib/coins";
+import { claimWatchSeconds, isWatching, formatCoins, COIN_RATES, TELEGRAM_GROUP_URL } from "@/lib/coins";
 import { playUiSound } from "@/lib/ui-sounds";
 import { toast } from "sonner";
 
@@ -94,10 +94,10 @@ export function CoinWalletSheet({ onClose }: { onClose: () => void }) {
             <li className="flex items-center gap-2"><ImageIcon className="h-3.5 w-3.5 text-blue-500" /> পোস্ট করলে — {COIN_RATES.post} কয়েন</li>
             <li className="flex items-center gap-2"><Sparkles className="h-3.5 w-3.5 text-violet-500" /> স্টোরি দিলে — {COIN_RATES.story} কয়েন</li>
             <li className="flex items-center gap-2"><MessageCircle className="h-3.5 w-3.5 text-emerald-500" /> বন্ধুকে মেসেজ / কমেন্ট — {COIN_RATES.message} কয়েন</li>
-            <li className="flex items-center gap-2"><Video className="h-3.5 w-3.5 text-amber-500" /> ভিডিও দেখলে — প্রতি ২০ সেকেন্ডে ১ কয়েন</li>
+            <li className="flex items-center gap-2"><Video className="h-3.5 w-3.5 text-amber-500" /> ভিডিও দেখলে — প্রতি ২০ সেকেন্ডে {COIN_RATES.watch} কয়েন</li>
           </ul>
           <p className="mt-2 flex items-center gap-1.5 text-[11px] font-bold text-gray-500 dark:text-muted-foreground">
-            <Clock className="h-3.5 w-3.5" /> আজ ভিডিও দেখে: {formatCoins(data?.watch_today)} / {formatCoins(data?.watch_daily_cap ?? 600)} কয়েন
+            <Clock className="h-3.5 w-3.5" /> আজ ভিডিও দেখে: {formatCoins(data?.watch_today)} / {formatCoins(data?.watch_daily_cap ?? 9000)} কয়েন
           </p>
         </div>
       </div>
@@ -126,7 +126,8 @@ export function WatchCoinBar() {
     return () => clearInterval(timer);
   }, []);
 
-  const coins = Math.floor(seconds / 20);
+  const units = Math.floor(seconds / 20);
+  const coins = units * COIN_RATES.watch;
   const progress = ((seconds % 20) / 20) * 100;
 
   if (seconds < 3 && coins === 0) return null;
@@ -134,7 +135,7 @@ export function WatchCoinBar() {
   const claim = async () => {
     if (coins < 1 || claiming) return;
     setClaiming(true);
-    const spend = coins * 20;
+    const spend = units * 20;
     const awarded = await claimWatchSeconds(spend);
     setClaiming(false);
     if (awarded > 0) {
@@ -146,7 +147,9 @@ export function WatchCoinBar() {
       queryClient.invalidateQueries({ queryKey: ["coin-summary"] });
       toast.success(`+${awarded} কয়েন যোগ হয়েছে! 🪙`);
     } else {
-      toast.info("আজকের কয়েন লিমিট শেষ, কাল আবার চেষ্টা করুন");
+      toast.info("কয়েন নিতে টেলিগ্রাম গ্রুপে জয়েন করুন অথবা আজকের লিমিট শেষ", {
+        action: { label: "জয়েন", onClick: () => window.open(TELEGRAM_GROUP_URL, "_blank") },
+      });
     }
   };
 
