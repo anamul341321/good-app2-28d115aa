@@ -189,6 +189,8 @@ function MessageContextMenu({
   onClose,
   onDelete,
   onReply,
+  onReact,
+  myReaction,
   mine,
   position,
 }: {
@@ -196,6 +198,8 @@ function MessageContextMenu({
   onClose: () => void;
   onDelete: () => void;
   onReply?: () => void;
+  onReact?: (emoji: string | null) => void;
+  myReaction?: string | null;
   mine: boolean;
   position: { x: number; y: number };
 }) {
@@ -207,6 +211,26 @@ function MessageContextMenu({
         className="fixed z-[90] min-w-[160px] rounded-xl border border-border/60 bg-card/95 p-1.5 shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-150"
         style={{ left: position.x, top: position.y }}
       >
+        {onReact && (
+          <div className="mb-1 flex items-center justify-between gap-0.5 rounded-full border border-border/50 bg-surface-2/80 px-2 py-1.5">
+            {REACTION_EMOJIS.map((emoji) => (
+              <button
+                key={emoji}
+                onClick={() => {
+                  onClose();
+                  onReact(myReaction === emoji ? null : emoji);
+                  if (navigator.vibrate) navigator.vibrate(10);
+                }}
+                aria-label={`React ${emoji}`}
+                className={`grid h-8 w-8 place-items-center rounded-full text-lg transition-transform hover:scale-125 active:scale-110 ${
+                  myReaction === emoji ? "bg-primary/20 ring-1 ring-primary" : ""
+                }`}
+              >
+                {emoji}
+              </button>
+            ))}
+          </div>
+        )}
         {onReply && (
           <button
             onClick={() => {
