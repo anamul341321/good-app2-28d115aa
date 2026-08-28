@@ -4,7 +4,8 @@
 export const GROUP_CHAT = "@goodappbuy";
 
 export async function isTelegramGroupMember(tgUserId: number): Promise<boolean> {
-  const token = process.env["TELEGRAM_BOT_TOKEN"];
+  // গ্রুপে যে বট অ্যাডমিন সেটাই মেম্বারশিপ দেখতে পারে (TG_MOD_BOT_TOKEN)।
+  const token = process.env["TG_MOD_BOT_TOKEN"] || process.env["TELEGRAM_BOT_TOKEN"];
   if (!token) return false;
   try {
     const res = await fetch(`https://api.telegram.org/bot${token}/getChatMember`, {
