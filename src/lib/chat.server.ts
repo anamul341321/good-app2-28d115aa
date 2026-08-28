@@ -105,6 +105,24 @@ export function shapeCallMessages(
   });
 }
 
+/** মেসেজগুলোর রিঅ্যাকশন বসিয়ে দেয় (in-place) */
+export async function attachReactions(sb: any, messages: Array<{ id: string; reactions?: any[] }>) {
+  const ids = messages.map((m) => m.id).filter((id) => !String(id).startsWith("call:"));
+  if (!ids.length) return messages;
+  const { data } = await sb
+    .from("message_reactions")
+    .select("message_id, user_id, emoji")
+    .in("message_id", ids);
+  const byMsg = new Map<string, Array<{ emoji: string; userId: string }>>();
+  for (const r of (data ?? []) as any[]) {
+    const list = byMsg.get(r.message_id) ?? [];
+    list.push({ emoji: r.emoji, userId: r.user_id });
+    byMsg.set(r.message_id, list);
+  }
+  for (const m of messages) m.reactions = byMsg.get(m.id) ?? [];
+  return messages;
+}
+
 /** শেষ মেসেজের সংক্ষিপ্ত টেক্সট */
 export function previewOf(m: { kind: string; body: string; deleted_at?: string | null }) {
   if (m.deleted_at) return "মেসেজ মুছে ফেলা হয়েছে";
