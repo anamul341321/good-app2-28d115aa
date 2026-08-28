@@ -6,6 +6,7 @@ import { getAdBoostStatus, recordAdView } from "@/lib/ads.functions";
 import { AD_BOOST, adBoostWithdrawInfo } from "@/lib/ad-boost";
 import { withdrawCountdownInfo } from "@/lib/withdraw-window";
 import { showRewardedAd } from "@/lib/ads";
+import { loadAdsConfig } from "@/lib/ads-config";
 
 /**
  * উইথড্র পেজের "অ্যাড দেখে সময় কমান" কার্ড।
@@ -13,6 +14,11 @@ import { showRewardedAd } from "@/lib/ads";
  */
 export function AdBoostCard() {
   const qc = useQueryClient();
+  const { data: adsCfg } = useQuery({
+    queryKey: ["ads-config"],
+    queryFn: () => loadAdsConfig(),
+    staleTime: 5 * 60_000,
+  });
   const [now] = useState(() => Date.now());
   const { data } = useQuery({
     queryKey: ["ad-boost"],
