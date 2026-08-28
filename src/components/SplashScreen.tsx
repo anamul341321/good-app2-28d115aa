@@ -118,8 +118,8 @@ transition:opacity .4s ease,transform .4s ease;}
 .ga-mark{position:relative;width:112px;height:112px;display:grid;place-items:center;animation:ga-pop .7s cubic-bezier(.2,1.4,.4,1) both}
 .ga-mark-ring{position:absolute;inset:0;border-radius:999px;border:2px solid oklch(0.75 0.2 320/.5);border-top-color:transparent;animation:ga-spin 1.1s linear infinite}
 .ga-mark-ring.two{inset:10px;border:2px solid oklch(0.85 0.16 200/.45);border-bottom-color:transparent;animation-direction:reverse;animation-duration:1.7s}
-.ga-mark-core{width:74px;height:74px;border-radius:22px;display:grid;place-items:center;font-weight:900;font-size:32px;color:#fff;letter-spacing:-1px;
-background:linear-gradient(135deg,oklch(0.65 0.24 300),oklch(0.72 0.18 200));box-shadow:0 12px 40px oklch(0.6 0.24 300/.55);animation:ga-breathe 1.8s ease-in-out infinite}
+.ga-mark-core{width:84px;height:84px;border-radius:24px;display:block;object-fit:cover;
+ box-shadow:0 12px 40px oklch(0.6 0.24 300/.55);animation:ga-breathe 1.8s ease-in-out infinite}
 .ga-title{font-size:26px;font-weight:900;color:#fff;letter-spacing:.4px;position:relative;z-index:1;
 background:linear-gradient(90deg,#fff,oklch(0.85 0.16 320),#fff);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:ga-shine 2.2s linear infinite}
 .ga-sub{font-size:13px;color:oklch(0.9 0.02 300/.7);z-index:1}
