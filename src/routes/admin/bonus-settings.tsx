@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { ApkUploadCard } from "@/components/admin/ApkUploadCard";
 import { TestApkUploadCard } from "@/components/admin/TestApkUploadCard";
 import { AppLinksCard } from "@/components/admin/AppLinksCard";
+import { AdsSettingsCard } from "@/components/admin/AdsSettingsCard";
 
 export const Route = createFileRoute("/admin/bonus-settings")({ component: BonusSettings });
 
@@ -294,6 +295,7 @@ function BonusSettings() {
 
   return (
     <div className="space-y-3">
+      <AdsSettingsCard />
       <AppLinksCard />
       <TestApkUploadCard />
       <ApkUploadCard />
