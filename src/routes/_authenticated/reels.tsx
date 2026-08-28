@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { markWatching, awardCoins } from "@/lib/coins";
 import { WatchCoinBar } from "@/components/social/CoinWallet";
+import { playUiSound } from "@/lib/ui-sounds";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -241,9 +242,16 @@ function ReelsPage() {
       const path = await uploadPostMedia(file, file.name, user.id);
       return createPost(user.id, "", undefined, path);
     },
-    onSuccess: () => {
+    onSuccess: (post) => {
       toast.success("রিল আপলোড হয়েছে");
       queryClient.invalidateQueries({ queryKey: ["reels-local-posts"] });
+      void awardCoins("reel", (post as { id?: string } | undefined)?.id).then((c) => {
+        if (c > 0) {
+          playUiSound("coin");
+          toast.success(`+${c} কয়েন পেয়েছেন 🪙`);
+          queryClient.invalidateQueries({ queryKey: ["coin-summary"] });
+        }
+      });
     },
     onError: () => toast.error("আপলোড ব্যর্থ হয়েছে"),
     onSettled: () => setUploading(false),
