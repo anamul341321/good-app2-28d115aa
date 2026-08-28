@@ -138,6 +138,21 @@ export function Composer({
     }
   };
 
+  /** রেকর্ডিং বাতিল — কিছুই পাঠানো হবে না */
+  const cancelRec = async () => {
+    const recorder = rec.current;
+    rec.current = null;
+    window.clearInterval(timer.current);
+    setRecSec(0);
+    setRecording(false);
+    try {
+      await recorder?.stop();
+    } catch {}
+    toast.info("ভয়েস মেসেজ বাতিল হয়েছে");
+  };
+
+
+
 
 
   return (
