@@ -1,3 +1,4 @@
+import { markWatching, } from "@/lib/coins";
 import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
@@ -930,6 +931,7 @@ function InlinePlayer({
             autoPlay
             playsInline
             preload="metadata"
+            onTimeUpdate={(e) => { const v = e.currentTarget; if (!v.paused && !v.ended) markWatching(); }}
             onLoadedData={() => setLocalMediaFailed(false)}
             onError={() => setLocalMediaFailed(true)}
             onEnded={playNext}

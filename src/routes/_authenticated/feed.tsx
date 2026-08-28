@@ -26,6 +26,9 @@ import { PeopleYouMayKnow } from "@/components/social/PeopleYouMayKnow";
 import { getPublicProfile } from "@/lib/social-users.functions";
 import { playUiSound } from "@/lib/ui-sounds";
 import VerifiedBadge from "@/components/VerifiedBadge";
+import { CoinWalletButton, CoinWalletSheet, WatchCoinBar } from "@/components/social/CoinWallet";
+import { awardCoins, markWatching } from "@/lib/coins";
+import { compressImage } from "@/lib/image-compress";
 
 export const Route = createFileRoute("/_authenticated/feed")({
   component: FeedPage,
@@ -144,6 +147,7 @@ function FeedVideoPlayer({
         onTimeUpdate={(e) => {
           const v = e.currentTarget;
           if (v.duration) setProgress((v.currentTime / v.duration) * 100);
+          if (!v.paused && !v.ended) markWatching();
         }}
         onLoadedMetadata={(e) => setDuration(e.currentTarget.duration || 0)}
         onClick={() => {
@@ -276,6 +280,7 @@ function FeedPage() {
   const [storyEditorFile, setStoryEditorFile] = useState<File | null>(null);
   const [replyingTo, setReplyingTo] = useState<{ id: string; name: string } | null>(null);
   const [expandedReplies, setExpandedReplies] = useState<Set<string>>(new Set());
+  const [showCoinWallet, setShowCoinWallet] = useState(false);
   const POSTS_PER_PAGE = 20;
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -423,19 +428,36 @@ function FeedPage() {
       if (!user) throw new Error("Login required");
       let imageUrl: string | undefined;
       let videoUrl: string | undefined;
-      if (postImageFiles.length > 0) {
-        const urls: string[] = [];
-        for (const file of postImageFiles) urls.push(await uploadPostMedia(file, file.name, user.id));
-        imageUrl = urls.join(",");
-      }
-      if (postVideoFile) videoUrl = await uploadPostMedia(postVideoFile, postVideoFile.name, user.id);
+      // ছবিগুলো আগে ছোট করে, একসাথে (parallel) আপলোড — স্লো নেটেও দ্রুত পোস্ট হবে
+      const [imageResult, videoResult] = await Promise.all([
+        postImageFiles.length > 0
+          ? Promise.all(
+              postImageFiles.map(async (file) => {
+                const small = await compressImage(file);
+                return uploadPostMedia(small, small.name, user.id);
+              }),
+            ).then((urls) => urls.join(","))
+          : Promise.resolve(undefined),
+        postVideoFile
+          ? uploadPostMedia(postVideoFile, postVideoFile.name, user.id)
+          : Promise.resolve(undefined),
+      ]);
+      imageUrl = imageResult;
+      videoUrl = videoResult;
       return createPost(user.id, postContent, imageUrl, videoUrl);
     },
-    onSuccess: () => {
+    onSuccess: (post) => {
       setPostContent(""); setPostImageFiles([]); setPostImagePreviews([]);
       setPostVideoFile(null); setPostVideoPreview(null); setShowCreatePost(false);
       queryClient.invalidateQueries({ queryKey: ["feed-posts"] });
       toast.success("পোস্ট প্রকাশিত! 🎉");
+      void awardCoins("post", (post as Post | undefined)?.id).then((c) => {
+        if (c > 0) {
+          playUiSound("coin");
+          toast.success(`+${c} কয়েন পেয়েছেন 🪙`);
+          queryClient.invalidateQueries({ queryKey: ["coin-summary"] });
+        }
+      });
     },
     onError: (e: Error) => toast.error(e.message || "পোস্ট করা যায়নি"),
   });
@@ -537,6 +559,9 @@ function FeedPage() {
     onSuccess: () => {
       if (commentingPostId) loadComments(commentingPostId);
       queryClient.invalidateQueries({ queryKey: ["feed-posts", searchQuery] });
+      void awardCoins("comment", commentingPostId ?? undefined).then((c) => {
+        if (c > 0) queryClient.invalidateQueries({ queryKey: ["coin-summary"] });
+      });
     },
     onError: () => { if (commentingPostId) loadComments(commentingPostId); },
   });
@@ -560,14 +585,22 @@ function FeedPage() {
   const storyMutation = useMutation({
     mutationFn: async ({ files, musicName }: { files: File[]; musicName?: string }) => {
       if (!user) throw new Error("Login");
-      for (const file of files) {
-        const url = await uploadStoryMedia(file, user.id);
-        await createStory(user.id, url, musicName);
-      }
+      // স্টোরির ছবি ছোট করে একসাথে আপলোড — স্লো নেটেও সাথে সাথে যাবে
+      const urls = await Promise.all(
+        files.map(async (file) => uploadStoryMedia(await compressImage(file, 1280, 0.7), user.id)),
+      );
+      for (const url of urls) await createStory(user.id, url, musicName);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["stories"] });
       toast.success("স্টোরি যোগ হয়েছে! ✨");
+      void awardCoins("story").then((c) => {
+        if (c > 0) {
+          playUiSound("coin");
+          toast.success(`+${c} কয়েন পেয়েছেন 🪙`);
+          queryClient.invalidateQueries({ queryKey: ["coin-summary"] });
+        }
+      });
     },
   });
 
@@ -989,7 +1022,8 @@ function FeedPage() {
             </Link>
             <h1 className="text-[28px] font-black tracking-normal text-blue-600">good-app</h1>
           </div>
-          <div className="flex items-center gap-0.5">
+          <div className="flex items-center gap-1">
+            <CoinWalletButton onClick={() => setShowCoinWallet(true)} />
             <button onClick={() => setShowCreatePost(true)} className="w-9 h-9 rounded-full bg-gray-100 text-gray-700 flex items-center justify-center transition-colors hover:bg-gray-200 dark:bg-secondary dark:text-foreground">
               <Plus className="w-5 h-5" />
             </button>
@@ -1589,6 +1623,9 @@ function FeedPage() {
           timeAgo={timeAgo}
         />
       )}
+
+      <WatchCoinBar />
+      {showCoinWallet && <CoinWalletSheet onClose={() => setShowCoinWallet(false)} />}
     </div>
   );
 }

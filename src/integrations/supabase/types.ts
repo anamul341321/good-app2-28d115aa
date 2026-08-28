@@ -826,6 +826,57 @@ export type Database = {
         }
         Relationships: []
       }
+      coin_ledger: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          reason: string
+          reference_id: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          reason: string
+          reference_id?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          reason?: string
+          reference_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      coin_wallets: {
+        Row: {
+          balance: number
+          created_at: string
+          total_earned: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          balance?: number
+          created_at?: string
+          total_earned?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          balance?: number
+          created_at?: string
+          total_earned?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       comment_likes: {
         Row: {
           comment_id: string
@@ -3045,6 +3096,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      assert_coin_self: { Args: { _user_id: string }; Returns: undefined }
+      award_coin_event: {
+        Args: { _event: string; _reference_id?: string; _user_id: string }
+        Returns: Json
+      }
       claim_all_slot_mining: { Args: { _user_id: string }; Returns: Json }
       claim_mining_earnings: { Args: { _user_id: string }; Returns: Json }
       claim_mining_to_main: { Args: { _user_id: string }; Returns: Json }
@@ -3055,6 +3111,10 @@ export type Database = {
       }
       claim_slot_reward: {
         Args: { _task_id: string; _user_id: string }
+        Returns: Json
+      }
+      claim_watch_coins: {
+        Args: { _seconds: number; _user_id: string }
         Returns: Json
       }
       claim_welcome_bonuses: { Args: { _user_id: string }; Returns: Json }
@@ -3106,6 +3166,7 @@ export type Database = {
         Returns: number
       }
       expire_unanswered_calls: { Args: never; Returns: number }
+      get_coin_summary: { Args: { _user_id: string }; Returns: Json }
       get_user_balance_breakdown: { Args: { _user_id: string }; Returns: Json }
       get_whitelist_cron_secret: { Args: never; Returns: string }
       has_role: {

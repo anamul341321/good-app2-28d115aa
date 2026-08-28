@@ -5,6 +5,8 @@ import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Loader2, UploadCloud, Image as ImageIcon, Video } from "lucide-react";
 import { createLongVideoUploadWithThumbnail, uploadPostMedia } from "@/lib/feed-api";
+import { awardCoins } from "@/lib/coins";
+import { playUiSound } from "@/lib/ui-sounds";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -72,6 +74,12 @@ function StudioPage() {
     },
     onSuccess: (post) => {
       toast.success("ভিডিও আপলোড হয়েছে");
+      void awardCoins("reel", post?.id).then((c) => {
+        if (c > 0) {
+          playUiSound("coin");
+          toast.success(`+${c} কয়েন পেয়েছেন 🪙`);
+        }
+      });
       navigate({ to: "/watch/$postId", params: { postId: post.id } });
     },
     onError: () => toast.error("আপলোড ব্যর্থ হয়েছে"),

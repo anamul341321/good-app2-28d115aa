@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ShieldCheck, Database, Eye, Trash2, Lock, Mail, ArrowLeft, Baby, Share2, Clock, UserCheck, ScanFace } from "lucide-react";
+import { ShieldCheck, Database, Eye, Trash2, Lock, Mail, ArrowLeft, Baby, Share2, Clock, UserCheck, ScanFace, Coins } from "lucide-react";
 
 export const Route = createFileRoute("/privacy")({
   head: () => ({
@@ -121,8 +121,20 @@ const SECTIONS: { icon: React.ElementType; title: string; points: string[] }[] =
     ],
   },
   {
+    icon: Coins,
+    title: "১০. Good Coin (ইন-অ্যাপ রিওয়ার্ড পয়েন্ট)",
+    points: [
+      "Good Coin একটি সম্পূর্ণ ইন-অ্যাপ ভার্চুয়াল পয়েন্ট — এটি কোনো ক্রিপ্টোকারেন্সি, সিকিউরিটি, লটারি বা বাস্তব মুদ্রা নয় এবং এর কোনো নগদ মূল্য নির্ধারিত নেই।",
+      "কয়েন কেনা যায় না; শুধু অ্যাপে স্বাভাবিক ব্যবহারে (ভিডিও দেখা, পোস্ট/রিলস/স্টোরি দেওয়া, কমেন্ট বা মেসেজ) পাওয়া যায়। কয়েন পেতে কোনো টাকা দিতে হয় না।",
+      "ভিডিও দেখার সময় কতক্ষণ দেখা হলো তা শুধু কয়েন হিসাব করার জন্য গণনা করা হয়; কোনো ভিডিও বা স্ক্রিন রেকর্ড করা হয় না।",
+      "প্রতারণা রোধে দৈনিক সীমা আছে এবং সব কয়েন হিসাব সার্ভারে যাচাই হয়। অস্বাভাবিক/স্বয়ংক্রিয় (বট) ব্যবহারে কয়েন বাতিল হতে পারে।",
+      "‘কয়েন এক্সচেঞ্জ’ ফিচারটি এখনো চালু হয়নি (Coming Soon)। ভবিষ্যতে চালু হলে শর্ত ও রেট অ্যাপে আগেই জানানো হবে; বর্তমানে কয়েনের বিনিময়ে কোনো অর্থ বা পুরস্কারের প্রতিশ্রুতি দেওয়া হচ্ছে না।",
+      "কয়েন হস্তান্তরযোগ্য নয় এবং একাউন্ট বন্ধ/বাতিল হলে জমা কয়েনও বাতিল হয়ে যায়।",
+    ],
+  },
+  {
     icon: Mail,
-    title: "১০. যোগাযোগ",
+    title: "১১. যোগাযোগ",
     points: [
       "গোপনীয়তা সংক্রান্ত যেকোনো প্রশ্ন বা ডেটা মুছে ফেলার অনুরোধে অ্যাপের সাপোর্টে যোগাযোগ করুন।",
       "যোগাযোগ ইমেইল: support@goodapp2.live",

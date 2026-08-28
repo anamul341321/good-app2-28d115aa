@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ChevronLeft, Info, Check, X, UserPlus, Loader2, Maximize2, MoreVertical, Trash2, Ban } from "lucide-react";
 import { deleteMessage, deleteAllMessages, getThread, markChatRead, sendMessage } from "@/lib/chat.functions";
+import { awardCoins } from "@/lib/coins";
 import { respondFriendRequest, sendFriendRequest } from "@/lib/friends.functions";
 import { CallButtons } from "@/components/CallProvider";
 import { playSentTone } from "@/lib/msg-sound";
@@ -83,6 +84,7 @@ function ThreadPage() {
     onSuccess: () => {
       playSentTone();
       refresh();
+      void awardCoins("message");
     },
     onError: (e: any) => toast.error(e?.message ?? "Failed to send"),
   });
