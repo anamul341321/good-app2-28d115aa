@@ -90,6 +90,31 @@ function CoinWalletPage() {
   const [tgUsername, setTgUsername] = useState("");
 
   const history = useQuery({ queryKey: ["coin-history"], queryFn: () => getCoinHistory() });
+  const checkin = useQuery({ queryKey: ["coin-checkin"], queryFn: () => getDailyCheckin(), refetchInterval: 60_000 });
+  const [checkinBusy, setCheckinBusy] = useState(false);
+
+  const claimCheckin = async () => {
+    if (checkinBusy) return;
+    setCheckinBusy(true);
+    try {
+      const res = await claimDailyCheckin();
+      if (res.awarded > 0) {
+        celebrate();
+        toast.success(`ডেইলি চেক-ইন বোনাস +${res.awarded} কয়েন! 🪙`);
+      } else if (res.already) {
+        toast.info("আজকের চেক-ইন আগেই নেওয়া হয়েছে");
+      } else {
+        toast.error("আজকের টার্গেট এখনো পূরণ হয়নি");
+      }
+      queryClient.invalidateQueries({ queryKey: ["coin-checkin"] });
+      queryClient.invalidateQueries({ queryKey: ["coin-summary"] });
+      queryClient.invalidateQueries({ queryKey: ["coin-history"] });
+    } catch {
+      toast.error("ক্লেইম করা যায়নি — পরে চেষ্টা করুন");
+    } finally {
+      setCheckinBusy(false);
+    }
+  };
 
   const celebrate = () => {
     playUiSound("coin");
