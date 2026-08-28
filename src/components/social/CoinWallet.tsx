@@ -148,6 +148,19 @@ export function WatchCoinBar() {
 
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-16 z-[90] flex justify-center px-3">
+      {flash && (
+        <div className="pointer-events-none absolute -top-2 flex justify-center" aria-hidden>
+          {["-36px", "-18px", "0px", "18px", "36px", "10px"].map((x, i) => (
+            <span
+              key={i}
+              className="coin-burst absolute text-xl"
+              style={{ ["--burst-x" as string]: x, animationDelay: `${i * 60}ms` }}
+            >
+              🪙
+            </span>
+          ))}
+        </div>
+      )}
       <button
         type="button"
         onClick={claim}

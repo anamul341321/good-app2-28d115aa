@@ -26,7 +26,7 @@ import { PeopleYouMayKnow } from "@/components/social/PeopleYouMayKnow";
 import { getPublicProfile } from "@/lib/social-users.functions";
 import { playUiSound } from "@/lib/ui-sounds";
 import VerifiedBadge from "@/components/VerifiedBadge";
-import { CoinWalletButton, CoinWalletSheet, WatchCoinBar } from "@/components/social/CoinWallet";
+import { CoinWalletButton, WatchCoinBar } from "@/components/social/CoinWallet";
 import { awardCoins, markWatching } from "@/lib/coins";
 import { compressImage } from "@/lib/image-compress";
 
@@ -280,7 +280,7 @@ function FeedPage() {
   const [storyEditorFile, setStoryEditorFile] = useState<File | null>(null);
   const [replyingTo, setReplyingTo] = useState<{ id: string; name: string } | null>(null);
   const [expandedReplies, setExpandedReplies] = useState<Set<string>>(new Set());
-  const [showCoinWallet, setShowCoinWallet] = useState(false);
+  
   const POSTS_PER_PAGE = 20;
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -1023,7 +1023,7 @@ function FeedPage() {
             <h1 className="text-[28px] font-black tracking-normal text-blue-600">good-app</h1>
           </div>
           <div className="flex items-center gap-1">
-            <CoinWalletButton onClick={() => setShowCoinWallet(true)} />
+            <CoinWalletButton onClick={() => navigate({ to: "/coins" })} />
             <button onClick={() => setShowCreatePost(true)} className="w-9 h-9 rounded-full bg-gray-100 text-gray-700 flex items-center justify-center transition-colors hover:bg-gray-200 dark:bg-secondary dark:text-foreground">
               <Plus className="w-5 h-5" />
             </button>
@@ -1625,7 +1625,7 @@ function FeedPage() {
       )}
 
       <WatchCoinBar />
-      {showCoinWallet && <CoinWalletSheet onClose={() => setShowCoinWallet(false)} />}
+      
     </div>
   );
 }
