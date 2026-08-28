@@ -8,7 +8,7 @@ import {
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCoinSummary } from "@/components/social/CoinWallet";
 import { formatCoins, COIN_RATES, TELEGRAM_GROUP_URL } from "@/lib/coins";
-import { getCoinHistory, claimTelegramByUsername } from "@/lib/coins.functions";
+import { getCoinHistory, claimTelegramByUsername, getDailyCheckin, claimDailyCheckin } from "@/lib/coins.functions";
 import { toast } from "sonner";
 import { playUiSound } from "@/lib/ui-sounds";
 
