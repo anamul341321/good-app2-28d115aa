@@ -53,9 +53,10 @@ import { useMediaFullscreen } from "@/hooks/use-media-fullscreen";
 
 export const Route = createFileRoute("/_authenticated/reels")({
   component: ReelsPage,
-  validateSearch: (search: Record<string, unknown>): { postId?: string } => {
+  validateSearch: (search: Record<string, unknown>): { postId?: string; upload?: boolean } => {
     const postId = typeof search.postId === "string" ? search.postId : undefined;
-    return postId ? { postId } : {};
+    const upload = search["upload"] === true || search["upload"] === "1" || search["upload"] === "true";
+    return { ...(postId ? { postId } : {}), ...(upload ? { upload: true } : {}) };
   },
   head: () => ({
     meta: [
@@ -159,7 +160,7 @@ function ReelsPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { postId: selectedPostId } = Route.useSearch();
+  const { postId: selectedPostId, upload: autoUpload } = Route.useSearch();
   const { items, isLoading, isError } = useCombinedReels(selectedPostId);
   const containerRef = useRef<HTMLDivElement>(null);
   const selectedScrollHandledRef = useRef<string | null>(null);
@@ -168,6 +169,14 @@ function ReelsPage() {
   const [commentPostId, setCommentPostId] = useState<string | null>(null);
   const uploadInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+
+  // ?upload=1 দিয়ে এলে সরাসরি ভিডিও পিকার খুলবে
+  const autoUploadRef = useRef(false);
+  useEffect(() => {
+    if (!autoUpload || autoUploadRef.current) return;
+    autoUploadRef.current = true;
+    setTimeout(() => uploadInputRef.current?.click(), 300);
+  }, [autoUpload]);
 
   const updateActiveFromScroll = useCallback(() => {
     const root = containerRef.current;

@@ -32,6 +32,12 @@ import { compressImage } from "@/lib/image-compress";
 
 export const Route = createFileRoute("/_authenticated/feed")({
   component: FeedPage,
+  // ?compose=post → সরাসরি পোস্ট লেখার বক্স, ?compose=story → স্টোরি সিলেক্টর
+  validateSearch: (search: Record<string, unknown>): { compose?: "post" | "photo" | "video" | "story" } => {
+    const c = String(search["compose"] ?? "");
+    return c === "post" || c === "photo" || c === "video" || c === "story" ? { compose: c } : {};
+  },
+
   head: () => ({
     meta: [
       { title: "নিউজ ফিড — Good-App" },
@@ -291,6 +297,22 @@ function FeedPage() {
   const tapTimerRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const sentinelRef = useRef<HTMLDivElement>(null);
   const feedVideoRefs = useRef<Record<string, HTMLVideoElement | null>>({});
+
+  // ?compose=... দিয়ে এলে সরাসরি নির্দিষ্ট অ্যাকশন খুলে যাবে (কয়েন ওয়ালেট থেকে আসা লিংক)
+  const { compose } = Route.useSearch();
+  const composeHandledRef = useRef(false);
+  useEffect(() => {
+    if (!compose || composeHandledRef.current) return;
+    composeHandledRef.current = true;
+    if (compose === "story") {
+      setTimeout(() => storyInputRef.current?.click(), 250);
+      return;
+    }
+    setShowCreatePost(true);
+    if (compose === "photo") setTimeout(() => fileInputRef.current?.click(), 350);
+    if (compose === "video") setTimeout(() => videoInputRef.current?.click(), 350);
+  }, [compose]);
+
 
   useEffect(() => {
     if (!isLoading && !user) navigate({ to: "/" });
