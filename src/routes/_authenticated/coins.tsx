@@ -84,6 +84,8 @@ function CoinWalletPage() {
   const joined = !!data?.telegram_joined;
   const [verifying, setVerifying] = useState(false);
   const [burst, setBurst] = useState(false);
+  const [askUsername, setAskUsername] = useState(false);
+  const [tgUsername, setTgUsername] = useState("");
 
   const history = useQuery({ queryKey: ["coin-history"], queryFn: () => getCoinHistory() });
 
