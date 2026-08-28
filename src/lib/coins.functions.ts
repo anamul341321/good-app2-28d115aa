@@ -221,3 +221,35 @@ export const claimTelegramByUsername = createServerFn({ method: "POST" })
       already: !!result?.already,
     };
   });
+
+export type DailyCheckin = {
+  likes: number;
+  comments: number;
+  messages: number;
+  need_likes: number;
+  need_comments: number;
+  need_messages: number;
+  reward: number;
+  claimed: boolean;
+  eligible: boolean;
+};
+
+/** আজকের ডেইলি চেক-ইন প্রগ্রেস (৫ লাইক + ২ কমেন্ট + ৩ মেসেজ) */
+export const getDailyCheckin = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const { data, error } = await (supabase as any).rpc("get_daily_checkin", { _user_id: userId });
+    if (error) throw new Error(error.message);
+    return data as DailyCheckin;
+  });
+
+/** দিনে একবার ১০০০ কয়েন ক্লেইম */
+export const claimDailyCheckin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const { data, error } = await (supabase as any).rpc("claim_daily_checkin", { _user_id: userId });
+    if (error) throw new Error(error.message);
+    return data as { ok: boolean; awarded: number; already?: boolean; reason?: string; balance?: number; progress: DailyCheckin };
+  });
