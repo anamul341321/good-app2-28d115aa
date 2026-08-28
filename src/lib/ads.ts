@@ -38,12 +38,13 @@ export async function initAds() {
   const AdMob = await getAdMob();
   if (!AdMob) return;
   try {
-    await AdMob.initialize({ initializeForTesting: false });
+    await AdMob.initialize({ initializeForTesting: cfg.test });
     initialized = true;
   } catch (e) {
     console.warn("AdMob init failed", e);
   }
 }
+
 
 const DAY_KEY = "ga_last_daily_ad";
 
@@ -66,8 +67,9 @@ export async function showDailyAppOpenAd() {
   try {
     await AdMob.prepareInterstitial({
       adId: cfg.interstitialUnit || ADS_CONFIG.interstitialId,
-      isTesting: false,
+      isTesting: cfg.test,
     });
+
     await AdMob.showInterstitial();
     localStorage.setItem(DAY_KEY, today);
   } catch {
@@ -85,8 +87,9 @@ export async function showRewardedAd(): Promise<boolean> {
   try {
     await AdMob.prepareRewardVideoAd({
       adId: cfg.rewardedUnit || ADS_CONFIG.rewardedId,
-      isTesting: false,
+      isTesting: cfg.test,
     });
+
     const res = await AdMob.showRewardVideoAd();
     return !!(res as any)?.reward;
   } catch {
@@ -110,8 +113,9 @@ export async function showBottomBanner() {
       adSize: BannerAdSize.ADAPTIVE_BANNER,
       position: BannerAdPosition.BOTTOM_CENTER,
       margin: 0,
-      isTesting: false,
+      isTesting: cfg.test,
     });
+
     bannerShown = true;
   } catch {
     // চুপচাপ বাদ

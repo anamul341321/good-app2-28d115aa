@@ -2,6 +2,7 @@ import { getAppStatus } from "@/lib/app-status.functions";
 
 export type AdsConfig = {
   enabled: boolean;
+  test: boolean;
   banner: boolean;
   rewarded: boolean;
   appOpen: boolean;
@@ -12,6 +13,7 @@ export type AdsConfig = {
 
 const OFF: AdsConfig = {
   enabled: false,
+  test: false,
   banner: false,
   rewarded: false,
   appOpen: false,
@@ -19,6 +21,7 @@ const OFF: AdsConfig = {
   interstitialUnit: null,
   rewardedUnit: null,
 };
+
 
 let cache: AdsConfig | null = null;
 let inflight: Promise<AdsConfig> | null = null;
@@ -33,6 +36,7 @@ export async function loadAdsConfig(): Promise<AdsConfig> {
       const enabled = s?.adsEnabled === true;
       const cfg: AdsConfig = {
         enabled,
+        test: enabled && s?.adsTestMode === true,
         banner: enabled && s?.adsBannerEnabled !== false,
         rewarded: enabled && s?.adsRewardedEnabled !== false,
         appOpen: enabled && s?.adsAppOpenEnabled !== false,
@@ -40,6 +44,7 @@ export async function loadAdsConfig(): Promise<AdsConfig> {
         interstitialUnit: s?.adsInterstitialUnit ?? null,
         rewardedUnit: s?.adsRewardedUnit ?? null,
       };
+
       cache = cfg;
       return cfg;
     } catch {

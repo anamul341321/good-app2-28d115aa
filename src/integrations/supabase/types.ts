@@ -278,6 +278,7 @@ export type Database = {
           ads_interstitial_unit: string | null
           ads_rewarded_enabled: boolean
           ads_rewarded_unit: string | null
+          ads_test_mode: boolean | null
           apk_url: string | null
           apk_version: string | null
           auto_payout_enabled: boolean
@@ -333,6 +334,7 @@ export type Database = {
           ads_interstitial_unit?: string | null
           ads_rewarded_enabled?: boolean
           ads_rewarded_unit?: string | null
+          ads_test_mode?: boolean | null
           apk_url?: string | null
           apk_version?: string | null
           auto_payout_enabled?: boolean
@@ -388,6 +390,7 @@ export type Database = {
           ads_interstitial_unit?: string | null
           ads_rewarded_enabled?: boolean
           ads_rewarded_unit?: string | null
+          ads_test_mode?: boolean | null
           apk_url?: string | null
           apk_version?: string | null
           auto_payout_enabled?: boolean

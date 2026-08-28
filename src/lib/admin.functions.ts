@@ -3132,6 +3132,7 @@ export const adminFaceSignupKeys = createServerFn({ method: "GET" }).handler(asy
 export const adminSetAdsSettings = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => z.object({
     enabled: z.boolean(),
+    testMode: z.boolean().optional(),
     banner: z.boolean().optional(),
     rewarded: z.boolean().optional(),
     appOpen: z.boolean().optional(),
@@ -3146,6 +3147,7 @@ export const adminSetAdsSettings = createServerFn({ method: "POST" })
       ads_enabled: data.enabled,
       updated_at: new Date().toISOString(),
     };
+    if (data.testMode !== undefined) patch.ads_test_mode = data.testMode;
     if (data.banner !== undefined) patch.ads_banner_enabled = data.banner;
     if (data.rewarded !== undefined) patch.ads_rewarded_enabled = data.rewarded;
     if (data.appOpen !== undefined) patch.ads_appopen_enabled = data.appOpen;
@@ -3156,3 +3158,4 @@ export const adminSetAdsSettings = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
