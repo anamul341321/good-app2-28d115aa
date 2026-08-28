@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { markWatching } from "@/lib/coins";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -707,6 +708,7 @@ function LocalReel({
           muted={muted}
           poster={posterUrl}
           preload="auto"
+          onTimeUpdate={(e) => { const v = e.currentTarget; if (!v.paused && !v.ended) markWatching(); }}
           onLoadedData={() => setMediaFailed(false)}
           onError={() => setMediaFailed(true)}
         />
@@ -922,6 +924,7 @@ function ExternalReel({
           loop
           playsInline
           muted={muted}
+          onTimeUpdate={(e) => { const v = e.currentTarget; if (!v.paused && !v.ended) markWatching(); }}
         />
       ) : isActive ? (
         // pointer-events-none — না হলে ইফ্রেম টাচ খেয়ে ফেলে, স্ক্রল/সোয়াইপ কাজ করে না

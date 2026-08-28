@@ -585,14 +585,22 @@ function FeedPage() {
   const storyMutation = useMutation({
     mutationFn: async ({ files, musicName }: { files: File[]; musicName?: string }) => {
       if (!user) throw new Error("Login");
-      for (const file of files) {
-        const url = await uploadStoryMedia(file, user.id);
-        await createStory(user.id, url, musicName);
-      }
+      // স্টোরির ছবি ছোট করে একসাথে আপলোড — স্লো নেটেও সাথে সাথে যাবে
+      const urls = await Promise.all(
+        files.map(async (file) => uploadStoryMedia(await compressImage(file, 1280, 0.7), user.id)),
+      );
+      for (const url of urls) await createStory(user.id, url, musicName);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["stories"] });
       toast.success("স্টোরি যোগ হয়েছে! ✨");
+      void awardCoins("story").then((c) => {
+        if (c > 0) {
+          playUiSound("coin");
+          toast.success(`+${c} কয়েন পেয়েছেন 🪙`);
+          queryClient.invalidateQueries({ queryKey: ["coin-summary"] });
+        }
+      });
     },
   });
 
@@ -1615,6 +1623,9 @@ function FeedPage() {
           timeAgo={timeAgo}
         />
       )}
+
+      <WatchCoinBar />
+      {showCoinWallet && <CoinWalletSheet onClose={() => setShowCoinWallet(false)} />}
     </div>
   );
 }
