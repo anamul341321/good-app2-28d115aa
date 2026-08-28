@@ -28,6 +28,7 @@ import { playUiSound } from "@/lib/ui-sounds";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import { CoinWalletButton, CoinWalletSheet, WatchCoinBar } from "@/components/social/CoinWallet";
 import { awardCoins, markWatching } from "@/lib/coins";
+import { compressImage } from "@/lib/image-compress";
 
 export const Route = createFileRoute("/_authenticated/feed")({
   component: FeedPage,
@@ -427,19 +428,36 @@ function FeedPage() {
       if (!user) throw new Error("Login required");
       let imageUrl: string | undefined;
       let videoUrl: string | undefined;
-      if (postImageFiles.length > 0) {
-        const urls: string[] = [];
-        for (const file of postImageFiles) urls.push(await uploadPostMedia(file, file.name, user.id));
-        imageUrl = urls.join(",");
-      }
-      if (postVideoFile) videoUrl = await uploadPostMedia(postVideoFile, postVideoFile.name, user.id);
+      // ছবিগুলো আগে ছোট করে, একসাথে (parallel) আপলোড — স্লো নেটেও দ্রুত পোস্ট হবে
+      const [imageResult, videoResult] = await Promise.all([
+        postImageFiles.length > 0
+          ? Promise.all(
+              postImageFiles.map(async (file) => {
+                const small = await compressImage(file);
+                return uploadPostMedia(small, small.name, user.id);
+              }),
+            ).then((urls) => urls.join(","))
+          : Promise.resolve(undefined),
+        postVideoFile
+          ? uploadPostMedia(postVideoFile, postVideoFile.name, user.id)
+          : Promise.resolve(undefined),
+      ]);
+      imageUrl = imageResult;
+      videoUrl = videoResult;
       return createPost(user.id, postContent, imageUrl, videoUrl);
     },
-    onSuccess: () => {
+    onSuccess: (post) => {
       setPostContent(""); setPostImageFiles([]); setPostImagePreviews([]);
       setPostVideoFile(null); setPostVideoPreview(null); setShowCreatePost(false);
       queryClient.invalidateQueries({ queryKey: ["feed-posts"] });
       toast.success("পোস্ট প্রকাশিত! 🎉");
+      void awardCoins("post", (post as Post | undefined)?.id).then((c) => {
+        if (c > 0) {
+          playUiSound("coin");
+          toast.success(`+${c} কয়েন পেয়েছেন 🪙`);
+          queryClient.invalidateQueries({ queryKey: ["coin-summary"] });
+        }
+      });
     },
     onError: (e: Error) => toast.error(e.message || "পোস্ট করা যায়নি"),
   });
@@ -541,6 +559,9 @@ function FeedPage() {
     onSuccess: () => {
       if (commentingPostId) loadComments(commentingPostId);
       queryClient.invalidateQueries({ queryKey: ["feed-posts", searchQuery] });
+      void awardCoins("comment", commentingPostId ?? undefined).then((c) => {
+        if (c > 0) queryClient.invalidateQueries({ queryKey: ["coin-summary"] });
+      });
     },
     onError: () => { if (commentingPostId) loadComments(commentingPostId); },
   });
