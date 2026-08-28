@@ -298,6 +298,22 @@ function FeedPage() {
   const sentinelRef = useRef<HTMLDivElement>(null);
   const feedVideoRefs = useRef<Record<string, HTMLVideoElement | null>>({});
 
+  // ?compose=... দিয়ে এলে সরাসরি নির্দিষ্ট অ্যাকশন খুলে যাবে (কয়েন ওয়ালেট থেকে আসা লিংক)
+  const { compose } = Route.useSearch();
+  const composeHandledRef = useRef(false);
+  useEffect(() => {
+    if (!compose || composeHandledRef.current) return;
+    composeHandledRef.current = true;
+    if (compose === "story") {
+      setTimeout(() => storyInputRef.current?.click(), 250);
+      return;
+    }
+    setShowCreatePost(true);
+    if (compose === "photo") setTimeout(() => fileInputRef.current?.click(), 350);
+    if (compose === "video") setTimeout(() => videoInputRef.current?.click(), 350);
+  }, [compose]);
+
+
   useEffect(() => {
     if (!isLoading && !user) navigate({ to: "/" });
   }, [user, isLoading, navigate]);
