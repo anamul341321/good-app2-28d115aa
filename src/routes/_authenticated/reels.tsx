@@ -160,7 +160,7 @@ function ReelsPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { postId: selectedPostId } = Route.useSearch();
+  const { postId: selectedPostId, upload: autoUpload } = Route.useSearch();
   const { items, isLoading, isError } = useCombinedReels(selectedPostId);
   const containerRef = useRef<HTMLDivElement>(null);
   const selectedScrollHandledRef = useRef<string | null>(null);
