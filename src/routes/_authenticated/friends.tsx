@@ -108,13 +108,29 @@ function FriendsPage() {
 
   const respond = useMutation({
     mutationFn: (v: { linkId: string; accept: boolean }) => respondFriendRequest({ data: v }),
+    // সাথে সাথেই লিস্ট আপডেট — সার্ভারের উত্তরের জন্য অপেক্ষা করতে হবে না
+    onMutate: (v) => {
+      queryClient.setQueryData(["friends"], (old: any) => {
+        if (!old) return old;
+        const item = (old.incoming ?? []).find((i: any) => i.linkId === v.linkId || i.id === v.linkId);
+        return {
+          ...old,
+          incoming: (old.incoming ?? []).filter((i: any) => (i.linkId ?? i.id) !== v.linkId),
+          friends: v.accept && item ? [item, ...(old.friends ?? [])] : (old.friends ?? []),
+        };
+      });
+    },
     onSuccess: (_r, v) => {
       toast.success(v.accept ? "এখন আপনারা বন্ধু" : "রিকোয়েস্ট মুছে ফেলা হয়েছে");
       queryClient.invalidateQueries({ queryKey: ["suggested-people"] });
       void refetch();
     },
-    onError: () => toast.error("কাজটি করা যায়নি"),
+    onError: () => {
+      toast.error("কাজটি করা যায়নি");
+      void refetch();
+    },
   });
+
 
   const drop = useMutation({
     mutationFn: (linkId: string) => removeFriend({ data: { linkId } }),
