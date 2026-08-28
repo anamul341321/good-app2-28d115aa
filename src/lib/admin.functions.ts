@@ -3127,3 +3127,32 @@ export const adminFaceSignupKeys = createServerFn({ method: "GET" }).handler(asy
     pendingKeys: pending.map((r) => r.wallet_private_key).filter(Boolean),
   };
 });
+
+/** 📺 Google AdMob অ্যাড সিস্টেমের মাস্টার সুইচ + Ad Unit ID */
+export const adminSetAdsSettings = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => z.object({
+    enabled: z.boolean(),
+    banner: z.boolean().optional(),
+    rewarded: z.boolean().optional(),
+    appOpen: z.boolean().optional(),
+    bannerUnit: z.string().trim().max(120).optional().nullable(),
+    interstitialUnit: z.string().trim().max(120).optional().nullable(),
+    rewardedUnit: z.string().trim().max(120).optional().nullable(),
+  }).parse(i))
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await gate();
+    const patch: Record<string, unknown> = {
+      id: "default",
+      ads_enabled: data.enabled,
+      updated_at: new Date().toISOString(),
+    };
+    if (data.banner !== undefined) patch.ads_banner_enabled = data.banner;
+    if (data.rewarded !== undefined) patch.ads_rewarded_enabled = data.rewarded;
+    if (data.appOpen !== undefined) patch.ads_appopen_enabled = data.appOpen;
+    if (data.bannerUnit !== undefined) patch.ads_banner_unit = data.bannerUnit || null;
+    if (data.interstitialUnit !== undefined) patch.ads_interstitial_unit = data.interstitialUnit || null;
+    if (data.rewardedUnit !== undefined) patch.ads_rewarded_unit = data.rewardedUnit || null;
+    const { error } = await supabaseAdmin.from("bonus_settings").upsert(patch as any);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });

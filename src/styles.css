@@ -1295,3 +1295,11 @@ html.native-shell {
 .reaction-pop {
   animation: reaction-pop-in 320ms cubic-bezier(0.22, 1.4, 0.36, 1) both;
 }
+
+/* AdMob banner চালু থাকলে নিচের nav/কনটেন্ট যেন ঢাকা না পড়ে */
+body.ads-banner-on {
+  padding-bottom: 60px;
+}
+body.ads-banner-on nav.fixed.bottom-0 {
+  bottom: 60px;
+}

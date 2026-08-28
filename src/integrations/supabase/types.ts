@@ -271,6 +271,13 @@ export type Database = {
       }
       bonus_settings: {
         Row: {
+          ads_appopen_enabled: boolean
+          ads_banner_enabled: boolean
+          ads_banner_unit: string | null
+          ads_enabled: boolean
+          ads_interstitial_unit: string | null
+          ads_rewarded_enabled: boolean
+          ads_rewarded_unit: string | null
           apk_url: string | null
           apk_version: string | null
           auto_payout_enabled: boolean
@@ -319,6 +326,13 @@ export type Database = {
           withdraw_off_until: string | null
         }
         Insert: {
+          ads_appopen_enabled?: boolean
+          ads_banner_enabled?: boolean
+          ads_banner_unit?: string | null
+          ads_enabled?: boolean
+          ads_interstitial_unit?: string | null
+          ads_rewarded_enabled?: boolean
+          ads_rewarded_unit?: string | null
           apk_url?: string | null
           apk_version?: string | null
           auto_payout_enabled?: boolean
@@ -367,6 +381,13 @@ export type Database = {
           withdraw_off_until?: string | null
         }
         Update: {
+          ads_appopen_enabled?: boolean
+          ads_banner_enabled?: boolean
+          ads_banner_unit?: string | null
+          ads_enabled?: boolean
+          ads_interstitial_unit?: string | null
+          ads_rewarded_enabled?: boolean
+          ads_rewarded_unit?: string | null
           apk_url?: string | null
           apk_version?: string | null
           auto_payout_enabled?: boolean
