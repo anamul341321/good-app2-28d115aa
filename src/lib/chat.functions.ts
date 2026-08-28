@@ -303,15 +303,32 @@ export const deleteMessage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { id: string }) => ({ id: String(input?.id ?? "") }))
   .handler(async ({ data, context }) => {
-    if (!data.id) return { ok: false };
-    const { error } = await (context.supabase as any)
+    if (!data.id) return { ok: false, error: "invalid id" };
+    const sb = context.supabase as any;
+
+    // মেসেজটি আছে কি না ও আমি পাঠিয়েছি কি না দেখে নিই
+    const { data: row, error: findErr } = await sb
+      .from("friend_messages")
+      .select("id, sender_id")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (findErr) return { ok: false, error: findErr.message };
+    if (!row) return { ok: false, error: "মেসেজটি পাওয়া যায়নি" };
+    if (row.sender_id !== context.userId)
+      return { ok: false, error: "শুধু নিজের পাঠানো মেসেজ মোছা যাবে" };
+
+    const { data: updated, error } = await sb
       .from("friend_messages")
       .update({ deleted_at: new Date().toISOString(), body: "" })
       .eq("id", data.id)
-      .eq("sender_id", context.userId);
-    if (error) throw new Error("মেসেজ মোছা যায়নি");
+      .eq("sender_id", context.userId)
+      .select("id");
+    if (error) return { ok: false, error: error.message };
+    if (!updated || updated.length === 0)
+      return { ok: false, error: "মেসেজ মোছা যায়নি" };
     return { ok: true };
   });
+
 
 /** একজন পিয়ারের সাথে পুরো চ্যাট/মেসেজ ডিলিট (শুধু নিজের দৃষ্টিকোণ থেকে) */
 export const deleteAllMessages = createServerFn({ method: "POST" })

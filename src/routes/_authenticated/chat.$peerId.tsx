@@ -91,8 +91,16 @@ function ThreadPage() {
 
   const del = useMutation({
     mutationFn: (id: string) => deleteMessage({ data: { id } }),
-    onSuccess: refresh,
+    onSuccess: (res: any) => {
+      if (!res?.ok) {
+        toast.error(res?.error ?? "মেসেজ মোছা যায়নি");
+        return;
+      }
+      refresh();
+    },
+    onError: (e: any) => toast.error(e?.message ?? "মেসেজ মোছা যায়নি"),
   });
+
 
   const react = useMutation({
     mutationFn: ({ id, emoji }: { id: string; emoji: string | null }) =>
