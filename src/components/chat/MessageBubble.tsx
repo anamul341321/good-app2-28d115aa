@@ -493,8 +493,33 @@ export function MessageBubble({
           ) : (
             <p className="whitespace-pre-wrap break-words text-sm font-black leading-snug">{m.body}</p>
           )}
+
+          {/* মেসেঞ্জার-স্টাইল রিঅ্যাকশন ব্যাজ — বাবলের নিচের কোণে ভাসে */}
+          {!m.deleted && reactionChips.length > 0 && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onReact?.(m.id, myReaction);
+              }}
+              aria-label="রিঅ্যাকশন"
+              className={`absolute -bottom-3 ${mine ? "-left-2" : "-right-2"} z-10 flex items-center gap-0.5 rounded-full border border-border/60 bg-card px-1.5 py-0.5 shadow-md ${
+                myReaction ? "ring-1 ring-primary" : ""
+              }`}
+            >
+              {reactionChips.slice(0, 3).map(([emoji]) => (
+                <span key={emoji} className="text-[11px] leading-none">{emoji}</span>
+              ))}
+              {(() => {
+                const total = reactionChips.reduce((s, [, c]) => s + c, 0);
+                return total > 1 ? (
+                  <span className="text-[9px] font-black text-muted-foreground">{total}</span>
+                ) : null;
+              })()}
+            </button>
+          )}
         </div>
       </div>
+      
       
       {/* Seen — মেসেঞ্জার স্টাইল ছোট প্রোফাইল ছবি */}
       {mine && seenBy && !m.deleted && (
@@ -511,6 +536,8 @@ export function MessageBubble({
         onClose={() => setMenu(false)}
         onDelete={() => onDelete?.(m.id)}
         onReply={onReply ? () => onReply(m) : undefined}
+        onReact={onReact && !m.deleted ? (emoji) => onReact(m.id, emoji) : undefined}
+        myReaction={myReaction}
         mine={mine}
         position={menuPos}
       />
