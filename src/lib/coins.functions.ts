@@ -131,3 +131,93 @@ export const verifyTelegramJoin = createServerFn({ method: "POST" })
     return { linked: true, member: true, awarded: Number(data?.awarded ?? 0), already: !!data?.already };
   });
 
+
+export type TelegramUsernameClaimResult = {
+  ok: boolean;
+  awarded: number;
+  already: boolean;
+  error?: "not_found" | "not_member" | "duplicate" | "already_claimed";
+};
+
+/**
+ * Username দিয়ে টেলিগ্রাম জয়েন ক্লেইম:
+ * 1) username → tg_user_id (বট যে মেসেজগুলো দেখেছে সেখান থেকে)
+ * 2) বট দিয়ে getChatMember — গ্রুপে আছে কি না
+ * 3) ডুপ্লিকেট চেক — এই username দিয়ে আগে কেউ ক্লেইম করেছে কি না
+ */
+export const claimTelegramByUsername = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z.object({ username: z.string().trim().min(3).max(64) }).parse(i),
+  )
+  .handler(async ({ data, context }): Promise<TelegramUsernameClaimResult> => {
+    const { supabase, userId } = context;
+    const uname = data.username.replace(/^@/, "").replace(/^https?:\/\/t\.me\//i, "").trim();
+    const unameLc = uname.toLowerCase();
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // ১) ডুপ্লিকেট username চেক
+    const { data: dup } = await (supabaseAdmin as any)
+      .from("coin_telegram_claims")
+      .select("user_id")
+      .eq("username_lc", unameLc)
+      .maybeSingle();
+    if (dup && dup.user_id !== userId) {
+      return { ok: false, awarded: 0, already: false, error: "duplicate" };
+    }
+
+    // ২) username → tg_user_id
+    let tgId = 0;
+    const { data: msgs } = await (supabaseAdmin as any)
+      .from("tg_messages")
+      .select("tg_user_id")
+      .ilike("username", uname)
+      .not("tg_user_id", "is", null)
+      .order("created_at", { ascending: false })
+      .limit(1);
+    tgId = Number(msgs?.[0]?.tg_user_id ?? 0);
+    if (!tgId) {
+      const { data: off } = await (supabaseAdmin as any)
+        .from("tg_offenders")
+        .select("tg_user_id")
+        .ilike("username", uname)
+        .limit(1);
+      tgId = Number(off?.[0]?.tg_user_id ?? 0);
+    }
+    if (!tgId) {
+      const { data: sess } = await (supabaseAdmin as any)
+        .from("tg_sessions")
+        .select("tg_user_id")
+        .eq("app_user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(1);
+      tgId = Number(sess?.[0]?.tg_user_id ?? 0);
+    }
+    if (!tgId) return { ok: false, awarded: 0, already: false, error: "not_found" };
+
+    // ৩) গ্রুপ মেম্বারশিপ যাচাই
+    const { isTelegramGroupMember } = await import("@/lib/telegram-membership.server");
+    const member = await isTelegramGroupMember(tgId);
+    if (!member) return { ok: false, awarded: 0, already: false, error: "not_member" };
+
+    const { error: insErr } = await (supabaseAdmin as any)
+      .from("coin_telegram_claims")
+      .upsert(
+        { user_id: userId, username_lc: unameLc, tg_user_id: tgId },
+        { onConflict: "user_id" },
+      );
+    if (insErr && insErr.code === "23505") {
+      return { ok: false, awarded: 0, already: false, error: "duplicate" };
+    }
+
+    const { data: result, error } = await (supabase as any).rpc("claim_telegram_join", {
+      _user_id: userId,
+    });
+    if (error) throw new Error(error.message);
+    return {
+      ok: true,
+      awarded: Number(result?.awarded ?? 0),
+      already: !!result?.already,
+    };
+  });
