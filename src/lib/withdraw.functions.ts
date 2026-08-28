@@ -97,9 +97,29 @@ export const requestWithdraw = createServerFn({ method: "POST" })
       throw new Error((settings as any)?.withdraw_off_message || "উইথড্র রিকোয়েস্ট আপাতত বন্ধ আছে — একটু পরে আবার চেষ্টা করুন।");
     }
 
-    // Monthly withdraw window: only open on the 1st of every month (Asia/Dhaka).
-    if (!withdrawCountdownInfo(Date.now()).isOpen) {
-      throw new Error("উইথড্র প্রতি মাসের ১ তারিখে চালু হয় — আগামী ১ তারিখ পর্যন্ত অপেক্ষা করুন");
+    // Monthly withdraw window: opens on the 1st of every month (Asia/Dhaka).
+    // Ad Boost: 5 rewarded ads = 1 boost = 5 days less waiting (max 25 days).
+    {
+      const win = withdrawCountdownInfo(Date.now());
+      if (!win.isOpen) {
+        const cycleStart = new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString().slice(0, 7) + "-01";
+        const { count: adCount } = await supabase
+          .from("ad_views")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", userId)
+          .gte("cycle_month", cycleStart);
+        const boostInfo = adBoostWithdrawInfo({
+          now: Date.now(),
+          nextFirstAt: win.nextFirstAt,
+          isOpen: false,
+          boosts: Math.floor((adCount ?? 0) / AD_BOOST.adsPerBoost),
+        });
+        if (!boostInfo.unlocked) {
+          throw new Error(
+            `উইথড্র প্রতি মাসের ১ তারিখে চালু হয় — আরও ${boostInfo.effectiveDaysLeft} দিন বাকি। উইথড্র পেজে অ্যাড দেখে সময় কমাতে পারেন (${AD_BOOST.adsPerBoost}টি অ্যাড = ${AD_BOOST.daysPerBoost} দিন কম)।`,
+          );
+        }
+      }
     }
 
     const { data: userWallets } = await supabase.from("wallets").select("*").eq("user_id", userId);
