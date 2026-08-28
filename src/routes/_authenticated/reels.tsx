@@ -170,6 +170,14 @@ function ReelsPage() {
   const uploadInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
 
+  // ?upload=1 দিয়ে এলে সরাসরি ভিডিও পিকার খুলবে
+  const autoUploadRef = useRef(false);
+  useEffect(() => {
+    if (!autoUpload || autoUploadRef.current) return;
+    autoUploadRef.current = true;
+    setTimeout(() => uploadInputRef.current?.click(), 300);
+  }, [autoUpload]);
+
   const updateActiveFromScroll = useCallback(() => {
     const root = containerRef.current;
     if (!root) return;
