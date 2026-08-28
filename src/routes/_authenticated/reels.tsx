@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { markWatching } from "@/lib/coins";
+import { markWatching, awardCoins } from "@/lib/coins";
+import { WatchCoinBar } from "@/components/social/CoinWallet";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -359,6 +360,7 @@ function ReelsPage() {
         onClose={() => setCommentPostId(null)}
         userId={user?.id}
       />
+      <WatchCoinBar />
     </div>
   );
 }
