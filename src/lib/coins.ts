@@ -1,14 +1,28 @@
-import { awardCoinEvent, claimWatchCoins } from "@/lib/coins.functions";
+import { awardCoinEvent, claimWatchCoins, claimTelegramJoin } from "@/lib/coins.functions";
+
+export const TELEGRAM_GROUP_URL = "https://t.me/goodappbuy";
 
 export const COIN_RATES = {
-  reel: 12,
-  post: 10,
-  story: 4,
-  comment: 1,
-  message: 1,
+  reel: 500,
+  post: 400,
+  story: 200,
+  comment: 50,
+  message: 50,
+  watch: 30,
+  telegram: 1000,
 } as const;
 
-export type CoinEvent = keyof typeof COIN_RATES;
+export type CoinEvent = "reel" | "post" | "story" | "comment" | "message";
+
+export async function claimTelegramBonus(): Promise<{ awarded: number; already: boolean }> {
+  try {
+    const res = await claimTelegramJoin();
+    return { awarded: res?.awarded ?? 0, already: !!res?.already };
+  } catch {
+    return { awarded: 0, already: false };
+  }
+}
+
 
 /** Fire-and-forget coin award — never blocks or breaks the calling flow. */
 export async function awardCoins(event: CoinEvent, referenceId?: string): Promise<number> {
