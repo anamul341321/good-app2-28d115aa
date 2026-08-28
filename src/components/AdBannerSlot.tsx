@@ -18,18 +18,18 @@ export function AdBannerSlot() {
     let alive = true;
     if (blocked) {
       void hideBottomBanner();
-      document.body.style.paddingBottom = "";
+      document.body.classList.remove("ads-banner-on");
       return;
     }
     void isBannerActive().then((ok) => {
       if (!alive || !ok) return;
       void showBottomBanner();
-      document.body.style.paddingBottom = "60px";
+      document.body.classList.add("ads-banner-on");
     });
     return () => {
       alive = false;
       void hideBottomBanner();
-      document.body.style.paddingBottom = "";
+      document.body.classList.remove("ads-banner-on");
     };
   }, [blocked, path]);
 

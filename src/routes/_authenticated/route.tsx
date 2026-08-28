@@ -1,4 +1,5 @@
 import { createFileRoute, Outlet, Link, useRouter, useRouterState } from "@tanstack/react-router";
+import { AdBannerSlot } from "@/components/AdBannerSlot";
 import { supabase } from "@/integrations/supabase/client";
 import { Home, Wallet, ArrowDownToLine, ArrowLeft, LogOut, Loader2, RefreshCcw, User, Users, Settings, MoreVertical, PhoneCall, FileText, ShieldCheck, ScrollText, LayoutGrid } from "lucide-react";
 import {
@@ -271,6 +272,8 @@ function AuthedLayout() {
       )}
 
       {!isSocialRoute && <DailyFaceVerificationWarning />}
+
+      <AdBannerSlot />
 
       <main className={isSocialRoute ? "" : "max-w-md mx-auto px-4 pt-4"}>
         <Outlet />
