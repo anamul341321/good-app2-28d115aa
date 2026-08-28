@@ -160,11 +160,14 @@ export const getThread = createServerFn({ method: "POST" })
 
     const names = await peopleMap([data.peerId]);
     const p = names.get(data.peerId);
+    const merged = [
+      ...(await shapeMessages((rows ?? []) as any[])),
+      ...shapeCallMessages((calls ?? []) as any[]),
+    ].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    const { attachReactions } = await import("./chat.server");
+    await attachReactions(sb, merged as any[]);
     return {
-      messages: [
-        ...(await shapeMessages((rows ?? []) as any[])),
-        ...shapeCallMessages((calls ?? []) as any[]),
-      ].sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
+      messages: merged,
       peer: {
         userId: data.peerId,
         name: p?.display_name ?? "ইউজার",
