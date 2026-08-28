@@ -478,7 +478,7 @@ function FeedPage() {
       setPostContent(""); setPostImageFiles([]); setPostImagePreviews([]);
       setPostVideoFile(null); setPostVideoPreview(null); setShowCreatePost(false);
       queryClient.invalidateQueries({ queryKey: ["feed-posts"] });
-      toast.success("পোস্ট প্রকাশিত! 🎉");
+      toast.success("পোস্ট প্রকাশিত! 🎉", { id: "posting" });
       void awardCoins("post", (post as Post | undefined)?.id).then((c) => {
         if (c > 0) {
           playUiSound("coin");
@@ -487,7 +487,11 @@ function FeedPage() {
         }
       });
     },
-    onError: (e: Error) => toast.error(e.message || "পোস্ট করা যায়নি"),
+    onError: (e: Error) => {
+      toast.error(e.message || "পোস্ট করা যায়নি", { id: "posting" });
+      setShowCreatePost(true);
+    },
+
   });
 
   const deletePostMutation = useMutation({
