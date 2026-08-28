@@ -5,7 +5,11 @@ import {
   MessageCircle, Video, TrendingUp, CalendarClock, Gift, Lock,
 } from "lucide-react";
 import { useCoinSummary } from "@/components/social/CoinWallet";
-import { formatCoins, COIN_RATES } from "@/lib/coins";
+import { formatCoins, COIN_RATES, TELEGRAM_GROUP_URL, claimTelegramBonus } from "@/lib/coins";
+import { useQueryClient } from "@tanstack/react-query";
+import { Send } from "lucide-react";
+import { toast } from "sonner";
+import { playUiSound } from "@/lib/ui-sounds";
 
 export const Route = createFileRoute("/_authenticated/coins")({
   head: () => ({
@@ -39,22 +43,37 @@ function useCountUp(target: number, duration = 1200) {
 }
 
 const EARN_ITEMS = [
+  { icon: Send, label: "টেলিগ্রাম গ্রুপে জয়েন করলে (একবার)", coins: COIN_RATES.telegram, color: "text-sky-300", bg: "bg-sky-500/15" },
   { icon: Film, label: "রিলস আপলোড করলে", coins: COIN_RATES.reel, color: "text-pink-400", bg: "bg-pink-500/15" },
   { icon: ImageIcon, label: "পোস্ট করলে", coins: COIN_RATES.post, color: "text-sky-400", bg: "bg-sky-500/15" },
   { icon: Sparkles, label: "স্টোরি দিলে", coins: COIN_RATES.story, color: "text-violet-400", bg: "bg-violet-500/15" },
   { icon: MessageCircle, label: "মেসেজ / কমেন্ট করলে", coins: COIN_RATES.message, color: "text-emerald-400", bg: "bg-emerald-500/15" },
-  { icon: Video, label: "ভিডিও দেখলে (প্রতি ২০ সেকেন্ড)", coins: 1, color: "text-amber-400", bg: "bg-amber-500/15" },
+  { icon: Video, label: "ভিডিও দেখলে (প্রতি ২০ সেকেন্ড)", coins: COIN_RATES.watch, color: "text-amber-400", bg: "bg-amber-500/15" },
 ];
 
 function CoinWalletPage() {
   const navigate = useNavigate();
   const { data, isLoading } = useCoinSummary();
+  const queryClient = useQueryClient();
+  const joined = !!data?.telegram_joined;
+
+  const joinTelegram = async () => {
+    window.open(TELEGRAM_GROUP_URL, "_blank");
+    const res = await claimTelegramBonus();
+    queryClient.invalidateQueries({ queryKey: ["coin-summary"] });
+    if (res.awarded > 0) {
+      playUiSound("coin");
+      toast.success(`টেলিগ্রাম জয়েন বোনাস +${res.awarded} কয়েন! 🪙`);
+    } else if (res.already) {
+      toast.info("আপনি আগেই টেলিগ্রাম বোনাস নিয়েছেন");
+    }
+  };
   const balance = useCountUp(data?.balance ?? 0);
-  const watchCap = data?.watch_daily_cap ?? 600;
+  const watchCap = data?.watch_daily_cap ?? 9000;
   const watchPct = Math.min(100, ((data?.watch_today ?? 0) / watchCap) * 100);
 
   return (
-    <div className="min-h-screen bg-[#0c0a05] pb-10 text-amber-50">
+    <div className="fixed inset-0 z-[200] overflow-y-auto bg-[#0c0a05] pb-14 text-amber-50">
       {/* Header */}
       <div className="sticky top-0 z-20 flex items-center gap-2 border-b border-amber-500/10 bg-[#0c0a05]/90 px-3 py-3 backdrop-blur">
         <button
@@ -114,6 +133,35 @@ function CoinWalletPage() {
         </div>
       </div>
 
+      {/* Telegram join */}
+      <div className="mt-4 px-4">
+        <button
+          type="button"
+          onClick={joinTelegram}
+          className="w-full overflow-hidden rounded-3xl border border-sky-400/25 bg-gradient-to-br from-sky-900/60 to-[#04121a] p-4 text-left active:scale-[0.99]"
+        >
+          <div className="flex items-center gap-3">
+            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-sky-300 to-sky-600 text-sky-950 shadow-lg">
+              <Send className="h-6 w-6" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-[15px] font-black text-sky-50">টেলিগ্রাম গ্রুপে জয়েন করুন</p>
+              <p className="text-[12px] font-bold text-sky-200/70">
+                {joined ? "✅ জয়েন সম্পন্ন — বোনাস নেওয়া হয়েছে" : `জয়েন করলেই +${COIN_RATES.telegram} কয়েন বোনাস`}
+              </p>
+            </div>
+            <span className="ml-auto shrink-0 rounded-full bg-sky-400/20 px-3 py-1.5 text-[12px] font-black text-sky-100 ring-1 ring-sky-300/30">
+              {joined ? "Joined" : "Join"}
+            </span>
+          </div>
+          {!joined && (
+            <p className="mt-3 text-[12px] font-bold leading-relaxed text-amber-200/80">
+              ⚠️ টেলিগ্রাম গ্রুপে জয়েন না করলে কয়েন ক্লেইম করা যাবে না।
+            </p>
+          )}
+        </button>
+      </div>
+
       {/* Watch progress */}
       <div className="mt-4 px-4">
         <div className="rounded-3xl border border-amber-400/15 bg-amber-950/40 p-4">
@@ -132,7 +180,7 @@ function CoinWalletPage() {
             />
           </div>
           <p className="mt-2 text-[11px] font-bold text-amber-200/60">
-            ফিড ও রিলসে ভিডিও চালু রাখুন — প্রতি ২০ সেকেন্ডে ১ কয়েন। ভিডিও বন্ধ করলে কয়েন হবে না।
+            ফিড ও রিলসে ভিডিও চালু রাখুন — প্রতি ২০ সেকেন্ডে {COIN_RATES.watch} কয়েন। ভিডিও বন্ধ করলে কয়েন হবে না।
           </p>
         </div>
       </div>
