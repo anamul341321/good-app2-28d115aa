@@ -17,6 +17,8 @@ function SeenAvatar({ name, src }: { name: string; src?: string | null }) {
 }
 
 
+export const REACTION_EMOJIS = ["❤️", "😂", "😮", "😢", "😡", "👍"];
+
 export type ChatMsg = {
   id: string;
   senderId: string;
@@ -28,6 +30,8 @@ export type ChatMsg = {
   readAt: string | null;
   createdAt: string;
   deleted: boolean;
+  /** মেসেঞ্জার-স্টাইল ইমোজি রিঅ্যাকশন */
+  reactions?: { emoji: string; userId: string }[];
 };
 
 function timeOf(iso: string) {
