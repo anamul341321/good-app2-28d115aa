@@ -290,6 +290,8 @@ function ThreadPage() {
                 key={m.id}
                 m={m}
                 mine={m.senderId === me}
+                meId={me}
+                onReact={(id, emoji) => react.mutate({ id, emoji })}
                 onDelete={(id) => del.mutate(id)}
                 onJumpTo={jumpToMessage}
                 onReply={(msg) =>
