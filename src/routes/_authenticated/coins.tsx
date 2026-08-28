@@ -71,6 +71,7 @@ const EARN_ITEMS: EarnItem[] = [
 
 const REASON_META: Record<string, { bn: string; icon: any; color: string }> = {
   telegram_join: { bn: "টেলিগ্রাম জয়েন বোনাস", icon: Send, color: "text-sky-300" },
+  daily_checkin: { bn: "ডেইলি চেক-ইন বোনাস", icon: Gift, color: "text-emerald-300" },
   watch: { bn: "ভিডিও দেখে আয়", icon: Video, color: "text-amber-300" },
   reel: { bn: "রিলস আপলোড", icon: Film, color: "text-pink-300" },
   post: { bn: "পোস্ট করেছেন", icon: ImageIcon, color: "text-sky-300" },
