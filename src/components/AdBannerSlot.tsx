@@ -1,27 +1,37 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useRouterState } from "@tanstack/react-router";
 import { showBottomBanner, hideBottomBanner, isBannerActive } from "@/lib/ads";
 
+/** যেসব স্ক্রিনে ব্যানার দেখানো হবে না (ফুল-স্ক্রিন / বিরক্তিকর হয়) */
+const BLOCKED = ["/reels", "/chat", "/call", "/video", "/story", "/messenger"];
+
 /**
- * নিচে AdMob banner দেখায় (শুধু অ্যাপে + অ্যাডমিন সুইচ ON হলে)।
- * ব্যানার নেটিভ ওভারলে, তাই কনটেন্ট যেন না ঢাকে সেজন্য সমান উচ্চতার
- * একটি ফাঁকা জায়গা রেখে দেয়। সুইচ OFF থাকলে কিছুই রেন্ডার হয় না।
+ * নিচে ছোট AdMob banner (শুধু অ্যাপে + অ্যাডমিন সুইচ ON হলে)।
+ * ব্যানার নেটিভ ওভারলে, তাই কনটেন্ট না ঢাকতে body-তে সমান padding দেয়।
+ * সুইচ OFF থাকলে কোনো কিছুই হয় না — অ্যাপ আগের মতোই থাকে।
  */
 export function AdBannerSlot() {
-  const [active, setActive] = useState(false);
+  const path = useRouterState({ select: (s) => s.location.pathname });
+  const blocked = BLOCKED.some((p) => path.includes(p));
 
   useEffect(() => {
     let alive = true;
+    if (blocked) {
+      void hideBottomBanner();
+      document.body.style.paddingBottom = "";
+      return;
+    }
     void isBannerActive().then((ok) => {
       if (!alive || !ok) return;
-      setActive(true);
       void showBottomBanner();
+      document.body.style.paddingBottom = "60px";
     });
     return () => {
       alive = false;
       void hideBottomBanner();
+      document.body.style.paddingBottom = "";
     };
-  }, []);
+  }, [blocked, path]);
 
-  if (!active) return null;
-  return <div aria-hidden className="h-[60px] w-full shrink-0" />;
+  return null;
 }
