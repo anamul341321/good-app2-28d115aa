@@ -143,7 +143,7 @@ function CoinWalletPage() {
       return claimTelegram();
     }
     playUiSound("coin");
-    if (item.to) navigate({ to: item.to });
+    if (item.to) navigate({ to: item.to, search: (item.search ?? {}) as never });
   };
 
   const balance = useCountUp(data?.balance ?? 0);
