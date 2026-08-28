@@ -334,6 +334,50 @@ function CoinWalletPage() {
         </div>
       </div>
 
+      {/* ডেইলি চেক-ইন — প্রতিদিন ৫ লাইক + ২ কমেন্ট + ৩ মেসেজ করলে ১০০০ কয়েন */}
+      <div className="mt-5 px-4">
+        <div className="rounded-3xl border border-emerald-400/20 bg-emerald-950/30 p-4">
+          <div className="flex items-center justify-between gap-2">
+            <p className="flex items-center gap-2 text-[13px] font-black uppercase tracking-wider text-emerald-300/90">
+              <Gift className="h-4 w-4" /> ডেইলি চেক-ইন
+            </p>
+            <span className="rounded-full bg-emerald-500/15 px-2.5 py-1 text-[12px] font-black text-emerald-300">
+              +{COIN_RATES.checkin} 🪙
+            </span>
+          </div>
+          <p className="mt-1.5 text-[11px] font-bold text-emerald-200/60">
+            প্রতিদিন ৫টি লাইক, ২টি কমেন্ট ও ৩টি মেসেজ করলেই {COIN_RATES.checkin} কয়েন ক্লেইম করতে পারবেন।
+          </p>
+          <div className="mt-3 grid grid-cols-3 gap-2">
+            {[
+              { label: "লাইক", now: checkin.data?.likes ?? 0, need: checkin.data?.need_likes ?? 5 },
+              { label: "কমেন্ট", now: checkin.data?.comments ?? 0, need: checkin.data?.need_comments ?? 2 },
+              { label: "মেসেজ", now: checkin.data?.messages ?? 0, need: checkin.data?.need_messages ?? 3 },
+            ].map((s) => (
+              <div key={s.label} className="rounded-2xl bg-black/30 px-2 py-2 text-center">
+                <p className="text-[15px] font-black text-emerald-200">
+                  {Math.min(s.now, s.need)}/{s.need}
+                </p>
+                <p className="text-[10px] font-bold text-emerald-200/60">{s.label}</p>
+              </div>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={() => void claimCheckin()}
+            disabled={checkinBusy || !!checkin.data?.claimed || !checkin.data?.eligible}
+            className="mt-3 w-full rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-400 py-2.5 text-[13px] font-black text-emerald-950 disabled:opacity-50"
+          >
+            {checkin.data?.claimed
+              ? "✅ আজকের চেক-ইন হয়ে গেছে"
+              : checkin.data?.eligible
+                ? `ক্লেইম করুন +${COIN_RATES.checkin}`
+                : "টার্গেট পূরণ করুন"}
+          </button>
+        </div>
+      </div>
+
+
       {/* How to earn — each row is tappable + has an action button */}
       <div className="mt-5 px-4">
         <p className="mb-2.5 flex items-center gap-2 px-1 text-[13px] font-black uppercase tracking-wider text-amber-300/80">
