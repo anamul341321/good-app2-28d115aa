@@ -15,21 +15,25 @@ export function useCoinSummary(enabled = true) {
   });
 }
 
-/** Small gold wallet pill for the feed header. */
+/** Premium gold wallet button for the feed header. */
 export function CoinWalletButton({ onClick }: { onClick: () => void }) {
   const { data } = useCoinSummary();
   return (
     <button
       type="button"
       onClick={onClick}
-      aria-label="কয়েন ওয়ালেট"
-      className="btn-press flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 px-2.5 text-[12px] font-black text-amber-950 shadow-[0_8px_18px_-8px_rgba(245,158,11,0.9)] ring-1 ring-amber-200/70"
+      aria-label="কয়েন ওয়ালেট খুলুন"
+      className="btn-press relative flex h-9 shrink-0 items-center gap-1.5 overflow-hidden rounded-full bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 pl-1.5 pr-2.5 text-[12px] font-black text-amber-950 shadow-[0_10px_22px_-10px_rgba(245,158,11,0.95)] ring-1 ring-amber-200/80 active:scale-95"
     >
-      <Coins className="h-4 w-4" />
+      <span className="coin-spin-slow grid h-6 w-6 place-items-center rounded-full bg-gradient-to-br from-yellow-100 to-amber-500 ring-1 ring-amber-200">
+        <Coins className="h-3.5 w-3.5" />
+      </span>
       <span className="tabular-nums">{formatCoins(data?.balance)}</span>
+      <span className="pointer-events-none absolute inset-0 animate-pulse bg-white/10" />
     </button>
   );
 }
+
 
 /** Premium coin balance card + coming-soon exchange. */
 export function CoinWalletSheet({ onClose }: { onClose: () => void }) {
