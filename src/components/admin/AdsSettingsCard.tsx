@@ -121,6 +121,23 @@ export function AdsSettingsCard() {
       </div>
 
       <div className="space-y-2 opacity-100">
+        <div className="flex items-center justify-between gap-3 rounded-xl bg-amber/10 p-2.5 border border-amber/30">
+          <div className="min-w-0">
+            <p className="text-[11px] font-bold text-navy">🧪 Test Mode (Google Test Ads)</p>
+            <p className="text-[9px] text-muted-foreground">
+              ON করলে আসল Ad Unit ID না বসিয়েও demo ID দিয়ে অ্যাড টেস্ট করতে পারবেন — আয় হবে না।
+            </p>
+          </div>
+          <Toggle
+            on={testMode}
+            disabled={!on || save.isPending}
+            onChange={(v) => {
+              setTestMode(v);
+              save.mutate({ enabled: on, testMode: v });
+            }}
+          />
+        </div>
+
         {[
           {
             label: "Banner অ্যাড (স্ক্রিনের নিচে ছোট)",
@@ -150,6 +167,7 @@ export function AdsSettingsCard() {
           </div>
         ))}
       </div>
+
 
       <div className="space-y-2">
         {[
