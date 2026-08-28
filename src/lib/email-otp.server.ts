@@ -1,14 +1,8 @@
-import * as React from "react";
-import { render } from "@react-email/render";
-import { TEMPLATES } from "@/lib/email-templates/registry";
-
-const SITE_NAME = "Good-App";
-const SENDER_DOMAIN = "notify.goodapp2.live";
-const FROM_DOMAIN = "notify.goodapp2.live";
+import { sendTemplateEmail } from "@/lib/email-templates/send-email";
 
 /**
  * সিস্টেম (নন-লগইন) ইমেইল পাঠানোর হেল্পার — যেমন পাসওয়ার্ড রিসেট কোড।
- * ডোমেইন ভেরিফাই শেষ হলে কিউ নিজে নিজেই মেইল পাঠাতে শুরু করে।
+ * মেইল সরাসরি Lovable-এর ম্যানেজড ইমেইল সার্ভিস দিয়ে পাঠানো হয়।
  */
 export async function sendSystemEmail(opts: {
   templateName: string;
@@ -16,84 +10,47 @@ export async function sendSystemEmail(opts: {
   templateData?: Record<string, unknown>;
   idempotencyKey?: string;
 }) {
-  const template = TEMPLATES[opts.templateName];
-  if (!template) throw new Error(`Unknown email template: ${opts.templateName}`);
-
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const to = opts.to.trim().toLowerCase();
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-  const { data: suppressed } = await supabaseAdmin
-    .from("suppressed_emails")
-    .select("id")
-    .eq("email", to)
-    .maybeSingle();
-  if (suppressed) throw new Error("এই ইমেইল ঠিকানায় মেইল পাঠানো সম্ভব নয়");
-
-  const data = opts.templateData ?? {};
-  const element = React.createElement(template.component, data);
-  const html = await render(element);
-  const text = await render(element, { plainText: true });
-  const subject = typeof template.subject === "function" ? template.subject(data) : template.subject;
-
-  const messageId = crypto.randomUUID();
-
-  // Transactional মেইলে unsubscribe_token বাধ্যতামূলক — প্রতি ইমেইলে একটি টোকেন।
-  let unsubscribeToken: string;
-  const { data: existingToken } = await supabaseAdmin
-    .from("email_unsubscribe_tokens")
-    .select("token")
-    .eq("email", to)
-    .maybeSingle();
-  if (existingToken?.token) {
-    unsubscribeToken = existingToken.token;
-  } else {
-    unsubscribeToken = crypto.randomUUID().replace(/-/g, "");
-    await supabaseAdmin
-      .from("email_unsubscribe_tokens")
-      .upsert({ token: unsubscribeToken, email: to }, { onConflict: "email" });
-    const { data: stored } = await supabaseAdmin
-      .from("email_unsubscribe_tokens")
-      .select("token")
-      .eq("email", to)
-      .maybeSingle();
-    if (stored?.token) unsubscribeToken = stored.token;
-  }
-
-  await supabaseAdmin.from("email_send_log").insert({
-    message_id: messageId,
-    template_name: opts.templateName,
-    recipient_email: to,
-    status: "pending",
-  });
-
-  const { error } = await supabaseAdmin.rpc("enqueue_email", {
-    queue_name: "transactional_emails",
-    payload: {
-      message_id: messageId,
-      to,
-      from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
-      sender_domain: SENDER_DOMAIN,
-      subject,
-      html,
-      text,
-      purpose: "transactional",
-      unsubscribe_token: unsubscribeToken,
-      label: opts.templateName,
-      idempotency_key: opts.idempotencyKey ?? messageId,
-      queued_at: new Date().toISOString(),
-    },
-  });
-
-  if (error) {
-    await supabaseAdmin.from("email_send_log").insert({
-      message_id: messageId,
+  const logRow = async (
+    status: "sent" | "suppressed" | "failed",
+    errorMessage?: string,
+  ) => {
+    const { error } = await supabaseAdmin.from("email_send_log").insert({
+      message_id: null,
       template_name: opts.templateName,
       recipient_email: to,
-      status: "failed",
-      error_message: error.message,
+      status,
+      error_message: errorMessage ?? null,
     });
+    if (error) {
+      console.error("email_send_log insert failed", {
+        code: error.code,
+        message: error.message,
+      });
+    }
+  };
+
+  let result: Awaited<ReturnType<typeof sendTemplateEmail>>;
+  try {
+    result = await sendTemplateEmail(opts.templateName, to, {
+      templateData: (opts.templateData ?? {}) as Record<string, any>,
+      ...(opts.idempotencyKey ? { idempotencyKey: opts.idempotencyKey } : {}),
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    await logRow("failed", message.slice(0, 1000));
+    console.error("system email send failed", message);
     throw new Error("মেইল পাঠানো যায়নি");
   }
+
+  if (!result.sent) {
+    await logRow("suppressed");
+    throw new Error("এই ইমেইল ঠিকানায় মেইল পাঠানো সম্ভব নয়");
+  }
+
+  await logRow("sent");
 
   return { ok: true as const };
 }
