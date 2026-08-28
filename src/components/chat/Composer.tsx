@@ -286,14 +286,53 @@ export function Composer({
               {sending || busy ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-6 w-6 fill-primary" />}
             </button>
           ) : (
-            <button
-              onClick={() => void startRec()}
-              disabled={busy}
-              className="btn-press h-9 w-9 flex items-center justify-center rounded-full text-primary disabled:opacity-50"
-            >
-              {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : <Mic className="h-6 w-6" />}
-            </button>
+            <>
+              <button
+                onClick={() => void startRec()}
+                disabled={busy}
+                aria-label="ভয়েস রেকর্ড"
+                className="btn-press h-9 w-9 flex items-center justify-center rounded-full text-primary disabled:opacity-50"
+              >
+                {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : <Mic className="h-6 w-6" />}
+              </button>
+              <div className="relative">
+                {pickEmoji && (
+                  <div className="absolute bottom-11 right-0 z-20 flex gap-1 rounded-2xl border bg-background px-2 py-1.5 shadow-xl">
+                    {["👍", "❤️", "😂", "😮", "😢", "🔥", "🙏"].map((e) => (
+                      <button
+                        key={e}
+                        onClick={() => chooseEmoji(e)}
+                        className="btn-press text-xl leading-none"
+                        aria-label={e}
+                      >
+                        {e}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <button
+                  onClick={() => {
+                    if (pickEmoji) { setPickEmoji(false); return; }
+                    onCancelReply?.();
+                    onSend({ body: quickEmoji, kind: "text" });
+                  }}
+                  onContextMenu={(ev) => { ev.preventDefault(); setPickEmoji(true); }}
+                  onPointerDown={() => {
+                    window.clearTimeout(pressTimer.current);
+                    pressTimer.current = window.setTimeout(() => setPickEmoji(true), 450);
+                  }}
+                  onPointerUp={() => window.clearTimeout(pressTimer.current)}
+                  onPointerLeave={() => window.clearTimeout(pressTimer.current)}
+                  disabled={sending || busy}
+                  aria-label="ডিফল্ট ইমোজি পাঠান"
+                  className="btn-press h-9 w-9 flex items-center justify-center rounded-full text-xl disabled:opacity-50"
+                >
+                  {quickEmoji}
+                </button>
+              </div>
+            </>
           )}
+
         </div>
       )}
     </div>
