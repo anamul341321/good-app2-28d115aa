@@ -46,6 +46,19 @@ function AuthedLayout() {
   // অ্যাপ খোলা + ডেটা অন থাকলেই "active" হার্টবিট যাবে (পুরো অ্যাপজুড়ে)
   usePresence();
   const router = useRouter();
+  const { t } = useLang();
+
+  // দিনের প্রথমবার লগইনের পর একটি app-open অ্যাড (শুধু Android অ্যাপে)
+  useEffect(() => {
+    if (authState !== "authenticated") return;
+    const timer = window.setTimeout(() => {
+      void import("@/lib/ads").then((m) =>
+        m.initAds().then(() => m.showDailyAppOpenAd()),
+      );
+    }, 2500);
+    return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authState]);
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const isSocialRoute = /^\/(social|chat|feed|friends|videos|reels|watch|studio|channel|user|profile)(\/|$)/.test(pathname);
   const [authState, setAuthState] = useState<"checking" | "authenticated" | "unauthenticated">(() => {
