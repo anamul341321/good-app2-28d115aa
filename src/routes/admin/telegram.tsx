@@ -10,7 +10,7 @@ import {
   tgGetSettings, tgSaveSettings, tgRegisterWebhook,
   tgListFaq, tgUpsertFaq, tgDeleteFaq, tgLookupUid, tgSendToGroup, tgReplyToUser,
   tgListBanRequests, tgResolveBanRequest, tgUnban, tgRecentMessages,
-  tgListBlocked, tgSetBlocked, tgUnfreeze, tgListVideos, tgUpsertVideo, tgDeleteVideo,
+  tgListBlocked, tgSetBlocked, tgUnfreeze, tgUnfreezeAll, tgListVideos, tgUpsertVideo, tgDeleteVideo,
   tgListVoices, tgUpsertVoice, tgDeleteVoice,
   tgBroadcast, tgBroadcastAudience, tgListLinkedProfiles,
   tgListAiKeys, tgAddAiKey, tgSetAiKeyActive, tgDeleteAiKey,
@@ -765,6 +765,15 @@ function BlockedPanel() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const unfreezeAll = useMutation({
+    mutationFn: () => tgUnfreezeAll(),
+    onSuccess: (r: any) => {
+      toast.success(`${r.unfrozen} জনের ফ্রিজ খুলে দেওয়া হয়েছে ✅`);
+      qc.invalidateQueries({ queryKey: ["tg-blocked"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const submitFreeze = () => {
     const v = freezeKey.trim();
     if (!v) return;
@@ -810,6 +819,13 @@ function BlockedPanel() {
             {unfreeze.isPending ? "..." : "খুলে দিন"}
           </button>
         </div>
+        <button
+          onClick={() => unfreezeAll.mutate()}
+          disabled={unfreezeAll.isPending}
+          className="w-full rounded-xl border border-emerald/40 bg-emerald/10 h-10 text-xs font-black text-emerald disabled:opacity-50"
+        >
+          {unfreezeAll.isPending ? "খোলা হচ্ছে..." : "সবার ফ্রিজ একসাথে খুলে দিন"}
+        </button>
       </div>
 
       {isLoading ? (

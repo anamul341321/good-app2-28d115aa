@@ -664,3 +664,55 @@ export const tgUnfreeze = createServerFn({ method: "POST" })
 
     return { ok: true as const, tg_user_id: tgId };
   });
+
+/**
+ * সবার ফ্রিজ একসাথে খুলে দেওয়া — যাদের ফ্রিজ/mute হয়েছে (tg_offenders) তাদের
+ * সবাইকে গ্রুপে আবার লিখতে দেওয়া হয়।
+ */
+export const tgUnfreezeAll = createServerFn({ method: "POST" }).handler(async () => {
+  const db = await guard();
+
+  const { data: s } = await db
+    .from("tg_bot_settings")
+    .select("group_chat_id")
+    .eq("id", "default")
+    .maybeSingle();
+  const defaultChats = String((s as any)?.group_chat_id ?? "")
+    .split(/[,\s]+/)
+    .map((x) => x.trim())
+    .filter(Boolean);
+
+  const { data: rows } = await db
+    .from("tg_offenders")
+    .select("tg_user_id, chat_id")
+    .limit(2000);
+
+  const { unrestrictUser, unbanChatMember } = await import("@/lib/telegram-bot.server");
+  let done = 0;
+  let failed = 0;
+
+  for (const r of ((rows as any[]) ?? [])) {
+    const tgId = Number(r.tg_user_id);
+    if (!tgId) continue;
+    const chats = r.chat_id ? [String(r.chat_id)] : defaultChats;
+    let ok = false;
+    for (const chat of chats) {
+      try {
+        await unbanChatMember(chat, tgId);
+      } catch { /* best-effort */ }
+      try {
+        await unrestrictUser(chat, tgId);
+        ok = true;
+      } catch { /* ignore this chat */ }
+    }
+    if (ok) done++;
+    else failed++;
+  }
+
+  await db
+    .from("tg_offenders")
+    .update({ blocked: false, warn_count: 0, unblocked_at: new Date().toISOString() } as any)
+    .not("tg_user_id", "is", null);
+
+  return { ok: true as const, unfrozen: done, failed };
+});

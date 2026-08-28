@@ -853,6 +853,30 @@ export type Database = {
         }
         Relationships: []
       }
+      coin_telegram_claims: {
+        Row: {
+          claimed_at: string
+          id: string
+          tg_user_id: number | null
+          user_id: string
+          username_lc: string
+        }
+        Insert: {
+          claimed_at?: string
+          id?: string
+          tg_user_id?: number | null
+          user_id: string
+          username_lc: string
+        }
+        Update: {
+          claimed_at?: string
+          id?: string
+          tg_user_id?: number | null
+          user_id?: string
+          username_lc?: string
+        }
+        Relationships: []
+      }
       coin_wallets: {
         Row: {
           balance: number

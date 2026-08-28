@@ -8,7 +8,7 @@ import {
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCoinSummary } from "@/components/social/CoinWallet";
 import { formatCoins, COIN_RATES, TELEGRAM_GROUP_URL } from "@/lib/coins";
-import { getCoinHistory, verifyTelegramJoin } from "@/lib/coins.functions";
+import { getCoinHistory, claimTelegramByUsername } from "@/lib/coins.functions";
 import { toast } from "sonner";
 import { playUiSound } from "@/lib/ui-sounds";
 
@@ -84,6 +84,8 @@ function CoinWalletPage() {
   const joined = !!data?.telegram_joined;
   const [verifying, setVerifying] = useState(false);
   const [burst, setBurst] = useState(false);
+  const [askUsername, setAskUsername] = useState(false);
+  const [tgUsername, setTgUsername] = useState("");
 
   const history = useQuery({ queryKey: ["coin-history"], queryFn: () => getCoinHistory() });
 
@@ -95,20 +97,29 @@ function CoinWalletPage() {
 
   const claimTelegram = async () => {
     if (verifying) return;
+    const uname = tgUsername.trim().replace(/^@/, "");
+    if (!uname || uname.length < 3) {
+      setAskUsername(true);
+      toast.info("আপনার টেলিগ্রাম username দিন (যেমন @yourname)");
+      return;
+    }
     setVerifying(true);
     try {
-      const res = await verifyTelegramJoin();
+      const res = await claimTelegramByUsername({ data: { username: uname } });
       if (res.awarded > 0) {
         celebrate();
+        setAskUsername(false);
         toast.success(`টেলিগ্রাম জয়েন বোনাস +${res.awarded} কয়েন! 🪙`);
       } else if (res.already) {
         toast.info("আপনি আগেই এই বোনাস নিয়েছেন");
-      } else if (!res.linked) {
-        toast.error("প্রথমে টেলিগ্রাম বট (/start) দিয়ে অ্যাকাউন্ট লিংক করুন — তারপরই যাচাই হবে", {
+      } else if (res.error === "duplicate") {
+        toast.error("এই username দিয়ে আগেই ক্লেইম করা হয়েছে — নিজের username দিন");
+      } else if (res.error === "not_found") {
+        toast.error("username টি গ্রুপে খুঁজে পাওয়া যায়নি — গ্রুপে একটি মেসেজ দিন বা বটে /start দিন, তারপর আবার ক্লেইম করুন", {
           action: { label: "গ্রুপে যান", onClick: () => window.open(TELEGRAM_GROUP_URL, "_blank") },
         });
       } else {
-        toast.error("গ্রুপে জয়েন পাওয়া যায়নি — জয়েন করে আবার ক্লেইম করুন", {
+        toast.error("এই username গ্রুপে জয়েন করা নেই — জয়েন করে আবার ক্লেইম করুন", {
           action: { label: "জয়েন", onClick: () => window.open(TELEGRAM_GROUP_URL, "_blank") },
         });
       }
@@ -122,7 +133,13 @@ function CoinWalletPage() {
   };
 
   const goEarn = (item: EarnItem) => {
-    if (item.telegram) return claimTelegram();
+    if (item.telegram) {
+      if (!askUsername && !tgUsername.trim()) {
+        setAskUsername(true);
+        return;
+      }
+      return claimTelegram();
+    }
     playUiSound("coin");
     if (item.to) navigate({ to: item.to });
   };
@@ -221,7 +238,7 @@ function CoinWalletPage() {
             </button>
             <button
               type="button"
-              onClick={claimTelegram}
+              onClick={() => (askUsername ? claimTelegram() : setAskUsername(true))}
               disabled={joined || verifying}
               className={`flex flex-1 items-center justify-center gap-1.5 rounded-2xl px-3 py-2.5 text-[13px] font-black active:scale-95 ${
                 joined
@@ -230,12 +247,45 @@ function CoinWalletPage() {
               }`}
             >
               {verifying ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
-              {joined ? "ক্লেইম হয়েছে" : verifying ? "যাচাই হচ্ছে..." : "যাচাই করে ক্লেইম"}
+              {joined ? "ক্লেইম হয়েছে" : verifying ? "যাচাই হচ্ছে..." : askUsername ? "যাচাই করে ক্লেইম" : "ক্লেইম করুন"}
             </button>
           </div>
+
+          {askUsername && !joined && (
+            <div className="mt-3 rounded-2xl border border-sky-300/20 bg-black/30 p-3">
+              <label className="text-[11px] font-black uppercase tracking-wider text-sky-200/70">
+                আপনার টেলিগ্রাম username
+              </label>
+              <div className="mt-1.5 flex items-center gap-2">
+                <span className="grid h-10 w-9 place-items-center rounded-xl bg-sky-500/15 text-[15px] font-black text-sky-200">@</span>
+                <input
+                  value={tgUsername}
+                  onChange={(e) => setTgUsername(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") claimTelegram(); }}
+                  placeholder="yourname"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  className="h-10 min-w-0 flex-1 rounded-xl border border-sky-300/20 bg-black/40 px-3 text-[14px] font-bold text-sky-50 outline-none placeholder:text-sky-200/30 focus:border-sky-300/50"
+                />
+                <button
+                  type="button"
+                  onClick={claimTelegram}
+                  disabled={verifying}
+                  className="h-10 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-400 px-4 text-[13px] font-black text-amber-950 active:scale-95 disabled:opacity-60"
+                >
+                  {verifying ? "..." : "যাচাই"}
+                </button>
+              </div>
+              <p className="mt-2 text-[11px] font-bold leading-relaxed text-sky-200/60">
+                বট এই username দিয়ে চেক করবে আপনি গ্রুপে আছেন কি না, এবং একই username দিয়ে আগে কেউ ক্লেইম করেছে কি না।
+              </p>
+            </div>
+          )}
+
           <p className="mt-2.5 text-[11px] font-bold leading-relaxed text-amber-200/70">
-            🔐 আমাদের বট আপনার টেলিগ্রাম আইডি দিয়ে গ্রুপ মেম্বারশিপ যাচাই করে — তাই জয়েন না করলে বোনাস পাওয়া যাবে না।
-            টেলিগ্রাম অ্যাকাউন্ট লিংক না থাকলে আগে বটে <span className="text-sky-200">/start</span> দিন।
+            🔐 প্রতিটি username দিয়ে একবারই বোনাস নেওয়া যাবে। username টি গ্রুপে খুঁজে না পেলে গ্রুপে একটি মেসেজ দিন বা বটে
+            <span className="text-sky-200"> /start</span> দিন, তারপর আবার ক্লেইম করুন।
           </p>
         </div>
       </div>
