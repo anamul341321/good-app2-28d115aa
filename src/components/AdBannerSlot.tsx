@@ -21,9 +21,12 @@ export function AdBannerSlot() {
       document.body.classList.remove("ads-banner-on");
       return;
     }
-    void isBannerActive().then((ok) => {
+    void isBannerActive().then(async (ok) => {
       if (!alive || !ok) return;
-      void showBottomBanner();
+      // অ্যাড আসলেই লোড হলে তবেই নিচে জায়গা রাখি — নাহলে বাটনগুলো
+      // অকারণে উপরে উঠে যায়।
+      const shown = await showBottomBanner();
+      if (!alive || !shown) return;
       document.body.classList.add("ads-banner-on");
     });
     return () => {

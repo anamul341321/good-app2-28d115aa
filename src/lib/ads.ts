@@ -18,6 +18,15 @@ export const ADS_CONFIG = {
 
 const isNative = () => Capacitor.isNativePlatform();
 
+/**
+ * টেস্ট মোড ON থাকলে সবসময় Google-এর স্যাম্পল Ad Unit ব্যবহার হয় —
+ * আসল ID + isTesting মিশে গেলে AdMob কোনো অ্যাড দেয় না (no-fill),
+ * তাই টেস্ট করার সময় অ্যাড দেখাই যেত না।
+ */
+function pickUnit(test: boolean, custom: string | null, sample: string) {
+  return test ? sample : custom || sample;
+}
+
 async function getAdMob() {
   if (!isNative()) return null;
   try {
@@ -66,7 +75,7 @@ export async function showDailyAppOpenAd() {
   if (!AdMob) return;
   try {
     await AdMob.prepareInterstitial({
-      adId: cfg.interstitialUnit || ADS_CONFIG.interstitialId,
+      adId: pickUnit(cfg.test, cfg.interstitialUnit, ADS_CONFIG.interstitialId),
       isTesting: cfg.test,
     });
 
@@ -86,7 +95,7 @@ export async function showRewardedAd(): Promise<boolean> {
   if (!AdMob) return false;
   try {
     await AdMob.prepareRewardVideoAd({
-      adId: cfg.rewardedUnit || ADS_CONFIG.rewardedId,
+      adId: pickUnit(cfg.test, cfg.rewardedUnit, ADS_CONFIG.rewardedId),
       isTesting: cfg.test,
     });
 
@@ -100,16 +109,17 @@ export async function showRewardedAd(): Promise<boolean> {
 let bannerShown = false;
 
 /** নিচে ছোট একটি banner অ্যাড দেখায় (নন-ইন্ট্রুসিভ, কনটেন্ট ঢাকে না) */
-export async function showBottomBanner() {
+export async function showBottomBanner(): Promise<boolean> {
   const cfg = await loadAdsConfig();
-  if (!cfg.banner) return;
+  if (!cfg.banner) return false;
   await initAds();
   const AdMob = await getAdMob();
-  if (!AdMob || bannerShown) return;
+  if (!AdMob) return false;
+  if (bannerShown) return true;
   try {
     const { BannerAdSize, BannerAdPosition } = await import("@capacitor-community/admob");
     await AdMob.showBanner({
-      adId: cfg.bannerUnit || ADS_CONFIG.bannerId,
+      adId: pickUnit(cfg.test, cfg.bannerUnit, ADS_CONFIG.bannerId),
       adSize: BannerAdSize.ADAPTIVE_BANNER,
       position: BannerAdPosition.BOTTOM_CENTER,
       margin: 0,
@@ -117,8 +127,10 @@ export async function showBottomBanner() {
     });
 
     bannerShown = true;
+    return true;
   } catch {
-    // চুপচাপ বাদ
+    // অ্যাড না এলে নিচে কোনো জায়গা রাখা হবে না
+    return false;
   }
 }
 
