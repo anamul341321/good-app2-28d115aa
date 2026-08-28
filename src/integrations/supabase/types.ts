@@ -3132,6 +3132,7 @@ export type Database = {
         Returns: Json
       }
       claim_all_slot_mining: { Args: { _user_id: string }; Returns: Json }
+      claim_daily_checkin: { Args: { _user_id: string }; Returns: Json }
       claim_mining_earnings: { Args: { _user_id: string }; Returns: Json }
       claim_mining_to_main: { Args: { _user_id: string }; Returns: Json }
       claim_reverify_bonus: { Args: { _user_id: string }; Returns: number }
@@ -3198,6 +3199,7 @@ export type Database = {
       }
       expire_unanswered_calls: { Args: never; Returns: number }
       get_coin_summary: { Args: { _user_id: string }; Returns: Json }
+      get_daily_checkin: { Args: { _user_id: string }; Returns: Json }
       get_user_balance_breakdown: { Args: { _user_id: string }; Returns: Json }
       get_whitelist_cron_secret: { Args: never; Returns: string }
       has_role: {
