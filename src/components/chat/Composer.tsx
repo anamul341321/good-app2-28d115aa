@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Image as ImageIcon, Loader2, Mic, Send, Square, Video, Plus, Smile, X, Reply } from "lucide-react";
+import { Image as ImageIcon, Loader2, Mic, Send, Square, Video, Plus, Smile, X, Reply, Trash2 } from "lucide-react";
 import { extOf, uploadChatFile, type UploadKind } from "@/lib/chat-upload";
 import { VoiceRecorder } from "@/lib/voice-record";
 
@@ -33,6 +33,26 @@ export function Composer({
   const rec = useRef<VoiceRecorder | null>(null);
   const timer = useRef<number | undefined>(undefined);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  // মেসেঞ্জারের মতো ডিফল্ট ইমোজি — লং-প্রেস করে বদলানো যায়
+  const [quickEmoji, setQuickEmoji] = useState("👍");
+  const [pickEmoji, setPickEmoji] = useState(false);
+  const pressTimer = useRef<number | undefined>(undefined);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("msgr_quick_emoji");
+      if (saved) setQuickEmoji(saved);
+    } catch {}
+  }, []);
+
+  const chooseEmoji = (e: string) => {
+    setQuickEmoji(e);
+    setPickEmoji(false);
+    try {
+      localStorage.setItem("msgr_quick_emoji", e);
+    } catch {}
+  };
+
 
   // মেসেঞ্জারের মতো — রিপ্লাই দিলে সাথে সাথেই কীবোর্ড খুলে যাবে
   useEffect(() => {
@@ -118,6 +138,21 @@ export function Composer({
     }
   };
 
+  /** রেকর্ডিং বাতিল — কিছুই পাঠানো হবে না */
+  const cancelRec = async () => {
+    const recorder = rec.current;
+    rec.current = null;
+    window.clearInterval(timer.current);
+    setRecSec(0);
+    setRecording(false);
+    try {
+      await recorder?.stop();
+    } catch {}
+    toast.info("ভয়েস মেসেজ বাতিল হয়েছে");
+  };
+
+
+
 
 
   return (
@@ -171,10 +206,17 @@ export function Composer({
       />
 
       {recording ? (
-        <div className="flex items-center gap-3 px-3 py-2 bg-surface-2 rounded-full">
+        <div className="flex items-center gap-2 px-2 py-2 bg-surface-2 rounded-full">
+          <button
+            onClick={() => void cancelRec()}
+            aria-label="ভয়েস বাতিল"
+            className="btn-press grid h-8 w-8 shrink-0 place-items-center rounded-full bg-surface-1 text-muted-foreground"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
           <span className="h-2 w-2 animate-pulse rounded-full bg-rose-500" />
           <div className="flex h-6 flex-1 items-center gap-0.5" aria-label="Recording">
-            {Array.from({ length: 24 }, (_, index) => (
+            {Array.from({ length: 20 }, (_, index) => (
               <span
                 key={index}
                 className="w-0.5 animate-pulse rounded-full bg-rose-500"
@@ -187,12 +229,14 @@ export function Composer({
           </p>
           <button
             onClick={() => void stopRec()}
-            className="btn-press grid h-8 w-8 place-items-center rounded-full bg-rose-500 text-white"
+            aria-label="ভয়েস পাঠান"
+            className="btn-press grid h-8 w-8 shrink-0 place-items-center rounded-full bg-rose-500 text-white"
           >
             <Square className="h-4 w-4 fill-white" />
           </button>
         </div>
       ) : (
+
         <div className="flex items-center gap-2">
           {!text.trim() && (
             <div className="flex items-center gap-2">
@@ -242,14 +286,53 @@ export function Composer({
               {sending || busy ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-6 w-6 fill-primary" />}
             </button>
           ) : (
-            <button
-              onClick={() => void startRec()}
-              disabled={busy}
-              className="btn-press h-9 w-9 flex items-center justify-center rounded-full text-primary disabled:opacity-50"
-            >
-              {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : <Mic className="h-6 w-6" />}
-            </button>
+            <>
+              <button
+                onClick={() => void startRec()}
+                disabled={busy}
+                aria-label="ভয়েস রেকর্ড"
+                className="btn-press h-9 w-9 flex items-center justify-center rounded-full text-primary disabled:opacity-50"
+              >
+                {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : <Mic className="h-6 w-6" />}
+              </button>
+              <div className="relative">
+                {pickEmoji && (
+                  <div className="absolute bottom-11 right-0 z-20 flex gap-1 rounded-2xl border bg-background px-2 py-1.5 shadow-xl">
+                    {["👍", "❤️", "😂", "😮", "😢", "🔥", "🙏"].map((e) => (
+                      <button
+                        key={e}
+                        onClick={() => chooseEmoji(e)}
+                        className="btn-press text-xl leading-none"
+                        aria-label={e}
+                      >
+                        {e}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <button
+                  onClick={() => {
+                    if (pickEmoji) { setPickEmoji(false); return; }
+                    onCancelReply?.();
+                    onSend({ body: quickEmoji, kind: "text" });
+                  }}
+                  onContextMenu={(ev) => { ev.preventDefault(); setPickEmoji(true); }}
+                  onPointerDown={() => {
+                    window.clearTimeout(pressTimer.current);
+                    pressTimer.current = window.setTimeout(() => setPickEmoji(true), 450);
+                  }}
+                  onPointerUp={() => window.clearTimeout(pressTimer.current)}
+                  onPointerLeave={() => window.clearTimeout(pressTimer.current)}
+                  disabled={sending || busy}
+                  aria-label="ডিফল্ট ইমোজি পাঠান"
+                  className="btn-press h-9 w-9 flex items-center justify-center rounded-full text-xl disabled:opacity-50"
+                >
+                  {quickEmoji}
+                </button>
+              </div>
+            </>
           )}
+
         </div>
       )}
     </div>

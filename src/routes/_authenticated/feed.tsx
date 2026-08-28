@@ -446,8 +446,14 @@ function FeedPage() {
   }, [queryClient, user?.id]);
 
   const createPostMutation = useMutation({
+    // পোস্টে দেরি লাগে না — বক্স সাথে সাথে বন্ধ হয়, আপলোড ব্যাকগ্রাউন্ডে চলে
+    onMutate: () => {
+      setShowCreatePost(false);
+      toast.loading("পোস্ট হচ্ছে…", { id: "posting" });
+    },
     mutationFn: async () => {
       if (!user) throw new Error("Login required");
+
       let imageUrl: string | undefined;
       let videoUrl: string | undefined;
       // ছবিগুলো আগে ছোট করে, একসাথে (parallel) আপলোড — স্লো নেটেও দ্রুত পোস্ট হবে
@@ -472,7 +478,7 @@ function FeedPage() {
       setPostContent(""); setPostImageFiles([]); setPostImagePreviews([]);
       setPostVideoFile(null); setPostVideoPreview(null); setShowCreatePost(false);
       queryClient.invalidateQueries({ queryKey: ["feed-posts"] });
-      toast.success("পোস্ট প্রকাশিত! 🎉");
+      toast.success("পোস্ট প্রকাশিত! 🎉", { id: "posting" });
       void awardCoins("post", (post as Post | undefined)?.id).then((c) => {
         if (c > 0) {
           playUiSound("coin");
@@ -481,7 +487,11 @@ function FeedPage() {
         }
       });
     },
-    onError: (e: Error) => toast.error(e.message || "পোস্ট করা যায়নি"),
+    onError: (e: Error) => {
+      toast.error(e.message || "পোস্ট করা যায়নি", { id: "posting" });
+      setShowCreatePost(true);
+    },
+
   });
 
   const deletePostMutation = useMutation({
@@ -639,7 +649,20 @@ function FeedPage() {
 
   const respondRequestMutation = useMutation({
     mutationFn: async ({ linkId, accept }: { linkId: string; accept: boolean }) => respondFriendRequest({ data: { linkId, accept } }),
+    // সাথে সাথেই রিকুয়েস্ট লিস্ট থেকে সরে যাবে
+    onMutate: ({ linkId, accept }) => {
+      queryClient.setQueryData(["friends-summary"], (old: any) => {
+        if (!old) return old;
+        const item = (old.incoming ?? []).find((i: any) => (i.linkId ?? i.id) === linkId);
+        return {
+          ...old,
+          incoming: (old.incoming ?? []).filter((i: any) => (i.linkId ?? i.id) !== linkId),
+          friends: accept && item ? [item, ...(old.friends ?? [])] : (old.friends ?? []),
+        };
+      });
+    },
     onSuccess: (_d, vars) => {
+
       queryClient.invalidateQueries({ queryKey: ["friends-summary"] });
       queryClient.invalidateQueries({ queryKey: ["feed-user-search"] });
       queryClient.invalidateQueries({ queryKey: ["suggested-people"] });
