@@ -32,6 +32,12 @@ import { compressImage } from "@/lib/image-compress";
 
 export const Route = createFileRoute("/_authenticated/feed")({
   component: FeedPage,
+  // ?compose=post → সরাসরি পোস্ট লেখার বক্স, ?compose=story → স্টোরি সিলেক্টর
+  validateSearch: (search: Record<string, unknown>): { compose?: "post" | "photo" | "video" | "story" } => {
+    const c = String(search["compose"] ?? "");
+    return c === "post" || c === "photo" || c === "video" || c === "story" ? { compose: c } : {};
+  },
+
   head: () => ({
     meta: [
       { title: "নিউজ ফিড — Good-App" },
