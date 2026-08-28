@@ -18,7 +18,6 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
-import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as CardUidRouteImport } from './routes/card.$uid'
 import { Route as ApiYoutubeShortsRouteImport } from './routes/api/youtube-shorts'
 import { Route as ApiYoutubeSearchRouteImport } from './routes/api/youtube-search'
@@ -60,7 +59,7 @@ import { Route as AuthenticatedFeedRouteImport } from './routes/_authenticated/f
 import { Route as AuthenticatedEarningsRouteImport } from './routes/_authenticated/earnings'
 import { Route as AuthenticatedSocialIndexRouteImport } from './routes/_authenticated/social/index'
 import { Route as AuthenticatedChatIndexRouteImport } from './routes/_authenticated/chat.index'
-import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
+import { Route as LovableEmailEventsRouteImport } from './routes/lovable/email/events'
 import { Route as ApiPublicWhitelistRecheckRouteImport } from './routes/api/public/whitelist-recheck'
 import { Route as ApiPublicTourAudioRouteImport } from './routes/api/public/tour-audio'
 import { Route as ApiPublicReverifyRemindersRouteImport } from './routes/api/public/reverify-reminders'
@@ -73,9 +72,7 @@ import { Route as AuthenticatedTaskSlotRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedSocialMessengerRouteImport } from './routes/_authenticated/social/messenger'
 import { Route as AuthenticatedChatPeerIdRouteImport } from './routes/_authenticated/chat.$peerId'
 import { Route as AuthenticatedChannelUserIdRouteImport } from './routes/_authenticated/channel/$userId'
-import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
-import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
@@ -132,11 +129,6 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdminRoute,
-} as any)
-const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
-  id: '/email/unsubscribe',
-  path: '/email/unsubscribe',
-  getParentRoute: () => rootRouteImport,
 } as any)
 const CardUidRoute = CardUidRouteImport.update({
   id: '/card/$uid',
@@ -344,9 +336,9 @@ const AuthenticatedChatIndexRoute = AuthenticatedChatIndexRouteImport.update({
   path: '/chat/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
-  id: '/lovable/email/suppression',
-  path: '/lovable/email/suppression',
+const LovableEmailEventsRoute = LovableEmailEventsRouteImport.update({
+  id: '/lovable/email/events',
+  path: '/lovable/email/events',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicWhitelistRecheckRoute =
@@ -414,22 +406,10 @@ const AuthenticatedChannelUserIdRoute =
     path: '/channel/$userId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const LovableEmailTransactionalSendRoute =
-  LovableEmailTransactionalSendRouteImport.update({
-    id: '/lovable/email/transactional/send',
-    path: '/lovable/email/transactional/send',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const LovableEmailTransactionalPreviewRoute =
   LovableEmailTransactionalPreviewRouteImport.update({
     id: '/lovable/email/transactional/preview',
     path: '/lovable/email/transactional/preview',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const LovableEmailQueueProcessRoute =
-  LovableEmailQueueProcessRouteImport.update({
-    id: '/lovable/email/queue/process',
-    path: '/lovable/email/queue/process',
     getParentRoute: () => rootRouteImport,
   } as any)
 const LovableEmailAuthWebhookRoute = LovableEmailAuthWebhookRouteImport.update({
@@ -543,7 +523,6 @@ export interface FileRoutesByFullPath {
   '/api/youtube-search': typeof ApiYoutubeSearchRoute
   '/api/youtube-shorts': typeof ApiYoutubeShortsRoute
   '/card/$uid': typeof CardUidRoute
-  '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/admin/': typeof AdminIndexRoute
   '/channel/$userId': typeof AuthenticatedChannelUserIdRoute
   '/chat/$peerId': typeof AuthenticatedChatPeerIdRoute
@@ -557,7 +536,7 @@ export interface FileRoutesByFullPath {
   '/api/public/reverify-reminders': typeof ApiPublicReverifyRemindersRoute
   '/api/public/tour-audio': typeof ApiPublicTourAudioRoute
   '/api/public/whitelist-recheck': typeof ApiPublicWhitelistRecheckRoute
-  '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/lovable/email/events': typeof LovableEmailEventsRoute
   '/chat/': typeof AuthenticatedChatIndexRoute
   '/social/': typeof AuthenticatedSocialIndexRoute
   '/chat/group/$groupId': typeof AuthenticatedChatGroupGroupIdRoute
@@ -572,9 +551,7 @@ export interface FileRoutesByFullPath {
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
-  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
-  '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -621,7 +598,6 @@ export interface FileRoutesByTo {
   '/api/youtube-search': typeof ApiYoutubeSearchRoute
   '/api/youtube-shorts': typeof ApiYoutubeShortsRoute
   '/card/$uid': typeof CardUidRoute
-  '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/admin': typeof AdminIndexRoute
   '/channel/$userId': typeof AuthenticatedChannelUserIdRoute
   '/chat/$peerId': typeof AuthenticatedChatPeerIdRoute
@@ -635,7 +611,7 @@ export interface FileRoutesByTo {
   '/api/public/reverify-reminders': typeof ApiPublicReverifyRemindersRoute
   '/api/public/tour-audio': typeof ApiPublicTourAudioRoute
   '/api/public/whitelist-recheck': typeof ApiPublicWhitelistRecheckRoute
-  '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/lovable/email/events': typeof LovableEmailEventsRoute
   '/chat': typeof AuthenticatedChatIndexRoute
   '/social': typeof AuthenticatedSocialIndexRoute
   '/chat/group/$groupId': typeof AuthenticatedChatGroupGroupIdRoute
@@ -650,9 +626,7 @@ export interface FileRoutesByTo {
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
-  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
-  '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -703,7 +677,6 @@ export interface FileRoutesById {
   '/api/youtube-search': typeof ApiYoutubeSearchRoute
   '/api/youtube-shorts': typeof ApiYoutubeShortsRoute
   '/card/$uid': typeof CardUidRoute
-  '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/admin/': typeof AdminIndexRoute
   '/_authenticated/channel/$userId': typeof AuthenticatedChannelUserIdRoute
   '/_authenticated/chat/$peerId': typeof AuthenticatedChatPeerIdRoute
@@ -717,7 +690,7 @@ export interface FileRoutesById {
   '/api/public/reverify-reminders': typeof ApiPublicReverifyRemindersRoute
   '/api/public/tour-audio': typeof ApiPublicTourAudioRoute
   '/api/public/whitelist-recheck': typeof ApiPublicWhitelistRecheckRoute
-  '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/lovable/email/events': typeof LovableEmailEventsRoute
   '/_authenticated/chat/': typeof AuthenticatedChatIndexRoute
   '/_authenticated/social/': typeof AuthenticatedSocialIndexRoute
   '/_authenticated/chat/group/$groupId': typeof AuthenticatedChatGroupGroupIdRoute
@@ -732,9 +705,7 @@ export interface FileRoutesById {
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
-  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
-  '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -785,7 +756,6 @@ export interface FileRouteTypes {
     | '/api/youtube-search'
     | '/api/youtube-shorts'
     | '/card/$uid'
-    | '/email/unsubscribe'
     | '/admin/'
     | '/channel/$userId'
     | '/chat/$peerId'
@@ -799,7 +769,7 @@ export interface FileRouteTypes {
     | '/api/public/reverify-reminders'
     | '/api/public/tour-audio'
     | '/api/public/whitelist-recheck'
-    | '/lovable/email/suppression'
+    | '/lovable/email/events'
     | '/chat/'
     | '/social/'
     | '/chat/group/$groupId'
@@ -814,9 +784,7 @@ export interface FileRouteTypes {
     | '/api/public/telegram/webhook'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
-    | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
-    | '/lovable/email/transactional/send'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -863,7 +831,6 @@ export interface FileRouteTypes {
     | '/api/youtube-search'
     | '/api/youtube-shorts'
     | '/card/$uid'
-    | '/email/unsubscribe'
     | '/admin'
     | '/channel/$userId'
     | '/chat/$peerId'
@@ -877,7 +844,7 @@ export interface FileRouteTypes {
     | '/api/public/reverify-reminders'
     | '/api/public/tour-audio'
     | '/api/public/whitelist-recheck'
-    | '/lovable/email/suppression'
+    | '/lovable/email/events'
     | '/chat'
     | '/social'
     | '/chat/group/$groupId'
@@ -892,9 +859,7 @@ export interface FileRouteTypes {
     | '/api/public/telegram/webhook'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
-    | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
-    | '/lovable/email/transactional/send'
   id:
     | '__root__'
     | '/'
@@ -944,7 +909,6 @@ export interface FileRouteTypes {
     | '/api/youtube-search'
     | '/api/youtube-shorts'
     | '/card/$uid'
-    | '/email/unsubscribe'
     | '/admin/'
     | '/_authenticated/channel/$userId'
     | '/_authenticated/chat/$peerId'
@@ -958,7 +922,7 @@ export interface FileRouteTypes {
     | '/api/public/reverify-reminders'
     | '/api/public/tour-audio'
     | '/api/public/whitelist-recheck'
-    | '/lovable/email/suppression'
+    | '/lovable/email/events'
     | '/_authenticated/chat/'
     | '/_authenticated/social/'
     | '/_authenticated/chat/group/$groupId'
@@ -973,9 +937,7 @@ export interface FileRouteTypes {
     | '/api/public/telegram/webhook'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
-    | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
-    | '/lovable/email/transactional/send'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -991,13 +953,12 @@ export interface RootRouteChildren {
   ApiYoutubeSearchRoute: typeof ApiYoutubeSearchRoute
   ApiYoutubeShortsRoute: typeof ApiYoutubeShortsRoute
   CardUidRoute: typeof CardUidRoute
-  EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   ApiPublicHisabCardRoute: typeof ApiPublicHisabCardRoute
   ApiPublicIpaybdWebhookRoute: typeof ApiPublicIpaybdWebhookRoute
   ApiPublicReverifyRemindersRoute: typeof ApiPublicReverifyRemindersRoute
   ApiPublicTourAudioRoute: typeof ApiPublicTourAudioRoute
   ApiPublicWhitelistRecheckRoute: typeof ApiPublicWhitelistRecheckRoute
-  LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
+  LovableEmailEventsRoute: typeof LovableEmailEventsRoute
   ApiPublicAppDownloadRoute: typeof ApiPublicAppDownloadRoute
   ApiPublicBroadcastRunRoute: typeof ApiPublicBroadcastRunRoute
   ApiPublicCeloSweepRunRoute: typeof ApiPublicCeloSweepRunRoute
@@ -1009,9 +970,7 @@ export interface RootRouteChildren {
   ApiPublicTelegramWebhookRoute: typeof ApiPublicTelegramWebhookRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
-  LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
-  LovableEmailTransactionalSendRoute: typeof LovableEmailTransactionalSendRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1078,13 +1037,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
-    }
-    '/email/unsubscribe': {
-      id: '/email/unsubscribe'
-      path: '/email/unsubscribe'
-      fullPath: '/email/unsubscribe'
-      preLoaderRoute: typeof EmailUnsubscribeRouteImport
-      parentRoute: typeof rootRouteImport
     }
     '/card/$uid': {
       id: '/card/$uid'
@@ -1373,11 +1325,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedChatIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/lovable/email/suppression': {
-      id: '/lovable/email/suppression'
-      path: '/lovable/email/suppression'
-      fullPath: '/lovable/email/suppression'
-      preLoaderRoute: typeof LovableEmailSuppressionRouteImport
+    '/lovable/email/events': {
+      id: '/lovable/email/events'
+      path: '/lovable/email/events'
+      fullPath: '/lovable/email/events'
+      preLoaderRoute: typeof LovableEmailEventsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/whitelist-recheck': {
@@ -1464,25 +1416,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedChannelUserIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/lovable/email/transactional/send': {
-      id: '/lovable/email/transactional/send'
-      path: '/lovable/email/transactional/send'
-      fullPath: '/lovable/email/transactional/send'
-      preLoaderRoute: typeof LovableEmailTransactionalSendRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/lovable/email/transactional/preview': {
       id: '/lovable/email/transactional/preview'
       path: '/lovable/email/transactional/preview'
       fullPath: '/lovable/email/transactional/preview'
       preLoaderRoute: typeof LovableEmailTransactionalPreviewRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lovable/email/queue/process': {
-      id: '/lovable/email/queue/process'
-      path: '/lovable/email/queue/process'
-      fullPath: '/lovable/email/queue/process'
-      preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/lovable/email/auth/webhook': {
@@ -1703,13 +1641,12 @@ const rootRouteChildren: RootRouteChildren = {
   ApiYoutubeSearchRoute: ApiYoutubeSearchRoute,
   ApiYoutubeShortsRoute: ApiYoutubeShortsRoute,
   CardUidRoute: CardUidRoute,
-  EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   ApiPublicHisabCardRoute: ApiPublicHisabCardRoute,
   ApiPublicIpaybdWebhookRoute: ApiPublicIpaybdWebhookRoute,
   ApiPublicReverifyRemindersRoute: ApiPublicReverifyRemindersRoute,
   ApiPublicTourAudioRoute: ApiPublicTourAudioRoute,
   ApiPublicWhitelistRecheckRoute: ApiPublicWhitelistRecheckRoute,
-  LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
+  LovableEmailEventsRoute: LovableEmailEventsRoute,
   ApiPublicAppDownloadRoute: ApiPublicAppDownloadRoute,
   ApiPublicBroadcastRunRoute: ApiPublicBroadcastRunRoute,
   ApiPublicCeloSweepRunRoute: ApiPublicCeloSweepRunRoute,
@@ -1721,9 +1658,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicTelegramWebhookRoute: ApiPublicTelegramWebhookRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
-  LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
-  LovableEmailTransactionalSendRoute: LovableEmailTransactionalSendRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -1,4 +1,5 @@
 import * as React from 'react'
+
 import {
   Body,
   Button,
@@ -22,25 +23,28 @@ export const InviteEmail = ({
   siteUrl,
   confirmationUrl,
 }: InviteEmailProps) => (
-  <Html lang="bn" dir="ltr">
-    <Head />
-    <Preview>{siteName}-তে আপনাকে আমন্ত্রণ জানানো হয়েছে</Preview>
+  <Html lang="en" dir="ltr">
+    <Head>
+      <style>{darkModeCss}</style>
+    </Head>
+    <Preview>You've been invited to join {siteName}</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Text style={brand}>{siteName}</Text>
-        <Heading style={h1}>আপনাকে আমন্ত্রণ জানানো হয়েছে</Heading>
+        <Heading style={h1}>You've been invited</Heading>
         <Text style={text}>
-          আপনাকে{' '}
+          You've been invited to join{' '}
           <Link href={siteUrl} style={link}>
             <strong>{siteName}</strong>
           </Link>
-          -তে যোগ দেওয়ার জন্য আমন্ত্রণ জানানো হয়েছে। আমন্ত্রণটি গ্রহণ করে একাউন্ট তৈরি করতে নিচের বাটনে ক্লিক করুন।
+          . Click the button below to accept the invitation and create your
+          account.
         </Text>
-        <Button style={button} href={confirmationUrl}>
-          আমন্ত্রণ গ্রহণ করুন
+        <Button className="dm-btn" style={button} href={confirmationUrl}>
+          Accept Invitation
         </Button>
-        <Text style={muted}>
-          যদি আপনি এই আমন্ত্রণ আশা না করেন, এই মেইলটি বাদ দিতে পারেন।
+        <Text style={footer}>
+          If you weren't expecting this invitation, you can safely ignore this
+          email.
         </Text>
       </Container>
     </Body>
@@ -49,21 +53,36 @@ export const InviteEmail = ({
 
 export default InviteEmail
 
-const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, Helvetica, sans-serif' }
-const container = { padding: '28px 24px', maxWidth: '480px' }
-const brand = { fontSize: '13px', fontWeight: 700, color: '#0ea5e9', letterSpacing: '1px', margin: '0 0 8px' }
-const h1 = { fontSize: '22px', color: '#0f172a', margin: '0 0 16px' }
-const text = { fontSize: '14px', color: '#334155', lineHeight: '22px', margin: '0 0 16px' }
-const link = { color: '#0ea5e9', textDecoration: 'none' }
+const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif' }
+const container = { padding: '20px 25px' }
+const h1 = {
+  fontSize: '22px',
+  fontWeight: 'bold' as const,
+  color: '#000000',
+  margin: '0 0 20px',
+}
+const text = {
+  fontSize: '14px',
+  color: '#55575d',
+  lineHeight: '1.5',
+  margin: '0 0 25px',
+}
+const link = { color: 'inherit', textDecoration: 'underline' }
 const button = {
-  backgroundColor: '#0f172a',
+  backgroundColor: '#000000',
   color: '#ffffff',
   fontSize: '14px',
-  fontWeight: 700,
-  borderRadius: '12px',
-  padding: '14px 24px',
+  border: '1px solid #000000',
+  borderRadius: '8px',
+  padding: '12px 20px',
   textDecoration: 'none',
-  display: 'inline-block',
-  margin: '0 0 16px',
 }
-const muted = { fontSize: '12px', color: '#64748b', lineHeight: '19px', margin: 0 }
+const footer = { fontSize: '12px', color: '#999999', margin: '30px 0 0' }
+// Rendered as a text child, which React may HTML-escape: keep this CSS free of >, &, and quotes.
+const darkModeCss = `
+  @media (prefers-color-scheme: dark) {
+    .dm-btn { background-color: #ffffff !important; color: #000000 !important; }
+  }
+  [data-ogsc] .dm-btn { background-color: #ffffff !important; color: #000000 !important; }
+  [data-ogsb] .dm-btn { background-color: #ffffff !important; color: #000000 !important; }
+`
