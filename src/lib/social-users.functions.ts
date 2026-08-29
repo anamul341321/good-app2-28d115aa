@@ -248,6 +248,7 @@ export const getPublicProfile = createServerFn({ method: "GET" })
       is_verified_badge: (row as any).is_verified_badge ?? null,
       created_at: (row as any).created_at ?? null,
       gender: ((row as any).gender ?? null) as "male" | "female" | null,
+      bio: ((row as any).bio ?? "") as string,
     };
   });
 
