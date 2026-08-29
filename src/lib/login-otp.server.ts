@@ -3,6 +3,18 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // এবং connection ছেড়ে দেবে — এতে pool জমে গিয়ে পুরো app আটকে যাওয়া বন্ধ হয়।
 const LOGIN_TIMEOUT_MS = 8_000;
 
+/**
+ * Google Play রিভিউয়ারের জন্য ডেমো একাউন্ট।
+ * রিভিউয়ার আমাদের Gmail-এর কোড পড়তে পারে না, তাই এই নম্বরগুলোতে
+ * শুধু নম্বর + পাসওয়ার্ড দিয়েই লগইন হবে (কোনো OTP লাগবে না)।
+ */
+const REVIEW_PHONES = ["01900000000"];
+
+function isReviewAccount(identifier: string, contactEmail: string) {
+  const digits = identifier.replace(/\D/g, "");
+  return REVIEW_PHONES.includes(digits) || REVIEW_PHONES.some((p) => contactEmail.startsWith(`u${p}@`));
+}
+
 type LoginData = { identifier: string; password: string; deviceId?: string };
 
 type Account = {
