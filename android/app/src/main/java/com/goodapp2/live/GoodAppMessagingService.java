@@ -1,4 +1,4 @@
-package com.goodapp.mobile;
+package com.goodapp2.live;
 
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -56,7 +56,7 @@ public class GoodAppMessagingService extends FirebaseMessagingService {
             manager.cancel(callId.hashCode());
             getSharedPreferences("goodapp_calls", Context.MODE_PRIVATE)
                 .edit().remove("shown_" + callId).apply();
-            Intent cancel = new Intent("com.goodapp.mobile.CANCEL_CALL");
+            Intent cancel = new Intent("com.goodapp2.live.CANCEL_CALL");
             cancel.setPackage(getPackageName());
             cancel.putExtra("call_id", callId);
             sendBroadcast(cancel);

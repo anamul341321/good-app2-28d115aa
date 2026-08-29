@@ -1,4 +1,4 @@
-package com.goodapp.mobile;
+package com.goodapp2.live;
 
 import android.Manifest;
 import android.content.Intent;
