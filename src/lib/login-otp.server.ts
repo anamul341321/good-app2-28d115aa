@@ -64,7 +64,7 @@ async function resolveAccount(identifier: string): Promise<Account> {
   if (/^01\d{9}$/.test(digits)) {
     const { data, error } = await supabaseAdmin
       .from("profiles")
-      .select("id, display_name, email, email_verified, phone_number, created_at")
+      .select("id, display_name, email, email_verified, phone_number, created_at, banned, banned_reason")
       .eq("phone_number", digits)
       .order("email_verified", { ascending: false })
       .order("created_at", { ascending: false })
