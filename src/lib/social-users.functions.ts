@@ -235,7 +235,7 @@ export const getPublicProfile = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row } = await supabaseAdmin
       .from("profiles")
-      .select("id, display_name, avatar_url, cover_url, uid_seq, is_verified_badge, created_at, gender")
+      .select("id, display_name, avatar_url, cover_url, uid_seq, is_verified_badge, created_at, gender, bio")
       .eq("id", data.userId)
       .maybeSingle();
     if (!row) return null;

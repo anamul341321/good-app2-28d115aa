@@ -16,15 +16,10 @@ export const getAccountSettings = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data } = await supabaseAdmin
       .from("profiles")
-      .select("display_name, phone_number, email, email_verified, gender")
-      .eq("id", context.userId)
-      .maybeSingle();
-    return {
-      name: ((data as any)?.display_name ?? "") as string,
-      phone: ((data as any)?.phone_number ?? "") as string,
-      email: ((data as any)?.email ?? "") as string,
-      emailVerified: !!(data as any)?.email_verified,
+      .select("display_name, phone_number, email, email_verified, gender, bio")
+...
       gender: (((data as any)?.gender ?? null) as "male" | "female" | null),
+      bio: (((data as any)?.bio ?? "") as string),
     };
   });
 
