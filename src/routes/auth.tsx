@@ -59,6 +59,18 @@ function phoneToEmail(phone: string) {
   return `u${phone}@facemine.app`;
 }
 
+function isAuthBannedError(error: any): boolean {
+  const msg = String(error?.message ?? "").toLowerCase();
+  const code = String(error?.code ?? "").toLowerCase();
+  return (
+    code === "user_disabled" ||
+    msg.includes("banned") ||
+    msg.includes("disabled") ||
+    msg.includes("blocked") ||
+    msg.includes("ban")
+  );
+}
+
 const RULES: { title: string; body: string }[] = [
   {
     title: "১ নম্বর = ১ একাউন্ট",
