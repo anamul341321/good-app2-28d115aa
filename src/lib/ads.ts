@@ -85,7 +85,8 @@ export async function showDailyAppOpenAd() {
     });
 
     await AdMob.showInterstitial();
-    localStorage.setItem(DAY_KEY, today);
+    localStorage.setItem(DAY_KEY, new Date().toISOString().slice(0, 10));
+
   } catch {
     // অ্যাড লোড না হলে চুপচাপ বাদ — ইউজারকে বিরক্ত করা যাবে না
   }
