@@ -14,3 +14,6 @@
 - [x] Bump the Android release to v1.31 (versionCode 31) so devices detect the new APK
 - [x] Enforce remote device logout on heartbeat/foreground and clear that device's OTP trust
 - [x] Require Gmail code when a remotely logged-out device signs in again
+- [x] Play Store compliance: AdMob/Advertising ID disclosure in privacy + data-safety
+- [x] Public /account-deletion page (Play Console data deletion URL)
+- [x] PLAYSTORE_LISTING.md — descriptions, data safety answers, content rating, reject checklist
