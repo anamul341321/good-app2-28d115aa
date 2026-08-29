@@ -1640,6 +1640,7 @@ export type Database = {
           banned: boolean
           banned_at: string | null
           banned_reason: string | null
+          bio: string | null
           bonus_first_verify_claimed: boolean
           bonus_first_verify_self_claimed: boolean
           bonus_reverify_claimed: boolean
@@ -1686,6 +1687,7 @@ export type Database = {
           banned?: boolean
           banned_at?: string | null
           banned_reason?: string | null
+          bio?: string | null
           bonus_first_verify_claimed?: boolean
           bonus_first_verify_self_claimed?: boolean
           bonus_reverify_claimed?: boolean
@@ -1732,6 +1734,7 @@ export type Database = {
           banned?: boolean
           banned_at?: string | null
           banned_reason?: string | null
+          bio?: string | null
           bonus_first_verify_claimed?: boolean
           bonus_first_verify_self_claimed?: boolean
           bonus_reverify_claimed?: boolean
