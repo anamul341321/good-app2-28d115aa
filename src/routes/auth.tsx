@@ -925,7 +925,11 @@ export function AuthPage() {
                 toast.success("একাউন্ট তৈরি হয়েছে — স্বাগতম!");
                 nav({ to: "/home" });
                 return;
-              } catch {
+              } catch (e: any) {
+                if (isAuthBannedError(e)) {
+                  toast.error("আপনার account block করা আছে — admin-এর সাথে যোগাযোগ করুন");
+                  return;
+                }
                 setMode("login");
                 setLoginId(cleanPhone);
                 toast.success("একাউন্ট তৈরি হয়েছে — এখন পাসওয়ার্ড দিয়ে লগইন করুন");
