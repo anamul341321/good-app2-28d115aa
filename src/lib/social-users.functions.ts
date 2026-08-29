@@ -235,7 +235,7 @@ export const getPublicProfile = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row } = await supabaseAdmin
       .from("profiles")
-      .select("id, display_name, avatar_url, cover_url, uid_seq, is_verified_badge, created_at, gender")
+      .select("id, display_name, avatar_url, cover_url, uid_seq, is_verified_badge, created_at, gender, bio")
       .eq("id", data.userId)
       .maybeSingle();
     if (!row) return null;
@@ -248,6 +248,7 @@ export const getPublicProfile = createServerFn({ method: "GET" })
       is_verified_badge: (row as any).is_verified_badge ?? null,
       created_at: (row as any).created_at ?? null,
       gender: ((row as any).gender ?? null) as "male" | "female" | null,
+      bio: ((row as any).bio ?? "") as string,
     };
   });
 

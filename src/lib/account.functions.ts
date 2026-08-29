@@ -16,7 +16,7 @@ export const getAccountSettings = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data } = await supabaseAdmin
       .from("profiles")
-      .select("display_name, phone_number, email, email_verified, gender")
+      .select("display_name, phone_number, email, email_verified, gender, bio")
       .eq("id", context.userId)
       .maybeSingle();
     return {
@@ -25,6 +25,7 @@ export const getAccountSettings = createServerFn({ method: "GET" })
       email: ((data as any)?.email ?? "") as string,
       emailVerified: !!(data as any)?.email_verified,
       gender: (((data as any)?.gender ?? null) as "male" | "female" | null),
+      bio: (((data as any)?.bio ?? "") as string),
     };
   });
 

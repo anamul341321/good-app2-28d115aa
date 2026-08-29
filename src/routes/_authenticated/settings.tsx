@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getAccountSettings, changePhoneNumber, deleteMyAccount, setMyGender } from "@/lib/account.functions";
+import { updateBio } from "@/lib/profile.functions";
 import { clearCurrentDeviceOtpTrust, listMyDevices, revokeDevice, revokeOtherDevices } from "@/lib/sessions.functions";
 import { requestEmailVerifyOtp, confirmEmailVerifyOtp } from "@/lib/email-verify.functions";
 import { requestPasswordChangeOtp, changePasswordWithOtp } from "@/lib/password-change.functions";
@@ -75,6 +76,21 @@ function SettingsPage() {
   const setPhoneFn = useServerFn(changePhoneNumber);
   const setGenderFn = useServerFn(setMyGender);
   const [genderBusy, setGenderBusy] = useState(false);
+  const updateBioFn = useServerFn(updateBio);
+  const [bioText, setBioText] = useState("");
+  const [bioBusy, setBioBusy] = useState(false);
+  const saveBio = async () => {
+    setBioBusy(true);
+    try {
+      await updateBioFn({ data: { bio: bioText } });
+      await qc.invalidateQueries({ queryKey: ["account-settings"] });
+      toast.success("বায়ো সেভ হয়েছে ✨");
+    } catch (e: any) {
+      toast.error(e?.message ?? "সেভ করা যায়নি");
+    } finally {
+      setBioBusy(false);
+    }
+  };
   const saveGender = async (g: "male" | "female") => {
     setGenderBusy(true);
     try {
@@ -89,6 +105,10 @@ function SettingsPage() {
   };
 
   const { data: acc } = useQuery({ queryKey: ["account-settings"], queryFn: () => account() });
+  useEffect(() => {
+    const b = (acc as any)?.bio;
+    if (typeof b === "string" && b !== "") setBioText((prev) => (prev === "" ? b : prev));
+  }, [(acc as any)?.bio]);
   const { data: devices, isLoading: devLoading } = useQuery({
     queryKey: ["my-devices", deviceId],
     queryFn: () => devicesFn({ data: { deviceId } }),
@@ -248,6 +268,33 @@ function SettingsPage() {
               {g.label}
             </button>
           ))}
+        </div>
+      </Card>
+
+      <Card
+        icon={<FileText className="w-4 h-4 text-cyan" />}
+        title="প্রোফাইল বায়ো"
+        desc="তোমার সম্পর্কে সংক্ষেপে লিখো — প্রোফাইলে সবাই দেখতে পাবে।"
+      >
+        <textarea
+          value={bioText}
+          onChange={(e) => setBioText(e.target.value.slice(0, 160))}
+          maxLength={160}
+          rows={3}
+          placeholder="যেমন: স্বপ্ন দেখি, কষ্ট করি, এগিয়ে যাই 🌟"
+          className={`${inputCls} resize-none`}
+        />
+        <div className="flex items-center justify-between">
+          <span className="text-[11px] text-muted-foreground">{bioText.length}/160</span>
+          <button
+            type="button"
+            onClick={saveBio}
+            disabled={bioBusy}
+            className="btn-press flex items-center gap-1.5 rounded-xl bg-cyan px-4 py-2 text-xs font-black text-white disabled:opacity-60"
+          >
+            {bioBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+            সেভ করো
+          </button>
         </div>
       </Card>
 

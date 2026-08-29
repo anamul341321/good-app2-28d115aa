@@ -43,6 +43,7 @@ type ProfileRow = {
   uid_seq: number | null;
   is_verified_badge: boolean | null;
   created_at: string | null;
+  bio?: string | null;
 };
 
 function Avatar({ path, className, fallback }: { path?: string | null; className?: string; fallback: string }) {
@@ -332,6 +333,11 @@ function UserProfilePage() {
           <p className="text-[13px] text-gray-500 dark:text-muted-foreground">
             {targetUser.uid_seq ? `UID: ${targetUser.uid_seq}` : ""}
           </p>
+          {targetUser.bio && targetUser.bio.trim() && (
+            <p className="mt-1.5 text-[14px] leading-snug text-gray-700 dark:text-foreground/90 whitespace-pre-wrap break-words">
+              {targetUser.bio}
+            </p>
+          )}
 
           <div className="flex items-center gap-4 mt-3 text-[13px] text-gray-500 dark:text-muted-foreground">
             <div className="flex items-center gap-1">

@@ -190,3 +190,18 @@ export const uploadCoverPhoto = createServerFn({ method: "POST" })
     if (pErr) throw new Error(pErr.message);
     return { ok: true, path };
   });
+
+// প্রোফাইল bio আপডেট — সর্বোচ্চ 160 অক্ষর
+export const updateBio = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { bio: string }) => data)
+  .handler(async ({ context, data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const bio = String(data.bio ?? "").trim().slice(0, 160);
+    const { error } = await (supabaseAdmin as any)
+      .from("profiles")
+      .update({ bio })
+      .eq("id", context.userId);
+    if (error) throw new Error(error.message);
+    return { ok: true, bio };
+  });
