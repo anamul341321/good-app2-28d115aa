@@ -36,28 +36,6 @@ export const touchDevice = createServerFn({ method: "POST" })
           .eq("id", (existing as any).id);
         return { revoked: false as const, justApproved: true as const };
       }
-      // কোনো "মেইন ফোন" না থাকলে অনুমতি দেওয়ার কেউ নেই — তখন নিজের একাউন্টে
-      // আটকে থাকা যাবে না, এই ফোনটিই আবার চালু হয়ে যাবে।
-      const { data: others } = await supabaseAdmin
-        .from("user_devices")
-        .select("id, last_seen_at")
-        .eq("user_id", context.userId)
-        .is("revoked_at", null)
-        .neq("device_id", deviceId)
-        .gte("last_seen_at", new Date(Date.now() - 7 * 24 * 3600_000).toISOString())
-        .limit(1);
-      if (!others?.length) {
-        await supabaseAdmin
-          .from("user_devices")
-          .update({
-            revoked_at: null,
-            approval_state: null,
-            approval_requested_at: null,
-            last_seen_at: new Date().toISOString(),
-          } as any)
-          .eq("id", (existing as any).id);
-        return { revoked: false as const, selfRestored: true as const };
-      }
       return {
         revoked: true as const,
         approvalState: ((existing as any).approval_state as string) ?? null,
@@ -314,7 +292,12 @@ export const revokeDevice = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin
       .from("user_devices")
-      .update({ revoked_at: new Date().toISOString() } as any)
+      .update({
+        revoked_at: new Date().toISOString(),
+        otp_trust_expires_at: null,
+        approval_state: null,
+        approval_requested_at: null,
+      } as any)
       .eq("id", data.id)
       .eq("user_id", context.userId);
     if (error) throw new Error("ডিভাইসটি লগআউট করা যায়নি");
@@ -328,10 +311,32 @@ export const revokeOtherDevices = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin
       .from("user_devices")
-      .update({ revoked_at: new Date().toISOString() } as any)
+      .update({
+        revoked_at: new Date().toISOString(),
+        otp_trust_expires_at: null,
+        approval_state: null,
+        approval_requested_at: null,
+      } as any)
       .eq("user_id", context.userId)
       .is("revoked_at", null)
       .neq("device_id", data.deviceId);
     if (error) throw new Error("অন্য ডিভাইসগুলো লগআউট করা যায়নি");
+    return { ok: true as const };
+  });
+
+/** স্বাভাবিক logout-এর পর একই ফোনে পরের login-এ আবার Gmail code চাইবে। */
+export const clearCurrentDeviceOtpTrust = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { deviceId: string }) => d)
+  .handler(async ({ data, context }) => {
+    const deviceId = (data.deviceId || "").trim().slice(0, 64);
+    if (!deviceId) return { ok: true as const };
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("user_devices")
+      .update({ otp_trust_expires_at: null } as any)
+      .eq("user_id", context.userId)
+      .eq("device_id", deviceId);
+    if (error) throw new Error("ডিভাইসের লগইন নিরাপত্তা আপডেট করা যায়নি");
     return { ok: true as const };
   });
