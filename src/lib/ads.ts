@@ -65,14 +65,19 @@ export async function showDailyAppOpenAd() {
   const cfg = await loadAdsConfig();
   if (!cfg.appOpen) return;
   if (ADS_CONFIG.dailyInterstitialLimit <= 0) return;
-  const today = new Date().toISOString().slice(0, 10);
-  try {
-    if (localStorage.getItem(DAY_KEY) === today) return;
-  } catch {
-    return;
+  // টেস্ট মোডে দিনে-একবার সীমা মানা হয় না, যাতে অ্যাডমিন প্রতিবার যাচাই করতে পারেন
+  if (!cfg.test) {
+    const today = new Date().toISOString().slice(0, 10);
+    try {
+      if (localStorage.getItem(DAY_KEY) === today) return;
+    } catch {
+      return;
+    }
   }
+  await initAds();
   const AdMob = await getAdMob();
   if (!AdMob) return;
+
   try {
     await AdMob.prepareInterstitial({
       adId: pickUnit(cfg.test, cfg.interstitialUnit, ADS_CONFIG.interstitialId),
