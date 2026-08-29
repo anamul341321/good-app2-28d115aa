@@ -9,6 +9,7 @@ import {
   ArrowLeft,
   Share2,
   Baby,
+  Megaphone,
 } from "lucide-react";
 
 export const Route = createFileRoute("/data-safety")({
@@ -73,6 +74,16 @@ const SECTIONS: { icon: React.ElementType; title: string; points: string[] }[] =
       "notify.goodapp2.live — লগইন কোড ও নোটিশ ইমেইল পাঠাতে।",
       "Google Sign-In — ঐচ্ছিক দ্রুত লগইন।",
       "টেলিগ্রাম সাপোর্ট বট — ব্যবহারকারীর UID ও স্ট্যাটাস দেখানো।",
+    ],
+  },
+  {
+    icon: Megaphone,
+    title: "বিজ্ঞাপন (Google AdMob)",
+    points: [
+      "Google AdMob-এর ব্যানার, ইন্টারস্টিশিয়াল ও রিওয়ার্ডেড ভিডিও বিজ্ঞাপন দেখানো হতে পারে।",
+      "বিজ্ঞাপনের জন্য ডিভাইসের Advertising ID (AAID) ও মোটামুটি অঞ্চল Google ব্যবহার করতে পারে।",
+      "নাম, ফোন নম্বর, ফেস ছবি বা ব্যালেন্স কোনো বিজ্ঞাপন নেটওয়ার্কে যায় না।",
+      "Android সেটিংস → Google → Ads থেকে ব্যক্তিগতকৃত বিজ্ঞাপন বন্ধ করা যায়।",
     ],
   },
   {

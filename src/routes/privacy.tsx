@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ShieldCheck, Database, Eye, Trash2, Lock, Mail, ArrowLeft, Baby, Share2, Clock, UserCheck, ScanFace, Coins } from "lucide-react";
+import { ShieldCheck, Database, Eye, Trash2, Lock, Mail, ArrowLeft, Baby, Share2, Clock, UserCheck, ScanFace, Coins, Megaphone } from "lucide-react";
 
 export const Route = createFileRoute("/privacy")({
   head: () => ({
@@ -133,8 +133,20 @@ const SECTIONS: { icon: React.ElementType; title: string; points: string[] }[] =
     ],
   },
   {
+    icon: Megaphone,
+    title: "১১. বিজ্ঞাপন (Google AdMob)",
+    points: [
+      "অ্যাপে Google AdMob-এর বিজ্ঞাপন দেখানো হতে পারে (ব্যানার, ইন্টারস্টিশিয়াল ও রিওয়ার্ডেড ভিডিও)।",
+      "বিজ্ঞাপন দেখানোর জন্য Google আপনার ডিভাইসের Advertising ID (AAID), মোটামুটি অবস্থান (দেশ/অঞ্চল) ও ডিভাইস তথ্য ব্যবহার করতে পারে — এটি Google-এর নিজস্ব নীতিতে পরিচালিত: https://policies.google.com/technologies/ads",
+      "আমরা আপনার নাম, ফোন নম্বর, ফেস ছবি বা ব্যালেন্স তথ্য কোনো বিজ্ঞাপন নেটওয়ার্কের সাথে শেয়ার করি না।",
+      "রিওয়ার্ডেড বিজ্ঞাপন দেখা সম্পূর্ণ ঐচ্ছিক — না দেখলেও অ্যাপের মূল সুবিধা ব্যবহার করা যায়।",
+      "Android সেটিংস → Google → Ads থেকে ‘Delete advertising ID’ বা ‘Opt out of Ads Personalisation’ দিয়ে ব্যক্তিগতকৃত বিজ্ঞাপন বন্ধ করা যায়।",
+      "১৮ বছরের কম বয়সীদের জন্য এই অ্যাপ নয়, তাই শিশু-লক্ষ্যিত বিজ্ঞাপন পরিবেশন করা হয় না।",
+    ],
+  },
+  {
     icon: Mail,
-    title: "১১. যোগাযোগ",
+    title: "১২. যোগাযোগ",
     points: [
       "গোপনীয়তা সংক্রান্ত যেকোনো প্রশ্ন বা ডেটা মুছে ফেলার অনুরোধে অ্যাপের সাপোর্টে যোগাযোগ করুন।",
       "যোগাযোগ ইমেইল: support@goodapp2.live",
@@ -190,6 +202,14 @@ function PrivacyPage() {
         সর্বশেষ হালনাগাদ: আগস্ট ২০২৬ ·{" "}
         <Link to="/terms" className="underline">
           নিয়ম ও শর্তাবলি
+        </Link>{" "}
+        ·{" "}
+        <Link to="/data-safety" className="underline">
+          ডেটা সেফটি
+        </Link>{" "}
+        ·{" "}
+        <Link to="/account-deletion" className="underline">
+          একাউন্ট ডিলিট
         </Link>
       </p>
     </main>
