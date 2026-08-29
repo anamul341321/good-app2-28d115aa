@@ -30,7 +30,7 @@ type Account = {
 
 type SignInResult =
   | { ok: true; session: { access_token: string; refresh_token: string } }
-  | { ok: false; reason: "auth" | "timeout" | "error" };
+  | { ok: false; reason: "auth" | "timeout" | "error" | "banned"; banReason?: string | null };
 
 
 function maskEmail(email: string) {
