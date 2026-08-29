@@ -84,7 +84,7 @@ async function resolveAccount(identifier: string): Promise<Account> {
   } else if (EMAIL_RE.test(raw)) {
     const { data, error } = await supabaseAdmin
       .from("profiles")
-      .select("id, display_name, email, email_verified, phone_number, created_at")
+      .select("id, display_name, email, email_verified, phone_number, created_at, banned, banned_reason")
       .ilike("email", raw)
       .order("email_verified", { ascending: false })
       .order("created_at", { ascending: false })
