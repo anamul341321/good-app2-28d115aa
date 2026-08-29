@@ -1,6 +1,6 @@
 # Good-App — Play Store জমা দেওয়ার সম্পূর্ণ প্যাক (কপি-পেস্ট রেডি)
 
-App name: **Good-App** · Package: **com.goodapp.mobile** · Category: **Finance** (Tools-ও চলে) · 18+
+App name: **Good-App** · Package: **com.anamul.goodapp** · Category: **Finance** (Tools-ও চলে) · 18+
 
 ## ১. জরুরি লিংক (Play Console-এ এগুলোই দেবেন)
 
