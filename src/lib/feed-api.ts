@@ -841,15 +841,17 @@ export async function getBangladeshExternalVideos(
   let videos = dedupeExternalVideos(ytResult.videos);
 
   if (isShort) {
-    // Reels must be Bangladesh/Bangla short-form clips — never mix long/Chinese results.
-    const shortOnly = videos.filter((v) => {
-      if (typeof v.duration === "number" && v.duration > 0) return v.duration <= 180;
-      return /#?shorts/i.test(v.title || "");
-    });
-    const bangladeshOnly = shortOnly.filter(isBangladeshShortCandidate);
-    videos = bangladeshOnly.length >= Math.min(rows, 3)
-      ? bangladeshOnly
-      : shortOnly.filter((v) => !hasCjkOrChineseMarker(`${v.title || ""} ${v.creator || ""}`));
+    // The shorts endpoint already targets short-form clips, and it does not always
+    // report a duration. Only drop clips that are *known* to be long, otherwise an
+    // unknown duration would wipe out almost the whole page.
+    const shortOnly = videos.filter((v) => !(typeof v.duration === "number" && v.duration > 300));
+    // Bangla/Bangladeshi clips come first, but the rest still fill the feed so the
+    // reels list is never nearly empty.
+    const clean = shortOnly.filter((v) => !hasCjkOrChineseMarker(`${v.title || ""} ${v.creator || ""}`));
+    const pool = clean.length > 0 ? clean : shortOnly;
+    const bangladeshFirst = pool.filter(isBangladeshShortCandidate);
+    const others = pool.filter((v) => !isBangladeshShortCandidate(v));
+    videos = [...bangladeshFirst, ...others];
   }
 
   // Avoid repeating videos the user actually played. Merely rendering a card
@@ -866,9 +868,12 @@ export async function getBangladeshExternalVideos(
   const preferenceRanked = [...unseen].sort((a, b) =>
     scorePreferredCategory(b.title, b.category) - scorePreferredCategory(a.title, a.category)
   );
-  const diverseUnseen = diversifyByCreator(preferenceRanked, 3);
+  const maxPerCreator = isShort ? 4 : 3;
+  const diverseUnseen = diversifyByCreator(preferenceRanked, maxPerCreator);
   const diversePlayed = diversifyByCreator(previouslyPlayed, 2);
   videos = [...diverseUnseen, ...diversePlayed];
+  // Never hand back an empty page just because of ranking filters.
+  if (videos.length === 0) videos = dedupeExternalVideos(ytResult.videos);
 
   // The provider can return an identical relevance order for keyless requests.
   // Rotate only the tail so the strongest first recommendations remain stable.
