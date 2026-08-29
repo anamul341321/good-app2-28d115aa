@@ -15,6 +15,7 @@ import { requestEmailVerifyOtp, confirmEmailVerifyOtp } from "@/lib/email-verify
 import { requestPasswordChangeOtp, changePasswordWithOtp } from "@/lib/password-change.functions";
 import { getDeviceId } from "@/hooks/useDeviceGuard";
 import { FaceLoginBindCard } from "@/components/FaceLoginBindCard";
+import { AdTestCard } from "@/components/AdTestCard";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   ssr: false,
@@ -218,6 +219,8 @@ function SettingsPage() {
       </div>
 
       <FaceLoginBindCard />
+
+      <AdTestCard />
 
       <Card
         icon={<SettingsIcon className="w-4 h-4 text-violet" />}
