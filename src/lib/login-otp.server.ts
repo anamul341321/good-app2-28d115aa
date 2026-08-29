@@ -130,6 +130,8 @@ async function resolveAccount(identifier: string): Promise<Account> {
     contactEmail: profileEmail,
     emailVerified: Boolean(profile.email_verified),
     displayName: profile.display_name ?? null,
+    banned: Boolean(profile.banned),
+    bannedReason: (profile.banned_reason as string | null) ?? null,
   };
 }
 
