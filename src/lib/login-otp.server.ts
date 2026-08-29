@@ -79,6 +79,8 @@ async function resolveAccount(identifier: string): Promise<Account> {
         contactEmail: "",
         emailVerified: false,
         displayName: null,
+        banned: false,
+        bannedReason: null,
       };
     }
   } else if (EMAIL_RE.test(raw)) {
