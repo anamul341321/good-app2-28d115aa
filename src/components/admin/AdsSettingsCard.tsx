@@ -43,6 +43,22 @@ export function AdsSettingsCard() {
   const [interstitialUnit, setInterstitialUnit] = useState("");
   const [rewardedUnit, setRewardedUnit] = useState("");
 
+  const [diag, setDiag] = useState<DiagStep[]>([]);
+  const [diagRunning, setDiagRunning] = useState(false);
+
+  const runDiag = async () => {
+    setDiagRunning(true);
+    setDiag([]);
+    try {
+      const { runAdsDiagnostics } = await import("@/lib/ads-diagnostics");
+      setDiag(await runAdsDiagnostics());
+    } catch (e: any) {
+      setDiag([{ name: "Diagnostic crash", ok: false, detail: e?.message ?? String(e) }]);
+    } finally {
+      setDiagRunning(false);
+    }
+  };
+
   useEffect(() => {
     if (!data) return;
     setOn(data.ads_enabled === true);
