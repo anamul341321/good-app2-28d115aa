@@ -345,3 +345,20 @@ export const revokeOtherDevices = createServerFn({ method: "POST" })
     if (error) throw new Error("অন্য ডিভাইসগুলো লগআউট করা যায়নি");
     return { ok: true as const };
   });
+
+/** স্বাভাবিক logout-এর পর একই ফোনে পরের login-এ আবার Gmail code চাইবে। */
+export const clearCurrentDeviceOtpTrust = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { deviceId: string }) => d)
+  .handler(async ({ data, context }) => {
+    const deviceId = (data.deviceId || "").trim().slice(0, 64);
+    if (!deviceId) return { ok: true as const };
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("user_devices")
+      .update({ otp_trust_expires_at: null } as any)
+      .eq("user_id", context.userId)
+      .eq("device_id", deviceId);
+    if (error) throw new Error("ডিভাইসের লগইন নিরাপত্তা আপডেট করা যায়নি");
+    return { ok: true as const };
+  });

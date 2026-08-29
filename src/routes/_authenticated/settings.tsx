@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getAccountSettings, changePhoneNumber, deleteMyAccount, setMyGender } from "@/lib/account.functions";
-import { listMyDevices, revokeDevice, revokeOtherDevices } from "@/lib/sessions.functions";
+import { clearCurrentDeviceOtpTrust, listMyDevices, revokeDevice, revokeOtherDevices } from "@/lib/sessions.functions";
 import { requestEmailVerifyOtp, confirmEmailVerifyOtp } from "@/lib/email-verify.functions";
 import { requestPasswordChangeOtp, changePasswordWithOtp } from "@/lib/password-change.functions";
 import { getDeviceId } from "@/hooks/useDeviceGuard";
@@ -69,6 +69,7 @@ function SettingsPage() {
   const devicesFn = useServerFn(listMyDevices);
   const killDevice = useServerFn(revokeDevice);
   const killOthers = useServerFn(revokeOtherDevices);
+  const clearOtpTrust = useServerFn(clearCurrentDeviceOtpTrust);
   const sendEmailOtp = useServerFn(requestEmailVerifyOtp);
   const confirmEmailOtp = useServerFn(confirmEmailVerifyOtp);
   const setPhoneFn = useServerFn(changePhoneNumber);
@@ -207,6 +208,7 @@ function SettingsPage() {
   async function logoutThis() {
     await qc.cancelQueries();
     qc.clear();
+    await clearOtpTrust({ data: { deviceId } }).catch(() => undefined);
     clearSharedSession();
     await supabase.auth.signOut({ scope: "local" }).catch(() => undefined);
     window.location.replace("/auth");

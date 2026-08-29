@@ -31,6 +31,9 @@ import { SlotPausedModal } from "@/components/SlotPausedModal";
 import { NewSystemModal } from "@/components/NewSystemModal";
 import { CallProvider } from "@/components/CallProvider";
 import { DailyFaceVerificationWarning } from "@/components/DailyFaceVerificationWarning";
+import { clearCurrentDeviceOtpTrust } from "@/lib/sessions.functions";
+import { getDeviceId } from "@/hooks/useDeviceGuard";
+import { useServerFn } from "@tanstack/react-start";
 
 import { clearSharedSession, getSharedSession } from "@/lib/auth-session";
 import { usePresence } from "@/lib/presence";
@@ -47,6 +50,7 @@ function AuthedLayout() {
   // অ্যাপ খোলা + ডেটা অন থাকলেই "active" হার্টবিট যাবে (পুরো অ্যাপজুড়ে)
   usePresence();
   const router = useRouter();
+  const clearOtpTrust = useServerFn(clearCurrentDeviceOtpTrust);
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const isSocialRoute = /^\/(social|chat|feed|friends|videos|reels|watch|studio|channel|user|profile)(\/|$)/.test(pathname);
   const [authState, setAuthState] = useState<"checking" | "authenticated" | "unauthenticated">(() => {
@@ -117,6 +121,7 @@ function AuthedLayout() {
 
 
   const logout = async () => {
+    await clearOtpTrust({ data: { deviceId: getDeviceId() } }).catch(() => undefined);
     clearSharedSession();
     await supabase.auth.signOut({ scope: "local" }).catch(() => undefined);
     window.location.replace("/auth");
