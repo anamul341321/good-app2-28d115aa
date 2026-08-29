@@ -79,10 +79,6 @@ function SettingsPage() {
   const updateBioFn = useServerFn(updateBio);
   const [bioText, setBioText] = useState("");
   const [bioBusy, setBioBusy] = useState(false);
-  useEffect(() => {
-    const b = (acc as any)?.bio;
-    if (typeof b === "string") setBioText((prev) => (prev === "" ? b : prev));
-  }, [(acc as any)?.bio]);
   const saveBio = async () => {
     setBioBusy(true);
     try {
