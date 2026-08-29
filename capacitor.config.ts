@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.goodapp2.live',
+  appId: 'com.anamul.goodapp',
   appName: 'Good-App',
   webDir: 'dist/client',
   // Primary mode: load the live deployed app so all server functions work.
