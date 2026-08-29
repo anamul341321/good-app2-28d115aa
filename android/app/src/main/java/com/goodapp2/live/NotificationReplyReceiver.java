@@ -1,4 +1,4 @@
-package com.goodapp.mobile;
+package com.goodapp2.live;
 
 import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
