@@ -1,4 +1,4 @@
-package com.goodapp2.live;
+package com.anamul.goodapp;
 
 import android.app.Activity;
 import android.app.NotificationManager;
@@ -70,7 +70,7 @@ public class IncomingCallActivity extends Activity {
             NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
             manager.cancel(callId.hashCode());
         }
-        IntentFilter cancelFilter = new IntentFilter("com.goodapp2.live.CANCEL_CALL");
+        IntentFilter cancelFilter = new IntentFilter("com.anamul.goodapp.CANCEL_CALL");
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(cancelReceiver, cancelFilter, Context.RECEIVER_NOT_EXPORTED);
         } else {

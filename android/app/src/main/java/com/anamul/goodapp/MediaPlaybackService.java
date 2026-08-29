@@ -1,4 +1,4 @@
-package com.goodapp2.live;
+package com.anamul.goodapp;
 
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -19,11 +19,11 @@ import androidx.media3.common.Player;
 import androidx.media3.exoplayer.ExoPlayer;
 
 public class MediaPlaybackService extends Service {
-    public static final String ACTION_START = "com.goodapp2.live.MEDIA_START";
-    public static final String ACTION_STOP = "com.goodapp2.live.MEDIA_STOP";
-    public static final String ACTION_PLAY_URL = "com.goodapp2.live.MEDIA_PLAY_URL";
-    public static final String ACTION_PREPARE_URL = "com.goodapp2.live.MEDIA_PREPARE_URL";
-    public static final String ACTION_TOGGLE = "com.goodapp2.live.MEDIA_TOGGLE";
+    public static final String ACTION_START = "com.anamul.goodapp.MEDIA_START";
+    public static final String ACTION_STOP = "com.anamul.goodapp.MEDIA_STOP";
+    public static final String ACTION_PLAY_URL = "com.anamul.goodapp.MEDIA_PLAY_URL";
+    public static final String ACTION_PREPARE_URL = "com.anamul.goodapp.MEDIA_PREPARE_URL";
+    public static final String ACTION_TOGGLE = "com.anamul.goodapp.MEDIA_TOGGLE";
     private static final String CHANNEL = "goodapp_media_playback_v2";
     private static final int NOTIFICATION_ID = 7312;
 
