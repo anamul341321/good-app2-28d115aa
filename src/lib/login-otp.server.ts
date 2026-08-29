@@ -183,6 +183,12 @@ async function verifyPassword(account: Account, password: string) {
   const success = results.find((r): r is Extract<SignInResult, { ok: true }> => r.ok === true);
   if (success) return success.session;
 
+  const banned = results.find((r): r is Extract<SignInResult, { ok: false; reason: "banned" }> => !r.ok && r.reason === "banned");
+  if (banned || account.banned) {
+    const reason = account.bannedReason || banned?.banReason || "Admin কর্তৃক block করা হয়েছে";
+    throw new Error(`আপনার account block করা আছে — ${reason}`);
+  }
+
   const hasTimeout = results.some((r) => !r.ok && r.reason === "timeout");
   if (hasTimeout) {
     throw new Error("লগইন সার্ভারে সময় লাগছে — ইন্টারনেট চেক করে আবার চেষ্টা করুন");
