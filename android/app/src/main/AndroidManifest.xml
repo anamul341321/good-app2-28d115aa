@@ -141,7 +141,7 @@
             android:name=".NotificationReplyReceiver"
             android:exported="false">
             <intent-filter>
-                <action android:name="com.goodapp.mobile.CHAT_REPLY" />
+                <action android:name="com.goodapp2.live.CHAT_REPLY" />
             </intent-filter>
         </receiver>
 
