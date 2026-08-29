@@ -59,6 +59,18 @@ function phoneToEmail(phone: string) {
   return `u${phone}@facemine.app`;
 }
 
+function isAuthBannedError(error: any): boolean {
+  const msg = String(error?.message ?? "").toLowerCase();
+  const code = String(error?.code ?? "").toLowerCase();
+  return (
+    code === "user_disabled" ||
+    msg.includes("banned") ||
+    msg.includes("disabled") ||
+    msg.includes("blocked") ||
+    msg.includes("ban")
+  );
+}
+
 const RULES: { title: string; body: string }[] = [
   {
     title: "১ নম্বর = ১ একাউন্ট",
@@ -475,7 +487,11 @@ export function AuthPage() {
       toast.success("একাউন্ট তৈরি হয়েছে!");
       nav({ to: "/home" });
     } catch (e: any) {
-      toast.error(e.message ?? "কিছু সমস্যা হয়েছে");
+      if (isAuthBannedError(e)) {
+        toast.error("আপনার account block করা আছে — admin-এর সাথে যোগাযোগ করুন");
+      } else {
+        toast.error(e.message ?? "কিছু সমস্যা হয়েছে");
+      }
     } finally {
       setLoading(false);
     }
@@ -913,7 +929,11 @@ export function AuthPage() {
                 toast.success("একাউন্ট তৈরি হয়েছে — স্বাগতম!");
                 nav({ to: "/home" });
                 return;
-              } catch {
+              } catch (e: any) {
+                if (isAuthBannedError(e)) {
+                  toast.error("আপনার account block করা আছে — admin-এর সাথে যোগাযোগ করুন");
+                  return;
+                }
                 setMode("login");
                 setLoginId(cleanPhone);
                 toast.success("একাউন্ট তৈরি হয়েছে — এখন পাসওয়ার্ড দিয়ে লগইন করুন");
@@ -937,8 +957,12 @@ export function AuthPage() {
                 setFaceMode(null);
                 toast.success("লগইন সফল — স্বাগতম!");
                 nav({ to: "/home" });
-              } catch {
-                toast.error("পাসওয়ার্ড ভুল — আবার চেষ্টা করুন");
+              } catch (e: any) {
+                if (isAuthBannedError(e)) {
+                  toast.error("আপনার account block করা আছে — admin-এর সাথে যোগাযোগ করুন");
+                } else {
+                  toast.error("পাসওয়ার্ড ভুল — আবার চেষ্টা করুন");
+                }
               }
             }}
           />

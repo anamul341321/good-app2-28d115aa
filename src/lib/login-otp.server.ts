@@ -24,11 +24,13 @@ type Account = {
   contactEmail: string;
   emailVerified: boolean;
   displayName: string | null;
+  banned: boolean;
+  bannedReason: string | null;
 };
 
 type SignInResult =
   | { ok: true; session: { access_token: string; refresh_token: string } }
-  | { ok: false; reason: "auth" | "timeout" | "error" };
+  | { ok: false; reason: "auth" | "timeout" | "error" | "banned"; banReason?: string | null };
 
 
 function maskEmail(email: string) {
@@ -62,7 +64,7 @@ async function resolveAccount(identifier: string): Promise<Account> {
   if (/^01\d{9}$/.test(digits)) {
     const { data, error } = await supabaseAdmin
       .from("profiles")
-      .select("id, display_name, email, email_verified, phone_number, created_at")
+      .select("id, display_name, email, email_verified, phone_number, created_at, banned, banned_reason")
       .eq("phone_number", digits)
       .order("email_verified", { ascending: false })
       .order("created_at", { ascending: false })
@@ -77,12 +79,14 @@ async function resolveAccount(identifier: string): Promise<Account> {
         contactEmail: "",
         emailVerified: false,
         displayName: null,
+        banned: false,
+        bannedReason: null,
       };
     }
   } else if (EMAIL_RE.test(raw)) {
     const { data, error } = await supabaseAdmin
       .from("profiles")
-      .select("id, display_name, email, email_verified, phone_number, created_at")
+      .select("id, display_name, email, email_verified, phone_number, created_at, banned, banned_reason")
       .ilike("email", raw)
       .order("email_verified", { ascending: false })
       .order("created_at", { ascending: false })
@@ -126,6 +130,8 @@ async function resolveAccount(identifier: string): Promise<Account> {
     contactEmail: profileEmail,
     emailVerified: Boolean(profile.email_verified),
     displayName: profile.display_name ?? null,
+    banned: Boolean(profile.banned),
+    bannedReason: (profile.banned_reason as string | null) ?? null,
   };
 }
 
@@ -151,7 +157,14 @@ async function signInWith(authEmail: string, password: string): Promise<SignInRe
   });
   try {
     const { data, error } = await client.auth.signInWithPassword({ email: authEmail, password });
-    if (error || !data.session) return { ok: false, reason: "auth" };
+    if (error || !data.session) {
+      const msg = String(error?.message ?? "").toLowerCase();
+      const code = String(error?.code ?? "").toLowerCase();
+      if (code === "user_disabled" || msg.includes("banned") || msg.includes("disabled") || msg.includes("blocked")) {
+        return { ok: false, reason: "banned" };
+      }
+      return { ok: false, reason: "auth" };
+    }
     return { ok: true, session: { access_token: data.session.access_token, refresh_token: data.session.refresh_token } };
   } catch (err: any) {
     const msg = String(err?.message ?? "").toLowerCase();
@@ -169,6 +182,12 @@ async function verifyPassword(account: Account, password: string) {
   );
   const success = results.find((r): r is Extract<SignInResult, { ok: true }> => r.ok === true);
   if (success) return success.session;
+
+  const anyBanned = results.some((r) => !r.ok && r.reason === "banned");
+  if (anyBanned || account.banned) {
+    const reason = account.bannedReason || "Admin কর্তৃক block করা হয়েছে";
+    throw new Error(`আপনার account block করা আছে — ${reason}`);
+  }
 
   const hasTimeout = results.some((r) => !r.ok && r.reason === "timeout");
   if (hasTimeout) {
