@@ -24,6 +24,8 @@ type Account = {
   contactEmail: string;
   emailVerified: boolean;
   displayName: string | null;
+  banned: boolean;
+  bannedReason: string | null;
 };
 
 type SignInResult =
