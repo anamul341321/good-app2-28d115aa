@@ -74,12 +74,24 @@ function AuthedLayout() {
   // দিনের প্রথমবার লগইনের পর একটি app-open অ্যাড (শুধু Android অ্যাপে)
   useEffect(() => {
     if (authState !== "authenticated") return;
+    let cancelled = false;
+    let attempt = 0;
+    let retryTimer: number | undefined;
+    const showAd = async () => {
+      const ads = await import("@/lib/ads");
+      const shown = await ads.showDailyAppOpenAd();
+      if (cancelled || shown || attempt >= 2) return;
+      attempt += 1;
+      retryTimer = window.setTimeout(() => void showAd(), 5_000);
+    };
     const timer = window.setTimeout(() => {
-      void import("@/lib/ads").then((m) =>
-        m.initAds().then(() => m.showDailyAppOpenAd()),
-      );
+      void showAd();
     }, 2500);
-    return () => window.clearTimeout(timer);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+      if (retryTimer !== undefined) window.clearTimeout(retryTimer);
+    };
   }, [authState]);
 
   useEffect(() => {
