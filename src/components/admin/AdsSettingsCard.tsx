@@ -3,6 +3,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Loader2, MonitorPlay, Save } from "lucide-react";
 import { adminGetBonusSettings, adminSetAdsSettings } from "@/lib/admin.functions";
+import type { DiagStep } from "@/lib/ads-diagnostics";
 
 function Toggle({
   on,
