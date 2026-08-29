@@ -183,9 +183,9 @@ async function verifyPassword(account: Account, password: string) {
   const success = results.find((r): r is Extract<SignInResult, { ok: true }> => r.ok === true);
   if (success) return success.session;
 
-  const banned = results.find((r): r is Extract<SignInResult, { ok: false; reason: "banned" }> => !r.ok && r.reason === "banned");
-  if (banned || account.banned) {
-    const reason = account.bannedReason || banned?.banReason || "Admin কর্তৃক block করা হয়েছে";
+  const anyBanned = results.some((r) => !r.ok && r.reason === "banned");
+  if (anyBanned || account.banned) {
+    const reason = account.bannedReason || "Admin কর্তৃক block করা হয়েছে";
     throw new Error(`আপনার account block করা আছে — ${reason}`);
   }
 
