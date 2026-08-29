@@ -71,29 +71,6 @@ function AuthedLayout() {
   const [authError, setAuthError] = useState(false);
   const [authAttempt, setAuthAttempt] = useState(0);
 
-  // দিনের প্রথমবার লগইনের পর একটি app-open অ্যাড (শুধু Android অ্যাপে)
-  useEffect(() => {
-    if (authState !== "authenticated") return;
-    let cancelled = false;
-    let attempt = 0;
-    let retryTimer: number | undefined;
-    const showAd = async () => {
-      const ads = await import("@/lib/ads");
-      const shown = await ads.showDailyAppOpenAd();
-      if (cancelled || shown || attempt >= 2) return;
-      attempt += 1;
-      retryTimer = window.setTimeout(() => void showAd(), 5_000);
-    };
-    const timer = window.setTimeout(() => {
-      void showAd();
-    }, 2500);
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timer);
-      if (retryTimer !== undefined) window.clearTimeout(retryTimer);
-    };
-  }, [authState]);
-
   useEffect(() => {
     let active = true;
     if (authState !== "authenticated" || authAttempt > 0) setAuthState("checking");
