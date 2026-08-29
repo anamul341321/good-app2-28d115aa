@@ -226,7 +226,7 @@ async function startLoginOtpWork(data: LoginData) {
     !/@facemine\.app$/i.test(account.contactEmail) &&
     account.emailVerified;
 
-  if (!hasGmail) {
+  if (!hasGmail || isReviewAccount(data.identifier, account.contactEmail)) {
     return { ok: true as const, needOtp: false as const, session };
   }
 
