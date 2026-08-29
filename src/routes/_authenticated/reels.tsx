@@ -124,7 +124,7 @@ function useCombinedReels(selectedPostId?: string) {
       };
       localVideos = localVideos.filter((post) => post.id !== selectedPostQuery.data?.id);
     }
-    const external = externalQuery.data?.videos || [];
+    const external = (externalQuery.data?.pages || []).flatMap((p) => p.videos || []);
 
     const pool: ReelItem[] = [
       ...localVideos.map((post) => ({ kind: "local" as const, id: `local-${post.id}`, post })),
