@@ -3219,16 +3219,7 @@ export type Database = {
             }
             Returns: undefined
           }
-      delete_email: {
-        Args: { message_id: number; queue_name: string }
-        Returns: boolean
-      }
       delete_expired_stories: { Args: never; Returns: number }
-      email_queue_dispatch: { Args: never; Returns: undefined }
-      enqueue_email: {
-        Args: { payload: Json; queue_name: string }
-        Returns: number
-      }
       expire_unanswered_calls: { Args: never; Returns: number }
       get_coin_summary: { Args: { _user_id: string }; Returns: Json }
       get_daily_checkin: { Args: { _user_id: string }; Returns: Json }
@@ -3260,26 +3251,9 @@ export type Database = {
         }
         Returns: undefined
       }
-      move_to_dlq: {
-        Args: {
-          dlq_name: string
-          message_id: number
-          payload: Json
-          source_queue: string
-        }
-        Returns: number
-      }
       purchase_card: {
         Args: { _product_id: string; _user_id: string }
         Returns: Json
-      }
-      read_email_batch: {
-        Args: { batch_size: number; queue_name: string; vt: number }
-        Returns: {
-          message: Json
-          msg_id: number
-          read_ct: number
-        }[]
       }
       record_ad_view: {
         Args: {
