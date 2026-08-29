@@ -4,7 +4,7 @@ import { WatchCoinBar } from "@/components/social/CoinWallet";
 import { playUiSound } from "@/lib/ui-sounds";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   Heart,
@@ -88,9 +88,13 @@ function useCombinedReels(selectedPostId?: string) {
     staleTime: 60_000,
     gcTime: 10 * 60_000,
   });
-  const externalQuery = useQuery({
+  // অসীম রিলস — স্ক্রল করলেই পরের পেজ লোড হবে
+  const externalQuery = useInfiniteQuery({
     queryKey: ["reels-external"],
-    queryFn: () => getBangladeshExternalVideos(1, 20, undefined, undefined, "short"),
+    initialPageParam: 1,
+    queryFn: ({ pageParam }) =>
+      getBangladeshExternalVideos(pageParam as number, 20, undefined, undefined, "short", pageParam as number),
+    getNextPageParam: (_last, all) => all.length + 1,
     staleTime: 10 * 60_000,
     gcTime: 30 * 60_000,
     retry: 0,
@@ -120,12 +124,9 @@ function useCombinedReels(selectedPostId?: string) {
       };
       localVideos = localVideos.filter((post) => post.id !== selectedPostQuery.data?.id);
     }
-    const external = externalQuery.data?.videos || [];
-
-    const pool: ReelItem[] = [
-      ...localVideos.map((post) => ({ kind: "local" as const, id: `local-${post.id}`, post })),
-      ...external.map((video, i) => ({ kind: "external" as const, id: `ext-${i}-${video.id}`, video })),
-    ];
+    const pages = externalQuery.data?.pages || [];
+    const firstPage = pages[0]?.videos || [];
+    const laterPages = pages.slice(1).flatMap((p) => p.videos || []);
 
     // seeded shuffle (Fisher–Yates + mulberry32) — র‍্যান্ডম কিন্তু re-render-এ একই
     let s = seedRef.current;
@@ -136,13 +137,29 @@ function useCombinedReels(selectedPostId?: string) {
       t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
       return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
     };
-    for (let i = pool.length - 1; i > 0; i--) {
+
+    // শুধু প্রথম ব্যাচ মেশানো হয় — পরের পেজগুলো নিচে যোগ হয়, তাই স্ক্রল লাফ দেয় না
+    const head: ReelItem[] = [
+      ...localVideos.map((post) => ({ kind: "local" as const, id: `local-${post.id}`, post })),
+      ...firstPage.map((video) => ({ kind: "external" as const, id: `ext-${video.id}`, video })),
+    ];
+    for (let i = head.length - 1; i > 0; i--) {
       const j = Math.floor(rand() * (i + 1));
-      const tmp = pool[i]!;
-      pool[i] = pool[j]!;
-      pool[j] = tmp;
+      const tmp = head[i]!;
+      head[i] = head[j]!;
+      head[j] = tmp;
     }
 
+    const seen = new Set(head.map((item) => item.id));
+    const tail: ReelItem[] = [];
+    for (const video of laterPages) {
+      const id = `ext-${video.id}`;
+      if (seen.has(id)) continue;
+      seen.add(id);
+      tail.push({ kind: "external", id, video });
+    }
+
+    const pool = [...head, ...tail];
     return pinned ? [pinned, ...pool] : pool;
   }, [localQuery.data, externalQuery.data, selectedPostQuery.data]);
 
@@ -153,6 +170,9 @@ function useCombinedReels(selectedPostId?: string) {
     items: waitingForSelected ? [] : items,
     isLoading: waitingForSelected || (localQuery.isLoading && externalQuery.isLoading),
     isError: localQuery.isError && externalQuery.isError,
+    loadMore: () => {
+      if (!externalQuery.isFetchingNextPage) void externalQuery.fetchNextPage();
+    },
   };
 }
 
@@ -161,7 +181,7 @@ function ReelsPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { postId: selectedPostId, upload: autoUpload } = Route.useSearch();
-  const { items, isLoading, isError } = useCombinedReels(selectedPostId);
+  const { items, isLoading, isError, loadMore } = useCombinedReels(selectedPostId);
   const containerRef = useRef<HTMLDivElement>(null);
   const selectedScrollHandledRef = useRef<string | null>(null);
   const [muted, setMuted] = useState(true);
@@ -198,7 +218,9 @@ function ReelsPage() {
     if (bestId) {
       setActiveId((current) => (current === bestId ? current : bestId));
     }
-  }, []);
+    // শেষের দিকে পৌঁছালে আরও রিলস লোড হবে
+    if (root.scrollTop + root.clientHeight * 3 >= root.scrollHeight) loadMore();
+  }, [loadMore]);
 
   useEffect(() => {
     if (user?.id) {
