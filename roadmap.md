@@ -8,7 +8,7 @@
 - [x] Default quick emoji (long-press to change) in Messenger composer
 - [x] Faster post publish (form closes instantly, upload in background)
 - [x] Friend request accept applies instantly (optimistic)
-- [ ] Telegram group join reward raised to 5000 coins
-- [ ] Daily check-in claim: 1000 coins after 5 likes + 2 comments + 3 messages in a day
+- [x] Telegram group join reward raised to 5000 coins
+- [x] Daily check-in claim: 1000 coins after 5 likes + 2 comments + 3 messages in a day
 - [x] Link the native AdMob plugin and make test-banner settings refresh/retry reliably
 - [x] Bump the Android release to v1.31 (versionCode 31) so devices detect the new APK

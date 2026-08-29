@@ -2736,9 +2736,11 @@ export const adminSetApkRelease = createServerFn({ method: "POST" })
         id: "default",
         apk_url: data.path,
         apk_version: cleanVersion,
+        min_app_version: cleanVersion,
+        force_update_enabled: true,
         updated_at: new Date().toISOString(),
       } as any)
-      .select("apk_url, apk_version")
+      .select("apk_url, apk_version, min_app_version, force_update_enabled")
       .single();
     if (error) throw new Error(error.message);
     if (!saved || (saved as any).apk_url !== data.path || (saved as any).apk_version !== cleanVersion) {
