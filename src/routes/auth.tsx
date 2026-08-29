@@ -487,7 +487,11 @@ export function AuthPage() {
       toast.success("একাউন্ট তৈরি হয়েছে!");
       nav({ to: "/home" });
     } catch (e: any) {
-      toast.error(e.message ?? "কিছু সমস্যা হয়েছে");
+      if (isAuthBannedError(e)) {
+        toast.error("আপনার account block করা আছে — admin-এর সাথে যোগাযোগ করুন");
+      } else {
+        toast.error(e.message ?? "কিছু সমস্যা হয়েছে");
+      }
     } finally {
       setLoading(false);
     }
