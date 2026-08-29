@@ -163,9 +163,13 @@ function DataSafetyPage() {
         <Link to="/privacy" className="underline">
           গোপনীয়তা নীতি
         </Link>{" "}
-        এবং{" "}
+        ·{" "}
         <Link to="/terms" className="underline">
           নিয়ম ও শর্তাবলি
+        </Link>{" "}
+        ·{" "}
+        <Link to="/child-safety" className="underline">
+          Child Safety
         </Link>
       </p>
     </main>

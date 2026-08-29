@@ -208,6 +208,10 @@ function PrivacyPage() {
           ডেটা সেফটি
         </Link>{" "}
         ·{" "}
+        <Link to="/child-safety" className="underline">
+          Child Safety
+        </Link>{" "}
+        ·{" "}
         <Link to="/account-deletion" className="underline">
           একাউন্ট ডিলিট
         </Link>

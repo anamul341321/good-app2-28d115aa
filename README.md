@@ -34,6 +34,7 @@ Play Store-এ আপলোডের সম্পূর্ণ গাইড আ�
 
 - [গোপনীয়তা নীতি](https://goodapp2.live/privacy)
 - [শর্তাবলি](https://goodapp2.live/terms)
+- [শিশু নিরাপত্তা মানদণ্ড](https://goodapp2.live/child-safety)
 
 ---
 

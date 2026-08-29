@@ -117,6 +117,10 @@ function AccountDeletionPage() {
           ডেটা সেফটি
         </Link>{" "}
         ·{" "}
+        <Link to="/child-safety" className="underline">
+          Child Safety
+        </Link>{" "}
+        ·{" "}
         <Link to="/terms" className="underline">
           শর্তাবলি
         </Link>
