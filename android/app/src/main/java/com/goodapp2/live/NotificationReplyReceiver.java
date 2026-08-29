@@ -21,7 +21,7 @@ import java.net.URL;
  * short-lived signed token so the reply can be delivered without opening the app.
  */
 public class NotificationReplyReceiver extends BroadcastReceiver {
-    public static final String ACTION_REPLY = "com.goodapp.mobile.CHAT_REPLY";
+    public static final String ACTION_REPLY = "com.goodapp2.live.CHAT_REPLY";
     public static final String KEY_TEXT = "goodapp_reply_text";
 
     @Override
