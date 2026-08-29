@@ -24,11 +24,14 @@ const OFF: AdsConfig = {
 
 
 let cache: AdsConfig | null = null;
+let cachedAt = 0;
 let inflight: Promise<AdsConfig> | null = null;
+
+const CACHE_TTL_MS = 15_000;
 
 /** অ্যাডমিন প্যানেলের সুইচ অনুযায়ী অ্যাড কনফিগ (একবার fetch করে ক্যাশ করে) */
 export async function loadAdsConfig(): Promise<AdsConfig> {
-  if (cache) return cache;
+  if (cache && Date.now() - cachedAt < CACHE_TTL_MS) return cache;
   if (inflight) return inflight;
   inflight = (async () => {
     try {
@@ -46,6 +49,7 @@ export async function loadAdsConfig(): Promise<AdsConfig> {
       };
 
       cache = cfg;
+      cachedAt = Date.now();
       return cfg;
     } catch {
       return OFF;

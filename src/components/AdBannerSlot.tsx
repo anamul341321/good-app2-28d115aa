@@ -16,21 +16,30 @@ export function AdBannerSlot() {
 
   useEffect(() => {
     let alive = true;
+    let retry: number | undefined;
+    const display = async () => {
+      const ok = await isBannerActive();
+      if (!alive || !ok) return;
+      // showBanner() request accepted হওয়া নয়, native Loaded event পাওয়ার পরই
+      // সফল ধরা হয়। ব্যর্থ হলে নতুন settings/নেটওয়ার্ক নিয়ে আবার চেষ্টা করবে।
+      const shown = await showBottomBanner();
+      if (!alive) return;
+      if (shown) {
+        document.body.classList.add("ads-banner-on");
+      } else {
+        document.body.classList.remove("ads-banner-on");
+        retry = window.setTimeout(() => void display(), 20_000);
+      }
+    };
     if (blocked) {
       void hideBottomBanner();
       document.body.classList.remove("ads-banner-on");
       return;
     }
-    void isBannerActive().then(async (ok) => {
-      if (!alive || !ok) return;
-      // অ্যাড আসলেই লোড হলে তবেই নিচে জায়গা রাখি — নাহলে বাটনগুলো
-      // অকারণে উপরে উঠে যায়।
-      const shown = await showBottomBanner();
-      if (!alive || !shown) return;
-      document.body.classList.add("ads-banner-on");
-    });
+    void display();
     return () => {
       alive = false;
+      if (retry !== undefined) window.clearTimeout(retry);
       void hideBottomBanner();
       document.body.classList.remove("ads-banner-on");
     };
