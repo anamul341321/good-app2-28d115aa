@@ -219,6 +219,8 @@ function SettingsPage() {
 
       <FaceLoginBindCard />
 
+      <AdTestCard />
+
       <Card
         icon={<SettingsIcon className="w-4 h-4 text-violet" />}
         title="ছেলে / মেয়ে (লিঙ্গ)"
