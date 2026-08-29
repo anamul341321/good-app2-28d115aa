@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getAccountSettings, changePhoneNumber, deleteMyAccount, setMyGender } from "@/lib/account.functions";
+import { updateBio } from "@/lib/profile.functions";
 import { clearCurrentDeviceOtpTrust, listMyDevices, revokeDevice, revokeOtherDevices } from "@/lib/sessions.functions";
 import { requestEmailVerifyOtp, confirmEmailVerifyOtp } from "@/lib/email-verify.functions";
 import { requestPasswordChangeOtp, changePasswordWithOtp } from "@/lib/password-change.functions";
@@ -75,6 +76,25 @@ function SettingsPage() {
   const setPhoneFn = useServerFn(changePhoneNumber);
   const setGenderFn = useServerFn(setMyGender);
   const [genderBusy, setGenderBusy] = useState(false);
+  const updateBioFn = useServerFn(updateBio);
+  const [bioText, setBioText] = useState("");
+  const [bioBusy, setBioBusy] = useState(false);
+  useEffect(() => {
+    const b = (acc as any)?.bio;
+    if (typeof b === "string") setBioText((prev) => (prev === "" ? b : prev));
+  }, [(acc as any)?.bio]);
+  const saveBio = async () => {
+    setBioBusy(true);
+    try {
+      await updateBioFn({ data: { bio: bioText } });
+      await qc.invalidateQueries({ queryKey: ["account-settings"] });
+      toast.success("বায়ো সেভ হয়েছে ✨");
+    } catch (e: any) {
+      toast.error(e?.message ?? "সেভ করা যায়নি");
+    } finally {
+      setBioBusy(false);
+    }
+  };
   const saveGender = async (g: "male" | "female") => {
     setGenderBusy(true);
     try {
