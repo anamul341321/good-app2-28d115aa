@@ -15,6 +15,7 @@ import { Route as DataSafetyRouteImport } from './routes/data-safety'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdminLoginRouteImport } from './routes/admin-login'
 import { Route as AdminRouteImport } from './routes/admin'
+import { Route as AccountDeletionRouteImport } from './routes/account-deletion'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
@@ -115,6 +116,11 @@ const AdminLoginRoute = AdminLoginRouteImport.update({
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountDeletionRoute = AccountDeletionRouteImport.update({
+  id: '/account-deletion',
+  path: '/account-deletion',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
@@ -484,6 +490,7 @@ const AuthenticatedChatGroupGroupIdRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/account-deletion': typeof AccountDeletionRoute
   '/admin': typeof AdminRouteWithChildren
   '/admin-login': typeof AdminLoginRoute
   '/auth': typeof AuthRoute
@@ -562,6 +569,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/account-deletion': typeof AccountDeletionRoute
   '/admin-login': typeof AdminLoginRoute
   '/auth': typeof AuthRoute
   '/data-safety': typeof DataSafetyRoute
@@ -640,6 +648,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/account-deletion': typeof AccountDeletionRoute
   '/admin': typeof AdminRouteWithChildren
   '/admin-login': typeof AdminLoginRoute
   '/auth': typeof AuthRoute
@@ -720,6 +729,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/account-deletion'
     | '/admin'
     | '/admin-login'
     | '/auth'
@@ -798,6 +808,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/account-deletion'
     | '/admin-login'
     | '/auth'
     | '/data-safety'
@@ -875,6 +886,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_authenticated'
+    | '/account-deletion'
     | '/admin'
     | '/admin-login'
     | '/auth'
@@ -955,6 +967,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AccountDeletionRoute: typeof AccountDeletionRoute
   AdminRoute: typeof AdminRouteWithChildren
   AdminLoginRoute: typeof AdminLoginRoute
   AuthRoute: typeof AuthRoute
@@ -1027,6 +1040,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/account-deletion': {
+      id: '/account-deletion'
+      path: '/account-deletion'
+      fullPath: '/account-deletion'
+      preLoaderRoute: typeof AccountDeletionRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -1652,6 +1672,7 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AccountDeletionRoute: AccountDeletionRoute,
   AdminRoute: AdminRouteWithChildren,
   AdminLoginRoute: AdminLoginRoute,
   AuthRoute: AuthRoute,
