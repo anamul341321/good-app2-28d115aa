@@ -202,6 +202,14 @@ function PrivacyPage() {
         সর্বশেষ হালনাগাদ: আগস্ট ২০২৬ ·{" "}
         <Link to="/terms" className="underline">
           নিয়ম ও শর্তাবলি
+        </Link>{" "}
+        ·{" "}
+        <Link to="/data-safety" className="underline">
+          ডেটা সেফটি
+        </Link>{" "}
+        ·{" "}
+        <Link to="/account-deletion" className="underline">
+          একাউন্ট ডিলিট
         </Link>
       </p>
     </main>
