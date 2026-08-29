@@ -272,6 +272,33 @@ function SettingsPage() {
       </Card>
 
       <Card
+        icon={<FileText className="w-4 h-4 text-cyan" />}
+        title="প্রোফাইল বায়ো"
+        desc="তোমার সম্পর্কে সংক্ষেপে লিখো — প্রোফাইলে সবাই দেখতে পাবে।"
+      >
+        <textarea
+          value={bioText}
+          onChange={(e) => setBioText(e.target.value.slice(0, 160))}
+          maxLength={160}
+          rows={3}
+          placeholder="যেমন: স্বপ্ন দেখি, কষ্ট করি, এগিয়ে যাই 🌟"
+          className={`${inputCls} resize-none`}
+        />
+        <div className="flex items-center justify-between">
+          <span className="text-[11px] text-muted-foreground">{bioText.length}/160</span>
+          <button
+            type="button"
+            onClick={saveBio}
+            disabled={bioBusy}
+            className="btn-press flex items-center gap-1.5 rounded-xl bg-cyan px-4 py-2 text-xs font-black text-white disabled:opacity-60"
+          >
+            {bioBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+            সেভ করো
+          </button>
+        </div>
+      </Card>
+
+      <Card
         icon={<KeyRound className="w-4 h-4 text-gold" />}
         title="পাসওয়ার্ড পরিবর্তন"
         desc="নিরাপত্তার জন্য Gmail-এ পাঠানো ৬ ডিজিটের কোড দিয়ে নিশ্চিত করতে হবে।"
