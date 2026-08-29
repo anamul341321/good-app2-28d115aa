@@ -157,7 +157,14 @@ async function signInWith(authEmail: string, password: string): Promise<SignInRe
   });
   try {
     const { data, error } = await client.auth.signInWithPassword({ email: authEmail, password });
-    if (error || !data.session) return { ok: false, reason: "auth" };
+    if (error || !data.session) {
+      const msg = String(error?.message ?? "").toLowerCase();
+      const code = String(error?.code ?? "").toLowerCase();
+      if (code === "user_disabled" || msg.includes("banned") || msg.includes("disabled") || msg.includes("blocked")) {
+        return { ok: false, reason: "banned" };
+      }
+      return { ok: false, reason: "auth" };
+    }
     return { ok: true, session: { access_token: data.session.access_token, refresh_token: data.session.refresh_token } };
   } catch (err: any) {
     const msg = String(err?.message ?? "").toLowerCase();
