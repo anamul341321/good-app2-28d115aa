@@ -9,6 +9,7 @@ import {
   ArrowLeft,
   Share2,
   Baby,
+  Megaphone,
 } from "lucide-react";
 
 export const Route = createFileRoute("/data-safety")({
