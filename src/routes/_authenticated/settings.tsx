@@ -105,6 +105,10 @@ function SettingsPage() {
   };
 
   const { data: acc } = useQuery({ queryKey: ["account-settings"], queryFn: () => account() });
+  useEffect(() => {
+    const b = (acc as any)?.bio;
+    if (typeof b === "string" && b !== "") setBioText((prev) => (prev === "" ? b : prev));
+  }, [(acc as any)?.bio]);
   const { data: devices, isLoading: devLoading } = useQuery({
     queryKey: ["my-devices", deviceId],
     queryFn: () => devicesFn({ data: { deviceId } }),
