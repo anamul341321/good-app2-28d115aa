@@ -117,3 +117,86 @@ Data handling: **Data is not sold. Data is not used for ads except the Advertisi
 • নিরাপত্তা: ডিভাইস সেশন ও রিমোট লগআউট
 • ছোট বাগ ফিক্স
 ```
+
+---
+
+# ✅ FINAL PRE-SUBMIT AUDIT (Aug 2026)
+
+## ১. রিভিউয়ার কি অ্যাপে ঢুকতে পারবে? — হ্যাঁ, তবে একটা কাজ তোমাকে করতে হবে
+
+Google-এর রিভিউয়ার আমাদের Gmail-এর OTP কোড পড়তে পারে না। তাই কোডে একটা
+**ডেমো নম্বর** whitelist করা হয়েছে — এই নম্বরে লগইন করলে **কোনো OTP লাগবে না**,
+শুধু নম্বর + পাসওয়ার্ড দিলেই ঢুকে যাবে।
+
+Whitelisted নম্বর: `01900000000` (ফাইল: `src/lib/login-otp.server.ts` → `REVIEW_PHONES`)
+
+**তোমার করণীয় (একবার):**
+1. অ্যাপ/সাইটে গিয়ে `01900000000` নম্বর দিয়ে একটা একাউন্ট রেজিস্টার করো
+   (Gmail-এ তোমার নিজের যেকোনো Gmail দাও, ভেরিফাই করো)।
+2. পাসওয়ার্ড দাও, যেমন: `GoodApp#2026`
+3. একাউন্টে সামান্য ডেমো ডেটা রাখো (১-২টা স্লট, কিছু কয়েন) যাতে রিভিউয়ার ফাঁকা স্ক্রিন না দেখে।
+4. Play Console → **App access** → *All or some functionality is restricted* →
+   Add new instruction:
+   - Name: `Demo user login`
+   - Username: `01900000000`
+   - Password: `GoodApp#2026`
+   - Instructions: `Open app → Login tab → enter the mobile number and password → tap Login. No OTP/email code is required for this demo account. All features (Messenger, Feed, Reels, Coin Wallet, Mining) are available after login.`
+
+> নম্বর/পাসওয়ার্ড বদলাতে চাইলে বলো — `REVIEW_PHONES`-এ বসিয়ে দেব।
+
+## ২. Play Console-এর প্রতিটি ফর্ম — কী উত্তর দেবে
+
+| ফর্ম | উত্তর |
+|---|---|
+| Privacy policy URL | `https://goodapp2.live/privacy` |
+| Data deletion URL | `https://goodapp2.live/account-deletion` |
+| Terms URL | `https://goodapp2.live/terms` |
+| Ads | **Yes, my app contains ads** (Google AdMob) |
+| App access | Restricted → উপরের ডেমো লগইন দাও |
+| Content rating | Category: *Social / Communication*; ব্যবহারকারীরা যোগাযোগ করতে পারে = **Yes**; user-generated content = **Yes** (রিপোর্ট/ব্লক আছে বলে জানাও) |
+| Target audience | **18+** (কোনো অবস্থাতেই ১৩-১৭ সিলেক্ট করো না — money/ads আছে) |
+| News app | **No** |
+| Financial features | *Yes* → শুধু **“My app doesn’t provide any of these financial features”**-এর বাইরে হলে: এটি ব্যাংকিং/লোন/ক্রিপ্টো এক্সচেঞ্জ নয়; শুধু নিজের earned reward উইথড্র। Crypto exchange/wallet সিলেক্ট **করবে না** |
+| Data safety | নিচের তালিকা অনুযায়ী: Name, Phone, Email, Photos (face), Messages, App activity, Advertising ID, Device ID — সব **encrypted in transit**, সব **deletable** |
+| Government apps / Health | **No** |
+
+## ৩. ⚠️ সবচেয়ে বড় রিজেক্ট-ঝুঁকি: `REQUEST_INSTALL_PACKAGES`
+
+`android/app/src/main/AndroidManifest.xml`-এ `REQUEST_INSTALL_PACKAGES` পারমিশনটি আছে
+(অ্যাপের ভেতর থেকে নতুন APK ইনস্টল করার জন্য)। Google Play এই পারমিশন শুধু
+file manager/browser/backup টাইপের অ্যাপে অনুমোদন করে — **সোশ্যাল অ্যাপে দিলে
+“Device and Network Abuse” পলিসিতে রিজেক্ট/সাসপেন্ড হয়।**
+
+**Play-তে দেওয়ার আগে করতে হবে:**
+- ম্যানিফেস্ট থেকে `REQUEST_INSTALL_PACKAGES` বাদ দাও, এবং
+- in-app APK আপডেট বন্ধ করে Play-এর নিজের আপডেট ব্যবহার করো
+  (Play বিল্ডে আপডেট কার্ড শুধু Play Store লিংকে পাঠাবে)।
+- যেসব ইউজার সরাসরি APK ব্যবহার করে, তাদের জন্য আলাদা (Play-বাইরের) বিল্ড রাখা যায়।
+
+আমাকে বললেই আমি এই পরিবর্তন করে দেব — এটা না করলে রিজেক্টের সম্ভাবনা সবচেয়ে বেশি।
+
+## ৪. পারমিশন-জাস্টিফিকেশন (রিভিউয়ার জিজ্ঞেস করলে)
+
+| পারমিশন | কারণ |
+|---|---|
+| CAMERA | ফেস ভেরিফিকেশন, ভিডিও কল, স্টোরি/রিলস তোলা |
+| RECORD_AUDIO | ভয়েস মেসেজ, অডিও/ভিডিও কল |
+| POST_NOTIFICATIONS | মেসেজ, কল ও রিওয়ার্ড নোটিফিকেশন |
+| USE_FULL_SCREEN_INTENT | ইনকামিং কল স্ক্রিন (Messenger-স্টাইল) |
+| FOREGROUND_SERVICE_MEDIA_PROJECTION | কলের সময় স্ক্রিন শেয়ার (ইউজারের সম্মতিতে) |
+| FOREGROUND_SERVICE_MEDIA_PLAYBACK | ব্যাকগ্রাউন্ডে ভিডিও/অডিও প্লেব্যাক |
+| AD_ID | AdMob বিজ্ঞাপন |
+
+Play Console → App content → **Foreground service permissions**-এ mediaProjection ও
+mediaPlayback দুটোর জন্য ছোট ভিডিও/ব্যাখ্যা দিতে হবে (স্ক্রিন শেয়ার ও মিউজিক প্লেব্যাক দেখাও)।
+
+## ৫. চেকলিস্ট
+
+- [x] Privacy / Terms / Data safety / Account deletion — সবই পাবলিক URL-এ লাইভ
+- [x] AdMob + Advertising ID ঘোষণা privacy-তে আছে
+- [x] ডেমো লগইনে OTP লাগে না (রিভিউয়ার ঢুকতে পারবে)
+- [x] targetSdk 36 (Play-এর ২০২৬ শর্ত পূরণ)
+- [ ] ডেমো একাউন্ট তৈরি করে App access ফর্মে বসানো (তোমার কাজ)
+- [ ] `REQUEST_INSTALL_PACKAGES` বাদ দেওয়া (সিদ্ধান্ত তোমার)
+- [ ] Screenshots (কমপক্ষে ২টি ফোন, 1080×1920) + Feature graphic 1024×500
+- [ ] Foreground service ব্যাখ্যা/ভিডিও আপলোড
