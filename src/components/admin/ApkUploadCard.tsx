@@ -8,7 +8,7 @@ import {
   adminSetApkRelease,
 } from "@/lib/admin.functions";
 
-const CURRENT_ANDROID_VERSION = "1.30";
+const CURRENT_ANDROID_VERSION = "1.31";
 
 function normalizeAndroidVersion(value: string): string {
   const match = value.trim().match(/\d+(?:\.\d+){1,2}/);
@@ -126,7 +126,7 @@ export function ApkUploadCard() {
       <p className="text-[11px] text-muted-foreground leading-snug">
         GitHub Actions থেকে নতুন করে নামানো <b>release-apk.zip</b> সোজা এখানে দিন — ভিতরের version
         যাচাই করে <b>APK</b> নিজে থেকেই বের করে আপলোড হবে। পুরোনো বা ভুল ZIP গ্রহণ করবে না। আপলোড
-        হলেই ইউজারদের হোম স্ক্রিনে "অ্যাপ ডাউনলোড করুন" কার্ড দেখাবে।
+        হলেই পুরোনো APK ব্যবহারকারীদের বাধ্যতামূলক update দেখাবে।
       </p>
 
       <div className="flex items-center justify-between rounded-xl border border-emerald-500/30 bg-background px-3 py-2 text-xs">

@@ -107,28 +107,63 @@ export async function showRewardedAd(): Promise<boolean> {
 }
 
 let bannerShown = false;
+let bannerLoading: Promise<boolean> | null = null;
 
 /** নিচে ছোট একটি banner অ্যাড দেখায় (নন-ইন্ট্রুসিভ, কনটেন্ট ঢাকে না) */
 export async function showBottomBanner(): Promise<boolean> {
+  if (bannerShown) return true;
+  if (bannerLoading) return bannerLoading;
+  bannerLoading = loadBottomBanner();
+  try {
+    return await bannerLoading;
+  } finally {
+    bannerLoading = null;
+  }
+}
+
+async function loadBottomBanner(): Promise<boolean> {
   const cfg = await loadAdsConfig();
   if (!cfg.banner) return false;
   await initAds();
   const AdMob = await getAdMob();
   if (!AdMob) return false;
-  if (bannerShown) return true;
   try {
-    const { BannerAdSize, BannerAdPosition } = await import("@capacitor-community/admob");
-    await AdMob.showBanner({
-      adId: pickUnit(cfg.test, cfg.bannerUnit, ADS_CONFIG.bannerId),
-      adSize: BannerAdSize.ADAPTIVE_BANNER,
-      position: BannerAdPosition.BOTTOM_CENTER,
-      margin: 0,
-      isTesting: cfg.test,
+    const { BannerAdSize, BannerAdPosition, BannerAdPluginEvents } = await import(
+      "@capacitor-community/admob"
+    );
+    return await new Promise<boolean>(async (resolve) => {
+      let settled = false;
+      const finish = async (loaded: boolean) => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(timeout);
+        await Promise.all([loadedHandle.remove(), failedHandle.remove()]);
+        bannerShown = loaded;
+        resolve(loaded);
+      };
+      const loadedHandle = await AdMob.addListener(BannerAdPluginEvents.Loaded, () => {
+        void finish(true);
+      });
+      const failedHandle = await AdMob.addListener(BannerAdPluginEvents.FailedToLoad, (error) => {
+        console.warn("AdMob banner failed", error);
+        void finish(false);
+      });
+      const timeout = window.setTimeout(() => void finish(false), 15_000);
+      try {
+        await AdMob.showBanner({
+          adId: pickUnit(cfg.test, cfg.bannerUnit, ADS_CONFIG.bannerId),
+          adSize: BannerAdSize.ADAPTIVE_BANNER,
+          position: BannerAdPosition.BOTTOM_CENTER,
+          margin: 0,
+          isTesting: cfg.test,
+        });
+      } catch (error) {
+        console.warn("AdMob banner request failed", error);
+        await finish(false);
+      }
     });
-
-    bannerShown = true;
-    return true;
-  } catch {
+  } catch (error) {
+    console.warn("AdMob banner setup failed", error);
     // অ্যাড না এলে নিচে কোনো জায়গা রাখা হবে না
     return false;
   }
