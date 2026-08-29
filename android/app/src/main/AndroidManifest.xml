@@ -55,11 +55,11 @@
             android:name="com.google.firebase.messaging.default_notification_color"
             android:resource="@color/notification_color" />
 
-        <!-- AdMob App ID. এটা Google-এর টেস্ট ID — নিজের AdMob অ্যাকাউন্টের
-             App ID (ca-app-pub-XXXXXXXXXXXXXXXX~YYYYYYYYYY) দিয়ে বদলান। -->
+        <!-- AdMob App ID — GoodApp-এর আসল AdMob অ্যাপ আইডি -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-3940256099942544~3347511713" />
+            android:value="ca-app-pub-4200468524943250~3577353703" />
+
 
         <activity
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density"
