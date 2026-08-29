@@ -10,6 +10,7 @@ App name: **Good-App** · Package: **com.anamul.goodapp** · Category: **Finance
 | Terms | https://goodapp2.live/terms |
 | Data safety সারসংক্ষেপ | https://goodapp2.live/data-safety |
 | **Account/Data deletion URL** (বাধ্যতামূলক) | https://goodapp2.live/account-deletion |
+| **Child safety standards URL** (বাধ্যতামূলক social/UGC app-এর জন্য) | https://goodapp2.live/child-safety |
 | Support email | support@goodapp2.live |
 | Website | https://goodapp2.live |
 
@@ -48,6 +49,7 @@ Good-App কোনো বিনিয়োগ, চাকরি বা গ্য
 গোপনীয়তা নীতি: https://goodapp2.live/privacy
 শর্তাবলি: https://goodapp2.live/terms
 অ্যাকাউন্ট ডিলিট: https://goodapp2.live/account-deletion
+শিশু নিরাপত্তা: https://goodapp2.live/child-safety
 সাপোর্ট: support@goodapp2.live
 ```
 
@@ -147,6 +149,7 @@ Data handling: **Data is not sold. Data is not used for ads except the Advertisi
 | Privacy policy URL | `https://goodapp2.live/privacy` |
 | Data deletion URL | `https://goodapp2.live/account-deletion` |
 | Terms URL | `https://goodapp2.live/terms` |
+| Child safety standards URL | `https://goodapp2.live/child-safety` |
 | Ads | **Yes** — অ্যাপে বিজ্ঞাপন আছে (Google AdMob) |
 | App access | Restricted → উপরের ডেমো লগইন |
 | Content rating | Category: Social/Communication; users can interact = **Yes**; user-generated content = **Yes** (report/block আছে) |
