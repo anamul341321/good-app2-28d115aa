@@ -953,8 +953,12 @@ export function AuthPage() {
                 setFaceMode(null);
                 toast.success("লগইন সফল — স্বাগতম!");
                 nav({ to: "/home" });
-              } catch {
-                toast.error("পাসওয়ার্ড ভুল — আবার চেষ্টা করুন");
+              } catch (e: any) {
+                if (isAuthBannedError(e)) {
+                  toast.error("আপনার account block করা আছে — admin-এর সাথে যোগাযোগ করুন");
+                } else {
+                  toast.error("পাসওয়ার্ড ভুল — আবার চেষ্টা করুন");
+                }
               }
             }}
           />
