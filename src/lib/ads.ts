@@ -18,6 +18,33 @@ export const ADS_CONFIG = {
 
 const isNative = () => Capacitor.isNativePlatform();
 
+const adErrorMessage = (error: unknown) => {
+  if (error instanceof Error && error.message) return error.message;
+  if (typeof error === "string" && error) return error;
+  if (error && typeof error === "object") {
+    const value = error as { message?: unknown; error?: unknown; code?: unknown };
+    const message = value.message ?? value.error ?? value.code;
+    if (typeof message === "string" || typeof message === "number") return String(message);
+  }
+  return "অজানা AdMob error";
+};
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = window.setTimeout(() => reject(new Error(message)), timeoutMs);
+    promise.then(
+      (value) => {
+        window.clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        window.clearTimeout(timer);
+        reject(error);
+      },
+    );
+  });
+}
+
 /**
  * টেস্ট মোড ON থাকলে সবসময় Google-এর স্যাম্পল Ad Unit ব্যবহার হয় —
  * আসল ID + isTesting মিশে গেলে AdMob কোনো অ্যাড দেয় না (no-fill),
@@ -53,12 +80,16 @@ export async function initAds(): Promise<boolean> {
 }
 
 async function initializeAds(): Promise<boolean> {
-  const cfg = await loadAdsConfig();
+  const cfg = await withTimeout(loadAdsConfig(), 10_000, "অ্যাড সেটিংস লোড হতে সময় লেগেছে");
   if (!cfg.enabled) return false;
   const AdMob = await getAdMob();
   if (!AdMob) return false;
   try {
-    await AdMob.initialize({ initializeForTesting: cfg.test });
+    await withTimeout(
+      AdMob.initialize({ initializeForTesting: cfg.test }),
+      15_000,
+      "AdMob চালু হতে সময় লেগেছে",
+    );
     initialized = true;
     return true;
   } catch (e) {
@@ -109,22 +140,67 @@ export async function showDailyAppOpenAd(): Promise<boolean> {
 
 /** Rewarded অ্যাড দেখিয়ে সফল হলে true দেয় (ইউজার নিজে ইচ্ছা করে দেখে) */
 export async function showRewardedAd(): Promise<boolean> {
-  const cfg = await loadAdsConfig();
-  if (!cfg.rewarded) return false;
-  if (!(await initAds())) return false;
+  if (!isNative()) throw new Error("অ্যাড শুধু Android অ্যাপে দেখা যাবে");
+  const cfg = await withTimeout(loadAdsConfig(), 10_000, "অ্যাড সেটিংস লোড হয়নি — আবার চেষ্টা করুন");
+  if (!cfg.enabled) throw new Error("অ্যাড সিস্টেম এখন বন্ধ আছে");
+  if (!cfg.rewarded) throw new Error("Rewarded ad এখন বন্ধ আছে");
+  if (!(await initAds())) throw new Error("AdMob চালু করা যায়নি — ইন্টারনেট দেখে আবার চেষ্টা করুন");
   const AdMob = await getAdMob();
-  if (!AdMob) return false;
+  if (!AdMob) throw new Error("এই APK-তে AdMob plugin পাওয়া যায়নি");
+
+  const { RewardAdPluginEvents } = await import("@capacitor-community/admob");
+  const handles: Array<{ remove: () => Promise<void> }> = [];
+  const removeListeners = async () => {
+    await Promise.allSettled(handles.map((handle) => handle.remove()));
+  };
+
   try {
-    await AdMob.prepareRewardVideoAd({
-      adId: pickUnit(cfg.test, cfg.rewardedUnit, ADS_CONFIG.rewardedId),
-      isTesting: cfg.test,
+    const loadEvent = new Promise<void>(async (resolve, reject) => {
+      handles.push(
+        await AdMob.addListener(RewardAdPluginEvents.Loaded, () => resolve()),
+        await AdMob.addListener(RewardAdPluginEvents.FailedToLoad, (error) => {
+          reject(new Error(`অ্যাড লোড হয়নি: ${adErrorMessage(error)}`));
+        }),
+      );
     });
 
-    const res = await AdMob.showRewardVideoAd();
-    return !!(res as any)?.reward;
+    const loadCommand = AdMob.prepareRewardVideoAd({
+      adId: pickUnit(cfg.test, cfg.rewardedUnit, ADS_CONFIG.rewardedId),
+      isTesting: cfg.test,
+    }).then(() => undefined);
+
+    // Some Android/WebView combinations emit Loaded but leave the bridge promise pending.
+    // Accept either signal so the button cannot spin forever after the ad is ready.
+    await withTimeout(
+      Promise.race([loadCommand, loadEvent]),
+      25_000,
+      "Google ad server থেকে কোনো response আসেনি — নেটওয়ার্ক বদলে আবার চেষ্টা করুন",
+    );
+
+    const rewardEvent = new Promise<boolean>(async (resolve, reject) => {
+      let rewarded = false;
+      handles.push(
+        await AdMob.addListener(RewardAdPluginEvents.Rewarded, () => {
+          rewarded = true;
+          resolve(true);
+        }),
+        await AdMob.addListener(RewardAdPluginEvents.Dismissed, () => resolve(rewarded)),
+        await AdMob.addListener(RewardAdPluginEvents.FailedToShow, (error) => {
+          reject(new Error(`অ্যাড দেখানো যায়নি: ${adErrorMessage(error)}`));
+        }),
+      );
+    });
+    const showCommand = AdMob.showRewardVideoAd().then((reward) => Boolean(reward));
+    return await withTimeout(
+      Promise.race([showCommand, rewardEvent]),
+      3 * 60_000,
+      "অ্যাডটি শেষ করা যায়নি — আবার চেষ্টা করুন",
+    );
   } catch (error) {
     console.warn("AdMob rewarded ad failed", error);
-    return false;
+    throw new Error(adErrorMessage(error));
+  } finally {
+    await removeListeners();
   }
 }
 
