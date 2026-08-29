@@ -36,28 +36,6 @@ export const touchDevice = createServerFn({ method: "POST" })
           .eq("id", (existing as any).id);
         return { revoked: false as const, justApproved: true as const };
       }
-      // কোনো "মেইন ফোন" না থাকলে অনুমতি দেওয়ার কেউ নেই — তখন নিজের একাউন্টে
-      // আটকে থাকা যাবে না, এই ফোনটিই আবার চালু হয়ে যাবে।
-      const { data: others } = await supabaseAdmin
-        .from("user_devices")
-        .select("id, last_seen_at")
-        .eq("user_id", context.userId)
-        .is("revoked_at", null)
-        .neq("device_id", deviceId)
-        .gte("last_seen_at", new Date(Date.now() - 7 * 24 * 3600_000).toISOString())
-        .limit(1);
-      if (!others?.length) {
-        await supabaseAdmin
-          .from("user_devices")
-          .update({
-            revoked_at: null,
-            approval_state: null,
-            approval_requested_at: null,
-            last_seen_at: new Date().toISOString(),
-          } as any)
-          .eq("id", (existing as any).id);
-        return { revoked: false as const, selfRestored: true as const };
-      }
       return {
         revoked: true as const,
         approvalState: ((existing as any).approval_state as string) ?? null,
