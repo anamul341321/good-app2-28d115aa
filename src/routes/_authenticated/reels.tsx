@@ -88,9 +88,13 @@ function useCombinedReels(selectedPostId?: string) {
     staleTime: 60_000,
     gcTime: 10 * 60_000,
   });
-  const externalQuery = useQuery({
+  // অসীম রিলস — স্ক্রল করলেই পরের পেজ লোড হবে
+  const externalQuery = useInfiniteQuery({
     queryKey: ["reels-external"],
-    queryFn: () => getBangladeshExternalVideos(1, 20, undefined, undefined, "short"),
+    initialPageParam: 1,
+    queryFn: ({ pageParam }) =>
+      getBangladeshExternalVideos(pageParam as number, 20, undefined, undefined, "short", pageParam as number),
+    getNextPageParam: (_last, all) => all.length + 1,
     staleTime: 10 * 60_000,
     gcTime: 30 * 60_000,
     retry: 0,
