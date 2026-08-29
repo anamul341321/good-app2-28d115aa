@@ -38,19 +38,32 @@ async function getAdMob() {
 }
 
 let initialized = false;
+let initialization: Promise<boolean> | null = null;
 
 /** অ্যাপ চালু হলে একবার কল করুন — AdMob initialize করে (সুইচ ON হলে) */
-export async function initAds() {
-  if (initialized) return;
+export async function initAds(): Promise<boolean> {
+  if (initialized) return true;
+  if (initialization) return initialization;
+  initialization = initializeAds();
+  try {
+    return await initialization;
+  } finally {
+    initialization = null;
+  }
+}
+
+async function initializeAds(): Promise<boolean> {
   const cfg = await loadAdsConfig();
-  if (!cfg.enabled) return;
+  if (!cfg.enabled) return false;
   const AdMob = await getAdMob();
-  if (!AdMob) return;
+  if (!AdMob) return false;
   try {
     await AdMob.initialize({ initializeForTesting: cfg.test });
     initialized = true;
+    return true;
   } catch (e) {
     console.warn("AdMob init failed", e);
+    return false;
   }
 }
 
@@ -61,22 +74,22 @@ const DAY_KEY = "ga_last_daily_ad";
  * দিনের প্রথমবার অ্যাপে ঢুকলে একটি interstitial অ্যাড দেখায়।
  * একই দিনে আবার দেখায় না (localStorage দিয়ে ট্র্যাক) — যাতে ইউজার বিরক্ত না হয়।
  */
-export async function showDailyAppOpenAd() {
+export async function showDailyAppOpenAd(): Promise<boolean> {
   const cfg = await loadAdsConfig();
-  if (!cfg.appOpen) return;
-  if (ADS_CONFIG.dailyInterstitialLimit <= 0) return;
+  if (!cfg.appOpen) return false;
+  if (ADS_CONFIG.dailyInterstitialLimit <= 0) return false;
   // টেস্ট মোডে দিনে-একবার সীমা মানা হয় না, যাতে অ্যাডমিন প্রতিবার যাচাই করতে পারেন
   if (!cfg.test) {
     const today = new Date().toISOString().slice(0, 10);
     try {
-      if (localStorage.getItem(DAY_KEY) === today) return;
+      if (localStorage.getItem(DAY_KEY) === today) return true;
     } catch {
-      return;
+      return false;
     }
   }
-  await initAds();
+  if (!(await initAds())) return false;
   const AdMob = await getAdMob();
-  if (!AdMob) return;
+  if (!AdMob) return false;
 
   try {
     await AdMob.prepareInterstitial({
@@ -86,9 +99,11 @@ export async function showDailyAppOpenAd() {
 
     await AdMob.showInterstitial();
     localStorage.setItem(DAY_KEY, new Date().toISOString().slice(0, 10));
-
-  } catch {
+    return true;
+  } catch (error) {
+    console.warn("AdMob app-open ad failed", error);
     // অ্যাড লোড না হলে চুপচাপ বাদ — ইউজারকে বিরক্ত করা যাবে না
+    return false;
   }
 }
 
@@ -96,7 +111,7 @@ export async function showDailyAppOpenAd() {
 export async function showRewardedAd(): Promise<boolean> {
   const cfg = await loadAdsConfig();
   if (!cfg.rewarded) return false;
-  await initAds();
+  if (!(await initAds())) return false;
   const AdMob = await getAdMob();
   if (!AdMob) return false;
   try {
@@ -107,7 +122,8 @@ export async function showRewardedAd(): Promise<boolean> {
 
     const res = await AdMob.showRewardVideoAd();
     return !!(res as any)?.reward;
-  } catch {
+  } catch (error) {
+    console.warn("AdMob rewarded ad failed", error);
     return false;
   }
 }
@@ -130,7 +146,7 @@ export async function showBottomBanner(): Promise<boolean> {
 async function loadBottomBanner(): Promise<boolean> {
   const cfg = await loadAdsConfig();
   if (!cfg.banner) return false;
-  await initAds();
+  if (!(await initAds())) return false;
   const AdMob = await getAdMob();
   if (!AdMob) return false;
   try {
