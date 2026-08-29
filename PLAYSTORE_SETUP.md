@@ -12,6 +12,7 @@
 - App খুললেই সরাসরি live site `https://good-app2.lovable.app` লোড হয় — তাই সব ফিচার (mining, withdraw, KYC) কাজ করে
 - **Privacy Policy** পেজ: `https://goodapp2.live/privacy` ← Play Store-এ এই লিংকটাই দিতে হবে
 - **Terms** পেজ: `https://goodapp2.live/terms`
+- **Child Safety Standards** পেজ: `https://goodapp2.live/child-safety` ← social/UGC অ্যাপের জন্য বাধ্যতামূলক
 - Play Store-এর গ্রাফিক্স তৈরি: `app-icon-512.png` (512×512) আর `feature-graphic-1024x500.jpg` (1024×500) — Files প্যানেল থেকে ডাউনলোড করুন
 - GitHub Actions cloud build workflow (PC/Android Studio লাগবে না)
 
@@ -88,6 +89,8 @@ Repository → **Settings** → **Secrets and variables** → **Actions** → **
 
 **App content** (এগুলো না দিলে রিভিউতে আটকাবে)
 - Privacy policy URL: `https://goodapp2.live/privacy`
+- Terms URL: `https://goodapp2.live/terms`
+- Child safety standards URL: `https://goodapp2.live/child-safety`
 - Data safety: ফর্মে সত্যি করে বলুন — নাম, ফোন নম্বর, ইমেইল, ছবি (ফেস) সংগ্রহ করা হয়; এনক্রিপ্টেড ট্রান্সফার; ব্যবহারকারী ডেটা মুছতে অনুরোধ করতে পারেন
 - Ads: No ads
 - Content rating: প্রশ্নপত্র পূরণ করুন
