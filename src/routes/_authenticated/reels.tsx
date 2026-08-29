@@ -4,7 +4,7 @@ import { WatchCoinBar } from "@/components/social/CoinWallet";
 import { playUiSound } from "@/lib/ui-sounds";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   Heart,
@@ -181,7 +181,7 @@ function ReelsPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { postId: selectedPostId, upload: autoUpload } = Route.useSearch();
-  const { items, isLoading, isError } = useCombinedReels(selectedPostId);
+  const { items, isLoading, isError, loadMore } = useCombinedReels(selectedPostId);
   const containerRef = useRef<HTMLDivElement>(null);
   const selectedScrollHandledRef = useRef<string | null>(null);
   const [muted, setMuted] = useState(true);
@@ -218,7 +218,9 @@ function ReelsPage() {
     if (bestId) {
       setActiveId((current) => (current === bestId ? current : bestId));
     }
-  }, []);
+    // শেষের দিকে পৌঁছালে আরও রিলস লোড হবে
+    if (root.scrollTop + root.clientHeight * 3 >= root.scrollHeight) loadMore();
+  }, [loadMore]);
 
   useEffect(() => {
     if (user?.id) {
