@@ -1,4 +1,4 @@
-package com.goodapp2.live;
+package com.anamul.goodapp;
 
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -37,8 +37,8 @@ import java.nio.ByteBuffer;
  * them into a canvas MediaStream track for WebRTC.
  */
 public class ScreenShareService extends Service {
-    public static final String ACTION_START = "com.goodapp2.live.START_SHARE";
-    public static final String ACTION_STOP = "com.goodapp2.live.STOP_SHARE";
+    public static final String ACTION_START = "com.anamul.goodapp.START_SHARE";
+    public static final String ACTION_STOP = "com.anamul.goodapp.STOP_SHARE";
     private static final String CHANNEL = "goodapp_screen_share";
 
     public interface FrameSink {
