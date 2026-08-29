@@ -15,6 +15,7 @@ import { requestEmailVerifyOtp, confirmEmailVerifyOtp } from "@/lib/email-verify
 import { requestPasswordChangeOtp, changePasswordWithOtp } from "@/lib/password-change.functions";
 import { getDeviceId } from "@/hooks/useDeviceGuard";
 import { FaceLoginBindCard } from "@/components/FaceLoginBindCard";
+import { clearSharedSession } from "@/lib/auth-session";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   ssr: false,
@@ -206,8 +207,9 @@ function SettingsPage() {
   async function logoutThis() {
     await qc.cancelQueries();
     qc.clear();
-    await supabase.auth.signOut();
-    router.navigate({ to: "/auth", replace: true });
+    clearSharedSession();
+    await supabase.auth.signOut({ scope: "local" }).catch(() => undefined);
+    window.location.replace("/auth");
   }
 
   return (

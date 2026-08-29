@@ -314,7 +314,12 @@ export const revokeDevice = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin
       .from("user_devices")
-      .update({ revoked_at: new Date().toISOString() } as any)
+      .update({
+        revoked_at: new Date().toISOString(),
+        otp_trust_expires_at: null,
+        approval_state: null,
+        approval_requested_at: null,
+      } as any)
       .eq("id", data.id)
       .eq("user_id", context.userId);
     if (error) throw new Error("ডিভাইসটি লগআউট করা যায়নি");
@@ -328,7 +333,12 @@ export const revokeOtherDevices = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin
       .from("user_devices")
-      .update({ revoked_at: new Date().toISOString() } as any)
+      .update({
+        revoked_at: new Date().toISOString(),
+        otp_trust_expires_at: null,
+        approval_state: null,
+        approval_requested_at: null,
+      } as any)
       .eq("user_id", context.userId)
       .is("revoked_at", null)
       .neq("device_id", data.deviceId);

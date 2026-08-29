@@ -1,7 +1,8 @@
 import { useEffect } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { touchDevice } from "@/lib/sessions.functions";
-import { getSharedSession } from "@/lib/auth-session";
+import { supabase } from "@/integrations/supabase/client";
+import { clearSharedSession, getSharedSession } from "@/lib/auth-session";
 
 const KEY = "ga_device_id";
 
@@ -32,8 +33,8 @@ export function deviceLabel() {
 }
 
 /**
- * প্রতি ৩০ সেকেন্ডে নিজের ডিভাইস "জীবিত" জানায় (সেটিংসে ডিভাইস লিস্টের জন্য)।
- * ডিভাইস অনুমতি/approval সিস্টেম বন্ধ — তাই কখনো লক করা হয় না।
+ * প্রতি ১৫ সেকেন্ডে নিজের ডিভাইস "জীবিত" জানায়। অন্য ফোন থেকে এই
+ * ডিভাইস revoke করা হলে local session মুছে দিয়ে সঙ্গে সঙ্গে login-এ ফেরায়।
  */
 export function useDeviceGuard(enabled = true): boolean {
   const touch = useServerFn(touchDevice);
@@ -49,19 +50,29 @@ export function useDeviceGuard(enabled = true): boolean {
         const { data: sess } = await getSharedSession();
         if (!sess?.session?.access_token) return;
         if (!active) return;
-        await touch({
+        const result = await touch({
           data: { deviceId, label: deviceLabel(), userAgent: navigator.userAgent },
         });
+        if (!result.revoked || !active) return;
+        active = false;
+        clearSharedSession();
+        await supabase.auth.signOut({ scope: "local" }).catch(() => undefined);
+        window.location.replace("/auth?reason=device-logout");
       } catch {
         /* নেটওয়ার্ক সমস্যা — কিছু করব না */
       }
     };
 
     ping();
-    const timer = setInterval(ping, 30_000);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void ping();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    const timer = setInterval(ping, 15_000);
     return () => {
       active = false;
       clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisible);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled]);

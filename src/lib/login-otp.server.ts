@@ -191,6 +191,9 @@ async function markDeviceTrusted(userId: string, deviceId?: string) {
         user_id: userId,
         device_id: deviceId,
         otp_trust_expires_at: expiresAt,
+        revoked_at: null,
+        approval_state: null,
+        approval_requested_at: null,
         last_seen_at: new Date().toISOString(),
       } as any,
       { onConflict: "user_id,device_id" }

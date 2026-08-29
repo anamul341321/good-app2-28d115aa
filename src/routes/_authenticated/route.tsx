@@ -117,9 +117,9 @@ function AuthedLayout() {
 
 
   const logout = async () => {
-    await supabase.auth.signOut();
     clearSharedSession();
-    router.navigate({ to: "/auth" });
+    await supabase.auth.signOut({ scope: "local" }).catch(() => undefined);
+    window.location.replace("/auth");
   };
 
   const { t } = useLang();
