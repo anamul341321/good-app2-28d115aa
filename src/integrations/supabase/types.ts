@@ -3266,6 +3266,10 @@ export type Database = {
         }
         Returns: Json
       }
+      revert_slot_claim_on_unwhitelist: {
+        Args: { _task_id: string; _user_id: string }
+        Returns: Json
+      }
       send_balance_transfer: {
         Args: {
           _amount: number

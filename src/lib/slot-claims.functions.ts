@@ -61,6 +61,38 @@ export const claimSlotReward = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => z.object({ taskId: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // ক্লেইমের ঠিক আগে আবার on-chain whitelist যাচাই — কোনো ঘর whitelist না
+    // থাকলে সেই ঘরের বোনাস/মাইনিং মেইন ব্যালেন্সে আসবে না।
+    const { data: task } = await supabaseAdmin
+      .from("tasks" as any)
+      .select("id, wallet_address, whitelist_ok")
+      .eq("id", data.taskId)
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    const walletAddress = (task as any)?.wallet_address as string | null;
+    if (walletAddress) {
+      try {
+        const { isWhitelistedRPC } = await import("@/lib/celo-whitelist");
+        const ok = await isWhitelistedRPC(walletAddress);
+        if (!ok) {
+          // whitelist_ok = false করলে DB trigger আগে ক্লেইম করা টাকাও
+          // মেইন ব্যালেন্স থেকে মাইনিং ব্যালেন্সে ফিরিয়ে নেবে।
+          await supabaseAdmin
+            .from("tasks" as any)
+            .update({ whitelist_ok: false })
+            .eq("id", data.taskId)
+            .eq("user_id", context.userId);
+          throw new Error(
+            "এই ঘরটি এখন whitelist-এ নেই — Re-verify সম্পন্ন করলেই এই ঘরের মাইনিং ও ১০৳ বোনাস মেইন ব্যালেন্সে নেওয়া যাবে।",
+          );
+        }
+      } catch (e: any) {
+        if (typeof e?.message === "string" && e.message.includes("whitelist-এ নেই")) throw e;
+        // RPC নেটওয়ার্ক সমস্যায় ক্লেইম আটকে দেব না — DB-র whitelist_ok চেকই চলবে।
+      }
+    }
+
     const { data: res, error } = await supabaseAdmin.rpc("claim_slot_reward" as any, {
       _user_id: context.userId,
       _task_id: data.taskId,
