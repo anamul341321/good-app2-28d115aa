@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { X, PartyPopper, Sparkles } from "lucide-react";
 import wowGirl from "@/assets/new-system-wow.jpg";
+import { getAppStatus } from "@/lib/app-status.functions";
 
 const KEY = "new_mining_system_notice_v1_seen_at";
 
