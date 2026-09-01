@@ -373,6 +373,7 @@ function HomePage() {
             <SlotClaimButton claim={claimBySlot.get(Number(mainTask.slot))}
               preview={previewClaim(mainTask)}
               onReverify={() => router.navigate({ to: "/reverify", search: { taskId: mainTask.id } as any })} />
+            <SlotSelfReset slot={Number(mainTask.slot)} disabled={mainTask.status === "empty"} />
             </div>
           </div>
         </div>
