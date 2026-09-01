@@ -3180,7 +3180,12 @@ export const adminResetUserEmail = createServerFn({ method: "POST" })
 
     const { error } = await supabaseAdmin
       .from("profiles")
-      .update({ email: null, email_verified: false, email_verified_at: null } as any)
+      .update({
+        email: null,
+        email_verified: false,
+        email_verified_at: null,
+        email_reset_at: new Date().toISOString(),
+      } as any)
       .eq("id", data.userId);
     if (error) throw new Error(error.message);
 
