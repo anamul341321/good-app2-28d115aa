@@ -185,7 +185,7 @@ export const requestWithdraw = createServerFn({ method: "POST" })
 
     if (debtTotal > 0) throw new Error(`⚠ আপনার অ্যাকাউন্টে ${Math.ceil(debtTotal)}৳ ওয়ার্নিং আছে — আগে সেটা পরিশোধ করুন`);
 
-    // মেইন ব্যালেন্স + আনলক হওয়া মাইনিং ব্যালেন্স — যেকোনো সময় withdraw করা যাবে।
+    // মেইন/বোনাস ব্যালেন্স যেকোনো সময়; আনলক মাইনিং ব্যালেন্স শুধু মাসের ১–৩ তারিখে withdraw।
     // মাইনিংয়ের লক অংশ শুধু ওই স্লট রি-ভেরিফাই করলেই আনলক হয়।
     const { data: bdRaw } = await (supabaseAdmin as any).rpc("get_user_balance_breakdown", { _user_id: userId });
     const bd = (bdRaw ?? {}) as Record<string, number>;
