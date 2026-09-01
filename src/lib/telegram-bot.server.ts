@@ -145,7 +145,9 @@ export async function sendMessage(chatId: string | number, text: string, _replyT
   // দুটোই যায়; ইউজার নিজে "ভয়েসে বলো" বললে শুধু ভয়েস।
   const voiceOnly = prefs.voice && replyModeOverride === "voice";
   const voiceOn = prefs.voice;
-  const textOn = !voiceOnly && prefs.text !== false;
+  // ভয়েস বন্ধ থাকলে "শুধু ভয়েস" মানে হয় না — তখন সবসময় লেখা যাবে, নইলে বট
+  // পুরোপুরি চুপ হয়ে যায় (KYC/DM কোনো উত্তরই পেত না)।
+  const textOn = !voiceOnly && (prefs.text !== false || !voiceOn);
 
   const plainLen = full.replace(/<[^>]+>/g, "").trim().length;
   const wantVoice = voiceOn && plainLen >= 1;
