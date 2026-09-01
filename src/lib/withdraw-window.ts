@@ -41,10 +41,15 @@ export function withdrawWindowInfo(now: number = Date.now()) {
   };
 }
 
-/** Returns the next 1st-of-month 00:00 Dhaka and whether today is that day. */
+/**
+ * মাইনিং ব্যালেন্স উইথড্র উইন্ডো: প্রতি মাসের ১–৩ তারিখ (Asia/Dhaka)।
+ * এই তিন দিনের বাইরে মাইনিং টাকা তোলা যাবে না (বোনাস/মেইন ব্যালেন্স যেকোনো সময়)।
+ */
+export const WITHDRAW_WINDOW_LAST_DAY = 3;
+
 export function withdrawCountdownInfo(now: number = Date.now()) {
   const { y, m, day } = dhakaNow(now);
-  const isOpen = day === 1;
+  const isOpen = day <= WITHDRAW_WINDOW_LAST_DAY;
 
   let targetY = y;
   let targetM = m;
