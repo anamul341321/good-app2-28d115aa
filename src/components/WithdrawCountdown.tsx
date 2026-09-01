@@ -37,13 +37,13 @@ export function WithdrawCountdown() {
         <div className="flex-1">
           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan">
             <Clock className="inline h-3 w-3 mr-1" />
-            উইথড্র শীঘ্রই চালু হবে
+            মাইনিং উইথড্র শীঘ্রই চালু হবে
           </p>
           <h3 className="mt-0.5 text-base font-black leading-tight text-foreground">
-            প্রতি মাসের ১ তারিখে উইথড্র চালু হবে
+            মাইনিং উইথড্র প্রতি মাসের ১–৩ তারিখ
           </h3>
           <p className="mt-1 text-[11px] text-muted-foreground leading-snug">
-            আগামী ১ তারিখ পর্যন্ত অপেক্ষা করুন। ঠিক ১ তারিখ থেকে আবার উইথড্র রিকোয়েস্ট পাঠাতে পারবেন।
+            মাইনিং ব্যালেন্স শুধু প্রতি মাসের ১, ২ ও ৩ তারিখে তোলা যাবে — এর বাইরে মাইনিং উইথড্র বন্ধ। মেইন/বোনাস ব্যালেন্স যেকোনো সময় তোলা যাবে।
           </p>
         </div>
       </div>

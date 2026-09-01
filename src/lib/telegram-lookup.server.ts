@@ -229,7 +229,7 @@ export async function buildUserCard(uidRaw: string): Promise<LookupResult> {
   }
 
   // মেইন ব্যালেন্স = বোনাস/রেফার বোনাসের অংশ (যেকোনো সময় তোলা যায়);
-  // বাকিটা মাইনিং ব্যালেন্স (আনলক হলে যেকোনো সময় তোলা যায়)।
+  // বাকিটা মাইনিং ব্যালেন্স (আনলক হলে শুধু মাসের ১–৩ তারিখে তোলা যায়)।
   const { splitBalance } = await import("@/lib/mining");
   const netBalance = Math.max(0, balance - debt);
   const { main: mainPart, mining: miningPart } = splitBalance({
@@ -261,7 +261,7 @@ export async function buildUserCard(uidRaw: string): Promise<LookupResult> {
     `\n<b>💰 হিসাব</b>\n` +
     `   বর্তমান ব্যালেন্স: <b>${bdt(balance - debt)}</b>\n` +
     `   💚 মেইন ব্যালেন্স (যেকোনো সময় তোলা যায়): <b>${bdt(mainPart)}</b>\n` +
-    `   ⛏️ মাইনিং ব্যালেন্স (আনলক হলে যেকোনো সময় তোলা যায়): <b>${bdt(miningPart)}</b>   মাইনিং: ${mining?.is_active ? "🟢 চালু" : "🔴 বন্ধ"}\n` +
+    `   ⛏️ মাইনিং ব্যালেন্স (আনলক থাকলে শুধু ১–৩ তারিখে তোলা যায়): <b>${bdt(miningPart)}</b>   মাইনিং: ${mining?.is_active ? "🟢 চালু" : "🔴 বন্ধ"}\n` +
     `   পেইড উইথড্র: <b>${bdt(paid)}</b>${pending ? `   পেন্ডিং: ${bdt(pending)}` : ""}\n` +
     (debt ? `   ⚠️ বকেয়া (ফেরতযোগ্য): <b>${bdt(debt)}</b>\n` : "");
 

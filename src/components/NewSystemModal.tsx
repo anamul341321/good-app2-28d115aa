@@ -87,7 +87,7 @@ export function NewSystemModal() {
             </li>
             <li className="flex gap-2">
               <span className="shrink-0">🕒</span>
-              <span><b>তারিখের নিয়ম শেষ!</b> ১–৩ তারিখের অপেক্ষা আর নেই — <b>যেকোনো সময়</b> উইথড্র করতে পারবেন।</span>
+              <span><b>উইথড্রের নিয়ম:</b> বোনাস/মেইন ব্যালেন্স যেকোনো সময়, আর <b>মাইনিং ব্যালেন্স শুধু প্রতি মাসের ১–৩ তারিখে</b> তোলা যাবে।</span>
             </li>
             <li className="flex gap-2">
               <span className="shrink-0">🎁</span>

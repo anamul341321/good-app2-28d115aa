@@ -98,8 +98,11 @@ export const requestWithdraw = createServerFn({ method: "POST" })
       throw new Error((settings as any)?.withdraw_off_message || "উইথড্র রিকোয়েস্ট আপাতত বন্ধ আছে — একটু পরে আবার চেষ্টা করুন।");
     }
 
-    // Monthly withdraw window: opens on the 1st of every month (Asia/Dhaka).
+    // মাইনিং টাকা withdraw শুধু প্রতি মাসের ১–৩ তারিখে (Asia/Dhaka)।
+    // বোনাস/মেইন ব্যালেন্স যেকোনো সময় তোলা যায়।
     // Ad Boost: 5 rewarded ads = 1 boost = 5 days less waiting (max 25 days).
+    let miningWindowOpen = true;
+    let miningWindowDaysLeft = 0;
     {
       const win = withdrawCountdownInfo(Date.now());
       if (!win.isOpen) {
@@ -115,11 +118,8 @@ export const requestWithdraw = createServerFn({ method: "POST" })
           isOpen: false,
           boosts: Math.floor((adCount ?? 0) / AD_BOOST.adsPerBoost),
         });
-        if (!boostInfo.unlocked) {
-          throw new Error(
-            `উইথড্র প্রতি মাসের ১ তারিখে চালু হয় — আরও ${boostInfo.effectiveDaysLeft} দিন বাকি। উইথড্র পেজে অ্যাড দেখে সময় কমাতে পারেন (${AD_BOOST.adsPerBoost}টি অ্যাড = ${AD_BOOST.daysPerBoost} দিন কম)।`,
-          );
-        }
+        miningWindowOpen = boostInfo.unlocked;
+        miningWindowDaysLeft = boostInfo.effectiveDaysLeft;
       }
     }
 
@@ -185,7 +185,7 @@ export const requestWithdraw = createServerFn({ method: "POST" })
 
     if (debtTotal > 0) throw new Error(`⚠ আপনার অ্যাকাউন্টে ${Math.ceil(debtTotal)}৳ ওয়ার্নিং আছে — আগে সেটা পরিশোধ করুন`);
 
-    // মেইন ব্যালেন্স + আনলক হওয়া মাইনিং ব্যালেন্স — যেকোনো সময় withdraw করা যাবে।
+    // মেইন/বোনাস ব্যালেন্স যেকোনো সময়; আনলক মাইনিং ব্যালেন্স শুধু মাসের ১–৩ তারিখে withdraw।
     // মাইনিংয়ের লক অংশ শুধু ওই স্লট রি-ভেরিফাই করলেই আনলক হয়।
     const { data: bdRaw } = await (supabaseAdmin as any).rpc("get_user_balance_breakdown", { _user_id: userId });
     const bd = (bdRaw ?? {}) as Record<string, number>;
@@ -193,6 +193,12 @@ export const requestWithdraw = createServerFn({ method: "POST" })
     const miningAvailable = Number(bd.mining_available ?? 0);
     const miningLockedAmount = Number(bd.mining_locked ?? 0);
     const available = bonusAvailable + miningAvailable;
+
+    if (!miningWindowOpen && amount > bonusAvailable) {
+      throw new Error(
+        `⛏️ মাইনিং ব্যালেন্স শুধু প্রতি মাসের ১–৩ তারিখের মধ্যে withdraw করা যায় — আরও ${miningWindowDaysLeft} দিন বাকি। এখন শুধু মেইন/বোনাস ব্যালেন্স ${Math.floor(bonusAvailable)}৳ তোলা যাবে। (উইথড্র পেজে অ্যাড দেখে সময় কমাতে পারেন — ${AD_BOOST.adsPerBoost}টি অ্যাড = ${AD_BOOST.daysPerBoost} দিন কম)`,
+      );
+    }
 
     if (amount > available) {
       if (miningLockedAmount > 0 && amount <= balance) {

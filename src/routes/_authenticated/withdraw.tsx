@@ -204,12 +204,12 @@ function WithdrawPage() {
               {miningLocked ? (
                 <p className="text-[10px] text-rose font-bold mt-0.5">🔒 লক {miningLockedAmount}৳ · আনলক {miningAvailable}৳</p>
               ) : (
-                <p className="text-[10px] text-emerald font-bold mt-0.5">✓ পুরোটাই আনলক · এখনই withdraw</p>
+                <p className="text-[10px] text-emerald font-bold mt-0.5">✓ পুরোটাই আনলক · ১–৩ তারিখে withdraw</p>
               )}
             </div>
           </div>
           <p className="text-[10px] text-muted-foreground leading-snug">
-            মেইন ব্যালেন্স ও আনলক হওয়া মাইনিং ব্যালেন্স <b>যেকোনো সময়</b> withdraw করা যাবে। যে স্লট রি-ভেরিফাই করবেন, সেই স্লটের মাইনিং টাকা আনলক হয়ে যাবে।
+            মেইন/বোনাস ব্যালেন্স <b>যেকোনো সময়</b> withdraw করা যাবে। <b>মাইনিং ব্যালেন্স শুধু প্রতি মাসের ১–৩ তারিখে</b> তোলা যাবে। যে স্লট রি-ভেরিফাই করবেন, সেই স্লটের মাইনিং টাকা আনলক হয়ে যাবে।
           </p>
         </div>
       )}
@@ -232,12 +232,12 @@ function WithdrawPage() {
               <div>
                 <p className={`text-[10px] uppercase tracking-[0.25em] font-black ${miningLocked ? "text-amber" : "text-emerald"}`}>মাইনিং আনলক নিয়ম</p>
                 <h3 className={`text-base font-black ${miningLocked ? "text-amber" : "text-emerald"}`}>
-                  {miningLocked ? `${miningLockedAmount}৳ লক — রি-ভেরিফাই করলে আনলক` : "সব টাকা আনলক — এখনই তুলুন"}
+                  {miningLocked ? `${miningLockedAmount}৳ লক — রি-ভেরিফাই করলে আনলক` : "সব টাকা আনলক — ১–৩ তারিখে তুলুন"}
                 </h3>
               </div>
             </div>
             <ul className="space-y-2 text-[12px] text-navy/90 leading-relaxed font-bold">
-              <li className="flex gap-2"><span className="text-emerald shrink-0">📅</span><span>প্রতি মাসের <b className="text-emerald">১ তারিখ</b> উইথড্র চালু থাকবে — বাকি সময় কাউন্টডাউন দেখাবে।</span></li>
+              <li className="flex gap-2"><span className="text-emerald shrink-0">📅</span><span>মাইনিং উইথড্র শুধু প্রতি মাসের <b className="text-emerald">১–৩ তারিখ</b> — বাকি সময় কাউন্টডাউন দেখাবে। মেইন/বোনাস ব্যালেন্স যেকোনো সময় তোলা যাবে।</span></li>
               <li className="flex gap-2"><span className="text-cyan shrink-0">⛏️</span><span>প্রতিটি স্লট আলাদাভাবে মাইনিং করে (<b>৫০৳/মাস</b> প্রতি স্লট) — ১টি স্লট রি-ভেরিফাই করলেই ওই স্লটের মাইনিং চালু।</span></li>
               <li className="flex gap-2"><span className="text-amber shrink-0">🔒</span><span>যে স্লট রি-ভেরিফাই করবেন, <b>সেই স্লটের জমা মাইনিং টাকাই</b> আনলক হবে। সব স্লট রি-ভেরিফাই করলে পুরো টাকা আনলক।</span></li>
               <li className="flex gap-2"><span className="text-violet shrink-0">🎁</span><span>আগে রি-ভেরিফাই করা স্লট আবার রি-ভেরিফাই করলে <b>প্রতি স্লটে ১০৳</b> বোনাস (মেইন ব্যালেন্সে)।</span></li>
