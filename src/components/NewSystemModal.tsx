@@ -12,6 +12,14 @@ const KEY = "new_mining_system_notice_v1_seen_at";
  */
 export function NewSystemModal() {
   const [open, setOpen] = useState(false);
+  const { data: status } = useQuery({
+    queryKey: ["app-status"],
+    queryFn: () => getAppStatus(),
+    staleTime: 60_000,
+  });
+  const bonusEnabled = status?.bonusEnabled === true;
+  const bonusTotal = Number(status?.firstVerifyBonus ?? 0) + Number(status?.reverifyBonus ?? 0);
+
 
   useEffect(() => {
     try {
