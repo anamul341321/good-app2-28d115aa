@@ -1128,6 +1128,8 @@ function FeedPage() {
           </button>
         </div>
       </nav>
+      </div>
+
 
 
       {showSearch && (
