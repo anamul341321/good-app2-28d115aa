@@ -57,6 +57,9 @@ export const getAppStatus = createServerFn({ method: "GET" }).handler(async () =
       adsBannerUnit: ((data as any)?.ads_banner_unit as string | null) ?? null,
       adsInterstitialUnit: ((data as any)?.ads_interstitial_unit as string | null) ?? null,
       adsRewardedUnit: ((data as any)?.ads_rewarded_unit as string | null) ?? null,
+      bonusEnabled: (data as any)?.bonus_enabled === true,
+      firstVerifyBonus: Number((data as any)?.first_verify_bonus ?? 0),
+      reverifyBonus: Number((data as any)?.reverify_bonus ?? 0),
 
     };
   } catch {
