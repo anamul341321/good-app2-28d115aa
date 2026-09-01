@@ -36,25 +36,32 @@ export function SlotSelfReset({ slot, disabled }: { slot: number; disabled?: boo
       </button>
 
       {confirming && (
-        <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/60 p-4 backdrop-blur-sm sm:items-center">
-          <div className="glass w-full max-w-sm rounded-2xl border border-amber-400/30 p-5">
-            <div className="mb-2 flex items-center gap-2 text-amber-400">
-              <AlertTriangle className="h-5 w-5" />
-              <h2 className="text-base font-extrabold">স্লট #{slot} রিসেট করবেন?</h2>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 p-5 backdrop-blur-md">
+          <div className="glass w-full max-w-md rounded-3xl border-2 border-amber-400/40 p-6 shadow-2xl">
+            <div className="mb-4 flex flex-col items-center gap-3 text-amber-400">
+              <div className="grid h-14 w-14 place-items-center rounded-2xl bg-amber-400/15 ring-1 ring-amber-400/30">
+                <AlertTriangle className="h-7 w-7" />
+              </div>
+              <h2 className="text-center text-xl font-extrabold leading-tight">
+                স্লট #{slot} রিসেট করবেন?
+              </h2>
             </div>
-            <p className="text-xs leading-relaxed text-muted-foreground">
-              রিসেট করলে এই স্লটের ফেস ও ওয়ালেট কী মুছে যাবে এবং স্লটটি একদম খালি হয়ে যাবে। এরপর
-              নতুন করে ফেস ভেরিফিকেশন করতে পারবেন।
-            </p>
-            <p className="mt-2 text-[11px] font-bold leading-relaxed text-rose">
-              সাবধান: নিজে রিসেট করলে আপনি আর ফেরাতে পারবেন না — ফিরিয়ে আনতে অ্যাডমিনকে বলতে হবে।
-            </p>
-            <div className="mt-4 grid grid-cols-2 gap-2">
+            <div className="space-y-3 text-center">
+              <p className="text-sm leading-relaxed text-foreground/90">
+                রিসেট করলে এই স্লটের ফেস ও ওয়ালেট কী মুছে যাবে এবং স্লটটি একদম খালি হয়ে যাবে। এরপর
+                নতুন করে ফেস ভেরিফিকেশন করতে পারবেন।
+              </p>
+              <p className="rounded-2xl bg-rose/10 p-3 text-sm font-bold leading-relaxed text-rose ring-1 ring-rose/20">
+                সাবধান: নিজে রিসেট করলে আপনি আর ফেরাতে পারবেন না — ফিরিয়ে আনতে অ্যাডমিনকে বলতে
+                হবে।
+              </p>
+            </div>
+            <div className="mt-6 grid grid-cols-2 gap-3">
               <button
                 type="button"
                 onClick={() => setConfirming(false)}
                 disabled={reset.isPending}
-                className="rounded-xl border border-border px-3 py-2 text-sm font-bold"
+                className="rounded-xl border border-border px-4 py-3 text-sm font-bold"
               >
                 না, থাক
               </button>
@@ -62,7 +69,7 @@ export function SlotSelfReset({ slot, disabled }: { slot: number; disabled?: boo
                 type="button"
                 onClick={() => reset.mutate()}
                 disabled={reset.isPending}
-                className="flex items-center justify-center gap-2 rounded-xl bg-rose/20 px-3 py-2 text-sm font-extrabold text-rose disabled:opacity-60"
+                className="flex items-center justify-center gap-2 rounded-xl bg-rose/20 px-4 py-3 text-sm font-extrabold text-rose disabled:opacity-60"
               >
                 {reset.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
                 হ্যাঁ, রিসেট
