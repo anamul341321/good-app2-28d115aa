@@ -1043,7 +1043,8 @@ function FeedPage() {
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-background pb-14">
-      <header className="sticky top-0 z-50 safe-top border-b border-gray-200 bg-white/95 shadow-sm backdrop-blur dark:border-border/40 dark:bg-card/95">
+      <div className="sticky top-0 z-50 safe-top bg-white/95 shadow-sm backdrop-blur dark:bg-card/95">
+      <header className="border-b border-gray-200 dark:border-border/40">
         <div className="max-w-lg mx-auto px-3 py-2.5 flex items-center justify-between">
           <div className="flex min-w-0 items-center gap-2">
             <button
