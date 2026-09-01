@@ -1,17 +1,17 @@
 /**
  * সবসময় চালু নিরাপত্তা গার্ড (bot off থাকলেও কাজ করে):
- *  - গ্রুপে গালি / স্ক্যাম / নিষিদ্ধ শব্দ / বাইরের লিংক / খারাপ ছবি → সাথে সাথে ডিলিট + ৩০ মিনিট ফ্রিজ
- *  - Good-App নিয়ে বাজে মন্তব্য (লেখা বা ভয়েস) → UID জানা থাকলে অ্যাপ অ্যাকাউন্ট ব্লক,
- *    UID জানা না থাকলে মেসেজ ডিলিট + ৩০ মিনিট ফ্রিজ।
+ *  - শুধু দুইটি জিনিস মুছে ফেলা হয়: (১) বাইরের লিংক, (২) ১৮+ / আপত্তিকর ছবি।
+ *  - কোনো ফ্রিজ (mute) বা অ্যাকাউন্ট ব্লক করা হয় না। ইউজার পেমেন্ট পেয়ে খুশি
+ *    হয়ে স্ক্রিনশট/মন্তব্য দিলে সেটা কখনোই মোছা হবে না।
  */
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { isHardAbuse, looksHelpful } from "@/lib/telegram-guard.server";
 import { aiFetch } from "@/lib/ai-free.server";
 
-export const FREEZE_SEC = 30 * 60;
+export const FREEZE_SEC = 0;
 
 const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const MODEL = "google/gemini-2.5-flash";
+
 
 /** Good-App / অ্যাডমিনকে নিয়ে বাজে মন্তব্য */
 const APP_TARGET =
