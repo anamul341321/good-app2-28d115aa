@@ -24,7 +24,6 @@ import {
   Minimize2,
 } from "lucide-react";
 import {
-  getFeedPosts,
   getLocalShortVideoPosts,
   getBangladeshExternalVideos,
   trackVideoPreference,
