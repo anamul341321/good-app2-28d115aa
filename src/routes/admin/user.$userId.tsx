@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { adminUserDetail, adminAdjustBalance, adminBalanceAudit, adminToggleMining, adminResetTask, adminমুছুনUser, adminResetUserPassword, adminClearMiningOverride, adminCreateVoucher, adminListVouchersForUser, adminSetReferralUnlock, adminResetWallet, adminMarkAsReverified, adminAddDebt, adminResolveDebt, adminDeleteDebt, adminDirectPayout, adminSetUserBlocked, adminSetBalanceFrozen, adminReturnTransferToSender, adminUserDailyReport, adminListTaskBackups, adminRestoreTask } from "@/lib/admin.functions";
+import { adminUserDetail, adminAdjustBalance, adminBalanceAudit, adminToggleMining, adminResetTask, adminমুছুনUser, adminResetUserPassword, adminResetUserEmail, adminClearMiningOverride, adminCreateVoucher, adminListVouchersForUser, adminSetReferralUnlock, adminResetWallet, adminMarkAsReverified, adminAddDebt, adminResolveDebt, adminDeleteDebt, adminDirectPayout, adminSetUserBlocked, adminSetBalanceFrozen, adminReturnTransferToSender, adminUserDailyReport, adminListTaskBackups, adminRestoreTask } from "@/lib/admin.functions";
 import { ArrowLeft, Loader2, Power, Plus, Minus, RefreshCw, Trash2, Copy, KeyRound, Gift, ScanFace, Share2, Lock, Unlock, Wallet, CheckCircle2, AlertTriangle, CheckCheck, Send, TrendingUp, Ban, ShieldOff } from "lucide-react";
 import { computeLiveBalance, splitBalance } from "@/lib/mining";
 import { toast } from "sonner";
@@ -77,6 +77,15 @@ function UserDetail() {
   const resetPass = useMutation({
     mutationFn: (pwd: string) => adminResetUserPassword({ data: { userId, newPassword: pwd } }),
     onSuccess: () => { toast.success("পাসওয়ার্ড রিসেট হয়েছে"); setNewPass(""); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const resetEmail = useMutation({
+    mutationFn: () => adminResetUserEmail({ data: { userId } }),
+    onSuccess: (r: any) => {
+      toast.success(r?.authCleared ? "Gmail রিসেট হয়েছে" : "Gmail রিসেট হয়েছে (লগইন ইমেইল পরে নতুনটিতে বদলে যাবে)");
+      refetch();
+    },
     onError: (e: any) => toast.error(e.message),
   });
 
