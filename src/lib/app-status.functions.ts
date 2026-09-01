@@ -19,7 +19,7 @@ export const getAppStatus = createServerFn({ method: "GET" }).handler(async () =
     const { data } = await supabaseAdmin
       .from("bonus_settings")
       .select(
-        "maintenance_enabled, maintenance_message, apk_url, apk_version, face_verify_enabled, face_verify_off_message, first_verify_enabled, first_verify_off_message, signup_off_message, min_app_version, force_update_enabled, force_update_web, force_update_message, ads_enabled, ads_test_mode, ads_banner_enabled, ads_rewarded_enabled, ads_appopen_enabled, ads_banner_unit, ads_interstitial_unit, ads_rewarded_unit",
+        "maintenance_enabled, maintenance_message, apk_url, apk_version, face_verify_enabled, face_verify_off_message, first_verify_enabled, first_verify_off_message, signup_off_message, min_app_version, force_update_enabled, force_update_web, force_update_message, ads_enabled, ads_test_mode, ads_banner_enabled, ads_rewarded_enabled, ads_appopen_enabled, ads_banner_unit, ads_interstitial_unit, ads_rewarded_unit, bonus_enabled, first_verify_bonus, reverify_bonus",
 
       )
       .eq("id", "default")
