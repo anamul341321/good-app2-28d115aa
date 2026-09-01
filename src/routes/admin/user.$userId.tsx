@@ -748,6 +748,32 @@ function UserDetail() {
         </div>
       </div>
 
+      {/* Gmail reset */}
+      <div className="glass rounded-2xl p-4 space-y-2">
+        <div className="flex items-center gap-2">
+          <KeyRound className="w-4 h-4 text-cyan" />
+          <p className="text-[10px] uppercase tracking-widest text-cyan font-bold">Gmail রিসেট</p>
+        </div>
+        <p className="text-[10px] text-muted-foreground leading-relaxed">
+          ইউজার তার Gmail হারিয়ে ফেললে এখান থেকে ইমেইলটি খুলে দিন। এরপর ইউজার সেটিংস থেকে নতুন Gmail
+          দিলে সেই নতুন ঠিকানাতেই ৬ ডিজিটের কোড যাবে — কোড দিলেই নতুন Gmail একাউন্টে যুক্ত হবে।
+        </p>
+        <p className="text-[10px] mono-num text-muted-foreground">
+          বর্তমান: {(data as any).profile?.email || "—"}
+        </p>
+        <button
+          onClick={() => {
+            if (!confirm("এই ইউজারের Gmail রিসেট করবেন? ইউজার নতুন Gmail যুক্ত করতে পারবে।")) return;
+            resetEmail.mutate();
+          }}
+          disabled={resetEmail.isPending}
+          className="px-3 py-2 rounded-xl bg-cyan/20 text-cyan font-bold text-xs flex items-center gap-1 disabled:opacity-50"
+        >
+          {resetEmail.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <KeyRound className="w-3 h-3" />}
+          Gmail রিসেট করুন
+        </button>
+      </div>
+
       {/* 🔴 Re-verify queue (not-whitelisted) — separate box with copyable private keys */}
       {(() => {
         const queue = (data.tasks ?? []).filter((t: any) => t.status === "verified" && t.whitelist_ok === false && t.wallet_address);
