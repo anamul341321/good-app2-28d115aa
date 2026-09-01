@@ -36,7 +36,7 @@ export function hitsBannedWord(raw: string, words: string[]): boolean {
   return (words ?? []).some((w) => w && t.includes(String(w).toLowerCase()));
 }
 
-/** ছবি নিরাপদ কি না — খুব ছোট AI চেক (BAD/SAFE) */
+/** ছবি ১৮+/আপত্তিকর কি না — খুব ছোট AI চেক (BAD/SAFE) */
 export async function photoIsBad(photoBase64: string): Promise<boolean> {
   const key = process.env.GEMINI_API_KEY || process.env.LOVABLE_API_KEY;
   if (!key) return false;
@@ -55,10 +55,11 @@ export async function photoIsBad(photoBase64: string): Promise<boolean> {
               {
                 type: "text",
                 text:
-                  "Is this image inappropriate for a family-friendly earning-app support group? " +
-                  "BAD = nudity/sexual, gore/violence, abusive text or slurs, gambling, drugs, " +
-                  "other apps/referral or investment promotion, QR codes or links to other services, " +
-                  "someone's private key/seed phrase. Otherwise SAFE. Answer with exactly one word: BAD or SAFE.",
+                  "Is this image adult (18+) or graphically violent? " +
+                  "BAD = nudity, sexual or pornographic content, sexualized posing, or gore. " +
+                  "Everything else is SAFE — payment screenshots, app screenshots, selfies, memes, " +
+                  "text screenshots, product photos, ads are all SAFE. " +
+                  "Answer with exactly one word: BAD or SAFE.",
               },
               { type: "image_url", image_url: { url: `data:image/jpeg;base64,${photoBase64}` } },
             ],
@@ -66,6 +67,7 @@ export async function photoIsBad(photoBase64: string): Promise<boolean> {
         ],
       }),
     });
+
     if (!res.ok) return false;
     const data: any = await res.json();
     return /BAD/i.test(String(data.choices?.[0]?.message?.content ?? ""));
