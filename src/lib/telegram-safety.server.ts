@@ -13,18 +13,11 @@ const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const MODEL = "google/gemini-2.5-flash";
 
 
-/** Good-App / অ্যাডমিনকে নিয়ে বাজে মন্তব্য */
-const APP_TARGET =
-  /(good\s*-?\s*app|গুড\s*অ্যাপ|গুড\s*এপ|গুডঅ্যাপ|goodapp|এই\s*অ্যাপ|এই\s*এপ|apps?\s*ta|অ্যাপটা|এপটা|অ্যাডমিন|admin)/i;
-const APP_SLUR =
-  /(চোর|চুর|ভুয়া|ভুয়ো|fake|ফেইক|ফেক|scam|স্ক্যাম|প্রতারক|ধোকা|ধোঁকা|ঠকা|ফাউল|faltu|ফালতু|বাটপার|batpar|চিটার|cheater|টাকা\s*মারে|টাকা\s*মেরে|dhandha|জোচ্চোর|harami|হারামি|kutta|কুত্তা|চুদ|চোদ|খানকি|বেশ্যা|শালা|মাদার|fuck|bitch|bastard)/i;
-
-export function insultsApp(raw: string): boolean {
-  const t = (raw || "").trim();
-  if (!t) return false;
-  if (looksHelpful(t) && !APP_SLUR.test(t)) return false;
-  return APP_TARGET.test(t) && APP_SLUR.test(t);
+/** আগের নিয়ম বাতিল — কোনো মন্তব্যের জন্য আর ব্যবস্থা নেওয়া হয় না। */
+export function insultsApp(_raw: string): boolean {
+  return false;
 }
+
 
 /** বাইরের লিংক (আমাদের নিজের লিংক ও সাপোর্ট আইডি ছাড় পায়) */
 export function badLinkIn(raw: string, supportUsername?: string | null): boolean {
