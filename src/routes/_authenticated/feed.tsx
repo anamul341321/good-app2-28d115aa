@@ -1043,7 +1043,8 @@ function FeedPage() {
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-background pb-14">
-      <header className="sticky top-0 z-50 safe-top border-b border-gray-200 bg-white/95 shadow-sm backdrop-blur dark:border-border/40 dark:bg-card/95">
+      <div className="sticky top-0 z-50 safe-top bg-white/95 shadow-sm backdrop-blur dark:bg-card/95">
+      <header className="border-b border-gray-200 dark:border-border/40">
         <div className="max-w-lg mx-auto px-3 py-2.5 flex items-center justify-between">
           <div className="flex min-w-0 items-center gap-2">
             <button
@@ -1079,7 +1080,7 @@ function FeedPage() {
         </div>
       </header>
 
-      <nav className="sticky safe-top-nav z-40 bg-white/95 dark:bg-card/95 backdrop-blur border-b border-gray-200 dark:border-border/40">
+      <nav className="border-b border-gray-200 dark:border-border/40">
         <div className="max-w-lg mx-auto flex items-center gap-1.5 px-2.5 py-2 overflow-x-auto no-scrollbar">
           <button onClick={() => setActiveTab("home")}
             className={`shrink-0 flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[11px] font-black transition-all active:scale-95 ${activeTab === "home" ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-[0_8px_18px_-8px_rgba(37,99,235,0.8)]" : "bg-gray-100 dark:bg-secondary text-gray-600 dark:text-muted-foreground"}`}>
@@ -1127,6 +1128,8 @@ function FeedPage() {
           </button>
         </div>
       </nav>
+      </div>
+
 
 
       {showSearch && (

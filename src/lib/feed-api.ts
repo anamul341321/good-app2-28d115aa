@@ -742,6 +742,24 @@ export async function getShortVideoPostById(postId: string): Promise<Post | null
   return { ...post, user: userMap[post.user_id] || null } as Post;
 }
 
+// good-app এ আপলোড করা সব শর্ট ভিডিও — পেজ ধরে ধরে (Short/Reels এর জন্য)।
+// আগে শুধু সর্বশেষ ৩০টি পোস্ট আনা হতো, তাই পুরোনো আপলোড করা রিলস কখনো দেখাত না।
+export async function getLocalShortVideoPosts(page = 0, limit = 40): Promise<Post[]> {
+  const from = page * limit;
+  const { data: posts } = await db
+    .from("posts")
+    .select("*")
+    .not("video_url", "is", null)
+    .eq("visibility", "public")
+    .order("created_at", { ascending: false })
+    .range(from, from + limit - 1);
+  if (!posts || posts.length === 0) return [];
+  const userMap = await fetchProfilesMap(posts.map((p: any) => p.user_id));
+  return posts
+    .filter((p: any) => !isLongVideoPostContent(p.content))
+    .map((p: any) => ({ ...p, user: userMap[p.user_id] || null })) as Post[];
+}
+
 // Count one real view for a good-app uploaded post (reel / video)
 export async function incrementPostView(postId: string): Promise<number> {
   try {

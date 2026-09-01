@@ -24,7 +24,7 @@ import {
   Minimize2,
 } from "lucide-react";
 import {
-  getFeedPosts,
+  getLocalShortVideoPosts,
   getBangladeshExternalVideos,
   trackVideoPreference,
   markReelsSeen,
@@ -82,9 +82,11 @@ type ReelItem =
 function useCombinedReels(selectedPostId?: string) {
   // লোকাল ভিডিও আগে দেখানো হয় — বাইরের (YouTube) লিস্ট ব্যাকগ্রাউন্ডে আসে,
   // তাই Short-এ ঢুকলেই আর দীর্ঘ লোডিং স্ক্রিন দেখতে হবে না।
-  const localQuery = useQuery({
+  const localQuery = useInfiniteQuery({
     queryKey: ["reels-local-posts"],
-    queryFn: () => getFeedPosts(30),
+    initialPageParam: 0,
+    queryFn: ({ pageParam }) => getLocalShortVideoPosts(pageParam as number, 40),
+    getNextPageParam: (last, all) => ((last?.length ?? 0) < 40 ? undefined : all.length),
     staleTime: 60_000,
     gcTime: 10 * 60_000,
   });
@@ -112,7 +114,8 @@ function useCombinedReels(selectedPostId?: string) {
   const seedRef = useRef<number>(Math.floor(Math.random() * 1_000_000) + 1);
 
   const items = useMemo<ReelItem[]>(() => {
-    let localVideos = (localQuery.data || []).filter(
+    const localPages = (localQuery.data?.pages || []).flat();
+    let localVideos = localPages.filter(
       (p) => !!p.video_url && !(p.content || "").startsWith(LONG_VIDEO_MARKER),
     );
     let pinned: ReelItem | null = null;
@@ -171,7 +174,8 @@ function useCombinedReels(selectedPostId?: string) {
     isLoading: waitingForSelected || (localQuery.isLoading && externalQuery.isLoading),
     isError: localQuery.isError && externalQuery.isError,
     loadMore: () => {
-      if (!externalQuery.isFetchingNextPage) void externalQuery.fetchNextPage();
+      if (localQuery.hasNextPage && !localQuery.isFetchingNextPage) void localQuery.fetchNextPage();
+      if (externalQuery.hasNextPage !== false && !externalQuery.isFetchingNextPage) void externalQuery.fetchNextPage();
     },
   };
 }

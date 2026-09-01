@@ -73,7 +73,10 @@ export function ReferralCommissionCard() {
             <span className="mono-num text-[2.8rem] leading-none font-black text-white drop-shadow">{intPart}</span>
             <span className="mono-num text-base leading-none font-black text-white/60">.{decPart}</span>
           </div>
-          <p className="text-xs font-black text-emerald-100 mt-1.5">৳ টাকা · মাইনিং ব্যালেন্সে যোগ হচ্ছে</p>
+          <p className="text-xs font-black text-emerald-100 mt-1.5">৳ টাকা · মোট রেফার কমিশন আয় (লাইফটাইম)</p>
+          <p className="text-[10px] font-bold text-white/70 mt-1 leading-snug">
+            ক্লেইম করা কমিশন মেইন ব্যালেন্সে যোগ হয় — মাইনিং কার্ডে “রেফার ১০% কমিশন” অংশে ক্লেইমযোগ্য ও ক্লেইম করা পরিমাণ দেখা যায়।
+          </p>
         </div>
 
         <div className="mt-4 grid grid-cols-2 gap-2">
