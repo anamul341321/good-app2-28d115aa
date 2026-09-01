@@ -15,6 +15,7 @@ import { GmailSecurityBanner } from "@/components/GmailSecurityBanner";
 import { ComplianceDisclaimer } from "@/components/ComplianceDisclaimer";
 import { DashSection } from "@/components/DashSection";
 import { SlotClaimButton, type SlotClaim } from "@/components/SlotClaimButton";
+import { SlotSelfReset } from "@/components/SlotSelfReset";
 import { listSlotClaims } from "@/lib/slot-claims.functions";
 import { getUnreadMessageCount } from "@/lib/chat.functions";
 
@@ -373,6 +374,7 @@ function HomePage() {
             <SlotClaimButton claim={claimBySlot.get(Number(mainTask.slot))}
               preview={previewClaim(mainTask)}
               onReverify={() => router.navigate({ to: "/reverify", search: { taskId: mainTask.id } as any })} />
+            <SlotSelfReset slot={Number(mainTask.slot)} disabled={mainTask.status === "empty"} />
             </div>
           </div>
         </div>
@@ -490,6 +492,7 @@ function HomePage() {
                           <SlotClaimButton claim={claimBySlot.get(Number(task.slot))} compact
                             preview={previewClaim(task)}
                             onReverify={() => router.navigate({ to: "/reverify", search: { taskId: task.id } as any })} />
+                          <SlotSelfReset slot={Number(task.slot)} disabled={task.status === "empty"} />
                           </div>
                         ))}
                       </div>
