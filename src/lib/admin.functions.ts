@@ -3161,3 +3161,44 @@ export const adminSetAdsSettings = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+
+// ---------------- Gmail/ইমেইল রিসেট (অ্যাডমিন) ----------------
+// ইউজার তার Gmail হারিয়ে ফেললে অ্যাডমিন এখান থেকে ইমেইলটি খুলে দেবে। এরপর
+// ইউজার সেটিংস থেকে নতুন Gmail দিলে সেই নতুন ঠিকানাতেই কোড যাবে, কোড দিলেই
+// নতুন Gmail একাউন্টে যুক্ত হবে।
+export const adminResetUserEmail = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => z.object({ userId: z.string().uuid() }).parse(i))
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await gate();
+
+    const { data: prof } = await supabaseAdmin
+      .from("profiles")
+      .select("email")
+      .eq("id", data.userId)
+      .maybeSingle();
+    const oldEmail = String((prof as any)?.email ?? "");
+
+    const { error } = await supabaseAdmin
+      .from("profiles")
+      .update({ email: null, email_verified: false, email_verified_at: null } as any)
+      .eq("id", data.userId);
+    if (error) throw new Error(error.message);
+
+    // পুরোনো ভেরিফিকেশন কোডগুলো বাতিল
+    await supabaseAdmin.from("email_verify_otps").delete().eq("user_id", data.userId);
+    await supabaseAdmin.from("password_reset_otps").delete().eq("user_id", data.userId);
+
+    // auth একাউন্টের ইমেইলও সরানোর চেষ্টা করি (ফোন/পাসওয়ার্ড লগইন অটুট থাকে)।
+    let authCleared = true;
+    try {
+      const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(data.userId, {
+        email: undefined as any,
+        email_confirm: false,
+      } as any);
+      if (authError) authCleared = false;
+    } catch {
+      authCleared = false;
+    }
+
+    return { ok: true as const, oldEmail, authCleared };
+  });
