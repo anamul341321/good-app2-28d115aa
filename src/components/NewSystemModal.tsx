@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { X, PartyPopper, Sparkles } from "lucide-react";
 import wowGirl from "@/assets/new-system-wow.jpg";
+import { getAppStatus } from "@/lib/app-status.functions";
 
 const KEY = "new_mining_system_notice_v1_seen_at";
 
@@ -10,6 +12,14 @@ const KEY = "new_mining_system_notice_v1_seen_at";
  */
 export function NewSystemModal() {
   const [open, setOpen] = useState(false);
+  const { data: status } = useQuery({
+    queryKey: ["app-status"],
+    queryFn: () => getAppStatus(),
+    staleTime: 60_000,
+  });
+  const bonusEnabled = status?.bonusEnabled === true;
+  const bonusTotal = Number(status?.firstVerifyBonus ?? 0) + Number(status?.reverifyBonus ?? 0);
+
 
   useEffect(() => {
     try {
@@ -99,7 +109,18 @@ export function NewSystemModal() {
             </li>
             <li className="flex gap-2">
               <span className="shrink-0">🏆</span>
-              <span>নতুন ইউজার: ১০টি স্লট রি-ভেরিফাই সম্পূর্ণ করলে <b>৩০০৳ বোনাস</b> (অফার চলাকালীন)।</span>
+              {bonusEnabled ? (
+                <span>
+                  নতুন ইউজার: ১০টি স্লট ভেরিফাই + রি-ভেরিফাই সম্পূর্ণ করলে{" "}
+                  <b>{bonusTotal}৳ বোনাস</b> (অফার চলাকালীন)।
+                </span>
+              ) : (
+                <span>
+                  <b>এককালীন First verify / Re-verify বোনাস অফার আপাতত বন্ধ</b> — এখন আয় হবে
+                  মাইনিং ও প্রতি স্লটে ১০৳ রি-ভেরিফাই গিফট থেকে। অফার আবার চালু হলে অ্যাপেই
+                  জানিয়ে দেওয়া হবে।
+                </span>
+              )}
             </li>
           </ul>
 

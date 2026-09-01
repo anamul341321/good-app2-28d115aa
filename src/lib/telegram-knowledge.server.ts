@@ -55,9 +55,10 @@ export async function loadRates(): Promise<AppRates> {
     promo,
     promoTitle: promo ? (b.promo_title ?? null) : null,
     promoEndAt: promo ? (b.promo_end_at ?? null) : null,
-    promoFirst: promo ? Number(b.promo_first_verify_bonus ?? 0) || null : null,
-    promoRe: promo ? Number(b.promo_reverify_bonus ?? 0) || null : null,
-    promoRef: promo ? Number(b.promo_referrer_bonus ?? 0) || null : null,
+    // এককালীন বোনাস অফার বন্ধ থাকলে promo রেটও দেখানো যাবে না
+    promoFirst: promo && bonusEnabled ? Number(b.promo_first_verify_bonus ?? 0) || null : null,
+    promoRe: promo && bonusEnabled ? Number(b.promo_reverify_bonus ?? 0) || null : null,
+    promoRef: promo && bonusEnabled ? Number(b.promo_referrer_bonus ?? 0) || null : null,
     usdtRate: Number(b.usdt_rate_bdt ?? 130),
     rechargeOn: b.recharge_enabled !== false,
     withdrawOn,
