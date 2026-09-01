@@ -282,7 +282,7 @@ export function MiningCounter({
         <div className="mt-2 mc-mini rounded-2xl p-2 flex items-center justify-between gap-2">
           <div>
             <p className="text-[8px] font-black tracking-widest text-white/70">💚 মেইন ব্যালেন্স</p>
-            <p className="text-[7.5px] text-white/60 leading-tight mt-0.5">বোনাস + ক্লেইম করা মাইনিং/কমিশন · যেকোনো সময় তোলা যায়</p>
+            <p className="text-[7.5px] text-white/60 leading-tight mt-0.5">বোনাস + ক্লেইম করা মাইনিং/কমিশন · বোনাস যেকোনো সময়, মাইনিং ১–৩ তারিখে</p>
           </div>
           <p className="mono-num text-[15px] font-black text-yellow-100 shrink-0">{bonusPart.toFixed(2)}৳</p>
         </div>
