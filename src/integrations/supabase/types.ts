@@ -1650,6 +1650,7 @@ export type Database = {
           display_name: string | null
           district: string | null
           email: string | null
+          email_reset_at: string | null
           email_verified: boolean
           email_verified_at: string | null
           father_name: string | null
@@ -1697,6 +1698,7 @@ export type Database = {
           display_name?: string | null
           district?: string | null
           email?: string | null
+          email_reset_at?: string | null
           email_verified?: boolean
           email_verified_at?: string | null
           father_name?: string | null
@@ -1744,6 +1746,7 @@ export type Database = {
           display_name?: string | null
           district?: string | null
           email?: string | null
+          email_reset_at?: string | null
           email_verified?: boolean
           email_verified_at?: string | null
           father_name?: string | null

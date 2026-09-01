@@ -26,6 +26,7 @@ type Account = {
   displayName: string | null;
   banned: boolean;
   bannedReason: string | null;
+  emailResetAt: string | null;
 };
 
 type SignInResult =
@@ -64,7 +65,7 @@ async function resolveAccount(identifier: string): Promise<Account> {
   if (/^01\d{9}$/.test(digits)) {
     const { data, error } = await supabaseAdmin
       .from("profiles")
-      .select("id, display_name, email, email_verified, phone_number, created_at, banned, banned_reason")
+      .select("id, display_name, email, email_verified, phone_number, created_at, banned, banned_reason, email_reset_at")
       .eq("phone_number", digits)
       .order("email_verified", { ascending: false })
       .order("created_at", { ascending: false })
@@ -81,12 +82,13 @@ async function resolveAccount(identifier: string): Promise<Account> {
         displayName: null,
         banned: false,
         bannedReason: null,
+        emailResetAt: null,
       };
     }
   } else if (EMAIL_RE.test(raw)) {
     const { data, error } = await supabaseAdmin
       .from("profiles")
-      .select("id, display_name, email, email_verified, phone_number, created_at, banned, banned_reason")
+      .select("id, display_name, email, email_verified, phone_number, created_at, banned, banned_reason, email_reset_at")
       .ilike("email", raw)
       .order("email_verified", { ascending: false })
       .order("created_at", { ascending: false })
@@ -132,6 +134,7 @@ async function resolveAccount(identifier: string): Promise<Account> {
     displayName: profile.display_name ?? null,
     banned: Boolean(profile.banned),
     bannedReason: (profile.banned_reason as string | null) ?? null,
+    emailResetAt: (profile.email_reset_at as string | null) ?? null,
   };
 }
 
@@ -245,6 +248,17 @@ async function startLoginOtpWork(data: LoginData) {
     !/@facemine\.app$/i.test(account.contactEmail) &&
     account.emailVerified;
 
+  // অ্যাডমিন Gmail রিসেট করে দিলে — অ্যাপে না ঢুকেই, শুধু নম্বর+পাসওয়ার্ড দিয়ে
+  // এখানেই নতুন Gmail যোগ করতে বলা হবে (কোড ভেরিফাই করে)।
+  if (
+    !hasGmail &&
+    !!account.id &&
+    !!account.emailResetAt &&
+    !isReviewAccount(data.identifier, account.contactEmail)
+  ) {
+    return { ok: true as const, needOtp: false as const, needEmail: true as const };
+  }
+
   if (!hasGmail || isReviewAccount(data.identifier, account.contactEmail)) {
     return { ok: true as const, needOtp: false as const, session };
   }
@@ -323,4 +337,128 @@ async function completeLoginOtpWork(data: LoginData & { code: string }) {
 
 export async function completeLoginOtpHandler(data: LoginData & { code: string }) {
   return withTimeout(completeLoginOtpWork(data), "ভেরিফিকেশনে বেশি সময় লাগছে — আবার চেষ্টা করুন");
+}
+
+
+/* ────────── Gmail রিসেটের পর নতুন Gmail যোগ (লগইন না করেই) ────────── */
+
+async function startNewEmailWork(data: LoginData & { email: string }) {
+  const email = data.email.trim().toLowerCase();
+  if (!EMAIL_RE.test(email)) throw new Error("সঠিক Gmail ঠিকানা দিন");
+
+  const account = await resolveAccount(data.identifier);
+  await verifyPassword(account, data.password);
+  if (!account.id) throw new Error("একাউন্ট পাওয়া যায়নি");
+
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+  const { data: taken } = await supabaseAdmin
+    .from("profiles")
+    .select("id")
+    .ilike("email", email)
+    .neq("id", account.id)
+    .maybeSingle();
+  if (taken) throw new Error("এই Gmail অন্য একটি একাউন্টে ব্যবহার হচ্ছে");
+
+  const { data: recent } = await supabaseAdmin
+    .from("email_verify_otps")
+    .select("created_at")
+    .eq("user_id", account.id)
+    .is("used_at", null)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (recent?.created_at && Date.now() - new Date(recent.created_at).getTime() < 60_000) {
+    return { ok: true as const, resent: false as const, destination: maskEmail(email) };
+  }
+
+  const code = String(Math.floor(100000 + Math.random() * 900000));
+  const { error: insertError } = await supabaseAdmin.from("email_verify_otps").insert({
+    user_id: account.id,
+    email,
+    code,
+    expires_at: new Date(Date.now() + 10 * 60_000).toISOString(),
+  });
+  if (insertError) throw new Error("কোড তৈরি করা যায়নি — আবার চেষ্টা করুন");
+
+  const { sendSystemEmail } = await import("@/lib/email-otp.server");
+  await sendSystemEmail({
+    templateName: "email-verify-otp",
+    to: email,
+    templateData: { code, name: account.displayName ?? undefined },
+  });
+  return { ok: true as const, resent: true as const, destination: maskEmail(email) };
+}
+
+export async function startNewEmailHandler(data: LoginData & { email: string }) {
+  return withTimeout(startNewEmailWork(data), "কোড পাঠাতে বেশি সময় লাগছে — আবার চেষ্টা করুন");
+}
+
+async function completeNewEmailWork(data: LoginData & { email: string; code: string }) {
+  const code = data.code.replace(/\D/g, "").slice(0, 6);
+  if (code.length !== 6) throw new Error("৬ ডিজিটের কোড দিন");
+  const email = data.email.trim().toLowerCase();
+  if (!EMAIL_RE.test(email)) throw new Error("সঠিক Gmail ঠিকানা দিন");
+
+  const account = await resolveAccount(data.identifier);
+  if (!account.id) throw new Error("একাউন্ট পাওয়া যায়নি");
+  const session = await verifyPassword(account, data.password);
+
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: otp } = await supabaseAdmin
+    .from("email_verify_otps")
+    .select("id, code, attempts, expires_at, email")
+    .eq("user_id", account.id)
+    .is("used_at", null)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (!otp) throw new Error("কোড পাওয়া যায়নি — আবার কোড পাঠান");
+  if (String((otp as any).email ?? "").toLowerCase() !== email)
+    throw new Error("Gmail মিলছে না — আবার কোড পাঠান");
+  if (new Date((otp as any).expires_at).getTime() < Date.now())
+    throw new Error("কোডের সময় শেষ — নতুন কোড নিন");
+  if (((otp as any).attempts ?? 0) >= 5) throw new Error("অনেকবার ভুল হয়েছে — নতুন কোড নিন");
+  if ((otp as any).code !== code) {
+    await supabaseAdmin
+      .from("email_verify_otps")
+      .update({ attempts: ((otp as any).attempts ?? 0) + 1 })
+      .eq("id", (otp as any).id);
+    throw new Error("কোড মেলেনি");
+  }
+
+  const { data: taken } = await supabaseAdmin
+    .from("profiles")
+    .select("id")
+    .ilike("email", email)
+    .neq("id", account.id)
+    .maybeSingle();
+  if (taken) throw new Error("এই Gmail অন্য একটি একাউন্টে ব্যবহার হচ্ছে");
+
+  await supabaseAdmin.auth.admin.updateUserById(account.id, { email, email_confirm: true });
+
+  const { error } = await supabaseAdmin
+    .from("profiles")
+    .update({
+      email,
+      email_verified: true,
+      email_verified_at: new Date().toISOString(),
+      email_reset_at: null,
+    } as any)
+    .eq("id", account.id);
+  if (error) throw new Error("Gmail সেভ করা যায়নি — আবার চেষ্টা করুন");
+
+  await supabaseAdmin
+    .from("email_verify_otps")
+    .update({ used_at: new Date().toISOString() })
+    .eq("id", (otp as any).id);
+
+  await markDeviceTrusted(account.id, data.deviceId);
+
+  return { ok: true as const, session, email: maskEmail(email) };
+}
+
+export async function completeNewEmailHandler(data: LoginData & { email: string; code: string }) {
+  return withTimeout(completeNewEmailWork(data), "যাচাই করতে বেশি সময় লাগছে — আবার চেষ্টা করুন");
 }
