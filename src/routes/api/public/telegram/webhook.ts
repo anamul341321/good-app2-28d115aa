@@ -3181,94 +3181,10 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return null;
         };
 
-        // ফ্রিজ শুধু স্পষ্ট গালি/স্ক্যামে হবে। কেউ অন্যকে সাহায্য করার কথা বললে
-        // ("যারা বুঝতেছেন না আমাকে ইনবক্স করেন") কখনোই ফ্রিজ/warning হবে না।
-        const { looksHelpful, isHardAbuse } = await import("@/lib/telegram-guard.server");
-        const freezeText = `${text} ${shotText ?? ""}`.trim();
-        const freezeAllowed = !!hardHit || isHardAbuse(freezeText);
-        const freezeSafe = looksHelpful(freezeText) || !freezeAllowed;
+        // ❄️ ফ্রিজ (mute) সম্পূর্ণ বন্ধ করা হয়েছে। ইউজার পেমেন্ট পেয়ে খুশি হয়ে
+        // গ্রুপে স্ক্রিনশট/মন্তব্য দিলে সেটা কখনোই মুছবে না বা ফ্রিজ হবে না।
+        // এখন শুধু বাইরের লিংক ও ১৮+ ছবি ডিলিট হয় — আর কিছুই না।
 
-        if (settings.moderation_enabled && decision.should_warn && !freezeSafe && msg.from?.id) {
-          const warnCount = ((offender as any)?.warn_count ?? 0) + 1;
-
-          // Which UID does this troublemaker belong to? Check the message, the
-          // chat history and the linked app profile.
-          let uidForWarn: string | null =
-            decision.uid || (decision as any)._knownUid || (offender as any)?.known_uid || null;
-          if (!uidForWarn) {
-            const { data: past } = await supabaseAdmin
-              .from("tg_messages")
-              .select("matched_uid")
-              .eq("tg_user_id", msg.from.id)
-              .not("matched_uid", "is", null)
-              .order("created_at", { ascending: false })
-              .limit(1);
-            uidForWarn = (past ?? [])[0]?.matched_uid ?? null;
-          }
-          if (!uidForWarn) {
-            const { data: linked } = await supabaseAdmin
-              .from("profiles")
-              .select("id, uid_seq")
-              .eq("telegram_user_id", msg.from.id)
-              .maybeSingle();
-            if (linked) {
-              appUserId = linked.id;
-              uidForWarn = String(linked.uid_seq ?? "") || null;
-            }
-          }
-          if (!appUserId && uidForWarn && /^\d+$/.test(uidForWarn)) {
-            const { data: byUid } = await supabaseAdmin
-              .from("profiles")
-              .select("id")
-              .eq("uid_seq", Number(uidForWarn))
-              .maybeSingle();
-            if (byUid) appUserId = byUid.id;
-          }
-          matchedUid = matchedUid || uidForWarn;
-
-          // ব্যান নয় — ৩০ মিনিটের ফ্রিজ। সময় শেষ হলে টেলিগ্রাম নিজে থেকেই
-          // আবার লেখার অনুমতি ফিরিয়ে দেয়, অ্যাডমিনকে কিছু করতে হয় না।
-          const FREEZE_SEC = 30 * 60;
-
-          await supabaseAdmin.from("tg_offenders").upsert({
-            tg_user_id: msg.from.id,
-            username: msg.from.username ?? null,
-            full_name: senderName,
-            warn_count: warnCount,
-            last_reason: decision.verdict,
-            last_offense_at: new Date().toISOString(),
-            known_uid: uidForWarn,
-            app_user_id: appUserId,
-            chat_id: msg.chat.id,
-          });
-          actions.push(`warn:${warnCount}`);
-
-          await restrictUser(chatId, msg.from.id, FREEZE_SEC);
-          actions.push("frozen-30m");
-
-          await sendMessage(
-            chatId,
-            `❄️ <b>${senderName}</b> কে <b>৩০ মিনিটের জন্য ফ্রিজ</b> করা হলো (${decision.verdict})।\n` +
-              `⏳ ৩০ মিনিট পর নিজে থেকেই আবার লিখতে পারবেন — কাউকে কিছু বলতে হবে না।\n` +
-              (uidForWarn ? `🆔 UID: <code>${uidForWarn}</code>\n` : "") +
-              `🙏 অনুগ্রহ করে গ্রুপে ভদ্রভাবে কথা বলুন।`,
-            msg.message_id,
-          );
-
-          if (warnCount >= settings.warn_threshold) {
-            const adminChat = settings.admin_chat_id || settings.group_chat_id || chatId;
-            await sendMessage(
-              adminChat,
-              `❄️ <b>একজনকে ফ্রিজ করা হয়েছে</b>\n` +
-                `${settings.admin_mention ? settings.admin_mention + "\n" : ""}` +
-                `ইউজার: <b>${senderName}</b>${msg.from.username ? ` (@${msg.from.username})` : ""}\n` +
-                `Telegram ID: <code>${msg.from.id}</code>\n` +
-                `App UID: <code>${matchedUid || "পাওয়া যায়নি"}</code>\n` +
-                `অপরাধ: ${decision.verdict} (${warnCount} বার)\n\n` +
-                `এই অপরাধের জন্য আমি তাকে <b>৩০ মিনিটের জন্য ফ্রিজ</b> করে দিয়েছি — ৩০ মিনিট পর অটোমেটিক খুলে যাবে, আপনাকে কিছু করতে হবে না।`,
-            );
-          }
-        }
 
         // ---- someone asked for a stored photo / key: never share, always deny -
         if (
