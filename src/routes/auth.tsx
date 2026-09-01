@@ -18,7 +18,7 @@ import {
   Coins,
 } from "lucide-react";
 import { registerWithPhone, resolveCardUidForLogin } from "@/lib/auth.functions";
-import { startLoginOtp, completeLoginOtp } from "@/lib/login-otp.functions";
+import { startLoginOtp, completeLoginOtp, startNewEmailForLogin, completeNewEmailForLogin } from "@/lib/login-otp.functions";
 import { getAuthMode } from "@/lib/auth-mode.functions";
 import { useQuery } from "@tanstack/react-query";
 import logo from "@/assets/goodapp-logo.png";
@@ -193,6 +193,13 @@ export function AuthPage() {
   const [otpDest, setOtpDest] = useState<string | null>(null);
   const startOtp = useServerFn(startLoginOtp);
   const confirmOtp = useServerFn(completeLoginOtp);
+  // Gmail রিসেটের পর — লগইন না করেই নতুন Gmail যোগ
+  const [newMailOpen, setNewMailOpen] = useState(false);
+  const [newMail, setNewMail] = useState("");
+  const [newMailSent, setNewMailSent] = useState(false);
+  const [newMailCode, setNewMailCode] = useState("");
+  const sendNewMail = useServerFn(startNewEmailForLogin);
+  const confirmNewMail = useServerFn(completeNewEmailForLogin);
   const { data: authMode } = useQuery({
     queryKey: ["auth-mode"],
     queryFn: () => getAuthMode(),
@@ -344,6 +351,15 @@ export function AuthPage() {
         startOtp({ data: { identifier, password, deviceId: getDeviceId() } }),
         timeout,
       ]);
+      if (res.needEmail) {
+        setOtpId(identifier);
+        setNewMail("");
+        setNewMailCode("");
+        setNewMailSent(false);
+        setNewMailOpen(true);
+        toast.info("আপনার Gmail রিসেট করা হয়েছে — নতুন Gmail যোগ করুন");
+        return;
+      }
       if (!res.needOtp && res.session) {
         await applySession(res.session);
         toast.success(res.trustedDevice ? "স্বাগতম! এই ডিভাইসে ২৪ ঘণ্টা OTP লাগবে না" : "স্বাগতম!");
@@ -375,6 +391,48 @@ export function AuthPage() {
       await applySession(res.session);
       setOtpOpen(false);
       toast.success("স্বাগতম! এই ডিভাইসে ২৪ ঘণ্টা OTP লাগবে না");
+      nav({ to: "/home" });
+    } catch (e: any) {
+      toast.error(e?.message ?? "কোড মেলেনি");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function doSendNewMail() {
+    setLoading(true);
+    try {
+      const res: any = await sendNewMail({
+        data: { identifier: otpId, password, email: newMail.trim(), deviceId: getDeviceId() },
+      });
+      setNewMailSent(true);
+      toast.success(
+        res.resent === false
+          ? "কোড আগেই পাঠানো হয়েছে — মেইলবক্স দেখুন"
+          : `${res.destination}-এ ৬ ডিজিটের কোড পাঠানো হয়েছে`,
+      );
+    } catch (e: any) {
+      toast.error(e?.message ?? "কোড পাঠানো যায়নি");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function doConfirmNewMail() {
+    setLoading(true);
+    try {
+      const res: any = await confirmNewMail({
+        data: {
+          identifier: otpId,
+          password,
+          email: newMail.trim(),
+          code: newMailCode,
+          deviceId: getDeviceId(),
+        },
+      });
+      await applySession(res.session);
+      setNewMailOpen(false);
+      toast.success("নতুন Gmail যুক্ত হয়েছে — স্বাগতম!");
       nav({ to: "/home" });
     } catch (e: any) {
       toast.error(e?.message ?? "কোড মেলেনি");
@@ -966,6 +1024,78 @@ export function AuthPage() {
               }
             }}
           />
+        )}
+
+        {newMailOpen && (
+          <div className="fixed inset-0 z-[96] overflow-y-auto overscroll-contain p-4 bg-black/75 backdrop-blur-sm flex items-start justify-center">
+            <div
+              className="w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300"
+              style={{ background: "linear-gradient(160deg,#f59e0b,#ef4444,#8b5cf6)" }}
+            >
+              <div className="p-5 text-white space-y-3">
+                <h2 className="text-center text-lg font-black drop-shadow">📧 নতুন Gmail যোগ করুন</h2>
+                <p className="text-center text-[12.5px] font-bold leading-relaxed">
+                  আপনার আগের Gmail রিসেট করা হয়েছে। লগইন করতে নতুন একটি Gmail দিন — সেই ঠিকানায় ৬
+                  ডিজিটের কোড যাবে।
+                </p>
+                <input
+                  autoFocus
+                  type="email"
+                  inputMode="email"
+                  translate="no"
+                  value={newMail}
+                  onChange={(e) => setNewMail(e.target.value)}
+                  placeholder="নতুন Gmail ঠিকানা"
+                  className="w-full rounded-2xl px-4 py-3 text-[14px] font-bold text-slate-900 bg-white/95 outline-none"
+                />
+                {!newMailSent ? (
+                  <button
+                    type="button"
+                    onClick={doSendNewMail}
+                    disabled={loading || newMail.trim().length < 5}
+                    className="w-full rounded-2xl py-3 font-black text-[14px] bg-white text-rose-600 btn-press disabled:opacity-60 flex items-center justify-center gap-2"
+                  >
+                    {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+                    কোড পাঠান
+                  </button>
+                ) : (
+                  <>
+                    <input
+                      inputMode="numeric"
+                      value={newMailCode}
+                      onChange={(e) => setNewMailCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                      placeholder="৬ ডিজিটের কোড"
+                      className="w-full rounded-2xl px-4 py-3 text-center text-[18px] font-black tracking-[8px] text-slate-900 bg-white/95 outline-none mono-num"
+                    />
+                    <button
+                      type="button"
+                      onClick={doConfirmNewMail}
+                      disabled={loading || newMailCode.length !== 6}
+                      className="w-full rounded-2xl py-3 font-black text-[14px] bg-white text-rose-600 btn-press disabled:opacity-60 flex items-center justify-center gap-2"
+                    >
+                      {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+                      যুক্ত করে লগইন
+                    </button>
+                    <button
+                      type="button"
+                      onClick={doSendNewMail}
+                      disabled={loading}
+                      className="w-full text-[11.5px] font-bold text-white/85 underline"
+                    >
+                      আবার কোড পাঠান
+                    </button>
+                  </>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setNewMailOpen(false)}
+                  className="w-full text-[11.5px] font-bold text-white/70"
+                >
+                  বাতিল
+                </button>
+              </div>
+            </div>
+          </div>
         )}
 
         {otpOpen && (
