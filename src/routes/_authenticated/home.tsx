@@ -15,6 +15,7 @@ import { GmailSecurityBanner } from "@/components/GmailSecurityBanner";
 import { ComplianceDisclaimer } from "@/components/ComplianceDisclaimer";
 import { DashSection } from "@/components/DashSection";
 import { SlotClaimButton, type SlotClaim } from "@/components/SlotClaimButton";
+import { SlotSelfReset } from "@/components/SlotSelfReset";
 import { listSlotClaims } from "@/lib/slot-claims.functions";
 import { getUnreadMessageCount } from "@/lib/chat.functions";
 
