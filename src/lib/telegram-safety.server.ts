@@ -107,8 +107,8 @@ async function findAppUser(tgUserId?: number | null) {
 export type SafetyResult = { handled: boolean; action?: string; reason?: string };
 
 /**
- * গ্রুপের একটি মেসেজে নিরাপত্তা গার্ড চালানো। bot চালু/বন্ধ যেকোনো অবস্থাতেই
- * এটি কাজ করবে — শুধু গ্রুপ চ্যাটে, অ্যাডমিন ছাড়া সবার জন্য।
+ * গ্রুপের একটি মেসেজে নিরাপত্তা গার্ড। শুধু দুইটি ক্ষেত্রে মেসেজ মুছে দেয়:
+ * বাইরের লিংক, অথবা ১৮+/আপত্তিকর ছবি। ফ্রিজ বা ব্লক কখনোই করে না।
  */
 export async function groupSafetyGuard(opts: {
   chatId: string;
@@ -124,7 +124,7 @@ export async function groupSafetyGuard(opts: {
   if (chatType !== "group" && chatType !== "supergroup") return { handled: false };
   if (senderIsAdmin || !msg?.message_id) return { handled: false };
 
-  const { sendMessage, deleteMessage, restrictUser, getPhotoBase64 } = await import(
+  const { sendMessage, deleteMessage, getPhotoBase64 } = await import(
     "@/lib/telegram-bot.server"
   );
 
@@ -135,12 +135,9 @@ export async function groupSafetyGuard(opts: {
   const text = `${msg.text ?? ""} ${msg.caption ?? ""} ${opts.voiceText ?? ""}`.trim();
 
   let reason: string | null = null;
-  if (insultsApp(text)) reason = "app-insult";
-  else if (isHardAbuse(text)) reason = "abuse";
-  else if (badLinkIn(text, settings?.support_username)) reason = "link";
-  else if (hitsBannedWord(text, settings?.banned_words ?? [])) reason = "banned-word";
+  if (badLinkIn(text, settings?.support_username)) reason = "link";
 
-  // ছবি/স্টিকার — ক্যাপশনে কিছু না থাকলেও ছবিটা যাচাই হবে
+  // ছবি — শুধু ১৮+/আপত্তিকর হলে মুছবে, পেমেন্ট স্ক্রিনশট কখনো নয়
   if (!reason && msg.photo?.length) {
     const fileId = msg.photo[msg.photo.length - 1]?.file_id;
     const b64 = fileId ? await getPhotoBase64(fileId) : null;
@@ -149,87 +146,21 @@ export async function groupSafetyGuard(opts: {
 
   if (!reason) return { handled: false };
 
-  // ১) খারাপ মেসেজ সাথে সাথে ডিলিট
   try {
     await deleteMessage(chatId, msg.message_id);
   } catch {
     /* বট অ্যাডমিন না হলে ডিলিট করতে পারবে না */
   }
 
-  const { uid, appUserId } = await findAppUser(msg.from?.id);
+  const { uid } = await findAppUser(msg.from?.id);
 
-  // ২) অ্যাপ নিয়ে বাজে মন্তব্য + UID জানা → অ্যাপ অ্যাকাউন্ট ব্লক
-  let blockedApp = false;
-  if (reason === "app-insult" && appUserId) {
-    await supabaseAdmin
-      .from("profiles")
-      .update({
-        banned: true,
-        banned_reason: "টেলিগ্রাম গ্রুপে Good-App নিয়ে আপত্তিকর মন্তব্য",
-        banned_at: new Date().toISOString(),
-      })
-      .eq("id", appUserId);
-    blockedApp = true;
-  }
-
-  // ৩) ৩০ মিনিটের ফ্রিজ (ব্লক হলেও গ্রুপে চুপ থাকবে)
-  if (msg.from?.id) {
-    try {
-      await restrictUser(chatId, msg.from.id, FREEZE_SEC);
-    } catch {
-      /* ignore */
-    }
-    const { data: prev } = await supabaseAdmin
-      .from("tg_offenders")
-      .select("warn_count")
-      .eq("tg_user_id", msg.from.id)
-      .maybeSingle();
-    await supabaseAdmin.from("tg_offenders").upsert({
-      tg_user_id: msg.from.id,
-      username: msg.from.username ?? null,
-      full_name: senderName,
-      warn_count: ((prev as any)?.warn_count ?? 0) + 1,
-      last_reason: reason,
-      last_offense_at: new Date().toISOString(),
-      known_uid: uid,
-      app_user_id: appUserId,
-      chat_id: msg.chat.id,
-      blocked: blockedApp || undefined,
-      blocked_at: blockedApp ? new Date().toISOString() : undefined,
-      blocked_reason: blockedApp ? "Good-App নিয়ে আপত্তিকর মন্তব্য" : undefined,
-    });
-  }
-
-  const label =
-    reason === "app-insult"
-      ? "Good-App নিয়ে আপত্তিকর মন্তব্য"
-      : reason === "link"
-        ? "বাইরের লিংক"
-        : reason === "bad-photo"
-          ? "আপত্তিকর ছবি"
-          : "আপত্তিকর ভাষা";
+  const label = reason === "link" ? "বাইরের লিংক" : "১৮+/আপত্তিকর ছবি";
 
   await sendMessage(
     chatId,
-    `❄️ <b>${senderName}</b> এর মেসেজটি মুছে দেওয়া হলো (${label}) এবং তাকে <b>৩০ মিনিটের জন্য ফ্রিজ</b> করা হলো।\n` +
-      (blockedApp
-        ? `🚫 অ্যাপ অ্যাকাউন্টও ব্লক করা হয়েছে${uid ? ` (UID <code>${uid}</code>)` : ""}।\n`
-        : uid
-          ? `🆔 UID: <code>${uid}</code>\n`
-          : "") +
-      `🙏 অনুগ্রহ করে গ্রুপে ভদ্রভাবে কথা বলুন।`,
+    `🧹 <b>${senderName}</b>, আপনার মেসেজটি মুছে দেওয়া হলো — ${label} গ্রুপে শেয়ার করা যাবে না 🙏\n` +
+      `আমাদের অফিসিয়াল লিংক: <b>https://goodapp2.live</b>`,
   );
-
-  if (settings?.admin_chat_id) {
-    await sendMessage(
-      settings.admin_chat_id,
-      `🛡️ <b>নিরাপত্তা গার্ড</b>\nইউজার: <b>${senderName}</b>${
-        msg.from?.username ? ` (@${msg.from.username})` : ""
-      }\nকারণ: ${label}\nApp UID: <code>${uid ?? "পাওয়া যায়নি"}</code>\n` +
-        (blockedApp ? `অ্যাকাউন্ট ব্লক ✅\n` : ``) +
-        `৩০ মিনিটের ফ্রিজ দেওয়া হয়েছে — অটোমেটিক খুলে যাবে।`,
-    );
-  }
 
   if (typeof opts.updateId === "number") {
     await supabaseAdmin.from("tg_messages").upsert(
@@ -243,7 +174,7 @@ export async function groupSafetyGuard(opts: {
         text: text.slice(0, 2000),
         has_photo: !!msg.photo?.length,
         verdict: reason,
-        action: blockedApp ? "deleted+frozen+app-blocked" : "deleted+frozen-30m",
+        action: "deleted",
         bot_reply: null,
         matched_uid: uid,
       },
@@ -251,5 +182,6 @@ export async function groupSafetyGuard(opts: {
     );
   }
 
-  return { handled: true, action: "deleted+frozen", reason };
+  return { handled: true, action: "deleted", reason };
 }
+
