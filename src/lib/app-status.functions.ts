@@ -85,6 +85,9 @@ export const getAppStatus = createServerFn({ method: "GET" }).handler(async () =
       adsBannerUnit: null,
       adsInterstitialUnit: null,
       adsRewardedUnit: null,
+      bonusEnabled: false,
+      firstVerifyBonus: 0,
+      reverifyBonus: 0,
 
     };
   }
