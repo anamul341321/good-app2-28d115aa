@@ -501,7 +501,7 @@ function UserDetail() {
               <div className="rounded-xl border border-cyan/30 bg-cyan/10 px-3 py-2">
                 <p className="text-[9px] uppercase tracking-widest font-black text-cyan">⛏️ Mining balance</p>
                 <p className="mono-num text-lg font-black text-cyan">{split.mining.toFixed(2)}৳</p>
-                <p className="text-[9px] text-muted-foreground leading-tight">যেকোনো সময় withdraw (আনলক অংশ) · নিজের {Number((m as any)?.self_mining_accrued ?? 0).toFixed(2)}৳ + রেফার ১০% {Number((m as any)?.referral_accrued ?? 0).toFixed(2)}৳</p>
+                <p className="text-[9px] text-muted-foreground leading-tight">১–৩ তারিখে withdraw (আনলক অংশ) · নিজের {Number((m as any)?.self_mining_accrued ?? 0).toFixed(2)}৳ + রেফার ১০% {Number((m as any)?.referral_accrued ?? 0).toFixed(2)}৳</p>
               </div>
             </div>
           );

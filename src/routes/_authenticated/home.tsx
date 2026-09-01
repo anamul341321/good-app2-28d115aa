@@ -389,7 +389,7 @@ function HomePage() {
             <span className="mono-num" translate="no">{totalClaimable.toFixed(2)}৳</span>
           </p>
           <p className="text-[10.5px] font-bold text-emerald-800/80 leading-snug mt-0.5">
-            {t("যে ঘরটি Re-verify করেছেন, ঠিক সেই ঘরের নিচেই সবুজ ক্লেইম বাটন আছে — বোনাস ও মাইনিং আলাদা করে দেখে নিতে পারবেন। ক্লেইম করা টাকা মেইন ব্যালেন্সে যাবে, যেকোনো সময় তোলা যাবে।",
+            {t("যে ঘরটি Re-verify করেছেন, ঠিক সেই ঘরের নিচেই সবুজ ক্লেইম বাটন আছে — বোনাস ও মাইনিং আলাদা করে দেখে নিতে পারবেন। ক্লেইম করা টাকা মেইন ব্যালেন্সে যাবে — বোনাসের টাকা যেকোনো সময়, মাইনিংয়ের টাকা প্রতি মাসের ১–৩ তারিখে তোলা যাবে।",
                 "Each re-verified slot has a green claim button right under it — bonus and mining shown separately. Claimed money goes to main balance, withdrawable anytime.")}
           </p>
         </div>
