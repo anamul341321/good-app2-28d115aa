@@ -3141,18 +3141,9 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
         const actions: string[] = [];
 
-        // অ্যাপ-সংক্রান্ত স্ক্রিনশট/ছবি কখনোই অটো-ডিলিট হবে না — গালিগালাজ
-        // (hardHit) ছাড়া ছবিসহ মেসেজ সবসময় সাপোর্ট প্রশ্ন হিসেবে ধরা হবে।
-        const photoProtected = (photos?.length ?? 0) > 0 && !hardHit;
-        if (
-          settings.moderation_enabled &&
-          decision.should_delete &&
-          settings.delete_bad_messages &&
-          !photoProtected
-        ) {
-          await deleteMessage(chatId, msg.message_id);
-          actions.push("deleted");
-        }
+        // মেসেজ ডিলিট শুধু দুই ক্ষেত্রে — বাইরের লিংক (উপরে হ্যান্ডেল হয়) এবং
+        // ১৮+ ছবি (safety guard)। AI-র মতামতে আর কোনো মেসেজ মুছে ফেলা হবে না।
+
 
         let banRequested = false;
         let matchedUid: string | null = decision.uid;
