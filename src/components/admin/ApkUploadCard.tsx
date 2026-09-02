@@ -8,7 +8,7 @@ import {
   adminSetApkRelease,
 } from "@/lib/admin.functions";
 
-const CURRENT_ANDROID_VERSION = "1.36";
+const CURRENT_ANDROID_VERSION = "1.35";
 const ANDROID_APPLICATION_ID = "com.goodapp.mobile";
 const ANDROID_SIGNING_CERT_SHA256 = "F06E3CE0A1F2EB8A9F011E7F9009975667A922D01A98A00164A63E27E67444F5";
 
