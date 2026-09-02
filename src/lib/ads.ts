@@ -99,25 +99,26 @@ async function initializeAds(): Promise<boolean> {
 }
 
 
-const DAY_KEY = "ga_last_daily_ad";
+const OPEN_AD_COOLDOWN_MS = 3 * 60_000;
+let lastOpenAdAt = 0;
 
 /**
- * দিনের প্রথমবার অ্যাপে ঢুকলে একটি interstitial অ্যাড দেখায়।
- * একই দিনে আবার দেখায় না (localStorage দিয়ে ট্র্যাক) — যাতে ইউজার বিরক্ত না হয়।
+ * অ্যাপে ঢোকার পরপরই একটি interstitial অ্যাড দেখায় (প্রতিবার খুললেই)।
+ * পরপর দুইবার না দেখাতে ৩ মিনিটের ছোট cooldown আছে।
+ * প্রথমে Unity Ads — না পেলে AdMob fallback.
  */
 export async function showDailyAppOpenAd(): Promise<boolean> {
   const cfg = await loadAdsConfig();
   if (!cfg.appOpen) return false;
-  if (ADS_CONFIG.dailyInterstitialLimit <= 0) return false;
-  // টেস্ট মোডে দিনে-একবার সীমা মানা হয় না, যাতে অ্যাডমিন প্রতিবার যাচাই করতে পারেন
-  if (!cfg.test) {
-    const today = new Date().toISOString().slice(0, 10);
-    try {
-      if (localStorage.getItem(DAY_KEY) === today) return true;
-    } catch {
-      return false;
-    }
+  if (!isNative()) return false;
+  if (!cfg.test && Date.now() - lastOpenAdAt < OPEN_AD_COOLDOWN_MS) return true;
+
+  const { showUnityInterstitial } = await import("@/lib/unity-ads");
+  if (await showUnityInterstitial(cfg.test)) {
+    lastOpenAdAt = Date.now();
+    return true;
   }
+
   if (!(await initAds())) return false;
   const AdMob = await getAdMob();
   if (!AdMob) return false;
@@ -129,7 +130,7 @@ export async function showDailyAppOpenAd(): Promise<boolean> {
     });
 
     await AdMob.showInterstitial();
-    localStorage.setItem(DAY_KEY, new Date().toISOString().slice(0, 10));
+    lastOpenAdAt = Date.now();
     return true;
   } catch (error) {
     console.warn("AdMob app-open ad failed", error);
@@ -144,7 +145,18 @@ export async function showRewardedAd(): Promise<boolean> {
   const cfg = await withTimeout(loadAdsConfig(), 10_000, "অ্যাড সেটিংস লোড হয়নি — আবার চেষ্টা করুন");
   if (!cfg.enabled) throw new Error("অ্যাড সিস্টেম এখন বন্ধ আছে");
   if (!cfg.rewarded) throw new Error("Rewarded ad এখন বন্ধ আছে");
-  if (!(await initAds())) throw new Error("AdMob চালু করা যায়নি — ইন্টারনেট দেখে আবার চেষ্টা করুন");
+
+  // প্রথমে Unity Ads (Play Store listing ছাড়াও আসল অ্যাড দেয়) — না পেলে AdMob
+  const { showUnityRewarded, unityAvailable } = await import("@/lib/unity-ads");
+  if (unityAvailable()) {
+    try {
+      return await showUnityRewarded(cfg.test);
+    } catch (unityError) {
+      console.warn("Unity rewarded failed, trying AdMob", unityError);
+    }
+  }
+
+  if (!(await initAds())) throw new Error("অ্যাড চালু করা যায়নি — ইন্টারনেট দেখে আবার চেষ্টা করুন");
   const AdMob = await getAdMob();
   if (!AdMob) throw new Error("এই APK-তে AdMob plugin পাওয়া যায়নি");
 
@@ -205,19 +217,30 @@ export async function showRewardedAd(): Promise<boolean> {
 }
 
 let bannerShown = false;
+let unityBannerShown = false;
 let bannerLoading: Promise<boolean> | null = null;
 
 /** নিচে ছোট একটি banner অ্যাড দেখায় (নন-ইন্ট্রুসিভ, কনটেন্ট ঢাকে না) */
 export async function showBottomBanner(): Promise<boolean> {
   if (bannerShown) return true;
   if (bannerLoading) return bannerLoading;
-  bannerLoading = loadBottomBanner();
+  bannerLoading = loadBottomBanner().then(async (ok) => {
+    if (ok) return true;
+    // AdMob banner না এলে Unity banner দিয়ে চেষ্টা
+    const cfg = await loadAdsConfig();
+    if (!cfg.banner || !isNative()) return false;
+    const { showUnityBanner } = await import("@/lib/unity-ads");
+    const unityOk = await showUnityBanner(cfg.test);
+    unityBannerShown = unityOk;
+    return unityOk;
+  });
   try {
     return await bannerLoading;
   } finally {
     bannerLoading = null;
   }
 }
+
 
 async function loadBottomBanner(): Promise<boolean> {
   const cfg = await loadAdsConfig();
@@ -269,6 +292,11 @@ async function loadBottomBanner(): Promise<boolean> {
 
 /** ব্যানার সরিয়ে দেয় (পেজ ছাড়লে) */
 export async function hideBottomBanner() {
+  if (unityBannerShown) {
+    const { hideUnityBanner } = await import("@/lib/unity-ads");
+    await hideUnityBanner();
+    unityBannerShown = false;
+  }
   const AdMob = await getAdMob();
   if (!AdMob || !bannerShown) return;
   try {

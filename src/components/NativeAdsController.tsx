@@ -29,8 +29,18 @@ export function NativeAdsController() {
       }
     };
 
+    // Warm up Unity Ads immediately so the launch ad can appear within a few seconds.
+    void (async () => {
+      const [{ initUnityAds }, { loadAdsConfig }] = await Promise.all([
+        import("@/lib/unity-ads"),
+        import("@/lib/ads-config"),
+      ]);
+      const cfg = await loadAdsConfig();
+      if (cfg.enabled) void initUnityAds(cfg.test);
+    })();
+
     // Wait until the WebView and native bridge have both completed startup.
-    launchTimer = window.setTimeout(() => void requestAd(), 3_500);
+    launchTimer = window.setTimeout(() => void requestAd(), 2_500);
 
     void import("@capacitor/app").then(async ({ App }) => {
       const handle = await App.addListener("appStateChange", ({ isActive }) => {
