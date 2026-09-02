@@ -253,3 +253,40 @@ export const claimDailyCheckin = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return data as { ok: boolean; awarded: number; already?: boolean; reason?: string; balance?: number; progress: DailyCheckin };
   });
+
+export type AdCoinStatus = {
+  coins_per_ad: number;
+  ads_per_break: number;
+  cooldown_seconds: number;
+  daily_limit: number;
+  today_count: number;
+  streak: number;
+  wait_seconds: number;
+  can_watch: boolean;
+};
+
+/** অ্যাড দেখে কয়েন — বর্তমান অবস্থা (কতটি দেখা হয়েছে, কত সেকেন্ড অপেক্ষা) */
+export const getAdCoinStatus = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const { data, error } = await (supabase as any).rpc("get_ad_coin_status", { _user_id: userId });
+    if (error) throw new Error(error.message);
+    return data as AdCoinStatus;
+  });
+
+/** একটি rewarded অ্যাড সম্পূর্ণ দেখা হলে ১০০০ কয়েন (সার্ভারেই লিমিট/কুলডাউন যাচাই) */
+export const claimAdCoins = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const { data, error } = await (supabase as any).rpc("claim_ad_coins", { _user_id: userId });
+    if (error) throw new Error(error.message);
+    return data as {
+      ok: boolean;
+      awarded: number;
+      balance?: number;
+      error?: "cooldown" | "daily_limit";
+      status: AdCoinStatus;
+    };
+  });
