@@ -89,6 +89,8 @@ function useCombinedReels(selectedPostId?: string) {
     getNextPageParam: (last, all) => ((last?.length ?? 0) < 40 ? undefined : all.length),
     staleTime: 60_000,
     gcTime: 10 * 60_000,
+    // নতুন আপলোড হওয়া রিলস নিজে নিজেই ফিডে চলে আসবে
+    refetchInterval: 60_000,
   });
   // অসীম রিলস — স্ক্রল করলেই পরের পেজ লোড হবে
   const externalQuery = useInfiniteQuery({
@@ -114,10 +116,16 @@ function useCombinedReels(selectedPostId?: string) {
   const seedRef = useRef<number>(Math.floor(Math.random() * 1_000_000) + 1);
 
   const items = useMemo<ReelItem[]>(() => {
-    const localPages = (localQuery.data?.pages || []).flat();
-    let localVideos = localPages.filter(
+    const localPages = localQuery.data?.pages || [];
+    // শুধু প্রথম পেজ মেশানো হয় — পরের লোকাল পেজগুলো নিচে যোগ হয়,
+    // তাই নতুন পেজ লোড বা নতুন আপলোড এলে স্ক্রল লাফ দেয় না
+    let localHead = (localPages[0] || []).filter(
       (p) => !!p.video_url && !(p.content || "").startsWith(LONG_VIDEO_MARKER),
     );
+    const localTail = localPages.slice(1).flat().filter(
+      (p) => !!p.video_url && !(p.content || "").startsWith(LONG_VIDEO_MARKER),
+    );
+    let localVideos = [...localHead, ...localTail];
     let pinned: ReelItem | null = null;
     if (selectedPostQuery.data?.video_url) {
       pinned = {
@@ -143,7 +151,9 @@ function useCombinedReels(selectedPostId?: string) {
 
     // শুধু প্রথম ব্যাচ মেশানো হয় — পরের পেজগুলো নিচে যোগ হয়, তাই স্ক্রল লাফ দেয় না
     const head: ReelItem[] = [
-      ...localVideos.map((post) => ({ kind: "local" as const, id: `local-${post.id}`, post })),
+      ...localHead
+        .filter((post) => localVideos.some((p) => p.id === post.id))
+        .map((post) => ({ kind: "local" as const, id: `local-${post.id}`, post })),
       ...firstPage.map((video) => ({ kind: "external" as const, id: `ext-${video.id}`, video })),
     ];
     for (let i = head.length - 1; i > 0; i--) {
@@ -155,6 +165,13 @@ function useCombinedReels(selectedPostId?: string) {
 
     const seen = new Set(head.map((item) => item.id));
     const tail: ReelItem[] = [];
+    // পরের লোকাল পেজগুলো মেশানো ছাড়াই নিচে যোগ হয়
+    for (const post of localTail) {
+      const id = `local-${post.id}`;
+      if (seen.has(id)) continue;
+      seen.add(id);
+      tail.push({ kind: "local", id, post });
+    }
     for (const video of laterPages) {
       const id = `ext-${video.id}`;
       if (seen.has(id)) continue;

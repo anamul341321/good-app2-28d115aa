@@ -751,12 +751,14 @@ export async function getLocalShortVideoPosts(page = 0, limit = 40): Promise<Pos
     .select("*")
     .not("video_url", "is", null)
     .eq("visibility", "public")
+    // লম্বা ভিডিও ডাটাবেস থেকেই বাদ — নাহলে ফিল্টারের পর পেজ ছোট হয়ে
+    // পরের পেজ আর লোড হতো না (স্ক্রল করলে নতুন রিলস আসত না)
+    .or(`content.is.null,content.not.like.${LONG_VIDEO_MARKER}%`)
     .order("created_at", { ascending: false })
     .range(from, from + limit - 1);
   if (!posts || posts.length === 0) return [];
   const userMap = await fetchProfilesMap(posts.map((p: any) => p.user_id));
   return posts
-    .filter((p: any) => !isLongVideoPostContent(p.content))
     .map((p: any) => ({ ...p, user: userMap[p.user_id] || null })) as Post[];
 }
 
