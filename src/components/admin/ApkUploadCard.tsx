@@ -9,6 +9,8 @@ import {
 } from "@/lib/admin.functions";
 
 const CURRENT_ANDROID_VERSION = "1.33";
+const ANDROID_APPLICATION_ID = "com.anamul.goodapp";
+const ANDROID_SIGNING_CERT_SHA256 = "F06E3CE0A1F2EB8A9F011E7F9009975667A922D01A98A00164A63E27E67444F5";
 
 function normalizeAndroidVersion(value: string): string {
   const match = value.trim().match(/\d+(?:\.\d+){1,2}/);
@@ -67,6 +69,13 @@ export function ApkUploadCard() {
       const metadata = JSON.parse(new TextDecoder().decode(files[metadataName]));
       const artifactVersion = normalizeAndroidVersion(String(metadata.versionName ?? ""));
       if (!artifactVersion) throw new Error("ZIP-এর Android version পাওয়া যায়নি");
+      if (metadata.applicationId !== ANDROID_APPLICATION_ID) {
+        throw new Error("এই APK-এর package ID পুরোনো অ্যাপের সাথে মিলছে না—এটি upload করা যাবে না");
+      }
+      const artifactCert = String(metadata.signingCertSha256 ?? "").replace(/:/g, "").toUpperCase();
+      if (artifactCert !== ANDROID_SIGNING_CERT_SHA256) {
+        throw new Error("এই APK পুরোনো অ্যাপের signing key দিয়ে তৈরি নয়—update-এর বদলে আলাদা app হবে");
+      }
       if (artifactVersion !== releaseVersion) {
         throw new Error(
           `এই ZIP v${artifactVersion}, কিন্তু ঘরে v${releaseVersion} লেখা—সঠিক নতুন file দিন`,
