@@ -50,6 +50,33 @@ export async function runAdsDiagnostics(): Promise<DiagStep[]> {
   }
   if (!cfg.enabled) return steps;
 
+  // Unity Ads প্রথমে যাচাই — এটিই এখন প্রধান নেটওয়ার্ক
+  try {
+    const { unityAvailable, initUnityAds, showUnityInterstitial, UNITY_ADS } = await import(
+      "@/lib/unity-ads"
+    );
+    const has = unityAvailable();
+    steps.push({
+      name: "U1. Unity Ads plugin",
+      ok: has,
+      detail: has ? `gameId ${UNITY_ADS.gameId}` : "এই APK-তে Unity plugin নেই — নতুন APK build করুন",
+    });
+    if (has) {
+      const init = await initUnityAds(cfg.test);
+      steps.push({ name: "U2. Unity initialize()", ok: init, detail: init ? "ok" : "init ব্যর্থ" });
+      if (init) {
+        const shown = await showUnityInterstitial(cfg.test);
+        steps.push({
+          name: "U3. Unity Interstitial",
+          ok: shown,
+          detail: shown ? "অ্যাড দেখানো হয়েছে" : `load/show হয়নি (${UNITY_ADS.interstitial})`,
+        });
+      }
+    }
+  } catch (e) {
+    steps.push({ name: "U1. Unity Ads", ok: false, detail: msg(e) });
+  }
+
   let AdMob: any;
   try {
     AdMob = (await import("@capacitor-community/admob")).AdMob;
