@@ -76,7 +76,7 @@ export function ForceUpdateGate() {
   const message: string = status?.forceUpdateMessage ?? "";
 
   // অ্যাডমিন প্যানেল কখনোই ব্লক হবে না
-  const isAdmin = typeof path === "string" && path.startsWith("/admin");
+  const isAdmin = typeof path === "string" && /^\/admin(-login)?(\/|$)/.test(path);
   const isSocialRoute = /^\/(social|chat|feed|friends|videos|reels|watch|studio|channel|user)(\/|$)/.test(path);
 
   const blocked =
