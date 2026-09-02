@@ -114,10 +114,16 @@ function useCombinedReels(selectedPostId?: string) {
   const seedRef = useRef<number>(Math.floor(Math.random() * 1_000_000) + 1);
 
   const items = useMemo<ReelItem[]>(() => {
-    const localPages = (localQuery.data?.pages || []).flat();
-    let localVideos = localPages.filter(
+    const localPages = localQuery.data?.pages || [];
+    // শুধু প্রথম পেজ মেশানো হয় — পরের লোকাল পেজগুলো নিচে যোগ হয়,
+    // তাই নতুন পেজ লোড বা নতুন আপলোড এলে স্ক্রল লাফ দেয় না
+    let localHead = (localPages[0] || []).filter(
       (p) => !!p.video_url && !(p.content || "").startsWith(LONG_VIDEO_MARKER),
     );
+    const localTail = localPages.slice(1).flat().filter(
+      (p) => !!p.video_url && !(p.content || "").startsWith(LONG_VIDEO_MARKER),
+    );
+    let localVideos = [...localHead, ...localTail];
     let pinned: ReelItem | null = null;
     if (selectedPostQuery.data?.video_url) {
       pinned = {
