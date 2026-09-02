@@ -17,6 +17,28 @@ function SeenAvatar({ name, src }: { name: string; src?: string | null }) {
 }
 
 
+/** স্টোরিতে রিপ্লাই — মেসেঞ্জারের মতো স্টোরির থাম্বনেইল মেনশন হয়ে দেখা যায় */
+function StoryMentionCard({ path, mine, ownerName }: { path?: string | null; mine: boolean; ownerName?: string }) {
+  const url = useFeedMedia(path);
+  return (
+    <div
+      className={`mb-1.5 flex items-center gap-2 rounded-xl border-l-4 px-2 py-1.5 ${
+        mine ? "border-white/70 bg-white/15" : "border-primary/70 bg-primary/10"
+      }`}
+    >
+      <span className="h-11 w-8 shrink-0 overflow-hidden rounded-md bg-black/25">
+        {url ? <img src={url} alt="" className="h-full w-full object-cover" loading="lazy" /> : null}
+      </span>
+      <span className="min-w-0 flex-1">
+        <p className="text-[10px] font-black opacity-90">
+          {ownerName ? `${ownerName}-এর স্টোরি` : "স্টোরি"}
+        </p>
+        <p className="text-[11px] font-bold opacity-75">স্টোরিতে রিপ্লাই দিয়েছেন</p>
+      </span>
+    </div>
+  );
+}
+
 export const REACTION_EMOJIS = ["❤️", "😂", "😮", "😢", "😡", "👍"];
 
 export type ChatMsg = {
