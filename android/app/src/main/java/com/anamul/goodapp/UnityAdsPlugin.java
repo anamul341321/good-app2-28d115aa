@@ -72,13 +72,23 @@ public class UnityAdsPlugin extends Plugin {
             call.reject("Unity Ads is not initialized");
             return;
         }
+        loadWithRetry(call, placementId, 0);
+    }
+
+    /**
+     * Unity sometimes answers the first load with a transient
+     * INVALID_ARGUMENT / NO_FILL response right after initialization.
+     * Retrying a few times with a short delay makes real ads appear
+     * instead of failing on the very first tap.
+     */
+    private void loadWithRetry(final PluginCall call, final String placementId, final int attempt) {
         UnityAds.load(placementId, new IUnityAdsLoadListener() {
             @Override
             public void onUnityAdsAdLoaded(String id) {
                 UnityAds.show(getActivity(), id, new IUnityAdsShowListener() {
                     @Override
                     public void onUnityAdsShowFailure(String p, UnityAds.UnityAdsShowError error, String message) {
-                        call.reject("Unity show failed: " + error + " " + message);
+                        call.reject("AD_SHOW_FAILED");
                     }
 
                     @Override
@@ -99,7 +109,14 @@ public class UnityAdsPlugin extends Plugin {
 
             @Override
             public void onUnityAdsFailedToLoad(String id, UnityAds.UnityAdsLoadError error, String message) {
-                call.reject("Unity load failed: " + error + " " + message);
+                if (attempt < 3) {
+                    new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(
+                        () -> loadWithRetry(call, placementId, attempt + 1),
+                        1500L * (attempt + 1)
+                    );
+                    return;
+                }
+                call.reject("AD_NO_FILL");
             }
         });
     }
