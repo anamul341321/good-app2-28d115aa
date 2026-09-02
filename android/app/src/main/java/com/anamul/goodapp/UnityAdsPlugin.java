@@ -22,8 +22,8 @@ import com.unity3d.services.banners.UnityBannerSize;
 
 /**
  * Unity Ads bridge for Good-App.
- * Unity Ads serves real ads without a Play Store listing, so this is the
- * primary ad network; AdMob stays as a fallback inside the web layer.
+ * Unity Ads serves real ads without a Play Store listing and is the only
+ * ad network used by the app (AdMob has been removed).
  */
 @CapacitorPlugin(name = "UnityAds")
 public class UnityAdsPlugin extends Plugin {

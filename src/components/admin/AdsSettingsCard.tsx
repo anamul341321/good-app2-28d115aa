@@ -107,7 +107,7 @@ export function AdsSettingsCard() {
     <div className="glass rounded-2xl p-4 space-y-3">
       <div className="flex items-center gap-2">
         <MonitorPlay className="w-4 h-4 text-cyan" />
-        <p className="text-[11px] font-black text-navy">📺 Google Ads (AdMob)</p>
+        <p className="text-[11px] font-black text-navy">📺 Unity Ads (আসল অ্যাড)</p>
       </div>
 
       <div
@@ -132,27 +132,17 @@ export function AdsSettingsCard() {
           />
         </div>
         <p className="text-[9px] text-muted-foreground mt-1">
-          মাস্টার সুইচ ON করলেই কাজ করে — নিচের "Test Mode" ON থাকলে Google-এর demo ID দিয়ে টেস্ট অ্যাড দেখাবে (কোনো আয় হবে না)।
+          মাস্টার সুইচ ON করলেই ইউজাররা আসল Unity অ্যাড দেখবে এবং আয় গোনা হবে।
         </p>
 
       </div>
 
       <div className="space-y-2 opacity-100">
-        <div className="flex items-center justify-between gap-3 rounded-xl bg-amber/10 p-2.5 border border-amber/30">
-          <div className="min-w-0">
-            <p className="text-[11px] font-bold text-navy">🧪 Test Mode (Google Test Ads)</p>
-            <p className="text-[9px] text-muted-foreground">
-              ON করলে আসল Ad Unit ID না বসিয়েও demo ID দিয়ে অ্যাড টেস্ট করতে পারবেন — আয় হবে না।
-            </p>
-          </div>
-          <Toggle
-            on={testMode}
-            disabled={!on || save.isPending}
-            onChange={(v) => {
-              setTestMode(v);
-              save.mutate({ enabled: on, testMode: v });
-            }}
-          />
+        <div className="rounded-xl bg-emerald/10 p-2.5 border border-emerald/30">
+          <p className="text-[11px] font-bold text-navy">✅ সবসময় আসল (Live) Unity Ads</p>
+          <p className="text-[9px] text-muted-foreground">
+            Test Mode বাদ দেওয়া হয়েছে — অ্যাপে সবসময় আসল অ্যাড আসবে, তাই Unity Dashboard-এ আয় গোনা হবে।
+          </p>
         </div>
 
         {[
@@ -186,22 +176,11 @@ export function AdsSettingsCard() {
       </div>
 
 
-      <div className="space-y-2">
-        {[
-          { label: "Banner Ad Unit ID", v: bannerUnit, set: setBannerUnit },
-          { label: "Interstitial Ad Unit ID", v: interstitialUnit, set: setInterstitialUnit },
-          { label: "Rewarded Ad Unit ID", v: rewardedUnit, set: setRewardedUnit },
-        ].map((f) => (
-          <label key={f.label} className="block">
-            <span className="text-[10px] font-bold text-muted-foreground">{f.label}</span>
-            <input
-              value={f.v}
-              onChange={(e) => f.set(e.target.value)}
-              placeholder="ca-app-pub-…/…"
-              className="mt-1 w-full rounded-xl bg-white/10 px-3 py-2 text-xs outline-none"
-            />
-          </label>
-        ))}
+      <div className="rounded-xl bg-white/5 p-2.5">
+        <p className="text-[11px] font-bold text-navy">Unity Ads — Game ID 800366349</p>
+        <p className="text-[9px] text-muted-foreground">
+          Placement: Rewarded_Android / Interstitial_Android / Banner_Android — কোনো Ad Unit ID বসাতে হবে না।
+        </p>
       </div>
 
       <button

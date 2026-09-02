@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   ChevronLeft, Coins, Sparkles, Repeat, Film, Image as ImageIcon,
   MessageCircle, Video, TrendingUp, CalendarClock, Gift, Lock,
-  Send, History, ChevronRight, ShieldCheck, Loader2,
+  Send, History, ChevronRight, ShieldCheck, Loader2, PlayCircle,
 } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCoinSummary } from "@/components/social/CoinWallet";
@@ -79,6 +79,7 @@ const REASON_META: Record<string, { bn: string; icon: any; color: string }> = {
   story: { bn: "স্টোরি দিয়েছেন", icon: Sparkles, color: "text-violet-300" },
   comment: { bn: "কমেন্ট করেছেন", icon: MessageCircle, color: "text-emerald-300" },
   message: { bn: "মেসেজ পাঠিয়েছেন", icon: MessageCircle, color: "text-emerald-300" },
+  ad_watch: { bn: "অ্যাড দেখে আয়", icon: PlayCircle, color: "text-yellow-300" },
 };
 
 function CoinWalletPage() {
@@ -336,6 +337,11 @@ function CoinWalletPage() {
             রেট পরে ঘোষণা করা হবে। 🚀
           </p>
         </div>
+      </div>
+
+      {/* অ্যাড দেখে কয়েন — প্রতি অ্যাডে ১০০০ কয়েন */}
+      <div className="mt-4 px-4">
+        <AdCoinCard onEarned={celebrate} />
       </div>
 
       {/* Watch progress */}
