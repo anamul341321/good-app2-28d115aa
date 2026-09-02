@@ -165,6 +165,13 @@ function useCombinedReels(selectedPostId?: string) {
 
     const seen = new Set(head.map((item) => item.id));
     const tail: ReelItem[] = [];
+    // পরের লোকাল পেজগুলো মেশানো ছাড়াই নিচে যোগ হয়
+    for (const post of localTail) {
+      const id = `local-${post.id}`;
+      if (seen.has(id)) continue;
+      seen.add(id);
+      tail.push({ kind: "local", id, post });
+    }
     for (const video of laterPages) {
       const id = `ext-${video.id}`;
       if (seen.has(id)) continue;
