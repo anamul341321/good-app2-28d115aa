@@ -7,7 +7,7 @@ import { claimVoucher } from "@/lib/vouchers.functions";
 import { getLeaderboards } from "@/lib/leaderboard.functions";
 import { MiningCounter } from "@/components/MiningCounter";
 import bonusGirl from "@/assets/bonus-girl.png";
-import { CheckCircle2, Camera, Lock, Sparkles, Loader2, X, Plus, Crown, Users, User, ShieldCheck, BadgeCheck, ChevronDown, Gift, RefreshCcw, MessageCircle, ChevronRight, Newspaper } from "lucide-react";
+import { CheckCircle2, Camera, Lock, Sparkles, Loader2, X, Plus, Crown, Users, User, ShieldCheck, BadgeCheck, ChevronDown, Gift, RefreshCcw, MessageCircle, ChevronRight, Newspaper, Coins } from "lucide-react";
 import { PageVoice } from "@/components/PageVoice";
 import { FaceVerifyPausedNotice } from "@/components/FaceVerifyPausedNotice";
 import { getAppStatus } from "@/lib/app-status.functions";
@@ -169,6 +169,20 @@ function HomePage() {
           <p className="text-[9px] tracking-[0.2em] font-black text-white/85">ফিড</p>
           <p className="text-base font-black leading-tight mt-0.5">{t("নিউজ ফিড", "News Feed")}</p>
         </div>
+      </Link>
+
+      <Link to="/coins" preload="intent"
+        className="col-span-2 rounded-2xl px-4 py-3 relative overflow-hidden btn-press border border-amber/40 bg-gradient-to-r from-amber-500/90 to-orange-600/90 shadow-lg flex items-center gap-3">
+        <span className="w-9 h-9 rounded-xl bg-white/25 backdrop-blur border border-white/40 flex items-center justify-center text-white">
+          <Coins className="w-5 h-5" />
+        </span>
+        <span className="min-w-0 flex-1 text-white">
+          <span className="block text-[9px] tracking-[0.2em] font-black text-white/85">GOOD COIN</span>
+          <span className="block text-sm font-black leading-tight">{t("আরও আয় করুন", "Earn More")}</span>
+        </span>
+        <span className="text-[10px] font-black text-white/90">
+          {t("অ্যাড দেখে কয়েন", "Watch ads → coins")}
+        </span>
       </Link>
     </div>
   );
