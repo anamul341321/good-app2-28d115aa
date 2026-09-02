@@ -176,22 +176,11 @@ export function AdsSettingsCard() {
       </div>
 
 
-      <div className="space-y-2">
-        {[
-          { label: "Banner Ad Unit ID", v: bannerUnit, set: setBannerUnit },
-          { label: "Interstitial Ad Unit ID", v: interstitialUnit, set: setInterstitialUnit },
-          { label: "Rewarded Ad Unit ID", v: rewardedUnit, set: setRewardedUnit },
-        ].map((f) => (
-          <label key={f.label} className="block">
-            <span className="text-[10px] font-bold text-muted-foreground">{f.label}</span>
-            <input
-              value={f.v}
-              onChange={(e) => f.set(e.target.value)}
-              placeholder="ca-app-pub-…/…"
-              className="mt-1 w-full rounded-xl bg-white/10 px-3 py-2 text-xs outline-none"
-            />
-          </label>
-        ))}
+      <div className="rounded-xl bg-white/5 p-2.5">
+        <p className="text-[11px] font-bold text-navy">Unity Ads — Game ID 800366349</p>
+        <p className="text-[9px] text-muted-foreground">
+          Placement: Rewarded_Android / Interstitial_Android / Banner_Android — কোনো Ad Unit ID বসাতে হবে না।
+        </p>
       </div>
 
       <button
