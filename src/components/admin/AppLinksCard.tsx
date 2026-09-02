@@ -30,8 +30,14 @@ export function AppLinksCard() {
       label: "ওয়েবসাইট লিংক",
     },
     {
+      icon: <Download className="w-4 h-4 text-cyan" />,
+      title: "ডাউনলোড পেজ (শেয়ার করার জন্য সেরা)",
+      value: `${SITE_URL}/download`,
+      label: "ডাউনলোড পেজ লিংক",
+    },
+    {
       icon: <Download className="w-4 h-4 text-emerald-500" />,
-      title: `অ্যাপ ডাউনলোড লিংক${version ? ` (v${version})` : ""}`,
+      title: `সরাসরি APK লিংক${version ? ` (v${version})` : ""}`,
       value: DOWNLOAD_URL,
       label: "ডাউনলোড লিংক",
     },
