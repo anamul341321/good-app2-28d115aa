@@ -89,6 +89,8 @@ function useCombinedReels(selectedPostId?: string) {
     getNextPageParam: (last, all) => ((last?.length ?? 0) < 40 ? undefined : all.length),
     staleTime: 60_000,
     gcTime: 10 * 60_000,
+    // নতুন আপলোড হওয়া রিলস নিজে নিজেই ফিডে চলে আসবে
+    refetchInterval: 60_000,
   });
   // অসীম রিলস — স্ক্রল করলেই পরের পেজ লোড হবে
   const externalQuery = useInfiniteQuery({
@@ -149,7 +151,9 @@ function useCombinedReels(selectedPostId?: string) {
 
     // শুধু প্রথম ব্যাচ মেশানো হয় — পরের পেজগুলো নিচে যোগ হয়, তাই স্ক্রল লাফ দেয় না
     const head: ReelItem[] = [
-      ...localVideos.map((post) => ({ kind: "local" as const, id: `local-${post.id}`, post })),
+      ...localHead
+        .filter((post) => localVideos.some((p) => p.id === post.id))
+        .map((post) => ({ kind: "local" as const, id: `local-${post.id}`, post })),
       ...firstPage.map((video) => ({ kind: "external" as const, id: `ext-${video.id}`, video })),
     ];
     for (let i = head.length - 1; i > 0; i--) {
