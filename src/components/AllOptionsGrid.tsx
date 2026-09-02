@@ -34,6 +34,7 @@ type Tile = {
 // Referral lives in its own dedicated nav button now, so it is intentionally
 // not part of this grid.
 const TILES: Tile[] = [
+  { to: "/coins", Icon: Coins, bn: "আরও আয় করুন", en: "Earn More", hintBn: "অ্যাড দেখে কয়েন", hintEn: "Watch ads → coins", from: "#f59e0b", to2: "#ea580c" },
   { to: "/feed", Icon: Newspaper, bn: "নিউজ ফিড", en: "News Feed", hintBn: "পোস্ট · স্টোরি", hintEn: "Posts · stories", from: "#1877F2", to2: "#42a5f5" },
   { to: "/reels", Icon: Clapperboard, bn: "রিলস", en: "Reels", hintBn: "শর্ট ভিডিও", hintEn: "Short videos", from: "#e11d48", to2: "#f97316" },
   { to: "/studio", Icon: Youtube, bn: "ভিডিও", en: "Videos", hintBn: "ভিডিও আপলোড", hintEn: "Upload video", from: "#dc2626", to2: "#ef4444" },
