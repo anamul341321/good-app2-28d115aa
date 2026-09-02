@@ -99,25 +99,26 @@ async function initializeAds(): Promise<boolean> {
 }
 
 
-const DAY_KEY = "ga_last_daily_ad";
+const OPEN_AD_COOLDOWN_MS = 3 * 60_000;
+let lastOpenAdAt = 0;
 
 /**
- * দিনের প্রথমবার অ্যাপে ঢুকলে একটি interstitial অ্যাড দেখায়।
- * একই দিনে আবার দেখায় না (localStorage দিয়ে ট্র্যাক) — যাতে ইউজার বিরক্ত না হয়।
+ * অ্যাপে ঢোকার পরপরই একটি interstitial অ্যাড দেখায় (প্রতিবার খুললেই)।
+ * পরপর দুইবার না দেখাতে ৩ মিনিটের ছোট cooldown আছে।
+ * প্রথমে Unity Ads — না পেলে AdMob fallback.
  */
 export async function showDailyAppOpenAd(): Promise<boolean> {
   const cfg = await loadAdsConfig();
   if (!cfg.appOpen) return false;
-  if (ADS_CONFIG.dailyInterstitialLimit <= 0) return false;
-  // টেস্ট মোডে দিনে-একবার সীমা মানা হয় না, যাতে অ্যাডমিন প্রতিবার যাচাই করতে পারেন
-  if (!cfg.test) {
-    const today = new Date().toISOString().slice(0, 10);
-    try {
-      if (localStorage.getItem(DAY_KEY) === today) return true;
-    } catch {
-      return false;
-    }
+  if (!isNative()) return false;
+  if (!cfg.test && Date.now() - lastOpenAdAt < OPEN_AD_COOLDOWN_MS) return true;
+
+  const { showUnityInterstitial } = await import("@/lib/unity-ads");
+  if (await showUnityInterstitial(cfg.test)) {
+    lastOpenAdAt = Date.now();
+    return true;
   }
+
   if (!(await initAds())) return false;
   const AdMob = await getAdMob();
   if (!AdMob) return false;
@@ -129,7 +130,7 @@ export async function showDailyAppOpenAd(): Promise<boolean> {
     });
 
     await AdMob.showInterstitial();
-    localStorage.setItem(DAY_KEY, new Date().toISOString().slice(0, 10));
+    lastOpenAdAt = Date.now();
     return true;
   } catch (error) {
     console.warn("AdMob app-open ad failed", error);
