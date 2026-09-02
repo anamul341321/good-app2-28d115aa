@@ -80,7 +80,8 @@ export function AdCoinCard({ onEarned }: { onEarned?: () => void }) {
       qc.invalidateQueries({ queryKey: ["coin-summary"] });
       qc.invalidateQueries({ queryKey: ["coin-history"] });
     } catch (e: any) {
-      toast.error(e?.message ?? "অ্যাড দেখানো যায়নি — আবার চেষ্টা করুন");
+      const { friendlyAdError } = await import("@/lib/unity-ads");
+      toast.error(friendlyAdError(e));
     } finally {
       setBusy(false);
     }
