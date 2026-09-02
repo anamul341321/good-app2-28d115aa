@@ -11,6 +11,7 @@ import { formatCoins, COIN_RATES, TELEGRAM_GROUP_URL } from "@/lib/coins";
 import { getCoinHistory, claimTelegramByUsername, getDailyCheckin, claimDailyCheckin } from "@/lib/coins.functions";
 import { toast } from "sonner";
 import { playUiSound } from "@/lib/ui-sounds";
+import { AdCoinCard } from "@/components/AdCoinCard";
 
 export const Route = createFileRoute("/_authenticated/coins")({
   head: () => ({
