@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as DownloadRouteImport } from './routes/download'
 import { Route as DataSafetyRouteImport } from './routes/data-safety'
 import { Route as ChildSafetyRouteImport } from './routes/child-safety'
 import { Route as AuthRouteImport } from './routes/auth'
@@ -98,6 +99,11 @@ const TermsRoute = TermsRouteImport.update({
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DownloadRoute = DownloadRouteImport.update({
+  id: '/download',
+  path: '/download',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DataSafetyRoute = DataSafetyRouteImport.update({
@@ -508,6 +514,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/child-safety': typeof ChildSafetyRoute
   '/data-safety': typeof DataSafetyRoute
+  '/download': typeof DownloadRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
   '/coins': typeof AuthenticatedCoinsRoute
@@ -588,6 +595,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/child-safety': typeof ChildSafetyRoute
   '/data-safety': typeof DataSafetyRoute
+  '/download': typeof DownloadRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
   '/coins': typeof AuthenticatedCoinsRoute
@@ -670,6 +678,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/child-safety': typeof ChildSafetyRoute
   '/data-safety': typeof DataSafetyRoute
+  '/download': typeof DownloadRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
   '/_authenticated/coins': typeof AuthenticatedCoinsRoute
@@ -753,6 +762,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/child-safety'
     | '/data-safety'
+    | '/download'
     | '/privacy'
     | '/terms'
     | '/coins'
@@ -833,6 +843,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/child-safety'
     | '/data-safety'
+    | '/download'
     | '/privacy'
     | '/terms'
     | '/coins'
@@ -914,6 +925,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/child-safety'
     | '/data-safety'
+    | '/download'
     | '/privacy'
     | '/terms'
     | '/_authenticated/coins'
@@ -997,6 +1009,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ChildSafetyRoute: typeof ChildSafetyRoute
   DataSafetyRoute: typeof DataSafetyRoute
+  DownloadRoute: typeof DownloadRoute
   PrivacyRoute: typeof PrivacyRoute
   TermsRoute: typeof TermsRoute
   ApiTiktokFeedRoute: typeof ApiTiktokFeedRoute
@@ -1038,6 +1051,13 @@ declare module '@tanstack/react-router' {
       path: '/privacy'
       fullPath: '/privacy'
       preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/download': {
+      id: '/download'
+      path: '/download'
+      fullPath: '/download'
+      preLoaderRoute: typeof DownloadRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/data-safety': {
@@ -1718,6 +1738,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ChildSafetyRoute: ChildSafetyRoute,
   DataSafetyRoute: DataSafetyRoute,
+  DownloadRoute: DownloadRoute,
   PrivacyRoute: PrivacyRoute,
   TermsRoute: TermsRoute,
   ApiTiktokFeedRoute: ApiTiktokFeedRoute,
