@@ -15,6 +15,7 @@ import {
   Newspaper,
   Clapperboard,
   Youtube,
+  Coins,
   ChevronRight,
 
   type LucideIcon,
