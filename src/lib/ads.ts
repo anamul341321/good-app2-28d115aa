@@ -145,7 +145,18 @@ export async function showRewardedAd(): Promise<boolean> {
   const cfg = await withTimeout(loadAdsConfig(), 10_000, "অ্যাড সেটিংস লোড হয়নি — আবার চেষ্টা করুন");
   if (!cfg.enabled) throw new Error("অ্যাড সিস্টেম এখন বন্ধ আছে");
   if (!cfg.rewarded) throw new Error("Rewarded ad এখন বন্ধ আছে");
-  if (!(await initAds())) throw new Error("AdMob চালু করা যায়নি — ইন্টারনেট দেখে আবার চেষ্টা করুন");
+
+  // প্রথমে Unity Ads (Play Store listing ছাড়াও আসল অ্যাড দেয়) — না পেলে AdMob
+  const { showUnityRewarded, unityAvailable } = await import("@/lib/unity-ads");
+  if (unityAvailable()) {
+    try {
+      return await showUnityRewarded(cfg.test);
+    } catch (unityError) {
+      console.warn("Unity rewarded failed, trying AdMob", unityError);
+    }
+  }
+
+  if (!(await initAds())) throw new Error("অ্যাড চালু করা যায়নি — ইন্টারনেট দেখে আবার চেষ্টা করুন");
   const AdMob = await getAdMob();
   if (!AdMob) throw new Error("এই APK-তে AdMob plugin পাওয়া যায়নি");
 
