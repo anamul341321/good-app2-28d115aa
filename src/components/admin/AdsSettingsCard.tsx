@@ -107,7 +107,7 @@ export function AdsSettingsCard() {
     <div className="glass rounded-2xl p-4 space-y-3">
       <div className="flex items-center gap-2">
         <MonitorPlay className="w-4 h-4 text-cyan" />
-        <p className="text-[11px] font-black text-navy">📺 Google Ads (AdMob)</p>
+        <p className="text-[11px] font-black text-navy">📺 Unity Ads (আসল অ্যাড)</p>
       </div>
 
       <div
@@ -132,7 +132,7 @@ export function AdsSettingsCard() {
           />
         </div>
         <p className="text-[9px] text-muted-foreground mt-1">
-          মাস্টার সুইচ ON করলেই কাজ করে — নিচের "Test Mode" ON থাকলে Google-এর demo ID দিয়ে টেস্ট অ্যাড দেখাবে (কোনো আয় হবে না)।
+          মাস্টার সুইচ ON করলেই ইউজাররা আসল Unity অ্যাড দেখবে এবং আয় গোনা হবে।
         </p>
 
       </div>
