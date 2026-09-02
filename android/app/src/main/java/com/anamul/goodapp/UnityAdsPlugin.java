@@ -14,8 +14,6 @@ import com.unity3d.ads.IUnityAdsInitializationListener;
 import com.unity3d.ads.IUnityAdsLoadListener;
 import com.unity3d.ads.IUnityAdsShowListener;
 import com.unity3d.ads.UnityAds;
-import com.unity3d.ads.UnityAdsLoadError;
-import com.unity3d.ads.UnityAdsShowError;
 import com.unity3d.services.banners.BannerErrorInfo;
 import com.unity3d.services.banners.BannerView;
 import com.unity3d.services.banners.UnityBannerSize;
@@ -79,7 +77,7 @@ public class UnityAdsPlugin extends Plugin {
             public void onUnityAdsAdLoaded(String id) {
                 UnityAds.show(getActivity(), id, new IUnityAdsShowListener() {
                     @Override
-                    public void onUnityAdsShowFailure(String p, UnityAdsShowError error, String message) {
+                    public void onUnityAdsShowFailure(String p, UnityAds.UnityAdsShowError error, String message) {
                         call.reject("Unity show failed: " + error + " " + message);
                     }
 
@@ -100,7 +98,7 @@ public class UnityAdsPlugin extends Plugin {
             }
 
             @Override
-            public void onUnityAdsFailedToLoad(String id, UnityAdsLoadError error, String message) {
+            public void onUnityAdsFailedToLoad(String id, UnityAds.UnityAdsLoadError error, String message) {
                 call.reject("Unity load failed: " + error + " " + message);
             }
         });
