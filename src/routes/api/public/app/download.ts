@@ -28,7 +28,7 @@ export const Route = createFileRoute("/api/public/app/download")({
         if (/^https?:\/\//i.test(path)) {
           if (requestedUrl.searchParams.get("resolve") === "1") {
             return Response.json(
-              { downloadUrl: path, fileName: `Good-App-v${version}.apk` },
+              { downloadUrl: path, fileName: `Good-App-v${version}.apk`, version },
               { headers: { "cache-control": "no-store" } },
             );
           }
@@ -51,7 +51,7 @@ export const Route = createFileRoute("/api/public/app/download")({
         }
         if (requestedUrl.searchParams.get("resolve") === "1") {
           return Response.json(
-            { downloadUrl: data.signedUrl, fileName: `Good-App-v${version}.apk` },
+            { downloadUrl: data.signedUrl, fileName: `Good-App-v${version}.apk`, version },
             { headers: { "cache-control": "no-store" } },
           );
         }
