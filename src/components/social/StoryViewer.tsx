@@ -177,11 +177,30 @@ export default function StoryViewer({ story, allStories, userId, onClose, onDele
     }
   };
 
-  const handleSendReply = () => {
-    if (!replyText.trim()) return;
+  const handleSendReply = async () => {
+    const text = replyText.trim();
+    if (!text) return;
     setReplyText("");
     setShowReplyInput(false);
     setPaused(false);
+    try {
+      const { sendMessage } = await import("@/lib/chat.functions");
+      await sendMessage({
+        data: {
+          peerId: currentStory.user_id,
+          body: text,
+          kind: "text",
+          mediaMeta: {
+            story_id: currentStory.id,
+            story_image: currentStory.image_url,
+            story_owner_id: currentStory.user_id,
+            story_owner_name: currentStory.user?.display_name ?? null,
+          },
+        },
+      });
+    } catch {
+      /* মেসেজ পাঠানো না গেলেও চ্যাট খুলে যাবে */
+    }
     onMessage(currentStory.user_id);
   };
 
