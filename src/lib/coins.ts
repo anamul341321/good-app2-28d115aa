@@ -1,4 +1,4 @@
-import { awardCoinEvent, claimWatchCoins, claimTelegramJoin } from "@/lib/coins.functions";
+import { awardCoinEvent, claimWatchCoins, claimTelegramJoin, verifyTelegramJoin } from "@/lib/coins.functions";
 
 export const TELEGRAM_GROUP_URL = "https://t.me/goodappbuy";
 
@@ -36,13 +36,28 @@ export async function awardCoins(event: CoinEvent, referenceId?: string): Promis
 }
 
 export async function claimWatchSeconds(seconds: number): Promise<number> {
+  const secs = Math.min(600, Math.max(0, Math.floor(seconds)));
   try {
-    const res = await claimWatchCoins({ data: { seconds: Math.min(600, Math.max(0, Math.floor(seconds))) } });
-    return res?.awarded ?? 0;
+    const res = await claimWatchCoins({ data: { seconds: secs } });
+    if (res?.awarded) return res.awarded;
+    // যে ইউজার টেলিগ্রাম গ্রুপে আছে কিন্তু ক্লেইম করেনি — বট দিয়ে অটো-ভেরিফাই করে আবার চেষ্টা
+    if (res?.error === "telegram_required") {
+      try {
+        const v = await verifyTelegramJoin();
+        if (v?.member) {
+          const retry = await claimWatchCoins({ data: { seconds: secs } });
+          return retry?.awarded ?? 0;
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+    return 0;
   } catch {
     return 0;
   }
 }
+
 
 /* ---------------- watch-time tracker ---------------- */
 
