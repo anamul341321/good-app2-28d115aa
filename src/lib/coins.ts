@@ -1,4 +1,4 @@
-import { awardCoinEvent, claimWatchCoins, claimTelegramJoin } from "@/lib/coins.functions";
+import { awardCoinEvent, claimWatchCoins, claimTelegramJoin, verifyTelegramJoin } from "@/lib/coins.functions";
 
 export const TELEGRAM_GROUP_URL = "https://t.me/goodappbuy";
 
