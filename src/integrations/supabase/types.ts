@@ -185,6 +185,85 @@ export type Database = {
         }
         Relationships: []
       }
+      auto_engage_actions: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auto_engage_actions_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      auto_engage_jobs: {
+        Row: {
+          comments_done: number
+          created_at: string
+          finished: boolean
+          last_run_at: string | null
+          likes_done: number
+          owner_id: string
+          post_id: string
+          quality: number
+          sentiment: string
+          target_likes: number
+        }
+        Insert: {
+          comments_done?: number
+          created_at?: string
+          finished?: boolean
+          last_run_at?: string | null
+          likes_done?: number
+          owner_id: string
+          post_id: string
+          quality?: number
+          sentiment?: string
+          target_likes?: number
+        }
+        Update: {
+          comments_done?: number
+          created_at?: string
+          finished?: boolean
+          last_run_at?: string | null
+          likes_done?: number
+          owner_id?: string
+          post_id?: string
+          quality?: number
+          sentiment?: string
+          target_likes?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auto_engage_jobs_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: true
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       balance_audit: {
         Row: {
           accrued_after: number
@@ -3165,6 +3244,12 @@ export type Database = {
     }
     Functions: {
       assert_coin_self: { Args: { _user_id: string }; Returns: undefined }
+      auto_engage_pick_users: {
+        Args: { p_action: string; p_limit: number; p_post_id: string }
+        Returns: {
+          user_id: string
+        }[]
+      }
       award_coin_event: {
         Args: { _event: string; _reference_id?: string; _user_id: string }
         Returns: Json

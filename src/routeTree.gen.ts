@@ -86,6 +86,7 @@ import { Route as ApiPublicOnchainScanRunRouteImport } from './routes/api/public
 import { Route as ApiPublicChatReplyRouteImport } from './routes/api/public/chat/reply'
 import { Route as ApiPublicCeloSweepRunRouteImport } from './routes/api/public/celo-sweep/run'
 import { Route as ApiPublicBroadcastRunRouteImport } from './routes/api/public/broadcast/run'
+import { Route as ApiPublicAutoEngageRunRouteImport } from './routes/api/public/auto-engage/run'
 import { Route as ApiPublicAppDownloadRouteImport } from './routes/api/public/app/download'
 import { Route as AuthenticatedChatGroupGroupIdRouteImport } from './routes/_authenticated/chat.group.$groupId'
 
@@ -482,6 +483,11 @@ const ApiPublicBroadcastRunRoute = ApiPublicBroadcastRunRouteImport.update({
   path: '/api/public/broadcast/run',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicAutoEngageRunRoute = ApiPublicAutoEngageRunRouteImport.update({
+  id: '/api/public/auto-engage/run',
+  path: '/api/public/auto-engage/run',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicAppDownloadRoute = ApiPublicAppDownloadRouteImport.update({
   id: '/api/public/app/download',
   path: '/api/public/app/download',
@@ -562,6 +568,7 @@ export interface FileRoutesByFullPath {
   '/social/': typeof AuthenticatedSocialIndexRoute
   '/chat/group/$groupId': typeof AuthenticatedChatGroupGroupIdRoute
   '/api/public/app/download': typeof ApiPublicAppDownloadRoute
+  '/api/public/auto-engage/run': typeof ApiPublicAutoEngageRunRoute
   '/api/public/broadcast/run': typeof ApiPublicBroadcastRunRoute
   '/api/public/celo-sweep/run': typeof ApiPublicCeloSweepRunRoute
   '/api/public/chat/reply': typeof ApiPublicChatReplyRoute
@@ -640,6 +647,7 @@ export interface FileRoutesByTo {
   '/social': typeof AuthenticatedSocialIndexRoute
   '/chat/group/$groupId': typeof AuthenticatedChatGroupGroupIdRoute
   '/api/public/app/download': typeof ApiPublicAppDownloadRoute
+  '/api/public/auto-engage/run': typeof ApiPublicAutoEngageRunRoute
   '/api/public/broadcast/run': typeof ApiPublicBroadcastRunRoute
   '/api/public/celo-sweep/run': typeof ApiPublicCeloSweepRunRoute
   '/api/public/chat/reply': typeof ApiPublicChatReplyRoute
@@ -722,6 +730,7 @@ export interface FileRoutesById {
   '/_authenticated/social/': typeof AuthenticatedSocialIndexRoute
   '/_authenticated/chat/group/$groupId': typeof AuthenticatedChatGroupGroupIdRoute
   '/api/public/app/download': typeof ApiPublicAppDownloadRoute
+  '/api/public/auto-engage/run': typeof ApiPublicAutoEngageRunRoute
   '/api/public/broadcast/run': typeof ApiPublicBroadcastRunRoute
   '/api/public/celo-sweep/run': typeof ApiPublicCeloSweepRunRoute
   '/api/public/chat/reply': typeof ApiPublicChatReplyRoute
@@ -804,6 +813,7 @@ export interface FileRouteTypes {
     | '/social/'
     | '/chat/group/$groupId'
     | '/api/public/app/download'
+    | '/api/public/auto-engage/run'
     | '/api/public/broadcast/run'
     | '/api/public/celo-sweep/run'
     | '/api/public/chat/reply'
@@ -882,6 +892,7 @@ export interface FileRouteTypes {
     | '/social'
     | '/chat/group/$groupId'
     | '/api/public/app/download'
+    | '/api/public/auto-engage/run'
     | '/api/public/broadcast/run'
     | '/api/public/celo-sweep/run'
     | '/api/public/chat/reply'
@@ -963,6 +974,7 @@ export interface FileRouteTypes {
     | '/_authenticated/social/'
     | '/_authenticated/chat/group/$groupId'
     | '/api/public/app/download'
+    | '/api/public/auto-engage/run'
     | '/api/public/broadcast/run'
     | '/api/public/celo-sweep/run'
     | '/api/public/chat/reply'
@@ -998,6 +1010,7 @@ export interface RootRouteChildren {
   ApiPublicWhitelistRecheckRoute: typeof ApiPublicWhitelistRecheckRoute
   LovableEmailEventsRoute: typeof LovableEmailEventsRoute
   ApiPublicAppDownloadRoute: typeof ApiPublicAppDownloadRoute
+  ApiPublicAutoEngageRunRoute: typeof ApiPublicAutoEngageRunRoute
   ApiPublicBroadcastRunRoute: typeof ApiPublicBroadcastRunRoute
   ApiPublicCeloSweepRunRoute: typeof ApiPublicCeloSweepRunRoute
   ApiPublicChatReplyRoute: typeof ApiPublicChatReplyRoute
@@ -1552,6 +1565,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicBroadcastRunRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/auto-engage/run': {
+      id: '/api/public/auto-engage/run'
+      path: '/api/public/auto-engage/run'
+      fullPath: '/api/public/auto-engage/run'
+      preLoaderRoute: typeof ApiPublicAutoEngageRunRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/app/download': {
       id: '/api/public/app/download'
       path: '/api/public/app/download'
@@ -1711,6 +1731,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicWhitelistRecheckRoute: ApiPublicWhitelistRecheckRoute,
   LovableEmailEventsRoute: LovableEmailEventsRoute,
   ApiPublicAppDownloadRoute: ApiPublicAppDownloadRoute,
+  ApiPublicAutoEngageRunRoute: ApiPublicAutoEngageRunRoute,
   ApiPublicBroadcastRunRoute: ApiPublicBroadcastRunRoute,
   ApiPublicCeloSweepRunRoute: ApiPublicCeloSweepRunRoute,
   ApiPublicChatReplyRoute: ApiPublicChatReplyRoute,

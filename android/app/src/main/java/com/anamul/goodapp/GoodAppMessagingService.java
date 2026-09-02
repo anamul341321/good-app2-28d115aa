@@ -41,7 +41,7 @@ public class GoodAppMessagingService extends FirebaseMessagingService {
     public static final String CALL_CHANNEL = "goodapp_incoming_calls_v3";
     // New channel ID resets phones that cached the earlier non-bubble channel state.
     public static final String MESSAGE_CHANNEL = "goodapp_messages_v5";
-    public static final String SOCIAL_CHANNEL = "goodapp_social_notifications_v1";
+    public static final String SOCIAL_CHANNEL = "goodapp_social_notifications_v2";
 
     @Override
     public void onMessageReceived(@NonNull RemoteMessage message) {
@@ -481,8 +481,8 @@ public class GoodAppMessagingService extends FirebaseMessagingService {
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setAutoCancel(true)
             .setContentIntent(pending)
-            .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM))
-            .setVibrate(new long[] {0, 90, 70, 90, 70, 140})
+            .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
+            .setVibrate(new long[] {0, 55, 45, 55})
             .build();
         NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         manager.notify(("social-" + value(data, "reference_id", title)).hashCode(), notification);
@@ -491,7 +491,7 @@ public class GoodAppMessagingService extends FirebaseMessagingService {
     private void createSocialChannel() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
         NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        Uri sound = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
+        Uri sound = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
         AudioAttributes audio = new AudioAttributes.Builder()
             .setUsage(AudioAttributes.USAGE_NOTIFICATION)
             .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
@@ -503,7 +503,7 @@ public class GoodAppMessagingService extends FirebaseMessagingService {
         );
         channel.setDescription("Comments, mentions, likes and friend alerts");
         channel.enableVibration(true);
-        channel.setVibrationPattern(new long[] {0, 90, 70, 90, 70, 140});
+        channel.setVibrationPattern(new long[] {0, 55, 45, 55});
         channel.setSound(sound, audio);
         channel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
         manager.createNotificationChannel(channel);
