@@ -119,7 +119,9 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
-  const isSocialRoute = /^\/(social|chat|feed|friends|videos|reels|watch|studio|channel|user|profile)(\/|$)/.test(pathname);
+  // Exclude admin and social routes from update gates
+  const isExcludedRoute = /^\/(admin|admin-login|social|chat|feed|friends|videos|reels|watch|studio|channel|user|profile)(\/|$)/.test(pathname);
+
   useNativeApp();
   useEffect(() => {
     // Native Android WebView draws under the status bar; give it a slightly
@@ -159,8 +161,8 @@ function RootComponent() {
       <LanguageProvider>
         <NativeAdsController />
         <SplashScreen />
-        {!isSocialRoute && <AppUpdateBanner />}
-        {!isSocialRoute && <ForceUpdateGate />}
+        {!isExcludedRoute && <AppUpdateBanner />}
+        {!isExcludedRoute && <ForceUpdateGate />}
         <Outlet />
 
         <Toaster theme="dark" position="top-center" richColors />
