@@ -1,21 +1,21 @@
 {
   "project_info": {
-    "project_number": "629653022059",
-    "project_id": "good-app-d4c92",
-    "storage_bucket": "good-app-d4c92.firebasestorage.app"
+    "project_number": "657595444765",
+    "project_id": "good-app-c2321",
+    "storage_bucket": "good-app-c2321.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:629653022059:android:9d491abd5e99dcba9b982e",
+        "mobilesdk_app_id": "1:657595444765:android:602e94f9141d907cb320f4",
         "android_client_info": {
-          "package_name": "com.anamul.goodapp"
+          "package_name": "com.goodapp.mobile"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyDUipvTxRG2XvZDklbkoTfJOPIwt_D1dHU"
+          "current_key": "AIzaSyARRcN7ihaq3XnliR_uOZrGs1D-LFX6N-M"
         }
       ],
       "services": {

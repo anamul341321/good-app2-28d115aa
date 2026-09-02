@@ -126,9 +126,13 @@ jobs:
         run: |
           mkdir -p android-release
           cp android/app/build/outputs/apk/release/app-release.apk android-release/Good-App-v${{ steps.android_version.outputs.name }}.apk
-          printf '{"versionName":"%s","versionCode":%s,"commit":"%s"}\n' \
+          CERT_SHA256=$(keytool -printcert -jarfile android/app/build/outputs/apk/release/app-release.apk \
+            | sed -n 's/^[[:space:]]*SHA256: //p' | head -1 | tr -d ':')
+          test -n "$CERT_SHA256"
+          printf '{"versionName":"%s","versionCode":%s,"applicationId":"com.goodapp.mobile","signingCertSha256":"%s","commit":"%s"}\n' \
             '${{ steps.android_version.outputs.name }}' \
             '${{ steps.android_version.outputs.code }}' \
+            "$CERT_SHA256" \
             '${{ github.sha }}' > android-release/release-metadata.json
 
       - name: Publish Release APK artifact

@@ -8,7 +8,7 @@ import { isNativeApp } from "@/lib/native-google";
 import { Button } from "@/components/ui/button";
 
 /**
- * নেটিভ অ্যাপে নতুন ভার্সন এলে উপরে আপডেট ব্যানার দেখায়।
+ * নেটিভ অ্যাপে নতুন ভার্সন এলে উপরে আপডেট ব্যেনার দেখায়।
  * Admin Panel-এ নতুন APK আপলোড করলে apk_version বদলায় — সেটি ফোনে ইনস্টল
  * করা ভার্সনের সাথে না মিললেই ব্যানার আসে। আপডেট করে ফেললে নিজে থেকেই চলে যায়।
  */
@@ -105,8 +105,11 @@ export function AppUpdateBanner() {
   const forceBlocked =
     (data as any)?.forceUpdate === true &&
     (native ? isNewer(required, installed) : (data as any)?.forceUpdateWeb === true && !!required);
-  const isSocialRoute = /^\/(social|chat|feed|friends|videos|reels|watch|studio|channel|user)(\/|$)/.test(pathname);
-  const shouldShow = !!url && !!latest && !forceBlocked && !isSocialRoute && !hidden && (!native || (!!installed && isNewer(latest, installed))) && !/play\.google\.com/i.test(url);
+  
+  const isAdmin = /^\/admin(-login)?(\/|$)/.test(pathname);
+  const isSocialRoute = /^\/(social|chat|feed|friends|videos|reels|watch|studio|channel|user|profile)(\/|$)/.test(pathname);
+
+  const shouldShow = !!url && !!latest && !forceBlocked && !isAdmin && !isSocialRoute && !hidden && (!native || (!!installed && isNewer(latest, installed))) && !/play\.google\.com/i.test(url);
 
   useEffect(() => {
     if (!shouldShow) return;

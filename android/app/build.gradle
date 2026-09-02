@@ -10,11 +10,13 @@ android {
     namespace = "com.anamul.goodapp"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.anamul.goodapp"
+        // Permanent identity used by the originally installed Good-App builds.
+        // Never change this: Android would install a second app instead of updating.
+        applicationId "com.goodapp.mobile"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 33
-        versionName "1.33"
+        versionCode 34
+        versionName "1.34"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
