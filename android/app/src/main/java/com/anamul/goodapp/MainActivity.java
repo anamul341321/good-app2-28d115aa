@@ -487,6 +487,7 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        registerPlugin(UnityAdsPlugin.class);
         super.onCreate(savedInstanceState);
 
         WebView appWebView = bridge.getWebView();
