@@ -56,9 +56,28 @@ export async function showUnityInterstitial(testMode = false): Promise<boolean> 
 
 /** Rewarded দেখায় — ইউজার পুরোটা দেখলে true (রিওয়ার্ড দেওয়া যাবে) */
 export async function showUnityRewarded(testMode = false): Promise<boolean> {
-  if (!(await initUnityAds(testMode))) throw new Error("Unity Ads চালু করা যায়নি");
-  const r = await UnityAdsNative.show({ placementId: UNITY_ADS.rewarded });
-  return r.completed === true;
+  if (!(await initUnityAds(testMode))) throw new Error("অ্যাড চালু করা যায়নি — ইন্টারনেট দেখে আবার চেষ্টা করুন");
+  try {
+    const r = await UnityAdsNative.show({ placementId: UNITY_ADS.rewarded });
+    return r.completed === true;
+  } catch (e: any) {
+    throw new Error(friendlyAdError(e));
+  }
+}
+
+/** Unity-র টেকনিক্যাল এরর ইউজারের বোধগম্য বাংলা বার্তায় বদলে দেয় */
+export function friendlyAdError(e: any): string {
+  const raw = String(e?.message ?? e ?? "");
+  if (/NO_FILL|INVALID_ARGUMENT|adMarkup|objectId/i.test(raw)) {
+    return "এই মুহূর্তে কোনো অ্যাড পাওয়া যাচ্ছে না — কিছুক্ষণ পর আবার চেষ্টা করুন";
+  }
+  if (/AD_SHOW_FAILED|show failed/i.test(raw)) {
+    return "অ্যাড দেখানো যায়নি — আবার চেষ্টা করুন";
+  }
+  if (/init/i.test(raw)) {
+    return "অ্যাড চালু করা যায়নি — ইন্টারনেট দেখে আবার চেষ্টা করুন";
+  }
+  return "অ্যাড এখন পাওয়া যাচ্ছে না — একটু পরে চেষ্টা করুন";
 }
 
 export async function showUnityBanner(testMode = false): Promise<boolean> {
