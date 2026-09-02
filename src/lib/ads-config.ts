@@ -39,7 +39,8 @@ export async function loadAdsConfig(): Promise<AdsConfig> {
       const enabled = s?.adsEnabled === true;
       const cfg: AdsConfig = {
         enabled,
-        test: enabled && s?.adsTestMode === true,
+        // সবসময় live অ্যাড — কোনো test ad দেখানো হবে না (আয় হতে হবে)
+        test: false,
         banner: enabled && s?.adsBannerEnabled !== false,
         rewarded: enabled && s?.adsRewardedEnabled !== false,
         appOpen: enabled && s?.adsAppOpenEnabled !== false,

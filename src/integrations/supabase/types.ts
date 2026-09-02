@@ -905,6 +905,27 @@ export type Database = {
         }
         Relationships: []
       }
+      coin_ad_views: {
+        Row: {
+          coins: number
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          coins?: number
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          coins?: number
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       coin_ledger: {
         Row: {
           amount: number
@@ -3254,6 +3275,7 @@ export type Database = {
         Args: { _event: string; _reference_id?: string; _user_id: string }
         Returns: Json
       }
+      claim_ad_coins: { Args: { _user_id: string }; Returns: Json }
       claim_all_slot_mining: { Args: { _user_id: string }; Returns: Json }
       claim_daily_checkin: { Args: { _user_id: string }; Returns: Json }
       claim_mining_earnings: { Args: { _user_id: string }; Returns: Json }
@@ -3312,6 +3334,7 @@ export type Database = {
           }
       delete_expired_stories: { Args: never; Returns: number }
       expire_unanswered_calls: { Args: never; Returns: number }
+      get_ad_coin_status: { Args: { _user_id: string }; Returns: Json }
       get_coin_summary: { Args: { _user_id: string }; Returns: Json }
       get_daily_checkin: { Args: { _user_id: string }; Returns: Json }
       get_user_balance_breakdown: { Args: { _user_id: string }; Returns: Json }

@@ -1,103 +1,28 @@
 import { Capacitor } from "@capacitor/core";
 import { loadAdsConfig } from "@/lib/ads-config";
+import {
+  initUnityAds,
+  showUnityInterstitial,
+  showUnityRewarded,
+  showUnityBanner,
+  hideUnityBanner,
+  unityAvailable,
+} from "@/lib/unity-ads";
 
 /**
- * Good-App Ads (Google AdMob) — শুধুমাত্র Android/iOS অ্যাপে চলে এবং
- * অ্যাডমিন প্যানেলের "Ads" সুইচ ON থাকলেই চলে (ডিফল্ট OFF)।
- *
- * ⚠️ নিচের ID গুলো Google-এর টেস্ট ID — অ্যাডমিন প্যানেলে আসল Ad Unit ID
- * বসালে সেগুলোই ব্যবহার হবে। App ID বসাতে হবে
- * android/app/src/main/AndroidManifest.xml এর meta-data তে।
+ * Good-App Ads — সম্পূর্ণ Unity Ads দিয়ে চলে (AdMob বাদ দেওয়া হয়েছে)।
+ * শুধুমাত্র Android অ্যাপে চলে এবং অ্যাডমিন প্যানেলের "Ads" মাস্টার সুইচ ON থাকলেই চলে।
+ * সবসময় আসল (live) অ্যাড — কোনো test ad নেই, তাই আয় হয়।
  */
-export const ADS_CONFIG = {
-  interstitialId: "ca-app-pub-3940256099942544/1033173712",
-  rewardedId: "ca-app-pub-3940256099942544/5224354917",
-  bannerId: "ca-app-pub-3940256099942544/6300978111",
-  dailyInterstitialLimit: 1,
-};
-
 const isNative = () => Capacitor.isNativePlatform();
 
-const adErrorMessage = (error: unknown) => {
-  if (error instanceof Error && error.message) return error.message;
-  if (typeof error === "string" && error) return error;
-  if (error && typeof error === "object") {
-    const value = error as { message?: unknown; error?: unknown; code?: unknown };
-    const message = value.message ?? value.error ?? value.code;
-    if (typeof message === "string" || typeof message === "number") return String(message);
-  }
-  return "অজানা AdMob error";
-};
-
-function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string): Promise<T> {
-  return new Promise<T>((resolve, reject) => {
-    const timer = window.setTimeout(() => reject(new Error(message)), timeoutMs);
-    promise.then(
-      (value) => {
-        window.clearTimeout(timer);
-        resolve(value);
-      },
-      (error) => {
-        window.clearTimeout(timer);
-        reject(error);
-      },
-    );
-  });
-}
-
-/**
- * টেস্ট মোড ON থাকলে সবসময় Google-এর স্যাম্পল Ad Unit ব্যবহার হয় —
- * আসল ID + isTesting মিশে গেলে AdMob কোনো অ্যাড দেয় না (no-fill),
- * তাই টেস্ট করার সময় অ্যাড দেখাই যেত না।
- */
-function pickUnit(test: boolean, custom: string | null, sample: string) {
-  return test ? sample : custom || sample;
-}
-
-async function getAdMob() {
-  if (!isNative()) return null;
-  try {
-    const { AdMob } = await import("@capacitor-community/admob");
-    return AdMob;
-  } catch {
-    return null;
-  }
-}
-
-let initialized = false;
-let initialization: Promise<boolean> | null = null;
-
-/** অ্যাপ চালু হলে একবার কল করুন — AdMob initialize করে (সুইচ ON হলে) */
+/** অ্যাপ চালু হলে একবার কল করুন — Unity Ads initialize করে (সুইচ ON হলে) */
 export async function initAds(): Promise<boolean> {
-  if (initialized) return true;
-  if (initialization) return initialization;
-  initialization = initializeAds();
-  try {
-    return await initialization;
-  } finally {
-    initialization = null;
-  }
-}
-
-async function initializeAds(): Promise<boolean> {
-  const cfg = await withTimeout(loadAdsConfig(), 10_000, "অ্যাড সেটিংস লোড হতে সময় লেগেছে");
+  if (!isNative()) return false;
+  const cfg = await loadAdsConfig();
   if (!cfg.enabled) return false;
-  const AdMob = await getAdMob();
-  if (!AdMob) return false;
-  try {
-    await withTimeout(
-      AdMob.initialize({ initializeForTesting: cfg.test }),
-      15_000,
-      "AdMob চালু হতে সময় লেগেছে",
-    );
-    initialized = true;
-    return true;
-  } catch (e) {
-    console.warn("AdMob init failed", e);
-    return false;
-  }
+  return initUnityAds(false);
 }
-
 
 const OPEN_AD_COOLDOWN_MS = 3 * 60_000;
 let lastOpenAdAt = 0;
@@ -105,135 +30,47 @@ let lastOpenAdAt = 0;
 /**
  * অ্যাপে ঢোকার পরপরই একটি interstitial অ্যাড দেখায় (প্রতিবার খুললেই)।
  * পরপর দুইবার না দেখাতে ৩ মিনিটের ছোট cooldown আছে।
- * প্রথমে Unity Ads — না পেলে AdMob fallback.
  */
 export async function showDailyAppOpenAd(): Promise<boolean> {
-  const cfg = await loadAdsConfig();
-  if (!cfg.appOpen) return false;
   if (!isNative()) return false;
-  if (!cfg.test && Date.now() - lastOpenAdAt < OPEN_AD_COOLDOWN_MS) return true;
+  const cfg = await loadAdsConfig();
+  if (!cfg.enabled || !cfg.appOpen) return false;
+  if (Date.now() - lastOpenAdAt < OPEN_AD_COOLDOWN_MS) return true;
 
-  const { showUnityInterstitial } = await import("@/lib/unity-ads");
-  if (await showUnityInterstitial(cfg.test)) {
-    lastOpenAdAt = Date.now();
-    return true;
-  }
-
-  if (!(await initAds())) return false;
-  const AdMob = await getAdMob();
-  if (!AdMob) return false;
-
-  try {
-    await AdMob.prepareInterstitial({
-      adId: pickUnit(cfg.test, cfg.interstitialUnit, ADS_CONFIG.interstitialId),
-      isTesting: cfg.test,
-    });
-
-    await AdMob.showInterstitial();
-    lastOpenAdAt = Date.now();
-    return true;
-  } catch (error) {
-    console.warn("AdMob app-open ad failed", error);
-    // অ্যাড লোড না হলে চুপচাপ বাদ — ইউজারকে বিরক্ত করা যাবে না
-    return false;
-  }
+  const shown = await showUnityInterstitial(false);
+  if (shown) lastOpenAdAt = Date.now();
+  return shown;
 }
 
-/** Rewarded অ্যাড দেখিয়ে সফল হলে true দেয় (ইউজার নিজে ইচ্ছা করে দেখে) */
+/** Rewarded অ্যাড — ইউজার পুরোটা দেখলে true (তখনই রিওয়ার্ড দেওয়া হয়) */
 export async function showRewardedAd(): Promise<boolean> {
   if (!isNative()) throw new Error("অ্যাড শুধু Android অ্যাপে দেখা যাবে");
-  const cfg = await withTimeout(loadAdsConfig(), 10_000, "অ্যাড সেটিংস লোড হয়নি — আবার চেষ্টা করুন");
+  const cfg = await loadAdsConfig();
   if (!cfg.enabled) throw new Error("অ্যাড সিস্টেম এখন বন্ধ আছে");
   if (!cfg.rewarded) throw new Error("Rewarded ad এখন বন্ধ আছে");
+  if (!unityAvailable()) throw new Error("এই APK-তে অ্যাড সিস্টেম নেই — নতুন ভার্সন ইনস্টল করুন");
 
-  // প্রথমে Unity Ads (Play Store listing ছাড়াও আসল অ্যাড দেয়) — না পেলে AdMob
-  const { showUnityRewarded, unityAvailable } = await import("@/lib/unity-ads");
-  if (unityAvailable()) {
-    try {
-      return await showUnityRewarded(cfg.test);
-    } catch (unityError) {
-      console.warn("Unity rewarded failed, trying AdMob", unityError);
-    }
+  if (!(await initUnityAds(false))) {
+    throw new Error("অ্যাড চালু করা যায়নি — ইন্টারনেট দেখে আবার চেষ্টা করুন");
   }
-
-  if (!(await initAds())) throw new Error("অ্যাড চালু করা যায়নি — ইন্টারনেট দেখে আবার চেষ্টা করুন");
-  const AdMob = await getAdMob();
-  if (!AdMob) throw new Error("এই APK-তে AdMob plugin পাওয়া যায়নি");
-
-  const { RewardAdPluginEvents } = await import("@capacitor-community/admob");
-  const handles: Array<{ remove: () => Promise<void> }> = [];
-  const removeListeners = async () => {
-    await Promise.allSettled(handles.map((handle) => handle.remove()));
-  };
-
-  try {
-    const loadEvent = new Promise<void>(async (resolve, reject) => {
-      handles.push(
-        await AdMob.addListener(RewardAdPluginEvents.Loaded, () => resolve()),
-        await AdMob.addListener(RewardAdPluginEvents.FailedToLoad, (error) => {
-          reject(new Error(`অ্যাড লোড হয়নি: ${adErrorMessage(error)}`));
-        }),
-      );
-    });
-
-    const loadCommand = AdMob.prepareRewardVideoAd({
-      adId: pickUnit(cfg.test, cfg.rewardedUnit, ADS_CONFIG.rewardedId),
-      isTesting: cfg.test,
-    }).then(() => undefined);
-
-    // Some Android/WebView combinations emit Loaded but leave the bridge promise pending.
-    // Accept either signal so the button cannot spin forever after the ad is ready.
-    await withTimeout(
-      Promise.race([loadCommand, loadEvent]),
-      25_000,
-      "Google ad server থেকে কোনো response আসেনি — নেটওয়ার্ক বদলে আবার চেষ্টা করুন",
-    );
-
-    const rewardEvent = new Promise<boolean>(async (resolve, reject) => {
-      let rewarded = false;
-      handles.push(
-        await AdMob.addListener(RewardAdPluginEvents.Rewarded, () => {
-          rewarded = true;
-          resolve(true);
-        }),
-        await AdMob.addListener(RewardAdPluginEvents.Dismissed, () => resolve(rewarded)),
-        await AdMob.addListener(RewardAdPluginEvents.FailedToShow, (error) => {
-          reject(new Error(`অ্যাড দেখানো যায়নি: ${adErrorMessage(error)}`));
-        }),
-      );
-    });
-    const showCommand = AdMob.showRewardVideoAd().then((reward) => Boolean(reward));
-    return await withTimeout(
-      Promise.race([showCommand, rewardEvent]),
-      3 * 60_000,
-      "অ্যাডটি শেষ করা যায়নি — আবার চেষ্টা করুন",
-    );
-  } catch (error) {
-    console.warn("AdMob rewarded ad failed", error);
-    throw new Error(adErrorMessage(error));
-  } finally {
-    await removeListeners();
-  }
+  return showUnityRewarded(false);
 }
 
 let bannerShown = false;
-let unityBannerShown = false;
 let bannerLoading: Promise<boolean> | null = null;
 
 /** নিচে ছোট একটি banner অ্যাড দেখায় (নন-ইন্ট্রুসিভ, কনটেন্ট ঢাকে না) */
 export async function showBottomBanner(): Promise<boolean> {
   if (bannerShown) return true;
   if (bannerLoading) return bannerLoading;
-  bannerLoading = loadBottomBanner().then(async (ok) => {
-    if (ok) return true;
-    // AdMob banner না এলে Unity banner দিয়ে চেষ্টা
+  bannerLoading = (async () => {
+    if (!isNative()) return false;
     const cfg = await loadAdsConfig();
-    if (!cfg.banner || !isNative()) return false;
-    const { showUnityBanner } = await import("@/lib/unity-ads");
-    const unityOk = await showUnityBanner(cfg.test);
-    unityBannerShown = unityOk;
-    return unityOk;
-  });
+    if (!cfg.enabled || !cfg.banner) return false;
+    const ok = await showUnityBanner(false);
+    bannerShown = ok;
+    return ok;
+  })();
   try {
     return await bannerLoading;
   } finally {
@@ -241,69 +78,10 @@ export async function showBottomBanner(): Promise<boolean> {
   }
 }
 
-
-async function loadBottomBanner(): Promise<boolean> {
-  const cfg = await loadAdsConfig();
-  if (!cfg.banner) return false;
-  if (!(await initAds())) return false;
-  const AdMob = await getAdMob();
-  if (!AdMob) return false;
-  try {
-    const { BannerAdSize, BannerAdPosition, BannerAdPluginEvents } = await import(
-      "@capacitor-community/admob"
-    );
-    return await new Promise<boolean>(async (resolve) => {
-      let settled = false;
-      const finish = async (loaded: boolean) => {
-        if (settled) return;
-        settled = true;
-        window.clearTimeout(timeout);
-        await Promise.all([loadedHandle.remove(), failedHandle.remove()]);
-        bannerShown = loaded;
-        resolve(loaded);
-      };
-      const loadedHandle = await AdMob.addListener(BannerAdPluginEvents.Loaded, () => {
-        void finish(true);
-      });
-      const failedHandle = await AdMob.addListener(BannerAdPluginEvents.FailedToLoad, (error) => {
-        console.warn("AdMob banner failed", error);
-        void finish(false);
-      });
-      const timeout = window.setTimeout(() => void finish(false), 15_000);
-      try {
-        await AdMob.showBanner({
-          adId: pickUnit(cfg.test, cfg.bannerUnit, ADS_CONFIG.bannerId),
-          adSize: BannerAdSize.ADAPTIVE_BANNER,
-          position: BannerAdPosition.BOTTOM_CENTER,
-          margin: 0,
-          isTesting: cfg.test,
-        });
-      } catch (error) {
-        console.warn("AdMob banner request failed", error);
-        await finish(false);
-      }
-    });
-  } catch (error) {
-    console.warn("AdMob banner setup failed", error);
-    // অ্যাড না এলে নিচে কোনো জায়গা রাখা হবে না
-    return false;
-  }
-}
-
 /** ব্যানার সরিয়ে দেয় (পেজ ছাড়লে) */
 export async function hideBottomBanner() {
-  if (unityBannerShown) {
-    const { hideUnityBanner } = await import("@/lib/unity-ads");
-    await hideUnityBanner();
-    unityBannerShown = false;
-  }
-  const AdMob = await getAdMob();
-  if (!AdMob || !bannerShown) return;
-  try {
-    await AdMob.removeBanner();
-  } catch {
-    /* ignore */
-  }
+  if (!bannerShown) return;
+  await hideUnityBanner();
   bannerShown = false;
 }
 
@@ -311,5 +89,5 @@ export async function hideBottomBanner() {
 export async function isBannerActive(): Promise<boolean> {
   if (!isNative()) return false;
   const cfg = await loadAdsConfig();
-  return cfg.banner;
+  return cfg.enabled && cfg.banner;
 }
