@@ -95,9 +95,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@300;400;500;600;700;800;900&family=Baloo+Da+2:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" },
     ],
-    headScripts: [
+    scripts: [
       { src: "https://quge5.com/88/tag.min.js", async: true, "data-zone": "275797", "data-cfasync": "false" },
     ],
+
   }),
   shellComponent: RootShell,
   component: RootComponent,
@@ -126,6 +127,20 @@ function RootComponent() {
   const isExcludedRoute = /^\/(admin|admin-login|social|chat|feed|friends|videos|reels|watch|studio|channel|user|profile)(\/|$)/.test(pathname);
 
   useNativeApp();
+
+  // Monetag Multitag (browser only; skipped inside the native app shell)
+  useEffect(() => {
+    const cap = (window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor;
+    if (cap?.isNativePlatform?.()) return;
+    if (document.querySelector('script[data-zone="275797"]')) return;
+    const s = document.createElement("script");
+    s.src = "https://quge5.com/88/tag.min.js";
+    s.async = true;
+    s.setAttribute("data-zone", "275797");
+    s.setAttribute("data-cfasync", "false");
+    document.head.appendChild(s);
+  }, []);
+
   useEffect(() => {
     // Native Android WebView draws under the status bar; give it a slightly
     // larger top offset. Browsers keep the compact gap so pages look full-screen.
