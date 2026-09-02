@@ -79,6 +79,7 @@ const REASON_META: Record<string, { bn: string; icon: any; color: string }> = {
   story: { bn: "স্টোরি দিয়েছেন", icon: Sparkles, color: "text-violet-300" },
   comment: { bn: "কমেন্ট করেছেন", icon: MessageCircle, color: "text-emerald-300" },
   message: { bn: "মেসেজ পাঠিয়েছেন", icon: MessageCircle, color: "text-emerald-300" },
+  ad_watch: { bn: "অ্যাড দেখে আয়", icon: PlayCircle, color: "text-yellow-300" },
 };
 
 function CoinWalletPage() {
