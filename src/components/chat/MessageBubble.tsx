@@ -442,6 +442,14 @@ export function MessageBubble({
           )}
 
 
+          {!m.deleted && m.mediaMeta?.story_id && (
+            <StoryMentionCard
+              path={m.mediaMeta.story_image as string | null}
+              mine={mine}
+              ownerName={(m.mediaMeta.story_owner_name as string | null) ?? undefined}
+            />
+          )}
+
           {m.deleted ? (
             <p className="flex items-center gap-1.5 text-xs font-bold italic opacity-80">
               <Ban className="h-3.5 w-3.5" /> Message deleted
