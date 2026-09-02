@@ -217,6 +217,7 @@ export async function showRewardedAd(): Promise<boolean> {
 }
 
 let bannerShown = false;
+let unityBannerShown = false;
 let bannerLoading: Promise<boolean> | null = null;
 
 /** নিচে ছোট একটি banner অ্যাড দেখায় (নন-ইন্ট্রুসিভ, কনটেন্ট ঢাকে না) */
@@ -291,6 +292,11 @@ async function loadBottomBanner(): Promise<boolean> {
 
 /** ব্যানার সরিয়ে দেয় (পেজ ছাড়লে) */
 export async function hideBottomBanner() {
+  if (unityBannerShown) {
+    const { hideUnityBanner } = await import("@/lib/unity-ads");
+    await hideUnityBanner();
+    unityBannerShown = false;
+  }
   const AdMob = await getAdMob();
   if (!AdMob || !bannerShown) return;
   try {
