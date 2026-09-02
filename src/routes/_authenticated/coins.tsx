@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   ChevronLeft, Coins, Sparkles, Repeat, Film, Image as ImageIcon,
   MessageCircle, Video, TrendingUp, CalendarClock, Gift, Lock,
-  Send, History, ChevronRight, ShieldCheck, Loader2,
+  Send, History, ChevronRight, ShieldCheck, Loader2, PlayCircle,
 } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCoinSummary } from "@/components/social/CoinWallet";
