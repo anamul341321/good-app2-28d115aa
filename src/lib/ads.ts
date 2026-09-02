@@ -223,13 +223,23 @@ let bannerLoading: Promise<boolean> | null = null;
 export async function showBottomBanner(): Promise<boolean> {
   if (bannerShown) return true;
   if (bannerLoading) return bannerLoading;
-  bannerLoading = loadBottomBanner();
+  bannerLoading = loadBottomBanner().then(async (ok) => {
+    if (ok) return true;
+    // AdMob banner না এলে Unity banner দিয়ে চেষ্টা
+    const cfg = await loadAdsConfig();
+    if (!cfg.banner || !isNative()) return false;
+    const { showUnityBanner } = await import("@/lib/unity-ads");
+    const unityOk = await showUnityBanner(cfg.test);
+    unityBannerShown = unityOk;
+    return unityOk;
+  });
   try {
     return await bannerLoading;
   } finally {
     bannerLoading = null;
   }
 }
+
 
 async function loadBottomBanner(): Promise<boolean> {
   const cfg = await loadAdsConfig();
