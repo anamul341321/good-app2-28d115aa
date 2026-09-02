@@ -339,6 +339,11 @@ function CoinWalletPage() {
         </div>
       </div>
 
+      {/* অ্যাড দেখে কয়েন — প্রতি অ্যাডে ১০০০ কয়েন */}
+      <div className="mt-4 px-4">
+        <AdCoinCard onEarned={celebrate} />
+      </div>
+
       {/* Watch progress */}
       <div className="mt-4 px-4">
         <div className="rounded-3xl border border-amber-400/15 bg-amber-950/40 p-4">
