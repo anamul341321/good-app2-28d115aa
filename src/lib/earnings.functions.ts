@@ -2,6 +2,21 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
+/**
+ * মাইনিং ক্লেইমের শর্ত: আজ অ্যাপে কমপক্ষে ১ ঘণ্টা অ্যাক্টিভ থাকতে হবে।
+ * সময়টা একবারে লাগে না — সারাদিনে মিলিয়ে ১ ঘণ্টা হলেই চলবে।
+ */
+async function requireDailyActive(supabase: any, userId: string) {
+  const { data } = await supabase.rpc("get_daily_activity", { _user_id: userId });
+  const seconds = Number((data as any)?.seconds ?? 0);
+  const required = Number((data as any)?.required ?? 3600);
+  if (seconds >= required) return;
+  const leftMin = Math.max(1, Math.ceil((required - seconds) / 60));
+  throw new Error(
+    `⏳ আজ মাইনিং ক্লেইম করতে অ্যাপে কমপক্ষে ১ ঘণ্টা অ্যাক্টিভ থাকতে হবে — আর ${leftMin} মিনিট বাকি।`,
+  );
+}
+
 export type EarningRow = {
   id: string;
   kind: string;
