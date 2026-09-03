@@ -1,11 +1,14 @@
 import { useEffect } from "react";
 import { Capacitor } from "@capacitor/core";
+import { useRouterState } from "@tanstack/react-router";
 
 /**
  * Starts native app-open ads from the app lifecycle rather than from a page.
  * This keeps the request working across login redirects and route changes.
  */
 export function NativeAdsController() {
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
 
@@ -60,6 +63,14 @@ export function NativeAdsController() {
       void removeAppListener?.();
     };
   }, []);
+
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform() || pathname.startsWith("/call")) return;
+    const timer = window.setTimeout(() => {
+      void import("@/lib/ads").then(({ showDailyAppOpenAd }) => showDailyAppOpenAd());
+    }, 1_200);
+    return () => window.clearTimeout(timer);
+  }, [pathname]);
 
   return null;
 }

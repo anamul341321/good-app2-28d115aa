@@ -18,3 +18,4 @@
 - [x] Public /account-deletion page (Play Console data deletion URL)
 - [x] PLAYSTORE_LISTING.md — descriptions, data safety answers, content rating, reject checklist
 - [x] Fix click-blocking: remove blank sandboxed ad iframe/overlay, inject Monetag directly only on public pages (logged-out), persist web update-banner dismissal 12h, hide it on /download
+- [x] Restore native monetization throughout the app: wait for real Unity banner load, show banners on every authenticated screen except active calls, and retry interstitials safely on navigation

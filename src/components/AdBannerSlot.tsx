@@ -2,8 +2,8 @@ import { useEffect } from "react";
 import { useRouterState } from "@tanstack/react-router";
 import { showBottomBanner, hideBottomBanner, isBannerActive } from "@/lib/ads";
 
-/** যেসব স্ক্রিনে ব্যানার দেখানো হবে না (ফুল-স্ক্রিন / বিরক্তিকর হয়) */
-const BLOCKED = ["/reels", "/chat", "/call", "/video", "/story", "/messenger"];
+/** Active call-এ native controls ঢেকে যেতে পারে; বাকি সব authenticated screen-এ banner থাকে। */
+const BLOCKED = ["/call"];
 
 /**
  * নিচে ছোট AdMob banner (শুধু অ্যাপে + অ্যাডমিন সুইচ ON হলে)।
