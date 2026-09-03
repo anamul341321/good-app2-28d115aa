@@ -20,6 +20,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { LanguageProvider } from "@/lib/i18n";
 import { useNativeApp } from "@/hooks/useNativeApp";
 import { NativeAdsController } from "@/components/NativeAdsController";
+import { MonetagAdFrame } from "@/components/MonetagAdFrame";
 
 function NotFoundComponent() {
   return (
@@ -129,32 +130,19 @@ function RootComponent() {
 
   useNativeApp();
 
-  // Monetag Multitag — শুধু পাবলিক/মার্কেটিং পেজে (ব্রাউজারে)।
-  // অ্যাপের ভেতরের পেজে (claim, wallet, coins, chat…) কোনো অ্যাড ইনজেক্ট হয় না,
-  // তাই ইউজারের ক্লিক ভুল করে অ্যাডে চলে যায় না।
-  const adsAllowed = /^\/(download|privacy|terms|child-safety|data-safety|account-deletion|card\/)?$/.test(
-    pathname === "/" ? "/" : pathname.replace(/\/+$/, "")
-  );
+  // Monetag Multitag আর সরাসরি পেজে ইনজেক্ট হয় না। সব অ্যাড এখন
+  // sandboxed iframe (MonetagAdFrame)-এর ভিতরে চলে — সব ফরম্যাট দেখা যায়,
+  // কিন্তু popunder/onclick স্ক্রিপ্ট অ্যাপের বাটনের ক্লিক দখল করতে পারে না।
+  const isNativeShell =
+    typeof window !== "undefined" &&
+    Boolean(
+      (window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor?.isNativePlatform?.(),
+    );
+  const showWebAd = !isNativeShell && !/^\/admin/.test(pathname);
 
   useEffect(() => {
-    const cap = (window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor;
-    if (cap?.isNativePlatform?.()) return;
-
-    const existing = document.querySelector('script[data-zone="275797"]');
-
-    if (adsAllowed) {
-      if (existing) return;
-      const s = document.createElement("script");
-      s.src = "https://quge5.com/88/tag.min.js";
-      s.async = true;
-      s.setAttribute("data-zone", "275797");
-      s.setAttribute("data-cfasync", "false");
-      document.head.appendChild(s);
-      return;
-    }
-
-    // অ্যাপ পেজে ঢুকলে ট্যাগ ও তার ফিক্সড ওভারলে সরিয়ে দেওয়া হয়
-    existing?.remove();
+    // পুরনো ইনজেক্ট করা ট্যাগ ও তার ফিক্সড ওভারলে সরিয়ে দেওয়া হয়
+    document.querySelector('script[data-zone="275797"]')?.remove();
     const cleanup = () => {
       document.querySelectorAll("body > iframe, body > ins").forEach((el) => el.remove());
       document.querySelectorAll<HTMLElement>("body > div").forEach((el) => {
@@ -168,7 +156,12 @@ function RootComponent() {
     cleanup();
     const t = window.setTimeout(cleanup, 1200);
     return () => window.clearTimeout(t);
-  }, [adsAllowed]);
+  }, [pathname]);
+
+  useEffect(() => {
+    document.body.classList.toggle("web-ad-on", showWebAd);
+    return () => document.body.classList.remove("web-ad-on");
+  }, [showWebAd]);
 
 
   useEffect(() => {
@@ -212,6 +205,15 @@ function RootComponent() {
         {!isExcludedRoute && <AppUpdateBanner />}
         {!isExcludedRoute && <ForceUpdateGate />}
         <Outlet />
+
+        {showWebAd && (
+          <div
+            data-app-ui
+            className="fixed inset-x-0 bottom-0 z-[60] border-t border-border bg-surface/95 px-2 pb-1 pt-0.5 backdrop-blur"
+          >
+            <MonetagAdFrame height={90} />
+          </div>
+        )}
 
         <Toaster theme="dark" position="top-center" richColors />
       </LanguageProvider>
