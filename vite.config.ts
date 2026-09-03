@@ -7,6 +7,7 @@
 import path from "path";
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 import { loadEnv } from "vite";
+import { liteStrip } from "./vite-lite-strip";
 
 // Load all env vars (including non-VITE_ prefixed like SUPABASE_SERVICE_ROLE_KEY)
 // into process.env so server routes can read them. Do NOT expose these in envDefine.
@@ -21,6 +22,7 @@ export default defineConfig({
     server: { entry: "server" },
   },
   vite: {
+    plugins: [liteStrip()],
     resolve: {
       alias: {
         // Pin entities to the hoisted v4.5.0 copy; v7+ removed ./lib/decode.js and breaks React Email SSR.
