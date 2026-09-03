@@ -416,7 +416,7 @@ function HomePage() {
               }}
               onOpenPhoto={(url) => setLightbox({ url, label: t("আমার নিজের ছবি · Slot #1", "My own photo · Slot #1") })} />
             <SlotClaimButton claim={lite ? null : claimBySlot.get(Number(mainTask.slot))}
-              preview={previewClaim(mainTask)}
+              preview={lite ? null : previewClaim(mainTask)}
               onReverify={() => router.navigate({ to: "/reverify", search: { taskId: mainTask.id } as any })} />
             <SlotSelfReset slot={Number(mainTask.slot)} disabled={mainTask.status === "empty"} />
             </div>
@@ -534,7 +534,7 @@ function HomePage() {
                             }}
                             onOpenPhoto={(url) => setLightbox({ url, label: t(`সাক্ষী #${task.slot} · ${(task as any).face_label || "মুখ"}`, `Witness #${task.slot} · ${(task as any).face_label || "Face"}`) })} />
                           <SlotClaimButton claim={lite ? null : claimBySlot.get(Number(task.slot))} compact
-                            preview={previewClaim(task)}
+                            preview={lite ? null : previewClaim(task)}
                             onReverify={() => router.navigate({ to: "/reverify", search: { taskId: task.id } as any })} />
                           <SlotSelfReset slot={Number(task.slot)} disabled={task.status === "empty"} />
                           </div>

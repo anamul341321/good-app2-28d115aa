@@ -71,15 +71,15 @@ const EARN_ITEMS: EarnItem[] = [
 ];
 
 const REASON_META: Record<string, { bn: string; icon: any; color: string }> = {
-  telegram_join: { bn: "টেলিগ্রাম জয়েন বোনাস", icon: Send, color: "text-sky-300" },
-  daily_checkin: { bn: "ডেইলি চেক-ইন বোনাস", icon: Gift, color: "text-emerald-300" },
-  watch: { bn: "ভিডিও দেখে আয়", icon: Video, color: "text-amber-300" },
+  telegram_join: { bn: "টেলিগ্রাম জয়েন পয়েন্ট", icon: Send, color: "text-sky-300" },
+  daily_checkin: { bn: "ডেইলি চেক-ইন পয়েন্ট", icon: Gift, color: "text-emerald-300" },
+  watch: { bn: "ভিডিও দেখার পয়েন্ট", icon: Video, color: "text-amber-300" },
   reel: { bn: "রিলস আপলোড", icon: Film, color: "text-pink-300" },
   post: { bn: "পোস্ট করেছেন", icon: ImageIcon, color: "text-sky-300" },
   story: { bn: "স্টোরি দিয়েছেন", icon: Sparkles, color: "text-violet-300" },
   comment: { bn: "কমেন্ট করেছেন", icon: MessageCircle, color: "text-emerald-300" },
   message: { bn: "মেসেজ পাঠিয়েছেন", icon: MessageCircle, color: "text-emerald-300" },
-  ad_watch: { bn: "অ্যাড দেখে আয়", icon: PlayCircle, color: "text-yellow-300" },
+  ad_watch: { bn: "অ্যাড দেখার পয়েন্ট", icon: PlayCircle, color: "text-yellow-300" },
 };
 
 function CoinWalletPage() {
@@ -104,7 +104,7 @@ function CoinWalletPage() {
       const res = await claimDailyCheckin();
       if (res.awarded > 0) {
         celebrate();
-        toast.success(`ডেইলি চেক-ইন বোনাস +${res.awarded} কয়েন! 🪙`);
+        toast.success(`ডেইলি চেক-ইন পয়েন্ট +${res.awarded} কয়েন! 🪙`);
       } else if (res.already) {
         toast.info("আজকের চেক-ইন আগেই নেওয়া হয়েছে");
       } else {
@@ -140,9 +140,9 @@ function CoinWalletPage() {
       if (res.awarded > 0) {
         celebrate();
         setAskUsername(false);
-        toast.success(`টেলিগ্রাম জয়েন বোনাস +${res.awarded} কয়েন! 🪙`);
+        toast.success(`টেলিগ্রাম জয়েন পয়েন্ট +${res.awarded} কয়েন! 🪙`);
       } else if (res.already) {
-        toast.info("আপনি আগেই এই বোনাস নিয়েছেন");
+        toast.info("আপনি আগেই এই পয়েন্ট নিয়েছেন");
       } else if (res.error === "duplicate") {
         toast.error("এই username দিয়ে আগেই ক্লেইম করা হয়েছে — নিজের username দিন");
       } else if (res.error === "not_found") {
@@ -245,7 +245,7 @@ function CoinWalletPage() {
         </div>
       </div>
 
-      {lite && <div className="mx-4 mt-3 rounded-2xl border border-cyan-400/25 bg-cyan-500/10 p-3 text-center text-[11px] font-bold leading-relaxed text-cyan-100">Good Coin শুধু অ্যাপের ভেতরের অ্যাক্টিভিটি পয়েন্ট। এটি টাকা নয় এবং নগদে রূপান্তর বা উত্তোলন করা যায় না।</div>}
+      {lite && <div className="mx-4 mt-3 rounded-2xl border border-cyan-400/25 bg-cyan-500/10 p-3 text-center text-[11px] font-bold leading-relaxed text-cyan-100">Good Coin শুধু অ্যাপের ভেতরের নন-পারচেজেবল ও নন-ট্রান্সফারেবল অ্যাক্টিভিটি পয়েন্ট; এর বাস্তব জগতের কোনো মূল্য নেই।</div>}
 
       {/* Telegram verify + claim */}
       <div className="mt-4 px-4">
@@ -257,7 +257,7 @@ function CoinWalletPage() {
             <div className="min-w-0">
               <p className="text-[15px] font-black text-sky-50">টেলিগ্রাম গ্রুপে জয়েন করুন</p>
               <p className="text-[12px] font-bold text-sky-200/70">
-                {joined ? "✅ যাচাই সম্পন্ন — বোনাস নেওয়া হয়েছে" : `জয়েন করে ক্লেইম করলেই +${COIN_RATES.telegram} কয়েন`}
+                {joined ? "✅ যাচাই সম্পন্ন — পয়েন্ট নেওয়া হয়েছে" : `জয়েন করে ক্লেইম করলেই +${COIN_RATES.telegram} কয়েন`}
               </p>
             </div>
           </div>
@@ -317,7 +317,7 @@ function CoinWalletPage() {
           )}
 
           <p className="mt-2.5 text-[11px] font-bold leading-relaxed text-amber-200/70">
-            🔐 প্রতিটি username দিয়ে একবারই বোনাস নেওয়া যাবে। username টি গ্রুপে খুঁজে না পেলে গ্রুপে একটি মেসেজ দিন বা বটে
+            🔐 প্রতিটি username দিয়ে একবারই পয়েন্ট নেওয়া যাবে। username টি গ্রুপে খুঁজে না পেলে গ্রুপে একটি মেসেজ দিন বা বটে
             <span className="text-sky-200"> /start</span> দিন, তারপর আবার ক্লেইম করুন।
           </p>
         </div>
@@ -347,7 +347,7 @@ function CoinWalletPage() {
         <div className="rounded-3xl border border-amber-400/15 bg-amber-950/40 p-4">
           <div className="flex items-center justify-between">
             <p className="flex items-center gap-2 text-[13px] font-black text-amber-100">
-              <Video className="h-4 w-4 text-amber-400" /> ভিডিও দেখে আজকের আয়
+              <Video className="h-4 w-4 text-amber-400" /> ভিডিও দেখে আজকের পয়েন্ট
             </p>
             <p className="text-[12px] font-black tabular-nums text-amber-300">
               {formatCoins(data?.watch_today)} / {formatCoins(watchCap)} 🪙
