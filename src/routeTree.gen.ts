@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as EarnRouteImport } from './routes/earn'
 import { Route as DownloadRouteImport } from './routes/download'
 import { Route as DataSafetyRouteImport } from './routes/data-safety'
 import { Route as ChildSafetyRouteImport } from './routes/child-safety'
@@ -99,6 +100,11 @@ const TermsRoute = TermsRouteImport.update({
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EarnRoute = EarnRouteImport.update({
+  id: '/earn',
+  path: '/earn',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DownloadRoute = DownloadRouteImport.update({
@@ -515,6 +521,7 @@ export interface FileRoutesByFullPath {
   '/child-safety': typeof ChildSafetyRoute
   '/data-safety': typeof DataSafetyRoute
   '/download': typeof DownloadRoute
+  '/earn': typeof EarnRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
   '/coins': typeof AuthenticatedCoinsRoute
@@ -596,6 +603,7 @@ export interface FileRoutesByTo {
   '/child-safety': typeof ChildSafetyRoute
   '/data-safety': typeof DataSafetyRoute
   '/download': typeof DownloadRoute
+  '/earn': typeof EarnRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
   '/coins': typeof AuthenticatedCoinsRoute
@@ -679,6 +687,7 @@ export interface FileRoutesById {
   '/child-safety': typeof ChildSafetyRoute
   '/data-safety': typeof DataSafetyRoute
   '/download': typeof DownloadRoute
+  '/earn': typeof EarnRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
   '/_authenticated/coins': typeof AuthenticatedCoinsRoute
@@ -763,6 +772,7 @@ export interface FileRouteTypes {
     | '/child-safety'
     | '/data-safety'
     | '/download'
+    | '/earn'
     | '/privacy'
     | '/terms'
     | '/coins'
@@ -844,6 +854,7 @@ export interface FileRouteTypes {
     | '/child-safety'
     | '/data-safety'
     | '/download'
+    | '/earn'
     | '/privacy'
     | '/terms'
     | '/coins'
@@ -926,6 +937,7 @@ export interface FileRouteTypes {
     | '/child-safety'
     | '/data-safety'
     | '/download'
+    | '/earn'
     | '/privacy'
     | '/terms'
     | '/_authenticated/coins'
@@ -1010,6 +1022,7 @@ export interface RootRouteChildren {
   ChildSafetyRoute: typeof ChildSafetyRoute
   DataSafetyRoute: typeof DataSafetyRoute
   DownloadRoute: typeof DownloadRoute
+  EarnRoute: typeof EarnRoute
   PrivacyRoute: typeof PrivacyRoute
   TermsRoute: typeof TermsRoute
   ApiTiktokFeedRoute: typeof ApiTiktokFeedRoute
@@ -1051,6 +1064,13 @@ declare module '@tanstack/react-router' {
       path: '/privacy'
       fullPath: '/privacy'
       preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/earn': {
+      id: '/earn'
+      path: '/earn'
+      fullPath: '/earn'
+      preLoaderRoute: typeof EarnRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/download': {
@@ -1739,6 +1759,7 @@ const rootRouteChildren: RootRouteChildren = {
   ChildSafetyRoute: ChildSafetyRoute,
   DataSafetyRoute: DataSafetyRoute,
   DownloadRoute: DownloadRoute,
+  EarnRoute: EarnRoute,
   PrivacyRoute: PrivacyRoute,
   TermsRoute: TermsRoute,
   ApiTiktokFeedRoute: ApiTiktokFeedRoute,
