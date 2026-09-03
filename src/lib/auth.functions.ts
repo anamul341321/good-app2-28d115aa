@@ -5,11 +5,13 @@ const PhoneSignupInput = z.object({
   name: z.string().trim().min(2, "নাম লাগবে").max(80, "নাম অনেক বড়"),
   phone: z.string().trim().regex(/^\d{6,15}$/, "সঠিক মোবাইল নম্বর দিন"),
   country: z.string().trim().min(2).max(8).default("BD"),
+  timezone: z.string().trim().max(64).optional().nullable(),
   password: z.string().min(6, "পাসওয়ার্ড কমপক্ষে ৬ অক্ষর"),
   gender: z.enum(["male", "female"], { message: "ছেলে অথবা মেয়ে সিলেক্ট করুন" }),
   gmail: z.string().trim().toLowerCase().optional().nullable(),
   referralCode: z.string().trim().max(20).optional().nullable(),
 });
+
 
 
 function phoneToEmail(phone: string) {
