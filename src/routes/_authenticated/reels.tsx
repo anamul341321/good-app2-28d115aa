@@ -873,6 +873,14 @@ function LocalReel({
       {/* ট্যাপ লেয়ার — এক ট্যাপে পজ, ডাবল ট্যাপে লাভ */}
       <div className="absolute inset-0 z-10" onClick={handleTap} />
 
+      {buffering && isActive && !paused && (
+        <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+          <Loader2 className="h-10 w-10 animate-spin text-white/90 drop-shadow-lg" />
+        </div>
+      )}
+
+
+
       {paused && (
         <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
           <Play className="h-16 w-16 text-white/80 drop-shadow-lg" />
