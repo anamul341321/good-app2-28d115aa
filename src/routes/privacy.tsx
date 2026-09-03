@@ -169,6 +169,8 @@ function PrivacyPage() {
         হোমে ফিরুন
       </Link>
 
+      <PolicyLangBar kind="privacy" />
+
       <header className="text-center space-y-2">
         <div
           className="inline-flex w-14 h-14 rounded-2xl items-center justify-center"

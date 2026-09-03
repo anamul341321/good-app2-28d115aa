@@ -122,6 +122,8 @@ function TermsPage() {
           <ArrowLeft className="w-3.5 h-3.5" /> ফিরে যান
         </Link>
 
+        <PolicyLangBar kind="terms" />
+
         <header className="premium-panel rounded-2xl p-5 text-center">
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl gradient-navy mb-3">
             <FileText className="w-7 h-7 text-gold" />
