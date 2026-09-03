@@ -183,7 +183,7 @@ function HomePage() {
           <span className="block text-sm font-black leading-tight">{t("আরও আয় করুন", "Earn More")}</span>
         </span>
         <span className="text-[10px] font-black text-white/90">
-          {t("অ্যাড দেখে কয়েন", "Watch ads → coins")}
+          {t("কয়েন ওয়ালেট", "Coin wallet")}
         </span>
       </Link>
     </div>
