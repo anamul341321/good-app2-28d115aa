@@ -144,11 +144,12 @@ function RootComponent() {
     const ownNodes = new Set<Element>(Array.from(document.body.children));
     const vignetteZones = ["11713170", "11713348", "11713413"];
 
-    // এক ঘণ্টায় সর্বোচ্চ ২৫টি request — ঘণ্টা শেষ হলে কাউন্টার আবার শুরু হয়,
-    // তাই লম্বা session-এও ads বন্ধ হয়ে যায় না।
+    // এক ঘণ্টায় সর্বোচ্চ ১২টি request (৫ মিনিট পর পর) — ঘণ্টা শেষ হলে কাউন্টার
+    // আবার শুরু হয়, তাই লম্বা session-এও ads বন্ধ হয়ে যায় না।
     const SESSION_KEY = "monetag_window";
-    const MAX_PER_WINDOW = 25;
+    const MAX_PER_WINDOW = 12;
     const WINDOW_MS = 60 * 60_000;
+
     const readWindow = () => {
       try {
         const raw = JSON.parse(sessionStorage.getItem(SESSION_KEY) || "{}");
