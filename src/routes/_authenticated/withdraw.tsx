@@ -114,7 +114,7 @@ function WithdrawPage() {
     isOpen: monthlyWindow.isOpen,
     boosts: adBoost?.boosts ?? 0,
   });
-  const withdrawClosed = withdrawWindowInfo(now).isClosed || adminWithdrawOff || !boostInfo.unlocked;
+  const withdrawClosed = withdrawWindowInfo(now).isClosed || adminWithdrawOff || !monthlyWindow.isOpen;
 
   return (
     <div className="space-y-4 pt-2">
