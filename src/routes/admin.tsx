@@ -6,8 +6,9 @@ import { adminStats } from "@/lib/admin.functions";
 import {
   Users, ArrowDownToLine, ScanFace, LogOut, Loader2, AlertTriangle,
   LayoutDashboard, Clock, Wallet, ShieldCheck, Gift, Bot,
-  Fuel, Package
+  Fuel, Package, Globe2
 } from "lucide-react";
+
 
 import { useEffect, useState } from "react";
 
