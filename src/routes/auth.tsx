@@ -760,8 +760,8 @@ export function AuthPage() {
               </span>
               <span className="text-[10px] font-bold opacity-90">
                 {mode === "login"
-                  ? "লাইভ ক্যামেরায় মুখ স্ক্যান করলেই একাউন্ট চিনে নেবে"
-                  : "ধাপে ধাপে তথ্য দিন — শেষে ফেস ভেরিফিকেশন খুলবে"}
+                  ? t("লাইভ ক্যামেরায় মুখ স্ক্যান করলেই একাউন্ট চিনে নেবে", "Scan your face on the live camera and we recognise your account")
+                  : t("ধাপে ধাপে তথ্য দিন — শেষে ফেস ভেরিফিকেশন খুলবে", "Fill the steps — face verification opens at the end")}
               </span>
 
             </button>
@@ -771,7 +771,7 @@ export function AuthPage() {
             {mode === "signup" && (
               <div data-voice="auth.name">
                 <label className="text-[11px] font-black text-emerald uppercase tracking-wider">
-                  নাম
+                  {t("নাম", "Full name")}
                 </label>
                 <input
                   required
@@ -784,7 +784,7 @@ export function AuthPage() {
             {mode === "login" ? (
               <div data-voice="auth.phone">
                 <label className="text-[11px] font-black text-cyan uppercase tracking-wider">
-                  মোবাইল নম্বর অথবা Gmail
+                  {t("মোবাইল নম্বর অথবা Gmail", "Mobile number or Gmail")}
                 </label>
                 <input
                   required
@@ -793,13 +793,19 @@ export function AuthPage() {
                   autoComplete="username"
                   autoCapitalize="none"
                   spellCheck={false}
-                  placeholder="01XXXXXXXXX অথবা yourname@gmail.com"
+                  placeholder={t("01XXXXXXXXX অথবা yourname@gmail.com", "01XXXXXXXXX or yourname@gmail.com")}
                   className="w-full mt-1 px-4 py-3 bg-white border-2 border-border rounded-xl text-sm outline-none focus:border-cyan text-navy transition"
                 />
                 <p className="text-[10px] text-muted-foreground mt-1">
                   {otpEnabled
-                    ? "যেটা সহজ সেটাই দিন — লগইনের সময় আপনার Gmail-এ ৬ ডিজিটের কোড যাবে।"
-                    : "যেটা সহজ সেটাই দিন — যাদের Gmail যোগ করা আছে, তাদের লগইনে Gmail-এ ৬ ডিজিটের কোড যাবে (2-Step সিকিউরিটি)।"}
+                    ? t(
+                        "যেটা সহজ সেটাই দিন — লগইনের সময় আপনার Gmail-এ ৬ ডিজিটের কোড যাবে।",
+                        "Use whichever is easier — a 6-digit code will be sent to your Gmail when you log in.",
+                      )
+                    : t(
+                        "যেটা সহজ সেটাই দিন — যাদের Gmail যোগ করা আছে, তাদের লগইনে Gmail-এ ৬ ডিজিটের কোড যাবে (2-Step সিকিউরিটি)।",
+                        "Use whichever is easier — accounts with a Gmail linked get a 6-digit login code (2-step security).",
+                      )}
                 </p>
               </div>
             ) : (
@@ -833,7 +839,7 @@ export function AuthPage() {
                   required
                   value={phone}
                   onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, phoneMax))}
-                  placeholder={countryCode === "BD" ? "০১XXXXXXXXX (১১ ডিজিট)" : `${phoneMax} digits`}
+                  placeholder={countryCode === "BD" ? "01XXXXXXXXX (11 digits)" : `${phoneMax} digits`}
                   maxLength={phoneMax}
                   autoComplete="tel"
                   className="w-full mt-1 px-4 py-3 bg-white border-2 border-border rounded-xl text-sm outline-none focus:border-cyan mono-num text-navy transition"
@@ -844,7 +850,7 @@ export function AuthPage() {
             {mode === "signup" && otpEnabled && (
               <div data-voice="auth.email">
                 <label className="text-[11px] font-black text-rose uppercase tracking-wider">
-                  📧 Gmail (ভেরিফিকেশন লাগবে)
+                  📧 {t("Gmail (ভেরিফিকেশন লাগবে)", "Gmail (verification required)")}
                 </label>
                 <input
                   type="email"
@@ -857,20 +863,22 @@ export function AuthPage() {
                   className="w-full mt-1 px-4 py-3 bg-white border-2 border-border rounded-xl text-sm outline-none focus:border-rose text-navy transition"
                 />
                 <p className="text-[10px] text-muted-foreground mt-1">
-                  একাউন্ট খোলার পর এই Gmail-এ কোড যাবে — কোড বসালেই Gmail লিংক হবে ও পাসওয়ার্ড ভুলে
-                  গেলে নিজেই রিসেট করতে পারবেন।
+                  {t(
+                    "একাউন্ট খোলার পর এই Gmail-এ কোড যাবে — কোড বসালেই Gmail লিংক হবে ও পাসওয়ার্ড ভুলে গেলে নিজেই রিসেট করতে পারবেন।",
+                    "After signup a code is sent to this Gmail — entering it links your Gmail so you can reset your own password later.",
+                  )}
                 </p>
               </div>
             )}
             {mode === "signup" && (
               <div data-voice="auth.gender">
                 <label className="text-[11px] font-black text-violet uppercase tracking-wider">
-                  আপনি ছেলে না মেয়ে?
+                  {t("আপনি ছেলে না মেয়ে?", "Are you male or female?")}
                 </label>
                 <div className="mt-1 grid grid-cols-2 gap-2">
                   {([
-                    { key: "male", label: "ছেলে", icon: "/avatar-male.png" },
-                    { key: "female", label: "মেয়ে", icon: "/avatar-female.png" },
+                    { key: "male", label: t("ছেলে", "Male"), icon: "/avatar-male.png" },
+                    { key: "female", label: t("মেয়ে", "Female"), icon: "/avatar-female.png" },
                   ] as const).map((g) => (
                     <button
                       key={g.key}
@@ -888,13 +896,16 @@ export function AuthPage() {
                   ))}
                 </div>
                 <p className="text-[10px] text-muted-foreground mt-1">
-                  ছবি না দিলে এই অনুযায়ী ডিফল্ট প্রোফাইল ছবি দেখাবে।
+                  {t(
+                    "ছবি না দিলে এই অনুযায়ী ডিফল্ট প্রোফাইল ছবি দেখাবে।",
+                    "If you do not upload a photo, this decides your default profile picture.",
+                  )}
                 </p>
               </div>
             )}
             <div data-voice="auth.password">
               <label className="text-[11px] font-black text-violet uppercase tracking-wider">
-                পাসওয়ার্ড
+                {t("পাসওয়ার্ড", "Password")}
               </label>
               <input
                 type="password"
@@ -908,17 +919,19 @@ export function AuthPage() {
             {mode === "signup" && (
               <div data-voice="auth.referral">
                 <label className="text-[11px] font-black text-emerald uppercase tracking-wider flex items-center gap-1">
-                  🎁 রেফারেল কোড{" "}
-                  <span className="text-muted-foreground normal-case font-bold">(ঐচ্ছিক)</span>
+                  🎁 {t("রেফারেল কোড", "Referral code")}{" "}
+                  <span className="text-muted-foreground normal-case font-bold">
+                    {t("(ঐচ্ছিক)", "(optional)")}
+                  </span>
                 </label>
                 <input
                   value={referralCode}
                   onChange={(e) => setReferralCode(e.target.value.toUpperCase().slice(0, 12))}
-                  placeholder="উদাহরণ: ABC1234"
+                  placeholder={t("উদাহরণ: ABC1234", "Example: ABC1234")}
                   className="w-full mt-1 px-4 py-3 bg-white border-2 border-border rounded-xl text-sm outline-none focus:border-emerald mono-num tracking-widest text-navy transition"
                 />
                 <p className="text-[10px] text-muted-foreground mt-1">
-                  কেউ আপনাকে রেফার করলে তাঁর কোড লিখুন।
+                  {t("কেউ আপনাকে রেফার করলে তাঁর কোড লিখুন।", "Enter the code of whoever invited you.")}
                 </p>
               </div>
             )}
@@ -931,12 +944,12 @@ export function AuthPage() {
               }`}
             >
               {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-              {mode === "login" ? "লগইন করুন" : "পরবর্তী ধাপ"}
+              {mode === "login" ? t("লগইন করুন", "Log in") : t("পরবর্তী ধাপ", "Next step")}
             </button>
 
             <div className="flex items-center gap-2 py-1">
               <span className="h-px flex-1 bg-border" />
-              <span className="text-[10px] font-black text-muted-foreground">অথবা</span>
+              <span className="text-[10px] font-black text-muted-foreground">{t("অথবা", "or")}</span>
               <span className="h-px flex-1 bg-border" />
             </div>
             <button
@@ -948,7 +961,7 @@ export function AuthPage() {
               {googleLoading ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  Google-এ নিয়ে যাচ্ছি…
+                  {t("Google-এ নিয়ে যাচ্ছি…", "Opening Google…")}
                 </>
               ) : (
                 <>
@@ -984,14 +997,14 @@ export function AuthPage() {
                   onClick={() => setForgotOpen(true)}
                   className="w-full py-2 text-[12px] font-black text-cyan underline underline-offset-4"
                 >
-                  পাসওয়ার্ড ভুলে গেছেন?
+                  {t("পাসওয়ার্ড ভুলে গেছেন?", "Forgot your password?")}
                 </button>
               </>
             )}
           </form>
 
           <p className="text-[10px] text-center text-muted-foreground mt-5">
-            🔒 আপনার সমস্ত তথ্য এনক্রিপ্টেড ও সম্পূর্ণ নিরাপদ
+            🔒 {t("আপনার সমস্ত তথ্য এনক্রিপ্টেড ও সম্পূর্ণ নিরাপদ", "All your data is encrypted and fully secure")}
           </p>
         </div>
 
