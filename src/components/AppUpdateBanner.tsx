@@ -245,6 +245,11 @@ export function AppUpdateBanner() {
               </>
             )}
           </p>
+          {native && (
+            <p className="mx-auto mt-2 max-w-[18rem] text-[11px] leading-snug text-yellow-300/90">
+              বারবার update চাইলে ফোন থেকে পুরনো Good-App আনইনস্টল করে শুধু নতুনটা রাখুন ✅
+            </p>
+          )}
 
           <Button
             type="button"
