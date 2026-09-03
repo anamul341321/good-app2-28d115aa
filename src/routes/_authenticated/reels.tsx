@@ -205,7 +205,23 @@ function ReelsPage() {
   const { items, isLoading, isError, loadMore } = useCombinedReels(selectedPostId);
   const containerRef = useRef<HTMLDivElement>(null);
   const selectedScrollHandledRef = useRef<string | null>(null);
-  const [muted, setMuted] = useState(true);
+  // ডিফল্টে সাউন্ড চালু — প্লে করলেই অটো শব্দ আসবে, ট্যাপ করতে হবে না
+  const [muted, setMuted] = useState(false);
+  // ব্রাউজার অটোপ্লে ব্লক করলে সাময়িকভাবে মিউট হয় — প্রথম টাচেই আবার সাউন্ড
+  const autoMutedRef = useRef(false);
+  useEffect(() => {
+    if (!muted || !autoMutedRef.current) return;
+    const unmute = () => {
+      autoMutedRef.current = false;
+      setMuted(false);
+    };
+    window.addEventListener("pointerdown", unmute, { once: true, passive: true });
+    window.addEventListener("touchstart", unmute, { once: true, passive: true });
+    return () => {
+      window.removeEventListener("pointerdown", unmute);
+      window.removeEventListener("touchstart", unmute);
+    };
+  }, [muted]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [commentPostId, setCommentPostId] = useState<string | null>(null);
   const uploadInputRef = useRef<HTMLInputElement>(null);
