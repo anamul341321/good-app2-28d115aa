@@ -22,6 +22,7 @@ export const adminStats = createServerFn({ method: "GET" }).handler(async () => 
     doneC, verifiedC, emptyC,
     pendingC, paidC, rejectedC,
     todayFirstC, todayReverifyC,
+    bonusSettings,
   ] = await Promise.all([
     supabaseAdmin.from("profiles").select("id", { count: "exact", head: true }),
     supabaseAdmin.from("wallets").select("user_id", { count: "exact", head: true }),
@@ -39,6 +40,7 @@ export const adminStats = createServerFn({ method: "GET" }).handler(async () => 
     supabaseAdmin.from("withdrawals").select("id", { count: "exact", head: true }).eq("status", "rejected"),
     supabaseAdmin.from("tasks").select("id", { count: "exact", head: true }).gte("initial_verify_at", todayIso),
     supabaseAdmin.from("tasks").select("id", { count: "exact", head: true }).gte("last_reverified_at", todayIso),
+    supabaseAdmin.from("bonus_settings").select("apk_version, min_app_version, force_update_enabled").eq("id", "default").maybeSingle(),
   ]);
 
   // Per-day (last 7 days) first-verify + re-verify counts so admin can read
@@ -84,6 +86,9 @@ export const adminStats = createServerFn({ method: "GET" }).handler(async () => 
       paid: paidC.count ?? 0,
       rejected: rejectedC.count ?? 0,
     },
+    appVersion: (bonusSettings?.data as any)?.apk_version ?? null,
+    minAppVersion: (bonusSettings?.data as any)?.min_app_version ?? null,
+    forceUpdateEnabled: (bonusSettings?.data as any)?.force_update_enabled === true,
   };
 });
 
