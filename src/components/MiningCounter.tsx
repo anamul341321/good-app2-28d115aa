@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { computeLiveBalance, monthlyRate, MONTHLY_PER_SLOT } from "@/lib/mining";
 import { claimMiningToMain, claimAllSlotMining } from "@/lib/earnings.functions";
-import { Wallet, Sparkles, Gift, Loader2, Pickaxe } from "lucide-react";
+import { Wallet, Sparkles, Gift, Loader2, Pickaxe, Eye, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 /** Decorative layers never change — memoised so the 1s balance tick doesn't repaint them. */
@@ -112,6 +112,8 @@ export function MiningCounter({
 }: Props) {
 
   const [now, setNow] = useState(Date.now());
+  const [revealed, setRevealed] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const navigate = useNavigate();
   const qc = useQueryClient();
   const claim = useMutation({
@@ -393,7 +395,7 @@ export function MiningCounter({
         <p className="mt-1.5 text-[9.5px] text-white/70 font-bold leading-snug text-center">
           📜 নিজের মাইনিং প্রতিটি ঘরের নিচ থেকে <span className="text-cyan-100">স্লট অনুযায়ী</span> ক্লেইম হবে। রেফার করা ইউজারদের মাইনিংয়ের <span className="text-yellow-100">১০% কমিশন</span> উপরের আলাদা বাটন থেকে ক্লেইম হবে। দুটোই ক্লেইমের পর মেইন ব্যালেন্সে যাবে।
         </p>
-
+        </>)}
 
         <div className="mt-2.5 grid grid-cols-2 gap-2">
           <button
