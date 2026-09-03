@@ -114,6 +114,12 @@ const COMMENTS: Record<Sentiment, string[]> = {
     "Wow, joss hoise 🔥",
     "সাপোর্ট রইলো ভাই 👍",
     "Amader app er best video 😍",
+    "সুন্দর হয়েছে",
+    "Valo laglo",
+    "খুব ভালো কাজ, চালিয়ে যান",
+    "Sundor vabe banaisen",
+    "ভালো লাগলো ভাই, ধন্যবাদ",
+    "Onek din por emon ekta video dekhlam",
   ],
 };
 
