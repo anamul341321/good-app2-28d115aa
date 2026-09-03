@@ -58,6 +58,18 @@ export const requestWithdraw = createServerFn({ method: "POST" })
     }
 
 
+    // উইথড্র উইন্ডো: প্রতি মাসের ১ তারিখ রাত ১২:০০টা → ৩ তারিখ রাত ১০:০০টা (Asia/Dhaka)।
+    // এর বাইরে কোনো উইথড্র রিকোয়েস্ট নেওয়া হবে না।
+    {
+      const win = withdrawCountdownInfo(Date.now());
+      if (!win.isOpen) {
+        const daysLeft = Math.max(1, Math.ceil(win.msUntilOpen / 86400000));
+        throw new Error(
+          `⏳ উইথড্র এখন বন্ধ — প্রতি মাসের ১ তারিখ রাত ১২:০০টা থেকে ৩ তারিখ রাত ১০:০০টা পর্যন্ত চালু থাকে। আগামী ১ তারিখ পর্যন্ত আর ${daysLeft} দিন বাকি (উইথড্র পেজে লাইভ কাউন্টডাউন দেখুন)।`,
+        );
+      }
+    }
+
     // Daily limit: max 3 withdraw requests per 24h
     const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     const { count: dailyCount } = await supabase
