@@ -197,6 +197,10 @@ function useCombinedReels(selectedPostId?: string) {
   };
 }
 
+/** অটোপ্লে ব্লক হলে সাময়িক মিউট ট্র্যাক করি — ইউজার নিজে মিউট করলে নয় */
+const soundState = { autoMuted: false };
+
+
 function ReelsPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
