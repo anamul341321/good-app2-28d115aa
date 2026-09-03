@@ -12,6 +12,7 @@ import { PageVoice } from "@/components/PageVoice";
 import { FaceVerifyPausedNotice } from "@/components/FaceVerifyPausedNotice";
 import { getAppStatus } from "@/lib/app-status.functions";
 import { GmailSecurityBanner } from "@/components/GmailSecurityBanner";
+import { AdsBoostBanner } from "@/components/AdsBoostBanner";
 import { ComplianceDisclaimer } from "@/components/ComplianceDisclaimer";
 import { DashSection } from "@/components/DashSection";
 import { SlotClaimButton, type SlotClaim } from "@/components/SlotClaimButton";
@@ -298,6 +299,9 @@ function HomePage() {
           balanceBreakdown={(data as any).balanceBreakdown}
         />
       </div>
+
+      {/* Ads সাপোর্ট ব্যানার — Continue দিতে উৎসাহ */}
+      <AdsBoostBanner />
 
       <VoucherPopup vouchers={(data as any).vouchers ?? []} onClaimed={() => refetch()} />
 
