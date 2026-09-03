@@ -53,6 +53,8 @@ export const Route = createFileRoute("/_authenticated")({
 function AuthedLayout() {
   // অ্যাপ খোলা + ডেটা অন থাকলেই "active" হার্টবিট যাবে (পুরো অ্যাপজুড়ে)
   usePresence();
+  // ইউজারের কেনা থিম / ইমোজি প্যাক অ্যাপ্লাই
+  useCosmetics();
   const router = useRouter();
   const clearOtpTrust = useServerFn(clearCurrentDeviceOtpTrust);
   const pathname = useRouterState({ select: (state) => state.location.pathname });
