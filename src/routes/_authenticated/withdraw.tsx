@@ -15,7 +15,6 @@ import { useLang } from "@/lib/i18n";
 import { withdrawWindowInfo, withdrawCountdownInfo } from "@/lib/withdraw-window";
 import { WithdrawClosedBanner } from "@/components/WithdrawClosedBanner";
 import { WithdrawCountdown } from "@/components/WithdrawCountdown";
-import { adBoostWithdrawInfo } from "@/lib/ad-boost";
 import { getAdBoostStatus } from "@/lib/ads.functions";
 import { WithdrawRejectDetails } from "@/components/WithdrawRejectDetails";
 
