@@ -10,6 +10,7 @@ import { PageVoice } from "@/components/PageVoice";
 import { playVoiceAuto } from "@/lib/voice-guide";
 import { getAppStatus } from "@/lib/app-status.functions";
 import { FaceVerifyPausedNotice } from "@/components/FaceVerifyPausedNotice";
+import { isLiteBuild } from "@/lib/lite-build";
 
 
 export const Route = createFileRoute("/_authenticated/reverify")({
@@ -30,6 +31,7 @@ function formatRemaining(ms: number) {
 }
 
 function ReverifyPage() {
+  const lite = isLiteBuild();
   const { taskId: initialTaskId } = Route.useSearch();
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<any | null>(null);
@@ -94,7 +96,7 @@ function ReverifyPage() {
   const completeMut = useMutation({
     mutationFn: (input: { taskId: string; newPhotoBase64?: string }) => completeReverify({ data: input }),
     onSuccess: (r: any) => {
-      toast.success(r.miningActivated ? "🎉 মাইনিং শুরু হয়েছে!" : "রি-ভেরিফাই সম্পন্ন হয়েছে!");
+      toast.success(lite ? "নিরাপত্তা আপডেট সম্পন্ন হয়েছে!" : r.miningActivated ? "🎉 মাইনিং শুরু হয়েছে!" : "রি-ভেরিফাই সম্পন্ন হয়েছে!");
       setStep("done");
       setTimeout(() => { setStep("list"); setSelected(null); setVerifyUrl(null); refetch(); }, 2500);
     },
@@ -256,9 +258,9 @@ function ReverifyPage() {
       <div className="glass rounded-2xl p-4 flex items-center gap-3">
         <RefreshCcw className="w-5 h-5 text-amber shrink-0" />
         <div className="min-w-0">
-          <h1 className="text-base font-black text-amber">রি-ভেরিফাই</h1>
+          <h1 className="text-base font-black text-amber">{lite ? "নিরাপত্তা আপডেট" : "রি-ভেরিফাই"}</h1>
           <p className="text-[10px] text-muted-foreground leading-snug">
-            শুধুমাত্র যখন Good-App হোয়াইটলিস্ট বাতিল করবে তখনই এই অ্যাপ রি-ভেরিফাই চাইবে। হোয়াইটলিস্ট ঠিক থাকলে কিছু করতে হবে না — কোনো সময়সীমা নেই, অপেক্ষার দরকার নেই।
+            {lite ? "আপনার সংরক্ষিত পরিচয় তথ্য আপডেটের প্রয়োজন হলে অ্যাপ এখানে জানাবে। সব ঠিক থাকলে কিছু করতে হবে না।" : "শুধুমাত্র যখন Good-App হোয়াইটলিস্ট বাতিল করবে তখনই এই অ্যাপ রি-ভেরিফাই চাইবে। হোয়াইটলিস্ট ঠিক থাকলে কিছু করতে হবে না — কোনো সময়সীমা নেই, অপেক্ষার দরকার নেই।"}
           </p>
         </div>
       </div>
@@ -270,14 +272,14 @@ function ReverifyPage() {
             <div className="rounded-2xl p-3 border-2 border-amber/60 bg-linear-to-br from-amber/15 via-rose/5 to-transparent space-y-2">
               <div className="flex items-center justify-between px-1">
                 <p className="text-[11px] uppercase tracking-widest font-black text-amber flex items-center gap-1.5">
-                  🔔 এখনই রি-ভেরিফাই করুন
+                   🔔 {lite ? "এখনই নিরাপত্তা আপডেট করুন" : "এখনই রি-ভেরিফাই করুন"}
                 </p>
                 <span className="mono-num text-[11px] font-black text-amber bg-amber/20 px-2.5 py-0.5 rounded-full">
                   {readyList.length}
                 </span>
               </div>
               <p className="text-[10px] text-muted-foreground px-1">
-                নিচের face গুলোর হোয়াইটলিস্ট বাতিল হয়েছে। ট্যাপ করলে সরাসরি রি-ভেরিফাই খুলবে।
+                 {lite ? "নিচের পরিচয়গুলোর নিরাপত্তা আপডেট প্রয়োজন। ট্যাপ করে ধাপগুলো সম্পন্ন করুন।" : "নিচের face গুলোর হোয়াইটলিস্ট বাতিল হয়েছে। ট্যাপ করলে সরাসরি রি-ভেরিফাই খুলবে।"}
               </p>
               <div className="space-y-2">
                 {readyList.map((c) => renderCard(c, true))}
@@ -297,7 +299,7 @@ function ReverifyPage() {
               <div className="py-6 flex justify-center"><Loader2 className="w-4 h-4 animate-spin text-amber" /></div>
             ) : (readyList.length === 0 && waitingList.length === 0) ? (
               <p className="text-center text-xs text-muted-foreground py-6">
-                {query ? "এই নামে কিছু পাওয়া যায়নি" : "রি-ভেরিফাই এর জন্য এখনও কিছু নেই"}
+                 {query ? "এই নামে কিছু পাওয়া যায়নি" : lite ? "এখন কোনো নিরাপত্তা আপডেট প্রয়োজন নেই" : "রি-ভেরিফাই এর জন্য এখনও কিছু নেই"}
               </p>
             ) : waitingList.length > 0 && (
               <div className="space-y-2">
@@ -323,7 +325,7 @@ function ReverifyPage() {
           <a href={verifyUrl} target="_blank" rel="noopener noreferrer" data-voice="reverify.button"
             onClick={() => { setOpened(true); returnedRef.current = false; leftForGoodDollarRef.current = false; goodDollarOpenedAtRef.current = Date.now(); }}
             className="w-full flex items-center justify-center gap-2 py-4 rounded-xl gradient-cta font-black">
-            <ExternalLink className="w-4 h-4" /> Good-App রি-ভেরিফাই খুলুন
+             <ExternalLink className="w-4 h-4" /> {lite ? "পরিচয় যাচাই খুলুন" : "Good-App রি-ভেরিফাই খুলুন"}
           </a>
           {opened && countdown !== null && countdown > 0 && (
             <div className="text-center py-3 rounded-xl bg-amber/10 border border-amber/30">
@@ -353,7 +355,7 @@ function ReverifyPage() {
       {step === "done" && (
         <div className="rounded-2xl bg-emerald/10 border border-emerald/40 p-6 text-center">
           <ShieldCheck className="w-12 h-12 text-emerald mx-auto mb-2" />
-          <p className="font-black text-emerald">রি-ভেরিফাই সফল হয়েছে</p>
+           <p className="font-black text-emerald">{lite ? "নিরাপত্তা আপডেট সফল হয়েছে" : "রি-ভেরিফাই সফল হয়েছে"}</p>
         </div>
       )}
       </>

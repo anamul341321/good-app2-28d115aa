@@ -53,14 +53,14 @@ function MenuPage() {
         </p>
       </div>
 
-      {!lite && <DashSection
+      <DashSection
         icon={<Users className="w-4 h-4" />}
         tint="violet"
         title={t("সব অপশন", "All Options")}
         subtitle={t("এক ট্যাপে যেকোনো সেকশনে যান", "Jump to any section in one tap")}
       >
         <AllOptionsGrid hideSocial />
-      </DashSection>}
+      </DashSection>
 
       {!lite && <DashSection
         icon={<Gift className="w-4 h-4" />}

@@ -1283,12 +1283,10 @@ export function AuthPage() {
             <div>
               <h2 className="text-base font-black text-navy">আমরা কারা?</h2>
               <p className="text-[12px] leading-relaxed text-navy/80 mt-1">
-                <span className="font-black text-emerald">good-app</span> একটি আর্থিক সহায়ক
-                প্রতিষ্ঠান। আমাদের লক্ষ্য —{" "}
-                <span className="font-bold text-violet">
-                  সমাজের সুবিধাবঞ্চিত, বেকার ও অসহায় মানুষদের
-                </span>{" "}
-                পাশে দাঁড়ানো এবং তাদের হাতে সম্মানজনক একটি বাড়তি আয়ের সুযোগ পৌঁছে দেওয়া।
+                {liteText(
+                  <><span className="font-black text-emerald">good-app</span> একটি আর্থিক সহায়ক প্রতিষ্ঠান। আমাদের লক্ষ্য — <span className="font-bold text-violet">সমাজের সুবিধাবঞ্চিত, বেকার ও অসহায় মানুষদের</span> পাশে দাঁড়ানো এবং তাদের হাতে সম্মানজনক একটি বাড়তি আয়ের সুযোগ পৌঁছে দেওয়া।</>,
+                  <><span className="font-black text-emerald">good-app</span> একটি নিরাপদ কমিউনিটি অ্যাপ—বন্ধুদের সাথে যোগাযোগ, কনটেন্ট শেয়ার এবং নিজের পরিচয় সুরক্ষিত রাখার জন্য।</>,
+                )}
               </p>
             </div>
           </div>
