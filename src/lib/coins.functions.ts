@@ -194,10 +194,16 @@ export const claimTelegramByUsername = createServerFn({ method: "POST" })
         .limit(1);
       tgId = Number(sess?.[0]?.tg_user_id ?? 0);
     }
+
+    const { isTelegramGroupMember, resolveTelegramUsername } = await import(
+      "@/lib/telegram-membership.server"
+    );
+
+    // গ্রুপে কখনো মেসেজ না করলেও পাবলিক username থেকে সরাসরি আইডি বের করি
+    if (!tgId) tgId = await resolveTelegramUsername(uname);
     if (!tgId) return { ok: false, awarded: 0, already: false, error: "not_found" };
 
     // ৩) গ্রুপ মেম্বারশিপ যাচাই
-    const { isTelegramGroupMember } = await import("@/lib/telegram-membership.server");
     const member = await isTelegramGroupMember(tgId);
     if (!member) return { ok: false, awarded: 0, already: false, error: "not_member" };
 

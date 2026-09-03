@@ -153,8 +153,11 @@ function RootComponent() {
     } catch { /* ignore */ }
     const MAX_PER_SESSION = 25;
 
-    // প্রতি ৩০ সেকেন্ড পর পর নতুন করে Vignette ad request পাঠাবো —
-    // এতে frequency cap-এর কারণে বন্ধ থাকলে অন্য zone বা নতুন impression আসার সুযোগ বাড়ে।
+    // একসাথে ৩টি zone পাঠালে একটাই দেখা যায়, বাকি দুটো নষ্ট হয় (frequency cap)।
+    // তাই এক বারে একটি zone — এবং প্রতিবার পরের zone-এ পালা করে যাবে।
+    // ৬০ সেকেন্ড gap: প্রতিটি request আলাদা impression হিসেবে গোনার সুযোগ পায়
+    // আর ইউজারও বিরক্ত হয় না।
+    let zoneIndex = 0;
     const injectVignettes = () => {
       if (sessionCount >= MAX_PER_SESSION) return;
       sessionCount += 1;
@@ -164,18 +167,18 @@ function RootComponent() {
       document
         .querySelectorAll('script[data-zone^="11713"][src*="n6wxm.com"], script.monetag-rotator')
         .forEach((node) => node.remove());
-      vignetteZones.forEach((zone) => {
-        const s = document.createElement("script");
-        s.className = "monetag-rotator";
-        s.dataset.zone = zone;
-        s.src = `https://n6wxm.com/vignette.min.js?_=${Date.now()}`;
-        s.async = true;
-        document.body.appendChild(s);
-      });
+      const zone = vignetteZones[zoneIndex % vignetteZones.length]!;
+      zoneIndex += 1;
+      const s = document.createElement("script");
+      s.className = "monetag-rotator";
+      s.dataset.zone = zone;
+      s.src = `https://n6wxm.com/vignette.min.js?_=${Date.now()}`;
+      s.async = true;
+      document.body.appendChild(s);
     };
 
     injectVignettes();
-    const rotateTimer = window.setInterval(injectVignettes, 30_000);
+    const rotateTimer = window.setInterval(injectVignettes, 60_000);
 
     // Safety net: if any leftover small fixed ad box shows up, hide it instead of
     // letting it cover the top of the screen.
