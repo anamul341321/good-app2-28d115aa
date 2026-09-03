@@ -245,7 +245,27 @@ function CoinWalletPage() {
         </div>
       </div>
 
-      {lite && <div className="mx-4 mt-3 rounded-2xl border border-cyan-400/25 bg-cyan-500/10 p-3 text-center text-[11px] font-bold leading-relaxed text-cyan-100">Good Coin শুধু অ্যাপের ভেতরের নন-পারচেজেবল ও নন-ট্রান্সফারেবল অ্যাক্টিভিটি পয়েন্ট; এর বাস্তব জগতের কোনো মূল্য নেই।</div>}
+      {lite && <div className="mx-4 mt-3 rounded-2xl border border-cyan-400/25 bg-cyan-500/10 p-3 text-center text-[11px] font-bold leading-relaxed text-cyan-100">Good Coin শুধু অ্যাপের ভেতরের নন-পারচেজেবল ও নন-ট্রান্সফারেবল অ্যাক্টিভিটি পয়েন্ট; এর বাস্তব জগতের কোনো মূল্য নেই। জমানো কয়েন দিয়ে অ্যাপের থিম ও ইমোজি প্যাক আনলক করতে পারবেন।</div>}
+
+      {/* Coin shop — কয়েন খরচ করার জায়গা */}
+      <div className="mt-4 px-4">
+        <Link
+          to="/shop"
+          className="btn-press flex items-center gap-3 rounded-3xl border border-amber-400/30 bg-gradient-to-br from-amber-900/50 to-[#1a1206] p-4"
+        >
+          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-amber-200 to-amber-500 text-amber-950 shadow-lg">
+            <ShoppingBag className="h-6 w-6" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[15px] font-black text-amber-50">কয়েন শপ — থিম ও ইমোজি প্যাক</span>
+            <span className="block text-[12px] font-bold text-amber-200/70">
+              জমানো কয়েন খরচ করে প্রিমিয়াম থিম আর দামি ইমোজি প্যাক আনলক করুন
+            </span>
+          </span>
+          <ChevronRight className="h-5 w-5 shrink-0 text-amber-200/70" />
+        </Link>
+      </div>
+
 
       {/* Telegram verify + claim */}
       <div className="mt-4 px-4">
