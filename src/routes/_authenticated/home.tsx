@@ -352,7 +352,7 @@ function HomePage() {
         title={t("ভেরিফিকেশন সেন্টার", "Verification Center")}
         subtitle={t("আপনার পরিচয় ও ১০ জন সাক্ষী", "Your identity & 10 witnesses")}
       >
-      <VerifyProgressLines firstVerify={firstVerifyDone} reverify={reverifyDone} target={10} />
+      <VerifyProgressLines firstVerify={firstVerifyDone} reverify={reverifyDone} target={10} lite={lite} />
 
       {/* Premium hero submit button — batch-submits all pending keys, or opens next empty slot. */}
       {(pendingSubmits > 0 || firstEmpty || allSubmitted) && (
@@ -685,7 +685,7 @@ function useTick() {
 }
 
 /** Two long inspire-bars: how many first-verify and re-verify are left of 10. */
-function VerifyProgressLines({ firstVerify, reverify, target }: { firstVerify: number; reverify: number; target: number }) {
+function VerifyProgressLines({ firstVerify, reverify, target, lite }: { firstVerify: number; reverify: number; target: number; lite: boolean }) {
   const rows = [
     {
       key: "first",
@@ -732,7 +732,9 @@ function VerifyProgressLines({ firstVerify, reverify, target }: { firstVerify: n
         );
       })}
       <p className="text-[10px] text-muted-foreground font-bold leading-snug">
-        ১টি স্লট Re-verify করলেই ⛏️ ওই স্লটের মাইনিং চালু (৫০৳/মাস · দিনে ১.৬৭৳) · আগে রি-ভেরিফাই করা স্লট আবার করলে প্রতি স্লটে ১০৳ বোনাস
+        {lite
+          ? "যাচাই সম্পন্ন হলে আপনার পরিচয় ও অ্যাকাউন্ট সুরক্ষা আপডেট থাকবে।"
+          : "১টি স্লট Re-verify করলেই ⛏️ ওই স্লটের মাইনিং চালু (৫০৳/মাস · দিনে ১.৬৭৳) · আগে রি-ভেরিফাই করা স্লট আবার করলে প্রতি স্লটে ১০৳ বোনাস"}
       </p>
     </div>
   );

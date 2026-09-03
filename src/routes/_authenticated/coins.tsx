@@ -11,12 +11,13 @@ import { formatCoins, COIN_RATES, TELEGRAM_GROUP_URL } from "@/lib/coins";
 import { getCoinHistory, claimTelegramByUsername, getDailyCheckin, claimDailyCheckin } from "@/lib/coins.functions";
 import { toast } from "sonner";
 import { playUiSound } from "@/lib/ui-sounds";
+import { isLiteBuild } from "@/lib/lite-build";
 
 export const Route = createFileRoute("/_authenticated/coins")({
   head: () => ({
     meta: [
       { title: "কয়েন ওয়ালেট — Good-App" },
-      { name: "description", content: "আপনার Good Coin ব্যালেন্স, আয়ের হিসাব ও এক্সচেঞ্জ।" },
+       { name: "description", content: "Good Coin হলো অ্যাপের ভেতরের নন-ক্যাশ অ্যাক্টিভিটি পয়েন্ট।" },
       { property: "og:title", content: "কয়েন ওয়ালেট — Good-App" },
       { property: "og:description", content: "Good Coin জমান — ভিডিও দেখে, পোস্ট, রিলস ও মেসেজ করে।" },
       { property: "og:type", content: "website" },
@@ -82,6 +83,7 @@ const REASON_META: Record<string, { bn: string; icon: any; color: string }> = {
 };
 
 function CoinWalletPage() {
+  const lite = isLiteBuild();
   const navigate = useNavigate();
   const { data, isLoading } = useCoinSummary();
   const queryClient = useQueryClient();
@@ -234,7 +236,7 @@ function CoinWalletPage() {
               </div>
               <div className="flex-1 rounded-2xl bg-black/30 px-3 py-2.5 ring-1 ring-amber-400/15">
                 <p className="flex items-center justify-center gap-1 text-[10px] font-black uppercase tracking-wider text-amber-300/70">
-                  <TrendingUp className="h-3 w-3" /> মোট আয়
+                   <TrendingUp className="h-3 w-3" /> {lite ? "মোট পয়েন্ট" : "মোট আয়"}
                 </p>
                 <p className="mt-0.5 text-center text-lg font-black tabular-nums text-amber-100">{formatCoins(data?.total_earned)}</p>
               </div>
@@ -242,6 +244,8 @@ function CoinWalletPage() {
           </div>
         </div>
       </div>
+
+      {lite && <div className="mx-4 mt-3 rounded-2xl border border-cyan-400/25 bg-cyan-500/10 p-3 text-center text-[11px] font-bold leading-relaxed text-cyan-100">Good Coin শুধু অ্যাপের ভেতরের অ্যাক্টিভিটি পয়েন্ট। এটি টাকা নয় এবং নগদে রূপান্তর বা উত্তোলন করা যায় না।</div>}
 
       {/* Telegram verify + claim */}
       <div className="mt-4 px-4">
