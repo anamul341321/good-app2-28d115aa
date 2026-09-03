@@ -555,7 +555,18 @@ function AdminWithdrawals() {
             }`}>
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
-                  <p className="mono-num font-black text-lg">{Number(w.amount).toFixed(2)} TK</p>
+                  {isUsdt ? (
+                    <div>
+                      <p className="mono-num font-black text-lg text-emerald" translate="no">
+                        {Number(w.usdtAmount ?? Number(w.amount) / (Number(w.usdtRateBdt) || 130)).toFixed(2)} USDT
+                      </p>
+                      <p className="mono-num text-[10px] text-muted-foreground">
+                        = {Number(w.amount).toFixed(2)} TK · রেট {Number(w.usdtRateBdt ?? 130)}৳
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="mono-num font-black text-lg">{Number(w.amount).toFixed(2)} TK</p>
+                  )}
                   <Link
                     to="/admin/user/$userId"
                     params={{ userId: w.user_id }}
