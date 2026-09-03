@@ -17,3 +17,4 @@
 - [x] Play Store compliance: AdMob/Advertising ID disclosure in privacy + data-safety
 - [x] Public /account-deletion page (Play Console data deletion URL)
 - [x] PLAYSTORE_LISTING.md — descriptions, data safety answers, content rating, reject checklist
+- [x] Fix click-blocking: remove blank sandboxed ad iframe/overlay, inject Monetag directly only on public pages (logged-out), persist web update-banner dismissal 12h, hide it on /download

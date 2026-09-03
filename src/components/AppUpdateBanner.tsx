@@ -44,6 +44,23 @@ export function AppUpdateBanner() {
   const [percent, setPercent] = useState(0);
   const [hidden, setHidden] = useState(false);
 
+  // ওয়েবে একবার বন্ধ করলে ১২ ঘণ্টা আর দেখায় না — না হলে প্রতি পেজে
+  // পুরো স্ক্রিন ঢেকে ফেলে ও ভিজিটর কিছুই ক্লিক করতে পারে না।
+  useEffect(() => {
+    if (native) return;
+    try {
+      const at = Number(localStorage.getItem("web_update_banner_hide_at") || "0");
+      if (Date.now() - at < 12 * 60 * 60 * 1000) setHidden(true);
+    } catch { /* ignore */ }
+  }, [native]);
+
+  const hide = () => {
+    setHidden(true);
+    try {
+      localStorage.setItem("web_update_banner_hide_at", String(Date.now()));
+    } catch { /* ignore */ }
+  };
+
 
   const readVersion = () =>
 
@@ -109,7 +126,8 @@ export function AppUpdateBanner() {
   const isAdmin = /^\/admin(-login)?(\/|$)/.test(pathname);
   const isSocialRoute = /^\/(social|chat|feed|friends|videos|reels|watch|studio|channel|user|profile)(\/|$)/.test(pathname);
 
-  const shouldShow = !!url && !!latest && !forceBlocked && !isAdmin && !isSocialRoute && !hidden && (!native || (!!installed && isNewer(latest, installed))) && !/play\.google\.com/i.test(url);
+  const isDownloadPage = pathname === "/download";
+  const shouldShow = !!url && !!latest && !forceBlocked && !isAdmin && !isSocialRoute && !isDownloadPage && !hidden && (!native || (!!installed && isNewer(latest, installed))) && !/play\.google\.com/i.test(url);
 
   useEffect(() => {
     if (!shouldShow) return;
@@ -193,7 +211,7 @@ export function AppUpdateBanner() {
 
         <button
           type="button"
-          onClick={() => setHidden(true)}
+          onClick={hide}
           aria-label="বন্ধ করুন"
           className="absolute right-3 top-3 z-10 grid h-9 w-9 place-items-center rounded-full bg-white/10 text-white btn-press hover:bg-white/20"
         >
@@ -239,7 +257,7 @@ export function AppUpdateBanner() {
 
           <button
             type="button"
-            onClick={() => setHidden(true)}
+            onClick={hide}
             className="mt-3 w-full rounded-2xl border border-white/15 bg-white/5 py-3 text-sm font-bold text-white/70 btn-press"
           >
             এখন না — পরে করব
