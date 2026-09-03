@@ -129,18 +129,46 @@ function RootComponent() {
 
   useNativeApp();
 
-  // Monetag Multitag (browser only; skipped inside the native app shell)
+  // Monetag Multitag — শুধু পাবলিক/মার্কেটিং পেজে (ব্রাউজারে)।
+  // অ্যাপের ভেতরের পেজে (claim, wallet, coins, chat…) কোনো অ্যাড ইনজেক্ট হয় না,
+  // তাই ইউজারের ক্লিক ভুল করে অ্যাডে চলে যায় না।
+  const adsAllowed = /^\/(download|privacy|terms|child-safety|data-safety|account-deletion|card\/)?$/.test(
+    pathname === "/" ? "/" : pathname.replace(/\/+$/, "")
+  );
+
   useEffect(() => {
     const cap = (window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor;
     if (cap?.isNativePlatform?.()) return;
-    if (document.querySelector('script[data-zone="275797"]')) return;
-    const s = document.createElement("script");
-    s.src = "https://quge5.com/88/tag.min.js";
-    s.async = true;
-    s.setAttribute("data-zone", "275797");
-    s.setAttribute("data-cfasync", "false");
-    document.head.appendChild(s);
-  }, []);
+
+    const existing = document.querySelector('script[data-zone="275797"]');
+
+    if (adsAllowed) {
+      if (existing) return;
+      const s = document.createElement("script");
+      s.src = "https://quge5.com/88/tag.min.js";
+      s.async = true;
+      s.setAttribute("data-zone", "275797");
+      s.setAttribute("data-cfasync", "false");
+      document.head.appendChild(s);
+      return;
+    }
+
+    // অ্যাপ পেজে ঢুকলে ট্যাগ ও তার ফিক্সড ওভারলে সরিয়ে দেওয়া হয়
+    existing?.remove();
+    const cleanup = () => {
+      document.querySelectorAll("body > iframe, body > ins").forEach((el) => el.remove());
+      document.querySelectorAll<HTMLElement>("body > div").forEach((el) => {
+        if (el.dataset["appRoot"] !== undefined) return;
+        const st = getComputedStyle(el);
+        if (st.position !== "fixed") return;
+        if (Number(st.zIndex) > 9000 && !el.querySelector("[data-app-ui]")) el.remove();
+      });
+    };
+    cleanup();
+    const t = window.setTimeout(cleanup, 1200);
+    return () => window.clearTimeout(t);
+  }, [adsAllowed]);
+
 
   useEffect(() => {
     // Native Android WebView draws under the status bar; give it a slightly
