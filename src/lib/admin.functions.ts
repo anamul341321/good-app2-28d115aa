@@ -519,6 +519,10 @@ export const adminListWithdrawals = createServerFn({ method: "GET" }).handler(as
   if (recentRes.error) throw new Error(recentRes.error.message);
   const rows: any[] = [...(pendingRes.data ?? []), ...(recentRes.data ?? [])];
 
+  // USDT রেট — USDT withdraw row-এ কত USDT চাওয়া হয়েছে সেটা দেখাতে দরকার।
+  const rateRes = await supabaseAdmin.from("bonus_settings").select("usdt_rate_bdt").eq("id", "default").maybeSingle();
+  const usdtRateBdt = Number((rateRes.data as any)?.usdt_rate_bdt ?? 130) || 130;
+
   // Suspicion signals for pending rows only
   const pendingUserIds = Array.from(new Set(rows.filter((r) => r.status === "pending").map((r) => r.user_id)));
   const signalsMap = new Map<string, any>();
