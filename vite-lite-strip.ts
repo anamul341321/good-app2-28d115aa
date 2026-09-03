@@ -30,7 +30,8 @@ const normalize = (id: string) => id.replace(/\\/g, "/").split("?")[0]!;
 
 const routePathOf = (rel: string) => {
   const withoutExt = rel.replace(/^src\/routes/, "").replace(/\.tsx?$/, "");
-  const cleaned = withoutExt.replace(/\/index$/, "/");
+  // Flat file routing uses dots as separators: user.$userId -> user/$userId
+  const cleaned = withoutExt.replace(/\./g, "/").replace(/\/index$/, "/");
   return cleaned === "" ? "/" : cleaned;
 };
 
