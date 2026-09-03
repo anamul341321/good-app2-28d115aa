@@ -352,50 +352,58 @@ export function MiningCounter({
           </p>
         )}
 
-        {/* সব ঘরের জমা মাইনিং একসাথে → মেইন ব্যালেন্স (১০৳ বোনাস ছাড়া) */}
-        <Button
-          disabled={selfMiningClaimable < 0.5 || claimAll.isPending}
-          onClick={() => claimAll.mutate()}
-          className={`mt-2.5 h-auto w-full rounded-2xl py-2.5 text-[12.5px] font-black btn-press border ${
-            selfMiningClaimable >= 0.5
-              ? "bg-gradient-to-r from-cyan-300 to-sky-500 text-cyan-950 border-white/40 shadow-lg"
-              : "bg-white/10 text-white/60 border-white/20"
-          }`}
-        >
-          {claimAll.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Pickaxe className="w-4 h-4" />}
-          {selfMiningClaimable >= 0.5
-            ? `Re-verify থাকা ঘরের মাইনিং ${selfMiningClaimable.toFixed(2)}৳ ক্লেইম করুন`
-            : selfMiningReverifyLocked >= 0.5
-              ? `🔒 ${selfMiningReverifyLocked.toFixed(2)}৳ লক — ঘরগুলো Re-verify করলেই খুলবে`
-              : "প্রতিদিনের মাইনিং জমা হলে এখান থেকে সব ক্লেইম করুন"}
-        </Button>
-
-
-        {/* আনলক হওয়া মাইনিং টাকা → মেইন ব্যালেন্সে ক্লেইম */}
-
-        <Button
-          disabled={referralMiningAvailable < 0.5 || claim.isPending}
-          onClick={() => claim.mutate()}
-          className={`mt-2.5 h-auto w-full rounded-2xl py-2.5 text-[12.5px] font-black btn-press border ${
-            referralMiningAvailable >= 0.5
-              ? "bg-gradient-to-r from-emerald-400 to-teal-500 text-emerald-950 border-white/40 shadow-lg"
-              : "bg-white/10 text-white/60 border-white/20"
-          }`}
-        >
-          {claim.isPending ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <Gift className="w-4 h-4" />
-          )}
-          {referralMiningAvailable >= 0.5
-            ? `রেফার ১০% কমিশন ${referralMiningAvailable.toFixed(2)}৳ ক্লেইম করুন`
-            : "রেফার ১০% কমিশন জমা হলে এখানে ক্লেইম করুন"}
-        </Button>
-
         <p className="mt-1.5 text-[9.5px] text-white/70 font-bold leading-snug text-center">
           📜 নিজের মাইনিং প্রতিটি ঘরের নিচ থেকে <span className="text-cyan-100">স্লট অনুযায়ী</span> ক্লেইম হবে। রেফার করা ইউজারদের মাইনিংয়ের <span className="text-yellow-100">১০% কমিশন</span> উপরের আলাদা বাটন থেকে ক্লেইম হবে। দুটোই ক্লেইমের পর মেইন ব্যালেন্সে যাবে।
         </p>
         </>)}
+
+        {/* ⛏️ মেইন ক্লেইম বাটন — সবসময় দেখা যাবে। ১ ঘণ্টা অ্যাক্টিভ হলেই উজ্জ্বল হয়ে ক্লেইম করতে বলবে */}
+        <Button
+          disabled={!canClaimNow || claimAll.isPending}
+          onClick={() => claimAll.mutate()}
+          className={`mt-3 h-auto w-full rounded-2xl py-3 text-[13px] font-black btn-press border whitespace-normal leading-snug ${
+            canClaimNow
+              ? "mc-claim-glow bg-gradient-to-r from-amber-300 via-yellow-300 to-orange-400 text-amber-950 border-white/50 shadow-xl"
+              : "bg-white/10 text-white/70 border-white/20"
+          }`}
+        >
+          {claimAll.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Pickaxe className="w-4 h-4" />}
+          {canClaimNow
+            ? `⚡ এখনই ${selfMiningClaimable.toFixed(2)}৳ মাইনিং ক্লেইম করুন`
+            : !activeDone
+              ? `⏳ আজ আর ${formatActiveTime(activeLeft)} অ্যাক্টিভ থাকলেই ক্লেইম খুলবে`
+              : selfMiningReverifyLocked >= 0.5
+                ? `🔒 ${selfMiningReverifyLocked.toFixed(2)}৳ লক — ঘরগুলো Re-verify করলেই খুলবে`
+                : "আজকের মাইনিং জমা হলেই এখান থেকে ক্লেইম করুন"}
+        </Button>
+
+        {/* 🤝 রেফার কমিশন ক্লেইম */}
+        <Button
+          disabled={referralMiningAvailable < 0.5 || !activeDone || claim.isPending}
+          onClick={() => claim.mutate()}
+          className={`mt-2 h-auto w-full rounded-2xl py-2.5 text-[12.5px] font-black btn-press border whitespace-normal leading-snug ${
+            referralMiningAvailable >= 0.5 && activeDone
+              ? "bg-gradient-to-r from-emerald-400 to-teal-500 text-emerald-950 border-white/40 shadow-lg"
+              : "bg-white/10 text-white/60 border-white/20"
+          }`}
+        >
+          {claim.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Gift className="w-4 h-4" />}
+          {referralMiningAvailable >= 0.5
+            ? activeDone
+              ? `রেফার ১০% কমিশন ${referralMiningAvailable.toFixed(2)}৳ ক্লেইম করুন`
+              : `⏳ ১ ঘণ্টা অ্যাক্টিভ হলেই ${referralMiningAvailable.toFixed(2)}৳ কমিশন ক্লেইম`
+            : "রেফার ১০% কমিশন জমা হলে এখানে ক্লেইম করুন"}
+        </Button>
+
+        {/* ⚠️ প্রতিদিন ক্লেইম না করলে ব্যালেন্স হারানোর সতর্কতা */}
+        <div className="mt-2.5 rounded-2xl border border-rose-300/45 bg-rose-950/45 px-3 py-2 flex items-start gap-2">
+          <AlertTriangle className="mt-[2px] h-4 w-4 shrink-0 text-rose-200" />
+          <p className="text-[11px] font-bold leading-relaxed text-white">
+            <span className="font-black text-rose-100">জরুরি সতর্কতা:</span> প্রতিদিনের মাইনিং{" "}
+            <b>প্রতিদিনই ক্লেইম</b> করে মেইন ব্যালেন্সে নিতে হবে। ক্লেইম না করে ফেলে রাখলে জমা মাইনিং{" "}
+            <b>হারিয়ে যেতে পারে</b> — তাই ১ ঘণ্টা অ্যাক্টিভ পূরণ করে রোজ ক্লেইম করুন।
+          </p>
+        </div>
 
         <div className="mt-2.5 grid grid-cols-2 gap-2">
           <button
