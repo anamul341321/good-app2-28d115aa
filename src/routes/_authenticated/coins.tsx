@@ -11,7 +11,6 @@ import { formatCoins, COIN_RATES, TELEGRAM_GROUP_URL } from "@/lib/coins";
 import { getCoinHistory, claimTelegramByUsername, getDailyCheckin, claimDailyCheckin } from "@/lib/coins.functions";
 import { toast } from "sonner";
 import { playUiSound } from "@/lib/ui-sounds";
-import { AdCoinCard } from "@/components/AdCoinCard";
 
 export const Route = createFileRoute("/_authenticated/coins")({
   head: () => ({
@@ -337,11 +336,6 @@ function CoinWalletPage() {
             রেট পরে ঘোষণা করা হবে। 🚀
           </p>
         </div>
-      </div>
-
-      {/* অ্যাড দেখে কয়েন — প্রতি অ্যাডে ১০০০ কয়েন */}
-      <div className="mt-4 px-4">
-        <AdCoinCard onEarned={celebrate} />
       </div>
 
       {/* Watch progress */}
