@@ -72,7 +72,23 @@ export const Route = createFileRoute("/_authenticated/reels")({
       },
       { property: "og:type", content: "video.other" },
     ],
+    links: [
+      { rel: "preconnect", href: "https://www.youtube.com" },
+      { rel: "preconnect", href: "https://i.ytimg.com" },
+      { rel: "preconnect", href: "https://rr1---sn-vgqsrn6k.googlevideo.com", crossOrigin: "anonymous" as const },
+      { rel: "dns-prefetch", href: "https://googlevideo.com" },
+      ...(import.meta.env["VITE_SUPABASE_URL"]
+        ? [
+            {
+              rel: "preconnect",
+              href: String(import.meta.env["VITE_SUPABASE_URL"]),
+              crossOrigin: "anonymous" as const,
+            },
+          ]
+        : []),
+    ],
   }),
+
 });
 
 type ReelItem =
@@ -299,12 +315,13 @@ function ReelsPage() {
   // signed URL গুলো আগেই তৈরি করে রাখি — তাই স্ক্রল করলেই ভিডিও সাথে সাথে চলে
   useEffect(() => {
     const paths = items
-      .slice(Math.max(0, activeIndex - 1), activeIndex + 4)
+      .slice(Math.max(0, activeIndex - 1), activeIndex + 8)
       .flatMap((item) =>
         item.kind === "local" ? [item.post.video_url, item.post.user?.avatar_url] : [],
       );
-    prefetchFeedMedia(paths).catch(() => {});
+    prefetchFeedMedia(paths, 8).catch(() => {});
   }, [items, activeIndex]);
+
 
 
   const uploadMutation = useMutation({
@@ -397,7 +414,7 @@ function ReelsPage() {
               key={item.id}
               item={item}
               isActive={activeId === item.id}
-              isNear={Math.abs(index - activeIndex) <= 1}
+              isNear={index - activeIndex >= -1 && index - activeIndex <= 2}
               muted={muted}
               setMuted={setMuted}
               onVisible={() => setActiveId(item.id)}
@@ -624,7 +641,9 @@ function LocalReel({
   const [paused, setPaused] = useState(false);
   const [mediaFailed, setMediaFailed] = useState(false);
   const [mediaKey, setMediaKey] = useState(0);
+  const [buffering, setBuffering] = useState(false);
   const [burst, setBurst] = useState(false);
+
   const lastTapRef = useRef(0);
   const singleTapTimer = useRef<number | null>(null);
   const playerBoxRef = useRef<HTMLDivElement | null>(null);
@@ -687,6 +706,33 @@ function LocalReel({
       artwork: post.image_url || undefined,
     });
   }, [isActive, mediaFailed, post.content, post.image_url, post.user?.display_name, videoUrl]);
+
+  // স্লো নেটে ভিডিও আটকে গেলে নিজে থেকেই আবার চালু করার চেষ্টা করি
+  useEffect(() => {
+    if (!isActive || !buffering) return;
+    const timer = window.setTimeout(() => {
+      const el = videoRef.current;
+      if (!el) return;
+      if (el.readyState >= 3) {
+        setBuffering(false);
+        el.play().catch(() => {});
+        return;
+      }
+      // এখনো ডেটা আসেনি — সোর্স রিলোড করে আবার চেষ্টা
+      try {
+        el.load();
+        el.play().catch(() => {});
+      } catch {
+        /* ignore */
+      }
+    }, 6000);
+    return () => window.clearTimeout(timer);
+  }, [isActive, buffering]);
+
+  useEffect(() => {
+    if (!isActive) setBuffering(false);
+  }, [isActive]);
+
 
   const likeMutation = useMutation({
     mutationFn: async () => {
@@ -793,9 +839,13 @@ function LocalReel({
           preload="auto"
           onTimeUpdate={(e) => { const v = e.currentTarget; if (!v.paused && !v.ended) markWatching(); }}
           onLoadedData={() => setMediaFailed(false)}
+          onWaiting={() => { if (isActive) setBuffering(true); }}
+          onPlaying={() => setBuffering(false)}
+          onCanPlay={() => setBuffering(false)}
           onError={() => setMediaFailed(true)}
         />
       ) : (
+
         <div className="relative flex h-full w-full items-center justify-center bg-black">
           {posterUrl && (
             <img
@@ -822,6 +872,14 @@ function LocalReel({
 
       {/* ট্যাপ লেয়ার — এক ট্যাপে পজ, ডাবল ট্যাপে লাভ */}
       <div className="absolute inset-0 z-10" onClick={handleTap} />
+
+      {buffering && isActive && !paused && (
+        <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+          <Loader2 className="h-10 w-10 animate-spin text-white/90 drop-shadow-lg" />
+        </div>
+      )}
+
+
 
       {paused && (
         <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
