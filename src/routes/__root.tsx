@@ -133,13 +133,18 @@ function RootComponent() {
     // Remove the old Multitag (it carried OnClick/Popunder which hijacked app
     // button clicks) and load only the safe formats instead:
     //   - Vignette (zone 11713170): full-screen ad WITH a visible close button
-    //   - In-Page Push (zone 11713181): small persistent banner
-    // Neither format overlays app buttons, so clicks stay inside the app.
-    // Runs on both website and native Android app (WebView) for extra earnings;
-    // admin panel stays clean.
+    //   - In-Page Push (zone 11713181): small banner, pinned to the BOTTOM so
+    //     app buttons at the top stay visible and usable.
+    // The push tag is also re-injected periodically so a fresh creative shows
+    // up instead of the same banner staying forever.
     document.querySelectorAll('script[data-zone="275797"], script[src*="quge5.com/88/tag.min.js"]')
       .forEach((node) => node.remove());
     if (pathname.startsWith("/admin")) return;
+
+    const PUSH_ZONE = "11713181";
+    const PUSH_SRC = "https://nap5k.com/tag.min.js";
+    const ownNodes = new Set<Element>(Array.from(document.body.children));
+
     const ensure = (zone: string, src: string) => {
       if (document.querySelector(`script[data-zone="${zone}"]`)) return;
       const s = document.createElement("script");
@@ -149,8 +154,46 @@ function RootComponent() {
       document.body.appendChild(s);
     };
     ensure("11713170", "https://n6wxm.com/vignette.min.js");
-    ensure("11713181", "https://nap5k.com/tag.min.js");
+    ensure(PUSH_ZONE, PUSH_SRC);
+
+    // Push any ad container the network injects to the bottom strip.
+    const pinToBottom = () => {
+      Array.from(document.body.children).forEach((el) => {
+        if (ownNodes.has(el) || el.tagName === "SCRIPT" || el.tagName === "STYLE") return;
+        const style = window.getComputedStyle(el);
+        if (style.position !== "fixed" || style.display === "none") return;
+        const rect = el.getBoundingClientRect();
+        // Leave full-screen formats (vignette/interstitial) untouched.
+        if (rect.height > window.innerHeight * 0.6) return;
+        const node = el as HTMLElement;
+        node.style.setProperty("top", "auto", "important");
+        node.style.setProperty("bottom", "calc(env(safe-area-inset-bottom) + 68px)", "important");
+        node.style.setProperty("z-index", "40", "important");
+      });
+    };
+    const observer = new MutationObserver(pinToBottom);
+    observer.observe(document.body, { childList: true });
+    const pinTimer = window.setInterval(pinToBottom, 1_500);
+
+    // Rotate the push creative: drop the tag + its containers, load it again.
+    const rotateTimer = window.setInterval(() => {
+      document.querySelectorAll(`script[data-zone="${PUSH_ZONE}"]`).forEach((n) => n.remove());
+      Array.from(document.body.children).forEach((el) => {
+        if (ownNodes.has(el) || el.tagName === "SCRIPT" || el.tagName === "STYLE") return;
+        const style = window.getComputedStyle(el);
+        const rect = el.getBoundingClientRect();
+        if (style.position === "fixed" && rect.height <= window.innerHeight * 0.6) el.remove();
+      });
+      ensure(PUSH_ZONE, PUSH_SRC);
+    }, 45_000);
+
+    return () => {
+      observer.disconnect();
+      window.clearInterval(pinTimer);
+      window.clearInterval(rotateTimer);
+    };
   }, [pathname]);
+
 
 
 
