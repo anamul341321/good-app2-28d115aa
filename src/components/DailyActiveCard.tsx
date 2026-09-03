@@ -5,6 +5,8 @@ import { DAILY_ACTIVE_REQUIRED, formatActiveTime, useActivityToday } from "@/hoo
  * ডেইলি অ্যাক্টিভ টাইম নোটিশ + লাইভ কাউন্টার।
  * নিয়ম: প্রতিদিন কমপক্ষে ১ ঘণ্টা অ্যাপে অ্যাক্টিভ থাকলেই মাইনিং ব্যালেন্স ক্লেইম করা যাবে।
  * সময়টা একবারে লাগবে না — সারাদিনে যতবার ইচ্ছা, ৫/৭ মিনিট করে মিলিয়ে ১ ঘণ্টা হলেই হবে।
+ *
+ * রঙ: কার্ডের ভেতরটা গাঢ় (dark) রাখা হয়েছে, তাই সাদা লেখা লাইট থিমেও স্পষ্ট পড়া যায়।
  */
 export function DailyActiveCard() {
   const { data } = useActivityToday();
@@ -16,17 +18,17 @@ export function DailyActiveCard() {
 
   return (
     <div
-      className={`relative overflow-hidden rounded-[22px] border p-3.5 ${
+      className={`relative overflow-hidden rounded-[22px] border p-3.5 shadow-lg ${
         done
-          ? "border-emerald-400/40 bg-gradient-to-br from-emerald-500/20 via-teal-500/10 to-cyan-500/10"
-          : "border-amber-400/40 bg-gradient-to-br from-amber-500/20 via-orange-500/10 to-rose-500/10"
+          ? "border-emerald-400/50 bg-gradient-to-br from-emerald-900 via-teal-900 to-slate-900"
+          : "border-amber-400/50 bg-gradient-to-br from-amber-900 via-orange-900 to-slate-900"
       }`}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
           <span
             className={`grid h-9 w-9 shrink-0 place-items-center rounded-2xl ${
-              done ? "bg-emerald-400/20 text-emerald-200" : "bg-amber-400/20 text-amber-200"
+              done ? "bg-emerald-400/25 text-emerald-100" : "bg-amber-400/25 text-amber-100"
             }`}
           >
             {done ? <CheckCircle2 className="h-5 w-5" /> : <Clock className="h-5 w-5" />}
@@ -35,22 +37,22 @@ export function DailyActiveCard() {
             <p className="text-[13px] font-black leading-tight text-white">
               📢 আজকের অ্যাক্টিভ সময়
             </p>
-            <p className="mono-num text-[15px] font-black leading-tight text-white">
+            <p className="mono-num text-[16px] font-black leading-tight text-white">
               {formatActiveTime(seconds)}{" "}
-              <span className="text-[10px] font-bold text-white/60">/ ১ ঘন্টা</span>
+              <span className="text-[11px] font-bold text-white/75">/ ১ ঘন্টা</span>
             </p>
           </div>
         </div>
         <span
           className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-widest ${
-            done ? "bg-emerald-400/20 text-emerald-100" : "bg-amber-400/20 text-amber-100"
+            done ? "bg-emerald-400/30 text-white" : "bg-amber-400/30 text-white"
           }`}
         >
           {done ? "✅ ক্লেইম চালু" : "লাইভ"}
         </span>
       </div>
 
-      <div className="mt-2.5 h-2.5 overflow-hidden rounded-full bg-black/40">
+      <div className="mt-2.5 h-2.5 overflow-hidden rounded-full bg-black/50">
         <div
           className={`h-full rounded-full transition-all duration-700 ${
             done
@@ -61,8 +63,8 @@ export function DailyActiveCard() {
         />
       </div>
 
-      <p className="mt-2 flex items-start gap-1.5 text-[11px] font-bold leading-snug text-white/80">
-        <Info className="mt-[2px] h-3.5 w-3.5 shrink-0 text-white/60" />
+      <p className="mt-2.5 flex items-start gap-1.5 text-[12px] font-semibold leading-relaxed text-white">
+        <Info className="mt-[3px] h-3.5 w-3.5 shrink-0 text-white/80" />
         {done ? (
           <span>
             দারুণ! আজকের <b>১ ঘণ্টা</b> অ্যাক্টিভ সময় পূরণ হয়েছে — এখন আপনার{" "}
