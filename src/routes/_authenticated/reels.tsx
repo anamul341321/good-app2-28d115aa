@@ -972,6 +972,7 @@ function ExternalReel({
   const toggleMute = (event?: React.MouseEvent<HTMLButtonElement>) => {
     event?.stopPropagation();
     const nextMuted = !muted;
+    soundState.autoMuted = false;
     setMuted(nextMuted);
     if (isDirectVideo) {
       const el = videoRef.current;
