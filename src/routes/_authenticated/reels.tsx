@@ -75,14 +75,14 @@ export const Route = createFileRoute("/_authenticated/reels")({
     links: [
       { rel: "preconnect", href: "https://www.youtube.com" },
       { rel: "preconnect", href: "https://i.ytimg.com" },
-      { rel: "preconnect", href: "https://rr1---sn-vgqsrn6k.googlevideo.com", crossOrigin: "anonymous" },
+      { rel: "preconnect", href: "https://rr1---sn-vgqsrn6k.googlevideo.com", crossOrigin: "anonymous" as const },
       { rel: "dns-prefetch", href: "https://googlevideo.com" },
       ...(import.meta.env["VITE_SUPABASE_URL"]
         ? [
             {
               rel: "preconnect",
               href: String(import.meta.env["VITE_SUPABASE_URL"]),
-              crossOrigin: "anonymous",
+              crossOrigin: "anonymous" as const,
             },
           ]
         : []),
