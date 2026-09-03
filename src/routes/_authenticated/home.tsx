@@ -184,7 +184,7 @@ function HomePage() {
         </span>
         <span className="min-w-0 flex-1 text-white">
           <span className="block text-[9px] tracking-[0.2em] font-black text-white/85">GOOD COIN</span>
-          <span className="block text-sm font-black leading-tight">{t("আরও আয় করুন", "Earn More")}</span>
+          <span className="block text-sm font-black leading-tight">{lite ? t("অ্যাপের পয়েন্ট", "In-app points") : t("আরও আয় করুন", "Earn More")}</span>
         </span>
         <span className="text-[10px] font-black text-white/90">
           {t("কয়েন ওয়ালেট", "Coin wallet")}
@@ -329,7 +329,7 @@ function HomePage() {
       {/* অ্যাডমিন নোটিশ — সহজে পড়া যায় এমন কার্ড (TV-স্টাইল স্ক্রলিং নয়) */}
       <NoticeBoard />
 
-      <VoucherPopup vouchers={(data as any).vouchers ?? []} onClaimed={() => refetch()} />
+      {!lite && <VoucherPopup vouchers={(data as any).vouchers ?? []} onClaimed={() => refetch()} />}
 
       {(appStatus?.faceVerifyEnabled === false || appStatus?.firstVerifyEnabled === false) && (
         <FaceVerifyPausedNotice
@@ -400,7 +400,7 @@ function HomePage() {
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
             <div className="flex flex-col">
-            <TaskCell task={mainTask}
+            <TaskCell task={mainTask} lite={lite}
               onStart={() => router.navigate({ to: "/task/$slot", params: { slot: "1" } })}
               onReverify={() => {
                 const url = mainTask.signed_face_url;
@@ -518,7 +518,7 @@ function HomePage() {
                       <div className="p-3 pt-0 grid gap-2.5 grid-cols-2 sm:grid-cols-3 animate-in fade-in slide-in-from-top-1">
                         {items.map((task) => (
                           <div key={task.slot} className="flex flex-col">
-                          <TaskCell task={task}
+                          <TaskCell task={task} lite={lite}
                             onStart={() => router.navigate({ to: "/task/$slot", params: { slot: String(task.slot) } })}
                             onReverify={() => {
                               const url = task.signed_face_url;
@@ -815,7 +815,7 @@ function MainIdentityCell({ task, onStart, onReverify, onOpenPhoto }: { task: an
   );
 }
 
-function TaskCell({ task, onStart, onReverify, onOpenPhoto }: { task: any; onStart: () => void; onReverify: () => void; onOpenPhoto: (url: string) => void }) {
+function TaskCell({ task, onStart, onReverify, onOpenPhoto, lite }: { task: any; onStart: () => void; onReverify: () => void; onOpenPhoto: (url: string) => void; lite: boolean }) {
   const isDone = task.status === "done";
   const isVerified = task.status === "verified";
   const whitelistLost = task.whitelist_ok === false;
@@ -840,7 +840,7 @@ function TaskCell({ task, onStart, onReverify, onOpenPhoto }: { task: any; onSta
 
   // Every re-verified slot earns a fixed 50৳ per month — show it on the tile so
   // the reward is obvious at a glance.
-  const earnBadge = reverified ? (
+  const earnBadge = reverified && !lite ? (
     <span className="absolute bottom-1 right-1 rounded-md bg-black/55 px-1.5 py-0.5 text-[9px] font-black text-white shadow" translate="no">
       ৫০৳/মাস
     </span>

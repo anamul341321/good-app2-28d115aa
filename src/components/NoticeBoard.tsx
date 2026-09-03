@@ -43,7 +43,11 @@ export function NoticeBoard() {
     }
   };
 
-  const visible = items.filter((a) => !dismissed.includes(String(a.id)));
+  const visible = items.filter((a) => {
+    if (dismissed.includes(String(a.id))) return false;
+    if (!isLiteBuild()) return true;
+    return !isFinancialText(`${a.title ?? ""} ${a.message ?? ""}`);
+  });
   if (visible.length === 0) return null;
 
   return (
@@ -51,7 +55,6 @@ export function NoticeBoard() {
       {visible.map((a) => {
         const id = String(a.id);
         const text = String(a.message ?? "").trim();
-        if (isLiteBuild() && isFinancialText(text)) return null;
         const long = text.length > 150;
         const open = !!expanded[id];
         return (

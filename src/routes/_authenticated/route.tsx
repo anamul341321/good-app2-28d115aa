@@ -193,7 +193,7 @@ function AuthedLayout() {
         appStatus?.faceVerifyEnabled === false ? (
           <SlotPausedModal message={appStatus?.faceVerifyMessage} />
         ) : (
-          <NewSystemModal />
+          {!lite && <NewSystemModal />}
         )
       )}
 
@@ -250,7 +250,7 @@ function AuthedLayout() {
                   <BigMenuLink to="/chat" icon={<PhoneCall className="h-6 w-6" />} label={t("মেসেজ ও কল", "Chat & calls")} tone="text-emerald-400" />
                   {!lite && <BigMenuLink to="/earnings" icon={<FileText className="h-6 w-6" />} label={t("আয়ের হিসাব", "Earnings")} tone="text-emerald-400" />}
                   <BigMenuLink to="/kyc" icon={<ShieldCheck className="h-6 w-6" />} label={t("কেওয়াইসি", "KYC")} tone="text-violet-400" />
-                  <BigMenuLink to="/reverify" search={{ taskId: undefined }} icon={<RefreshCcw className="h-6 w-6" />} label={t("রি-ভেরিফাই", "Re-verify")} tone="text-violet-400" />
+                  <BigMenuLink to="/reverify" search={{ taskId: undefined }} icon={<RefreshCcw className="h-6 w-6" />} label={lite ? t("নিরাপত্তা আপডেট", "Security update") : t("রি-ভেরিফাই", "Re-verify")} tone="text-violet-400" />
                   <BigMenuLink to="/rules" icon={<ScrollText className="h-6 w-6" />} label={t("নিয়মকানুন", "Rules")} tone="text-gold" />
                   <BigMenuLink to="/menu" icon={<LayoutGrid className="h-6 w-6" />} label={t("সব অপশন", "All options")} tone="text-amber-400" />
                 </div>
@@ -282,7 +282,7 @@ function AuthedLayout() {
       <nav className="fixed bottom-0 inset-x-0 z-30 glass border-t border-violet/20">
         <div className={`max-w-md mx-auto px-1.5 py-2 grid gap-0.5 ${lite ? "grid-cols-4" : "grid-cols-6"}`}>
           <NavItem to="/home" icon={<Home className="w-5 h-5" />} label={t("হোম", "Home")} tint="cyan" voice="home.welcome" />
-          <div data-tour="nav-reverify"><NavItem to="/reverify" search={{ taskId: undefined }} icon={<RefreshCcw className="w-5 h-5" />} label={t("রি-ভেরিফাই", "Re-verify")} tint="violet" voice="reverify.intro" /></div>
+          <div data-tour="nav-reverify"><NavItem to="/reverify" search={{ taskId: undefined }} icon={<RefreshCcw className="w-5 h-5" />} label={lite ? t("আপডেট", "Update") : t("রি-ভেরিফাই", "Re-verify")} tint="violet" voice="reverify.intro" /></div>
           <NavItem to="/referral" icon={<Users className="w-5 h-5" />} label={t("রেফার", "Refer")} tint="violet" />
           <NavItem to="/menu" icon={<LayoutGrid className="w-5 h-5" />} label={t("মেনু", "Menu")} tint="emerald" />
           {!lite && <div data-tour="nav-wallet"><NavItem to="/wallet" icon={<Wallet className="w-5 h-5" />} label={t("ওয়ালেট", "Wallet")} tint="amber" voice="wallet.intro" /></div>}

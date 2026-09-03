@@ -34,12 +34,12 @@ type Tile = {
 };
 
 // Financial features are hidden in the Play Store Lite build.
-const LITE_HIDDEN = new Set(["/wallet", "/withdraw", "/earnings", "/recharge", "/send"]);
+const LITE_HIDDEN = new Set(["/wallet", "/withdraw", "/earnings", "/recharge", "/send", "/offers"]);
 
 // Referral lives in its own dedicated nav button now, so it is intentionally
 // not part of this grid.
 const TILES: Tile[] = [
-  { to: "/coins", Icon: Coins, bn: "আরও আয় করুন", en: "Earn More", hintBn: "কয়েন ওয়ালেট", hintEn: "Coin wallet", from: "#f59e0b", to2: "#ea580c" },
+  { to: "/coins", Icon: Coins, bn: "Good Coin", en: "Good Coin", hintBn: "অ্যাপের পয়েন্ট", hintEn: "In-app points", from: "#f59e0b", to2: "#ea580c" },
   { to: "/feed", Icon: Newspaper, bn: "নিউজ ফিড", en: "News Feed", hintBn: "পোস্ট · স্টোরি", hintEn: "Posts · stories", from: "#1877F2", to2: "#42a5f5" },
   { to: "/reels", Icon: Clapperboard, bn: "রিলস", en: "Reels", hintBn: "শর্ট ভিডিও", hintEn: "Short videos", from: "#e11d48", to2: "#f97316" },
   { to: "/studio", Icon: Youtube, bn: "ভিডিও", en: "Videos", hintBn: "ভিডিও আপলোড", hintEn: "Upload video", from: "#dc2626", to2: "#ef4444" },
@@ -47,7 +47,7 @@ const TILES: Tile[] = [
 
   { to: "/withdraw", Icon: ArrowDownToLine, bn: "উইথড্র", en: "Withdraw", hintBn: "টাকা তুলুন", hintEn: "Cash out", from: "#f43f5e", to2: "#ec4899" },
   { to: "/earnings", Icon: BarChart3, bn: "আয়ের হিসাব", en: "Earnings", hintBn: "সম্পূর্ণ হিসাব", hintEn: "Full statement", from: "#10b981", to2: "#06b6d4" },
-  { to: "/reverify", Icon: RefreshCcw, bn: lite ? "আপডেট" : "রি-ভেরিফাই", en: "Re-verify", hintBn: lite ? "সিকিউরিটি চেক" : "৪ দিন পর", hintEn: lite ? "Security check" : "Every 4 days", from: "#06b6d4", to2: "#3b82f6" },
+  { to: "/reverify", Icon: RefreshCcw, bn: "নিরাপত্তা আপডেট", en: "Security update", hintBn: "পরিচয় সুরক্ষা", hintEn: "Identity security", from: "#06b6d4", to2: "#3b82f6" },
   { to: "/recharge", Icon: Smartphone, bn: "রিচার্জ", en: "Recharge", hintBn: "মোবাইল রিচার্জ", hintEn: "Mobile top-up", from: "#22c55e", to2: "#14b8a6" },
   { to: "/send", Icon: Send, bn: "সেন্ড", en: "Send", hintBn: "ব্যালেন্স পাঠান", hintEn: "Send balance", from: "#a855f7", to2: "#ec4899" },
   { to: "/offers", Icon: Gift, bn: "অফার", en: "Offers", hintBn: "বোনাস অফার", hintEn: "Bonus offers", from: "#ec4899", to2: "#f59e0b" },

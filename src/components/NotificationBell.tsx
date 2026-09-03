@@ -3,6 +3,8 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Bell, X, CheckCheck } from "lucide-react";
 import { getMyNotifications, markAllNoticesRead } from "@/lib/notices.functions";
 import { playNotifyTone } from "@/lib/msg-sound";
+import { isLiteBuild } from "@/lib/lite-build";
+import { isFinancialText } from "@/lib/lite-policy";
 
 
 function timeAgo(iso: string) {
@@ -40,8 +42,11 @@ export function NotificationBell() {
     onSuccess: () => refetch(),
   });
 
-  const unread = data?.unread ?? 0;
-  const items = data?.items ?? [];
+  const allItems = data?.items ?? [];
+  const items = isLiteBuild()
+    ? allItems.filter((n) => !isFinancialText(`${n.title ?? ""} ${n.body ?? ""}`))
+    : allItems;
+  const unread = items.filter((n) => !n.read).length;
   const hasUnreadWarning = items.some(
     (n) => !n.read && severityOf(`${n.title ?? ""} ${n.body}`, n.type) === "bad",
   );
