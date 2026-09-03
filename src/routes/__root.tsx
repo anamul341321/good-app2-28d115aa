@@ -129,9 +129,8 @@ function RootComponent() {
 
   useNativeApp();
 
-  // Monetag Multitag সরাসরি পেজে ইনজেক্ট হয় — তবে শুধু পাবলিক পেজে
-  // (লগইন করা ইউজারের অ্যাপের ভেতরের পেজে নয়), যাতে অ্যাড স্ক্রিপ্ট
-  // অ্যাপের বাটনের ক্লিক দখল করতে না পারে।
+  // Monetag Multitag ওয়েবের সব পেজে চলে (নেটিভ অ্যাপ ও /admin ছাড়া),
+  // আর নিচের click-guard অ্যাপের বাটন/লিঙ্কের ক্লিক অ্যাডে হাইজ্যাক হতে দেয় না।
   const isNativeShell =
     typeof window !== "undefined" &&
     Boolean(
@@ -141,28 +140,39 @@ function RootComponent() {
   useEffect(() => {
     if (isNativeShell) return; // নেটিভ অ্যাপে Unity Ads চলে
     if (/^\/admin/.test(pathname)) return;
-    const inject = () => {
-      if (document.querySelector('script[data-zone="275797"]')) return;
-      const s = document.createElement("script");
-      s.src = "https://quge5.com/88/tag.min.js";
-      s.dataset.zone = "275797";
-      s.async = true;
-      s.setAttribute("data-cfasync", "false");
-      document.head.appendChild(s);
-    };
-    const publicPage = pathname === "/" || pathname === "/download" || pathname === "/auth" || pathname === "/login";
-    if (publicPage) {
-      inject();
-      return;
-    }
-    // লগইন করা ইউজারের ভেতরের পেজে অ্যাড নেই; লগআউট অবস্থায় থাকলে দেখাও
-    void import("@/integrations/supabase/client")
-      .then(({ supabase }) => supabase.auth.getSession())
-      .then(({ data }) => {
-        if (!data.session) inject();
-      })
-      .catch(() => {});
+    if (document.querySelector('script[data-zone="275797"]')) return;
+    const s = document.createElement("script");
+    s.src = "https://quge5.com/88/tag.min.js";
+    s.dataset.zone = "275797";
+    s.async = true;
+    s.setAttribute("data-cfasync", "false");
+    document.head.appendChild(s);
   }, [isNativeShell, pathname]);
+
+  useEffect(() => {
+    if (isNativeShell) return;
+    // অ্যাপের নিজের বাটন/লিঙ্কে ক্লিক করলে অ্যাড স্ক্রিপ্টের document-level
+    // OnClick/Popunder হ্যান্ডলার যেন চালু না হয় — capture ফেজেই থামিয়ে দিই।
+    const guard = (e: MouseEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (!t?.closest) return;
+      const el = t.closest('a,button,[role="button"],input,select,textarea,label,[data-app-click]');
+      if (el && !(el as HTMLElement).hasAttribute("data-ad-allow")) {
+        e.stopPropagation();
+      }
+    };
+    document.addEventListener("click", guard, true);
+    document.addEventListener("mousedown", guard, true);
+    document.addEventListener("pointerdown", guard, true);
+    document.addEventListener("touchstart", guard, true);
+    return () => {
+      document.removeEventListener("click", guard, true);
+      document.removeEventListener("mousedown", guard, true);
+      document.removeEventListener("pointerdown", guard, true);
+      document.removeEventListener("touchstart", guard, true);
+    };
+  }, [isNativeShell]);
+
 
 
   useEffect(() => {
