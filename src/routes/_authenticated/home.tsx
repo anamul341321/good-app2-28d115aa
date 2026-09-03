@@ -15,6 +15,7 @@ import { getAppStatus } from "@/lib/app-status.functions";
 import { GmailSecurityBanner } from "@/components/GmailSecurityBanner";
 import { AdsBoostBanner } from "@/components/AdsBoostBanner";
 import { ReferBonusBanner, RatesEntryCard } from "@/components/ReferBonusBanner";
+import { ForeignCurrencyCard } from "@/components/ForeignCurrencyCard";
 import { ComplianceDisclaimer } from "@/components/ComplianceDisclaimer";
 import { DashSection } from "@/components/DashSection";
 import { SlotClaimButton, type SlotClaim } from "@/components/SlotClaimButton";
