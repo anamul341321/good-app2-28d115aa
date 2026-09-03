@@ -56,13 +56,18 @@ export function DailyActiveCard() {
             <Flame className={`h-3.5 w-3.5 ${done ? "text-emerald-300" : "text-amber-300"}`} />
             <p className="text-[12px] font-black tracking-wide text-white/90">আজকের অ্যাক্টিভ সময়</p>
           </div>
-          <p className="mono-num mt-0.5 text-[22px] font-black leading-none text-white">
+          <p className="mono-num mt-0.5 text-[17px] font-black leading-tight text-white">
             {formatActiveTime(seconds)}
             <span className="ml-1 text-[11px] font-bold text-white/60">/ ১ ঘণ্টা</span>
           </p>
           <p className={`mt-1 text-[11px] font-bold ${done ? "text-emerald-200" : "text-amber-200"}`}>
             {done ? "✅ ক্লেইম বাটন খুলে গেছে" : `⏳ আর ${formatActiveTime(left)} বাকি`}
           </p>
+          {!done && (
+            <p className={`mt-0.5 text-[10.5px] font-bold ${active ? "text-emerald-200" : "text-rose-200"}`}>
+              {active ? "🟢 সময় গোনা চলছে" : "⏸️ থেমে আছে — স্ক্রল/ট্যাপ করুন"}
+            </p>
+          )}
         </div>
       </div>
 
