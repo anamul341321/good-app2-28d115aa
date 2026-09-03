@@ -301,6 +301,9 @@ function HomePage() {
         />
       </div>
 
+      {/* ডেইলি ১ ঘণ্টা অ্যাক্টিভ থাকার নোটিশ + লাইভ কাউন্টার (মাইনিং কার্ডের নিচে) */}
+      <DailyActiveCard />
+
       {/* Ads সাপোর্ট ব্যানার — Continue দিতে উৎসাহ */}
       <AdsBoostBanner />
 
