@@ -305,8 +305,8 @@ function HomePage() {
 
       {/* বিদেশি ইউজারদের জন্য USDT + নিজের দেশের মুদ্রায় ব্যালেন্স */}
       <ForeignCurrencyCard
-        main={Number((data as any)?.balanceBreakdown?.main ?? (data as any)?.profile?.balance ?? 0)}
-        mining={Number(data.mining?.accrued_amount ?? 0)}
+        main={Number((data as any)?.balanceBreakdown?.bonus_part ?? 0)}
+        mining={Number((data as any)?.balanceBreakdown?.mining_available ?? data.mining?.accrued_amount ?? 0)}
       />
 
       {/* ডেইলি ১ ঘণ্টা অ্যাক্টিভ থাকার নোটিশ + লাইভ কাউন্টার (মাইনিং কার্ডের নিচে) */}
