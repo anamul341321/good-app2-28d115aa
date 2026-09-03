@@ -278,7 +278,14 @@ export async function runAutoEngagement(maxJobs = 12): Promise<{ processed: Enga
       });
       const cIds: string[] = ((commentUsers ?? []) as any[]).map((r) => r.user_id).filter(Boolean);
       if (cIds.length) {
-        const rows = cIds.map((uid) => ({ post_id: post.id, user_id: uid, body: pick(COMMENTS[sentiment]) }));
+        // UI `content` কলাম দেখায় — তাই দুই কলামেই একই লেখা রাখি, নাহলে খালি কমেন্ট দেখায়
+        const used = new Set<string>();
+        const rows = cIds.map((uid) => {
+          let text = pick(COMMENTS[sentiment]);
+          for (let i = 0; i < 6 && used.has(text); i += 1) text = pick(COMMENTS[sentiment]);
+          used.add(text);
+          return { post_id: post.id, user_id: uid, body: text, content: text };
+        });
         const { error: cErr } = await sb.from("post_comments").insert(rows);
         if (!cErr) {
           addedComments = cIds.length;
