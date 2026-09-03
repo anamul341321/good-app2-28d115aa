@@ -792,7 +792,7 @@ function MainIdentityCell({ task, onStart, onReverify, onOpenPhoto }: { task: an
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 px-1">
           <Sparkles className="w-6 h-6 text-white drop-shadow" />
           <p className="text-[11px] font-black text-white text-center leading-tight drop-shadow">
-            {(lite ? "আপডেট" : "রি-ভেরিফাই")}<br/>করুন
+            {(isLiteBuild() ? "আপডেট" : "রি-ভেরিফাই")}<br/>করুন
           </p>
         </div>
       </button>
