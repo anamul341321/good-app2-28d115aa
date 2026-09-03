@@ -99,10 +99,13 @@ const REPLACEMENTS: Array<[RegExp, string]> = [
 ];
 
 // Paths, urls, css/class strings, snake_case keys and empty strings are left alone.
-const SKIP_LITERAL = /^$|[/_.:@#]/;
+const SKIP_LITERAL = (text: string) =>
+  text === "" ||
+  // No spaces + pure ASCII + path/key punctuation => identifier, path, url or css class.
+  (!/\s/.test(text) && !/[^\x20-\x7e]/.test(text) && /[/_.:@#]/.test(text));
 
 const scrubLiteralText = (text: string) => {
-  if (SKIP_LITERAL.test(text)) return text;
+  if (SKIP_LITERAL(text)) return text;
   let out = text;
   for (const [re, to] of REPLACEMENTS) out = out.replace(re, to);
   return out;
