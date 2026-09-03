@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { computeLiveBalance, monthlyRate, MONTHLY_PER_SLOT } from "@/lib/mining";
 import { claimMiningToMain, claimAllSlotMining } from "@/lib/earnings.functions";
 import { Wallet, Sparkles, Gift, Loader2, Pickaxe, Eye, ChevronDown, ChevronUp, AlertTriangle } from "lucide-react";
-import { DAILY_ACTIVE_REQUIRED, formatActiveTime, useActivityToday } from "@/hooks/useActivityTracker";
+import { formatActiveTime, useLiveActiveSeconds } from "@/hooks/useActivityTracker";
 import { Button } from "@/components/ui/button";
 
 /** Decorative layers never change — memoised so the 1s balance tick doesn't repaint them. */
@@ -207,9 +207,7 @@ export function MiningCounter({
   const perDay = ratePerMonth / 30;
 
   // আজকের অ্যাক্টিভ সময় — ১ ঘণ্টা পূরণ হলেই ক্লেইম বাটন উজ্জ্বল হবে
-  const { data: activity } = useActivityToday();
-  const activeSeconds = activity?.seconds ?? 0;
-  const activeRequired = activity?.required ?? DAILY_ACTIVE_REQUIRED;
+  const { seconds: activeSeconds, required: activeRequired } = useLiveActiveSeconds();
   const activeDone = activeSeconds >= activeRequired;
   const activeLeft = Math.max(0, activeRequired - activeSeconds);
   const canClaimNow = activeDone && selfMiningClaimable >= 0.5;
