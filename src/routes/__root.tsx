@@ -141,22 +141,10 @@ function RootComponent() {
   const showWebAd = !isNativeShell && !/^\/admin/.test(pathname);
 
   useEffect(() => {
-    // পুরনো ইনজেক্ট করা ট্যাগ ও তার ফিক্সড ওভারলে সরিয়ে দেওয়া হয়
+    // আগের ভার্সনে পেজে সরাসরি ইনজেক্ট করা ট্যাগ থাকলে সেটি সরানো হয়।
+    // React-এর নিজের DOM নোড কখনো মুছে ফেলা হয় না (removeChild crash এড়াতে)।
     document.querySelector('script[data-zone="275797"]')?.remove();
-    const cleanup = () => {
-      document.querySelectorAll("body > iframe, body > ins").forEach((el) => el.remove());
-      document.querySelectorAll<HTMLElement>("body > div").forEach((el) => {
-        if (el.dataset["appRoot"] !== undefined) return;
-        const st = getComputedStyle(el);
-        if (st.position !== "fixed") return;
-        if (el.querySelector("[data-radix-portal], [role='dialog'], [data-sonner-toaster]")) return;
-        if (Number(st.zIndex) > 9000 && !el.querySelector("[data-app-ui]")) el.remove();
-      });
-    };
-    cleanup();
-    const t = window.setTimeout(cleanup, 1200);
-    return () => window.clearTimeout(t);
-  }, [pathname]);
+  }, []);
 
   useEffect(() => {
     document.body.classList.toggle("web-ad-on", showWebAd);
