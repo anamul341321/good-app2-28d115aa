@@ -810,9 +810,13 @@ function LocalReel({
           preload="auto"
           onTimeUpdate={(e) => { const v = e.currentTarget; if (!v.paused && !v.ended) markWatching(); }}
           onLoadedData={() => setMediaFailed(false)}
+          onWaiting={() => { if (isActive) setBuffering(true); }}
+          onPlaying={() => setBuffering(false)}
+          onCanPlay={() => setBuffering(false)}
           onError={() => setMediaFailed(true)}
         />
       ) : (
+
         <div className="relative flex h-full w-full items-center justify-center bg-black">
           {posterUrl && (
             <img
