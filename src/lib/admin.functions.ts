@@ -1871,7 +1871,7 @@ export const adminUpdateBonusSettings = createServerFn({ method: "POST" })
       "test_apk_url", "test_apk_version",
       "apk_lite_url", "apk_lite_version",
       "test_apk_lite_url", "test_apk_lite_version",
-      "min_app_version", "force_update_enabled", "force_update_enabled", "force_update_web", "force_update_message",
+      "min_app_version", "force_update_enabled", "force_update_web", "force_update_message",
     ] as const) {
       if ((data as any)[k] !== undefined) patch[k] = (data as any)[k];
     }
