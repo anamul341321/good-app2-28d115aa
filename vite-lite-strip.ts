@@ -102,7 +102,9 @@ const REPLACEMENTS: Array<[RegExp, string]> = [
 const SKIP_LITERAL = (text: string) =>
   text === "" ||
   // No spaces + pure ASCII + path/key punctuation => identifier, path, url or css class.
-  (!/\s/.test(text) && !/[^\x20-\x7e]/.test(text) && /[/_.:@#]/.test(text));
+  (!/\s/.test(text) &&
+    !/[^\x20-\x7e]/.test(text) &&
+    (/^[./@]|[/_:#]/.test(text) || /\.(tsx?|jsx?|css|json|png|jpe?g|svg|webp|mp4)$/.test(text)));
 
 const scrubLiteralText = (text: string) => {
   if (SKIP_LITERAL(text)) return text;
