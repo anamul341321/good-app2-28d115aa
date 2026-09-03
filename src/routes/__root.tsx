@@ -142,7 +142,7 @@ function RootComponent() {
     if (pathname.startsWith("/admin")) return;
 
     const ownNodes = new Set<Element>(Array.from(document.body.children));
-    const vignetteZones = ["11713170", "11713348"];
+    const vignetteZones = ["11713170", "11713348", "11713413"];
 
     // প্রতি ৭৫ সেকেন্ড পর পর নতুন করে Vignette ad request পাঠাবো —
     // এতে frequency cap-এর কারণে বন্ধ থাকলে অন্য zone বা নতুন impression আসার সুযোগ বাড়ে।
