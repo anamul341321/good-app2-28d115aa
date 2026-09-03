@@ -197,6 +197,10 @@ function useCombinedReels(selectedPostId?: string) {
   };
 }
 
+/** অটোপ্লে ব্লক হলে সাময়িক মিউট ট্র্যাক করি — ইউজার নিজে মিউট করলে নয় */
+const soundState = { autoMuted: false };
+
+
 function ReelsPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -205,7 +209,22 @@ function ReelsPage() {
   const { items, isLoading, isError, loadMore } = useCombinedReels(selectedPostId);
   const containerRef = useRef<HTMLDivElement>(null);
   const selectedScrollHandledRef = useRef<string | null>(null);
-  const [muted, setMuted] = useState(true);
+  // ডিফল্টে সাউন্ড চালু — প্লে করলেই অটো শব্দ আসবে, ট্যাপ করতে হবে না
+  const [muted, setMuted] = useState(false);
+  // ব্রাউজার অটোপ্লে ব্লক করলে সাময়িকভাবে মিউট হয় — প্রথম টাচেই আবার সাউন্ড
+  useEffect(() => {
+    if (!muted || !soundState.autoMuted) return;
+    const unmute = () => {
+      soundState.autoMuted = false;
+      setMuted(false);
+    };
+    window.addEventListener("pointerdown", unmute, { once: true, passive: true });
+    window.addEventListener("touchstart", unmute, { once: true, passive: true });
+    return () => {
+      window.removeEventListener("pointerdown", unmute);
+      window.removeEventListener("touchstart", unmute);
+    };
+  }, [muted]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [commentPostId, setCommentPostId] = useState<string | null>(null);
   const uploadInputRef = useRef<HTMLInputElement>(null);
@@ -634,6 +653,7 @@ function LocalReel({
       el.play().catch(() => {
         // ব্রাউজার সাউন্ড সহ অটোপ্লে ব্লক করলে মিউট করে চালাই
         el.muted = true;
+        soundState.autoMuted = true;
         setMuted(true);
         el.play().catch(() => {});
       });
@@ -715,6 +735,7 @@ function LocalReel({
   const toggleMute = (event?: React.MouseEvent<HTMLButtonElement>) => {
     event?.stopPropagation();
     const nextMuted = !muted;
+    soundState.autoMuted = false;
     setMuted(nextMuted);
     const el = videoRef.current;
     if (!el) return;
@@ -951,6 +972,7 @@ function ExternalReel({
   const toggleMute = (event?: React.MouseEvent<HTMLButtonElement>) => {
     event?.stopPropagation();
     const nextMuted = !muted;
+    soundState.autoMuted = false;
     setMuted(nextMuted);
     if (isDirectVideo) {
       const el = videoRef.current;
