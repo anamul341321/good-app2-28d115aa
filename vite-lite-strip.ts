@@ -182,8 +182,11 @@ const aliasOf = (name: string) => {
   return alias;
 };
 
-/** atob() expression that reproduces `text` at runtime. */
-const hidden = (text: string) => `atob(${JSON.stringify(b64(text))})`;
+/** Expression that reproduces `text` at runtime without spelling it out. */
+const hidden = (text: string) =>
+  /[^\x00-\x7f]/.test(text)
+    ? `decodeURIComponent(atob(${JSON.stringify(b64(encodeURIComponent(text)))}))`
+    : `atob(${JSON.stringify(b64(text))})`;
 
 type Segment = { kind: "code" | "sq" | "dq" | "tpl" | "comment"; start: number; end: number };
 
