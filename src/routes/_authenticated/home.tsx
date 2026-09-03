@@ -308,7 +308,6 @@ function HomePage() {
         mining={Number((data as any)?.balanceBreakdown?.mining_available ?? data.mining?.accrued_amount ?? 0)}
       />
 
-      {/* ডেইলি ১ ঘণ্টা অ্যাক্টিভ থাকার নোটিশ + লাইভ কাউন্টার (মাইনিং কার্ডের নিচে) */}
 
       {/* দেশভিত্তিক রেট + রেফার বোনাস এন্ট্রি */}
       <RatesEntryCard />

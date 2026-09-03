@@ -38,7 +38,6 @@ import { useServerFn } from "@tanstack/react-start";
 
 import { clearSharedSession, getSharedSession } from "@/lib/auth-session";
 import { usePresence } from "@/lib/presence";
-import { useActivityTracker } from "@/hooks/useActivityTracker";
 
 
 
@@ -51,8 +50,6 @@ export const Route = createFileRoute("/_authenticated")({
 function AuthedLayout() {
   // অ্যাপ খোলা + ডেটা অন থাকলেই "active" হার্টবিট যাবে (পুরো অ্যাপজুড়ে)
   usePresence();
-  // প্রতিদিনের অ্যাক্টিভ সময় গোনা হয় (মাইনিং ক্লেইমের জন্য দিনে ১ ঘণ্টা লাগে)
-  useActivityTracker();
   const router = useRouter();
   const clearOtpTrust = useServerFn(clearCurrentDeviceOtpTrust);
   const pathname = useRouterState({ select: (state) => state.location.pathname });
