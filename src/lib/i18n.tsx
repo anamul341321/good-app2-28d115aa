@@ -36,9 +36,14 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY) as Lang | null;
-      if (saved && LANGS.includes(saved)) setLangState(saved);
       const savedCountry = localStorage.getItem(COUNTRY_KEY);
       if (savedCountry) setCountryState(savedCountry.toUpperCase());
+      if (saved && LANGS.includes(saved)) {
+        setLangState(saved);
+      } else if (savedCountry) {
+        // ভাষা নিজে বাছাই না করলে দেশ অনুযায়ী ডিফল্ট — বাংলাদেশ ছাড়া সব দেশে English
+        setLangState(getRegion(savedCountry).lang);
+      }
     } catch {}
     setHydrated(true);
   }, []);
