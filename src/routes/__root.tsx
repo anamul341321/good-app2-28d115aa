@@ -130,53 +130,49 @@ function RootComponent() {
   useNativeApp();
 
   useEffect(() => {
-    // Safe Monetag formats only:
-    //   - Vignette (11713170): full-screen ad with a close button (best payout)
-    //   - In-Page Push (11713181): the small ad box — forced to the very BOTTOM
-    //     so it never covers app buttons.
-    // The old Multitag (OnClick/Popunder) stays removed: it hijacked clicks.
+    // Only Vignette (11713170): full-screen ad with a close button, highest payout,
+    // and it never sits on top of app buttons.
+    // In-Page Push (11713181) and the old Multitag (OnClick/Popunder) stay OFF —
+    // they covered the UI / hijacked clicks and paid very little.
     document
-      .querySelectorAll('script[data-zone="275797"], script[src*="quge5.com/88/tag.min.js"]')
+      .querySelectorAll(
+        'script[data-zone="275797"], script[src*="quge5.com/88/tag.min.js"], script[data-zone="11713181"], script[src*="nap5k.com"]',
+      )
       .forEach((node) => node.remove());
     if (pathname.startsWith("/admin")) return;
 
     const ownNodes = new Set<Element>(Array.from(document.body.children));
-    const ensure = (zone: string, src: string) => {
-      if (document.querySelector(`script[data-zone="${zone}"]`)) return;
+    if (!document.querySelector('script[data-zone="11713170"]')) {
       const s = document.createElement("script");
-      s.dataset.zone = zone;
-      s.src = src;
+      s.dataset.zone = "11713170";
+      s.src = "https://n6wxm.com/vignette.min.js";
       s.async = true;
       document.body.appendChild(s);
-    };
-    ensure("11713170", "https://n6wxm.com/vignette.min.js");
-    ensure("11713181", "https://nap5k.com/tag.min.js");
+    }
 
-    // Any small fixed container the ad network injects gets pushed to the very
-    // bottom (above the nav bar). Full-screen formats are left alone.
-    const pinToBottom = () => {
+    // Safety net: if any leftover small fixed ad box shows up, hide it instead of
+    // letting it cover the top of the screen.
+    const hideStrayBoxes = () => {
       Array.from(document.body.children).forEach((el) => {
         if (ownNodes.has(el) || el.tagName === "SCRIPT" || el.tagName === "STYLE") return;
         const node = el as HTMLElement;
         const style = window.getComputedStyle(node);
         if (style.position !== "fixed" || style.display === "none") return;
         const rect = node.getBoundingClientRect();
-        if (rect.height > window.innerHeight * 0.5) return; // vignette / interstitial
-        node.style.setProperty("top", "auto", "important");
-        node.style.setProperty("bottom", "calc(env(safe-area-inset-bottom) + 72px)", "important");
-        node.style.setProperty("max-height", "110px", "important");
-        node.style.setProperty("z-index", "40", "important");
+        if (rect.height > window.innerHeight * 0.5) return; // vignette — leave alone
+        if (rect.top < window.innerHeight * 0.5) node.style.setProperty("display", "none", "important");
       });
     };
-    const observer = new MutationObserver(pinToBottom);
+    const observer = new MutationObserver(hideStrayBoxes);
     observer.observe(document.body, { childList: true, subtree: true });
-    const pinTimer = window.setInterval(pinToBottom, 800);
+    const pinTimer = window.setInterval(hideStrayBoxes, 800);
 
     return () => {
       observer.disconnect();
       window.clearInterval(pinTimer);
     };
   }, [pathname]);
+
 
 
 
