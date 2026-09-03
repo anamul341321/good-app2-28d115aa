@@ -283,9 +283,6 @@ function HomePage() {
       {/* দুইটি প্রধান বাটন — মেসেঞ্জার ও নিউজ ফিড */}
       {socialEntryCards}
 
-      {/* ডেইলি ১ ঘণ্টা অ্যাক্টিভ থাকার নোটিশ + লাইভ কাউন্টার */}
-      <DailyActiveCard />
-
       {/* মাইনিং কার্ড */}
       <div data-tour="mining" data-voice="home.mining" className="relative">
         <MiningCounter
