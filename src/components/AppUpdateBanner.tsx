@@ -44,20 +44,26 @@ export function AppUpdateBanner() {
   const [percent, setPercent] = useState(0);
   const [hidden, setHidden] = useState(false);
 
-  // ওয়েবে একবার বন্ধ করলে ১২ ঘণ্টা আর দেখায় না — না হলে প্রতি পেজে
-  // পুরো স্ক্রিন ঢেকে ফেলে ও ভিজিটর কিছুই ক্লিক করতে পারে না।
+  // একবার বন্ধ করলে সেই version-এর জন্য আর দেখায় না।
+  // native-এও কাজ করে কারণ WebView localStorage share করে।
   useEffect(() => {
-    if (native) return;
     try {
-      const at = Number(localStorage.getItem("web_update_banner_hide_at") || "0");
-      if (Date.now() - at < 12 * 60 * 60 * 1000) setHidden(true);
+      const saved = localStorage.getItem("update_banner_dismissed");
+      if (!saved) return;
+      const parsed = JSON.parse(saved) as { version?: string; at?: number };
+      if (parsed.version && parsed.version === latest) setHidden(true);
+      // fallback: older time-based hide (12h) for web
+      else if (!native && parsed.at && Date.now() - parsed.at < 12 * 60 * 60 * 1000) setHidden(true);
     } catch { /* ignore */ }
-  }, [native]);
+  }, [native, latest]);
 
   const hide = () => {
     setHidden(true);
     try {
-      localStorage.setItem("web_update_banner_hide_at", String(Date.now()));
+      localStorage.setItem(
+        "update_banner_dismissed",
+        JSON.stringify({ version: latest ?? null, at: Date.now() })
+      );
     } catch { /* ignore */ }
   };
 
