@@ -2779,7 +2779,8 @@ export const adminSetApkRelease = createServerFn({ method: "POST" })
       ok: true,
       path: data.path,
       version: cleanVersion,
-      downloadUrl: `/api/public/app/download?v=${encodeURIComponent(cleanVersion)}&file=${encodeURIComponent(data.path)}`,
+      lite: data.lite,
+      downloadUrl: `/api/public/app/download?v=${encodeURIComponent(cleanVersion)}&file=${encodeURIComponent(data.path)}${data.lite ? "&lite=1" : ""}`,
     };
   });
 
