@@ -707,6 +707,33 @@ function LocalReel({
     });
   }, [isActive, mediaFailed, post.content, post.image_url, post.user?.display_name, videoUrl]);
 
+  // স্লো নেটে ভিডিও আটকে গেলে নিজে থেকেই আবার চালু করার চেষ্টা করি
+  useEffect(() => {
+    if (!isActive || !buffering) return;
+    const timer = window.setTimeout(() => {
+      const el = videoRef.current;
+      if (!el) return;
+      if (el.readyState >= 3) {
+        setBuffering(false);
+        el.play().catch(() => {});
+        return;
+      }
+      // এখনো ডেটা আসেনি — সোর্স রিলোড করে আবার চেষ্টা
+      try {
+        el.load();
+        el.play().catch(() => {});
+      } catch {
+        /* ignore */
+      }
+    }, 6000);
+    return () => window.clearTimeout(timer);
+  }, [isActive, buffering]);
+
+  useEffect(() => {
+    if (!isActive) setBuffering(false);
+  }, [isActive]);
+
+
   const likeMutation = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error("no user");
