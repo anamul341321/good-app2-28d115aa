@@ -6,8 +6,9 @@ import { adminStats } from "@/lib/admin.functions";
 import {
   Users, ArrowDownToLine, ScanFace, LogOut, Loader2, AlertTriangle,
   LayoutDashboard, Clock, Wallet, ShieldCheck, Gift, Bot,
-  Fuel, Package
+  Fuel, Package, Globe2
 } from "lucide-react";
+
 
 import { useEffect, useState } from "react";
 
@@ -84,6 +85,8 @@ function AdminLayout() {
         <AdminTab to="/admin/unverified" icon={<AlertTriangle className="w-3.5 h-3.5" />} label="Not whitelisted" />
         <AdminTab to="/admin/celo-gas-transfer" icon={<Fuel className="w-3.5 h-3.5" />} label="Celo gas transfer" />
         <AdminTab to="/admin/bonus-settings" icon={<Gift className="w-3.5 h-3.5" />} label="Bonus" />
+        <AdminTab to="/admin/countries" icon={<Globe2 className="w-3.5 h-3.5" />} label="Countries" />
+
         <AdminTab to="/admin/announcements" icon={<AlertTriangle className="w-3.5 h-3.5" />} label="Announcements" />
         <AdminTab to="/admin/cards" icon={<Package className="w-3.5 h-3.5" />} label="Card Management" />
         <AdminTab to="/admin/telegram" icon={<Bot className="w-3.5 h-3.5" />} label="Telegram Bot" />

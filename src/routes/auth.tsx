@@ -548,6 +548,10 @@ export function AuthPage() {
           password,
           gender: (gender ?? "male") as "male" | "female",
           country: countryCode,
+          timezone: (() => {
+            try { return Intl.DateTimeFormat().resolvedOptions().timeZone ?? null; } catch { return null; }
+          })(),
+
           gmail: gmail.trim().toLowerCase() || null,
           referralCode: referralCode || null,
         },

@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as RulesRouteImport } from './routes/rules'
+import { Route as RatesRouteImport } from './routes/rates'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as EarnRouteImport } from './routes/earn'
 import { Route as DownloadRouteImport } from './routes/download'
@@ -38,6 +39,7 @@ import { Route as AdminPaidReportRouteImport } from './routes/admin/paid-report'
 import { Route as AdminMiningRouteImport } from './routes/admin/mining'
 import { Route as AdminKycRouteImport } from './routes/admin/kyc'
 import { Route as AdminFacesRouteImport } from './routes/admin/faces'
+import { Route as AdminCountriesRouteImport } from './routes/admin/countries'
 import { Route as AdminCeloGasTransferRouteImport } from './routes/admin/celo-gas-transfer'
 import { Route as AdminCardsRouteImport } from './routes/admin/cards'
 import { Route as AdminBonusSettingsRouteImport } from './routes/admin/bonus-settings'
@@ -101,6 +103,11 @@ const TermsRoute = TermsRouteImport.update({
 const RulesRoute = RulesRouteImport.update({
   id: '/rules',
   path: '/rules',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RatesRoute = RatesRouteImport.update({
+  id: '/rates',
+  path: '/rates',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrivacyRoute = PrivacyRouteImport.update({
@@ -235,6 +242,11 @@ const AdminKycRoute = AdminKycRouteImport.update({
 const AdminFacesRoute = AdminFacesRouteImport.update({
   id: '/faces',
   path: '/faces',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCountriesRoute = AdminCountriesRouteImport.update({
+  id: '/countries',
+  path: '/countries',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminCeloGasTransferRoute = AdminCeloGasTransferRouteImport.update({
@@ -529,6 +541,7 @@ export interface FileRoutesByFullPath {
   '/download': typeof DownloadRoute
   '/earn': typeof EarnRoute
   '/privacy': typeof PrivacyRoute
+  '/rates': typeof RatesRoute
   '/rules': typeof RulesRoute
   '/terms': typeof TermsRoute
   '/coins': typeof AuthenticatedCoinsRoute
@@ -556,6 +569,7 @@ export interface FileRoutesByFullPath {
   '/admin/bonus-settings': typeof AdminBonusSettingsRoute
   '/admin/cards': typeof AdminCardsRoute
   '/admin/celo-gas-transfer': typeof AdminCeloGasTransferRoute
+  '/admin/countries': typeof AdminCountriesRoute
   '/admin/faces': typeof AdminFacesRoute
   '/admin/kyc': typeof AdminKycRoute
   '/admin/mining': typeof AdminMiningRoute
@@ -612,6 +626,7 @@ export interface FileRoutesByTo {
   '/download': typeof DownloadRoute
   '/earn': typeof EarnRoute
   '/privacy': typeof PrivacyRoute
+  '/rates': typeof RatesRoute
   '/rules': typeof RulesRoute
   '/terms': typeof TermsRoute
   '/coins': typeof AuthenticatedCoinsRoute
@@ -638,6 +653,7 @@ export interface FileRoutesByTo {
   '/admin/bonus-settings': typeof AdminBonusSettingsRoute
   '/admin/cards': typeof AdminCardsRoute
   '/admin/celo-gas-transfer': typeof AdminCeloGasTransferRoute
+  '/admin/countries': typeof AdminCountriesRoute
   '/admin/faces': typeof AdminFacesRoute
   '/admin/kyc': typeof AdminKycRoute
   '/admin/mining': typeof AdminMiningRoute
@@ -697,6 +713,7 @@ export interface FileRoutesById {
   '/download': typeof DownloadRoute
   '/earn': typeof EarnRoute
   '/privacy': typeof PrivacyRoute
+  '/rates': typeof RatesRoute
   '/rules': typeof RulesRoute
   '/terms': typeof TermsRoute
   '/_authenticated/coins': typeof AuthenticatedCoinsRoute
@@ -724,6 +741,7 @@ export interface FileRoutesById {
   '/admin/bonus-settings': typeof AdminBonusSettingsRoute
   '/admin/cards': typeof AdminCardsRoute
   '/admin/celo-gas-transfer': typeof AdminCeloGasTransferRoute
+  '/admin/countries': typeof AdminCountriesRoute
   '/admin/faces': typeof AdminFacesRoute
   '/admin/kyc': typeof AdminKycRoute
   '/admin/mining': typeof AdminMiningRoute
@@ -783,6 +801,7 @@ export interface FileRouteTypes {
     | '/download'
     | '/earn'
     | '/privacy'
+    | '/rates'
     | '/rules'
     | '/terms'
     | '/coins'
@@ -810,6 +829,7 @@ export interface FileRouteTypes {
     | '/admin/bonus-settings'
     | '/admin/cards'
     | '/admin/celo-gas-transfer'
+    | '/admin/countries'
     | '/admin/faces'
     | '/admin/kyc'
     | '/admin/mining'
@@ -866,6 +886,7 @@ export interface FileRouteTypes {
     | '/download'
     | '/earn'
     | '/privacy'
+    | '/rates'
     | '/rules'
     | '/terms'
     | '/coins'
@@ -892,6 +913,7 @@ export interface FileRouteTypes {
     | '/admin/bonus-settings'
     | '/admin/cards'
     | '/admin/celo-gas-transfer'
+    | '/admin/countries'
     | '/admin/faces'
     | '/admin/kyc'
     | '/admin/mining'
@@ -950,6 +972,7 @@ export interface FileRouteTypes {
     | '/download'
     | '/earn'
     | '/privacy'
+    | '/rates'
     | '/rules'
     | '/terms'
     | '/_authenticated/coins'
@@ -977,6 +1000,7 @@ export interface FileRouteTypes {
     | '/admin/bonus-settings'
     | '/admin/cards'
     | '/admin/celo-gas-transfer'
+    | '/admin/countries'
     | '/admin/faces'
     | '/admin/kyc'
     | '/admin/mining'
@@ -1036,6 +1060,7 @@ export interface RootRouteChildren {
   DownloadRoute: typeof DownloadRoute
   EarnRoute: typeof EarnRoute
   PrivacyRoute: typeof PrivacyRoute
+  RatesRoute: typeof RatesRoute
   RulesRoute: typeof RulesRoute
   TermsRoute: typeof TermsRoute
   ApiTiktokFeedRoute: typeof ApiTiktokFeedRoute
@@ -1077,6 +1102,13 @@ declare module '@tanstack/react-router' {
       path: '/rules'
       fullPath: '/rules'
       preLoaderRoute: typeof RulesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rates': {
+      id: '/rates'
+      path: '/rates'
+      fullPath: '/rates'
+      preLoaderRoute: typeof RatesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/privacy': {
@@ -1266,6 +1298,13 @@ declare module '@tanstack/react-router' {
       path: '/faces'
       fullPath: '/admin/faces'
       preLoaderRoute: typeof AdminFacesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/countries': {
+      id: '/admin/countries'
+      path: '/countries'
+      fullPath: '/admin/countries'
+      preLoaderRoute: typeof AdminCountriesRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/celo-gas-transfer': {
@@ -1732,6 +1771,7 @@ interface AdminRouteChildren {
   AdminBonusSettingsRoute: typeof AdminBonusSettingsRoute
   AdminCardsRoute: typeof AdminCardsRoute
   AdminCeloGasTransferRoute: typeof AdminCeloGasTransferRoute
+  AdminCountriesRoute: typeof AdminCountriesRoute
   AdminFacesRoute: typeof AdminFacesRoute
   AdminKycRoute: typeof AdminKycRoute
   AdminMiningRoute: typeof AdminMiningRoute
@@ -1752,6 +1792,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminBonusSettingsRoute: AdminBonusSettingsRoute,
   AdminCardsRoute: AdminCardsRoute,
   AdminCeloGasTransferRoute: AdminCeloGasTransferRoute,
+  AdminCountriesRoute: AdminCountriesRoute,
   AdminFacesRoute: AdminFacesRoute,
   AdminKycRoute: AdminKycRoute,
   AdminMiningRoute: AdminMiningRoute,
@@ -1781,6 +1822,7 @@ const rootRouteChildren: RootRouteChildren = {
   DownloadRoute: DownloadRoute,
   EarnRoute: EarnRoute,
   PrivacyRoute: PrivacyRoute,
+  RatesRoute: RatesRoute,
   RulesRoute: RulesRoute,
   TermsRoute: TermsRoute,
   ApiTiktokFeedRoute: ApiTiktokFeedRoute,
