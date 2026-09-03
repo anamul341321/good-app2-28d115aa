@@ -184,7 +184,7 @@ function RootComponent() {
 
     // নতুন করে route বদলালে সাথে সাথেই আরেকটি request পাঠাবো না।
     if (!document.querySelector("script.monetag-rotator")) injectVignettes();
-    const rotateTimer = window.setInterval(injectVignettes, 45_000);
+    const rotateTimer = window.setInterval(injectVignettes, 5 * 60_000);
 
 
     // Safety net: if any leftover small fixed ad box shows up, hide it instead of
