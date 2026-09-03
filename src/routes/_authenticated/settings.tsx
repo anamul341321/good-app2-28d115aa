@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { isLiteBuild } from "@/lib/lite-build";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -525,8 +526,12 @@ function SettingsPage() {
         ) : (
           <div className="space-y-2">
             <ul className="text-[11px] font-bold text-muted-foreground space-y-1">
-              <li>⚠️ ব্যালেন্স থাকলে আগে উইথড্র করে নিন — ডিলিটের পর টাকা ফেরত পাওয়া যাবে না।</li>
-              <li>⚠️ পেন্ডিং উইথড্র থাকলে ডিলিট হবে না।</li>
+              {!isLiteBuild() && (
+                <>
+                  <li>⚠️ ব্যালেন্স থাকলে আগে উইথড্র করে নিন — ডিলিটের পর টাকা ফেরত পাওয়া যাবে না।</li>
+                  <li>⚠️ পেন্ডিং উইথড্র থাকলে ডিলিট হবে না।</li>
+                </>
+              )}
               <li>⚠️ ফেস ছবি ও সব ডেটা সাথে সাথেই মুছে যাবে।</li>
             </ul>
             <label className="text-[11px] font-black text-rose uppercase tracking-wider block">

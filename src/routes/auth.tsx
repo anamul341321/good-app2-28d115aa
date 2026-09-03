@@ -506,9 +506,34 @@ export function AuthPage() {
           localStorage.setItem("good-app-ref-code", referralCode.trim().toUpperCase());
       } catch {}
 
-      // ১) নেটিভ অ্যাপে প্রথমে Android Credential Manager — ফোনে যুক্ত Gmail
-      // একাউন্টগুলো সরাসরি chooser-এ দেখাবে (নতুন করে Gmail লিখতে হবে না)।
       let pickedEmail: string | undefined;
+
+      // ১) নেটিভ অ্যাপে প্রথমে ফোনের আসল ব্রাউজার (Chrome Custom Tab) খুলি —
+      // অন্য অ্যাপের মতো Google-এর পেজ আসবে, ব্রাউজারে থাকা Gmail গুলো দেখাবে,
+      // একটায় ট্যাপ করলেই লগইন হয়ে অ্যাপে ফিরে আসবে।
+      try {
+        const { isNativeApp, signInWithBrowserGoogle } = await import("@/lib/browser-google");
+        if (isNativeApp()) {
+          const br = await signInWithBrowserGoogle();
+          if (br.ok) {
+            const { clearSharedSession } = await import("@/lib/auth-session");
+            clearSharedSession();
+            redirecting = true;
+            window.location.href = "/home";
+            return;
+          }
+          if (br.error === "cancelled") {
+            setGoogleLoading(false);
+            return;
+          }
+          console.warn("browser google sign-in failed, falling back:", br.error);
+        }
+      } catch (browserErr) {
+        console.warn("browser google sign-in crashed, falling back", browserErr);
+      }
+
+      // ২) ফলব্যাক: Android Credential Manager — ফোনে যুক্ত Gmail
+      // একাউন্টগুলো সরাসরি chooser-এ দেখাবে (নতুন করে Gmail লিখতে হবে না)।
       try {
         const { nativeGoogleAvailable, signInWithNativeGoogle } = await import(
           "@/lib/native-google"

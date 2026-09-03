@@ -1,44 +1,49 @@
-import { ExternalLink, Smartphone } from "lucide-react";
+import { MessageCircle, Info } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { useLang } from "@/lib/i18n";
+import { TELEGRAM_GROUP_URL } from "@/lib/coins";
 
 /**
- * Placeholder shown in the Play Store Lite build when a user navigates to
- * a financial route (withdraw, send, recharge). It explains the feature is
- * only available on the full website and offers an "Open in browser" button.
+ * Shown in the Play Store build when a user opens a screen that is not part of
+ * this app version. No external app link and no payment/withdrawal wording —
+ * only a friendly note plus our Telegram support group for help.
  */
-const WEBSITE_ORIGIN = "https://goodapp2.live";
-
 export function LiteFeatureBlock({ title }: { title?: string }) {
   const { t } = useLang();
-  const site = WEBSITE_ORIGIN;
 
   return (
     <div className="min-h-[60vh] flex items-center justify-center px-4">
-      <div className="glass w-full max-w-sm rounded-3xl p-6 text-center space-y-4 border border-amber/30 shadow-[0_20px_50px_-20px_rgba(245,158,11,0.4)]">
-        <div className="mx-auto w-16 h-16 rounded-2xl bg-amber/15 border border-amber/30 flex items-center justify-center">
-          <Smartphone className="w-8 h-8 text-amber" />
+      <div className="glass w-full max-w-sm rounded-3xl p-6 text-center space-y-4 border border-border shadow-xl">
+        <div className="mx-auto w-16 h-16 rounded-2xl bg-cyan-500/15 border border-cyan-400/30 flex items-center justify-center">
+          <Info className="w-8 h-8 text-cyan" />
         </div>
         <h1 className="text-lg font-black text-navy">
-          {title || t("এই ফিচারটি এখানে নেই", "This feature is not available here")}
+          {title
+            ? t(`${title} — এই সংস্করণে নেই`, `${title} — not in this version`)
+            : t("এই অংশটি এই সংস্করণে নেই", "This section is not in this version")}
         </h1>
         <p className="text-xs text-muted-foreground font-bold leading-relaxed">
           {t(
-            "Play Store নিয়ম অনুযায়ী এ অ্যাপে উইথড্র, সেন্ড মানি ও মোবাইল রিচার্জ রাখা যায় না। এই সুবিধাগুলো পেতে নিচের বাটনে ক্লিক করে আমাদের ওয়েবসাইটে খুলুন।",
-            "Due to Play Store policy, withdraw, send money and mobile recharge are not included in this app. Please use our website for these features."
+            "এই অ্যাপ সংস্করণে মেসেঞ্জার, রিলস, প্রোফাইল, ভেরিফিকেশন ও রিওয়ার্ড ফিচারগুলো আছে। কোনো প্রশ্ন বা সাহায্যের দরকার হলে আমাদের সাপোর্ট গ্রুপে মেসেজ দিন — দ্রুত উত্তর পাবেন।",
+            "This app version includes messenger, reels, profile, verification and reward features. If you need any help, message our support group — we reply quickly.",
           )}
         </p>
         <a
-          href={site}
+          href={TELEGRAM_GROUP_URL}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center justify-center gap-2 w-full rounded-xl gradient-cta px-4 py-3 text-sm font-black text-white btn-press"
+          className="inline-flex items-center justify-center gap-2 w-full rounded-xl px-4 py-3 text-sm font-black text-white btn-press"
+          style={{ background: "linear-gradient(120deg,#0088cc,#06b6d4)" }}
         >
-          <ExternalLink className="w-4 h-4" />
-          {t("ওয়েবসাইটে খুলুন", "Open in browser")}
+          <MessageCircle className="w-4 h-4" />
+          {t("সাপোর্টে মেসেজ দিন", "Message support")}
         </a>
-        <p className="text-[10px] text-muted-foreground">
-          {t("ঠিকানা:", "URL:")} <span className="mono-num" translate="no">{site.replace(/^https?:\/\//, "")}</span>
-        </p>
+        <Link
+          to="/home"
+          className="block text-[11px] font-black text-muted-foreground btn-press"
+        >
+          {t("← হোমে ফিরে যান", "← Back to home")}
+        </Link>
       </div>
     </div>
   );

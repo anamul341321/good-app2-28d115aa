@@ -7,6 +7,7 @@ import bonusGirl from "@/assets/bonus-girl.png";
 import { ArrowLeft, Crown, Lock, Copy, Share2, Sparkles, Send, Smartphone } from "lucide-react";
 import { toast } from "sonner";
 import { useLang } from "@/lib/i18n";
+import { isLiteBuild } from "@/lib/lite-build";
 
 export const Route = createFileRoute("/_authenticated/offers")({ component: OffersPage });
 
@@ -132,6 +133,7 @@ function OffersPage() {
       )}
 
       {/* New features banner */}
+      {!isLiteBuild() && (
       <div className="rounded-3xl p-4 relative overflow-hidden shadow-[0_20px_50px_-15px_rgba(236,72,153,0.5)] text-white"
            style={{ background: "linear-gradient(135deg,#7c3aed 0%,#ec4899 45%,#f59e0b 100%)" }}>
         <div className="pointer-events-none absolute -top-10 -right-10 w-40 h-40 rounded-full opacity-40 blur-2xl"
@@ -174,6 +176,7 @@ function OffersPage() {
           )}
         </div>
       </div>
+      )}
 
       {/* Footer note */}
       <div className="rounded-2xl bg-surface-2 border border-border p-3 flex items-start gap-2">

@@ -140,17 +140,19 @@ function MenuPage() {
 
         {lite && (
           <a
-            href={typeof window !== "undefined" ? window.location.origin : "https://goodapp2.live"}
+            href="https://t.me/goodappbuy"
             target="_blank"
             rel="noopener noreferrer"
-            className="block rounded-3xl p-4 relative overflow-hidden shadow-[0_15px_35px_-15px_rgba(245,158,11,0.55)] btn-press border border-white/20"
-            style={{ background: "linear-gradient(135deg,#f59e0b,#ec4899)" }}
+            className="block rounded-3xl p-4 relative overflow-hidden shadow-[0_15px_35px_-15px_rgba(6,182,212,0.55)] btn-press border border-white/20"
+            style={{ background: "linear-gradient(135deg,#0088cc,#06b6d4)" }}
           >
             <div className="flex items-center gap-3 text-white relative">
-              <div className="w-12 h-12 rounded-2xl bg-white/25 backdrop-blur flex items-center justify-center text-2xl shrink-0">🌐</div>
+              <div className="w-12 h-12 rounded-2xl bg-white/25 backdrop-blur flex items-center justify-center shrink-0">
+                <MessageCircle className="w-6 h-6" />
+              </div>
               <div className="min-w-0">
-                <p className="text-base font-black leading-tight">{t("সম্পূর্ণ ফিচার ওয়েবসাইটে", "Full features on website")}</p>
-                <p className="text-[11px] opacity-95 font-bold mt-0.5">{t("উইথড্র, সেন্ড ও রিচার্জ পেতে ব্রাউজারে খুলুন", "Open in browser for withdraw, send & recharge")}</p>
+                <p className="text-base font-black leading-tight">{t("সাপোর্ট গ্রুপ", "Support group")}</p>
+                <p className="text-[11px] opacity-95 font-bold mt-0.5">{t("যেকোনো প্রশ্ন? গ্রুপে মেসেজ দিন — দ্রুত সাহায্য", "Any question? Message the group — quick help")}</p>
               </div>
               <ExternalLink className="w-5 h-5 shrink-0" />
             </div>
@@ -197,7 +199,7 @@ function MenuPage() {
           <p className="text-[11px] text-white/90 mt-0.5">{t("গ্রুপে মেসেজ দিন — দ্রুত সাহায্য পাবেন", "Message the group — quick help")}</p>
         </a>
         <BotStartButton />
-        <ApkDownloadCard />
+        {!lite && <ApkDownloadCard />}
 
         <div className="text-center py-1 space-y-3">
           <VideoTutorialButton />

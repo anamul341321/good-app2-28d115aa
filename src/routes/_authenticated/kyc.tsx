@@ -4,6 +4,7 @@ import { getOnboardingState } from "@/lib/onboarding.functions";
 import { getDashboard } from "@/lib/dashboard.functions";
 import { BadgeCheck, Bot, CheckCircle2, Copy, Loader2, RefreshCcw, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
+import { isLiteBuild } from "@/lib/lite-build";
 
 export const Route = createFileRoute("/_authenticated/kyc")({ component: KycPage });
 
@@ -37,14 +38,18 @@ function KycPage() {
           KYC ভেরিফাইড <BadgeCheck className="w-6 h-6" style={{ color: "#1d9bf0" }} />
         </h1>
         <p className="text-sm text-muted-foreground">
-          আপনার অ্যাকাউন্ট ভেরিফাইড ✅ প্রোফাইলে নীল ✔ ব্যাজ যোগ হয়েছে এবং উইথড্র চালু আছে।
+          {isLiteBuild()
+            ? "আপনার অ্যাকাউন্ট ভেরিফাইড ✅ প্রোফাইলে নীল ✔ ব্যাজ যোগ হয়েছে।"
+            : "আপনার অ্যাকাউন্ট ভেরিফাইড ✅ প্রোফাইলে নীল ✔ ব্যাজ যোগ হয়েছে এবং উইথড্র চালু আছে।"}
         </p>
+        {!isLiteBuild() && (
         <button
           onClick={() => router.navigate({ to: "/withdraw" })}
           className="rounded-2xl px-6 py-3 gradient-cta font-black btn-press"
         >
           উইথড্র পেজে যান
         </button>
+        )}
       </div>
     );
   }

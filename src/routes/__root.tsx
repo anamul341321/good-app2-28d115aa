@@ -1,4 +1,5 @@
 import { AppUpdateBanner } from "@/components/AppUpdateBanner";
+import { isLiteBuild } from "@/lib/lite-build";
 import { ForceUpdateGate } from "@/components/ForceUpdateGate";
 
 import { SplashScreen } from "@/components/SplashScreen";
@@ -253,8 +254,8 @@ function RootComponent() {
       <LanguageProvider>
         <NativeAdsController />
         <SplashScreen />
-        {!isExcludedRoute && <AppUpdateBanner />}
-        {!isExcludedRoute && <ForceUpdateGate />}
+        {!isExcludedRoute && !isLiteBuild() && <AppUpdateBanner />}
+        {!isExcludedRoute && !isLiteBuild() && <ForceUpdateGate />}
         <Outlet />
 
         <Toaster theme="dark" position="top-center" richColors />
