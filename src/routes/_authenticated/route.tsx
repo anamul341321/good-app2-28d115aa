@@ -1,7 +1,9 @@
 import { createFileRoute, Outlet, Link, useRouter, useRouterState } from "@tanstack/react-router";
 import { AdBannerSlot } from "@/components/AdBannerSlot";
+import { OverlayUnstick } from "@/components/OverlayUnstick";
+import { useCosmetics } from "@/hooks/useCosmetics";
 import { supabase } from "@/integrations/supabase/client";
-import { Home, Wallet, ArrowDownToLine, ArrowLeft, LogOut, Loader2, RefreshCcw, User, Users, Settings, MoreVertical, PhoneCall, FileText, ShieldCheck, ScrollText, LayoutGrid } from "lucide-react";
+import { Home, Wallet, ArrowDownToLine, ArrowLeft, LogOut, Loader2, RefreshCcw, User, Users, Settings, MoreVertical, PhoneCall, ShoppingBag, FileText, ShieldCheck, ScrollText, LayoutGrid } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -227,7 +229,7 @@ function AuthedLayout() {
             <NotificationBell />
             <RegionBadge />
             <LanguageToggle />
-            <DropdownMenu>
+            <DropdownMenu modal={false}>
               <DropdownMenuTrigger
                 aria-label={t("মেনু", "Menu")}
                 className="btn-press relative flex h-12 min-w-[52px] items-center justify-center gap-1 rounded-2xl gradient-navy px-3 text-gold border border-gold/50 shadow-[0_6px_18px_-6px_rgba(0,0,0,0.6)] outline-none active:scale-95">
@@ -252,6 +254,7 @@ function AuthedLayout() {
                   <BigMenuLink to="/kyc" icon={<ShieldCheck className="h-6 w-6" />} label={t("কেওয়াইসি", "KYC")} tone="text-violet-400" />
                   <BigMenuLink to="/reverify" search={{ taskId: undefined }} icon={<RefreshCcw className="h-6 w-6" />} label={lite ? t("নিরাপত্তা আপডেট", "Security update") : t("রি-ভেরিফাই", "Re-verify")} tone="text-violet-400" />
                   <BigMenuLink to="/rules" icon={<ScrollText className="h-6 w-6" />} label={t("নিয়মকানুন", "Rules")} tone="text-gold" />
+                  <BigMenuLink to="/shop" icon={<ShoppingBag className="h-6 w-6" />} label={t("কয়েন শপ", "Coin shop")} tone="text-amber-400" />
                   <BigMenuLink to="/menu" icon={<LayoutGrid className="h-6 w-6" />} label={t("সব অপশন", "All options")} tone="text-amber-400" />
                 </div>
 

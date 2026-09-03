@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { Image as ImageIcon, Loader2, Mic, Send, Square, Video, Plus, Smile, X, Reply, Trash2 } from "lucide-react";
 import { extOf, uploadChatFile, type UploadKind } from "@/lib/chat-upload";
 import { VoiceRecorder } from "@/lib/voice-record";
+import { activeEmojis } from "@/lib/cosmetics";
 
 export type SendPayload = {
   body?: string;

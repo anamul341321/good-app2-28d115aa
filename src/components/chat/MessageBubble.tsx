@@ -239,7 +239,7 @@ function MessageContextMenu({
       >
         {onReact && (
           <div className="mb-1 flex items-center justify-between gap-0.5 rounded-full border border-border/50 bg-surface-2/80 px-2 py-1.5">
-            {REACTION_EMOJIS.map((emoji) => (
+            {reactionEmojis().map((emoji) => (
               <button
                 key={emoji}
                 onClick={() => {
