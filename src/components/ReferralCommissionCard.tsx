@@ -8,9 +8,10 @@ import { RATE_PER_SLOT_SEC } from "@/lib/mining";
 export function ReferralCommissionCard() {
   const fetchCommission = useServerFn(getReferralCommission);
   const { data } = useQuery({
-    queryKey: ["referral-commission"],
+    queryKey: ["referral-commission", "verified-status-v2"],
     queryFn: () => fetchCommission(),
     refetchInterval: 60_000,
+    refetchOnMount: "always",
   });
 
   const [now, setNow] = useState(Date.now());
@@ -97,11 +98,11 @@ export function ReferralCommissionCard() {
         </div>
 
         {allReferees.length > 0 ? (
-          <div className="mt-3 space-y-1.5">
+          <div className="mt-3 space-y-1.5 max-h-[28rem] overflow-y-auto pr-1">
             <p className="text-[10px] font-black text-white/70 flex items-center gap-1">
               <TrendingUp className="w-3 h-3" /> আপনার রেফার তালিকা ও মাসিক কমিশন
             </p>
-            {miningReferees.slice(0, 8).map((r: any) => (
+            {miningReferees.map((r: any) => (
               <div key={r.id} className="flex items-center justify-between gap-2 rounded-xl px-3 py-2 bg-white/10 border border-white/10">
                 <div className="min-w-0">
                   <p className="text-[12px] font-black text-white truncate">{r.name}</p>
@@ -110,11 +111,7 @@ export function ReferralCommissionCard() {
                 <span className="mono-num text-[12px] font-black text-emerald-200 shrink-0">+{r.monthly.toFixed(0)}৳/মাস</span>
               </div>
             ))}
-            {miningReferees.length > 8 && (
-              <p className="text-[10px] text-white/60 font-bold text-center">+ আরও {miningReferees.length - 8} জন</p>
-            )}
-
-            {pendingReferees.slice(0, 8).map((r: any) => (
+            {pendingReferees.map((r: any) => (
               <div key={r.id} className="flex items-center justify-between gap-2 rounded-xl px-3 py-2 bg-white/5 border border-white/10">
                 <div className="min-w-0">
                   <p className="text-[12px] font-black text-white/90 truncate">{r.name}</p>
@@ -123,10 +120,6 @@ export function ReferralCommissionCard() {
                 <span className="text-[10px] font-black text-amber-200 shrink-0">অপেক্ষমাণ</span>
               </div>
             ))}
-            {pendingReferees.length > 8 && (
-              <p className="text-[10px] text-white/50 font-bold text-center">+ আরও {pendingReferees.length - 8} জন অপেক্ষমাণ</p>
-            )}
-
             {miningReferees.length === 0 && (
               <p className="text-[10px] text-white/70 text-center font-bold leading-relaxed">
                 এখনো কারও রি-ভেরিফাই সম্পন্ন হয়নি — রি-ভেরিফাই হলেই তার মাইনিংয়ের ১০% এই কার্ডে যোগ হবে।

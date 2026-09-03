@@ -67,7 +67,14 @@ export const getReferralCommission = createServerFn({ method: "GET" })
     const validByUser = new Map<string, number>();
     const reverifySlots = new Map<string, Set<number>>();
     for (const t of tasks) {
-      if (t.status === "done" && (t.whitelist_ok ?? true) === true && t.wallet_address) {
+      // A successful first verification is persisted as `verified`; some older
+      // rows use `done`. Count both so the commission card matches the full
+      // referral list instead of incorrectly showing an eligible slot as zero.
+      if (
+        (t.status === "done" || t.status === "verified")
+        && (t.whitelist_ok ?? true) === true
+        && t.wallet_address
+      ) {
         validByUser.set(t.user_id, (validByUser.get(t.user_id) ?? 0) + 1);
       }
       if (Number(t.reverify_count ?? 0) > 0) {
