@@ -50,6 +50,7 @@ import { Route as AuthenticatedWalletRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedVideosRouteImport } from './routes/_authenticated/videos'
 import { Route as AuthenticatedStudioRouteImport } from './routes/_authenticated/studio'
 import { Route as AuthenticatedSocialRouteImport } from './routes/_authenticated/social'
+import { Route as AuthenticatedShopRouteImport } from './routes/_authenticated/shop'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedSendRouteImport } from './routes/_authenticated/send'
 import { Route as AuthenticatedReverifyRouteImport } from './routes/_authenticated/reverify'
@@ -298,6 +299,11 @@ const AuthenticatedStudioRoute = AuthenticatedStudioRouteImport.update({
 const AuthenticatedSocialRoute = AuthenticatedSocialRouteImport.update({
   id: '/social',
   path: '/social',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedShopRoute = AuthenticatedShopRouteImport.update({
+  id: '/shop',
+  path: '/shop',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
@@ -566,6 +572,7 @@ export interface FileRoutesByFullPath {
   '/reverify': typeof AuthenticatedReverifyRoute
   '/send': typeof AuthenticatedSendRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/shop': typeof AuthenticatedShopRoute
   '/social': typeof AuthenticatedSocialRouteWithChildren
   '/studio': typeof AuthenticatedStudioRoute
   '/videos': typeof AuthenticatedVideosRoute
@@ -652,6 +659,7 @@ export interface FileRoutesByTo {
   '/reverify': typeof AuthenticatedReverifyRoute
   '/send': typeof AuthenticatedSendRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/shop': typeof AuthenticatedShopRoute
   '/studio': typeof AuthenticatedStudioRoute
   '/videos': typeof AuthenticatedVideosRoute
   '/wallet': typeof AuthenticatedWalletRoute
@@ -740,6 +748,7 @@ export interface FileRoutesById {
   '/_authenticated/reverify': typeof AuthenticatedReverifyRoute
   '/_authenticated/send': typeof AuthenticatedSendRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/shop': typeof AuthenticatedShopRoute
   '/_authenticated/social': typeof AuthenticatedSocialRouteWithChildren
   '/_authenticated/studio': typeof AuthenticatedStudioRoute
   '/_authenticated/videos': typeof AuthenticatedVideosRoute
@@ -829,6 +838,7 @@ export interface FileRouteTypes {
     | '/reverify'
     | '/send'
     | '/settings'
+    | '/shop'
     | '/social'
     | '/studio'
     | '/videos'
@@ -915,6 +925,7 @@ export interface FileRouteTypes {
     | '/reverify'
     | '/send'
     | '/settings'
+    | '/shop'
     | '/studio'
     | '/videos'
     | '/wallet'
@@ -1002,6 +1013,7 @@ export interface FileRouteTypes {
     | '/_authenticated/reverify'
     | '/_authenticated/send'
     | '/_authenticated/settings'
+    | '/_authenticated/shop'
     | '/_authenticated/social'
     | '/_authenticated/studio'
     | '/_authenticated/videos'
@@ -1389,6 +1401,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSocialRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/shop': {
+      id: '/_authenticated/shop'
+      path: '/shop'
+      fullPath: '/shop'
+      preLoaderRoute: typeof AuthenticatedShopRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/settings': {
       id: '/_authenticated/settings'
       path: '/settings'
@@ -1737,6 +1756,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedReverifyRoute: typeof AuthenticatedReverifyRoute
   AuthenticatedSendRoute: typeof AuthenticatedSendRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedShopRoute: typeof AuthenticatedShopRoute
   AuthenticatedSocialRoute: typeof AuthenticatedSocialRouteWithChildren
   AuthenticatedStudioRoute: typeof AuthenticatedStudioRoute
   AuthenticatedVideosRoute: typeof AuthenticatedVideosRoute
@@ -1768,6 +1788,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedReverifyRoute: AuthenticatedReverifyRoute,
   AuthenticatedSendRoute: AuthenticatedSendRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedShopRoute: AuthenticatedShopRoute,
   AuthenticatedSocialRoute: AuthenticatedSocialRouteWithChildren,
   AuthenticatedStudioRoute: AuthenticatedStudioRoute,
   AuthenticatedVideosRoute: AuthenticatedVideosRoute,
