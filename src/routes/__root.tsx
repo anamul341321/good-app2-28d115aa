@@ -161,6 +161,7 @@ function RootComponent() {
         if (el.dataset["appRoot"] !== undefined) return;
         const st = getComputedStyle(el);
         if (st.position !== "fixed") return;
+        if (el.querySelector("[data-radix-portal], [role='dialog'], [data-sonner-toaster]")) return;
         if (Number(st.zIndex) > 9000 && !el.querySelector("[data-app-ui]")) el.remove();
       });
     };
