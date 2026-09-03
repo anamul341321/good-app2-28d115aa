@@ -32,7 +32,9 @@ export function ReferralCommissionCard() {
     balance += elapsed * ratePerSec;
   }
   const [intPart, decPart] = balance.toFixed(6).split(".");
-  const miningReferees = (data.referees ?? []).filter((r: any) => r.mining);
+  const allReferees = (data.referees ?? []) as any[];
+  const miningReferees = allReferees.filter((r: any) => r.mining);
+  const pendingReferees = allReferees.filter((r: any) => !r.mining);
 
   return (
     <div className="relative rounded-[28px] p-5 overflow-hidden border border-white/15 shadow-[0_28px_60px_-24px_rgba(16,185,129,0.65)]"
@@ -94,16 +96,16 @@ export function ReferralCommissionCard() {
           </div>
         </div>
 
-        {miningReferees.length > 0 ? (
+        {allReferees.length > 0 ? (
           <div className="mt-3 space-y-1.5">
             <p className="text-[10px] font-black text-white/70 flex items-center gap-1">
-              <TrendingUp className="w-3 h-3" /> কার কাছ থেকে মাসে কত আসবে
+              <TrendingUp className="w-3 h-3" /> আপনার রেফার তালিকা ও মাসিক কমিশন
             </p>
             {miningReferees.slice(0, 8).map((r: any) => (
               <div key={r.id} className="flex items-center justify-between gap-2 rounded-xl px-3 py-2 bg-white/10 border border-white/10">
                 <div className="min-w-0">
                   <p className="text-[12px] font-black text-white truncate">{r.name}</p>
-                  <p className="text-[10px] text-white/60 font-bold">UID {r.uid} · {r.reverifies} রি-ভেরিফাই · আয়ের ১০% = {r.monthly.toFixed(0)}৳/মাস</p>
+                  <p className="text-[10px] text-white/60 font-bold">UID {r.uid} · ভেরিফাই {r.valid} · {r.reverifies} রি-ভেরিফাই · আয়ের ১০% = {r.monthly.toFixed(0)}৳/মাস</p>
                 </div>
                 <span className="mono-num text-[12px] font-black text-emerald-200 shrink-0">+{r.monthly.toFixed(0)}৳/মাস</span>
               </div>
@@ -111,13 +113,32 @@ export function ReferralCommissionCard() {
             {miningReferees.length > 8 && (
               <p className="text-[10px] text-white/60 font-bold text-center">+ আরও {miningReferees.length - 8} জন</p>
             )}
+
+            {pendingReferees.slice(0, 8).map((r: any) => (
+              <div key={r.id} className="flex items-center justify-between gap-2 rounded-xl px-3 py-2 bg-white/5 border border-white/10">
+                <div className="min-w-0">
+                  <p className="text-[12px] font-black text-white/90 truncate">{r.name}</p>
+                  <p className="text-[10px] text-white/55 font-bold">UID {r.uid} · ভেরিফাই {r.valid} · রি-ভেরিফাই {r.reverifies}</p>
+                </div>
+                <span className="text-[10px] font-black text-amber-200 shrink-0">অপেক্ষমাণ</span>
+              </div>
+            ))}
+            {pendingReferees.length > 8 && (
+              <p className="text-[10px] text-white/50 font-bold text-center">+ আরও {pendingReferees.length - 8} জন অপেক্ষমাণ</p>
+            )}
+
+            {miningReferees.length === 0 && (
+              <p className="text-[10px] text-white/70 text-center font-bold leading-relaxed">
+                এখনো কারও রি-ভেরিফাই সম্পন্ন হয়নি — রি-ভেরিফাই হলেই তার মাইনিংয়ের ১০% এই কার্ডে যোগ হবে।
+              </p>
+            )}
           </div>
         ) : (
           <p className="mt-3 text-[11px] text-white/75 text-center font-bold leading-relaxed">
-            আপনার রেফার করা কোনো ইউজার এখনো ১০টি রি-ভেরিফাই সম্পন্ন করে মাইনিং চালু করেননি।
-            <br />মাইনিং চালু হলেই তার মাইনিংয়ের ১০% প্রতিদিন এই কার্ডে যোগ হবে।
+            আপনার রেফার করা কোনো ইউজার এখনো নেই।
           </p>
         )}
+
 
         <p className="mt-3 text-[10px] text-white/55 text-center font-bold">
           কোনো রেফারের ১০টির মধ্যে ১টি স্লটও রি-ভেরিফাই চাইলে তার মাইনিং বন্ধ — তখন ১০% কমিশনও বন্ধ, আবার রি-ভেরিফাই করলে চালু।
