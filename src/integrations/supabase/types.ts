@@ -1036,6 +1036,45 @@ export type Database = {
           },
         ]
       }
+      country_settings: {
+        Row: {
+          code: string
+          flag: string
+          monthly_mining_bdt: number
+          name_en: string
+          name_local: string
+          referral_bonus_active: boolean
+          referral_bonus_bdt: number
+          signup_allowed: boolean
+          tier: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          flag?: string
+          monthly_mining_bdt?: number
+          name_en: string
+          name_local: string
+          referral_bonus_active?: boolean
+          referral_bonus_bdt?: number
+          signup_allowed?: boolean
+          tier?: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          flag?: string
+          monthly_mining_bdt?: number
+          name_en?: string
+          name_local?: string
+          referral_bonus_active?: boolean
+          referral_bonus_bdt?: number
+          signup_allowed?: boolean
+          tier?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       daily_activity: {
         Row: {
           day: string
@@ -1776,8 +1815,10 @@ export type Database = {
           email_verified: boolean
           email_verified_at: string | null
           father_name: string | null
+          foreign_referral_bonus_paid: boolean
           full_address: string | null
           gender: string | null
+          geo_verified: boolean
           id: string
           is_verified_badge: boolean
           kyc_nid_back_url: string | null
@@ -1797,11 +1838,15 @@ export type Database = {
           referral_unlock_override: boolean
           referred_by: string | null
           referrer_bonus_paid_at: string | null
+          signup_ip: string | null
+          signup_ip_country: string | null
+          signup_timezone: string | null
           telegram_user_id: number | null
           tg_link_skipped: boolean
           thana_upazila: string | null
           uid_seq: number | null
           village_area: string | null
+          vpn_flagged: boolean
         }
         Insert: {
           avatar_url?: string | null
@@ -1826,8 +1871,10 @@ export type Database = {
           email_verified?: boolean
           email_verified_at?: string | null
           father_name?: string | null
+          foreign_referral_bonus_paid?: boolean
           full_address?: string | null
           gender?: string | null
+          geo_verified?: boolean
           id: string
           is_verified_badge?: boolean
           kyc_nid_back_url?: string | null
@@ -1847,11 +1894,15 @@ export type Database = {
           referral_unlock_override?: boolean
           referred_by?: string | null
           referrer_bonus_paid_at?: string | null
+          signup_ip?: string | null
+          signup_ip_country?: string | null
+          signup_timezone?: string | null
           telegram_user_id?: number | null
           tg_link_skipped?: boolean
           thana_upazila?: string | null
           uid_seq?: number | null
           village_area?: string | null
+          vpn_flagged?: boolean
         }
         Update: {
           avatar_url?: string | null
@@ -1876,8 +1927,10 @@ export type Database = {
           email_verified?: boolean
           email_verified_at?: string | null
           father_name?: string | null
+          foreign_referral_bonus_paid?: boolean
           full_address?: string | null
           gender?: string | null
+          geo_verified?: boolean
           id?: string
           is_verified_badge?: boolean
           kyc_nid_back_url?: string | null
@@ -1897,11 +1950,15 @@ export type Database = {
           referral_unlock_override?: boolean
           referred_by?: string | null
           referrer_bonus_paid_at?: string | null
+          signup_ip?: string | null
+          signup_ip_country?: string | null
+          signup_timezone?: string | null
           telegram_user_id?: number | null
           tg_link_skipped?: boolean
           thana_upazila?: string | null
           uid_seq?: number | null
           village_area?: string | null
+          vpn_flagged?: boolean
         }
         Relationships: [
           {
