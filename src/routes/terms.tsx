@@ -1,4 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useLang } from "@/lib/i18n";
+import { RegionBadge } from "@/components/RegionBadge";
+import { LanguageToggle } from "@/components/LanguageToggle";
 import { FileText, ShieldCheck, Coins, UserCheck, Wallet, Gift, AlertTriangle, Scale, Mail, ArrowLeft, ScanFace } from "lucide-react";
 
 export const Route = createFileRoute("/terms")({
@@ -119,6 +122,8 @@ function TermsPage() {
           <ArrowLeft className="w-3.5 h-3.5" /> ফিরে যান
         </Link>
 
+        <PolicyLangBar kind="terms" />
+
         <header className="premium-panel rounded-2xl p-5 text-center">
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl gradient-navy mb-3">
             <FileText className="w-7 h-7 text-gold" />
@@ -157,5 +162,37 @@ function TermsPage() {
         </section>
       </div>
     </main>
+  );
+}
+
+/** ভাষা/দেশ বার + সহজ ভাষায় সারমর্ম — বাংলাদেশের বাইরের ইউজারও বুঝবে */
+function PolicyLangBar({ kind }: { kind: "privacy" | "terms" }) {
+  const { t } = useLang();
+  return (
+    <div className="glass mb-4 rounded-2xl p-3">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-[12px] font-black">
+          {t("নিজের ভাষায় পড়ুন", "Read in your language")}
+        </p>
+        <div className="flex items-center gap-2">
+          <RegionBadge />
+          <LanguageToggle />
+        </div>
+      </div>
+      <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
+        {kind === "privacy"
+          ? t(
+              "সহজ কথায়: আপনি সত্যিকারের মানুষ কি না বুঝতে আমরা শুধু আপনার ফেস ছবি ও প্রোফাইল তথ্য রাখি। NID, OTP, ব্যাংক PIN বা পাসওয়ার্ড কখনো চাওয়া হয় না, আর আপনার তথ্য বিক্রি করা হয় না।",
+              "In short: we only keep your face photo and profile details to confirm you are a real person. We never ask for national ID, OTP, bank PIN or your password, and we never sell your data."
+            )
+          : t(
+              "সহজ কথায়: এক ব্যক্তি এক একাউন্ট, প্রতিদিন ১ ঘণ্টা অ্যাপে সক্রিয় থাকতে হবে, মাইনিং প্রতিদিন ক্লেইম করতে হবে, উইথড্র মাসের ১–৩ তারিখে এবং সব লেনদেন Main Balance থেকে হয়।",
+              "In short: one person one account, stay active in the app 1 hour a day, claim mining daily, withdraw on the 1st-3rd of the month, and all payouts come from Main Balance."
+            )}
+      </p>
+      <Link to="/rules" className="mt-2 inline-flex text-[11px] font-black text-cyan underline">
+        {t("সব নিয়ম সহজ ভাষায় দেখুন", "See all rules in simple words")}
+      </Link>
+    </div>
   );
 }

@@ -17,6 +17,7 @@ import { useEffect, useState } from "react";
 import logo from "@/assets/goodapp-logo.png";
 import { GuidedTour } from "@/components/GuidedTour";
 import { LanguageToggle } from "@/components/LanguageToggle";
+import { RegionBadge } from "@/components/RegionBadge";
 import { LanguagePicker } from "@/components/LanguagePicker";
 import { useLang } from "@/lib/i18n";
 import { SlotResetApproval } from "@/components/SlotResetApproval";
@@ -225,6 +226,7 @@ function AuthedLayout() {
           </div>
           <div className="flex items-center gap-2">
             <NotificationBell />
+            <RegionBadge />
             <LanguageToggle />
             <DropdownMenu>
               <DropdownMenuTrigger
@@ -250,6 +252,7 @@ function AuthedLayout() {
                   <BigMenuLink to="/earnings" icon={<FileText className="h-6 w-6" />} label={t("আয়ের হিসাব", "Earnings")} tone="text-emerald-400" />
                   <BigMenuLink to="/kyc" icon={<ShieldCheck className="h-6 w-6" />} label={t("কেওয়াইসি", "KYC")} tone="text-violet-400" />
                   <BigMenuLink to="/reverify" search={{ taskId: undefined }} icon={<RefreshCcw className="h-6 w-6" />} label={t("রি-ভেরিফাই", "Re-verify")} tone="text-violet-400" />
+                  <BigMenuLink to="/rules" icon={<ScrollText className="h-6 w-6" />} label={t("নিয়মকানুন", "Rules")} tone="text-gold" />
                   <BigMenuLink to="/menu" icon={<LayoutGrid className="h-6 w-6" />} label={t("সব অপশন", "All options")} tone="text-amber-400" />
                 </div>
 
