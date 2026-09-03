@@ -195,12 +195,15 @@ function RootComponent() {
         <Outlet />
 
         {showWebAd && (
-          <div
-            data-app-ui
-            className="fixed inset-x-0 bottom-0 z-[60] border-t border-border bg-surface/95 px-2 pb-1 pt-0.5 backdrop-blur"
-          >
-            <MonetagAdFrame height={110} rotateMs={35_000} />
-          </div>
+          <>
+            <div
+              data-app-ui
+              className="fixed inset-x-0 bottom-0 z-[60] border-t border-border bg-surface/95 px-2 pb-1 pt-0.5 backdrop-blur"
+            >
+              <MonetagAdFrame height={110} rotateMs={18_000} />
+            </div>
+            <AdBoxOverlay firstDelayMs={12_000} repeatMs={150_000} />
+          </>
         )}
 
         <Toaster theme="dark" position="top-center" richColors />
