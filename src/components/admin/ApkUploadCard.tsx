@@ -71,6 +71,14 @@ export function ApkUploadCard() {
       const metadata = JSON.parse(new TextDecoder().decode(files[metadataName]));
       const artifactVersion = normalizeAndroidVersion(String(metadata.versionName ?? ""));
       if (!artifactVersion) throw new Error("ZIP-এর Android version পাওয়া যায়নি");
+      const artifactIsLite = metadata.lite === true;
+      if (artifactIsLite !== lite) {
+        throw new Error(
+          lite
+            ? "এই ZIPটি Full app—GitHub-এ Build mode: lite দিয়ে বানানো ZIP দিন"
+            : "এই ZIPটি Lite app—আপলোডের আগে Lite checkbox চালু করুন",
+        );
+      }
       if (metadata.applicationId !== ANDROID_APPLICATION_ID) {
         throw new Error("এই APK-এর package ID পুরোনো অ্যাপের সাথে মিলছে না—এটি upload করা যাবে না");
       }

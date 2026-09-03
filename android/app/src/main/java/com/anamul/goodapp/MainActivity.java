@@ -237,6 +237,12 @@ public class MainActivity extends BridgeActivity {
     }
 
     public final class GoodAppDownloader {
+        /** Immutable identity compiled into this APK; the live website cannot override it. */
+        @JavascriptInterface
+        public boolean isLiteBuild() {
+            return BuildConfig.LITE_BUILD;
+        }
+
         @JavascriptInterface
         public void openExternal(String url) {
             runOnUiThread(() -> openApkDownload(Uri.parse(url)));

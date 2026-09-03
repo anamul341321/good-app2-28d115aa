@@ -89,6 +89,8 @@ jobs:
 
       - name: Build Debug APK
         if: github.event.inputs.build_type == 'apk-debug'
+        env:
+          ANDROID_BUILD_MODE: ${{ github.event.inputs.build_mode }}
         run: |
           cd android
           ./gradlew assembleDebug
@@ -100,6 +102,7 @@ jobs:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_BUILD_MODE: ${{ github.event.inputs.build_mode }}
         run: |
           set -euo pipefail
           KS="${{ github.workspace }}/android/app/my-release-key.jks"
@@ -167,6 +170,7 @@ jobs:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_BUILD_MODE: ${{ github.event.inputs.build_mode }}
         run: |
           set -euo pipefail
           KS="${{ github.workspace }}/android/app/my-release-key.jks"

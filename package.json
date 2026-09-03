@@ -19,7 +19,7 @@
     "mobile:open:lite": "bun run build:lite && bun run mobile:html && cap sync && cap open android",
     "android:debug": "vite build && bun run mobile:html && cap sync && cd android && ./gradlew assembleDebug",
     "android:release": "vite build && bun run mobile:html && cap sync && cd android && ./gradlew bundleRelease",
-    "android:release:lite": "bun run build:lite && bun run mobile:html && cap sync && cd android && ./gradlew bundleRelease"
+    "android:release:lite": "bun run build:lite && bun run mobile:html && cap sync && cd android && ANDROID_BUILD_MODE=lite ./gradlew bundleRelease"
   },
   "dependencies": {
     "@capacitor-community/admob": "^8.1.0",
