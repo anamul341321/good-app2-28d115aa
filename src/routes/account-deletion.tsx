@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { litePolicySections, liteText } from "@/lib/lite-policy";
 import { Trash2, ArrowLeft, Mail, ListOrdered, Database, Clock } from "lucide-react";
 
 export const Route = createFileRoute("/account-deletion")({
@@ -8,7 +9,7 @@ export const Route = createFileRoute("/account-deletion")({
       {
         name: "description",
         content:
-          "Good-App একাউন্ট ও সব ডেটা (প্রোফাইল, ফেস ছবি, স্লট, ব্যালেন্স) কীভাবে স্থায়ীভাবে মুছে ফেলবেন — অ্যাপ থেকে বা ইমেইলে অনুরোধ করে।",
+          liteText("Good-App একাউন্ট ও সব ডেটা (প্রোফাইল, ফেস ছবি, স্লট, ব্যালেন্স) কীভাবে স্থায়ীভাবে মুছে ফেলবেন — অ্যাপ থেকে বা ইমেইলে অনুরোধ করে।", "Good-App একাউন্ট ও সব ডেটা (প্রোফাইল, ফেস ছবি, মেসেজ) কীভাবে স্থায়ীভাবে মুছে ফেলবেন — অ্যাপ থেকে বা ইমেইলে অনুরোধ করে।"),
       },
       { property: "og:title", content: "একাউন্ট ও ডেটা ডিলিট | Good-App" },
       {
@@ -89,7 +90,7 @@ function AccountDeletionPage() {
       </header>
 
       <div className="space-y-4">
-        {BLOCKS.map((b) => (
+        {litePolicySections(BLOCKS).map((b) => (
           <section key={b.title} className="rounded-2xl border border-border bg-surface p-4 space-y-2">
             <div className="flex items-center gap-2">
               <b.icon className="w-4 h-4 text-rose-500" />

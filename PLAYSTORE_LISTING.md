@@ -1,6 +1,21 @@
-# Good-App — Play Store জমা দেওয়ার সম্পূর্ণ প্যাক (কপি-পেস্ট রেডি)
+# Good-App Lite — Play Store জমা দেওয়ার সম্পূর্ণ প্যাক (কপি-পেস্ট রেডি)
 
-App name: **Good-App** · Package: **com.anamul.goodapp** · Category: **Finance** (Tools-ও চলে) · 18+
+> ⚠️ এটি **Lite (Play Store) সংস্করণের** লিস্টিং। Lite বিল্ডে কোনো উইথড্র, সেন্ড মানি,
+> মোবাইল রিচার্জ, কার্ড কেনা বা টাকা সংক্রান্ত ফিচার/লেখা নেই। আর্থিক ফিচার শুধু
+> ওয়েবসাইট সংস্করণে (goodapp2.live) থাকবে — সেটি Play Store-এ জমা দেওয়া হয় না।
+
+App name: **Good-App** · Package: **com.goodapp.mobile**
+Category: **Social** (Communication-ও চলে) — **কোনোভাবেই Finance নয়** · Rating: 18+
+
+## ০. আগের রিজেক্ট কেন হয়েছিল (Play Console Requirements)
+
+Personal developer account দিয়ে **financial products/services** ক্যাটাগরির অ্যাপ দেওয়া যায় না।
+তাই এবার:
+
+1. Category = **Social**, Finance/ফাইন্যান্স কোথাও সিলেক্ট করা যাবে না।
+2. App content → **Financial features = None of these** সিলেক্ট করতে হবে।
+3. Store listing, স্ক্রিনশট, ভিডিও ও অ্যাপের ভিতরে কোথাও উইথড্র/টাকা/পেমেন্টের কথা থাকবে না।
+4. Privacy policy / Terms / Data safety পেজেও Lite বিল্ডে টাকা সংক্রান্ত লাইন দেখাবে না (কোডে অটো বাদ যায়)।
 
 ## ১. জরুরি লিংক (Play Console-এ এগুলোই দেবেন)
 
@@ -10,181 +25,86 @@ App name: **Good-App** · Package: **com.anamul.goodapp** · Category: **Finance
 | Terms | https://goodapp2.live/terms |
 | Data safety সারসংক্ষেপ | https://goodapp2.live/data-safety |
 | **Account/Data deletion URL** (বাধ্যতামূলক) | https://goodapp2.live/account-deletion |
-| **Child safety standards URL** (বাধ্যতামূলক social/UGC app-এর জন্য) | https://goodapp2.live/child-safety |
+| **Child safety standards URL** (বাধ্যতামূলক UGC app-এর জন্য) | https://goodapp2.live/child-safety |
 | Support email | support@goodapp2.live |
-| Website | https://goodapp2.live |
 
 ## ২. Short description (৮০ অক্ষরের মধ্যে)
 
 ```
-ফেস ভেরিফিকেশন, রিওয়ার্ড, মেসেঞ্জার ও সহজ উইথড্র — সব এক অ্যাপে।
+মেসেঞ্জার, রিলস, স্টোরি ও ফেস ভেরিফিকেশন — নিরাপদ বাংলা কমিউনিটি অ্যাপ।
 ```
 
 ## ৩. Full description (কপি-পেস্ট)
 
 ```
-Good-App একটি বাংলা কমিউনিটি ও রিওয়ার্ড অ্যাপ। এখানে আপনি নিরাপদ ফেস ভেরিফিকেশন দিয়ে অ্যাকাউন্ট নিশ্চিত করতে পারেন, দৈনিক অ্যাক্টিভিটি রিওয়ার্ড সংগ্রহ করতে পারেন, বন্ধুদের সাথে মেসেজ ও কল করতে পারেন এবং নিজের ব্যালেন্স সহজে উইথড্র করতে পারেন।
+Good-App একটি বাংলা কমিউনিটি ও মেসেঞ্জার অ্যাপ। বন্ধুদের সাথে চ্যাট, ভয়েস ও ভিডিও কল করুন, ছোট ভিডিও (রিলস) দেখুন, স্টোরি দিন এবং নিরাপদ ফেস ভেরিফিকেশন দিয়ে নিজের অ্যাকাউন্ট সুরক্ষিত রাখুন।
 
 প্রধান ফিচার
-• ফেস ভেরিফিকেশন — শুধু আপনি প্রকৃত ব্যবহারকারী কি না যাচাই করার জন্য (সম্পূর্ণ ঐচ্ছিক)
+• মেসেঞ্জার — রিয়েল-টাইম চ্যাট, গ্রুপ, ভয়েস মেসেজ, ভয়েস/ভিডিও কল
+• রিলস ও স্টোরি — ছোট ভিডিও দেখা ও নিজের স্টোরি শেয়ার করা
+• ফেস ভেরিফিকেশন — শুধু আপনি প্রকৃত ব্যবহারকারী কি না যাচাই করতে (সম্পূর্ণ ঐচ্ছিক)
 • ফেস লগইন — ফেস মিললেও পাসওয়ার্ড বাধ্যতামূলক, তাই অ্যাকাউন্ট নিরাপদ
-• স্লট ও দৈনিক অ্যাক্টিভিটি রিওয়ার্ড, ট্রান্সপারেন্ট হিসাব ও লেজার
-• Good Coin — ইন-অ্যাপ পয়েন্ট, ভিডিও দেখা/পোস্ট/কমেন্ট/মেসেজে জমা হয়
-• মেসেঞ্জার — টেক্সট, ভয়েস মেসেজ, রিঅ্যাকশন, অডিও ও ভিডিও কল
-• ফিড, রিলস ও স্টোরি — কমিউনিটির সাথে যুক্ত থাকুন
-• মোবাইল রিচার্জ, মিনিট/এমবি কার্ড ও সেন্ড মানি
-• উইথড্র — bKash/Nagad/Rocket সহ জনপ্রিয় মাধ্যম
-• ২-স্টেপ নিরাপত্তা — Gmail কোড, ডিভাইস সেশন ম্যানেজমেন্ট, রিমোট লগআউট
-• সম্পূর্ণ বাংলা ইন্টারফেস
+• Good Coin — অ্যাপে স্বাভাবিক ব্যবহারে পাওয়া ইন-অ্যাপ কয়েন (কেনা যায় না, টাকায় রূপান্তরযোগ্য নয়)
+• বন্ধু খোঁজা, ফ্রেন্ড রিকোয়েস্ট ও প্রোফাইল
+• একাধিক দেশ ও ভাষা সাপোর্ট
+• রিপোর্ট ও ব্লক — অনিরাপদ কনটেন্ট সরাসরি রিপোর্ট করা যায়
 
-নিরাপত্তা ও গোপনীয়তা
-• সব তথ্য HTTPS এনক্রিপশনে আদান-প্রদান হয়
-• ফেস ছবি এনক্রিপ্টেড সংরক্ষিত; কখনো বিক্রি বা শেয়ার করা হয় না
-• NID, ব্যাংক PIN বা কার্ড নম্বর কখনোই চাওয়া হয় না
-• সেটিংস থেকে যেকোনো সময় অ্যাকাউন্ট ও সব ডেটা স্থায়ীভাবে মুছে ফেলা যায়
+গোপনীয়তা
+আমরা NID, OTP, ব্যাংক PIN বা পাসওয়ার্ড কখনো চাই না। ফেস ছবি এনক্রিপ্টেড অবস্থায় শুধু আপনার অ্যাকাউন্টের সাথে থাকে এবং কোনো তৃতীয় পক্ষের কাছে বিক্রি বা শেয়ার করা হয় না।
 
-গুরুত্বপূর্ণ তথ্য
-Good-App কোনো বিনিয়োগ, চাকরি বা গ্যারান্টিড ইনকামের প্ল্যাটফর্ম নয়। রিওয়ার্ড/বোনাস অ্যাপের নিয়ম, সক্রিয় স্লট ও অ্যাক্টিভিটির উপর নির্ভরশীল এবং শর্তাবলি প্রযোজ্য। Good Coin একটি ইন-অ্যাপ ভার্চুয়াল পয়েন্ট — এটি কোনো ক্রিপ্টোকারেন্সি বা মুদ্রা নয়। অ্যাপে Google AdMob-এর বিজ্ঞাপন দেখানো হতে পারে; রিওয়ার্ডেড বিজ্ঞাপন দেখা সম্পূর্ণ ঐচ্ছিক। অ্যাপটি ১৮ বছর বা তার বেশি বয়সীদের জন্য।
-
-গোপনীয়তা নীতি: https://goodapp2.live/privacy
-শর্তাবলি: https://goodapp2.live/terms
-অ্যাকাউন্ট ডিলিট: https://goodapp2.live/account-deletion
-শিশু নিরাপত্তা: https://goodapp2.live/child-safety
-সাপোর্ট: support@goodapp2.live
+এই অ্যাপ কোনো ব্যাংকিং, বিনিয়োগ, লোন বা আর্থিক সেবা দেয় না এবং কোনো আয়ের প্রতিশ্রুতি দেয় না।
 ```
 
-## ৪. Data safety ফর্ম — ঠিক এই উত্তরগুলো দিন
+## ৪. App content declarations (হুবহু এভাবে দিন)
 
-Does your app collect or share user data? → **Yes**
-Is all data encrypted in transit? → **Yes**
-Do you provide a way to delete data? → **Yes** (URL: /account-deletion)
+| প্রশ্ন | উত্তর |
+|---|---|
+| App category | **Social** |
+| Financial features | **None of these** |
+| Ads | Yes (ইন-অ্যাপ বিজ্ঞাপন আছে) |
+| In-app purchases | No |
+| User-generated content | **Yes** (চ্যাট, স্টোরি, রিলস) → রিপোর্ট/ব্লক ব্যবস্থা আছে |
+| Child safety standards | URL দিন (উপরের টেবিল) |
+| Target audience | 18+ |
+| Data deletion | URL দিন (উপরের টেবিল) |
+| Gambling / crypto / lending / money transfer | **No** |
 
-| Data type | Collected | Shared | Purpose | Optional? |
+## ৫. Data safety ফর্ম
+
+| ডেটা | সংগ্রহ | শেয়ার | উদ্দেশ্য | বাধ্যতামূলক? |
 |---|---|---|---|---|
-| Name | Yes | No | Account management | Required |
-| Email address | Yes | No | Account management, security (OTP) | Optional |
-| Phone number | Yes | No | Account management, communication | Required |
-| User IDs | Yes | No | Account management, fraud prevention | Required |
-| Photos (face image) | Yes | No | Account management (identity verification), fraud prevention | Optional |
-| Photos/Videos (posts, stories) | Yes | No | App functionality | Optional |
-| Audio (voice messages, calls) | Yes | No | App functionality | Optional |
-| Messages (in-app) | Yes | No | App functionality | Required for messenger |
-| Payment info (wallet/payout number) | Yes | No | App functionality (withdrawal) | Optional |
-| Purchase/financial history (in-app ledger) | Yes | No | App functionality, fraud prevention | Required |
-| Device or other IDs (Advertising ID) | Yes | Yes (Google AdMob) | Advertising, fraud prevention | Required |
-| App interactions / diagnostics | Yes | No | Analytics, fraud prevention | Required |
+| নাম | Yes | No | App functionality, Account management | Required |
+| ফোন নম্বর | Yes | No | Account management, Fraud prevention | Required |
+| ইমেইল | Yes | No | Account security (OTP) | Optional |
+| ফেস ছবি / বায়োমেট্রিক | Yes | No | Account security (real-person check) | Optional |
+| ছবি/ভিডিও (স্টোরি, রিলস) | Yes | No | App functionality | Optional |
+| মেসেজ | Yes | No | App functionality (chat) | Required |
+| ডিভাইস ID / লগ | Yes | No | Fraud prevention, Analytics | Required |
 
-Data handling: **Data is not sold. Data is not used for ads except the Advertising ID processed by Google AdMob.**
+- Data encrypted in transit: **Yes**
+- Users can request data deletion: **Yes** (in-app + URL)
 
-## ৫. App content ফর্ম
+## ৬. App access (রিভিউয়ারের জন্য)
 
-- **Privacy policy:** https://goodapp2.live/privacy
-- **Ads:** Yes, this app contains ads (Google AdMob — banner, interstitial, rewarded)
-- **App access:** সব ফিচার লগইনের পরে → রিভিউয়ারের জন্য **টেস্ট অ্যাকাউন্ট** দিন (ফোন নম্বর + পাসওয়ার্ড + OTP লাগলে ধাপ লিখে দিন)। এটা না দিলে রিজেক্ট প্রায় নিশ্চিত।
-- **Content rating:** প্রশ্নে — সহিংসতা/যৌনতা/মাদক: No; **User-generated content: Yes** (মেসেজ, পোস্ট, কমেন্ট) → রিপোর্ট/ব্লক ব্যবস্থা আছে বলে জানান; **Financial features: Yes** (money transfer/withdrawal, no gambling, no lending)
-- **Target audience:** 18+ only, শিশুদের লক্ষ্য করা হয়নি
-- **News app:** No · **COVID/Gov app:** No · **Gambling:** No
-- **Financial features declaration:** "Money management/transfer app" — লাইসেন্স চাইলে জানাবেন যে অ্যাপ নিজে কোনো ব্যাংকিং সেবা দেয় না, শুধু ইন-অ্যাপ রিওয়ার্ড ব্যালেন্স ও থার্ড-পার্টি পেমেন্ট গেটওয়ে দিয়ে পরিশোধ করে
-- **Data deletion:** https://goodapp2.live/account-deletion
-
-## ৬. পারমিশন ব্যাখ্যা (রিভিউতে চাইলে দিন)
-
-| পারমিশন | কারণ |
-|---|---|
-| CAMERA | ফেস ভেরিফিকেশন, ফেস লগইন, ভিডিও কল, কার্ড কোড স্ক্যান |
-| RECORD_AUDIO | ভয়েস মেসেজ, অডিও/ভিডিও কল |
-| INTERNET / NETWORK_STATE | সার্ভার সিঙ্ক |
-| POST_NOTIFICATIONS | মেসেজ, কল ও নোটিশ অ্যালার্ট |
-| AD_ID | Google AdMob বিজ্ঞাপন |
-| FOREGROUND_SERVICE (media/microphone) | কল চলাকালীন ও ব্যাকগ্রাউন্ড অডিও |
-
-## ৭. রিজেক্ট এড়ানোর চেকলিস্ট
-
-1. Privacy policy ও Account deletion লিংক লাইভ ও পাবলিক (লগইন ছাড়াই খোলে) — ✅ দুটোই এখন আছে
-2. Data safety ফর্মে **ফেস ছবি ও Advertising ID অবশ্যই** ঘোষণা করুন — লুকালে সাসপেন্ড
-3. Description-এ "গ্যারান্টিড ইনকাম / টাকা দ্বিগুণ / ইনভেস্টমেন্ট" লিখবেন না
-4. App access-এ রিভিউয়ারের জন্য কাজ করা টেস্ট লগইন দিন (OTP লাগলে বিকল্প পথ/কোড লিখে দিন)
-5. Screenshot অবশ্যই অ্যাপের আসল স্ক্রিন (হোম, ওয়ালেট, মেসেঞ্জার, উইথড্র, সেটিংস) — কমপক্ষে ২টি, ভালো হয় ৫টি
-6. User-generated content থাকলে রিপোর্ট/ব্লক ও কনটেন্ট মডারেশন ব্যবস্থা দেখান
-7. AdMob রিওয়ার্ডেড অ্যাডে "টাকা দেব" বলা যাবে না — শুধু ইন-অ্যাপ কয়েন/বুস্ট
-8. Target API level সর্বশেষ Play রিকোয়ারমেন্ট মিলিয়ে রাখুন
-9. Keystore ও পাসওয়ার্ড কখনো হারাবেন না
-
-## ৮. Release notes (v1.32)
+Play Console → App access → "All functionality is available without special access" **নয়**।
+লগইন লাগে, তাই একটি টেস্ট অ্যাকাউন্ট দিন:
 
 ```
-• মেসেঞ্জার আরও দ্রুত ও স্থিতিশীল
-• কল ও ভয়েস মেসেজের উন্নতি
-• Good Coin ওয়ালেট ও ডেইলি চেক-ইন
-• নিরাপত্তা: ডিভাইস সেশন ও রিমোট লগআউট
-• ছোট বাগ ফিক্স
+Login: (আপনার তৈরি করা টেস্ট মোবাইল নম্বর)
+Password: (টেস্ট পাসওয়ার্ড)
+Note: Face verification is optional and can be skipped.
 ```
 
----
+## ৭. যা কখনো করবেন না
 
-# ✅ FINAL PRE-SUBMIT AUDIT — সব রেডি (Aug 2026)
+1. Category-তে Finance/Payments সিলেক্ট করবেন না।
+2. Description বা স্ক্রিনশটে "উইথড্র / টাকা / ইনকাম / বিকাশ / নগদ / USDT" লিখবেন না।
+3. অ্যাপের ভিতরে ওয়েবসাইটের লিংক দিয়ে টাকা তোলার কথা বলবেন না (Lite বিল্ডে নেই)।
+4. APK সাইডলোড/ডাউনলোড লিংক দেবেন না (Device & Network Abuse)।
+5. "গ্যারান্টিড ইনকাম / ইনভেস্টমেন্ট / টাকা দ্বিগুণ" — কোথাও নয়।
 
-## ১. রিভিউয়ার লগইন — ✅ একাউন্ট তৈরি করা হয়ে গেছে
+## ৮. বিল্ড কমান্ড
 
-| ফিল্ড | মান |
-|---|---|
-| Username | `01900000000` |
-| Password | `GoodApp#2026` |
-
-- একাউন্টটি ব্যাকএন্ডে তৈরি করা আছে (নাম: Play Reviewer), লগইন টেস্ট করে দেখা হয়েছে — কাজ করে ✅
-- এই একাউন্টে **কোনো Gmail/OTP কোড লাগে না** (কোডেও whitelist করা আছে: `REVIEW_PHONES` in `src/lib/login-otp.server.ts`)
-- ডেমো ডেটা: ৫,০০০ Good Coin দেওয়া আছে, যাতে রিভিউয়ার ফাঁকা স্ক্রিন না দেখে
-
-**Play Console → App content → App access** → *All or some functionality is restricted* → Add new instructions:
-- Name: `Demo user login`
-- Username: `01900000000`
-- Password: `GoodApp#2026`
-- Instructions:
-  `Open the app, stay on the Login tab, type the mobile number 01900000000 and password GoodApp#2026, then tap "লগইন করুন" (Login). No SMS or email code is required for this demo account. After login all features are available: Messenger, Feed, Reels, Coin Wallet, Mining and Settings.`
-
-## ২. Play Console-এর প্রতিটি ফর্ম — কী উত্তর দেবে
-
-| ফর্ম | উত্তর |
-|---|---|
-| Privacy policy URL | `https://goodapp2.live/privacy` |
-| Data deletion URL | `https://goodapp2.live/account-deletion` |
-| Terms URL | `https://goodapp2.live/terms` |
-| Child safety standards URL | `https://goodapp2.live/child-safety` |
-| Ads | **Yes** — অ্যাপে বিজ্ঞাপন আছে (Google AdMob) |
-| App access | Restricted → উপরের ডেমো লগইন |
-| Content rating | Category: Social/Communication; users can interact = **Yes**; user-generated content = **Yes** (report/block আছে) |
-| Target audience | **18+** (money + ads আছে, তাই ১৮-এর নিচে সিলেক্ট করো না) |
-| News app | **No** |
-| Financial features | ব্যাংকিং/লোন/ক্রিপ্টো এক্সচেঞ্জ **নয়** — ইউজার শুধু নিজের earned reward উইথড্র করে |
-| Data safety | Name, Phone, Email, Photos (face), Messages, App activity, Advertising ID, Device ID — সব encrypted in transit, সব deletable |
-| Government / Health apps | **No** |
-| Foreground service permissions | mediaProjection (কলে স্ক্রিন শেয়ার) ও mediaPlayback (ব্যাকগ্রাউন্ড ভিডিও/অডিও) — ছোট ভিডিও/ব্যাখ্যা দিতে হবে |
-
-## ৩. ✅ ঝুঁকির পারমিশন সরিয়ে দেওয়া হয়েছে
-
-`REQUEST_INSTALL_PACKAGES` ম্যানিফেস্ট থেকে **বাদ দেওয়া হয়েছে** — Play এই পারমিশন
-সোশ্যাল অ্যাপে অনুমোদন করে না ("Device and Network Abuse")।
-এখন অ্যাপ-আপডেট ব্রাউজার ডাউনলোড / Play Store লিংক দিয়ে হবে, অ্যাপের ভেতরে
-ইনস্টলার খোলার দরকার নেই। apk_url-এ Play Store লিংক দিলে আপডেট ব্যানার নিজেই লুকিয়ে যায়।
-
-## ৪. পারমিশন-জাস্টিফিকেশন
-
-| পারমিশন | কারণ |
-|---|---|
-| CAMERA | ফেস ভেরিফিকেশন, ভিডিও কল, স্টোরি/রিলস |
-| RECORD_AUDIO | ভয়েস মেসেজ, অডিও/ভিডিও কল |
-| POST_NOTIFICATIONS | মেসেজ, কল ও রিওয়ার্ড নোটিফিকেশন |
-| USE_FULL_SCREEN_INTENT | ইনকামিং কল স্ক্রিন |
-| FOREGROUND_SERVICE_MEDIA_PROJECTION | কলে স্ক্রিন শেয়ার (ইউজারের সম্মতিতে) |
-| FOREGROUND_SERVICE_MEDIA_PLAYBACK | ব্যাকগ্রাউন্ডে ভিডিও/অডিও চলা |
-| AD_ID | AdMob বিজ্ঞাপন |
-
-## ৫. চেকলিস্ট
-
-- [x] Privacy / Terms / Data safety / Account deletion — পাবলিক URL-এ লাইভ
-- [x] AdMob + Advertising ID ঘোষণা privacy-তে আছে
-- [x] রিভিউয়ার ডেমো একাউন্ট তৈরি + লগইন টেস্টেড (OTP লাগে না)
-- [x] `REQUEST_INSTALL_PACKAGES` বাদ
-- [x] targetSdk 36
-- [ ] Screenshots (২-৮টি ফোন স্ক্রিনশট, 1080×1920) + Feature graphic 1024×500 — এগুলো তোমাকে আপলোড করতে হবে
-- [ ] উপরের টেবিল দেখে Play Console-এর ফর্মগুলো পূরণ
+```bash
+bun run android:release:lite
+```

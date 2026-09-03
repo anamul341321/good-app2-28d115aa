@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { litePolicySections, liteText } from "@/lib/lite-policy";
 import { useLang } from "@/lib/i18n";
 import { RegionBadge } from "@/components/RegionBadge";
 import { LanguageToggle } from "@/components/LanguageToggle";
@@ -8,9 +9,9 @@ export const Route = createFileRoute("/terms")({
   head: () => ({
     meta: [
       { title: "নিয়ম ও শর্তাবলি | Good-App" },
-      { name: "description", content: "Good-App ব্যবহারের নিয়ম, ফেস ভেরিফিকেশন, বোনাস, উইথড্র, রেফারেল ও একাউন্ট নিরাপত্তার সব শর্তাবলি এক জায়গায়।" },
+      { name: "description", content: liteText("Good-App ব্যবহারের নিয়ম, ফেস ভেরিফিকেশন, বোনাস, উইথড্র, রেফারেল ও একাউন্ট নিরাপত্তার সব শর্তাবলি এক জায়গায়।", "Good-App ব্যবহারের নিয়ম: একাউন্ট, ফেস ভেরিফিকেশন, মেসেঞ্জার, কনটেন্ট ও একাউন্ট নিরাপত্তার শর্তাবলি।") },
       { property: "og:title", content: "নিয়ম ও শর্তাবলি | Good-App" },
-      { property: "og:description", content: "Good-App-এর ব্যবহারবিধি, উইথড্র নিয়ম ও গোপনীয়তা নীতি বিস্তারিত পড়ুন।" },
+      { property: "og:description", content: liteText("Good-App-এর ব্যবহারবিধি, উইথড্র নিয়ম ও গোপনীয়তা নীতি বিস্তারিত পড়ুন।", "Good-App-এর ব্যবহারবিধি, কনটেন্ট নিয়ম ও গোপনীয়তা নীতি বিস্তারিত পড়ুন।") },
       { property: "og:type", content: "article" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -135,7 +136,7 @@ function TermsPage() {
           <p className="text-[10px] text-muted-foreground mt-2">সর্বশেষ হালনাগাদ: আগস্ট ২০২৬</p>
         </header>
 
-        {SECTIONS.map((s) => (
+        {litePolicySections(SECTIONS).map((s) => (
           <section key={s.title} className="premium-panel rounded-2xl p-4">
             <div className="flex items-center gap-2 mb-2">
               <span className="w-8 h-8 rounded-xl gradient-navy flex items-center justify-center">
@@ -186,8 +187,14 @@ function PolicyLangBar({ kind }: { kind: "privacy" | "terms" }) {
               "In short: we only keep your face photo and profile details to confirm you are a real person. We never ask for national ID, OTP, bank PIN or your password, and we never sell your data."
             )
           : t(
-              "সহজ কথায়: এক ব্যক্তি এক একাউন্ট, মাইনিং প্রতিদিন ক্লেইম করতে হবে, উইথড্র মাসের ১–৩ তারিখে এবং সব লেনদেন Main Balance থেকে হয়।",
-              "In short: one person one account, stay active in the app 1 hour a day, claim mining daily, withdraw on the 1st-3rd of the month, and all payouts come from Main Balance."
+              liteText(
+                "সহজ কথায়: এক ব্যক্তি এক একাউন্ট, মাইনিং প্রতিদিন ক্লেইম করতে হবে, উইথড্র মাসের ১–৩ তারিখে এবং সব লেনদেন Main Balance থেকে হয়।",
+                "সহজ কথায়: এক ব্যক্তি এক একাউন্ট, নিজের আসল তথ্য দিন, ফেস ভেরিফিকেশন শুধু আপনি প্রকৃত মানুষ কি না বোঝার জন্য, আর অন্যকে হ্যারাস করা বা ফেক কনটেন্ট দেওয়া নিষিদ্ধ।",
+              ),
+              liteText(
+                "In short: one person one account, claim mining daily, withdraw on the 1st-3rd of the month, and all payouts come from Main Balance.",
+                "In short: one person one account, use your real details, face check only proves you are a real person, and harassment or fake content is not allowed.",
+              )
             )}
       </p>
       <Link to="/rules" className="mt-2 inline-flex text-[11px] font-black text-cyan underline">

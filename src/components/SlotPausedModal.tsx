@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { isLiteBuild } from "@/lib/lite-build";
 import { ShieldAlert, Sparkles, Clock, X, CheckCircle2 } from "lucide-react";
 
 const KEY = "slot_paused_notice_seen_at";
@@ -56,8 +57,17 @@ export function SlotPausedModal({ message }: { message?: string | null }) {
             </p>
             <p className="text-[13px] font-bold leading-relaxed text-foreground">
               • আগের ভেরিফাই করা স্লট আগের মতোই থাকবে<br />
-              • মাইনিং স্বাভাবিকভাবে চলবে, টাকা যোগ হতেই থাকবে<br />
-              • বোনাস, রেফার কমিশন ও ব্যালেন্স কোথাও কমবে না
+              {isLiteBuild() ? (
+                <>
+                  • আপনার প্রোফাইল, ফেস কী ও রিওয়ার্ড স্ট্যাটাস আগের মতোই থাকবে<br />
+                  • মেসেঞ্জার, রিলস ও অন্য সব ফিচার স্বাভাবিকভাবে চলবে
+                </>
+              ) : (
+                <>
+                  • মাইনিং স্বাভাবিকভাবে চলবে, টাকা যোগ হতেই থাকবে<br />
+                  • বোনাস, রেফার কমিশন ও ব্যালেন্স কোথাও কমবে না
+                </>
+              )}
             </p>
           </div>
 

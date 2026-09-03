@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { liteText } from "@/lib/lite-policy";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -167,8 +168,11 @@ export function EmailVerifyGate() {
           <h2 className="text-center text-lg font-black drop-shadow">📧 Gmail ভেরিফিকেশন</h2>
           {step === "email" && (
             <p className="text-center text-[12.5px] font-bold leading-relaxed">
-              একাউন্টের নিরাপত্তা ও উইথড্র চালু রাখতে একটি Gmail ভেরিফাই করে রাখুন। পাসওয়ার্ড ভুলে
-              গেলেও এই Gmail-এ কোড পাঠিয়ে নিজেই ঠিক করতে পারবেন।
+              {liteText(
+                "একাউন্টের নিরাপত্তা ও উইথড্র চালু রাখতে একটি Gmail ভেরিফাই করে রাখুন।",
+                "একাউন্টের নিরাপত্তা ঠিক রাখতে একটি Gmail ভেরিফাই করে রাখুন।",
+              )}{" "}
+              পাসওয়ার্ড ভুলে গেলেও এই Gmail-এ কোড পাঠিয়ে নিজেই ঠিক করতে পারবেন।
             </p>
           )}
 
