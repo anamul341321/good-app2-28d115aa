@@ -730,6 +730,29 @@ function AdminWithdrawals() {
                 <Copy className={`w-4 h-4 shrink-0 ${isUsdt ? "text-emerald" : isBkash ? "text-rose" : "text-amber"}`} />
               </button>
 
+              {/* USDT — কত USDT পাঠাতে হবে, সরাসরি কপি */}
+              {isUsdt && w.status === "pending" && (
+                <div className="rounded-xl border-2 border-emerald/30 bg-emerald/5 p-2 space-y-1.5">
+                  <p className="text-[10px] font-black text-emerald">💵 পাঠাতে হবে (Celo · USDT)</p>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => copy(String(Number(w.usdtAmount ?? Number(w.amount) / (Number(w.usdtRateBdt) || 130)).toFixed(2)), "USDT অ্যামাউন্ট")}
+                      className="py-1.5 rounded-lg bg-emerald/15 text-emerald text-[11px] font-black mono-num"
+                      translate="no">
+                      {Number(w.usdtAmount ?? Number(w.amount) / (Number(w.usdtRateBdt) || 130)).toFixed(2)} USDT কপি
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => copy(w.wallet_number, "USDT address")}
+                      className="py-1.5 rounded-lg bg-white/5 text-[10px] font-bold">
+                      Address কপি
+                    </button>
+                  </div>
+                </div>
+              )}
+
+
               {/* ⚡ সেমি-অটো পে — অ্যাপ খুলবে, নম্বর clipboard-এ কপি হবে */}
               {w.status === "pending" && !isUsdt && (
                 <div className="rounded-xl border-2 border-cyan/30 bg-cyan/5 p-2 space-y-1.5">
