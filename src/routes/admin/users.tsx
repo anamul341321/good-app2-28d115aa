@@ -10,9 +10,9 @@ import { useState } from "react";
 export const Route = createFileRoute("/admin/users")({ component: AdminUsers });
 
 function AdminUsers() {
-  const { data, isLoading, refetch } = useQuery({ queryKey: ["admin-users", "original-first-verifies-v2"], queryFn: () => adminListUsers(), staleTime: 300_000, gcTime: 600_000, refetchOnMount: false, refetchOnWindowFocus: false });
-  const { data: blocked, refetch: refetchBlocked } = useQuery({ queryKey: ["admin-blocked-users"], queryFn: () => adminListBlockedUsers(), staleTime: 300_000, gcTime: 600_000, refetchOnMount: false, refetchOnWindowFocus: false });
-  const { data: refLeaders } = useQuery({ queryKey: ["admin-ref-leaderboard", "original-first-verifies-v2"], queryFn: () => adminReferrerLeaderboard(), staleTime: 300_000, gcTime: 600_000, refetchOnMount: false, refetchOnWindowFocus: false });
+  const { data, isLoading, refetch } = useQuery({ queryKey: ["admin-users", "original-first-verifies-v2"], queryFn: () => adminListUsers(), staleTime: 15_000, gcTime: 600_000, refetchOnMount: "always", refetchOnWindowFocus: true });
+  const { data: blocked, refetch: refetchBlocked } = useQuery({ queryKey: ["admin-blocked-users"], queryFn: () => adminListBlockedUsers(), staleTime: 15_000, gcTime: 600_000, refetchOnMount: "always", refetchOnWindowFocus: true });
+  const { data: refLeaders } = useQuery({ queryKey: ["admin-ref-leaderboard", "original-first-verifies-v2"], queryFn: () => adminReferrerLeaderboard(), staleTime: 15_000, gcTime: 600_000, refetchOnMount: "always", refetchOnWindowFocus: true });
   const [q, setQ] = useState("");
   const [tab, setTab] = useState<"verifiers" | "referrers" | "all" | "blocked">("verifiers");
   const [showAll, setShowAll] = useState(false);
