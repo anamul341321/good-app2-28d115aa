@@ -205,7 +205,6 @@ export function MiningCounter({
   // দিনে কত আসে — মাসিক রেট ÷ ৩০
   const perDay = ratePerMonth / 30;
 
-  // আজকের অ্যাক্টিভ সময় — ১ ঘণ্টা পূরণ হলেই ক্লেইম বাটন উজ্জ্বল হবে
   const canClaimNow = selfMiningClaimable >= 0.5;
 
   return (
