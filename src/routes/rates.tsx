@@ -86,14 +86,14 @@ function RatesPage() {
         </div>
       </header>
 
-      <section className="rounded-2xl border border-emerald-500/40 bg-emerald-500/10 p-4">
+      <section className="rounded-2xl border border-emerald-500/40 bg-surface-2 p-4">
         <div className="flex items-center gap-2">
-          <Gift className="h-4 w-4 text-emerald-400" />
-          <h2 className="text-sm font-black text-emerald-400">
+          <Gift className="h-4 w-4 text-emerald-500" />
+          <h2 className="text-sm font-black text-foreground">
             {t("ইনস্ট্যান্ট রেফার বোনাস চালু আছে যেসব দেশে", "Countries with an instant referral bonus")}
           </h2>
         </div>
-        <p className="mt-1 text-[11px] text-emerald-200/80">
+        <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
           {t(
             "এই দেশগুলোর ইউজার আপনার রেফার কোড দিয়ে একাউন্ট খুললেই সাথে সাথে বোনাস আপনার মেইন ব্যালেন্সে যোগ হবে। ইউজারকে অবশ্যই আসলেই সেই দেশে থাকতে হবে — VPN দিয়ে হবে না।",
             "When someone from these countries signs up with your referral code, the bonus is added to your main balance instantly. They must really be in that country — VPN does not work.",
@@ -104,22 +104,23 @@ function RatesPage() {
           {bonusRows.map((r) => (
             <div
               key={r.code}
-              className="flex items-center justify-between rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2"
+              className="flex items-center justify-between rounded-xl border border-border bg-surface px-3 py-2"
             >
               <div className="flex items-center gap-2">
                 <span className="text-lg">{r.flag || flagOf(r.code)}</span>
                 <div>
-                  <p className="text-xs font-black text-emerald-300">{r.name_en}</p>
-                  <p className="text-[10px] text-emerald-200/70">
+                  <p className="text-sm font-black text-foreground">{r.name_en}</p>
+                  <p className="text-[11px] font-semibold text-muted-foreground">
                     {t("মাইনিং", "Mining")} {show(r.monthly_mining_bdt)} / {t("মাস", "month")} (10 {t("ঘর", "slots")})
                   </p>
                 </div>
               </div>
-              <span className="mono-num rounded-lg bg-emerald-500/20 px-2.5 py-1 text-xs font-black text-emerald-300">
+              <span className="mono-num rounded-lg bg-emerald-500 px-2.5 py-1 text-xs font-black text-white">
                 +{money(r.referral_bonus_bdt, countryCode).main}
               </span>
             </div>
           ))}
+
           {!isLoading && bonusRows.length === 0 && (
             <p className="text-xs text-muted-foreground">
               {t("এখন কোনো দেশে ইনস্ট্যান্ট বোনাস চালু নেই।", "No country has an instant bonus right now.")}
