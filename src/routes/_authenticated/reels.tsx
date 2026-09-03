@@ -641,7 +641,9 @@ function LocalReel({
   const [paused, setPaused] = useState(false);
   const [mediaFailed, setMediaFailed] = useState(false);
   const [mediaKey, setMediaKey] = useState(0);
+  const [buffering, setBuffering] = useState(false);
   const [burst, setBurst] = useState(false);
+
   const lastTapRef = useRef(0);
   const singleTapTimer = useRef<number | null>(null);
   const playerBoxRef = useRef<HTMLDivElement | null>(null);
