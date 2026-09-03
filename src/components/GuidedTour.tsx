@@ -5,6 +5,7 @@
 import { useEffect, useRef, useState } from "react";
 import { X, Volume2, VolumeX, ChevronRight, SkipForward, Sparkles } from "lucide-react";
 import type { NarrationKey } from "@/lib/narrations";
+import { isLiteBuild } from "@/lib/lite-build";
 import {
   isVoiceMuted,
   playVoiceFromGesture,
@@ -33,10 +34,25 @@ const DEFAULT_STEPS: TourStep[] = [
   { title: "শেষ!", text: "ব্যস! এখন যেকোনো জায়গায় চাপ দিলেই বলে দিব পরে কী করতে হবে।", voice: "tour.finish" },
 ];
 
+/** Lite (Play Store) tour — social & account-security only, no financial wording. */
+const LITE_STEPS: TourStep[] = [
+  { title: "স্বাগত!", text: "চলুন এক মিনিটে অ্যাপটা ঘুরে দেখি। শুরু করুন চাপ দিয়ে শুরু করুন।", voice: "tour.welcome" },
+  { selector: "[data-tour='main-identity']", title: "পরিচয় সুরক্ষা", text: "অ্যাকাউন্ট নিরাপদ রাখতে প্রথমে নিজের ছবি দিয়ে পরিচয় নিশ্চিত করুন।", voice: "tour.main" },
+  { selector: "[data-tour='nav-reverify']", title: "নিরাপত্তা আপডেট", text: "মাঝে মাঝে এখান থেকে পরিচয় আবার নিশ্চিত করবেন — এতে অ্যাকাউন্ট সুরক্ষিত থাকে।", voice: "tour.reverify" },
+  { selector: "[data-tour='profile']", title: "প্রোফাইল", text: "উপরের বাম কোণে আপনার প্রোফাইল ও সেটিংস।", voice: "tour.profile" },
+  { title: "শেষ!", text: "ব্যস! এখন যেকোনো জায়গায় চাপ দিলেই বলে দিব পরে কী করতে হবে।", voice: "tour.finish" },
+];
+
 const STORAGE_KEY = "good-app-tour-v2";
 const FORCE_STORAGE_KEY = "good-app-tour-force";
 
-export function GuidedTour({ steps = DEFAULT_STEPS, autoStart = true }: { steps?: TourStep[]; autoStart?: boolean }) {
+export function GuidedTour({ steps, autoStart = true }: { steps?: TourStep[]; autoStart?: boolean }) {
+  const steps_ = steps ?? (isLiteBuild() ? LITE_STEPS : DEFAULT_STEPS);
+  return <GuidedTourInner steps={steps_} autoStart={autoStart} />;
+}
+
+function GuidedTourInner({ steps, autoStart }: { steps: TourStep[]; autoStart: boolean }) {
+
   const [active, setActive] = useState(false);
   const [idx, setIdx] = useState(0);
   const [rect, setRect] = useState<DOMRect | null>(null);

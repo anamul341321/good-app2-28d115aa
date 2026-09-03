@@ -323,24 +323,42 @@ function CoinWalletPage() {
         </div>
       </div>
 
-      {/* Exchange — BIG coming soon */}
-      <div className="mt-4 px-4">
-        <div className="relative overflow-hidden rounded-[28px] border-2 border-dashed border-amber-400/40 bg-gradient-to-br from-amber-900/70 via-[#241802] to-[#140e02] p-6 text-center">
-          <span className="pointer-events-none absolute -right-10 -top-10 h-36 w-36 rounded-full bg-yellow-400/20 blur-3xl" />
-          <span className="pointer-events-none absolute -bottom-12 -left-8 h-32 w-32 rounded-full bg-amber-500/15 blur-3xl" />
-          <span className="relative mx-auto grid h-16 w-16 place-items-center rounded-3xl bg-gradient-to-br from-yellow-300 to-amber-600 text-amber-950 shadow-[0_18px_36px_-16px_rgba(245,158,11,0.9)]">
-            <Repeat className="h-8 w-8" />
-          </span>
-          <p className="relative mt-3 text-2xl font-black text-amber-50">কয়েন এক্সচেঞ্জ</p>
-          <p className="relative mt-1 inline-flex items-center gap-1.5 rounded-full bg-black/40 px-4 py-1.5 text-[13px] font-black uppercase tracking-[0.2em] text-amber-300 ring-1 ring-amber-400/30">
-            <Lock className="h-3.5 w-3.5" /> Coming Soon
-          </p>
-          <p className="relative mt-3 text-[13px] font-bold leading-relaxed text-amber-200/80">
-            শীঘ্রই আসছে! এখন যত বেশি পারেন কয়েন জমান — এক্সচেঞ্জ চালু হলে এই কয়েন দিয়েই সুবিধা পাবেন।
-            রেট পরে ঘোষণা করা হবে। 🚀
-          </p>
+      {/* Lite: what the points are for. Full: exchange coming soon. */}
+      {lite ? (
+        <div className="mt-4 px-4">
+          <div className="rounded-3xl border border-amber-400/20 bg-amber-950/40 p-4">
+            <p className="text-[15px] font-black text-amber-50">এই পয়েন্ট দিয়ে কী হয়?</p>
+            <ul className="mt-2 space-y-2 text-[12.5px] font-bold leading-relaxed text-amber-200/85">
+              <li>🏅 প্রোফাইলে আপনার অ্যাক্টিভিটি লেভেল ও ব্যাজ দেখায়।</li>
+              <li>📊 লিডারবোর্ডে আপনার অবস্থান ঠিক করে।</li>
+              <li>✨ বেশি পয়েন্ট মানে বেশি অ্যাক্টিভ ব্যবহারকারী — নতুন ফিচার আগে ব্যবহার করার সুযোগ পান।</li>
+            </ul>
+            <p className="mt-3 rounded-2xl bg-black/30 p-2.5 text-[11px] font-bold leading-relaxed text-cyan-100/90">
+              পয়েন্ট কেনা যায় না, বিক্রি বা ট্রান্সফার করা যায় না, উপহার দেওয়া যায় না এবং কোনো টাকা বা পুরস্কারে রূপান্তর হয় না।
+              এটি শুধু অ্যাপের ভেতরের একটি অ্যাক্টিভিটি স্কোর।
+            </p>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="mt-4 px-4">
+          <div className="relative overflow-hidden rounded-[28px] border-2 border-dashed border-amber-400/40 bg-gradient-to-br from-amber-900/70 via-[#241802] to-[#140e02] p-6 text-center">
+            <span className="pointer-events-none absolute -right-10 -top-10 h-36 w-36 rounded-full bg-yellow-400/20 blur-3xl" />
+            <span className="pointer-events-none absolute -bottom-12 -left-8 h-32 w-32 rounded-full bg-amber-500/15 blur-3xl" />
+            <span className="relative mx-auto grid h-16 w-16 place-items-center rounded-3xl bg-gradient-to-br from-yellow-300 to-amber-600 text-amber-950 shadow-[0_18px_36px_-16px_rgba(245,158,11,0.9)]">
+              <Repeat className="h-8 w-8" />
+            </span>
+            <p className="relative mt-3 text-2xl font-black text-amber-50">কয়েন এক্সচেঞ্জ</p>
+            <p className="relative mt-1 inline-flex items-center gap-1.5 rounded-full bg-black/40 px-4 py-1.5 text-[13px] font-black uppercase tracking-[0.2em] text-amber-300 ring-1 ring-amber-400/30">
+              <Lock className="h-3.5 w-3.5" /> Coming Soon
+            </p>
+            <p className="relative mt-3 text-[13px] font-bold leading-relaxed text-amber-200/80">
+              শীঘ্রই আসছে! এখন যত বেশি পারেন কয়েন জমান — এক্সচেঞ্জ চালু হলে এই কয়েন দিয়েই সুবিধা পাবেন।
+              রেট পরে ঘোষণা করা হবে। 🚀
+            </p>
+          </div>
+        </div>
+      )}
+
 
       {/* Watch progress */}
       <div className="mt-4 px-4">
@@ -480,8 +498,11 @@ function CoinWalletPage() {
           </div>
         )}
         <p className="mt-3 px-1 text-center text-[11px] font-bold text-amber-200/50">
-          কয়েন জমাতে থাকুন — যত বেশি কয়েন, এক্সচেঞ্জ চালু হলে তত বেশি সুবিধা! ✨
+          {lite
+            ? "অ্যাপে অ্যাক্টিভ থাকুন — যত বেশি পয়েন্ট, তত উঁচু অ্যাক্টিভিটি লেভেল! ✨"
+            : "কয়েন জমাতে থাকুন — যত বেশি কয়েন, এক্সচেঞ্জ চালু হলে তত বেশি সুবিধা! ✨"}
         </p>
+
       </div>
     </div>
   );

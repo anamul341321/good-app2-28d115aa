@@ -1,8 +1,11 @@
 import { PlayCircle } from "lucide-react";
+import { isLiteBuild } from "@/lib/lite-build";
 
 const VIDEO_URL = "https://youtu.be/gbUn9GdDvK8?si=TuIhMdVWVuW2rmOy";
 
 export function VideoTutorialButton({ variant = "default" }: { variant?: "default" | "compact" }) {
+  // Play Store Lite build ships no external tutorial link.
+  if (isLiteBuild()) return null;
   const compact = variant === "compact";
   return (
     <a
