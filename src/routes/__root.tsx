@@ -205,6 +205,15 @@ function RootComponent() {
         {!isExcludedRoute && <ForceUpdateGate />}
         <Outlet />
 
+        {showWebAd && (
+          <div
+            data-app-ui
+            className="fixed inset-x-0 bottom-0 z-[60] border-t border-border bg-surface/95 px-2 pb-1 pt-0.5 backdrop-blur"
+          >
+            <MonetagAdFrame height={90} />
+          </div>
+        )}
+
         <Toaster theme="dark" position="top-center" richColors />
       </LanguageProvider>
     </QueryClientProvider>
