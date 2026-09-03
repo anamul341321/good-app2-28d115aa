@@ -47,7 +47,7 @@ const TILES: Tile[] = [
 
   { to: "/withdraw", Icon: ArrowDownToLine, bn: "উইথড্র", en: "Withdraw", hintBn: "টাকা তুলুন", hintEn: "Cash out", from: "#f43f5e", to2: "#ec4899" },
   { to: "/earnings", Icon: BarChart3, bn: "আয়ের হিসাব", en: "Earnings", hintBn: "সম্পূর্ণ হিসাব", hintEn: "Full statement", from: "#10b981", to2: "#06b6d4" },
-  { to: "/reverify", Icon: RefreshCcw, bn: "রি-ভেরিফাই", en: "Re-verify", hintBn: "৪ দিন পর", hintEn: "Every 4 days", from: "#06b6d4", to2: "#3b82f6" },
+  { to: "/reverify", Icon: RefreshCcw, bn: lite ? "আপডেট" : "রি-ভেরিফাই", en: "Re-verify", hintBn: lite ? "সিকিউরিটি চেক" : "৪ দিন পর", hintEn: lite ? "Security check" : "Every 4 days", from: "#06b6d4", to2: "#3b82f6" },
   { to: "/recharge", Icon: Smartphone, bn: "রিচার্জ", en: "Recharge", hintBn: "মোবাইল রিচার্জ", hintEn: "Mobile top-up", from: "#22c55e", to2: "#14b8a6" },
   { to: "/send", Icon: Send, bn: "সেন্ড", en: "Send", hintBn: "ব্যালেন্স পাঠান", hintEn: "Send balance", from: "#a855f7", to2: "#ec4899" },
   { to: "/offers", Icon: Gift, bn: "অফার", en: "Offers", hintBn: "বোনাস অফার", hintEn: "Bonus offers", from: "#ec4899", to2: "#f59e0b" },

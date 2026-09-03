@@ -1,3 +1,4 @@
+import { Navigate } from '@tanstack/react-router';
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { getDashboard } from "@/lib/dashboard.functions";
@@ -9,7 +10,7 @@ import { toast } from "sonner";
 import { useLang } from "@/lib/i18n";
 import { isLiteBuild } from "@/lib/lite-build";
 
-export const Route = createFileRoute("/_authenticated/offers")({ component: OffersPage });
+export const Route = createFileRoute("/_authenticated/offers")({ component: () => isLiteBuild() ? <Navigate to="/home" /> : <OffersPage /> });
 
 function OffersPage() {
   const { t } = useLang();

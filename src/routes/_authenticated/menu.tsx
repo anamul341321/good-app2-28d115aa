@@ -71,7 +71,7 @@ function MenuPage() {
         <Link to="/offers"
           className="block rounded-3xl p-4 relative overflow-hidden shadow-[0_20px_45px_-20px_rgba(236,72,153,0.6)] btn-press border border-white/20"
           style={{ background: "linear-gradient(135deg,#7c3aed 0%,#ec4899 55%,#f59e0b 100%)" }}>
-          {hasUnclaimed && (
+          {!lite && hasUnclaimed && (
             <span className="absolute top-2.5 right-2.5 text-[10px] font-black bg-white text-rose px-2.5 py-1 rounded-full shadow-lg animate-pulse" translate="no">
               🎯 {bonusTotal}৳ {t("পেন্ডিং", "pending")}
             </span>
@@ -159,7 +159,7 @@ function MenuPage() {
           </a>
         )}
 
-        <ReferralCommissionCard />
+        {!lite && <ReferralCommissionCard />}
       </DashSection>
 
       <DashSection

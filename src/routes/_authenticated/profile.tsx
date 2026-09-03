@@ -218,7 +218,8 @@ function ProfilePage() {
       </div>
 
       {/* Monthly Mining Info */}
-      <div className="glass rounded-2xl p-4 border border-emerald/20 bg-emerald/5 no-print">
+{!isLiteBuild() && (
+      {!isLiteBuild() && <div className="glass rounded-2xl p-4 border border-emerald/20 bg-emerald/5 no-print">}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-xl bg-emerald/20 flex items-center justify-center text-emerald">
@@ -238,8 +239,8 @@ function ProfilePage() {
             </p>
           </div>
         </div>
+)}
       </div>
-
       <PasswordSelfChange />
 
 
@@ -249,7 +250,7 @@ function ProfilePage() {
         {!isLiteBuild() && (
           <TabBtn active={tab === "withdraw"} onClick={() => setTab("withdraw")} icon={<History className="w-4 h-4" />} label="উইথড্র" voice="profile.history" />
         )}
-        <TabBtn active={tab === "claim"} onClick={() => setTab("claim")} icon={<Sparkles className="w-4 h-4" />} label="ক্লেইম" voice="profile.history" />
+         {!isLiteBuild() && <TabBtn active={tab === "claim"} onClick={() => setTab("claim")} icon={<Sparkles className="w-4 h-4" />} label="ক্লেইম" voice="profile.history" />
       </div>
 
       {tab === "card" && (
@@ -313,7 +314,7 @@ function ProfilePage() {
         const noteBit = noteClean ? ` · ${noteClean}` : "";
         return { id: w.id, amount: Number(w.amount), date: w.created_at, status: w.status, meta: `${w.provider} · ${w.wallet_number}${badge}${noteBit}` };
       })} />}
-      {tab === "claim" && <HistoryList empty="এখনো কোনো ক্লেইম বা বোনাস সংশোধন নেই" items={(data.claims ?? []).map((c: any) => ({ id: c.id, amount: Number(c.amount), date: c.created_at, status: (c.kind ?? "mining") === "mining" ? "claim" : "bonus", meta: (c.kind ?? "mining") === "mining" ? (c.note ?? "মাইনিং ক্লেইম") : `প্রোমো বোনাস · ${c.note ?? "সংশোধন"}` }))} />}
+      {!isLiteBuild() && tab === "claim" && <HistoryList empty="এখনো কোনো ক্লেইম বা বোনাস সংশোধন নেই" items={(data.claims ?? []).map((c: any) => ({ id: c.id, amount: Number(c.amount), date: c.created_at, status: (c.kind ?? "mining") === "mining" ? "claim" : "bonus", meta: (c.kind ?? "mining") === "mining" ? (c.note ?? "মাইনিং ক্লেইম") : `প্রোমো বোনাস · ${c.note ?? "সংশোধন"}` }))} />}
     </div>
   );
 }

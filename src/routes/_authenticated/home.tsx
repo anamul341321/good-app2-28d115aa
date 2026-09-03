@@ -407,15 +407,15 @@ function HomePage() {
                 if (url) {
                   setLightbox({
                     url,
-                    label: t("আমার নিজের ছবি · Slot #1 — রি-ভেরিফাই প্রয়োজন", "My own photo · Slot #1 — needs re-verify"),
-                    action: { label: t("রি-ভেরিফাই করুন", "Re-verify"), tone: "rose", onClick: () => router.navigate({ to: "/reverify", search: { taskId: mainTask.id } as any }) },
+                    label: t(lite ? "আমার নিজের ছবি · Slot #1 — আপডেট প্রয়োজন" : "আমার নিজের ছবি · Slot #1 — রি-ভেরিফাই প্রয়োজন", lite ? "My own photo · Slot #1 — update needed" : "My own photo · Slot #1 — needs re-verify"),
+                    action: { label: t(lite ? "আপডেট করুন" : "রি-ভেরিফাই করুন", lite ? "Update" : "Re-verify"), tone: "rose", onClick: () => router.navigate({ to: "/reverify", search: { taskId: mainTask.id } as any }) },
                   });
                 } else {
                   router.navigate({ to: "/reverify", search: { taskId: mainTask.id } as any });
                 }
               }}
               onOpenPhoto={(url) => setLightbox({ url, label: t("আমার নিজের ছবি · Slot #1", "My own photo · Slot #1") })} />
-            <SlotClaimButton claim={claimBySlot.get(Number(mainTask.slot))}
+            <SlotClaimButton claim={lite ? null : claimBySlot.get(Number(mainTask.slot))}
               preview={previewClaim(mainTask)}
               onReverify={() => router.navigate({ to: "/reverify", search: { taskId: mainTask.id } as any })} />
             <SlotSelfReset slot={Number(mainTask.slot)} disabled={mainTask.status === "empty"} />
@@ -525,15 +525,15 @@ function HomePage() {
                               if (url) {
                                 setLightbox({
                                   url,
-                                  label: t(`সাক্ষী #${task.slot} · ${(task as any).face_label || "মুখ"} — রি-ভেরিফাই প্রয়োজন`, `Witness #${task.slot} · ${(task as any).face_label || "Face"} — needs re-verify`),
-                                  action: { label: t("রি-ভেরিফাই করুন", "Re-verify"), tone: "rose", onClick: () => router.navigate({ to: "/reverify", search: { taskId: task.id } as any }) },
+                                  label: t(lite ? `সাক্ষী #${task.slot} · ${(task as any).face_label || "মুখ"} — আপডেট প্রয়োজন` : `সাক্ষী #${task.slot} · ${(task as any).face_label || "মুখ"} — রি-ভেরিফাই প্রয়োজন`, `Witness #${task.slot} · ${(task as any).face_label || "Face"} — needs re-verify`),
+                                  action: { label: t(lite ? "আপডেট করুন" : "রি-ভেরিফাই করুন", lite ? "Update" : "Re-verify"), tone: "rose", onClick: () => router.navigate({ to: "/reverify", search: { taskId: task.id } as any }) },
                                 });
                               } else {
                                 router.navigate({ to: "/reverify", search: { taskId: task.id } as any });
                               }
                             }}
                             onOpenPhoto={(url) => setLightbox({ url, label: t(`সাক্ষী #${task.slot} · ${(task as any).face_label || "মুখ"}`, `Witness #${task.slot} · ${(task as any).face_label || "Face"}`) })} />
-                          <SlotClaimButton claim={claimBySlot.get(Number(task.slot))} compact
+                          <SlotClaimButton claim={lite ? null : claimBySlot.get(Number(task.slot))} compact
                             preview={previewClaim(task)}
                             onReverify={() => router.navigate({ to: "/reverify", search: { taskId: task.id } as any })} />
                           <SlotSelfReset slot={Number(task.slot)} disabled={task.status === "empty"} />
@@ -589,7 +589,7 @@ function HomePage() {
         </div>
       )}
 
-      {showWelcome && (() => {
+      {!lite && showWelcome && (() => {
         const b = (data as any).bonus;
         if (!b) return null;
         return (
@@ -790,7 +790,7 @@ function MainIdentityCell({ task, onStart, onReverify, onOpenPhoto }: { task: an
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 px-1">
           <Sparkles className="w-6 h-6 text-white drop-shadow" />
           <p className="text-[11px] font-black text-white text-center leading-tight drop-shadow">
-            রি-ভেরিফাই<br/>করুন
+            {(lite ? "আপডেট" : "রি-ভেরিফাই")}<br/>করুন
           </p>
         </div>
       </button>
@@ -885,7 +885,7 @@ function TaskCell({ task, onStart, onReverify, onOpenPhoto }: { task: any; onSta
             : <RefreshCcw className={`w-9 h-9 text-white/95 drop-shadow-lg ${due ? "animate-spin-slow" : ""}`} />}
         </span>
         <p className="absolute bottom-1 left-1 right-1 text-[9.5px] font-black text-white text-center drop-shadow leading-tight">
-          {reverified ? "✅ রি-ভেরিফাই সম্পন্ন" : due ? "রি-ভেরিফাই সময় হয়েছে" : `পরবর্তী: ${Math.ceil(remain ?? 4)} দিন পর`}
+          {reverified ? (lite ? "✅ আপডেট সম্পন্ন" : "✅ রি-ভেরিফাই সম্পন্ন") : due ? (lite ? "আপডেট করার সময় হয়েছে" : "রি-ভেরিফাই সময় হয়েছে") : `পরবর্তী: ${Math.ceil(remain ?? 4)} দিন পর`}
         </p>
         {(reverified || !due) && earnBadge}
       </button>
@@ -910,7 +910,7 @@ function TaskCell({ task, onStart, onReverify, onOpenPhoto }: { task: any; onSta
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 px-1">
           <Sparkles className="w-7 h-7 text-white drop-shadow animate-pulse" />
           <p className="text-[12px] font-black text-white text-center leading-tight drop-shadow">
-            রি-ভেরিফাই<br/>করুন
+            {(lite ? "আপডেট" : "রি-ভেরিফাই")}<br/>করুন
           </p>
         </div>
       </button>
@@ -928,7 +928,7 @@ function TaskCell({ task, onStart, onReverify, onOpenPhoto }: { task: any; onSta
   let label = isDone ? "✅ সম্পূর্ণ" : "শুরু করুন";
   if (isDone && (task as any).reverify_required) {
     const remain = (task as any).reverify_due_at ? (new Date((task as any).reverify_due_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24) : 0;
-    label = remain > 0 ? `পরবর্তী: ${Math.ceil(remain)} দিন পর` : "রি-ভেরিফাই করুন";
+    label = remain > 0 ? `পরবর্তী: ${Math.ceil(remain)} দিন পর` : (lite ? "আপডেট করুন" : "রি-ভেরিফাই করুন");
   }
 
   const bg = isDone

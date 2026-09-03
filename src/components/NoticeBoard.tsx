@@ -1,3 +1,5 @@
+import { isLiteBuild } from "@/lib/lite-build";
+import { isFinancialText } from "@/lib/lite-policy";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Megaphone, ChevronDown, X } from "lucide-react";
@@ -49,6 +51,7 @@ export function NoticeBoard() {
       {visible.map((a) => {
         const id = String(a.id);
         const text = String(a.message ?? "").trim();
+        if (isLiteBuild() && isFinancialText(text)) return null;
         const long = text.length > 150;
         const open = !!expanded[id];
         return (

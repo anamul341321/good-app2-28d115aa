@@ -59,7 +59,7 @@ function KycPage() {
       <div className="text-center">
         <ShieldCheck className="w-8 h-8 text-emerald mx-auto" />
         <h1 className="text-2xl font-black mt-1">KYC ভেরিফিকেশন</h1>
-        <p className="text-[11px] text-muted-foreground mt-1">মাত্র ১ ধাপ — নীল ✔ ব্যাজ ও উইথড্র চালু হবে</p>
+        <p className="text-[11px] text-muted-foreground mt-1">মাত্র ১ ধাপ — প্রোফাইলে নীল ✔ ব্যাজ যোগ হবে</p>
       </div>
 
       <div className="glass rounded-2xl p-4 space-y-2 text-[12px] font-bold text-navy">
@@ -67,7 +67,7 @@ function KycPage() {
         <p>✔ বটে <b>শুরু করুন (Start)</b> চাপলেই KYC সম্পন্ন — আর কিছু লাগবে না</p>
         <p>✔ বট UID চাইলে নিচের <b>UID</b> টি কপি করে পাঠিয়ে দিন</p>
         <p>✔ KYC হলে প্রোফাইলে <b>নীল ✔ ব্যাজ</b> এবং <b>উইথড্র চালু</b> হবে</p>
-        <p className="text-rose-600">⚠ KYC ছাড়া অ্যাপের সব কাজ চলবে, কিন্তু <b>টাকা তোলা যাবে না</b></p>
+        <p className="text-rose-600">⚠ KYC ছাড়া আপনার প্রোফাইলে <b>নীল ✔ ব্যাজ</b> থাকবে না</p>
       </div>
 
       {uid && (

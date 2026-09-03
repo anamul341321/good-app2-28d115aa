@@ -772,8 +772,8 @@ export function AuthPage() {
             <h1 className="text-3xl font-black text-navy tracking-tight">গুড অ্যাপ</h1>
             <p className="text-xs text-muted-foreground mt-1.5 font-bold">
               <span className="text-cyan">১০টি টাস্ক</span>
-              <span className="mx-1.5 text-muted-foreground">→</span>
-              <span className="text-violet">মাসিক রিওয়ার্ড সুবিধা</span>
+              <span className="mx-1.5 text-muted-foreground">{!isLiteBuild() && "→"}</span>
+              {!isLiteBuild() && <span className="text-violet">মাসিক রিওয়ার্ড সুবিধা</span>}
             </p>
             <p className="text-[10px] text-muted-foreground mt-1 px-2">
               {liteText(
@@ -786,7 +786,7 @@ export function AuthPage() {
               <VideoTutorialButton />
             </div>
             <div className="mt-3 text-left">
-              <ApkDownloadCard />
+              {!isLiteBuild() && <ApkDownloadCard />}
             </div>
           </div>
 
