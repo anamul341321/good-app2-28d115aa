@@ -1350,23 +1350,91 @@ body.ads-banner-on nav.fixed.bottom-0 {
 @media (prefers-reduced-motion: reduce) { .mc-claim-glow { animation: none; } }
 
 /* ---------- Coin shop themes (cosmetic only) ---------- */
+/* ---------- Premium cosmetic themes (Good Coin shop) ---------- */
+/* Every theme retunes accents, surfaces and the page aura. Higher priced
+   themes get richer depth: deeper aura, glass surfaces and a glow ring. */
 .theme-ocean {
-  --primary: oklch(0.60 0.16 232); --ring: oklch(0.60 0.16 232);
-  --violet: oklch(0.60 0.16 232); --cyan: oklch(0.70 0.13 210); --gold: oklch(0.78 0.12 210);
+  --primary: oklch(0.58 0.17 232); --ring: oklch(0.58 0.17 232);
+  --violet: oklch(0.58 0.17 232); --cyan: oklch(0.72 0.14 205); --gold: oklch(0.80 0.12 205);
+  --accent: oklch(0.93 0.04 225);
+  --surface: oklch(0.985 0.012 225); --surface-2: oklch(0.955 0.022 225);
+  --border: oklch(0.89 0.03 225);
+  --aura-1: oklch(0.72 0.14 205); --aura-2: oklch(0.58 0.17 232); --aura-base: oklch(0.95 0.035 228);
+  --aura-strength: 16%;
 }
 .theme-sunset {
-  --primary: oklch(0.64 0.20 30); --ring: oklch(0.64 0.20 30);
-  --violet: oklch(0.62 0.22 350); --cyan: oklch(0.74 0.16 60); --gold: oklch(0.80 0.15 70);
+  --primary: oklch(0.63 0.21 28); --ring: oklch(0.63 0.21 28);
+  --violet: oklch(0.61 0.23 350); --cyan: oklch(0.76 0.16 60); --gold: oklch(0.82 0.15 72);
+  --accent: oklch(0.94 0.05 40);
+  --surface: oklch(0.99 0.015 45); --surface-2: oklch(0.96 0.03 40);
+  --border: oklch(0.90 0.04 40);
+  --aura-1: oklch(0.78 0.16 55); --aura-2: oklch(0.62 0.22 350); --aura-base: oklch(0.955 0.04 40);
+  --aura-strength: 20%;
 }
 .theme-emerald {
-  --primary: oklch(0.58 0.15 160); --ring: oklch(0.58 0.15 160);
-  --violet: oklch(0.58 0.15 160); --cyan: oklch(0.70 0.13 175); --gold: oklch(0.80 0.13 140);
+  --primary: oklch(0.56 0.16 160); --ring: oklch(0.56 0.16 160);
+  --violet: oklch(0.56 0.16 160); --cyan: oklch(0.72 0.13 175); --gold: oklch(0.82 0.14 140);
+  --accent: oklch(0.93 0.05 160);
+  --surface: oklch(0.985 0.014 165); --surface-2: oklch(0.955 0.026 165);
+  --border: oklch(0.89 0.035 165);
+  --aura-1: oklch(0.74 0.14 168); --aura-2: oklch(0.52 0.14 155); --aura-base: oklch(0.95 0.04 165);
+  --aura-strength: 22%;
 }
+/* --- premium tier: glass surfaces + glow --- */
 .theme-neon {
-  --primary: oklch(0.62 0.28 305); --ring: oklch(0.62 0.28 305);
-  --violet: oklch(0.62 0.28 305); --cyan: oklch(0.78 0.18 195); --gold: oklch(0.85 0.18 330);
+  --background: oklch(0.17 0.03 285);
+  --foreground: oklch(0.97 0.01 300);
+  --card: oklch(0.22 0.04 288); --card-foreground: oklch(0.97 0.01 300);
+  --popover: oklch(0.22 0.04 288); --popover-foreground: oklch(0.97 0.01 300);
+  --surface: oklch(0.24 0.045 290); --surface-2: oklch(0.28 0.05 292);
+  --muted: oklch(0.26 0.04 290); --muted-foreground: oklch(0.78 0.03 295);
+  --secondary: oklch(0.26 0.05 292); --secondary-foreground: oklch(0.97 0.01 300);
+  --accent: oklch(0.32 0.09 300); --accent-foreground: oklch(0.98 0.01 300);
+  --border: oklch(0.36 0.07 295); --input: oklch(0.30 0.06 292);
+  --primary: oklch(0.70 0.27 305); --primary-foreground: oklch(0.14 0.02 285);
+  --ring: oklch(0.78 0.20 195);
+  --navy: oklch(0.97 0.01 300);
+  --violet: oklch(0.70 0.27 305); --cyan: oklch(0.82 0.18 195); --gold: oklch(0.88 0.18 330);
+  --aura-1: oklch(0.70 0.27 305); --aura-2: oklch(0.82 0.18 195); --aura-base: oklch(0.16 0.03 285);
+  --aura-strength: 34%;
+  --premium-glow: 0 0 0 1px color-mix(in oklch, var(--cyan) 45%, transparent),
+                  0 10px 40px -12px color-mix(in oklch, var(--violet) 60%, transparent);
 }
 .theme-royal {
-  --primary: oklch(0.52 0.13 80); --ring: oklch(0.52 0.13 80);
-  --violet: oklch(0.42 0.09 70); --cyan: oklch(0.74 0.15 85); --gold: oklch(0.80 0.16 82);
+  --background: oklch(0.19 0.03 265);
+  --foreground: oklch(0.97 0.012 85);
+  --card: oklch(0.235 0.035 268); --card-foreground: oklch(0.97 0.012 85);
+  --popover: oklch(0.235 0.035 268); --popover-foreground: oklch(0.97 0.012 85);
+  --surface: oklch(0.255 0.04 268); --surface-2: oklch(0.30 0.045 270);
+  --muted: oklch(0.27 0.035 268); --muted-foreground: oklch(0.80 0.04 85);
+  --secondary: oklch(0.28 0.04 270); --secondary-foreground: oklch(0.97 0.012 85);
+  --accent: oklch(0.34 0.07 80); --accent-foreground: oklch(0.98 0.01 85);
+  --border: oklch(0.40 0.06 82); --input: oklch(0.31 0.05 270);
+  --primary: oklch(0.78 0.16 84); --primary-foreground: oklch(0.18 0.03 265);
+  --ring: oklch(0.82 0.16 84);
+  --navy: oklch(0.97 0.012 85);
+  --violet: oklch(0.62 0.10 300); --cyan: oklch(0.74 0.13 90); --gold: oklch(0.84 0.16 84);
+  --aura-1: oklch(0.84 0.16 84); --aura-2: oklch(0.50 0.10 285); --aura-base: oklch(0.17 0.03 265);
+  --aura-strength: 30%;
+  --premium-glow: 0 0 0 1px color-mix(in oklch, var(--gold) 55%, transparent),
+                  0 12px 44px -14px color-mix(in oklch, var(--gold) 55%, transparent);
 }
+
+/* Themed page aura — replaces the default body glow when a theme is on. */
+[class*="theme-"] body::before,
+body[class*="theme-"]::before,
+html[class*="theme-"] body::before {
+  background:
+    radial-gradient(900px 520px at 8% -10%, color-mix(in oklch, var(--aura-1) var(--aura-strength, 12%), transparent), transparent 62%),
+    radial-gradient(820px 520px at 100% 100%, color-mix(in oklch, var(--aura-2) var(--aura-strength, 12%), transparent), transparent 65%),
+    var(--aura-base, oklch(0.94 0.035 245)) !important;
+}
+
+/* Premium tiers get a subtle glow on cards so the spend feels worth it. */
+html.theme-neon .rounded-2xl,
+html.theme-neon .rounded-3xl,
+html.theme-royal .rounded-2xl,
+html.theme-royal .rounded-3xl {
+  box-shadow: var(--premium-glow, none);
+}
+

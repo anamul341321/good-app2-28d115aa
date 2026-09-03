@@ -12,7 +12,23 @@ const MAX: Record<UploadKind, number> = {
   voice: 25 * 1024 * 1024,
 };
 
+// একই ফাইল একাধিকবার ট্যাপ করলে যেন দুবার আপলোড না হয় — চলমান আপলোড শেয়ার করি।
+const inflight = new Map<string, Promise<string>>();
+
 export async function uploadChatFile(file: Blob, kind: UploadKind, ext: string) {
+  const dedupeKey = `${kind}:${file.size}:${(file as File).name ?? ""}:${(file as File).lastModified ?? ""}`;
+  const running = inflight.get(dedupeKey);
+  if (running) return running;
+  const task = uploadChatFileOnce(file, kind, ext);
+  inflight.set(dedupeKey, task);
+  try {
+    return await task;
+  } finally {
+    inflight.delete(dedupeKey);
+  }
+}
+
+async function uploadChatFileOnce(file: Blob, kind: UploadKind, ext: string) {
   const { data } = await supabase.auth.getSession();
   const me = data.session?.user?.id;
   if (!me) throw new Error("লগইন করুন");
@@ -26,6 +42,7 @@ export async function uploadChatFile(file: Blob, kind: UploadKind, ext: string) 
 
   const { error } = await supabase.storage.from("chat-media").upload(path, file, {
     contentType: file.type || undefined,
+    cacheControl: "31536000",
     upsert: false,
   });
   if (error) throw new Error("আপলোড হয়নি — ইন্টারনেট চেক করুন");

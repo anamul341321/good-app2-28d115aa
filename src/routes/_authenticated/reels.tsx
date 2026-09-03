@@ -324,6 +324,9 @@ function ReelsPage() {
 
 
 
+  // একই ভিডিও বারবার সাবমিট হয়ে ৩/৪টা রিল তৈরি হওয়া বন্ধ করি
+  const lastUploadKeyRef = useRef<string | null>(null);
+
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
       if (!user) throw new Error("no user");
@@ -341,22 +344,39 @@ function ReelsPage() {
         }
       });
     },
-    onError: () => toast.error("আপলোড ব্যর্থ হয়েছে"),
+    onError: () => {
+      lastUploadKeyRef.current = null;
+      toast.error("আপলোড ব্যর্থ হয়েছে");
+    },
     onSettled: () => setUploading(false),
   });
 
-  const handlePickFile = () => uploadInputRef.current?.click();
+  const handlePickFile = () => {
+    if (uploading || uploadMutation.isPending) return;
+    uploadInputRef.current?.click();
+  };
+
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = "";
     if (!file) return;
     if (!file.type.startsWith("video/")) {
       toast.error("শুধুমাত্র ভিডিও ফাইল আপলোড করুন");
       return;
     }
+    if (uploading || uploadMutation.isPending) {
+      toast.info("আগের ভিডিওটি আপলোড হচ্ছে, একটু অপেক্ষা করুন");
+      return;
+    }
+    const key = `${file.name}:${file.size}:${file.lastModified}`;
+    if (lastUploadKeyRef.current === key) {
+      toast.info("এই ভিডিওটি ইতিমধ্যে আপলোড হয়েছে");
+      return;
+    }
+    lastUploadKeyRef.current = key;
     setUploading(true);
     uploadMutation.mutate(file);
-    e.target.value = "";
   };
 
   if (isLoading) {
