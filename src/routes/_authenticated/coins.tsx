@@ -1,9 +1,9 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import {
   ChevronLeft, Coins, Sparkles, Repeat, Film, Image as ImageIcon,
   MessageCircle, Video, TrendingUp, CalendarClock, Gift, Lock,
-  Send, History, ChevronRight, ShieldCheck, Loader2, PlayCircle,
+  Send, History, ChevronRight, ShieldCheck, Loader2, PlayCircle, ShoppingBag,
 } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCoinSummary } from "@/components/social/CoinWallet";
