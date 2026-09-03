@@ -938,6 +938,27 @@ export type Database = {
         }
         Relationships: []
       }
+      coin_cosmetics: {
+        Row: {
+          emoji_key: string
+          theme_key: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          emoji_key?: string
+          theme_key?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          emoji_key?: string
+          theme_key?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       coin_ledger: {
         Row: {
           amount: number
@@ -961,6 +982,33 @@ export type Database = {
           id?: string
           reason?: string
           reference_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      coin_shop_purchases: {
+        Row: {
+          cost: number
+          created_at: string
+          id: string
+          item_key: string
+          item_kind: string
+          user_id: string
+        }
+        Insert: {
+          cost?: number
+          created_at?: string
+          id?: string
+          item_key: string
+          item_kind: string
+          user_id: string
+        }
+        Update: {
+          cost?: number
+          created_at?: string
+          id?: string
+          item_key?: string
+          item_kind?: string
           user_id?: string
         }
         Relationships: []
@@ -3369,6 +3417,15 @@ export type Database = {
       }
       award_coin_event: {
         Args: { _event: string; _reference_id?: string; _user_id: string }
+        Returns: Json
+      }
+      buy_cosmetic: {
+        Args: {
+          _cost: number
+          _item_key: string
+          _item_kind: string
+          _user_id: string
+        }
         Returns: Json
       }
       claim_ad_coins: { Args: { _user_id: string }; Returns: Json }
