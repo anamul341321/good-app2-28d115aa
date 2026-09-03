@@ -298,7 +298,7 @@ export function Composer({
               <div className="relative">
                 {pickEmoji && (
                   <div className="absolute bottom-11 right-0 z-20 flex gap-1 rounded-2xl border bg-background px-2 py-1.5 shadow-xl">
-                    {["👍", "❤️", "😂", "😮", "😢", "🔥", "🙏"].map((e) => (
+                    {activeEmojis().map((e) => (
                       <button
                         key={e}
                         onClick={() => chooseEmoji(e)}

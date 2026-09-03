@@ -39,6 +39,10 @@ function StoryMentionCard({ path, mine, ownerName }: { path?: string | null; min
   );
 }
 
+import { activeEmojis } from "@/lib/cosmetics";
+
+/** Equipped emoji pack drives the reaction row. */
+export const reactionEmojis = () => activeEmojis().slice(0, 6);
 export const REACTION_EMOJIS = ["❤️", "😂", "😮", "😢", "😡", "👍"];
 
 export type ChatMsg = {
