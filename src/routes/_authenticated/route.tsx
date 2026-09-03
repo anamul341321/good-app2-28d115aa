@@ -193,7 +193,7 @@ function AuthedLayout() {
         appStatus?.faceVerifyEnabled === false ? (
           <SlotPausedModal message={appStatus?.faceVerifyMessage} />
         ) : (
-          {!lite && <NewSystemModal />}
+          !lite ? <NewSystemModal /> : null
         )
       )}
 
