@@ -20,8 +20,6 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { LanguageProvider } from "@/lib/i18n";
 import { useNativeApp } from "@/hooks/useNativeApp";
 import { NativeAdsController } from "@/components/NativeAdsController";
-import { MonetagAdFrame } from "@/components/MonetagAdFrame";
-import { AdBoxOverlay } from "@/components/AdBoxOverlay";
 
 function NotFoundComponent() {
   return (
@@ -131,26 +129,40 @@ function RootComponent() {
 
   useNativeApp();
 
-  // Monetag Multitag আর সরাসরি পেজে ইনজেক্ট হয় না। সব অ্যাড এখন
-  // sandboxed iframe (MonetagAdFrame)-এর ভিতরে চলে — সব ফরম্যাট দেখা যায়,
-  // কিন্তু popunder/onclick স্ক্রিপ্ট অ্যাপের বাটনের ক্লিক দখল করতে পারে না।
+  // Monetag Multitag সরাসরি পেজে ইনজেক্ট হয় — তবে শুধু পাবলিক পেজে
+  // (লগইন করা ইউজারের অ্যাপের ভেতরের পেজে নয়), যাতে অ্যাড স্ক্রিপ্ট
+  // অ্যাপের বাটনের ক্লিক দখল করতে না পারে।
   const isNativeShell =
     typeof window !== "undefined" &&
     Boolean(
       (window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor?.isNativePlatform?.(),
     );
-  const showWebAd = !isNativeShell && !/^\/admin/.test(pathname);
 
   useEffect(() => {
-    // আগের ভার্সনে পেজে সরাসরি ইনজেক্ট করা ট্যাগ থাকলে সেটি সরানো হয়।
-    // React-এর নিজের DOM নোড কখনো মুছে ফেলা হয় না (removeChild crash এড়াতে)।
-    document.querySelector('script[data-zone="275797"]')?.remove();
-  }, []);
-
-  useEffect(() => {
-    document.body.classList.toggle("web-ad-on", showWebAd);
-    return () => document.body.classList.remove("web-ad-on");
-  }, [showWebAd]);
+    if (isNativeShell) return; // নেটিভ অ্যাপে Unity Ads চলে
+    if (/^\/admin/.test(pathname)) return;
+    const inject = () => {
+      if (document.querySelector('script[data-zone="275797"]')) return;
+      const s = document.createElement("script");
+      s.src = "https://quge5.com/88/tag.min.js";
+      s.dataset.zone = "275797";
+      s.async = true;
+      s.setAttribute("data-cfasync", "false");
+      document.head.appendChild(s);
+    };
+    const publicPage = pathname === "/" || pathname === "/download" || pathname === "/auth" || pathname === "/login";
+    if (publicPage) {
+      inject();
+      return;
+    }
+    // লগইন করা ইউজারের ভেতরের পেজে অ্যাড নেই; লগআউট অবস্থায় থাকলে দেখাও
+    void import("@/integrations/supabase/client")
+      .then(({ supabase }) => supabase.auth.getSession())
+      .then(({ data }) => {
+        if (!data.session) inject();
+      })
+      .catch(() => {});
+  }, [isNativeShell, pathname]);
 
 
   useEffect(() => {
@@ -194,18 +206,6 @@ function RootComponent() {
         {!isExcludedRoute && <AppUpdateBanner />}
         {!isExcludedRoute && <ForceUpdateGate />}
         <Outlet />
-
-        {showWebAd && (
-          <>
-            <div
-              data-app-ui
-              className="fixed inset-x-0 bottom-0 z-[60] border-t border-border bg-surface/95 px-2 pb-1 pt-0.5 backdrop-blur"
-            >
-              <MonetagAdFrame height={110} rotateMs={18_000} />
-            </div>
-            <AdBoxOverlay firstDelayMs={12_000} repeatMs={150_000} />
-          </>
-        )}
 
         <Toaster theme="dark" position="top-center" richColors />
       </LanguageProvider>
