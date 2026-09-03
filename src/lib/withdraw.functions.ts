@@ -206,9 +206,9 @@ export const requestWithdraw = createServerFn({ method: "POST" })
     const miningLockedAmount = Number(bd.mining_locked ?? 0);
     const available = bonusAvailable + miningAvailable;
 
-    if (!miningWindowOpen && amount > bonusAvailable) {
+    if (!miningWindowOpen) {
       throw new Error(
-        `⛏️ মাইনিং ব্যালেন্স শুধু প্রতি মাসের ১–৩ তারিখের মধ্যে withdraw করা যায় — আরও ${miningWindowDaysLeft} দিন বাকি। এখন শুধু মেইন/বোনাস ব্যালেন্স ${Math.floor(bonusAvailable)}৳ তোলা যাবে। (উইথড্র পেজে অ্যাড দেখে সময় কমাতে পারেন — ${AD_BOOST.adsPerBoost}টি অ্যাড = ${AD_BOOST.daysPerBoost} দিন কম)`,
+        `⏳ উইথড্র এখন বন্ধ — প্রতি মাসের ১ তারিখ রাত ১২:০০টা থেকে ৩ তারিখ রাত ১০:০০টা পর্যন্ত খোলা থাকে (আরও ${miningWindowDaysLeft} দিন বাকি)। মাইনিং ক্লেইম করে মেইন ব্যালেন্সে নিলেও এই সময়ের বাইরে তোলা যাবে না।`,
       );
     }
 

@@ -201,7 +201,7 @@ function WithdrawPage() {
             </div>
           </div>
           <p className="text-[10px] text-muted-foreground leading-snug">
-            মেইন/বোনাস ব্যালেন্স <b>যেকোনো সময়</b> withdraw করা যাবে। <b>মাইনিং ব্যালেন্স শুধু প্রতি মাসের ১–৩ তারিখে</b> তোলা যাবে। যে স্লট রি-ভেরিফাই করবেন, সেই স্লটের মাইনিং টাকা আনলক হয়ে যাবে।
+            <b>উইথড্র শুধু প্রতি মাসের ১–৩ তারিখে</b> (৩ তারিখ রাত ১০টা পর্যন্ত) — মেইন ও মাইনিং, দুই ব্যালেন্সের জন্যই একই নিয়ম। মাইনিং ক্লেইম করে মেইনে নিলেও উইন্ডোর বাইরে তোলা যাবে না। যে স্লট রি-ভেরিফাই করবেন, সেই স্লটের মাইনিং টাকা আনলক হয়ে যাবে।
           </p>
         </div>
       )}
@@ -229,7 +229,7 @@ function WithdrawPage() {
               </div>
             </div>
             <ul className="space-y-2 text-[12px] text-navy/90 leading-relaxed font-bold">
-              <li className="flex gap-2"><span className="text-emerald shrink-0">📅</span><span>মাইনিং উইথড্র শুধু প্রতি মাসের <b className="text-emerald">১–৩ তারিখ</b> — বাকি সময় কাউন্টডাউন দেখাবে। মেইন/বোনাস ব্যালেন্স যেকোনো সময় তোলা যাবে।</span></li>
+              <li className="flex gap-2"><span className="text-emerald shrink-0">📅</span><span>উইথড্র (মেইন + মাইনিং দুটোই) শুধু প্রতি মাসের <b className="text-emerald">১–৩ তারিখ</b>, ৩ তারিখ রাত ১০টা পর্যন্ত — বাকি সময় কাউন্টডাউন দেখাবে।</span></li>
               <li className="flex gap-2"><span className="text-cyan shrink-0">⛏️</span><span>প্রতিটি স্লট আলাদাভাবে মাইনিং করে (<b>৫০৳/মাস</b> প্রতি স্লট) — ১টি স্লট রি-ভেরিফাই করলেই ওই স্লটের মাইনিং চালু।</span></li>
               <li className="flex gap-2"><span className="text-amber shrink-0">🔒</span><span>যে স্লট রি-ভেরিফাই করবেন, <b>সেই স্লটের জমা মাইনিং টাকাই</b> আনলক হবে। সব স্লট রি-ভেরিফাই করলে পুরো টাকা আনলক।</span></li>
               <li className="flex gap-2"><span className="text-violet shrink-0">🎁</span><span>আগে রি-ভেরিফাই করা স্লট আবার রি-ভেরিফাই করলে <b>প্রতি স্লটে ১০৳</b> বোনাস (মেইন ব্যালেন্সে)।</span></li>
