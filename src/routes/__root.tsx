@@ -129,22 +129,17 @@ function RootComponent() {
 
   useNativeApp();
 
-  const isNativeShell =
-    typeof window !== "undefined" &&
-    Boolean(
-      (window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor?.isNativePlatform?.(),
-    );
-
   useEffect(() => {
     // Remove the old Multitag (it carried OnClick/Popunder which hijacked app
     // button clicks) and load only the safe formats instead:
     //   - Vignette (zone 11713170): full-screen ad WITH a visible close button
     //   - In-Page Push (zone 11713181): small persistent banner
     // Neither format overlays app buttons, so clicks stay inside the app.
-    // Ads run on web pages only; native Android ads go through Unity.
+    // Runs on both website and native Android app (WebView) for extra earnings;
+    // admin panel stays clean.
     document.querySelectorAll('script[data-zone="275797"], script[src*="quge5.com/88/tag.min.js"]')
       .forEach((node) => node.remove());
-    if (isNativeShell || pathname.startsWith("/admin")) return;
+    if (pathname.startsWith("/admin")) return;
     const ensure = (zone: string, src: string) => {
       if (document.querySelector(`script[data-zone="${zone}"]`)) return;
       const s = document.createElement("script");
@@ -155,7 +150,7 @@ function RootComponent() {
     };
     ensure("11713170", "https://n6wxm.com/vignette.min.js");
     ensure("11713181", "https://nap5k.com/tag.min.js");
-  }, [isNativeShell, pathname]);
+  }, [pathname]);
 
 
 
