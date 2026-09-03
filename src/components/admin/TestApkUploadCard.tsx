@@ -8,7 +8,7 @@ import {
   adminSetTestApkRelease,
 } from "@/lib/admin.functions";
 
-const CURRENT_ANDROID_VERSION = "1.30";
+const CURRENT_ANDROID_VERSION = "1.36";
 
 function normalizeAndroidVersion(value: string): string {
   const match = value.trim().match(/\d+(?:\.\d+){1,2}/);
@@ -44,6 +44,26 @@ export function TestApkUploadCard() {
       const { unzipSync } = await import("fflate");
       const buf = new Uint8Array(await picked.arrayBuffer());
       const files = unzipSync(buf);
+
+      const metadataName = Object.keys(files).find((n) => /release-metadata\.json$/i.test(n));
+      if (!metadataName) {
+        throw new Error("এটি পুরোনো/ভুল artifact—নতুন GitHub Lite workflow-এর ZIP দিন");
+      }
+      const metadata = JSON.parse(new TextDecoder().decode(files[metadataName]));
+      const artifactVersion = normalizeAndroidVersion(String(metadata.versionName ?? ""));
+      const artifactIsLite = metadata.lite === true;
+      if (artifactIsLite !== lite) {
+        throw new Error(
+          lite
+            ? "এই ZIPটি Full app—GitHub-এ Build mode: lite দিয়ে বানানো ZIP দিন"
+            : "এই ZIPটি Lite app—আপলোডের আগে Lite checkbox চালু করুন",
+        );
+      }
+      if (!artifactVersion || artifactVersion !== releaseVersion) {
+        throw new Error(
+          `এই ZIP v${artifactVersion || "অজানা"}, কিন্তু ঘরে v${releaseVersion} লেখা—সঠিক file দিন`,
+        );
+      }
 
       const apkName = Object.keys(files).find((n) => /\.apk$/i.test(n));
       if (!apkName) throw new Error("ZIP ফাইলের ভিতরে কোনো .apk পাওয়া যায়নি");
