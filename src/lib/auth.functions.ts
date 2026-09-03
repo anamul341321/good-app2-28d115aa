@@ -160,8 +160,9 @@ export const registerWithPhone = createServerFn({ method: "POST" })
               user_id: refOwner.id,
               title: "🌍 বিদেশি রেফার বোনাস",
               body: `${region.flag} ${region.nameEn} থেকে একজন একাউন্ট খুলেছে — আপনি সাথে সাথে ${bonusAmount}৳ বোনাস পেয়েছেন!`,
-              severity: "success",
+              metadata: { kind: "foreign_referral_bonus", amount: bonusAmount, country: region.code },
             } as any);
+
           }
         } catch {
           // বোনাস ফেল করলেও একাউন্ট তৈরি আটকাবে না
