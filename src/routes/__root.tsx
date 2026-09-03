@@ -142,13 +142,17 @@ function RootComponent() {
     if (pathname.startsWith("/admin")) return;
 
     const ownNodes = new Set<Element>(Array.from(document.body.children));
-    if (!document.querySelector('script[data-zone="11713170"]')) {
+    // দুইটা Vignette zone — একটার frequency cap শেষ হলে অন্যটা দেখাতে পারে,
+    // তাই মোট ad impression বাড়ে (কোনো বাটন ঢাকে না, close বাটন থাকে)।
+    ["11713170", "11713348"].forEach((zone) => {
+      if (document.querySelector(`script[data-zone="${zone}"]`)) return;
       const s = document.createElement("script");
-      s.dataset.zone = "11713170";
+      s.dataset.zone = zone;
       s.src = "https://n6wxm.com/vignette.min.js";
       s.async = true;
       document.body.appendChild(s);
-    }
+    });
+
 
     // Safety net: if any leftover small fixed ad box shows up, hide it instead of
     // letting it cover the top of the screen.
