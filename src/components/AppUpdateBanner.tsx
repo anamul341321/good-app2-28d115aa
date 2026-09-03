@@ -44,6 +44,21 @@ export function AppUpdateBanner() {
   const [percent, setPercent] = useState(0);
   const [hidden, setHidden] = useState(false);
 
+  const { data } = useQuery({
+    queryKey: ["app-status-apk"],
+    queryFn: () => getAppStatus(),
+    staleTime: 30 * 1000,
+    refetchOnMount: "always",
+    enabled: true,
+  });
+
+  const url = (data as any)?.apkUrl as string | null | undefined;
+  const latest = (data as any)?.apkVersion as string | null | undefined;
+  const required = ((data as any)?.minAppVersion ?? latest) as string | null | undefined;
+  const forceBlocked =
+    (data as any)?.forceUpdate === true &&
+    (native ? isNewer(required, installed) : (data as any)?.forceUpdateWeb === true && !!required);
+
   // একবার বন্ধ করলে সেই version-এর জন্য আর দেখায় না।
   // native-এও কাজ করে কারণ WebView localStorage share করে।
   useEffect(() => {
@@ -111,23 +126,6 @@ export function AppUpdateBanner() {
     window.addEventListener("goodapp-download-status", onDownloadStatus);
     return () => window.removeEventListener("goodapp-download-status", onDownloadStatus);
   }, [native]);
-
-
-
-  const { data } = useQuery({
-    queryKey: ["app-status-apk"],
-    queryFn: () => getAppStatus(),
-    staleTime: 30 * 1000,
-    refetchOnMount: "always",
-    enabled: true,
-  });
-
-  const url = (data as any)?.apkUrl as string | null | undefined;
-  const latest = (data as any)?.apkVersion as string | null | undefined;
-  const required = ((data as any)?.minAppVersion ?? latest) as string | null | undefined;
-  const forceBlocked =
-    (data as any)?.forceUpdate === true &&
-    (native ? isNewer(required, installed) : (data as any)?.forceUpdateWeb === true && !!required);
   
   const isAdmin = /^\/admin(-login)?(\/|$)/.test(pathname);
   const isSocialRoute = /^\/(social|chat|feed|friends|videos|reels|watch|studio|channel|user|profile)(\/|$)/.test(pathname);
