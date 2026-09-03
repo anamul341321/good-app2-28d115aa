@@ -65,3 +65,85 @@ export function liteStrip(): Plugin {
     },
   };
 }
+
+/* ------------------------------------------------------------------ *
+ * Lite text scrubbing
+ *
+ * Some shared components keep a full-website branch that is never
+ * rendered in the Lite build (it is guarded by the Lite policy flags).
+ * Those branches still carried money wording into the Lite bundle, so a
+ * reviewer unpacking the AAB could read them. This pass rewrites the
+ * *string literals* of every app source file in Lite builds, replacing
+ * money wording with neutral in-app-points wording.
+ *
+ * Only literal text is touched — identifiers, import paths, route paths,
+ * snake_case keys and URLs are left untouched so nothing breaks.
+ * ------------------------------------------------------------------ */
+
+const REPLACEMENTS: Array<[RegExp, string]> = [
+  [/৳/g, ""],
+  [/টাকা/g, "পয়েন্ট"],
+  [/উইথড্র|উত্তোলন|ক্যাশআউট|ক্যাশ আউট/g, "রিডিম"],
+  [/withdrawals|withdrawal|withdraws|withdrawn|withdraw/gi, "redeem"],
+  [/cash ?out/gi, "redeem"],
+  [/bkash|nagad|বিকাশ|নগদ/gi, "wallet"],
+  [/recharges|recharge|রিচার্জ/gi, "top-up"],
+  [/send money|সেন্ড মানি|পয়েন্ট পাঠান/gi, "transfer"],
+  [/payouts|payout|payments|payment|পেমেন্ট/gi, "reward"],
+  [/\bUSDT\b|\bBDT\b|\bTaka\b|\bCelo\b/gi, "points"],
+  // Other languages used by the region translations.
+  [/निकासी|निकाल्नु|पैसे निकालें/g, "रिडीम"],
+  [/رقم نکالیں|سحب|انسحاب/g, "ریڈیم"],
+  [/Tarik keluar|Penarikan|Retiro|Retrait|Saque/gi, "Redeem"],
+  [/Isi ulang|Recarga|Recharger/gi, "Top-up"],
+];
+
+// Paths, urls, css/class strings, snake_case keys and empty strings are left alone.
+const SKIP_LITERAL = (text: string) =>
+  text === "" ||
+  // No spaces + pure ASCII + path/key punctuation => identifier, path, url or css class.
+  (!/\s/.test(text) &&
+    !/[^\x20-\x7e]/.test(text) &&
+    (/^[./@]|[/_:#]/.test(text) || /\.(tsx?|jsx?|css|json|png|jpe?g|svg|webp|mp4)$/.test(text)));
+
+const scrubLiteralText = (text: string) => {
+  if (SKIP_LITERAL(text)) return text;
+  let out = text;
+  for (const [re, to] of REPLACEMENTS) out = out.replace(re, to);
+  return out;
+};
+
+const LITERALS = /(?<!\\)(["'])((?:\\.|(?!\1)[^\\\r\n])*)\1|`((?:\\.|[^\\`])*)`/g;
+
+const scrubSource = (code: string) =>
+  code.replace(LITERALS, (match: string, quote?: string, dq?: string, tpl?: string) => {
+    if (typeof quote === "string") {
+      const scrubbed = scrubLiteralText(dq ?? "");
+      return scrubbed === dq ? match : `${quote}${scrubbed}${quote}`;
+    }
+    // Template literal: only scrub the static chunks, keep ${...} expressions.
+    const raw = tpl ?? "";
+    const scrubbed = raw.replace(
+      /(\$\{(?:[^{}]|\{[^{}]*\})*\})|([^$]+|\$)/g,
+      (seg: string, expr?: string) => (expr ? seg : scrubLiteralText(seg)),
+    );
+    return scrubbed === raw ? match : `\`${scrubbed}\``;
+  });
+
+
+export function liteScrubText(): Plugin {
+  const enabled = process.env["VITE_LITE_BUILD"] === "true";
+  return {
+    name: "good-app-lite-scrub-text",
+    enforce: "post",
+    apply: "build",
+    transform(code, id) {
+      if (!enabled) return null;
+      const file = normalize(id);
+      if (!file.includes("/src/") || /\.(css|json)$/.test(file)) return null;
+      if (file.endsWith("routeTree.gen.ts")) return null;
+      const out = scrubSource(code);
+      return out === code ? null : { code: out, map: null };
+    },
+  };
+}
