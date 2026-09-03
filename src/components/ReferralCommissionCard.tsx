@@ -32,7 +32,9 @@ export function ReferralCommissionCard() {
     balance += elapsed * ratePerSec;
   }
   const [intPart, decPart] = balance.toFixed(6).split(".");
-  const miningReferees = (data.referees ?? []).filter((r: any) => r.mining);
+  const allReferees = (data.referees ?? []) as any[];
+  const miningReferees = allReferees.filter((r: any) => r.mining);
+  const pendingReferees = allReferees.filter((r: any) => !r.mining);
 
   return (
     <div className="relative rounded-[28px] p-5 overflow-hidden border border-white/15 shadow-[0_28px_60px_-24px_rgba(16,185,129,0.65)]"
