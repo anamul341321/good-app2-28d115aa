@@ -187,8 +187,14 @@ function PolicyLangBar({ kind }: { kind: "privacy" | "terms" }) {
               "In short: we only keep your face photo and profile details to confirm you are a real person. We never ask for national ID, OTP, bank PIN or your password, and we never sell your data."
             )
           : t(
-              "সহজ কথায়: এক ব্যক্তি এক একাউন্ট, মাইনিং প্রতিদিন ক্লেইম করতে হবে, উইথড্র মাসের ১–৩ তারিখে এবং সব লেনদেন Main Balance থেকে হয়।",
-              "In short: one person one account, stay active in the app 1 hour a day, claim mining daily, withdraw on the 1st-3rd of the month, and all payouts come from Main Balance."
+              liteText(
+                "সহজ কথায়: এক ব্যক্তি এক একাউন্ট, মাইনিং প্রতিদিন ক্লেইম করতে হবে, উইথড্র মাসের ১–৩ তারিখে এবং সব লেনদেন Main Balance থেকে হয়।",
+                "সহজ কথায়: এক ব্যক্তি এক একাউন্ট, নিজের আসল তথ্য দিন, ফেস ভেরিফিকেশন শুধু আপনি প্রকৃত মানুষ কি না বোঝার জন্য, আর অন্যকে হ্যারাস করা বা ফেক কনটেন্ট দেওয়া নিষিদ্ধ।",
+              ),
+              liteText(
+                "In short: one person one account, claim mining daily, withdraw on the 1st-3rd of the month, and all payouts come from Main Balance.",
+                "In short: one person one account, use your real details, face check only proves you are a real person, and harassment or fake content is not allowed.",
+              )
             )}
       </p>
       <Link to="/rules" className="mt-2 inline-flex text-[11px] font-black text-cyan underline">
