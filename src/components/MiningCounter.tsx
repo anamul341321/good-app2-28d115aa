@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { computeLiveBalance, monthlyRate, MONTHLY_PER_SLOT } from "@/lib/mining";
 import { claimMiningToMain, claimAllSlotMining } from "@/lib/earnings.functions";
 import { Wallet, Sparkles, Gift, Loader2, Pickaxe, Eye, ChevronDown, ChevronUp, AlertTriangle } from "lucide-react";
-import { DAILY_ACTIVE_REQUIRED, formatActiveTime, useActivityToday } from "@/hooks/useActivityTracker";
+import { formatActiveTime, useLiveActiveSeconds } from "@/hooks/useActivityTracker";
 import { Button } from "@/components/ui/button";
 
 /** Decorative layers never change — memoised so the 1s balance tick doesn't repaint them. */
