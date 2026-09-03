@@ -129,8 +129,6 @@ function RootComponent() {
 
   useNativeApp();
 
-  // Monetag Multitag ওয়েবের সব পেজে চলে (নেটিভ অ্যাপ ও /admin ছাড়া),
-  // আর নিচের click-guard অ্যাপের বাটন/লিঙ্কের ক্লিক অ্যাডে হাইজ্যাক হতে দেয় না।
   const isNativeShell =
     typeof window !== "undefined" &&
     Boolean(
@@ -138,37 +136,13 @@ function RootComponent() {
     );
 
   useEffect(() => {
-    if (isNativeShell) return; // নেটিভ অ্যাপে Unity Ads চলে
-    if (/^\/admin/.test(pathname)) return;
-    if (document.querySelector('script[data-zone="275797"]')) return;
-    const s = document.createElement("script");
-    s.src = "https://quge5.com/88/tag.min.js";
-    s.dataset.zone = "275797";
-    s.async = true;
-    s.setAttribute("data-cfasync", "false");
-    document.head.appendChild(s);
+    // The previous Monetag Multitag included an OnClick/Popunder format that
+    // could place invisible click targets over the app. Remove every copy and
+    // never load it in the interactive web app. Native Android ads continue
+    // through the isolated Unity bridge and cannot change web navigation.
+    document.querySelectorAll('script[data-zone="275797"], script[src*="quge5.com/88/tag.min.js"]')
+      .forEach((node) => node.remove());
   }, [isNativeShell, pathname]);
-
-  useEffect(() => {
-    if (isNativeShell) return;
-    // অ্যাপের নিজের বাটন/লিঙ্কে ক্লিক করলে অ্যাড স্ক্রিপ্টের document-level
-    // OnClick/Popunder হ্যান্ডলার যেন চালু না হয়। React-এর হ্যান্ডলার root
-    // container-এ চলে, তাই সেখান থেকেই bubble থামাই — অ্যাপের ক্লিক ঠিক থাকে,
-    // শুধু document পর্যন্ত পৌঁছায় না।
-    const root = document.getElementById("root") ?? document.body.firstElementChild;
-    if (!root) return;
-    const guard = (e: Event) => {
-      const t = e.target as HTMLElement | null;
-      if (!t?.closest) return;
-      const el = t.closest('a,button,[role="button"],input,select,textarea,label');
-      if (el && !(el as HTMLElement).hasAttribute("data-ad-allow")) {
-        e.stopPropagation();
-      }
-    };
-    const types = ["click", "mousedown", "mouseup", "pointerdown", "touchstart", "auxclick"];
-    types.forEach((t) => root.addEventListener(t, guard));
-    return () => types.forEach((t) => root.removeEventListener(t, guard));
-  }, [isNativeShell]);
 
 
 
