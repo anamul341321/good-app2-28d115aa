@@ -26,6 +26,7 @@ export async function initAds(): Promise<boolean> {
 
 const OPEN_AD_COOLDOWN_MS = 3 * 60_000;
 let lastOpenAdAt = 0;
+let openAdLoading: Promise<boolean> | null = null;
 
 /**
  * অ্যাপে ঢোকার পরপরই একটি interstitial অ্যাড দেখায় (প্রতিবার খুললেই)।
@@ -36,10 +37,16 @@ export async function showDailyAppOpenAd(): Promise<boolean> {
   const cfg = await loadAdsConfig();
   if (!cfg.enabled || !cfg.appOpen) return false;
   if (Date.now() - lastOpenAdAt < OPEN_AD_COOLDOWN_MS) return true;
-
-  const shown = await showUnityInterstitial(false);
-  if (shown) lastOpenAdAt = Date.now();
-  return shown;
+  if (openAdLoading) return openAdLoading;
+  openAdLoading = showUnityInterstitial(false).then((shown) => {
+    if (shown) lastOpenAdAt = Date.now();
+    return shown;
+  });
+  try {
+    return await openAdLoading;
+  } finally {
+    openAdLoading = null;
+  }
 }
 
 /** Rewarded অ্যাড — ইউজার পুরোটা দেখলে true (তখনই রিওয়ার্ড দেওয়া হয়) */
