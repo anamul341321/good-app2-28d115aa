@@ -32,6 +32,9 @@ import { getSharedSession } from "@/lib/auth-session";
 import { getDeviceId } from "@/hooks/useDeviceGuard";
 
 import { ScanFace } from "lucide-react";
+import { useLang } from "@/lib/i18n";
+import { REGIONS, validatePhoneForRegion, maxPhoneLength, guessRegionCode } from "@/lib/regions";
+import { RegionBadge } from "@/components/RegionBadge";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -180,6 +183,16 @@ export function AuthPage() {
   const [referralCode, setReferralCode] = useState("");
   const [gmail, setGmail] = useState("");
   const [gender, setGender] = useState<"male" | "female" | null>(null);
+  const { countryCode, setCountry, region, t } = useLang();
+  const phoneMax = maxPhoneLength(countryCode);
+
+  // প্রথমবার এলে ফোনের টাইমজোন দেখে দেশ সাজেস্ট করি (ইউজার বদলাতে পারবে)
+  useEffect(() => {
+    try {
+      if (!localStorage.getItem("good-app-country")) setCountry(guessRegionCode());
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
@@ -283,9 +296,14 @@ export function AuthPage() {
   }, [nav]);
 
   const validateForm = () => {
-    const cleanPhone = phone.replace(/\D/g, "").slice(0, 11);
-    if (!/^01\d{9}$/.test(cleanPhone)) {
-      toast.error("১১ ডিজিটের সঠিক মোবাইল নম্বর দিন (০১ দিয়ে শুরু)");
+    const cleanPhone = phone.replace(/\D/g, "").slice(0, phoneMax);
+    const phoneProblem = validatePhoneForRegion(countryCode, cleanPhone);
+    if (phoneProblem) {
+      toast.error(
+        countryCode === "BD"
+          ? "১১ ডিজিটের সঠিক মোবাইল নম্বর দিন (০১ দিয়ে শুরু)"
+          : `${region.nameEn}: ${phoneProblem}`
+      );
       return null;
     }
     if (mode === "signup" && name.trim().length < 2) {
@@ -520,7 +538,7 @@ export function AuthPage() {
   }
 
   async function doSignup() {
-    const cleanPhone = phone.replace(/\D/g, "").slice(0, 11);
+    const cleanPhone = phone.replace(/\D/g, "").slice(0, phoneMax);
     setLoading(true);
     try {
       await register({
@@ -529,6 +547,7 @@ export function AuthPage() {
           phone: cleanPhone,
           password,
           gender: (gender ?? "male") as "male" | "female",
+          country: countryCode,
           gmail: gmail.trim().toLowerCase() || null,
           referralCode: referralCode || null,
         },
@@ -781,16 +800,37 @@ export function AuthPage() {
               </div>
             ) : (
               <div data-voice="auth.phone">
-                <label className="text-[11px] font-black text-cyan uppercase tracking-wider">
-                  মোবাইল নম্বর
+                <label className="text-[11px] font-black text-amber uppercase tracking-wider">
+                  {t("আপনার দেশ", "Your country")}
+                </label>
+                <select
+                  value={countryCode}
+                  onChange={(e) => setCountry(e.target.value)}
+                  className="w-full mt-1 px-4 py-3 bg-white border-2 border-border rounded-xl text-sm font-black outline-none focus:border-amber text-navy transition"
+                >
+                  {REGIONS.map((r) => (
+                    <option key={r.code} value={r.code}>
+                      {r.flag} {r.nameLocal} ({r.nameEn}) {r.dial ? `+${r.dial}` : ""}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  {t(
+                    "দেশ সিলেক্ট করলেই অ্যাপ সেই দেশের ভাষায় দেখাবে — চাইলে উপরের ভাষা বাটন থেকে English রাখতে পারবেন।",
+                    "Pick your country and the app switches to that language — you can always keep English from the language button above."
+                  )}
+                </p>
+
+                <label className="mt-3 block text-[11px] font-black text-cyan uppercase tracking-wider">
+                  {t("মোবাইল নম্বর", "Mobile number")} {region.dial ? `(+${region.dial})` : ""}
                 </label>
                 <input
                   inputMode="numeric"
                   required
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 11))}
-                  placeholder="০১XXXXXXXXX (১১ ডিজিট)"
-                  maxLength={11}
+                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, phoneMax))}
+                  placeholder={countryCode === "BD" ? "০১XXXXXXXXX (১১ ডিজিট)" : `${phoneMax} digits`}
+                  maxLength={phoneMax}
                   autoComplete="tel"
                   className="w-full mt-1 px-4 py-3 bg-white border-2 border-border rounded-xl text-sm outline-none focus:border-cyan mono-num text-navy transition"
                 />
