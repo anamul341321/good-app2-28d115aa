@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { litePolicySections, liteText } from "@/lib/lite-policy";
 import { useLang } from "@/lib/i18n";
 import { RegionBadge } from "@/components/RegionBadge";
 import { LanguageToggle } from "@/components/LanguageToggle";
@@ -185,7 +186,7 @@ function PrivacyPage() {
       </header>
 
       <div className="space-y-4">
-        {SECTIONS.map((s) => (
+        {litePolicySections(SECTIONS).map((s) => (
           <section key={s.title} className="rounded-2xl border border-border bg-surface p-4 space-y-2">
             <div className="flex items-center gap-2">
               <s.icon className="w-4 h-4 text-cyan-500" />

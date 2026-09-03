@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { litePolicySections, liteText } from "@/lib/lite-policy";
 import { ArrowLeft, ShieldCheck, Coins, Wallet, Users, AlertTriangle, Globe, FileText } from "lucide-react";
 import { useLang } from "@/lib/i18n";
 import { RegionBadge } from "@/components/RegionBadge";
@@ -8,9 +9,9 @@ export const Route = createFileRoute("/rules")({
   head: () => ({
     meta: [
       { title: "App Rules & How It Works | Good-App" },
-      { name: "description", content: "Simple rules of Good-App: face verification, mining, referral, withdraw window and account safety — in your own language." },
+      { name: "description", content: liteText("Simple rules of Good-App: face verification, mining, referral, withdraw window and account safety — in your own language.", "Simple rules of Good-App: face verification, messenger, content rules and account safety — in your own language.") },
       { property: "og:title", content: "App Rules & How It Works | Good-App" },
-      { property: "og:description", content: "Read Good-App rules in simple words: verification, mining, withdraw and safety." },
+      { property: "og:description", content: liteText("Read Good-App rules in simple words: verification, mining, withdraw and safety.", "Read Good-App rules in simple words: verification, messenger, content and safety.") },
       { property: "og:type", content: "article" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -100,7 +101,7 @@ function RulesPage() {
         </div>
 
         <div className="mt-4 space-y-3">
-          {sections.map((s) => (
+          {litePolicySections(sections).map((s) => (
             <section key={s.title} className="glass rounded-3xl p-4">
               <h2 className="flex items-center gap-2 text-sm font-black text-cyan">
                 <s.icon className="h-4 w-4" /> {s.title}

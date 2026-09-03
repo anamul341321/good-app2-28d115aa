@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { litePolicySections, liteText } from "@/lib/lite-policy";
 import { useLang } from "@/lib/i18n";
 import { RegionBadge } from "@/components/RegionBadge";
 import { LanguageToggle } from "@/components/LanguageToggle";
@@ -8,9 +9,9 @@ export const Route = createFileRoute("/terms")({
   head: () => ({
     meta: [
       { title: "নিয়ম ও শর্তাবলি | Good-App" },
-      { name: "description", content: "Good-App ব্যবহারের নিয়ম, ফেস ভেরিফিকেশন, বোনাস, উইথড্র, রেফারেল ও একাউন্ট নিরাপত্তার সব শর্তাবলি এক জায়গায়।" },
+      { name: "description", content: liteText("Good-App ব্যবহারের নিয়ম, ফেস ভেরিফিকেশন, বোনাস, উইথড্র, রেফারেল ও একাউন্ট নিরাপত্তার সব শর্তাবলি এক জায়গায়।", "Good-App ব্যবহারের নিয়ম: একাউন্ট, ফেস ভেরিফিকেশন, মেসেঞ্জার, কনটেন্ট ও একাউন্ট নিরাপত্তার শর্তাবলি।") },
       { property: "og:title", content: "নিয়ম ও শর্তাবলি | Good-App" },
-      { property: "og:description", content: "Good-App-এর ব্যবহারবিধি, উইথড্র নিয়ম ও গোপনীয়তা নীতি বিস্তারিত পড়ুন।" },
+      { property: "og:description", content: liteText("Good-App-এর ব্যবহারবিধি, উইথড্র নিয়ম ও গোপনীয়তা নীতি বিস্তারিত পড়ুন।", "Good-App-এর ব্যবহারবিধি, কনটেন্ট নিয়ম ও গোপনীয়তা নীতি বিস্তারিত পড়ুন।") },
       { property: "og:type", content: "article" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -135,7 +136,7 @@ function TermsPage() {
           <p className="text-[10px] text-muted-foreground mt-2">সর্বশেষ হালনাগাদ: আগস্ট ২০২৬</p>
         </header>
 
-        {SECTIONS.map((s) => (
+        {litePolicySections(SECTIONS).map((s) => (
           <section key={s.title} className="premium-panel rounded-2xl p-4">
             <div className="flex items-center gap-2 mb-2">
               <span className="w-8 h-8 rounded-xl gradient-navy flex items-center justify-center">
