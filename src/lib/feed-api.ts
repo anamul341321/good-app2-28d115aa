@@ -1353,7 +1353,11 @@ export async function uploadPostMedia(file: File, fileName: string, userId?: str
   const ext = getFileExtension(fileName || file.name || "bin");
   const ownerSegment = userId || "anonymous";
   const path = `feed/${ownerSegment}/${crypto.randomUUID()}.${ext}`;
-  const { error } = await supabase.storage.from("social_media").upload(path, file);
+  const { error } = await supabase.storage.from("social_media").upload(path, file, {
+    contentType: file.type || undefined,
+    cacheControl: "31536000",
+    upsert: false,
+  });
   if (error) throw error;
   return path;
 }

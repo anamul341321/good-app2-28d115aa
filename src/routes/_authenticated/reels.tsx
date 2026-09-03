@@ -324,6 +324,9 @@ function ReelsPage() {
 
 
 
+  // একই ভিডিও বারবার সাবমিট হয়ে ৩/৪টা রিল তৈরি হওয়া বন্ধ করি
+  const lastUploadKeyRef = useRef<string | null>(null);
+
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
       if (!user) throw new Error("no user");
@@ -353,8 +356,6 @@ function ReelsPage() {
     uploadInputRef.current?.click();
   };
 
-  // একই ভিডিও বারবার সাবমিট হয়ে ৩/৪টা রিল তৈরি হওয়া বন্ধ করি
-  const lastUploadKeyRef = useRef<string | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
