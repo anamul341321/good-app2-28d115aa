@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { computeLiveBalance, monthlyRate, MONTHLY_PER_SLOT } from "@/lib/mining";
 import { claimMiningToMain, claimAllSlotMining } from "@/lib/earnings.functions";
-import { Wallet, Sparkles, Gift, Loader2, Pickaxe } from "lucide-react";
+import { Wallet, Sparkles, Gift, Loader2, Pickaxe, Eye, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 /** Decorative layers never change — memoised so the 1s balance tick doesn't repaint them. */
@@ -112,6 +112,8 @@ export function MiningCounter({
 }: Props) {
 
   const [now, setNow] = useState(Date.now());
+  const [revealed, setRevealed] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const navigate = useNavigate();
   const qc = useQueryClient();
   const claim = useMutation({
@@ -238,11 +240,34 @@ export function MiningCounter({
           )}
         </div>
 
-        <div className="text-center">
-          <p className="text-[9px] uppercase tracking-[0.3em] text-white/60 font-black">Total Balance</p>
-          <AnimatedMoney value={displayBalance} live={live} />
-        </div>
+        {/* bKash-এর মতো — ট্যাপ করলেই ব্যালেন্স দেখা যাবে */}
+        {revealed ? (
+          <button type="button" onClick={() => setRevealed(false)} className="w-full text-center btn-press">
+            <p className="text-[9px] uppercase tracking-[0.3em] text-white/60 font-black">Total Balance</p>
+            <AnimatedMoney value={displayBalance} live={live} />
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setRevealed(true)}
+            className="mt-1 w-full rounded-2xl border border-white/25 bg-white/10 px-3 py-3 backdrop-blur-md btn-press flex items-center justify-center gap-2"
+          >
+            <Eye className="w-4 h-4 text-white/85" />
+            <span className="text-[13px] font-black text-white">ব্যালেন্স দেখুন</span>
+          </button>
+        )}
 
+        {/* ডিটেইলস — চাইলে পুরো হিসাব খুলবে, নাহলে কার্ড ছোটই থাকবে */}
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className="mt-2 w-full rounded-xl border border-white/20 bg-white/5 px-3 py-1.5 text-[11px] font-black text-white/90 btn-press flex items-center justify-center gap-1.5"
+        >
+          {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+          {expanded ? "ডিটেইলস বন্ধ করুন" : "ডিটেইলস দেখুন"}
+        </button>
+
+        {expanded && (<>
         <div className={`mt-2.5 rounded-xl px-2.5 py-1.5 text-[10px] font-black flex items-center justify-between gap-2 border ${live ? "mc-ribbon-open" : "mc-ribbon-closed"}`}>
           <span className="flex items-center gap-1.5 min-w-0">
             <span>{live ? "🟢" : "🔴"}</span>
@@ -370,7 +395,7 @@ export function MiningCounter({
         <p className="mt-1.5 text-[9.5px] text-white/70 font-bold leading-snug text-center">
           📜 নিজের মাইনিং প্রতিটি ঘরের নিচ থেকে <span className="text-cyan-100">স্লট অনুযায়ী</span> ক্লেইম হবে। রেফার করা ইউজারদের মাইনিংয়ের <span className="text-yellow-100">১০% কমিশন</span> উপরের আলাদা বাটন থেকে ক্লেইম হবে। দুটোই ক্লেইমের পর মেইন ব্যালেন্সে যাবে।
         </p>
-
+        </>)}
 
         <div className="mt-2.5 grid grid-cols-2 gap-2">
           <button

@@ -3,7 +3,6 @@ import { loadAdsConfig } from "@/lib/ads-config";
 import {
   initUnityAds,
   showUnityInterstitial,
-  showUnityRewarded,
   showUnityBanner,
   hideUnityBanner,
 } from "@/lib/unity-ads";
@@ -46,19 +45,6 @@ export async function showDailyAppOpenAd(): Promise<boolean> {
   } finally {
     openAdLoading = null;
   }
-}
-
-/** Rewarded অ্যাড — ইউজার পুরোটা দেখলে true (তখনই রিওয়ার্ড দেওয়া হয়) */
-export async function showRewardedAd(): Promise<boolean> {
-  if (!isNative()) throw new Error("অ্যাড শুধু Android অ্যাপে দেখা যাবে");
-  const cfg = await loadAdsConfig();
-  if (!cfg.enabled) throw new Error("অ্যাড সিস্টেম এখন বন্ধ আছে");
-  if (!cfg.rewarded) throw new Error("Rewarded ad এখন বন্ধ আছে");
-  if (!(await initUnityAds(false))) throw new Error("AD_NO_FILL");
-
-  // Reward only from Unity's native COMPLETED callback. A web vignette has no
-  // trustworthy completion callback, so it must never unlock server-side coins.
-  return showUnityRewarded(false);
 }
 
 let bannerShown = false;

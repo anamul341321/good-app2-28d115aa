@@ -2,6 +2,21 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
+/**
+ * মাইনিং ক্লেইমের শর্ত: আজ অ্যাপে কমপক্ষে ১ ঘণ্টা অ্যাক্টিভ থাকতে হবে।
+ * সময়টা একবারে লাগে না — সারাদিনে মিলিয়ে ১ ঘণ্টা হলেই চলবে।
+ */
+async function requireDailyActive(supabase: any, userId: string) {
+  const { data } = await supabase.rpc("get_daily_activity", { _user_id: userId });
+  const seconds = Number((data as any)?.seconds ?? 0);
+  const required = Number((data as any)?.required ?? 3600);
+  if (seconds >= required) return;
+  const leftMin = Math.max(1, Math.ceil((required - seconds) / 60));
+  throw new Error(
+    `⏳ আজ মাইনিং ক্লেইম করতে অ্যাপে কমপক্ষে ১ ঘণ্টা অ্যাক্টিভ থাকতে হবে — আর ${leftMin} মিনিট বাকি।`,
+  );
+}
+
 export type EarningRow = {
   id: string;
   kind: string;
@@ -228,6 +243,7 @@ export const claimMiningEarnings = createServerFn({ method: "POST" })
 export const claimMiningToMain = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    await requireDailyActive(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data, error } = await supabaseAdmin.rpc("claim_mining_to_main" as any, {
       _user_id: context.userId,
@@ -248,6 +264,7 @@ export const claimSlotMining = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => z.object({ taskId: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
+    await requireDailyActive(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: res, error } = await supabaseAdmin.rpc("claim_slot_mining" as any, {
       _user_id: context.userId,
@@ -268,6 +285,7 @@ export const claimSlotMining = createServerFn({ method: "POST" })
 export const claimAllSlotMining = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    await requireDailyActive(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: res, error } = await supabaseAdmin.rpc("claim_all_slot_mining" as any, {
       _user_id: context.userId,

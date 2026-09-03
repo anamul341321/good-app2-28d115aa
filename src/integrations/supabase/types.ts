@@ -1036,6 +1036,27 @@ export type Database = {
           },
         ]
       }
+      daily_activity: {
+        Row: {
+          day: string
+          seconds: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          day: string
+          seconds?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          day?: string
+          seconds?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       email_send_log: {
         Row: {
           created_at: string
@@ -3336,6 +3357,7 @@ export type Database = {
       expire_unanswered_calls: { Args: never; Returns: number }
       get_ad_coin_status: { Args: { _user_id: string }; Returns: Json }
       get_coin_summary: { Args: { _user_id: string }; Returns: Json }
+      get_daily_activity: { Args: { _user_id: string }; Returns: Json }
       get_daily_checkin: { Args: { _user_id: string }; Returns: Json }
       get_user_balance_breakdown: { Args: { _user_id: string }; Returns: Json }
       get_whitelist_cron_secret: { Args: never; Returns: string }
@@ -3394,6 +3416,10 @@ export type Database = {
       spend_locked_mining: {
         Args: { _amount: number; _user_id: string }
         Returns: number
+      }
+      touch_daily_activity: {
+        Args: { _seconds: number; _user_id: string }
+        Returns: Json
       }
       touch_presence: { Args: never; Returns: undefined }
       transition_task_whitelist: {

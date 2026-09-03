@@ -15,7 +15,6 @@ import { useLang } from "@/lib/i18n";
 import { withdrawWindowInfo, withdrawCountdownInfo } from "@/lib/withdraw-window";
 import { WithdrawClosedBanner } from "@/components/WithdrawClosedBanner";
 import { WithdrawCountdown } from "@/components/WithdrawCountdown";
-import { AdBoostCard } from "@/components/AdBoostCard";
 import { adBoostWithdrawInfo } from "@/lib/ad-boost";
 import { getAdBoostStatus } from "@/lib/ads.functions";
 import { WithdrawRejectDetails } from "@/components/WithdrawRejectDetails";
@@ -126,8 +125,6 @@ function WithdrawPage() {
       </div>
 
       <WithdrawCountdown />
-
-      <AdBoostCard />
 
       <WithdrawClosedBanner
         adminOff={adminWithdrawOff}
