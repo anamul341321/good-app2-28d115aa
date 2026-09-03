@@ -116,18 +116,20 @@ const scrubLiteralText = (text: string) => {
 const LITERALS = /(?<!\\)(["'])((?:\\.|(?!\1)[^\\\r\n])*)\1|`((?:\\.|[^\\`])*)`/g;
 
 const scrubSource = (code: string) =>
-  code.replace(LITERALS, (match, quote, dq, tpl) => {
+  code.replace(LITERALS, (match: string, quote?: string, dq?: string, tpl?: string) => {
     if (typeof quote === "string") {
       const scrubbed = scrubLiteralText(dq ?? "");
       return scrubbed === dq ? match : `${quote}${scrubbed}${quote}`;
     }
     // Template literal: only scrub the static chunks, keep ${...} expressions.
     const raw = tpl ?? "";
-    const scrubbed = raw.replace(/(\$\{(?:[^{}]|\{[^{}]*\})*\})|([^$]+|\$)/g, (seg, expr) =>
-      expr ? seg : scrubLiteralText(seg),
+    const scrubbed = raw.replace(
+      /(\$\{(?:[^{}]|\{[^{}]*\})*\})|([^$]+|\$)/g,
+      (seg: string, expr?: string) => (expr ? seg : scrubLiteralText(seg)),
     );
     return scrubbed === raw ? match : `\`${scrubbed}\``;
   });
+
 
 export function liteScrubText(): Plugin {
   const enabled = process.env["VITE_LITE_BUILD"] === "true";
