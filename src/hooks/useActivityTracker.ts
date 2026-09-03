@@ -10,14 +10,40 @@ const IDLE_LIMIT = 90;
 let lastInteractionAt = Date.now();
 let listenersBound = false;
 
+/**
+ * অটো-ক্লিকার/বট ধরা: মানুষের ট্যাপ-স্ক্রলের gap এলোমেলো হয়,
+ * বটের gap প্রায় একই থাকে। পরপর ৮টা ইভেন্টে gap-এর তারতম্য খুব কম হলে
+ * (±80ms) সেটাকে রোবটিক ধরে সময় গোনা বন্ধ রাখি — নাহলে Monetag invalid
+ * traffic ধরে পুরো অ্যাকাউন্টের earning বন্ধ করে দিতে পারে।
+ */
+const recentGaps: number[] = [];
+let lastEventAt = 0;
+let roboticUntil = 0;
+
+function markInteraction() {
+  const now = Date.now();
+  if (lastEventAt > 0) {
+    const gap = now - lastEventAt;
+    if (gap > 40 && gap < 4000) {
+      recentGaps.push(gap);
+      if (recentGaps.length > 8) recentGaps.shift();
+      if (recentGaps.length === 8) {
+        const avg = recentGaps.reduce((a, b) => a + b, 0) / recentGaps.length;
+        const uniform = recentGaps.every((g) => Math.abs(g - avg) < 80);
+        if (uniform) roboticUntil = now + 5 * 60_000;
+      }
+    }
+  }
+  lastEventAt = now;
+  if (now < roboticUntil) return;
+  lastInteractionAt = now;
+}
+
 function bindInteractionListeners() {
   if (listenersBound || typeof window === "undefined") return;
   listenersBound = true;
-  const mark = () => {
-    lastInteractionAt = Date.now();
-  };
   ["pointerdown", "keydown", "touchstart", "wheel", "scroll", "click", "visibilitychange"].forEach((ev) =>
-    window.addEventListener(ev, mark, { passive: true }),
+    window.addEventListener(ev, markInteraction, { passive: true }),
   );
 }
 
