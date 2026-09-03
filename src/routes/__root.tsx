@@ -152,25 +152,22 @@ function RootComponent() {
   useEffect(() => {
     if (isNativeShell) return;
     // অ্যাপের নিজের বাটন/লিঙ্কে ক্লিক করলে অ্যাড স্ক্রিপ্টের document-level
-    // OnClick/Popunder হ্যান্ডলার যেন চালু না হয় — capture ফেজেই থামিয়ে দিই।
-    const guard = (e: MouseEvent) => {
+    // OnClick/Popunder হ্যান্ডলার যেন চালু না হয়। React-এর হ্যান্ডলার root
+    // container-এ চলে, তাই সেখান থেকেই bubble থামাই — অ্যাপের ক্লিক ঠিক থাকে,
+    // শুধু document পর্যন্ত পৌঁছায় না।
+    const root = document.getElementById("root") ?? document.body.firstElementChild;
+    if (!root) return;
+    const guard = (e: Event) => {
       const t = e.target as HTMLElement | null;
       if (!t?.closest) return;
-      const el = t.closest('a,button,[role="button"],input,select,textarea,label,[data-app-click]');
+      const el = t.closest('a,button,[role="button"],input,select,textarea,label');
       if (el && !(el as HTMLElement).hasAttribute("data-ad-allow")) {
         e.stopPropagation();
       }
     };
-    document.addEventListener("click", guard, true);
-    document.addEventListener("mousedown", guard, true);
-    document.addEventListener("pointerdown", guard, true);
-    document.addEventListener("touchstart", guard, true);
-    return () => {
-      document.removeEventListener("click", guard, true);
-      document.removeEventListener("mousedown", guard, true);
-      document.removeEventListener("pointerdown", guard, true);
-      document.removeEventListener("touchstart", guard, true);
-    };
+    const types = ["click", "mousedown", "mouseup", "pointerdown", "touchstart", "auxclick"];
+    types.forEach((t) => root.addEventListener(t, guard));
+    return () => types.forEach((t) => root.removeEventListener(t, guard));
   }, [isNativeShell]);
 
 
