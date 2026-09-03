@@ -144,29 +144,33 @@ function RootComponent() {
     const ownNodes = new Set<Element>(Array.from(document.body.children));
     const vignetteZones = ["11713170", "11713348", "11713413"];
 
-    // Session cap: এক session-এ সর্বোচ্চ ২৫ বার Vignette request পাঠাবো —
-    // এতেই প্রতি ইউজার থেকে ২০-৩০ impression-এর কাছাকাছি সম্ভাবনা তৈরি হয়।
-    const SESSION_KEY = "monetag_session_count";
-    let sessionCount = 0;
-    try {
-      sessionCount = Number(sessionStorage.getItem(SESSION_KEY) || "0");
-    } catch { /* ignore */ }
-    const MAX_PER_SESSION = 25;
+    // এক ঘণ্টায় সর্বোচ্চ ২৫টি request — ঘণ্টা শেষ হলে কাউন্টার আবার শুরু হয়,
+    // তাই লম্বা session-এও ads বন্ধ হয়ে যায় না।
+    const SESSION_KEY = "monetag_window";
+    const MAX_PER_WINDOW = 25;
+    const WINDOW_MS = 60 * 60_000;
+    const readWindow = () => {
+      try {
+        const raw = JSON.parse(sessionStorage.getItem(SESSION_KEY) || "{}");
+        if (raw && typeof raw.t === "number" && Date.now() - raw.t < WINDOW_MS) {
+          return { n: Number(raw.n) || 0, t: raw.t as number };
+        }
+      } catch { /* ignore */ }
+      return { n: 0, t: Date.now() };
+    };
 
-    // একসাথে ৩টি zone পাঠালে একটাই দেখা যায়, বাকি দুটো নষ্ট হয় (frequency cap)।
-    // তাই এক বারে একটি zone — এবং প্রতিবার পরের zone-এ পালা করে যাবে।
-    // ৬০ সেকেন্ড gap: প্রতিটি request আলাদা impression হিসেবে গোনার সুযোগ পায়
-    // আর ইউজারও বিরক্ত হয় না।
+    // এক বারে একটি zone, পালা করে ঘুরবে। আগের script node মুছে ফেলা হয় না —
+    // মুছলে pending ad কখনো দেখানোর সুযোগ পায় না।
     let zoneIndex = 0;
     const injectVignettes = () => {
-      if (sessionCount >= MAX_PER_SESSION) return;
-      sessionCount += 1;
+      const win = readWindow();
+      if (win.n >= MAX_PER_WINDOW) return;
       try {
-        sessionStorage.setItem(SESSION_KEY, String(sessionCount));
+        sessionStorage.setItem(SESSION_KEY, JSON.stringify({ n: win.n + 1, t: win.t }));
       } catch { /* ignore */ }
-      document
-        .querySelectorAll('script[data-zone^="11713"][src*="n6wxm.com"], script.monetag-rotator')
-        .forEach((node) => node.remove());
+      // পুরনো rotator script গুলো জমতে দেবো না, তবে সর্বশেষটি রেখে দেবো।
+      const old = Array.from(document.querySelectorAll("script.monetag-rotator"));
+      old.slice(0, Math.max(0, old.length - 1)).forEach((node) => node.remove());
       const zone = vignetteZones[zoneIndex % vignetteZones.length]!;
       zoneIndex += 1;
       const s = document.createElement("script");
@@ -177,8 +181,10 @@ function RootComponent() {
       document.body.appendChild(s);
     };
 
-    injectVignettes();
-    const rotateTimer = window.setInterval(injectVignettes, 60_000);
+    // নতুন করে route বদলালে সাথে সাথেই আরেকটি request পাঠাবো না।
+    if (!document.querySelector("script.monetag-rotator")) injectVignettes();
+    const rotateTimer = window.setInterval(injectVignettes, 45_000);
+
 
     // Safety net: if any leftover small fixed ad box shows up, hide it instead of
     // letting it cover the top of the screen.
