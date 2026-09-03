@@ -6,7 +6,6 @@ import {
   showUnityRewarded,
   showUnityBanner,
   hideUnityBanner,
-  unityAvailable,
 } from "@/lib/unity-ads";
 
 /**
@@ -55,43 +54,11 @@ export async function showRewardedAd(): Promise<boolean> {
   const cfg = await loadAdsConfig();
   if (!cfg.enabled) throw new Error("অ্যাড সিস্টেম এখন বন্ধ আছে");
   if (!cfg.rewarded) throw new Error("Rewarded ad এখন বন্ধ আছে");
-  if (!unityAvailable()) {
-    // Unity নেই → Monetag fallback
-    return showMonetagRewardFallback();
-  }
+  if (!(await initUnityAds(false))) throw new Error("AD_NO_FILL");
 
-  if (!(await initUnityAds(false))) {
-    return showMonetagRewardFallback();
-  }
-  try {
-    return await showUnityRewarded(false);
-  } catch {
-    // Unity no-fill বা অন্য সমস্যা → Monetag vignette দেখিয়ে রিওয়ার্ড দেই,
-    // যাতে ইউজার কখনো "অ্যাড নেই" দেখে ব্যর্থ না হয়।
-    return showMonetagRewardFallback();
-  }
-}
-
-/**
- * Unity ব্যর্থ হলে Monetag vignette দেখায়। APK আসলে ওয়েবসাইট WebView হিসেবে
- * চলে, তাই vignette script এখানেও কাজ করে এবং earning Monetag dashboard-এ যায়।
- * অ্যাড render হওয়ার জন্য কিছু সময় দেই, তারপর রিওয়ার্ড allow করি।
- */
-function showMonetagRewardFallback(): Promise<boolean> {
-  return new Promise((resolve) => {
-    try {
-      const s = document.createElement("script");
-      s.src = `https://n6wxm.com/vignette.min.js?_=${Date.now()}`;
-      s.dataset.zone = "11713170";
-      s.async = true;
-      s.onerror = () => resolve(false);
-      document.body.appendChild(s);
-      // Vignette সাধারণত সাথে সাথেই ওপেন হয়; ১২ সেকেন্ড পর রিওয়ার্ড দেই।
-      window.setTimeout(() => resolve(true), 12_000);
-    } catch {
-      resolve(false);
-    }
-  });
+  // Reward only from Unity's native COMPLETED callback. A web vignette has no
+  // trustworthy completion callback, so it must never unlock server-side coins.
+  return showUnityRewarded(false);
 }
 
 let bannerShown = false;
