@@ -3,7 +3,8 @@ import { z } from "zod";
 
 const PhoneSignupInput = z.object({
   name: z.string().trim().min(2, "নাম লাগবে").max(80, "নাম অনেক বড়"),
-  phone: z.string().trim().regex(/^01\d{9}$/, "১১ ডিজিটের BD নম্বর লাগবে"),
+  phone: z.string().trim().regex(/^\d{6,15}$/, "সঠিক মোবাইল নম্বর দিন"),
+  country: z.string().trim().min(2).max(8).default("BD"),
   password: z.string().min(6, "পাসওয়ার্ড কমপক্ষে ৬ অক্ষর"),
   gender: z.enum(["male", "female"], { message: "ছেলে অথবা মেয়ে সিলেক্ট করুন" }),
   gmail: z.string().trim().toLowerCase().optional().nullable(),
@@ -23,6 +24,12 @@ export const registerWithPhone = createServerFn({ method: "POST" })
     const otpEnabled = await isEmailOtpEnabled();
     const email = phoneToEmail(data.phone);
     const gmail = (data.gmail ?? "").trim().toLowerCase();
+
+    // দেশভিত্তিক নম্বর যাচাই (BD = 01XXXXXXXXX, অন্য দেশ = নিজের ডিজিট নিয়ম)
+    const { validatePhoneForRegion, getRegion } = await import("./regions");
+    const region = getRegion(data.country);
+    const phoneProblem = validatePhoneForRegion(region.code, data.phone);
+    if (phoneProblem) throw new Error(`${region.nameEn}: ${phoneProblem}`);
 
     if (otpEnabled && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(gmail)) {
       throw new Error("সঠিক Gmail ঠিকানা দিন");
@@ -76,6 +83,7 @@ export const registerWithPhone = createServerFn({ method: "POST" })
         phone_number: data.phone,
         contact_email: gmail,
         gender: data.gender,
+        country: region.code,
         ...(refCode ? { referral_code: refCode } : {}),
       },
     });
@@ -93,6 +101,7 @@ export const registerWithPhone = createServerFn({ method: "POST" })
         .from("profiles")
         .update({
           gender: data.gender,
+          country: region.code,
           ...(gmail ? { email: gmail, email_verified: false } : {}),
         } as any)
         .eq("id", created.user.id);

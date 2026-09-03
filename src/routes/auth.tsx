@@ -330,7 +330,7 @@ export function AuthPage() {
     if (mode === "login") {
       const id = loginId.trim();
       const digits = id.replace(/\D/g, "");
-      const isPhone = /^01\d{9}$/.test(digits);
+      const isPhone = digits.length >= 6 && digits.length <= 15;
       const isMail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(id);
       if (!isPhone && !isMail) {
         toast.error("১১ ডিজিটের নম্বর অথবা Gmail দিন");
