@@ -243,6 +243,7 @@ export const claimMiningEarnings = createServerFn({ method: "POST" })
 export const claimMiningToMain = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    await requireDailyActive(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data, error } = await supabaseAdmin.rpc("claim_mining_to_main" as any, {
       _user_id: context.userId,
@@ -263,6 +264,7 @@ export const claimSlotMining = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => z.object({ taskId: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
+    await requireDailyActive(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: res, error } = await supabaseAdmin.rpc("claim_slot_mining" as any, {
       _user_id: context.userId,
@@ -283,6 +285,7 @@ export const claimSlotMining = createServerFn({ method: "POST" })
 export const claimAllSlotMining = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    await requireDailyActive(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: res, error } = await supabaseAdmin.rpc("claim_all_slot_mining" as any, {
       _user_id: context.userId,
