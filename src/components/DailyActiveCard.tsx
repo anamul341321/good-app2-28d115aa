@@ -7,9 +7,7 @@ import { formatActiveTime, useLiveActiveSeconds } from "@/hooks/useActivityTrack
  * ডিজাইন: গাঢ় গ্লাস কার্ড + রিং প্রগ্রেস, তাই লাইট/ডার্ক দুই থিমেই লেখা স্পষ্ট।
  */
 export function DailyActiveCard() {
-  const { data } = useActivityToday();
-  const seconds = data?.seconds ?? 0;
-  const required = data?.required ?? DAILY_ACTIVE_REQUIRED;
+  const { seconds, required, active } = useLiveActiveSeconds();
   const done = seconds >= required;
   const pct = Math.min(100, Math.round((seconds / required) * 100));
   const left = Math.max(0, required - seconds);
