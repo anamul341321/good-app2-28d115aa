@@ -14,6 +14,8 @@ import { FaceVerifyPausedNotice } from "@/components/FaceVerifyPausedNotice";
 import { getAppStatus } from "@/lib/app-status.functions";
 import { GmailSecurityBanner } from "@/components/GmailSecurityBanner";
 import { AdsBoostBanner } from "@/components/AdsBoostBanner";
+import { ReferBonusBanner, RatesEntryCard } from "@/components/ReferBonusBanner";
+import { ForeignCurrencyCard } from "@/components/ForeignCurrencyCard";
 import { ComplianceDisclaimer } from "@/components/ComplianceDisclaimer";
 import { DashSection } from "@/components/DashSection";
 import { SlotClaimButton, type SlotClaim } from "@/components/SlotClaimButton";
@@ -301,8 +303,20 @@ function HomePage() {
         />
       </div>
 
+      {/* বিদেশি ইউজারদের জন্য USDT + নিজের দেশের মুদ্রায় ব্যালেন্স */}
+      <ForeignCurrencyCard
+        main={Number((data as any)?.balanceBreakdown?.bonus_part ?? 0)}
+        mining={Number((data as any)?.balanceBreakdown?.mining_available ?? data.mining?.accrued_amount ?? 0)}
+      />
+
       {/* ডেইলি ১ ঘণ্টা অ্যাক্টিভ থাকার নোটিশ + লাইভ কাউন্টার (মাইনিং কার্ডের নিচে) */}
       <DailyActiveCard />
+
+      {/* দেশভিত্তিক রেট + রেফার বোনাস এন্ট্রি */}
+      <RatesEntryCard />
+
+      {/* ফুল-স্ক্রিন রেফার বোনাস ব্যানার (দিনে একবার) */}
+      <ReferBonusBanner />
 
       {/* Ads সাপোর্ট ব্যানার — Continue দিতে উৎসাহ */}
       <AdsBoostBanner />
