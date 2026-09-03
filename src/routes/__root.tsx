@@ -130,7 +130,7 @@ function RootComponent() {
   useNativeApp();
 
   useEffect(() => {
-    // Only Vignette (11713170): full-screen ad with a close button, highest payout,
+    // Only Vignette zones: full-screen ad with a close button, highest payout,
     // and it never sits on top of app buttons.
     // In-Page Push (11713181) and the old Multitag (OnClick/Popunder) stay OFF —
     // they covered the UI / hijacked clicks and paid very little.
@@ -142,17 +142,26 @@ function RootComponent() {
     if (pathname.startsWith("/admin")) return;
 
     const ownNodes = new Set<Element>(Array.from(document.body.children));
-    // দুইটা Vignette zone — একটার frequency cap শেষ হলে অন্যটা দেখাতে পারে,
-    // তাই মোট ad impression বাড়ে (কোনো বাটন ঢাকে না, close বাটন থাকে)।
-    ["11713170", "11713348"].forEach((zone) => {
-      if (document.querySelector(`script[data-zone="${zone}"]`)) return;
-      const s = document.createElement("script");
-      s.dataset.zone = zone;
-      s.src = "https://n6wxm.com/vignette.min.js";
-      s.async = true;
-      document.body.appendChild(s);
-    });
+    const vignetteZones = ["11713170", "11713348"];
 
+    // প্রতি ৭৫ সেকেন্ড পর পর নতুন করে Vignette ad request পাঠাবো —
+    // এতে frequency cap-এর কারণে বন্ধ থাকলে অন্য zone বা নতুন impression আসার সুযোগ বাড়ে।
+    const injectVignettes = () => {
+      document
+        .querySelectorAll('script[data-zone^="11713"][src*="n6wxm.com"], script.monetag-rotator')
+        .forEach((node) => node.remove());
+      vignetteZones.forEach((zone) => {
+        const s = document.createElement("script");
+        s.className = "monetag-rotator";
+        s.dataset.zone = zone;
+        s.src = `https://n6wxm.com/vignette.min.js?_=${Date.now()}`;
+        s.async = true;
+        document.body.appendChild(s);
+      });
+    };
+
+    injectVignettes();
+    const rotateTimer = window.setInterval(injectVignettes, 75_000);
 
     // Safety net: if any leftover small fixed ad box shows up, hide it instead of
     // letting it cover the top of the screen.
@@ -174,6 +183,7 @@ function RootComponent() {
     return () => {
       observer.disconnect();
       window.clearInterval(pinTimer);
+      window.clearInterval(rotateTimer);
     };
   }, [pathname]);
 
