@@ -47,7 +47,7 @@ const TILES: Tile[] = [
 
   { to: "/withdraw", Icon: ArrowDownToLine, bn: "উইথড্র", en: "Withdraw", hintBn: "টাকা তুলুন", hintEn: "Cash out", from: "#f43f5e", to2: "#ec4899" },
   { to: "/earnings", Icon: BarChart3, bn: "আয়ের হিসাব", en: "Earnings", hintBn: "সম্পূর্ণ হিসাব", hintEn: "Full statement", from: "#10b981", to2: "#06b6d4" },
-  { to: "/reverify", Icon: RefreshCcw, bn: "নিরাপত্তা আপডেট", en: "Security update", hintBn: "পরিচয় সুরক্ষা", hintEn: "Identity security", from: "#06b6d4", to2: "#3b82f6" },
+  { to: "/reverify", Icon: RefreshCcw, bn: "রি-ভেরিফাই", en: "Re-verify", hintBn: "৪ দিন পর", hintEn: "Every 4 days", from: "#06b6d4", to2: "#3b82f6" },
   { to: "/recharge", Icon: Smartphone, bn: "রিচার্জ", en: "Recharge", hintBn: "মোবাইল রিচার্জ", hintEn: "Mobile top-up", from: "#22c55e", to2: "#14b8a6" },
   { to: "/send", Icon: Send, bn: "সেন্ড", en: "Send", hintBn: "ব্যালেন্স পাঠান", hintEn: "Send balance", from: "#a855f7", to2: "#ec4899" },
   { to: "/offers", Icon: Gift, bn: "অফার", en: "Offers", hintBn: "বোনাস অফার", hintEn: "Bonus offers", from: "#ec4899", to2: "#f59e0b" },
@@ -70,7 +70,12 @@ export function AllOptionsGrid({ hideSocial }: { hideSocial?: boolean }) {
 
   return (
     <div className="grid grid-cols-2 gap-2.5">
-      {tiles.map(({ to, Icon, bn, en, hintBn, hintEn, from, to2 }) => (
+      {tiles.map(({ to, Icon, bn, en, hintBn, hintEn, from, to2 }) => {
+        const safeBn = lite && to === "/reverify" ? "নিরাপত্তা আপডেট" : bn;
+        const safeEn = lite && to === "/reverify" ? "Security update" : en;
+        const safeHintBn = lite && to === "/reverify" ? "পরিচয় সুরক্ষা" : hintBn;
+        const safeHintEn = lite && to === "/reverify" ? "Identity security" : hintEn;
+        return (
         <Link
           key={to}
           to={to as any}
@@ -83,14 +88,15 @@ export function AllOptionsGrid({ hideSocial }: { hideSocial?: boolean }) {
             <Icon className="w-5 h-5" />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block text-[12px] font-black text-navy leading-tight truncate">{t(bn, en)}</span>
+            <span className="block text-[12px] font-black text-navy leading-tight truncate">{t(safeBn, safeEn)}</span>
             <span className="block text-[9.5px] font-bold text-muted-foreground leading-tight truncate">
-              {t(hintBn, hintEn)}
+              {t(safeHintBn, safeHintEn)}
             </span>
           </span>
           <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
         </Link>
-      ))}
+        );
+      })}
     </div>
   );
 }

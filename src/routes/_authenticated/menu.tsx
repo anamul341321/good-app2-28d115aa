@@ -53,16 +53,16 @@ function MenuPage() {
         </p>
       </div>
 
-      <DashSection
+      {!lite && <DashSection
         icon={<Users className="w-4 h-4" />}
         tint="violet"
         title={t("সব অপশন", "All Options")}
         subtitle={t("এক ট্যাপে যেকোনো সেকশনে যান", "Jump to any section in one tap")}
       >
         <AllOptionsGrid hideSocial />
-      </DashSection>
+      </DashSection>}
 
-      <DashSection
+      {!lite && <DashSection
         icon={<Gift className="w-4 h-4" />}
         tint="rose"
         title={t("অফার ও দ্রুত কাজ", "Offers & Quick Actions")}
@@ -160,7 +160,7 @@ function MenuPage() {
         )}
 
         {!lite && <ReferralCommissionCard />}
-      </DashSection>
+      </DashSection>}
 
       <DashSection
         icon={<Crown className="w-4 h-4" />}
@@ -221,9 +221,9 @@ function MenuPage() {
             <Link to="/settings" className="btn-press flex flex-col items-center gap-1 rounded-xl bg-surface-2 border border-border py-2.5 text-[10px] font-black">
               <Sparkles className="w-4 h-4 text-violet-400" /> {t("সেটিংস", "Settings")}
             </Link>
-            <Link to="/rates" className="btn-press col-span-3 flex items-center justify-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 py-2.5 text-[11px] font-black text-emerald-300">
+            {!lite && <Link to="/rates" className="btn-press col-span-3 flex items-center justify-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 py-2.5 text-[11px] font-black text-emerald-300">
               🌍 {t("দেশভিত্তিক মাইনিং রেট ও রেফার বোনাস", "Country mining rates & referral bonus")}
-            </Link>
+            </Link>}
             <Link to="/rules" className="btn-press col-span-3 flex items-center justify-center gap-1.5 rounded-xl bg-surface-2 border border-border py-2.5 text-[11px] font-black">
               📘 {t("সব নিয়ম", "All rules")}
             </Link>

@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { getAppStatus } from "@/lib/app-status.functions";
 import { isNativeApp } from "@/lib/native-google";
 import { Button } from "@/components/ui/button";
+import { isLiteBuild } from "@/lib/lite-build";
 
 /**
  * নেটিভ অ্যাপে নতুন ভার্সন এলে উপরে আপডেট ব্যেনার দেখায়।
@@ -131,7 +132,7 @@ export function AppUpdateBanner() {
   const isSocialRoute = /^\/(social|chat|feed|friends|videos|reels|watch|studio|channel|user|profile)(\/|$)/.test(pathname);
 
   const isDownloadPage = pathname === "/download";
-  const shouldShow = !!url && !!latest && !forceBlocked && !isAdmin && !isSocialRoute && !isDownloadPage && !hidden && (!native || (!!installed && isNewer(latest, installed))) && !/play\.google\.com/i.test(url);
+  const shouldShow = !isLiteBuild() && !!url && !!latest && !forceBlocked && !isAdmin && !isSocialRoute && !isDownloadPage && !hidden && (!native || (!!installed && isNewer(latest, installed))) && !/play\.google\.com/i.test(url);
 
   useEffect(() => {
     if (!shouldShow) return;
