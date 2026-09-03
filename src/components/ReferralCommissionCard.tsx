@@ -8,9 +8,10 @@ import { RATE_PER_SLOT_SEC } from "@/lib/mining";
 export function ReferralCommissionCard() {
   const fetchCommission = useServerFn(getReferralCommission);
   const { data } = useQuery({
-    queryKey: ["referral-commission"],
+    queryKey: ["referral-commission", "verified-status-v2"],
     queryFn: () => fetchCommission(),
     refetchInterval: 60_000,
+    refetchOnMount: "always",
   });
 
   const [now, setNow] = useState(Date.now());
