@@ -21,6 +21,7 @@ const STRIPPED = [
   "src/routes/_authenticated/history.tsx",
   "src/routes/rates.tsx",
   "src/routes/earn.tsx",
+  "src/routes/download.tsx",
 ];
 
 /** Directories whose route modules are removed from the Lite bundle. */
