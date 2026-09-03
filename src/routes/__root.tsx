@@ -95,9 +95,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@300;400;500;600;700;800;900&family=Baloo+Da+2:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" },
     ],
-    scripts: [
-      { src: "https://quge5.com/88/tag.min.js", async: true, "data-zone": "275797", "data-cfasync": "false" },
-    ],
+    // Monetag ট্যাগ শুধু পাবলিক/মার্কেটিং পেজে চলে (RootComponent-এ inject হয়),
+    // তাই অ্যাপের ভেতরের বাটনে ক্লিক আর অ্যাডে হাইজ্যাক হয় না।
+    scripts: [],
+
 
   }),
   shellComponent: RootShell,
