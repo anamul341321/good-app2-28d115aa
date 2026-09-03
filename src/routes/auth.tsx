@@ -36,6 +36,7 @@ import { ScanFace } from "lucide-react";
 import { useLang } from "@/lib/i18n";
 import { REGIONS, validatePhoneForRegion, maxPhoneLength, guessRegionCode } from "@/lib/regions";
 import { RegionBadge } from "@/components/RegionBadge";
+import { isLiteBuild } from "@/lib/lite-build";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,

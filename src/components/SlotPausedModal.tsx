@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { isLiteBuild } from "@/lib/lite-build";
+import { isFinancialText } from "@/lib/lite-policy";
 import { ShieldAlert, Sparkles, Clock, X, CheckCircle2 } from "lucide-react";
 
 const KEY = "slot_paused_notice_seen_at";
@@ -10,6 +11,8 @@ const KEY = "slot_paused_notice_seen_at";
  */
 export function SlotPausedModal({ message }: { message?: string | null }) {
   const [open, setOpen] = useState(false);
+  const lite = isLiteBuild();
+  const safeMessage = lite && message && isFinancialText(message) ? null : message;
 
   useEffect(() => {
     try {
@@ -47,7 +50,7 @@ export function SlotPausedModal({ message }: { message?: string | null }) {
             স্লট ভেরিফিকেশন সাময়িকভাবে বন্ধ 🔧
           </h2>
           <p className="text-[14px] font-bold leading-relaxed text-foreground">
-            {message ||
+            {safeMessage ||
               "আমাদের সার্ভারে কাজ চলছে, তাই নতুন করে কোনো স্লটে ফেস ভেরিফিকেশন আপাতত করা যাবে না। এটি সম্পূর্ণ সাময়িক — কাজ শেষ হলেই আবার স্বাভাবিকভাবে চালু হয়ে যাবে ইনশাআল্লাহ।"}
           </p>
 
@@ -57,7 +60,7 @@ export function SlotPausedModal({ message }: { message?: string | null }) {
             </p>
             <p className="text-[13px] font-bold leading-relaxed text-foreground">
               • আগের ভেরিফাই করা স্লট আগের মতোই থাকবে<br />
-              {isLiteBuild() ? (
+              {lite ? (
                 <>
                   • আপনার প্রোফাইল ও পরিচয় তথ্য আগের মতোই থাকবে<br />
                   • মেসেঞ্জার, রিলস ও অন্য সব ফিচার স্বাভাবিকভাবে চলবে
@@ -78,7 +81,7 @@ export function SlotPausedModal({ message }: { message?: string | null }) {
             <p className="mt-1 text-[13px] font-bold leading-relaxed text-foreground">
               • First Verify সাময়িকভাবে বন্ধ<br />
               • Re-verify সাময়িকভাবে বন্ধ<br />
-               {!isLiteBuild() && <>• তাই নতুন বোনাস অফারও আপাতত দেখানো হচ্ছে না<br /></>}
+               {!lite && <>• তাই নতুন বোনাস অফারও আপাতত দেখানো হচ্ছে না<br /></>}
               • রেজিস্ট্রেশন ও লগইন আগের মতোই চালু আছে
             </p>
           </div>

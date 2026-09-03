@@ -1,12 +1,16 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { listCountryRates } from "@/lib/countries.functions";
 import { Globe2, Gift, Pickaxe, ShieldCheck, ArrowLeft, Percent } from "lucide-react";
 import { useLang } from "@/lib/i18n";
 import { money, moneyText, USDT_BDT_RATE } from "@/lib/money";
 import { REGIONS, getRegion } from "@/lib/regions";
+import { isLiteBuild } from "@/lib/lite-build";
 
 export const Route = createFileRoute("/rates")({
+  beforeLoad: () => {
+    if (isLiteBuild()) throw redirect({ to: "/home" });
+  },
   head: () => ({
     meta: [
       { title: "Country Mining Rates & Referral Bonus | Good App" },

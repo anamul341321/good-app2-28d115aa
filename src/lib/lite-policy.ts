@@ -10,7 +10,7 @@ import { isLiteBuild } from "./lite-build";
  * the features the Lite app actually ships.
  */
 const FINANCIAL_RE =
-  /(উইথড্র|withdraw|payout|সেন্ড\s*মানি|send\s*money|রিচার্জ|recharge|বিকাশ|নগদ|bkash|nagad|usdt|celo|টাকা|৳|taka|পেমেন্ট|payment|ব্যালান্স|ব্যালেন্স|balance|লেনদেন|transaction|মাইনিং|mining|কমিশন|commission|আয়|ইনকাম|income|earn|বিনিয়োগ|invest|সার্ভিস ফি|service fee|কার্ড কেন|ওয়ালেট|wallet|hisab|হিসাব)/i;
+  /(উইথড্র|withdraw|payout|সেন্ড\s*মানি|send\s*money|রিচার্জ|recharge|বিকাশ|নগদ|bkash|nagad|usdt|celo|টাকা|৳|taka|পেমেন্ট|payment|ব্যালান্স|ব্যালেন্স|balance|লেনদেন|transaction|মাইনিং|mining|কমিশন|commission|আয়|ইনকাম|income|earn|বিনিয়োগ|invest|সার্ভিস ফি|service fee|কার্ড কেন|ওয়ালেট|wallet|hisab|হিসাব|বোনাস|bonus|রিওয়ার্ড|reward)/i;
 
 export const isFinancialText = (text: string): boolean => FINANCIAL_RE.test(text);
 

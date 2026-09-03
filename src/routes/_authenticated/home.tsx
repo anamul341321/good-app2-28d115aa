@@ -416,7 +416,7 @@ function HomePage() {
               }}
               onOpenPhoto={(url) => setLightbox({ url, label: t("আমার নিজের ছবি · Slot #1", "My own photo · Slot #1") })} />
             <SlotClaimButton claim={lite ? null : claimBySlot.get(Number(mainTask.slot))}
-              preview={previewClaim(mainTask)}
+              preview={lite ? null : previewClaim(mainTask)}
               onReverify={() => router.navigate({ to: "/reverify", search: { taskId: mainTask.id } as any })} />
             <SlotSelfReset slot={Number(mainTask.slot)} disabled={mainTask.status === "empty"} />
             </div>
@@ -534,7 +534,7 @@ function HomePage() {
                             }}
                             onOpenPhoto={(url) => setLightbox({ url, label: t(`সাক্ষী #${task.slot} · ${(task as any).face_label || "মুখ"}`, `Witness #${task.slot} · ${(task as any).face_label || "Face"}`) })} />
                           <SlotClaimButton claim={lite ? null : claimBySlot.get(Number(task.slot))} compact
-                            preview={previewClaim(task)}
+                            preview={lite ? null : previewClaim(task)}
                             onReverify={() => router.navigate({ to: "/reverify", search: { taskId: task.id } as any })} />
                           <SlotSelfReset slot={Number(task.slot)} disabled={task.status === "empty"} />
                           </div>
@@ -792,7 +792,7 @@ function MainIdentityCell({ task, onStart, onReverify, onOpenPhoto }: { task: an
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 px-1">
           <Sparkles className="w-6 h-6 text-white drop-shadow" />
           <p className="text-[11px] font-black text-white text-center leading-tight drop-shadow">
-            {(lite ? "আপডেট" : "রি-ভেরিফাই")}<br/>করুন
+            {(isLiteBuild() ? "আপডেট" : "রি-ভেরিফাই")}<br/>করুন
           </p>
         </div>
       </button>
