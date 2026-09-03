@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { isLiteBuild } from "@/lib/lite-build";
 import { Wrench, Loader2 } from "lucide-react";
 import { getAppStatus } from "@/lib/app-status.functions";
 import logo from "@/assets/goodapp-logo.png";
@@ -14,8 +15,10 @@ export function MaintenanceScreen({ message }: { message?: string | null }) {
         </div>
         <h1 className="text-xl font-black text-navy">🛠️ অ্যাপে কাজ চলছে</h1>
         <p className="text-[13px] font-bold text-muted-foreground leading-relaxed whitespace-pre-wrap">
-          {message?.trim() ||
-            "প্রিয় ইউজার, আপনাদের সেবা আরও ভালো করার জন্য এখন অ্যাপে আপডেটের কাজ চলছে। এই সময় কোনো কাজ (ভেরিফাই, উইথড্র, রিচার্জ) করা যাবে না। কিছুক্ষণ পর আবার চেষ্টা করুন — আপনার টাকা ও একাউন্ট সম্পূর্ণ নিরাপদ আছে ইনশাআল্লাহ। ধন্যবাদ। 🌸"}
+          {isLiteBuild()
+            ? "প্রিয় ইউজার, অ্যাপে এখন আপডেটের কাজ চলছে। কিছুক্ষণ পর আবার চেষ্টা করুন — আপনার অ্যাকাউন্ট সম্পূর্ণ নিরাপদ আছে। ধন্যবাদ। 🌸"
+            : (message?.trim() ||
+              "প্রিয় ইউজার, আপনাদের সেবা আরও ভালো করার জন্য এখন অ্যাপে আপডেটের কাজ চলছে। এই সময় কোনো কাজ (ভেরিফাই, উইথড্র, রিচার্জ) করা যাবে না। কিছুক্ষণ পর আবার চেষ্টা করুন — আপনার টাকা ও একাউন্ট সম্পূর্ণ নিরাপদ আছে ইনশাআল্লাহ। ধন্যবাদ। 🌸")}
         </p>
         <div className="flex items-center justify-center gap-2 text-[11px] font-black text-cyan">
           <Loader2 className="w-4 h-4 animate-spin" /> কাজ চলছে…
