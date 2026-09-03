@@ -1,3 +1,4 @@
+import { Navigate } from '@tanstack/react-router';
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { getDashboard } from "@/lib/dashboard.functions";
@@ -8,12 +9,14 @@ import { ArrowLeft, Crown, Lock, Copy, Share2, Sparkles, Send, Smartphone } from
 import { toast } from "sonner";
 import { useLang } from "@/lib/i18n";
 import { isLiteBuild } from "@/lib/lite-build";
+import { LiteFeatureBlock } from "@/components/LiteFeatureBlock";
 
-export const Route = createFileRoute("/_authenticated/offers")({ component: OffersPage });
+export const Route = createFileRoute("/_authenticated/offers")({ component: () => isLiteBuild() ? <Navigate to="/home" /> : <OffersPage /> });
 
 function OffersPage() {
   const { t } = useLang();
   const { data } = useQuery({ queryKey: ["dashboard"], queryFn: () => getDashboard() });
+  if (isLiteBuild()) return <LiteFeatureBlock />;
   if (!data) return <div className="py-10 text-center text-sm text-muted-foreground">{t("লোড হচ্ছে…", "Loading…")}</div>;
 
   const b = (data as any).bonus;

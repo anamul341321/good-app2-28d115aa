@@ -59,7 +59,7 @@ export function SlotPausedModal({ message }: { message?: string | null }) {
               • আগের ভেরিফাই করা স্লট আগের মতোই থাকবে<br />
               {isLiteBuild() ? (
                 <>
-                  • আপনার প্রোফাইল, ফেস কী ও রিওয়ার্ড স্ট্যাটাস আগের মতোই থাকবে<br />
+                  • আপনার প্রোফাইল ও পরিচয় তথ্য আগের মতোই থাকবে<br />
                   • মেসেঞ্জার, রিলস ও অন্য সব ফিচার স্বাভাবিকভাবে চলবে
                 </>
               ) : (
@@ -78,7 +78,7 @@ export function SlotPausedModal({ message }: { message?: string | null }) {
             <p className="mt-1 text-[13px] font-bold leading-relaxed text-foreground">
               • First Verify সাময়িকভাবে বন্ধ<br />
               • Re-verify সাময়িকভাবে বন্ধ<br />
-              • তাই নতুন বোনাস অফারও আপাতত দেখানো হচ্ছে না<br />
+               {!isLiteBuild() && <>• তাই নতুন বোনাস অফারও আপাতত দেখানো হচ্ছে না<br /></>}
               • রেজিস্ট্রেশন ও লগইন আগের মতোই চালু আছে
             </p>
           </div>

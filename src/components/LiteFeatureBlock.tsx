@@ -8,7 +8,7 @@ import { TELEGRAM_GROUP_URL } from "@/lib/coins";
  * this app version. No external app link and no payment/withdrawal wording —
  * only a friendly note plus our Telegram support group for help.
  */
-export function LiteFeatureBlock({ title }: { title?: string }) {
+export function LiteFeatureBlock({ title: _title }: { title?: string }) {
   const { t } = useLang();
 
   return (
@@ -18,14 +18,12 @@ export function LiteFeatureBlock({ title }: { title?: string }) {
           <Info className="w-8 h-8 text-cyan" />
         </div>
         <h1 className="text-lg font-black text-navy">
-          {title
-            ? t(`${title} — এই সংস্করণে নেই`, `${title} — not in this version`)
-            : t("এই অংশটি এই সংস্করণে নেই", "This section is not in this version")}
+          {t("এই অংশটি উপলভ্য নয়", "This section is unavailable")}
         </h1>
         <p className="text-xs text-muted-foreground font-bold leading-relaxed">
           {t(
-            "এই অ্যাপ সংস্করণে মেসেঞ্জার, রিলস, প্রোফাইল, ভেরিফিকেশন ও রিওয়ার্ড ফিচারগুলো আছে। কোনো প্রশ্ন বা সাহায্যের দরকার হলে আমাদের সাপোর্ট গ্রুপে মেসেজ দিন — দ্রুত উত্তর পাবেন।",
-            "This app version includes messenger, reels, profile, verification and reward features. If you need any help, message our support group — we reply quickly.",
+            "মেসেঞ্জার, রিলস, স্টোরি, প্রোফাইল ও নিরাপত্তা যাচাই ব্যবহার করুন। কোনো প্রশ্ন থাকলে আমাদের সাপোর্ট গ্রুপে মেসেজ দিন।",
+            "Use Messenger, Reels, Stories, profiles and security verification. Message our support group if you need help.",
           )}
         </p>
         <a

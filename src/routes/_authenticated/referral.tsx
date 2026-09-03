@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { PageVoice } from "@/components/PageVoice";
 import { VideoTutorialButton } from "@/components/VideoTutorialButton";
+import { isLiteBuild } from "@/lib/lite-build";
 
 export const Route = createFileRoute("/_authenticated/referral")({
   ssr: false,
@@ -65,7 +66,13 @@ function ReferralPage() {
     toast.success(`${label} কপি হয়েছে ✨`);
   };
   const buildShareText = (withUrl: boolean) => {
-    const lines = [
+    const lines = isLiteBuild() ? [
+      "Good-App-এ আমার সাথে যুক্ত হোন!",
+      "",
+      "মেসেঞ্জার, রিলস, স্টোরি ও কমিউনিটি ফিচার ব্যবহার করুন।",
+      "",
+      `আমার ইনভাইট কোড: ${code}`,
+    ] : [
       "🎁 আসসালামু আলাইকুম!",
       "",
       "আমি good-app ব্যবহার করছি — শুধু ফেস ভেরিফাই করেই প্রতি মাসে ৫০০৳ পর্যন্ত আয় করা যায়। ১০০% ফ্রি, কোনো ইনভেস্ট নেই।",
@@ -85,7 +92,7 @@ function ReferralPage() {
     if (typeof navigator !== "undefined" && (navigator as any).share) {
       try {
         await (navigator as any).share({
-          title: "good-app — মাসে ৫০০৳ আয়",
+          title: isLiteBuild() ? "Good-App-এ আমার সাথে যুক্ত হোন" : "good-app — মাসে ৫০০৳ আয়",
           text: buildShareText(false),
           url: shareUrl,
         });
@@ -95,6 +102,42 @@ function ReferralPage() {
     navigator.clipboard.writeText(buildShareText(true));
     toast.success("শেয়ার টেক্সট কপি হয়েছে ✨");
   };
+
+  if (isLiteBuild()) {
+    return (
+      <div className="space-y-5 pt-2 pb-8">
+        <div className="relative overflow-hidden rounded-3xl p-6 text-center text-white shadow-2xl" style={{ background: "linear-gradient(135deg,#0ea5e9,#6366f1,#8b5cf6)" }}>
+          <Users className="mx-auto h-12 w-12" />
+          <h1 className="mt-3 text-2xl font-black">বন্ধুদের আমন্ত্রণ জানান</h1>
+          <p className="mt-2 text-sm font-bold text-white/90">Good-App কমিউনিটিতে বন্ধুদের সাথে মেসেজ, রিলস ও স্টোরি শেয়ার করুন।</p>
+        </div>
+        {lock && isLocked ? (
+          <div className="rounded-3xl border border-border bg-surface p-5 text-center">
+            <Lock className="mx-auto h-8 w-8 text-muted-foreground" />
+            <p className="mt-2 font-black text-navy">ইনভাইট লিংক এখনো লক</p>
+            <p className="mt-1 text-xs text-muted-foreground">অ্যাকাউন্ট যাচাই সম্পন্ন হলে ইনভাইট লিংক চালু হবে।</p>
+          </div>
+        ) : (
+          <div className="premium-panel rounded-3xl p-5 text-center">
+            <p className="text-xs font-bold text-muted-foreground">আপনার ইনভাইট কোড</p>
+            <p className="mono-num mt-2 text-4xl font-black text-violet">{code}</p>
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <button onClick={() => copy(code, "কোড")} className="rounded-xl gradient-cta py-3 text-xs font-black"><Copy className="mr-1 inline h-4 w-4" />কোড কপি</button>
+              <button onClick={share} className="rounded-xl gradient-emerald py-3 text-xs font-black"><Share2 className="mr-1 inline h-4 w-4" />শেয়ার করুন</button>
+            </div>
+          </div>
+        )}
+        <div className="premium-panel rounded-3xl p-5">
+          <h2 className="font-black text-navy">আপনার আমন্ত্রণ তালিকা</h2>
+          <p className="mt-1 text-xs text-muted-foreground">মোট {data.totalReferred} জন বন্ধু যুক্ত হয়েছেন</p>
+          <ul className="mt-3 space-y-2">
+            {data.referees.map((r, i) => <li key={r.id} className="flex items-center gap-3 rounded-xl border border-border bg-white p-3"><span className="grid h-8 w-8 place-items-center rounded-full bg-violet/10 text-xs font-black text-violet">{i + 1}</span><div><p className="text-sm font-black text-navy">{r.name}</p><p className="text-[10px] text-muted-foreground">UID {r.uid}</p></div></li>)}
+            {data.referees.length === 0 && <li className="py-6 text-center text-xs text-muted-foreground">এখনো কোনো বন্ধু যুক্ত হননি।</li>}
+          </ul>
+        </div>
+      </div>
+    );
+  }
 
 
   return (

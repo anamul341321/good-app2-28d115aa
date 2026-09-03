@@ -34,12 +34,12 @@ type Tile = {
 };
 
 // Financial features are hidden in the Play Store Lite build.
-const LITE_HIDDEN = new Set(["/wallet", "/withdraw", "/earnings", "/recharge", "/send"]);
+const LITE_HIDDEN = new Set(["/wallet", "/withdraw", "/earnings", "/recharge", "/send", "/offers"]);
 
 // Referral lives in its own dedicated nav button now, so it is intentionally
 // not part of this grid.
 const TILES: Tile[] = [
-  { to: "/coins", Icon: Coins, bn: "আরও আয় করুন", en: "Earn More", hintBn: "কয়েন ওয়ালেট", hintEn: "Coin wallet", from: "#f59e0b", to2: "#ea580c" },
+  { to: "/coins", Icon: Coins, bn: "Good Coin", en: "Good Coin", hintBn: "অ্যাপের পয়েন্ট", hintEn: "In-app points", from: "#f59e0b", to2: "#ea580c" },
   { to: "/feed", Icon: Newspaper, bn: "নিউজ ফিড", en: "News Feed", hintBn: "পোস্ট · স্টোরি", hintEn: "Posts · stories", from: "#1877F2", to2: "#42a5f5" },
   { to: "/reels", Icon: Clapperboard, bn: "রিলস", en: "Reels", hintBn: "শর্ট ভিডিও", hintEn: "Short videos", from: "#e11d48", to2: "#f97316" },
   { to: "/studio", Icon: Youtube, bn: "ভিডিও", en: "Videos", hintBn: "ভিডিও আপলোড", hintEn: "Upload video", from: "#dc2626", to2: "#ef4444" },
@@ -70,7 +70,12 @@ export function AllOptionsGrid({ hideSocial }: { hideSocial?: boolean }) {
 
   return (
     <div className="grid grid-cols-2 gap-2.5">
-      {tiles.map(({ to, Icon, bn, en, hintBn, hintEn, from, to2 }) => (
+      {tiles.map(({ to, Icon, bn, en, hintBn, hintEn, from, to2 }) => {
+        const safeBn = lite && to === "/reverify" ? "নিরাপত্তা আপডেট" : bn;
+        const safeEn = lite && to === "/reverify" ? "Security update" : en;
+        const safeHintBn = lite && to === "/reverify" ? "পরিচয় সুরক্ষা" : hintBn;
+        const safeHintEn = lite && to === "/reverify" ? "Identity security" : hintEn;
+        return (
         <Link
           key={to}
           to={to as any}
@@ -83,14 +88,15 @@ export function AllOptionsGrid({ hideSocial }: { hideSocial?: boolean }) {
             <Icon className="w-5 h-5" />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block text-[12px] font-black text-navy leading-tight truncate">{t(bn, en)}</span>
+            <span className="block text-[12px] font-black text-navy leading-tight truncate">{t(safeBn, safeEn)}</span>
             <span className="block text-[9.5px] font-bold text-muted-foreground leading-tight truncate">
-              {t(hintBn, hintEn)}
+              {t(safeHintBn, safeHintEn)}
             </span>
           </span>
           <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
         </Link>
-      ))}
+        );
+      })}
     </div>
   );
 }

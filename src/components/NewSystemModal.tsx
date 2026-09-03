@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { X, PartyPopper, Sparkles } from "lucide-react";
 import wowGirl from "@/assets/new-system-wow.jpg";
 import { getAppStatus } from "@/lib/app-status.functions";
+import { isLiteBuild } from "@/lib/lite-build";
 
 const KEY = "new_mining_system_notice_v1_seen_at";
 
@@ -33,7 +34,7 @@ export function NewSystemModal() {
     }
   }, []);
 
-  if (!open) return null;
+  if (isLiteBuild() || !open) return null;
 
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[95] flex items-end justify-center px-3 pb-[max(1rem,env(safe-area-inset-bottom))] animate-in fade-in duration-300">

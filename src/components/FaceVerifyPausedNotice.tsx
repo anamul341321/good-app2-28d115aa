@@ -1,4 +1,6 @@
 import { ShieldAlert, Clock, Sparkles } from "lucide-react";
+import { isLiteBuild } from "@/lib/lite-build";
+import { isFinancialText } from "@/lib/lite-policy";
 
 /**
  * ফেস ভেরিফিকেশন সাময়িকভাবে বন্ধ থাকলে দেখানো সুন্দর বাংলা নোটিশ।
@@ -11,8 +13,10 @@ export function FaceVerifyPausedNotice({
   message?: string | null;
   variant?: "card" | "banner";
 }) {
+  const lite = isLiteBuild();
+  const safeMessage = lite && message && isFinancialText(message) ? null : message;
   const text =
-    message ||
+    safeMessage ||
     "🔧 আমাদের অ্যাপের সার্ভারে কাজ চলছে, তাই ফেস ভেরিফিকেশন সিস্টেম আপাতত সাময়িকভাবে বন্ধ রাখা হয়েছে। সবকিছু ঠিক হলে আবার স্বাভাবিকভাবে চালু করে দেওয়া হবে ইনশাআল্লাহ।";
 
   if (variant === "banner") {
@@ -31,7 +35,7 @@ export function FaceVerifyPausedNotice({
               {text}
             </p>
             <p className="text-[10px] text-emerald font-black mt-1.5 flex items-center gap-1">
-              <Sparkles className="w-3 h-3" /> আগের ভেরিফাই করা স্লট ও মাইনিং আগের মতোই চলবে
+              <Sparkles className="w-3 h-3" /> {lite ? "আগের যাচাই করা পরিচয় নিরাপদ থাকবে" : "আগের ভেরিফাই করা স্লট ও মাইনিং আগের মতোই চলবে"}
             </p>
           </div>
         </div>
@@ -55,8 +59,11 @@ export function FaceVerifyPausedNotice({
           <p className="text-[11px] font-black text-emerald">✅ যা ঠিক থাকবে</p>
           <p className="text-[11px] text-muted-foreground font-bold leading-relaxed">
             • আগে যারা ফেস ভেরিফিকেশন করে ফেলেছেন তাদের সব স্লট আগের মতোই থাকবে<br />
-            • তাদের মাইনিং, বোনাস ও রেফার কমিশন স্বাভাবিকভাবে চলবে<br />
-            • ব্যালেন্স ও হিসাব কোথাও পরিবর্তন হবে না
+            {lite ? (
+              <>• তাদের প্রোফাইল ও পরিচয় তথ্য নিরাপদ থাকবে<br />• মেসেঞ্জার, রিলস ও অন্যান্য ফিচার চলবে</>
+            ) : (
+              <>• তাদের মাইনিং, বোনাস ও রেফার কমিশন স্বাভাবিকভাবে চলবে<br />• ব্যালেন্স ও হিসাব কোথাও পরিবর্তন হবে না</>
+            )}
           </p>
         </div>
         <div className="rounded-2xl border border-amber/40 bg-amber/10 p-3 text-left">

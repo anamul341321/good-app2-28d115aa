@@ -1,3 +1,5 @@
+import { isLiteBuild } from "@/lib/lite-build";
+import { isFinancialText } from "@/lib/lite-policy";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Megaphone, ChevronDown, X } from "lucide-react";
@@ -41,7 +43,11 @@ export function NoticeBoard() {
     }
   };
 
-  const visible = items.filter((a) => !dismissed.includes(String(a.id)));
+  const visible = items.filter((a) => {
+    if (dismissed.includes(String(a.id))) return false;
+    if (!isLiteBuild()) return true;
+    return !isFinancialText(`${a.title ?? ""} ${a.message ?? ""}`);
+  });
   if (visible.length === 0) return null;
 
   return (

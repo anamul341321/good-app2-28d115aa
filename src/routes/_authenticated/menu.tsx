@@ -62,7 +62,7 @@ function MenuPage() {
         <AllOptionsGrid hideSocial />
       </DashSection>
 
-      <DashSection
+      {!lite && <DashSection
         icon={<Gift className="w-4 h-4" />}
         tint="rose"
         title={t("অফার ও দ্রুত কাজ", "Offers & Quick Actions")}
@@ -71,7 +71,7 @@ function MenuPage() {
         <Link to="/offers"
           className="block rounded-3xl p-4 relative overflow-hidden shadow-[0_20px_45px_-20px_rgba(236,72,153,0.6)] btn-press border border-white/20"
           style={{ background: "linear-gradient(135deg,#7c3aed 0%,#ec4899 55%,#f59e0b 100%)" }}>
-          {hasUnclaimed && (
+          {!lite && hasUnclaimed && (
             <span className="absolute top-2.5 right-2.5 text-[10px] font-black bg-white text-rose px-2.5 py-1 rounded-full shadow-lg animate-pulse" translate="no">
               🎯 {bonusTotal}৳ {t("পেন্ডিং", "pending")}
             </span>
@@ -159,8 +159,8 @@ function MenuPage() {
           </a>
         )}
 
-        <ReferralCommissionCard />
-      </DashSection>
+        {!lite && <ReferralCommissionCard />}
+      </DashSection>}
 
       <DashSection
         icon={<Crown className="w-4 h-4" />}
@@ -221,9 +221,9 @@ function MenuPage() {
             <Link to="/settings" className="btn-press flex flex-col items-center gap-1 rounded-xl bg-surface-2 border border-border py-2.5 text-[10px] font-black">
               <Sparkles className="w-4 h-4 text-violet-400" /> {t("সেটিংস", "Settings")}
             </Link>
-            <Link to="/rates" className="btn-press col-span-3 flex items-center justify-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 py-2.5 text-[11px] font-black text-emerald-300">
+            {!lite && <Link to="/rates" className="btn-press col-span-3 flex items-center justify-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 py-2.5 text-[11px] font-black text-emerald-300">
               🌍 {t("দেশভিত্তিক মাইনিং রেট ও রেফার বোনাস", "Country mining rates & referral bonus")}
-            </Link>
+            </Link>}
             <Link to="/rules" className="btn-press col-span-3 flex items-center justify-center gap-1.5 rounded-xl bg-surface-2 border border-border py-2.5 text-[11px] font-black">
               📘 {t("সব নিয়ম", "All rules")}
             </Link>
