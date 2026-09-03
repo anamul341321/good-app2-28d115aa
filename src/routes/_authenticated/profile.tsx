@@ -1,4 +1,5 @@
 import { createFileRoute, Navigate } from "@tanstack/react-router";
+import { isLiteBuild } from "@/lib/lite-build";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useState, useEffect, useRef } from "react";
 import { getProfileHistory, updateProfileDetails, uploadAvatar } from "@/lib/profile.functions";
@@ -243,9 +244,11 @@ function ProfilePage() {
 
 
 
-      <div className="grid grid-cols-3 gap-2 no-print">
+      <div className={`grid ${isLiteBuild() ? "grid-cols-2" : "grid-cols-3"} gap-2 no-print`}>
         <TabBtn active={tab === "card"} onClick={() => setTab("card")} icon={<IdCard className="w-4 h-4" />} label="কার্ড" voice="profile.card" />
-        <TabBtn active={tab === "withdraw"} onClick={() => setTab("withdraw")} icon={<History className="w-4 h-4" />} label="উইথড্র" voice="profile.history" />
+        {!isLiteBuild() && (
+          <TabBtn active={tab === "withdraw"} onClick={() => setTab("withdraw")} icon={<History className="w-4 h-4" />} label="উইথড্র" voice="profile.history" />
+        )}
         <TabBtn active={tab === "claim"} onClick={() => setTab("claim")} icon={<Sparkles className="w-4 h-4" />} label="ক্লেইম" voice="profile.history" />
       </div>
 

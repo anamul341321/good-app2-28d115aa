@@ -13,6 +13,7 @@ import { FaceVerifyPausedNotice } from "@/components/FaceVerifyPausedNotice";
 import { getAppStatus } from "@/lib/app-status.functions";
 import { GmailSecurityBanner } from "@/components/GmailSecurityBanner";
 import { AdsBoostBanner } from "@/components/AdsBoostBanner";
+import { NoticeBoard } from "@/components/NoticeBoard";
 import { ReferBonusBanner, RatesEntryCard } from "@/components/ReferBonusBanner";
 import { ForeignCurrencyCard } from "@/components/ForeignCurrencyCard";
 import { ComplianceDisclaimer } from "@/components/ComplianceDisclaimer";
@@ -324,6 +325,9 @@ function HomePage() {
       )}
 
       {lite && <LiteHomeNotice />}
+
+      {/* অ্যাডমিন নোটিশ — সহজে পড়া যায় এমন কার্ড (TV-স্টাইল স্ক্রলিং নয়) */}
+      <NoticeBoard />
 
       <VoucherPopup vouchers={(data as any).vouchers ?? []} onClaimed={() => refetch()} />
 
@@ -1308,29 +1312,28 @@ function WithdrawFeed() {
 
 function LiteHomeNotice() {
   const { t } = useLang();
-  const site = "https://goodapp2.live";
   return (
-    <div className="rounded-3xl p-5 relative overflow-hidden shadow-[0_20px_50px_-20px_rgba(245,158,11,0.45)] border border-amber/30"
-         style={{ background: "linear-gradient(135deg,#f59e0b 0%,#ec4899 55%,#8b5cf6 100%)" }}>
+    <div className="rounded-3xl p-5 relative overflow-hidden shadow-[0_20px_50px_-20px_rgba(6,182,212,0.45)] border border-white/20"
+         style={{ background: "linear-gradient(135deg,#0088cc 0%,#06b6d4 55%,#14b8a6 100%)" }}>
       <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/15 blur-3xl" />
       <div className="relative flex items-center gap-4 text-white">
-        <div className="w-14 h-14 rounded-2xl bg-white/25 backdrop-blur border border-white/40 flex items-center justify-center text-3xl shadow-lg shrink-0">🌐</div>
+        <div className="w-14 h-14 rounded-2xl bg-white/25 backdrop-blur border border-white/40 flex items-center justify-center text-3xl shadow-lg shrink-0">💬</div>
         <div className="flex-1 min-w-0">
-          <p className="text-[10px] uppercase tracking-[0.25em] font-black opacity-95">Play Store Lite</p>
+          <p className="text-[10px] uppercase tracking-[0.25em] font-black opacity-95">Good-App</p>
           <p className="text-lg font-black leading-tight drop-shadow mt-0.5">
-            {t("সম্পূর্ণ ফিচার ওয়েবসাইটে", "Full features on the website")}
+            {t("সাহায্য দরকার?", "Need help?")}
           </p>
           <p className="text-[11px] opacity-95 font-bold mt-0.5">
-            {t("উইথড্র, সেন্ড মানি, রিচার্জ ও আর্নিং ড্যাশবোর্ড শুধু goodapp2.live-এ", "Withdraw, send money, recharge and the earnings dashboard are only on goodapp2.live")}
+            {t("আমাদের সাপোর্ট গ্রুপে মেসেজ দিন — দ্রুত উত্তর পাবেন", "Message our support group — we reply quickly")}
           </p>
         </div>
         <a
-          href={site}
+          href="https://t.me/goodappbuy"
           target="_blank"
           rel="noopener noreferrer"
-          className="shrink-0 rounded-xl bg-white text-rose px-3 py-2 text-xs font-black btn-press flex items-center gap-1"
+          className="shrink-0 rounded-xl bg-white text-cyan-700 px-3 py-2 text-xs font-black btn-press flex items-center gap-1"
         >
-          {t("খুলুন", "Open")} →
+          {t("সাপোর্ট", "Support")} →
         </a>
       </div>
     </div>

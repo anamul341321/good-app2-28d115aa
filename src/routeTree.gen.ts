@@ -25,6 +25,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as CardUidRouteImport } from './routes/card.$uid'
+import { Route as AuthNativeCallbackRouteImport } from './routes/auth.native-callback'
 import { Route as ApiYoutubeShortsRouteImport } from './routes/api/youtube-shorts'
 import { Route as ApiYoutubeSearchRouteImport } from './routes/api/youtube-search'
 import { Route as ApiTiktokFeedRouteImport } from './routes/api/tiktok-feed'
@@ -173,6 +174,11 @@ const CardUidRoute = CardUidRouteImport.update({
   id: '/card/$uid',
   path: '/card/$uid',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthNativeCallbackRoute = AuthNativeCallbackRouteImport.update({
+  id: '/native-callback',
+  path: '/native-callback',
+  getParentRoute: () => AuthRoute,
 } as any)
 const ApiYoutubeShortsRoute = ApiYoutubeShortsRouteImport.update({
   id: '/api/youtube-shorts',
@@ -535,7 +541,7 @@ export interface FileRoutesByFullPath {
   '/account-deletion': typeof AccountDeletionRoute
   '/admin': typeof AdminRouteWithChildren
   '/admin-login': typeof AdminLoginRoute
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
   '/child-safety': typeof ChildSafetyRoute
   '/data-safety': typeof DataSafetyRoute
   '/download': typeof DownloadRoute
@@ -584,6 +590,7 @@ export interface FileRoutesByFullPath {
   '/api/tiktok-feed': typeof ApiTiktokFeedRoute
   '/api/youtube-search': typeof ApiYoutubeSearchRoute
   '/api/youtube-shorts': typeof ApiYoutubeShortsRoute
+  '/auth/native-callback': typeof AuthNativeCallbackRoute
   '/card/$uid': typeof CardUidRoute
   '/admin/': typeof AdminIndexRoute
   '/channel/$userId': typeof AuthenticatedChannelUserIdRoute
@@ -620,7 +627,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/account-deletion': typeof AccountDeletionRoute
   '/admin-login': typeof AdminLoginRoute
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
   '/child-safety': typeof ChildSafetyRoute
   '/data-safety': typeof DataSafetyRoute
   '/download': typeof DownloadRoute
@@ -668,6 +675,7 @@ export interface FileRoutesByTo {
   '/api/tiktok-feed': typeof ApiTiktokFeedRoute
   '/api/youtube-search': typeof ApiYoutubeSearchRoute
   '/api/youtube-shorts': typeof ApiYoutubeShortsRoute
+  '/auth/native-callback': typeof AuthNativeCallbackRoute
   '/card/$uid': typeof CardUidRoute
   '/admin': typeof AdminIndexRoute
   '/channel/$userId': typeof AuthenticatedChannelUserIdRoute
@@ -707,7 +715,7 @@ export interface FileRoutesById {
   '/account-deletion': typeof AccountDeletionRoute
   '/admin': typeof AdminRouteWithChildren
   '/admin-login': typeof AdminLoginRoute
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
   '/child-safety': typeof ChildSafetyRoute
   '/data-safety': typeof DataSafetyRoute
   '/download': typeof DownloadRoute
@@ -756,6 +764,7 @@ export interface FileRoutesById {
   '/api/tiktok-feed': typeof ApiTiktokFeedRoute
   '/api/youtube-search': typeof ApiYoutubeSearchRoute
   '/api/youtube-shorts': typeof ApiYoutubeShortsRoute
+  '/auth/native-callback': typeof AuthNativeCallbackRoute
   '/card/$uid': typeof CardUidRoute
   '/admin/': typeof AdminIndexRoute
   '/_authenticated/channel/$userId': typeof AuthenticatedChannelUserIdRoute
@@ -844,6 +853,7 @@ export interface FileRouteTypes {
     | '/api/tiktok-feed'
     | '/api/youtube-search'
     | '/api/youtube-shorts'
+    | '/auth/native-callback'
     | '/card/$uid'
     | '/admin/'
     | '/channel/$userId'
@@ -928,6 +938,7 @@ export interface FileRouteTypes {
     | '/api/tiktok-feed'
     | '/api/youtube-search'
     | '/api/youtube-shorts'
+    | '/auth/native-callback'
     | '/card/$uid'
     | '/admin'
     | '/channel/$userId'
@@ -1015,6 +1026,7 @@ export interface FileRouteTypes {
     | '/api/tiktok-feed'
     | '/api/youtube-search'
     | '/api/youtube-shorts'
+    | '/auth/native-callback'
     | '/card/$uid'
     | '/admin/'
     | '/_authenticated/channel/$userId'
@@ -1054,7 +1066,7 @@ export interface RootRouteChildren {
   AccountDeletionRoute: typeof AccountDeletionRoute
   AdminRoute: typeof AdminRouteWithChildren
   AdminLoginRoute: typeof AdminLoginRoute
-  AuthRoute: typeof AuthRoute
+  AuthRoute: typeof AuthRouteWithChildren
   ChildSafetyRoute: typeof ChildSafetyRoute
   DataSafetyRoute: typeof DataSafetyRoute
   DownloadRoute: typeof DownloadRoute
@@ -1201,6 +1213,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/card/$uid'
       preLoaderRoute: typeof CardUidRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/auth/native-callback': {
+      id: '/auth/native-callback'
+      path: '/native-callback'
+      fullPath: '/auth/native-callback'
+      preLoaderRoute: typeof AuthNativeCallbackRouteImport
+      parentRoute: typeof AuthRoute
     }
     '/api/youtube-shorts': {
       id: '/api/youtube-shorts'
@@ -1810,13 +1829,23 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface AuthRouteChildren {
+  AuthNativeCallbackRoute: typeof AuthNativeCallbackRoute
+}
+
+const AuthRouteChildren: AuthRouteChildren = {
+  AuthNativeCallbackRoute: AuthNativeCallbackRoute,
+}
+
+const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AccountDeletionRoute: AccountDeletionRoute,
   AdminRoute: AdminRouteWithChildren,
   AdminLoginRoute: AdminLoginRoute,
-  AuthRoute: AuthRoute,
+  AuthRoute: AuthRouteWithChildren,
   ChildSafetyRoute: ChildSafetyRoute,
   DataSafetyRoute: DataSafetyRoute,
   DownloadRoute: DownloadRoute,
