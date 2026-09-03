@@ -653,6 +653,7 @@ function LocalReel({
       el.play().catch(() => {
         // ব্রাউজার সাউন্ড সহ অটোপ্লে ব্লক করলে মিউট করে চালাই
         el.muted = true;
+        soundState.autoMuted = true;
         setMuted(true);
         el.play().catch(() => {});
       });
