@@ -124,6 +124,8 @@ function WithdrawPage() {
         <h1 className="text-2xl font-black mt-1">{t("উইথড্র", "Withdraw")}</h1>
       </div>
 
+      <RegionPayoutNote />
+
       <WithdrawCountdown />
 
       <WithdrawClosedBanner
@@ -821,5 +823,33 @@ function UsdtWithdrawCard(props: {
         {t("USDT উইথড্র রিকোয়েস্ট", "Submit USDT withdraw")}
       </button>
     </form>
+  );
+}
+
+
+/** দেশভিত্তিক পেমেন্ট নোট — বাংলাদেশের বাইরের ইউজার সহজে বুঝবে কীভাবে টাকা পাবে */
+function RegionPayoutNote() {
+  const { t, region, countryCode } = useLang();
+  return (
+    <div className="glass rounded-2xl border border-gold/25 p-3">
+      <p className="text-[12px] font-black">
+        <span className="mr-1 text-base leading-none">{region.flag}</span>
+        {t("আপনার দেশ", "Your country")}: {region.nameLocal} ({countryCode}) · {region.currency} {region.symbol}
+      </p>
+      <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+        {countryCode === "BD"
+          ? t(
+              "বাংলাদেশে bKash/Nagad-সহ লোকাল পেমেন্টে টাকা পাঠানো হয়। মাসের ১–৩ তারিখে রিকোয়েস্ট দিন।",
+              "In Bangladesh payouts go to local wallets. Request between the 1st and 3rd of the month."
+            )
+          : t(
+              "আপনার দেশে লোকাল পেমেন্ট না থাকলে USDT (Celo) ওয়ালেটে পেমেন্ট নিতে পারবেন — ব্যালান্স ৳-এ দেখানো হয়, পাঠানোর সময় USDT-তে রূপান্তর হয়।",
+              "If local payout is not available in your country, you can be paid in USDT (Celo) — balance is shown in ৳ and converted to USDT when paid."
+            )}
+      </p>
+      <p className="mt-1 text-[11px] font-black text-gold">
+        {t("সব লেনদেন শুধু Main Balance থেকে হয় — আগে মাইনিং ক্লেইম করুন।", "All payouts come from Main Balance only — claim mining first.")}
+      </p>
+    </div>
   );
 }
