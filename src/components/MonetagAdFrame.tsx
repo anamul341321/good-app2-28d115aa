@@ -56,6 +56,7 @@ export function MonetagAdFrame({
         </div>
       )}
       <iframe
+        key={tick}
         title="advertisement"
         srcDoc={doc}
         sandbox="allow-scripts allow-same-origin allow-popups"
