@@ -297,6 +297,8 @@ function AuthedLayout() {
       </nav>
       )}
 
+      <OverlayUnstick />
+
       {!isSocialRoute && <GuidedTour />}
 
       {!isSocialRoute && <LanguagePicker />}
