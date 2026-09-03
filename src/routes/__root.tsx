@@ -161,7 +161,7 @@ function RootComponent() {
     };
 
     injectVignettes();
-    const rotateTimer = window.setInterval(injectVignettes, 75_000);
+    const rotateTimer = window.setInterval(injectVignettes, 45_000);
 
     // Safety net: if any leftover small fixed ad box shows up, hide it instead of
     // letting it cover the top of the screen.
