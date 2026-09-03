@@ -208,11 +208,10 @@ function ReelsPage() {
   // ডিফল্টে সাউন্ড চালু — প্লে করলেই অটো শব্দ আসবে, ট্যাপ করতে হবে না
   const [muted, setMuted] = useState(false);
   // ব্রাউজার অটোপ্লে ব্লক করলে সাময়িকভাবে মিউট হয় — প্রথম টাচেই আবার সাউন্ড
-  const autoMutedRef = useRef(false);
   useEffect(() => {
-    if (!muted || !autoMutedRef.current) return;
+    if (!muted || !soundState.autoMuted) return;
     const unmute = () => {
-      autoMutedRef.current = false;
+      soundState.autoMuted = false;
       setMuted(false);
     };
     window.addEventListener("pointerdown", unmute, { once: true, passive: true });
