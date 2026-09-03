@@ -641,6 +641,8 @@ export const adminListWithdrawals = createServerFn({ method: "GET" }).handler(as
     ...r,
     isAdminPayout: typeof r.admin_note === "string" && r.admin_note.startsWith("[Admin Payout]"),
     signals: r.status === "pending" ? signalsMap.get(r.user_id) ?? null : null,
+    usdtRateBdt,
+    usdtAmount: r.provider === "usdt" ? Number((Number(r.amount) / usdtRateBdt).toFixed(2)) : null,
   }));
 });
 
