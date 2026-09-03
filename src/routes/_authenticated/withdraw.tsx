@@ -15,7 +15,6 @@ import { useLang } from "@/lib/i18n";
 import { withdrawWindowInfo, withdrawCountdownInfo } from "@/lib/withdraw-window";
 import { WithdrawClosedBanner } from "@/components/WithdrawClosedBanner";
 import { WithdrawCountdown } from "@/components/WithdrawCountdown";
-import { adBoostWithdrawInfo } from "@/lib/ad-boost";
 import { getAdBoostStatus } from "@/lib/ads.functions";
 import { WithdrawRejectDetails } from "@/components/WithdrawRejectDetails";
 
@@ -108,13 +107,7 @@ function WithdrawPage() {
 
   const adminWithdrawOff = (data as any)?.payoutSettings?.withdrawEnabled === false;
   const monthlyWindow = withdrawCountdownInfo(now);
-  const boostInfo = adBoostWithdrawInfo({
-    now,
-    nextFirstAt: monthlyWindow.nextFirstAt,
-    isOpen: monthlyWindow.isOpen,
-    boosts: adBoost?.boosts ?? 0,
-  });
-  const withdrawClosed = withdrawWindowInfo(now).isClosed || adminWithdrawOff || !boostInfo.unlocked;
+  const withdrawClosed = withdrawWindowInfo(now).isClosed || adminWithdrawOff || !monthlyWindow.isOpen;
 
   return (
     <div className="space-y-4 pt-2">

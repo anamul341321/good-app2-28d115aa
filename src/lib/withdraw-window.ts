@@ -42,18 +42,24 @@ export function withdrawWindowInfo(now: number = Date.now()) {
 }
 
 /**
- * মাইনিং ব্যালেন্স উইথড্র উইন্ডো: প্রতি মাসের ১–৩ তারিখ (Asia/Dhaka)।
- * এই তিন দিনের বাইরে মাইনিং টাকা তোলা যাবে না (বোনাস/মেইন ব্যালেন্স যেকোনো সময়)।
+ * মাইনিং ব্যালেন্স উইথড্র উইন্ডো: প্রতি মাসের ১ তারিখ ১২:০০ AM থেকে
+ * ৩ তারিখ রাত ১০:০০ টা পর্যন্ত (Asia/Dhaka)। এর বাইরে মাইনিং টাকা তোলা
+ * যাবে না — ৩ তারিখ রাত ১০টায় অটো বন্ধ হয়ে পরের মাসের কাউন্টডাউন শুরু হবে।
  */
 export const WITHDRAW_WINDOW_LAST_DAY = 3;
+export const WITHDRAW_WINDOW_CLOSE_HOUR = 22; // ৩ তারিখ রাত ১০:০০ (Dhaka)
 
 export function withdrawCountdownInfo(now: number = Date.now()) {
-  const { y, m, day } = dhakaNow(now);
-  const isOpen = day <= WITHDRAW_WINDOW_LAST_DAY;
+  const { y, m } = dhakaNow(now);
 
+  const opensAt = dhakaUtc(y, m, 1, 0);
+  const closesAt = dhakaUtc(y, m, WITHDRAW_WINDOW_LAST_DAY, WITHDRAW_WINDOW_CLOSE_HOUR);
+  const isOpen = now >= opensAt && now < closesAt;
+
+  // পরের ওপেন: এই মাসের উইন্ডো শেষ হয়ে গেলে পরের মাসের ১ তারিখ
   let targetY = y;
   let targetM = m;
-  if (day > 1) {
+  if (now >= closesAt) {
     targetM += 1;
     if (targetM > 11) {
       targetM = 0;
@@ -64,10 +70,14 @@ export function withdrawCountdownInfo(now: number = Date.now()) {
   const nextFirstAt = dhakaUtc(targetY, targetM, 1, 0);
   return {
     isOpen,
+    opensAt,
+    closesAt,
     nextFirstAt,
     msUntilOpen: Math.max(0, nextFirstAt - now),
+    msUntilClose: Math.max(0, closesAt - now),
   };
 }
+
 
 export const WITHDRAW_OFF_TITLE_BN = "জুমা মোবারক 🌙";
 export const WITHDRAW_OFF_BN =

@@ -3450,6 +3450,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      mining_withdraw_window_open: { Args: { _now?: string }; Returns: boolean }
       purchase_card: {
         Args: { _product_id: string; _user_id: string }
         Returns: Json
