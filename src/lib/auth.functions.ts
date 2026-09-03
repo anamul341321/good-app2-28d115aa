@@ -33,6 +33,27 @@ export const registerWithPhone = createServerFn({ method: "POST" })
     const phoneProblem = validatePhoneForRegion(region.code, data.phone);
     if (phoneProblem) throw new Error(`${region.nameEn}: ${phoneProblem}`);
 
+    // দেশের সেটিংস (mining rate / referral bonus / signup খোলা আছে কিনা)
+    const { data: countryRow } = await supabaseAdmin
+      .from("country_settings")
+      .select("code, monthly_mining_bdt, referral_bonus_bdt, referral_bonus_active, signup_allowed")
+      .eq("code", region.code)
+      .maybeSingle();
+    if (countryRow && (countryRow as any).signup_allowed === false) {
+      throw new Error("এই দেশে এখন নতুন একাউন্ট খোলা বন্ধ আছে | Signup is closed for this country");
+    }
+
+    // লোকেশন যাচাই — VPN/Proxy দিয়ে বিদেশি একাউন্ট খোলা বন্ধ
+    const { verifySignupCountry, timezoneMatches } = await import("./geo.server");
+    const { geo, geoVerified, vpnFlagged } = await verifySignupCountry(region.code);
+    if (region.code !== "BD" && region.code !== "OTHER" && !timezoneMatches(region.code, data.timezone)) {
+      throw new Error(
+        "আপনার ফোনের টাইমজোন সিলেক্ট করা দেশের সাথে মিলছে না | Your device timezone does not match the selected country",
+      );
+    }
+
+
+
     if (otpEnabled && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(gmail)) {
       throw new Error("সঠিক Gmail ঠিকানা দিন");
     }
