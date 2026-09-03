@@ -132,7 +132,7 @@ const RULES: { title: string; body: string; titleEn: string; bodyEn: string }[] 
   },
 ];
 
-const liteRules = RULES.filter((r) => !isFinancialText(`${r.title} ${r.body} ${r.titleEn} ${r.bodyEn}`));
+const liteRules = liteText(RULES, RULES.filter((r) => !isFinancialText(`${r.title} ${r.body} ${r.titleEn} ${r.bodyEn}`)));
 
 const FAQS: {
   q: string;
@@ -200,7 +200,7 @@ const FAQS: {
   },
 ];
 
-const liteFaqs = FAQS.filter((f) => !isFinancialText(`${f.q} ${f.a} ${f.qEn} ${f.aEn}`));
+const liteFaqs = liteText(FAQS, FAQS.filter((f) => !isFinancialText(`${f.q} ${f.a} ${f.qEn} ${f.aEn}`)));
 
 const toneClass: Record<string, { bg: string; chip: string; ring: string }> = {
   cyan: { bg: "from-cyan/15 to-cyan/5", chip: "bg-cyan", ring: "ring-cyan/40" },
