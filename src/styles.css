@@ -1306,10 +1306,10 @@ body.ads-banner-on nav.fixed.bottom-0 {
 
 /* ওয়েব (Monetag) sandboxed ad স্ট্রিপ — কনটেন্ট/nav যেন ঢাকা না পড়ে */
 body.web-ad-on {
-  padding-bottom: 116px;
+  padding-bottom: 136px;
 }
 body.web-ad-on nav.fixed.bottom-0 {
-  bottom: 116px;
+  bottom: 136px;
 }
 
 /* ---- Coin wallet page animations ---- */
