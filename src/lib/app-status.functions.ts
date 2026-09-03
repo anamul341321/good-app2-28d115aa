@@ -45,7 +45,7 @@ export const getAppStatus = createServerFn({ method: "GET" }).handler(async () =
         ((data as any)?.face_verify_off_message as string | null) || FACE_VERIFY_OFF_DEFAULT,
       signupMessage: ((data as any)?.signup_off_message as string | null) || SIGNUP_OFF_DEFAULT,
       minAppVersion: ((data as any)?.min_app_version as string | null) ?? null,
-      forceUpdate: (data as any)?.force_update_enabled !== false,
+      forceUpdate: (data as any)?.force_update_enabled === true,
       forceUpdateWeb: (data as any)?.force_update_web === true,
       forceUpdateMessage:
         ((data as any)?.force_update_message as string | null) || FORCE_UPDATE_DEFAULT_MESSAGE,

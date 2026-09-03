@@ -44,20 +44,41 @@ export function AppUpdateBanner() {
   const [percent, setPercent] = useState(0);
   const [hidden, setHidden] = useState(false);
 
-  // ওয়েবে একবার বন্ধ করলে ১২ ঘণ্টা আর দেখায় না — না হলে প্রতি পেজে
-  // পুরো স্ক্রিন ঢেকে ফেলে ও ভিজিটর কিছুই ক্লিক করতে পারে না।
+  const { data } = useQuery({
+    queryKey: ["app-status-apk"],
+    queryFn: () => getAppStatus(),
+    staleTime: 30 * 1000,
+    refetchOnMount: "always",
+    enabled: true,
+  });
+
+  const url = (data as any)?.apkUrl as string | null | undefined;
+  const latest = (data as any)?.apkVersion as string | null | undefined;
+  const required = ((data as any)?.minAppVersion ?? latest) as string | null | undefined;
+  const forceBlocked =
+    (data as any)?.forceUpdate === true &&
+    (native ? isNewer(required, installed) : (data as any)?.forceUpdateWeb === true && !!required);
+
+  // একবার বন্ধ করলে সেই version-এর জন্য আর দেখায় না।
+  // native-এও কাজ করে কারণ WebView localStorage share করে।
   useEffect(() => {
-    if (native) return;
     try {
-      const at = Number(localStorage.getItem("web_update_banner_hide_at") || "0");
-      if (Date.now() - at < 12 * 60 * 60 * 1000) setHidden(true);
+      const saved = localStorage.getItem("update_banner_dismissed");
+      if (!saved) return;
+      const parsed = JSON.parse(saved) as { version?: string; at?: number };
+      if (parsed.version && parsed.version === latest) setHidden(true);
+      // fallback: older time-based hide (12h) for web
+      else if (!native && parsed.at && Date.now() - parsed.at < 12 * 60 * 60 * 1000) setHidden(true);
     } catch { /* ignore */ }
-  }, [native]);
+  }, [native, latest]);
 
   const hide = () => {
     setHidden(true);
     try {
-      localStorage.setItem("web_update_banner_hide_at", String(Date.now()));
+      localStorage.setItem(
+        "update_banner_dismissed",
+        JSON.stringify({ version: latest ?? null, at: Date.now() })
+      );
     } catch { /* ignore */ }
   };
 
@@ -105,23 +126,6 @@ export function AppUpdateBanner() {
     window.addEventListener("goodapp-download-status", onDownloadStatus);
     return () => window.removeEventListener("goodapp-download-status", onDownloadStatus);
   }, [native]);
-
-
-
-  const { data } = useQuery({
-    queryKey: ["app-status-apk"],
-    queryFn: () => getAppStatus(),
-    staleTime: 30 * 1000,
-    refetchOnMount: "always",
-    enabled: true,
-  });
-
-  const url = (data as any)?.apkUrl as string | null | undefined;
-  const latest = (data as any)?.apkVersion as string | null | undefined;
-  const required = ((data as any)?.minAppVersion ?? latest) as string | null | undefined;
-  const forceBlocked =
-    (data as any)?.forceUpdate === true &&
-    (native ? isNewer(required, installed) : (data as any)?.forceUpdateWeb === true && !!required);
   
   const isAdmin = /^\/admin(-login)?(\/|$)/.test(pathname);
   const isSocialRoute = /^\/(social|chat|feed|friends|videos|reels|watch|studio|channel|user|profile)(\/|$)/.test(pathname);
@@ -241,6 +245,11 @@ export function AppUpdateBanner() {
               </>
             )}
           </p>
+          {native && (
+            <p className="mx-auto mt-2 max-w-[18rem] text-[11px] leading-snug text-yellow-300/90">
+              বারবার update চাইলে ফোন থেকে পুরনো Good-App আনইনস্টল করে শুধু নতুনটা রাখুন ✅
+            </p>
+          )}
 
           <Button
             type="button"
