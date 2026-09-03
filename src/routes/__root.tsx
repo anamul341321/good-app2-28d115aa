@@ -144,9 +144,23 @@ function RootComponent() {
     const ownNodes = new Set<Element>(Array.from(document.body.children));
     const vignetteZones = ["11713170", "11713348", "11713413"];
 
-    // প্রতি ৪৫ সেকেন্ড পর পর নতুন করে Vignette ad request পাঠাবো —
+    // Session cap: এক session-এ সর্বোচ্চ ২৫ বার Vignette request পাঠাবো —
+    // এতেই প্রতি ইউজার থেকে ২০-৩০ impression-এর কাছাকাছি সম্ভাবনা তৈরি হয়।
+    const SESSION_KEY = "monetag_session_count";
+    let sessionCount = 0;
+    try {
+      sessionCount = Number(sessionStorage.getItem(SESSION_KEY) || "0");
+    } catch { /* ignore */ }
+    const MAX_PER_SESSION = 25;
+
+    // প্রতি ৩০ সেকেন্ড পর পর নতুন করে Vignette ad request পাঠাবো —
     // এতে frequency cap-এর কারণে বন্ধ থাকলে অন্য zone বা নতুন impression আসার সুযোগ বাড়ে।
     const injectVignettes = () => {
+      if (sessionCount >= MAX_PER_SESSION) return;
+      sessionCount += 1;
+      try {
+        sessionStorage.setItem(SESSION_KEY, String(sessionCount));
+      } catch { /* ignore */ }
       document
         .querySelectorAll('script[data-zone^="11713"][src*="n6wxm.com"], script.monetag-rotator')
         .forEach((node) => node.remove());
@@ -161,7 +175,7 @@ function RootComponent() {
     };
 
     injectVignettes();
-    const rotateTimer = window.setInterval(injectVignettes, 45_000);
+    const rotateTimer = window.setInterval(injectVignettes, 30_000);
 
     // Safety net: if any leftover small fixed ad box shows up, hide it instead of
     // letting it cover the top of the screen.
