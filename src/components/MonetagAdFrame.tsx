@@ -12,12 +12,16 @@ export function MonetagAdFrame({
   height = 100,
   className = "",
   label = true,
+  rotateMs = 35_000,
 }: {
   height?: number;
   className?: string;
   label?: boolean;
+  /** কত সেকেন্ড পরপর নতুন অ্যাড লোড হবে (0 দিলে rotate বন্ধ) */
+  rotateMs?: number;
 }) {
   const [ready, setReady] = useState(false);
+  const [tick, setTick] = useState(0);
 
   useEffect(() => {
     const cap = (window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor;
@@ -25,6 +29,16 @@ export function MonetagAdFrame({
     if (cap?.isNativePlatform?.()) return;
     setReady(true);
   }, []);
+
+  // প্রতি rotateMs পর iframe নতুন করে লোড হয় → নতুন অ্যাড (impression বাড়ে)।
+  // ট্যাব লুকানো থাকলে rotate হয় না, যাতে invalid impression না গোনে।
+  useEffect(() => {
+    if (!ready || !rotateMs) return;
+    const id = window.setInterval(() => {
+      if (document.visibilityState === "visible") setTick((t) => t + 1);
+    }, rotateMs);
+    return () => window.clearInterval(id);
+  }, [ready, rotateMs]);
 
   if (!ready) return null;
 
