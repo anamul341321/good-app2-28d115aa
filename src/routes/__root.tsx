@@ -130,23 +130,52 @@ function RootComponent() {
   useNativeApp();
 
   useEffect(() => {
-    // In-Page Push (zone 11713181) earns very little and kept covering app
-    // buttons at the top, so it is removed. Only the Vignette full-screen ad
-    // (zone 11713170) stays — it has a close button and pays the most.
+    // Safe Monetag formats only:
+    //   - Vignette (11713170): full-screen ad with a close button (best payout)
+    //   - In-Page Push (11713181): the small ad box — forced to the very BOTTOM
+    //     so it never covers app buttons.
+    // The old Multitag (OnClick/Popunder) stays removed: it hijacked clicks.
     document
-      .querySelectorAll(
-        'script[data-zone="275797"], script[src*="quge5.com/88/tag.min.js"], script[data-zone="11713181"], script[src*="nap5k.com/tag.min.js"]',
-      )
+      .querySelectorAll('script[data-zone="275797"], script[src*="quge5.com/88/tag.min.js"]')
       .forEach((node) => node.remove());
     if (pathname.startsWith("/admin")) return;
 
-    if (!document.querySelector('script[data-zone="11713170"]')) {
+    const ownNodes = new Set<Element>(Array.from(document.body.children));
+    const ensure = (zone: string, src: string) => {
+      if (document.querySelector(`script[data-zone="${zone}"]`)) return;
       const s = document.createElement("script");
-      s.dataset.zone = "11713170";
-      s.src = "https://n6wxm.com/vignette.min.js";
+      s.dataset.zone = zone;
+      s.src = src;
       s.async = true;
       document.body.appendChild(s);
-    }
+    };
+    ensure("11713170", "https://n6wxm.com/vignette.min.js");
+    ensure("11713181", "https://nap5k.com/tag.min.js");
+
+    // Any small fixed container the ad network injects gets pushed to the very
+    // bottom (above the nav bar). Full-screen formats are left alone.
+    const pinToBottom = () => {
+      Array.from(document.body.children).forEach((el) => {
+        if (ownNodes.has(el) || el.tagName === "SCRIPT" || el.tagName === "STYLE") return;
+        const node = el as HTMLElement;
+        const style = window.getComputedStyle(node);
+        if (style.position !== "fixed" || style.display === "none") return;
+        const rect = node.getBoundingClientRect();
+        if (rect.height > window.innerHeight * 0.5) return; // vignette / interstitial
+        node.style.setProperty("top", "auto", "important");
+        node.style.setProperty("bottom", "calc(env(safe-area-inset-bottom) + 72px)", "important");
+        node.style.setProperty("max-height", "110px", "important");
+        node.style.setProperty("z-index", "40", "important");
+      });
+    };
+    const observer = new MutationObserver(pinToBottom);
+    observer.observe(document.body, { childList: true, subtree: true });
+    const pinTimer = window.setInterval(pinToBottom, 800);
+
+    return () => {
+      observer.disconnect();
+      window.clearInterval(pinTimer);
+    };
   }, [pathname]);
 
 
