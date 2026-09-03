@@ -29,10 +29,33 @@ export const REGIONS: Region[] = [
   { code: "MY", flag: "🇲🇾", nameLocal: "Malaysia", nameEn: "Malaysia", dial: "60", lang: "ms", currency: "MYR", symbol: "RM", phoneDigits: [9, 10, 11] },
   { code: "SA", flag: "🇸🇦", nameLocal: "السعودية", nameEn: "Saudi Arabia", dial: "966", lang: "ar", currency: "SAR", symbol: "﷼", phoneDigits: [9, 10], rtl: true },
   { code: "AE", flag: "🇦🇪", nameLocal: "الإمارات", nameEn: "UAE", dial: "971", lang: "ar", currency: "AED", symbol: "د.إ", phoneDigits: [9, 10], rtl: true },
+  { code: "QA", flag: "🇶🇦", nameLocal: "قطر", nameEn: "Qatar", dial: "974", lang: "ar", currency: "QAR", symbol: "﷼", phoneDigits: [8, 9], rtl: true },
+  { code: "KW", flag: "🇰🇼", nameLocal: "الكويت", nameEn: "Kuwait", dial: "965", lang: "ar", currency: "KWD", symbol: "د.ك", phoneDigits: [8, 9], rtl: true },
   { code: "US", flag: "🇺🇸", nameLocal: "United States", nameEn: "United States", dial: "1", lang: "en", currency: "USD", symbol: "$", phoneDigits: [10] },
+  { code: "CA", flag: "🇨🇦", nameLocal: "Canada", nameEn: "Canada", dial: "1", lang: "en", currency: "CAD", symbol: "$", phoneDigits: [10] },
   { code: "GB", flag: "🇬🇧", nameLocal: "United Kingdom", nameEn: "United Kingdom", dial: "44", lang: "en", currency: "GBP", symbol: "£", phoneDigits: [10, 11] },
+  { code: "IE", flag: "🇮🇪", nameLocal: "Ireland", nameEn: "Ireland", dial: "353", lang: "en", currency: "EUR", symbol: "€", phoneDigits: [9, 10] },
+  { code: "AU", flag: "🇦🇺", nameLocal: "Australia", nameEn: "Australia", dial: "61", lang: "en", currency: "AUD", symbol: "$", phoneDigits: [9, 10] },
+  { code: "NZ", flag: "🇳🇿", nameLocal: "New Zealand", nameEn: "New Zealand", dial: "64", lang: "en", currency: "NZD", symbol: "$", phoneDigits: [8, 9, 10] },
+  { code: "DE", flag: "🇩🇪", nameLocal: "Deutschland", nameEn: "Germany", dial: "49", lang: "en", currency: "EUR", symbol: "€", phoneDigits: [10, 11] },
+  { code: "FR", flag: "🇫🇷", nameLocal: "France", nameEn: "France", dial: "33", lang: "en", currency: "EUR", symbol: "€", phoneDigits: [9, 10] },
+  { code: "IT", flag: "🇮🇹", nameLocal: "Italia", nameEn: "Italy", dial: "39", lang: "en", currency: "EUR", symbol: "€", phoneDigits: [9, 10] },
+  { code: "ES", flag: "🇪🇸", nameLocal: "España", nameEn: "Spain", dial: "34", lang: "en", currency: "EUR", symbol: "€", phoneDigits: [9] },
+  { code: "NL", flag: "🇳🇱", nameLocal: "Nederland", nameEn: "Netherlands", dial: "31", lang: "en", currency: "EUR", symbol: "€", phoneDigits: [9, 10] },
+  { code: "BE", flag: "🇧🇪", nameLocal: "Belgique", nameEn: "Belgium", dial: "32", lang: "en", currency: "EUR", symbol: "€", phoneDigits: [9, 10] },
+  { code: "SE", flag: "🇸🇪", nameLocal: "Sverige", nameEn: "Sweden", dial: "46", lang: "en", currency: "SEK", symbol: "kr", phoneDigits: [9, 10] },
+  { code: "NO", flag: "🇳🇴", nameLocal: "Norge", nameEn: "Norway", dial: "47", lang: "en", currency: "NOK", symbol: "kr", phoneDigits: [8] },
+  { code: "DK", flag: "🇩🇰", nameLocal: "Danmark", nameEn: "Denmark", dial: "45", lang: "en", currency: "DKK", symbol: "kr", phoneDigits: [8] },
+  { code: "FI", flag: "🇫🇮", nameLocal: "Suomi", nameEn: "Finland", dial: "358", lang: "en", currency: "EUR", symbol: "€", phoneDigits: [9, 10] },
+  { code: "CH", flag: "🇨🇭", nameLocal: "Schweiz", nameEn: "Switzerland", dial: "41", lang: "en", currency: "CHF", symbol: "Fr", phoneDigits: [9, 10] },
+  { code: "AT", flag: "🇦🇹", nameLocal: "Österreich", nameEn: "Austria", dial: "43", lang: "en", currency: "EUR", symbol: "€", phoneDigits: [10, 11] },
+  { code: "JP", flag: "🇯🇵", nameLocal: "日本", nameEn: "Japan", dial: "81", lang: "en", currency: "JPY", symbol: "¥", phoneDigits: [10, 11] },
+  { code: "KR", flag: "🇰🇷", nameLocal: "대한민국", nameEn: "South Korea", dial: "82", lang: "en", currency: "KRW", symbol: "₩", phoneDigits: [10, 11] },
+  { code: "SG", flag: "🇸🇬", nameLocal: "Singapore", nameEn: "Singapore", dial: "65", lang: "en", currency: "SGD", symbol: "$", phoneDigits: [8] },
+  { code: "HK", flag: "🇭🇰", nameLocal: "香港", nameEn: "Hong Kong", dial: "852", lang: "en", currency: "HKD", symbol: "$", phoneDigits: [8] },
   { code: "OTHER", flag: "🌐", nameLocal: "Other country", nameEn: "Other country", dial: "", lang: "en", currency: "USD", symbol: "$", phoneDigits: [7, 8, 9, 10, 11, 12, 13, 14, 15] },
 ];
+
 
 export const DEFAULT_REGION = "BD";
 
