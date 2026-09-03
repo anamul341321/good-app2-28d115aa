@@ -21,6 +21,7 @@ import { LanguageProvider } from "@/lib/i18n";
 import { useNativeApp } from "@/hooks/useNativeApp";
 import { NativeAdsController } from "@/components/NativeAdsController";
 import { MonetagAdFrame } from "@/components/MonetagAdFrame";
+import { AdBoxOverlay } from "@/components/AdBoxOverlay";
 
 function NotFoundComponent() {
   return (
