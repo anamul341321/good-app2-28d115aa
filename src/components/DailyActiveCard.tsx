@@ -1,5 +1,5 @@
 import { Clock, CheckCircle2, Flame, ShieldCheck } from "lucide-react";
-import { DAILY_ACTIVE_REQUIRED, formatActiveTime, useActivityToday } from "@/hooks/useActivityTracker";
+import { formatActiveTime, useLiveActiveSeconds } from "@/hooks/useActivityTracker";
 
 /**
  * ডেইলি অ্যাক্টিভ টাইম কার্ড — মাইনিং কার্ডের নিচে বসে।
