@@ -90,10 +90,16 @@ const REPLACEMENTS: Array<[RegExp, string]> = [
   [/recharges|recharge|রিচার্জ/gi, "top-up"],
   [/send money|সেন্ড মানি|পয়েন্ট পাঠান/gi, "transfer"],
   [/payouts|payout|payments|payment|পেমেন্ট/gi, "reward"],
-  [/\bUSDT\b|\bBDT\b/g, "points"],
+  [/\bUSDT\b|\bBDT\b|\bTaka\b|\bCelo\b/gi, "points"],
+  // Other languages used by the region translations.
+  [/निकासी|निकाल्नु|पैसे निकालें/g, "रिडीम"],
+  [/رقم نکالیں|سحب|انسحاب/g, "ریڈیم"],
+  [/Tarik keluar|Penarikan|Retiro|Retrait|Saque/gi, "Redeem"],
+  [/Isi ulang|Recarga|Recharger/gi, "Top-up"],
 ];
 
-const SKIP_LITERAL = /^[\w./$:@#-]*$/; // identifiers, paths, urls, keys
+// Paths, urls, css/class strings, snake_case keys and empty strings are left alone.
+const SKIP_LITERAL = /^$|[/_.:@#]/;
 
 const scrubLiteralText = (text: string) => {
   if (SKIP_LITERAL.test(text)) return text;
