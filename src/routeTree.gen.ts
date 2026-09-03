@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TermsRouteImport } from './routes/terms'
+import { Route as RulesRouteImport } from './routes/rules'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as EarnRouteImport } from './routes/earn'
 import { Route as DownloadRouteImport } from './routes/download'
@@ -95,6 +96,11 @@ import { Route as AuthenticatedChatGroupGroupIdRouteImport } from './routes/_aut
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
   path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RulesRoute = RulesRouteImport.update({
+  id: '/rules',
+  path: '/rules',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrivacyRoute = PrivacyRouteImport.update({
@@ -523,6 +529,7 @@ export interface FileRoutesByFullPath {
   '/download': typeof DownloadRoute
   '/earn': typeof EarnRoute
   '/privacy': typeof PrivacyRoute
+  '/rules': typeof RulesRoute
   '/terms': typeof TermsRoute
   '/coins': typeof AuthenticatedCoinsRoute
   '/earnings': typeof AuthenticatedEarningsRoute
@@ -605,6 +612,7 @@ export interface FileRoutesByTo {
   '/download': typeof DownloadRoute
   '/earn': typeof EarnRoute
   '/privacy': typeof PrivacyRoute
+  '/rules': typeof RulesRoute
   '/terms': typeof TermsRoute
   '/coins': typeof AuthenticatedCoinsRoute
   '/earnings': typeof AuthenticatedEarningsRoute
@@ -689,6 +697,7 @@ export interface FileRoutesById {
   '/download': typeof DownloadRoute
   '/earn': typeof EarnRoute
   '/privacy': typeof PrivacyRoute
+  '/rules': typeof RulesRoute
   '/terms': typeof TermsRoute
   '/_authenticated/coins': typeof AuthenticatedCoinsRoute
   '/_authenticated/earnings': typeof AuthenticatedEarningsRoute
@@ -774,6 +783,7 @@ export interface FileRouteTypes {
     | '/download'
     | '/earn'
     | '/privacy'
+    | '/rules'
     | '/terms'
     | '/coins'
     | '/earnings'
@@ -856,6 +866,7 @@ export interface FileRouteTypes {
     | '/download'
     | '/earn'
     | '/privacy'
+    | '/rules'
     | '/terms'
     | '/coins'
     | '/earnings'
@@ -939,6 +950,7 @@ export interface FileRouteTypes {
     | '/download'
     | '/earn'
     | '/privacy'
+    | '/rules'
     | '/terms'
     | '/_authenticated/coins'
     | '/_authenticated/earnings'
@@ -1024,6 +1036,7 @@ export interface RootRouteChildren {
   DownloadRoute: typeof DownloadRoute
   EarnRoute: typeof EarnRoute
   PrivacyRoute: typeof PrivacyRoute
+  RulesRoute: typeof RulesRoute
   TermsRoute: typeof TermsRoute
   ApiTiktokFeedRoute: typeof ApiTiktokFeedRoute
   ApiYoutubeSearchRoute: typeof ApiYoutubeSearchRoute
@@ -1057,6 +1070,13 @@ declare module '@tanstack/react-router' {
       path: '/terms'
       fullPath: '/terms'
       preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rules': {
+      id: '/rules'
+      path: '/rules'
+      fullPath: '/rules'
+      preLoaderRoute: typeof RulesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/privacy': {
@@ -1761,6 +1781,7 @@ const rootRouteChildren: RootRouteChildren = {
   DownloadRoute: DownloadRoute,
   EarnRoute: EarnRoute,
   PrivacyRoute: PrivacyRoute,
+  RulesRoute: RulesRoute,
   TermsRoute: TermsRoute,
   ApiTiktokFeedRoute: ApiTiktokFeedRoute,
   ApiYoutubeSearchRoute: ApiYoutubeSearchRoute,
