@@ -8,7 +8,7 @@ export const Route = createFileRoute("/rules")({
   head: () => ({
     meta: [
       { title: "App Rules & How It Works | Good-App" },
-      { name: "description", content: "Simple rules of Good-App: face verification, mining, daily active time, referral, withdraw window and account safety — in your own language." },
+      { name: "description", content: "Simple rules of Good-App: face verification, mining, referral, withdraw window and account safety — in your own language." },
       { property: "og:title", content: "App Rules & How It Works | Good-App" },
       { property: "og:description", content: "Read Good-App rules in simple words: verification, mining, withdraw and safety." },
       { property: "og:type", content: "article" },
@@ -34,10 +34,9 @@ function RulesPage() {
     },
     {
       icon: Coins,
-      title: t("২. মাইনিং ও দৈনিক ১ ঘণ্টা", "2. Mining & the daily 1 hour"),
+      title: t("২. মাইনিং", "2. Mining"),
       points: [
         t("১০টি স্লট ভেরিফাই হলে মাইনিং চালু হয়।", "Mining starts once your 10 slots are verified."),
-        t("প্রতিদিন অ্যাপের ভেতরে কমপক্ষে ১ ঘণ্টা সক্রিয় থাকতে হবে — ফোন ফেলে রাখলে সময় গোনা হয় না।", "You must stay active inside the app for at least 1 hour a day — idle time is not counted."),
         t("মাইনিং ব্যালান্স প্রতিদিন ক্লেইম করতে হবে, নাহলে ব্যালান্স হারাতে পারেন।", "Claim your mining balance daily, otherwise you may lose it."),
         t("স্লটের whitelist বাতিল হলে ওই স্লটের রিওয়ার্ড ফিরে যেতে পারে।", "If a slot loses whitelist, its reward can be reversed."),
       ],

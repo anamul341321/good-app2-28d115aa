@@ -5,7 +5,6 @@ import { toast } from "sonner";
 import { computeLiveBalance, monthlyRate, MONTHLY_PER_SLOT } from "@/lib/mining";
 import { claimMiningToMain, claimAllSlotMining } from "@/lib/earnings.functions";
 import { Wallet, Sparkles, Gift, Loader2, Pickaxe, Eye, ChevronDown, ChevronUp, AlertTriangle } from "lucide-react";
-import { formatActiveTime, useLiveActiveSeconds } from "@/hooks/useActivityTracker";
 import { Button } from "@/components/ui/button";
 
 /** Decorative layers never change — memoised so the 1s balance tick doesn't repaint them. */
@@ -207,10 +206,7 @@ export function MiningCounter({
   const perDay = ratePerMonth / 30;
 
   // আজকের অ্যাক্টিভ সময় — ১ ঘণ্টা পূরণ হলেই ক্লেইম বাটন উজ্জ্বল হবে
-  const { seconds: activeSeconds, required: activeRequired } = useLiveActiveSeconds();
-  const activeDone = activeSeconds >= activeRequired;
-  const activeLeft = Math.max(0, activeRequired - activeSeconds);
-  const canClaimNow = activeDone && selfMiningClaimable >= 0.5;
+  const canClaimNow = selfMiningClaimable >= 0.5;
 
   return (
     <div className="mc-premium relative rounded-[24px] p-4 overflow-hidden" style={{ contain: "paint" }}>
@@ -364,7 +360,7 @@ export function MiningCounter({
         </p>
         </>)}
 
-        {/* ⛏️ মেইন ক্লেইম বাটন — সবসময় দেখা যাবে। ১ ঘণ্টা অ্যাক্টিভ হলেই উজ্জ্বল হয়ে ক্লেইম করতে বলবে */}
+        {/* ⛏️ মেইন ক্লেইম বাটন */}
         <Button
           disabled={!canClaimNow || claimAll.isPending}
           onClick={() => claimAll.mutate()}
@@ -377,28 +373,24 @@ export function MiningCounter({
           {claimAll.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Pickaxe className="w-4 h-4" />}
           {canClaimNow
             ? `⚡ এখনই ${selfMiningClaimable.toFixed(2)}৳ মাইনিং ক্লেইম করুন`
-            : !activeDone
-              ? `⏳ আজ আর ${formatActiveTime(activeLeft)} অ্যাক্টিভ থাকলেই ক্লেইম খুলবে`
-              : selfMiningReverifyLocked >= 0.5
+            : selfMiningReverifyLocked >= 0.5
                 ? `🔒 ${selfMiningReverifyLocked.toFixed(2)}৳ লক — ঘরগুলো Re-verify করলেই খুলবে`
                 : "আজকের মাইনিং জমা হলেই এখান থেকে ক্লেইম করুন"}
         </Button>
 
         {/* 🤝 রেফার কমিশন ক্লেইম */}
         <Button
-          disabled={referralMiningAvailable < 0.5 || !activeDone || claim.isPending}
+          disabled={referralMiningAvailable < 0.5 || claim.isPending}
           onClick={() => claim.mutate()}
           className={`mt-2 h-auto w-full rounded-2xl py-2.5 text-[12.5px] font-black btn-press border whitespace-normal leading-snug ${
-            referralMiningAvailable >= 0.5 && activeDone
+            referralMiningAvailable >= 0.5
               ? "bg-gradient-to-r from-emerald-400 to-teal-500 text-emerald-950 border-white/40 shadow-lg"
               : "bg-white/10 text-white/60 border-white/20"
           }`}
         >
           {claim.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Gift className="w-4 h-4" />}
           {referralMiningAvailable >= 0.5
-            ? activeDone
-              ? `রেফার ১০% কমিশন ${referralMiningAvailable.toFixed(2)}৳ ক্লেইম করুন`
-              : `⏳ ১ ঘণ্টা অ্যাক্টিভ হলেই ${referralMiningAvailable.toFixed(2)}৳ কমিশন ক্লেইম`
+            ? `রেফার ১০% কমিশন ${referralMiningAvailable.toFixed(2)}৳ ক্লেইম করুন`
             : "রেফার ১০% কমিশন জমা হলে এখানে ক্লেইম করুন"}
         </Button>
 
@@ -408,7 +400,7 @@ export function MiningCounter({
           <p className="text-[11px] font-bold leading-relaxed text-white">
             <span className="font-black text-rose-100">জরুরি সতর্কতা:</span> প্রতিদিনের মাইনিং{" "}
             <b>প্রতিদিনই ক্লেইম</b> করে মেইন ব্যালেন্সে নিতে হবে। ক্লেইম না করে ফেলে রাখলে জমা মাইনিং{" "}
-            <b>হারিয়ে যেতে পারে</b> — তাই ১ ঘণ্টা অ্যাক্টিভ পূরণ করে রোজ ক্লেইম করুন।
+            <b>হারিয়ে যেতে পারে</b> — তাই রোজ ক্লেইম করুন।
           </p>
         </div>
 

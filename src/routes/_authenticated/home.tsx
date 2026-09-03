@@ -6,7 +6,6 @@ import { addMoreSlots, batchSubmitPending } from "@/lib/tasks.functions";
 import { claimVoucher } from "@/lib/vouchers.functions";
 import { getLeaderboards } from "@/lib/leaderboard.functions";
 import { MiningCounter } from "@/components/MiningCounter";
-import { DailyActiveCard } from "@/components/DailyActiveCard";
 import bonusGirl from "@/assets/bonus-girl.png";
 import { CheckCircle2, Camera, Lock, Sparkles, Loader2, X, Plus, Crown, Users, User, ShieldCheck, BadgeCheck, ChevronDown, Gift, RefreshCcw, MessageCircle, ChevronRight, Newspaper, Coins } from "lucide-react";
 import { PageVoice } from "@/components/PageVoice";
@@ -310,7 +309,6 @@ function HomePage() {
       />
 
       {/* ডেইলি ১ ঘণ্টা অ্যাক্টিভ থাকার নোটিশ + লাইভ কাউন্টার (মাইনিং কার্ডের নিচে) */}
-      <DailyActiveCard />
 
       {/* দেশভিত্তিক রেট + রেফার বোনাস এন্ট্রি */}
       <RatesEntryCard />
