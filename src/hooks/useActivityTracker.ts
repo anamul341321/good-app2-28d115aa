@@ -19,6 +19,7 @@ let listenersBound = false;
 const recentGaps: number[] = [];
 let lastEventAt = 0;
 let roboticUntil = 0;
+let roboticWarnedAt = 0;
 
 function markInteraction() {
   const now = Date.now();
@@ -30,7 +31,21 @@ function markInteraction() {
       if (recentGaps.length === 8) {
         const avg = recentGaps.reduce((a, b) => a + b, 0) / recentGaps.length;
         const uniform = recentGaps.every((g) => Math.abs(g - avg) < 80);
-        if (uniform) roboticUntil = now + 5 * 60_000;
+        if (uniform) {
+          roboticUntil = now + 5 * 60_000;
+          recentGaps.length = 0;
+          // user-কে জানিয়ে দেই যে auto-clicker ধরা পড়েছে, সময় গোনা বন্ধ
+          if (now - roboticWarnedAt > 10 * 60_000) {
+            roboticWarnedAt = now;
+            void import("sonner").then(({ toast }) =>
+              toast.warning("⚠️ অটো-ক্লিকার ধরা পড়েছে", {
+                description:
+                  "নিজে স্ক্রল/ট্যাপ করলেই অ্যাক্টিভ সময় গোনা হবে। মেশিন দিয়ে scroll করলে ১ ঘণ্টা পূরণ হবে না।",
+                duration: 8_000,
+              }),
+            );
+          }
+        }
       }
     }
   }
