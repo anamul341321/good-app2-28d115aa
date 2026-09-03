@@ -207,9 +207,7 @@ export function MiningCounter({
   const perDay = ratePerMonth / 30;
 
   // আজকের অ্যাক্টিভ সময় — ১ ঘণ্টা পূরণ হলেই ক্লেইম বাটন উজ্জ্বল হবে
-  const { data: activity } = useActivityToday();
-  const activeSeconds = activity?.seconds ?? 0;
-  const activeRequired = activity?.required ?? DAILY_ACTIVE_REQUIRED;
+  const { seconds: activeSeconds, required: activeRequired } = useLiveActiveSeconds();
   const activeDone = activeSeconds >= activeRequired;
   const activeLeft = Math.max(0, activeRequired - activeSeconds);
   const canClaimNow = activeDone && selfMiningClaimable >= 0.5;
