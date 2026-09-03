@@ -7,11 +7,14 @@ import { Wallet, ShieldCheck, Loader2, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { PageVoice } from "@/components/PageVoice";
 import { useLang } from "@/lib/i18n";
+import { isLiteBuild } from "@/lib/lite-build";
+import { LiteFeatureBlock } from "@/components/LiteFeatureBlock";
 
 
 export const Route = createFileRoute("/_authenticated/wallet")({ component: WalletPage });
 
 function WalletPage() {
+  if (isLiteBuild()) return <LiteFeatureBlock title="ওয়ালেট" />;
   const { data, isLoading, refetch } = useQuery({ queryKey: ["dashboard"], queryFn: () => getDashboard() });
   const { t } = useLang();
 

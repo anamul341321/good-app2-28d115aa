@@ -3,6 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { getMyHistory } from "@/lib/history.functions";
 import { useLang } from "@/lib/i18n";
+import { isLiteBuild } from "@/lib/lite-build";
+import { LiteFeatureBlock } from "@/components/LiteFeatureBlock";
 import {
   ArrowLeft, Smartphone, Ticket, ArrowDownToLine, Send, ArrowDownLeft,
   CheckCircle2, XCircle, Loader2, History as HistoryIcon, Copy,
@@ -40,6 +42,7 @@ const TABS = [
 ];
 
 function HistoryPage() {
+  if (isLiteBuild()) return <LiteFeatureBlock title="লেনদেনের ইতিহাস" />;
   const { t } = useLang();
   const router = useRouter();
   const [tab, setTab] = useState("all");

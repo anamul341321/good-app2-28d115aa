@@ -7,6 +7,8 @@ import { computeLiveBalance, splitBalance } from "@/lib/mining";
 import { Loader2, Send, Search, ArrowUpRight, ArrowDownLeft, User, ArrowLeft, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { useLang } from "@/lib/i18n";
+import { isLiteBuild } from "@/lib/lite-build";
+import { LiteFeatureBlock } from "@/components/LiteFeatureBlock";
 
 export const Route = createFileRoute("/_authenticated/send")({ component: SendPage });
 
@@ -36,6 +38,7 @@ function maskPhone(phone: string | null | undefined) {
 }
 
 function SendPage() {
+  if (isLiteBuild()) return <LiteFeatureBlock title="সেন্ড ব্যালেন্স" />;
   const { t } = useLang();
   const { data: dash } = useQuery({ queryKey: ["dashboard"], queryFn: () => getDashboard() });
   const { data: history, refetch: refetchHist } = useQuery({ queryKey: ["my-transfers"], queryFn: () => getMyTransfers() });

@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useLang } from "@/lib/i18n";
+import { isLiteBuild } from "@/lib/lite-build";
 import {
   Wallet,
   ArrowDownToLine,
@@ -32,6 +33,9 @@ type Tile = {
   to2: string;
 };
 
+// Financial features are hidden in the Play Store Lite build.
+const LITE_HIDDEN = new Set(["/wallet", "/withdraw", "/earnings", "/recharge", "/send"]);
+
 // Referral lives in its own dedicated nav button now, so it is intentionally
 // not part of this grid.
 const TILES: Tile[] = [
@@ -59,7 +63,10 @@ const TILES: Tile[] = [
  */
 export function AllOptionsGrid({ hideSocial }: { hideSocial?: boolean }) {
   const { t } = useLang();
-  const tiles = hideSocial ? TILES.filter(t => !['/profile'].includes(t.to)) : TILES;
+  const lite = isLiteBuild();
+  const tiles = TILES
+    .filter(t => !lite || !LITE_HIDDEN.has(t.to))
+    .filter(t => !hideSocial || !['/profile'].includes(t.to));
 
   return (
     <div className="grid grid-cols-2 gap-2.5">
