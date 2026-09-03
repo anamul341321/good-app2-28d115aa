@@ -735,6 +735,7 @@ function LocalReel({
   const toggleMute = (event?: React.MouseEvent<HTMLButtonElement>) => {
     event?.stopPropagation();
     const nextMuted = !muted;
+    soundState.autoMuted = false;
     setMuted(nextMuted);
     const el = videoRef.current;
     if (!el) return;
