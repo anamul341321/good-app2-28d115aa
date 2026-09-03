@@ -34,7 +34,7 @@ function RulesPage() {
     },
     {
       icon: Coins,
-      title: t("২. মাইনিং ও দৈনিক ১ ঘণ্টা", "2. Mining & the daily 1 hour"),
+      title: t("২. মাইনিং", "2. Mining"),
       points: [
         t("১০টি স্লট ভেরিফাই হলে মাইনিং চালু হয়।", "Mining starts once your 10 slots are verified."),
         t("মাইনিং ব্যালান্স প্রতিদিন ক্লেইম করতে হবে, নাহলে ব্যালান্স হারাতে পারেন।", "Claim your mining balance daily, otherwise you may lose it."),
