@@ -1,4 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { isLiteBuild } from "@/lib/lite-build";
 import { useEffect, useState } from "react";
 import {
   Download,
@@ -35,6 +36,9 @@ export const Route = createFileRoute("/download")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
+  loader: () => {
+    if (isLiteBuild()) throw redirect({ to: "/home" });
+  },
   component: DownloadPage,
 });
 
