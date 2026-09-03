@@ -144,7 +144,7 @@ function RootComponent() {
     const ownNodes = new Set<Element>(Array.from(document.body.children));
     const vignetteZones = ["11713170", "11713348", "11713413"];
 
-    // প্রতি ৭৫ সেকেন্ড পর পর নতুন করে Vignette ad request পাঠাবো —
+    // প্রতি ৪৫ সেকেন্ড পর পর নতুন করে Vignette ad request পাঠাবো —
     // এতে frequency cap-এর কারণে বন্ধ থাকলে অন্য zone বা নতুন impression আসার সুযোগ বাড়ে।
     const injectVignettes = () => {
       document
