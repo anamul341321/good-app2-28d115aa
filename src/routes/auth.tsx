@@ -74,90 +74,124 @@ function isAuthBannedError(error: any): boolean {
   );
 }
 
-const RULES: { title: string; body: string }[] = [
+const RULES: { title: string; body: string; titleEn: string; bodyEn: string }[] = [
   {
     title: "১ নম্বর = ১ একাউন্ট",
     body: "একটি মোবাইল নম্বর দিয়ে শুধু একটি একাউন্ট খোলা যাবে। ডুপ্লিকেট পেলে ব্যান।",
+    titleEn: "One number = one account",
+    bodyEn: "One mobile number can open only one account. Duplicates are banned.",
   },
   {
     title: "আসল মুখ দিয়েই ভেরিফাই",
     body: "নিজের আসল মুখ দিয়ে ফেস ভেরিফিকেশন করতে হবে। অন্যের ছবি বা ফেক ফেস দিলে একাউন্ট স্থায়ীভাবে বাতিল।",
+    titleEn: "Verify with your real face",
+    bodyEn: "Face verification must use your own real face. Someone else's photo or a fake face permanently cancels the account.",
   },
   {
     title: "১০টি টাস্ক = মাসিক রিওয়ার্ড",
     body: "১০টি স্লট সম্পূর্ণ ভেরিফাই হলে মাসিক হারে লাইভ রিওয়ার্ড সুবিধা চালু হবে। প্রদর্শিত হার আনুমানিক এবং অ্যাপের নিয়ম ও তহবিলের উপর নির্ভরশীল।",
+    titleEn: "10 tasks = monthly reward",
+    bodyEn: "When all 10 slots are fully verified, the live monthly reward starts. The shown rate is approximate and depends on app rules and funding.",
   },
   {
     title: "বোনাস শুধু প্রথম ১০টি স্লটে",
     body: "ফার্স্ট ভেরিফাই বোনাস ও রি-ভেরিফাই বোনাস শুধু প্রথম ১০টি স্লট (স্লট ১–১০) সম্পন্ন করলেই পাওয়া যায়। ১১, ১২, ১৩ … বাড়তি স্লট রি-ভেরিফাই করলে বোনাস হিসাবে ধরা হবে না — বাড়তি স্লটে শুধু মাসিক মাইনিং বাড়ে। নিয়ম এড়িয়ে বোনাস নেওয়ার চেষ্টা করলে হিসাব যাচাইয়ের জন্য ব্যালেন্স সাময়িকভাবে freeze করা হবে।",
+    titleEn: "Bonus only on the first 10 slots",
+    bodyEn: "First-verify and re-verify bonuses apply only to slots 1–10. Extra slots (11, 12, 13 …) do not count as bonus — they only increase monthly mining. Trying to bypass this temporarily freezes the balance for review.",
   },
   {
     title: "Whitelist হারালেই রি-ভেরিফাই",
     body: "সাধারণত ৪–৫ দিনের মধ্যে লাগতে পারে, তবে শুধু Good-App whitelist বাতিল করলেই অ্যাপ রি-ভেরিফাই চাইবে। Whitelist ঠিক থাকলে কিছু করতে হবে না।",
+    titleEn: "Re-verify only if whitelist is lost",
+    bodyEn: "It may take 4–5 days, but the app asks for re-verify only when Good-App cancels the whitelist. If the whitelist is fine, you do nothing.",
   },
   {
     title: "উইথড্র নিয়ম",
     body: "ন্যূনতম ৫০৳ থেকে বিকাশ / নগদে উইথড্র। ওয়ালেট নম্বর একবার সেট করার পর আর পরিবর্তন করা যাবে না।",
+    titleEn: "Withdraw rules",
+    bodyEn: "Withdraw from 50৳ minimum. Once the wallet number is set it cannot be changed.",
   },
   {
     title: "মিথ্যা তথ্য নিষিদ্ধ",
     body: "ভুল নাম, ভুল নম্বর বা অন্যের পরিচয় দিলে একাউন্ট সাসপেন্ড ও পেমেন্ট আটকে দেওয়া হবে।",
+    titleEn: "False information is banned",
+    bodyEn: "A wrong name, wrong number or someone else's identity suspends the account and holds payments.",
   },
   {
     title: "কোনো গ্যারান্টিড ইনকাম নয়",
     body: "Good-App কোনো বিনিয়োগ, চাকরি বা গ্যারান্টিড আয়ের প্রতিশ্রুতি দেয় না। রিওয়ার্ড পেতে হলে সব নিয়ম মেনে চলতে হবে।",
+    titleEn: "No guaranteed income",
+    bodyEn: "Good-App promises no investment, job or guaranteed income. All rules must be followed to receive rewards.",
   },
   {
     title: "অ্যাডমিনের সিদ্ধান্তই চূড়ান্ত",
     body: "যেকোনো বিতর্কিত বিষয়ে অ্যাডমিনের সিদ্ধান্তই চূড়ান্ত বলে গণ্য হবে।",
+    titleEn: "Admin decision is final",
+    bodyEn: "In any dispute the admin's decision is final.",
   },
 ];
 
 const FAQS: {
   q: string;
   a: string;
+  qEn: string;
+  aEn: string;
   icon: React.ElementType;
   tone: "cyan" | "emerald" | "amber" | "violet" | "rose";
 }[] = [
   {
     q: "Face Verification করলে কোনো সমস্যা হবে কি?",
     a: "Good-App এমন একটি প্ল্যাটফর্ম, যেখানে একজন ব্যবহারকারী প্রকৃত (Real) মানুষ কি না তা নিশ্চিত করতে Face Verification করা হয়। সফল যাচাইয়ের পর প্ল্যাটফর্ম থেকে ফ্রি reward/bonus দেওয়া হয়। এর উদ্দেশ্য একজন ব্যক্তি যেন একাধিক account খুলে অন্যায় সুবিধা নিতে না পারেন। এখানে NID, OTP, bank PIN বা কোনো password নেওয়া হয় না। এটি সম্পূর্ণ ঐচ্ছিক—আপনি চাইলে করবেন, না চাইলে করবেন না; কাউকে বাধ্য করা হয় না।",
+    qEn: "Is face verification risky?",
+    aEn: "Good-App uses face verification only to confirm a user is a real person. After a successful check the platform gives a free reward/bonus. The goal is to stop one person opening many accounts. No NID, OTP, bank PIN or password is collected. It is fully optional — nobody is forced.",
     icon: ShieldCheck,
     tone: "emerald",
   },
   {
     q: "Re-verify কেন চাওয়া হয়?",
     a: "আপনার Face key বা account অন্য কেউ ব্যবহার করছে কি না এবং account নিরাপদ আছে কি না নিশ্চিত করার জন্য Re-verify চাওয়া হয়। Good-App whitelist বাতিল না করা পর্যন্ত Good-App Re-verify চাইবে না। Whitelist হারালে app আপনাকে জানাবে; সফল Re-verify-এর পর key আবার whitelist হলে সেটি Re-verify হিসেবে গণনা হবে। ভবিষ্যতে আবার whitelist হারালে নিরাপত্তার জন্য আবারও Re-verify করতে পারবেন।",
+    qEn: "Why is re-verify asked?",
+    aEn: "Re-verify confirms nobody else is using your face key or account. Good-App asks for it only after the whitelist is cancelled. The app notifies you when the whitelist is lost; once the key is whitelisted again it counts as a re-verify.",
     icon: ShieldCheck,
     tone: "violet",
   },
   {
     q: "এই টাকা আসলে কোথা থেকে আসে?",
     a: "গুড-অ্যাপ একটি আর্থিক সহায়ক প্রতিষ্ঠান। আমাদের প্রধান লক্ষ্য সমাজের সুবিধাবঞ্চিত, অসহায় ও বেকার মানুষদের পাশে দাঁড়ানো। বিশ্বের বিভিন্ন দাতব্য সংস্থা, আন্তর্জাতিক অনুদান (গুড-অ্যাপ প্রোটোকল সহ) এবং আমাদের নিজস্ব তহবিল থেকে এই অর্থ আসে। আপনার ফেস ভেরিফাই করার মাধ্যমে প্রমাণ হয় আপনি একজন বাস্তব মানুষ — এর বিনিময়ে আমরা মাসিক সহায়তা প্রদান করি।",
+    qEn: "Where does this money come from?",
+    aEn: "Good-App is a financial support initiative for underprivileged and unemployed people. Funds come from charities, international grants (including the Good-App protocol) and our own fund. Verifying your face proves you are a real person, and in return we provide monthly support.",
     icon: Heart,
     tone: "rose",
   },
   {
     q: "আমাদের লক্ষ্য কী?",
     a: "দেশের প্রতিটি সুবিধাবঞ্চিত মানুষের হাতে অন্তত একটু সম্মানজনক উপার্জনের সুযোগ পৌঁছে দেওয়া। বেকার ছাত্র, গৃহিণী, কৃষক, রিকশাচালক — যারা ছোট একটি বাড়তি আয়ের আশা রাখেন, তাদের জন্যই এই প্ল্যাটফর্ম।",
+    qEn: "What is our goal?",
+    aEn: "To bring at least a small dignified earning opportunity to every underprivileged person — students, homemakers, farmers, rickshaw pullers and anyone hoping for a little extra income.",
     icon: HandHeart,
     tone: "emerald",
   },
   {
     q: "এটা কি স্থায়ীভাবে চলবে?",
     a: "যতদিন আপনার পরিচয় ও Good-App whitelist ঠিক থাকবে, ততদিন মাইনিং চলবে। Whitelist হারালেই শুধু পরিচয় ও account-এর নিরাপত্তা নিশ্চিত করতে Re-verify চাওয়া হবে।",
+    qEn: "Will this run permanently?",
+    aEn: "Mining continues as long as your identity and Good-App whitelist stay valid. Only when the whitelist is lost do we ask for re-verify to secure your identity and account.",
     icon: Coins,
     tone: "amber",
   },
   {
     q: "কতজন মানুষ ইতিমধ্যে যুক্ত হয়েছেন?",
     a: "প্রতিদিন হাজারো মানুষ আমাদের সাথে যুক্ত হচ্ছেন। আপনি একা নন — আপনি একটি বিশাল মানবিক পরিবারের অংশ হতে যাচ্ছেন।",
+    qEn: "How many people already joined?",
+    aEn: "Thousands join every day. You are not alone — you are joining a huge humanitarian family.",
     icon: Users,
     tone: "cyan",
   },
   {
     q: "শুরু করতে কত খরচ?",
     a: "সম্পূর্ণ বিনামূল্যে। কোনো রেজিস্ট্রেশন ফি, কোনো ডিপোজিট নেই। শুধু আপনার আসল মুখ দিয়ে ফেস ভেরিফাই করুন — ব্যস।",
+    qEn: "How much does it cost to start?",
+    aEn: "Completely free. No registration fee, no deposit. Just verify with your real face.",
     icon: Gift,
     tone: "violet",
   },
@@ -183,7 +217,8 @@ export function AuthPage() {
   const [referralCode, setReferralCode] = useState("");
   const [gmail, setGmail] = useState("");
   const [gender, setGender] = useState<"male" | "female" | null>(null);
-  const { countryCode, setCountry, region, t } = useLang();
+  const { countryCode, setCountry, region, t, lang } = useLang();
+  const isBn = lang === "bn";
   const phoneMax = maxPhoneLength(countryCode);
 
   // প্রথমবার এলে ফোনের টাইমজোন দেখে দেশ সাজেস্ট করি (ইউজার বদলাতে পারবে)
@@ -600,9 +635,9 @@ export function AuthPage() {
             <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl gradient-navy mb-3 float-anim">
               <ShieldCheck className="w-7 h-7 text-gold" />
             </div>
-            <h1 className="text-xl font-black text-navy">নিয়মাবলি ও শর্তাবলি</h1>
+            <h1 className="text-xl font-black text-navy">{t("নিয়মাবলি ও শর্তাবলি", "Terms & rules")}</h1>
             <p className="text-[11px] text-muted-foreground mt-1">
-              একাউন্ট তৈরি করার আগে অনুগ্রহ করে পড়ুন
+              {t("একাউন্ট তৈরি করার আগে অনুগ্রহ করে পড়ুন", "Please read before creating an account")}
             </p>
             <div className="gold-divider mt-3" />
           </div>
@@ -622,9 +657,9 @@ export function AuthPage() {
                     {i + 1}
                   </div>
                   <div>
-                    <p className="font-black text-sm text-navy">{r.title}</p>
+                    <p className="font-black text-sm text-navy">{isBn ? r.title : r.titleEn}</p>
                     <p className="text-[12px] leading-relaxed text-muted-foreground mt-0.5">
-                      {r.body}
+                      {isBn ? r.body : r.bodyEn}
                     </p>
                   </div>
                 </div>
@@ -1233,7 +1268,7 @@ export function AuthPage() {
             <div className="w-9 h-9 rounded-xl gradient-amber flex items-center justify-center">
               <HelpCircle className="w-5 h-5 text-white" />
             </div>
-            <h2 className="text-lg font-black text-navy">সাধারণ প্রশ্ন</h2>
+            <h2 className="text-lg font-black text-navy">{t("সাধারণ প্রশ্ন", "Frequently asked questions")}</h2>
           </div>
 
           <div className="space-y-2.5">
@@ -1256,7 +1291,7 @@ export function AuthPage() {
                       <Icon className="w-4.5 h-4.5" strokeWidth={2.4} />
                     </div>
                     <span className="flex-1 font-black text-[13px] text-navy leading-snug">
-                      {f.q}
+                      {isBn ? f.q : f.qEn}
                     </span>
                     <ChevronDown
                       className={`w-4 h-4 text-navy/60 transition-transform shrink-0 ${open ? "rotate-180" : ""}`}
@@ -1265,7 +1300,7 @@ export function AuthPage() {
                   {open && (
                     <div className="px-3.5 pb-3.5 -mt-1">
                       <p className="text-[12px] leading-relaxed text-navy/85 bg-white/70 rounded-xl p-3 border border-border">
-                        {f.a}
+                        {isBn ? f.a : f.aEn}
                       </p>
                     </div>
                   )}
