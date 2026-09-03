@@ -1765,6 +1765,7 @@ export type Database = {
           bonus_first_verify_claimed: boolean
           bonus_first_verify_self_claimed: boolean
           bonus_reverify_claimed: boolean
+          country: string
           cover_url: string | null
           created_at: string
           date_of_birth: string | null
@@ -1786,6 +1787,7 @@ export type Database = {
           kyc_verified_at: string | null
           last_active_at: string | null
           last_reels_seen_at: string | null
+          locale: string | null
           mother_name: string | null
           nid_number: string | null
           onboarded_at: string | null
@@ -1813,6 +1815,7 @@ export type Database = {
           bonus_first_verify_claimed?: boolean
           bonus_first_verify_self_claimed?: boolean
           bonus_reverify_claimed?: boolean
+          country?: string
           cover_url?: string | null
           created_at?: string
           date_of_birth?: string | null
@@ -1834,6 +1837,7 @@ export type Database = {
           kyc_verified_at?: string | null
           last_active_at?: string | null
           last_reels_seen_at?: string | null
+          locale?: string | null
           mother_name?: string | null
           nid_number?: string | null
           onboarded_at?: string | null
@@ -1861,6 +1865,7 @@ export type Database = {
           bonus_first_verify_claimed?: boolean
           bonus_first_verify_self_claimed?: boolean
           bonus_reverify_claimed?: boolean
+          country?: string
           cover_url?: string | null
           created_at?: string
           date_of_birth?: string | null
@@ -1882,6 +1887,7 @@ export type Database = {
           kyc_verified_at?: string | null
           last_active_at?: string | null
           last_reels_seen_at?: string | null
+          locale?: string | null
           mother_name?: string | null
           nid_number?: string | null
           onboarded_at?: string | null
