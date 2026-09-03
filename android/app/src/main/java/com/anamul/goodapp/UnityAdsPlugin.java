@@ -28,6 +28,7 @@ public class UnityAdsPlugin extends Plugin {
     private boolean initialized = false;
     private BannerView bannerView = null;
     private FrameLayout bannerHolder = null;
+    private boolean bannerLoaded = false;
 
     @PluginMethod
     public void initialize(final PluginCall call) {
@@ -134,10 +135,19 @@ public class UnityAdsPlugin extends Plugin {
         }
         getActivity().runOnUiThread(() -> {
             try {
-                if (bannerView != null) {
+                if (bannerView != null && bannerLoaded) {
                     call.resolve(new JSObject().put("shown", true));
                     return;
                 }
+                if (bannerView != null) {
+                    bannerView.destroy();
+                    bannerView = null;
+                }
+                if (bannerHolder != null && bannerHolder.getParent() instanceof ViewGroup) {
+                    ((ViewGroup) bannerHolder.getParent()).removeView(bannerHolder);
+                    bannerHolder = null;
+                }
+                bannerLoaded = false;
                 ViewGroup root = (ViewGroup) getActivity().getWindow().getDecorView()
                     .findViewById(android.R.id.content);
                 bannerHolder = new FrameLayout(getActivity());
@@ -151,7 +161,10 @@ public class UnityAdsPlugin extends Plugin {
                 bannerView = new BannerView(getActivity(), placementId, UnityBannerSize.getDynamicSize(getActivity()));
                 bannerView.setListener(new BannerView.IListener() {
                     @Override
-                    public void onBannerLoaded(BannerView view) {}
+                    public void onBannerLoaded(BannerView view) {
+                        bannerLoaded = true;
+                        call.resolve(new JSObject().put("shown", true));
+                    }
 
                     @Override
                     public void onBannerShown(BannerView view) {}
@@ -160,14 +173,24 @@ public class UnityAdsPlugin extends Plugin {
                     public void onBannerClick(BannerView view) {}
 
                     @Override
-                    public void onBannerFailedToLoad(BannerView view, BannerErrorInfo info) {}
+                    public void onBannerFailedToLoad(BannerView view, BannerErrorInfo info) {
+                        bannerLoaded = false;
+                        try {
+                            view.destroy();
+                            if (bannerHolder != null && bannerHolder.getParent() instanceof ViewGroup) {
+                                ((ViewGroup) bannerHolder.getParent()).removeView(bannerHolder);
+                            }
+                        } catch (Exception ignored) {}
+                        bannerView = null;
+                        bannerHolder = null;
+                        call.reject("AD_NO_FILL");
+                    }
 
                     @Override
                     public void onBannerLeftApplication(BannerView view) {}
                 });
                 bannerHolder.addView(bannerView);
                 bannerView.load();
-                call.resolve(new JSObject().put("shown", true));
             } catch (Exception e) {
                 call.reject("Unity banner failed: " + e.getMessage());
             }
@@ -182,6 +205,7 @@ public class UnityAdsPlugin extends Plugin {
                     bannerView.destroy();
                     bannerView = null;
                 }
+                bannerLoaded = false;
                 if (bannerHolder != null && bannerHolder.getParent() instanceof ViewGroup) {
                     ((ViewGroup) bannerHolder.getParent()).removeView(bannerHolder);
                     bannerHolder = null;
