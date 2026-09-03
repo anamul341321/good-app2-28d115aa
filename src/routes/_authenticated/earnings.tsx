@@ -6,6 +6,8 @@ import { EarningsStatement } from "@/components/EarningsStatement";
 import { EarningsBreakdown } from "@/components/EarningsBreakdown";
 import { toast } from "sonner";
 import { Loader2, Coins, Gift, Users, PieChart, HandCoins, History, FileText, ListOrdered } from "lucide-react";
+import { isLiteBuild } from "@/lib/lite-build";
+import { LiteFeatureBlock } from "@/components/LiteFeatureBlock";
 
 export const Route = createFileRoute("/_authenticated/earnings")({
   ssr: false,
@@ -25,6 +27,7 @@ export const Route = createFileRoute("/_authenticated/earnings")({
 const tk = (n: number) => `${n.toFixed(2)}৳`;
 
 function EarningsPage() {
+  if (isLiteBuild()) return <LiteFeatureBlock title="আয়ের হিসাব" />;
   const qc = useQueryClient();
   const [showSheet, setShowSheet] = useState(false);
   const { data, isLoading, refetch } = useQuery({

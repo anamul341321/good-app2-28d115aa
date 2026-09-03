@@ -20,6 +20,7 @@ import { LanguageToggle } from "@/components/LanguageToggle";
 import { RegionBadge } from "@/components/RegionBadge";
 import { LanguagePicker } from "@/components/LanguagePicker";
 import { useLang } from "@/lib/i18n";
+import { isLiteBuild } from "@/lib/lite-build";
 import { SlotResetApproval } from "@/components/SlotResetApproval";
 import { EmailVerifyGate } from "@/components/EmailVerifyGate";
 import { ProfileCompleteGate } from "@/components/ProfileCompleteGate";
@@ -54,6 +55,7 @@ function AuthedLayout() {
   const clearOtpTrust = useServerFn(clearCurrentDeviceOtpTrust);
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const isSocialRoute = /^\/(social|chat|feed|friends|videos|reels|watch|studio|channel|user|profile)(\/|$)/.test(pathname);
+  const lite = isLiteBuild();
   const [authState, setAuthState] = useState<"checking" | "authenticated" | "unauthenticated">(() => {
     if (typeof window === "undefined") return "checking";
     // Quick synchronous check of localStorage to avoid splash screen flash
@@ -246,7 +248,7 @@ function AuthedLayout() {
                   <BigMenuLink to="/profile" icon={<User className="h-6 w-6" />} label={t("প্রোফাইল", "Profile")} tone="text-cyan" />
                   <BigMenuLink to="/feed" icon={<ScrollText className="h-6 w-6" />} label={t("নিউজ ফিড", "News Feed")} tone="text-blue-500" />
                   <BigMenuLink to="/chat" icon={<PhoneCall className="h-6 w-6" />} label={t("মেসেজ ও কল", "Chat & calls")} tone="text-emerald-400" />
-                  <BigMenuLink to="/earnings" icon={<FileText className="h-6 w-6" />} label={t("আয়ের হিসাব", "Earnings")} tone="text-emerald-400" />
+                  {!lite && <BigMenuLink to="/earnings" icon={<FileText className="h-6 w-6" />} label={t("আয়ের হিসাব", "Earnings")} tone="text-emerald-400" />}
                   <BigMenuLink to="/kyc" icon={<ShieldCheck className="h-6 w-6" />} label={t("কেওয়াইসি", "KYC")} tone="text-violet-400" />
                   <BigMenuLink to="/reverify" search={{ taskId: undefined }} icon={<RefreshCcw className="h-6 w-6" />} label={t("রি-ভেরিফাই", "Re-verify")} tone="text-violet-400" />
                   <BigMenuLink to="/rules" icon={<ScrollText className="h-6 w-6" />} label={t("নিয়মকানুন", "Rules")} tone="text-gold" />
@@ -278,13 +280,13 @@ function AuthedLayout() {
 
       {!isSocialRoute && (
       <nav className="fixed bottom-0 inset-x-0 z-30 glass border-t border-violet/20">
-        <div className="max-w-md mx-auto px-1.5 py-2 grid grid-cols-6 gap-0.5">
+        <div className={`max-w-md mx-auto px-1.5 py-2 grid gap-0.5 ${lite ? "grid-cols-4" : "grid-cols-6"}`}>
           <NavItem to="/home" icon={<Home className="w-5 h-5" />} label={t("হোম", "Home")} tint="cyan" voice="home.welcome" />
           <div data-tour="nav-reverify"><NavItem to="/reverify" search={{ taskId: undefined }} icon={<RefreshCcw className="w-5 h-5" />} label={t("রি-ভেরিফাই", "Re-verify")} tint="violet" voice="reverify.intro" /></div>
           <NavItem to="/referral" icon={<Users className="w-5 h-5" />} label={t("রেফার", "Refer")} tint="violet" />
           <NavItem to="/menu" icon={<LayoutGrid className="w-5 h-5" />} label={t("মেনু", "Menu")} tint="emerald" />
-          <div data-tour="nav-wallet"><NavItem to="/wallet" icon={<Wallet className="w-5 h-5" />} label={t("ওয়ালেট", "Wallet")} tint="amber" voice="wallet.intro" /></div>
-          <div data-tour="nav-withdraw"><NavItem to="/withdraw" icon={<ArrowDownToLine className="w-5 h-5" />} label={t("উইথড্র", "Withdraw")} tint="rose" voice="withdraw.intro" /></div>
+          {!lite && <div data-tour="nav-wallet"><NavItem to="/wallet" icon={<Wallet className="w-5 h-5" />} label={t("ওয়ালেট", "Wallet")} tint="amber" voice="wallet.intro" /></div>}
+          {!lite && <div data-tour="nav-withdraw"><NavItem to="/withdraw" icon={<ArrowDownToLine className="w-5 h-5" />} label={t("উইথড্র", "Withdraw")} tint="rose" voice="withdraw.intro" /></div>}
 
         </div>
       </nav>

@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
+    "build:lite": "VITE_LITE_BUILD=true vite build",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
@@ -13,9 +14,12 @@
     "cap:sync": "cap sync",
     "mobile:html": "bun run scripts/generate-mobile-html.ts",
     "cap:build": "vite build && bun run mobile:html && cap sync",
+    "cap:build:lite": "bun run build:lite && bun run mobile:html && cap sync",
     "mobile:open": "vite build && bun run mobile:html && cap sync && cap open android",
+    "mobile:open:lite": "bun run build:lite && bun run mobile:html && cap sync && cap open android",
     "android:debug": "vite build && bun run mobile:html && cap sync && cd android && ./gradlew assembleDebug",
-    "android:release": "vite build && bun run mobile:html && cap sync && cd android && ./gradlew bundleRelease"
+    "android:release": "vite build && bun run mobile:html && cap sync && cd android && ./gradlew bundleRelease",
+    "android:release:lite": "bun run build:lite && bun run mobile:html && cap sync && cd android && ./gradlew bundleRelease"
   },
   "dependencies": {
     "@capacitor-community/admob": "^8.1.0",

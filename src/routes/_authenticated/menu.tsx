@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Gift, Sparkles, Lock, Crown, MessageCircle, ShieldCheck, Users } from "lucide-react";
+import { Gift, Sparkles, Lock, Crown, MessageCircle, ShieldCheck, Users, ExternalLink } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { getDashboard } from "@/lib/dashboard.functions";
 import { DashSection } from "@/components/DashSection";
@@ -14,6 +14,7 @@ import { BotStartButton } from "@/components/BotStartButton";
 import { VideoTutorialButton } from "@/components/VideoTutorialButton";
 import { TourReplayButton } from "@/components/GuidedTour";
 import { useLang } from "@/lib/i18n";
+import { isLiteBuild } from "@/lib/lite-build";
 
 export const Route = createFileRoute("/_authenticated/menu")({
   component: MenuPage,
@@ -31,6 +32,7 @@ export const Route = createFileRoute("/_authenticated/menu")({
 
 function MenuPage() {
   const { t } = useLang();
+  const lite = isLiteBuild();
   const { data } = useQuery({
     queryKey: ["dashboard"],
     queryFn: () => getDashboard(),
@@ -64,7 +66,7 @@ function MenuPage() {
         icon={<Gift className="w-4 h-4" />}
         tint="rose"
         title={t("অফার ও দ্রুত কাজ", "Offers & Quick Actions")}
-        subtitle={t("বোনাস · সেন্ড ব্যালেন্স · মোবাইল রিচার্জ", "Bonus · Send balance · Mobile recharge")}
+        subtitle={lite ? t("বোনাস · রেফার · রি-ভেরিফাই", "Bonus · Refer · Re-verify") : t("বোনাস · সেন্ড ব্যালেন্স · মোবাইল রিচার্জ", "Bonus · Send balance · Mobile recharge")}
       >
         <Link to="/offers"
           className="block rounded-3xl p-4 relative overflow-hidden shadow-[0_20px_45px_-20px_rgba(236,72,153,0.6)] btn-press border border-white/20"
@@ -88,51 +90,72 @@ function MenuPage() {
           </div>
         </Link>
 
-        <div className="grid grid-cols-2 gap-3">
-          <Link to="/send"
-            className="rounded-3xl p-4 btn-press flex flex-col items-start gap-2 relative overflow-hidden shadow-[0_15px_35px_-15px_rgba(124,58,237,0.55)] text-white border border-white/20"
-            style={{ background: "linear-gradient(135deg,#7c3aed,#ec4899)" }}>
-            <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-white/15 blur-xl" />
-            <div className="w-12 h-12 rounded-2xl bg-white/25 backdrop-blur flex items-center justify-center text-2xl shrink-0 relative">💸</div>
-            <div className="min-w-0 relative">
-              <p className="text-base font-black leading-tight">{t("সেন্ড ব্যালেন্স", "Send Balance")}</p>
-              <p className="text-[11px] opacity-95 font-bold mt-0.5" translate="no">{t("সর্বনিম্ন ১৫৳", "Min 15৳")}</p>
-            </div>
-          </Link>
-
-          <Link to="/history"
-            className="rounded-3xl p-4 btn-press flex flex-col items-start gap-2 relative overflow-hidden shadow-[0_15px_35px_-15px_rgba(124,58,237,0.55)] text-white border border-white/20"
-            style={{ background: "linear-gradient(135deg,#7c3aed,#06b6d4)" }}>
-            <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-white/15 blur-xl" />
-            <div className="w-12 h-12 rounded-2xl bg-white/25 backdrop-blur flex items-center justify-center text-2xl shrink-0 relative">🧾</div>
-            <div className="min-w-0 relative">
-              <p className="text-base font-black leading-tight">{t("সব ইতিহাস", "All History")}</p>
-              <p className="text-[11px] opacity-95 font-bold mt-0.5">{t("রিচার্জ · কার্ড · উইথড্র", "Recharge · Card · Withdraw")}</p>
-            </div>
-          </Link>
-
-
-          {rechargeOn ? (
-            <Link to="/recharge"
-              className="rounded-3xl p-4 btn-press flex flex-col items-start gap-2 relative overflow-hidden shadow-[0_15px_35px_-15px_rgba(6,182,212,0.55)] text-white border border-white/20"
-              style={{ background: "linear-gradient(135deg,#06b6d4,#10b981)" }}>
+        {!lite && (
+          <div className="grid grid-cols-2 gap-3">
+            <Link to="/send"
+              className="rounded-3xl p-4 btn-press flex flex-col items-start gap-2 relative overflow-hidden shadow-[0_15px_35px_-15px_rgba(124,58,237,0.55)] text-white border border-white/20"
+              style={{ background: "linear-gradient(135deg,#7c3aed,#ec4899)" }}>
               <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-white/15 blur-xl" />
-              <div className="w-12 h-12 rounded-2xl bg-white/25 backdrop-blur flex items-center justify-center text-2xl shrink-0 relative">📱</div>
+              <div className="w-12 h-12 rounded-2xl bg-white/25 backdrop-blur flex items-center justify-center text-2xl shrink-0 relative">💸</div>
               <div className="min-w-0 relative">
-                <p className="text-base font-black leading-tight">{t("মোবাইল রিচার্জ", "Mobile Recharge")}</p>
-                <p className="text-[11px] opacity-95 font-bold mt-0.5" translate="no">{t("সর্বনিম্ন ২০৳", "Min 20৳")}</p>
+                <p className="text-base font-black leading-tight">{t("সেন্ড ব্যালেন্স", "Send Balance")}</p>
+                <p className="text-[11px] opacity-95 font-bold mt-0.5" translate="no">{t("সর্বনিম্ন ১৫৳", "Min 15৳")}</p>
               </div>
             </Link>
-          ) : (
-            <div className="rounded-3xl p-4 bg-surface-2 border-2 border-dashed border-border opacity-70 flex flex-col items-start gap-2">
-              <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center"><Lock className="w-5 h-5" /></div>
-              <div className="min-w-0">
-                <p className="text-base font-black leading-tight">{t("রিচার্জ বন্ধ", "Recharge off")}</p>
-                <p className="text-[11px] text-muted-foreground font-bold">{t("সাময়িক", "Temporary")}</p>
+
+            <Link to="/history"
+              className="rounded-3xl p-4 btn-press flex flex-col items-start gap-2 relative overflow-hidden shadow-[0_15px_35px_-15px_rgba(124,58,237,0.55)] text-white border border-white/20"
+              style={{ background: "linear-gradient(135deg,#7c3aed,#06b6d4)" }}>
+              <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-white/15 blur-xl" />
+              <div className="w-12 h-12 rounded-2xl bg-white/25 backdrop-blur flex items-center justify-center text-2xl shrink-0 relative">🧾</div>
+              <div className="min-w-0 relative">
+                <p className="text-base font-black leading-tight">{t("সব ইতিহাস", "All History")}</p>
+                <p className="text-[11px] opacity-95 font-bold mt-0.5">{t("রিচার্জ · কার্ড · উইথড্র", "Recharge · Card · Withdraw")}</p>
               </div>
+            </Link>
+
+
+            {rechargeOn ? (
+              <Link to="/recharge"
+                className="rounded-3xl p-4 btn-press flex flex-col items-start gap-2 relative overflow-hidden shadow-[0_15px_35px_-15px_rgba(6,182,212,0.55)] text-white border border-white/20"
+                style={{ background: "linear-gradient(135deg,#06b6d4,#10b981)" }}>
+                <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-white/15 blur-xl" />
+                <div className="w-12 h-12 rounded-2xl bg-white/25 backdrop-blur flex items-center justify-center text-2xl shrink-0 relative">📱</div>
+                <div className="min-w-0 relative">
+                  <p className="text-base font-black leading-tight">{t("মোবাইল রিচার্জ", "Mobile Recharge")}</p>
+                  <p className="text-[11px] opacity-95 font-bold mt-0.5" translate="no">{t("সর্বনিম্ন ২০৳", "Min 20৳")}</p>
+                </div>
+              </Link>
+            ) : (
+              <div className="rounded-3xl p-4 bg-surface-2 border-2 border-dashed border-border opacity-70 flex flex-col items-start gap-2">
+                <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center"><Lock className="w-5 h-5" /></div>
+                <div className="min-w-0">
+                  <p className="text-base font-black leading-tight">{t("রিচার্জ বন্ধ", "Recharge off")}</p>
+                  <p className="text-[11px] text-muted-foreground font-bold">{t("সাময়িক", "Temporary")}</p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {lite && (
+          <a
+            href={typeof window !== "undefined" ? window.location.origin : "https://goodapp2.live"}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block rounded-3xl p-4 relative overflow-hidden shadow-[0_15px_35px_-15px_rgba(245,158,11,0.55)] btn-press border border-white/20"
+            style={{ background: "linear-gradient(135deg,#f59e0b,#ec4899)" }}
+          >
+            <div className="flex items-center gap-3 text-white relative">
+              <div className="w-12 h-12 rounded-2xl bg-white/25 backdrop-blur flex items-center justify-center text-2xl shrink-0">🌐</div>
+              <div className="min-w-0">
+                <p className="text-base font-black leading-tight">{t("সম্পূর্ণ ফিচার ওয়েবসাইটে", "Full features on website")}</p>
+                <p className="text-[11px] opacity-95 font-bold mt-0.5">{t("উইথড্র, সেন্ড ও রিচার্জ পেতে ব্রাউজারে খুলুন", "Open in browser for withdraw, send & recharge")}</p>
+              </div>
+              <ExternalLink className="w-5 h-5 shrink-0" />
             </div>
-          )}
-        </div>
+          </a>
+        )}
 
         <ReferralCommissionCard />
       </DashSection>
@@ -146,6 +169,7 @@ function MenuPage() {
         <Leaderboards />
       </DashSection>
 
+      {!lite && (
       <DashSection
         icon={<Sparkles className="w-4 h-4" />}
         tint="rose"
@@ -155,6 +179,7 @@ function MenuPage() {
         <PaymentHistoryCard />
         <ComplianceDisclaimer />
       </DashSection>
+      )}
 
 
       <DashSection

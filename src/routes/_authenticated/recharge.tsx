@@ -8,6 +8,8 @@ import { Loader2, Smartphone, CheckCircle2, XCircle, ArrowLeft, Sparkles, Zap, W
 import { listCardStore, purchaseCard, myCards } from "@/lib/cards.functions";
 import { toast } from "sonner";
 import { useLang } from "@/lib/i18n";
+import { isLiteBuild } from "@/lib/lite-build";
+import { LiteFeatureBlock } from "@/components/LiteFeatureBlock";
 
 export const Route = createFileRoute("/_authenticated/recharge")({ component: RechargePage });
 
@@ -47,6 +49,7 @@ function BackBar() {
 }
 
 function RechargePage() {
+  if (isLiteBuild()) return <LiteFeatureBlock title="মোবাইল রিচার্জ" />;
   const { t } = useLang();
   const { data: dash, refetch } = useQuery({ queryKey: ["dashboard"], queryFn: () => getDashboard() });
   const { data: history, refetch: refetchHist } = useQuery({ queryKey: ["my-recharges"], queryFn: () => getMyRecharges() });

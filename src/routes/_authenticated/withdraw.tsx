@@ -17,12 +17,15 @@ import { WithdrawClosedBanner } from "@/components/WithdrawClosedBanner";
 import { WithdrawCountdown } from "@/components/WithdrawCountdown";
 import { getAdBoostStatus } from "@/lib/ads.functions";
 import { WithdrawRejectDetails } from "@/components/WithdrawRejectDetails";
+import { isLiteBuild } from "@/lib/lite-build";
+import { LiteFeatureBlock } from "@/components/LiteFeatureBlock";
 
 
 
 export const Route = createFileRoute("/_authenticated/withdraw")({ component: WithdrawPage });
 
 function WithdrawPage() {
+  if (isLiteBuild()) return <LiteFeatureBlock title="উইথড্র" />;
   const { t } = useLang();
   const { data, isLoading, refetch } = useQuery({ queryKey: ["dashboard"], queryFn: () => getDashboard() });
   const { data: history, refetch: refetchHistory } = useQuery({

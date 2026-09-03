@@ -24,6 +24,7 @@ import { getUnreadMessageCount } from "@/lib/chat.functions";
 
 
 import { useLang } from "@/lib/i18n";
+import { isLiteBuild } from "@/lib/lite-build";
 
 import { toast } from "sonner";
 
@@ -63,6 +64,7 @@ function slotTheme(slot: number) {
 function HomePage() {
   const router = useRouter();
   const { t } = useLang();
+  const lite = isLiteBuild();
   const [lightbox, setLightbox] = useState<{ url: string; label: string; action?: { label: string; onClick: () => void; tone?: "rose" | "amber" } } | null>(null);
   const [openBox, setOpenBox] = useState<number>(0);
   const [showWelcome, setShowWelcome] = useState<boolean>(false);
@@ -284,39 +286,44 @@ function HomePage() {
       {/* দুইটি প্রধান বাটন — মেসেঞ্জার ও নিউজ ফিড */}
       {socialEntryCards}
 
-      {/* মাইনিং কার্ড */}
-      <div data-tour="mining" data-voice="home.mining" className="relative">
-        <MiningCounter
-          accrued={Number(data.mining?.accrued_amount ?? 0)}
-          withdrawn={Number(data.mining?.mining_withdrawn ?? 0)}
-          isActive={data.mining?.is_active ?? false}
-          lastCreditedAt={data.mining?.last_credited_at ?? null}
-          selfSlots={Number((data.mining as any)?.self_slots ?? 0)}
-          referralUnits={Number((data.mining as any)?.referral_units ?? 0)}
-          effectiveTaskCount={Number((data.mining as any)?.self_slots ?? 0)}
-          qualifyingReferees={Number((data.mining as any)?.qualifying_referees ?? 0)}
-          selfQualified={(data.mining as any)?.self_qualified ?? false}
-          displayTaskCount={Number((data as any).bonus?.firstVerifyCount ?? 0)}
-          leagueCount={Number((data as any).bonus?.firstVerifyCount ?? 0)}
-          balanceBreakdown={(data as any).balanceBreakdown}
-        />
-      </div>
+      {!lite && (
+        <>
+          {/* মাইনিং কার্ড */}
+          <div data-tour="mining" data-voice="home.mining" className="relative">
+            <MiningCounter
+              accrued={Number(data.mining?.accrued_amount ?? 0)}
+              withdrawn={Number(data.mining?.mining_withdrawn ?? 0)}
+              isActive={data.mining?.is_active ?? false}
+              lastCreditedAt={data.mining?.last_credited_at ?? null}
+              selfSlots={Number((data.mining as any)?.self_slots ?? 0)}
+              referralUnits={Number((data.mining as any)?.referral_units ?? 0)}
+              effectiveTaskCount={Number((data.mining as any)?.self_slots ?? 0)}
+              qualifyingReferees={Number((data.mining as any)?.qualifying_referees ?? 0)}
+              selfQualified={(data.mining as any)?.self_qualified ?? false}
+              displayTaskCount={Number((data as any).bonus?.firstVerifyCount ?? 0)}
+              leagueCount={Number((data as any).bonus?.firstVerifyCount ?? 0)}
+              balanceBreakdown={(data as any).balanceBreakdown}
+            />
+          </div>
 
-      {/* বিদেশি ইউজারদের জন্য USDT + নিজের দেশের মুদ্রায় ব্যালেন্স */}
-      <ForeignCurrencyCard
-        main={Number((data as any)?.balanceBreakdown?.bonus_part ?? 0)}
-        mining={Number((data as any)?.balanceBreakdown?.mining_available ?? data.mining?.accrued_amount ?? 0)}
-      />
+          {/* বিদেশি ইউজারদের জন্য USDT + নিজের দেশের মুদ্রায় ব্যালেন্স */}
+          <ForeignCurrencyCard
+            main={Number((data as any)?.balanceBreakdown?.bonus_part ?? 0)}
+            mining={Number((data as any)?.balanceBreakdown?.mining_available ?? data.mining?.accrued_amount ?? 0)}
+          />
 
+          {/* দেশভিত্তিক রেট + রেফার বোনাস এন্ট্রি */}
+          <RatesEntryCard />
 
-      {/* দেশভিত্তিক রেট + রেফার বোনাস এন্ট্রি */}
-      <RatesEntryCard />
+          {/* ফুল-স্ক্রিন রেফার বোনাস ব্যানার (দিনে একবার) */}
+          <ReferBonusBanner />
 
-      {/* ফুল-স্ক্রিন রেফার বোনাস ব্যানার (দিনে একবার) */}
-      <ReferBonusBanner />
+          {/* Ads সাপোর্ট ব্যানার — Continue দিতে উৎসাহ */}
+          <AdsBoostBanner />
+        </>
+      )}
 
-      {/* Ads সাপোর্ট ব্যানার — Continue দিতে উৎসাহ */}
-      <AdsBoostBanner />
+      {lite && <LiteHomeNotice />}
 
       <VoucherPopup vouchers={(data as any).vouchers ?? []} onClaimed={() => refetch()} />
 
@@ -414,7 +421,7 @@ function HomePage() {
       )}
 
 
-      {totalClaimable > 0 && (
+      {totalClaimable > 0 && !lite && (
         <div className="rounded-2xl p-3 border border-emerald-300/50 shadow-[0_14px_30px_-14px_rgba(16,185,129,0.9)]"
              style={{ background: "linear-gradient(120deg,#ecfdf5,#d1fae5)" }}>
           <p className="text-[12.5px] font-black text-emerald-900 flex items-center gap-1.5">
@@ -1298,6 +1305,40 @@ function WithdrawFeed() {
     </div>
   );
 }
+
+function LiteHomeNotice() {
+  const { t } = useLang();
+  const site = "https://goodapp2.live";
+  return (
+    <div className="rounded-3xl p-5 relative overflow-hidden shadow-[0_20px_50px_-20px_rgba(245,158,11,0.45)] border border-amber/30"
+         style={{ background: "linear-gradient(135deg,#f59e0b 0%,#ec4899 55%,#8b5cf6 100%)" }}>
+      <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/15 blur-3xl" />
+      <div className="relative flex items-center gap-4 text-white">
+        <div className="w-14 h-14 rounded-2xl bg-white/25 backdrop-blur border border-white/40 flex items-center justify-center text-3xl shadow-lg shrink-0">🌐</div>
+        <div className="flex-1 min-w-0">
+          <p className="text-[10px] uppercase tracking-[0.25em] font-black opacity-95">Play Store Lite</p>
+          <p className="text-lg font-black leading-tight drop-shadow mt-0.5">
+            {t("সম্পূর্ণ ফিচার ওয়েবসাইটে", "Full features on the website")}
+          </p>
+          <p className="text-[11px] opacity-95 font-bold mt-0.5">
+            {t("উইথড্র, সেন্ড মানি, রিচার্জ ও আর্নিং ড্যাশবোর্ড শুধু goodapp2.live-এ", "Withdraw, send money, recharge and the earnings dashboard are only on goodapp2.live")}
+          </p>
+        </div>
+        <a
+          href={site}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="shrink-0 rounded-xl bg-white text-rose px-3 py-2 text-xs font-black btn-press flex items-center gap-1"
+        >
+          {t("খুলুন", "Open")} →
+        </a>
+      </div>
+    </div>
+  );
+}
+
+
+
 
 
 
