@@ -136,12 +136,25 @@ function RootComponent() {
     );
 
   useEffect(() => {
-    // The previous Monetag Multitag included an OnClick/Popunder format that
-    // could place invisible click targets over the app. Remove every copy and
-    // never load it in the interactive web app. Native Android ads continue
-    // through the isolated Unity bridge and cannot change web navigation.
+    // Remove the old Multitag (it carried OnClick/Popunder which hijacked app
+    // button clicks) and load only the safe formats instead:
+    //   - Vignette (zone 11713170): full-screen ad WITH a visible close button
+    //   - In-Page Push (zone 11713181): small persistent banner
+    // Neither format overlays app buttons, so clicks stay inside the app.
+    // Ads run on web pages only; native Android ads go through Unity.
     document.querySelectorAll('script[data-zone="275797"], script[src*="quge5.com/88/tag.min.js"]')
       .forEach((node) => node.remove());
+    if (isNativeShell || pathname.startsWith("/admin")) return;
+    const ensure = (zone: string, src: string) => {
+      if (document.querySelector(`script[data-zone="${zone}"]`)) return;
+      const s = document.createElement("script");
+      s.dataset.zone = zone;
+      s.src = src;
+      s.async = true;
+      document.body.appendChild(s);
+    };
+    ensure("11713170", "https://n6wxm.com/vignette.min.js");
+    ensure("11713181", "https://nap5k.com/tag.min.js");
   }, [isNativeShell, pathname]);
 
 
