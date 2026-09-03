@@ -315,12 +315,13 @@ function ReelsPage() {
   // signed URL গুলো আগেই তৈরি করে রাখি — তাই স্ক্রল করলেই ভিডিও সাথে সাথে চলে
   useEffect(() => {
     const paths = items
-      .slice(Math.max(0, activeIndex - 1), activeIndex + 4)
+      .slice(Math.max(0, activeIndex - 1), activeIndex + 8)
       .flatMap((item) =>
         item.kind === "local" ? [item.post.video_url, item.post.user?.avatar_url] : [],
       );
-    prefetchFeedMedia(paths).catch(() => {});
+    prefetchFeedMedia(paths, 8).catch(() => {});
   }, [items, activeIndex]);
+
 
 
   const uploadMutation = useMutation({
