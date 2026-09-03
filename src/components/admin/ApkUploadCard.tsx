@@ -28,11 +28,13 @@ export function ApkUploadCard() {
   const [version, setVersion] = useState(CURRENT_ANDROID_VERSION);
   const [progress, setProgress] = useState<number | null>(null);
   const [doneUrl, setDoneUrl] = useState<string | null>(null);
+  const [lite, setLite] = useState(false);
   const { data: settings } = useQuery({
     queryKey: ["admin-bonus-settings"],
     queryFn: () => adminGetBonusSettings(),
   });
   const activeVersion = (settings as any)?.apk_version as string | null | undefined;
+  const activeLiteVersion = (settings as any)?.apk_lite_version as string | null | undefined;
 
   useEffect(() => {
     // আপলোড বক্সে সবসময় সোর্স কোডের সর্বশেষ ভার্সনই দেখাবে, তাই আগের
@@ -90,7 +92,7 @@ export function ApkUploadCard() {
           type: "application/vnd.android.package-archive",
         },
       );
-      const { path, signedUrl } = await adminCreateApkUpload({ data: { version: releaseVersion } });
+      const { path, signedUrl } = await adminCreateApkUpload({ data: { version: releaseVersion, lite } });
       await new Promise<void>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.open("PUT", signedUrl);
@@ -103,7 +105,7 @@ export function ApkUploadCard() {
         xhr.onerror = () => reject(new Error("নেটওয়ার্ক সমস্যা — আবার চেষ্টা করুন"));
         xhr.send(file);
       });
-      return adminSetApkRelease({ data: { path, version: releaseVersion } });
+      return adminSetApkRelease({ data: { path, version: releaseVersion, lite } });
     },
     onSuccess: (res) => {
       setProgress(null);
@@ -111,11 +113,11 @@ export function ApkUploadCard() {
       setVersion(res.version);
       queryClient.setQueryData(["admin-bonus-settings"], (old: any) => ({
         ...(old ?? {}),
-        apk_url: res.path,
-        apk_version: res.version,
+        [lite ? "apk_lite_url" : "apk_url"]: res.path,
+        [lite ? "apk_lite_version" : "apk_version"]: res.version,
       }));
       queryClient.invalidateQueries({ queryKey: ["app-status-apk"] });
-      toast.success(`✅ Good-App v${res.version} চালু হয়েছে — ইউজাররা এখন নতুন APK পাবে`);
+      toast.success(`✅ Good-App ${lite ? "Lite " : ""}v${res.version} চালু হয়েছে — ইউজাররা এখন নতুন APK পাবে`);
     },
     onError: (e: any) => {
       setProgress(null);
@@ -136,12 +138,30 @@ export function ApkUploadCard() {
         GitHub Actions থেকে নতুন করে নামানো <b>release-apk.zip</b> সোজা এখানে দিন — ভিতরের version
         যাচাই করে <b>APK</b> নিজে থেকেই বের করে আপলোড হবে। পুরোনো বা ভুল ZIP গ্রহণ করবে না। আপলোড
         হলেই পুরোনো APK ব্যবহারকারীদের বাধ্যতামূলক update দেখাবে।
+        <br />
+        <span className="text-cyan-600 font-bold">Lite</span> = Play Store-এর জন্য financial feature ছাড়া বিল্ড।
       </p>
 
-      <div className="flex items-center justify-between rounded-xl border border-emerald-500/30 bg-background px-3 py-2 text-xs">
-        <span className="text-muted-foreground">বর্তমানে চালু</span>
-        <strong className="text-emerald-600">v{activeVersion || "—"}</strong>
+      <div className="grid grid-cols-2 gap-2">
+        <div className="flex items-center justify-between rounded-xl border border-emerald-500/30 bg-background px-3 py-2 text-xs">
+          <span className="text-muted-foreground">Full চালু</span>
+          <strong className="text-emerald-600">v{activeVersion || "—"}</strong>
+        </div>
+        <div className="flex items-center justify-between rounded-xl border border-cyan-500/30 bg-background px-3 py-2 text-xs">
+          <span className="text-muted-foreground">Lite চালু</span>
+          <strong className="text-cyan-600">v{activeLiteVersion || "—"}</strong>
+        </div>
       </div>
+
+      <label className="flex items-center gap-2 rounded-xl border border-cyan-500/30 bg-cyan-500/5 px-3 py-2 cursor-pointer">
+        <input
+          type="checkbox"
+          checked={lite}
+          onChange={(e) => setLite(e.target.checked)}
+          className="w-4 h-4 accent-cyan-600"
+        />
+        <span className="text-xs font-black text-navy">Play Store Lite build আপলোড করুন</span>
+      </label>
 
       <div className="flex items-center gap-2">
         <input
@@ -164,7 +184,7 @@ export function ApkUploadCard() {
         <button
           onClick={() => inputRef.current?.click()}
           disabled={upload.isPending}
-          className="flex-1 py-2.5 rounded-xl gradient-emerald text-xs font-black btn-press flex items-center justify-center gap-2 disabled:opacity-60"
+          className={`flex-1 py-2.5 rounded-xl text-xs font-black btn-press flex items-center justify-center gap-2 disabled:opacity-60 ${lite ? "gradient-cyan" : "gradient-emerald"}`}
         >
           {upload.isPending ? (
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -172,8 +192,8 @@ export function ApkUploadCard() {
             <Upload className="w-4 h-4" />
           )}
           {upload.isPending
-            ? `v${version} আপলোড হচ্ছে… ${progress ?? 0}%`
-            : `v${version} release ZIP বেছে নিন`}
+            ? `v${version} ${lite ? "Lite " : ""}আপলোড হচ্ছে… ${progress ?? 0}%`
+            : `v${version} ${lite ? "Lite " : ""}release ZIP বেছে নিন`}
         </button>
       </div>
 

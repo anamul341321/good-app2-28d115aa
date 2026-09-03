@@ -358,6 +358,8 @@ export type Database = {
           ads_rewarded_enabled: boolean
           ads_rewarded_unit: string | null
           ads_test_mode: boolean | null
+          apk_lite_url: string | null
+          apk_lite_version: string | null
           apk_url: string | null
           apk_version: string | null
           auto_payout_enabled: boolean
@@ -395,6 +397,8 @@ export type Database = {
           referrer_bonus: number
           reverify_bonus: number
           signup_off_message: string | null
+          test_apk_lite_url: string | null
+          test_apk_lite_version: string | null
           test_apk_url: string | null
           test_apk_version: string | null
           updated_at: string
@@ -414,6 +418,8 @@ export type Database = {
           ads_rewarded_enabled?: boolean
           ads_rewarded_unit?: string | null
           ads_test_mode?: boolean | null
+          apk_lite_url?: string | null
+          apk_lite_version?: string | null
           apk_url?: string | null
           apk_version?: string | null
           auto_payout_enabled?: boolean
@@ -451,6 +457,8 @@ export type Database = {
           referrer_bonus?: number
           reverify_bonus?: number
           signup_off_message?: string | null
+          test_apk_lite_url?: string | null
+          test_apk_lite_version?: string | null
           test_apk_url?: string | null
           test_apk_version?: string | null
           updated_at?: string
@@ -470,6 +478,8 @@ export type Database = {
           ads_rewarded_enabled?: boolean
           ads_rewarded_unit?: string | null
           ads_test_mode?: boolean | null
+          apk_lite_url?: string | null
+          apk_lite_version?: string | null
           apk_url?: string | null
           apk_version?: string | null
           auto_payout_enabled?: boolean
@@ -507,6 +517,8 @@ export type Database = {
           referrer_bonus?: number
           reverify_bonus?: number
           signup_off_message?: string | null
+          test_apk_lite_url?: string | null
+          test_apk_lite_version?: string | null
           test_apk_url?: string | null
           test_apk_version?: string | null
           updated_at?: string
