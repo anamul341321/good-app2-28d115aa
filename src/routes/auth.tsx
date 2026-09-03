@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { isFinancialText, liteText } from "@/lib/lite-policy";
 import { useServerFn } from "@tanstack/react-start";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -131,6 +132,8 @@ const RULES: { title: string; body: string; titleEn: string; bodyEn: string }[] 
   },
 ];
 
+const liteRules = RULES.filter((r) => !isFinancialText(`${r.title} ${r.body} ${r.titleEn} ${r.bodyEn}`));
+
 const FAQS: {
   q: string;
   a: string;
@@ -196,6 +199,8 @@ const FAQS: {
     tone: "violet",
   },
 ];
+
+const liteFaqs = FAQS.filter((f) => !isFinancialText(`${f.q} ${f.a} ${f.qEn} ${f.aEn}`));
 
 const toneClass: Record<string, { bg: string; chip: string; ring: string }> = {
   cyan: { bg: "from-cyan/15 to-cyan/5", chip: "bg-cyan", ring: "ring-cyan/40" },
@@ -668,7 +673,7 @@ export function AuthPage() {
           </div>
 
           <div className="space-y-2.5 max-h-[55vh] overflow-y-auto pr-1">
-            {RULES.map((r, i) => {
+            {liteRules.map((r, i) => {
               const tones = ["cyan", "emerald", "amber", "violet", "rose"] as const;
               const t = toneClass[tones[i % tones.length]] ?? toneClass.cyan;
               return (
@@ -771,8 +776,10 @@ export function AuthPage() {
               <span className="text-violet">মাসিক রিওয়ার্ড সুবিধা</span>
             </p>
             <p className="text-[10px] text-muted-foreground mt-1 px-2">
-              রিওয়ার্ড অ্যাপের নিয়ম, তহবিল ও সক্রিয় স্লটের উপর নির্ভরশীল — কোনো "গ্যারান্টিড
-              ইনকাম" নয়।
+              {liteText(
+                'রিওয়ার্ড অ্যাপের নিয়ম, তহবিল ও সক্রিয় স্লটের উপর নির্ভরশীল — কোনো "গ্যারান্টিড ইনকাম" নয়।',
+                "সব ফিচার সম্পূর্ণ ফ্রি — ভেরিফিকেশন শুধু আপনি প্রকৃত ব্যবহারকারী কি না তা নিশ্চিত করে।",
+              )}
             </p>
             <div className="gold-divider mt-3" />
             <div className="mt-4">
@@ -1297,7 +1304,7 @@ export function AuthPage() {
           </div>
 
           <div className="space-y-2.5">
-            {FAQS.map((f, i) => {
+            {liteFaqs.map((f, i) => {
               const t = toneClass[f.tone] ?? toneClass.cyan;
               const Icon = f.icon;
               const open = openFaq === i;

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { isLiteBuild } from "@/lib/lite-build";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Gift, Loader2, Lock, Pickaxe, RefreshCcw, Sparkles, X } from "lucide-react";
@@ -37,6 +38,7 @@ export function SlotClaimButton({
 }) {
   const [open, setOpen] = useState(false);
   const qc = useQueryClient();
+  const lite = isLiteBuild();
 
   const mut = useMutation({
     mutationFn: () => claimSlotReward({ data: { taskId: claim!.taskId } }),
@@ -63,6 +65,7 @@ export function SlotClaimButton({
   });
 
   // ── রি-ভেরিফাই করার আগে: লক করা (teaser) বাটন ─────────────────────────────
+  if (lite) return null;
   const locked = !claim && !!preview;
   const data = claim ?? preview ?? null;
   if (!data) return null;
