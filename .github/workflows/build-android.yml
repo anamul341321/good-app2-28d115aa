@@ -3,7 +3,7 @@ name: Build Android APK/AAB
 on:
   workflow_dispatch:
     inputs:
-    build_type:
+      build_type:
         description: "Build type"
         required: true
         default: "apk-release"
@@ -12,7 +12,7 @@ on:
           - apk-release
           - aab-release
           - apk-debug
-    build_mode:
+      build_mode:
         description: "Build mode"
         required: true
         default: "full"
@@ -20,7 +20,6 @@ on:
         options:
           - full
           - lite
-
 
 concurrency:
   group: android-build-${{ github.ref }}
