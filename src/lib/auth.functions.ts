@@ -118,17 +118,58 @@ export const registerWithPhone = createServerFn({ method: "POST" })
       throw new Error(error.message);
     }
 
-    // প্রোফাইলে Gmail + লিঙ্গ সেভ (Gmail ভেরিফাই হবে অ্যাপে কোড বসিয়ে)
+    // প্রোফাইলে Gmail + লিঙ্গ + লোকেশন প্রমাণ সেভ
     if (created?.user?.id) {
       await supabaseAdmin
         .from("profiles")
         .update({
           gender: data.gender,
           country: region.code,
+          signup_ip: geo.ip,
+          signup_ip_country: geo.ipCountry,
+          signup_timezone: data.timezone ?? null,
+          geo_verified: geoVerified,
+          vpn_flagged: vpnFlagged,
           ...(gmail ? { email: gmail, email_verified: false } : {}),
         } as any)
         .eq("id", created.user.id);
+
+      // 🌍 বিদেশি রেফারেল বোনাস — সাথে সাথে referrer-এর মেইন ব্যালেন্সে
+      const bonusAmount = Number((countryRow as any)?.referral_bonus_bdt ?? 0);
+      const bonusActive = !!(countryRow as any)?.referral_bonus_active;
+      if (refCode && bonusActive && bonusAmount > 0 && geoVerified && !vpnFlagged) {
+        try {
+          const { data: refOwner } = await supabaseAdmin
+            .from("profiles")
+            .select("id")
+            .eq("referral_code", refCode)
+            .maybeSingle();
+          if (refOwner?.id && refOwner.id !== created.user.id) {
+            await supabaseAdmin.rpc("credit_bonus_balance", {
+              _user_id: refOwner.id,
+              _amount: bonusAmount,
+              _type: "foreign_referral_bonus",
+              _source_id: created.user.id,
+              _metadata: { country: region.code, ip_country: geo.ipCountry },
+            });
+            await supabaseAdmin
+              .from("profiles")
+              .update({ foreign_referral_bonus_paid: true } as any)
+              .eq("id", created.user.id);
+            await supabaseAdmin.from("user_notices").insert({
+              user_id: refOwner.id,
+              title: "🌍 বিদেশি রেফার বোনাস",
+              body: `${region.flag} ${region.nameEn} থেকে একজন একাউন্ট খুলেছে — আপনি সাথে সাথে ${bonusAmount}৳ বোনাস পেয়েছেন!`,
+              severity: "success",
+            } as any);
+          }
+        } catch {
+          // বোনাস ফেল করলেও একাউন্ট তৈরি আটকাবে না
+        }
+      }
     }
+
+
 
 
     return { ok: true, email };
