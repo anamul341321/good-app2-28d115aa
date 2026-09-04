@@ -512,57 +512,13 @@ export function AuthPage() {
           localStorage.setItem("good-app-ref-code", referralCode.trim().toUpperCase());
       } catch {}
 
-      let pickedEmail: string | undefined;
+      const pickedEmail: string | undefined = undefined;
 
-      // ১) নেটিভ অ্যাপে প্রথমে ফোনের আসল ব্রাউজার (Chrome Custom Tab) খুলি —
-      // অন্য অ্যাপের মতো Google-এর পেজ আসবে, ব্রাউজারে থাকা Gmail গুলো দেখাবে,
-      // একটায় ট্যাপ করলেই লগইন হয়ে অ্যাপে ফিরে আসবে।
-      try {
-        const { isNativeApp, signInWithBrowserGoogle } = await import("@/lib/browser-google");
-        if (isNativeApp()) {
-          const br = await signInWithBrowserGoogle();
-          if (br.ok) {
-            const { clearSharedSession } = await import("@/lib/auth-session");
-            clearSharedSession();
-            redirecting = true;
-            window.location.href = "/home";
-            return;
-          }
-          if (br.error === "cancelled") {
-            setGoogleLoading(false);
-            return;
-          }
-          console.warn("browser google sign-in failed, falling back:", br.error);
-        }
-      } catch (browserErr) {
-        console.warn("browser google sign-in crashed, falling back", browserErr);
-      }
+      // Google লগইন সবসময় Lovable-managed broker দিয়ে হয় (web + native WebView
+      // দুই জায়গাতেই)। আগের custom Google client / Custom Tab flow বাদ দেওয়া
+      // হয়েছে — ওটাই "Error 400: redirect_uri_mismatch" দেখাচ্ছিল, কারণ ওই
+      // client-এ Supabase callback URL রেজিস্টার করা ছিল না।
 
-      // ২) ফলব্যাক: Android Credential Manager — ফোনে যুক্ত Gmail
-      // একাউন্টগুলো সরাসরি chooser-এ দেখাবে (নতুন করে Gmail লিখতে হবে না)।
-      try {
-        const { nativeGoogleAvailable, signInWithNativeGoogle } = await import(
-          "@/lib/native-google"
-        );
-        if (nativeGoogleAvailable()) {
-          const nat = await signInWithNativeGoogle();
-          pickedEmail = nat.email;
-          if (nat.ok) {
-            const { clearSharedSession } = await import("@/lib/auth-session");
-            clearSharedSession();
-            redirecting = true;
-            window.location.href = "/home";
-            return;
-          }
-          console.warn("native google sign-in failed, falling back:", nat.error);
-        }
-      } catch (nativeErr) {
-        console.warn("native google sign-in crashed, falling back", nativeErr);
-      }
-
-      // ২) ফলব্যাক: Lovable-managed Google OAuth (web/browser flow)।
-      // chooser-এ বেছে নেওয়া Gmail থাকলে সেটাই prefill করি — তখন নতুন করে
-      // Gmail যোগ করতে বলবে না, শুধু কনফার্ম করলেই লগইন হবে।
       const { lovable } = await import("@/integrations/lovable/index");
 
       const res: any = await lovable.auth.signInWithOAuth("google", {
