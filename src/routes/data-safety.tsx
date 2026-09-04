@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { litePolicySections, liteText } from "@/lib/lite-policy";
+import { litePolicySections } from "@/lib/lite-policy";
 import {
   ShieldCheck,
   Database,
