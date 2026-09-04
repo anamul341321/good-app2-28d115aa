@@ -248,7 +248,7 @@ function PrivacyPage() {
       </div>
 
       <p className="text-[10px] text-center text-muted-foreground">
-        সর্বশেষ হালনাগাদ: আগস্ট ২০২৬ ·{" "}
+        সর্বশেষ হালনাগাদ: সেপ্টেম্বর ২০২৬ ·{" "}
         <Link to="/terms" className="underline">
           নিয়ম ও শর্তাবলি
         </Link>{" "}

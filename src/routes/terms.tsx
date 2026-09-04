@@ -133,7 +133,7 @@ function TermsPage() {
           <p className="text-[11px] text-muted-foreground mt-1">
             Good-App ব্যবহারের আগে নিচের নিয়মগুলো ভালোভাবে পড়ে নিন।
           </p>
-          <p className="text-[10px] text-muted-foreground mt-2">সর্বশেষ হালনাগাদ: আগস্ট ২০২৬</p>
+          <p className="text-[10px] text-muted-foreground mt-2">সর্বশেষ হালনাগাদ: সেপ্টেম্বর ২০২৬</p>
         </header>
 
         {litePolicySections(SECTIONS).map((s) => (
