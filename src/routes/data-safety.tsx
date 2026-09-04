@@ -197,7 +197,8 @@ function DataSafetyPage() {
       </div>
 
       <p className="text-[10px] text-center text-muted-foreground">
-        বিস্তারিত পড়ুন:{" "}
+        সর্বশেষ হালনাগাদ: সেপ্টেম্বর ২০২৬ · বিস্তারিত পড়ুন:{" "}
+
         <Link to="/privacy" className="underline">
           গোপনীয়তা নীতি
         </Link>{" "}
