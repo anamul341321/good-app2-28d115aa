@@ -318,8 +318,6 @@ function HomePage() {
           {/* ফুল-স্ক্রিন রেফার বোনাস ব্যানার (দিনে একবার) */}
           <ReferBonusBanner />
 
-          {/* Ads সাপোর্ট ব্যানার — Continue দিতে উৎসাহ */}
-          <AdsBoostBanner />
         </>
       )}
 
