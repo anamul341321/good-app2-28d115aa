@@ -12,7 +12,6 @@ import { PageVoice } from "@/components/PageVoice";
 import { FaceVerifyPausedNotice } from "@/components/FaceVerifyPausedNotice";
 import { getAppStatus } from "@/lib/app-status.functions";
 import { GmailSecurityBanner } from "@/components/GmailSecurityBanner";
-import { AdsBoostBanner } from "@/components/AdsBoostBanner";
 import { NoticeBoard } from "@/components/NoticeBoard";
 import { ReferBonusBanner, RatesEntryCard } from "@/components/ReferBonusBanner";
 import { ForeignCurrencyCard } from "@/components/ForeignCurrencyCard";

@@ -20,7 +20,6 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { LanguageProvider } from "@/lib/i18n";
 import { useNativeApp } from "@/hooks/useNativeApp";
-import { NativeAdsController } from "@/components/NativeAdsController";
 
 function NotFoundComponent() {
   return (
@@ -180,7 +179,6 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <LanguageProvider>
-        <NativeAdsController />
         <SplashScreen />
         {!isExcludedRoute && !isLiteBuild() && <AppUpdateBanner />}
         {!isExcludedRoute && !isLiteBuild() && <ForceUpdateGate />}
