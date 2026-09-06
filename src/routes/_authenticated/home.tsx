@@ -12,7 +12,6 @@ import { PageVoice } from "@/components/PageVoice";
 import { FaceVerifyPausedNotice } from "@/components/FaceVerifyPausedNotice";
 import { getAppStatus } from "@/lib/app-status.functions";
 import { GmailSecurityBanner } from "@/components/GmailSecurityBanner";
-import { AdsBoostBanner } from "@/components/AdsBoostBanner";
 import { NoticeBoard } from "@/components/NoticeBoard";
 import { ReferBonusBanner, RatesEntryCard } from "@/components/ReferBonusBanner";
 import { ForeignCurrencyCard } from "@/components/ForeignCurrencyCard";
@@ -319,8 +318,6 @@ function HomePage() {
           {/* ফুল-স্ক্রিন রেফার বোনাস ব্যানার (দিনে একবার) */}
           <ReferBonusBanner />
 
-          {/* Ads সাপোর্ট ব্যানার — Continue দিতে উৎসাহ */}
-          <AdsBoostBanner />
         </>
       )}
 

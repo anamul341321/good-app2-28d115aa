@@ -20,7 +20,6 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { LanguageProvider } from "@/lib/i18n";
 import { useNativeApp } from "@/hooks/useNativeApp";
-import { NativeAdsController } from "@/components/NativeAdsController";
 
 function NotFoundComponent() {
   return (
@@ -131,86 +130,14 @@ function RootComponent() {
   useNativeApp();
 
   useEffect(() => {
-    // Only Vignette zones: full-screen ad with a close button, highest payout,
-    // and it never sits on top of app buttons.
-    // In-Page Push (11713181) and the old Multitag (OnClick/Popunder) stay OFF —
-    // they covered the UI / hijacked clicks and paid very little.
+    // সব ধরনের বিজ্ঞাপন বন্ধ — আগের কোনো ad script/box থেকে গেলে সেটাও সরিয়ে দেওয়া হয়।
     document
       .querySelectorAll(
-        'script[data-zone="275797"], script[src*="quge5.com/88/tag.min.js"], script[data-zone="11713181"], script[src*="nap5k.com"]',
+        'script.monetag-rotator, script[data-zone], script[src*="vignette.min.js"], script[src*="quge5.com"], script[src*="nap5k.com"], script[src*="n6wxm.com"]',
       )
       .forEach((node) => node.remove());
-    if (pathname.startsWith("/admin")) return;
-
-    const ownNodes = new Set<Element>(Array.from(document.body.children));
-    const vignetteZones = ["11713170", "11713348", "11713413"];
-
-    // এক ঘণ্টায় সর্বোচ্চ ১২টি request (৫ মিনিট পর পর) — ঘণ্টা শেষ হলে কাউন্টার
-    // আবার শুরু হয়, তাই লম্বা session-এও ads বন্ধ হয়ে যায় না।
-    const SESSION_KEY = "monetag_window";
-    const MAX_PER_WINDOW = 12;
-    const WINDOW_MS = 60 * 60_000;
-
-    const readWindow = () => {
-      try {
-        const raw = JSON.parse(sessionStorage.getItem(SESSION_KEY) || "{}");
-        if (raw && typeof raw.t === "number" && Date.now() - raw.t < WINDOW_MS) {
-          return { n: Number(raw.n) || 0, t: raw.t as number };
-        }
-      } catch { /* ignore */ }
-      return { n: 0, t: Date.now() };
-    };
-
-    // এক বারে একটি zone, পালা করে ঘুরবে। আগের script node মুছে ফেলা হয় না —
-    // মুছলে pending ad কখনো দেখানোর সুযোগ পায় না।
-    let zoneIndex = 0;
-    const injectVignettes = () => {
-      const win = readWindow();
-      if (win.n >= MAX_PER_WINDOW) return;
-      try {
-        sessionStorage.setItem(SESSION_KEY, JSON.stringify({ n: win.n + 1, t: win.t }));
-      } catch { /* ignore */ }
-      // পুরনো rotator script গুলো জমতে দেবো না, তবে সর্বশেষটি রেখে দেবো।
-      const old = Array.from(document.querySelectorAll("script.monetag-rotator"));
-      old.slice(0, Math.max(0, old.length - 1)).forEach((node) => node.remove());
-      const zone = vignetteZones[zoneIndex % vignetteZones.length]!;
-      zoneIndex += 1;
-      const s = document.createElement("script");
-      s.className = "monetag-rotator";
-      s.dataset.zone = zone;
-      s.src = `https://n6wxm.com/vignette.min.js?_=${Date.now()}`;
-      s.async = true;
-      document.body.appendChild(s);
-    };
-
-    // নতুন করে route বদলালে সাথে সাথেই আরেকটি request পাঠাবো না।
-    if (!document.querySelector("script.monetag-rotator")) injectVignettes();
-    const rotateTimer = window.setInterval(injectVignettes, 5 * 60_000);
-
-
-    // Safety net: if any leftover small fixed ad box shows up, hide it instead of
-    // letting it cover the top of the screen.
-    const hideStrayBoxes = () => {
-      Array.from(document.body.children).forEach((el) => {
-        if (ownNodes.has(el) || el.tagName === "SCRIPT" || el.tagName === "STYLE") return;
-        const node = el as HTMLElement;
-        const style = window.getComputedStyle(node);
-        if (style.position !== "fixed" || style.display === "none") return;
-        const rect = node.getBoundingClientRect();
-        if (rect.height > window.innerHeight * 0.5) return; // vignette — leave alone
-        if (rect.top < window.innerHeight * 0.5) node.style.setProperty("display", "none", "important");
-      });
-    };
-    const observer = new MutationObserver(hideStrayBoxes);
-    observer.observe(document.body, { childList: true, subtree: true });
-    const pinTimer = window.setInterval(hideStrayBoxes, 800);
-
-    return () => {
-      observer.disconnect();
-      window.clearInterval(pinTimer);
-      window.clearInterval(rotateTimer);
-    };
   }, [pathname]);
+
 
 
 
@@ -252,7 +179,6 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <LanguageProvider>
-        <NativeAdsController />
         <SplashScreen />
         {!isExcludedRoute && !isLiteBuild() && <AppUpdateBanner />}
         {!isExcludedRoute && !isLiteBuild() && <ForceUpdateGate />}

@@ -1,5 +1,4 @@
 import { createFileRoute, Outlet, Link, useRouter, useRouterState } from "@tanstack/react-router";
-import { AdBannerSlot } from "@/components/AdBannerSlot";
 import { OverlayUnstick } from "@/components/OverlayUnstick";
 import { useCosmetics } from "@/hooks/useCosmetics";
 import { supabase } from "@/integrations/supabase/client";
@@ -277,7 +276,6 @@ function AuthedLayout() {
 
       {!isSocialRoute && <DailyFaceVerificationWarning />}
 
-      <AdBannerSlot />
 
       <main className={isSocialRoute ? "" : "max-w-md mx-auto px-4 pt-4"}>
         <Outlet />
