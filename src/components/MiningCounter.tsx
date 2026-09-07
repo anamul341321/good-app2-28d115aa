@@ -163,6 +163,7 @@ export function MiningCounter({
   // Audited values from breakdown
   const auditedBalance = balanceBreakdown?.current_balance ?? 0;
   const bonusPart = balanceBreakdown?.bonus_part ?? 0;
+  const pendingPart = Math.max(0, balanceBreakdown?.pending_part ?? 0);
   const miningPart = balanceBreakdown?.mining_part ?? 0;
   const miningAvailable = balanceBreakdown?.mining_available ?? miningPart;
   const selfMiningTotal = Math.max(0, balanceBreakdown?.self_mining_total ?? 0);
