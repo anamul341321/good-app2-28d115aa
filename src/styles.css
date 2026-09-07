@@ -1122,6 +1122,18 @@
 }
 
 html { -webkit-tap-highlight-color: transparent; }
+
+/* সব ফোনে একই রকম UI — ফোনের সিস্টেম ফন্ট সাইজ/ডিসপ্লে সাইজ যাই হোক,
+   অ্যাপের লেখা ও লেআউট একই অনুপাতে দেখাবে (ছোট/বড় হবে না)। */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  font-size: clamp(14px, 4.05vw, 17px);
+}
+@media (min-width: 640px) {
+  html { font-size: 16px; }
+}
+
 input, textarea, select { touch-action: manipulation; }
 
 /* ===== Low-end device / heavy-load smoothness =====
