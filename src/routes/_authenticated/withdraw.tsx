@@ -95,13 +95,14 @@ function WithdrawPage() {
     now,
   }) : 0;
 
-  const breakdown = (data as any).balanceBreakdown || { current_balance: 0, bonus_part: 0, mining_part: 0, mining_available: 0, mining_locked: 0 };
+  const breakdown = (data as any).balanceBreakdown || { current_balance: 0, bonus_part: 0, pending_part: 0, mining_part: 0, mining_available: 0, mining_locked: 0 };
   const bonusAvailable = Math.floor(breakdown.bonus_part);
+  const pendingPart = Math.floor(breakdown.pending_part ?? 0);
   const miningPart = Math.floor(breakdown.mining_part);
   const miningAvailable = Math.floor(breakdown.mining_available ?? breakdown.mining_part ?? 0);
-  // শুধু মেইন ব্যালেন্স উইথড্র করা যাবে — মাইনিং ব্যালেন্স আগে মেইনে ক্লেইম করতে হবে।
+  // মেইন ব্যালেন্স + ক্লেইম করা মাইনিং (পেন্ডিং) — ১–৩ তারিখের উইন্ডোতে দুটোই তোলা যায়।
   const miningLockedAmount = miningPart;
-  const claimable = bonusAvailable;
+  const claimable = bonusAvailable + pendingPart;
   const miningLocked = miningLockedAmount > 0;
 
   const chosenWallet = provider === "bkash" ? walletBkash : provider === "nagad" ? walletNagad : null;
@@ -185,6 +186,23 @@ function WithdrawPage() {
           </button>
         )}
       </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <div className="rounded-2xl p-3 border border-emerald/40 bg-emerald/10">
+          <p className="text-[10px] font-black text-emerald">💚 {t("মেইন ব্যালেন্স", "Main balance")}</p>
+          <p className="mono-num text-lg font-black" translate="no">{bonusAvailable}৳</p>
+          <p className="text-[9px] text-muted-foreground leading-tight">{t("বোনাসের টাকা — সাথে সাথেই যোগ হয়", "Bonus money — credited instantly")}</p>
+        </div>
+        <div className="rounded-2xl p-3 border border-amber/50 bg-amber/10">
+          <p className="text-[10px] font-black text-amber">⏳ {t("পেন্ডিং ব্যালেন্স", "Pending balance")}</p>
+          <p className="mono-num text-lg font-black" translate="no">{pendingPart}৳</p>
+          <p className="text-[9px] text-muted-foreground leading-tight">
+            {t("ক্লেইম করা মাইনিং — প্রতি মাসের ১–৩ তারিখে উইথড্র করা যাবে", "Claimed mining — withdrawable on the 1st–3rd each month")}
+          </p>
+        </div>
+      </div>
+
+
 
       {mining && (
         <div className="rounded-2xl p-4 border border-border bg-white/70 space-y-2">

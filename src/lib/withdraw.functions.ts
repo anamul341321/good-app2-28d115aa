@@ -202,9 +202,11 @@ export const requestWithdraw = createServerFn({ method: "POST" })
     const { data: bdRaw } = await (supabaseAdmin as any).rpc("get_user_balance_breakdown", { _user_id: userId });
     const bd = (bdRaw ?? {}) as Record<string, number>;
     const bonusAvailable = Number(bd.bonus_part ?? 0);
+    const pendingAvailable = Number(bd.pending_part ?? 0);
     const miningAvailable = Number(bd.mining_available ?? 0);
     const miningLockedAmount = Number(bd.mining_locked ?? 0);
-    const available = bonusAvailable + miningAvailable;
+    // মেইন ব্যালেন্স + ক্লেইম করা মাইনিং (পেন্ডিং ব্যালেন্স) — উইন্ডো খোলা থাকলে দুটোই তোলা যায়।
+    const available = bonusAvailable + pendingAvailable + miningAvailable;
 
     if (!miningWindowOpen) {
       throw new Error(

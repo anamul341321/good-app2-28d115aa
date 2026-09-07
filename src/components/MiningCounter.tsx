@@ -77,6 +77,7 @@ type Props = {
   balanceBreakdown?: {
     total_accrued: number;
     bonus_part: number;
+    pending_part?: number;
     mining_part: number;
     mining_available?: number;
     mining_locked?: number;
@@ -119,7 +120,7 @@ export function MiningCounter({
   const claim = useMutation({
     mutationFn: () => claimMiningToMain(),
     onSuccess: (res: any) => {
-      toast.success(`🎉 রেফার ১০% কমিশন ${Number(res?.amount ?? 0).toFixed(2)}৳ মেইন ব্যালেন্সে যোগ হয়েছে`);
+      toast.success(`🎉 রেফার ১০% কমিশন ${Number(res?.amount ?? 0).toFixed(2)}৳ পেন্ডিং ব্যালেন্সে যোগ হয়েছে — ১–৩ তারিখে উইথড্র করা যাবে`);
       void qc.invalidateQueries();
     },
     onError: (e: any) => toast.error(e?.message ?? "ক্লেইম করা যায়নি"),
@@ -128,8 +129,8 @@ export function MiningCounter({
     mutationFn: () => claimAllSlotMining(),
     onSuccess: (res: any) => {
       toast.success(
-        `⛏️ সব ঘরের মাইনিং ${Number(res?.mining ?? 0).toFixed(2)}৳ মেইন ব্যালেন্সে যোগ হয়েছে` +
-          ` · ${Number(res?.slots ?? 0)}টি ঘর`,
+        `⏳ সব ঘরের মাইনিং ${Number(res?.mining ?? 0).toFixed(2)}৳ পেন্ডিং ব্যালেন্সে জমা হয়েছে · ${Number(res?.slots ?? 0)}টি ঘর` +
+          ` — প্রতি মাসের ১–৩ তারিখে উইথড্র করা যাবে`,
       );
       void qc.invalidateQueries();
     },
@@ -162,6 +163,7 @@ export function MiningCounter({
   // Audited values from breakdown
   const auditedBalance = balanceBreakdown?.current_balance ?? 0;
   const bonusPart = balanceBreakdown?.bonus_part ?? 0;
+  const pendingPart = Math.max(0, balanceBreakdown?.pending_part ?? 0);
   const miningPart = balanceBreakdown?.mining_part ?? 0;
   const miningAvailable = balanceBreakdown?.mining_available ?? miningPart;
   const selfMiningTotal = Math.max(0, balanceBreakdown?.self_mining_total ?? 0);
@@ -309,10 +311,19 @@ export function MiningCounter({
         <div className="mt-2 mc-mini rounded-2xl p-2 flex items-center justify-between gap-2">
           <div>
             <p className="text-[8px] font-black tracking-widest text-white/70">💚 মেইন ব্যালেন্স</p>
-            <p className="text-[7.5px] text-white/60 leading-tight mt-0.5">বোনাস + ক্লেইম করা মাইনিং/কমিশন · বোনাস যেকোনো সময়, মাইনিং ১–৩ তারিখে</p>
+            <p className="text-[7.5px] text-white/60 leading-tight mt-0.5">বোনাসের টাকা — সাথে সাথেই যোগ হয়, যেকোনো সময় ব্যবহার করা যায়</p>
           </div>
           <p className="mono-num text-[15px] font-black text-yellow-100 shrink-0">{bonusPart.toFixed(2)}৳</p>
         </div>
+
+        <div className="mt-2 mc-mini rounded-2xl p-2 flex items-center justify-between gap-2">
+          <div>
+            <p className="text-[8px] font-black tracking-widest text-white/70">⏳ পেন্ডিং ব্যালেন্স</p>
+            <p className="text-[7.5px] text-white/60 leading-tight mt-0.5">ক্লেইম করা মাইনিং/কমিশন — প্রতি মাসের ১–৩ তারিখে উইথড্র করা যাবে</p>
+          </div>
+          <p className="mono-num text-[15px] font-black text-amber-100 shrink-0">{pendingPart.toFixed(2)}৳</p>
+        </div>
+
 
         <div className="mt-2 grid grid-cols-2 gap-2">
           <div className="mc-stat rounded-2xl p-2">
