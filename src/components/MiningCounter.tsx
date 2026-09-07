@@ -120,7 +120,7 @@ export function MiningCounter({
   const claim = useMutation({
     mutationFn: () => claimMiningToMain(),
     onSuccess: (res: any) => {
-      toast.success(`🎉 রেফার ১০% কমিশন ${Number(res?.amount ?? 0).toFixed(2)}৳ মেইন ব্যালেন্সে যোগ হয়েছে`);
+      toast.success(`🎉 রেফার ১০% কমিশন ${Number(res?.amount ?? 0).toFixed(2)}৳ পেন্ডিং ব্যালেন্সে যোগ হয়েছে — ১–৩ তারিখে উইথড্র করা যাবে`);
       void qc.invalidateQueries();
     },
     onError: (e: any) => toast.error(e?.message ?? "ক্লেইম করা যায়নি"),
@@ -129,8 +129,8 @@ export function MiningCounter({
     mutationFn: () => claimAllSlotMining(),
     onSuccess: (res: any) => {
       toast.success(
-        `⛏️ সব ঘরের মাইনিং ${Number(res?.mining ?? 0).toFixed(2)}৳ মেইন ব্যালেন্সে যোগ হয়েছে` +
-          ` · ${Number(res?.slots ?? 0)}টি ঘর`,
+        `⏳ সব ঘরের মাইনিং ${Number(res?.mining ?? 0).toFixed(2)}৳ পেন্ডিং ব্যালেন্সে জমা হয়েছে · ${Number(res?.slots ?? 0)}টি ঘর` +
+          ` — প্রতি মাসের ১–৩ তারিখে উইথড্র করা যাবে`,
       );
       void qc.invalidateQueries();
     },
