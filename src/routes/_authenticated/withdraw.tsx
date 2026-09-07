@@ -100,9 +100,11 @@ function WithdrawPage() {
   const pendingPart = Math.floor(breakdown.pending_part ?? 0);
   const miningPart = Math.floor(breakdown.mining_part);
   const miningAvailable = Math.floor(breakdown.mining_available ?? breakdown.mining_part ?? 0);
-  // মেইন ব্যালেন্স + ক্লেইম করা মাইনিং (পেন্ডিং) — ১–৩ তারিখের উইন্ডোতে দুটোই তোলা যায়।
+  const monthlyWindow = withdrawCountdownInfo(now);
+  // ক্লেইম করা মাইনিং (পেন্ডিং) শুধু ১–৩ তারিখের উইন্ডোতেই তোলা যায়।
+  // উইন্ডো বন্ধ থাকলে সেটা আবার পেন্ডিং হিসেবে লক — মেইন ব্যালেন্সে যোগ হবে না।
   const miningLockedAmount = miningPart;
-  const claimable = bonusAvailable + pendingPart;
+  const claimable = bonusAvailable + (monthlyWindow.isOpen ? pendingPart : 0);
   const miningLocked = miningLockedAmount > 0;
 
   const chosenWallet = provider === "bkash" ? walletBkash : provider === "nagad" ? walletNagad : null;
@@ -110,8 +112,8 @@ function WithdrawPage() {
   const chosenOffMsg  = provider === "bkash" ? payout.bkashOffMessage : payout.nagadOffMessage;
 
   const adminWithdrawOff = (data as any)?.payoutSettings?.withdrawEnabled === false;
-  const monthlyWindow = withdrawCountdownInfo(now);
   const withdrawClosed = withdrawWindowInfo(now).isClosed || adminWithdrawOff || !monthlyWindow.isOpen;
+
 
   return (
     <div className="space-y-4 pt-2">
