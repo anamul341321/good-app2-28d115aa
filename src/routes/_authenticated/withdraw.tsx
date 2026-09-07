@@ -187,6 +187,23 @@ function WithdrawPage() {
         )}
       </div>
 
+      <div className="grid grid-cols-2 gap-2">
+        <div className="rounded-2xl p-3 border border-emerald/40 bg-emerald/10">
+          <p className="text-[10px] font-black text-emerald">💚 {t("মেইন ব্যালেন্স", "Main balance")}</p>
+          <p className="mono-num text-lg font-black" translate="no">{bonusAvailable}৳</p>
+          <p className="text-[9px] text-muted-foreground leading-tight">{t("বোনাসের টাকা — সাথে সাথেই যোগ হয়", "Bonus money — credited instantly")}</p>
+        </div>
+        <div className="rounded-2xl p-3 border border-amber/50 bg-amber/10">
+          <p className="text-[10px] font-black text-amber">⏳ {t("পেন্ডিং ব্যালেন্স", "Pending balance")}</p>
+          <p className="mono-num text-lg font-black" translate="no">{pendingPart}৳</p>
+          <p className="text-[9px] text-muted-foreground leading-tight">
+            {t("ক্লেইম করা মাইনিং — প্রতি মাসের ১–৩ তারিখে উইথড্র করা যাবে", "Claimed mining — withdrawable on the 1st–3rd each month")}
+          </p>
+        </div>
+      </div>
+
+
+
       {mining && (
         <div className="rounded-2xl p-4 border border-border bg-white/70 space-y-2">
           <div className="flex items-center justify-between gap-3">
