@@ -502,6 +502,11 @@ public class MainActivity extends BridgeActivity {
         appWebView.stopLoading();
         appWebView.getSettings().setDomStorageEnabled(true);
         appWebView.getSettings().setMediaPlaybackRequiresUserGesture(false);
+        // Same UI on every phone: ignore the device's system font-size/display-size
+        // setting so text and layout never render bigger/smaller than designed.
+        appWebView.getSettings().setTextZoom(100);
+        appWebView.getSettings().setSupportZoom(false);
+        appWebView.getSettings().setBuiltInZoomControls(false);
         appWebView.addJavascriptInterface(new GoodAppDownloader(), "GoodAppDownloader");
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
             && ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
