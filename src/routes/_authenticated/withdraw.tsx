@@ -199,8 +199,11 @@ function WithdrawPage() {
           <p className="text-[10px] font-black text-amber">⏳ {t("পেন্ডিং ব্যালেন্স", "Pending balance")}</p>
           <p className="mono-num text-lg font-black" translate="no">{pendingPart}৳</p>
           <p className="text-[9px] text-muted-foreground leading-tight">
-            {t("ক্লেইম করা মাইনিং — প্রতি মাসের ১–৩ তারিখে উইথড্র করা যাবে", "Claimed mining — withdrawable on the 1st–3rd each month")}
+            {monthlyWindow.isOpen
+              ? t("ক্লেইম করা মাইনিং — এখন উইন্ডো খোলা, এই টাকা এখনই উইথড্র করা যাবে", "Claimed mining — window is open, withdrawable now")
+              : t("ক্লেইম করা মাইনিং লক — ৩ তারিখের পরে যা বাকি থাকে তা পেন্ডিংয়েই থাকে, পরের মাসের ১ তারিখে খুলবে", "Claimed mining is locked — whatever is left after the 3rd stays pending and unlocks on the 1st next month")}
           </p>
+
         </div>
       </div>
 
