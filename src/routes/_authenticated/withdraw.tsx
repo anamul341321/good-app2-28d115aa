@@ -95,13 +95,14 @@ function WithdrawPage() {
     now,
   }) : 0;
 
-  const breakdown = (data as any).balanceBreakdown || { current_balance: 0, bonus_part: 0, mining_part: 0, mining_available: 0, mining_locked: 0 };
+  const breakdown = (data as any).balanceBreakdown || { current_balance: 0, bonus_part: 0, pending_part: 0, mining_part: 0, mining_available: 0, mining_locked: 0 };
   const bonusAvailable = Math.floor(breakdown.bonus_part);
+  const pendingPart = Math.floor(breakdown.pending_part ?? 0);
   const miningPart = Math.floor(breakdown.mining_part);
   const miningAvailable = Math.floor(breakdown.mining_available ?? breakdown.mining_part ?? 0);
-  // শুধু মেইন ব্যালেন্স উইথড্র করা যাবে — মাইনিং ব্যালেন্স আগে মেইনে ক্লেইম করতে হবে।
+  // মেইন ব্যালেন্স + ক্লেইম করা মাইনিং (পেন্ডিং) — ১–৩ তারিখের উইন্ডোতে দুটোই তোলা যায়।
   const miningLockedAmount = miningPart;
-  const claimable = bonusAvailable;
+  const claimable = bonusAvailable + pendingPart;
   const miningLocked = miningLockedAmount > 0;
 
   const chosenWallet = provider === "bkash" ? walletBkash : provider === "nagad" ? walletNagad : null;
