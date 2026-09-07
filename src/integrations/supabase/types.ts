@@ -1560,6 +1560,7 @@ export type Database = {
           last_credited_at: string | null
           mining_unlocked: number
           mining_withdrawn: number
+          pending_mining: number
           qualifying_referees: number
           referral_accrued: number
           referral_units: number
@@ -1579,6 +1580,7 @@ export type Database = {
           last_credited_at?: string | null
           mining_unlocked?: number
           mining_withdrawn?: number
+          pending_mining?: number
           qualifying_referees?: number
           referral_accrued?: number
           referral_units?: number
@@ -1598,6 +1600,7 @@ export type Database = {
           last_credited_at?: string | null
           mining_unlocked?: number
           mining_withdrawn?: number
+          pending_mining?: number
           qualifying_referees?: number
           referral_accrued?: number
           referral_units?: number
