@@ -77,6 +77,7 @@ type Props = {
   balanceBreakdown?: {
     total_accrued: number;
     bonus_part: number;
+    pending_part?: number;
     mining_part: number;
     mining_available?: number;
     mining_locked?: number;
