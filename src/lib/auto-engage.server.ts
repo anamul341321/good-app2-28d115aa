@@ -153,6 +153,17 @@ function pick<T>(list: T[]): T {
   return list[Math.floor(Math.random() * list.length)] as T;
 }
 
+/** সব টেমপ্লেট শেষ হলে ছোট ছোট পরিবর্তন করে নতুন কমেন্ট বানাই */
+const VARIANT_PREFIX = ["", "ভাই ", "Vai ", "সত্যি ", "Sotti ", "আরে ", "Wow "];
+const VARIANT_SUFFIX = ["", " ❤️", " 🔥", " 😍", " 👏", " 🙌", "…", " 💯", " 🤍"];
+function varyComment(text: string, used: Set<string>): string {
+  for (let i = 0; i < 40; i += 1) {
+    const candidate = `${pick(VARIANT_PREFIX)}${text}${pick(VARIANT_SUFFIX)}`.trim();
+    if (!used.has(candidate)) return candidate;
+  }
+  return `${text} ${"✨".repeat(1 + (used.size % 3))}`;
+}
+
 function jitter(value: number, spread = 0.45) {
   const factor = 1 + (Math.random() * 2 - 1) * spread;
   return Math.max(0, Math.round(value * factor));
