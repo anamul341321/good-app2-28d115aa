@@ -43,7 +43,25 @@ import {
   LONG_VIDEO_MARKER,
 } from "@/lib/feed-api";
 
-import { useFeedMedia, prefetchFeedMedia } from "@/lib/feed-media";
+import {
+  useFeedMedia,
+  prefetchFeedMedia,
+  peekFeedMedia,
+  resolveFeedMedia,
+} from "@/lib/feed-media";
+
+/** সামনের ভিডিওর প্রথম কয়েকশো KB আগেই এনে ব্রাউজার ক্যাশে রাখি */
+const warmedVideos = new Set<string>();
+async function warmVideoBytes(url: string) {
+  if (warmedVideos.has(url)) return;
+  warmedVideos.add(url);
+  try {
+    const res = await fetch(url, { headers: { Range: "bytes=0-786431" }, cache: "force-cache" });
+    await res.arrayBuffer();
+  } catch {
+    warmedVideos.delete(url);
+  }
+}
 import { attachBackgroundAudio } from "@/lib/background-audio";
 import { MessengerAvatar } from "@/components/messenger/MessengerAvatar";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
