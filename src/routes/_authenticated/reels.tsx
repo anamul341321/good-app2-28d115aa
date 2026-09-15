@@ -901,7 +901,9 @@ function LocalReel({
           playsInline
           muted={muted}
           poster={posterUrl}
-          preload="auto"
+          // চালু ভিডিও ও পরের ২টি পুরো প্রি-লোড, বাকিগুলো শুধু metadata —
+          // স্লো ফোনে নেট ভাগ হয়ে যায় না, তাই চালু ভিডিও দ্রুত আসে
+          preload={isActive || (distance > 0 && distance <= 2) ? "auto" : "metadata"}
           onTimeUpdate={(e) => { const v = e.currentTarget; if (!v.paused && !v.ended) markWatching(); }}
           onLoadedData={() => setMediaFailed(false)}
           onWaiting={() => { if (isActive) setBuffering(true); }}
