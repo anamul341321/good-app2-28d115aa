@@ -525,6 +525,7 @@ function ReelSlide({
   item,
   isActive,
   isNear,
+  distance = 0,
   muted,
   setMuted,
   onVisible,
@@ -533,6 +534,7 @@ function ReelSlide({
   item: ReelItem;
   isActive: boolean;
   isNear: boolean;
+  distance?: number;
   muted: boolean;
   setMuted: (v: boolean) => void;
   onVisible: () => void;
