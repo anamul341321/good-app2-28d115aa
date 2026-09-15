@@ -681,6 +681,7 @@ function LocalReel({
   post,
   isActive,
   isNear = true,
+  distance = 0,
   muted,
   setMuted,
   onOpenComments,
