@@ -153,6 +153,17 @@ function pick<T>(list: T[]): T {
   return list[Math.floor(Math.random() * list.length)] as T;
 }
 
+/** সব টেমপ্লেট শেষ হলে ছোট ছোট পরিবর্তন করে নতুন কমেন্ট বানাই */
+const VARIANT_PREFIX = ["", "ভাই ", "Vai ", "সত্যি ", "Sotti ", "আরে ", "Wow "];
+const VARIANT_SUFFIX = ["", " ❤️", " 🔥", " 😍", " 👏", " 🙌", "…", " 💯", " 🤍"];
+function varyComment(text: string, used: Set<string>): string {
+  for (let i = 0; i < 40; i += 1) {
+    const candidate = `${pick(VARIANT_PREFIX)}${text}${pick(VARIANT_SUFFIX)}`.trim();
+    if (!used.has(candidate)) return candidate;
+  }
+  return `${text} ${"✨".repeat(1 + (used.size % 3))}`;
+}
+
 function jitter(value: number, spread = 0.45) {
   const factor = 1 + (Math.random() * 2 - 1) * spread;
   return Math.max(0, Math.round(value * factor));
@@ -284,11 +295,29 @@ export async function runAutoEngagement(maxJobs = 12): Promise<{ processed: Enga
       });
       const cIds: string[] = ((commentUsers ?? []) as any[]).map((r) => r.user_id).filter(Boolean);
       if (cIds.length) {
+        // এই পোস্টে আগে যেসব কমেন্ট গেছে সেগুলো বাদ দিই — একই লেখা দুইবার আসবে না
+        const { data: existingComments } = await sb
+          .from("post_comments")
+          .select("content, body")
+          .eq("post_id", post.id)
+          .limit(400);
+        const used = new Set<string>(
+          ((existingComments ?? []) as any[])
+            .map((c) => String(c.content ?? c.body ?? "").trim())
+            .filter(Boolean),
+        );
+
+        // টপিক অনুযায়ী কমেন্ট, সাথে অল্প কিছু general — যেন একঘেয়ে না লাগে
+        const pool = Array.from(
+          new Set([...COMMENTS[sentiment], ...(sentiment === "general" ? [] : COMMENTS.general)]),
+        );
+        const fresh = pool.filter((t) => !used.has(t));
+
         // UI `content` কলাম দেখায় — তাই দুই কলামেই একই লেখা রাখি, নাহলে খালি কমেন্ট দেখায়
-        const used = new Set<string>();
         const rows = cIds.map((uid) => {
-          let text = pick(COMMENTS[sentiment]);
-          for (let i = 0; i < 6 && used.has(text); i += 1) text = pick(COMMENTS[sentiment]);
+          const available = fresh.filter((t) => !used.has(t));
+          let text = available.length ? pick(available) : varyComment(pick(pool), used);
+          if (used.has(text)) text = varyComment(text, used);
           used.add(text);
           return { post_id: post.id, user_id: uid, body: text, content: text };
         });

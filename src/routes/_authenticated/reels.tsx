@@ -43,7 +43,25 @@ import {
   LONG_VIDEO_MARKER,
 } from "@/lib/feed-api";
 
-import { useFeedMedia, prefetchFeedMedia } from "@/lib/feed-media";
+import {
+  useFeedMedia,
+  prefetchFeedMedia,
+  peekFeedMedia,
+  resolveFeedMedia,
+} from "@/lib/feed-media";
+
+/** সামনের ভিডিওর প্রথম কয়েকশো KB আগেই এনে ব্রাউজার ক্যাশে রাখি */
+const warmedVideos = new Set<string>();
+async function warmVideoBytes(url: string) {
+  if (warmedVideos.has(url)) return;
+  warmedVideos.add(url);
+  try {
+    const res = await fetch(url, { headers: { Range: "bytes=0-786431" }, cache: "force-cache" });
+    await res.arrayBuffer();
+  } catch {
+    warmedVideos.delete(url);
+  }
+}
 import { attachBackgroundAudio } from "@/lib/background-audio";
 import { MessengerAvatar } from "@/components/messenger/MessengerAvatar";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -315,11 +333,32 @@ function ReelsPage() {
   // signed URL গুলো আগেই তৈরি করে রাখি — তাই স্ক্রল করলেই ভিডিও সাথে সাথে চলে
   useEffect(() => {
     const paths = items
-      .slice(Math.max(0, activeIndex - 1), activeIndex + 8)
+      .slice(Math.max(0, activeIndex - 2), activeIndex + 14)
       .flatMap((item) =>
         item.kind === "local" ? [item.post.video_url, item.post.user?.avatar_url] : [],
       );
     prefetchFeedMedia(paths, 8).catch(() => {});
+  }, [items, activeIndex]);
+
+  // সামনের ভিডিওগুলোর শুরুর অংশ আগেই ডাউনলোড করে ব্রাউজার ক্যাশে রাখি —
+  // স্লো ফোনেও পরের রিল সাথে সাথেই চালু হয় (TikTok স্টাইল)
+  useEffect(() => {
+    const upcoming = items
+      .slice(activeIndex + 1, activeIndex + 5)
+      .flatMap((item) => (item.kind === "local" ? [item.post.video_url] : []))
+      .filter(Boolean) as string[];
+    let cancelled = false;
+    (async () => {
+      for (const path of upcoming) {
+        if (cancelled) return;
+        const url = peekFeedMedia(path) || (await resolveFeedMedia(path).catch(() => undefined));
+        if (!url || cancelled) continue;
+        await warmVideoBytes(url);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [items, activeIndex]);
 
 
@@ -434,7 +473,8 @@ function ReelsPage() {
               key={item.id}
               item={item}
               isActive={activeId === item.id}
-              isNear={index - activeIndex >= -1 && index - activeIndex <= 2}
+              isNear={index - activeIndex >= -2 && index - activeIndex <= 4}
+              distance={index - activeIndex}
               muted={muted}
               setMuted={setMuted}
               onVisible={() => setActiveId(item.id)}
@@ -485,6 +525,7 @@ function ReelSlide({
   item,
   isActive,
   isNear,
+  distance = 0,
   muted,
   setMuted,
   onVisible,
@@ -493,6 +534,7 @@ function ReelSlide({
   item: ReelItem;
   isActive: boolean;
   isNear: boolean;
+  distance?: number;
   muted: boolean;
   setMuted: (v: boolean) => void;
   onVisible: () => void;
@@ -529,6 +571,7 @@ function ReelSlide({
           post={item.post}
           isActive={isActive}
           isNear={isNear}
+          distance={distance}
           muted={muted}
           setMuted={setMuted}
           onOpenComments={onOpenComments}
@@ -638,6 +681,7 @@ function LocalReel({
   post,
   isActive,
   isNear = true,
+  distance = 0,
   muted,
   setMuted,
   onOpenComments,
@@ -645,6 +689,7 @@ function LocalReel({
   post: Post;
   isActive: boolean;
   isNear?: boolean;
+  distance?: number;
   muted: boolean;
   setMuted: (v: boolean) => void;
   onOpenComments: (postId: string) => void;
@@ -856,7 +901,9 @@ function LocalReel({
           playsInline
           muted={muted}
           poster={posterUrl}
-          preload="auto"
+          // চালু ভিডিও ও পরের ২টি পুরো প্রি-লোড, বাকিগুলো শুধু metadata —
+          // স্লো ফোনে নেট ভাগ হয়ে যায় না, তাই চালু ভিডিও দ্রুত আসে
+          preload={isActive || (distance > 0 && distance <= 2) ? "auto" : "metadata"}
           onTimeUpdate={(e) => { const v = e.currentTarget; if (!v.paused && !v.ended) markWatching(); }}
           onLoadedData={() => setMediaFailed(false)}
           onWaiting={() => { if (isActive) setBuffering(true); }}
