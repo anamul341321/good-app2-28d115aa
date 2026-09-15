@@ -434,7 +434,8 @@ function ReelsPage() {
               key={item.id}
               item={item}
               isActive={activeId === item.id}
-              isNear={index - activeIndex >= -1 && index - activeIndex <= 2}
+              isNear={index - activeIndex >= -2 && index - activeIndex <= 4}
+              distance={index - activeIndex}
               muted={muted}
               setMuted={setMuted}
               onVisible={() => setActiveId(item.id)}
