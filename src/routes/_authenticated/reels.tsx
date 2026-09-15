@@ -571,6 +571,7 @@ function ReelSlide({
           post={item.post}
           isActive={isActive}
           isNear={isNear}
+          distance={distance}
           muted={muted}
           setMuted={setMuted}
           onOpenComments={onOpenComments}
