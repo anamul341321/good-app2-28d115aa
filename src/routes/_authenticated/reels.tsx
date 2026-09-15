@@ -315,11 +315,32 @@ function ReelsPage() {
   // signed URL গুলো আগেই তৈরি করে রাখি — তাই স্ক্রল করলেই ভিডিও সাথে সাথে চলে
   useEffect(() => {
     const paths = items
-      .slice(Math.max(0, activeIndex - 1), activeIndex + 8)
+      .slice(Math.max(0, activeIndex - 2), activeIndex + 14)
       .flatMap((item) =>
         item.kind === "local" ? [item.post.video_url, item.post.user?.avatar_url] : [],
       );
     prefetchFeedMedia(paths, 8).catch(() => {});
+  }, [items, activeIndex]);
+
+  // সামনের ভিডিওগুলোর শুরুর অংশ আগেই ডাউনলোড করে ব্রাউজার ক্যাশে রাখি —
+  // স্লো ফোনেও পরের রিল সাথে সাথেই চালু হয় (TikTok স্টাইল)
+  useEffect(() => {
+    const upcoming = items
+      .slice(activeIndex + 1, activeIndex + 5)
+      .flatMap((item) => (item.kind === "local" ? [item.post.video_url] : []))
+      .filter(Boolean) as string[];
+    let cancelled = false;
+    (async () => {
+      for (const path of upcoming) {
+        if (cancelled) return;
+        const url = peekFeedMedia(path) || (await resolveFeedMedia(path).catch(() => undefined));
+        if (!url || cancelled) continue;
+        await warmVideoBytes(url);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [items, activeIndex]);
 
 
