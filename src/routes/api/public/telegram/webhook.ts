@@ -2884,7 +2884,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         // ---- বিকাশ/নগদ নম্বর বদলানো → provider মনে রেখে UID নিয়ে reset --------
         if (
           wantsWalletReset &&
-          !decision.should_delete &&
+          !moderation.should_delete &&
           settings.auto_reply_enabled &&
           msg.from?.id
         ) {
