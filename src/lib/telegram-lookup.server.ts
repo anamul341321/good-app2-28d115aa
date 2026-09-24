@@ -179,7 +179,10 @@ export async function buildUserCard(uidRaw: string): Promise<LookupResult> {
     tasks.filter((t: any) => t.wallet_address && (t.status === "done" || t.status === "verified")).map((t: any) => t.slot),
   ).size;
   const reVerified = new Set(
-    tasks.filter((t: any) => (t.reverify_count ?? 0) > 0).map((t: any) => t.slot),
+    tasks.filter((t: any) => (t.reverify_count ?? 0) > 0 && t.whitelist_ok !== false).map((t: any) => t.slot),
+  ).size;
+  const reLost = new Set(
+    tasks.filter((t: any) => (t.reverify_count ?? 0) > 0 && t.whitelist_ok === false).map((t: any) => t.slot),
   ).size;
   const notWhitelisted = tasks.filter((t: any) => t.wallet_address && t.whitelist_ok === false).length;
 
@@ -251,7 +254,8 @@ export async function buildUserCard(uidRaw: string): Promise<LookupResult> {
 
     `\n<b>✅ ফেস ভেরিফিকেশন</b>\n` +
     `   ১ম ভেরিফাই: <b>${firstVerified}/10</b>\n` +
-    `   রি-ভেরিফাই: <b>${reVerified}/10</b>\n` +
+    `   রি-ভেরিফাই (এখনো whitelist আছে): <b>${reVerified}/10</b>\n` +
+    (reLost ? `   ⚠️ রি-ভেরিফাই করার পর আবার whitelist চলে গেছে: <b>${reLost}</b> টি স্লট — এগুলো রি-ভেরিফাই হিসাবে ধরা হয়নি\n` : "") +
     (notWhitelisted ? `   🔁 রি-ভেরিফাই চাওয়া হয়েছে: <b>${notWhitelisted}</b> টি স্লটে — অ্যাপের রি-ভেরিফাই পেজ থেকে করে নিন\n` : "") +
     `\n<b>👥 রেফার</b>\n` +
     `   মোট রেফার: <b>${referees.length}</b> জন\n` +
@@ -259,10 +263,12 @@ export async function buildUserCard(uidRaw: string): Promise<LookupResult> {
     `   ১০/১০ সম্পন্ন করেছে: <b>${refComplete}</b> জন\n` +
     (lines.length ? lines.join("\n") + "\n" : "") +
     `\n<b>💰 হিসাব</b>\n` +
-    `   বর্তমান ব্যালেন্স: <b>${bdt(balance - debt)}</b>\n` +
-    `   💚 মেইন ব্যালেন্স (যেকোনো সময় তোলা যায়): <b>${bdt(mainPart)}</b>\n` +
-    `   ⛏️ মাইনিং ব্যালেন্স (আনলক থাকলে শুধু ১–৩ তারিখে তোলা যায়): <b>${bdt(miningPart)}</b>   মাইনিং: ${mining?.is_active ? "🟢 চালু" : "🔴 বন্ধ"}\n` +
-    `   পেইড উইথড্র: <b>${bdt(paid)}</b>${pending ? `   পেন্ডিং: ${bdt(pending)}` : ""}\n` +
+    `   💼 মোট ব্যালেন্স: <b>${bdt(balance - debt)}</b>\n\n` +
+    `   💚 <b>মেইন ব্যালেন্স: ${bdt(mainPart)}</b>\n` +
+    `      ↳ এটা এসেছে বোনাস থেকে (ওয়েলকাম বোনাস, রেফার বোনাস, রি-ভেরিফাই বোনাস, কারো পাঠানো টাকা) — মাইনিং থেকে না। তাই ১ তারিখের অপেক্ষা ছাড়াই তোলা যায়।\n\n` +
+    `   ⛏️ <b>মাইনিং ব্যালেন্স: ${bdt(miningPart)}</b>  (মাইনিং ${mining?.is_active ? "🟢 চালু" : "🔴 বন্ধ"})\n` +
+    `      ↳ স্লট মাইনিং থেকে জমা — শুধু মাসের ১–৩ তারিখে (৩ তারিখ রাত ১০টা পর্যন্ত) তোলা যাবে।\n\n` +
+    `   ✅ এখন পর্যন্ত পেইড উইথড্র: <b>${bdt(paid)}</b>${pending ? `\n   ⏳ পেন্ডিং উইথড্র: <b>${bdt(pending)}</b>` : ""}\n` +
     (debt ? `   ⚠️ বকেয়া (ফেরতযোগ্য): <b>${bdt(debt)}</b>\n` : "");
 
   return { found: true, card };
