@@ -2881,7 +2881,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         }
 
         // ---- "কিভাবে withdraw/password reset করব?" → সরাসরি নিয়ম, UID নয়
-        if (howToTopic && settings.auto_reply_enabled && !photoBase64) {
+        if (howToTopic && !wantsWalletReset && settings.auto_reply_enabled && !photoBase64) {
           const reply = howToReply(senderName, howToTopic);
           await sendMessage(chatId, reply, msg.message_id);
           await logMessage("question", `how-to:${howToTopic}`, reply, null);
