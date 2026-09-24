@@ -2881,7 +2881,71 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         }
 
         // ---- "কিভাবে withdraw/password reset করব?" → সরাসরি নিয়ম, UID নয়
-        if (howToTopic && settings.auto_reply_enabled && !photoBase64) {
+        // ---- বিকাশ/নগদ নম্বর বদলানো → provider মনে রেখে UID নিয়ে reset --------
+        if (
+          wantsWalletReset &&
+          settings.auto_reply_enabled &&
+          msg.from?.id
+        ) {
+          const uidNow = pickUidFromCurrentOrReply();
+          if (!walletResetProvider) {
+            await saveSession({
+              intent: "wallet_reset",
+              step: "await_provider",
+              uid: uidNow ?? null,
+              app_user_id: null,
+              data: {},
+            });
+            const ask = "অবশ্যই 🙂 কোন নম্বরটি রিসেট করতে চান—<b>বিকাশ</b>, <b>নগদ</b> নাকি দুটোই?";
+            await sendMessage(chatId, ask, msg.message_id);
+            await logMessage("question", "wallet-reset-ask-provider", ask, null);
+            return Response.json({ ok: true, flow: "wallet-reset-ask-provider" });
+          }
+          const reasonNow = detectWalletReason(text, false);
+          if (!reasonNow) {
+            await saveSession({
+              intent: "wallet_reset",
+              step: "await_reason",
+              uid: uidNow ?? null,
+              app_user_id: null,
+              data: { provider: walletResetProvider },
+            });
+            const ask =
+              `জি, ${providerLabelOf(walletResetProvider)} নম্বর রিসেট করে দেওয়া যাবে 🙂\n` + walletReasonAsk;
+            await sendMessage(chatId, ask, msg.message_id);
+            await logMessage("question", "wallet-reset-ask-reason", ask, uidNow ?? null);
+            return Response.json({ ok: true, flow: "wallet-reset-ask-reason" });
+          }
+
+          if (uidNow) {
+            const { resetPaymentNumbersForUid, walletResetReply } =
+              await import("@/lib/telegram-wallet.server");
+            const result = await resetPaymentNumbersForUid(uidNow, providerArg(walletResetProvider));
+            const reply = walletResetReply(result) + (result.ok ? `\n📝 কারণ: ${reasonNow}` : "");
+            await sendMessage(chatId, reply, msg.message_id);
+            await logMessage(
+              "question",
+              `wallet-reset:${walletResetProvider}:${reasonNow}`,
+              reply,
+              result.ok ? uidNow : null,
+            );
+            return Response.json({ ok: true, flow: "wallet-reset-complete" });
+          }
+
+          await saveSession({
+            intent: "wallet_reset",
+            step: "await_uid",
+            uid: null,
+            app_user_id: null,
+            data: { provider: walletResetProvider, reason: reasonNow },
+          });
+          const ask = `কারণ বুঝেছি: <b>${reasonNow}</b> 🙂\n${providerLabelOf(walletResetProvider)} নম্বরটি রিসেট করে দিচ্ছি—শুধু আপনার <b>UID</b> লিখুন।`;
+          await sendMessage(chatId, ask, msg.message_id);
+          await logMessage("question", `wallet-reset-ask-uid:${walletResetProvider}`, ask, null);
+          return Response.json({ ok: true, flow: "wallet-reset-ask-uid" });
+        }
+
+        if (howToTopic && !wantsWalletReset && settings.auto_reply_enabled && !photoBase64) {
           const reply = howToReply(senderName, howToTopic);
           await sendMessage(chatId, reply, msg.message_id);
           await logMessage("question", `how-to:${howToTopic}`, reply, null);
@@ -3477,71 +3541,6 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           actions.push("extra-slot-bonus");
           await logMessage(decision.verdict, actions.join(","), reply, null);
           return Response.json({ ok: true, flow: "extra-slot-bonus", actions });
-        }
-
-        // ---- বিকাশ/নগদ নম্বর বদলানো → provider মনে রেখে UID নিয়ে reset --------
-        if (
-          wantsWalletReset &&
-          !decision.should_delete &&
-          settings.auto_reply_enabled &&
-          msg.from?.id
-        ) {
-          const uidNow = pickUidFromCurrentOrReply();
-          if (!walletResetProvider) {
-            await saveSession({
-              intent: "wallet_reset",
-              step: "await_provider",
-              uid: uidNow ?? null,
-              app_user_id: null,
-              data: {},
-            });
-            const ask = "অবশ্যই 🙂 কোন নম্বরটি রিসেট করতে চান—<b>বিকাশ</b>, <b>নগদ</b> নাকি দুটোই?";
-            await sendMessage(chatId, ask, msg.message_id);
-            await logMessage("question", "wallet-reset-ask-provider", ask, null);
-            return Response.json({ ok: true, flow: "wallet-reset-ask-provider" });
-          }
-          const reasonNow = detectWalletReason(text, false);
-          if (!reasonNow) {
-            await saveSession({
-              intent: "wallet_reset",
-              step: "await_reason",
-              uid: uidNow ?? null,
-              app_user_id: null,
-              data: { provider: walletResetProvider },
-            });
-            const ask =
-              `জি, ${providerLabelOf(walletResetProvider)} নম্বর রিসেট করে দেওয়া যাবে 🙂\n` + walletReasonAsk;
-            await sendMessage(chatId, ask, msg.message_id);
-            await logMessage("question", "wallet-reset-ask-reason", ask, uidNow ?? null);
-            return Response.json({ ok: true, flow: "wallet-reset-ask-reason" });
-          }
-
-          if (uidNow) {
-            const { resetPaymentNumbersForUid, walletResetReply } =
-              await import("@/lib/telegram-wallet.server");
-            const result = await resetPaymentNumbersForUid(uidNow, providerArg(walletResetProvider));
-            const reply = walletResetReply(result) + (result.ok ? `\n📝 কারণ: ${reasonNow}` : "");
-            await sendMessage(chatId, reply, msg.message_id);
-            await logMessage(
-              "question",
-              `wallet-reset:${walletResetProvider}:${reasonNow}`,
-              reply,
-              result.ok ? uidNow : null,
-            );
-            return Response.json({ ok: true, flow: "wallet-reset-complete" });
-          }
-
-          await saveSession({
-            intent: "wallet_reset",
-            step: "await_uid",
-            uid: null,
-            app_user_id: null,
-            data: { provider: walletResetProvider, reason: reasonNow },
-          });
-          const ask = `কারণ বুঝেছি: <b>${reasonNow}</b> 🙂\n${providerLabelOf(walletResetProvider)} নম্বরটি রিসেট করে দিচ্ছি—শুধু আপনার <b>UID</b> লিখুন।`;
-          await sendMessage(chatId, ask, msg.message_id);
-          await logMessage("question", `wallet-reset-ask-uid:${walletResetProvider}`, ask, null);
-          return Response.json({ ok: true, flow: "wallet-reset-ask-uid" });
         }
 
         // ---- "যেগুলো হয় না ওগুলো রিমুভ করা যাবে?" → UID + স্লট নিয়ে রিসেট -----
