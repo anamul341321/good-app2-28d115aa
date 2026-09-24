@@ -1874,7 +1874,9 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           if (aliveRaw && sess && !answering && !isCancel && questionish) {
             await clearSession();
           }
-          const alive = aliveRaw && (answering || isCancel || !questionish);
+          const walletSwitch = wantsWalletReset && sess?.intent !== "wallet_reset";
+          if (aliveRaw && sess && walletSwitch) await clearSession();
+          const alive = aliveRaw && !walletSwitch && (answering || isCancel || !questionish);
 
           if (alive && sess) {
             if (isCancel) {
