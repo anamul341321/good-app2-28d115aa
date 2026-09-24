@@ -1385,19 +1385,62 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           ) &&
           /(slot|স্লট|face|ফেস|verify|ভেরিফাই|verification|ভেরিফিকেশন|oigula|ওইগুলো|ওগুলো|ogulo|eigula|এইগুলো|egula|account|একাউন্ট)/i.test(
             norm,
+          ) &&
+          !(
+            /(nagad|নগদ|bkash|b\s*kash|বিকাশ|wallet|ওয়ালেট|ওয়ালেট)/i.test(norm) &&
+            !/(slot|স্লট|face|ফেস)/i.test(norm)
           );
 
-        const walletResetProvider = /(?:nagad|নগদ)/i.test(norm)
-          ? "nagad"
-          : /(?:bkash|b\s*kash|বিকাশ)/i.test(norm)
-            ? "bkash"
-            : null;
+        const mentionsNagad = /(?:nagad|নগদ)/i.test(norm);
+        const mentionsBkash = /(?:bkash|b\s*kash|বিকাশ)/i.test(norm);
+        const walletResetProvider: "bkash" | "nagad" | "both" | null =
+          mentionsNagad && mentionsBkash
+            ? "both"
+            : mentionsNagad
+              ? "nagad"
+              : mentionsBkash
+                ? "bkash"
+                : null;
         const wantsWalletReset =
-          /(nagad|নগদ|bkash|b\s*kash|বিকাশ|payment|পেমেন্ট|wallet|ওয়ালেট)/i.test(norm) &&
-          /(number|নম্বর|নাম্বার|নং)/i.test(norm) &&
-          /(change|চেঞ্জ|bodla|বদলা|বদল|poriborton|পরিবর্তন|reset|রিসেট|remove|রিমুভ|delete|ডিলিট|muche|মুছ|ভুল|wrong)/i.test(
+          /(nagad|নগদ|bkash|b\s*kash|বিকাশ|payment|পেমেন্ট|wallet|ওয়ালেট|ওয়ালেট)/i.test(norm) &&
+          (/(number|নম্বর|নাম্বার|নং|wallet|ওয়ালেট|ওয়ালেট|option|অপশন)/i.test(norm) ||
+            mentionsNagad ||
+            mentionsBkash) &&
+          /(change|চেঞ্জ|bodla|বদলা|বদল|poriborton|পরিবর্তন|reset|রিসেট|remove|রিমুভ|delete|ডিলিট|muche|মুছ|ভুল|wrong|ban|ব্যান|block|ব্লক|connect|কানেক্ট|new number|নতুন নম্বর)/i.test(
             norm,
           );
+        // কেন বিকাশ/নগদ রিসেট চায় — ইউজারের লেখা থেকে কারণ বের করা
+        const WALLET_REASONS = [
+          "নম্বরটি ব্যান/ব্লক হয়ে গেছে",
+          "ভুল নম্বর সেভ হয়ে গেছে",
+          "সিম/নম্বর হারিয়ে গেছে বা বন্ধ",
+          "নতুন নম্বর ব্যবহার করতে চাই",
+          "অন্য কারণ",
+        ];
+        const detectWalletReason = (text: string, allowBareDigit: boolean): string | null => {
+          const t = text.trim();
+          if (allowBareDigit) {
+            const m = /^\s*([1-5১-৫])\s*$/.exec(t);
+            if (m) {
+              const d = "১২৩৪৫".indexOf(m[1]) >= 0 ? "১২৩৪৫".indexOf(m[1]) + 1 : Number(m[1]);
+              return WALLET_REASONS[d - 1];
+            }
+          }
+          if (/(ban|ব্যান|block|ব্লক|বন্ধ করে দি|suspend|লক হয়ে|lock)/i.test(t)) return WALLET_REASONS[0];
+          if (/(ভুল|wrong|bhul|vul)/i.test(t)) return WALLET_REASONS[1];
+          if (/(হারিয়|হারাই|harai|sim|সিম|নষ্ট|হারিয়)/i.test(t)) return WALLET_REASONS[2];
+          if (/(notun|নতুন|new|অন্য নম্বর|onno number)/i.test(t)) return WALLET_REASONS[3];
+          if (allowBareDigit && t.length >= 6 && !/^\s*\d+\s*$/.test(t)) return `${WALLET_REASONS[4]}: ${t.slice(0, 120)}`;
+          return null;
+        };
+        const walletReasonAsk =
+          `কেন নম্বরটি রিসেট করতে চান, একটি কারণ বেছে নিয়ে নম্বর লিখুন 👇\n` +
+          WALLET_REASONS.map((r, i) => `${i + 1}. ${r}`).join("\n") +
+          `\n\n(অন্য কারণ হলে নিজের ভাষায় লিখে জানান)`;
+        const providerLabelOf = (p: string | null | undefined) =>
+          p === "nagad" ? "নগদ" : p === "bkash" ? "বিকাশ" : "বিকাশ ও নগদ";
+        const providerArg = (p: string | null | undefined) =>
+          p === "bkash" || p === "nagad" ? p : null;
 
         // "আমার রেফার হয় না / রেফার লিংক কাজ করে না" → নিজের ৫টি স্লট ভেরিফাই লাগবে
         const asksReferralUnlock =
@@ -1816,9 +1859,14 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
                     sess?.intent === "verification_dates" ||
                     sess?.intent === "account_info" ||
                     sess?.intent === "referral_join" ||
-                    sess?.intent === "referral_history" ||
-                    sess?.intent === "wallet_reset"
+                    sess?.intent === "referral_history"
                   ? looksLikeUidAnswer
+                  : sess?.intent === "wallet_reset"
+                  ? sess.step === "await_reason"
+                    ? true
+                    : sess.step === "await_provider"
+                      ? !!walletResetProvider || looksLikeUidAnswer
+                      : looksLikeUidAnswer
                   : sess?.step === "await_slot"
                     ? looksLikeSlotAnswer
                     : looksLikeUidAnswer || looksLikeSlotAnswer;
@@ -1893,30 +1941,38 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             }
 
             if (sess.intent === "wallet_reset") {
-              const rememberedProvider = (sess.data as any)?.provider as
-                | "bkash"
-                | "nagad"
-                | undefined;
-              const provider = rememberedProvider || walletResetProvider;
+              const sd = (sess.data as any) ?? {};
+              const provider = (sd.provider as string | undefined) || walletResetProvider;
               if (sess.step === "await_provider" && !provider) {
                 await sendMessage(
                   chatId,
-                  "কোন নম্বরটি বদলাতে চান—<b>বিকাশ</b> নাকি <b>নগদ</b>?",
+                  "কোন নম্বরটি রিসেট করতে চান—<b>বিকাশ</b>, <b>নগদ</b> নাকি দুটোই?",
                   msg.message_id,
                 );
                 return Response.json({ ok: true, flow: "wallet-reset-await-provider" });
               }
+              let reason = (sd.reason as string | undefined) || null;
+              if (!reason) reason = detectWalletReason(text, sess.step === "await_reason");
+              if (!reason) {
+                await saveSession({
+                  intent: "wallet_reset",
+                  step: "await_reason",
+                  data: { provider },
+                });
+                await sendMessage(chatId, walletReasonAsk, msg.message_id);
+                return Response.json({ ok: true, flow: "wallet-reset-await-reason" });
+              }
 
-              const uid = pickUidFromCurrentOrReply();
+              const uid = sess.step === "await_reason" ? (sess.uid as string | null) || pickUidFromCurrentOrReply() : pickUidFromCurrentOrReply() || (sess.uid as string | null);
               if (!uid) {
                 await saveSession({
                   intent: "wallet_reset",
                   step: "await_uid",
-                  data: { provider },
+                  data: { provider, reason },
                 });
                 await sendMessage(
                   chatId,
-                  `${provider === "nagad" ? "নগদ" : "বিকাশ"} নম্বরটি রিসেট করে দিচ্ছি। শুধু আপনার <b>UID</b> লিখুন।`,
+                  `কারণ বুঝেছি: <b>${reason}</b> 🙂\n${providerLabelOf(provider)} নম্বরটি রিসেট করে দিচ্ছি—শুধু আপনার <b>UID</b> লিখুন।`,
                   msg.message_id,
                 );
                 return Response.json({ ok: true, flow: "wallet-reset-await-uid" });
@@ -1924,13 +1980,14 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
               const { resetPaymentNumbersForUid, walletResetReply } =
                 await import("@/lib/telegram-wallet.server");
-              const result = await resetPaymentNumbersForUid(uid, provider);
-              const reply = walletResetReply(result);
+              const result = await resetPaymentNumbersForUid(uid, providerArg(provider));
+              const reply =
+                walletResetReply(result) + (result.ok ? `\n📝 কারণ: ${reason}` : "");
               if (result.ok) await clearSession();
               await sendMessage(chatId, reply, msg.message_id);
               await logMessage(
                 "question",
-                `wallet-reset:${provider ?? "all"}`,
+                `wallet-reset:${provider ?? "all"}:${reason}`,
                 reply,
                 result.ok ? uid : null,
               );
@@ -3427,32 +3484,47 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           settings.auto_reply_enabled &&
           msg.from?.id
         ) {
+          const uidNow = pickUidFromCurrentOrReply();
           if (!walletResetProvider) {
             await saveSession({
               intent: "wallet_reset",
               step: "await_provider",
-              uid: null,
+              uid: uidNow ?? null,
               app_user_id: null,
               data: {},
             });
-            const ask = "অবশ্যই—কোন নম্বরটি বদলাতে চান, <b>বিকাশ</b> নাকি <b>নগদ</b>?";
+            const ask = "অবশ্যই 🙂 কোন নম্বরটি রিসেট করতে চান—<b>বিকাশ</b>, <b>নগদ</b> নাকি দুটোই?";
             await sendMessage(chatId, ask, msg.message_id);
             await logMessage("question", "wallet-reset-ask-provider", ask, null);
             return Response.json({ ok: true, flow: "wallet-reset-ask-provider" });
           }
+          const reasonNow = detectWalletReason(text, false);
+          if (!reasonNow) {
+            await saveSession({
+              intent: "wallet_reset",
+              step: "await_reason",
+              uid: uidNow ?? null,
+              app_user_id: null,
+              data: { provider: walletResetProvider },
+            });
+            const ask =
+              `জি, ${providerLabelOf(walletResetProvider)} নম্বর রিসেট করে দেওয়া যাবে 🙂\n` + walletReasonAsk;
+            await sendMessage(chatId, ask, msg.message_id);
+            await logMessage("question", "wallet-reset-ask-reason", ask, uidNow ?? null);
+            return Response.json({ ok: true, flow: "wallet-reset-ask-reason" });
+          }
 
-          const uid = pickUidFromCurrentOrReply();
-          if (uid) {
+          if (uidNow) {
             const { resetPaymentNumbersForUid, walletResetReply } =
               await import("@/lib/telegram-wallet.server");
-            const result = await resetPaymentNumbersForUid(uid, walletResetProvider);
-            const reply = walletResetReply(result);
+            const result = await resetPaymentNumbersForUid(uidNow, providerArg(walletResetProvider));
+            const reply = walletResetReply(result) + (result.ok ? `\n📝 কারণ: ${reasonNow}` : "");
             await sendMessage(chatId, reply, msg.message_id);
             await logMessage(
               "question",
-              `wallet-reset:${walletResetProvider}`,
+              `wallet-reset:${walletResetProvider}:${reasonNow}`,
               reply,
-              result.ok ? uid : null,
+              result.ok ? uidNow : null,
             );
             return Response.json({ ok: true, flow: "wallet-reset-complete" });
           }
@@ -3462,10 +3534,9 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             step: "await_uid",
             uid: null,
             app_user_id: null,
-            data: { provider: walletResetProvider },
+            data: { provider: walletResetProvider, reason: reasonNow },
           });
-          const providerLabel = walletResetProvider === "nagad" ? "নগদ" : "বিকাশ";
-          const ask = `${providerLabel} নম্বরটি বদলানোর ব্যবস্থা করছি 🙂\nশুধু আপনার <b>UID</b> লিখুন—পেলেই পুরোনো ${providerLabel} নম্বরটি রিসেট করে দেব।`;
+          const ask = `কারণ বুঝেছি: <b>${reasonNow}</b> 🙂\n${providerLabelOf(walletResetProvider)} নম্বরটি রিসেট করে দিচ্ছি—শুধু আপনার <b>UID</b> লিখুন।`;
           await sendMessage(chatId, ask, msg.message_id);
           await logMessage("question", `wallet-reset-ask-uid:${walletResetProvider}`, ask, null);
           return Response.json({ ok: true, flow: "wallet-reset-ask-uid" });
