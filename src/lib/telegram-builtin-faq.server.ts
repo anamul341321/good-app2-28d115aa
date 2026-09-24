@@ -157,6 +157,21 @@ export const BUILTIN_FAQS: BuiltinFaq[] = [
     keywords: [
       "apps download",
       "app download",
+      "apps link",
+      "app link",
+      "apps er link",
+      "app er link",
+      "apps link din",
+      "link din",
+      "লিংকটা দেন",
+      "লিংক দেন",
+      "লিংক দিন",
+      "অ্যাপস লিংক",
+      "অ্যাপ লিংক",
+      "অ্যাপসের লিংক",
+      "অ্যাপের লিংক",
+      "এপস লিংক",
+      "apk link",
       "download korbo",
       "download kivabe",
       "apps kivabe download",
@@ -194,6 +209,7 @@ export const BUILTIN_FAQS: BuiltinFaq[] = [
 
     answer:
       `📲 <b>নতুন সিস্টেমে অ্যাপ ডাউনলোড / ইনস্টল</b> (খুব সহজ, ১ মিনিটের কাজ) 👇\n\n` +
+      `🔗 <b>সরাসরি ডাউনলোড লিংক:</b> https://goodapp2.live/api/public/app/download\n\n` +
       `<b>১️⃣</b> Chrome দিয়ে আমাদের অফিসিয়াল ওয়েবসাইট <b>https://goodapp2.live</b> ওপেন করুন।\n` +
       `<b>২️⃣</b> স্ক্রিনে নীচে থাকা <b>বড় "Download App" / "অ্যাপ ডাউনলোড করুন"</b> বাটনে ট্যাপ করুন।\n` +
       `<b>৩️⃣</b> APK ফাইল ডাউনলোড হলে Notification বারে ট্যাপ করে খুলুন, অথবা <b>Downloads</b> ফোল্ডার থেকে <b>goodapp2-release.apk</b> তে ট্যাপ করুন।\n` +
@@ -606,7 +622,7 @@ export const BUILTIN_FAQS: BuiltinFaq[] = [
   {
     topic: "লিংক এক্সপায়ার / সেশন শেষ",
     screenshot: ["expired", "session", "link is no longer valid"],
-    keywords: ["expire", "expired", "লিংক", "link kaj kore na", "session shesh"],
+    keywords: ["expire", "expired", "verify link kaj kore na", "ভেরিফাই লিংক কাজ করে না", "session shesh", "লিংক এক্সপায়ার"],
     answer:
       `ভেরিফিকেশন লিংক অল্প সময় পর নিজে থেকেই বাতিল হয়ে যায় ⏳\n\n` +
       `👉 অ্যাপে ফিরে গিয়ে ঐ স্লট থেকে <b>নতুন করে ভেরিফিকেশন শুরু</b> করুন, নতুন লিংক তৈরি হবে এবং কাজ করবে 🙂`,
