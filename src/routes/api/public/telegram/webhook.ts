@@ -3675,6 +3675,29 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return Response.json({ ok: true, flow: "referral_history_ask_uid", actions });
         }
 
+        // ---- "ফেস ভেরিফাই/ভেরিফিকেশন করতে পারছি না" → সরাসরি সমাধান ----------
+        // এটা হিসাব দেখার অনুরোধ নয় — তাই asksOwnAccount-এর আগেই ধরতে হবে,
+        // নইলে বট ভুল করে "হিসাব দেখে দিচ্ছি" বলে বসে।
+        const reportsVerifyFailureEarly =
+          /(হয় না|hoy na|hoi na|হচ্ছে না|hocche na|পারছি না|পারতেছি না|parchi na|parteci na|partesi na|error|এরর|fail|ফেইল|problem|somossa|সমস্যা|আসে না|ashe na|নিচ্ছে না|niche na|nicche na|আটকে|atke|wrong|ভুল|হচ্ছে নাহ|হয়না)/i.test(
+            norm,
+          ) &&
+          /(face|ফেস|verify|ভেরিফাই|verification|ভেরিফিকেশন|scan|স্ক্যান|মুখ)/i.test(norm);
+        if (
+          reportsVerifyFailureEarly &&
+          !decision.should_delete &&
+          settings.auto_reply_enabled
+        ) {
+          const { verifyTipsReply, loadRates } = await import("@/lib/telegram-knowledge.server");
+          const vRates = await loadRates();
+          const reply =
+            verifyTipsReply(senderName, vRates) + (vRates.faceVerifyOn ? videoSuffix(text) : "");
+          await sendMessage(chatId, reply, msg.message_id);
+          actions.push("verify-help");
+          await logMessage(decision.verdict, actions.join(","), reply, matchedUid);
+          return Response.json({ ok: true, flow: "verify_help", actions });
+        }
+
         // ---- "আমার কয়টা রেফার/ভেরিফাই/ব্যালেন্স?" → UID নিয়ে একাউন্ট কার্ড -----
         if (asksOwnAccount && !decision.should_delete && settings.auto_reply_enabled) {
           // ⚠️ কখনোই অনুমান করে অন্য কারো UID দেখানো যাবে না।
