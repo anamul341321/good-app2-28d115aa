@@ -231,44 +231,55 @@ export async function buildUserCard(uidRaw: string): Promise<LookupResult> {
     }
   }
 
-  // মেইন ব্যালেন্স = বোনাস/রেফার বোনাসের অংশ (যেকোনো সময় তোলা যায়);
-  // বাকিটা মাইনিং ব্যালেন্স (আনলক হলে শুধু মাসের ১–৩ তারিখে তোলা যায়)।
-  const { splitBalance } = await import("@/lib/mining");
+  // অ্যাপের একই হিসাব (get_user_balance_breakdown) থেকে ভাগ নেওয়া হচ্ছে,
+  // যাতে বটের রিপোর্ট আর অ্যাপের উইথড্র পেজ হুবহু মেলে।
+  let bd: any = null;
+  try {
+    const { data } = await db.rpc("get_user_balance_breakdown", { _user_id: profile.id });
+    bd = data;
+  } catch { /* ignore */ }
   const netBalance = Math.max(0, balance - debt);
-  const { main: mainPart, mining: miningPart } = splitBalance({
-    balance: netBalance,
-    bonusTotal: Number(mining?.bonus_amount ?? 0),
-    withdrawn: Number(mining?.withdrawn_amount ?? 0),
-    miningWithdrawn: Number(mining?.mining_withdrawn ?? 0),
-  });
+  const pendingPart = Math.max(0, Number(bd?.pending_part ?? 0));
+  const miningPart = Math.max(0, Number(bd?.mining_part ?? 0));
+  const mainPart = bd
+    ? Math.max(0, Number(bd?.bonus_part ?? 0))
+    : Math.max(0, netBalance - pendingPart - miningPart);
+  const windowOpen = !!bd?.window_open;
+  const availableNow = bd ? Math.max(0, Number(bd?.available_now ?? 0)) : mainPart;
 
   const kycOk = !!profile.kyc_verified && !!profile.telegram_user_id;
+  const line = `━━━━━━━━━━━━━━━━\n`;
   const card =
     `👤 <b>${profile.display_name || "ইউজার"}</b> — UID <code>${profile.uid_seq ?? "—"}</code>\n` +
     `📱 ${mask(profile.phone_number)}   🔗 রেফার কোড: <code>${profile.referral_code}</code>\n` +
     (kycOk
       ? `🔵 <b>KYC: ভেরিফাইড ✅</b> — উইথড্র চালু\n`
-      : `🔴 <b>KYC: হয়নি (unverified)</b> — একাউন্ট ঠিকই আছে, তবে KYC ছাড়া <b>টাকা তোলা যাবে না</b>।\n` +
-        `   👉 অ্যাপের হোম পেজে লাল <b>“KYC করুন”</b> বাটনে চাপ দিন → টেলিগ্রাম খুলবে → <b>START</b> চাপুন → KYC শেষ (১০ সেকেন্ডের কাজ) 💙\n`) +
+      : `🔴 <b>KYC: হয়নি</b> — KYC ছাড়া <b>টাকা তোলা যাবে না</b>।\n` +
+        `   👉 অ্যাপের হোম পেজে লাল <b>“KYC করুন”</b> বাটনে চাপ দিন → টেলিগ্রামে <b>START</b> চাপুন 💙\n`) +
     (profile.banned ? `🚫 <b>একাউন্ট ব্যান</b> — ${profile.banned_reason || "কারণ নেই"}\n` : "") +
-
-    `\n<b>✅ ফেস ভেরিফিকেশন</b>\n` +
-    `   ১ম ভেরিফাই: <b>${firstVerified}/10</b>\n` +
-    `   রি-ভেরিফাই (এখনো whitelist আছে): <b>${reVerified}/10</b>\n` +
-    (reLost ? `   ⚠️ রি-ভেরিফাই করার পর আবার whitelist চলে গেছে: <b>${reLost}</b> টি স্লট — এগুলো রি-ভেরিফাই হিসাবে ধরা হয়নি\n` : "") +
-    (notWhitelisted ? `   🔁 রি-ভেরিফাই চাওয়া হয়েছে: <b>${notWhitelisted}</b> টি স্লটে — অ্যাপের রি-ভেরিফাই পেজ থেকে করে নিন\n` : "") +
-    `\n<b>👥 রেফার</b>\n` +
-    `   মোট রেফার: <b>${referees.length}</b> জন\n` +
-    `   তাদের মোট ১ম ফেস: <b>${refFirst}</b> টি\n` +
-    `   ১০/১০ সম্পন্ন করেছে: <b>${refComplete}</b> জন\n` +
+    line +
+    `<b>🪪 ফেস ভেরিফিকেশন</b>\n` +
+    `   ✅ ১ম ভেরিফাই: <b>${firstVerified}</b> টি স্লট\n` +
+    `   🔄 রি-ভেরিফাই (whitelist আছে): <b>${reVerified}</b> টি স্লট\n` +
+    (reLost ? `   ⚠️ রি-ভেরিফাই করার পর whitelist চলে গেছে: <b>${reLost}</b> টি (গোনা হয়নি)\n` : "") +
+    (notWhitelisted ? `   🔁 আবার রি-ভেরিফাই লাগবে: <b>${notWhitelisted}</b> টি স্লটে — অ্যাপের রি-ভেরিফাই পেজ থেকে করুন\n` : "") +
+    line +
+    `<b>👥 রেফার</b>\n` +
+    `   মোট রেফার: <b>${referees.length}</b> জন  •  তাদের ১ম ফেস: <b>${refFirst}</b> টি\n` +
+    `   ১০/১০ সম্পন্ন: <b>${refComplete}</b> জন\n` +
     (lines.length ? lines.join("\n") + "\n" : "") +
-    `\n<b>💰 হিসাব</b>\n` +
-    `   💼 মোট ব্যালেন্স: <b>${bdt(balance - debt)}</b>\n\n` +
-    `   💚 <b>মেইন ব্যালেন্স: ${bdt(mainPart)}</b>\n` +
-    `      ↳ এটা এসেছে বোনাস থেকে (ওয়েলকাম বোনাস, রেফার বোনাস, রি-ভেরিফাই বোনাস, কারো পাঠানো টাকা) — মাইনিং থেকে না। তাই ১ তারিখের অপেক্ষা ছাড়াই তোলা যায়।\n\n` +
-    `   ⛏️ <b>মাইনিং ব্যালেন্স: ${bdt(miningPart)}</b>  (মাইনিং ${mining?.is_active ? "🟢 চালু" : "🔴 বন্ধ"})\n` +
-    `      ↳ স্লট মাইনিং থেকে জমা — শুধু মাসের ১–৩ তারিখে (৩ তারিখ রাত ১০টা পর্যন্ত) তোলা যাবে।\n\n` +
-    `   ✅ এখন পর্যন্ত পেইড উইথড্র: <b>${bdt(paid)}</b>${pending ? `\n   ⏳ পেন্ডিং উইথড্র: <b>${bdt(pending)}</b>` : ""}\n` +
+    line +
+    `<b>💰 হিসাব</b>\n` +
+    `   💼 মোট ব্যালেন্স: <b>${bdt(netBalance)}</b>\n\n` +
+    `   💚 মেইন ব্যালেন্স: <b>${bdt(mainPart)}</b>\n` +
+    `      ↳ যেকোনো সময় তোলা যায়\n` +
+    `   ⏳ পেন্ডিং ব্যালেন্স: <b>${bdt(pendingPart)}</b>\n` +
+    `      ↳ ক্লেইম করা মাইনিং ও কারো পাঠানো টাকা — শুধু মাসের ১–৩ তারিখে (৩ তারিখ রাত ১০টা পর্যন্ত) তোলা যাবে\n` +
+    `   ⛏️ মাইনিং ব্যালেন্স: <b>${bdt(miningPart)}</b>  (${mining?.is_active ? "🟢 চালু" : "🔴 বন্ধ"})\n` +
+    `      ↳ এখনো ক্লেইম হয়নি — ক্লেইম করলে পেন্ডিং-এ যাবে\n\n` +
+    `   🟢 এখন তোলা যাবে: <b>${bdt(availableNow)}</b>${windowOpen ? "  (উইথড্র উইন্ডো খোলা ✅)" : "  (১ তারিখে পেন্ডিং-ও যোগ হবে)"}\n` +
+    line +
+    `   ✅ মোট পেইড উইথড্র: <b>${bdt(paid)}</b>${pending ? `\n   ⏳ প্রসেসিং-এ আছে: <b>${bdt(pending)}</b>` : ""}\n` +
     (debt ? `   ⚠️ বকেয়া (ফেরতযোগ্য): <b>${bdt(debt)}</b>\n` : "");
 
   return { found: true, card };
