@@ -42,10 +42,16 @@ export async function loadRates(): Promise<AppRates> {
     (!b.promo_start_at || new Date(b.promo_start_at).getTime() <= now) &&
     (!b.promo_end_at || new Date(b.promo_end_at).getTime() >= now);
 
-  // Withdraw is OFF only when admin disabled it AND any timed pause hasn't expired.
+  // Withdraw is OFF when admin disabled it, OR outside the monthly window (1st–3rd, 10 PM Dhaka).
   const offUntil = b.withdraw_off_until ? new Date(b.withdraw_off_until).getTime() : null;
   const pauseExpired = offUntil !== null && offUntil <= now;
-  const withdrawOn = !(b.withdraw_enabled === false && !pauseExpired);
+  const adminOn = !(b.withdraw_enabled === false && !pauseExpired);
+  const { withdrawCountdownInfo } = await import("./withdraw-window");
+  const win = withdrawCountdownInfo(now);
+  const withdrawOn = adminOn && win.isOpen;
+  const nextOpen = new Intl.DateTimeFormat("bn-BD", { timeZone: "Asia/Dhaka", day: "numeric", month: "long" }).format(new Date(win.nextFirstAt));
+  const daysLeft = Math.ceil(win.msUntilOpen / 86400000);
+  const windowMsg = `উইথড্র প্রতি মাসের ১ তারিখ রাত ১২টা থেকে ৩ তারিখ রাত ১০টা পর্যন্ত চালু থাকে। এখন বন্ধ — আবার চালু হবে ${nextOpen} (আর প্রায় ${daysLeft} দিন বাকি) ইনশাআল্লাহ। এই সময়ের মধ্যে আপনার টাকা নিরাপদে অ্যাকাউন্টেই থাকবে।`;
 
   const bonusEnabled = b.bonus_enabled === true;
   return {
@@ -62,7 +68,7 @@ export async function loadRates(): Promise<AppRates> {
     usdtRate: Number(b.usdt_rate_bdt ?? 130),
     rechargeOn: b.recharge_enabled !== false,
     withdrawOn,
-    withdrawOffMsg: withdrawOn ? null : (b.withdraw_off_message ?? null),
+    withdrawOffMsg: withdrawOn ? null : !adminOn ? (b.withdraw_off_message ?? null) : windowMsg,
     bkashOn: b.bkash_enabled !== false,
     nagadOn: b.nagad_enabled !== false,
     usdtOn: b.usdt_enabled !== false,
