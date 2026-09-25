@@ -14,8 +14,19 @@ export function useCosmetics() {
 
   const { data } = useQuery({
     queryKey: ["cosmetics"],
-    queryFn: () => getCosmetics() as Promise<CosmeticState>,
+    queryFn: async (): Promise<CosmeticState | null> => {
+      const { supabase } = await import("@/integrations/supabase/client");
+      const { data: s } = await supabase.auth.getSession();
+      if (!s.session) return null;
+      try {
+        return (await getCosmetics()) as CosmeticState;
+      } catch {
+        return null;
+      }
+    },
     staleTime: 60_000,
+    retry: false,
+    throwOnError: false,
   });
 
   useEffect(() => {
