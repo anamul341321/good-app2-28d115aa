@@ -3688,10 +3688,57 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           !decision.should_delete &&
           settings.auto_reply_enabled
         ) {
-          const { verifyTipsReply, loadRates } = await import("@/lib/telegram-knowledge.server");
+          const { verifyTipsReply, loadRates, knowledgeText } = await import(
+            "@/lib/telegram-knowledge.server"
+          );
           const vRates = await loadRates();
-          const reply =
-            verifyTipsReply(senderName, vRates) + (vRates.faceVerifyOn ? videoSuffix(text) : "");
+          const tips = verifyTipsReply(senderName, vRates).replace(/<[^>]+>/g, "");
+          const mention =
+            (settings as any).admin_mention || (settings as any).support_username || "@anamulmunni";
+          // আগেই টিপস দেওয়া হয়েছে অথবা ইউজার বলছে "তাও/এখনো হচ্ছে না" → অ্যাডমিন ডাকো
+          const stillFailing =
+            /(তাও|তবুও|এখনো|এখনও|abar|আবার|still|tao|tobuo|ekhono|akhono|onekbar|অনেকবার)/i.test(norm) ||
+            (convoReplies ?? []).some((r: string) => /ভেরিফাই|verify|ফেস/i.test(String(r)));
+          let knownUid: string | null = null;
+          try {
+            knownUid = await linkedUid();
+          } catch {
+            /* ignore */
+          }
+          const uidInText = text.match(/\b\d{2,7}\b/)?.[0] ?? null;
+          const useUid = uidInText || knownUid;
+          let reply: string | null = null;
+          try {
+            const { agentAnswer } = await import("@/lib/telegram-agent.server");
+            const { appRulebook } = await import("@/lib/telegram-app-rules.server");
+            reply = await agentAnswer({
+              name: senderName,
+              question:
+                `${text}${quotedContext}\n\n` +
+                `[নির্দেশ: ইউজার ফেস ভেরিফিকেশনে সমস্যার কথা বলছে। মুখস্থ লম্বা লিস্ট দেবে না। ` +
+                (useUid
+                  ? `এই ইউজারের UID ${useUid} — আগে lookup_user ও list_slots টুল দিয়ে তার স্লট/ভেরিফাই/হোয়াইটলিস্ট অবস্থা দেখে নাও, তারপর তার আসল অবস্থা অনুযায়ী বোঝাও কোথায় সমস্যা আর এখন কী করতে হবে। `
+                  : `UID জানা নেই — তার কথা থেকে সমস্যা বুঝে সমাধান বলো, আর শেষে বলো UID দিলে একাউন্ট দেখে নির্দিষ্ট করে বলতে পারবে। `) +
+                `সে যে এরর/সমস্যার কথা বলেছে শুধু সেটার সমাধান ২–৫ লাইনে সুন্দর করে বাংলায় বোঝাও। ` +
+                `সাহায্যের জন্য সাধারণ টিপস: ${tips.slice(0, 1200)}]`,
+              knowledge: knowledgeText(vRates),
+              rulebook: appRulebook(vRates),
+              history: convoHistory,
+              pastReplies: convoReplies,
+              recall: recallText,
+              isAdmin: senderIsAdmin,
+            });
+          } catch (e) {
+            console.error("[tg] verify agent failed", e);
+          }
+          if (!reply) reply = verifyTipsReply(senderName, vRates);
+          if (stillFailing) {
+            reply +=
+              `\n\n🙋 এরপরও না হলে চিন্তা করবেন না — অ্যাডমিন নিজে দেখে দেবেন। ${mention}` +
+              (useUid ? ` (UID ${useUid})` : "");
+            actions.push("verify-escalated");
+          }
+          if (vRates.faceVerifyOn) reply += videoSuffix(text);
           await sendMessage(chatId, reply, msg.message_id);
           actions.push("verify-help");
           await logMessage(decision.verdict, actions.join(","), reply, matchedUid);
