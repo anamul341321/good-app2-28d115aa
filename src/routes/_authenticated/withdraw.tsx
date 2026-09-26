@@ -23,7 +23,19 @@ import { Button } from "@/components/ui/button";
 
 
 
-export const Route = createFileRoute("/_authenticated/withdraw")({ component: WithdrawPage });
+export const Route = createFileRoute("/_authenticated/withdraw")({
+  head: () => ({
+    meta: [
+      { title: "উইথড্র | GoodApp" },
+      { name: "description", content: "GoodApp ব্যালান্স থেকে বিকাশ, নগদ বা USDT-তে উইথড্র করুন।" },
+      { property: "og:title", content: "উইথড্র | GoodApp" },
+      { property: "og:description", content: "ব্যালান্স, সময় ও পেমেন্ট মাধ্যম দেখে সহজে উইথড্র করুন।" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
+  component: WithdrawPage,
+});
 
 function WithdrawPage() {
   if (isLiteBuild()) return <LiteFeatureBlock title="উইথড্র" />;
@@ -32,8 +44,6 @@ function WithdrawPage() {
   const { data: history, refetch: refetchHistory } = useQuery({
     queryKey: ["withdrawals"], queryFn: () => getMyWithdrawals(),
   });
-
-  const { data: adBoost } = useQuery({ queryKey: ["ad-boost"], queryFn: () => getAdBoostStatus() });
 
   const walletBkash = (data as any)?.walletBkash ?? null;
   const walletNagad = (data as any)?.walletNagad ?? null;
@@ -81,32 +91,16 @@ function WithdrawPage() {
 
   if (isLoading) return <div className="py-20 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-cyan" /></div>;
 
-  const mining = data?.mining;
   const debts = (data as any)?.debts ?? [];
   const debtTotal = Number((data as any)?.debtTotal ?? 0);
-  const balance = mining ? computeLiveBalance({
-    accrued: Number(mining.accrued_amount), withdrawn: Number(mining.withdrawn_amount),
-    isActive: mining.is_active, lastCreditedAt: mining.last_credited_at,
-    effectiveTaskCount: Number((mining as any).effective_task_count ?? 0),
-    qualifyingReferees: Number((mining as any).qualifying_referees ?? 0),
-    selfSlots: Number((mining as any).self_slots ?? 0),
-    referralUnits: Number((mining as any).referral_units ?? 0),
-    selfQualified: (mining as any).self_qualified !== false,
-    debt: debtTotal,
-    now,
-  }) : 0;
 
-  const breakdown = (data as any).balanceBreakdown || { current_balance: 0, bonus_part: 0, pending_part: 0, mining_part: 0, mining_available: 0, mining_locked: 0 };
+  const breakdown = (data as any).balanceBreakdown || { bonus_part: 0, pending_part: 0 };
   const bonusAvailable = Math.floor(breakdown.bonus_part);
   const pendingPart = Math.floor(breakdown.pending_part ?? 0);
-  const miningPart = Math.floor(breakdown.mining_part);
-  const miningAvailable = Math.floor(breakdown.mining_available ?? breakdown.mining_part ?? 0);
   const monthlyWindow = withdrawCountdownInfo(now);
   // ক্লেইম করা মাইনিং (পেন্ডিং) শুধু ১–৩ তারিখের উইন্ডোতেই তোলা যায়।
   // উইন্ডো বন্ধ থাকলে সেটা আবার পেন্ডিং হিসেবে লক — মেইন ব্যালেন্সে যোগ হবে না।
-  const miningLockedAmount = miningPart;
   const claimable = bonusAvailable + (monthlyWindow.isOpen ? pendingPart : 0);
-  const miningLocked = miningLockedAmount > 0;
 
   const chosenWallet = provider === "bkash" ? walletBkash : provider === "nagad" ? walletNagad : null;
   const chosenEnabled = provider === "bkash" ? payout.bkashEnabled : provider === "nagad" ? payout.nagadEnabled : false;
@@ -228,65 +222,6 @@ function WithdrawPage() {
 
 
 
-      {mining && (
-        <div className="rounded-2xl p-4 border border-border bg-white/70 space-y-2">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-[10px] uppercase tracking-widest text-emerald font-black">💚 মেইন ব্যালেন্স (এখনই উইথড্র)</p>
-              <p className="mono-num text-2xl font-black text-emerald mt-0.5" translate="no">{bonusAvailable}৳</p>
-            </div>
-            <div className="text-right">
-              <p className="text-[10px] uppercase tracking-widest text-cyan font-black">⛏️ মাইনিং</p>
-              <p className="mono-num text-2xl font-black text-cyan mt-0.5" translate="no">{miningPart}৳</p>
-              {miningLocked ? (
-                <p className="text-[10px] text-rose font-bold mt-0.5">🔒 লক {miningLockedAmount}৳ · আনলক {miningAvailable}৳</p>
-              ) : (
-                <p className="text-[10px] text-emerald font-bold mt-0.5">✓ পুরোটাই আনলক · ১–৩ তারিখে withdraw</p>
-              )}
-            </div>
-          </div>
-          <p className="text-[10px] text-muted-foreground leading-snug">
-            <b>মাইনিং টাকা প্রতি মাসের ১–৩ তারিখে</b> (৩ তারিখ রাত ১০টা পর্যন্ত) তোলা যাবে। বোনাস টাকা থাকলে যেকোনো দিন তোলা যাবে।
-          </p>
-        </div>
-      )}
-
-      {/* ⛏️ Mining unlock rules */}
-      {mining && (
-        <div className={`relative overflow-hidden rounded-3xl p-5 border-2 shadow-xl ${miningLocked ? "border-amber/50" : "border-emerald/50"}`}
-             style={{
-               background: miningLocked
-                 ? "linear-gradient(135deg, color-mix(in oklch, var(--color-amber) 14%, white) 0%, color-mix(in oklch, var(--color-cyan) 10%, white) 100%)"
-                 : "linear-gradient(135deg, color-mix(in oklch, var(--color-emerald) 15%, white) 0%, color-mix(in oklch, var(--color-cyan) 10%, white) 100%)"
-             }}>
-          <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full opacity-30 blur-3xl pointer-events-none"
-               style={{ background: miningLocked ? "var(--color-amber)" : "var(--color-emerald)" }} />
-          <div className="relative">
-            <div className="flex items-center gap-2 mb-3">
-              <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-xl ${miningLocked ? "bg-amber text-white" : "bg-emerald text-white"} shadow-lg`}>
-                {miningLocked ? "🔒" : "🔓"}
-              </div>
-              <div>
-                <p className={`text-[10px] uppercase tracking-[0.25em] font-black ${miningLocked ? "text-amber" : "text-emerald"}`}>মাইনিং আনলক নিয়ম</p>
-                <h3 className={`text-base font-black ${miningLocked ? "text-amber" : "text-emerald"}`}>
-                  {miningLocked ? `${miningLockedAmount}৳ লক — রি-ভেরিফাই করলে আনলক` : "সব টাকা আনলক — ১–৩ তারিখে তুলুন"}
-                </h3>
-              </div>
-            </div>
-            <ul className="space-y-2 text-[12px] text-navy/90 leading-relaxed font-bold">
-              <li className="flex gap-2"><span className="text-emerald shrink-0">📅</span><span>মাইনিং উইথড্র প্রতি মাসের <b className="text-emerald">১–৩ তারিখ</b>, ৩ তারিখ রাত ১০টা পর্যন্ত খোলা থাকবে।</span></li>
-              <li className="flex gap-2"><span className="text-violet shrink-0">🎁</span><span>বোনাস চালু হলে বোনাসের টাকা <b>যেকোনো দিন</b> তোলা যাবে।</span></li>
-              <li className="flex gap-2"><span className="text-cyan shrink-0">⛏️</span><span>প্রতিটি স্লট আলাদাভাবে মাইনিং করে (<b>৫০৳/মাস</b> প্রতি স্লট) — ১টি স্লট রি-ভেরিফাই করলেই ওই স্লটের মাইনিং চালু।</span></li>
-              <li className="flex gap-2"><span className="text-amber shrink-0">🔒</span><span>যে স্লট রি-ভেরিফাই করবেন, <b>সেই স্লটের জমা মাইনিং টাকাই</b> আনলক হবে। সব স্লট রি-ভেরিফাই করলে পুরো টাকা আনলক।</span></li>
-            </ul>
-          </div>
-        </div>
-      )}
-
-
-
-
-
       {!payout.bkashEnabled && !payout.nagadEnabled && (
         <div className="relative overflow-hidden rounded-2xl p-5 text-center border-2 border-amber/50"
              style={{ background: "linear-gradient(135deg, color-mix(in oklch, var(--color-amber) 18%, transparent), color-mix(in oklch, var(--color-rose) 15%, transparent))" }}>
@@ -314,12 +249,13 @@ function WithdrawPage() {
 
       {/* Mode toggle: BDT vs USDT */}
       <div className="grid grid-cols-2 gap-2" translate="no">
-        <button
+          <Button
+            variant="outline"
           type="button"
           onClick={() => setMode("bdt")}
-          className={`relative overflow-hidden rounded-2xl p-3.5 border-2 text-left transition ${
+            className={`h-auto justify-start relative overflow-hidden rounded-2xl p-3.5 border-2 text-left transition ${
             mode === "bdt"
-              ? "border-rose bg-linear-to-br from-rose/15 via-amber/10 to-transparent shadow-lg"
+              ? "border-rose bg-rose/10 shadow-lg"
               : "border-border bg-surface-2 opacity-80"
           }`}>
           <div className="flex items-center gap-2">
@@ -332,13 +268,14 @@ function WithdrawPage() {
               <p className="text-[9px] text-muted-foreground">{t("বিকাশ / নগদ", "bKash / Nagad")}</p>
             </div>
           </div>
-        </button>
-        <button
+          </Button>
+          <Button
+            variant="outline"
           type="button"
           onClick={() => setMode("usdt")}
-          className={`relative overflow-hidden rounded-2xl p-3.5 border-2 text-left transition ${
+            className={`h-auto justify-start relative overflow-hidden rounded-2xl p-3.5 border-2 text-left transition ${
             mode === "usdt"
-              ? "border-emerald bg-linear-to-br from-emerald/15 via-cyan/10 to-transparent shadow-lg"
+              ? "border-emerald bg-emerald/10 shadow-lg"
               : "border-border bg-surface-2 opacity-80"
           }`}>
           <div className="flex items-center gap-2">
@@ -348,7 +285,7 @@ function WithdrawPage() {
               <p className={`text-[9px] font-bold ${usdtEnabled ? "text-muted-foreground" : "text-rose"}`} translate="no">{usdtEnabled ? "Celo Network" : t("সাময়িক বন্ধ", "Temporarily off")}</p>
             </div>
           </div>
-        </button>
+          </Button>
       </div>
 
       {mode === "bdt" ? (
@@ -546,16 +483,16 @@ function ProviderPill({ selected, available, enabled, logo, label, tone, wallet,
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`rounded-2xl p-3 border-2 text-left transition ${
+      className={`h-auto w-full justify-start rounded-2xl p-3 border-2 text-left transition ${
         selected
-          ? `border-${tone} bg-${tone}/10`
+          ? tone === "rose" ? "border-rose bg-rose/10 shadow-md" : "border-amber bg-amber/10 shadow-md"
           : "border-border bg-surface-2"
       } ${disabled ? "opacity-50" : ""}`}
     >
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
-          <img src={logo} alt={label} className="h-6 w-auto object-contain shrink-0" loading="lazy" />
-          <span className={`text-sm font-black text-${tone} truncate`} translate="no">{label}</span>
+          <img src={logo} alt={label} className="h-10 w-10 rounded-xl object-contain shrink-0 bg-background shadow-sm" loading="lazy" />
+          <span className={`text-sm font-black ${tone === "rose" ? "text-rose" : "text-amber"} truncate`} translate="no">{label}</span>
         </div>
         {!enabled && <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-rose/20 text-rose shrink-0">{t("বন্ধ", "Off")}</span>}
       </div>
@@ -595,7 +532,8 @@ function DebtCard({ d, t, onClaimed }: { d: any; t: (bn: string, en: string) => 
         </span>
         <span className="mono-num font-black text-rose" translate="no">{Math.ceil(Number(d.amount))}৳</span>
       </div>
-      <button
+      <Button
+        variant="outline"
         type="button"
         onClick={() => { navigator.clipboard.writeText(d.payment_number); toast.success(t("Agent নম্বর কপি হয়েছে", "Agent number copied")); }}
         className="w-full flex items-center justify-between gap-2 bg-amber/10 border border-amber/40 rounded-lg px-3 py-2.5">
@@ -604,7 +542,7 @@ function DebtCard({ d, t, onClaimed }: { d: any; t: (bn: string, en: string) => 
           <p className="mono-num font-black text-lg text-navy" translate="no">{d.payment_number}</p>
         </div>
         <Copy className="w-4 h-4 text-amber" />
-      </button>
+    </Button>
       {d.message && (
         <div className="rounded-lg bg-rose/10 border border-rose/30 p-2.5">
           <p className="text-[10px] uppercase tracking-widest text-rose font-black">{t("অ্যাডমিনের বার্তা", "Admin message")}</p>
@@ -885,8 +823,8 @@ function RegionPayoutNote() {
       <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
         {countryCode === "BD"
           ? t(
-              "বাংলাদেশে bKash/Nagad-সহ লোকাল পেমেন্টে টাকা পাঠানো হয়। মাসের ১–৩ তারিখে রিকোয়েস্ট দিন।",
-              "In Bangladesh payouts go to local wallets. Request between the 1st and 3rd of the month."
+              "বাংলাদেশে বিকাশ বা নগদে টাকা পাঠানো হয়। মাইনিং টাকা ১–৩ তারিখে, বোনাস টাকা থাকলে যেকোনো দিন তুলতে পারবেন।",
+              "In Bangladesh payouts go to local wallets. Mining is available on days 1–3; bonus funds can be withdrawn any day."
             )
           : t(
               "আপনার দেশে লোকাল পেমেন্ট না থাকলে USDT (Celo) ওয়ালেটে পেমেন্ট নিতে পারবেন — ব্যালান্স ৳-এ দেখানো হয়, পাঠানোর সময় USDT-তে রূপান্তর হয়।",
@@ -894,7 +832,7 @@ function RegionPayoutNote() {
             )}
       </p>
       <p className="mt-1 text-[11px] font-black text-gold">
-        {t("সব লেনদেন শুধু Main Balance থেকে হয় — আগে মাইনিং ক্লেইম করুন।", "All payouts come from Main Balance only — claim mining first.")}
+        {t("মাইনিং টাকা তুলতে আগে ক্লেইম করে পেন্ডিং ব্যালান্সে নিন।", "Claim mining into pending balance before withdrawing.")}
       </p>
     </div>
   );

@@ -4,7 +4,6 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { MIN_WITHDRAW_BDT, MIN_PAYOUT_BDT, withdrawPayout, withdrawFee, withdrawDebit } from "./constants";
 import { computeLiveBalance } from "./mining";
 import { withdrawCountdownInfo } from "./withdraw-window";
-import { AD_BOOST, adBoostWithdrawInfo } from "./ad-boost";
 
 const CELO_ADDR_RE = /^0x[a-fA-F0-9]{40}$/;
 
@@ -100,28 +99,9 @@ export const requestWithdraw = createServerFn({ method: "POST" })
 
     // মাইনিং টাকা withdraw শুধু প্রতি মাসের ১–৩ তারিখে (Asia/Dhaka)।
     // বোনাস/মেইন ব্যালেন্স যেকোনো সময় তোলা যায়।
-    // Ad Boost: 5 rewarded ads = 1 boost = 5 days less waiting (max 25 days).
-    let miningWindowOpen = true;
-    let miningWindowDaysLeft = 0;
-    {
-      const win = withdrawCountdownInfo(Date.now());
-      if (!win.isOpen) {
-        const cycleStart = new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString().slice(0, 7) + "-01";
-        const { count: adCount } = await supabase
-          .from("ad_views")
-          .select("id", { count: "exact", head: true })
-          .eq("user_id", userId)
-          .gte("cycle_month", cycleStart);
-        const boostInfo = adBoostWithdrawInfo({
-          now: Date.now(),
-          nextFirstAt: win.nextFirstAt,
-          isOpen: false,
-          boosts: Math.floor((adCount ?? 0) / AD_BOOST.adsPerBoost),
-        });
-        miningWindowOpen = boostInfo.unlocked;
-        miningWindowDaysLeft = boostInfo.effectiveDaysLeft;
-      }
-    }
+    const miningWindow = withdrawCountdownInfo(Date.now());
+    const miningWindowOpen = miningWindow.isOpen;
+    const miningWindowDaysLeft = Math.max(1, Math.ceil(miningWindow.msUntilOpen / 86400000));
 
     const { data: userWallets } = await supabase.from("wallets").select("*").eq("user_id", userId);
     const walletBkash = (userWallets ?? []).find((w: any) => w.provider === "bkash") ?? null;
