@@ -188,9 +188,11 @@ export function MiningCounter({
   // The increment is the difference between the live computed value and the last recorded value in mining_state.
   const liveIncrement = Math.max(0, liveMiningBalance - (accrued - withdrawn));
   
-  // displayBalance is anchored to the audited ledger total + the live mining increment.
-  // We floor to avoid floating point jitter.
-  const displayBalance = Math.floor(isActive ? (auditedBalance + liveIncrement) : auditedBalance);
+  // মোট ব্যালেন্সে শুধু ক্লেইম করা টাকা (মেইন + পেন্ডিং)। আজকের ক্লেইম-না-করা
+  // মাইনিং আলাদা দেখানো হয় — রাত ১২টার আগে ক্লেইম না করলে সেটা বাতিল হয়।
+  void auditedBalance;
+  const displayBalance = Math.floor(bonusPart + pendingPart);
+  const todayUnclaimed = Math.max(0, miningPart + (isActive ? liveIncrement : 0));
 
   const rawSelfSlots = selfSlotsProp ?? effectiveTaskCount;
   const selfSlots = selfQualified ? rawSelfSlots : 0;
@@ -254,6 +256,14 @@ export function MiningCounter({
             <p className="text-[9px] uppercase tracking-[0.3em] text-white/60 font-black">Total Balance</p>
             <AnimatedMoney value={displayBalance} live={live} />
           </button>
+        ) : null}
+        {revealed ? (
+          <div className="mt-1.5 rounded-xl border border-white/20 bg-white/10 px-3 py-1.5 text-center">
+            <p className="text-[11px] font-black text-white">
+              ⛏️ আজকের মাইনিং: {todayUnclaimed.toFixed(2)}৳ <span className="text-white/60">(ক্লেইম বাকি)</span>
+            </p>
+            <p className="text-[9px] font-bold text-white/65">রাত ১২টার আগে ক্লেইম না করলে আজকের টাকা বাতিল হবে</p>
+          </div>
         ) : (
           <button
             type="button"
