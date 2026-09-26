@@ -1,7 +1,7 @@
 /**
  * মালিক (owner) কমান্ড হ্যান্ডলার।
  *
- * শুধুমাত্র `tg_bot_settings.support_username` (ডিফল্ট @anamulmunni) — অর্থাৎ
+ * শুধুমাত্র `tg_bot_settings.support_username` (ডিফল্ট @GoodAppOwner) — অর্থাৎ
  * অ্যাপের মালিক — এই কমান্ডগুলো চালাতে পারেন। গ্রুপে বটকে মেনশন করে, বা সরাসরি
  * বটের ইনবক্সে (DM) লিখলেও কাজ হবে।
  *
@@ -19,7 +19,7 @@ export function isOwnerIdentity(
   supportUsername?: string | null,
   adminChatId?: string | number | null,
 ): boolean {
-  const owner = String(supportUsername || "@anamulmunni")
+  const owner = String(supportUsername || "@GoodAppOwner")
     .replace(/^@/, "")
     .toLowerCase();
   const usernameMatches = !!username && username.toLowerCase() === owner;

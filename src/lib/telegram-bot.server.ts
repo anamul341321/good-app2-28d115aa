@@ -888,7 +888,7 @@ export async function decide(opts: {
   const withImages = opts.faq.filter((f) => f.imageBase64);
   const videos = opts.videos ?? [];
   const voices = opts.voices ?? [];
-  const support = opts.supportUsername || "@anamulmunni";
+  const support = opts.supportUsername || "@GoodAppOwner";
 
   const system = `${opts.persona}
 
