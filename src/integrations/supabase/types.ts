@@ -1558,6 +1558,7 @@ export type Database = {
           effective_task_count: number
           is_active: boolean
           last_credited_at: string | null
+          mining_day: string | null
           mining_unlocked: number
           mining_withdrawn: number
           pending_mining: number
@@ -1578,6 +1579,7 @@ export type Database = {
           effective_task_count?: number
           is_active?: boolean
           last_credited_at?: string | null
+          mining_day?: string | null
           mining_unlocked?: number
           mining_withdrawn?: number
           pending_mining?: number
@@ -1598,6 +1600,7 @@ export type Database = {
           effective_task_count?: number
           is_active?: boolean
           last_credited_at?: string | null
+          mining_day?: string | null
           mining_unlocked?: number
           mining_withdrawn?: number
           pending_mining?: number
