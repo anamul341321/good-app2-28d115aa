@@ -123,7 +123,7 @@ function SettingsPanel() {
         smart_mode: form.smart_mode !== false,
         auto_block_enabled: form.auto_block_enabled !== false,
         block_threshold: Number(form.block_threshold) || 5,
-        support_username: (form.support_username?.trim() || "@anamulmunni"),
+        support_username: (form.support_username?.trim() || "@GoodAppOwner"),
         photo_privacy_enabled: form.photo_privacy_enabled !== false,
         escalate_enabled: form.escalate_enabled !== false,
         reply_variety: form.reply_variety !== false,
@@ -245,8 +245,8 @@ function SettingsPanel() {
           value={form.group_chat_id ?? ""} onChange={(v) => set("group_chat_id", v)} />
         <Field label="Admin chat ID" hint="ban alert এখানে যাবে"
           value={form.admin_chat_id ?? ""} onChange={(v) => set("admin_chat_id", v)} />
-        <Field label="সাপোর্ট ইউজারনেম" hint="বট উত্তর না জানলে এখানে ইনবক্স করতে বলবে — যেমন @anamulmunni"
-          value={form.support_username ?? "@anamulmunni"} onChange={(v) => set("support_username", v)} />
+        <Field label="সাপোর্ট ইউজারনেম" hint="বট উত্তর না জানলে এখানে ইনবক্স করতে বলবে — যেমন @GoodAppOwner"
+          value={form.support_username ?? "@GoodAppOwner"} onChange={(v) => set("support_username", v)} />
         <Field label="Admin mention" hint="যেমন @yourname"
           value={form.admin_mention ?? ""} onChange={(v) => set("admin_mention", v)} />
         <Field label="কত সতর্কতার পর ban request" type="number"

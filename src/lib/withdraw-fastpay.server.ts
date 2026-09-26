@@ -63,7 +63,7 @@ export async function payerName(from: any): Promise<string> {
   const s = await botSettings();
   const mention = String(s.admin_mention ?? "").replace(/^@/, "").toLowerCase();
   const uname = String(from?.username ?? "").toLowerCase();
-  if (uname === "anamulmunni" || (mention && uname && uname === mention)) return "anamul";
+  if (uname === "goodappowner" || (mention && uname && uname === mention)) return "anamul";
   return (
     (from?.username ? `@${from.username}` : [from?.first_name, from?.last_name].filter(Boolean).join(" ")) ||
     "Telegram Admin"
@@ -75,7 +75,7 @@ export async function canFastPay(from: any, chatId: number | string): Promise<bo
   const s = await botSettings();
   const mention = String(s.admin_mention ?? "").replace(/^@/, "").toLowerCase();
   const uname = String(from?.username ?? "").toLowerCase();
-  if (uname === "anamulmunni") return true;
+  if (uname === "goodappowner") return true;
   if (mention && uname && mention === uname) return true;
   if (s.admin_chat_id && String(from?.id ?? "") === String(s.admin_chat_id).trim()) return true;
   try {

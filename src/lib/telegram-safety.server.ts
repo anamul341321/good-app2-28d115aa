@@ -23,7 +23,7 @@ export function insultsApp(_raw: string): boolean {
 export function badLinkIn(raw: string, supportUsername?: string | null): boolean {
   const urls = (raw || "").match(/(?:https?:\/\/|www\.|t\.me\/|telegram\.me\/)[^\s]+/gi) ?? [];
   const ownHost = /(goodapp2\.live|good-app2\.lovable\.app|youtu\.be|youtube\.com)/i;
-  const support = String(supportUsername || "@anamulmunni").replace(/^@/, "");
+  const support = String(supportUsername || "@GoodAppOwner").replace(/^@/, "");
   const bad = urls.some(
     (u) => !ownHost.test(u) && !new RegExp(`t(?:elegram)?\\.me/${support}`, "i").test(u),
   );

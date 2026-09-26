@@ -542,7 +542,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         // If an admin writes, or the user replies to an admin's message, stay silent.
         const isBotCommand = /^\/(?:start|help|admin|reset)\b/i.test(text.trim());
         // গ্রুপের মালিক (support_username) সবসময় অ্যাডমিন হিসেবেই গণ্য হবে
-        const ownerUsername = String((settings as any).support_username || "@anamulmunni")
+        const ownerUsername = String((settings as any).support_username || "@GoodAppOwner")
           .replace(/^@/, "")
           .toLowerCase();
         const senderIsOwner = (msg.from?.username ?? "").toLowerCase() === ownerUsername;
@@ -683,7 +683,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             }
           }
 
-          // ---- মালিক (@anamulmunni) কাউকে mention/reply করে "এই user এর UID কত?"
+          // ---- মালিক (@GoodAppOwner) কাউকে mention/reply করে "এই user এর UID কত?"
           // বা তার তথ্য জিজ্ঞেস করলে — সরাসরি UID + হিসাব কার্ড দেবে, ভদ্রভাবে।
           // শুধু owner-ই এই তথ্য পাবে; অন্য কেউ নয়।
           if (senderIsOwner) {
@@ -1139,7 +1139,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           const linkSrc = `${text} ${msg.caption ?? ""}`;
           const urls = linkSrc.match(/(?:https?:\/\/|www\.|t\.me\/|telegram\.me\/)[^\s]+/gi) ?? [];
           const ownHost = /(goodapp2\.live|good-app2\.lovable\.app|youtu\.be|youtube\.com)/i;
-          const supportUser = String((settings as any).support_username || "@anamulmunni").replace(
+          const supportUser = String((settings as any).support_username || "@GoodAppOwner").replace(
             /^@/,
             "",
           );
@@ -2328,7 +2328,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           const { adminWhereReply } = await import("@/lib/telegram-bot.server");
           const reply = adminWhereReply(
             senderName,
-            (settings as any).support_username || "@anamulmunni",
+            (settings as any).support_username || "@GoodAppOwner",
           );
           await sendMessage(chatId, reply, msg.message_id);
           await logMessage("question", "admin-where", reply, null);
@@ -3253,7 +3253,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               pastReplies: (settings as any).reply_variety === false ? [] : pastReplies,
               knownUid,
               warnCount: (offender as any)?.warn_count ?? 0,
-              supportUsername: (settings as any).support_username || "@anamulmunni",
+              supportUsername: (settings as any).support_username || "@GoodAppOwner",
             });
           } catch (e) {
             console.error("[tg] decide failed", e);
@@ -3694,7 +3694,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           const vRates = await loadRates();
           const tips = verifyTipsReply(senderName, vRates).replace(/<[^>]+>/g, "");
           const mention =
-            (settings as any).admin_mention || (settings as any).support_username || "@anamulmunni";
+            (settings as any).admin_mention || (settings as any).support_username || "@GoodAppOwner";
           // আগেই টিপস দেওয়া হয়েছে অথবা ইউজার বলছে "তাও/এখনো হচ্ছে না" → অ্যাডমিন ডাকো
           const stillFailing =
             /(তাও|তবুও|এখনো|এখনও|abar|আবার|still|tao|tobuo|ekhono|akhono|onekbar|অনেকবার)/i.test(norm) ||
@@ -4060,7 +4060,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               isAdmin: senderIsAdmin,
             })) ?? (await smartAnswer(base));
           const mention =
-            (settings as any).admin_mention || (settings as any).support_username || "@anamulmunni";
+            (settings as any).admin_mention || (settings as any).support_username || "@GoodAppOwner";
           // কোটা শেষ/কী নেই → অজানা প্রশ্নে চুপ থাকবে, কাউকে মেনশনও করবে না।
           if (!smart) {
             const { aiOutOfQuota } = await import("@/lib/ai-free.server");
@@ -4146,7 +4146,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               isAdmin: senderIsAdmin,
             })) ?? (await smartAnswer(base2));
           const mention =
-            (settings as any).admin_mention || (settings as any).support_username || "@anamulmunni";
+            (settings as any).admin_mention || (settings as any).support_username || "@GoodAppOwner";
           if (!smart) {
             const { aiOutOfQuota } = await import("@/lib/ai-free.server");
             if (aiOutOfQuota()) {
@@ -4304,7 +4304,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           const { smartAnswer, escalateReply } = await import("@/lib/telegram-bot.server");
           const { loadRates, knowledgeText } = await import("@/lib/telegram-knowledge.server");
           const mention =
-            (settings as any).admin_mention || (settings as any).support_username || "@anamulmunni";
+            (settings as any).admin_mention || (settings as any).support_username || "@GoodAppOwner";
           let reply: string | null = null;
           if (decision.needs_uid) {
             if (msg.from?.id) {
