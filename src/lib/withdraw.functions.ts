@@ -58,18 +58,6 @@ export const requestWithdraw = createServerFn({ method: "POST" })
     }
 
 
-    // উইথড্র উইন্ডো: প্রতি মাসের ১ তারিখ রাত ১২:০০টা → ৩ তারিখ রাত ১০:০০টা (Asia/Dhaka)।
-    // এর বাইরে কোনো উইথড্র রিকোয়েস্ট নেওয়া হবে না।
-    {
-      const win = withdrawCountdownInfo(Date.now());
-      if (!win.isOpen) {
-        const daysLeft = Math.max(1, Math.ceil(win.msUntilOpen / 86400000));
-        throw new Error(
-          `⏳ উইথড্র এখন বন্ধ — প্রতি মাসের ১ তারিখ রাত ১২:০০টা থেকে ৩ তারিখ রাত ১০:০০টা পর্যন্ত চালু থাকে। আগামী ১ তারিখ পর্যন্ত আর ${daysLeft} দিন বাকি (উইথড্র পেজে লাইভ কাউন্টডাউন দেখুন)।`,
-        );
-      }
-    }
-
     // Daily limit: max 3 withdraw requests per 24h
     const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     const { count: dailyCount } = await supabase
@@ -203,18 +191,15 @@ export const requestWithdraw = createServerFn({ method: "POST" })
     const bd = (bdRaw ?? {}) as Record<string, number>;
     const bonusAvailable = Number(bd.bonus_part ?? 0);
     const pendingAvailable = Number(bd.pending_part ?? 0);
-    const miningAvailable = Number(bd.mining_available ?? 0);
     const miningLockedAmount = Number(bd.mining_locked ?? 0);
-    // মেইন ব্যালেন্স + ক্লেইম করা মাইনিং (পেন্ডিং ব্যালেন্স) — উইন্ডো খোলা থাকলে দুটোই তোলা যায়।
-    const available = bonusAvailable + pendingAvailable + miningAvailable;
-
-    if (!miningWindowOpen) {
-      throw new Error(
-        `⏳ উইথড্র এখন বন্ধ — প্রতি মাসের ১ তারিখ রাত ১২:০০টা থেকে ৩ তারিখ রাত ১০:০০টা পর্যন্ত খোলা থাকে (আরও ${miningWindowDaysLeft} দিন বাকি)। মাইনিং ক্লেইম করে মেইন ব্যালেন্সে নিলেও এই সময়ের বাইরে তোলা যাবে না।`,
-      );
-    }
+    // বোনাস/মেইন ব্যালেন্স যেকোনো দিন তোলা যায়। পেন্ডিং মাইনিং কেবল
+    // মাসের ১–৩ তারিখের উইন্ডোতে যোগ হয়; আনক্লেইমড মাইনিং কখনো সরাসরি নয়।
+    const available = bonusAvailable + (miningWindowOpen ? pendingAvailable : 0);
 
     if (amount > available) {
+      if (!miningWindowOpen && pendingAvailable > 0) {
+        throw new Error(`⏳ এখন শুধু বোনাস ব্যালেন্স থেকে ${Math.floor(bonusAvailable)}৳ তোলা যাবে। পেন্ডিং মাইনিং প্রতি মাসের ১–৩ তারিখে খুলবে (আরও ${miningWindowDaysLeft} দিন বাকি)।`);
+      }
       if (miningLockedAmount > 0 && amount <= balance) {
         throw new Error(`আপনার ${Math.floor(miningLockedAmount)}৳ মাইনিং ব্যালেন্স এখনো লক — যে স্লট রি-ভেরিফাই করবেন, সেই স্লটের মাইনিং টাকা আনলক হবে। এখন তোলা যাবে: ${Math.floor(available)}৳।`);
       }

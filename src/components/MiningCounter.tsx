@@ -4,8 +4,10 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { computeLiveBalance, monthlyRate, MONTHLY_PER_SLOT } from "@/lib/mining";
 import { claimMiningToMain, claimAllSlotMining } from "@/lib/earnings.functions";
-import { Wallet, Sparkles, Gift, Loader2, Pickaxe, Eye, ChevronDown, ChevronUp, AlertTriangle } from "lucide-react";
+import { Wallet, Sparkles, Gift, Loader2, Pickaxe, Eye, ChevronDown, ChevronUp, AlertTriangle, LockKeyhole } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { withdrawCountdownInfo } from "@/lib/withdraw-window";
+import { MIN_WITHDRAW_BDT } from "@/lib/constants";
 
 /** Decorative layers never change — memoised so the 1s balance tick doesn't repaint them. */
 const MiningDecor = memo(function MiningDecor({ live }: { live: boolean }) {
@@ -201,7 +203,9 @@ export function MiningCounter({
   const ratePerMonth = monthlyRate(rateArgs);
   const selfMonth = MONTHLY_PER_SLOT * selfSlots;
   const bonusMonth = MONTHLY_PER_SLOT * refUnits;
-  const claimable = Math.floor(bonusPart + miningAvailable);
+  const withdrawWindowOpen = withdrawCountdownInfo(now).isOpen;
+  const withdrawableNow = Math.floor(bonusPart + (withdrawWindowOpen ? pendingPart : 0));
+  const canOpenWithdraw = withdrawableNow >= MIN_WITHDRAW_BDT;
   const league = leagueFor(leagueCount ?? Math.max(effectiveTaskCount, displayTaskCount ?? 0));
 
   // দিনে কত আসে — মাসিক রেট ÷ ৩০
@@ -415,20 +419,26 @@ export function MiningCounter({
         </div>
 
         <div className="mt-2.5 grid grid-cols-2 gap-2">
-          <button
+          <Button
             onClick={() => navigate({ to: "/withdraw" })}
-            className="rounded-2xl py-2.5 font-black text-[12px] flex items-center justify-center gap-1.5 btn-press mc-cta"
+            disabled={!canOpenWithdraw}
+            className={`h-auto rounded-2xl py-2.5 font-black text-[12px] whitespace-normal leading-tight btn-press ${canOpenWithdraw ? "mc-cta" : "border border-white/20 bg-white/10 text-white/45"}`}
           >
-            <Wallet className="w-3.5 h-3.5" />
-            {live && claimable > 0 ? `${claimable}৳ উইথড্র` : "উইথড্র"}
-          </button>
-          <button
+            {canOpenWithdraw ? <Wallet className="w-3.5 h-3.5" /> : <LockKeyhole className="w-3.5 h-3.5" />}
+            {canOpenWithdraw ? `${withdrawableNow}৳ উইথড্র করুন` : "উইথড্র বন্ধ"}
+          </Button>
+          <Button
+            variant="ghost"
             onClick={() => navigate({ to: "/earnings" })}
-            className="rounded-2xl py-2.5 font-black text-[12px] text-white flex items-center justify-center gap-1.5 btn-press border border-white/25 bg-white/10 backdrop-blur-md"
+            className="h-auto rounded-2xl py-2.5 font-black text-[12px] text-white btn-press border border-white/25 bg-white/10 backdrop-blur-md hover:bg-white/15 hover:text-white"
           >
             📜 আয়ের হিসাব
-          </button>
+          </Button>
         </div>
+        <p className="mt-1.5 text-center text-[9px] font-bold text-white/60">
+          {withdrawWindowOpen ? "মাইনিং উইথড্র ৩ তারিখ রাত ১০টা পর্যন্ত খোলা" : "মাইনিং উইথড্র প্রতি মাসের ১–৩ তারিখ খোলা"}
+          {!withdrawWindowOpen && bonusPart > 0 ? " · বোনাস এখনই তোলা যাবে" : ""}
+        </p>
 
       </div>
     </div>

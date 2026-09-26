@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Clock, Lock } from "lucide-react";
+import { CalendarClock, CheckCircle2, LockKeyhole } from "lucide-react";
 import { withdrawCountdownInfo } from "@/lib/withdraw-window";
 
 function pad(n: number) {
@@ -27,33 +27,25 @@ export function WithdrawCountdown() {
   if (info.isOpen) {
     const c = formatBn(info.msUntilClose);
     return (
-      <div className="relative overflow-hidden rounded-3xl border-2 border-emerald/40 bg-linear-to-br from-emerald/20 via-cyan/10 to-violet/10 p-5 shadow-xl">
-        <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-emerald/20 blur-3xl" />
-        <div className="relative flex items-start gap-3">
-          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-emerald text-white shadow-lg">
-            <Clock className="h-6 w-6" />
+      <div className="premium-panel rounded-2xl border-emerald/35 p-4">
+        <div className="relative flex items-center gap-3">
+          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-emerald text-primary-foreground shadow-lg">
+            <CheckCircle2 className="h-5 w-5" />
           </div>
           <div className="flex-1">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald">
-              মাইনিং উইথড্র চালু আছে ✅
-            </p>
-            <h3 className="mt-0.5 text-base font-black leading-tight text-foreground">
-              ৩ তারিখ রাত ১০:০০ টায় অটো বন্ধ হবে
-            </h3>
-            <p className="mt-1 text-[11px] text-muted-foreground leading-snug">
-              এখনই মাইনিং ব্যালেন্স উইথড্র করে নিন। সময় শেষ হলে পরের মাসের ১ তারিখ পর্যন্ত মাইনিং উইথড্র বন্ধ থাকবে।
-            </p>
+            <p className="text-[11px] font-black text-emerald">মাইনিং উইথড্র এখন চালু</p>
+            <h3 className="text-sm font-black leading-tight text-foreground">৩ তারিখ রাত ১০টায় বন্ধ হবে</h3>
           </div>
         </div>
-        <div className="relative mt-4 grid grid-cols-4 gap-2">
+        <div className="relative mt-3 grid grid-cols-4 gap-1.5">
           {[["দিন", c.days], ["ঘণ্টা", c.hours], ["মিনিট", c.minutes], ["সেকেন্ড", c.seconds]].map(([label, val]) => (
-            <div key={label as string} className="rounded-2xl bg-background/80 p-2 text-center backdrop-blur-sm border border-border">
-              <p className="mono-num text-xl font-black text-emerald" translate="no">{pad(val as number)}</p>
-              <p className="text-[9px] font-bold text-muted-foreground">{label}</p>
+            <div key={label as string} className="rounded-xl bg-emerald/10 px-1 py-1.5 text-center border border-emerald/20">
+              <p className="mono-num text-base font-black text-emerald" translate="no">{pad(val as number)}</p>
+              <p className="text-[8px] font-bold text-muted-foreground">{label}</p>
             </div>
           ))}
         </div>
-        <p className="relative mt-2 text-center text-[10px] font-bold text-muted-foreground">বন্ধ হতে বাকি</p>
+        <p className="relative mt-2 text-center text-[10px] font-bold text-muted-foreground">মাইনিং টাকা তোলার সময় বাকি</p>
       </div>
     );
   }
@@ -61,45 +53,27 @@ export function WithdrawCountdown() {
   const { days, hours, minutes, seconds } = formatBn(info.msUntilOpen);
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border-2 border-cyan/40 bg-linear-to-br from-violet/20 via-cyan/10 to-emerald/10 p-5 shadow-xl">
-      <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-cyan/20 blur-3xl" />
-      <div className="relative flex items-start gap-3">
-        <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-cyan text-white shadow-lg">
-          <Lock className="h-6 w-6" />
+    <div className="premium-panel rounded-2xl border-cyan/35 p-4">
+      <div className="relative flex items-center gap-3">
+        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-cyan text-primary-foreground shadow-lg">
+          <LockKeyhole className="h-5 w-5" />
         </div>
         <div className="flex-1">
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan">
-            <Clock className="inline h-3 w-3 mr-1" />
-            মাইনিং উইথড্র এখন বন্ধ
-          </p>
-          <h3 className="mt-0.5 text-base font-black leading-tight text-foreground">
-            আগামী ১ তারিখ ১২:০০ AM-এ চালু হবে
-          </h3>
-          <p className="mt-1 text-[11px] text-muted-foreground leading-snug">
-            উইথড্র শুধু প্রতি মাসের ১ তারিখ রাত ১২টা থেকে ৩ তারিখ রাত ১০:০০ টা পর্যন্ত খোলা থাকে। মাইনিং ক্লেইম করে মেইন ব্যালেন্সে নিলেও এই সময়ের বাইরে কোনো ব্যালেন্স তোলা যাবে না।
-          </p>
+          <p className="text-[11px] font-black text-cyan">মাইনিং উইথড্র এখন বন্ধ</p>
+          <h3 className="text-sm font-black leading-tight text-foreground">পরের মাসের ১ তারিখ রাত ১২টায় খুলবে</h3>
         </div>
       </div>
 
-
-      <div className="relative mt-4 grid grid-cols-4 gap-2">
-        <div className="rounded-2xl bg-background/80 p-2 text-center backdrop-blur-sm border border-border">
-          <p className="mono-num text-xl font-black text-cyan" translate="no">{pad(days)}</p>
-          <p className="text-[9px] font-bold text-muted-foreground">দিন</p>
-        </div>
-        <div className="rounded-2xl bg-background/80 p-2 text-center backdrop-blur-sm border border-border">
-          <p className="mono-num text-xl font-black text-cyan" translate="no">{pad(hours)}</p>
-          <p className="text-[9px] font-bold text-muted-foreground">ঘণ্টা</p>
-        </div>
-        <div className="rounded-2xl bg-background/80 p-2 text-center backdrop-blur-sm border border-border">
-          <p className="mono-num text-xl font-black text-cyan" translate="no">{pad(minutes)}</p>
-          <p className="text-[9px] font-bold text-muted-foreground">মিনিট</p>
-        </div>
-        <div className="rounded-2xl bg-background/80 p-2 text-center backdrop-blur-sm border border-border">
-          <p className="mono-num text-xl font-black text-cyan" translate="no">{pad(seconds)}</p>
-          <p className="text-[9px] font-bold text-muted-foreground">সেকেন্ড</p>
-        </div>
+      <div className="relative mt-3 grid grid-cols-4 gap-1.5">
+        {[["দিন", days], ["ঘণ্টা", hours], ["মিনিট", minutes], ["সেকেন্ড", seconds]].map(([label, val]) => (
+          <div key={label as string} className="rounded-xl bg-cyan/10 px-1 py-1.5 text-center border border-cyan/20">
+            <p className="mono-num text-base font-black text-cyan" translate="no">{pad(val as number)}</p>
+            <p className="text-[8px] font-bold text-muted-foreground">{label}</p>
+          </div>
+        ))}
       </div>
+      <p className="relative mt-2 flex items-center justify-center gap-1 text-center text-[10px] font-bold text-muted-foreground"><CalendarClock className="h-3 w-3" /> প্রতি মাসের ১–৩ তারিখ মাইনিং উইথড্র খোলা</p>
+      <p className="relative mt-1 text-center text-[10px] font-black text-emerald">বোনাস টাকা থাকলে যেকোনো দিন তোলা যাবে</p>
     </div>
   );
 }
