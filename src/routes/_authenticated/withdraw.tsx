@@ -3,26 +3,37 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { getDashboard, getMyWithdrawals } from "@/lib/dashboard.functions";
 import { requestWithdraw } from "@/lib/withdraw.functions";
 import { withdrawPayout, MIN_WITHDRAW_BDT, withdrawFee } from "@/lib/constants";
-import { computeLiveBalance, splitBalance } from "@/lib/mining";
 import { useState, useEffect } from "react";
-import { ArrowDownToLine, Loader2, Lock, Copy, ShieldAlert } from "lucide-react";
+import { ArrowDownToLine, Loader2, Lock, Copy, ShieldAlert, CalendarDays, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { PageVoice } from "@/components/PageVoice";
 import bkashLogo from "@/assets/bkash-logo.png";
 import nagadLogo from "@/assets/nagad-logo.png";
 import usdtLogo from "@/assets/usdt-logo.png";
 import { useLang } from "@/lib/i18n";
-import { withdrawWindowInfo, withdrawCountdownInfo } from "@/lib/withdraw-window";
+import { withdrawCountdownInfo } from "@/lib/withdraw-window";
 import { WithdrawClosedBanner } from "@/components/WithdrawClosedBanner";
 import { WithdrawCountdown } from "@/components/WithdrawCountdown";
-import { getAdBoostStatus } from "@/lib/ads.functions";
 import { WithdrawRejectDetails } from "@/components/WithdrawRejectDetails";
 import { isLiteBuild } from "@/lib/lite-build";
 import { LiteFeatureBlock } from "@/components/LiteFeatureBlock";
+import { Button } from "@/components/ui/button";
 
 
 
-export const Route = createFileRoute("/_authenticated/withdraw")({ component: WithdrawPage });
+export const Route = createFileRoute("/_authenticated/withdraw")({
+  head: () => ({
+    meta: [
+      { title: "উইথড্র | GoodApp" },
+      { name: "description", content: "GoodApp ব্যালান্স থেকে বিকাশ, নগদ বা USDT-তে উইথড্র করুন।" },
+      { property: "og:title", content: "উইথড্র | GoodApp" },
+      { property: "og:description", content: "ব্যালান্স, সময় ও পেমেন্ট মাধ্যম দেখে সহজে উইথড্র করুন।" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
+  component: WithdrawPage,
+});
 
 function WithdrawPage() {
   if (isLiteBuild()) return <LiteFeatureBlock title="উইথড্র" />;
@@ -31,8 +42,6 @@ function WithdrawPage() {
   const { data: history, refetch: refetchHistory } = useQuery({
     queryKey: ["withdrawals"], queryFn: () => getMyWithdrawals(),
   });
-
-  const { data: adBoost } = useQuery({ queryKey: ["ad-boost"], queryFn: () => getAdBoostStatus() });
 
   const walletBkash = (data as any)?.walletBkash ?? null;
   const walletNagad = (data as any)?.walletNagad ?? null;
@@ -80,47 +89,39 @@ function WithdrawPage() {
 
   if (isLoading) return <div className="py-20 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-cyan" /></div>;
 
-  const mining = data?.mining;
   const debts = (data as any)?.debts ?? [];
   const debtTotal = Number((data as any)?.debtTotal ?? 0);
-  const balance = mining ? computeLiveBalance({
-    accrued: Number(mining.accrued_amount), withdrawn: Number(mining.withdrawn_amount),
-    isActive: mining.is_active, lastCreditedAt: mining.last_credited_at,
-    effectiveTaskCount: Number((mining as any).effective_task_count ?? 0),
-    qualifyingReferees: Number((mining as any).qualifying_referees ?? 0),
-    selfSlots: Number((mining as any).self_slots ?? 0),
-    referralUnits: Number((mining as any).referral_units ?? 0),
-    selfQualified: (mining as any).self_qualified !== false,
-    debt: debtTotal,
-    now,
-  }) : 0;
 
-  const breakdown = (data as any).balanceBreakdown || { current_balance: 0, bonus_part: 0, pending_part: 0, mining_part: 0, mining_available: 0, mining_locked: 0 };
+  const breakdown = (data as any).balanceBreakdown || { bonus_part: 0, pending_part: 0 };
   const bonusAvailable = Math.floor(breakdown.bonus_part);
   const pendingPart = Math.floor(breakdown.pending_part ?? 0);
-  const miningPart = Math.floor(breakdown.mining_part);
-  const miningAvailable = Math.floor(breakdown.mining_available ?? breakdown.mining_part ?? 0);
   const monthlyWindow = withdrawCountdownInfo(now);
   // ক্লেইম করা মাইনিং (পেন্ডিং) শুধু ১–৩ তারিখের উইন্ডোতেই তোলা যায়।
   // উইন্ডো বন্ধ থাকলে সেটা আবার পেন্ডিং হিসেবে লক — মেইন ব্যালেন্সে যোগ হবে না।
-  const miningLockedAmount = miningPart;
   const claimable = bonusAvailable + (monthlyWindow.isOpen ? pendingPart : 0);
-  const miningLocked = miningLockedAmount > 0;
 
   const chosenWallet = provider === "bkash" ? walletBkash : provider === "nagad" ? walletNagad : null;
   const chosenEnabled = provider === "bkash" ? payout.bkashEnabled : provider === "nagad" ? payout.nagadEnabled : false;
   const chosenOffMsg  = provider === "bkash" ? payout.bkashOffMessage : payout.nagadOffMessage;
 
   const adminWithdrawOff = (data as any)?.payoutSettings?.withdrawEnabled === false;
-  const withdrawClosed = withdrawWindowInfo(now).isClosed || adminWithdrawOff || !monthlyWindow.isOpen;
+  // বোনাস/মেইন টাকা যেকোনো দিন তোলা যায়; শুধু পেন্ডিং মাইনিং মাসের ১–৩ তারিখে খোলে।
+  const withdrawClosed = adminWithdrawOff;
+  const enteredAmount = Math.floor(Number(amount) || 0);
+  const amountValid = enteredAmount >= MIN_WITHDRAW_BDT && enteredAmount <= claimable;
 
 
   return (
     <div className="space-y-4 pt-2">
       <PageVoice pageId="withdraw" steps={["withdraw.intro","withdraw.amount","withdraw.submit"]} />
-      <div className="text-center">
-        <ArrowDownToLine className="w-8 h-8 text-rose mx-auto" />
-        <h1 className="text-2xl font-black mt-1">{t("উইথড্র", "Withdraw")}</h1>
+      <div className="flex items-center gap-3 px-1">
+        <div className="grid h-11 w-11 place-items-center rounded-xl bg-primary text-primary-foreground shadow-lg">
+          <ArrowDownToLine className="w-5 h-5" />
+        </div>
+        <div>
+          <h1 className="text-xl font-black">{t("উইথড্র করুন", "Withdraw")}</h1>
+          <p className="text-[11px] font-bold text-muted-foreground">নিজের পরিমাণ লিখে বিকাশ বা নগদ বেছে নিন</p>
+        </div>
       </div>
 
       <RegionPayoutNote />
@@ -167,25 +168,35 @@ function WithdrawPage() {
         </div>
       )}
 
-      <div className={`mining-card mining-card-morph rounded-2xl p-6 text-center relative overflow-hidden ${mode === "usdt" ? "ring-2 ring-emerald/40" : "ring-2 ring-rose/30"}`}>
-        <p className="text-xs uppercase tracking-widest text-white/80 font-black">
+      <div className={`mining-card mining-card-morph rounded-2xl p-5 text-center relative overflow-hidden ${mode === "usdt" ? "ring-2 ring-emerald/40" : "ring-2 ring-primary/30"}`}>
+        <div className="mx-auto mb-2 flex w-fit items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-2.5 py-1 text-[9px] font-black text-white/85">
+          <Sparkles className="h-3 w-3" /> এই মুহূর্তে তোলা যাবে
+        </div>
+        <p className="text-[10px] font-black text-white/70">
           {mode === "usdt"
             ? t("USDT ক্লেইমযোগ্য ব্যালেন্স", "USDT claimable balance")
             : debtTotal > 0 ? t("বর্তমান BDT ব্যালেন্স", "Current BDT balance") : t("BDT ক্লেইমযোগ্য ব্যালেন্স", "BDT claimable balance")}
         </p>
-        <p className={`mono-num text-5xl font-black mt-2 drop-shadow ${claimable < 0 ? "text-amber" : "text-white"}`} translate="no">
+        <p className={`mono-num text-4xl font-black mt-1 drop-shadow ${claimable < 0 ? "text-amber" : "text-white"}`} translate="no">
           {mode === "usdt" ? (claimable / usdtRate).toFixed(2) : claimable} <span className="text-2xl">{mode === "usdt" ? "USDT" : "৳"}</span>
         </p>
-        <p className="text-[11px] text-white/70 mt-2" translate="no">
-          {t("লাইভ ব্যালেন্স", "Live balance")}: {mode === "usdt" ? `${(balance / usdtRate).toFixed(4)} USDT` : `${balance.toFixed(4)}৳`}
-        </p>
+        <div className="mt-3 grid grid-cols-2 gap-2 text-left">
+          <div className="rounded-xl border border-white/15 bg-white/10 p-2.5">
+            <p className="text-[9px] font-bold text-white/60">বোনাস · যেকোনো দিন</p>
+            <p className="mono-num text-base font-black text-white" translate="no">{bonusAvailable}৳</p>
+          </div>
+          <div className="rounded-xl border border-white/15 bg-white/10 p-2.5">
+            <p className="text-[9px] font-bold text-white/60">মাইনিং · ১–৩ তারিখ</p>
+            <p className="mono-num text-base font-black text-white" translate="no">{pendingPart}৳</p>
+          </div>
+        </div>
         {debtTotal === 0 && claimable >= 50 && (
-          <button type="button" onClick={() => setAmount(String(claimable))}
-            className="mt-4 rounded-xl px-5 py-2.5 font-black text-sm bg-white text-rose btn-press shine">
+          <Button type="button" variant="secondary" onClick={() => setAmount(String(claimable))}
+            className="mt-3 h-auto rounded-xl px-5 py-2.5 font-black text-sm btn-press shine">
             💰 {mode === "usdt"
               ? t(`সম্পূর্ণ ${(claimable / usdtRate).toFixed(2)} USDT নিন`, `Withdraw all ${(claimable / usdtRate).toFixed(2)} USDT`)
-              : t(`সম্পূর্ণ ${claimable}৳ ক্লেইম করুন`, `Claim full ${claimable}৳`)}
-          </button>
+              : t(`সম্পূর্ণ ${claimable}৳ লিখুন`, `Enter full ${claimable}৳`)}
+          </Button>
         )}
       </div>
 
@@ -193,7 +204,7 @@ function WithdrawPage() {
         <div className="rounded-2xl p-3 border border-emerald/40 bg-emerald/10">
           <p className="text-[10px] font-black text-emerald">💚 {t("মেইন ব্যালেন্স", "Main balance")}</p>
           <p className="mono-num text-lg font-black" translate="no">{bonusAvailable}৳</p>
-          <p className="text-[9px] text-muted-foreground leading-tight">{t("বোনাসের টাকা — সাথে সাথেই যোগ হয়", "Bonus money — credited instantly")}</p>
+           <p className="text-[9px] text-muted-foreground leading-tight">{t("থাকলে যেকোনো দিন তোলা যাবে", "Withdraw any day when available")}</p>
         </div>
         <div className="rounded-2xl p-3 border border-amber/50 bg-amber/10">
           <p className="text-[10px] font-black text-amber">⏳ {t("পেন্ডিং ব্যালেন্স", "Pending balance")}</p>
@@ -206,65 +217,6 @@ function WithdrawPage() {
 
         </div>
       </div>
-
-
-
-      {mining && (
-        <div className="rounded-2xl p-4 border border-border bg-white/70 space-y-2">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-[10px] uppercase tracking-widest text-emerald font-black">💚 মেইন ব্যালেন্স (এখনই উইথড্র)</p>
-              <p className="mono-num text-2xl font-black text-emerald mt-0.5" translate="no">{bonusAvailable}৳</p>
-            </div>
-            <div className="text-right">
-              <p className="text-[10px] uppercase tracking-widest text-cyan font-black">⛏️ মাইনিং</p>
-              <p className="mono-num text-2xl font-black text-cyan mt-0.5" translate="no">{miningPart}৳</p>
-              {miningLocked ? (
-                <p className="text-[10px] text-rose font-bold mt-0.5">🔒 লক {miningLockedAmount}৳ · আনলক {miningAvailable}৳</p>
-              ) : (
-                <p className="text-[10px] text-emerald font-bold mt-0.5">✓ পুরোটাই আনলক · ১–৩ তারিখে withdraw</p>
-              )}
-            </div>
-          </div>
-          <p className="text-[10px] text-muted-foreground leading-snug">
-            <b>উইথড্র শুধু প্রতি মাসের ১–৩ তারিখে</b> (৩ তারিখ রাত ১০টা পর্যন্ত) — মেইন ও মাইনিং, দুই ব্যালেন্সের জন্যই একই নিয়ম। মাইনিং ক্লেইম করে মেইনে নিলেও উইন্ডোর বাইরে তোলা যাবে না। যে স্লট রি-ভেরিফাই করবেন, সেই স্লটের মাইনিং টাকা আনলক হয়ে যাবে।
-          </p>
-        </div>
-      )}
-
-      {/* ⛏️ Mining unlock rules */}
-      {mining && (
-        <div className={`relative overflow-hidden rounded-3xl p-5 border-2 shadow-xl ${miningLocked ? "border-amber/50" : "border-emerald/50"}`}
-             style={{
-               background: miningLocked
-                 ? "linear-gradient(135deg, color-mix(in oklch, var(--color-amber) 14%, white) 0%, color-mix(in oklch, var(--color-cyan) 10%, white) 100%)"
-                 : "linear-gradient(135deg, color-mix(in oklch, var(--color-emerald) 15%, white) 0%, color-mix(in oklch, var(--color-cyan) 10%, white) 100%)"
-             }}>
-          <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full opacity-30 blur-3xl pointer-events-none"
-               style={{ background: miningLocked ? "var(--color-amber)" : "var(--color-emerald)" }} />
-          <div className="relative">
-            <div className="flex items-center gap-2 mb-3">
-              <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-xl ${miningLocked ? "bg-amber text-white" : "bg-emerald text-white"} shadow-lg`}>
-                {miningLocked ? "🔒" : "🔓"}
-              </div>
-              <div>
-                <p className={`text-[10px] uppercase tracking-[0.25em] font-black ${miningLocked ? "text-amber" : "text-emerald"}`}>মাইনিং আনলক নিয়ম</p>
-                <h3 className={`text-base font-black ${miningLocked ? "text-amber" : "text-emerald"}`}>
-                  {miningLocked ? `${miningLockedAmount}৳ লক — রি-ভেরিফাই করলে আনলক` : "সব টাকা আনলক — ১–৩ তারিখে তুলুন"}
-                </h3>
-              </div>
-            </div>
-            <ul className="space-y-2 text-[12px] text-navy/90 leading-relaxed font-bold">
-              <li className="flex gap-2"><span className="text-emerald shrink-0">📅</span><span>উইথড্র (মেইন + মাইনিং দুটোই) শুধু প্রতি মাসের <b className="text-emerald">১–৩ তারিখ</b>, ৩ তারিখ রাত ১০টা পর্যন্ত — বাকি সময় কাউন্টডাউন দেখাবে।</span></li>
-              <li className="flex gap-2"><span className="text-cyan shrink-0">⛏️</span><span>প্রতিটি স্লট আলাদাভাবে মাইনিং করে (<b>৫০৳/মাস</b> প্রতি স্লট) — ১টি স্লট রি-ভেরিফাই করলেই ওই স্লটের মাইনিং চালু।</span></li>
-              <li className="flex gap-2"><span className="text-amber shrink-0">🔒</span><span>যে স্লট রি-ভেরিফাই করবেন, <b>সেই স্লটের জমা মাইনিং টাকাই</b> আনলক হবে। সব স্লট রি-ভেরিফাই করলে পুরো টাকা আনলক।</span></li>
-              <li className="flex gap-2"><span className="text-violet shrink-0">🎁</span><span>আগে রি-ভেরিফাই করা স্লট আবার রি-ভেরিফাই করলে <b>প্রতি স্লটে ১০৳</b> বোনাস (মেইন ব্যালেন্সে)।</span></li>
-            </ul>
-          </div>
-        </div>
-      )}
-
-
 
 
 
@@ -295,12 +247,13 @@ function WithdrawPage() {
 
       {/* Mode toggle: BDT vs USDT */}
       <div className="grid grid-cols-2 gap-2" translate="no">
-        <button
+          <Button
+            variant="outline"
           type="button"
           onClick={() => setMode("bdt")}
-          className={`relative overflow-hidden rounded-2xl p-3.5 border-2 text-left transition ${
+            className={`h-auto justify-start relative overflow-hidden rounded-2xl p-3.5 border-2 text-left transition ${
             mode === "bdt"
-              ? "border-rose bg-linear-to-br from-rose/15 via-amber/10 to-transparent shadow-lg"
+              ? "border-rose bg-rose/10 shadow-lg"
               : "border-border bg-surface-2 opacity-80"
           }`}>
           <div className="flex items-center gap-2">
@@ -313,13 +266,14 @@ function WithdrawPage() {
               <p className="text-[9px] text-muted-foreground">{t("বিকাশ / নগদ", "bKash / Nagad")}</p>
             </div>
           </div>
-        </button>
-        <button
+          </Button>
+          <Button
+            variant="outline"
           type="button"
           onClick={() => setMode("usdt")}
-          className={`relative overflow-hidden rounded-2xl p-3.5 border-2 text-left transition ${
+            className={`h-auto justify-start relative overflow-hidden rounded-2xl p-3.5 border-2 text-left transition ${
             mode === "usdt"
-              ? "border-emerald bg-linear-to-br from-emerald/15 via-cyan/10 to-transparent shadow-lg"
+              ? "border-emerald bg-emerald/10 shadow-lg"
               : "border-border bg-surface-2 opacity-80"
           }`}>
           <div className="flex items-center gap-2">
@@ -329,7 +283,7 @@ function WithdrawPage() {
               <p className={`text-[9px] font-bold ${usdtEnabled ? "text-muted-foreground" : "text-rose"}`} translate="no">{usdtEnabled ? "Celo Network" : t("সাময়িক বন্ধ", "Temporarily off")}</p>
             </div>
           </div>
-        </button>
+          </Button>
       </div>
 
       {mode === "bdt" ? (
@@ -374,13 +328,21 @@ function WithdrawPage() {
               <p className="text-[11px] text-muted-foreground mt-1" translate="no">{t(`সর্বনিম্ন ${MIN_WITHDRAW_BDT}৳ ক্লেইমযোগ্য হলে উইথড্র করা যাবে`, `Withdraw needs at least ${MIN_WITHDRAW_BDT}৳ claimable`)}</p>
             </div>
           ) : provider && chosenWallet && chosenEnabled ? (
-            <form onSubmit={(e) => { e.preventDefault(); mut.mutate(); }} className="glass rounded-2xl p-5 space-y-4" data-voice="withdraw.intro">
+            <form onSubmit={(e) => { e.preventDefault(); mut.mutate(); }} className="premium-panel rounded-2xl p-4 space-y-4" data-voice="withdraw.intro">
+              <div className="flex items-center gap-2 border-b border-border pb-3">
+                <CalendarDays className="h-4 w-4 text-primary" />
+                <p className="text-xs font-black">টাকার পরিমাণ লিখুন</p>
+                <span className="ml-auto text-[9px] font-bold text-muted-foreground">সর্বোচ্চ {claimable}৳</span>
+              </div>
               <div data-voice="withdraw.amount">
-                <label className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">{t("পরিমাণ (৳ পূর্ণ টাকা)", "Amount (whole ৳)")}</label>
-                <input type="number" min={MIN_WITHDRAW_BDT} step="1" value={amount}
-                  onChange={(e) => setAmount(e.target.value.replace(/[^\d]/g, ""))}
-                  placeholder={t(`সর্বনিম্ন ${MIN_WITHDRAW_BDT}`, `Minimum ${MIN_WITHDRAW_BDT}`)}
-                  className="w-full mt-2 px-4 py-3 mono-num bg-surface-2 border border-border rounded-xl text-lg font-black outline-none focus:border-rose" />
+                <label className="text-[10px] text-muted-foreground font-bold">{t("কত টাকা তুলতে চান?", "How much do you want to withdraw?")}</label>
+                <div className="relative mt-2">
+                  <input type="number" min={MIN_WITHDRAW_BDT} max={claimable} step="1" value={amount}
+                    onChange={(e) => setAmount(e.target.value.replace(/[^\d]/g, ""))}
+                    placeholder={t("নিজে পরিমাণ লিখুন", "Enter amount")}
+                    className="w-full px-4 py-3.5 pr-12 mono-num bg-surface-2 border-2 border-border rounded-xl text-xl font-black outline-none focus:border-primary" />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-lg font-black text-muted-foreground">৳</span>
+                </div>
                 <p className="text-[10px] text-muted-foreground mt-1" translate="no">{t("সর্বনিম্ন", "Min")}: {MIN_WITHDRAW_BDT}৳ · {t("সর্বোচ্চ", "Max")}: {claimable}৳</p>
                 <p className="text-[10px] text-amber mt-1 font-bold" translate="no">{t(`ফি: ১০০৳ এর কম উইথড্রে ২০%, ১০০৳ বা তার বেশি হলে ১০% — সর্বনিম্ন রিকোয়েস্ট ${MIN_WITHDRAW_BDT}৳ (৬৩৳ দিলে ফি ১২.৬০৳, হাতে ৫০৳, বাকি ০.৪০৳ মেইন ব্যালেন্সে থাকবে)`, `Fee: 20% under 100৳, 10% for 100৳ and above — minimum request ${MIN_WITHDRAW_BDT}৳ (63৳ → 12.60৳ fee → 50৳ in hand, 0.40৳ stays in balance)`)}</p>
                 <p className="text-[10px] text-muted-foreground mt-1" translate="no">{t("পয়সা (দশমিক) উইথড্র হয় না — শুধু পূর্ণ টাকা যাবে, বাকি পয়সা মেইন ব্যালেন্সেই থাকবে", "Paisa (decimals) can't be withdrawn — only whole taka; the rest stays in your main balance")}</p>
@@ -407,12 +369,12 @@ function WithdrawPage() {
                   <Copy className="w-3 h-3 text-muted-foreground" />
                 </button>
               </div>
-              <button disabled={withdrawClosed || mut.isPending || Math.floor(Number(amount) || 0) < MIN_WITHDRAW_BDT || Math.floor(Number(amount) || 0) > claimable}
+              <Button disabled={withdrawClosed || mut.isPending || !amountValid}
                 data-voice="withdraw.submit"
-                className="w-full py-4 rounded-xl gradient-cta font-black text-base flex items-center justify-center gap-2 disabled:opacity-50">
+                className="w-full h-auto py-4 rounded-xl gradient-cta font-black text-base disabled:opacity-40">
                 {mut.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
-                {t("উইথড্র রিকোয়েস্ট করুন", "Submit withdraw request")}
-              </button>
+                {withdrawClosed ? "উইথড্র সাময়িক বন্ধ" : !amountValid ? "পরিমাণ লিখুন" : t("উইথড্র রিকোয়েস্ট করুন", "Submit withdraw request")}
+              </Button>
             </form>
           ) : null}
         </>
@@ -519,16 +481,16 @@ function ProviderPill({ selected, available, enabled, logo, label, tone, wallet,
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`rounded-2xl p-3 border-2 text-left transition ${
+      className={`h-auto w-full justify-start rounded-2xl p-3 border-2 text-left transition ${
         selected
-          ? `border-${tone} bg-${tone}/10`
+          ? tone === "rose" ? "border-rose bg-rose/10 shadow-md" : "border-amber bg-amber/10 shadow-md"
           : "border-border bg-surface-2"
       } ${disabled ? "opacity-50" : ""}`}
     >
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
-          <img src={logo} alt={label} className="h-6 w-auto object-contain shrink-0" loading="lazy" />
-          <span className={`text-sm font-black text-${tone} truncate`} translate="no">{label}</span>
+          <img src={logo} alt={label} className="h-10 w-10 rounded-xl object-contain shrink-0 bg-background shadow-sm" loading="lazy" />
+          <span className={`text-sm font-black ${tone === "rose" ? "text-rose" : "text-amber"} truncate`} translate="no">{label}</span>
         </div>
         {!enabled && <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-rose/20 text-rose shrink-0">{t("বন্ধ", "Off")}</span>}
       </div>
@@ -568,7 +530,8 @@ function DebtCard({ d, t, onClaimed }: { d: any; t: (bn: string, en: string) => 
         </span>
         <span className="mono-num font-black text-rose" translate="no">{Math.ceil(Number(d.amount))}৳</span>
       </div>
-      <button
+      <Button
+        variant="outline"
         type="button"
         onClick={() => { navigator.clipboard.writeText(d.payment_number); toast.success(t("Agent নম্বর কপি হয়েছে", "Agent number copied")); }}
         className="w-full flex items-center justify-between gap-2 bg-amber/10 border border-amber/40 rounded-lg px-3 py-2.5">
@@ -577,7 +540,7 @@ function DebtCard({ d, t, onClaimed }: { d: any; t: (bn: string, en: string) => 
           <p className="mono-num font-black text-lg text-navy" translate="no">{d.payment_number}</p>
         </div>
         <Copy className="w-4 h-4 text-amber" />
-      </button>
+    </Button>
       {d.message && (
         <div className="rounded-lg bg-rose/10 border border-rose/30 p-2.5">
           <p className="text-[10px] uppercase tracking-widest text-rose font-black">{t("অ্যাডমিনের বার্তা", "Admin message")}</p>
@@ -858,8 +821,8 @@ function RegionPayoutNote() {
       <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
         {countryCode === "BD"
           ? t(
-              "বাংলাদেশে bKash/Nagad-সহ লোকাল পেমেন্টে টাকা পাঠানো হয়। মাসের ১–৩ তারিখে রিকোয়েস্ট দিন।",
-              "In Bangladesh payouts go to local wallets. Request between the 1st and 3rd of the month."
+              "বাংলাদেশে বিকাশ বা নগদে টাকা পাঠানো হয়। মাইনিং টাকা ১–৩ তারিখে, বোনাস টাকা থাকলে যেকোনো দিন তুলতে পারবেন।",
+              "In Bangladesh payouts go to local wallets. Mining is available on days 1–3; bonus funds can be withdrawn any day."
             )
           : t(
               "আপনার দেশে লোকাল পেমেন্ট না থাকলে USDT (Celo) ওয়ালেটে পেমেন্ট নিতে পারবেন — ব্যালান্স ৳-এ দেখানো হয়, পাঠানোর সময় USDT-তে রূপান্তর হয়।",
@@ -867,7 +830,7 @@ function RegionPayoutNote() {
             )}
       </p>
       <p className="mt-1 text-[11px] font-black text-gold">
-        {t("সব লেনদেন শুধু Main Balance থেকে হয় — আগে মাইনিং ক্লেইম করুন।", "All payouts come from Main Balance only — claim mining first.")}
+        {t("মাইনিং টাকা তুলতে আগে ক্লেইম করে পেন্ডিং ব্যালান্সে নিন।", "Claim mining into pending balance before withdrawing.")}
       </p>
     </div>
   );

@@ -4,8 +4,10 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { computeLiveBalance, monthlyRate, MONTHLY_PER_SLOT } from "@/lib/mining";
 import { claimMiningToMain, claimAllSlotMining } from "@/lib/earnings.functions";
-import { Wallet, Sparkles, Gift, Loader2, Pickaxe, Eye, ChevronDown, ChevronUp, AlertTriangle } from "lucide-react";
+import { Wallet, Sparkles, Gift, Loader2, Pickaxe, Eye, ChevronDown, ChevronUp, AlertTriangle, LockKeyhole } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { withdrawCountdownInfo } from "@/lib/withdraw-window";
+import { MIN_WITHDRAW_BDT } from "@/lib/constants";
 
 /** Decorative layers never change — memoised so the 1s balance tick doesn't repaint them. */
 const MiningDecor = memo(function MiningDecor({ live }: { live: boolean }) {
@@ -201,7 +203,9 @@ export function MiningCounter({
   const ratePerMonth = monthlyRate(rateArgs);
   const selfMonth = MONTHLY_PER_SLOT * selfSlots;
   const bonusMonth = MONTHLY_PER_SLOT * refUnits;
-  const claimable = Math.floor(bonusPart + miningAvailable);
+  const withdrawWindowOpen = withdrawCountdownInfo(now).isOpen;
+  const withdrawableNow = Math.floor(bonusPart + (withdrawWindowOpen ? pendingPart : 0));
+  const canOpenWithdraw = withdrawableNow >= MIN_WITHDRAW_BDT;
   const league = leagueFor(leagueCount ?? Math.max(effectiveTaskCount, displayTaskCount ?? 0));
 
   // দিনে কত আসে — মাসিক রেট ÷ ৩০
@@ -260,6 +264,19 @@ export function MiningCounter({
             <span className="text-[13px] font-black text-white">ব্যালেন্স দেখুন</span>
           </button>
         )}
+
+        <Button
+          onClick={() => navigate({ to: "/withdraw" })}
+          disabled={!canOpenWithdraw}
+          className={`mt-2.5 h-auto w-full rounded-2xl py-3 font-black text-[13px] whitespace-normal leading-tight btn-press ${canOpenWithdraw ? "mc-cta" : "border border-white/20 bg-white/10 text-white/45"}`}
+        >
+          {canOpenWithdraw ? <Wallet className="w-4 h-4" /> : <LockKeyhole className="w-4 h-4" />}
+          {canOpenWithdraw ? `${withdrawableNow}৳ উইথড্র করুন` : "উইথড্র এখন বন্ধ"}
+        </Button>
+        <p className="mt-1 text-center text-[9px] font-bold text-white/60">
+          {withdrawWindowOpen ? "মাইনিং উইথড্র ৩ তারিখ রাত ১০টা পর্যন্ত খোলা" : "মাইনিং উইথড্র প্রতি মাসের ১–৩ তারিখ খোলা"}
+          {!withdrawWindowOpen && bonusPart > 0 ? " · বোনাস এখনই তোলা যাবে" : ""}
+        </p>
 
         {/* ডিটেইলস — চাইলে পুরো হিসাব খুলবে, নাহলে কার্ড ছোটই থাকবে */}
         <button
@@ -366,7 +383,7 @@ export function MiningCounter({
         )}
 
         <p className="mt-1.5 text-[9.5px] text-white/70 font-bold leading-snug text-center">
-          📜 নিজের মাইনিং প্রতিটি ঘরের নিচ থেকে <span className="text-cyan-100">স্লট অনুযায়ী</span> ক্লেইম হবে। রেফার করা ইউজারদের মাইনিংয়ের <span className="text-yellow-100">১০% কমিশন</span> উপরের আলাদা বাটন থেকে ক্লেইম হবে। দুটোই ক্লেইমের পর মেইন ব্যালেন্সে যাবে।
+          📜 নিজের মাইনিং প্রতিটি ঘরের নিচ থেকে <span className="text-cyan-100">স্লট অনুযায়ী</span> ক্লেইম হবে। রেফার করা ইউজারদের মাইনিংয়ের <span className="text-yellow-100">১০% কমিশন</span> উপরের আলাদা বাটন থেকে ক্লেইম হবে। দুটোই ক্লেইমের পর পেন্ডিং ব্যালেন্সে যাবে।
         </p>
         </>)}
 
@@ -409,25 +426,19 @@ export function MiningCounter({
           <AlertTriangle className="mt-[2px] h-4 w-4 shrink-0 text-rose-200" />
           <p className="text-[11px] font-bold leading-relaxed text-white">
             <span className="font-black text-rose-100">জরুরি সতর্কতা:</span> প্রতিদিনের মাইনিং{" "}
-            <b>প্রতিদিনই ক্লেইম</b> করে মেইন ব্যালেন্সে নিতে হবে। ক্লেইম না করে ফেলে রাখলে জমা মাইনিং{" "}
+            <b>প্রতিদিনই ক্লেইম</b> করে পেন্ডিং ব্যালেন্সে নিতে হবে। ক্লেইম না করে ফেলে রাখলে জমা মাইনিং{" "}
             <b>হারিয়ে যেতে পারে</b> — তাই রোজ ক্লেইম করুন।
           </p>
         </div>
 
-        <div className="mt-2.5 grid grid-cols-2 gap-2">
-          <button
-            onClick={() => navigate({ to: "/withdraw" })}
-            className="rounded-2xl py-2.5 font-black text-[12px] flex items-center justify-center gap-1.5 btn-press mc-cta"
-          >
-            <Wallet className="w-3.5 h-3.5" />
-            {live && claimable > 0 ? `${claimable}৳ উইথড্র` : "উইথড্র"}
-          </button>
-          <button
+        <div className="mt-2.5">
+          <Button
+            variant="ghost"
             onClick={() => navigate({ to: "/earnings" })}
-            className="rounded-2xl py-2.5 font-black text-[12px] text-white flex items-center justify-center gap-1.5 btn-press border border-white/25 bg-white/10 backdrop-blur-md"
+            className="h-auto w-full rounded-2xl py-2.5 font-black text-[12px] text-white btn-press border border-white/25 bg-white/10 backdrop-blur-md hover:bg-white/15 hover:text-white"
           >
             📜 আয়ের হিসাব
-          </button>
+          </Button>
         </div>
 
       </div>
