@@ -75,6 +75,7 @@ import { Route as ApiPublicTourAudioRouteImport } from './routes/api/public/tour
 import { Route as ApiPublicReverifyRemindersRouteImport } from './routes/api/public/reverify-reminders'
 import { Route as ApiPublicIpaybdWebhookRouteImport } from './routes/api/public/ipaybd-webhook'
 import { Route as ApiPublicHisabCardRouteImport } from './routes/api/public/hisab-card'
+import { Route as ApiPublicDailyClaimWarningRouteImport } from './routes/api/public/daily-claim-warning'
 import { Route as AdminUserUserIdRouteImport } from './routes/admin/user.$userId'
 import { Route as AuthenticatedWatchPostIdRouteImport } from './routes/_authenticated/watch.$postId'
 import { Route as AuthenticatedUserUserIdRouteImport } from './routes/_authenticated/user.$userId'
@@ -429,6 +430,12 @@ const ApiPublicHisabCardRoute = ApiPublicHisabCardRouteImport.update({
   path: '/api/public/hisab-card',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicDailyClaimWarningRoute =
+  ApiPublicDailyClaimWarningRouteImport.update({
+    id: '/api/public/daily-claim-warning',
+    path: '/api/public/daily-claim-warning',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AdminUserUserIdRoute = AdminUserUserIdRouteImport.update({
   id: '/user/$userId',
   path: '/user/$userId',
@@ -607,6 +614,7 @@ export interface FileRoutesByFullPath {
   '/user/$userId': typeof AuthenticatedUserUserIdRoute
   '/watch/$postId': typeof AuthenticatedWatchPostIdRoute
   '/admin/user/$userId': typeof AdminUserUserIdRoute
+  '/api/public/daily-claim-warning': typeof ApiPublicDailyClaimWarningRoute
   '/api/public/hisab-card': typeof ApiPublicHisabCardRoute
   '/api/public/ipaybd-webhook': typeof ApiPublicIpaybdWebhookRoute
   '/api/public/reverify-reminders': typeof ApiPublicReverifyRemindersRoute
@@ -693,6 +701,7 @@ export interface FileRoutesByTo {
   '/user/$userId': typeof AuthenticatedUserUserIdRoute
   '/watch/$postId': typeof AuthenticatedWatchPostIdRoute
   '/admin/user/$userId': typeof AdminUserUserIdRoute
+  '/api/public/daily-claim-warning': typeof ApiPublicDailyClaimWarningRoute
   '/api/public/hisab-card': typeof ApiPublicHisabCardRoute
   '/api/public/ipaybd-webhook': typeof ApiPublicIpaybdWebhookRoute
   '/api/public/reverify-reminders': typeof ApiPublicReverifyRemindersRoute
@@ -783,6 +792,7 @@ export interface FileRoutesById {
   '/_authenticated/user/$userId': typeof AuthenticatedUserUserIdRoute
   '/_authenticated/watch/$postId': typeof AuthenticatedWatchPostIdRoute
   '/admin/user/$userId': typeof AdminUserUserIdRoute
+  '/api/public/daily-claim-warning': typeof ApiPublicDailyClaimWarningRoute
   '/api/public/hisab-card': typeof ApiPublicHisabCardRoute
   '/api/public/ipaybd-webhook': typeof ApiPublicIpaybdWebhookRoute
   '/api/public/reverify-reminders': typeof ApiPublicReverifyRemindersRoute
@@ -873,6 +883,7 @@ export interface FileRouteTypes {
     | '/user/$userId'
     | '/watch/$postId'
     | '/admin/user/$userId'
+    | '/api/public/daily-claim-warning'
     | '/api/public/hisab-card'
     | '/api/public/ipaybd-webhook'
     | '/api/public/reverify-reminders'
@@ -959,6 +970,7 @@ export interface FileRouteTypes {
     | '/user/$userId'
     | '/watch/$postId'
     | '/admin/user/$userId'
+    | '/api/public/daily-claim-warning'
     | '/api/public/hisab-card'
     | '/api/public/ipaybd-webhook'
     | '/api/public/reverify-reminders'
@@ -1048,6 +1060,7 @@ export interface FileRouteTypes {
     | '/_authenticated/user/$userId'
     | '/_authenticated/watch/$postId'
     | '/admin/user/$userId'
+    | '/api/public/daily-claim-warning'
     | '/api/public/hisab-card'
     | '/api/public/ipaybd-webhook'
     | '/api/public/reverify-reminders'
@@ -1091,6 +1104,7 @@ export interface RootRouteChildren {
   ApiYoutubeSearchRoute: typeof ApiYoutubeSearchRoute
   ApiYoutubeShortsRoute: typeof ApiYoutubeShortsRoute
   CardUidRoute: typeof CardUidRoute
+  ApiPublicDailyClaimWarningRoute: typeof ApiPublicDailyClaimWarningRoute
   ApiPublicHisabCardRoute: typeof ApiPublicHisabCardRoute
   ApiPublicIpaybdWebhookRoute: typeof ApiPublicIpaybdWebhookRoute
   ApiPublicReverifyRemindersRoute: typeof ApiPublicReverifyRemindersRoute
@@ -1576,6 +1590,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHisabCardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/daily-claim-warning': {
+      id: '/api/public/daily-claim-warning'
+      path: '/api/public/daily-claim-warning'
+      fullPath: '/api/public/daily-claim-warning'
+      preLoaderRoute: typeof ApiPublicDailyClaimWarningRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/user/$userId': {
       id: '/admin/user/$userId'
       path: '/user/$userId'
@@ -1879,6 +1900,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiYoutubeSearchRoute: ApiYoutubeSearchRoute,
   ApiYoutubeShortsRoute: ApiYoutubeShortsRoute,
   CardUidRoute: CardUidRoute,
+  ApiPublicDailyClaimWarningRoute: ApiPublicDailyClaimWarningRoute,
   ApiPublicHisabCardRoute: ApiPublicHisabCardRoute,
   ApiPublicIpaybdWebhookRoute: ApiPublicIpaybdWebhookRoute,
   ApiPublicReverifyRemindersRoute: ApiPublicReverifyRemindersRoute,
