@@ -265,6 +265,19 @@ export function MiningCounter({
           </button>
         )}
 
+        <Button
+          onClick={() => navigate({ to: "/withdraw" })}
+          disabled={!canOpenWithdraw}
+          className={`mt-2.5 h-auto w-full rounded-2xl py-3 font-black text-[13px] whitespace-normal leading-tight btn-press ${canOpenWithdraw ? "mc-cta" : "border border-white/20 bg-white/10 text-white/45"}`}
+        >
+          {canOpenWithdraw ? <Wallet className="w-4 h-4" /> : <LockKeyhole className="w-4 h-4" />}
+          {canOpenWithdraw ? `${withdrawableNow}৳ উইথড্র করুন` : "উইথড্র এখন বন্ধ"}
+        </Button>
+        <p className="mt-1 text-center text-[9px] font-bold text-white/60">
+          {withdrawWindowOpen ? "মাইনিং উইথড্র ৩ তারিখ রাত ১০টা পর্যন্ত খোলা" : "মাইনিং উইথড্র প্রতি মাসের ১–৩ তারিখ খোলা"}
+          {!withdrawWindowOpen && bonusPart > 0 ? " · বোনাস এখনই তোলা যাবে" : ""}
+        </p>
+
         {/* ডিটেইলস — চাইলে পুরো হিসাব খুলবে, নাহলে কার্ড ছোটই থাকবে */}
         <button
           type="button"
@@ -370,7 +383,7 @@ export function MiningCounter({
         )}
 
         <p className="mt-1.5 text-[9.5px] text-white/70 font-bold leading-snug text-center">
-          📜 নিজের মাইনিং প্রতিটি ঘরের নিচ থেকে <span className="text-cyan-100">স্লট অনুযায়ী</span> ক্লেইম হবে। রেফার করা ইউজারদের মাইনিংয়ের <span className="text-yellow-100">১০% কমিশন</span> উপরের আলাদা বাটন থেকে ক্লেইম হবে। দুটোই ক্লেইমের পর মেইন ব্যালেন্সে যাবে।
+          📜 নিজের মাইনিং প্রতিটি ঘরের নিচ থেকে <span className="text-cyan-100">স্লট অনুযায়ী</span> ক্লেইম হবে। রেফার করা ইউজারদের মাইনিংয়ের <span className="text-yellow-100">১০% কমিশন</span> উপরের আলাদা বাটন থেকে ক্লেইম হবে। দুটোই ক্লেইমের পর পেন্ডিং ব্যালেন্সে যাবে।
         </p>
         </>)}
 
@@ -413,32 +426,20 @@ export function MiningCounter({
           <AlertTriangle className="mt-[2px] h-4 w-4 shrink-0 text-rose-200" />
           <p className="text-[11px] font-bold leading-relaxed text-white">
             <span className="font-black text-rose-100">জরুরি সতর্কতা:</span> প্রতিদিনের মাইনিং{" "}
-            <b>প্রতিদিনই ক্লেইম</b> করে মেইন ব্যালেন্সে নিতে হবে। ক্লেইম না করে ফেলে রাখলে জমা মাইনিং{" "}
+            <b>প্রতিদিনই ক্লেইম</b> করে পেন্ডিং ব্যালেন্সে নিতে হবে। ক্লেইম না করে ফেলে রাখলে জমা মাইনিং{" "}
             <b>হারিয়ে যেতে পারে</b> — তাই রোজ ক্লেইম করুন।
           </p>
         </div>
 
-        <div className="mt-2.5 grid grid-cols-2 gap-2">
-          <Button
-            onClick={() => navigate({ to: "/withdraw" })}
-            disabled={!canOpenWithdraw}
-            className={`h-auto rounded-2xl py-2.5 font-black text-[12px] whitespace-normal leading-tight btn-press ${canOpenWithdraw ? "mc-cta" : "border border-white/20 bg-white/10 text-white/45"}`}
-          >
-            {canOpenWithdraw ? <Wallet className="w-3.5 h-3.5" /> : <LockKeyhole className="w-3.5 h-3.5" />}
-            {canOpenWithdraw ? `${withdrawableNow}৳ উইথড্র করুন` : "উইথড্র বন্ধ"}
-          </Button>
+        <div className="mt-2.5">
           <Button
             variant="ghost"
             onClick={() => navigate({ to: "/earnings" })}
-            className="h-auto rounded-2xl py-2.5 font-black text-[12px] text-white btn-press border border-white/25 bg-white/10 backdrop-blur-md hover:bg-white/15 hover:text-white"
+            className="h-auto w-full rounded-2xl py-2.5 font-black text-[12px] text-white btn-press border border-white/25 bg-white/10 backdrop-blur-md hover:bg-white/15 hover:text-white"
           >
             📜 আয়ের হিসাব
           </Button>
         </div>
-        <p className="mt-1.5 text-center text-[9px] font-bold text-white/60">
-          {withdrawWindowOpen ? "মাইনিং উইথড্র ৩ তারিখ রাত ১০টা পর্যন্ত খোলা" : "মাইনিং উইথড্র প্রতি মাসের ১–৩ তারিখ খোলা"}
-          {!withdrawWindowOpen && bonusPart > 0 ? " · বোনাস এখনই তোলা যাবে" : ""}
-        </p>
 
       </div>
     </div>
