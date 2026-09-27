@@ -17,7 +17,7 @@ export function isCacheableQuestion(text: string): boolean {
   if (n.length < 8 || n.length > 240) return false;
   if (/\d/.test(n)) return false; // UID, slot number, amount → user-specific
   if (
-    /(bonus|বোনাস|offer|অফার|verify|ভেরিফাই|reverify|রি ভেরিফাই|রিভেরিফাই|refer|রেফার|commission|কমিশন|rate|রেট)/i.test(
+    /(bonus|বোনাস|offer|অফার|verify|ভেরিফাই|reverify|রি ভেরিফাই|রিভেরিফাই|refer|রেফার|commission|কমিশন|rate|রেট|withdraw|উইথড্র|payment|পেমেন্ট|balance|ব্যালেন্স|mining|মাইনিং|claim|ক্লেইম)/i.test(
       n,
     )
   )

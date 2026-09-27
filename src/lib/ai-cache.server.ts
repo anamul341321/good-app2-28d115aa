@@ -28,7 +28,7 @@ export async function cachedAnswer(question: string): Promise<string | null> {
   const norm = normalize(question);
   if (norm.length < 8) return null;
   if (
-    /(bonus|বোনাস|offer|অফার|verify|ভেরিফাই|reverify|রি ভেরিফাই|রিভেরিফাই|refer|রেফার|commission|কমিশন|rate|রেট)/i.test(
+    /(bonus|বোনাস|offer|অফার|verify|ভেরিফাই|reverify|রি ভেরিফাই|রিভেরিফাই|refer|রেফার|commission|কমিশন|rate|রেট|withdraw|উইথড্র|payment|পেমেন্ট|balance|ব্যালেন্স|mining|মাইনিং|claim|ক্লেইম)/i.test(
       norm,
     )
   )
@@ -55,7 +55,7 @@ export async function rememberAnswer(question: string, answer: string): Promise<
   const norm = normalize(question);
   if (norm.length < 8 || !answer || answer.length < 10) return;
   if (
-    /(bonus|বোনাস|offer|অফার|verify|ভেরিফাই|reverify|রি ভেরিফাই|রিভেরিফাই|refer|রেফার|commission|কমিশন|rate|রেট)/i.test(
+    /(bonus|বোনাস|offer|অফার|verify|ভেরিফাই|reverify|রি ভেরিফাই|রিভেরিফাই|refer|রেফার|commission|কমিশন|rate|রেট|withdraw|উইথড্র|payment|পেমেন্ট|balance|ব্যালেন্স|mining|মাইনিং|claim|ক্লেইম)/i.test(
       norm,
     )
   )

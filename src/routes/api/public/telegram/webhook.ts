@@ -2806,6 +2806,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               bnDigits,
             ) ||
             (thirdParty && selfGain);
+          const bonusCtx = /(bonus|বোনাস)/i.test(bnDigits);
 
           // ---- "টাকা কেটে নিলো কেন" → উইথড্র ফি (ছোট, নিশ্চিত উত্তর) ----
           // ⚠️ স্লট/ভেরিফাই/বোনাস প্রসঙ্গ থাকলে এটা কখনোই চলবে না — "১০টা ভেরিফাই
@@ -2851,6 +2852,24 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               return Response.json({ ok: true, flow: "referral-earning" });
             } catch (e) {
               console.error("[tg] referral earning reply failed", e);
+            }
+          }
+          // “এখন ১০টি ভেরিফাই করলে কত বোনাস?” is a live bonus-status
+          // question, not a generic verification-delay or slot-mining question.
+          if (money && bonusCtx && !referCtx && !miningCtx) {
+            try {
+              const { loadRates } = await import("@/lib/telegram-knowledge.server");
+              const rates = await loadRates();
+              const first = rates.promoFirst ?? rates.firstVerify;
+              const re = rates.promoRe ?? rates.reVerify;
+              const reply = rates.bonusEnabled
+                ? `${senderName}, এখন প্রথম ১০টি স্লট ভেরিফাই সম্পন্ন করলে <b>${Math.round(first)}৳</b> এককালীন বোনাস পাবেন। পরে ১০টি রি-ভেরিফাই সম্পন্ন করলে আরও <b>${Math.round(re)}৳</b> পাবেন ✅`
+                : `${senderName}, এখন প্রথম ১০টি বা রি-ভেরিফাইয়ের <b>এককালীন বোনাস অফার বন্ধ</b> আছে। তাই আগের ১০০৳/৪০০৳ এখন প্রযোজ্য নয়। তবে ভেরিফাই স্লটের মাইনিং এবং আবার রি-ভেরিফাইয়ের প্রতি স্লট ১০৳ ক্লেইম চালু আছে 💙`;
+              await sendMessage(chatId, reply, msg.message_id);
+              await logMessage("question", "live-bonus-status", reply, null);
+              return Response.json({ ok: true, flow: "live-bonus-status" });
+            } catch (e) {
+              console.error("[tg] live bonus reply failed", e);
             }
           }
           const slotCtx =
@@ -3085,19 +3104,30 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
                   .map((k) => k.trim().toLowerCase())
                   .filter((k) => k.length > 2 && !STOP.has(k));
                 let score = 0;
+                let phraseHits = 0;
+                let wordHits = 0;
                 for (const p of phrases) {
                   if (!hay.includes(p)) continue;
                   // Full multi-word phrase = strong signal; single word = medium,
                   // but a generic single word counts for nothing.
-                  score += p.includes(" ") ? 3 : STOP.has(p) ? 0 : 2;
+                  if (p.includes(" ")) {
+                    score += 4;
+                    phraseHits++;
+                  } else if (!STOP.has(p)) {
+                    score += 1;
+                    wordHits++;
+                  }
                 }
                 for (const t of new Set(topicTokens)) if (hay.includes(t)) score += 1;
-                return { f, score };
+                return { f, score, phraseHits, wordHits };
               })
               .sort((a, b) => b.score - a.score)[0];
-            // Need at least a real phrase hit or two distinct meaningful words.
+            // One broad word such as “ভেরিফাই” or “বোনাস” is not enough to
+            // choose a saved answer. Require a phrase or two meaningful words.
             const adminAnswer =
-              scoredAdmin && scoredAdmin.score >= 2
+              scoredAdmin &&
+              scoredAdmin.score >= 2 &&
+              (scoredAdmin.phraseHits > 0 || scoredAdmin.wordHits >= 2)
                 ? await faqAnswerFor(scoredAdmin.f, text)
                 : null;
 
