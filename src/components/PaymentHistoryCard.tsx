@@ -76,9 +76,15 @@ export function PaymentHistoryCard() {
           </p>
           <p className="text-lg font-black leading-tight drop-shadow-lg">পেমেন্ট হিস্টরি দেখতে ক্লিক করুন</p>
           <p className="text-[11px] opacity-95 font-bold mt-0.5">
-            গড় সময়: <span className="mono-num text-yellow-200">{fmtWait(avgWaitSeconds)}</span>
-            {pendingCount > 0 && <span className="ml-2 bg-white/25 backdrop-blur rounded-full px-1.5">⏳ {pendingCount}</span>}
-            <span className="ml-2 bg-white/25 backdrop-blur rounded-full px-1.5">💰 আজ {Math.floor(todayTotal)}৳</span>
+            {windowOpen ? (
+              <>
+                গড় সময়: <span className="mono-num text-yellow-200">{fmtWait(avgWaitSeconds)}</span>
+                {pendingCount > 0 && <span className="ml-2 bg-white/25 backdrop-blur rounded-full px-1.5">⏳ {pendingCount}</span>}
+                <span className="ml-2 bg-white/25 backdrop-blur rounded-full px-1.5">💰 আজ {Math.floor(todayTotal)}৳</span>
+              </>
+            ) : (
+              <span className="bg-white/25 backdrop-blur rounded-full px-1.5">📅 পেমেন্ট: প্রতি মাসের ১–৩ তারিখ</span>
+            )}
           </p>
         </div>
         <ChevronDown className={`w-6 h-6 text-white transition-transform drop-shadow ${open ? "rotate-180" : ""}`} />
@@ -89,23 +95,32 @@ export function PaymentHistoryCard() {
           <div className="flex gap-1.5 mb-2">
             <button onClick={() => setTab("top")}
               className={`flex-1 py-1.5 rounded-xl text-[11px] font-black border transition ${
-                tab === "top" ? "bg-yellow-300 text-navy border-yellow-300 shadow-lg" : "bg-white/15 text-white border-white/30"
+                tab === "top" || !windowOpen ? "bg-yellow-300 text-navy border-yellow-300 shadow-lg" : "bg-white/15 text-white border-white/30"
               }`}>
               🏆 টপ Payee
             </button>
-            <button onClick={() => setTab("pending")}
-              className={`flex-1 py-1.5 rounded-xl text-[11px] font-black border transition ${
-                tab === "pending" ? "bg-amber text-navy border-amber shadow-lg" : "bg-white/15 text-white border-white/30"
-              }`}>
-              ⏳ Pending
-            </button>
-            <button onClick={() => setTab("paid")}
-              className={`flex-1 py-1.5 rounded-xl text-[11px] font-black border transition ${
-                tab === "paid" ? "bg-emerald text-white border-emerald shadow-lg" : "bg-white/15 text-white border-white/30"
-              }`}>
-              ✅ Paid
-            </button>
+            {windowOpen && (
+              <>
+                <button onClick={() => setTab("pending")}
+                  className={`flex-1 py-1.5 rounded-xl text-[11px] font-black border transition ${
+                    tab === "pending" ? "bg-amber text-navy border-amber shadow-lg" : "bg-white/15 text-white border-white/30"
+                  }`}>
+                  ⏳ Pending
+                </button>
+                <button onClick={() => setTab("paid")}
+                  className={`flex-1 py-1.5 rounded-xl text-[11px] font-black border transition ${
+                    tab === "paid" ? "bg-emerald text-white border-emerald shadow-lg" : "bg-white/15 text-white border-white/30"
+                  }`}>
+                  ✅ Paid
+                </button>
+              </>
+            )}
           </div>
+          {!windowOpen && (
+            <p className="mb-2 rounded-xl bg-white/15 backdrop-blur border border-white/30 px-3 py-2 text-[11px] font-bold text-white">
+              📅 Pending ও Paid লিস্ট প্রতি মাসের <b>১–৩ তারিখ</b> উইথড্র চালু থাকলে দেখা যায়। এখন শুধু টপ Payee দেখাচ্ছে।
+            </p>
+          )}
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
