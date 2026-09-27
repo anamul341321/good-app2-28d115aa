@@ -285,3 +285,38 @@ export const claimAllSlotMining = createServerFn({ method: "POST" })
     return { ok: true, mining: Number(out.mining ?? 0), slots: Number(out.slots ?? 0) };
   });
 
+
+/** দৈনিক এককালীন ক্লেইমের অবস্থা (সন্ধ্যা ৬টা → পরের সন্ধ্যা ৬টা) */
+export const getDailyMiningStatus = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await supabaseAdmin.rpc("settle_mining", { _user_id: context.userId });
+    const { data, error } = await supabaseAdmin.rpc("get_daily_mining_status" as any, { _user_id: context.userId });
+    if (error) throw new Error(error.message);
+    const d = (data ?? {}) as any;
+    return {
+      claimedToday: !!d.claimed_today,
+      slots: Number(d.slots ?? 0),
+      perSlot: Number(d.per_slot ?? 0),
+      amount: Number(d.amount ?? 0),
+      referralAmount: Number(d.referral_amount ?? 0),
+      nextAt: String(d.next_at ?? ""),
+      blockedPending: Number(d.blocked_pending ?? 0),
+      blockedSlots: Number(d.blocked_slots ?? 0),
+    };
+  });
+
+export const claimDailyMining = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin.rpc("claim_daily_mining" as any, { _user_id: context.userId });
+    if (error) throw new Error(error.message);
+    const out = (data ?? {}) as any;
+    if (!out.ok) {
+      if (out.reason === "already_claimed") throw new Error("আজকের ক্লেইম হয়ে গেছে — পরের ক্লেইম সন্ধ্যা ৬টায়।");
+      throw new Error("ক্লেইম করার মতো ঘর নেই — Re-verify করা ও whitelist থাকা ঘর লাগবে।");
+    }
+    return { total: Number(out.total ?? 0), slots: Number(out.slots ?? 0) };
+  });
