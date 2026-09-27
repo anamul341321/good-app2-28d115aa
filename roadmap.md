@@ -6,3 +6,4 @@
 - [x] Redesign the balance withdrawal entry and withdrawal page in a premium, easy Bengali layout
 - [x] Allow bonus balance withdrawals any day while keeping mining/pending balance limited to the 1st–3rd window
 - [x] Verify amount entry, bKash/Nagad selection, countdown, disabled states, and mobile rendering
+- [x] Show an entry warning for slots needing re-verification, with Telegram support directly below
