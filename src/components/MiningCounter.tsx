@@ -202,7 +202,6 @@ export function MiningCounter({
   // দিনে কত আসে — মাসিক রেট ÷ ৩০
   const perDay = ratePerMonth / 30;
 
-  const canClaimNow = selfMiningClaimable >= 0.5;
 
   return (
     <div className="mc-premium relative rounded-[24px] p-4 overflow-hidden" style={{ contain: "paint" }}>

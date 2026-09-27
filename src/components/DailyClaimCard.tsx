@@ -1,8 +1,29 @@
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Gift, CheckCircle2, Loader2, AlertTriangle } from "lucide-react";
+import { Gift, CheckCircle2, Loader2, AlertTriangle, Timer } from "lucide-react";
 import { claimDailyMining, getDailyMiningStatus } from "@/lib/earnings.functions";
+
+/** পরের ক্লেইম সময় = ঢাকার সন্ধ্যা ৬টা (UTC ১২টা)। */
+function nextResetMs(now: number): number {
+  const d = new Date(now);
+  const reset = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 12, 0, 0);
+  return now < reset ? reset : reset + 24 * 3600 * 1000;
+}
+
+function useCountdownToReset() {
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  const left = Math.max(0, nextResetMs(now) - now);
+  const h = Math.floor(left / 3600000);
+  const m = Math.floor((left % 3600000) / 60000);
+  const sec = Math.floor((left % 60000) / 1000);
+  return `${h} ঘণ্টা ${m} মিনিট ${sec} সেকেন্ড`;
+}
 
 export function DailyClaimCard() {
   const qc = useQueryClient();
