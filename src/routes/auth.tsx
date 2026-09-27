@@ -104,8 +104,8 @@ const RULES: { title: string; body: string; titleEn: string; bodyEn: string }[] 
   {
     title: "ভেরিফাই হারালেই রি-ভেরিফাই",
     body: "সাধারণত ৪–৫ দিনের মধ্যে লাগতে পারে, তবে শুধু Good-App ভেরিফাই বাতিল করলেই অ্যাপ রি-ভেরিফাই চাইবে। ভেরিফাই ঠিক থাকলে কিছু করতে হবে না।",
-    titleEn: "Re-verify only if ভেরিফাই is lost",
-    bodyEn: "It may take 4–5 days, but the app asks for re-verify only when Good-App cancels the ভেরিফাই. If the ভেরিফাই is fine, you do nothing.",
+    titleEn: "Re-verify only if verification is lost",
+    bodyEn: "It may take 4–5 days, but the app asks for re-verify only when Good-App cancels the verification. If the verification is fine, you do nothing.",
   },
   {
     title: "উইথড্র নিয়ম",
@@ -179,7 +179,7 @@ const FAQS: {
     q: "এটা কি স্থায়ীভাবে চলবে?",
     a: "যতদিন আপনার পরিচয় ও Good-App ভেরিফাই ঠিক থাকবে, ততদিন মাইনিং চলবে। ভেরিফাই হারালেই শুধু পরিচয় ও account-এর নিরাপত্তা নিশ্চিত করতে Re-verify চাওয়া হবে।",
     qEn: "Will this run permanently?",
-    aEn: "Mining continues as long as your identity and Good-App ভেরিফাই stay valid. Only when the verification is lost do we ask for re-verify to secure your identity and account.",
+    aEn: "Mining continues as long as your identity and Good-App verification stay valid. Only when the verification is lost do we ask for re-verify to secure your identity and account.",
     icon: Coins,
     tone: "amber",
   },
