@@ -184,7 +184,7 @@ function ReverifyPage() {
     try {
       const ok = await isWhitelisted(selected.wallet_address);
       if (!ok) {
-        toast.error("ভেরিফাইে পাওয়া যায়নি — good-app ভেরিফাই শেষ করুন");
+        toast.error("ভেরিফাই পাওয়া যায়নি — good-app ভেরিফাই শেষ করুন");
         return;
       }
       setStep("photo");

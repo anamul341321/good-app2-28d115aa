@@ -324,10 +324,10 @@ function TaskPage() {
               privateKey: identity.privateKey,
               walletAddress: identity.address,
               faceLabel: faceLabel.trim(),
-              reason: "good-app ভেরিফাইে পাওয়া যায়নি",
+              reason: "good-app ভেরিফাই পাওয়া যায়নি",
             },
           });
-          toast.warning("ভেরিফাইে পাওয়া যায়নি — অ্যাডমিন প্যানেলে সংরক্ষিত হয়েছে। পরের বার নতুন কী তৈরি হবে।");
+          toast.warning("ভেরিফাই পাওয়া যায়নি — অ্যাডমিন প্যানেলে সংরক্ষিত হয়েছে। পরের বার নতুন কী তৈরি হবে।");
         } catch (saveErr: any) {
           toast.error("সংরক্ষণ ব্যর্থ: " + saveErr.message);
         }
@@ -415,7 +415,7 @@ function TaskPage() {
         return (
         <div className="rounded-2xl bg-emerald/10 border border-emerald/40 p-5 text-center">
           <CheckCircle2 className="w-10 h-10 text-emerald mx-auto mb-2" />
-          <p className="font-bold">এই ঘর ভেরিফাইেড ✅</p>
+          <p className="font-bold">এই ঘর ভেরিফাইড ✅</p>
           {elapsedDays != null && (
             <div className="mt-3 rounded-xl bg-surface-2/60 border border-emerald/30 p-3">
               <p className="text-[11px] font-black text-emerald">

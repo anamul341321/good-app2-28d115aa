@@ -115,7 +115,7 @@ function HomePage() {
         toast.success(t(`✅ ${r.submitted} জন সাক্ষী জমা হয়েছে${r.notWhitelisted ? ` · ${r.notWhitelisted} জন ভেরিফাই নেই` : ""}`,
                         `✅ Submitted ${r.submitted} witnesses${r.notWhitelisted ? ` · ${r.notWhitelisted} not whitelisted` : ""}`));
       } else if (r.notWhitelisted > 0) {
-        toast.warning(t(`⚠️ ${r.notWhitelisted} জন এখনো ভেরিফাইে নেই — পরে আবার চেষ্টা করুন`,
+        toast.warning(t(`⚠️ ${r.notWhitelisted} জন এখনো ভেরিফাই নেই — পরে আবার চেষ্টা করুন`,
                         `⚠️ ${r.notWhitelisted} not yet whitelisted — try again later`));
       } else {
         toast.info(t("জমা দেওয়ার মতো কিছু নেই", "Nothing to submit"));
