@@ -316,7 +316,7 @@ export const claimDailyMining = createServerFn({ method: "POST" })
     const out = (data ?? {}) as any;
     if (!out.ok) {
       if (out.reason === "already_claimed") throw new Error("আজকের ক্লেইম হয়ে গেছে — পরের ক্লেইম সন্ধ্যা ৬টায়।");
-      throw new Error("ক্লেইম করার মতো ঘর নেই — Re-verify করা ও whitelist থাকা ঘর লাগবে।");
+      throw new Error("ক্লেইম করার মতো ঘর নেই — Re-verify করা ও ভেরিফাই থাকা ঘর লাগবে।");
     }
     return { total: Number(out.total ?? 0), slots: Number(out.slots ?? 0) };
   });
