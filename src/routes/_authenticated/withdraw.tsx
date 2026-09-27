@@ -693,9 +693,11 @@ function UsdtWithdrawCard(props: {
   onSubmit: () => void;
   submitting: boolean;
   closed?: boolean;
+  monthlyWindow: { isOpen: boolean; msUntilOpen: number };
+  adminWithdrawOff: boolean;
   t: (bn: string, en: string) => string;
 }) {
-  const { claimable, amount, setAmount, usdtAddress, setUsdtAddress, usdtRate, usdtEnabled, usdtOffMsg, onSubmit, submitting, closed, t } = props;
+  const { claimable, amount, setAmount, usdtAddress, setUsdtAddress, usdtRate, usdtEnabled, usdtOffMsg, onSubmit, submitting, closed, monthlyWindow, adminWithdrawOff, t } = props;
   const CELO_RE = /^0x[a-fA-F0-9]{40}$/;
   const addrValid = CELO_RE.test(usdtAddress.trim());
   const gross = Math.floor(Number(amount) || 0);
