@@ -2132,6 +2132,14 @@ export const adminSetUserBlocked = createServerFn({ method: "POST" })
       banned_at: data.blocked ? new Date().toISOString() : null,
     } as any).eq("id", data.userId);
     if (pErr) throw new Error(pErr.message);
+    if (!data.blocked) {
+      // আনব্লক করলে পুরনো লিংক-সতর্কতা শূন্য হবে
+      const { data: p } = await supabaseAdmin.from("profiles").select("uid_seq").eq("id", data.userId).maybeSingle();
+      if ((p as any)?.uid_seq != null) {
+        await supabaseAdmin.from("tg_messages").update({ verdict: "link-cleared" } as any)
+          .eq("matched_uid", String((p as any).uid_seq)).eq("verdict", "link");
+      }
+    }
     return { ok: true, blocked: data.blocked };
   });
 
