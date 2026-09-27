@@ -1,10 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { claimMiningEarnings, getEarnings } from "@/lib/earnings.functions";
+import { useQuery } from "@tanstack/react-query";
+import { getEarnings } from "@/lib/earnings.functions";
 import { EarningsStatement } from "@/components/EarningsStatement";
 import { EarningsBreakdown } from "@/components/EarningsBreakdown";
-import { toast } from "sonner";
 import { Loader2, Coins, Gift, Users, PieChart, HandCoins, History, FileText, ListOrdered } from "lucide-react";
 import { isLiteBuild } from "@/lib/lite-build";
 import { LiteFeatureBlock } from "@/components/LiteFeatureBlock";
@@ -28,9 +27,8 @@ const tk = (n: number) => `${n.toFixed(2)}৳`;
 
 function EarningsPage() {
   if (isLiteBuild()) return <LiteFeatureBlock title="আয়ের হিসাব" />;
-  const qc = useQueryClient();
   const [showSheet, setShowSheet] = useState(false);
-  const { data, isLoading, refetch } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ["earnings"],
     queryFn: () => getEarnings(),
     refetchInterval: 60_000,
