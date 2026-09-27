@@ -640,6 +640,47 @@ function FeeBreakdown({ amount, t }: { amount: string; t: (bn: string, en: strin
   );
 }
 
+function WithdrawLockedCard({ monthlyWindow, adminWithdrawOff, min, t }: {
+  monthlyWindow: { isOpen: boolean; msUntilOpen: number };
+  adminWithdrawOff: boolean;
+  min: number;
+  t: (bn: string, en: string) => string;
+}) {
+  if (adminWithdrawOff) {
+    return (
+      <div className="rounded-2xl border-2 border-amber/40 bg-amber/10 p-4 text-center">
+        <p className="text-sm font-bold text-amber">⏸️ {t("উইথড্র সাময়িকভাবে বন্ধ", "Withdraw is temporarily paused")}</p>
+        <p className="text-[11px] text-muted-foreground mt-1">{t("جرب مرة أخرى لاحقًا", "Please try again a little later")}</p>
+      </div>
+    );
+  }
+  if (!monthlyWindow.isOpen) {
+    const ms = monthlyWindow.msUntilOpen;
+    const d = Math.floor(ms / 86_400_000);
+    const h = Math.floor((ms % 86_400_000) / 3_600_000);
+    const mnt = Math.floor((ms % 3_600_000) / 60_000);
+    return (
+      <div className="rounded-2xl border-2 border-cyan/40 bg-cyan/10 p-5 text-center">
+        <p className="text-2xl">⏰</p>
+        <p className="mt-1 text-sm font-black">{t("বোনাস ছাড়া উইথড্র খোলে প্রতি মাসের ১ তারিখে", "Besides bonus funds, withdrawal opens on the 1st of every month")}</p>
+        <p className="mono-num mt-1.5 text-base font-black text-cyan" translate="no">
+          {d > 0 ? `${d} ${t("দিন", "d ")} ` : ""}{h} {t("ঘণ্টা", "h ")} {mnt} {t("মিনিট বাকি", "min left")}
+        </p>
+        <p className="mt-1.5 text-[10px] leading-relaxed text-muted-foreground">
+          {t("মাইনিং ব্যালেন্স ১ তারিখ থেকে ৩ তারিখ রাত ১০টা পর্যন্ত তোলা যায়। এর বাইরে টাকা আপনার হিসাবে জমা থেকে যায়।", "Mining balance can be withdrawn from the 1st through the 3rd at 10 PM. Outside that, the money stays safe in your account.")}
+        </p>
+      </div>
+    );
+  }
+  return (
+    <div className="rounded-2xl border border-rose/30 bg-rose/10 p-4 text-center">
+      <Lock className="w-6 h-6 text-rose mx-auto mb-1" />
+      <p className="text-sm font-bold text-rose">{t("পর্যাপ্ত ব্যালেন্স নেই", "Not enough balance")}</p>
+      <p className="text-[11px] text-muted-foreground mt-1" translate="no">{t(`সর্বনিম্ন ${min}৳ হলে উইথড্র করা যাবে`, `Withdraw needs at least ${min}৳`)}</p>
+    </div>
+  );
+}
+
 function UsdtWithdrawCard(props: {
   claimable: number;
   amount: string;
