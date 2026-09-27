@@ -69,7 +69,7 @@ export function SlotClaimButton({
   const locked = !claim && !!preview;
   const data = claim ?? preview ?? null;
   if (!data) return null;
-  // ঘরটি এখন whitelist-এ না থাকলে (Re-verify চাওয়া হয়েছে) → মাইনিং + বোনাস দুটোই লক
+  // ঘরটি এখন ভেরিফাই-এ না থাকলে (Re-verify চাওয়া হয়েছে) → মাইনিং + বোনাস দুটোই লক
   const dueTs = data.dueAt ? new Date(data.dueAt).getTime() : NaN;
   const reverifyDue = locked && data.whitelistOk !== true;
   const miningClaimableNow = locked && data.whitelistOk === true;
@@ -147,7 +147,7 @@ export function SlotClaimButton({
                       ? "এই ঘরে GoodDollar Re-verify চেয়ে ফেলেছে — তাই এই ঘরের মাইনিং টাকা লক। Re-verify করলেই মাইনিং + ১০৳ বোনাস একসাথে খুলবে।"
                       : "মাইনিং = এই ঘর থেকে জমা হওয়া আয় (৫০৳/মাস হারে) — GoodDollar এখনো Re-verify চায়নি, তাই এটা যেকোনো সময় মেইন ব্যালেন্সে নিতে পারবেন (উইথড্র শুধু মাসের ১–৩ তারিখে)।",
                     "১০৳ বোনাস = শুধু এই ঘর আবার Re-verify করলেই খুলবে (আগে একবার Re-verify করা ঘরের জন্য)।",
-                    "যে ঘর প্রথমবার Re-verify-ই হয়নি বা এখনো whitelist হয়নি — সেখানে ১০৳ বোনাস নেই, শুধু মাইনিং।",
+                    "যে ঘর প্রথমবার Re-verify-ই হয়নি বা এখনো ভেরিফাই হয়নি — সেখানে ১০৳ বোনাস নেই, শুধু মাইনিং।",
                     "টাকা কখনো নষ্ট হয় না — না নিলে ঘরের নিচেই জমা থাকবে ও বাড়তে থাকবে।",
                     "রেফারের ১০% কমিশন ঘরের সাথে লক নয় — মাইনিং কার্ডের 🤝 রেফার কমিশন থেকে যেকোনো সময় ক্লেইম করা যায়।",
                     "বোনাস সাথে সাথেই মেইন ব্যালেন্সে যাবে; মাইনিং যাবে পেন্ডিং ব্যালেন্সে — প্রতি মাসের ১–৩ তারিখে উইথড্র করা যাবে।",

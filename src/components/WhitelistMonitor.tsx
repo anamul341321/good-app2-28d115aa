@@ -11,10 +11,10 @@ function ago(iso?: string | null) {
   return `${Math.floor(m / 60)} ঘণ্টা আগে`;
 }
 
-/** Live view of the resumable auto whitelist check (100 keys per batch). */
+/** Live view of the resumable auto ভেরিফাই check (100 keys per batch). */
 export function WhitelistMonitor() {
   const { data } = useQuery({
-    queryKey: ["admin-whitelist-runs"],
+    queryKey: ["admin-ভেরিফাই-runs"],
     queryFn: () => adminWhitelistRuns(),
     refetchInterval: 5_000,
     staleTime: 0,
@@ -37,7 +37,7 @@ export function WhitelistMonitor() {
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <Radio className={`w-4 h-4 ${live ? "text-emerald" : "text-cyan"}`} />
-          <p className="text-[11px] uppercase tracking-widest font-black text-cyan">Auto whitelist check</p>
+          <p className="text-[11px] uppercase tracking-widest font-black text-cyan">Auto ভেরিফাই check</p>
         </div>
         <span className={`text-[10px] font-black px-2 py-0.5 rounded-full transition-colors ${live ? "bg-emerald text-white" : "bg-surface-2 text-muted-foreground border border-border"}`}>
           {live ? "🟢 চলছে এখন" : stuck ? "⚠️ আটকে গেছে — আবার শুরু হবে" : "⏳ অপেক্ষায়"}
@@ -68,7 +68,7 @@ export function WhitelistMonitor() {
           <div className="grid grid-cols-3 gap-2">
             <Cell label="Batch (১০০/ব্যাচ)" value={String(shown.batches_done ?? 0)} />
             <Cell label="নতুন যোগ হয়েছে" value={String(shown.pending_promoted ?? 0)} accent="emerald" />
-            <Cell label="Whitelist হারিয়েছে" value={String(shown.flipped ?? 0)} accent="rose" />
+            <Cell label="ভেরিফাই হারিয়েছে" value={String(shown.flipped ?? 0)} accent="rose" />
           </div>
 
           <div className="flex items-center gap-2 text-[10px] text-muted-foreground">

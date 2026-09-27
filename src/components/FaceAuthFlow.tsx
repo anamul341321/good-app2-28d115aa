@@ -35,7 +35,7 @@ type Props = {
  * ফেস দিয়ে রেজিস্ট্রেশন/লগইন — ইউজারকে শুধু "লোড হচ্ছে" দেখানো হয় (key/technical
  * ডিটেইল লুকানো)। প্রথমে ছবি তোলা হয় (পরে re-verify-এর সময় চেনার জন্য), তারপর
  * ফেস ভেরিফিকেশন অ্যাপের ভেতরেই full screen-এ খোলে → সিস্টেম নিজেই auto check করে।
- * ভেরিফিকেশন পেজ থেকে ব্যাক করলে সাথে সাথেই whitelist চেক হয় — না হলে "আবার চেষ্টা
+ * ভেরিফিকেশন পেজ থেকে ব্যাক করলে সাথে সাথেই ভেরিফাই চেক হয় — না হলে "আবার চেষ্টা
  * করুন" আসে; সেখানে চাপলে আগের key আবার চেক করে, তাও না হলে নতুন key দিয়ে আবার
  * ভেরিফিকেশন লিংক খোলে।
  */
@@ -212,7 +212,7 @@ export function FaceAuthFlow(props: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, address, mode]);
 
-  /** ব্যাক/ক্লোজ চাপলে — বন্ধ না করে আগে whitelist চেক করে */
+  /** ব্যাক/ক্লোজ চাপলে — বন্ধ না করে আগে ভেরিফাই চেক করে */
   const recheck = async () => {
     if (!address) {
       onClose();
@@ -322,7 +322,7 @@ export function FaceAuthFlow(props: Props) {
     }
   };
 
-  // whitelist না হলে একাউন্ট হবে না — সাইনআপে স্কিপ অপশন নেই
+  // ভেরিফাই না হলে একাউন্ট হবে না — সাইনআপে স্কিপ অপশন নেই
   const canSkip = mode === "login" && ((phase === "verify" && ticks >= 3) || phase === "retry");
 
   const stepIndex = phase === "info" ? 1 : phase === "secure" ? 2 : phase === "photo" ? 3 : 4;
@@ -601,7 +601,7 @@ export function FaceAuthFlow(props: Props) {
                   )}
                 </div>
                 <p className="text-[11px] leading-snug text-white/55">
-                  রেজিস্ট্রেশন করুন চাপলে ফেস ভেরিফিকেশন খুলবে। ভেরিফিকেশন সফল (whitelist) হলেই
+                  রেজিস্ট্রেশন করুন চাপলে ফেস ভেরিফিকেশন খুলবে। ভেরিফিকেশন সফল (ভেরিফাই) হলেই
                   একাউন্ট তৈরি হবে — না হলে একাউন্ট হবে না।
                 </p>
                 <div className="flex gap-2">

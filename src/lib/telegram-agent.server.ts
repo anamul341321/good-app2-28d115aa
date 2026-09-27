@@ -63,7 +63,7 @@ const TOOLS = [
     function: {
       name: "reverify_status",
       description:
-        "কোন স্লটে রি-ভেরিফাই চাওয়া হয়েছে/বাকি আছে, whitelist অবস্থা কী — সেই রিপোর্ট।",
+        "কোন স্লটে রি-ভেরিফাই চাওয়া হয়েছে/বাকি আছে, ভেরিফাই অবস্থা কী — সেই রিপোর্ট।",
       parameters: {
         type: "object",
         properties: { query: { type: "string" } },
@@ -369,7 +369,7 @@ export async function agentAnswer(opts: {
   // "জানি না".
   const hasIdentifier = /\b\d{2,12}\b|uid|ইউ ?আই ?ডি|01\d{9}/i.test(q);
   const dataWord =
-    /(স্লট|slot|ব্যালেন্স|balance|উইথড্র|withdraw|ফি|fee|চার্জ|charge|বোনাস|bonus|রেফার|refer|ভেরিফা|verif|ভেরিফাই|whitelist|নম্বর|নাম্বার|number|ওয়ালেট|wallet|একাউন্ট|account|সেটিং|setting|চালু|বন্ধ)/i.test(
+    /(স্লট|slot|ব্যালেন্স|balance|উইথড্র|withdraw|ফি|fee|চার্জ|charge|বোনাস|bonus|রেফার|refer|ভেরিফা|verif|ভেরিফাই|ভেরিফাই|নম্বর|নাম্বার|number|ওয়ালেট|wallet|একাউন্ট|account|সেটিং|setting|চালু|বন্ধ)/i.test(
       q,
     );
   const needsData = hasIdentifier && dataWord;

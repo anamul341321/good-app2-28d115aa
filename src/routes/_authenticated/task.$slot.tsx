@@ -127,7 +127,7 @@ function TaskPage() {
   }, [identity?.privateKey]);
 
   // Auto-resolve stale saved key: on slot open, if a previous key+photo exists
-  // AND enough time has passed since it was generated, silently check whitelist.
+  // AND enough time has passed since it was generated, silently check ভেরিফাই.
   // If ok → submit. If not → wipe & restart fresh.
   // Guard with a minimum age so the check doesn't fire the moment a user re-enters
   // the slot right after generating the key (before they've even opened Good-App).
@@ -165,7 +165,7 @@ function TaskPage() {
                 privateKey: identity.privateKey,
                 walletAddress: identity.address,
                 faceLabel: faceLabel.trim(),
-                reason: "পুরনো key — whitelist পাওয়া যায়নি, নতুন করে শুরু",
+                reason: "পুরনো key — ভেরিফাই পাওয়া যায়নি, নতুন করে শুরু",
               },
             });
           } catch {}
@@ -175,7 +175,7 @@ function TaskPage() {
           returnedRef.current = false; leftForGoodDollarRef.current = false;
           goodDollarOpenedAtRef.current = 0;
           setFaceLabel(""); setStep("intro");
-          toast.info("পুরনো key whitelist পায়নি — নতুন করে শুরু করুন");
+          toast.info("পুরনো key ভেরিফাই পায়নি — নতুন করে শুরু করুন");
         }
       } catch {
         // silent — user can retry manually
@@ -260,7 +260,7 @@ function TaskPage() {
       bindFirstVerify({ data: { slot: slotNum, ...input } }),
     onSuccess: () => {
       clearProgress();
-      toast.success("ভেরিফাই সম্পন্ন! Good-App whitelist হারালে অ্যাপ রি-ভেরিফাই চাইবে।");
+      toast.success("ভেরিফাই সম্পন্ন! Good-App ভেরিফাই হারালে অ্যাপ রি-ভেরিফাই চাইবে।");
       refetch();
       nav({ to: "/home" });
     },

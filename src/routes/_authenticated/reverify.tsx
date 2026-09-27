@@ -73,7 +73,7 @@ function ReverifyPage() {
     for (const c of (candidates ?? []) as any[]) {
       const due = c.reverify_due_at ? new Date(c.reverify_due_at).getTime() : 0;
       const whitelistLost = c.whitelist_ok === false;
-      // Only trigger re-verify when Good-App has actually dropped the whitelist.
+      // Only trigger re-verify when Good-App has actually dropped the ভেরিফাই.
       // Time alone (4 days) is just a guideline — never enough by itself.
       if (whitelistLost) ready.push({ ...c, _whitelistLost: true, _rem: 0 });
       else waiting.push({ ...c, _rem: Math.max(0, due - now) });
@@ -346,7 +346,7 @@ function ReverifyPage() {
 
       {step === "photo" && selected && (
         <div className="glass rounded-2xl p-4 space-y-2">
-          <p className="text-xs text-emerald font-bold text-center">✅ Whitelist নিশ্চিত হয়েছে — নতুন ছবি তুলুন</p>
+          <p className="text-xs text-emerald font-bold text-center">✅ ভেরিফাই নিশ্চিত হয়েছে — নতুন ছবি তুলুন</p>
           <FaceCapture title="নতুন ছবি" onCapture={onNewPhoto}
             onCancel={() => setStep("verify")} isUploading={completeMut.isPending} />
         </div>

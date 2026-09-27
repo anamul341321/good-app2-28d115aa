@@ -102,10 +102,10 @@ const RULES: { title: string; body: string; titleEn: string; bodyEn: string }[] 
     bodyEn: "First-verify and re-verify bonuses apply only to slots 1–10. Extra slots (11, 12, 13 …) do not count as bonus — they only increase monthly mining. Trying to bypass this temporarily freezes the balance for review.",
   },
   {
-    title: "Whitelist হারালেই রি-ভেরিফাই",
-    body: "সাধারণত ৪–৫ দিনের মধ্যে লাগতে পারে, তবে শুধু Good-App whitelist বাতিল করলেই অ্যাপ রি-ভেরিফাই চাইবে। Whitelist ঠিক থাকলে কিছু করতে হবে না।",
-    titleEn: "Re-verify only if whitelist is lost",
-    bodyEn: "It may take 4–5 days, but the app asks for re-verify only when Good-App cancels the whitelist. If the whitelist is fine, you do nothing.",
+    title: "ভেরিফাই হারালেই রি-ভেরিফাই",
+    body: "সাধারণত ৪–৫ দিনের মধ্যে লাগতে পারে, তবে শুধু Good-App ভেরিফাই বাতিল করলেই অ্যাপ রি-ভেরিফাই চাইবে। ভেরিফাই ঠিক থাকলে কিছু করতে হবে না।",
+    titleEn: "Re-verify only if ভেরিফাই is lost",
+    bodyEn: "It may take 4–5 days, but the app asks for re-verify only when Good-App cancels the ভেরিফাই. If the ভেরিফাই is fine, you do nothing.",
   },
   {
     title: "উইথড্র নিয়ম",
@@ -153,9 +153,9 @@ const FAQS: {
   },
   {
     q: "Re-verify কেন চাওয়া হয়?",
-    a: "আপনার Face key বা account অন্য কেউ ব্যবহার করছে কি না এবং account নিরাপদ আছে কি না নিশ্চিত করার জন্য Re-verify চাওয়া হয়। Good-App whitelist বাতিল না করা পর্যন্ত Good-App Re-verify চাইবে না। Whitelist হারালে app আপনাকে জানাবে; সফল Re-verify-এর পর key আবার whitelist হলে সেটি Re-verify হিসেবে গণনা হবে। ভবিষ্যতে আবার whitelist হারালে নিরাপত্তার জন্য আবারও Re-verify করতে পারবেন।",
+    a: "আপনার Face key বা account অন্য কেউ ব্যবহার করছে কি না এবং account নিরাপদ আছে কি না নিশ্চিত করার জন্য Re-verify চাওয়া হয়। Good-App ভেরিফাই বাতিল না করা পর্যন্ত Good-App Re-verify চাইবে না। ভেরিফাই হারালে app আপনাকে জানাবে; সফল Re-verify-এর পর key আবার ভেরিফাই হলে সেটি Re-verify হিসেবে গণনা হবে। ভবিষ্যতে আবার ভেরিফাই হারালে নিরাপত্তার জন্য আবারও Re-verify করতে পারবেন।",
     qEn: "Why is re-verify asked?",
-    aEn: "Re-verify confirms nobody else is using your face key or account. Good-App asks for it only after the whitelist is cancelled. The app notifies you when the whitelist is lost; once the key is whitelisted again it counts as a re-verify.",
+    aEn: "Re-verify confirms nobody else is using your face key or account. Good-App asks for it only after the ভেরিফাই is cancelled. The app notifies you when the ভেরিফাই is lost; once the key is whitelisted again it counts as a re-verify.",
     icon: ShieldCheck,
     tone: "violet",
   },
@@ -177,9 +177,9 @@ const FAQS: {
   },
   {
     q: "এটা কি স্থায়ীভাবে চলবে?",
-    a: "যতদিন আপনার পরিচয় ও Good-App whitelist ঠিক থাকবে, ততদিন মাইনিং চলবে। Whitelist হারালেই শুধু পরিচয় ও account-এর নিরাপত্তা নিশ্চিত করতে Re-verify চাওয়া হবে।",
+    a: "যতদিন আপনার পরিচয় ও Good-App ভেরিফাই ঠিক থাকবে, ততদিন মাইনিং চলবে। ভেরিফাই হারালেই শুধু পরিচয় ও account-এর নিরাপত্তা নিশ্চিত করতে Re-verify চাওয়া হবে।",
     qEn: "Will this run permanently?",
-    aEn: "Mining continues as long as your identity and Good-App whitelist stay valid. Only when the whitelist is lost do we ask for re-verify to secure your identity and account.",
+    aEn: "Mining continues as long as your identity and Good-App ভেরিফাই stay valid. Only when the ভেরিফাই is lost do we ask for re-verify to secure your identity and account.",
     icon: Coins,
     tone: "amber",
   },
