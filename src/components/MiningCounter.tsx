@@ -259,10 +259,7 @@ export function MiningCounter({
         ) : null}
         {revealed ? (
           <div className="mt-1.5 rounded-xl border border-white/20 bg-white/10 px-3 py-1.5 text-center">
-            <p className="text-[11px] font-black text-white">
-              ⛏️ আজকের মাইনিং: {todayUnclaimed.toFixed(2)}৳ <span className="text-white/60">(ক্লেইম বাকি)</span>
-            </p>
-            <p className="text-[9px] font-bold text-white/65">রাত ১২টার আগে ক্লেইম না করলে আজকের টাকা বাতিল হবে</p>
+            <p className="text-[10px] font-bold text-white/75">উপরের কার্ড থেকে দিনে একবার পুরো দিনের মাইনিং ক্লেইম করুন{todayUnclaimed > 0 ? ` (+${todayUnclaimed.toFixed(2)}৳ আগের জমা)` : ""}</p>
           </div>
         ) : (
           <button

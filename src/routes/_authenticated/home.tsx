@@ -288,6 +288,7 @@ function HomePage() {
 
       {!lite && (
         <>
+          <DailyClaimCard />
           {/* মাইনিং কার্ড */}
           <div data-tour="mining" data-voice="home.mining" className="relative">
             <MiningCounter
