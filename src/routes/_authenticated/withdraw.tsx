@@ -169,9 +169,15 @@ function WithdrawPage() {
       )}
 
       <div className={`mining-card mining-card-morph rounded-2xl p-5 text-center relative overflow-hidden ${mode === "usdt" ? "ring-2 ring-emerald/40" : "ring-2 ring-primary/30"}`}>
-        <div className="mx-auto mb-2 flex w-fit items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-2.5 py-1 text-[9px] font-black text-white/85">
-          <Sparkles className="h-3 w-3" /> এই মুহূর্তে তোলা যাবে
-        </div>
+        {monthlyWindow.isOpen && !adminWithdrawOff ? (
+          <div className="mx-auto mb-2 flex w-fit items-center gap-1.5 rounded-full border border-emerald/40 bg-emerald/15 px-2.5 py-1 text-[9px] font-black text-emerald">
+            <Sparkles className="h-3 w-3" /> {t("🟢 উইথড্র খোলা — এখন তোলা যাবে", "🟢 Withdraw open — you can withdraw now")}
+          </div>
+        ) : (
+          <div className="mx-auto mb-2 flex w-fit items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-2.5 py-1 text-[9px] font-black text-white/85">
+            <Sparkles className="h-3 w-3" /> {t("⏰ পরের উইথড্র: ১ তারিখ", "⏰ Next withdrawal: the 1st")}
+          </div>
+        )}
         <p className="text-[10px] font-black text-white/70">
           {mode === "usdt"
             ? t("USDT ক্লেইমযোগ্য ব্যালেন্স", "USDT claimable balance")
