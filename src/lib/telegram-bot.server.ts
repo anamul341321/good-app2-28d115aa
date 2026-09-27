@@ -1088,19 +1088,19 @@ export async function matchBuiltinFaqPhoto(photoBase64: string): Promise<string 
       body: JSON.stringify({
         model: MODEL,
         temperature: 0,
-        max_tokens: 10,
+        max_tokens: 60,
         messages: [
           {
             role: "user",
             content: [
-                {
-                  type: "text",
-                  text:
+              {
+                type: "text",
+                text:
                     `স্ক্রিনশটটি সাবধানে দেখো। ইউজার সাধারণত সমস্যার জায়গায় লাল দাগ/সার্কেল করে দেয় — লাল দাগ থাকলে সেটাই স্ক্রিনশটের মূল বিষয়, না থাকলে সবচেয়ে বড়/কেন্দ্রে থাকা অংশটি।\n` +
                     `প্রশ্ন: স্ক্রিনশটের মূল বিষয় নিচের কোন টপিকের সাথে মেলে?\n${list}\n\n` +
                     `নিয়ম: স্ক্রিনের কোণে ছোট কোনো বাটন/ট্যাবে টপিকের নাম দেখা গেলে সেটা ম্যাচ নয়। পুরো হোম স্ক্রিন বা মেনুর স্ক্রিনশটে অনেক জিনিস একসাথে দেখা যায় — মূল বিষয় স্পষ্টভাবে কোনো টপিকের না মিললে -1 লেখো।\n` +
                     `শুধু নম্বরটি লেখো।`,
-                },
+              },
               { type: "image_url", image_url: { url: `data:image/jpeg;base64,${photoBase64}` } },
             ],
           },
@@ -1110,7 +1110,7 @@ export async function matchBuiltinFaqPhoto(photoBase64: string): Promise<string 
     if (!res.ok) return null;
     const data: any = await res.json();
     const idx = parseInt(String(data.choices?.[0]?.message?.content ?? "").match(/-?\d+/)?.[0] ?? "-1", 10);
-    if (idx < 0 || idx >= BUILTIN_FAQS.length) return null;
+    if (!Number.isInteger(idx) || idx < 0 || idx >= BUILTIN_FAQS.length) return null;
     return BUILTIN_FAQS[idx].answer;
   } catch {
     return null;
