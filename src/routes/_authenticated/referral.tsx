@@ -298,7 +298,7 @@ function ReferralPage() {
           <Step n={2} tone="violet">বন্ধু সাইন আপ ফর্মে কোডটি বসিয়ে একাউন্ট খুলবেন।</Step>
           <Step n={3} tone="emerald">বন্ধু যখন <b>১০টি ঘর</b> Face Verify সম্পন্ন করবেন — সাথে সাথে আপনার <b className="text-emerald">+১০% আজীবন বোনাস</b> চালু।</Step>
           <li className="rounded-xl bg-amber/10 border border-amber/30 p-2.5 text-[11px] text-amber-900">
-            <b className="text-amber">⚠️ মনে রাখুন:</b> Re-verify মিস করলে whitelist হারাবে ও বোনাস বন্ধ হবে। আবার Re-verify করালে বোনাস ফিরে আসবে।
+            <b className="text-amber">⚠️ মনে রাখুন:</b> Re-verify মিস করলে ভেরিফাই হারাবে ও বোনাস বন্ধ হবে। আবার Re-verify করালে বোনাস ফিরে আসবে।
           </li>
         </ol>
       </div>

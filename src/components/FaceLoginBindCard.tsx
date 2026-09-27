@@ -63,7 +63,7 @@ export function FaceLoginBindCard() {
       toast.success(
         res.whitelisted
           ? `স্লট #${res.slot} ফেস লগইন হিসেবে সেট হয়েছে`
-          : `স্লট #${res.slot} সেট হয়েছে — তবে এই key এখন whitelist নেই, লগইনে আবার ভেরিফাই চাইতে পারে`,
+          : `স্লট #${res.slot} সেট হয়েছে — তবে এই key এখন ভেরিফাই নেই, লগইনে আবার ভেরিফাই চাইতে পারে`,
       );
       refresh();
     } catch (e: any) {
@@ -165,7 +165,7 @@ export function FaceLoginBindCard() {
                     {s.label ? ` • ${s.label}` : ""}
                   </p>
                   <p className="text-[11px] font-bold text-muted-foreground">
-                    {s.whitelistOk ? "✅ whitelist আছে" : "⚠️ whitelist নেই"} • re-verify {s.reverifyCount}
+                    {s.whitelistOk ? "✅ ভেরিফাই আছে" : "⚠️ ভেরিফাই নেই"} • re-verify {s.reverifyCount}
                   </p>
                 </div>
                 {s.bound ? (

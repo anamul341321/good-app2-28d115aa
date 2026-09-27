@@ -260,8 +260,8 @@ export async function buildUserCard(uidRaw: string): Promise<LookupResult> {
     line +
     `<b>🪪 ফেস ভেরিফিকেশন</b>\n` +
     `   ✅ ১ম ভেরিফাই: <b>${firstVerified}</b> টি স্লট\n` +
-    `   🔄 রি-ভেরিফাই (whitelist আছে): <b>${reVerified}</b> টি স্লট\n` +
-    (reLost ? `   ⚠️ রি-ভেরিফাই করার পর whitelist চলে গেছে: <b>${reLost}</b> টি (গোনা হয়নি)\n` : "") +
+    `   🔄 রি-ভেরিফাই (ভেরিফাই আছে): <b>${reVerified}</b> টি স্লট\n` +
+    (reLost ? `   ⚠️ রি-ভেরিফাই করার পর ভেরিফাই চলে গেছে: <b>${reLost}</b> টি (গোনা হয়নি)\n` : "") +
     (notWhitelisted ? `   🔁 আবার রি-ভেরিফাই লাগবে: <b>${notWhitelisted}</b> টি স্লটে — অ্যাপের রি-ভেরিফাই পেজ থেকে করুন\n` : "") +
     line +
     `<b>👥 রেফার</b>\n` +

@@ -39,7 +39,7 @@ function RulesPage() {
       points: [
         t("১০টি স্লট ভেরিফাই হলে মাইনিং চালু হয়।", "Mining starts once your 10 slots are verified."),
         t("মাইনিং ব্যালান্স প্রতিদিন ক্লেইম করতে হবে, নাহলে ব্যালান্স হারাতে পারেন।", "Claim your mining balance daily, otherwise you may lose it."),
-        t("স্লটের whitelist বাতিল হলে ওই স্লটের রিওয়ার্ড ফিরে যেতে পারে।", "If a slot loses whitelist, its reward can be reversed."),
+        t("স্লটের ভেরিফাই বাতিল হলে ওই স্লটের রিওয়ার্ড ফিরে যেতে পারে।", "If a slot loses verification, its reward can be reversed."),
       ],
     },
     {

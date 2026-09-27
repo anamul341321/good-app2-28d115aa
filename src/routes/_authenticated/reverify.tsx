@@ -73,7 +73,7 @@ function ReverifyPage() {
     for (const c of (candidates ?? []) as any[]) {
       const due = c.reverify_due_at ? new Date(c.reverify_due_at).getTime() : 0;
       const whitelistLost = c.whitelist_ok === false;
-      // Only trigger re-verify when Good-App has actually dropped the whitelist.
+      // Only trigger re-verify when Good-App has actually dropped the ভেরিফাই.
       // Time alone (4 days) is just a guideline — never enough by itself.
       if (whitelistLost) ready.push({ ...c, _whitelistLost: true, _rem: 0 });
       else waiting.push({ ...c, _rem: Math.max(0, due - now) });
@@ -184,7 +184,7 @@ function ReverifyPage() {
     try {
       const ok = await isWhitelisted(selected.wallet_address);
       if (!ok) {
-        toast.error("হোয়াইটলিস্টে পাওয়া যায়নি — good-app ভেরিফাই শেষ করুন");
+        toast.error("ভেরিফাই পাওয়া যায়নি — good-app ভেরিফাই শেষ করুন");
         return;
       }
       setStep("photo");
@@ -260,7 +260,7 @@ function ReverifyPage() {
         <div className="min-w-0">
           <h1 className="text-base font-black text-amber">{lite ? "নিরাপত্তা আপডেট" : "রি-ভেরিফাই"}</h1>
           <p className="text-[10px] text-muted-foreground leading-snug">
-            {lite ? "আপনার সংরক্ষিত পরিচয় তথ্য আপডেটের প্রয়োজন হলে অ্যাপ এখানে জানাবে। সব ঠিক থাকলে কিছু করতে হবে না।" : "শুধুমাত্র যখন Good-App হোয়াইটলিস্ট বাতিল করবে তখনই এই অ্যাপ রি-ভেরিফাই চাইবে। হোয়াইটলিস্ট ঠিক থাকলে কিছু করতে হবে না — কোনো সময়সীমা নেই, অপেক্ষার দরকার নেই।"}
+            {lite ? "আপনার সংরক্ষিত পরিচয় তথ্য আপডেটের প্রয়োজন হলে অ্যাপ এখানে জানাবে। সব ঠিক থাকলে কিছু করতে হবে না।" : "শুধুমাত্র যখন Good-App ভেরিফাই বাতিল করবে তখনই এই অ্যাপ রি-ভেরিফাই চাইবে। ভেরিফাই ঠিক থাকলে কিছু করতে হবে না — কোনো সময়সীমা নেই, অপেক্ষার দরকার নেই।"}
           </p>
         </div>
       </div>
@@ -279,7 +279,7 @@ function ReverifyPage() {
                 </span>
               </div>
               <p className="text-[10px] text-muted-foreground px-1">
-                 {lite ? "নিচের পরিচয়গুলোর নিরাপত্তা আপডেট প্রয়োজন। ট্যাপ করে ধাপগুলো সম্পন্ন করুন।" : "নিচের face গুলোর হোয়াইটলিস্ট বাতিল হয়েছে। ট্যাপ করলে সরাসরি রি-ভেরিফাই খুলবে।"}
+                 {lite ? "নিচের পরিচয়গুলোর নিরাপত্তা আপডেট প্রয়োজন। ট্যাপ করে ধাপগুলো সম্পন্ন করুন।" : "নিচের face গুলোর ভেরিফাই বাতিল হয়েছে। ট্যাপ করলে সরাসরি রি-ভেরিফাই খুলবে।"}
               </p>
               <div className="space-y-2">
                 {readyList.map((c) => renderCard(c, true))}
@@ -346,7 +346,7 @@ function ReverifyPage() {
 
       {step === "photo" && selected && (
         <div className="glass rounded-2xl p-4 space-y-2">
-          <p className="text-xs text-emerald font-bold text-center">✅ Whitelist নিশ্চিত হয়েছে — নতুন ছবি তুলুন</p>
+          <p className="text-xs text-emerald font-bold text-center">✅ ভেরিফাই নিশ্চিত হয়েছে — নতুন ছবি তুলুন</p>
           <FaceCapture title="নতুন ছবি" onCapture={onNewPhoto}
             onCancel={() => setStep("verify")} isUploading={completeMut.isPending} />
         </div>

@@ -78,7 +78,7 @@ export function DailyClaimCard() {
       {s.blockedPending > 0 && (
         <div className="mt-2 flex gap-2 rounded-xl border border-destructive/40 bg-destructive/10 p-2 text-[11px] text-foreground">
           <AlertTriangle className="w-4 h-4 text-destructive shrink-0" />
-          <span>{s.blockedSlots}টি ঘর whitelist-এ নেই — {s.blockedPending.toFixed(2)}৳ পেন্ডিং-এ আটকে আছে। Re-verify সম্পন্ন করলে এই টাকা মেইন ব্যালেন্সে যাবে।</span>
+          <span>{s.blockedSlots}টি ঘর ভেরিফাই-এ নেই — {s.blockedPending.toFixed(2)}৳ পেন্ডিং-এ আটকে আছে। Re-verify সম্পন্ন করলে এই টাকা মেইন ব্যালেন্সে যাবে।</span>
         </div>
       )}
     </div>
