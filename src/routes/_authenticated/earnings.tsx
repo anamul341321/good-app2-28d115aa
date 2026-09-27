@@ -1,10 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { claimMiningEarnings, getEarnings } from "@/lib/earnings.functions";
+import { useQuery } from "@tanstack/react-query";
+import { getEarnings } from "@/lib/earnings.functions";
 import { EarningsStatement } from "@/components/EarningsStatement";
 import { EarningsBreakdown } from "@/components/EarningsBreakdown";
-import { toast } from "sonner";
 import { Loader2, Coins, Gift, Users, PieChart, HandCoins, History, FileText, ListOrdered } from "lucide-react";
 import { isLiteBuild } from "@/lib/lite-build";
 import { LiteFeatureBlock } from "@/components/LiteFeatureBlock";
@@ -28,24 +27,14 @@ const tk = (n: number) => `${n.toFixed(2)}৳`;
 
 function EarningsPage() {
   if (isLiteBuild()) return <LiteFeatureBlock title="আয়ের হিসাব" />;
-  const qc = useQueryClient();
   const [showSheet, setShowSheet] = useState(false);
-  const { data, isLoading, refetch } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ["earnings"],
     queryFn: () => getEarnings(),
     refetchInterval: 60_000,
     staleTime: 15_000,
   });
 
-  const claim = useMutation({
-    mutationFn: () => claimMiningEarnings(),
-    onSuccess: (res) => {
-      toast.success(`✅ ${tk(res.amount)} ক্লেইম হয়েছে — নিজের ${tk(res.selfAmount)} + রেফার ${tk(res.referralAmount)}`);
-      qc.invalidateQueries({ queryKey: ["earnings"] });
-      refetch();
-    },
-    onError: (e: any) => toast.error(e?.message ?? "ক্লেইম হয়নি"),
-  });
 
   if (isLoading || !data) {
     return <div className="py-20 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-cyan" /></div>;
@@ -107,17 +96,11 @@ function EarningsPage() {
             <p className="mono-num text-xl font-black text-emerald">{tk(c.pendingReferral)}</p>
           </div>
         </div>
-        <button
-          onClick={() => claim.mutate()}
-          disabled={!c.canClaim || claim.isPending}
-          className="w-full py-3.5 rounded-2xl gradient-emerald font-black text-sm text-white btn-press disabled:opacity-60"
-        >
-          {claim.isPending ? "ক্লেইম হচ্ছে…" : c.pending >= 0.5
-            ? c.canClaim ? `💰 ${tk(c.pending)} ক্লেইম করুন` : "⏳ ৬ ঘণ্টা পর আবার ক্লেইম"
-            : "এখনো ক্লেইমের মতো জমা হয়নি"}
-        </button>
+        <div className="w-full py-3.5 rounded-2xl bg-muted border border-border text-center font-black text-sm text-muted-foreground">
+          ⛏️ মাইনিং ক্লেইম হোম পেজের "আজকের মাইনিং ক্লেইম" কার্ড থেকে হয় — দিনে একবার, সন্ধ্যা ৬টায় রিসেট
+        </div>
         <p className="text-[10px] text-muted-foreground leading-relaxed">
-          ℹ️ ক্লেইম করলে ব্যালেন্স কমে না — শুধু এতদিনের মাইনিং আয় তারিখসহ নিচের হিসাবে লেখা হয়। প্রতিদিন বা প্রতি মাসে যখন চান ক্লেইম করতে পারবেন (প্রতি ৬ ঘণ্টায় একবার)।
+          ℹ️ ক্লেইম করলে ব্যালেন্স কমে না — টাকা পেন্ডিং ব্যালেন্সে জমা হয় এবং তারিখসহ নিচের হিসাবে লেখা হয়।
           {c.lastClaimAt && <> শেষ ক্লেইম: {new Date(c.lastClaimAt).toLocaleString("bn-BD")}।</>}
         </p>
         <div className="grid grid-cols-2 gap-2 rounded-2xl border border-border bg-surface-2 p-3 text-center">

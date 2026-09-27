@@ -1,10 +1,32 @@
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Gift, CheckCircle2, Loader2, AlertTriangle } from "lucide-react";
+import { Gift, CheckCircle2, Loader2, AlertTriangle, Timer } from "lucide-react";
 import { claimDailyMining, getDailyMiningStatus } from "@/lib/earnings.functions";
 
+/** পরের ক্লেইম সময় = ঢাকার সন্ধ্যা ৬টা (UTC ১২টা)। */
+function nextResetMs(now: number): number {
+  const d = new Date(now);
+  const reset = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 12, 0, 0);
+  return now < reset ? reset : reset + 24 * 3600 * 1000;
+}
+
+function useCountdownToReset() {
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  const left = Math.max(0, nextResetMs(now) - now);
+  const h = Math.floor(left / 3600000);
+  const m = Math.floor((left % 3600000) / 60000);
+  const sec = Math.floor((left % 60000) / 1000);
+  return `${h} ঘণ্টা ${m} মিনিট ${sec} সেকেন্ড`;
+}
+
 export function DailyClaimCard() {
+  const countdown = useCountdownToReset();
   const qc = useQueryClient();
   const fetchStatus = useServerFn(getDailyMiningStatus);
   const doClaim = useServerFn(claimDailyMining);
@@ -31,8 +53,14 @@ export function DailyClaimCard() {
         {s.slots}টি ঘর × {s.perSlot.toFixed(2)}৳{s.referralAmount > 0 ? ` + রেফার ${s.referralAmount.toFixed(2)}৳` : ""} · দিনে একবার
       </p>
       {s.claimedToday ? (
-        <div className="mt-3 flex items-center justify-center gap-2 rounded-2xl bg-muted py-3 text-sm font-bold text-muted-foreground">
-          <CheckCircle2 className="w-4 h-4" /> আজকের ক্লেইম শেষ — পরের ক্লেইম সন্ধ্যা ৬টায়
+        <div className="mt-3 rounded-2xl bg-muted py-3 px-3 text-center">
+          <p className="flex items-center justify-center gap-2 text-sm font-bold text-muted-foreground">
+            <CheckCircle2 className="w-4 h-4" /> আজকের ক্লেইম শেষ
+          </p>
+          <p className="mt-1.5 flex items-center justify-center gap-1.5 text-[12px] font-black text-foreground">
+            <Timer className="w-3.5 h-3.5 text-primary" />
+            পরের ক্লেইম সন্ধ্যা ৬টায় — বাকি <span className="mono-num text-primary">{countdown}</span>
+          </p>
         </div>
       ) : (
         <button

@@ -3,8 +3,8 @@ import { useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { computeLiveBalance, monthlyRate, MONTHLY_PER_SLOT } from "@/lib/mining";
-import { claimMiningToMain, claimAllSlotMining } from "@/lib/earnings.functions";
-import { Wallet, Sparkles, Gift, Loader2, Pickaxe, Eye, ChevronDown, ChevronUp, AlertTriangle, LockKeyhole } from "lucide-react";
+import { claimMiningToMain } from "@/lib/earnings.functions";
+import { Wallet, Sparkles, Gift, Loader2, Eye, ChevronDown, ChevronUp, AlertTriangle, LockKeyhole } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { withdrawCountdownInfo } from "@/lib/withdraw-window";
 import { MIN_WITHDRAW_BDT } from "@/lib/constants";
@@ -127,17 +127,6 @@ export function MiningCounter({
     },
     onError: (e: any) => toast.error(e?.message ?? "ক্লেইম করা যায়নি"),
   });
-  const claimAll = useMutation({
-    mutationFn: () => claimAllSlotMining(),
-    onSuccess: (res: any) => {
-      toast.success(
-        `⏳ সব ঘরের মাইনিং ${Number(res?.mining ?? 0).toFixed(2)}৳ পেন্ডিং ব্যালেন্সে জমা হয়েছে · ${Number(res?.slots ?? 0)}টি ঘর` +
-          ` — প্রতি মাসের ১–৩ তারিখে উইথড্র করা যাবে`,
-      );
-      void qc.invalidateQueries();
-    },
-    onError: (e: any) => toast.error(e?.message ?? "ক্লেইম করা যায়নি"),
-  });
 
 
   useEffect(() => {
@@ -213,7 +202,6 @@ export function MiningCounter({
   // দিনে কত আসে — মাসিক রেট ÷ ৩০
   const perDay = ratePerMonth / 30;
 
-  const canClaimNow = selfMiningClaimable >= 0.5;
 
   return (
     <div className="mc-premium relative rounded-[24px] p-4 overflow-hidden" style={{ contain: "paint" }}>
@@ -394,23 +382,11 @@ export function MiningCounter({
         </p>
         </>)}
 
-        {/* ⛏️ মেইন ক্লেইম বাটন */}
-        <Button
-          disabled={!canClaimNow || claimAll.isPending}
-          onClick={() => claimAll.mutate()}
-          className={`mt-3 h-auto w-full rounded-2xl py-3 text-[13px] font-black btn-press border whitespace-normal leading-snug ${
-            canClaimNow
-              ? "mc-claim-glow bg-gradient-to-r from-amber-300 via-yellow-300 to-orange-400 text-amber-950 border-white/50 shadow-xl"
-              : "bg-white/10 text-white/70 border-white/20"
-          }`}
-        >
-          {claimAll.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Pickaxe className="w-4 h-4" />}
-          {canClaimNow
-            ? `⚡ এখনই ${selfMiningClaimable.toFixed(2)}৳ মাইনিং ক্লেইম করুন`
-            : selfMiningReverifyLocked >= 0.5
-                ? `🔒 ${selfMiningReverifyLocked.toFixed(2)}৳ লক — ঘরগুলো Re-verify করলেই খুলবে`
-                : "আজকের মাইনিং জমা হলেই এখান থেকে ক্লেইম করুন"}
-        </Button>
+        {/* ⛏️ দৈনিক মাইনিং ক্লেইম শুধু উপরের "আজকের মাইনিং ক্লেইম" কার্ড থেকে হয় —
+             আলাদা বাটন রাখলে একই টাকা দুই জায়গা থেকে ক্লেইমের বিভ্রান্তি হয় */}
+        <p className="mt-3 text-center text-[10px] font-bold text-white/70">
+          ⛏️ মাইনিং ক্লেইম করতে উপরের <span className="text-yellow-200">"আজকের মাইনিং ক্লেইম"</span> কার্ড ব্যবহার করুন — দিনে একবার, সন্ধ্যা ৬টায় রিসেট
+        </p>
 
         {/* 🤝 রেফার কমিশন ক্লেইম */}
         <Button
