@@ -91,7 +91,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           .split(/[,\s]+/)
           .map((s) => s.trim())
           .filter(Boolean);
-        // প্রাইভেট চ্যাট (KYC/সাপোর্ট DM) সবসময় অনুমোদিত — গ্রুপ হোয়াইটলিস্ট শুধু গ্রুপের জন্য
+        // প্রাইভেট চ্যাট (KYC/সাপোর্ট DM) সবসময় অনুমোদিত — গ্রুপ ভেরিফাই শুধু গ্রুপের জন্য
         const isPrivateChat = msg.chat?.type === "private";
         const { isOwnerIdentity } = await import("@/lib/telegram-owner.server");
         const senderIsOwnerIdentity = isOwnerIdentity(
@@ -3717,7 +3717,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
                 `${text}${quotedContext}\n\n` +
                 `[নির্দেশ: ইউজার ফেস ভেরিফিকেশনে সমস্যার কথা বলছে। মুখস্থ লম্বা লিস্ট দেবে না। ` +
                 (useUid
-                  ? `এই ইউজারের UID ${useUid} — আগে lookup_user ও list_slots টুল দিয়ে তার স্লট/ভেরিফাই/হোয়াইটলিস্ট অবস্থা দেখে নাও, তারপর তার আসল অবস্থা অনুযায়ী বোঝাও কোথায় সমস্যা আর এখন কী করতে হবে। `
+                  ? `এই ইউজারের UID ${useUid} — আগে lookup_user ও list_slots টুল দিয়ে তার স্লট/ভেরিফাই/ভেরিফাই অবস্থা দেখে নাও, তারপর তার আসল অবস্থা অনুযায়ী বোঝাও কোথায় সমস্যা আর এখন কী করতে হবে। `
                   : `UID জানা নেই — তার কথা থেকে সমস্যা বুঝে সমাধান বলো, আর শেষে বলো UID দিলে একাউন্ট দেখে নির্দিষ্ট করে বলতে পারবে। `) +
                 `সে যে এরর/সমস্যার কথা বলেছে শুধু সেটার সমাধান ২–৫ লাইনে সুন্দর করে বাংলায় বোঝাও। ` +
                 `সাহায্যের জন্য সাধারণ টিপস: ${tips.slice(0, 1200)}]`,

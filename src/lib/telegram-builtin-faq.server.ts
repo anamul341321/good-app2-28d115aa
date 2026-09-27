@@ -719,7 +719,7 @@ export const BUILTIN_FAQS: BuiltinFaq[] = [
   {
     topic: "Whitelist হচ্ছে না / pending দেখাচ্ছে",
     screenshot: ["not whitelisted", "pending", "whitelist"],
-    keywords: ["whitelist", "হোয়াইটলিস্ট", "pending", "check hoy na"],
+    keywords: ["whitelist", "ভেরিফাই", "pending", "check hoy na"],
     answer:
       `ফেস ভেরিফিকেশন সফল হওয়ার পর whitelist হতে কিছুটা সময় লাগে ⏳ আমাদের সিস্টেম <b>প্রতি কয়েক মিনিট পরপর অটো চেক</b> করে, whitelist হলেই স্লটে ✅ দেখাবে।\n\n` +
       `একটু অপেক্ষা করুন — নিজে থেকেই আপডেট হয়ে যাবে 💙`,
@@ -824,7 +824,7 @@ const INTENT_RULES: IntentRule[] = [
   {
     topic: "Whitelist হচ্ছে না",
     groups: [
-      ["whitelist", "white list", "হোয়াইটলিস্ট", "হোয়াইট লিস্ট"],
+      ["whitelist", "white list", "ভেরিফাই", "হোয়াইট লিস্ট"],
       [
         ...TIME_WORDS,
         "hocche na",

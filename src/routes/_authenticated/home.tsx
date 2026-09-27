@@ -112,10 +112,10 @@ function HomePage() {
     mutationFn: () => batchSubmitPending(),
     onSuccess: (r: any) => {
       if (r.submitted > 0) {
-        toast.success(t(`✅ ${r.submitted} জন সাক্ষী জমা হয়েছে${r.notWhitelisted ? ` · ${r.notWhitelisted} জন হোয়াইটলিস্টে নেই` : ""}`,
+        toast.success(t(`✅ ${r.submitted} জন সাক্ষী জমা হয়েছে${r.notWhitelisted ? ` · ${r.notWhitelisted} জন ভেরিফাইে নেই` : ""}`,
                         `✅ Submitted ${r.submitted} witnesses${r.notWhitelisted ? ` · ${r.notWhitelisted} not whitelisted` : ""}`));
       } else if (r.notWhitelisted > 0) {
-        toast.warning(t(`⚠️ ${r.notWhitelisted} জন এখনো হোয়াইটলিস্টে নেই — পরে আবার চেষ্টা করুন`,
+        toast.warning(t(`⚠️ ${r.notWhitelisted} জন এখনো ভেরিফাইে নেই — পরে আবার চেষ্টা করুন`,
                         `⚠️ ${r.notWhitelisted} not yet whitelisted — try again later`));
       } else {
         toast.info(t("জমা দেওয়ার মতো কিছু নেই", "Nothing to submit"));
@@ -375,14 +375,14 @@ function HomePage() {
 
           <span className="flex-1 text-left leading-tight">
             <span className="block text-[10px] uppercase tracking-[0.2em] text-white/85 font-bold">
-              {pendingSubmits > 0 ? t("ব্যাচ জমা · হোয়াইটলিস্ট চেক", "Batch submit · whitelist check") : (firstEmpty ? t("এক ট্যাপে সাক্ষী যোগ", "Add witness in one tap") : t("নতুন ব্যাচ আনলক", "Unlock a new batch"))}
+              {pendingSubmits > 0 ? t("ব্যাচ জমা · ভেরিফাই চেক", "Batch submit · whitelist check") : (firstEmpty ? t("এক ট্যাপে সাক্ষী যোগ", "Add witness in one tap") : t("নতুন ব্যাচ আনলক", "Unlock a new batch"))}
             </span>
             <span className="block text-2xl font-black drop-shadow-sm mt-0.5">
               {pendingSubmits > 0 ? t(`সব জমা দিন (${pendingSubmits})`, `Submit all (${pendingSubmits})`) : (firstEmpty ? t("জমা দিন", "Submit") : t("আরও ১০ Slot", "10 More Slots"))}
             </span>
             <span className="block text-[11px] text-white/90 font-bold mt-0.5">
               {pendingSubmits > 0
-                ? t(`${pendingSubmits} টি কী প্রস্তুত · হোয়াইটলিস্ট পেলে অটো জমা`, `${pendingSubmits} keys ready · auto-submits on whitelist`)
+                ? t(`${pendingSubmits} টি কী প্রস্তুত · ভেরিফাই পেলে অটো জমা`, `${pendingSubmits} keys ready · auto-submits on whitelist`)
                 : (firstEmpty ? t(`Slot #${firstEmpty.slot} · এখনই ছবি তুলুন`, `Slot #${firstEmpty.slot} · take a photo now`) : t("১০ জন সম্পন্ন — আরও যোগ করুন", "10 done — add more"))}
             </span>
           </span>
