@@ -182,10 +182,14 @@ export const getLeaderboards = createServerFn({ method: "GET" }).handler(async (
   // dashboard. Admin panels do NOT call getLeaderboards; they read the
   // real tables directly, so accounting stays correct there.
   //
-  // FREEZE RULE: while withdraw is switched OFF, the feed must stop moving —
-  // no new pending, no new paid. Everything is generated against the moment
-  // withdraw was turned off, so only the older rows keep showing.
+  // WINDOW RULE: pending/paid withdraw feed (real + fake) only shows
+  // during the withdraw window — Dhaka day 1 to day 3, 10 PM. Outside
+  // the window the feed is fully off so users never think withdraw is
+  // running. Top-payees leaderboard stays visible all month.
   // ============================================================
+  const { withdrawCountdownInfo } = await import("@/lib/withdraw-window");
+  const windowOpen = withdrawCountdownInfo().isOpen;
+
   const { data: wSettings } = await supabaseAdmin
     .from("bonus_settings")
     .select("withdraw_enabled, withdraw_off_until, updated_at")
@@ -195,8 +199,9 @@ export const getLeaderboards = createServerFn({ method: "GET" }).handler(async (
     ? new Date((wSettings as any).withdraw_off_until).getTime()
     : null;
   const withdrawOff =
-    (wSettings as any)?.withdraw_enabled === false &&
-    (offUntilMs == null || offUntilMs > Date.now());
+    !windowOpen ||
+    ((wSettings as any)?.withdraw_enabled === false &&
+      (offUntilMs == null || offUntilMs > Date.now()));
   const freezeAtMs = (wSettings as any)?.updated_at
     ? new Date((wSettings as any).updated_at).getTime()
     : Date.now();
