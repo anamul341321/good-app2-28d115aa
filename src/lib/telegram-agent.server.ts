@@ -145,18 +145,24 @@ const TOOLS = [
   },
 ];
 
+// Sentinel: a concrete UID/identifier was looked up and does NOT exist in
+// the app. The bot must stay completely silent in that case — saying
+// "এই UID আমাদের অ্যাপে নেই" in a public group exposes who is/isn't a
+// member and looks bad when people probe with random numbers.
+export const TOOL_SILENT = "__SILENT__";
+
 async function runTool(name: string, args: any): Promise<string> {
   try {
     if (name === "lookup_user") {
       const { buildUserCard } = await import("./telegram-lookup.server");
       const r: any = await buildUserCard(String(args?.query ?? ""));
-      if (!r?.found) return "এই আইডেন্টিফায়ারে কোনো একাউন্ট পাওয়া যায়নি।";
+      if (!r?.found) return TOOL_SILENT;
       return r.card;
     }
     if (name === "referral_join_report") {
       const { buildReferralJoinReport } = await import("./telegram-lookup.server");
       const r: any = await buildReferralJoinReport(String(args?.query ?? ""));
-      if (!r?.found) return "এই UID/আইডেন্টিফায়ারে কোনো একাউন্ট পাওয়া যায়নি।";
+      if (!r?.found) return TOOL_SILENT;
       return r.card;
     }
     if (name === "verification_dates") {
@@ -165,17 +171,17 @@ async function runTool(name: string, args: any): Promise<string> {
         String(args?.query ?? ""),
         args?.kind ?? "all",
       );
-      return r?.found ? r.card : "একাউন্ট পাওয়া যায়নি বা একাধিক মিল পাওয়া গেছে।";
+      return r?.found ? r.card : TOOL_SILENT;
     }
     if (name === "reverify_status") {
       const { buildReverifyStatusReport } = await import("./telegram-lookup.server");
       const r: any = await buildReverifyStatusReport(String(args?.query ?? ""));
-      return r?.found ? r.card : "একাউন্ট পাওয়া যায়নি বা একাধিক মিল পাওয়া গেছে।";
+      return r?.found ? r.card : TOOL_SILENT;
     }
     if (name === "withdraw_status") {
       const { buildWithdrawStatusCard } = await import("./telegram-withdraw.server");
       const r: any = await buildWithdrawStatusCard(String(args?.uid ?? ""));
-      return r?.found ? r.card : "এই UID তে কোনো উইথড্র তথ্য পাওয়া যায়নি।";
+      return r?.found ? r.card : TOOL_SILENT;
     }
     if (name === "list_slots") {
       const { listSlotNumbers } = await import("./telegram-slot.server");
@@ -413,6 +419,8 @@ export async function agentAnswer(opts: {
             /* ignore */
           }
           const out = await runTool(c.function?.name, args);
+          // Unknown/fake UID → bot stays completely silent.
+          if (out === TOOL_SILENT) return null;
           messages2.push({ role: "tool", tool_call_id: c.id, content: out.slice(0, 4000) });
         }
         continue;

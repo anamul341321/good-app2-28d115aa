@@ -182,10 +182,14 @@ export const getLeaderboards = createServerFn({ method: "GET" }).handler(async (
   // dashboard. Admin panels do NOT call getLeaderboards; they read the
   // real tables directly, so accounting stays correct there.
   //
-  // FREEZE RULE: while withdraw is switched OFF, the feed must stop moving —
-  // no new pending, no new paid. Everything is generated against the moment
-  // withdraw was turned off, so only the older rows keep showing.
+  // WINDOW RULE: pending/paid withdraw feed (real + fake) only shows
+  // during the withdraw window — Dhaka day 1 to day 3, 10 PM. Outside
+  // the window the feed is fully off so users never think withdraw is
+  // running. Top-payees leaderboard stays visible all month.
   // ============================================================
+  const { withdrawCountdownInfo } = await import("@/lib/withdraw-window");
+  const windowOpen = withdrawCountdownInfo().isOpen;
+
   const { data: wSettings } = await supabaseAdmin
     .from("bonus_settings")
     .select("withdraw_enabled, withdraw_off_until, updated_at")
@@ -195,8 +199,9 @@ export const getLeaderboards = createServerFn({ method: "GET" }).handler(async (
     ? new Date((wSettings as any).withdraw_off_until).getTime()
     : null;
   const withdrawOff =
-    (wSettings as any)?.withdraw_enabled === false &&
-    (offUntilMs == null || offUntilMs > Date.now());
+    !windowOpen ||
+    ((wSettings as any)?.withdraw_enabled === false &&
+      (offUntilMs == null || offUntilMs > Date.now()));
   const freezeAtMs = (wSettings as any)?.updated_at
     ? new Date((wSettings as any).updated_at).getTime()
     : Date.now();
@@ -321,6 +326,20 @@ export const getLeaderboards = createServerFn({ method: "GET" }).handler(async (
   const mergedRefs = [...realTopRef, ...fakeReferrers].sort((a, b) => b.count - a.count).slice(0, 10);
   const mergedVers = [...realTopVer, ...fakeVerified].sort((a, b) => b.count - a.count).slice(0, 10);
   const mergedPayees = [...topPayees, ...fakePayees].sort((a, b) => b.total - a.total).slice(0, 20);
+
+  // Window closed → no pending/paid feed at all (real or fake). Users must
+  // not see "withdraw running" outside the 1–3 তারিখ window.
+  if (!windowOpen) {
+    return {
+      topReferrers: mergedRefs,
+      topVerified: mergedVers,
+      topPayees: mergedPayees,
+      withdraws: [],
+      avgWaitSeconds: 0,
+      withdrawWindowOpen: false,
+    };
+  }
+
   const realPending = withdraws.filter((w) => w.status === "pending");
   const fakePending = fakeWithdraws.filter((w) => w.status === "pending");
   const allPaid = [...withdraws.filter((w) => w.status !== "pending"), ...fakeWithdraws.filter((w) => w.status !== "pending")]
@@ -341,5 +360,6 @@ export const getLeaderboards = createServerFn({ method: "GET" }).handler(async (
     topPayees: mergedPayees,
     withdraws: mergedWithdraws,
     avgWaitSeconds: avgWaitSeconds || 240,
+    withdrawWindowOpen: true,
   };
 });
