@@ -169,9 +169,15 @@ function WithdrawPage() {
       )}
 
       <div className={`mining-card mining-card-morph rounded-2xl p-5 text-center relative overflow-hidden ${mode === "usdt" ? "ring-2 ring-emerald/40" : "ring-2 ring-primary/30"}`}>
-        <div className="mx-auto mb-2 flex w-fit items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-2.5 py-1 text-[9px] font-black text-white/85">
-          <Sparkles className="h-3 w-3" /> এই মুহূর্তে তোলা যাবে
-        </div>
+        {monthlyWindow.isOpen && !adminWithdrawOff ? (
+          <div className="mx-auto mb-2 flex w-fit items-center gap-1.5 rounded-full border border-emerald/40 bg-emerald/15 px-2.5 py-1 text-[9px] font-black text-emerald">
+            <Sparkles className="h-3 w-3" /> {t("🟢 উইথড্র খোলা — এখন তোলা যাবে", "🟢 Withdraw open — you can withdraw now")}
+          </div>
+        ) : (
+          <div className="mx-auto mb-2 flex w-fit items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-2.5 py-1 text-[9px] font-black text-white/85">
+            <Sparkles className="h-3 w-3" /> {t("⏰ পরের উইথড্র: ১ তারিখ", "⏰ Next withdrawal: the 1st")}
+          </div>
+        )}
         <p className="text-[10px] font-black text-white/70">
           {mode === "usdt"
             ? t("USDT ক্লেইমযোগ্য ব্যালেন্স", "USDT claimable balance")
@@ -322,11 +328,12 @@ function WithdrawPage() {
           )}
 
           {provider && chosenWallet && chosenEnabled && claimable < MIN_WITHDRAW_BDT ? (
-            <div className="rounded-2xl border border-rose/30 bg-rose/10 p-4 text-center">
-              <Lock className="w-6 h-6 text-rose mx-auto mb-1" />
-              <p className="text-sm font-bold text-rose">{t("পর্যাপ্ত ব্যালেন্স নেই", "Not enough balance")}</p>
-              <p className="text-[11px] text-muted-foreground mt-1" translate="no">{t(`সর্বনিম্ন ${MIN_WITHDRAW_BDT}৳ ক্লেইমযোগ্য হলে উইথড্র করা যাবে`, `Withdraw needs at least ${MIN_WITHDRAW_BDT}৳ claimable`)}</p>
-            </div>
+            <WithdrawLockedCard
+              monthlyWindow={monthlyWindow}
+              adminWithdrawOff={adminWithdrawOff}
+              min={MIN_WITHDRAW_BDT}
+              t={t}
+            />
           ) : provider && chosenWallet && chosenEnabled ? (
             <form onSubmit={(e) => { e.preventDefault(); mut.mutate(); }} className="premium-panel rounded-2xl p-4 space-y-4" data-voice="withdraw.intro">
               <div className="flex items-center gap-2 border-b border-border pb-3">
@@ -389,6 +396,8 @@ function WithdrawPage() {
           onSubmit={() => mut.mutate()}
           submitting={mut.isPending}
           closed={withdrawClosed}
+          monthlyWindow={monthlyWindow}
+          adminWithdrawOff={adminWithdrawOff}
           t={t}
         />
       )}
@@ -639,6 +648,47 @@ function FeeBreakdown({ amount, t }: { amount: string; t: (bn: string, en: strin
   );
 }
 
+function WithdrawLockedCard({ monthlyWindow, adminWithdrawOff, min, t }: {
+  monthlyWindow: { isOpen: boolean; msUntilOpen: number };
+  adminWithdrawOff: boolean;
+  min: number;
+  t: (bn: string, en: string) => string;
+}) {
+  if (adminWithdrawOff) {
+    return (
+      <div className="rounded-2xl border-2 border-amber/40 bg-amber/10 p-4 text-center">
+        <p className="text-sm font-bold text-amber">⏸️ {t("উইথড্র সাময়িকভাবে বন্ধ", "Withdraw is temporarily paused")}</p>
+        <p className="text-[11px] text-muted-foreground mt-1">{t("একটু পরে আবার চেষ্টা করুন", "Please try again a little later")}</p>
+      </div>
+    );
+  }
+  if (!monthlyWindow.isOpen) {
+    const ms = monthlyWindow.msUntilOpen;
+    const d = Math.floor(ms / 86_400_000);
+    const h = Math.floor((ms % 86_400_000) / 3_600_000);
+    const mnt = Math.floor((ms % 3_600_000) / 60_000);
+    return (
+      <div className="rounded-2xl border-2 border-cyan/40 bg-cyan/10 p-5 text-center">
+        <p className="text-2xl">⏰</p>
+        <p className="mt-1 text-sm font-black">{t("বোনাস ছাড়া উইথড্র খোলে প্রতি মাসের ১ তারিখে", "Besides bonus funds, withdrawal opens on the 1st of every month")}</p>
+        <p className="mono-num mt-1.5 text-base font-black text-cyan" translate="no">
+          {d > 0 ? `${d} ${t("দিন", "d ")} ` : ""}{h} {t("ঘণ্টা", "h ")} {mnt} {t("মিনিট বাকি", "min left")}
+        </p>
+        <p className="mt-1.5 text-[10px] leading-relaxed text-muted-foreground">
+          {t("মাইনিং ব্যালেন্স ১ তারিখ থেকে ৩ তারিখ রাত ১০টা পর্যন্ত তোলা যায়। এর বাইরে টাকা আপনার হিসাবে জমা থেকে যায়।", "Mining balance can be withdrawn from the 1st through the 3rd at 10 PM. Outside that, the money stays safe in your account.")}
+        </p>
+      </div>
+    );
+  }
+  return (
+    <div className="rounded-2xl border border-rose/30 bg-rose/10 p-4 text-center">
+      <Lock className="w-6 h-6 text-rose mx-auto mb-1" />
+      <p className="text-sm font-bold text-rose">{t("পর্যাপ্ত ব্যালেন্স নেই", "Not enough balance")}</p>
+      <p className="text-[11px] text-muted-foreground mt-1" translate="no">{t(`সর্বনিম্ন ${min}৳ হলে উইথড্র করা যাবে`, `Withdraw needs at least ${min}৳`)}</p>
+    </div>
+  );
+}
+
 function UsdtWithdrawCard(props: {
   claimable: number;
   amount: string;
@@ -651,9 +701,11 @@ function UsdtWithdrawCard(props: {
   onSubmit: () => void;
   submitting: boolean;
   closed?: boolean;
+  monthlyWindow: { isOpen: boolean; msUntilOpen: number };
+  adminWithdrawOff: boolean;
   t: (bn: string, en: string) => string;
 }) {
-  const { claimable, amount, setAmount, usdtAddress, setUsdtAddress, usdtRate, usdtEnabled, usdtOffMsg, onSubmit, submitting, closed, t } = props;
+  const { claimable, amount, setAmount, usdtAddress, setUsdtAddress, usdtRate, usdtEnabled, usdtOffMsg, onSubmit, submitting, closed, monthlyWindow, adminWithdrawOff, t } = props;
   const CELO_RE = /^0x[a-fA-F0-9]{40}$/;
   const addrValid = CELO_RE.test(usdtAddress.trim());
   const gross = Math.floor(Number(amount) || 0);
@@ -675,11 +727,7 @@ function UsdtWithdrawCard(props: {
 
   if (claimable < MIN_WITHDRAW_BDT) {
     return (
-      <div className="rounded-2xl border border-rose/30 bg-rose/10 p-4 text-center">
-        <Lock className="w-6 h-6 text-rose mx-auto mb-1" />
-        <p className="text-sm font-bold text-rose">{t("পর্যাপ্ত ব্যালেন্স নেই", "Not enough balance")}</p>
-        <p className="text-[11px] text-muted-foreground mt-1" translate="no">{t(`সর্বনিম্ন ${MIN_WITHDRAW_BDT}৳ ক্লেইমযোগ্য হলে উইথড্র করা যাবে`, `Withdraw needs at least ${MIN_WITHDRAW_BDT}৳ claimable`)}</p>
-      </div>
+      <WithdrawLockedCard monthlyWindow={monthlyWindow} adminWithdrawOff={adminWithdrawOff} min={MIN_WITHDRAW_BDT} t={t} />
     );
   }
 
