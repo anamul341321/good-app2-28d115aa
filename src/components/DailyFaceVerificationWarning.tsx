@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { AlertTriangle, ScanFace, X } from "lucide-react";
+import { AlertTriangle, MessageCircle, ScanFace, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { getProfileHistory } from "@/lib/profile.functions";
 
@@ -23,6 +23,9 @@ export function DailyFaceVerificationWarning() {
     (task: any) => task.status === "done" && (task.whitelist_ok ?? true),
   );
   const needsVerification = Boolean(data) && !hasVerifiedFace;
+  const needsReverification = (data?.tasks ?? []).some(
+    (task: any) => task.status !== "empty" && task.whitelist_ok === false,
+  );
 
   useEffect(() => {
     if (!needsVerification) return;
@@ -33,7 +36,7 @@ export function DailyFaceVerificationWarning() {
     }
   }, [needsVerification]);
 
-  if (!needsVerification) return null;
+  if (!needsVerification && !needsReverification) return null;
 
   const dismissForToday = () => {
     try {
@@ -46,23 +49,57 @@ export function DailyFaceVerificationWarning() {
 
   return (
     <>
-      <div className="sticky top-[calc(env(safe-area-inset-top)+5rem)] z-20 border-y border-rose/40 bg-rose/15 px-3 py-2 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-md items-center gap-2">
-          <AlertTriangle className="h-4 w-4 shrink-0 text-rose" />
-          <p className="min-w-0 flex-1 text-[11px] font-black leading-snug text-rose">
-            ফেস ভেরিফিকেশন বাকি আছে
-          </p>
-          <Link
-            to="/task/$slot"
-            params={{ slot: "1" }}
-            className="shrink-0 rounded-lg bg-rose px-3 py-1.5 text-[10px] font-black text-primary-foreground"
-          >
-            এখনই করুন
-          </Link>
+      {needsReverification && (
+        <div className="sticky top-[calc(env(safe-area-inset-top)+5rem)] z-20 border-y border-amber/50 bg-background/95 px-3 py-2.5 backdrop-blur-xl">
+          <div className="mx-auto max-w-md space-y-2">
+            <div className="flex items-start gap-2.5 rounded-xl border border-amber/40 bg-amber/10 p-3">
+              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber" />
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-black text-amber">১ তারিখের আগেই রি-ভেরিফাই করুন</p>
+                <p className="mt-1 text-[11px] font-bold leading-relaxed text-foreground">
+                  যেসব স্লটে রি-ভেরিফাই চেয়েছে, সেগুলো ১ তারিখের আগে সম্পন্ন না করলে ঐ স্লটের মাইনিং টাকা আনলক হবে না। রি-ভেরিফাই করা স্লটের টাকাই শুধু আনলক হবে।
+                </p>
+              </div>
+              <Link
+                to="/reverify"
+                search={{ taskId: undefined }}
+                className="shrink-0 rounded-lg bg-amber px-3 py-2 text-[10px] font-black text-background"
+              >
+                এখনই করুন
+              </Link>
+            </div>
+            <a
+              href="https://t.me/goodappbuy"
+              target="_blank"
+              rel="noreferrer"
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-cyan/40 bg-cyan/10 px-3 py-2.5 text-xs font-black text-cyan"
+            >
+              <MessageCircle className="h-4 w-4" />
+              টেলিগ্রাম সাপোর্ট গ্রুপে মেসেজ দিন
+            </a>
+          </div>
         </div>
-      </div>
+      )}
 
-      {showDailyWarning && (
+      {needsVerification && (
+        <div className={`${needsReverification ? "" : "sticky top-[calc(env(safe-area-inset-top)+5rem)] z-20"} border-y border-rose/40 bg-rose/15 px-3 py-2 backdrop-blur-xl`}>
+          <div className="mx-auto flex max-w-md items-center gap-2">
+            <AlertTriangle className="h-4 w-4 shrink-0 text-rose" />
+            <p className="min-w-0 flex-1 text-[11px] font-black leading-snug text-rose">
+              ফেস ভেরিফিকেশন বাকি আছে
+            </p>
+            <Link
+              to="/task/$slot"
+              params={{ slot: "1" }}
+              className="shrink-0 rounded-lg bg-rose px-3 py-1.5 text-[10px] font-black text-primary-foreground"
+            >
+              এখনই করুন
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {needsVerification && showDailyWarning && (
         <div className="fixed inset-0 z-[110] grid place-items-center bg-background/80 p-4 backdrop-blur-sm">
           <section className="w-full max-w-sm overflow-hidden rounded-2xl border-2 border-rose/50 bg-surface shadow-2xl">
             <div className="flex items-center justify-between bg-rose/15 px-4 py-3">
