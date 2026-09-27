@@ -128,13 +128,15 @@ export function PaymentHistoryCard() {
             className="w-full mb-2 px-3 py-2 rounded-xl bg-white/15 backdrop-blur border border-white/30 text-white placeholder:text-white/60 text-xs outline-none focus:border-white"
           />
 
-          {tab === "top" ? (
+          {tab === "top" || !windowOpen ? (
             <>
               <div className="rounded-xl bg-white/15 backdrop-blur border border-white/30 p-2.5 mb-2 space-y-1">
-                <div className="flex items-center justify-between">
-                  <p className="text-[11px] font-black text-white">📅 আজকের লেনদেন হয়েছে</p>
-                  <p className="mono-num font-black text-yellow-200 text-lg">{Math.floor(todayTotal)}৳</p>
-                </div>
+                {windowOpen && (
+                  <div className="flex items-center justify-between">
+                    <p className="text-[11px] font-black text-white">📅 আজকের লেনদেন হয়েছে</p>
+                    <p className="mono-num font-black text-yellow-200 text-lg">{Math.floor(todayTotal)}৳</p>
+                  </div>
+                )}
                 <div className="flex items-center justify-between">
                   <p className="text-[10px] font-bold text-white/85">💰 সর্বমোট withdraw payment</p>
                   <p className="mono-num font-black text-white text-sm">{Math.floor(grandTotal)}৳</p>
