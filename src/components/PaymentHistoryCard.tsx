@@ -37,6 +37,7 @@ export function PaymentHistoryCard() {
 
   if (!data) return null;
   const { withdraws = [], avgWaitSeconds = 0, topPayees = [] } = data as any;
+  const windowOpen = (data as any).withdrawWindowOpen !== false;
   if (withdraws.length === 0 && topPayees.length === 0) return null;
 
   const filtered = (withdraws as any[]).filter((w) => {
