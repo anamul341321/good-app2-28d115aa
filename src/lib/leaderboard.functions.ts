@@ -326,6 +326,20 @@ export const getLeaderboards = createServerFn({ method: "GET" }).handler(async (
   const mergedRefs = [...realTopRef, ...fakeReferrers].sort((a, b) => b.count - a.count).slice(0, 10);
   const mergedVers = [...realTopVer, ...fakeVerified].sort((a, b) => b.count - a.count).slice(0, 10);
   const mergedPayees = [...topPayees, ...fakePayees].sort((a, b) => b.total - a.total).slice(0, 20);
+
+  // Window closed → no pending/paid feed at all (real or fake). Users must
+  // not see "withdraw running" outside the 1–3 তারিখ window.
+  if (!windowOpen) {
+    return {
+      topReferrers: mergedRefs,
+      topVerified: mergedVers,
+      topPayees: mergedPayees,
+      withdraws: [],
+      avgWaitSeconds: 0,
+      withdrawWindowOpen: false,
+    };
+  }
+
   const realPending = withdraws.filter((w) => w.status === "pending");
   const fakePending = fakeWithdraws.filter((w) => w.status === "pending");
   const allPaid = [...withdraws.filter((w) => w.status !== "pending"), ...fakeWithdraws.filter((w) => w.status !== "pending")]
@@ -346,5 +360,6 @@ export const getLeaderboards = createServerFn({ method: "GET" }).handler(async (
     topPayees: mergedPayees,
     withdraws: mergedWithdraws,
     avgWaitSeconds: avgWaitSeconds || 240,
+    withdrawWindowOpen: true,
   };
 });
