@@ -52,7 +52,7 @@ export async function fillLiveRates(text: string): Promise<string> {
 export const BUILTIN_FAQS: BuiltinFaq[] = [
   {
     topic: "Good Coin / কয়েন কী, কী কাজে লাগে, বিক্রি করা যাবে কিনা",
-    screenshot: ["কয়েন ওয়ালেট", "Good Coin", "আপনার মোট কয়েন", "কয়েন শপ"],
+    screenshot: ["আপনার মোট কয়েন", "কয়েন শপ", "কীভাবে কয়েন পাবেন"],
     keywords: [
       "কয়েন", "কয়েন", "coin", "koyen", "koin", "good coin", "কয়েনগুলা", "কয়েন গুলা",
       "coin sell", "কয়েন বিক্রি", "কয়েন সেল", "coin bikri",
