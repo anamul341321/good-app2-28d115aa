@@ -390,6 +390,8 @@ function WithdrawPage() {
           onSubmit={() => mut.mutate()}
           submitting={mut.isPending}
           closed={withdrawClosed}
+          monthlyWindow={monthlyWindow}
+          adminWithdrawOff={adminWithdrawOff}
           t={t}
         />
       )}
