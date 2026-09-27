@@ -719,11 +719,7 @@ function UsdtWithdrawCard(props: {
 
   if (claimable < MIN_WITHDRAW_BDT) {
     return (
-      <div className="rounded-2xl border border-rose/30 bg-rose/10 p-4 text-center">
-        <Lock className="w-6 h-6 text-rose mx-auto mb-1" />
-        <p className="text-sm font-bold text-rose">{t("পর্যাপ্ত ব্যালেন্স নেই", "Not enough balance")}</p>
-        <p className="text-[11px] text-muted-foreground mt-1" translate="no">{t(`সর্বনিম্ন ${MIN_WITHDRAW_BDT}৳ ক্লেইমযোগ্য হলে উইথড্র করা যাবে`, `Withdraw needs at least ${MIN_WITHDRAW_BDT}৳ claimable`)}</p>
-      </div>
+      <WithdrawLockedCard monthlyWindow={monthlyWindow} adminWithdrawOff={adminWithdrawOff} min={MIN_WITHDRAW_BDT} t={t} />
     );
   }
 
