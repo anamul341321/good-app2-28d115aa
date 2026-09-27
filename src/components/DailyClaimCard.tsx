@@ -26,6 +26,7 @@ function useCountdownToReset() {
 }
 
 export function DailyClaimCard() {
+  const countdown = useCountdownToReset();
   const qc = useQueryClient();
   const fetchStatus = useServerFn(getDailyMiningStatus);
   const doClaim = useServerFn(claimDailyMining);
@@ -52,8 +53,14 @@ export function DailyClaimCard() {
         {s.slots}টি ঘর × {s.perSlot.toFixed(2)}৳{s.referralAmount > 0 ? ` + রেফার ${s.referralAmount.toFixed(2)}৳` : ""} · দিনে একবার
       </p>
       {s.claimedToday ? (
-        <div className="mt-3 flex items-center justify-center gap-2 rounded-2xl bg-muted py-3 text-sm font-bold text-muted-foreground">
-          <CheckCircle2 className="w-4 h-4" /> আজকের ক্লেইম শেষ — পরের ক্লেইম সন্ধ্যা ৬টায়
+        <div className="mt-3 rounded-2xl bg-muted py-3 px-3 text-center">
+          <p className="flex items-center justify-center gap-2 text-sm font-bold text-muted-foreground">
+            <CheckCircle2 className="w-4 h-4" /> আজকের ক্লেইম শেষ
+          </p>
+          <p className="mt-1.5 flex items-center justify-center gap-1.5 text-[12px] font-black text-foreground">
+            <Timer className="w-3.5 h-3.5 text-primary" />
+            পরের ক্লেইম সন্ধ্যা ৬টায় — বাকি <span className="mono-num text-primary">{countdown}</span>
+          </p>
         </div>
       ) : (
         <button
