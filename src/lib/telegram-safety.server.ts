@@ -152,15 +152,7 @@ export async function groupSafetyGuard(opts: {
     /* বট অ্যাডমিন না হলে ডিলিট করতে পারবে না */
   }
 
-  const { uid } = await findAppUser(msg.from?.id);
-
-  const label = reason === "link" ? "বাইরের লিংক" : "১৮+/আপত্তিকর ছবি";
-
-  await sendMessage(
-    chatId,
-    `🧹 <b>${senderName}</b>, আপনার মেসেজটি মুছে দেওয়া হলো — ${label} গ্রুপে শেয়ার করা যাবে না 🙏\n` +
-      `আমাদের অফিসিয়াল লিংক: <b>https://goodapp2.live</b>`,
-  );
+  const { uid, appUserId } = await findAppUser(msg.from?.id);
 
   if (typeof opts.updateId === "number") {
     await supabaseAdmin.from("tg_messages").upsert(
@@ -181,6 +173,42 @@ export async function groupSafetyGuard(opts: {
       { onConflict: "update_id" },
     );
   }
+
+  if (reason === "link") {
+    // UID না থাকলে শুধু ডিলিট — কোনো মেসেজ নয়
+    if (!uid || !appUserId) return { handled: true, action: "deleted", reason };
+    const { count } = await supabaseAdmin
+      .from("tg_messages")
+      .select("id", { count: "exact", head: true })
+      .eq("matched_uid", uid)
+      .eq("verdict", "link");
+    const strikes = Math.max(1, count ?? 1);
+    if (strikes >= 3) {
+      try {
+        await supabaseAdmin.auth.admin.updateUserById(appUserId, { ban_duration: "876000h" } as any);
+      } catch { /* ignore */ }
+      await supabaseAdmin.from("profiles").update({
+        banned: true,
+        banned_reason: "গ্রুপে ৩ বার লিংক শেয়ার করার কারণে",
+        banned_at: new Date().toISOString(),
+      } as any).eq("id", appUserId);
+      await sendMessage(
+        chatId,
+        `⛔ <b>${senderName}</b> (UID ${uid}) — ৩ বার লিংক শেয়ার করায় আপনার অ্যাকাউন্ট ব্লক করা হলো।`,
+      );
+      return { handled: true, action: "blocked", reason };
+    }
+    await sendMessage(
+      chatId,
+      `⚠️ <b>${senderName}</b> (UID ${uid}) — গ্রুপে লিংক শেয়ার করা নিষেধ। আবার করলে অ্যাকাউন্ট ব্লক করা হবে। (সতর্কতা ${strikes}/৩)`,
+    );
+    return { handled: true, action: "warned", reason };
+  }
+
+  await sendMessage(
+    chatId,
+    `🧹 <b>${senderName}</b>, আপনার মেসেজটি মুছে দেওয়া হলো — ১৮+/আপত্তিকর ছবি গ্রুপে শেয়ার করা যাবে না 🙏`,
+  );
 
   return { handled: true, action: "deleted", reason };
 }
