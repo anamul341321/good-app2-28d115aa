@@ -2595,7 +2595,16 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             shotText = shotText || (await readScreenshotText(photoBase64)) || "";
             if (shotText) {
               const hay = shotText.toLowerCase();
+              // হোম স্ক্রিনে সবসময় ছোট "Good Coin" বাটন থাকে — তাই শুধু
+              // আসল কয়েন ওয়ালেট/শপ পেজ হলেই কয়েনের উত্তর যাবে। মাইনিং,
+              // ব্যালেন্স, ক্লেইম বা উইথড্র দেখা গেলে কয়েনের উত্তর কখনোই নয়।
+              const moneyScreen =
+                /(মাইনিং|mining|ক্লেইম|claim|total balance|ব্যালেন্স|balance|উইথড্র|withdraw|৳)/i.test(hay);
+              const coinPage =
+                /(আপনার মোট কয়েন|কয়েন শপ|coin shop|কয়েন এক্সচেঞ্জ|কীভাবে কয়েন পাবেন)/i.test(hay);
+              const isCoinFaq = (f: any) => /coin|কয়েন/i.test(String(f?.topic ?? ""));
               const scored = faq
+                .filter((f) => !isCoinFaq(f) || (coinPage && !moneyScreen))
                 .map((f) => {
                   const keys: string[] = [
                     ...(Array.isArray(f.keywords)
