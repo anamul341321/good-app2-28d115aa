@@ -650,7 +650,7 @@ function WithdrawLockedCard({ monthlyWindow, adminWithdrawOff, min, t }: {
     return (
       <div className="rounded-2xl border-2 border-amber/40 bg-amber/10 p-4 text-center">
         <p className="text-sm font-bold text-amber">⏸️ {t("উইথড্র সাময়িকভাবে বন্ধ", "Withdraw is temporarily paused")}</p>
-        <p className="text-[11px] text-muted-foreground mt-1">{t("أرجو المحاولة لاحقًا", "Please try again a little later")}</p>
+        <p className="text-[11px] text-muted-foreground mt-1">{t("একটু পরে আবার চেষ্টা করুন", "Please try again a little later")}</p>
       </div>
     );
   }
