@@ -3085,19 +3085,30 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
                   .map((k) => k.trim().toLowerCase())
                   .filter((k) => k.length > 2 && !STOP.has(k));
                 let score = 0;
+                let phraseHits = 0;
+                let wordHits = 0;
                 for (const p of phrases) {
                   if (!hay.includes(p)) continue;
                   // Full multi-word phrase = strong signal; single word = medium,
                   // but a generic single word counts for nothing.
-                  score += p.includes(" ") ? 3 : STOP.has(p) ? 0 : 2;
+                  if (p.includes(" ")) {
+                    score += 4;
+                    phraseHits++;
+                  } else if (!STOP.has(p)) {
+                    score += 1;
+                    wordHits++;
+                  }
                 }
                 for (const t of new Set(topicTokens)) if (hay.includes(t)) score += 1;
-                return { f, score };
+                return { f, score, phraseHits, wordHits };
               })
               .sort((a, b) => b.score - a.score)[0];
-            // Need at least a real phrase hit or two distinct meaningful words.
+            // One broad word such as “ভেরিফাই” or “বোনাস” is not enough to
+            // choose a saved answer. Require a phrase or two meaningful words.
             const adminAnswer =
-              scoredAdmin && scoredAdmin.score >= 2
+              scoredAdmin &&
+              scoredAdmin.score >= 2 &&
+              (scoredAdmin.phraseHits > 0 || scoredAdmin.wordHits >= 2)
                 ? await faqAnswerFor(scoredAdmin.f, text)
                 : null;
 

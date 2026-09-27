@@ -961,11 +961,21 @@ function matchIntent(text: string): BuiltinFaq | null {
  * একাধিক মিললে সবচেয়ে লম্বা (সবচেয়ে নির্দিষ্ট) কিওয়ার্ডটি জেতে।
  */
 export function matchBuiltinFaqText(text: string): BuiltinFaq | null {
-  const hay = text.toLowerCase();
+  const hay = normText(text);
   if (!hay.trim()) return null;
+  // A lone broad word must never select a whole canned answer. For example,
+  // “১০টা ভেরিফাই করলে এখন কত বোনাস?” used to match the generic
+  // “ভেরিফাই হচ্ছে না” FAQ merely because both contained “ভেরিফাই”.
+  const broadSingles = new Set([
+    "verify", "verification", "ভেরিফাই", "ভেরিফিকেশন", "pending", "পেন্ডিং",
+    "error", "এরর", "problem", "সমস্যা", "camera", "ক্যামেরা", "bonus", "বোনাস",
+    "withdraw", "উইথড্র", "payment", "পেমেন্ট", "balance", "ব্যালেন্স",
+    "slot", "স্লট", "mining", "মাইনিং", "link", "লিংক", "app", "apps",
+  ]);
   const hitLen = (k: string) => {
-    const key = k.toLowerCase().trim();
+    const key = normText(k);
     if (key.length < 3) return 0;
+    if (!key.includes(" ") && broadSingles.has(key)) return 0;
     // 3-letter keys (kyc, apk…) only count as a whole word, never inside another word.
     if (key.length === 3 && /^[a-z]+$/.test(key)) {
       return new RegExp(`(^|[^a-z])${key}([^a-z]|$)`, "i").test(hay) ? key.length : 0;
