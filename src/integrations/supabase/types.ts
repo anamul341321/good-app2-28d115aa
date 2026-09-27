@@ -1558,10 +1558,13 @@ export type Database = {
           effective_task_count: number
           is_active: boolean
           last_credited_at: string | null
+          last_daily_claim_day: string | null
+          last_release_month: string | null
           mining_day: string | null
           mining_unlocked: number
           mining_withdrawn: number
           pending_mining: number
+          pending_referral: number
           qualifying_referees: number
           referral_accrued: number
           referral_units: number
@@ -1579,10 +1582,13 @@ export type Database = {
           effective_task_count?: number
           is_active?: boolean
           last_credited_at?: string | null
+          last_daily_claim_day?: string | null
+          last_release_month?: string | null
           mining_day?: string | null
           mining_unlocked?: number
           mining_withdrawn?: number
           pending_mining?: number
+          pending_referral?: number
           qualifying_referees?: number
           referral_accrued?: number
           referral_units?: number
@@ -1600,10 +1606,13 @@ export type Database = {
           effective_task_count?: number
           is_active?: boolean
           last_credited_at?: string | null
+          last_daily_claim_day?: string | null
+          last_release_month?: string | null
           mining_day?: string | null
           mining_unlocked?: number
           mining_withdrawn?: number
           pending_mining?: number
+          pending_referral?: number
           qualifying_referees?: number
           referral_accrued?: number
           referral_units?: number
@@ -2422,6 +2431,8 @@ export type Database = {
           last_reverified_at: string | null
           last_whitelist_check_at: string | null
           locked_mined: number
+          pending_carry: number
+          pending_mined: number
           reverify_count: number
           reverify_due_at: string | null
           slot: number
@@ -2442,6 +2453,8 @@ export type Database = {
           last_reverified_at?: string | null
           last_whitelist_check_at?: string | null
           locked_mined?: number
+          pending_carry?: number
+          pending_mined?: number
           reverify_count?: number
           reverify_due_at?: string | null
           slot: number
@@ -2462,6 +2475,8 @@ export type Database = {
           last_reverified_at?: string | null
           last_whitelist_check_at?: string | null
           locked_mined?: number
+          pending_carry?: number
+          pending_mined?: number
           reverify_count?: number
           reverify_due_at?: string | null
           slot?: number
@@ -3437,6 +3452,7 @@ export type Database = {
       claim_ad_coins: { Args: { _user_id: string }; Returns: Json }
       claim_all_slot_mining: { Args: { _user_id: string }; Returns: Json }
       claim_daily_checkin: { Args: { _user_id: string }; Returns: Json }
+      claim_daily_mining: { Args: { _user_id: string }; Returns: Json }
       claim_mining_earnings: { Args: { _user_id: string }; Returns: Json }
       claim_mining_to_main: { Args: { _user_id: string }; Returns: Json }
       claim_reverify_bonus: { Args: { _user_id: string }; Returns: number }
@@ -3497,6 +3513,7 @@ export type Database = {
       get_coin_summary: { Args: { _user_id: string }; Returns: Json }
       get_daily_activity: { Args: { _user_id: string }; Returns: Json }
       get_daily_checkin: { Args: { _user_id: string }; Returns: Json }
+      get_daily_mining_status: { Args: { _user_id: string }; Returns: Json }
       get_user_balance_breakdown: { Args: { _user_id: string }; Returns: Json }
       get_whitelist_cron_secret: { Args: never; Returns: string }
       has_role: {
@@ -3525,6 +3542,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      mining_day_key: { Args: { _now?: string }; Returns: string }
       mining_withdraw_window_open: { Args: { _now?: string }; Returns: boolean }
       purchase_card: {
         Args: { _product_id: string; _user_id: string }

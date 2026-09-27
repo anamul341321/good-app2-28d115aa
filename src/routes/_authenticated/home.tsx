@@ -1,3 +1,4 @@
+import { DailyClaimCard } from "@/components/DailyClaimCard";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { createContext, useContext, useEffect, useState } from "react";
@@ -288,6 +289,7 @@ function HomePage() {
 
       {!lite && (
         <>
+          <DailyClaimCard />
           {/* মাইনিং কার্ড */}
           <div data-tour="mining" data-voice="home.mining" className="relative">
             <MiningCounter
