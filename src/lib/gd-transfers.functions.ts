@@ -49,8 +49,8 @@ async function blockAt(ts: number, latest: number): Promise<number> {
 export const adminGdTransfersForDay = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }).parse(i))
   .handler(async ({ data }) => {
-    const { requireAdminSession } = await import("./admin-session.server").catch(() => ({ requireAdminSession: null as any }));
-    if (requireAdminSession) await requireAdminSession();
+    const { requireAdminSession } = await import("@/lib/admin-session.server");
+    await requireAdminSession();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     // our wallets
