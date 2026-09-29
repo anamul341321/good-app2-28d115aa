@@ -39,6 +39,7 @@ import { Route as AdminRechargesRouteImport } from './routes/admin/recharges'
 import { Route as AdminPaidReportRouteImport } from './routes/admin/paid-report'
 import { Route as AdminMiningRouteImport } from './routes/admin/mining'
 import { Route as AdminKycRouteImport } from './routes/admin/kyc'
+import { Route as AdminGdTransfersRouteImport } from './routes/admin/gd-transfers'
 import { Route as AdminFacesRouteImport } from './routes/admin/faces'
 import { Route as AdminCountriesRouteImport } from './routes/admin/countries'
 import { Route as AdminCeloGasTransferRouteImport } from './routes/admin/celo-gas-transfer'
@@ -245,6 +246,11 @@ const AdminMiningRoute = AdminMiningRouteImport.update({
 const AdminKycRoute = AdminKycRouteImport.update({
   id: '/kyc',
   path: '/kyc',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminGdTransfersRoute = AdminGdTransfersRouteImport.update({
+  id: '/gd-transfers',
+  path: '/gd-transfers',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminFacesRoute = AdminFacesRouteImport.update({
@@ -591,6 +597,7 @@ export interface FileRoutesByFullPath {
   '/admin/celo-gas-transfer': typeof AdminCeloGasTransferRoute
   '/admin/countries': typeof AdminCountriesRoute
   '/admin/faces': typeof AdminFacesRoute
+  '/admin/gd-transfers': typeof AdminGdTransfersRoute
   '/admin/kyc': typeof AdminKycRoute
   '/admin/mining': typeof AdminMiningRoute
   '/admin/paid-report': typeof AdminPaidReportRoute
@@ -678,6 +685,7 @@ export interface FileRoutesByTo {
   '/admin/celo-gas-transfer': typeof AdminCeloGasTransferRoute
   '/admin/countries': typeof AdminCountriesRoute
   '/admin/faces': typeof AdminFacesRoute
+  '/admin/gd-transfers': typeof AdminGdTransfersRoute
   '/admin/kyc': typeof AdminKycRoute
   '/admin/mining': typeof AdminMiningRoute
   '/admin/paid-report': typeof AdminPaidReportRoute
@@ -769,6 +777,7 @@ export interface FileRoutesById {
   '/admin/celo-gas-transfer': typeof AdminCeloGasTransferRoute
   '/admin/countries': typeof AdminCountriesRoute
   '/admin/faces': typeof AdminFacesRoute
+  '/admin/gd-transfers': typeof AdminGdTransfersRoute
   '/admin/kyc': typeof AdminKycRoute
   '/admin/mining': typeof AdminMiningRoute
   '/admin/paid-report': typeof AdminPaidReportRoute
@@ -860,6 +869,7 @@ export interface FileRouteTypes {
     | '/admin/celo-gas-transfer'
     | '/admin/countries'
     | '/admin/faces'
+    | '/admin/gd-transfers'
     | '/admin/kyc'
     | '/admin/mining'
     | '/admin/paid-report'
@@ -947,6 +957,7 @@ export interface FileRouteTypes {
     | '/admin/celo-gas-transfer'
     | '/admin/countries'
     | '/admin/faces'
+    | '/admin/gd-transfers'
     | '/admin/kyc'
     | '/admin/mining'
     | '/admin/paid-report'
@@ -1037,6 +1048,7 @@ export interface FileRouteTypes {
     | '/admin/celo-gas-transfer'
     | '/admin/countries'
     | '/admin/faces'
+    | '/admin/gd-transfers'
     | '/admin/kyc'
     | '/admin/mining'
     | '/admin/paid-report'
@@ -1336,6 +1348,13 @@ declare module '@tanstack/react-router' {
       path: '/kyc'
       fullPath: '/admin/kyc'
       preLoaderRoute: typeof AdminKycRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/gd-transfers': {
+      id: '/admin/gd-transfers'
+      path: '/gd-transfers'
+      fullPath: '/admin/gd-transfers'
+      preLoaderRoute: typeof AdminGdTransfersRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/faces': {
@@ -1834,6 +1853,7 @@ interface AdminRouteChildren {
   AdminCeloGasTransferRoute: typeof AdminCeloGasTransferRoute
   AdminCountriesRoute: typeof AdminCountriesRoute
   AdminFacesRoute: typeof AdminFacesRoute
+  AdminGdTransfersRoute: typeof AdminGdTransfersRoute
   AdminKycRoute: typeof AdminKycRoute
   AdminMiningRoute: typeof AdminMiningRoute
   AdminPaidReportRoute: typeof AdminPaidReportRoute
@@ -1855,6 +1875,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminCeloGasTransferRoute: AdminCeloGasTransferRoute,
   AdminCountriesRoute: AdminCountriesRoute,
   AdminFacesRoute: AdminFacesRoute,
+  AdminGdTransfersRoute: AdminGdTransfersRoute,
   AdminKycRoute: AdminKycRoute,
   AdminMiningRoute: AdminMiningRoute,
   AdminPaidReportRoute: AdminPaidReportRoute,
