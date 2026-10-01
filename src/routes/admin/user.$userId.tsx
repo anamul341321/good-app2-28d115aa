@@ -3,6 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { adminUserDetail, adminAdjustBalance, adminBalanceAudit, adminToggleMining, adminResetTask, adminমুছুনUser, adminResetUserPassword, adminResetUserEmail, adminClearMiningOverride, adminCreateVoucher, adminListVouchersForUser, adminSetReferralUnlock, adminResetWallet, adminMarkAsReverified, adminAddDebt, adminResolveDebt, adminDeleteDebt, adminDirectPayout, adminSetUserBlocked, adminSetBalanceFrozen, adminReturnTransferToSender, adminUserDailyReport, adminListTaskBackups, adminRestoreTask } from "@/lib/admin.functions";
 import { ArrowLeft, Loader2, Power, Plus, Minus, RefreshCw, Trash2, Copy, KeyRound, Gift, ScanFace, Share2, Lock, Unlock, Wallet, CheckCircle2, AlertTriangle, CheckCheck, Send, TrendingUp, Ban, ShieldOff } from "lucide-react";
 import { computeLiveBalance, splitBalance } from "@/lib/mining";
+import { adminSlotReverifyDates } from "@/lib/admin-reverify-dates.functions";
 import { toast } from "sonner";
 import { useState } from "react";
 import { BalanceHistory } from "@/components/admin/BalanceHistory";
@@ -42,6 +43,11 @@ function UserDetail() {
   const auditQ = useQuery({
     queryKey: ["admin-user-balance-audit", userId],
     queryFn: () => adminBalanceAudit({ data: { userId } }),
+  });
+  const reverifyQ = useQuery({
+    queryKey: ["admin-slot-reverify-dates", userId],
+    queryFn: () => adminSlotReverifyDates({ data: { userId } }),
+    staleTime: 5 * 60_000,
   });
 
   const sendVoucher = useMutation({
@@ -485,23 +491,26 @@ function UserDetail() {
 
         {/* Main balance (anytime withdraw) vs mining balance (1st–3rd only) */}
         {(() => {
-          const split = splitBalance({
-            balance: liveBal,
-            bonusTotal: Number((m as any)?.bonus_amount ?? 0),
-            withdrawn: Number((m as any)?.withdrawn_amount ?? 0),
-            miningWithdrawn: Number((m as any)?.mining_withdrawn ?? 0),
-          });
+          const bd = ((data as any).balanceBreakdown ?? {}) as Record<string, number>;
+          const main = Number(bd.bonus_part ?? 0);
+          const pending = Number(bd.pending_part ?? 0);
+          const locked = Number(bd.mining_locked ?? 0);
           return (
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               <div className="rounded-xl border border-emerald/30 bg-emerald/10 px-3 py-2">
-                <p className="text-[9px] uppercase tracking-widest font-black text-emerald">💚 Main balance</p>
-                <p className="mono-num text-lg font-black text-emerald">{split.main.toFixed(2)}৳</p>
-                <p className="text-[9px] text-muted-foreground leading-tight">বোনাস + রেফার বোনাস · যেকোনো সময় withdraw</p>
+                <p className="text-[9px] uppercase tracking-widest font-black text-emerald">💚 Main</p>
+                <p className="mono-num text-lg font-black text-emerald">{main.toFixed(2)}৳</p>
+                <p className="text-[9px] text-muted-foreground leading-tight">এখন withdraw করা যাবে</p>
+              </div>
+              <div className="rounded-xl border border-amber/30 bg-amber/10 px-3 py-2">
+                <p className="text-[9px] uppercase tracking-widest font-black text-amber">⏳ Pending</p>
+                <p className="mono-num text-lg font-black text-amber">{pending.toFixed(2)}৳</p>
+                <p className="text-[9px] text-muted-foreground leading-tight">ক্লেইম করা, ১ তারিখে verified slot-এর টাকা main-এ</p>
               </div>
               <div className="rounded-xl border border-cyan/30 bg-cyan/10 px-3 py-2">
-                <p className="text-[9px] uppercase tracking-widest font-black text-cyan">⛏️ Mining balance</p>
-                <p className="mono-num text-lg font-black text-cyan">{split.mining.toFixed(2)}৳</p>
-                <p className="text-[9px] text-muted-foreground leading-tight">১–৩ তারিখে withdraw (আনলক অংশ) · নিজের {Number((m as any)?.self_mining_accrued ?? 0).toFixed(2)}৳ + রেফার ১০% {Number((m as any)?.referral_accrued ?? 0).toFixed(2)}৳</p>
+                <p className="text-[9px] uppercase tracking-widest font-black text-cyan">🔒 Locked mining</p>
+                <p className="mono-num text-lg font-black text-cyan">{locked.toFixed(2)}৳</p>
+                <p className="text-[9px] text-muted-foreground leading-tight">re-verify বাকি slot-এর টাকা</p>
               </div>
             </div>
           );
@@ -893,6 +902,18 @@ function UserDetail() {
                 {t.done_at && (
                   <p className="text-[9px] text-emerald">Re-verified: {new Date(t.done_at).toLocaleString()}</p>
                 )}
+                {(() => {
+                  const r = reverifyQ.data?.slots?.[t.id];
+                  if (!t.wallet_address) return null;
+                  if (reverifyQ.isLoading) return <p className="text-[9px] text-muted-foreground">পরের re-verify: লোড হচ্ছে…</p>;
+                  if (!r?.dueAt) return <p className="text-[9px] text-muted-foreground">পরের re-verify: তথ্য পাওয়া যায়নি</p>;
+                  const days = Math.ceil((new Date(r.dueAt).getTime() - Date.now()) / 86400000);
+                  return (
+                    <p className={`text-[9px] font-black ${days <= 0 ? "text-rose" : days <= 15 ? "text-amber" : "text-emerald"}`}>
+                      📅 পরের re-verify: {new Date(r.dueAt).toLocaleDateString()} ({days <= 0 ? `মেয়াদ শেষ ${-days} দিন আগে` : `${days} দিন বাকি`})
+                    </p>
+                  );
+                })()}
 
                 {t.wallet_address && (
                   <button onClick={() => copy(t.wallet_address)} className="w-full flex items-center gap-1 text-[9px] text-cyan mono-num truncate">
