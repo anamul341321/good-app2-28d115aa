@@ -174,11 +174,13 @@ export const requestWithdraw = createServerFn({ method: "POST" })
     const miningLockedAmount = Number(bd.mining_locked ?? 0);
     // বোনাস/মেইন ব্যালেন্স যেকোনো দিন তোলা যায়। পেন্ডিং মাইনিং কেবল
     // মাসের ১–৩ তারিখের উইন্ডোতে যোগ হয়; আনক্লেইমড মাইনিং কখনো সরাসরি নয়।
-    const available = bonusAvailable + (miningWindowOpen ? pendingAvailable : 0);
+    // উইথড্র শুধু মেইন ব্যালেন্স থেকে। পেন্ডিং টাকা ১ তারিখে (ভেরিফাই স্লটের) মেইনে আসে।
+    const available = bonusAvailable;
+    void miningWindowOpen; void miningWindowDaysLeft;
 
     if (amount > available) {
-      if (!miningWindowOpen && pendingAvailable > 0) {
-        throw new Error(`⏳ এখন শুধু বোনাস ব্যালেন্স থেকে ${Math.floor(bonusAvailable)}৳ তোলা যাবে। পেন্ডিং মাইনিং প্রতি মাসের ১–৩ তারিখে খুলবে (আরও ${miningWindowDaysLeft} দিন বাকি)।`);
+      if (pendingAvailable > 0) {
+        throw new Error(`⏳ উইথড্র শুধু মেইন ব্যালেন্স থেকে হয় — এখন তোলা যাবে ${Math.floor(bonusAvailable)}৳। পেন্ডিং টাকা সরাসরি তোলা যায় না; রি-ভেরিফাই থাকা স্লটের টাকা ১ তারিখে মেইনে আসে।`);
       }
       if (miningLockedAmount > 0 && amount <= balance) {
         throw new Error(`আপনার ${Math.floor(miningLockedAmount)}৳ মাইনিং ব্যালেন্স এখনো লক — যে স্লট রি-ভেরিফাই করবেন, সেই স্লটের মাইনিং টাকা আনলক হবে। এখন তোলা যাবে: ${Math.floor(available)}৳।`);

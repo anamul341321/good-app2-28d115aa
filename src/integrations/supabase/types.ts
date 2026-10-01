@@ -1481,6 +1481,27 @@ export type Database = {
           },
         ]
       }
+      gd_transfer_daily: {
+        Row: {
+          day: string
+          finalized: boolean
+          result: Json
+          updated_at: string
+        }
+        Insert: {
+          day: string
+          finalized?: boolean
+          result?: Json
+          updated_at?: string
+        }
+        Update: {
+          day?: string
+          finalized?: boolean
+          result?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       message_reactions: {
         Row: {
           created_at: string
@@ -1568,6 +1589,8 @@ export type Database = {
           qualifying_referees: number
           referral_accrued: number
           referral_units: number
+          released_main: number
+          released_referral: number
           self_mining_accrued: number
           self_qualified: boolean
           self_slots: number
@@ -1592,6 +1615,8 @@ export type Database = {
           qualifying_referees?: number
           referral_accrued?: number
           referral_units?: number
+          released_main?: number
+          released_referral?: number
           self_mining_accrued?: number
           self_qualified?: boolean
           self_slots?: number
@@ -1616,6 +1641,8 @@ export type Database = {
           qualifying_referees?: number
           referral_accrued?: number
           referral_units?: number
+          released_main?: number
+          released_referral?: number
           self_mining_accrued?: number
           self_qualified?: boolean
           self_slots?: number
@@ -2433,6 +2460,7 @@ export type Database = {
           locked_mined: number
           pending_carry: number
           pending_mined: number
+          released_mined: number
           reverify_count: number
           reverify_due_at: string | null
           slot: number
@@ -2455,6 +2483,7 @@ export type Database = {
           locked_mined?: number
           pending_carry?: number
           pending_mined?: number
+          released_mined?: number
           reverify_count?: number
           reverify_due_at?: string | null
           slot: number
@@ -2477,6 +2506,7 @@ export type Database = {
           locked_mined?: number
           pending_carry?: number
           pending_mined?: number
+          released_mined?: number
           reverify_count?: number
           reverify_due_at?: string | null
           slot?: number
@@ -3556,10 +3586,15 @@ export type Database = {
         }
         Returns: Json
       }
+      release_pending_verified_slots: {
+        Args: { _force?: boolean }
+        Returns: Json
+      }
       revert_slot_claim_on_unwhitelist: {
         Args: { _task_id: string; _user_id: string }
         Returns: Json
       }
+      revert_unwithdrawn_mining_main: { Args: never; Returns: Json }
       send_balance_transfer: {
         Args: {
           _amount: number

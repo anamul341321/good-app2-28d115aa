@@ -98,7 +98,7 @@ function WithdrawPage() {
   const monthlyWindow = withdrawCountdownInfo(now);
   // ক্লেইম করা মাইনিং (পেন্ডিং) শুধু ১–৩ তারিখের উইন্ডোতেই তোলা যায়।
   // উইন্ডো বন্ধ থাকলে সেটা আবার পেন্ডিং হিসেবে লক — মেইন ব্যালেন্সে যোগ হবে না।
-  const claimable = bonusAvailable + (monthlyWindow.isOpen ? pendingPart : 0);
+  const claimable = bonusAvailable;
 
   const chosenWallet = provider === "bkash" ? walletBkash : provider === "nagad" ? walletNagad : null;
   const chosenEnabled = provider === "bkash" ? payout.bkashEnabled : provider === "nagad" ? payout.nagadEnabled : false;
@@ -192,7 +192,7 @@ function WithdrawPage() {
             <p className="mono-num text-base font-black text-white" translate="no">{bonusAvailable}৳</p>
           </div>
           <div className="rounded-xl border border-white/15 bg-white/10 p-2.5">
-            <p className="text-[9px] font-bold text-white/60">মাইনিং · ১–৩ তারিখ</p>
+            <p className="text-[9px] font-bold text-white/60">পেন্ডিং · তোলা যাবে না</p>
             <p className="mono-num text-base font-black text-white" translate="no">{pendingPart}৳</p>
           </div>
         </div>
@@ -216,9 +216,7 @@ function WithdrawPage() {
           <p className="text-[10px] font-black text-amber">⏳ {t("পেন্ডিং ব্যালেন্স", "Pending balance")}</p>
           <p className="mono-num text-lg font-black" translate="no">{pendingPart}৳</p>
           <p className="text-[9px] text-muted-foreground leading-tight">
-            {monthlyWindow.isOpen
-              ? t("ক্লেইম করা মাইনিং — এখন উইন্ডো খোলা, এই টাকা এখনই উইথড্র করা যাবে", "Claimed mining — window is open, withdrawable now")
-              : t("ক্লেইম করা মাইনিং লক — ৩ তারিখের পরে যা বাকি থাকে তা পেন্ডিংয়েই থাকে, পরের মাসের ১ তারিখে খুলবে", "Claimed mining is locked — whatever is left after the 3rd stays pending and unlocks on the 1st next month")}
+            {t("সরাসরি তোলা যায় না — রি-ভেরিফাই থাকা স্লটের টাকা ১ তারিখে মেইনে আসে। ৩ তারিখ রাত ১০টার পর না তোলা টাকা আবার পেন্ডিংয়ে ফেরে।", "Not withdrawable directly — verified slots move to main on the 1st; unwithdrawn mining returns to pending after the 3rd, 10 PM.")}
           </p>
 
         </div>
