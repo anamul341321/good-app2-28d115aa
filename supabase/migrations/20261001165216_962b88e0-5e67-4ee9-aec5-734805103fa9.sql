@@ -1,0 +1,1 @@
+revoke execute on function public.slot_locked_share(uuid) from authenticated;

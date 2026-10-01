@@ -33,6 +33,12 @@ export async function resetTaskById(taskId: string, actor: "admin" | "user") {
     if (walletPendingError) throw new Error(walletPendingError.message);
   }
 
+  // ভেরিফাই না থাকা স্লটের আটকে থাকা pending অংশ রিসেটে মুছে যায় (কখনো বাড়ে না)।
+  const { error: burnError } = await (supabaseAdmin as any).rpc("burn_slot_locked_share", {
+    _task_id: taskId,
+  });
+  if (burnError) throw new Error(burnError.message);
+
   const { error } = await supabaseAdmin
     .from("tasks")
     .update({

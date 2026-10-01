@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Loader2, RotateCcw, AlertTriangle } from "lucide-react";
-import { selfResetSlot } from "@/lib/slot-reset.functions";
+import { selfResetSlot, getSlotLockedShare } from "@/lib/slot-reset.functions";
 
 /**
  * প্রতিটি স্লটের নিচে "রিসেট করুন" — ইউজার নিজেই স্লট খালি করে নতুন করে ফেস
@@ -22,6 +22,13 @@ export function SlotSelfReset({ slot, disabled }: { slot: number; disabled?: boo
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "রিসেট করা যায়নি"),
   });
+
+  const share = useQuery({
+    queryKey: ["slot-locked-share", slot],
+    queryFn: () => getSlotLockedShare({ data: { slot } }),
+    enabled: confirming,
+  });
+  const locked = share.data?.amount ?? 0;
 
   if (disabled) return null;
 
@@ -51,6 +58,12 @@ export function SlotSelfReset({ slot, disabled }: { slot: number; disabled?: boo
                 রিসেট করলে এই স্লটের ফেস ও ওয়ালেট কী মুছে যাবে এবং স্লটটি একদম খালি হয়ে যাবে। এরপর
                 নতুন করে ফেস ভেরিফিকেশন করতে পারবেন।
               </p>
+              {locked > 0 && (
+                <p className="rounded-2xl bg-rose/15 p-3 text-sm font-extrabold leading-relaxed text-rose ring-2 ring-rose/40">
+                  এই স্লটে {locked.toFixed(2)}৳ আটকে আছে — রিসেট করলে এই টাকা চিরতরে হারিয়ে যাবে। আগে
+                  রি-ভেরিফাই করে টাকা মেইনে নিন।
+                </p>
+              )}
               <p className="rounded-2xl bg-rose/10 p-3 text-sm font-bold leading-relaxed text-rose ring-1 ring-rose/20">
                 সাবধান: নিজে রিসেট করলে আপনি আর ফেরাতে পারবেন না — ফিরিয়ে আনতে অ্যাডমিনকে বলতে
                 হবে।
