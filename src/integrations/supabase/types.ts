@@ -1481,6 +1481,27 @@ export type Database = {
           },
         ]
       }
+      gd_transfer_daily: {
+        Row: {
+          day: string
+          finalized: boolean
+          result: Json
+          updated_at: string
+        }
+        Insert: {
+          day: string
+          finalized?: boolean
+          result?: Json
+          updated_at?: string
+        }
+        Update: {
+          day?: string
+          finalized?: boolean
+          result?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       message_reactions: {
         Row: {
           created_at: string
