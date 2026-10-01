@@ -1580,6 +1580,7 @@ export type Database = {
           is_active: boolean
           last_credited_at: string | null
           last_daily_claim_day: string | null
+          last_legacy_release_month: string | null
           last_release_month: string | null
           mining_day: string | null
           mining_unlocked: number
@@ -1606,6 +1607,7 @@ export type Database = {
           is_active?: boolean
           last_credited_at?: string | null
           last_daily_claim_day?: string | null
+          last_legacy_release_month?: string | null
           last_release_month?: string | null
           mining_day?: string | null
           mining_unlocked?: number
@@ -1632,6 +1634,7 @@ export type Database = {
           is_active?: boolean
           last_credited_at?: string | null
           last_daily_claim_day?: string | null
+          last_legacy_release_month?: string | null
           last_release_month?: string | null
           mining_day?: string | null
           mining_unlocked?: number
@@ -3584,6 +3587,10 @@ export type Database = {
           _daily_limit?: number
           _max_boosts?: number
         }
+        Returns: Json
+      }
+      release_legacy_verified_pending: {
+        Args: { _force?: boolean }
         Returns: Json
       }
       release_pending_verified_slots: {
