@@ -73,3 +73,22 @@ export const selfResetSlot = createServerFn({ method: "POST" })
 
     return { ok: true as const, slot: res.slot };
   });
+
+/** রিসেট করলে এই স্লটের কত টাকা (ভেরিফাই না থাকায় আটকে থাকা) হারিয়ে যাবে। */
+export const getSlotLockedShare = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ slot: z.number().int().min(1).max(500) }).parse(i))
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: task } = await supabaseAdmin
+      .from("tasks")
+      .select("id")
+      .eq("user_id", context.userId)
+      .eq("slot", data.slot)
+      .maybeSingle();
+    if (!task) return { amount: 0 };
+    const { data: amt } = await (supabaseAdmin as any).rpc("slot_locked_share", {
+      _task_id: (task as any).id,
+    });
+    return { amount: Number(amt ?? 0) };
+  });
