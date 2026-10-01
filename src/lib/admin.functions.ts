@@ -351,7 +351,9 @@ export const adminUserDetail = createServerFn({ method: "POST" })
       })).sort((a, b) => b.faceTotal - a.faceTotal || new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     }
 
+    const { data: bdRaw } = await (supabaseAdmin as any).rpc("get_user_balance_breakdown", { _user_id: data.userId });
     return {
+      balanceBreakdown: (bdRaw ?? null) as Record<string, number> | null,
       profile: profile.data,
       referrer: referrer?.data ?? null,
       blocked: (() => {
