@@ -3473,6 +3473,7 @@ export type Database = {
         Args: { _event: string; _reference_id?: string; _user_id: string }
         Returns: Json
       }
+      burn_slot_locked_share: { Args: { _task_id: string }; Returns: number }
       buy_cosmetic: {
         Args: {
           _cost: number
@@ -3612,6 +3613,7 @@ export type Database = {
         Returns: Json
       }
       settle_mining: { Args: { _user_id: string }; Returns: undefined }
+      slot_locked_share: { Args: { _task_id: string }; Returns: number }
       spend_locked_mining: {
         Args: { _amount: number; _user_id: string }
         Returns: number
