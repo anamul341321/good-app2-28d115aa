@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.release_pending_on_reverify() FROM PUBLIC, anon, authenticated;
