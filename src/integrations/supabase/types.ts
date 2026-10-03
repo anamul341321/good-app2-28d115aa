@@ -3462,6 +3462,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_move_pending_to_main: {
+        Args: { _amount?: number; _user_id: string }
+        Returns: number
+      }
       assert_coin_self: { Args: { _user_id: string }; Returns: undefined }
       auto_engage_pick_users: {
         Args: { p_action: string; p_limit: number; p_post_id: string }

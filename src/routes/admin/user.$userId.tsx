@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { adminUserDetail, adminAdjustBalance, adminBalanceAudit, adminToggleMining, adminResetTask, adminমুছুনUser, adminResetUserPassword, adminResetUserEmail, adminClearMiningOverride, adminCreateVoucher, adminListVouchersForUser, adminSetReferralUnlock, adminResetWallet, adminMarkAsReverified, adminAddDebt, adminResolveDebt, adminDeleteDebt, adminDirectPayout, adminSetUserBlocked, adminSetBalanceFrozen, adminReturnTransferToSender, adminUserDailyReport, adminListTaskBackups, adminRestoreTask } from "@/lib/admin.functions";
+import { adminUserDetail, adminAdjustBalance, adminBalanceAudit, adminToggleMining, adminResetTask, adminমুছুনUser, adminResetUserPassword, adminResetUserEmail, adminClearMiningOverride, adminCreateVoucher, adminListVouchersForUser, adminSetReferralUnlock, adminResetWallet, adminMarkAsReverified, adminAddDebt, adminResolveDebt, adminDeleteDebt, adminDirectPayout, adminSetUserBlocked, adminSetBalanceFrozen, adminMovePendingToMain, adminReturnTransferToSender, adminUserDailyReport, adminListTaskBackups, adminRestoreTask } from "@/lib/admin.functions";
 import { ArrowLeft, Loader2, Power, Plus, Minus, RefreshCw, Trash2, Copy, KeyRound, Gift, ScanFace, Share2, Lock, Unlock, Wallet, CheckCircle2, AlertTriangle, CheckCheck, Send, TrendingUp, Ban, ShieldOff } from "lucide-react";
 import { computeLiveBalance } from "@/lib/mining";
 import { adminSlotReverifyDates } from "@/lib/admin-reverify-dates.functions";
@@ -141,6 +141,12 @@ function UserDetail() {
   const setBlocked = useMutation({
     mutationFn: (blocked: boolean) => adminSetUserBlocked({ data: { userId, blocked } }),
     onSuccess: (_r, blocked) => { toast.success(blocked ? "🚫 User block করা হলো" : "✅ User unblock করা হলো"); refetch(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const movePending = useMutation({
+    mutationFn: (amount: number | null) => adminMovePendingToMain({ data: { userId, amount } }),
+    onSuccess: (r) => { toast.success(`✅ ${r.moved.toFixed(2)}৳ Main-এ নেওয়া হলো`); refetch(); },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -506,6 +512,21 @@ function UserDetail() {
                 <p className="text-[9px] uppercase tracking-widest font-black text-amber">⏳ Pending</p>
                 <p className="mono-num text-lg font-black text-amber">{pending.toFixed(2)}৳</p>
                 <p className="text-[9px] text-muted-foreground leading-tight">ক্লেইম করা, ১ তারিখে verified slot-এর টাকা main-এ</p>
+                {pending > 0 && (
+                  <button
+                    disabled={movePending.isPending}
+                    onClick={() => {
+                      const v = window.prompt(`কত টাকা Main-এ নেবেন? (ফাঁকা রাখলে পুরো ${pending.toFixed(2)}৳)`, "");
+                      if (v === null) return;
+                      const n = v.trim() ? Number(v) : null;
+                      if (n !== null && (!Number.isFinite(n) || n <= 0)) { toast.error("সঠিক টাকা লিখুন"); return; }
+                      movePending.mutate(n);
+                    }}
+                    className="mt-1 w-full rounded-lg bg-amber/20 px-2 py-1 text-[10px] font-black text-amber"
+                  >
+                    {movePending.isPending ? "..." : "→ Main-এ নিন"}
+                  </button>
+                )}
               </div>
               <div className="rounded-xl border border-cyan/30 bg-cyan/10 px-3 py-2">
                 <p className="text-[9px] uppercase tracking-widest font-black text-cyan">🔒 Locked mining</p>

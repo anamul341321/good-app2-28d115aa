@@ -2145,6 +2145,21 @@ export const adminSetUserBlocked = createServerFn({ method: "POST" })
     return { ok: true, blocked: data.blocked };
   });
 
+/** Pending → Main (amount ফাঁকা হলে পুরোটা)। মোট টাকা বাড়ে না। */
+export const adminMovePendingToMain = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => z.object({
+    userId: z.string().uuid(),
+    amount: z.number().positive().nullable().optional(),
+  }).parse(i))
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await gate();
+    const { data: moved, error } = await (supabaseAdmin as any).rpc("admin_move_pending_to_main", {
+      _user_id: data.userId, _amount: data.amount ?? null,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true, moved: Number(moved ?? 0) };
+  });
+
 /** ব্যালেন্স freeze/unfreeze — account block না করেই টাকা নড়াচড়া বন্ধ রাখা যায়। */
 export const adminSetBalanceFrozen = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => z.object({
