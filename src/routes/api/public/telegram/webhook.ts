@@ -423,6 +423,17 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           }
         }
 
+        // ---- গ্রুপে মালিক বটকে মেনশন করে আদেশ দিলে সেটা পালন করবে ----------
+        if (!isPrivateChat && senderIsOwnerIdentity && /@\w*bot\b/i.test(text)) {
+          const { runOwnerCommand } = await import("@/lib/telegram-owner.server");
+          const res = await runOwnerCommand(text.replace(/@\w*bot\b/gi, " "));
+          if (res.handled && res.reply) {
+            await sendMessage(chatId, res.reply, msg.message_id);
+            await finalizeLog("question", res.flow, res.reply);
+            return Response.json({ ok: true, flow: res.flow });
+          }
+        }
+
         // ---- প্রাইভেট চ্যাটে UID পাঠালেই KYC লিংক হয়ে যাবে ----------------
         if (msg.chat?.type === "private" && msg.from?.id) {
           // ---- মালিক (support_username) ইনবক্সে লিখলে পূর্ণ অ্যাডমিন ক্ষমতা --

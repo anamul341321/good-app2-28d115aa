@@ -68,6 +68,57 @@ export async function runOwnerCommand(rawText: string): Promise<OwnerResult> {
   const { SLOT_WORD, NUM_WORD } = slotMod;
   const hasSlotWord = new RegExp(SLOT_WORD, "i").test(cmd);
 
+  // ---- ০) Block / Unblock / Pending → Main ------------------------------
+  const isUnblock = /(unblock|un-block|আনব্লক|আন\s*ব্লক|ব্লক\s*খুল|block\s*khul)/i.test(cmd);
+  const isBlock = !isUnblock && /(block|ব্লক)/i.test(cmd);
+  const isPendingMove = /(pending|পেন্ডিং|পেনডিং)/i.test(cmd) && /(main|মেইন|মেন)/i.test(cmd);
+  if (isUnblock || isBlock || isPendingMove) {
+    const uid = await extractUid(cmd.replace(/(\d+(?:\.\d+)?)\s*(৳|tk|taka|টাকা)/gi, ""));
+    if (!uid) {
+      return { handled: true, flow: "owner-need-uid", reply: `🙏 জি স্যার — কোন <b>UID</b>? যেমন: <code>uid 4100 block করো</code>` };
+    }
+    const profile = await slotMod.findProfileByUid(uid);
+    if (!profile?.id) {
+      return { handled: true, flow: "owner-uid-missing", reply: `❌ UID <code>${uid}</code> দিয়ে কোনো একাউন্ট পাওয়া যায়নি স্যার।` };
+    }
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const name = profile.display_name || "ইউজার";
+    if (isPendingMove) {
+      const amt = cmd.match(/(\d+(?:\.\d+)?)\s*(৳|tk|taka|টাকা)/i)?.[1];
+      const { data: moved, error } = await (supabaseAdmin as any).rpc("admin_move_pending_to_main", {
+        _user_id: profile.id, _amount: amt ? Number(amt) : null,
+      });
+      if (error) return { handled: true, flow: "owner-pending-fail", reply: `⚠️ সমস্যা: ${error.message}` };
+      const m = Number(moved ?? 0);
+      return {
+        handled: true, flow: "owner-pending-move",
+        reply: m > 0
+          ? `✅ <b>${name}</b> (UID <code>${uid}</code>) — <b>${m.toFixed(2)}৳</b> পেন্ডিং থেকে মেইন ব্যালেন্সে নেওয়া হলো।`
+          : `ℹ️ <b>${name}</b> (UID <code>${uid}</code>) এর পেন্ডিং ব্যালেন্সে কোনো টাকা নেই।`,
+      };
+    }
+    const blocked = isBlock;
+    const { error: aErr } = await supabaseAdmin.auth.admin.updateUserById(profile.id, {
+      ban_duration: blocked ? "876000h" : "none",
+    } as any);
+    if (aErr) return { handled: true, flow: "owner-block-fail", reply: `⚠️ সমস্যা: ${aErr.message}` };
+    await supabaseAdmin.from("profiles").update({
+      banned: blocked,
+      banned_reason: blocked ? "Owner (Telegram) কর্তৃক block" : null,
+      banned_at: blocked ? new Date().toISOString() : null,
+    } as any).eq("id", profile.id);
+    if (!blocked) {
+      await supabaseAdmin.from("tg_messages").update({ verdict: "link-cleared" } as any)
+        .eq("matched_uid", String(uid)).eq("verdict", "link");
+    }
+    return {
+      handled: true, flow: blocked ? "owner-block" : "owner-unblock",
+      reply: blocked
+        ? `🚫 <b>${name}</b> (UID <code>${uid}</code>) এর একাউন্ট block করা হলো।`
+        : `✅ <b>${name}</b> (UID <code>${uid}</code>) এর একাউন্ট unblock করা হলো।`,
+    };
+  }
+
   // ---- ১) স্লট রিসেট ----------------------------------------------------
   if (RESET_INTENT.test(cmd) && hasSlotWord) {
     const uid = await extractUid(cmd);
