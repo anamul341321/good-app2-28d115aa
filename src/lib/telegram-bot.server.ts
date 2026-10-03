@@ -376,9 +376,12 @@ export function unrestrictUser(chatId: string | number, userId: number) {
       can_send_polls: true,
       can_send_other_messages: true,
       can_add_web_page_previews: true,
-      can_change_info: false,
+      // সব true দিলে Telegram ইউজারকে পুরোপুরি সাধারণ সদস্য বানায়
+      // (গ্রুপের নিজস্ব নিয়ম তখনও প্রযোজ্য থাকে)।
+      can_change_info: true,
       can_invite_users: true,
-      can_pin_messages: false,
+      can_pin_messages: true,
+      can_manage_topics: true,
     },
   });
 }
