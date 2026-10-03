@@ -144,6 +144,12 @@ function UserDetail() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const movePending = useMutation({
+    mutationFn: (amount: number | null) => adminMovePendingToMain({ data: { userId, amount } }),
+    onSuccess: (r) => { toast.success(`✅ ${r.moved.toFixed(2)}৳ Main-এ নেওয়া হলো`); refetch(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const setFrozen = useMutation({
     mutationFn: (v: { frozen: boolean; reason?: string }) =>
       adminSetBalanceFrozen({ data: { userId, frozen: v.frozen, reason: v.reason ?? null } }),
@@ -506,6 +512,21 @@ function UserDetail() {
                 <p className="text-[9px] uppercase tracking-widest font-black text-amber">⏳ Pending</p>
                 <p className="mono-num text-lg font-black text-amber">{pending.toFixed(2)}৳</p>
                 <p className="text-[9px] text-muted-foreground leading-tight">ক্লেইম করা, ১ তারিখে verified slot-এর টাকা main-এ</p>
+                {pending > 0 && (
+                  <button
+                    disabled={movePending.isPending}
+                    onClick={() => {
+                      const v = window.prompt(`কত টাকা Main-এ নেবেন? (ফাঁকা রাখলে পুরো ${pending.toFixed(2)}৳)`, "");
+                      if (v === null) return;
+                      const n = v.trim() ? Number(v) : null;
+                      if (n !== null && (!Number.isFinite(n) || n <= 0)) { toast.error("সঠিক টাকা লিখুন"); return; }
+                      movePending.mutate(n);
+                    }}
+                    className="mt-1 w-full rounded-lg bg-amber/20 px-2 py-1 text-[10px] font-black text-amber"
+                  >
+                    {movePending.isPending ? "..." : "→ Main-এ নিন"}
+                  </button>
+                )}
               </div>
               <div className="rounded-xl border border-cyan/30 bg-cyan/10 px-3 py-2">
                 <p className="text-[9px] uppercase tracking-widest font-black text-cyan">🔒 Locked mining</p>
