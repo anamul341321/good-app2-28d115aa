@@ -9,8 +9,9 @@ import balanceA from "@/assets/callcenter/balance.mp3.asset.json";
 import referA from "@/assets/callcenter/refer.mp3.asset.json";
 import agentA from "@/assets/callcenter/agent.mp3.asset.json";
 import invalidA from "@/assets/callcenter/invalid.mp3.asset.json";
+import { SupportLiveCall } from "@/components/SupportLiveCall";
 
-export const Route = createFileRoute("/_authenticated/callcenter")({
+export const Route = createFileRoute("/callcenter")({
   head: () => ({
     meta: [
       { title: "কল সেন্টার — Good-App" },
@@ -188,10 +189,7 @@ function CallCenterPage() {
 
       {showAgent && (
         <div className="mx-auto mt-4 flex w-full max-w-xs flex-col gap-2.5 px-4 animate-fade-in">
-          <a href="tel:+8809611502055"
-            className="flex items-center justify-center gap-2 rounded-full bg-green-600 px-6 py-3.5 text-sm font-black text-white shadow-lg active:scale-95 transition">
-            <Phone className="h-4 w-4" /> কাস্টমার কেয়ারে কল করুন
-          </a>
+          <SupportLiveCall onActive={(on) => { if (on) audioRef.current?.pause(); }} />
           <a href={TELEGRAM_SUPPORT_URL} target="_blank" rel="noreferrer"
             className="flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-xs font-bold text-primary-foreground shadow-lg active:scale-95 transition">
             লিখে সমস্যা পাঠান (টেলিগ্রাম)

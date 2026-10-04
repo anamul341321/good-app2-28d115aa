@@ -6,7 +6,7 @@ import { adminStats } from "@/lib/admin.functions";
 import {
   Users, ArrowDownToLine, ScanFace, LogOut, Loader2, AlertTriangle,
   LayoutDashboard, Clock, Wallet, ShieldCheck, Gift, Bot,
-  Fuel, Package, Globe2
+  Fuel, Package, Globe2, Phone
 } from "lucide-react";
 
 
@@ -91,6 +91,7 @@ function AdminLayout() {
         <AdminTab to="/admin/announcements" icon={<AlertTriangle className="w-3.5 h-3.5" />} label="Announcements" />
         <AdminTab to="/admin/cards" icon={<Package className="w-3.5 h-3.5" />} label="Card Management" />
         <AdminTab to="/admin/telegram" icon={<Bot className="w-3.5 h-3.5" />} label="Telegram Bot" />
+        <AdminTab to="/admin/calls" icon={<Phone className="w-3.5 h-3.5" />} label="ইনকামিং কল" />
 
       </nav>
       <Outlet />
