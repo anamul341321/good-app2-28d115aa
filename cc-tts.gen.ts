@@ -1,9 +1,16 @@
-import { speakBengali } from "./src/lib/tts-free.server";
-import { CALL_CENTER_SCRIPTS } from "./src/lib/callcenter-scripts";
-import { writeFileSync } from "fs";
-
-const agent = CALL_CENTER_SCRIPTS.find(s => s.key === "agent")!;
-const wav = await speakBengali(agent.text);
-if (!wav) { console.error("TTS failed"); process.exit(1); }
-writeFileSync("/tmp/cc-tts/agent.wav", Buffer.from(wav));
-console.log("wav bytes:", wav.byteLength);
+import { freeKeyPool } from "./src/lib/ai-free.server";
+const keys = await freeKeyPool();
+console.log("keys available:", keys.length);
+if (keys.length) {
+  const res = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent", {
+    method: "POST",
+    headers: { "x-goog-api-key": keys[0].key, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      contents: [{ role: "user", parts: [{ text: "Say: আসসালামু আলাইকুম" }] }],
+      generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Achernar" } } } },
+    }),
+    signal: AbortSignal.timeout(20000),
+  });
+  console.log("status:", res.status);
+  console.log("body:", (await res.text()).slice(0, 400));
+}
