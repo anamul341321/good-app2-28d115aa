@@ -33,6 +33,7 @@ import { NotificationBell } from "@/components/NotificationBell";
 import { SlotPausedModal } from "@/components/SlotPausedModal";
 import { NewSystemModal } from "@/components/NewSystemModal";
 import { CallProvider } from "@/components/CallProvider";
+import { AgentIncomingCall } from "@/components/AgentIncomingCall";
 import { DailyFaceVerificationWarning } from "@/components/DailyFaceVerificationWarning";
 import { clearCurrentDeviceOtpTrust } from "@/lib/sessions.functions";
 import { getDeviceId } from "@/hooks/useDeviceGuard";
@@ -191,6 +192,7 @@ function AuthedLayout() {
 
   return (
     <CallProvider>
+    <AgentIncomingCall />
     <div className={isSocialRoute ? "min-h-screen" : "min-h-screen pb-24"}>
       {!isSocialRoute && (
         appStatus?.faceVerifyEnabled === false ? (

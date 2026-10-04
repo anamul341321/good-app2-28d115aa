@@ -1,11 +1,11 @@
 {
   "version": 1,
-  "asset_id": "d3ad133b-ec4d-43c5-953e-068ce6540868",
+  "asset_id": "abea4e1a-e631-4f79-82c9-5c52840025ed",
   "project_id": "9faa7771-af86-4101-8cf2-0ed6dd381713",
-  "url": "/__l5e/assets-v1/d3ad133b-ec4d-43c5-953e-068ce6540868/cc2-invalid.mp3",
-  "r2_key": "a/v1/9faa7771-af86-4101-8cf2-0ed6dd381713/d3ad133b-ec4d-43c5-953e-068ce6540868/cc2-invalid.mp3",
-  "original_filename": "cc2-invalid.mp3",
-  "size": 109056,
+  "url": "/__l5e/assets-v1/abea4e1a-e631-4f79-82c9-5c52840025ed/cc3-invalid.mp3",
+  "r2_key": "a/v1/9faa7771-af86-4101-8cf2-0ed6dd381713/abea4e1a-e631-4f79-82c9-5c52840025ed/cc3-invalid.mp3",
+  "original_filename": "cc3-invalid.mp3",
+  "size": 81548,
   "content_type": "audio/mpeg",
-  "created_at": "2026-10-04T15:48:12Z"
+  "created_at": "2026-10-04T16:18:20Z"
 }

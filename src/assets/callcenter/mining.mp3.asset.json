@@ -1,11 +1,11 @@
 {
   "version": 1,
-  "asset_id": "a9e657e5-5379-4171-bc87-0c98e2c03d3d",
+  "asset_id": "421f3f35-d99d-496f-8030-e486e52b7f23",
   "project_id": "9faa7771-af86-4101-8cf2-0ed6dd381713",
-  "url": "/__l5e/assets-v1/a9e657e5-5379-4171-bc87-0c98e2c03d3d/cc2-mining.mp3",
-  "r2_key": "a/v1/9faa7771-af86-4101-8cf2-0ed6dd381713/a9e657e5-5379-4171-bc87-0c98e2c03d3d/cc2-mining.mp3",
-  "original_filename": "cc2-mining.mp3",
-  "size": 473088,
+  "url": "/__l5e/assets-v1/421f3f35-d99d-496f-8030-e486e52b7f23/cc3-mining.mp3",
+  "r2_key": "a/v1/9faa7771-af86-4101-8cf2-0ed6dd381713/421f3f35-d99d-496f-8030-e486e52b7f23/cc3-mining.mp3",
+  "original_filename": "cc3-mining.mp3",
+  "size": 304460,
   "content_type": "audio/mpeg",
-  "created_at": "2026-10-04T15:48:19Z"
+  "created_at": "2026-10-04T16:18:25Z"
 }

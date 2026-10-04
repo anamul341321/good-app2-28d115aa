@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { Phone, PhoneOff, PhoneIncoming, Mic, MicOff, Volume2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { adminListPushTargets, adminAddPushTarget, adminRemovePushTarget } from "@/lib/admin.functions";
 import { adminAcceptSupportCall, adminEndSupportCall, adminListSupportCalls } from "@/lib/support-call.functions";
 import { SUPPORT_ICE, SUPPORT_LOBBY, supportChannel, type RingPayload } from "@/lib/support-rtc";
 
@@ -139,6 +140,7 @@ function AdminCalls() {
           <Volume2 className="h-4 w-4" /> রিং সাউন্ড চালু করুন (একবার চাপুন)
         </button>
       )}
+      <CallAgents />
       <p className="text-xs text-muted-foreground">এই পেজ খোলা থাকলেই কল রিং হবে। বন্ধ থাকলে মিসড কলের খবর টেলিগ্রামে যাবে।</p>
 
       {active && (
@@ -172,6 +174,41 @@ function AdminCalls() {
             <span>{who({ name: c.caller_name, uid: c.caller_uid })}</span>
             <span>{STATUS[c.status] ?? c.status} · {new Date(c.created_at).toLocaleString("bn-BD", { timeZone: "Asia/Dhaka" })}
               {c.answered_at && c.ended_at ? ` · ${Math.round((+new Date(c.ended_at) - +new Date(c.answered_at)) / 1000)}s` : ""}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** কল এজেন্ট: এখানে যাদের UID দেবেন, অ্যাপে লগইন থাকলে তাদের ফোনেও কল আসবে। */
+function CallAgents() {
+  const qc = useQueryClient();
+  const { data } = useQuery({ queryKey: ["admin-push-targets"], queryFn: () => adminListPushTargets() });
+  const [uid, setUid] = useState("");
+  const [msg, setMsg] = useState("");
+  const add = async () => {
+    const n = Number(uid); if (!n) return;
+    try { await adminAddPushTarget({ data: { uid: n, label: "কল এজেন্ট" } }); setUid(""); setMsg(`UID ${n} এজেন্ট হয়েছে`); }
+    catch (e: any) { setMsg(e?.message ?? "যোগ করা যায়নি"); }
+    void qc.invalidateQueries({ queryKey: ["admin-push-targets"] });
+  };
+  const remove = async (userId: string) => { await adminRemovePushTarget({ data: { userId } }); void qc.invalidateQueries({ queryKey: ["admin-push-targets"] }); };
+  return (
+    <div className="rounded-2xl border bg-card p-4 space-y-3">
+      <p className="font-black">📞 কল এজেন্ট (যাদের কাছে কল যাবে)</p>
+      <p className="text-xs text-muted-foreground">এদের অ্যাপে লগইন থাকলেই কল আসবে। যেকোনো একজন ধরলেই বাকিদের থেকে কেটে যাবে।</p>
+      <div className="flex gap-2">
+        <input value={uid} onChange={(e) => setUid(e.target.value.replace(/\D/g, ""))} placeholder="UID লিখুন" inputMode="numeric"
+          className="flex-1 rounded-lg border bg-background px-3 py-2 text-sm" />
+        <button onClick={add} className="rounded-lg bg-primary px-4 py-2 text-sm font-black text-primary-foreground">এজেন্ট বানান</button>
+      </div>
+      {msg && <p className="text-xs font-bold">{msg}</p>}
+      <div className="space-y-1.5">
+        {(data ?? []).map((a: any) => (
+          <div key={a.userId} className="flex items-center justify-between rounded-lg border px-3 py-2 text-sm">
+            <span>{a.name ?? "—"} {a.uid ? `· UID ${a.uid}` : ""}</span>
+            <button onClick={() => remove(a.userId)} className="text-xs font-bold text-destructive">সরান</button>
           </div>
         ))}
       </div>
