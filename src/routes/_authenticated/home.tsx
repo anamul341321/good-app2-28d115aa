@@ -8,7 +8,7 @@ import { claimVoucher } from "@/lib/vouchers.functions";
 import { getLeaderboards } from "@/lib/leaderboard.functions";
 import { MiningCounter } from "@/components/MiningCounter";
 import bonusGirl from "@/assets/bonus-girl.png";
-import { CheckCircle2, Camera, Lock, Sparkles, Loader2, X, Plus, Crown, Users, User, ShieldCheck, BadgeCheck, ChevronDown, Gift, RefreshCcw, MessageCircle, ChevronRight, Newspaper, Coins } from "lucide-react";
+import { CheckCircle2, Camera, Lock, Sparkles, Loader2, X, Plus, Crown, Users, User, ShieldCheck, BadgeCheck, ChevronDown, Gift, RefreshCcw, MessageCircle, ChevronRight, Newspaper, Coins, Headset } from "lucide-react";
 import { PageVoice } from "@/components/PageVoice";
 import { FaceVerifyPausedNotice } from "@/components/FaceVerifyPausedNotice";
 import { getAppStatus } from "@/lib/app-status.functions";
@@ -178,7 +178,7 @@ function HomePage() {
       </Link>
 
       <Link to="/coins" preload="intent"
-        className="col-span-2 rounded-2xl px-4 py-3 relative overflow-hidden btn-press border border-amber/40 bg-gradient-to-r from-amber-500/90 to-orange-600/90 shadow-lg flex items-center gap-3">
+        className="rounded-2xl px-3 py-3 relative overflow-hidden btn-press border border-amber/40 bg-gradient-to-r from-amber-500/90 to-orange-600/90 shadow-lg flex items-center gap-2">
         <span className="w-9 h-9 rounded-xl bg-white/25 backdrop-blur border border-white/40 flex items-center justify-center text-white">
           <Coins className="w-5 h-5" />
         </span>
@@ -186,9 +186,18 @@ function HomePage() {
           <span className="block text-[9px] tracking-[0.2em] font-black text-white/85">GOOD COIN</span>
           <span className="block text-sm font-black leading-tight">{lite ? t("অ্যাপের পয়েন্ট", "In-app points") : t("আরও আয় করুন", "Earn More")}</span>
         </span>
-        <span className="text-[10px] font-black text-white/90">
-          {t("কয়েন ওয়ালেট", "Coin wallet")}
+      </Link>
+
+      <Link to="/callcenter" preload="intent"
+        className="rounded-2xl px-3 py-3 relative overflow-hidden btn-press border border-cyan/40 gradient-navy shadow-lg flex items-center gap-2">
+        <span className="w-9 h-9 shrink-0 rounded-xl bg-white/25 backdrop-blur border border-white/40 flex items-center justify-center text-white">
+          <Headset className="w-5 h-5" />
         </span>
+        <span className="min-w-0 flex-1 text-white">
+          <span className="block text-[9px] font-black text-white/85">সহায়তা</span>
+          <span className="block text-sm font-black leading-tight">কল সেন্টার</span>
+        </span>
+        <ChevronRight className="h-4 w-4 shrink-0 text-white/80" />
       </Link>
     </div>
   );

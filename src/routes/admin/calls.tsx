@@ -1,11 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
 import { Phone, PhoneOff, PhoneIncoming, Mic, MicOff, Volume2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { adminListPushTargets, adminAddPushTarget, adminRemovePushTarget } from "@/lib/admin.functions";
-import { adminAcceptSupportCall, adminEndSupportCall, adminListSupportCalls } from "@/lib/support-call.functions";
-import { SUPPORT_ICE, SUPPORT_LOBBY, supportChannel, type RingPayload } from "@/lib/support-rtc";
+import { adminAcceptSupportCall, adminEndSupportCall, adminListSupportCalls, getSupportCallStatus } from "@/lib/support-call.functions";
+import { SUPPORT_LOBBY, getSupportIce, supportChannel, type RingPayload } from "@/lib/support-rtc";
 
 export const Route = createFileRoute("/admin/calls")({
   head: () => ({ meta: [{ title: "ইনকামিং কল — Admin" }, { name: "description", content: "কাস্টমার কেয়ার লাইভ কল" }] }),
@@ -27,7 +28,8 @@ function AdminCalls() {
   const remote = useRef<HTMLAudioElement | null>(null);
   const takenRef = useRef<Set<string>>(new Set());
   const lobbyRef = useRef<any>(null);
-  const rtc = useRef<{ pc?: RTCPeerConnection; stream?: MediaStream; ch?: any }>({});
+  const rtc = useRef<{ pc?: RTCPeerConnection; stream?: MediaStream; ch?: any; statusTimer?: number }>({});
+  const readStatus = useServerFn(getSupportCallStatus);
 
   // ইনকামিং রিং শুনি
   useEffect(() => {
@@ -80,8 +82,14 @@ function AdminCalls() {
 
   const teardown = (notify: boolean) => {
     const c = rtc.current;
-    if (c.ch) { if (notify) void c.ch.send({ type: "broadcast", event: "hangup", payload: {} }); supabase.removeChannel(c.ch); }
+    if (c.statusTimer) clearInterval(c.statusTimer);
+    if (c.ch) {
+      const ch = c.ch;
+      if (notify) void ch.send({ type: "broadcast", event: "hangup", payload: {} }).finally(() => supabase.removeChannel(ch));
+      else void supabase.removeChannel(ch);
+    }
     c.pc?.close(); c.stream?.getTracks().forEach((t) => t.stop());
+    if (remote.current) { remote.current.pause(); remote.current.srcObject = null; }
     rtc.current = {};
     setActive(null); setTalking(false); setSec(0); setMuted(false);
     void qc.invalidateQueries({ queryKey: ["support-calls"] });
@@ -93,14 +101,21 @@ function AdminCalls() {
     if (ok.ok) void lobbyRef.current?.send({ type: "broadcast", event: "taken", payload: { id: r.id } });
     if (!ok.ok) { setRinging((m) => { const n = { ...m }; delete n[r.id]; return n; }); return; }
     let stream: MediaStream;
-    try { stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } }); }
+    const mediaPromise = navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+    const icePromise = getSupportIce();
+    try { stream = await mediaPromise; }
     catch { alert("মাইক্রোফোনের অনুমতি দিন"); return; }
     setActive(r);
-    const pc = new RTCPeerConnection(SUPPORT_ICE);
+    const pc = new RTCPeerConnection(await icePromise);
     stream.getTracks().forEach((t) => pc.addTrack(t, stream));
     pc.ontrack = (e) => { if (remote.current) { remote.current.srcObject = e.streams[0]; void remote.current.play().catch(() => {}); } };
     const ch = supabase.channel(supportChannel(r.id), { config: { broadcast: { self: false } } });
     rtc.current = { pc, stream, ch };
+    rtc.current.statusTimer = window.setInterval(() => {
+      void readStatus({ data: { id: r.id } }).then(({ status }) => {
+        if (status === "ended" || status === "missed") teardown(false);
+      }).catch(() => {});
+    }, 1200);
     pc.onicecandidate = (e) => { if (e.candidate) void ch.send({ type: "broadcast", event: "ice", payload: { from: "admin", c: e.candidate.toJSON() } }); };
     ch.on("broadcast", { event: "offer" }, async ({ payload }: any) => {
       await pc.setRemoteDescription(payload.sdp);

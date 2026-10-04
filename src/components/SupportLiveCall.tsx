@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { Phone, PhoneOff, Mic, MicOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { startSupportCall, endSupportCall } from "@/lib/support-call.functions";
-import { SUPPORT_ICE, SUPPORT_LOBBY, supportChannel } from "@/lib/support-rtc";
+import { startSupportCall, endSupportCall, getSupportCallStatus } from "@/lib/support-call.functions";
+import { SUPPORT_LOBBY, getSupportIce, supportChannel } from "@/lib/support-rtc";
 
 type S = "idle" | "calling" | "talking" | "busy" | "ended" | "nomic";
 const BN = "০১২৩৪৫৬৭৮৯";
@@ -15,12 +16,21 @@ export function SupportLiveCall({ onActive, autoStart }: { onActive?: (active: b
   const [muted, setMuted] = useState(false);
   const r = useRef<{ pc?: RTCPeerConnection; stream?: MediaStream; ch?: any; lobby?: any; id?: string; timers: number[] }>({ timers: [] });
   const remote = useRef<HTMLAudioElement | null>(null);
+  const readStatus = useServerFn(getSupportCallStatus);
 
   const cleanup = (missed: boolean, notify = true) => {
     const c = r.current;
     c.timers.forEach((t) => clearInterval(t));
     c.timers = [];
-    if (c.ch) { if (notify) void c.ch.send({ type: "broadcast", event: "hangup", payload: {} }); supabase.removeChannel(c.ch); }
+    if (c.ch) {
+      const ch = c.ch;
+      if (notify) {
+        void ch.send({ type: "broadcast", event: "hangup", payload: {} })
+          .finally(() => supabase.removeChannel(ch));
+      } else {
+        void supabase.removeChannel(ch);
+      }
+    }
     if (c.lobby) supabase.removeChannel(c.lobby);
     c.pc?.close();
     c.stream?.getTracks().forEach((t) => t.stop());
@@ -48,7 +58,7 @@ export function SupportLiveCall({ onActive, autoStart }: { onActive?: (active: b
     try {
       const { id, uid, name } = await startSupportCall({ data: {} });
       c.id = id;
-      const pc = new RTCPeerConnection(SUPPORT_ICE);
+      const pc = new RTCPeerConnection(await getSupportIce());
       c.pc = pc;
       stream.getTracks().forEach((t) => pc.addTrack(t, stream));
       pc.ontrack = (e) => { if (remote.current) { remote.current.srcObject = e.streams[0]; void remote.current.play().catch(() => {}); } };
@@ -84,6 +94,14 @@ export function SupportLiveCall({ onActive, autoStart }: { onActive?: (active: b
         waited += 1;
         if (waited >= 45) { cleanup(true); setS("busy"); }
       }, 1000));
+      c.timers.push(window.setInterval(() => {
+        void readStatus({ data: { id } }).then(({ status }) => {
+          if (status === "ended" || status === "missed") {
+            cleanup(false, false);
+            setS(status === "missed" ? "busy" : "ended");
+          }
+        }).catch(() => {});
+      }, 1200));
     } catch {
       cleanup(false); setS("busy");
     }

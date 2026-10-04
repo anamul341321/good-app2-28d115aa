@@ -90,6 +90,15 @@ export const endSupportCall = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+/** হারিয়ে যাওয়া realtime signal-এর fallback; UUID জানা caller-কে শুধু call status দেয়। */
+export const getSupportCallStatus = createServerFn({ method: "GET" })
+  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data }) => {
+    const sb = await admin();
+    const { data: row } = await sb.from("support_calls").select("status").eq("id", data.id).maybeSingle();
+    return { status: (row?.status as string | undefined) ?? "ended" };
+  });
+
 async function gate() {
   const { requireAdminSession } = await import("@/lib/admin-session.server");
   await requireAdminSession();
