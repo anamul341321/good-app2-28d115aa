@@ -184,18 +184,22 @@ function useCombinedReels(selectedPostId?: string) {
     };
 
     // শুধু প্রথম ব্যাচ মেশানো হয় — পরের পেজগুলো নিচে যোগ হয়, তাই স্ক্রল লাফ দেয় না
-    const head: ReelItem[] = [
+    const localItems: ReelItem[] = [
       ...localHead
         .filter((post) => localVideos.some((p) => p.id === post.id))
         .map((post) => ({ kind: "local" as const, id: `local-${post.id}`, post })),
+    ];
+    for (let i = localItems.length - 1; i > 0; i--) {
+      const j = Math.floor(rand() * (i + 1));
+      const tmp = localItems[i]!;
+      localItems[i] = localItems[j]!;
+      localItems[j] = tmp;
+    }
+    // App-এ upload করা reels আগে আসে; বাইরের ভিডিও কখনো প্রথম local video-র loading আটকে রাখে না।
+    const head: ReelItem[] = [
+      ...localItems,
       ...firstPage.map((video) => ({ kind: "external" as const, id: `ext-${video.id}`, video })),
     ];
-    for (let i = head.length - 1; i > 0; i--) {
-      const j = Math.floor(rand() * (i + 1));
-      const tmp = head[i]!;
-      head[i] = head[j]!;
-      head[j] = tmp;
-    }
 
     const seen = new Set(head.map((item) => item.id));
     const tail: ReelItem[] = [];
@@ -333,18 +337,18 @@ function ReelsPage() {
   // signed URL গুলো আগেই তৈরি করে রাখি — তাই স্ক্রল করলেই ভিডিও সাথে সাথে চলে
   useEffect(() => {
     const paths = items
-      .slice(Math.max(0, activeIndex - 2), activeIndex + 14)
+      .slice(Math.max(0, activeIndex - 1), activeIndex + 6)
       .flatMap((item) =>
         item.kind === "local" ? [item.post.video_url, item.post.user?.avatar_url] : [],
       );
-    prefetchFeedMedia(paths, 8).catch(() => {});
+    prefetchFeedMedia(paths, 3).catch(() => {});
   }, [items, activeIndex]);
 
   // সামনের ভিডিওগুলোর শুরুর অংশ আগেই ডাউনলোড করে ব্রাউজার ক্যাশে রাখি —
   // স্লো ফোনেও পরের রিল সাথে সাথেই চালু হয় (TikTok স্টাইল)
   useEffect(() => {
     const upcoming = items
-      .slice(activeIndex + 1, activeIndex + 5)
+      .slice(activeIndex + 1, activeIndex + 2)
       .flatMap((item) => (item.kind === "local" ? [item.post.video_url] : []))
       .filter(Boolean) as string[];
     let cancelled = false;
@@ -772,7 +776,7 @@ function LocalReel({
     });
   }, [isActive, mediaFailed, post.content, post.image_url, post.user?.display_name, videoUrl]);
 
-  // স্লো নেটে ভিডিও আটকে গেলে নিজে থেকেই আবার চালু করার চেষ্টা করি
+  // ডেটা এলে playback আবার শুরু করি; source reload করলে slow network-এ download শুরু থেকে হতো।
   useEffect(() => {
     if (!isActive || !buffering) return;
     const timer = window.setTimeout(() => {
@@ -783,14 +787,7 @@ function LocalReel({
         el.play().catch(() => {});
         return;
       }
-      // এখনো ডেটা আসেনি — সোর্স রিলোড করে আবার চেষ্টা
-      try {
-        el.load();
-        el.play().catch(() => {});
-      } catch {
-        /* ignore */
-      }
-    }, 6000);
+    }, 2500);
     return () => window.clearTimeout(timer);
   }, [isActive, buffering]);
 
@@ -901,9 +898,7 @@ function LocalReel({
           playsInline
           muted={muted}
           poster={posterUrl}
-          // চালু ভিডিও ও পরের ২টি পুরো প্রি-লোড, বাকিগুলো শুধু metadata —
-          // স্লো ফোনে নেট ভাগ হয়ে যায় না, তাই চালু ভিডিও দ্রুত আসে
-          preload={isActive || (distance > 0 && distance <= 2) ? "auto" : "metadata"}
+          preload={isActive ? "auto" : "metadata"}
           onTimeUpdate={(e) => { const v = e.currentTarget; if (!v.paused && !v.ended) markWatching(); }}
           onLoadedData={() => setMediaFailed(false)}
           onWaiting={() => { if (isActive) setBuffering(true); }}

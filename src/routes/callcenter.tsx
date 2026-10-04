@@ -10,7 +10,6 @@ import balanceA from "@/assets/callcenter/balance.mp3.asset.json";
 import referA from "@/assets/callcenter/refer.mp3.asset.json";
 import moreA from "@/assets/callcenter/more.mp3.asset.json";
 import agentA from "@/assets/callcenter/agent.mp3.asset.json";
-import aiA from "@/assets/callcenter/ai.mp3.asset.json";
 import nopressA from "@/assets/callcenter/nopress.mp3.asset.json";
 import byeA from "@/assets/callcenter/bye.mp3.asset.json";
 import invalidA from "@/assets/callcenter/invalid.mp3.asset.json";
@@ -42,7 +41,6 @@ const AUDIO: Record<string, string> = {
   refer: referA.url,
   more: moreA.url,
   agent: agentA.url,
-  ai: aiA.url,
   nopress: nopressA.url,
   bye: byeA.url,
   invalid: invalidA.url,
@@ -54,6 +52,7 @@ const MENU: Record<string, { key: string; label: string }> = {
   "৩": { key: "reverify", label: "রি ভেরিফাই" },
   "৪": { key: "balance", label: "ব্যালেন্স" },
   "৫": { key: "refer", label: "রেফার বোনাস" },
+  "৯": { key: "menu", label: "মূল মেনু" },
   "০": { key: "agent", label: "কাস্টমার কেয়ার" },
 };
 
@@ -178,8 +177,8 @@ function CallCenterPage() {
     const m = MENU[d];
     setShowAgent(false); setShowAi(false);
     if (!m) { say("invalid", "ভুল বোতাম", () => menu("menu")); return; }
+    if (m.key === "menu") { menu("menu"); return; }
     if (m.key === "agent") { setShowAgent(true); say("agent", m.label); return; }
-    // এ আই নিজেই সালাম দেবে — তাই আলাদা রেকর্ড করা ভয়েস বাজাব না (দুই ভয়েস একসাথে হতো)
     // তথ্য বলা শেষে: "স্যার, আপনাকে আর কীভাবে সাহায্য করতে পারি?" → মেনু
     say(m.key, m.label, () => say("more", "আর কোনো সাহায্য", () => menu("menu")));
   };
@@ -227,7 +226,7 @@ function CallCenterPage() {
 
       {state === "connected" && (
         <div className="mx-auto mt-3 w-full max-w-xs px-4 text-[11px] leading-5 text-muted-foreground text-center">
-          ১ উইথড্র · ২ মাইনিং · ৩ রি-ভেরিফাই · ৪ ব্যালেন্স · ৫ রেফার · ৯ এ আই সহকারী · ০ প্রতিনিধি
+          ১ উইথড্র · ২ মাইনিং · ৩ রি-ভেরিফাই · ৪ ব্যালেন্স · ৫ রেফার · ৯ মূল মেনু · ০ প্রতিনিধি
         </div>
       )}
 
