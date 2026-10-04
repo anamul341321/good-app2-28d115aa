@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeader } from "@tanstack/react-start/server";
 import { z } from "zod";
 
-const BASE_RULES = `তুমি "গুড অ্যাপ" কাস্টমার কেয়ারের একজন আসল মানুষের মতো ভদ্র, হাসিখুশি মহিলা প্রতিনিধি। ফোনে কথা বলছ, তাই একদম স্বাভাবিক কথ্য শুদ্ধ বাংলায়, ছোট ২-৩ বাক্যে উত্তর দেবে — যেন মানুষ কথা বলছে, রোবট নয়। কোনো ইমোজি, লিংক, তালিকা, চিহ্ন ব্যবহার করবে না। "আপনি" বলে সম্বোধন করবে।
+const BASE_RULES = `তুমি "গুড অ্যাপ" কাস্টমার কেয়ারের একজন আসল মানুষের মতো ভদ্র, হাসিখুশি মহিলা প্রতিনিধি। ফোনে কথা বলছ, তাই একদম স্বাভাবিক কথ্য শুদ্ধ বাংলায়, ছোট ২-৩ বাক্যে উত্তর দেবে (সর্বোচ্চ ৪০ শব্দ) — যেন মানুষ কথা বলছে, রোবট নয়। কোনো ইমোজি, লিংক, তালিকা, চিহ্ন ব্যবহার করবে না। "আপনি" বলে সম্বোধন করবে।
 কঠোর নিয়ম:
 - শুধু নিচের নিয়মবই আর গ্রাহকের অ্যাকাউন্ট তথ্য থেকে উত্তর দেবে। এর বাইরে কিছু বানিয়ে বলবে না, অনুমান করবে না।
 - উত্তর জানা না থাকলে সোজা বলবে "এই বিষয়টি আমি নিশ্চিত নই, মেনুতে ফিরে শূন্য চাপলে আমাদের প্রতিনিধি আপনাকে সাহায্য করবেন।"
@@ -64,11 +64,27 @@ async function speak(key: string, text: string): Promise<string | null> {
   } catch { return null; }
 }
 
+/** লম্বা উত্তর বাক্যে ভাগ করে একসাথে ভয়েস বানাই — দ্রুত হয়। */
+async function speakChunks(key: string, text: string): Promise<string[]> {
+  const parts = text.split(/(?<=[।?!])\s+/).map((p) => p.trim()).filter(Boolean);
+  const chunks: string[] = [];
+  for (const p of parts) {
+    const last = chunks[chunks.length - 1];
+    if (last && last.length + p.length < 90) chunks[chunks.length - 1] = `${last} ${p}`;
+    else chunks.push(p);
+  }
+  const audios = await Promise.all((chunks.length ? chunks : [text]).map((c) => speak(key, c)));
+  return audios.filter((a): a is string => !!a);
+}
+
+let greetCache: string | null = null;
+
 /** কল ধরার সাথে সাথে সালাম দিয়ে শুভেচ্ছা (ভয়েস সহ)। */
 export const greetCallCenterAi = createServerFn({ method: "POST" }).handler(async () => {
   const key = process.env["LOVABLE_API_KEY"];
   const text = "আসসালামু আলাইকুম! গুড অ্যাপ কাস্টমার কেয়ারে আপনাকে স্বাগতম। বলুন, আমি আপনাকে কীভাবে সাহায্য করতে পারি?";
-  return { text, audio: key ? await speak(key, text) : null, mime: "audio/wav" };
+  if (key && !greetCache) greetCache = await speak(key, text);
+  return { text, audios: greetCache ? [greetCache] : [], mime: "audio/wav" };
 });
 
 export const askCallCenterAi = createServerFn({ method: "POST" })
@@ -117,5 +133,5 @@ export const askCallCenterAi = createServerFn({ method: "POST" })
       }
     }
     const text = clean(out) || "দুঃখিত, বিষয়টি বুঝতে পারিনি। অনুগ্রহ করে আরেকবার বলুন।";
-    return { text, audio: await speak(key, text), mime: "audio/wav" };
+    return { text, audios: await speakChunks(key, text), mime: "audio/wav" };
   });

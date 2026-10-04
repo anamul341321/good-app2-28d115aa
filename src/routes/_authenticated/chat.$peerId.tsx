@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useParams, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useParams, useNavigate, redirect } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -15,6 +15,13 @@ import { formatLastActive, isRecentlyActive } from "@/lib/last-active";
 import { MessengerAvatar } from "@/components/messenger/MessengerAvatar";
 
 export const Route = createFileRoute("/_authenticated/chat/$peerId")({
+  // ফোনের কল স্ক্রিন থেকে কাস্টমার কেয়ার কল ধরলে হোমে নিয়ে গিয়ে কল চালু হয়
+  beforeLoad: ({ params, location }) => {
+    if (params.peerId === "support") {
+      const sp = new URLSearchParams(location.searchStr);
+      throw redirect({ to: "/home", search: { supportCall: sp.get("call") ?? "", supportAction: sp.has("decline") ? "decline" : "accept" } as any });
+    }
+  },
   component: ThreadPage,
   head: () => ({
     meta: [
