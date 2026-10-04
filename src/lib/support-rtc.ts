@@ -1,3 +1,4 @@
+import { registerFastIce } from "./rtc-ice";
 // কাস্টমার কেয়ার লাইভ কলের শেয়ার করা সেটিংস (ব্রাউজার-সেফ)
 export const SUPPORT_LOBBY = "support-call-lobby";
 export const supportChannel = (id: string) => `support-call-${id}`;
@@ -17,5 +18,7 @@ export const SUPPORT_ICE: RTCConfiguration = {
     },
   ],
 };
+
+registerFastIce(SUPPORT_ICE);
 
 export type RingPayload = { id: string; name: string | null; uid: number | null; at: number };

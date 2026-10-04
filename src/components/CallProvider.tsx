@@ -1,3 +1,4 @@
+import { registerFastIce } from "@/lib/rtc-ice";
 import {
   createContext,
   useCallback,
@@ -53,7 +54,7 @@ type Ctx = {
 const CallContext = createContext<Ctx>({ startCall: () => {}, state: "idle" });
 export const useCalls = () => useContext(CallContext);
 
-const ICE = {
+const ICE: RTCConfiguration = {
   iceServers: [
     { urls: "stun:stun.l.google.com:19302" },
     { urls: "stun:stun1.l.google.com:19302" },
@@ -74,6 +75,8 @@ const ICE = {
   bundlePolicy: "max-bundle" as RTCBundlePolicy,
   rtcpMuxPolicy: "require" as RTCRtcpMuxPolicy,
 };
+registerFastIce(ICE);
+
 
 /**
  * পুরো অ্যাপে অডিও/ভিডিও কল। সিগন্যালিং হয় Supabase Realtime broadcast দিয়ে
