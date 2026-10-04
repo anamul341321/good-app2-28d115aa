@@ -40,30 +40,13 @@ export function SplashScreen() {
       }
     } catch { /* noop */ }
 
-    let objectUrl: string | null = null;
-    const controller = new AbortController();
-    // The uploaded MP4 contains the original stereo audio; the WebM fallback is silent.
-    const selectedUrl = introVideo.url;
-    void fetch(selectedUrl, { signal: controller.signal })
-      .then((response) => {
-        if (!response.ok) throw new Error("Intro video could not be loaded");
-        return response.blob();
-      })
-      .then((blob) => {
-        objectUrl = URL.createObjectURL(blob);
-        setVideoSource(objectUrl);
-      })
-      .catch((error: unknown) => {
-        if (error instanceof DOMException && error.name === "AbortError") return;
-        finish();
-      });
+    // Use the CDN URL directly so slower phones can begin streaming immediately.
+    setVideoSource(introVideo.url);
 
     // Safety net: a network or playback error must never trap the user.
     const safetyTimer = setTimeout(finish, 10_000);
 
     return () => {
-      controller.abort();
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
       clearTimeout(safetyTimer);
       if (finishTimer.current) clearTimeout(finishTimer.current);
     };
@@ -77,6 +60,8 @@ export function SplashScreen() {
     video.volume = 1;
     void video.play().then(() => setNeedsSoundTap(false)).catch(() => {
       // Mobile browsers require a real user gesture before playing sound.
+      video.muted = true;
+      void video.play().catch(finish);
       setNeedsSoundTap(true);
     });
   }, [videoSource]);
@@ -85,7 +70,11 @@ export function SplashScreen() {
     const video = videoRef.current;
     if (!video) return;
     const backgroundVideo = backgroundVideoRef.current;
-    if (backgroundVideo) backgroundVideo.currentTime = video.currentTime;
+    video.currentTime = 0;
+    if (backgroundVideo) {
+      backgroundVideo.currentTime = 0;
+      void backgroundVideo.play().catch(() => undefined);
+    }
     video.muted = false;
     video.volume = 1;
     void video.play().then(() => setNeedsSoundTap(false)).catch(finish);
