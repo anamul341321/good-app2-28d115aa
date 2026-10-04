@@ -22,12 +22,13 @@ export const askCallCenterAi = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const key = process.env["LOVABLE_API_KEY"];
     if (!key) throw new Error("এ আই এখন চালু নেই");
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/responses", {
       method: "POST",
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [{ role: "system", content: SYSTEM }, ...data.history, { role: "user", content: data.question }],
+        model: "openai/gpt-6-astra",
+        instructions: SYSTEM,
+        input: [...data.history, { role: "user", content: data.question }],
       }),
     });
     if (!res.ok) {
@@ -35,7 +36,7 @@ export const askCallCenterAi = createServerFn({ method: "POST" })
       throw new Error("দুঃখিত, এই মুহূর্তে উত্তর দেওয়া যাচ্ছে না");
     }
     const j = (await res.json()) as any;
-    const text: string = (j.choices?.[0]?.message?.content ?? "").replace(/[*#_`>]/g, "").trim() ||
+    const text: string = ((j.output ?? []).flatMap((o: any) => o.content ?? []).filter((c: any) => c.type === "output_text").map((c: any) => c.text).join(" ")).replace(/[*#_`>]/g, "").trim() ||
       "দুঃখিত, বিষয়টি বুঝতে পারিনি। অনুগ্রহ করে আবার বলুন।";
     let audio: string | null = null;
     try {
