@@ -198,6 +198,14 @@ function MenuPage() {
           </p>
           <p className="text-[11px] text-white/90 mt-0.5">{t("গ্রুপে মেসেজ দিন — দ্রুত সাহায্য পাবেন", "Message the group — quick help")}</p>
         </a>
+        <Link to="/callcenter"
+           className="block rounded-2xl p-3.5 text-center shadow-md btn-press mt-2"
+           style={{ background: "linear-gradient(120deg,#16a34a,#22c55e)" }}>
+          <p className="text-sm font-black text-white flex items-center justify-center gap-1.5">
+            <Phone className="w-4 h-4" /> {t("কল সেন্টার", "Call Center")}
+          </p>
+          <p className="text-[11px] text-white/90 mt-0.5">{t("ভয়েসে শুনুন — উইথড্র, মাইনিং, ব্যালেন্সের তথ্য", "Listen by voice — withdraw, mining, balance info")}</p>
+        </Link>
         <BotStartButton />
         {!lite && <ApkDownloadCard />}
 
