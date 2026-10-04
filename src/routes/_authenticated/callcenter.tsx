@@ -187,10 +187,16 @@ function CallCenterPage() {
       )}
 
       {showAgent && (
-        <a href={TELEGRAM_SUPPORT_URL} target="_blank" rel="noreferrer"
-          className="mx-auto mt-4 rounded-full bg-primary px-6 py-3 text-sm font-black text-primary-foreground shadow-lg animate-fade-in">
-          টেলিগ্রামে কাস্টমার কেয়ারের সাথে কথা বলুন
-        </a>
+        <div className="mx-auto mt-4 flex w-full max-w-xs flex-col gap-2.5 px-4 animate-fade-in">
+          <a href="tel:+8809611502055"
+            className="flex items-center justify-center gap-2 rounded-full bg-green-600 px-6 py-3.5 text-sm font-black text-white shadow-lg active:scale-95 transition">
+            <Phone className="h-4 w-4" /> কাস্টমার কেয়ারে কল করুন
+          </a>
+          <a href={TELEGRAM_SUPPORT_URL} target="_blank" rel="noreferrer"
+            className="flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-xs font-bold text-primary-foreground shadow-lg active:scale-95 transition">
+            লিখে সমস্যা পাঠান (টেলিগ্রাম)
+          </a>
+        </div>
       )}
 
       <div className="mt-auto flex items-center justify-center gap-8 pb-[max(env(safe-area-inset-bottom),2rem)] pt-6">
