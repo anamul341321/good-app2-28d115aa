@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import introVideo from "@/assets/goodapp-logo-intro.mp4.asset.json";
-import introVideoWebm from "@/assets/goodapp-logo-intro.webm.asset.json";
 
 /**
  * Full-screen branded launch video. It plays once whenever the app starts,
