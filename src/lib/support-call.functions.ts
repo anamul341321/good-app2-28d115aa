@@ -40,7 +40,7 @@ export const startSupportCall = createServerFn({ method: "POST" })
       const { sendPushToAdmins } = await import("@/lib/push.server");
       const { alertOwnerPrivate } = await import("@/lib/withdraw-fastpay.server");
       await Promise.allSettled([
-        sendPushToAdmins({ title: "📞 কাস্টমার কেয়ারে কল আসছে", body: `${who} — এখনই ধরুন`, url: "/admin/calls" }),
+        sendPushToAdmins({ title: "📞 কাস্টমার কেয়ারে কল আসছে", body: `${who} — এখনই ধরুন`, url: "/home" }),
         alertOwnerPrivate(`📞 <b>কাস্টমার কেয়ারে কল আসছে</b>\n👤 ${who}\n👉 অ্যাডমিন প্যানেল → ইনকামিং কল থেকে ধরুন`),
       ]);
     } catch { /* নোটিফিকেশন না গেলেও কল চলবে */ }
@@ -103,3 +103,40 @@ export const adminListSupportCalls = createServerFn({ method: "GET" }).handler(a
   const { data } = await sb.from("support_calls").select("*").order("created_at", { ascending: false }).limit(200);
   return data ?? [];
 });
+
+// ── অ্যাপের ভেতরের কল এজেন্ট (অ্যাডমিন প্যানেল থেকে যাদের এজেন্ট বানানো হয়) ──
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+
+async function agentGate(userId: string) {
+  const sb = await admin();
+  const { data } = await sb.from("admin_push_targets").select("user_id").eq("user_id", userId).maybeSingle();
+  if (!data) throw new Error("আপনি কল এজেন্ট নন");
+  return sb;
+}
+
+export const amICallAgent = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    try { await agentGate(context.userId); return { agent: true }; } catch { return { agent: false }; }
+  });
+
+export const agentAcceptSupportCall = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const sb = await agentGate(context.userId);
+    const { data: row } = await sb.from("support_calls")
+      .update({ status: "accepted", answered_at: new Date().toISOString() })
+      .eq("id", data.id).eq("status", "ringing").select("id").maybeSingle();
+    return { ok: !!row };
+  });
+
+export const agentEndSupportCall = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const sb = await agentGate(context.userId);
+    await sb.from("support_calls").update({ status: "ended", ended_at: new Date().toISOString() })
+      .eq("id", data.id).in("status", ["ringing", "accepted"]);
+    return { ok: true };
+  });
