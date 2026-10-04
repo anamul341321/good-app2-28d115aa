@@ -181,7 +181,8 @@ function CallCenterPage() {
     setShowAgent(false); setShowAi(false);
     if (!m) { say("invalid", "ভুল বোতাম", () => menu("menu")); return; }
     if (m.key === "agent") { setShowAgent(true); say("agent", m.label); return; }
-    if (m.key === "ai") { setShowAi(true); say("ai", m.label); return; }
+    // এ আই নিজেই সালাম দেবে — তাই আলাদা রেকর্ড করা ভয়েস বাজাব না (দুই ভয়েস একসাথে হতো)
+    if (m.key === "ai") { clearWait(); audioRef.current?.pause(); setLabel(m.label); setShowAi(true); return; }
     // তথ্য বলা শেষে: "স্যার, আপনাকে আর কীভাবে সাহায্য করতে পারি?" → মেনু
     say(m.key, m.label, () => say("more", "আর কোনো সাহায্য", () => menu("menu")));
   };

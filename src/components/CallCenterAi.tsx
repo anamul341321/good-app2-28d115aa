@@ -20,15 +20,20 @@ export function CallCenterAi({ onSpeak }: { onSpeak?: () => void }) {
   const histRef = useRef<Msg[]>([]);
   const silentRounds = useRef(0);
 
-  const play = (audio: string | null, mime: string, after: () => void) => {
-    if (!audio) { after(); return; }
+  // টুকরোগুলো একটার পর একটা বাজাই; কল কাটলে সাথে সাথে থামে
+  const play = (audios: string[], mime: string, after: () => void) => {
+    if (!alive.current) return;
+    if (!audios.length) { after(); return; }
+    onSpeak?.();
+    const [head, ...rest] = audios;
     const a = player.current ?? new Audio();
     player.current = a;
-    a.src = `data:${mime};base64,${audio}`;
-    a.onended = () => after();
-    a.onerror = () => after();
+    a.src = `data:${mime};base64,${head}`;
+    const next = () => { if (alive.current) play(rest, mime, after); };
+    a.onended = next;
+    a.onerror = next;
     setState("speaking");
-    void a.play().catch(() => after());
+    void a.play().catch(next);
   };
 
   const listen = () => {
@@ -49,7 +54,7 @@ export function CallCenterAi({ onSpeak }: { onSpeak?: () => void }) {
       if (got || !alive.current) return;
       // চুপ থাকলে আবার শুনবে; কয়েকবার চুপ থাকলে থামবে
       silentRounds.current += 1;
-      if (silentRounds.current < 3) setTimeout(listen, 300);
+      if (silentRounds.current < 3) setTimeout(() => { if (alive.current) listen(); }, 300);
       else setState("idle");
     };
     setState("listening");
@@ -63,8 +68,10 @@ export function CallCenterAi({ onSpeak }: { onSpeak?: () => void }) {
       const r = await askCallCenterAi({ data: { question: q, history: histRef.current.slice(-6) } });
       histRef.current = [...histRef.current, { role: "user", content: q }, { role: "assistant", content: r.text }];
       setHist(histRef.current);
-      play(r.audio, r.mime, listen);
+      if (!alive.current) return;
+      play(r.audios, r.mime, listen);
     } catch (e) {
+      if (!alive.current) return;
       setErr(e instanceof Error ? e.message : "দুঃখিত, আবার চেষ্টা করুন");
       setState("idle");
     }
@@ -76,12 +83,13 @@ export function CallCenterAi({ onSpeak }: { onSpeak?: () => void }) {
       if (!alive.current) return;
       histRef.current = [{ role: "assistant", content: g.text }];
       setHist(histRef.current);
-      play(g.audio, g.mime, listen);
-    }).catch(() => listen());
+      play(g.audios, g.mime, listen);
+    }).catch(() => { if (alive.current) listen(); });
     return () => {
       alive.current = false;
       try { recRef.current?.abort(); } catch { /* noop */ }
-      player.current?.pause();
+      const p = player.current;
+      if (p) { p.onended = null; p.onerror = null; p.pause(); p.src = ""; }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
