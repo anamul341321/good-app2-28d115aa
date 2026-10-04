@@ -1,34 +1,22 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  Phone,
-  PhoneOff,
-  Wallet,
-  Pickaxe,
-  ShieldCheck,
-  Coins,
-  Gift,
-  Headset,
-  Volume2,
-  Delete,
-} from "lucide-react";
-import { CALL_CENTER_SCRIPTS } from "@/lib/callcenter-scripts";
-import { PageBackHeader } from "@/components/PageBackHeader";
+import { Phone, PhoneOff, Headset, Volume2, VolumeX, Grid3x3, ArrowLeft } from "lucide-react";
+import greetingA from "@/assets/callcenter/greeting.mp3.asset.json";
+import withdrawA from "@/assets/callcenter/withdraw.mp3.asset.json";
+import miningA from "@/assets/callcenter/mining.mp3.asset.json";
+import reverifyA from "@/assets/callcenter/reverify.mp3.asset.json";
+import balanceA from "@/assets/callcenter/balance.mp3.asset.json";
+import referA from "@/assets/callcenter/refer.mp3.asset.json";
+import agentA from "@/assets/callcenter/agent.mp3.asset.json";
+import invalidA from "@/assets/callcenter/invalid.mp3.asset.json";
 
 export const Route = createFileRoute("/_authenticated/callcenter")({
   head: () => ({
     meta: [
       { title: "কল সেন্টার — Good-App" },
-      {
-        name: "description",
-        content:
-          "গুড অ্যাপ কল সেন্টার — উইথড্র, মাইনিং, রি ভেরিফাই ও ব্যালেন্স সংক্রান্ত তথ্য ভয়েসে শুনুন, অথবা কাস্টমার কেয়ারের সাথে কথা বলুন।",
-      },
+      { name: "description", content: "গুড অ্যাপ কল সেন্টার — উইথড্র, মাইনিং, রি ভেরিফাই ও ব্যালেন্সের তথ্য ভয়েসে শুনুন।" },
       { property: "og:title", content: "কল সেন্টার — Good-App" },
-      {
-        property: "og:description",
-        content: "ভয়েস মেনু দিয়ে উইথড্র, মাইনিং ও ব্যালেন্সের তথ্য শুনুন।",
-      },
+      { property: "og:description", content: "ভয়েস মেনু দিয়ে উইথড্র, মাইনিং ও ব্যালেন্সের তথ্য শুনুন।" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -38,276 +26,197 @@ export const Route = createFileRoute("/_authenticated/callcenter")({
 
 const TELEGRAM_SUPPORT_URL = "https://t.me/GoodAppOwner";
 
-const MENU = [
-  { digit: "১", key: "withdraw", label: "উইথড্র", icon: Wallet },
-  { digit: "২", key: "mining", label: "মাইনিং ও ক্লেইম", icon: Pickaxe },
-  { digit: "৩", key: "reverify", label: "রি ভেরিফাই", icon: ShieldCheck },
-  { digit: "৪", key: "balance", label: "ব্যালেন্স", icon: Coins },
-  { digit: "৫", key: "refer", label: "রেফার বোনাস", icon: Gift },
-  { digit: "০", key: "agent", label: "কাস্টমার কেয়ার", icon: Headset },
-] as const;
+const AUDIO: Record<string, string> = {
+  greeting: greetingA.url, withdraw: withdrawA.url, mining: miningA.url, reverify: reverifyA.url,
+  balance: balanceA.url, refer: referA.url, agent: agentA.url, invalid: invalidA.url,
+};
 
-const DIAL_PAD = ["১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯", "*", "০", "#"];
+const MENU: Record<string, { key: string; label: string }> = {
+  "১": { key: "withdraw", label: "উইথড্র তথ্য" },
+  "২": { key: "mining", label: "মাইনিং ও ক্লেইম" },
+  "৩": { key: "reverify", label: "রি ভেরিফাই" },
+  "৪": { key: "balance", label: "ব্যালেন্স" },
+  "৫": { key: "refer", label: "রেফার বোনাস" },
+  "০": { key: "agent", label: "কাস্টমার কেয়ার" },
+};
 
-type CallState = "idle" | "ringing" | "playing" | "ended";
+const PAD = ["১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯", "*", "০", "#"];
+const BN = "০১২৩৪৫৬৭৮৯";
+const bn = (n: number) => String(n).padStart(2, "0").replace(/\d/g, (d) => BN[+d]);
+
+type CallState = "idle" | "ringing" | "connected";
 
 function CallCenterPage() {
+  const router = useRouter();
   const [state, setState] = useState<CallState>("idle");
-  const [dialed, setDialed] = useState("");
-  const [nowPlaying, setNowPlaying] = useState<string>("");
-  const [error, setError] = useState("");
+  const [label, setLabel] = useState("");
+  const [seconds, setSeconds] = useState(0);
+  const [showPad, setShowPad] = useState(true);
+  const [speaker, setSpeaker] = useState(true);
+  const [showAgent, setShowAgent] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const timersRef = useRef<number[]>([]);
+  const ctxRef = useRef<AudioContext | null>(null);
+  const timers = useRef<number[]>([]);
 
-  const clearTimers = () => {
-    timersRef.current.forEach((t) => window.clearTimeout(t));
-    timersRef.current = [];
-  };
-
-  const stopAudio = useCallback(() => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.src = "";
-      audioRef.current = null;
-    }
-    if (typeof window !== "undefined" && window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-    }
+  const play = useCallback((key: string, title: string) => {
+    const a = audioRef.current;
+    if (!a) return;
+    a.pause();
+    a.src = AUDIO[key];
+    a.currentTime = 0;
+    setLabel(title);
+    if (key === "agent") setShowAgent(true);
+    void a.play().catch(() => setLabel("ভয়েস চালু করতে স্ক্রিনে একবার চাপ দিন"));
   }, []);
 
+  // আসল ফোনের মতো "টুট… টুট…" রিং টোন
+  const ring = (ctx: AudioContext) => {
+    [0, 1.2].forEach((t) => {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.frequency.value = 425;
+      g.gain.setValueAtTime(0.0001, ctx.currentTime + t);
+      g.gain.exponentialRampToValueAtTime(0.25, ctx.currentTime + t + 0.05);
+      g.gain.setValueAtTime(0.25, ctx.currentTime + t + 0.8);
+      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + t + 0.9);
+      o.connect(g).connect(ctx.destination);
+      o.start(ctx.currentTime + t);
+      o.stop(ctx.currentTime + t + 1);
+    });
+  };
+
   const hangUp = useCallback(() => {
-    clearTimers();
-    stopAudio();
+    timers.current.forEach((t) => window.clearTimeout(t));
+    timers.current = [];
+    audioRef.current?.pause();
     setState("idle");
-    setDialed("");
-    setNowPlaying("");
-  }, [stopAudio]);
+    setLabel("");
+    setSeconds(0);
+    setShowAgent(false);
+  }, []);
 
   useEffect(() => () => hangUp(), [hangUp]);
 
-  // ফ্রি ভয়েস কোটা শেষ হলে ফোনের নিজের বাংলা ভয়েসে পড়ে শোনায়,
-  // যাতে কোনো সময়ই কল সেন্টার নীরব না থাকে।
-  const speakWithBrowser = useCallback((text: string) => {
-    const synth = window.speechSynthesis;
-    if (!synth) {
-      setError("এই ফোনে ভয়েস চালু হয় না");
-      setState("idle");
-      setNowPlaying("");
-      return;
-    }
-    const utter = new SpeechSynthesisUtterance(text);
-    utter.lang = "bn-BD";
-    utter.rate = 0.95;
-    const bnVoice = synth
-      .getVoices()
-      .find((v) => v.lang?.toLowerCase().startsWith("bn"));
-    if (bnVoice) utter.voice = bnVoice;
-    utter.onend = () => {
-      setState("idle");
-      setNowPlaying("");
-      setDialed("");
-    };
-    synth.speak(utter);
-  }, []);
+  useEffect(() => {
+    if (state !== "connected") return;
+    const id = window.setInterval(() => setSeconds((s) => s + 1), 1000);
+    return () => window.clearInterval(id);
+  }, [state]);
 
-  const playScript = useCallback(
-    (key: string, title: string) => {
-      stopAudio();
-      setNowPlaying(title);
-      setState("playing");
-      const script = CALL_CENTER_SCRIPTS.find((s) => s.key === key);
+  useEffect(() => {
+    if (audioRef.current) audioRef.current.volume = speaker ? 1 : 0.35;
+  }, [speaker]);
 
-      fetch(`/api/public/callcenter-tts?key=${key}`)
-        .then((res) => {
-          if (!res.ok) throw new Error("tts-unavailable");
-          return res.blob();
-        })
-        .then((blob) => {
-          const audio = new Audio(URL.createObjectURL(blob));
-          audioRef.current = audio;
-          audio.onended = () => {
-            setState("idle");
-            setNowPlaying("");
-            setDialed("");
-          };
-          audio.onerror = () => {
-            if (script) speakWithBrowser(script.text);
-          };
-          void audio.play().catch(() => {
-            if (script) speakWithBrowser(script.text);
-          });
-        })
-        .catch(() => {
-          if (script) speakWithBrowser(script.text);
-        });
-    },
-    [stopAudio, speakWithBrowser]
-  );
-
-  const startCall = useCallback(() => {
-    setError("");
-    setDialed("");
+  const startCall = () => {
+    // বোতাম চাপার মুহূর্তেই অডিও আনলক করি — মোবাইলে যাতে সাউন্ড আটকে না যায়
+    const a = audioRef.current ?? new Audio();
+    audioRef.current = a;
+    a.preload = "auto";
+    a.src = AUDIO.greeting;
+    a.muted = true;
+    void a.play().then(() => { a.pause(); a.currentTime = 0; a.muted = false; }).catch(() => { a.muted = false; });
+    a.onended = () => setLabel("অনুগ্রহ করে একটি নম্বর চাপুন");
+    try {
+      const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      ctxRef.current = ctxRef.current ?? new Ctx();
+      void ctxRef.current.resume();
+      ring(ctxRef.current);
+    } catch { /* রিং টোন না হলেও কল চলবে */ }
+    setShowAgent(false);
+    setSeconds(0);
     setState("ringing");
-    // ছোট রিং পজ — আসল কল সেন্টারের মতো লাগে
-    timersRef.current.push(
-      window.setTimeout(() => playScript("greeting", "স্বাগতম"), 1600)
-    );
-  }, [playScript]);
+    timers.current.push(window.setTimeout(() => {
+      setState("connected");
+      play("greeting", "স্বাগতম");
+    }, 2600));
+  };
 
-  const pressDigit = useCallback(
-    (digit: string) => {
-      if (state !== "idle" && state !== "ended") return;
-      setError("");
-      const item = MENU.find((m) => m.digit === digit);
-      if (item) {
-        setDialed(digit);
-        playScript(item.key, item.label);
-      } else if (digit === "*" || digit === "#" || "৬৭৮৯".includes(digit)) {
-        setDialed(digit);
-        playScript("invalid", "ভুল বোতাম");
-      }
-    },
-    [state, playScript]
-  );
+  const press = (d: string) => {
+    if (state !== "connected") return;
+    if (navigator.vibrate) navigator.vibrate(30);
+    const m = MENU[d];
+    if (m) play(m.key, m.label);
+    else play("invalid", "ভুল বোতাম");
+  };
 
-  const greeting = CALL_CENTER_SCRIPTS.find((s) => s.key === "greeting");
+  const close = () => { hangUp(); router.history.back(); };
 
   return (
-    <div className="min-h-screen bg-background pb-10">
-      <PageBackHeader title="কল সেন্টার" />
+    <div className="fixed inset-0 z-[200] flex flex-col bg-gradient-to-b from-primary/90 via-background to-background text-foreground overflow-y-auto">
+      <div className="flex items-center justify-between px-4 pt-[max(env(safe-area-inset-top),1rem)]">
+        <button onClick={close} aria-label="ফিরে যান" className="flex h-10 w-10 items-center justify-center rounded-full bg-background/30 backdrop-blur">
+          <ArrowLeft className="h-5 w-5" />
+        </button>
+        <span className="text-xs font-bold opacity-80">Good-App কাস্টমার কেয়ার</span>
+        <span className="w-10" />
+      </div>
 
-      <div className="mx-auto max-w-md px-4 pt-4 space-y-4">
-        {/* ফোন স্টাইল কার্ড */}
-        <div className="rounded-3xl border border-border bg-card p-5 shadow-lg">
-          <div className="flex flex-col items-center gap-3 py-2">
-            <div
-              className={`flex h-20 w-20 items-center justify-center rounded-full ${
-                state === "playing" || state === "ringing"
-                  ? "bg-primary/15 animate-pulse"
-                  : "bg-muted"
-              }`}
-            >
-              {state === "idle" ? (
-                <Phone className="h-9 w-9 text-primary" />
-              ) : state === "ringing" ? (
-                <Volume2 className="h-9 w-9 text-primary animate-bounce" />
-              ) : (
-                <Headset className="h-9 w-9 text-primary" />
-              )}
-            </div>
-
-            <div className="text-center">
-              <p className="text-lg font-black text-foreground">
-                Good-App কল সেন্টার
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                {state === "idle" && "কল করতে নিচের সবুজ বোতামে চাপ দিন"}
-                {state === "ringing" && "কল কানেক্ট হচ্ছে…"}
-                {state === "playing" && `শুনছেন: ${nowPlaying}`}
-              </p>
-            </div>
-
-            <div className="flex gap-3 mt-1">
-              {state === "idle" ? (
-                <button
-                  onClick={startCall}
-                  className="flex items-center gap-2 rounded-full bg-green-600 px-6 py-3 text-sm font-bold text-white shadow-md active:scale-95 transition"
-                >
-                  <Phone className="h-4 w-4" /> কল করুন
-                </button>
-              ) : (
-                <button
-                  onClick={hangUp}
-                  className="flex items-center gap-2 rounded-full bg-red-600 px-6 py-3 text-sm font-bold text-white shadow-md active:scale-95 transition"
-                >
-                  <PhoneOff className="h-4 w-4" /> কল কাটুন
-                </button>
-              )}
-            </div>
-
-            {error && (
-              <p className="text-xs font-semibold text-destructive">{error}</p>
-            )}
-          </div>
-
-          {/* ডায়াল প্যাড */}
-          <div className="mt-4">
-            <div className="mb-2 flex items-center justify-center gap-2">
-              <div className="h-8 min-w-[3rem] rounded-lg bg-muted px-3 flex items-center justify-center text-lg font-black tracking-widest text-foreground">
-                {dialed || " "}
-              </div>
-              {dialed && (
-                <button
-                  onClick={() => setDialed("")}
-                  className="text-muted-foreground"
-                  aria-label="মুছুন"
-                >
-                  <Delete className="h-4 w-4" />
-                </button>
-              )}
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              {DIAL_PAD.map((d) => (
-                <button
-                  key={d}
-                  onClick={() => pressDigit(d)}
-                  disabled={state === "ringing" || state === "playing"}
-                  className="h-12 rounded-2xl bg-muted text-xl font-black text-foreground active:bg-primary/20 disabled:opacity-40 transition"
-                >
-                  {d}
-                </button>
-              ))}
-            </div>
+      <div className="flex flex-col items-center pt-8 pb-4">
+        <div className="relative">
+          {state !== "idle" && <span className="absolute inset-0 rounded-full bg-primary/40 animate-ping" />}
+          <div className="relative flex h-28 w-28 items-center justify-center rounded-full bg-card shadow-2xl ring-4 ring-background/40">
+            <Headset className="h-14 w-14 text-primary" />
           </div>
         </div>
-
-        {/* মেনু তালিকা */}
-        <div className="rounded-3xl border border-border bg-card p-4">
-          <p className="text-sm font-black text-foreground mb-3">
-            মেনু — সরাসরি চাপ দিয়েও শুনতে পারবেন
-          </p>
-          <div className="space-y-2">
-            {MENU.map((m) => (
-              <button
-                key={m.key}
-                onClick={() => pressDigit(m.digit)}
-                disabled={state === "ringing" || state === "playing"}
-                className="flex w-full items-center gap-3 rounded-2xl border border-border bg-background px-3 py-3 text-left active:bg-muted disabled:opacity-40 transition"
-              >
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/15 text-sm font-black text-primary">
-                  {m.digit}
-                </span>
-                <m.icon className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-bold text-foreground">
-                  {m.label}
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* সরাসরি কথা */}
-        <a
-          href={TELEGRAM_SUPPORT_URL}
-          target="_blank"
-          rel="noreferrer"
-          className="flex items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-3 text-sm font-black text-primary-foreground shadow-md active:scale-95 transition"
-        >
-          <Headset className="h-4 w-4" />
-          কাস্টমার কেয়ারের সাথে কথা বলুন (সকাল ১০টা – রাত ১০টা)
-        </a>
-
-        {greeting && (
-          <p className="text-center text-[11px] text-muted-foreground">
-            সব তথ্য বাংলা ভয়েসে শুনতে কল করুন বাটনে চাপ দিন
-          </p>
+        <p className="mt-5 text-2xl font-black">কল সেন্টার</p>
+        <p className="mt-1 text-sm font-semibold opacity-80">
+          {state === "idle" && "কল করতে নিচের সবুজ বোতামে চাপ দিন"}
+          {state === "ringing" && "রিং হচ্ছে…"}
+          {state === "connected" && `${bn(Math.floor(seconds / 60))}:${bn(seconds % 60)}`}
+        </p>
+        {state === "connected" && label && (
+          <p className="mt-3 rounded-full bg-card/80 px-4 py-1.5 text-xs font-bold shadow">🔊 {label}</p>
         )}
+      </div>
 
-        <div className="text-center">
-          <Link to="/menu" className="text-xs text-primary underline">
-            মেনুতে ফিরে যান
-          </Link>
+      {state === "connected" && showPad && (
+        <div className="mx-auto grid w-full max-w-xs grid-cols-3 gap-3 px-4 animate-fade-in">
+          {PAD.map((d) => (
+            <button key={d} onClick={() => press(d)}
+              className="h-16 rounded-full bg-card/90 text-2xl font-black shadow active:scale-90 active:bg-primary/30 transition">
+              {d}
+            </button>
+          ))}
         </div>
+      )}
+
+      {state === "connected" && (
+        <div className="mx-auto mt-3 w-full max-w-xs px-4 text-[11px] leading-5 text-muted-foreground text-center">
+          ১ উইথড্র · ২ মাইনিং · ৩ রি ভেরিফাই · ৪ ব্যালেন্স · ৫ রেফার · ০ কাস্টমার কেয়ার
+        </div>
+      )}
+
+      {showAgent && (
+        <a href={TELEGRAM_SUPPORT_URL} target="_blank" rel="noreferrer"
+          className="mx-auto mt-4 rounded-full bg-primary px-6 py-3 text-sm font-black text-primary-foreground shadow-lg animate-fade-in">
+          টেলিগ্রামে কাস্টমার কেয়ারের সাথে কথা বলুন
+        </a>
+      )}
+
+      <div className="mt-auto flex items-center justify-center gap-8 pb-[max(env(safe-area-inset-bottom),2rem)] pt-6">
+        {state === "connected" && (
+          <button onClick={() => setSpeaker((s) => !s)} aria-label="স্পিকার"
+            className="flex h-14 w-14 items-center justify-center rounded-full bg-card shadow">
+            {speaker ? <Volume2 className="h-6 w-6" /> : <VolumeX className="h-6 w-6" />}
+          </button>
+        )}
+        {state === "idle" ? (
+          <button onClick={startCall} aria-label="কল করুন"
+            className="flex h-20 w-20 items-center justify-center rounded-full bg-green-600 text-white shadow-2xl animate-pulse active:scale-90 transition">
+            <Phone className="h-9 w-9" />
+          </button>
+        ) : (
+          <button onClick={hangUp} aria-label="কল কাটুন"
+            className="flex h-20 w-20 items-center justify-center rounded-full bg-destructive text-destructive-foreground shadow-2xl active:scale-90 transition">
+            <PhoneOff className="h-9 w-9" />
+          </button>
+        )}
+        {state === "connected" && (
+          <button onClick={() => setShowPad((s) => !s)} aria-label="কীপ্যাড"
+            className="flex h-14 w-14 items-center justify-center rounded-full bg-card shadow">
+            <Grid3x3 className="h-6 w-6" />
+          </button>
+        )}
       </div>
     </div>
   );
