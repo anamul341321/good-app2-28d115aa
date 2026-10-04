@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Gift, Sparkles, Lock, Crown, MessageCircle, ShieldCheck, Users, ExternalLink } from "lucide-react";
+import { Gift, Sparkles, Lock, Crown, MessageCircle, ShieldCheck, Users, ExternalLink, Phone } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { getDashboard } from "@/lib/dashboard.functions";
 import { DashSection } from "@/components/DashSection";
