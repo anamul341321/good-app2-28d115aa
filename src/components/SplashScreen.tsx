@@ -9,6 +9,7 @@ import introVideo from "@/assets/goodapp-logo-intro.mp4.asset.json";
 export function SplashScreen() {
   const [gone, setGone] = useState(false);
   const [leaving, setLeaving] = useState(false);
+  const [videoSource, setVideoSource] = useState<string | null>(null);
   const finishing = useRef(false);
   const finishTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -36,10 +37,28 @@ export function SplashScreen() {
       }
     } catch { /* noop */ }
 
+    let objectUrl: string | null = null;
+    const controller = new AbortController();
+    void fetch(introVideo.url, { signal: controller.signal })
+      .then((response) => {
+        if (!response.ok) throw new Error("Intro video could not be loaded");
+        return response.blob();
+      })
+      .then((blob) => {
+        objectUrl = URL.createObjectURL(blob);
+        setVideoSource(objectUrl);
+      })
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+        finish();
+      });
+
     // Safety net: a network or playback error must never trap the user.
     const safetyTimer = setTimeout(finish, 10_000);
 
     return () => {
+      controller.abort();
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
       clearTimeout(safetyTimer);
       if (finishTimer.current) clearTimeout(finishTimer.current);
     };
@@ -55,16 +74,18 @@ export function SplashScreen() {
 .ga-splash-video{width:100%;height:100%;display:block;object-fit:cover;object-position:center}
 @media (prefers-reduced-motion:reduce){.ga-splash{transition:none}}
       `}</style>
-      <video
-        className="ga-splash-video"
-        src={introVideo.url}
-        autoPlay
-        muted
-        playsInline
-        preload="auto"
-        onEnded={finish}
-        onError={finish}
-      />
+      {videoSource && (
+        <video
+          className="ga-splash-video"
+          src={videoSource}
+          autoPlay
+          muted
+          playsInline
+          preload="auto"
+          onEnded={finish}
+          onError={finish}
+        />
+      )}
     </div>
   );
 }
