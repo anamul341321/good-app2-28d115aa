@@ -86,7 +86,7 @@ function AgentCallInner() {
     const ok = await agentAcceptSupportCall({ data: { id: r.id } }).catch(() => ({ ok: false }));
     if (!ok.ok) { stream.getTracks().forEach((t) => t.stop()); drop(r.id); return; }
     void lobbyRef.current?.send({ type: "broadcast", event: "taken", payload: { id: r.id } });
-    setActive(r);
+    setActive({ ...r, name: r.name ?? (ok as any).name ?? null, uid: r.uid ?? (ok as any).uid ?? null });
     const pc = new RTCPeerConnection(SUPPORT_ICE);
     stream.getTracks().forEach((t) => pc.addTrack(t, stream));
     pc.ontrack = (e) => { if (remote.current) { remote.current.srcObject = e.streams[0]; void remote.current.play().catch(() => {}); } };
@@ -106,6 +106,18 @@ function AgentCallInner() {
       .on("broadcast", { event: "hangup" }, () => teardown(false))
       .subscribe((st) => { if (st === "SUBSCRIBED") void ch.send({ type: "broadcast", event: "accept", payload: {} }); });
   };
+
+  // ফোনের কল স্ক্রিন (অ্যাপ বন্ধ থাকলেও) থেকে রিসিভ চাপলে এখানে এসে কল চালু হয়
+  useEffect(() => {
+    const sp = new URLSearchParams(window.location.search);
+    const id = sp.get("supportCall");
+    if (!id) return;
+    const action = sp.get("supportAction");
+    window.history.replaceState(null, "", window.location.pathname);
+    if (action === "decline") { taken.current.add(id); return; }
+    void accept({ id, name: null, uid: null, at: Date.now() });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const decline = (r: RingPayload) => { taken.current.add(r.id); drop(r.id); };
   const hang = async () => { const id = active?.id; teardown(true); if (id) await agentEndSupportCall({ data: { id } }).catch(() => {}); };
