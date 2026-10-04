@@ -97,14 +97,18 @@ function AdminCalls() {
 
   const accept = async (r: RingPayload) => {
     if (active) return;
+    const mediaPromise = navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+    const icePromise = getSupportIce();
     const ok = await adminAcceptSupportCall({ data: { id: r.id } });
     if (ok.ok) void lobbyRef.current?.send({ type: "broadcast", event: "taken", payload: { id: r.id } });
     if (!ok.ok) { setRinging((m) => { const n = { ...m }; delete n[r.id]; return n; }); return; }
     let stream: MediaStream;
-    const mediaPromise = navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
-    const icePromise = getSupportIce();
     try { stream = await mediaPromise; }
-    catch { alert("মাইক্রোফোনের অনুমতি দিন"); return; }
+    catch {
+      await adminEndSupportCall({ data: { id: r.id } }).catch(() => {});
+      alert("মাইক্রোফোনের অনুমতি দিন");
+      return;
+    }
     setActive(r);
     const pc = new RTCPeerConnection(await icePromise);
     stream.getTracks().forEach((t) => pc.addTrack(t, stream));

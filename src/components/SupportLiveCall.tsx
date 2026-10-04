@@ -34,6 +34,7 @@ export function SupportLiveCall({ onActive, autoStart }: { onActive?: (active: b
     if (c.lobby) supabase.removeChannel(c.lobby);
     c.pc?.close();
     c.stream?.getTracks().forEach((t) => t.stop());
+    if (remote.current) { remote.current.pause(); remote.current.srcObject = null; }
     if (c.id) void endSupportCall({ data: { id: c.id, missed } }).catch(() => {});
     r.current = { timers: [] };
     onActive?.(false);
