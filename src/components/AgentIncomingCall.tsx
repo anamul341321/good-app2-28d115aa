@@ -8,6 +8,9 @@ import { SUPPORT_ICE, SUPPORT_LOBBY, supportChannel, type RingPayload } from "@/
 /** অ্যাপে লগইন থাকা কল এজেন্টদের কাছে কাস্টমার কেয়ারের কল আসে — যেকোনো একজন ধরলেই বাকিদের থেকে কেটে যায়। */
 export function AgentIncomingCall() {
   const { data } = useQuery({ queryKey: ["am-call-agent"], queryFn: () => amICallAgent(), staleTime: 5 * 60_000 });
+  useEffect(() => {
+    if (data) try { data.agent ? localStorage.setItem("ga_call_agent", "1") : localStorage.removeItem("ga_call_agent"); } catch { /* ignore */ }
+  }, [data]);
   if (!data?.agent) return null;
   return <AgentCallInner />;
 }

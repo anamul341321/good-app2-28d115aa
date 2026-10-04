@@ -33,6 +33,9 @@ export function SplashScreen() {
         Boolean((window as any).GoodAppBubble) ||
         sp.has("bubble") ||
         sp.has("call") ||
+        sp.has("supportCall") ||
+        localStorage.getItem("ga_call_agent") === "1" ||
+        window.location.pathname.startsWith("/chat/support") ||
         sp.has("accept") ||
         sp.has("decline");
       if (instant) {
