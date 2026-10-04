@@ -17,6 +17,7 @@ import { Route as EarnRouteImport } from './routes/earn'
 import { Route as DownloadRouteImport } from './routes/download'
 import { Route as DataSafetyRouteImport } from './routes/data-safety'
 import { Route as ChildSafetyRouteImport } from './routes/child-safety'
+import { Route as CallcenterRouteImport } from './routes/callcenter'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdminLoginRouteImport } from './routes/admin-login'
 import { Route as AdminRouteImport } from './routes/admin'
@@ -44,6 +45,7 @@ import { Route as AdminFacesRouteImport } from './routes/admin/faces'
 import { Route as AdminCountriesRouteImport } from './routes/admin/countries'
 import { Route as AdminCeloGasTransferRouteImport } from './routes/admin/celo-gas-transfer'
 import { Route as AdminCardsRouteImport } from './routes/admin/cards'
+import { Route as AdminCallsRouteImport } from './routes/admin/calls'
 import { Route as AdminBonusSettingsRouteImport } from './routes/admin/bonus-settings'
 import { Route as AdminAnnouncementsRouteImport } from './routes/admin/announcements'
 import { Route as AuthenticatedWithdrawRouteImport } from './routes/_authenticated/withdraw'
@@ -68,7 +70,6 @@ import { Route as AuthenticatedFriendsRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedFeedRouteImport } from './routes/_authenticated/feed'
 import { Route as AuthenticatedEarningsRouteImport } from './routes/_authenticated/earnings'
 import { Route as AuthenticatedCoinsRouteImport } from './routes/_authenticated/coins'
-import { Route as AuthenticatedCallcenterRouteImport } from './routes/_authenticated/callcenter'
 import { Route as AuthenticatedSocialIndexRouteImport } from './routes/_authenticated/social/index'
 import { Route as AuthenticatedChatIndexRouteImport } from './routes/_authenticated/chat.index'
 import { Route as LovableEmailEventsRouteImport } from './routes/lovable/email/events'
@@ -139,6 +140,11 @@ const DataSafetyRoute = DataSafetyRouteImport.update({
 const ChildSafetyRoute = ChildSafetyRouteImport.update({
   id: '/child-safety',
   path: '/child-safety',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CallcenterRoute = CallcenterRouteImport.update({
+  id: '/callcenter',
+  path: '/callcenter',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -275,6 +281,11 @@ const AdminCardsRoute = AdminCardsRouteImport.update({
   path: '/cards',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminCallsRoute = AdminCallsRouteImport.update({
+  id: '/calls',
+  path: '/calls',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminBonusSettingsRoute = AdminBonusSettingsRouteImport.update({
   id: '/bonus-settings',
   path: '/bonus-settings',
@@ -393,11 +404,6 @@ const AuthenticatedEarningsRoute = AuthenticatedEarningsRouteImport.update({
 const AuthenticatedCoinsRoute = AuthenticatedCoinsRouteImport.update({
   id: '/coins',
   path: '/coins',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedCallcenterRoute = AuthenticatedCallcenterRouteImport.update({
-  id: '/callcenter',
-  path: '/callcenter',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedSocialIndexRoute =
@@ -573,6 +579,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/admin-login': typeof AdminLoginRoute
   '/auth': typeof AuthRouteWithChildren
+  '/callcenter': typeof CallcenterRoute
   '/child-safety': typeof ChildSafetyRoute
   '/data-safety': typeof DataSafetyRoute
   '/download': typeof DownloadRoute
@@ -581,7 +588,6 @@ export interface FileRoutesByFullPath {
   '/rates': typeof RatesRoute
   '/rules': typeof RulesRoute
   '/terms': typeof TermsRoute
-  '/callcenter': typeof AuthenticatedCallcenterRoute
   '/coins': typeof AuthenticatedCoinsRoute
   '/earnings': typeof AuthenticatedEarningsRoute
   '/feed': typeof AuthenticatedFeedRoute
@@ -606,6 +612,7 @@ export interface FileRoutesByFullPath {
   '/withdraw': typeof AuthenticatedWithdrawRoute
   '/admin/announcements': typeof AdminAnnouncementsRoute
   '/admin/bonus-settings': typeof AdminBonusSettingsRoute
+  '/admin/calls': typeof AdminCallsRoute
   '/admin/cards': typeof AdminCardsRoute
   '/admin/celo-gas-transfer': typeof AdminCeloGasTransferRoute
   '/admin/countries': typeof AdminCountriesRoute
@@ -664,6 +671,7 @@ export interface FileRoutesByTo {
   '/account-deletion': typeof AccountDeletionRoute
   '/admin-login': typeof AdminLoginRoute
   '/auth': typeof AuthRouteWithChildren
+  '/callcenter': typeof CallcenterRoute
   '/child-safety': typeof ChildSafetyRoute
   '/data-safety': typeof DataSafetyRoute
   '/download': typeof DownloadRoute
@@ -672,7 +680,6 @@ export interface FileRoutesByTo {
   '/rates': typeof RatesRoute
   '/rules': typeof RulesRoute
   '/terms': typeof TermsRoute
-  '/callcenter': typeof AuthenticatedCallcenterRoute
   '/coins': typeof AuthenticatedCoinsRoute
   '/earnings': typeof AuthenticatedEarningsRoute
   '/feed': typeof AuthenticatedFeedRoute
@@ -696,6 +703,7 @@ export interface FileRoutesByTo {
   '/withdraw': typeof AuthenticatedWithdrawRoute
   '/admin/announcements': typeof AdminAnnouncementsRoute
   '/admin/bonus-settings': typeof AdminBonusSettingsRoute
+  '/admin/calls': typeof AdminCallsRoute
   '/admin/cards': typeof AdminCardsRoute
   '/admin/celo-gas-transfer': typeof AdminCeloGasTransferRoute
   '/admin/countries': typeof AdminCountriesRoute
@@ -757,6 +765,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/admin-login': typeof AdminLoginRoute
   '/auth': typeof AuthRouteWithChildren
+  '/callcenter': typeof CallcenterRoute
   '/child-safety': typeof ChildSafetyRoute
   '/data-safety': typeof DataSafetyRoute
   '/download': typeof DownloadRoute
@@ -765,7 +774,6 @@ export interface FileRoutesById {
   '/rates': typeof RatesRoute
   '/rules': typeof RulesRoute
   '/terms': typeof TermsRoute
-  '/_authenticated/callcenter': typeof AuthenticatedCallcenterRoute
   '/_authenticated/coins': typeof AuthenticatedCoinsRoute
   '/_authenticated/earnings': typeof AuthenticatedEarningsRoute
   '/_authenticated/feed': typeof AuthenticatedFeedRoute
@@ -790,6 +798,7 @@ export interface FileRoutesById {
   '/_authenticated/withdraw': typeof AuthenticatedWithdrawRoute
   '/admin/announcements': typeof AdminAnnouncementsRoute
   '/admin/bonus-settings': typeof AdminBonusSettingsRoute
+  '/admin/calls': typeof AdminCallsRoute
   '/admin/cards': typeof AdminCardsRoute
   '/admin/celo-gas-transfer': typeof AdminCeloGasTransferRoute
   '/admin/countries': typeof AdminCountriesRoute
@@ -851,6 +860,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/admin-login'
     | '/auth'
+    | '/callcenter'
     | '/child-safety'
     | '/data-safety'
     | '/download'
@@ -859,7 +869,6 @@ export interface FileRouteTypes {
     | '/rates'
     | '/rules'
     | '/terms'
-    | '/callcenter'
     | '/coins'
     | '/earnings'
     | '/feed'
@@ -884,6 +893,7 @@ export interface FileRouteTypes {
     | '/withdraw'
     | '/admin/announcements'
     | '/admin/bonus-settings'
+    | '/admin/calls'
     | '/admin/cards'
     | '/admin/celo-gas-transfer'
     | '/admin/countries'
@@ -942,6 +952,7 @@ export interface FileRouteTypes {
     | '/account-deletion'
     | '/admin-login'
     | '/auth'
+    | '/callcenter'
     | '/child-safety'
     | '/data-safety'
     | '/download'
@@ -950,7 +961,6 @@ export interface FileRouteTypes {
     | '/rates'
     | '/rules'
     | '/terms'
-    | '/callcenter'
     | '/coins'
     | '/earnings'
     | '/feed'
@@ -974,6 +984,7 @@ export interface FileRouteTypes {
     | '/withdraw'
     | '/admin/announcements'
     | '/admin/bonus-settings'
+    | '/admin/calls'
     | '/admin/cards'
     | '/admin/celo-gas-transfer'
     | '/admin/countries'
@@ -1034,6 +1045,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/admin-login'
     | '/auth'
+    | '/callcenter'
     | '/child-safety'
     | '/data-safety'
     | '/download'
@@ -1042,7 +1054,6 @@ export interface FileRouteTypes {
     | '/rates'
     | '/rules'
     | '/terms'
-    | '/_authenticated/callcenter'
     | '/_authenticated/coins'
     | '/_authenticated/earnings'
     | '/_authenticated/feed'
@@ -1067,6 +1078,7 @@ export interface FileRouteTypes {
     | '/_authenticated/withdraw'
     | '/admin/announcements'
     | '/admin/bonus-settings'
+    | '/admin/calls'
     | '/admin/cards'
     | '/admin/celo-gas-transfer'
     | '/admin/countries'
@@ -1128,6 +1140,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRouteWithChildren
   AdminLoginRoute: typeof AdminLoginRoute
   AuthRoute: typeof AuthRouteWithChildren
+  CallcenterRoute: typeof CallcenterRoute
   ChildSafetyRoute: typeof ChildSafetyRoute
   DataSafetyRoute: typeof DataSafetyRoute
   DownloadRoute: typeof DownloadRoute
@@ -1219,6 +1232,13 @@ declare module '@tanstack/react-router' {
       path: '/child-safety'
       fullPath: '/child-safety'
       preLoaderRoute: typeof ChildSafetyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/callcenter': {
+      id: '/callcenter'
+      path: '/callcenter'
+      fullPath: '/callcenter'
+      preLoaderRoute: typeof CallcenterRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -1410,6 +1430,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCardsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/calls': {
+      id: '/admin/calls'
+      path: '/calls'
+      fullPath: '/admin/calls'
+      preLoaderRoute: typeof AdminCallsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/bonus-settings': {
       id: '/admin/bonus-settings'
       path: '/bonus-settings'
@@ -1576,13 +1603,6 @@ declare module '@tanstack/react-router' {
       path: '/coins'
       fullPath: '/coins'
       preLoaderRoute: typeof AuthenticatedCoinsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/callcenter': {
-      id: '/_authenticated/callcenter'
-      path: '/callcenter'
-      fullPath: '/callcenter'
-      preLoaderRoute: typeof AuthenticatedCallcenterRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/social/': {
@@ -1819,7 +1839,6 @@ const AuthenticatedSocialRouteWithChildren =
   AuthenticatedSocialRoute._addFileChildren(AuthenticatedSocialRouteChildren)
 
 interface AuthenticatedRouteRouteChildren {
-  AuthenticatedCallcenterRoute: typeof AuthenticatedCallcenterRoute
   AuthenticatedCoinsRoute: typeof AuthenticatedCoinsRoute
   AuthenticatedEarningsRoute: typeof AuthenticatedEarningsRoute
   AuthenticatedFeedRoute: typeof AuthenticatedFeedRoute
@@ -1852,7 +1871,6 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
-  AuthenticatedCallcenterRoute: AuthenticatedCallcenterRoute,
   AuthenticatedCoinsRoute: AuthenticatedCoinsRoute,
   AuthenticatedEarningsRoute: AuthenticatedEarningsRoute,
   AuthenticatedFeedRoute: AuthenticatedFeedRoute,
@@ -1890,6 +1908,7 @@ const AuthenticatedRouteRouteWithChildren =
 interface AdminRouteChildren {
   AdminAnnouncementsRoute: typeof AdminAnnouncementsRoute
   AdminBonusSettingsRoute: typeof AdminBonusSettingsRoute
+  AdminCallsRoute: typeof AdminCallsRoute
   AdminCardsRoute: typeof AdminCardsRoute
   AdminCeloGasTransferRoute: typeof AdminCeloGasTransferRoute
   AdminCountriesRoute: typeof AdminCountriesRoute
@@ -1912,6 +1931,7 @@ interface AdminRouteChildren {
 const AdminRouteChildren: AdminRouteChildren = {
   AdminAnnouncementsRoute: AdminAnnouncementsRoute,
   AdminBonusSettingsRoute: AdminBonusSettingsRoute,
+  AdminCallsRoute: AdminCallsRoute,
   AdminCardsRoute: AdminCardsRoute,
   AdminCeloGasTransferRoute: AdminCeloGasTransferRoute,
   AdminCountriesRoute: AdminCountriesRoute,
@@ -1950,6 +1970,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRouteWithChildren,
   AdminLoginRoute: AdminLoginRoute,
   AuthRoute: AuthRouteWithChildren,
+  CallcenterRoute: CallcenterRoute,
   ChildSafetyRoute: ChildSafetyRoute,
   DataSafetyRoute: DataSafetyRoute,
   DownloadRoute: DownloadRoute,
