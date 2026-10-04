@@ -101,7 +101,11 @@ function AdminCalls() {
     const icePromise = getSupportIce();
     const ok = await adminAcceptSupportCall({ data: { id: r.id } });
     if (ok.ok) void lobbyRef.current?.send({ type: "broadcast", event: "taken", payload: { id: r.id } });
-    if (!ok.ok) { setRinging((m) => { const n = { ...m }; delete n[r.id]; return n; }); return; }
+    if (!ok.ok) {
+      void mediaPromise.then((media) => media.getTracks().forEach((track) => track.stop())).catch(() => {});
+      setRinging((m) => { const n = { ...m }; delete n[r.id]; return n; });
+      return;
+    }
     let stream: MediaStream;
     try { stream = await mediaPromise; }
     catch {
