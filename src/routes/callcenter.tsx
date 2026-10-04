@@ -15,7 +15,6 @@ import nopressA from "@/assets/callcenter/nopress.mp3.asset.json";
 import byeA from "@/assets/callcenter/bye.mp3.asset.json";
 import invalidA from "@/assets/callcenter/invalid.mp3.asset.json";
 import { SupportLiveCall } from "@/components/SupportLiveCall";
-import { CallCenterAi } from "@/components/CallCenterAi";
 
 export const Route = createFileRoute("/callcenter")({
   head: () => ({
@@ -55,7 +54,6 @@ const MENU: Record<string, { key: string; label: string }> = {
   "৩": { key: "reverify", label: "রি ভেরিফাই" },
   "৪": { key: "balance", label: "ব্যালেন্স" },
   "৫": { key: "refer", label: "রেফার বোনাস" },
-  "৯": { key: "ai", label: "এ আই সহকারী" },
   "০": { key: "agent", label: "কাস্টমার কেয়ার" },
 };
 
@@ -182,7 +180,6 @@ function CallCenterPage() {
     if (!m) { say("invalid", "ভুল বোতাম", () => menu("menu")); return; }
     if (m.key === "agent") { setShowAgent(true); say("agent", m.label); return; }
     // এ আই নিজেই সালাম দেবে — তাই আলাদা রেকর্ড করা ভয়েস বাজাব না (দুই ভয়েস একসাথে হতো)
-    if (m.key === "ai") { clearWait(); audioRef.current?.pause(); setLabel(m.label); setShowAi(true); return; }
     // তথ্য বলা শেষে: "স্যার, আপনাকে আর কীভাবে সাহায্য করতে পারি?" → মেনু
     say(m.key, m.label, () => say("more", "আর কোনো সাহায্য", () => menu("menu")));
   };
@@ -236,7 +233,7 @@ function CallCenterPage() {
 
       {showAi && (
         <div className="mx-auto mt-4 w-full max-w-xs px-4 animate-fade-in">
-          <CallCenterAi onSpeak={() => { clearWait(); audioRef.current?.pause(); }} />
+          {null}
         </div>
       )}
 
