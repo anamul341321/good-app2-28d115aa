@@ -13,7 +13,9 @@ import agentA from "@/assets/callcenter/agent.mp3.asset.json";
 import nopressA from "@/assets/callcenter/nopress.mp3.asset.json";
 import byeA from "@/assets/callcenter/bye.mp3.asset.json";
 import invalidA from "@/assets/callcenter/invalid.mp3.asset.json";
-import { SupportLiveCall } from "@/components/SupportLiveCall";
+import agentchargeA from "@/assets/callcenter/agentcharge.mp3.asset.json";
+import { SupportLiveCall, type SupportPhase } from "@/components/SupportLiveCall";
+import { checkSupportCallBalance } from "@/lib/support-call.functions";
 
 export const Route = createFileRoute("/callcenter")({
   head: () => ({
@@ -44,6 +46,20 @@ const AUDIO: Record<string, string> = {
   nopress: nopressA.url,
   bye: byeA.url,
   invalid: invalidA.url,
+  agentcharge: agentchargeA.url,
+  // নিচেরগুলো সার্ভার থেকে একই কণ্ঠে তৈরি হয়ে আসে
+  transfer: "/api/public/callcenter-tts?key=transfer",
+  longwait: "/api/public/callcenter-tts?key=longwait",
+  nobalance: "/api/public/callcenter-tts?key=nobalance",
+  hold: "/api/public/callcenter-tts?key=hold",
+  channels: "/api/public/callcenter-tts?key=channels",
+};
+const SPOKEN_FALLBACK: Record<string, string> = {
+  transfer: "আপনার কলটি একজন কাস্টমার কেয়ার প্রতিনিধির কাছে ট্রান্সফার করা হচ্ছে। দয়া করে অপেক্ষা করুন।",
+  longwait: "দুঃখিত, আমাদের সব কয়টি চ্যানেল এই মুহূর্তে ব্যস্ত আছে। লাইন ফ্রি হওয়ার সাথে সাথেই একজন প্রতিনিধি আপনার কলটি রিসিভ করবেন। আপনার কলটি আমাদের কাছে খুবই গুরুত্বপূর্ণ। কল রিসিভ না করা পর্যন্ত কোনো চার্জ কাটা হবে না।",
+  nobalance: "দুঃখিত, আপনার অ্যাকাউন্টে পর্যাপ্ত ব্যালেন্স নেই। তাই প্রতিনিধির সাথে কথা বলা সম্ভব হচ্ছে না।",
+  hold: "আপনার কলটি কিছুক্ষণের জন্য হোল্ডে রাখা হয়েছে। দয়া করে লাইনে থাকুন।",
+  channels: "আমাদের ইউটিউব চ্যানেল সাবস্ক্রাইব করুন এবং টেলিগ্রাম চ্যানেলে জয়েন করুন। দুই হাজার সাবস্ক্রাইবার পূর্ণ হলেই রেফার বোনাস ও রি-ভেরিফাই বোনাস চালু হবে।",
 };
 
 const MENU: Record<string, { key: string; label: string }> = {
@@ -53,7 +69,7 @@ const MENU: Record<string, { key: string; label: string }> = {
   "৪": { key: "balance", label: "ব্যালেন্স" },
   "৫": { key: "refer", label: "রেফার বোনাস" },
   "৯": { key: "menu", label: "মূল মেনু" },
-  "০": { key: "agent", label: "কাস্টমার কেয়ার" },
+  "০": { key: "agentcharge", label: "কাস্টমার কেয়ার" },
 };
 
 const PAD = ["১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯", "*", "০", "#"];
@@ -85,7 +101,9 @@ function CallCenterPage() {
     { key: "balance", title: "নিরাপদ ব্যালেন্স সুবিধা" },
     { key: "withdraw", title: "সহজ উইথড্র সুবিধা" },
     { key: "refer", title: "রেফার সুবিধা" },
+    { key: "channels", title: "ইউটিউব ও টেলিগ্রাম চ্যানেল" },
   ] as const;
+  const awaitingConfirm = useRef(false);
 
   const clearWait = () => { if (waitTimer.current) { window.clearTimeout(waitTimer.current); waitTimer.current = null; } };
 
@@ -94,6 +112,8 @@ function CallCenterPage() {
     const audio = audioRef.current;
     if (!audio) return;
     audio.onended = null;
+    audio.onerror = null;
+    try { window.speechSynthesis?.cancel(); } catch { /* ignore */ }
     audio.pause();
     audio.currentTime = 0;
   }, []);
@@ -107,6 +127,12 @@ function CallCenterPage() {
     a.src = AUDIO[key];
     a.currentTime = 0;
     a.onended = () => next?.();
+    a.onerror = () => {
+      const t = SPOKEN_FALLBACK[key];
+      if (!t || !("speechSynthesis" in window)) { next?.(); return; }
+      const u = new SpeechSynthesisUtterance(t); u.lang = "bn-BD"; u.onend = () => next?.();
+      window.speechSynthesis.cancel(); window.speechSynthesis.speak(u);
+    };
     setLabel(title);
     void a.play().catch(() => setLabel("ভয়েস চালু করতে স্ক্রিনে একবার চাপ দিন"));
   }, []);
@@ -121,7 +147,28 @@ function CallCenterPage() {
     });
   }, [say]);
 
-  const handleAgentPhase = useCallback((phase: "idle" | "calling" | "talking" | "busy" | "ended" | "nomic") => {
+  const handleAgentPhase = useCallback((phase: SupportPhase) => {
+    if (phase === "hold") {
+      holdingForAgent.current = true;
+      say("hold", "কল হোল্ডে আছে", playNextHoldFeature);
+      return;
+    }
+    if (phase === "unhold") {
+      holdingForAgent.current = false;
+      stopVoice();
+      setLabel("প্রতিনিধির সাথে কথা হচ্ছে");
+      return;
+    }
+    if (phase === "longwait") {
+      if (!holdingForAgent.current) return;
+      say("longwait", "সব প্রতিনিধি ব্যস্ত", playNextHoldFeature);
+      return;
+    }
+    if (phase === "nobalance") {
+      holdingForAgent.current = false;
+      say("nobalance", "পর্যাপ্ত ব্যালেন্স নেই");
+      return;
+    }
     if (phase === "talking") {
       holdingForAgent.current = false;
       stopVoice();
@@ -132,7 +179,7 @@ function CallCenterPage() {
       holdingForAgent.current = false;
       stopVoice();
     }
-  }, [stopVoice]);
+  }, [stopVoice, say, playNextHoldFeature]);
 
   // মেনু বলা শেষে ৮ সেকেন্ড অপেক্ষা; কিছু না চাপলে প্রথমবার মেনুতে ফেরে, দ্বিতীয়বার কল কাটে
   const menu = useCallback((key: "greeting" | "menu" = "menu") => {
@@ -166,6 +213,7 @@ function CallCenterPage() {
   const hangUp = useCallback(() => {
     clearWait();
     holdingForAgent.current = false;
+    awaitingConfirm.current = false;
     silence.current = 0;
     setShowAi(false);
     timers.current.forEach((t) => window.clearTimeout(t));
@@ -219,15 +267,27 @@ function CallCenterPage() {
     silence.current = 0;
     holdingForAgent.current = false;
     stopVoice();
+    // চার্জ শোনার পর ১ চাপলে প্রতিনিধির কাছে ট্রান্সফার
+    if (awaitingConfirm.current && d === "১") {
+      awaitingConfirm.current = false;
+      setLabel("ব্যালেন্স যাচাই হচ্ছে…");
+      void checkSupportCallBalance().then((r) => r.ok).catch(() => false).then((ok) => {
+        if (!ok) { say("nobalance", "পর্যাপ্ত ব্যালেন্স নেই (লগইন থাকতে হবে)", () => menu("menu")); return; }
+        holdingForAgent.current = true;
+        holdFeatureIndex.current = 0;
+        setShowAgent(true);
+        say("transfer", "প্রতিনিধির কাছে ট্রান্সফার হচ্ছে", playNextHoldFeature);
+      });
+      return;
+    }
+    awaitingConfirm.current = false;
     const m = MENU[d];
     setShowAgent(false); setShowAi(false);
     if (!m) { say("invalid", "ভুল বোতাম", () => menu("menu")); return; }
     if (m.key === "menu") { menu("menu"); return; }
-    if (m.key === "agent") {
-      holdingForAgent.current = true;
-      holdFeatureIndex.current = 0;
-      setShowAgent(true);
-      say("agent", m.label, playNextHoldFeature);
+    if (m.key === "agentcharge") {
+      awaitingConfirm.current = true;
+      say("agentcharge", "প্রতি মিনিট ০.৪৳ — নিশ্চিত করতে ১ চাপুন", () => setLabel("নিশ্চিত করতে ১ চাপুন, মেনুতে ফিরতে ৯"));
       return;
     }
     // তথ্য বলা শেষে: "স্যার, আপনাকে আর কীভাবে সাহায্য করতে পারি?" → মেনু
@@ -277,7 +337,7 @@ function CallCenterPage() {
 
       {state === "connected" && (
         <div className="mx-auto mt-3 w-full max-w-xs px-4 text-[11px] leading-5 text-muted-foreground text-center">
-          ১ উইথড্র · ২ মাইনিং · ৩ রি-ভেরিফাই · ৪ ব্যালেন্স · ৫ রেফার · ৯ মূল মেনু · ০ প্রতিনিধি
+          ১ উইথড্র · ২ মাইনিং · ৩ রি-ভেরিফাই · ৪ ব্যালেন্স · ৫ রেফার · ৯ মূল মেনু · ০ প্রতিনিধি (প্রতি মিনিট ০.৪৳)
         </div>
       )}
 

@@ -47,6 +47,10 @@ export const startSupportCall = createServerFn({ method: "POST" })
         name = name || (p as any)?.display_name || null;
       }
     }
+    // প্রতি মিনিটের চার্জ কাটতে লগইন ও কমপক্ষে ০.৪৳ ব্যালেন্স লাগবে
+    if (!userId) throw new Error("login_required");
+    const { data: bal } = await sb.rpc("support_call_balance" as any, { _user: userId });
+    if (Number(bal ?? 0) < 0.4) throw new Error("no_balance");
     const { data: row, error } = await sb
       .from("support_calls")
       .insert({ caller_user_id: userId, caller_uid: uid, caller_name: name, caller_phone: data.phone?.trim() || null })
