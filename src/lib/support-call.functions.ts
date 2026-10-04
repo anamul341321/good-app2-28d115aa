@@ -3,6 +3,24 @@ import { getRequestHeader } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
+/** সব এজেন্টের ফোনে Messenger-এর মতো আসল কল স্ক্রিন বাজাও (অ্যাপ বন্ধ থাকলেও)। */
+async function ringAgents(callId: string, who: string) {
+  const { sendIncomingCallPush } = await import("@/lib/push.server");
+  const sb = await admin();
+  const { data } = await sb.from("admin_push_targets").select("user_id");
+  await Promise.allSettled((data ?? []).map((r: any) =>
+    sendIncomingCallPush(r.user_id, { callId, callerId: "support", callerName: `কাস্টমার কেয়ার কল — ${who}`, video: false }),
+  ));
+}
+
+/** বাকি এজেন্টদের ফোনের রিং বন্ধ করো। */
+async function stopAgentRing(callId: string, exceptUserId?: string) {
+  const { sendCancelCallPush } = await import("@/lib/push.server");
+  const sb = await admin();
+  const { data } = await sb.from("admin_push_targets").select("user_id");
+  await Promise.allSettled((data ?? []).filter((r: any) => r.user_id !== exceptUserId).map((r: any) => sendCancelCallPush(r.user_id, callId)));
+}
+
 async function admin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   return supabaseAdmin;
@@ -41,6 +59,7 @@ export const startSupportCall = createServerFn({ method: "POST" })
       const { sendPushToAdmins } = await import("@/lib/push.server");
       const { alertOwnerPrivate } = await import("@/lib/withdraw-fastpay.server");
       await Promise.allSettled([
+        ringAgents(row.id as string, who),
         sendPushToAdmins({ title: "📞 কাস্টমার কেয়ারে কল আসছে", body: `${who} — এখনই ধরুন`, url: "/home" }),
         alertOwnerPrivate(`📞 <b>কাস্টমার কেয়ারে কল আসছে</b>\n👤 ${who}\n👉 অ্যাডমিন প্যানেল → ইনকামিং কল থেকে ধরুন`),
       ]);
@@ -57,6 +76,7 @@ export const endSupportCall = createServerFn({ method: "POST" })
     if (!row || (row.status !== "ringing" && row.status !== "accepted")) return { ok: true };
     const status = row.status === "accepted" ? "ended" : "missed";
     await sb.from("support_calls").update({ status, ended_at: new Date().toISOString() }).eq("id", data.id);
+    if (status === "missed") await stopAgentRing(data.id).catch(() => {});
     if (status === "missed") {
       try {
         const { alertOwnerPrivate } = await import("@/lib/withdraw-fastpay.server");
@@ -87,6 +107,7 @@ export const adminAcceptSupportCall = createServerFn({ method: "POST" })
       .eq("status", "ringing")
       .select("id")
       .maybeSingle();
+    if (row) await stopAgentRing(data.id).catch(() => {});
     return { ok: !!row };
   });
 
@@ -127,8 +148,9 @@ export const agentAcceptSupportCall = createServerFn({ method: "POST" })
     const sb = await agentGate(context.userId);
     const { data: row } = await sb.from("support_calls")
       .update({ status: "accepted", answered_at: new Date().toISOString() })
-      .eq("id", data.id).eq("status", "ringing").select("id").maybeSingle();
-    return { ok: !!row };
+      .eq("id", data.id).eq("status", "ringing").select("id, caller_name, caller_uid").maybeSingle();
+    if (row) await stopAgentRing(data.id, context.userId).catch(() => {});
+    return { ok: !!row, name: (row as any)?.caller_name ?? null, uid: (row as any)?.caller_uid ?? null };
   });
 
 export const agentEndSupportCall = createServerFn({ method: "POST" })
