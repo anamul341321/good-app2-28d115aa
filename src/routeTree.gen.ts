@@ -68,6 +68,7 @@ import { Route as AuthenticatedFriendsRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedFeedRouteImport } from './routes/_authenticated/feed'
 import { Route as AuthenticatedEarningsRouteImport } from './routes/_authenticated/earnings'
 import { Route as AuthenticatedCoinsRouteImport } from './routes/_authenticated/coins'
+import { Route as AuthenticatedCallcenterRouteImport } from './routes/_authenticated/callcenter'
 import { Route as AuthenticatedSocialIndexRouteImport } from './routes/_authenticated/social/index'
 import { Route as AuthenticatedChatIndexRouteImport } from './routes/_authenticated/chat.index'
 import { Route as LovableEmailEventsRouteImport } from './routes/lovable/email/events'
@@ -77,6 +78,7 @@ import { Route as ApiPublicReverifyRemindersRouteImport } from './routes/api/pub
 import { Route as ApiPublicIpaybdWebhookRouteImport } from './routes/api/public/ipaybd-webhook'
 import { Route as ApiPublicHisabCardRouteImport } from './routes/api/public/hisab-card'
 import { Route as ApiPublicDailyClaimWarningRouteImport } from './routes/api/public/daily-claim-warning'
+import { Route as ApiPublicCallcenterTtsRouteImport } from './routes/api/public/callcenter-tts'
 import { Route as AdminUserUserIdRouteImport } from './routes/admin/user.$userId'
 import { Route as AuthenticatedWatchPostIdRouteImport } from './routes/_authenticated/watch.$postId'
 import { Route as AuthenticatedUserUserIdRouteImport } from './routes/_authenticated/user.$userId'
@@ -393,6 +395,11 @@ const AuthenticatedCoinsRoute = AuthenticatedCoinsRouteImport.update({
   path: '/coins',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCallcenterRoute = AuthenticatedCallcenterRouteImport.update({
+  id: '/callcenter',
+  path: '/callcenter',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedSocialIndexRoute =
   AuthenticatedSocialIndexRouteImport.update({
     id: '/',
@@ -442,6 +449,11 @@ const ApiPublicDailyClaimWarningRoute =
     path: '/api/public/daily-claim-warning',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicCallcenterTtsRoute = ApiPublicCallcenterTtsRouteImport.update({
+  id: '/api/public/callcenter-tts',
+  path: '/api/public/callcenter-tts',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminUserUserIdRoute = AdminUserUserIdRouteImport.update({
   id: '/user/$userId',
   path: '/user/$userId',
@@ -569,6 +581,7 @@ export interface FileRoutesByFullPath {
   '/rates': typeof RatesRoute
   '/rules': typeof RulesRoute
   '/terms': typeof TermsRoute
+  '/callcenter': typeof AuthenticatedCallcenterRoute
   '/coins': typeof AuthenticatedCoinsRoute
   '/earnings': typeof AuthenticatedEarningsRoute
   '/feed': typeof AuthenticatedFeedRoute
@@ -621,6 +634,7 @@ export interface FileRoutesByFullPath {
   '/user/$userId': typeof AuthenticatedUserUserIdRoute
   '/watch/$postId': typeof AuthenticatedWatchPostIdRoute
   '/admin/user/$userId': typeof AdminUserUserIdRoute
+  '/api/public/callcenter-tts': typeof ApiPublicCallcenterTtsRoute
   '/api/public/daily-claim-warning': typeof ApiPublicDailyClaimWarningRoute
   '/api/public/hisab-card': typeof ApiPublicHisabCardRoute
   '/api/public/ipaybd-webhook': typeof ApiPublicIpaybdWebhookRoute
@@ -658,6 +672,7 @@ export interface FileRoutesByTo {
   '/rates': typeof RatesRoute
   '/rules': typeof RulesRoute
   '/terms': typeof TermsRoute
+  '/callcenter': typeof AuthenticatedCallcenterRoute
   '/coins': typeof AuthenticatedCoinsRoute
   '/earnings': typeof AuthenticatedEarningsRoute
   '/feed': typeof AuthenticatedFeedRoute
@@ -709,6 +724,7 @@ export interface FileRoutesByTo {
   '/user/$userId': typeof AuthenticatedUserUserIdRoute
   '/watch/$postId': typeof AuthenticatedWatchPostIdRoute
   '/admin/user/$userId': typeof AdminUserUserIdRoute
+  '/api/public/callcenter-tts': typeof ApiPublicCallcenterTtsRoute
   '/api/public/daily-claim-warning': typeof ApiPublicDailyClaimWarningRoute
   '/api/public/hisab-card': typeof ApiPublicHisabCardRoute
   '/api/public/ipaybd-webhook': typeof ApiPublicIpaybdWebhookRoute
@@ -749,6 +765,7 @@ export interface FileRoutesById {
   '/rates': typeof RatesRoute
   '/rules': typeof RulesRoute
   '/terms': typeof TermsRoute
+  '/_authenticated/callcenter': typeof AuthenticatedCallcenterRoute
   '/_authenticated/coins': typeof AuthenticatedCoinsRoute
   '/_authenticated/earnings': typeof AuthenticatedEarningsRoute
   '/_authenticated/feed': typeof AuthenticatedFeedRoute
@@ -801,6 +818,7 @@ export interface FileRoutesById {
   '/_authenticated/user/$userId': typeof AuthenticatedUserUserIdRoute
   '/_authenticated/watch/$postId': typeof AuthenticatedWatchPostIdRoute
   '/admin/user/$userId': typeof AdminUserUserIdRoute
+  '/api/public/callcenter-tts': typeof ApiPublicCallcenterTtsRoute
   '/api/public/daily-claim-warning': typeof ApiPublicDailyClaimWarningRoute
   '/api/public/hisab-card': typeof ApiPublicHisabCardRoute
   '/api/public/ipaybd-webhook': typeof ApiPublicIpaybdWebhookRoute
@@ -841,6 +859,7 @@ export interface FileRouteTypes {
     | '/rates'
     | '/rules'
     | '/terms'
+    | '/callcenter'
     | '/coins'
     | '/earnings'
     | '/feed'
@@ -893,6 +912,7 @@ export interface FileRouteTypes {
     | '/user/$userId'
     | '/watch/$postId'
     | '/admin/user/$userId'
+    | '/api/public/callcenter-tts'
     | '/api/public/daily-claim-warning'
     | '/api/public/hisab-card'
     | '/api/public/ipaybd-webhook'
@@ -930,6 +950,7 @@ export interface FileRouteTypes {
     | '/rates'
     | '/rules'
     | '/terms'
+    | '/callcenter'
     | '/coins'
     | '/earnings'
     | '/feed'
@@ -981,6 +1002,7 @@ export interface FileRouteTypes {
     | '/user/$userId'
     | '/watch/$postId'
     | '/admin/user/$userId'
+    | '/api/public/callcenter-tts'
     | '/api/public/daily-claim-warning'
     | '/api/public/hisab-card'
     | '/api/public/ipaybd-webhook'
@@ -1020,6 +1042,7 @@ export interface FileRouteTypes {
     | '/rates'
     | '/rules'
     | '/terms'
+    | '/_authenticated/callcenter'
     | '/_authenticated/coins'
     | '/_authenticated/earnings'
     | '/_authenticated/feed'
@@ -1072,6 +1095,7 @@ export interface FileRouteTypes {
     | '/_authenticated/user/$userId'
     | '/_authenticated/watch/$postId'
     | '/admin/user/$userId'
+    | '/api/public/callcenter-tts'
     | '/api/public/daily-claim-warning'
     | '/api/public/hisab-card'
     | '/api/public/ipaybd-webhook'
@@ -1116,6 +1140,7 @@ export interface RootRouteChildren {
   ApiYoutubeSearchRoute: typeof ApiYoutubeSearchRoute
   ApiYoutubeShortsRoute: typeof ApiYoutubeShortsRoute
   CardUidRoute: typeof CardUidRoute
+  ApiPublicCallcenterTtsRoute: typeof ApiPublicCallcenterTtsRoute
   ApiPublicDailyClaimWarningRoute: typeof ApiPublicDailyClaimWarningRoute
   ApiPublicHisabCardRoute: typeof ApiPublicHisabCardRoute
   ApiPublicIpaybdWebhookRoute: typeof ApiPublicIpaybdWebhookRoute
@@ -1553,6 +1578,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCoinsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/callcenter': {
+      id: '/_authenticated/callcenter'
+      path: '/callcenter'
+      fullPath: '/callcenter'
+      preLoaderRoute: typeof AuthenticatedCallcenterRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/social/': {
       id: '/_authenticated/social/'
       path: '/'
@@ -1614,6 +1646,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/daily-claim-warning'
       fullPath: '/api/public/daily-claim-warning'
       preLoaderRoute: typeof ApiPublicDailyClaimWarningRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/callcenter-tts': {
+      id: '/api/public/callcenter-tts'
+      path: '/api/public/callcenter-tts'
+      fullPath: '/api/public/callcenter-tts'
+      preLoaderRoute: typeof ApiPublicCallcenterTtsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/user/$userId': {
@@ -1780,6 +1819,7 @@ const AuthenticatedSocialRouteWithChildren =
   AuthenticatedSocialRoute._addFileChildren(AuthenticatedSocialRouteChildren)
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedCallcenterRoute: typeof AuthenticatedCallcenterRoute
   AuthenticatedCoinsRoute: typeof AuthenticatedCoinsRoute
   AuthenticatedEarningsRoute: typeof AuthenticatedEarningsRoute
   AuthenticatedFeedRoute: typeof AuthenticatedFeedRoute
@@ -1812,6 +1852,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedCallcenterRoute: AuthenticatedCallcenterRoute,
   AuthenticatedCoinsRoute: AuthenticatedCoinsRoute,
   AuthenticatedEarningsRoute: AuthenticatedEarningsRoute,
   AuthenticatedFeedRoute: AuthenticatedFeedRoute,
@@ -1921,6 +1962,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiYoutubeSearchRoute: ApiYoutubeSearchRoute,
   ApiYoutubeShortsRoute: ApiYoutubeShortsRoute,
   CardUidRoute: CardUidRoute,
+  ApiPublicCallcenterTtsRoute: ApiPublicCallcenterTtsRoute,
   ApiPublicDailyClaimWarningRoute: ApiPublicDailyClaimWarningRoute,
   ApiPublicHisabCardRoute: ApiPublicHisabCardRoute,
   ApiPublicIpaybdWebhookRoute: ApiPublicIpaybdWebhookRoute,
