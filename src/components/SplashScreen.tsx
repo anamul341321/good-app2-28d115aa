@@ -9,7 +9,7 @@ import introVideo from "@/assets/goodapp-logo-intro.mp4.asset.json";
 export function SplashScreen() {
   const [gone, setGone] = useState(false);
   const [leaving, setLeaving] = useState(false);
-  const [videoSource, setVideoSource] = useState<string | null>(null);
+  const videoSource = introVideo.url;
   const [needsSoundTap, setNeedsSoundTap] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const backgroundVideoRef = useRef<HTMLVideoElement | null>(null);
@@ -39,9 +39,6 @@ export function SplashScreen() {
         return;
       }
     } catch { /* noop */ }
-
-    // Use the CDN URL directly so slower phones can begin streaming immediately.
-    setVideoSource(introVideo.url);
 
     // Safety net: a network or playback error must never trap the user.
     const safetyTimer = setTimeout(finish, 10_000);
