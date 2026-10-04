@@ -74,7 +74,8 @@ const ICE: RTCConfiguration = {
   iceTransportPolicy: "all" as RTCIceTransportPolicy,
   bundlePolicy: "max-bundle" as RTCBundlePolicy,
   rtcpMuxPolicy: "require" as RTCRtcpMuxPolicy,
-};registerFastIce(ICE);
+};
+registerFastIce(ICE);
 
 
 /**
