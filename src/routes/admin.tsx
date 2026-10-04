@@ -6,7 +6,7 @@ import { adminStats } from "@/lib/admin.functions";
 import {
   Users, ArrowDownToLine, ScanFace, LogOut, Loader2, AlertTriangle,
   LayoutDashboard, Clock, Wallet, ShieldCheck, Gift, Bot,
-  Fuel, Package, Globe2
+  Fuel, Package, Globe2, Phone
 } from "lucide-react";
 
 
