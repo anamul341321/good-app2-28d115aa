@@ -52,7 +52,7 @@ async function speak(key: string, text: string): Promise<string | null> {
       body: JSON.stringify({
         model: "google/gemini-3.1-flash-tts-preview",
         stream_format: "audio",
-        contents: [{ parts: [{ text: `একজন হাসিখুশি, উষ্ণ বাংলাদেশি কাস্টমার কেয়ার প্রতিনিধির মতো স্বাভাবিক গতিতে, আন্তরিকভাবে বলুন: ${text}` }] }],
+        contents: [{ role: "user", parts: [{ text: `একজন হাসিখুশি, উষ্ণ বাংলাদেশি কাস্টমার কেয়ার প্রতিনিধির মতো স্বাভাবিক গতিতে, আন্তরিকভাবে বলুন: ${text}` }] }],
         generationConfig: {
           responseModalities: ["AUDIO"],
           speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Achernar" } } },
