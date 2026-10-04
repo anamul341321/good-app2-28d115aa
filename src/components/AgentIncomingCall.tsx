@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Phone, PhoneOff, Mic, MicOff, Headset } from "lucide-react";
+import { Phone, PhoneOff, Mic, MicOff, Headset, Pause, Play } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { agentAcceptSupportCall, agentEndSupportCall, amICallAgent, getSupportCallStatus } from "@/lib/support-call.functions";
+import { agentAcceptSupportCall, agentEndSupportCall, agentSetSupportHold, amICallAgent, getSupportCallStatus } from "@/lib/support-call.functions";
 import { SUPPORT_LOBBY, getSupportIce, supportChannel, type RingPayload } from "@/lib/support-rtc";
 
 /** অ্যাপে লগইন থাকা কল এজেন্টদের কাছে কাস্টমার কেয়ারের কল আসে — যেকোনো একজন ধরলেই বাকিদের থেকে কেটে যায়। */
@@ -22,6 +22,7 @@ function AgentCallInner() {
   const [talking, setTalking] = useState(false);
   const [sec, setSec] = useState(0);
   const [muted, setMuted] = useState(false);
+  const [held, setHeld] = useState(false);
   const ctx = useRef<AudioContext | null>(null);
   const remote = useRef<HTMLAudioElement | null>(null);
   const taken = useRef<Set<string>>(new Set());
@@ -84,7 +85,7 @@ function AgentCallInner() {
     c.pc?.close(); c.stream?.getTracks().forEach((t) => t.stop());
     if (remote.current) { remote.current.pause(); remote.current.srcObject = null; }
     rtc.current = {};
-    setActive(null); setTalking(false); setSec(0); setMuted(false);
+    setActive(null); setTalking(false); setSec(0); setMuted(false); setHeld(false);
   };
 
   const drop = (id: string) => setRinging((m) => { const n = { ...m }; delete n[id]; return n; });
@@ -138,6 +139,13 @@ function AgentCallInner() {
   }, []);
 
   const decline = (r: RingPayload) => { taken.current.add(r.id); drop(r.id); };
+  const toggleHold = async () => {
+    if (!active) return;
+    const h = !held; setHeld(h);
+    rtc.current.stream?.getAudioTracks().forEach((t) => (t.enabled = !h && !muted));
+    void rtc.current.ch?.send({ type: "broadcast", event: "hold", payload: { on: h } });
+    await agentSetSupportHold({ data: { id: active.id, hold: h } }).catch(() => {});
+  };
   const hang = async () => { const id = active?.id; teardown(true); if (id) await agentEndSupportCall({ data: { id } }).catch(() => {}); };
   const who = (r: RingPayload) => `${r.name ?? "অতিথি"}${r.uid ? ` · UID ${r.uid}` : " · লগইন নেই"}`;
 
@@ -154,13 +162,15 @@ function AgentCallInner() {
         <p className="mt-5 text-sm font-bold opacity-80">কাস্টমার কেয়ার কল</p>
         <p className="mt-1 text-2xl font-black text-center">{who((active ?? first)!)}</p>
         <p className="mt-2 text-sm font-semibold opacity-80">
-          {active ? (talking ? `${String(Math.floor(sec / 60)).padStart(2, "0")}:${String(sec % 60).padStart(2, "0")}` : "সংযোগ হচ্ছে…") : "কল আসছে…"}
+          {active ? (talking ? (held ? "⏸ হোল্ডে আছে · " : "") + `${String(Math.floor(sec / 60)).padStart(2, "0")}:${String(sec % 60).padStart(2, "0")}` : "সংযোগ হচ্ছে…") : "কল আসছে…"}
         </p>
       </div>
       {active ? (
         <div className="flex items-center gap-8">
           <button aria-label="মাইক" onClick={() => { const m = !muted; setMuted(m); rtc.current.stream?.getAudioTracks().forEach((t) => (t.enabled = !m)); }}
             className="flex h-14 w-14 items-center justify-center rounded-full bg-card shadow">{muted ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}</button>
+          <button aria-label="হোল্ড" onClick={toggleHold}
+            className={`flex h-14 w-14 flex-col items-center justify-center rounded-full shadow ${held ? "bg-primary text-primary-foreground" : "bg-card"}`}>{held ? <Play className="h-6 w-6" /> : <Pause className="h-6 w-6" />}</button>
           <button aria-label="কল কাটুন" onClick={hang} className="flex h-20 w-20 items-center justify-center rounded-full bg-destructive text-destructive-foreground shadow-2xl"><PhoneOff className="h-9 w-9" /></button>
         </div>
       ) : (
