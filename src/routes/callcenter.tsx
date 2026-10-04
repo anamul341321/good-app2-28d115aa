@@ -109,6 +109,8 @@ function CallCenterPage() {
 
   const stopVoice = useCallback(() => {
     clearWait();
+    const m = music.current;
+    if (m) { clearInterval(m.timer); void m.ctx.close().catch(() => {}); music.current = null; }
     const audio = audioRef.current;
     if (!audio) return;
     audio.onended = null;
