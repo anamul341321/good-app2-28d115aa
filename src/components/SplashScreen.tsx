@@ -42,10 +42,8 @@ export function SplashScreen() {
 
     let objectUrl: string | null = null;
     const controller = new AbortController();
-    const probe = document.createElement("video");
-    const selectedUrl = probe.canPlayType("video/webm; codecs=vp9")
-      ? introVideoWebm.url
-      : introVideo.url;
+    // The uploaded MP4 contains the original stereo audio; the WebM fallback is silent.
+    const selectedUrl = introVideo.url;
     void fetch(selectedUrl, { signal: controller.signal })
       .then((response) => {
         if (!response.ok) throw new Error("Intro video could not be loaded");
