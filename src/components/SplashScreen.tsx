@@ -9,10 +9,12 @@ import introVideo from "@/assets/goodapp-logo-intro.mp4.asset.json";
 export function SplashScreen() {
   const [gone, setGone] = useState(false);
   const [leaving, setLeaving] = useState(false);
+  const finishing = useRef(false);
   const finishTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const finish = () => {
-    if (leaving || gone) return;
+    if (finishing.current) return;
+    finishing.current = true;
     setLeaving(true);
     finishTimer.current = setTimeout(() => setGone(true), 350);
   };
@@ -41,7 +43,7 @@ export function SplashScreen() {
       clearTimeout(safetyTimer);
       if (finishTimer.current) clearTimeout(finishTimer.current);
     };
-  }, [gone, leaving]);
+  }, []);
 
   if (gone) return null;
 
