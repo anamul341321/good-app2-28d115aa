@@ -16,3 +16,4 @@
 - [x] Prioritize uploaded Reels and reduce competing preloads on slow connections
 - [x] Harden session checks against temporary network and token-refresh races
 - [x] Prepare relay before calls and tune video for clearer 720p delivery
+- [x] Play GoodApp feature announcements while a caller waits, stopping instantly when an agent answers

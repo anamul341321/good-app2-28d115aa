@@ -6,11 +6,12 @@ import { startSupportCall, endSupportCall, getSupportCallStatus } from "@/lib/su
 import { SUPPORT_LOBBY, getSupportIce, supportChannel } from "@/lib/support-rtc";
 
 type S = "idle" | "calling" | "talking" | "busy" | "ended" | "nomic";
+type CallPhase = "idle" | "calling" | "talking" | "busy" | "ended" | "nomic";
 const BN = "০১২৩৪৫৬৭৮৯";
 const bn = (n: number) => String(n).padStart(2, "0").replace(/\d/g, (d) => BN[+d]);
 
 /** কাস্টমার → অ্যাডমিন প্যানেলে সরাসরি অ্যাপের ভেতরের ভয়েস কল। */
-export function SupportLiveCall({ onActive, autoStart }: { onActive?: (active: boolean) => void; autoStart?: boolean }) {
+export function SupportLiveCall({ onPhaseChange, autoStart }: { onPhaseChange?: (phase: CallPhase) => void; autoStart?: boolean }) {
   const [s, setS] = useState<S>("idle");
   const [sec, setSec] = useState(0);
   const [muted, setMuted] = useState(false);
@@ -37,10 +38,14 @@ export function SupportLiveCall({ onActive, autoStart }: { onActive?: (active: b
     if (remote.current) { remote.current.pause(); remote.current.srcObject = null; }
     if (c.id) void endSupportCall({ data: { id: c.id, missed } }).catch(() => {});
     r.current = { timers: [] };
-    onActive?.(false);
+    onPhaseChange?.(missed ? "busy" : "ended");
   };
 
   useEffect(() => () => cleanup(false), []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    onPhaseChange?.(s);
+  }, [onPhaseChange, s]);
 
   useEffect(() => {
     if (s !== "talking") return;
@@ -53,7 +58,7 @@ export function SupportLiveCall({ onActive, autoStart }: { onActive?: (active: b
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
     } catch { setS("nomic"); return; }
-    setS("calling"); setSec(0); onActive?.(true);
+    setS("calling"); setSec(0);
     const c = r.current;
     c.stream = stream;
     try {

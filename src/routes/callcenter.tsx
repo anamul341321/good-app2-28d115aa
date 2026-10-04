@@ -76,8 +76,26 @@ function CallCenterPage() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const ctxRef = useRef<AudioContext | null>(null);
   const timers = useRef<number[]>([]);
+  const holdingForAgent = useRef(false);
+  const holdFeatureIndex = useRef(0);
+
+  const HOLD_FEATURES = [
+    { key: "mining", title: "দৈনিক মাইনিং ও ক্লেইম" },
+    { key: "reverify", title: "স্লট রি-ভেরিফাই সুবিধা" },
+    { key: "balance", title: "নিরাপদ ব্যালেন্স সুবিধা" },
+    { key: "withdraw", title: "সহজ উইথড্র সুবিধা" },
+  ] as const;
 
   const clearWait = () => { if (waitTimer.current) { window.clearTimeout(waitTimer.current); waitTimer.current = null; } };
+
+  const stopVoice = useCallback(() => {
+    clearWait();
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.onended = null;
+    audio.pause();
+    audio.currentTime = 0;
+  }, []);
 
   // একটি ভয়েস চালাও, শেষ হলে next() চলবে
   const say = useCallback((key: string, title: string, next?: () => void) => {
@@ -91,6 +109,29 @@ function CallCenterPage() {
     setLabel(title);
     void a.play().catch(() => setLabel("ভয়েস চালু করতে স্ক্রিনে একবার চাপ দিন"));
   }, []);
+
+  const playNextHoldFeature = useCallback(() => {
+    if (!holdingForAgent.current) return;
+    const feature = HOLD_FEATURES[holdFeatureIndex.current % HOLD_FEATURES.length];
+    holdFeatureIndex.current += 1;
+    say(feature.key, feature.title, () => {
+      if (!holdingForAgent.current) return;
+      waitTimer.current = window.setTimeout(playNextHoldFeature, 650);
+    });
+  }, [say]);
+
+  const handleAgentPhase = useCallback((phase: "idle" | "calling" | "talking" | "busy" | "ended" | "nomic") => {
+    if (phase === "talking") {
+      holdingForAgent.current = false;
+      stopVoice();
+      setLabel("প্রতিনিধির সাথে কথা হচ্ছে");
+      return;
+    }
+    if (phase === "busy" || phase === "ended" || phase === "nomic") {
+      holdingForAgent.current = false;
+      stopVoice();
+    }
+  }, [stopVoice]);
 
   // মেনু বলা শেষে ৮ সেকেন্ড অপেক্ষা; কিছু না চাপলে প্রথমবার মেনুতে ফেরে, দ্বিতীয়বার কল কাটে
   const menu = useCallback((key: "greeting" | "menu" = "menu") => {
@@ -123,16 +164,17 @@ function CallCenterPage() {
 
   const hangUp = useCallback(() => {
     clearWait();
+    holdingForAgent.current = false;
     silence.current = 0;
     setShowAi(false);
     timers.current.forEach((t) => window.clearTimeout(t));
     timers.current = [];
-    audioRef.current?.pause();
+    stopVoice();
     setState("idle");
     setLabel("");
     setSeconds(0);
     setShowAgent(false);
-  }, []);
+  }, [stopVoice]);
 
   hangUpRef.current = hangUp;
   useEffect(() => () => hangUp(), [hangUp]);
@@ -178,7 +220,13 @@ function CallCenterPage() {
     setShowAgent(false); setShowAi(false);
     if (!m) { say("invalid", "ভুল বোতাম", () => menu("menu")); return; }
     if (m.key === "menu") { menu("menu"); return; }
-    if (m.key === "agent") { setShowAgent(true); say("agent", m.label); return; }
+    if (m.key === "agent") {
+      holdingForAgent.current = true;
+      holdFeatureIndex.current = 0;
+      setShowAgent(true);
+      say("agent", m.label, playNextHoldFeature);
+      return;
+    }
     // তথ্য বলা শেষে: "স্যার, আপনাকে আর কীভাবে সাহায্য করতে পারি?" → মেনু
     say(m.key, m.label, () => say("more", "আর কোনো সাহায্য", () => menu("menu")));
   };
@@ -238,7 +286,7 @@ function CallCenterPage() {
 
       {showAgent && (
         <div className="mx-auto mt-4 flex w-full max-w-xs flex-col gap-2.5 px-4 animate-fade-in">
-          <SupportLiveCall autoStart onActive={(on) => { if (on) clearWait(); }} />
+          <SupportLiveCall autoStart onPhaseChange={handleAgentPhase} />
           <a href={TELEGRAM_SUPPORT_URL} target="_blank" rel="noreferrer"
             className="flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-xs font-bold text-primary-foreground shadow-lg active:scale-95 transition">
             লিখে সমস্যা পাঠান (টেলিগ্রাম)
