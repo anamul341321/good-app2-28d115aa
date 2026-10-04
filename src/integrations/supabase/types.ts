@@ -2390,6 +2390,42 @@ export type Database = {
           },
         ]
       }
+      support_calls: {
+        Row: {
+          answered_at: string | null
+          caller_name: string | null
+          caller_phone: string | null
+          caller_uid: number | null
+          caller_user_id: string | null
+          created_at: string
+          ended_at: string | null
+          id: string
+          status: string
+        }
+        Insert: {
+          answered_at?: string | null
+          caller_name?: string | null
+          caller_phone?: string | null
+          caller_uid?: number | null
+          caller_user_id?: string | null
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          status?: string
+        }
+        Update: {
+          answered_at?: string | null
+          caller_name?: string | null
+          caller_phone?: string | null
+          caller_uid?: number | null
+          caller_user_id?: string | null
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          status?: string
+        }
+        Relationships: []
+      }
       suppressed_emails: {
         Row: {
           created_at: string
