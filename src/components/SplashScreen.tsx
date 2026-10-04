@@ -76,7 +76,7 @@ export function SplashScreen() {
       <style>{`
 .ga-splash{position:fixed;inset:0;z-index:9999;overflow:hidden;background:#0a1117;transition:opacity .35s ease}
 .ga-splash-out{opacity:0;pointer-events:none}
-.ga-splash-video{width:100%;height:100%;display:block;object-fit:cover;object-position:center}
+.ga-splash-video{width:100%;height:100%;display:block;object-fit:contain;object-position:center}
 @media (prefers-reduced-motion:reduce){.ga-splash{transition:none}}
       `}</style>
       {videoSource && (
