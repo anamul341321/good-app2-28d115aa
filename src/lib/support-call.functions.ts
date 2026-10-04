@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeader } from "@tanstack/react-start/server";
 import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 async function admin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -105,7 +106,6 @@ export const adminListSupportCalls = createServerFn({ method: "GET" }).handler(a
 });
 
 // ── অ্যাপের ভেতরের কল এজেন্ট (অ্যাডমিন প্যানেল থেকে যাদের এজেন্ট বানানো হয়) ──
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 async function agentGate(userId: string) {
   const sb = await admin();
