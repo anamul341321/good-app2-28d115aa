@@ -14,6 +14,7 @@ import { FaceVerifyPausedNotice } from "@/components/FaceVerifyPausedNotice";
 import { getAppStatus } from "@/lib/app-status.functions";
 import { GmailSecurityBanner } from "@/components/GmailSecurityBanner";
 import { NoticeBoard } from "@/components/NoticeBoard";
+import { ChannelJoinBanner } from "@/components/ChannelJoinBanner";
 import { ReferBonusBanner, RatesEntryCard } from "@/components/ReferBonusBanner";
 import { ForeignCurrencyCard } from "@/components/ForeignCurrencyCard";
 import { ComplianceDisclaimer } from "@/components/ComplianceDisclaimer";
@@ -335,6 +336,8 @@ function HomePage() {
       {lite && <LiteHomeNotice />}
 
       {/* অ্যাডমিন নোটিশ — সহজে পড়া যায় এমন কার্ড (TV-স্টাইল স্ক্রলিং নয়) */}
+      <ChannelJoinBanner />
+
       <NoticeBoard />
 
       {!lite && <VoucherPopup vouchers={(data as any).vouchers ?? []} onClaimed={() => refetch()} />}
