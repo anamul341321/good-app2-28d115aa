@@ -29,6 +29,7 @@ export function SplashScreen() {
     try {
       const sp = new URLSearchParams(window.location.search);
       const instant =
+        window.location.pathname.startsWith("/admin") ||
         Boolean((window as any).GoodAppBubble) ||
         sp.has("bubble") ||
         sp.has("call") ||
