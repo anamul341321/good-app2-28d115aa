@@ -24,20 +24,31 @@ function AdminCalls() {
   const [soundOn, setSoundOn] = useState(false);
   const ctx = useRef<AudioContext | null>(null);
   const remote = useRef<HTMLAudioElement | null>(null);
+  const takenRef = useRef<Set<string>>(new Set());
+  const lobbyRef = useRef<any>(null);
   const rtc = useRef<{ pc?: RTCPeerConnection; stream?: MediaStream; ch?: any }>({});
 
   // ইনকামিং রিং শুনি
   useEffect(() => {
-    const lobby = supabase.channel(SUPPORT_LOBBY)
-      .on("broadcast", { event: "ring" }, ({ payload }: any) => setRinging((m) => ({ ...m, [payload.id]: { ...payload, at: Date.now() } })))
+    const lobby = supabase.channel(SUPPORT_LOBBY, { config: { broadcast: { self: false } } })
+      .on("broadcast", { event: "ring" }, ({ payload }: any) => {
+        if (takenRef.current.has(payload.id)) return;
+        setRinging((m) => ({ ...m, [payload.id]: { ...payload, at: Date.now() } }));
+      })
+      // অন্য কোনো অ্যাডমিন ধরে ফেললে এখান থেকে রিং বন্ধ
+      .on("broadcast", { event: "taken" }, ({ payload }: any) => {
+        takenRef.current.add(payload.id);
+        setRinging((m) => { const n = { ...m }; delete n[payload.id]; return n; });
+      })
       .subscribe();
     const sweep = window.setInterval(() => {
       setRinging((m) => Object.fromEntries(Object.entries(m).filter(([, v]) => Date.now() - v.at < 8000)));
     }, 2000);
+    lobbyRef.current = lobby;
     return () => { supabase.removeChannel(lobby); clearInterval(sweep); };
   }, []);
 
-  const list = Object.values(ringing).filter((r) => r.id !== active?.id);
+  const list = active ? [] : Object.values(ringing);
 
   // রিংটোন
   useEffect(() => {
@@ -78,6 +89,7 @@ function AdminCalls() {
   const accept = async (r: RingPayload) => {
     if (active) return;
     const ok = await adminAcceptSupportCall({ data: { id: r.id } });
+    if (ok.ok) void lobbyRef.current?.send({ type: "broadcast", event: "taken", payload: { id: r.id } });
     if (!ok.ok) { setRinging((m) => { const n = { ...m }; delete n[r.id]; return n; }); return; }
     let stream: MediaStream;
     try { stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } }); }

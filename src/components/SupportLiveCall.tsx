@@ -9,7 +9,7 @@ const BN = "০১২৩৪৫৬৭৮৯";
 const bn = (n: number) => String(n).padStart(2, "0").replace(/\d/g, (d) => BN[+d]);
 
 /** কাস্টমার → অ্যাডমিন প্যানেলে সরাসরি অ্যাপের ভেতরের ভয়েস কল। */
-export function SupportLiveCall({ onActive }: { onActive?: (active: boolean) => void }) {
+export function SupportLiveCall({ onActive, autoStart }: { onActive?: (active: boolean) => void; autoStart?: boolean }) {
   const [s, setS] = useState<S>("idle");
   const [sec, setSec] = useState(0);
   const [muted, setMuted] = useState(false);
@@ -89,6 +89,11 @@ export function SupportLiveCall({ onActive }: { onActive?: (active: boolean) => 
     }
   };
 
+  const started = useRef(false);
+  useEffect(() => {
+    if (autoStart && !started.current) { started.current = true; void call(); }
+  }, [autoStart]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const hang = () => { cleanup(s === "calling"); setS("ended"); };
   const toggleMute = () => {
     const m = !muted; setMuted(m);
@@ -100,19 +105,19 @@ export function SupportLiveCall({ onActive }: { onActive?: (active: boolean) => 
       <audio ref={remote} autoPlay playsInline />
       {(s === "idle" || s === "ended" || s === "busy" || s === "nomic") && (
         <>
-          {s === "busy" && <p className="text-center text-xs font-bold text-destructive">এখন সব এজেন্ট ব্যস্ত। একটু পরে আবার চেষ্টা করুন, অথবা টেলিগ্রামে লিখে পাঠান।</p>}
+          {s === "busy" && <p className="text-center text-xs font-bold text-destructive">দুঃখিত, এই মুহূর্তে আমাদের সব প্রতিনিধি ব্যস্ত আছেন। একটু পরে আবার চেষ্টা করুন, অথবা টেলিগ্রামে লিখে পাঠান।</p>}
           {s === "ended" && <p className="text-center text-xs font-bold opacity-80">কল শেষ হয়েছে। ধন্যবাদ 💙</p>}
           {s === "nomic" && <p className="text-center text-xs font-bold text-destructive">কথা বলতে মাইক্রোফোনের অনুমতি দিন, তারপর আবার চাপুন।</p>}
           <button onClick={call}
             className="flex w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-3.5 text-sm font-black text-primary-foreground shadow-lg active:scale-95 transition">
-            <Phone className="h-4 w-4" /> এজেন্টের সাথে কথা বলুন
+            <Phone className="h-4 w-4" /> আবার প্রতিনিধিকে কল করুন
           </button>
         </>
       )}
       {(s === "calling" || s === "talking") && (
         <div className="flex w-full flex-col items-center gap-3 rounded-2xl bg-card/90 p-4 shadow-lg">
           <p className="text-sm font-black">
-            {s === "calling" ? "এজেন্টকে কল করা হচ্ছে… অপেক্ষা করুন" : `এজেন্টের সাথে কথা হচ্ছে · ${bn(Math.floor(sec / 60))}:${bn(sec % 60)}`}
+            {s === "calling" ? "প্রতিনিধির সাথে সংযোগ করা হচ্ছে… লাইনে থাকুন" : `প্রতিনিধির সাথে কথা হচ্ছে · ${bn(Math.floor(sec / 60))}:${bn(sec % 60)}`}
           </p>
           <div className="flex gap-6">
             <button onClick={toggleMute} aria-label="মিউট" className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">

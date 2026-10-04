@@ -1,3 +1,4 @@
+import { AdminCallAlert } from "@/components/AdminCallAlert";
 import { createFileRoute, Outlet, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
@@ -94,6 +95,7 @@ function AdminLayout() {
         <AdminTab to="/admin/calls" icon={<Phone className="w-3.5 h-3.5" />} label="ইনকামিং কল" />
 
       </nav>
+      <AdminCallAlert />
       <Outlet />
     </div>
   );
