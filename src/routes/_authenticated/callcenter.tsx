@@ -70,6 +70,9 @@ function CallCenterPage() {
       audioRef.current.src = "";
       audioRef.current = null;
     }
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
   }, []);
 
   const hangUp = useCallback(() => {
@@ -82,30 +85,63 @@ function CallCenterPage() {
 
   useEffect(() => () => hangUp(), [hangUp]);
 
+  // ফ্রি ভয়েস কোটা শেষ হলে ফোনের নিজের বাংলা ভয়েসে পড়ে শোনায়,
+  // যাতে কোনো সময়ই কল সেন্টার নীরব না থাকে।
+  const speakWithBrowser = useCallback((text: string) => {
+    const synth = window.speechSynthesis;
+    if (!synth) {
+      setError("এই ফোনে ভয়েস চালু হয় না");
+      setState("idle");
+      setNowPlaying("");
+      return;
+    }
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = "bn-BD";
+    utter.rate = 0.95;
+    const bnVoice = synth
+      .getVoices()
+      .find((v) => v.lang?.toLowerCase().startsWith("bn"));
+    if (bnVoice) utter.voice = bnVoice;
+    utter.onend = () => {
+      setState("idle");
+      setNowPlaying("");
+      setDialed("");
+    };
+    synth.speak(utter);
+  }, []);
+
   const playScript = useCallback(
     (key: string, title: string) => {
       stopAudio();
       setNowPlaying(title);
       setState("playing");
-      const audio = new Audio(`/api/public/callcenter-tts?key=${key}`);
-      audioRef.current = audio;
-      audio.onended = () => {
-        setState("idle");
-        setNowPlaying("");
-        setDialed("");
-      };
-      audio.onerror = () => {
-        setError("ভয়েস লোড হয়নি, আবার চেষ্টা করুন");
-        setState("idle");
-        setNowPlaying("");
-      };
-      void audio.play().catch(() => {
-        setError("ভয়েস চালু হয়নি, আবার চাপ দিন");
-        setState("idle");
-        setNowPlaying("");
-      });
+      const script = CALL_CENTER_SCRIPTS.find((s) => s.key === key);
+
+      fetch(`/api/public/callcenter-tts?key=${key}`)
+        .then((res) => {
+          if (!res.ok) throw new Error("tts-unavailable");
+          return res.blob();
+        })
+        .then((blob) => {
+          const audio = new Audio(URL.createObjectURL(blob));
+          audioRef.current = audio;
+          audio.onended = () => {
+            setState("idle");
+            setNowPlaying("");
+            setDialed("");
+          };
+          audio.onerror = () => {
+            if (script) speakWithBrowser(script.text);
+          };
+          void audio.play().catch(() => {
+            if (script) speakWithBrowser(script.text);
+          });
+        })
+        .catch(() => {
+          if (script) speakWithBrowser(script.text);
+        });
     },
-    [stopAudio]
+    [stopAudio, speakWithBrowser]
   );
 
   const startCall = useCallback(() => {
