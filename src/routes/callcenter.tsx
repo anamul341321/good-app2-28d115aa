@@ -110,7 +110,7 @@ function CallCenterPage() {
     void a.play().catch(() => setLabel("ভয়েস চালু করতে স্ক্রিনে একবার চাপ দিন"));
   }, []);
 
-  const playNextHoldFeature = useCallback(() => {
+  const playNextHoldFeature = useCallback(function playNextHoldFeature() {
     if (!holdingForAgent.current) return;
     const feature = HOLD_FEATURES[holdFeatureIndex.current % HOLD_FEATURES.length];
     holdFeatureIndex.current += 1;
@@ -216,6 +216,8 @@ function CallCenterPage() {
     if (state !== "connected") return;
     if (navigator.vibrate) navigator.vibrate(30);
     silence.current = 0;
+    holdingForAgent.current = false;
+    stopVoice();
     const m = MENU[d];
     setShowAgent(false); setShowAi(false);
     if (!m) { say("invalid", "ভুল বোতাম", () => menu("menu")); return; }

@@ -6,12 +6,11 @@ import { startSupportCall, endSupportCall, getSupportCallStatus } from "@/lib/su
 import { SUPPORT_LOBBY, getSupportIce, supportChannel } from "@/lib/support-rtc";
 
 type S = "idle" | "calling" | "talking" | "busy" | "ended" | "nomic";
-type CallPhase = "idle" | "calling" | "talking" | "busy" | "ended" | "nomic";
 const BN = "০১২৩৪৫৬৭৮৯";
 const bn = (n: number) => String(n).padStart(2, "0").replace(/\d/g, (d) => BN[+d]);
 
 /** কাস্টমার → অ্যাডমিন প্যানেলে সরাসরি অ্যাপের ভেতরের ভয়েস কল। */
-export function SupportLiveCall({ onPhaseChange, autoStart }: { onPhaseChange?: (phase: CallPhase) => void; autoStart?: boolean }) {
+export function SupportLiveCall({ onPhaseChange, autoStart }: { onPhaseChange?: (phase: S) => void; autoStart?: boolean }) {
   const [s, setS] = useState<S>("idle");
   const [sec, setSec] = useState(0);
   const [muted, setMuted] = useState(false);
@@ -74,6 +73,7 @@ export function SupportLiveCall({ onPhaseChange, autoStart }: { onPhaseChange?: 
       pc.onconnectionstatechange = () => { if (pc.connectionState === "failed") { cleanup(false); setS("ended"); } };
       ch.on("broadcast", { event: "accept" }, async () => {
         c.timers.forEach((t) => clearInterval(t)); c.timers = [];
+        onPhaseChange?.("talking");
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
         void ch.send({ type: "broadcast", event: "offer", payload: { sdp: offer } });
