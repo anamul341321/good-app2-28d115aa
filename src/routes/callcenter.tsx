@@ -10,7 +10,7 @@ import referA from "@/assets/callcenter/refer.mp3.asset.json";
 import agentA from "@/assets/callcenter/agent.mp3.asset.json";
 import invalidA from "@/assets/callcenter/invalid.mp3.asset.json";
 
-export const Route = createFileRoute("/_authenticated/callcenter")({
+export const Route = createFileRoute("/callcenter")({
   head: () => ({
     meta: [
       { title: "কল সেন্টার — Good-App" },
