@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { Phone, PhoneOff, Mic, MicOff, Headset } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { agentAcceptSupportCall, agentEndSupportCall, amICallAgent } from "@/lib/support-call.functions";
-import { SUPPORT_ICE, SUPPORT_LOBBY, supportChannel, type RingPayload } from "@/lib/support-rtc";
+import { agentAcceptSupportCall, agentEndSupportCall, amICallAgent, getSupportCallStatus } from "@/lib/support-call.functions";
+import { SUPPORT_LOBBY, getSupportIce, supportChannel, type RingPayload } from "@/lib/support-rtc";
 
 /** অ্যাপে লগইন থাকা কল এজেন্টদের কাছে কাস্টমার কেয়ারের কল আসে — যেকোনো একজন ধরলেই বাকিদের থেকে কেটে যায়। */
 export function AgentIncomingCall() {
@@ -25,7 +26,8 @@ function AgentCallInner() {
   const remote = useRef<HTMLAudioElement | null>(null);
   const taken = useRef<Set<string>>(new Set());
   const lobbyRef = useRef<any>(null);
-  const rtc = useRef<{ pc?: RTCPeerConnection; stream?: MediaStream; ch?: any }>({});
+  const rtc = useRef<{ pc?: RTCPeerConnection; stream?: MediaStream; ch?: any; statusTimer?: number }>({});
+  const readStatus = useServerFn(getSupportCallStatus);
 
   useEffect(() => {
     const lobby = supabase.channel(SUPPORT_LOBBY, { config: { broadcast: { self: false } } })
@@ -73,8 +75,14 @@ function AgentCallInner() {
 
   const teardown = (notify: boolean) => {
     const c = rtc.current;
-    if (c.ch) { if (notify) void c.ch.send({ type: "broadcast", event: "hangup", payload: {} }); supabase.removeChannel(c.ch); }
+    if (c.statusTimer) clearInterval(c.statusTimer);
+    if (c.ch) {
+      const ch = c.ch;
+      if (notify) void ch.send({ type: "broadcast", event: "hangup", payload: {} }).finally(() => supabase.removeChannel(ch));
+      else void supabase.removeChannel(ch);
+    }
     c.pc?.close(); c.stream?.getTracks().forEach((t) => t.stop());
+    if (remote.current) { remote.current.pause(); remote.current.srcObject = null; }
     rtc.current = {};
     setActive(null); setTalking(false); setSec(0); setMuted(false);
   };
@@ -84,17 +92,24 @@ function AgentCallInner() {
   const accept = async (r: RingPayload) => {
     if (active) return;
     let stream: MediaStream;
-    try { stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } }); }
+    const mediaPromise = navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+    const icePromise = getSupportIce();
+    try { stream = await mediaPromise; }
     catch { alert("কথা বলতে মাইক্রোফোনের অনুমতি দিন"); return; }
     const ok = await agentAcceptSupportCall({ data: { id: r.id } }).catch(() => ({ ok: false }));
     if (!ok.ok) { stream.getTracks().forEach((t) => t.stop()); drop(r.id); return; }
     void lobbyRef.current?.send({ type: "broadcast", event: "taken", payload: { id: r.id } });
     setActive({ ...r, name: r.name ?? (ok as any).name ?? null, uid: r.uid ?? (ok as any).uid ?? null });
-    const pc = new RTCPeerConnection(SUPPORT_ICE);
+    const pc = new RTCPeerConnection(await icePromise);
     stream.getTracks().forEach((t) => pc.addTrack(t, stream));
     pc.ontrack = (e) => { if (remote.current) { remote.current.srcObject = e.streams[0]; void remote.current.play().catch(() => {}); } };
     const ch = supabase.channel(supportChannel(r.id), { config: { broadcast: { self: false } } });
     rtc.current = { pc, stream, ch };
+    rtc.current.statusTimer = window.setInterval(() => {
+      void readStatus({ data: { id: r.id } }).then(({ status }) => {
+        if (status === "ended" || status === "missed") teardown(false);
+      }).catch(() => {});
+    }, 1200);
     pc.onicecandidate = (e) => { if (e.candidate) void ch.send({ type: "broadcast", event: "ice", payload: { from: "admin", c: e.candidate.toJSON() } }); };
     ch.on("broadcast", { event: "offer" }, async ({ payload }: any) => {
       await pc.setRemoteDescription(payload.sdp);
