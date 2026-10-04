@@ -84,6 +84,7 @@ function CallCenterPage() {
     { key: "reverify", title: "স্লট রি-ভেরিফাই সুবিধা" },
     { key: "balance", title: "নিরাপদ ব্যালেন্স সুবিধা" },
     { key: "withdraw", title: "সহজ উইথড্র সুবিধা" },
+    { key: "refer", title: "রেফার সুবিধা" },
   ] as const;
 
   const clearWait = () => { if (waitTimer.current) { window.clearTimeout(waitTimer.current); waitTimer.current = null; } };
