@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import introVideo from "@/assets/goodapp-logo-intro.mp4.asset.json";
+import introVideoWebm from "@/assets/goodapp-logo-intro.webm.asset.json";
 
 /**
  * Full-screen branded launch video. It plays once whenever the app starts,
@@ -39,7 +40,11 @@ export function SplashScreen() {
 
     let objectUrl: string | null = null;
     const controller = new AbortController();
-    void fetch(introVideo.url, { signal: controller.signal })
+    const probe = document.createElement("video");
+    const selectedUrl = probe.canPlayType("video/webm; codecs=vp9")
+      ? introVideoWebm.url
+      : introVideo.url;
+    void fetch(selectedUrl, { signal: controller.signal })
       .then((response) => {
         if (!response.ok) throw new Error("Intro video could not be loaded");
         return response.blob();
