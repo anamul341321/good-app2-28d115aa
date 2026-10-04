@@ -2,14 +2,20 @@ import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Phone, PhoneOff, Headset, Volume2, VolumeX, Grid3x3, ArrowLeft } from "lucide-react";
 import greetingA from "@/assets/callcenter/greeting.mp3.asset.json";
+import menuA from "@/assets/callcenter/menu.mp3.asset.json";
 import withdrawA from "@/assets/callcenter/withdraw.mp3.asset.json";
 import miningA from "@/assets/callcenter/mining.mp3.asset.json";
 import reverifyA from "@/assets/callcenter/reverify.mp3.asset.json";
 import balanceA from "@/assets/callcenter/balance.mp3.asset.json";
 import referA from "@/assets/callcenter/refer.mp3.asset.json";
+import moreA from "@/assets/callcenter/more.mp3.asset.json";
 import agentA from "@/assets/callcenter/agent.mp3.asset.json";
+import aiA from "@/assets/callcenter/ai.mp3.asset.json";
+import nopressA from "@/assets/callcenter/nopress.mp3.asset.json";
+import byeA from "@/assets/callcenter/bye.mp3.asset.json";
 import invalidA from "@/assets/callcenter/invalid.mp3.asset.json";
 import { SupportLiveCall } from "@/components/SupportLiveCall";
+import { CallCenterAi } from "@/components/CallCenterAi";
 
 export const Route = createFileRoute("/callcenter")({
   head: () => ({
@@ -28,8 +34,19 @@ export const Route = createFileRoute("/callcenter")({
 const TELEGRAM_SUPPORT_URL = "https://t.me/GoodAppOwner";
 
 const AUDIO: Record<string, string> = {
-  greeting: greetingA.url, withdraw: withdrawA.url, mining: miningA.url, reverify: reverifyA.url,
-  balance: balanceA.url, refer: referA.url, agent: agentA.url, invalid: invalidA.url,
+  greeting: greetingA.url,
+  menu: menuA.url,
+  withdraw: withdrawA.url,
+  mining: miningA.url,
+  reverify: reverifyA.url,
+  balance: balanceA.url,
+  refer: referA.url,
+  more: moreA.url,
+  agent: agentA.url,
+  ai: aiA.url,
+  nopress: nopressA.url,
+  bye: byeA.url,
+  invalid: invalidA.url,
 };
 
 const MENU: Record<string, { key: string; label: string }> = {
@@ -38,6 +55,7 @@ const MENU: Record<string, { key: string; label: string }> = {
   "৩": { key: "reverify", label: "রি ভেরিফাই" },
   "৪": { key: "balance", label: "ব্যালেন্স" },
   "৫": { key: "refer", label: "রেফার বোনাস" },
+  "৯": { key: "ai", label: "এ আই সহকারী" },
   "০": { key: "agent", label: "কাস্টমার কেয়ার" },
 };
 
@@ -55,20 +73,40 @@ function CallCenterPage() {
   const [showPad, setShowPad] = useState(true);
   const [speaker, setSpeaker] = useState(true);
   const [showAgent, setShowAgent] = useState(false);
+  const [showAi, setShowAi] = useState(false);
+  const silence = useRef(0);
+  const waitTimer = useRef<number | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const ctxRef = useRef<AudioContext | null>(null);
   const timers = useRef<number[]>([]);
 
-  const play = useCallback((key: string, title: string) => {
+  const clearWait = () => { if (waitTimer.current) { window.clearTimeout(waitTimer.current); waitTimer.current = null; } };
+
+  // একটি ভয়েস চালাও, শেষ হলে next() চলবে
+  const say = useCallback((key: string, title: string, next?: () => void) => {
     const a = audioRef.current;
     if (!a) return;
+    clearWait();
     a.pause();
     a.src = AUDIO[key];
     a.currentTime = 0;
+    a.onended = () => next?.();
     setLabel(title);
-    if (key === "agent") setShowAgent(true);
     void a.play().catch(() => setLabel("ভয়েস চালু করতে স্ক্রিনে একবার চাপ দিন"));
   }, []);
+
+  // মেনু বলা শেষে ৮ সেকেন্ড অপেক্ষা; কিছু না চাপলে প্রথমবার মেনুতে ফেরে, দ্বিতীয়বার কল কাটে
+  const menu = useCallback((key: "greeting" | "menu" = "menu") => {
+    say(key, key === "greeting" ? "স্বাগতম" : "মূল মেনু", () => {
+      setLabel("অনুগ্রহ করে একটি নম্বর চাপুন");
+      waitTimer.current = window.setTimeout(() => {
+        silence.current += 1;
+        if (silence.current >= 2) say("bye", "কল শেষ", () => hangUpRef.current());
+        else say("nopress", "কোনো বোতাম চাপা হয়নি", () => menu("menu"));
+      }, 8000);
+    });
+  }, [say]);
+  const hangUpRef = useRef<() => void>(() => {});
 
   // আসল ফোনের মতো "টুট… টুট…" রিং টোন
   const ring = (ctx: AudioContext) => {
@@ -87,6 +125,9 @@ function CallCenterPage() {
   };
 
   const hangUp = useCallback(() => {
+    clearWait();
+    silence.current = 0;
+    setShowAi(false);
     timers.current.forEach((t) => window.clearTimeout(t));
     timers.current = [];
     audioRef.current?.pause();
@@ -96,6 +137,7 @@ function CallCenterPage() {
     setShowAgent(false);
   }, []);
 
+  hangUpRef.current = hangUp;
   useEffect(() => () => hangUp(), [hangUp]);
 
   useEffect(() => {
@@ -116,7 +158,6 @@ function CallCenterPage() {
     a.src = AUDIO.greeting;
     a.muted = true;
     void a.play().then(() => { a.pause(); a.currentTime = 0; a.muted = false; }).catch(() => { a.muted = false; });
-    a.onended = () => setLabel("অনুগ্রহ করে একটি নম্বর চাপুন");
     try {
       const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       ctxRef.current = ctxRef.current ?? new Ctx();
@@ -128,16 +169,21 @@ function CallCenterPage() {
     setState("ringing");
     timers.current.push(window.setTimeout(() => {
       setState("connected");
-      play("greeting", "স্বাগতম");
+      menu("greeting");
     }, 2600));
   };
 
   const press = (d: string) => {
     if (state !== "connected") return;
     if (navigator.vibrate) navigator.vibrate(30);
+    silence.current = 0;
     const m = MENU[d];
-    if (m) play(m.key, m.label);
-    else play("invalid", "ভুল বোতাম");
+    setShowAgent(false); setShowAi(false);
+    if (!m) { say("invalid", "ভুল বোতাম", () => menu("menu")); return; }
+    if (m.key === "agent") { setShowAgent(true); say("agent", m.label); return; }
+    if (m.key === "ai") { setShowAi(true); say("ai", m.label); return; }
+    // তথ্য বলা শেষে: "স্যার, আপনাকে আর কীভাবে সাহায্য করতে পারি?" → মেনু
+    say(m.key, m.label, () => say("more", "আর কোনো সাহায্য", () => menu("menu")));
   };
 
   const close = () => { hangUp(); router.history.back(); };
@@ -183,13 +229,19 @@ function CallCenterPage() {
 
       {state === "connected" && (
         <div className="mx-auto mt-3 w-full max-w-xs px-4 text-[11px] leading-5 text-muted-foreground text-center">
-          ১ উইথড্র · ২ মাইনিং · ৩ রি ভেরিফাই · ৪ ব্যালেন্স · ৫ রেফার · ০ কাস্টমার কেয়ার
+          ১ উইথড্র · ২ মাইনিং · ৩ রি-ভেরিফাই · ৪ ব্যালেন্স · ৫ রেফার · ৯ এ আই সহকারী · ০ প্রতিনিধি
+        </div>
+      )}
+
+      {showAi && (
+        <div className="mx-auto mt-4 w-full max-w-xs px-4 animate-fade-in">
+          <CallCenterAi onSpeak={() => { clearWait(); audioRef.current?.pause(); }} />
         </div>
       )}
 
       {showAgent && (
         <div className="mx-auto mt-4 flex w-full max-w-xs flex-col gap-2.5 px-4 animate-fade-in">
-          <SupportLiveCall onActive={(on) => { if (on) audioRef.current?.pause(); }} />
+          <SupportLiveCall autoStart onActive={(on) => { if (on) clearWait(); }} />
           <a href={TELEGRAM_SUPPORT_URL} target="_blank" rel="noreferrer"
             className="flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-xs font-bold text-primary-foreground shadow-lg active:scale-95 transition">
             লিখে সমস্যা পাঠান (টেলিগ্রাম)
