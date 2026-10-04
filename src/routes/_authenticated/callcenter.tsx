@@ -12,7 +12,7 @@ import {
   Volume2,
   Delete,
 } from "lucide-react";
-import { CALL_CENTER_SCRIPTS } from "@/routes/api/public/callcenter-tts";
+import { CALL_CENTER_SCRIPTS } from "@/lib/callcenter-scripts";
 import { PageBackHeader } from "@/components/PageBackHeader";
 
 export const Route = createFileRoute("/_authenticated/callcenter")({
