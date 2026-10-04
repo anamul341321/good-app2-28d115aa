@@ -300,9 +300,9 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
           video: video
             ? {
                 facingMode: facing.current,
-                width: { ideal: 1280 },
-                height: { ideal: 720 },
-                frameRate: { ideal: 30 },
+                width: { ideal: 960 },
+                height: { ideal: 540 },
+                frameRate: { ideal: 24 },
               }
             : false,
         });
@@ -399,8 +399,8 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         const sender = pc.getSenders().find((x) => x.track?.kind === "video");
         if (sender) {
           const params = sender.getParameters();
-          params.degradationPreference = "balanced";
-          params.encodings = [{ maxBitrate: 2_400_000, maxFramerate: 30, scaleResolutionDownBy: 1 }];
+          params.degradationPreference = "maintain-framerate";
+          params.encodings = [{ maxBitrate: 1_200_000, maxFramerate: 24, scaleResolutionDownBy: 1 }];
           void sender.setParameters(params);
         }
       } catch {}
@@ -1121,7 +1121,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
               playsInline
               muted
               className="absolute right-3 h-40 w-28 rounded-[22px] border border-white/20 object-cover shadow-2xl"
-              style={{ top: "calc(env(safe-area-inset-top,0px) + 72px)" }}
+              style={{ top: "calc(env(safe-area-inset-top,0px) + 72px)", transform: !sharing && facing.current === "user" ? "scaleX(-1)" : undefined }}
             />
           )}
 
