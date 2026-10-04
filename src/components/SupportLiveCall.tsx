@@ -117,7 +117,7 @@ export function SupportLiveCall({ onPhaseChange, autoStart }: { onPhaseChange?: 
       c.timers.push(window.setInterval(() => {
         waited += 1;
         if (waited === 25) onPhaseChange?.("longwait");
-        if (waited >= 90) { cleanup(true); setS("busy"); }
+        if (waited >= 600) { cleanup(true); setS("busy"); }
       }, 1000));
       c.timers.push(window.setInterval(() => {
         void readStatus({ data: { id } }).then(({ status }) => {

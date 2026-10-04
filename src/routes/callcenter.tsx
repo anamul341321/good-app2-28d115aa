@@ -109,6 +109,8 @@ function CallCenterPage() {
 
   const stopVoice = useCallback(() => {
     clearWait();
+    const m = music.current;
+    if (m) { clearInterval(m.timer); void m.ctx.close().catch(() => {}); music.current = null; }
     const audio = audioRef.current;
     if (!audio) return;
     audio.onended = null;
@@ -137,15 +139,57 @@ function CallCenterPage() {
     void a.play().catch(() => setLabel("ভয়েস চালু করতে স্ক্রিনে একবার চাপ দিন"));
   }, []);
 
+  // অপেক্ষার সময় হালকা মিষ্টি ব্যাকগ্রাউন্ড মিউজিক (কথার নিচে নরম করে)
+  const music = useRef<{ ctx: AudioContext; timer: number; gain: GainNode } | null>(null);
+  const startMusic = useCallback(() => {
+    if (music.current) return;
+    try {
+      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const gain = ctx.createGain(); gain.gain.value = 0.045; gain.connect(ctx.destination);
+      const chords = [[261.6, 329.6, 392], [220, 261.6, 329.6], [174.6, 220, 261.6], [196, 246.9, 293.7]];
+      let i = 0;
+      const play = () => {
+        const t = ctx.currentTime;
+        chords[i++ % chords.length].forEach((f, k) => {
+          const o = ctx.createOscillator(); const g = ctx.createGain();
+          o.type = k === 0 ? "triangle" : "sine"; o.frequency.value = f;
+          g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(1, t + 0.8);
+          g.gain.linearRampToValueAtTime(0, t + 3.9);
+          o.connect(g); g.connect(gain); o.start(t); o.stop(t + 4);
+        });
+        // ছোট টুং-টাং মেলোডি
+        [0, 1, 2].forEach((n) => {
+          const o = ctx.createOscillator(); const g = ctx.createGain();
+          o.type = "sine"; o.frequency.value = chords[(i - 1) % chords.length][n] * 2;
+          const s = t + 0.5 + n * 0.9;
+          g.gain.setValueAtTime(0, s); g.gain.linearRampToValueAtTime(0.5, s + 0.05); g.gain.exponentialRampToValueAtTime(0.001, s + 0.8);
+          o.connect(g); g.connect(gain); o.start(s); o.stop(s + 0.85);
+        });
+      };
+      play();
+      const timer = window.setInterval(play, 4000);
+      music.current = { ctx, timer, gain };
+    } catch { /* ignore */ }
+  }, []);
+  const stopMusic = useCallback(() => {
+    const m = music.current; if (!m) return;
+    clearInterval(m.timer); void m.ctx.close().catch(() => {}); music.current = null;
+  }, []);
+  useEffect(() => () => stopMusic(), [stopMusic]);
+
+  // সুবিধা → "আপনার কলটি গুরুত্বপূর্ণ…" → পরের সুবিধা — প্রতিনিধি না ধরা পর্যন্ত চলতেই থাকবে
   const playNextHoldFeature = useCallback(function playNextHoldFeature() {
     if (!holdingForAgent.current) return;
-    const feature = HOLD_FEATURES[holdFeatureIndex.current % HOLD_FEATURES.length];
+    startMusic();
+    const step = holdFeatureIndex.current;
     holdFeatureIndex.current += 1;
-    say(feature.key, feature.title, () => {
+    const isNotice = step % 2 === 1;
+    const feature = HOLD_FEATURES[Math.floor(step / 2) % HOLD_FEATURES.length];
+    say(isNotice ? "longwait" : feature.key, isNotice ? "আপনার কলটি আমাদের কাছে গুরুত্বপূর্ণ" : feature.title, () => {
       if (!holdingForAgent.current) return;
-      waitTimer.current = window.setTimeout(playNextHoldFeature, 650);
+      waitTimer.current = window.setTimeout(playNextHoldFeature, 700);
     });
-  }, [say]);
+  }, [say, startMusic]);
 
   const handleAgentPhase = useCallback((phase: SupportPhase) => {
     if (phase === "hold") {
