@@ -2,10 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
-import { Phone, PhoneOff, PhoneIncoming, Mic, MicOff, Volume2 } from "lucide-react";
+import { Phone, PhoneOff, PhoneIncoming, Mic, MicOff, Volume2, Pause, Play } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { adminListPushTargets, adminAddPushTarget, adminRemovePushTarget } from "@/lib/admin.functions";
-import { adminAcceptSupportCall, adminEndSupportCall, adminListSupportCalls, getSupportCallStatus } from "@/lib/support-call.functions";
+import { adminAcceptSupportCall, adminEndSupportCall, adminSetSupportHold, adminListSupportCalls, getSupportCallStatus } from "@/lib/support-call.functions";
 import { SUPPORT_LOBBY, getSupportIce, supportChannel, type RingPayload } from "@/lib/support-rtc";
 
 export const Route = createFileRoute("/admin/calls")({
@@ -23,6 +23,7 @@ function AdminCalls() {
   const [talking, setTalking] = useState(false);
   const [sec, setSec] = useState(0);
   const [muted, setMuted] = useState(false);
+  const [held, setHeld] = useState(false);
   const [soundOn, setSoundOn] = useState(false);
   const ctx = useRef<AudioContext | null>(null);
   const remote = useRef<HTMLAudioElement | null>(null);
@@ -147,7 +148,15 @@ function AdminCalls() {
     setRinging((m) => { const n = { ...m }; delete n[r.id]; return n; });
   };
 
-  const hang = async () => { const id = active?.id; teardown(true); if (id) await adminEndSupportCall({ data: { id } }).catch(() => {}); };
+  const toggleHold = async () => {
+    if (!active) return;
+    const h = !held; setHeld(h);
+    rtc.current.stream?.getAudioTracks().forEach((t) => (t.enabled = !h && !muted));
+    void rtc.current.ch?.send({ type: "broadcast", event: "hold", payload: { on: h } });
+    await adminSetSupportHold({ data: { id: active.id, hold: h } }).catch(() => {});
+  };
+
+  const hang = async () => { setHeld(false); const id = active?.id; teardown(true); if (id) await adminEndSupportCall({ data: { id } }).catch(() => {}); };
 
   const who = (r: { name: string | null; uid: number | null }) => `${r.name ?? "অতিথি"}${r.uid ? ` · UID ${r.uid}` : " · লগইন নেই"}`;
 
@@ -173,6 +182,10 @@ function AdminCalls() {
           <div className="flex gap-3">
             <button onClick={() => { const m = !muted; setMuted(m); rtc.current.stream?.getAudioTracks().forEach((t) => (t.enabled = !m)); }}
               className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">{muted ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}</button>
+            <button onClick={toggleHold}
+              className={`flex h-12 items-center justify-center gap-1 rounded-full px-4 text-xs font-black ${held ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
+              {held ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />} {held ? "হোল্ড ছাড়ুন" : "হোল্ড"}
+            </button>
             <button onClick={hang} className="flex h-12 flex-1 items-center justify-center gap-2 rounded-full bg-destructive font-black text-destructive-foreground">
               <PhoneOff className="h-5 w-5" /> কল কাটুন
             </button>

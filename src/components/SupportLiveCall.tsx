@@ -2,21 +2,24 @@ import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Phone, PhoneOff, Mic, MicOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { startSupportCall, endSupportCall, getSupportCallStatus } from "@/lib/support-call.functions";
+import { startSupportCall, endSupportCall, getSupportCallStatus, chargeSupportMinute } from "@/lib/support-call.functions";
 import { SUPPORT_LOBBY, getSupportIce, supportChannel } from "@/lib/support-rtc";
 
-type S = "idle" | "calling" | "talking" | "busy" | "ended" | "nomic";
+type S = "idle" | "calling" | "talking" | "busy" | "ended" | "nomic" | "nobalance";
+export type SupportPhase = S | "hold" | "unhold" | "longwait";
 const BN = "০১২৩৪৫৬৭৮৯";
 const bn = (n: number) => String(n).padStart(2, "0").replace(/\d/g, (d) => BN[+d]);
 
 /** কাস্টমার → অ্যাডমিন প্যানেলে সরাসরি অ্যাপের ভেতরের ভয়েস কল। */
-export function SupportLiveCall({ onPhaseChange, autoStart }: { onPhaseChange?: (phase: S) => void; autoStart?: boolean }) {
+export function SupportLiveCall({ onPhaseChange, autoStart }: { onPhaseChange?: (phase: SupportPhase) => void; autoStart?: boolean }) {
   const [s, setS] = useState<S>("idle");
   const [sec, setSec] = useState(0);
   const [muted, setMuted] = useState(false);
   const r = useRef<{ pc?: RTCPeerConnection; stream?: MediaStream; ch?: any; lobby?: any; id?: string; timers: number[] }>({ timers: [] });
   const remote = useRef<HTMLAudioElement | null>(null);
   const readStatus = useServerFn(getSupportCallStatus);
+  const charge = useServerFn(chargeSupportMinute);
+  const [held, setHeld] = useState(false);
 
   const cleanup = (missed: boolean, notify = true) => {
     const c = r.current;
@@ -49,7 +52,17 @@ export function SupportLiveCall({ onPhaseChange, autoStart }: { onPhaseChange?: 
   useEffect(() => {
     if (s !== "talking") return;
     const t = window.setInterval(() => setSec((x) => x + 1), 1000);
-    return () => clearInterval(t);
+    // প্রতি মিনিটে ০.৪৳ — কথা শুরু হলেই প্রথম মিনিট, তারপর প্রতি ৬০ সেকেন্ডে
+    const bill = () => {
+      const id = r.current.id;
+      if (!id) return;
+      void charge({ data: { id } }).then((res) => {
+        if (!res.ok && res.error === "no_balance") { cleanup(false); setS("nobalance"); onPhaseChange?.("nobalance"); }
+      }).catch(() => {});
+    };
+    bill();
+    const b = window.setInterval(bill, 60_000);
+    return () => { clearInterval(t); clearInterval(b); };
   }, [s]);
 
   const call = async () => {
@@ -85,6 +98,11 @@ export function SupportLiveCall({ onPhaseChange, autoStart }: { onPhaseChange?: 
           if (payload.from === "admin") { try { await pc.addIceCandidate(payload.c); } catch { /* ignore */ } }
         })
         .on("broadcast", { event: "hangup" }, () => { cleanup(false, false); setS("ended"); })
+        .on("broadcast", { event: "hold" }, ({ payload }: any) => {
+          const on = !!payload?.on; setHeld(on);
+          if (remote.current) remote.current.muted = on;
+          onPhaseChange?.(on ? "hold" : "unhold");
+        })
         .on("broadcast", { event: "decline" }, () => { cleanup(true, false); setS("busy"); })
         .subscribe();
       const lobby = supabase.channel(SUPPORT_LOBBY);
@@ -98,7 +116,8 @@ export function SupportLiveCall({ onPhaseChange, autoStart }: { onPhaseChange?: 
       let waited = 0;
       c.timers.push(window.setInterval(() => {
         waited += 1;
-        if (waited >= 45) { cleanup(true); setS("busy"); }
+        if (waited === 25) onPhaseChange?.("longwait");
+        if (waited >= 90) { cleanup(true); setS("busy"); }
       }, 1000));
       c.timers.push(window.setInterval(() => {
         void readStatus({ data: { id } }).then(({ status }) => {
@@ -127,10 +146,11 @@ export function SupportLiveCall({ onPhaseChange, autoStart }: { onPhaseChange?: 
   return (
     <div className="flex flex-col items-center gap-2.5">
       <audio ref={remote} autoPlay playsInline />
-      {(s === "idle" || s === "ended" || s === "busy" || s === "nomic") && (
+      {(s === "idle" || s === "ended" || s === "busy" || s === "nomic" || s === "nobalance") && (
         <>
           {s === "busy" && <p className="text-center text-xs font-bold text-destructive">দুঃখিত, এই মুহূর্তে আমাদের সব প্রতিনিধি ব্যস্ত আছেন। একটু পরে আবার চেষ্টা করুন, অথবা টেলিগ্রামে লিখে পাঠান।</p>}
           {s === "ended" && <p className="text-center text-xs font-bold opacity-80">কল শেষ হয়েছে। ধন্যবাদ 💙</p>}
+          {s === "nobalance" && <p className="text-center text-xs font-bold text-destructive">দুঃখিত, আপনার অ্যাকাউন্টে পর্যাপ্ত ব্যালেন্স নেই, তাই প্রতিনিধির সাথে কথা বলা সম্ভব হচ্ছে না।</p>}
           {s === "nomic" && <p className="text-center text-xs font-bold text-destructive">কথা বলতে মাইক্রোফোনের অনুমতি দিন, তারপর আবার চাপুন।</p>}
           <button onClick={call}
             className="flex w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-3.5 text-sm font-black text-primary-foreground shadow-lg active:scale-95 transition">
@@ -140,8 +160,9 @@ export function SupportLiveCall({ onPhaseChange, autoStart }: { onPhaseChange?: 
       )}
       {(s === "calling" || s === "talking") && (
         <div className="flex w-full flex-col items-center gap-3 rounded-2xl bg-card/90 p-4 shadow-lg">
-          <p className="text-sm font-black">
-            {s === "calling" ? "প্রতিনিধির সাথে সংযোগ করা হচ্ছে… লাইনে থাকুন" : `প্রতিনিধির সাথে কথা হচ্ছে · ${bn(Math.floor(sec / 60))}:${bn(sec % 60)}`}
+          {s === "talking" && <p className="text-[11px] font-semibold opacity-70">চার্জ: প্রতি মিনিট ০.৪৳</p>}
+          <p className="text-sm font-black text-center">
+            {s === "calling" ? "প্রতিনিধির সাথে সংযোগ করা হচ্ছে… লাইনে থাকুন" : (held ? "⏸ আপনার কল হোল্ডে আছে (চার্জ কাটছে না) · " : "প্রতিনিধির সাথে কথা হচ্ছে · ") + `${bn(Math.floor(sec / 60))}:${bn(sec % 60)}`}
           </p>
           <div className="flex gap-6">
             <button onClick={toggleMute} aria-label="মিউট" className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">

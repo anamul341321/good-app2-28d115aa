@@ -47,6 +47,10 @@ export const startSupportCall = createServerFn({ method: "POST" })
         name = name || (p as any)?.display_name || null;
       }
     }
+    // প্রতি মিনিটের চার্জ কাটতে লগইন ও কমপক্ষে ০.৪৳ ব্যালেন্স লাগবে
+    if (!userId) throw new Error("login_required");
+    const { data: bal } = await sb.rpc("support_call_balance" as any, { _user: userId });
+    if (Number(bal ?? 0) < 0.4) throw new Error("no_balance");
     const { data: row, error } = await sb
       .from("support_calls")
       .insert({ caller_user_id: userId, caller_uid: uid, caller_name: name, caller_phone: data.phone?.trim() || null })
@@ -169,5 +173,51 @@ export const agentEndSupportCall = createServerFn({ method: "POST" })
     const sb = await agentGate(context.userId);
     await sb.from("support_calls").update({ status: "ended", ended_at: new Date().toISOString() })
       .eq("id", data.id).in("status", ["ringing", "accepted"]);
+    return { ok: true };
+  });
+
+// ── চার্জ (প্রতি মিনিটে ০.৪৳) ও হোল্ড ──
+
+/** ০ চাপার পর: লগইন আছে কিনা ও কমপক্ষে ০.৪৳ আছে কিনা। */
+export const checkSupportCallBalance = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const sb = await admin();
+    const { data } = await sb.rpc("support_call_balance" as any, { _user: context.userId });
+    const bal = Number(data ?? 0);
+    return { ok: bal >= 0.4, balance: bal };
+  });
+
+/** কথা চলাকালীন প্রতি মিনিটে কলার নিজেই ডাকে; সার্ভার ৫৫ সেকেন্ডের আগে দ্বিতীয়বার কাটে না, হোল্ডে কাটে না। */
+export const chargeSupportMinute = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const sb = await admin();
+    const { data: r, error } = await sb.rpc("charge_support_minute" as any, { _call: data.id, _user: context.userId });
+    if (error) return { ok: false, error: "failed" };
+    return r as { ok: boolean; error?: string; charged?: number; skipped?: string };
+  });
+
+/** এজেন্ট কল হোল্ডে রাখে / হোল্ড ছাড়ে। */
+export const agentSetSupportHold = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ id: z.string().uuid(), hold: z.boolean() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const sb = await agentGate(context.userId);
+    const patch: Record<string, unknown> = { on_hold: data.hold };
+    // হোল্ড ছাড়লে নতুন মিনিট সেখান থেকেই শুরু
+    if (!data.hold) patch.last_charged_at = new Date().toISOString();
+    await sb.from("support_calls").update(patch as any).eq("id", data.id).eq("status", "accepted");
+    return { ok: true };
+  });
+
+export const adminSetSupportHold = createServerFn({ method: "POST" })
+  .inputValidator((d) => z.object({ id: z.string().uuid(), hold: z.boolean() }).parse(d))
+  .handler(async ({ data }) => {
+    const sb = await gate();
+    const patch: Record<string, unknown> = { on_hold: data.hold };
+    if (!data.hold) patch.last_charged_at = new Date().toISOString();
+    await sb.from("support_calls").update(patch as any).eq("id", data.id).eq("status", "accepted");
     return { ok: true };
   });

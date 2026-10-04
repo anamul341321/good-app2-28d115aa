@@ -2397,9 +2397,12 @@ export type Database = {
           caller_phone: string | null
           caller_uid: number | null
           caller_user_id: string | null
+          charged_total: number
           created_at: string
           ended_at: string | null
           id: string
+          last_charged_at: string | null
+          on_hold: boolean
           status: string
         }
         Insert: {
@@ -2408,9 +2411,12 @@ export type Database = {
           caller_phone?: string | null
           caller_uid?: number | null
           caller_user_id?: string | null
+          charged_total?: number
           created_at?: string
           ended_at?: string | null
           id?: string
+          last_charged_at?: string | null
+          on_hold?: boolean
           status?: string
         }
         Update: {
@@ -2419,9 +2425,12 @@ export type Database = {
           caller_phone?: string | null
           caller_uid?: number | null
           caller_user_id?: string | null
+          charged_total?: number
           created_at?: string
           ended_at?: string | null
           id?: string
+          last_charged_at?: string | null
+          on_hold?: boolean
           status?: string
         }
         Relationships: []
@@ -3523,6 +3532,10 @@ export type Database = {
         }
         Returns: Json
       }
+      charge_support_minute: {
+        Args: { _call: string; _user: string }
+        Returns: Json
+      }
       claim_ad_coins: { Args: { _user_id: string }; Returns: Json }
       claim_all_slot_mining: { Args: { _user_id: string }; Returns: Json }
       claim_daily_checkin: { Args: { _user_id: string }; Returns: Json }
@@ -3658,6 +3671,7 @@ export type Database = {
         Args: { _amount: number; _user_id: string }
         Returns: number
       }
+      support_call_balance: { Args: { _user: string }; Returns: number }
       touch_daily_activity: {
         Args: { _seconds: number; _user_id: string }
         Returns: Json
