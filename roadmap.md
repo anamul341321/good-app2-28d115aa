@@ -11,3 +11,8 @@
 - [x] Reduce accepted support-call connection delay and skip splash for call entry
 - [x] Add a prominent home call-center entry
 - [x] Publish the YouTube/Telegram 2K bonus announcement on home
+- [x] Make call-center key 9 return to the main menu
+- [x] Replace the full-screen entry video with a short GoodApp logo animation and bypass it for calls/admin
+- [x] Prioritize uploaded Reels and reduce competing preloads on slow connections
+- [x] Harden session checks against temporary network and token-refresh races
+- [x] Prepare relay before calls and tune video for clearer 720p delivery

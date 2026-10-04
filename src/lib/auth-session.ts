@@ -60,9 +60,15 @@ async function refreshWithStored(stored: Stored): Promise<SessionResult> {
     const terminal =
       message.includes("invalid refresh token") ||
       message.includes("refresh token not found") ||
-      message.includes("already used") ||
       message.includes("revoked");
     if (terminal) return { data: { session: null }, error: null };
+    // অন্য tab/request token refresh করে ফেললে পুরোনো token-এ "already used" আসতে পারে।
+    // নতুন session storage-এ লেখা হওয়ার সুযোগ দিয়ে সেটি পড়ি; user-কে logout করি না।
+    if (message.includes("already used")) {
+      await new Promise((resolve) => setTimeout(resolve, 180));
+      const latest = readStoredSession();
+      return { data: { session: latest?.session ?? stored.session }, error: null };
+    }
     // অন্য যেকোনো ব্যর্থতা (নেটওয়ার্ক/সার্ভার) — পুরোনো সেশন রেখে দিই
     return { data: { session: stored.session }, error: null };
   } catch {

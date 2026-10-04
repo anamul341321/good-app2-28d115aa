@@ -90,7 +90,7 @@ function AuthedLayout() {
     const timeoutId = window.setTimeout(() => {
       if (!active) return;
       setAuthError(true);
-    }, 4_000);
+    }, 12_000);
 
     // নেটওয়ার্ক সমস্যা হলে যেন লগআউট না হয়ে যায়:
     // লোকাল সেশন থাকলে সেটাকেই বিশ্বাস করি, শুধু আসল sign-out হলে বের করে দিই।

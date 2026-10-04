@@ -62,8 +62,8 @@ export const CALL_CENTER_SCRIPTS: CallCenterScript[] = [
   {
     key: "ai",
     digit: "৯",
-    title: "এ আই সহকারী",
-    text: "আপনি এখন গুড অ্যাপ এ আই সহকারীর সাথে যুক্ত হয়েছেন। মাইক বোতামে চাপ দিয়ে আপনার প্রশ্নটি বলুন।",
+    title: "মূল মেনু",
+    text: "আপনাকে মূল মেনুতে ফিরিয়ে নেওয়া হচ্ছে। " + MENU_TEXT,
   },
   {
     key: "nopress",

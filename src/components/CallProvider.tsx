@@ -1,4 +1,4 @@
-import { registerFastIce } from "@/lib/rtc-ice";
+import { registerFastIce, waitForFastIce } from "@/lib/rtc-ice";
 import {
   createContext,
   useCallback,
@@ -318,10 +318,10 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         track.contentHint = "speech";
       });
       stream.getVideoTracks().forEach((track) => {
-        track.contentHint = "motion";
+        track.contentHint = "detail";
       });
       localStream.current = stream;
-      const pc = new RTCPeerConnection(ICE);
+      const pc = new RTCPeerConnection(await waitForFastIce(ICE, 700));
       stream.getTracks().forEach((t) => pc.addTrack(t, stream));
       const remote = new MediaStream();
       pc.ontrack = (e) => {

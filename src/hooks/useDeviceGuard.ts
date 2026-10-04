@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { touchDevice } from "@/lib/sessions.functions";
 import { supabase } from "@/integrations/supabase/client";
@@ -38,6 +38,7 @@ export function deviceLabel() {
  */
 export function useDeviceGuard(enabled = true): boolean {
   const touch = useServerFn(touchDevice);
+  const revokedChecks = useRef(0);
 
   useEffect(() => {
     if (!enabled) return;
@@ -53,7 +54,13 @@ export function useDeviceGuard(enabled = true): boolean {
         const result = await touch({
           data: { deviceId, label: deviceLabel(), userAgent: navigator.userAgent },
         });
-        if (!result.revoked || !active) return;
+        if (!result.revoked || !active) {
+          revokedChecks.current = 0;
+          return;
+        }
+        revokedChecks.current += 1;
+        // একটি stale/slow response-এর জন্য কাউকে app থেকে বের করি না।
+        if (revokedChecks.current < 2) return;
         active = false;
         clearSharedSession();
         await supabase.auth.signOut({ scope: "local" }).catch(() => undefined);
