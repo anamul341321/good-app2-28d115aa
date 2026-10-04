@@ -31,7 +31,7 @@ export const Route = createFileRoute("/api/public/callcenter-tts")({
 
         const cached = cacheGet(script.key);
         if (cached) {
-          return new Response(new Blob([cached], { type: "audio/wav" }), {
+          return new Response(new Blob([new Uint8Array(cached)], { type: "audio/wav" }), {
             headers: {
               "Content-Type": "audio/wav",
               "Cache-Control": "public, max-age=86400",
@@ -46,7 +46,7 @@ export const Route = createFileRoute("/api/public/callcenter-tts")({
             return new Response("voice unavailable", { status: 503 });
           }
           cachePut(script.key, wav);
-          return new Response(new Blob([wav], { type: "audio/wav" }), {
+          return new Response(new Blob([new Uint8Array(wav)], { type: "audio/wav" }), {
             headers: {
               "Content-Type": "audio/wav",
               "Cache-Control": "public, max-age=86400",
