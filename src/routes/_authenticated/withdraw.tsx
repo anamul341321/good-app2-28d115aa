@@ -9,7 +9,6 @@ import { toast } from "sonner";
 import { PageVoice } from "@/components/PageVoice";
 import bkashLogo from "@/assets/bkash-logo.png";
 import nagadLogo from "@/assets/nagad-logo.png";
-import usdtLogo from "@/assets/usdt-logo.png";
 import { useLang } from "@/lib/i18n";
 import { withdrawCountdownInfo } from "@/lib/withdraw-window";
 import { WithdrawClosedBanner } from "@/components/WithdrawClosedBanner";
@@ -58,14 +57,9 @@ function WithdrawPage() {
   const [provider, setProvider] = useState<"bkash" | "nagad" | null>(initial);
   useEffect(() => { if (!provider && initial) setProvider(initial); }, [initial, provider]);
 
-  const [mode, setMode] = useState<"bdt" | "usdt">("bdt");
-  // Play Store builds never show the crypto (USDT) payout path.
+  // USDT (crypto) payouts are removed from the withdraw UI everywhere —
+  // Play policy penalises crypto payouts, and the same UI serves the website.
   const store = isStoreBuild();
-  const [usdtAddress, setUsdtAddress] = useState<string>("");
-  const [historyTab, setHistoryTab] = useState<"bdt" | "usdt">("bdt");
-  const usdtRate = Number((data as any)?.payoutSettings?.usdtRateBdt ?? 130);
-  const usdtEnabled = (data as any)?.payoutSettings?.usdtEnabled !== false;
-  const usdtOffMsg = (data as any)?.payoutSettings?.usdtOffMessage;
 
   const [amount, setAmount] = useState<string>("");
   const [now, setNow] = useState(Date.now());
@@ -73,25 +67,18 @@ function WithdrawPage() {
     const id = setInterval(() => setNow(Date.now()), 500);
     return () => clearInterval(id);
   }, []);
-  useEffect(() => {
-    if (!store) return;
-    setMode("bdt");
-    setHistoryTab("bdt");
-    setUsdtAddress("");
-  }, [store]);
 
   const mut = useMutation({
     mutationFn: () => requestWithdraw({
       data: {
         amount: Math.floor(Number(amount) || 0),
         storeBuild: store,
-        provider: !store && mode === "usdt" ? "usdt" : (provider ?? undefined),
-        usdtAddress: !store && mode === "usdt" ? usdtAddress.trim() : undefined,
+        provider: provider ?? undefined,
       },
     }),
     onSuccess: () => {
       toast.success(t("উইথড্র রিকোয়েস্ট পাঠানো হয়েছে! অ্যাডমিন শীঘ্রই প্রসেস করবেন।", "Withdraw request submitted! The admin will process it soon."));
-      setAmount(""); setUsdtAddress("");
+      setAmount("");
       refetch(); refetchHistory();
     },
     onError: (e: any) => toast.error(e.message),
@@ -178,7 +165,7 @@ function WithdrawPage() {
         </div>
       )}
 
-      <div className={`mining-card mining-card-morph rounded-2xl p-5 text-center relative overflow-hidden ${mode === "usdt" ? "ring-2 ring-emerald/40" : "ring-2 ring-primary/30"}`}>
+      <div className="mining-card mining-card-morph rounded-2xl p-5 text-center relative overflow-hidden ring-2 ring-primary/30">
         {monthlyWindow.isOpen && !adminWithdrawOff ? (
           <div className="mx-auto mb-2 flex w-fit items-center gap-1.5 rounded-full border border-emerald/40 bg-emerald/15 px-2.5 py-1 text-[9px] font-black text-emerald">
             <Sparkles className="h-3 w-3" /> {t("🟢 উইথড্র খোলা — এখন তোলা যাবে", "🟢 Withdraw open — you can withdraw now")}
@@ -189,12 +176,10 @@ function WithdrawPage() {
           </div>
         )}
         <p className="text-[10px] font-black text-white/70">
-          {mode === "usdt"
-            ? t("USDT ক্লেইমযোগ্য ব্যালেন্স", "USDT claimable balance")
-            : debtTotal > 0 ? t("বর্তমান BDT ব্যালেন্স", "Current BDT balance") : t("BDT ক্লেইমযোগ্য ব্যালেন্স", "BDT claimable balance")}
+          {debtTotal > 0 ? t("বর্তমান BDT ব্যালেন্স", "Current BDT balance") : t("BDT ক্লেইমযোগ্য ব্যালেন্স", "BDT claimable balance")}
         </p>
         <p className={`mono-num text-4xl font-black mt-1 drop-shadow ${claimable < 0 ? "text-amber" : "text-white"}`} translate="no">
-          {mode === "usdt" ? (claimable / usdtRate).toFixed(2) : claimable} <span className="text-2xl">{mode === "usdt" ? "USDT" : "৳"}</span>
+          {claimable} <span className="text-2xl">৳</span>
         </p>
         <div className="mt-3 grid grid-cols-2 gap-2 text-left">
           <div className="rounded-xl border border-white/15 bg-white/10 p-2.5">
@@ -209,9 +194,7 @@ function WithdrawPage() {
         {debtTotal === 0 && claimable >= 50 && (
           <Button type="button" variant="secondary" onClick={() => setAmount(String(claimable))}
             className="mt-3 h-auto rounded-xl px-5 py-2.5 font-black text-sm btn-press shine">
-            💰 {mode === "usdt"
-              ? t(`সম্পূর্ণ ${(claimable / usdtRate).toFixed(2)} USDT নিন`, `Withdraw all ${(claimable / usdtRate).toFixed(2)} USDT`)
-              : t(`সম্পূর্ণ ${claimable}৳ লিখুন`, `Enter full ${claimable}৳`)}
+            💰 {t(`সম্পূর্ণ ${claimable}৳ লিখুন`, `Enter full ${claimable}৳`)}
           </Button>
         )}
       </div>
@@ -259,51 +242,24 @@ function WithdrawPage() {
       )}
 
 
-      {/* Mode toggle: BDT vs USDT */}
-      <div className={`grid ${store ? "grid-cols-1" : "grid-cols-2"} gap-2`} translate="no">
-          <Button
-            variant="outline"
-          type="button"
-          onClick={() => setMode("bdt")}
-            className={`h-auto justify-start relative overflow-hidden rounded-2xl p-3.5 border-2 text-left transition ${
-            mode === "bdt"
-              ? "border-rose bg-rose/10 shadow-lg"
-              : "border-border bg-surface-2 opacity-80"
-          }`}>
+      {/* Payout method: bKash / Nagad (BDT) only */}
+      <div className="grid grid-cols-1 gap-2" translate="no">
+          <div
+            className="h-auto justify-start relative overflow-hidden rounded-2xl p-3.5 border-2 text-left border-rose bg-rose/10 shadow-lg">
           <div className="flex items-center gap-2">
             <div className="flex -space-x-1.5">
               <img src={bkashLogo} alt="bKash" className="h-7 w-7 rounded-full object-contain bg-white border border-white shadow" loading="lazy" />
               <img src={nagadLogo} alt="Nagad" className="h-7 w-7 rounded-full object-contain bg-white border border-white shadow" loading="lazy" />
             </div>
             <div>
-              <p className={`text-sm font-black ${mode === "bdt" ? "text-rose" : "text-muted-foreground"}`}>BDT</p>
+              <p className="text-sm font-black text-rose">BDT</p>
               <p className="text-[9px] text-muted-foreground">{t("বিকাশ / নগদ", "bKash / Nagad")}</p>
             </div>
           </div>
-          </Button>
-          {!store && (
-          <Button
-            variant="outline"
-          type="button"
-          onClick={() => setMode("usdt")}
-            className={`h-auto justify-start relative overflow-hidden rounded-2xl p-3.5 border-2 text-left transition ${
-            mode === "usdt"
-              ? "border-emerald bg-emerald/10 shadow-lg"
-              : "border-border bg-surface-2 opacity-80"
-          }`}>
-          <div className="flex items-center gap-2">
-            <img src={usdtLogo} alt="USDT" width={32} height={32} className="h-8 w-8 rounded-full object-contain bg-white shadow" loading="lazy" />
-            <div>
-              <p className={`text-sm font-black ${mode === "usdt" ? "text-emerald" : "text-muted-foreground"}`} translate="no">USDT</p>
-              <p className={`text-[9px] font-bold ${usdtEnabled ? "text-muted-foreground" : "text-rose"}`} translate="no">{usdtEnabled ? "Celo Network" : t("সাময়িক বন্ধ", "Temporarily off")}</p>
-            </div>
           </div>
-          </Button>
-          )}
       </div>
 
-      {mode === "bdt" ? (
-        <>
+      <>
           {/* Provider chooser */}
           {(!walletBkash && !walletNagad) ? (
             <Link to="/wallet" className="block rounded-2xl border border-amber/40 bg-amber/10 p-4 text-center">
@@ -395,77 +351,42 @@ function WithdrawPage() {
             </form>
           ) : null}
         </>
-      ) : !store ? (
-        <UsdtWithdrawCard
-          claimable={claimable}
-          amount={amount} setAmount={setAmount}
-          usdtAddress={usdtAddress} setUsdtAddress={setUsdtAddress}
-          usdtRate={usdtRate}
-          usdtEnabled={usdtEnabled}
-          usdtOffMsg={usdtOffMsg}
-          onSubmit={() => mut.mutate()}
-          submitting={mut.isPending}
-          closed={withdrawClosed}
-          monthlyWindow={monthlyWindow}
-          adminWithdrawOff={adminWithdrawOff}
-          t={t}
-        />
-      ) : null}
 
 
       <div>
         <div className="flex items-center justify-between px-1 mb-2">
           <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">{t("ইতিহাস", "History")}</p>
           <div className="flex gap-1 rounded-full bg-surface-2 p-0.5" translate="no">
-            <button type="button" onClick={() => setHistoryTab("bdt")}
-              className={`px-3 py-1 rounded-full text-[10px] font-black transition ${historyTab === "bdt" ? "bg-rose text-white shadow" : "text-muted-foreground"}`}>
+            <span className="px-3 py-1 rounded-full text-[10px] font-black bg-rose text-white shadow">
               BDT
-            </button>
-            {!store && (
-            <button type="button" onClick={() => setHistoryTab("usdt")}
-              className={`px-3 py-1 rounded-full text-[10px] font-black transition ${historyTab === "usdt" ? "bg-emerald text-white shadow" : "text-muted-foreground"}`}>
-              USDT
-            </button>
-            )}
+            </span>
           </div>
         </div>
         <div className="space-y-2">
           {(() => {
-            const filteredHistory = (history ?? []).filter((w: any) =>
-              store ? w.provider !== "usdt" : historyTab === "usdt" ? w.provider === "usdt" : w.provider !== "usdt"
-            );
+            const filteredHistory = (history ?? []).filter((w: any) => w.provider !== "usdt");
             if (filteredHistory.length === 0) {
               return <p className="text-center text-xs text-muted-foreground py-6">{t("কোনো উইথড্র রিকোয়েস্ট নেই", "No withdraw requests yet")}</p>;
             }
             return filteredHistory.map((w: any) => {
-              const isUsdt = w.provider === "usdt";
-              const usdAmt = isUsdt ? (Number(w.amount) / usdtRate).toFixed(2) : null;
               return (
-                <div key={w.id} className={`glass rounded-xl p-3 flex items-start justify-between gap-2 ${isUsdt ? "border border-emerald/30" : ""}`}>
+                <div key={w.id} className="glass rounded-xl p-3 flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1 pr-2">
-                    {isUsdt ? (
-                      <p className="mono-num font-black text-emerald" translate="no">≈ {usdAmt} USDT <span className="text-[10px] text-muted-foreground font-bold">({Math.floor(Number(w.amount))}৳)</span></p>
-                    ) : (
-                      <p className="mono-num font-black" translate="no">{Math.floor(Number(w.amount))} ৳</p>
-                    )}
+                    <p className="mono-num font-black" translate="no">{Math.floor(Number(w.amount))} ৳</p>
                     <p className="text-[10px] text-muted-foreground flex items-center gap-1" translate="no">
                       <span>{new Date(w.created_at).toLocaleString()}</span>
                       <span>•</span>
-                      {isUsdt ? (
-                        <><img src={usdtLogo} alt="USDT" width={12} height={12} className="h-3 w-3 object-contain inline-block" loading="lazy" /> <span className="font-bold">Celo</span></>
-                      ) : (
-                        <img
-                          src={w.provider === "bkash" ? bkashLogo : nagadLogo}
-                          alt={w.provider === "bkash" ? "bKash" : "Nagad"}
-                          className="h-3 w-auto object-contain inline-block"
-                          loading="lazy"
-                        />
-                      )}
+                      <img
+                        src={w.provider === "bkash" ? bkashLogo : nagadLogo}
+                        alt={w.provider === "bkash" ? "bKash" : "Nagad"}
+                        className="h-3 w-auto object-contain inline-block"
+                        loading="lazy"
+                      />
                     </p>
                     <button
                       type="button"
-                      onClick={() => { navigator.clipboard.writeText(w.wallet_number); toast.success(t(isUsdt ? "Address কপি হয়েছে" : "নম্বর কপি হয়েছে", isUsdt ? "Address copied" : "Number copied")); }}
-                      className={`mt-1 inline-flex items-center gap-1 text-[10px] mono-num hover:underline break-all text-left ${isUsdt ? "text-emerald" : "text-cyan"}`}
+                      onClick={() => { navigator.clipboard.writeText(w.wallet_number); toast.success(t("নম্বর কপি হয়েছে", "Number copied")); }}
+                      className="mt-1 inline-flex items-center gap-1 text-[10px] mono-num hover:underline break-all text-left text-cyan"
                       translate="no">
                       <span className="break-all">{w.wallet_number}</span> <Copy className="w-2.5 h-2.5 shrink-0" />
                     </button>
@@ -701,173 +622,6 @@ function WithdrawLockedCard({ monthlyWindow, adminWithdrawOff, min, t }: {
   );
 }
 
-function UsdtWithdrawCard(props: {
-  claimable: number;
-  amount: string;
-  setAmount: (v: string) => void;
-  usdtAddress: string;
-  setUsdtAddress: (v: string) => void;
-  usdtRate: number;
-  usdtEnabled: boolean;
-  usdtOffMsg: string | null;
-  onSubmit: () => void;
-  submitting: boolean;
-  closed?: boolean;
-  monthlyWindow: { isOpen: boolean; msUntilOpen: number };
-  adminWithdrawOff: boolean;
-  t: (bn: string, en: string) => string;
-}) {
-  const { claimable, amount, setAmount, usdtAddress, setUsdtAddress, usdtRate, usdtEnabled, usdtOffMsg, onSubmit, submitting, closed, monthlyWindow, adminWithdrawOff, t } = props;
-  const CELO_RE = /^0x[a-fA-F0-9]{40}$/;
-  const addrValid = CELO_RE.test(usdtAddress.trim());
-  const gross = Math.floor(Number(amount) || 0);
-  const fee = withdrawFee(gross);
-  const payoutBdt = withdrawPayout(gross);
-
-  const grossUsd = gross / usdtRate;
-  const feeUsd = fee / usdtRate;
-  const payoutUsd = payoutBdt / usdtRate;
-
-  if (!usdtEnabled) {
-    return (
-      <div className="rounded-2xl border-2 border-rose/40 bg-rose/10 p-4 text-center">
-        <p className="text-sm font-bold text-rose">⚠️ {t("USDT withdraw বর্তমানে বন্ধ", "USDT withdraw is currently off")}</p>
-        {usdtOffMsg && <p className="text-[11px] text-navy/80 mt-1">{usdtOffMsg}</p>}
-      </div>
-    );
-  }
-
-  if (claimable < MIN_WITHDRAW_BDT) {
-    return (
-      <WithdrawLockedCard monthlyWindow={monthlyWindow} adminWithdrawOff={adminWithdrawOff} min={MIN_WITHDRAW_BDT} t={t} />
-    );
-  }
-
-  const minUsdt = (MIN_WITHDRAW_BDT / usdtRate); // 0.4
-  const maxUsdt = claimable / usdtRate;
-  const usdtInput = gross > 0 ? (gross / usdtRate).toFixed(2) : "";
-  const onUsdtChange = (v: string) => {
-    const cleaned = v.replace(/[^\d.]/g, "");
-    const n = Number(cleaned);
-    if (!isFinite(n) || n <= 0) { setAmount(""); return; }
-    // convert USDT → BDT (rounded to nearest ৳)
-    setAmount(String(Math.round(n * usdtRate)));
-  };
-
-  return (
-    <form onSubmit={(e) => { e.preventDefault(); onSubmit(); }}
-      className="rounded-2xl p-5 space-y-4 border-2 border-emerald/30 relative overflow-hidden"
-      style={{ background: "linear-gradient(155deg, rgba(16,185,129,0.10), rgba(6,182,212,0.06) 60%, rgba(15,23,42,0.4))" }}>
-      {/* USDT header — Binance-style */}
-      <div className="flex items-center gap-3">
-        <img src={usdtLogo} alt="USDT" width={48} height={48} className="h-12 w-12 rounded-full object-contain bg-white shadow-lg shrink-0" loading="lazy" />
-        <div className="flex-1 min-w-0">
-          <p className="text-base font-black text-emerald leading-tight" translate="no">Tether · USDT</p>
-          <p className="text-[11px] text-muted-foreground" translate="no">Stablecoin · 1 USDT = 1 USD</p>
-        </div>
-      </div>
-
-      {/* Network selector — Celo only */}
-      <div>
-        <label className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold" translate="no">Network</label>
-        <div className="mt-2 flex items-center justify-between rounded-xl border-2 border-emerald/40 bg-emerald/10 px-3 py-2.5">
-          <div className="flex items-center gap-2">
-            <div className="h-7 w-7 rounded-full bg-[#FCFF52] flex items-center justify-center text-[11px] font-black text-black shadow" translate="no">C</div>
-            <div>
-              <p className="text-[12px] font-black text-emerald" translate="no">Celo Network</p>
-              <p className="text-[9px] text-muted-foreground" translate="no">CELO · Low fee · Fast</p>
-            </div>
-          </div>
-          <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-emerald text-white" translate="no">SELECTED</span>
-        </div>
-      </div>
-
-      {/* Address input */}
-      <div>
-        <label className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold" translate="no">USDT Address</label>
-        <input
-          type="text"
-          value={usdtAddress}
-          onChange={(e) => setUsdtAddress(e.target.value.trim())}
-          placeholder="0x..."
-          spellCheck={false}
-          autoCorrect="off"
-          autoCapitalize="off"
-          translate="no"
-          className={`w-full mt-2 px-3 py-3 mono-num bg-surface-2 border-2 rounded-xl text-[12px] font-bold outline-none break-all ${
-            usdtAddress.length === 0 ? "border-border" : addrValid ? "border-emerald focus:border-emerald" : "border-rose focus:border-rose"
-          }`}
-        />
-        {usdtAddress.length > 0 && !addrValid && (
-          <p className="text-[10px] text-rose mt-1 font-bold">{t("সঠিক Celo address নয় (0x + 40 hex character)", "Not a valid Celo address (0x + 40 hex chars)")}</p>
-        )}
-        <div className="mt-2 rounded-lg border border-rose/40 bg-rose/10 px-2.5 py-1.5 flex gap-1.5">
-          <ShieldAlert className="h-3.5 w-3.5 shrink-0 text-rose mt-0.5" />
-          <p className="text-[10px] text-rose font-bold leading-snug">
-            {t("শুধুমাত্র Celo network-এর USDT address দিন। ভুল network-এ পাঠালে ফান্ড ফেরত পাবেন না।", "Only send to a Celo network USDT address. Wrong network = permanent loss.")}
-          </p>
-        </div>
-      </div>
-
-      {/* Amount input (USDT) */}
-      <div>
-        <label className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold" translate="no">Amount (USDT)</label>
-        <div className="relative mt-2">
-          <input
-            type="text"
-            inputMode="decimal"
-            value={usdtInput}
-            onChange={(e) => onUsdtChange(e.target.value)}
-            placeholder={minUsdt.toFixed(2)}
-            translate="no"
-            className="w-full pl-4 pr-16 py-3.5 mono-num bg-surface-2 border-2 border-border rounded-xl text-xl font-black outline-none focus:border-emerald"
-          />
-          <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 rounded-lg bg-emerald/15 px-2 py-1">
-            <img src={usdtLogo} alt="USDT" width={16} height={16} className="h-4 w-4 object-contain" loading="lazy" />
-            <span className="text-[10px] font-black text-emerald" translate="no">USDT</span>
-          </div>
-        </div>
-        <div className="mt-1.5 flex items-center justify-between text-[10px]">
-          <span className="text-muted-foreground" translate="no">Min {minUsdt.toFixed(2)} · Max {maxUsdt.toFixed(2)} USDT</span>
-          <button type="button" onClick={() => setAmount(String(claimable))}
-            className="text-emerald font-black hover:underline" translate="no">MAX</button>
-        </div>
-      </div>
-
-      {/* Breakdown */}
-      {gross >= MIN_WITHDRAW_BDT && (
-        <div className="rounded-xl border-2 border-emerald/40 bg-emerald/10 p-3 space-y-1.5" translate="no">
-          <p className="text-[10px] uppercase tracking-widest font-black text-emerald">{t("সারাংশ", "Summary")}</p>
-          <div className="flex justify-between text-[12px]">
-            <span className="text-muted-foreground">{t("ব্যালেন্স কাটবে", "Balance deducted")}</span>
-            <span className="mono-num font-bold">{grossUsd.toFixed(2)} USDT</span>
-          </div>
-          <div className="flex justify-between text-[12px]">
-            <span className="text-muted-foreground">{t("উইথড্র ফি (১০০৳ এর কম ২০%, বেশি হলে ১০%)", "Withdraw fee (20% under 100৳, 10% above)")}</span>
-            <span className="mono-num font-bold text-rose">− {feeUsd.toFixed(2)} USDT</span>
-          </div>
-          <div className="flex justify-between text-base border-t border-emerald/30 pt-1.5">
-            <span className="font-black">{t("আপনি পাবেন", "You receive")}</span>
-            <span className="mono-num font-black text-emerald" translate="no">{payoutUsd.toFixed(2)} USDT</span>
-          </div>
-        </div>
-      )}
-
-      <div className="rounded-lg bg-cyan/10 border border-cyan/30 px-3 py-2 text-[11px] text-cyan font-bold text-center">
-        📅 {t("দৈনিক সর্বোচ্চ ৩টি withdraw রিকোয়েস্ট করা যাবে", "Max 3 withdraw requests per day")}
-      </div>
-
-      <button
-        disabled={closed || submitting || gross < MIN_WITHDRAW_BDT || gross > claimable || !addrValid}
-        className="w-full py-4 rounded-xl font-black text-base flex items-center justify-center gap-2 disabled:opacity-50 text-white shadow-lg"
-        style={{ background: "linear-gradient(120deg,#10b981,#06b6d4)" }}>
-        {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
-        {t("USDT উইথড্র রিকোয়েস্ট", "Submit USDT withdraw")}
-      </button>
-    </form>
-  );
-}
-
 
 /** দেশভিত্তিক পেমেন্ট নোট — বাংলাদেশের বাইরের ইউজার সহজে বুঝবে কীভাবে টাকা পাবে */
 function RegionPayoutNote() {
@@ -886,8 +640,8 @@ function RegionPayoutNote() {
               "Payouts are sent to bKash or Nagad according to the displayed balance and schedule."
             )
           : t(
-              "আপনার দেশে লোকাল পেমেন্ট না থাকলে USDT (Celo) ওয়ালেটে পেমেন্ট নিতে পারবেন — ব্যালান্স ৳-এ দেখানো হয়, পাঠানোর সময় USDT-তে রূপান্তর হয়।",
-              "If local payout is not available in your country, you can be paid in USDT (Celo) — balance is shown in ৳ and converted to USDT when paid."
+              "আপনার দেশে লোকাল পেমেন্ট চালু হলে এখানে দেখানো হবে। রিওয়ার্ড ব্যালান্স নির্ধারিত সময়ে তোলা যায়।",
+              "Local payout options for your country will appear here when available. Rewards can be withdrawn on the scheduled days."
             )}
       </p>
       <p className="mt-1 text-[11px] font-black text-gold">
