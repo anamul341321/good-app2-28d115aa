@@ -49,7 +49,7 @@ function RulesPage() {
       title: t("৩. ব্যালান্স ও উইথড্র", "3. Balance & withdraw"),
       points: [
         t(store ? "সেন্ড মানি, রিচার্জ ও উইথড্র শুধু Main Balance থেকে হয়। আগে যোগ্য রিওয়ার্ড ক্লেইম করুন।" : "সেন্ড মানি, রিচার্জ, কার্ড কেনা ও উইথড্র — সব শুধু Main Balance থেকে হয়। আগে মাইনিং ক্লেইম করুন।", store ? "Send money, recharge and withdraw use Main Balance only. Claim eligible rewards first." : "Send money, recharge, card purchase and withdraw all come from Main Balance only. Claim mining first."),
-        t("প্রতি মাসের ১–৩ তারিখে উইথড্র উইন্ডো খোলা থাকে।", "The withdraw window is open on the 1st–3rd of every month."),
+        t("মেইন/বোনাস ব্যালান্স যেকোনো দিন তোলা যায়; যোগ্য পেন্ডিং রিওয়ার্ড ঢাকা সময়ে মাসের ১–৩ তারিখ রাত ১০টার মধ্যে মেইন ব্যালান্সে আসে।", "Main/bonus funds can be withdrawn any day; eligible pending rewards move to Main Balance from the 1st through 10 PM on the 3rd, Dhaka time."),
         t("রিচার্জ ও সেন্ড মানিতে সার্ভিস ফি কাটা হয় — কনফার্ম করার আগেই স্ক্রিনে দেখানো হয়।", "Recharge and send money have a service fee — it is shown on screen before you confirm."),
         !store && t(
           `আপনার দেশ ${region.nameEn} — লোকাল পেমেন্ট না থাকলে USDT (Celo) ওয়ালেটে পেমেন্ট নেওয়া যায়।`,
@@ -69,7 +69,7 @@ function RulesPage() {
       icon: AlertTriangle,
       title: t("৫. নিষিদ্ধ কাজ", "5. Not allowed"),
       points: [
-        t("অটো-ক্লিকার, বট বা এমুলেটর দিয়ে সময়/ক্লিক বাড়ানো নিষিদ্ধ।", "Auto-clickers, bots or emulators to fake time/clicks are banned."),
+        t("বট, এমুলেটর বা অন্য কোনো উপায়ে যোগ্যতা/হিসাব জাল করা নিষিদ্ধ।", "Bots, emulators or any method used to falsify eligibility or records are banned."),
         t("একই ফোন বা একই ফেস দিয়ে একাধিক একাউন্ট চালানো নিষিদ্ধ।", "Running multiple accounts from one phone or one face is banned."),
         t("Good-App কোনো ইনভেস্টমেন্ট বা গ্যারান্টিড আয়ের প্রতিশ্রুতি দেয় না।", "Good-App is not an investment and does not promise guaranteed income."),
       ],

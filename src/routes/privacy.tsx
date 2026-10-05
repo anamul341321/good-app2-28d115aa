@@ -267,8 +267,8 @@ function PolicyLangBar({ kind }: { kind: "privacy" | "terms" }) {
       <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
         {kind === "privacy"
           ? t(
-              "সহজ কথায়: আপনি সত্যিকারের মানুষ কি না বুঝতে আমরা শুধু আপনার ফেস ছবি ও প্রোফাইল তথ্য রাখি। NID, OTP, ব্যাংক PIN বা পাসওয়ার্ড কখনো চাওয়া হয় না, আর আপনার তথ্য বিক্রি করা হয় না।",
-              "In short: we only keep your face photo and profile details to confirm you are a real person. We never ask for national ID, OTP, bank PIN or your password, and we never sell your data."
+              "সহজ কথায়: একাউন্ট ও নিরাপত্তার জন্য প্রোফাইল, ফেস যাচাই, ডিভাইস ও লেনদেনের প্রয়োজনীয় তথ্য রাখা হয়। NID বা ব্যাংক PIN চাওয়া হয় না এবং তথ্য বিক্রি করা হয় না।",
+              "In short: we keep necessary profile, face-verification, device and transaction data for accounts and security. We do not ask for national ID or bank PIN, and we do not sell data."
             )
           : t(
               liteText(
