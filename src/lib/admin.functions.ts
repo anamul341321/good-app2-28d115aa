@@ -2746,10 +2746,11 @@ export const adminCreateApkUpload = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => z.object({
     version: z.string().trim().regex(/^\d+\.\d+(?:\.\d+)?$/, "সঠিক APK version দিন—যেমন 1.5"),
     lite: z.boolean().optional().default(false),
+    calls: z.boolean().optional().default(false),
   }).parse(i))
   .handler(async ({ data }) => {
     const supabaseAdmin = await gate();
-    const prefix = data.lite ? "good-app-lite" : "good-app";
+    const prefix = data.calls ? "goodapp-call" : data.lite ? "good-app-lite" : "good-app";
     const path = `${prefix}-v${data.version.replace(/[^0-9a-zA-Z._-]/g, "")}-${Date.now()}.apk`;
     const { data: signed, error } = await supabaseAdmin.storage
       .from("app-releases")
@@ -2764,22 +2765,17 @@ export const adminSetApkRelease = createServerFn({ method: "POST" })
     path: z.string().trim().min(1).max(300),
     version: z.string().trim().regex(/^\d+\.\d+(?:\.\d+)?$/, "সঠিক APK version দিন—যেমন 1.5"),
     lite: z.boolean().optional().default(false),
+    calls: z.boolean().optional().default(false),
   }).parse(i))
-  .handler(async ({ data }) => {
-    const supabaseAdmin = await gate();
-    const cleanVersion = data.version;
-    const { data: uploaded, error: uploadedError } = await supabaseAdmin.storage
-      .from("app-releases")
-      .list("", { search: data.path, limit: 2 });
-    const uploadedFile = uploaded?.find((file) => file.name === data.path);
-    if (uploadedError || !uploadedFile || Number(uploadedFile.metadata?.size ?? 0) < 1_000_000) {
-      throw new Error("APK ফাইলটি সম্পূর্ণ আপলোড হয়নি—আবার আপলোড করুন");
-    }
+...
     const patch: any = {
       id: "default",
       updated_at: new Date().toISOString(),
     };
-    if (data.lite) {
+    if (data.calls) {
+      patch.apk_calls_url = data.path;
+      patch.apk_calls_version = cleanVersion;
+    } else if (data.lite) {
       patch.apk_lite_url = data.path;
       patch.apk_lite_version = cleanVersion;
     } else {
@@ -2791,12 +2787,14 @@ export const adminSetApkRelease = createServerFn({ method: "POST" })
     const { data: saved, error } = await supabaseAdmin
       .from("bonus_settings")
       .upsert(patch)
-      .select("apk_url, apk_version, apk_lite_url, apk_lite_version, min_app_version, force_update_enabled")
+      .select("apk_url, apk_version, apk_lite_url, apk_lite_version, apk_calls_url, apk_calls_version, min_app_version, force_update_enabled")
       .single();
     if (error) throw new Error(error.message);
-    const savedOk = data.lite
-      ? (saved as any).apk_lite_url === data.path && (saved as any).apk_lite_version === cleanVersion
-      : (saved as any).apk_url === data.path && (saved as any).apk_version === cleanVersion;
+    const savedOk = data.calls
+      ? (saved as any).apk_calls_url === data.path && (saved as any).apk_calls_version === cleanVersion
+      : data.lite
+        ? (saved as any).apk_lite_url === data.path && (saved as any).apk_lite_version === cleanVersion
+        : (saved as any).apk_url === data.path && (saved as any).apk_version === cleanVersion;
     if (!saved || !savedOk) {
       throw new Error("APK আপলোড হয়েছে, কিন্তু নতুন version চালু করা যায়নি—আবার চেষ্টা করুন");
     }
@@ -2805,7 +2803,8 @@ export const adminSetApkRelease = createServerFn({ method: "POST" })
       path: data.path,
       version: cleanVersion,
       lite: data.lite,
-      downloadUrl: `/api/public/app/download?v=${encodeURIComponent(cleanVersion)}&file=${encodeURIComponent(data.path)}${data.lite ? "&lite=1" : ""}`,
+      calls: data.calls,
+      downloadUrl: `/api/public/app/download?v=${encodeURIComponent(cleanVersion)}&file=${encodeURIComponent(data.path)}${data.calls ? "&calls=1" : data.lite ? "&lite=1" : ""}`,
     };
   });
 
