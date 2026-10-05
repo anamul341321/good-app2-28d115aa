@@ -128,6 +128,7 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const storeBlocked = /^\/(admin(?:-login)?|download|earn|rates)(\/|$)/.test(pathname);
   // Exclude admin and social routes from update gates
   const isExcludedRoute = /^\/(admin|admin-login|callcenter|social|chat|feed|friends|videos|reels|watch|studio|channel|user|profile)(\/|$)/.test(pathname);
 
@@ -141,6 +142,11 @@ function RootComponent() {
       )
       .forEach((node) => node.remove());
   }, [pathname]);
+
+  useLayoutEffect(() => {
+    if (!isStoreBuild() || !storeBlocked) return;
+    router.navigate({ to: "/home", replace: true });
+  }, [router, storeBlocked]);
 
 
 
@@ -202,7 +208,7 @@ function RootComponent() {
         <SplashScreen />
         {!callsApp && !isExcludedRoute && !isLiteBuild() && !isStoreBuild() && <AppUpdateBanner />}
         {!callsApp && !isExcludedRoute && !isLiteBuild() && !isStoreBuild() && <ForceUpdateGate />}
-        {callsBlocked ? <div className="min-h-[100dvh] bg-background" /> : <Outlet />}
+        {callsBlocked || (isStoreBuild() && storeBlocked) ? <div className="min-h-[100dvh] bg-background" /> : <Outlet />}
 
         <Toaster theme="dark" position="top-center" richColors />
       </LanguageProvider>

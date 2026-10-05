@@ -67,7 +67,7 @@ Good-App কোনো ব্যাংক, ঋণ, বিনিয়োগ, স�
 | Phone number | Yes | No | Login, account management, fraud prevention | Yes |
 | Email | Yes | No | Security code and recovery | Optional |
 | User IDs | Yes | No | Account and transaction functionality | Yes |
-| Face photo / biometric-like verification image | Yes | No | Fraud prevention and account security | Optional |
+| Face photo / biometric-like verification image | Yes | No | Fraud prevention and account security | Required for signup/verification flow |
 | Profile photo, gender, country | Yes | No | Profile and regional settings | Optional |
 | Payment information (bKash/Nagad number) | Yes | No | Withdrawal processing | Optional until withdrawal |
 | Transaction history | Yes | No | App functionality, fraud prevention, accounting | Yes when used |
@@ -82,7 +82,7 @@ Good-App কোনো ব্যাংক, ঋণ, বিনিয়োগ, স�
 ```text
 Login: (reviewer test mobile number)
 Password: (reviewer test password)
-Instructions: Sign in with the supplied account. Face verification is optional. The account must contain enough sample data to review slot status, balance, history, send money, recharge and withdrawal screens without making a real payment.
+Instructions: Sign in with the supplied pre-verified account. The account must contain enough sample data to review slot status, balance, history, send money, recharge and withdrawal screens without making a real payment.
 ```
 
 ## Screenshots
