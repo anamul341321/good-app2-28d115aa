@@ -25,3 +25,5 @@
 - [x] Normalize the full app layout across small phones, large phones, and tablets
 - [x] Reduce Reels media/network load and prevent low-memory phone crashes
 - [x] Verify dashboard and Reels at representative phone sizes
+
+- [x] Track every slot balance independently for monthly release and reset deductions

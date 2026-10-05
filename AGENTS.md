@@ -13,3 +13,4 @@
 - Call relay credentials stay in the runtime secrets CLOUDFLARE_TURN_KEY_ID and CLOUDFLARE_TURN_API_TOKEN, read only inside the server function that mints them, because embedding them in the app would expose account keys.
 - Direct UID calling resolves the target server-side and reuses the authenticated call-session flow, so callers cannot spoof another identity.
 - Ordinary authenticated pages use the shared `app-shell` width and responsive navigation so controls remain consistent across phone sizes.
+- Mining balances are attributed per task slot: monthly release, re-verification release, and reset deductions may only affect that slot's recorded amounts.
