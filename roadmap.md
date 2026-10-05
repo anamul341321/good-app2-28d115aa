@@ -38,3 +38,4 @@
 
 - [x] Track every slot balance independently for monthly release and reset deductions
 - [x] Add a separate GoodApp Call APK build option that opens straight to calls with no animation
+- [x] Bangladesh-only: removed other countries, country pickers, foreign USDT card, country rates page and USDT/crypto wording from user screens.
