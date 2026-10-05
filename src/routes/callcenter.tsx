@@ -110,7 +110,7 @@ function CallCenterPage() {
   const stopVoice = useCallback(() => {
     clearWait();
     const m = music.current;
-    if (m) { clearInterval(m.timer); void m.ctx.close().catch(() => {}); music.current = null; }
+    if (m) { clearInterval(m.timer); try { m.gain.disconnect(); } catch { /* ignore */ } music.current = null; }
     const audio = audioRef.current;
     if (!audio) return;
     audio.onended = null;
@@ -146,7 +146,8 @@ function CallCenterPage() {
     try {
       // কল শুরুর সময় আনলক করা অডিও ব্যবহার — মোবাইলে নতুনটা চুপ থাকে
       const C = window.AudioContext || (window as any).webkitAudioContext;
-      const ctx: AudioContext = new C();
+      const ctx: AudioContext = ctxRef.current ?? new C();
+      ctxRef.current = ctx;
       void ctx.resume();
       const gain = ctx.createGain(); gain.gain.value = 0.09; gain.connect(ctx.destination);
       const chords = [[261.6, 329.6, 392], [220, 261.6, 329.6], [174.6, 220, 261.6], [196, 246.9, 293.7]];
@@ -176,7 +177,7 @@ function CallCenterPage() {
   }, []);
   const stopMusic = useCallback(() => {
     const m = music.current; if (!m) return;
-    clearInterval(m.timer); void m.ctx.close().catch(() => {}); music.current = null;
+    clearInterval(m.timer); try { m.gain.disconnect(); } catch { /* ignore */ } music.current = null;
   }, []);
   useEffect(() => () => stopMusic(), [stopMusic]);
 
