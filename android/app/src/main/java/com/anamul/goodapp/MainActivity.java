@@ -39,6 +39,8 @@ public class MainActivity extends BridgeActivity {
     private static final int SCREEN_SHARE_REQUEST = 9043;
     private static final int NOTIFICATION_PERMISSION_REQUEST = 9042;
     private static final String APP_URL = "https://www.goodapp2.live";
+    /** রিং স্ক্রিন জানতে পারে অ্যাপ আগে থেকেই চালু আছে কিনা (তাহলে আর লোড করতে হয় না)। */
+    public static volatile boolean alive = false;
     private static final String APK_DOWNLOAD_PATH = "/api/public/app/download";
     private long updateDownloadId = -1L;
     private String updateFileName = "Good-App-latest.apk";
@@ -501,6 +503,7 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(UnityAdsPlugin.class);
         super.onCreate(savedInstanceState);
+        alive = true;
 
         WebView appWebView = bridge.getWebView();
         // Capacitor starts server.url during super.onCreate(). Stop that first load
@@ -739,6 +742,7 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     public void onDestroy() {
+        alive = false;
         stopCapture();
         try {
             if (callWakeLock != null && callWakeLock.isHeld()) callWakeLock.release();
