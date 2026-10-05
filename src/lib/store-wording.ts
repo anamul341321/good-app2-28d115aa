@@ -16,6 +16,8 @@ const TERMS: Array<[RegExp, string]> = [
   [/USDT/gi, ""],
   [/Celo/gi, ""],
   [/ক্রিপ্টো/gi, ""],
+  [/Crypto/gi, ""],
+  [/বিজ্ঞাপন দেখে/g, ""],
 ];
 
 const SKIP = "script,style,textarea,input,select,code,pre";

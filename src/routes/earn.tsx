@@ -113,17 +113,9 @@ function EarnLanding() {
         <h2 className="text-xl font-black">Payout methods</h2>
         <div className="mt-4 glass rounded-2xl p-4 space-y-2 text-xs text-muted-foreground">
           <p>
-            <strong className="text-foreground">USDT (Celo network)</strong> — available worldwide. Paste your
-            USDT address, request the amount and our team sends it manually after review.
-          </p>
-          <p>
-            <strong className="text-foreground">Local mobile wallets</strong> — available for users inside
-            Bangladesh, processed on the 1st–3rd of every month.
-          </p>
-          <p>
-            PayPal is not supported. If you do not have a PayPal account you do not need one — USDT covers
-            international payouts, and any exchange or wallet that supports Celo USDT can convert it to your
-            local currency.
+            <strong className="text-foreground">bKash / Nagad (BDT)</strong> — Good-App is available in
+            Bangladesh only. Main balance can be withdrawn any day; task reward balance is withdrawable on the
+            1st–3rd of every month (until 10 PM).
           </p>
         </div>
       </section>
