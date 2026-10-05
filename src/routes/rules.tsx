@@ -4,6 +4,7 @@ import { ArrowLeft, ShieldCheck, Coins, Wallet, Users, AlertTriangle, Globe, Fil
 import { useLang } from "@/lib/i18n";
 import { RegionBadge } from "@/components/RegionBadge";
 import { LanguageToggle } from "@/components/LanguageToggle";
+import { isStoreBuild } from "@/lib/store-build";
 
 export const Route = createFileRoute("/rules")({
   head: () => ({
@@ -21,6 +22,7 @@ export const Route = createFileRoute("/rules")({
 
 function RulesPage() {
   const { t, region } = useLang();
+  const store = isStoreBuild();
 
   const sections = [
     {
@@ -35,10 +37,10 @@ function RulesPage() {
     },
     {
       icon: Coins,
-      title: t("২. মাইনিং", "2. Mining"),
+      title: t(store ? "২. টাস্ক রিওয়ার্ড" : "২. মাইনিং", store ? "2. Task rewards" : "2. Mining"),
       points: [
-        t("১০টি স্লট ভেরিফাই হলে মাইনিং চালু হয়।", "Mining starts once your 10 slots are verified."),
-        t("মাইনিং ব্যালান্স প্রতিদিন ক্লেইম করতে হবে, নাহলে ব্যালান্স হারাতে পারেন।", "Claim your mining balance daily, otherwise you may lose it."),
+        t(store ? "যোগ্য স্লট ভেরিফাই হলে রিওয়ার্ড সুবিধা চালু হয়।" : "১০টি স্লট ভেরিফাই হলে মাইনিং চালু হয়।", store ? "Task rewards start after the required slots are verified." : "Mining starts once your 10 slots are verified."),
+        t(store ? "রিওয়ার্ডের যোগ্যতা ও ক্লেইমের সময় অ্যাপে দেখানো নিয়ম অনুযায়ী নির্ধারিত হয়।" : "মাইনিং ব্যালান্স প্রতিদিন ক্লেইম করতে হবে, নাহলে ব্যালান্স হারাতে পারেন।", store ? "Reward eligibility and claim timing follow the rules shown in the app." : "Claim your mining balance daily, otherwise you may lose it."),
         t("স্লটের ভেরিফাই বাতিল হলে ওই স্লটের রিওয়ার্ড ফিরে যেতে পারে।", "If a slot loses verification, its reward can be reversed."),
       ],
     },
@@ -49,11 +51,11 @@ function RulesPage() {
         t("সেন্ড মানি, রিচার্জ, কার্ড কেনা ও উইথড্র — সব শুধু Main Balance থেকে হয়। আগে মাইনিং ক্লেইম করুন।", "Send money, recharge, card purchase and withdraw all come from Main Balance only. Claim mining first."),
         t("প্রতি মাসের ১–৩ তারিখে উইথড্র উইন্ডো খোলা থাকে।", "The withdraw window is open on the 1st–3rd of every month."),
         t("রিচার্জ ও সেন্ড মানিতে সার্ভিস ফি কাটা হয় — কনফার্ম করার আগেই স্ক্রিনে দেখানো হয়।", "Recharge and send money have a service fee — it is shown on screen before you confirm."),
-        t(
+        !store && t(
           `আপনার দেশ ${region.nameEn} — লোকাল পেমেন্ট না থাকলে USDT (Celo) ওয়ালেটে পেমেন্ট নেওয়া যায়।`,
           `Your country is ${region.nameEn} — where local payment is unavailable, you can be paid in USDT (Celo) to your wallet.`
         ),
-      ],
+      ].filter((point): point is string => Boolean(point)),
     },
     {
       icon: Users,

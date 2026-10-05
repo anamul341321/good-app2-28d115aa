@@ -6,10 +6,11 @@ import { useLang } from "@/lib/i18n";
 import { money, moneyText, USDT_BDT_RATE } from "@/lib/money";
 import { REGIONS, getRegion } from "@/lib/regions";
 import { isLiteBuild } from "@/lib/lite-build";
+import { isStoreBuild } from "@/lib/store-build";
 
 export const Route = createFileRoute("/rates")({
   beforeLoad: () => {
-    if (isLiteBuild()) throw redirect({ to: "/home" });
+    if (isLiteBuild() || isStoreBuild()) throw redirect({ to: "/home" });
   },
   head: () => ({
     meta: [

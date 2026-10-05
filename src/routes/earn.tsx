@@ -1,5 +1,6 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { isLiteBuild } from "@/lib/lite-build";
+import { isStoreBuild } from "@/lib/store-build";
 
 export const Route = createFileRoute("/earn")({
   head: () => ({
@@ -21,7 +22,7 @@ export const Route = createFileRoute("/earn")({
     ],
   }),
   loader: () => {
-    if (isLiteBuild()) throw redirect({ to: "/home" });
+    if (isLiteBuild() || isStoreBuild()) throw redirect({ to: "/home" });
   },
   component: EarnLanding,
 });
