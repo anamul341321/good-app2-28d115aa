@@ -6,6 +6,7 @@
 
 - [x] Remove USDT/crypto from every Play Store surface and action
 - [x] Align Privacy, Terms, Data Safety, Rules, and Play listing with the finance-focused Store app
+- [x] Correct Terms & Conditions to match the actual withdrawal, verification, account, deletion, and service rules
 - [x] Verify Store-mode mobile UI and scan for prohibited visible wording
 - [ ] Audit every Lite-visible screen and shared text for financial/reward claims
 - [ ] Remove or replace all Lite financial UI while preserving the full website
