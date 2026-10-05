@@ -46,8 +46,12 @@ type Signal =
 
 type CallState = "idle" | "calling" | "ringing" | "connecting" | "active";
 
+/** "phone" = ডায়াল প্যাড থেকে UID দিয়ে কল (ফোনের মতো স্ক্রিন), "messenger" = মেসেঞ্জার থেকে কল */
+export type CallStyle = "messenger" | "phone";
+type StartOpts = { style?: CallStyle; uid?: number | string };
+
 type Ctx = {
-  startCall: (peerId: string, peerName: string, video: boolean) => void;
+  startCall: (peerId: string, peerName: string, video: boolean, opts?: StartOpts) => void;
   state: CallState;
 };
 
@@ -95,6 +99,10 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   const stateRef = useRef<CallState>("idle");
   const [peer, setPeer] = useState<{ id: string; name: string } | null>(null);
   const [withVideo, setWithVideo] = useState(false);
+  const [callStyle, setCallStyle] = useState<CallStyle>("messenger");
+  const [dialedUid, setDialedUid] = useState<string>("");
+  // কল কাটলে এটা বাড়ে — শুরু হতে থাকা কল তখনই থেমে যায়, অন্যজনের ফোনে আর রিং যায় না।
+  const attemptRef = useRef(0);
   const [muted, setMuted] = useState(false);
   const [camOff, setCamOff] = useState(false);
   const [sharing, setSharing] = useState(false);
@@ -161,6 +169,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const cleanup = useCallback(() => {
+    attemptRef.current += 1;
     if (reconnectTimer.current) {
       window.clearTimeout(reconnectTimer.current);
       reconnectTimer.current = null;
