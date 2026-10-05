@@ -12,6 +12,7 @@ import {
 
 
 import { useEffect, useState } from "react";
+import { isStoreBuild } from "@/lib/store-build";
 
 export const Route = createFileRoute("/admin")({
   ssr: false,
@@ -22,6 +23,11 @@ function AdminLayout() {
   const check = useServerFn(adminCheck);
   const logout = useServerFn(adminLogout);
   const [status, setStatus] = useState<"checking" | "unlocked" | "locked">("checking");
+
+  useEffect(() => {
+    // The admin panel must never be reachable from the Google Play binary.
+    if (isStoreBuild()) window.location.replace("/home");
+  }, []);
 
   useEffect(() => {
     let active = true;

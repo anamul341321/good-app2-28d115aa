@@ -148,6 +148,11 @@ function RootComponent() {
 
 
   useEffect(() => {
+    // Google Play builds read "ইয ়া র্ন" wherever the website says "মাইনিং".
+    startStoreWording();
+  }, []);
+
+  useEffect(() => {
     // Native Android WebView draws under the status bar; give it a slightly
     // larger top offset. Browsers keep the compact gap so pages look full-screen.
     const cap = (window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor;

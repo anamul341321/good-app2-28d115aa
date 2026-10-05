@@ -28,6 +28,7 @@ import { getUnreadMessageCount } from "@/lib/chat.functions";
 
 import { useLang } from "@/lib/i18n";
 import { isLiteBuild } from "@/lib/lite-build";
+import { isStoreBuild } from "@/lib/store-build";
 
 import { toast } from "sonner";
 
@@ -68,6 +69,7 @@ function HomePage() {
   const router = useRouter();
   const { t } = useLang();
   const lite = isLiteBuild();
+  const store = isStoreBuild();
   const [lightbox, setLightbox] = useState<{ url: string; label: string; action?: { label: string; onClick: () => void; tone?: "rose" | "amber" } } | null>(null);
   const [openBox, setOpenBox] = useState<number>(0);
   const [showWelcome, setShowWelcome] = useState<boolean>(false);
@@ -301,11 +303,13 @@ function HomePage() {
             />
           </div>
 
-          {/* বিদেশি ইউজারদের জন্য USDT + নিজের দেশের মুদ্রায় ব্যালেন্স */}
+          {/* বিদেশি ইউজারদের জন্য USDT + নিজের দেশের মুদ্রায় ব্যালেন্স — Play অ্যাপে শোনায় না */}
+          {!store && (
           <ForeignCurrencyCard
             main={Number((data as any)?.balanceBreakdown?.bonus_part ?? 0)}
             mining={Number((data as any)?.balanceBreakdown?.mining_available ?? data.mining?.accrued_amount ?? 0)}
           />
+          )}
 
           {/* দেশভিত্তিক রেট + রেফার বোনাস এন্ট্রি */}
           <RatesEntryCard />
