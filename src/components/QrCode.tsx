@@ -1,16 +1,20 @@
 import { useEffect, useState } from "react";
-import QRCode from "qrcode";
 
 export function QrCode({ value, size = 128, className }: { value: string; size?: number; className?: string }) {
   const [dataUrl, setDataUrl] = useState<string>("");
   useEffect(() => {
     let cancelled = false;
-    QRCode.toDataURL(value, {
-      width: size * 2,
-      margin: 1,
-      color: { dark: "#0b1220", light: "#ffffff" },
-      errorCorrectionLevel: "H",
-    })
+    // Dynamic import: the "qrcode" package pulls in pngjs, which uses
+    // util.inherits and crashes the serverless SSR bundle at import time.
+    import("qrcode")
+      .then((QRCode) =>
+        QRCode.toDataURL(value, {
+          width: size * 2,
+          margin: 1,
+          color: { dark: "#0b1220", light: "#ffffff" },
+          errorCorrectionLevel: "H",
+        }),
+      )
       .then((url) => { if (!cancelled) setDataUrl(url); })
       .catch(() => {});
     return () => { cancelled = true; };

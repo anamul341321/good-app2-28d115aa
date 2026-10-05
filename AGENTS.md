@@ -18,3 +18,5 @@
 - The Google Play binary is built with build_mode/ANDROID_BUILD_MODE=store (Vite flag VITE_STORE_BUILD=true plus the native STORE_BUILD bridge read through `isStoreBuild()`), because Play policy bans in-app links to outside APKs, crypto payouts and the admin panel; store builds therefore hide those surfaces and render the mining wording as "ইয ়া র্ন" through `startStoreWording()`, while the website and the calls APK keep the original labels.
 - Incoming native calls preload MainActivity behind the ring screen (IncomingCallActivity has its own taskAffinity) and answer via window.__gaNativeCall without reloading, because a fresh page load delays call audio.
 - The native WebView serves /assets, /__l5e and the calls/chat/callcenter page HTML from an on-device copy (LocalShellCache: stale-while-revalidate for pages), because waiting on the network made the calls app and answered calls show loading.
+
+- The `qrcode` npm package (via pngjs) uses util.inherits and crashes the serverless SSR bundle at import time; always load it with a dynamic `import("qrcode")` inside useEffect (see src/components/QrCode.tsx), never a static import.
