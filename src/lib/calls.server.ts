@@ -11,7 +11,10 @@ export async function createCallSession(
 ) {
   if (!input.peerId || input.peerId === context.userId) throw new Error("ভুল কল");
 
-  const { data: callee } = await context.supabase
+  // Profiles are self-only under RLS, so the callee existence check uses the
+  // server client after the caller is already authenticated.
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: callee } = await supabaseAdmin
     .from("profiles")
     .select("id")
     .eq("id", input.peerId)
