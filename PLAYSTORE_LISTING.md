@@ -3,7 +3,7 @@
 > এই নথি শুধু GitHub Actions-এর `store` build-এর জন্য। সাধারণ website/full APK বা GoodApp Call APK Play Console-এ দেবেন না।
 
 App name: **Good-App**  
-Package: **com.anamul.goodapp**  
+Package: **com.goodanamul.goodapp**  
 Category: **Finance**  
 Target audience: **18+**
 

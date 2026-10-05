@@ -15,10 +15,11 @@ android {
     namespace = "com.anamul.goodapp"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        // Owner's registered package identity (verified inside the shipped v1.32/v1.33
-        // APKs). Never change this: a different package installs a second app instead
-        // of updating, and Google Play would reject an AAB that does not match.
-        applicationId isCallsBuild ? "com.goodapp.calls" : "com.anamul.goodapp"
+        // Store identity: the package Google Play and Firebase know this app by.
+        // The Java namespace above stays com.anamul.goodapp (code package only),
+        // so existing Java sources keep their folder layout. This identity can never
+        // be changed after the app is published on Google Play.
+        applicationId isCallsBuild ? "com.goodapp.calls" : "com.goodanamul.goodapp"
         manifestPlaceholders = [appLabel: isCallsBuild ? "GoodApp Call" : "Good-App"]
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
