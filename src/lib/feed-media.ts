@@ -143,11 +143,15 @@ export async function prefetchFeedMedia(paths: Array<string | null | undefined>,
 // React hook wrapper is defined below; kept in the same file per spec.
 import { useEffect, useState } from "react";
 
-export function useFeedMedia(pathOrUrl?: string | null): string | undefined {
+export function useFeedMedia(pathOrUrl?: string | null, enabled = true): string | undefined {
   const [resolved, setResolved] = useState<string | undefined>(() => peekFeedMedia(pathOrUrl));
 
   useEffect(() => {
     let cancelled = false;
+    if (!enabled) {
+      setResolved(undefined);
+      return;
+    }
     if (!pathOrUrl) {
       setResolved(undefined);
       return;
@@ -168,7 +172,7 @@ export function useFeedMedia(pathOrUrl?: string | null): string | undefined {
     return () => {
       cancelled = true;
     };
-  }, [pathOrUrl]);
+  }, [pathOrUrl, enabled]);
 
   return resolved;
 }

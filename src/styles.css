@@ -107,6 +107,8 @@
     line-height: 1.55;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+    min-width: 0;
+    overflow-x: clip;
   }
   h1, h2, h3, h4 {
     font-family: "Baloo Da 2", "Noto Sans Bengali", "Plus Jakarta Sans", system-ui, sans-serif;
@@ -118,6 +120,39 @@
   button, input, textarea, select {
     font-family: inherit;
   }
+}
+
+@utility app-shell {
+  width: 100%;
+  max-width: 30rem;
+  margin-inline: auto;
+}
+
+@media (max-width: 359px) {
+  html, body { font-size: 14.5px; }
+  .nav-icon svg { width: 1.125rem; height: 1.125rem; }
+  .profile-uid { display: none; }
+}
+
+@media (max-width: 480px) {
+  .mc-orb-a,
+  .mc-orb-b { display: none; }
+  .gradient-cta,
+  .gradient-aurora { animation: none; }
+}
+
+@media (min-width: 768px) {
+  .app-shell { max-width: 32rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gradient-cta,
+  .mining-card-morph,
+  .mining-ring,
+  .mining-coin,
+  .mining-number,
+  .ticker-track,
+  .nav-item-active .nav-icon { animation: none !important; }
 }
 
 

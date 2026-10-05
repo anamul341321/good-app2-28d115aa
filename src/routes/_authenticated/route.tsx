@@ -193,7 +193,7 @@ function AuthedLayout() {
   return (
     <CallProvider>
     <AgentIncomingCall />
-    <div className={isSocialRoute ? "min-h-screen" : "min-h-screen pb-24"}>
+    <div className={isSocialRoute ? "min-h-[100dvh]" : "min-h-[100dvh] overflow-x-clip pb-[calc(5.75rem+env(safe-area-inset-bottom))]"}>
       {!isSocialRoute && (
         appStatus?.faceVerifyEnabled === false ? (
           <SlotPausedModal message={appStatus?.faceVerifyMessage} />
@@ -204,8 +204,8 @@ function AuthedLayout() {
 
       {!isSocialRoute && (
         <header className="sticky top-0 z-30 glass safe-top">
-        <div className="max-w-md mx-auto px-3 pt-4 pb-3 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2.5">
+        <div className="app-shell grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-3 pb-3 pt-3">
+          <div className="flex min-w-0 items-center gap-2">
             {pathname !== "/home" && (
               <button
                 type="button"
@@ -221,14 +221,14 @@ function AuthedLayout() {
             )}
             <div data-tour="profile"><ProfileButton /></div>
 
-          <Link to="/home" className="flex items-center gap-2 btn-press">
-            <img src={logo} alt="good-app logo" className="w-9 h-9 rounded-xl shadow-lg" />
-            <span className="font-black text-lg tracking-tight bg-gradient-to-r from-violet-500 via-cyan-500 to-amber-500 bg-clip-text text-transparent">
+          <Link to="/home" className="btn-press flex min-w-0 items-center gap-1.5">
+            <img src={logo} alt="good-app logo" className="h-9 w-9 shrink-0 rounded-xl shadow-lg" />
+            <span className="truncate text-base font-black tracking-tight bg-gradient-to-r from-violet-500 via-cyan-500 to-amber-500 bg-clip-text text-transparent sm:text-lg">
               good-app
             </span>
           </Link>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-1 sm:gap-2">
             <NotificationBell />
             <RegionBadge />
             <LanguageToggle />
@@ -279,13 +279,13 @@ function AuthedLayout() {
       {!isSocialRoute && <DailyFaceVerificationWarning />}
 
 
-      <main className={isSocialRoute ? "" : "max-w-md mx-auto px-4 pt-4"}>
+      <main className={isSocialRoute ? "" : "app-shell px-3 pt-3 sm:px-4 sm:pt-4"}>
         <Outlet />
       </main>
 
       {!isSocialRoute && (
       <nav className="fixed bottom-0 inset-x-0 z-30 glass border-t border-violet/20">
-        <div className={`max-w-md mx-auto px-1.5 py-2 grid gap-0.5 ${lite ? "grid-cols-4" : "grid-cols-6"}`}>
+        <div className={`app-shell grid gap-0.5 px-1 py-1.5 ${lite ? "grid-cols-4" : "grid-cols-6"}`}>
           <NavItem to="/home" icon={<Home className="w-5 h-5" />} label={t("হোম", "Home")} tint="cyan" voice="home.welcome" />
           <div data-tour="nav-reverify"><NavItem to="/reverify" search={{ taskId: undefined }} icon={<RefreshCcw className="w-5 h-5" />} label={lite ? t("আপডেট", "Update") : t("রি-ভেরিফাই", "Re-verify")} tint="violet" voice="reverify.intro" /></div>
           <NavItem to="/referral" icon={<Users className="w-5 h-5" />} label={t("রেফার", "Refer")} tint="violet" />
@@ -344,7 +344,7 @@ function ProfileButton() {
           : <User className="w-5 h-5 text-gold" />}
       </span>
       {/* প্রোফাইলে না ঢুকেই UID দেখা যাবে */}
-      <span className="text-[9px] font-black leading-none text-gold mono-num" translate="no">
+      <span className="profile-uid text-[9px] font-black leading-none text-gold mono-num" translate="no">
         UID {uid ?? "—"}
       </span>
     </Link>
@@ -356,9 +356,9 @@ function NavItem({ to, icon, label, tint, voice, search }: { to: string; icon: R
     <Link to={to as any} data-voice={voice} search={search}
       activeProps={{ className: `nav-item-active nav-tint-${tint}` }}
       inactiveProps={{ className: `nav-tint-${tint} opacity-70` }}
-      className="nav-item relative flex flex-col items-center gap-0.5 py-2 rounded-xl text-[10px] font-black">
+      className="nav-item relative flex min-w-0 flex-col items-center gap-0.5 rounded-xl px-0.5 py-1.5 text-[9px] font-black sm:py-2 sm:text-[10px]">
       <span className="nav-icon">{icon}</span>
-      <span>{label}</span>
+      <span className="w-full truncate text-center">{label}</span>
     </Link>
   );
 }

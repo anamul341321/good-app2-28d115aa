@@ -3,7 +3,7 @@ import { markWatching, awardCoins } from "@/lib/coins";
 import { WatchCoinBar } from "@/components/social/CoinWallet";
 import { playUiSound } from "@/lib/ui-sounds";
 import { useAuth } from "@/hooks/useAuth";
-import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -46,22 +46,8 @@ import {
 import {
   useFeedMedia,
   prefetchFeedMedia,
-  peekFeedMedia,
-  resolveFeedMedia,
 } from "@/lib/feed-media";
 
-/** সামনের ভিডিওর প্রথম কয়েকশো KB আগেই এনে ব্রাউজার ক্যাশে রাখি */
-const warmedVideos = new Set<string>();
-async function warmVideoBytes(url: string) {
-  if (warmedVideos.has(url)) return;
-  warmedVideos.add(url);
-  try {
-    const res = await fetch(url, { headers: { Range: "bytes=0-786431" }, cache: "force-cache" });
-    await res.arrayBuffer();
-  } catch {
-    warmedVideos.delete(url);
-  }
-}
 import { attachBackgroundAudio } from "@/lib/background-audio";
 import { MessengerAvatar } from "@/components/messenger/MessengerAvatar";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -119,8 +105,8 @@ function useCombinedReels(selectedPostId?: string) {
   const localQuery = useInfiniteQuery({
     queryKey: ["reels-local-posts"],
     initialPageParam: 0,
-    queryFn: ({ pageParam }) => getLocalShortVideoPosts(pageParam as number, 40),
-    getNextPageParam: (last, all) => ((last?.length ?? 0) < 40 ? undefined : all.length),
+    queryFn: ({ pageParam }) => getLocalShortVideoPosts(pageParam as number, 16),
+    getNextPageParam: (last, all) => ((last?.length ?? 0) < 16 ? undefined : all.length),
     staleTime: 60_000,
     gcTime: 10 * 60_000,
     // নতুন আপলোড হওয়া রিলস নিজে নিজেই ফিডে চলে আসবে
@@ -131,7 +117,7 @@ function useCombinedReels(selectedPostId?: string) {
     queryKey: ["reels-external"],
     initialPageParam: 1,
     queryFn: ({ pageParam }) =>
-      getBangladeshExternalVideos(pageParam as number, 20, undefined, undefined, "short", pageParam as number),
+      getBangladeshExternalVideos(pageParam as number, 10, undefined, undefined, "short", pageParam as number),
     getNextPageParam: (_last, all) => all.length + 1,
     staleTime: 10 * 60_000,
     gcTime: 30 * 60_000,
@@ -276,30 +262,6 @@ function ReelsPage() {
     setTimeout(() => uploadInputRef.current?.click(), 300);
   }, [autoUpload]);
 
-  const updateActiveFromScroll = useCallback(() => {
-    const root = containerRef.current;
-    if (!root) return;
-    const center = root.scrollTop + root.clientHeight / 2;
-    let bestId: string | null = null;
-    let bestDistance = Number.POSITIVE_INFINITY;
-    Array.from(root.children).forEach((child) => {
-      const el = child as HTMLElement;
-      const id = el.dataset.reelId;
-      if (!id) return;
-      const childCenter = el.offsetTop + el.offsetHeight / 2;
-      const distance = Math.abs(childCenter - center);
-      if (distance < bestDistance) {
-        bestDistance = distance;
-        bestId = id;
-      }
-    });
-    if (bestId) {
-      setActiveId((current) => (current === bestId ? current : bestId));
-    }
-    // শেষের দিকে পৌঁছালে আরও রিলস লোড হবে
-    if (root.scrollTop + root.clientHeight * 3 >= root.scrollHeight) loadMore();
-  }, [loadMore]);
-
   useEffect(() => {
     if (user?.id) {
       markReelsSeen(user.id).catch(() => {});
@@ -334,36 +296,22 @@ function ReelsPage() {
     return idx < 0 ? 0 : idx;
   }, [items, activeId]);
 
-  // signed URL গুলো আগেই তৈরি করে রাখি — তাই স্ক্রল করলেই ভিডিও সাথে সাথে চলে
+  // শুধু বর্তমান ও পরের ভিডিওর URL প্রস্তুত রাখি; কম-মেমরির ফোনে একসাথে
+  // অনেক signed URL ও media request চালালে WebView বন্ধ হয়ে যেতে পারে।
   useEffect(() => {
     const paths = items
-      .slice(Math.max(0, activeIndex - 1), activeIndex + 6)
+      .slice(activeIndex, activeIndex + 2)
       .flatMap((item) =>
-        item.kind === "local" ? [item.post.video_url, item.post.user?.avatar_url] : [],
+        item.kind === "local" ? [item.post.video_url] : [],
       );
-    prefetchFeedMedia(paths, 3).catch(() => {});
+    prefetchFeedMedia(paths, 1).catch(() => {});
   }, [items, activeIndex]);
 
-  // সামনের ভিডিওগুলোর শুরুর অংশ আগেই ডাউনলোড করে ব্রাউজার ক্যাশে রাখি —
-  // স্লো ফোনেও পরের রিল সাথে সাথেই চালু হয় (TikTok স্টাইল)
+  // শেষের তিনটি ভিডিওর কাছে এলেই পরের ছোট batch আনি। Scroll event-এ প্রতিটি
+  // slide মাপা হয় না, তাই দুর্বল ফোনেও scrolling মসৃণ থাকে।
   useEffect(() => {
-    const upcoming = items
-      .slice(activeIndex + 1, activeIndex + 2)
-      .flatMap((item) => (item.kind === "local" ? [item.post.video_url] : []))
-      .filter(Boolean) as string[];
-    let cancelled = false;
-    (async () => {
-      for (const path of upcoming) {
-        if (cancelled) return;
-        const url = peekFeedMedia(path) || (await resolveFeedMedia(path).catch(() => undefined));
-        if (!url || cancelled) continue;
-        await warmVideoBytes(url);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [items, activeIndex]);
+    if (items.length > 0 && activeIndex >= items.length - 3) loadMore();
+  }, [activeIndex, items.length, loadMore]);
 
 
 
@@ -464,8 +412,7 @@ function ReelsPage() {
       ) : (
         <div
           ref={containerRef}
-          onScroll={updateActiveFromScroll}
-          className="h-full w-full snap-y snap-mandatory overflow-y-auto overscroll-contain"
+          className="scrollbar-none h-full w-full snap-y snap-mandatory overflow-y-auto overscroll-contain"
           style={{
             scrollbarWidth: "none",
             touchAction: "pan-y",
@@ -477,7 +424,7 @@ function ReelsPage() {
               key={item.id}
               item={item}
               isActive={activeId === item.id}
-              isNear={index - activeIndex >= -2 && index - activeIndex <= 4}
+              isNear={Math.abs(index - activeIndex) <= 1}
               distance={index - activeIndex}
               muted={muted}
               setMuted={setMuted}
@@ -581,7 +528,7 @@ function ReelSlide({
           onOpenComments={onOpenComments}
         />
       ) : (
-        <ExternalReel video={item.video} isActive={isActive} muted={muted} setMuted={setMuted} />
+        <ExternalReel video={item.video} isActive={isActive} isNear={isNear} muted={muted} setMuted={setMuted} />
       )}
     </div>
   );
@@ -699,9 +646,9 @@ function LocalReel({
   onOpenComments: (postId: string) => void;
 }) {
   const { user } = useAuth();
-  const videoUrl = useFeedMedia(post.video_url);
-  const posterUrl = useFeedMedia(post.image_url || undefined);
-  const avatarUrl = useFeedMedia(post.user?.avatar_url || undefined);
+  const videoUrl = useFeedMedia(post.video_url, isNear);
+  const posterUrl = useFeedMedia(post.image_url || undefined, isNear);
+  const avatarUrl = useFeedMedia(post.user?.avatar_url || undefined, isNear);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [liked, setLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(post.likes_count || 0);
@@ -898,7 +845,7 @@ function LocalReel({
           playsInline
           muted={muted}
           poster={posterUrl}
-          preload={isActive ? "auto" : "metadata"}
+          preload={distance >= 0 && distance <= 1 ? "auto" : "none"}
           onTimeUpdate={(e) => { const v = e.currentTarget; if (!v.paused && !v.ended) markWatching(); }}
           onLoadedData={() => setMediaFailed(false)}
           onWaiting={() => { if (isActive) setBuffering(true); }}
@@ -1015,11 +962,13 @@ function LocalReel({
 function ExternalReel({
   video,
   isActive,
+  isNear,
   muted,
   setMuted,
 }: {
   video: ExternalReelVideo;
   isActive: boolean;
+  isNear: boolean;
   muted: boolean;
   setMuted: (v: boolean) => void;
 }) {
@@ -1030,8 +979,9 @@ function ExternalReel({
   const embedSrc = `${video.video_url}${video.video_url.includes("?") ? "&" : "?"}autoplay=${isActive ? 1 : 0}&mute=${muted ? 1 : 0}&playsinline=1&enablejsapi=1&controls=0&modestbranding=1&rel=0`;
 
   useEffect(() => {
+    if (!isActive) return;
     trackVideoPreference({ title: video.title, category: video.category });
-  }, [video.id]);
+  }, [isActive, video.category, video.id, video.title]);
 
   useEffect(() => {
     if (isDirectVideo) {
@@ -1119,7 +1069,7 @@ function ExternalReel({
 
   return (
     <div className="relative h-full w-full">
-      {isDirectVideo ? (
+      {isDirectVideo && isNear ? (
         <video
           ref={videoRef}
           src={video.video_url}
@@ -1128,9 +1078,10 @@ function ExternalReel({
           loop
           playsInline
           muted={muted}
+          preload={isActive ? "auto" : "metadata"}
           onTimeUpdate={(e) => { const v = e.currentTarget; if (!v.paused && !v.ended) markWatching(); }}
         />
-      ) : isActive ? (
+      ) : !isDirectVideo && isActive ? (
         // pointer-events-none — না হলে ইফ্রেম টাচ খেয়ে ফেলে, স্ক্রল/সোয়াইপ কাজ করে না
         <iframe
           ref={iframeRef}
