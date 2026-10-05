@@ -60,8 +60,15 @@ function AuthedLayout() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const isSocialRoute = /^\/(social|chat|feed|friends|videos|reels|watch|studio|channel|user|profile|calls)(\/|$)/.test(pathname);
   useEffect(() => {
+    if (typeof window === "undefined") return;
+    // GoodApp Call অ্যাপ /calls?app=calls দিয়ে খোলে — ফ্ল্যাগ স্থায়ী করে রাখি
+    try {
+      if (new URLSearchParams(window.location.search).get("app") === "calls") {
+        localStorage.setItem("goodapp_calls_app", "1");
+      }
+    } catch {}
     // GoodApp Call অ্যাপ: শুধু কল ও মেসেজ — অন্য কোনো পেজ লোড হবে না
-    if (typeof window !== "undefined" && localStorage.getItem("goodapp_calls_app") === "1") {
+    if (localStorage.getItem("goodapp_calls_app") === "1") {
       if (!/^\/(calls|chat)(\/|$)/.test(pathname)) {
         router.navigate({ to: "/calls", replace: true });
         return;
