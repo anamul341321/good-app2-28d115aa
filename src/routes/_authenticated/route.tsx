@@ -71,7 +71,8 @@ function AuthedLayout() {
     } catch {}
     // GoodApp Call অ্যাপ: শুধু কল ও মেসেজ — অন্য কোনো পেজ লোড হবে না
     if (localStorage.getItem("goodapp_calls_app") === "1") {
-      if (!/^\/(calls|chat)(\/|$)/.test(pathname)) {
+      // /auth (লগইন) কখনো আটকাবো না — নইলে লগইন বোতাম আবার /calls-এ ফেরত পাঠায়
+      if (!/^\/(calls|chat|callcenter|auth)(\/|$)/.test(pathname)) {
         router.navigate({ to: "/calls", replace: true });
         return;
       }
