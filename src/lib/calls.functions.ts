@@ -54,3 +54,40 @@ export const updateCall = createServerFn({ method: "POST" })
     reason: input?.reason ? String(input.reason).slice(0, 80) : undefined,
   }))
   .handler(({ data, context }) => updateCallSession(context, data));
+
+export const listRecentCalls = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data: rows } = await context.supabase
+      .from("call_sessions")
+      .select("id, caller_id, callee_id, call_type, status, accepted_at, ended_at, created_at")
+      .or(`caller_id.eq.${context.userId},callee_id.eq.${context.userId}`)
+      .order("created_at", { ascending: false })
+      .limit(40);
+    const list = (rows ?? []) as any[];
+    const ids = [...new Set(list.map((r) => (r.caller_id === context.userId ? r.callee_id : r.caller_id)))];
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: profiles } = ids.length
+      ? await supabaseAdmin.from("profiles").select("id, display_name, uid_seq").in("id", ids)
+      : { data: [] as any[] };
+    const map = new Map((profiles ?? []).map((p: any) => [p.id, p]));
+    return list.map((r) => {
+      const outgoing = r.caller_id === context.userId;
+      const otherId = outgoing ? r.callee_id : r.caller_id;
+      const p: any = map.get(otherId);
+      const secs = r.accepted_at && r.ended_at
+        ? Math.max(0, Math.round((new Date(r.ended_at).getTime() - new Date(r.accepted_at).getTime()) / 1000))
+        : 0;
+      return {
+        id: r.id as string,
+        otherId: otherId as string,
+        name: (p?.display_name ?? "ইউজার") as string,
+        uid: (p?.uid_seq ?? null) as number | null,
+        outgoing,
+        video: r.call_type === "video",
+        answered: !!r.accepted_at,
+        seconds: secs,
+        at: r.created_at as string,
+      };
+    });
+  });
