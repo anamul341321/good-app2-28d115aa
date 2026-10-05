@@ -876,6 +876,8 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
           setCallSessionId(sig.callId ?? null);
           setPeer({ id: sig.from, name: sig.fromName });
           setWithVideo(sig.video);
+          setCallStyle(sig.style === "phone" ? "phone" : "messenger");
+          setDialedUid("");
           setState("ringing");
           return;
         }
