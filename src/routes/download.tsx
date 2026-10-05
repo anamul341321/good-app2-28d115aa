@@ -15,6 +15,7 @@ import {
   AlertTriangle,
   HelpCircle,
   Globe,
+  PhoneCall,
 } from "lucide-react";
 
 export const Route = createFileRoute("/download")({
@@ -109,11 +110,27 @@ const FAQ = [
 function DownloadPage() {
   const [version, setVersion] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [callsBusy, setCallsBusy] = useState(false);
+  const [callsVersion, setCallsVersion] = useState<string | null>(null);
+  const [isCallsApp, setIsCallsApp] = useState(false);
 
   useEffect(() => {
+    // কলিং অ্যাপের ভেতর থেকে খুললে কলিং ডাউনলোড বাটন দেখাবো না
+    try {
+      if (
+        localStorage.getItem("goodapp_calls_app") === "1" ||
+        new URLSearchParams(window.location.search).get("app") === "calls"
+      ) {
+        setIsCallsApp(true);
+      }
+    } catch {}
     fetch("/api/public/app/download?resolve=1")
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => d?.version && setVersion(String(d.version)))
+      .catch(() => {});
+    fetch("/api/public/app/download?calls=1&resolve=1")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => d?.version && setCallsVersion(String(d.version)))
       .catch(() => {});
   }, []);
 
@@ -121,6 +138,12 @@ function DownloadPage() {
     setBusy(true);
     window.location.href = "/api/public/app/download";
     setTimeout(() => setBusy(false), 4000);
+  };
+
+  const handleCallsDownload = () => {
+    setCallsBusy(true);
+    window.location.href = "/api/public/app/download?calls=1";
+    setTimeout(() => setCallsBusy(false), 4000);
   };
 
   return (
@@ -157,6 +180,19 @@ function DownloadPage() {
           <Download className="w-5 h-5" />
           {busy ? "ডাউনলোড শুরু হচ্ছে…" : "APK ডাউনলোড করুন"}
         </button>
+
+        {!isCallsApp && callsVersion && (
+          <button
+            onClick={handleCallsDownload}
+            disabled={callsBusy}
+            className="mt-3 w-full sm:w-auto sm:px-10 py-4 rounded-2xl gradient-cyan font-black text-base btn-press inline-flex items-center justify-center gap-2 disabled:opacity-60"
+          >
+            <PhoneCall className="w-5 h-5" />
+            {callsBusy
+              ? "ডাউনলোড শুরু হচ্ছে…"
+              : `GoodApp Call ডাউনলোড (v${callsVersion}) — শুধু কলিং অ্যাপ`}
+          </button>
+        )}
         <p className="mt-3 text-[11px] text-muted-foreground">
           শুধুমাত্র এই অফিসিয়াল পেজ থেকেই অ্যাপ ডাউনলোড করুন।
         </p>
