@@ -1348,7 +1348,7 @@ function PhoneKey({
   active: boolean;
   onClick: () => void;
   label: string;
-  children: ReactNode;
+  children: React.ReactNode;
 }) {
   return (
     <button type="button" onClick={onClick} aria-label={label} className="btn-press flex flex-col items-center gap-2">

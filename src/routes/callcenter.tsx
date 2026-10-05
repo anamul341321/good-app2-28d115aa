@@ -387,7 +387,7 @@ function CallCenterPage() {
     try {
       const person = await resolveUid({ data: { uid: numeric } });
       setUidMessage(`${person.name}-কে কল করা হচ্ছে`);
-      startDirectCall(person.userId, person.name, video);
+      startDirectCall(person.userId, person.name, video, { style: "phone", uid: numeric });
     } catch (error) {
       setUidMessage(error instanceof Error ? error.message : "কল করা যায়নি। লগইন করে আবার চেষ্টা করুন।");
     } finally {
@@ -408,7 +408,7 @@ function CallCenterPage() {
     try {
       const person = await resolveUid({ data: { uid: Number(num) } });
       setUidMessage(`${person.name}-কে কল করা হচ্ছে`);
-      startDirectCall(person.userId, person.name, video);
+      startDirectCall(person.userId, person.name, video, { style: "phone", uid: Number(num) });
     } catch (error) {
       setUidMessage(error instanceof Error ? error.message : "কল করা যায়নি। লগইন করে আবার চেষ্টা করুন।");
     } finally {
@@ -423,7 +423,7 @@ function CallCenterPage() {
     try {
       const person = await resolveUid({ data: { uid } });
       setUidMessage(`${person.name}-কে কল করা হচ্ছে`);
-      startDirectCall(person.userId, person.name, video);
+      startDirectCall(person.userId, person.name, video, { style: "phone", uid });
     } catch (error) {
       setUidMessage(error instanceof Error ? error.message : "কল করা যায়নি");
     } finally { setUidLoading(false); }
