@@ -642,7 +642,22 @@ public class MainActivity extends BridgeActivity {
         Uri uri = intent != null ? intent.getData() : null;
         if (uri != null && isAppDomain(uri) && bridge != null) {
             allowOverLockScreen(uri);
-            bridge.getWebView().loadUrl(withCallsFlag(uri.toString()));
+            final android.webkit.WebView wv = bridge.getWebView();
+            final String target = withCallsFlag(uri.toString());
+            String callId = uri.getQueryParameter("call");
+            String action = "1".equals(uri.getQueryParameter("accept")) ? "accept"
+                : ("1".equals(uri.getQueryParameter("decline")) ? "decline" : null);
+            String current = wv.getUrl();
+            if (callId != null && action != null && current != null && current.contains("goodapp2.live")) {
+                // অ্যাপ আগে থেকেই খোলা: পুরো পেজ আবার লোড না করে সরাসরি কল ধরি/কাটি।
+                String js = "(function(){try{return !!(window.__gaNativeCall&&window.__gaNativeCall("
+                    + org.json.JSONObject.quote(callId) + "," + org.json.JSONObject.quote(action) + "));}catch(e){return false;}})()";
+                wv.evaluateJavascript(js, result -> {
+                    if (!"true".equals(result)) wv.loadUrl(target);
+                });
+            } else {
+                wv.loadUrl(target);
+            }
         }
     }
 
