@@ -1,7 +1,7 @@
 import { MessageCircle, Info } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { useLang } from "@/lib/i18n";
-import { TELEGRAM_GROUP_URL } from "@/lib/coins";
+const TELEGRAM_GROUP_URL = "https://t.me/goodappbuy";
 
 /**
  * Shown in the Play Store build when a user opens a screen that is not part of

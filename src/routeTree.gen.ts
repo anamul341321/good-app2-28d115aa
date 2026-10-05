@@ -27,9 +27,6 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as CardUidRouteImport } from './routes/card.$uid'
 import { Route as AuthNativeCallbackRouteImport } from './routes/auth.native-callback'
-import { Route as ApiYoutubeShortsRouteImport } from './routes/api/youtube-shorts'
-import { Route as ApiYoutubeSearchRouteImport } from './routes/api/youtube-search'
-import { Route as ApiTiktokFeedRouteImport } from './routes/api/tiktok-feed'
 import { Route as AdminWithdrawalsRouteImport } from './routes/admin/withdrawals'
 import { Route as AdminWalletsRouteImport } from './routes/admin/wallets'
 import { Route as AdminUsersRouteImport } from './routes/admin/users'
@@ -50,15 +47,10 @@ import { Route as AdminBonusSettingsRouteImport } from './routes/admin/bonus-set
 import { Route as AdminAnnouncementsRouteImport } from './routes/admin/announcements'
 import { Route as AuthenticatedWithdrawRouteImport } from './routes/_authenticated/withdraw'
 import { Route as AuthenticatedWalletRouteImport } from './routes/_authenticated/wallet'
-import { Route as AuthenticatedVideosRouteImport } from './routes/_authenticated/videos'
-import { Route as AuthenticatedStudioRouteImport } from './routes/_authenticated/studio'
-import { Route as AuthenticatedSocialRouteImport } from './routes/_authenticated/social'
-import { Route as AuthenticatedShopRouteImport } from './routes/_authenticated/shop'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedSendRouteImport } from './routes/_authenticated/send'
 import { Route as AuthenticatedReverifyRouteImport } from './routes/_authenticated/reverify'
 import { Route as AuthenticatedReferralRouteImport } from './routes/_authenticated/referral'
-import { Route as AuthenticatedReelsRouteImport } from './routes/_authenticated/reels'
 import { Route as AuthenticatedRechargeRouteImport } from './routes/_authenticated/recharge'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedOffersRouteImport } from './routes/_authenticated/offers'
@@ -66,12 +58,8 @@ import { Route as AuthenticatedMenuRouteImport } from './routes/_authenticated/m
 import { Route as AuthenticatedKycRouteImport } from './routes/_authenticated/kyc'
 import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
 import { Route as AuthenticatedHistoryRouteImport } from './routes/_authenticated/history'
-import { Route as AuthenticatedFriendsRouteImport } from './routes/_authenticated/friends'
-import { Route as AuthenticatedFeedRouteImport } from './routes/_authenticated/feed'
 import { Route as AuthenticatedEarningsRouteImport } from './routes/_authenticated/earnings'
-import { Route as AuthenticatedCoinsRouteImport } from './routes/_authenticated/coins'
 import { Route as AuthenticatedCallsRouteImport } from './routes/_authenticated/calls'
-import { Route as AuthenticatedSocialIndexRouteImport } from './routes/_authenticated/social/index'
 import { Route as AuthenticatedChatIndexRouteImport } from './routes/_authenticated/chat.index'
 import { Route as LovableEmailEventsRouteImport } from './routes/lovable/email/events'
 import { Route as ApiPublicWhitelistRecheckRouteImport } from './routes/api/public/whitelist-recheck'
@@ -82,12 +70,9 @@ import { Route as ApiPublicHisabCardRouteImport } from './routes/api/public/hisa
 import { Route as ApiPublicDailyClaimWarningRouteImport } from './routes/api/public/daily-claim-warning'
 import { Route as ApiPublicCallcenterTtsRouteImport } from './routes/api/public/callcenter-tts'
 import { Route as AdminUserUserIdRouteImport } from './routes/admin/user.$userId'
-import { Route as AuthenticatedWatchPostIdRouteImport } from './routes/_authenticated/watch.$postId'
 import { Route as AuthenticatedUserUserIdRouteImport } from './routes/_authenticated/user.$userId'
 import { Route as AuthenticatedTaskSlotRouteImport } from './routes/_authenticated/task.$slot'
-import { Route as AuthenticatedSocialMessengerRouteImport } from './routes/_authenticated/social/messenger'
 import { Route as AuthenticatedChatPeerIdRouteImport } from './routes/_authenticated/chat.$peerId'
-import { Route as AuthenticatedChannelUserIdRouteImport } from './routes/_authenticated/channel/$userId'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
@@ -192,21 +177,6 @@ const AuthNativeCallbackRoute = AuthNativeCallbackRouteImport.update({
   path: '/native-callback',
   getParentRoute: () => AuthRoute,
 } as any)
-const ApiYoutubeShortsRoute = ApiYoutubeShortsRouteImport.update({
-  id: '/api/youtube-shorts',
-  path: '/api/youtube-shorts',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiYoutubeSearchRoute = ApiYoutubeSearchRouteImport.update({
-  id: '/api/youtube-search',
-  path: '/api/youtube-search',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiTiktokFeedRoute = ApiTiktokFeedRouteImport.update({
-  id: '/api/tiktok-feed',
-  path: '/api/tiktok-feed',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AdminWithdrawalsRoute = AdminWithdrawalsRouteImport.update({
   id: '/withdrawals',
   path: '/withdrawals',
@@ -307,26 +277,6 @@ const AuthenticatedWalletRoute = AuthenticatedWalletRouteImport.update({
   path: '/wallet',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedVideosRoute = AuthenticatedVideosRouteImport.update({
-  id: '/videos',
-  path: '/videos',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedStudioRoute = AuthenticatedStudioRouteImport.update({
-  id: '/studio',
-  path: '/studio',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedSocialRoute = AuthenticatedSocialRouteImport.update({
-  id: '/social',
-  path: '/social',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedShopRoute = AuthenticatedShopRouteImport.update({
-  id: '/shop',
-  path: '/shop',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -345,11 +295,6 @@ const AuthenticatedReverifyRoute = AuthenticatedReverifyRouteImport.update({
 const AuthenticatedReferralRoute = AuthenticatedReferralRouteImport.update({
   id: '/referral',
   path: '/referral',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedReelsRoute = AuthenticatedReelsRouteImport.update({
-  id: '/reels',
-  path: '/reels',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedRechargeRoute = AuthenticatedRechargeRouteImport.update({
@@ -387,24 +332,9 @@ const AuthenticatedHistoryRoute = AuthenticatedHistoryRouteImport.update({
   path: '/history',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedFriendsRoute = AuthenticatedFriendsRouteImport.update({
-  id: '/friends',
-  path: '/friends',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedFeedRoute = AuthenticatedFeedRouteImport.update({
-  id: '/feed',
-  path: '/feed',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedEarningsRoute = AuthenticatedEarningsRouteImport.update({
   id: '/earnings',
   path: '/earnings',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedCoinsRoute = AuthenticatedCoinsRouteImport.update({
-  id: '/coins',
-  path: '/coins',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedCallsRoute = AuthenticatedCallsRouteImport.update({
@@ -412,12 +342,6 @@ const AuthenticatedCallsRoute = AuthenticatedCallsRouteImport.update({
   path: '/calls',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedSocialIndexRoute =
-  AuthenticatedSocialIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => AuthenticatedSocialRoute,
-  } as any)
 const AuthenticatedChatIndexRoute = AuthenticatedChatIndexRouteImport.update({
   id: '/chat/',
   path: '/chat/',
@@ -471,12 +395,6 @@ const AdminUserUserIdRoute = AdminUserUserIdRouteImport.update({
   path: '/user/$userId',
   getParentRoute: () => AdminRoute,
 } as any)
-const AuthenticatedWatchPostIdRoute =
-  AuthenticatedWatchPostIdRouteImport.update({
-    id: '/watch/$postId',
-    path: '/watch/$postId',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedUserUserIdRoute = AuthenticatedUserUserIdRouteImport.update({
   id: '/user/$userId',
   path: '/user/$userId',
@@ -487,23 +405,11 @@ const AuthenticatedTaskSlotRoute = AuthenticatedTaskSlotRouteImport.update({
   path: '/task/$slot',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedSocialMessengerRoute =
-  AuthenticatedSocialMessengerRouteImport.update({
-    id: '/messenger',
-    path: '/messenger',
-    getParentRoute: () => AuthenticatedSocialRoute,
-  } as any)
 const AuthenticatedChatPeerIdRoute = AuthenticatedChatPeerIdRouteImport.update({
   id: '/chat/$peerId',
   path: '/chat/$peerId',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedChannelUserIdRoute =
-  AuthenticatedChannelUserIdRouteImport.update({
-    id: '/channel/$userId',
-    path: '/channel/$userId',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const LovableEmailTransactionalPreviewRoute =
   LovableEmailTransactionalPreviewRouteImport.update({
     id: '/lovable/email/transactional/preview',
@@ -595,10 +501,7 @@ export interface FileRoutesByFullPath {
   '/rules': typeof RulesRoute
   '/terms': typeof TermsRoute
   '/calls': typeof AuthenticatedCallsRoute
-  '/coins': typeof AuthenticatedCoinsRoute
   '/earnings': typeof AuthenticatedEarningsRoute
-  '/feed': typeof AuthenticatedFeedRoute
-  '/friends': typeof AuthenticatedFriendsRoute
   '/history': typeof AuthenticatedHistoryRoute
   '/home': typeof AuthenticatedHomeRoute
   '/kyc': typeof AuthenticatedKycRoute
@@ -606,15 +509,10 @@ export interface FileRoutesByFullPath {
   '/offers': typeof AuthenticatedOffersRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/recharge': typeof AuthenticatedRechargeRoute
-  '/reels': typeof AuthenticatedReelsRoute
   '/referral': typeof AuthenticatedReferralRoute
   '/reverify': typeof AuthenticatedReverifyRoute
   '/send': typeof AuthenticatedSendRoute
   '/settings': typeof AuthenticatedSettingsRoute
-  '/shop': typeof AuthenticatedShopRoute
-  '/social': typeof AuthenticatedSocialRouteWithChildren
-  '/studio': typeof AuthenticatedStudioRoute
-  '/videos': typeof AuthenticatedVideosRoute
   '/wallet': typeof AuthenticatedWalletRoute
   '/withdraw': typeof AuthenticatedWithdrawRoute
   '/admin/announcements': typeof AdminAnnouncementsRoute
@@ -635,18 +533,12 @@ export interface FileRoutesByFullPath {
   '/admin/users': typeof AdminUsersRoute
   '/admin/wallets': typeof AdminWalletsRoute
   '/admin/withdrawals': typeof AdminWithdrawalsRoute
-  '/api/tiktok-feed': typeof ApiTiktokFeedRoute
-  '/api/youtube-search': typeof ApiYoutubeSearchRoute
-  '/api/youtube-shorts': typeof ApiYoutubeShortsRoute
   '/auth/native-callback': typeof AuthNativeCallbackRoute
   '/card/$uid': typeof CardUidRoute
   '/admin/': typeof AdminIndexRoute
-  '/channel/$userId': typeof AuthenticatedChannelUserIdRoute
   '/chat/$peerId': typeof AuthenticatedChatPeerIdRoute
-  '/social/messenger': typeof AuthenticatedSocialMessengerRoute
   '/task/$slot': typeof AuthenticatedTaskSlotRoute
   '/user/$userId': typeof AuthenticatedUserUserIdRoute
-  '/watch/$postId': typeof AuthenticatedWatchPostIdRoute
   '/admin/user/$userId': typeof AdminUserUserIdRoute
   '/api/public/callcenter-tts': typeof ApiPublicCallcenterTtsRoute
   '/api/public/daily-claim-warning': typeof ApiPublicDailyClaimWarningRoute
@@ -657,7 +549,6 @@ export interface FileRoutesByFullPath {
   '/api/public/whitelist-recheck': typeof ApiPublicWhitelistRecheckRoute
   '/lovable/email/events': typeof LovableEmailEventsRoute
   '/chat/': typeof AuthenticatedChatIndexRoute
-  '/social/': typeof AuthenticatedSocialIndexRoute
   '/chat/group/$groupId': typeof AuthenticatedChatGroupGroupIdRoute
   '/api/public/app/download': typeof ApiPublicAppDownloadRoute
   '/api/public/auto-engage/run': typeof ApiPublicAutoEngageRunRoute
@@ -688,10 +579,7 @@ export interface FileRoutesByTo {
   '/rules': typeof RulesRoute
   '/terms': typeof TermsRoute
   '/calls': typeof AuthenticatedCallsRoute
-  '/coins': typeof AuthenticatedCoinsRoute
   '/earnings': typeof AuthenticatedEarningsRoute
-  '/feed': typeof AuthenticatedFeedRoute
-  '/friends': typeof AuthenticatedFriendsRoute
   '/history': typeof AuthenticatedHistoryRoute
   '/home': typeof AuthenticatedHomeRoute
   '/kyc': typeof AuthenticatedKycRoute
@@ -699,14 +587,10 @@ export interface FileRoutesByTo {
   '/offers': typeof AuthenticatedOffersRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/recharge': typeof AuthenticatedRechargeRoute
-  '/reels': typeof AuthenticatedReelsRoute
   '/referral': typeof AuthenticatedReferralRoute
   '/reverify': typeof AuthenticatedReverifyRoute
   '/send': typeof AuthenticatedSendRoute
   '/settings': typeof AuthenticatedSettingsRoute
-  '/shop': typeof AuthenticatedShopRoute
-  '/studio': typeof AuthenticatedStudioRoute
-  '/videos': typeof AuthenticatedVideosRoute
   '/wallet': typeof AuthenticatedWalletRoute
   '/withdraw': typeof AuthenticatedWithdrawRoute
   '/admin/announcements': typeof AdminAnnouncementsRoute
@@ -727,18 +611,12 @@ export interface FileRoutesByTo {
   '/admin/users': typeof AdminUsersRoute
   '/admin/wallets': typeof AdminWalletsRoute
   '/admin/withdrawals': typeof AdminWithdrawalsRoute
-  '/api/tiktok-feed': typeof ApiTiktokFeedRoute
-  '/api/youtube-search': typeof ApiYoutubeSearchRoute
-  '/api/youtube-shorts': typeof ApiYoutubeShortsRoute
   '/auth/native-callback': typeof AuthNativeCallbackRoute
   '/card/$uid': typeof CardUidRoute
   '/admin': typeof AdminIndexRoute
-  '/channel/$userId': typeof AuthenticatedChannelUserIdRoute
   '/chat/$peerId': typeof AuthenticatedChatPeerIdRoute
-  '/social/messenger': typeof AuthenticatedSocialMessengerRoute
   '/task/$slot': typeof AuthenticatedTaskSlotRoute
   '/user/$userId': typeof AuthenticatedUserUserIdRoute
-  '/watch/$postId': typeof AuthenticatedWatchPostIdRoute
   '/admin/user/$userId': typeof AdminUserUserIdRoute
   '/api/public/callcenter-tts': typeof ApiPublicCallcenterTtsRoute
   '/api/public/daily-claim-warning': typeof ApiPublicDailyClaimWarningRoute
@@ -749,7 +627,6 @@ export interface FileRoutesByTo {
   '/api/public/whitelist-recheck': typeof ApiPublicWhitelistRecheckRoute
   '/lovable/email/events': typeof LovableEmailEventsRoute
   '/chat': typeof AuthenticatedChatIndexRoute
-  '/social': typeof AuthenticatedSocialIndexRoute
   '/chat/group/$groupId': typeof AuthenticatedChatGroupGroupIdRoute
   '/api/public/app/download': typeof ApiPublicAppDownloadRoute
   '/api/public/auto-engage/run': typeof ApiPublicAutoEngageRunRoute
@@ -783,10 +660,7 @@ export interface FileRoutesById {
   '/rules': typeof RulesRoute
   '/terms': typeof TermsRoute
   '/_authenticated/calls': typeof AuthenticatedCallsRoute
-  '/_authenticated/coins': typeof AuthenticatedCoinsRoute
   '/_authenticated/earnings': typeof AuthenticatedEarningsRoute
-  '/_authenticated/feed': typeof AuthenticatedFeedRoute
-  '/_authenticated/friends': typeof AuthenticatedFriendsRoute
   '/_authenticated/history': typeof AuthenticatedHistoryRoute
   '/_authenticated/home': typeof AuthenticatedHomeRoute
   '/_authenticated/kyc': typeof AuthenticatedKycRoute
@@ -794,15 +668,10 @@ export interface FileRoutesById {
   '/_authenticated/offers': typeof AuthenticatedOffersRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/recharge': typeof AuthenticatedRechargeRoute
-  '/_authenticated/reels': typeof AuthenticatedReelsRoute
   '/_authenticated/referral': typeof AuthenticatedReferralRoute
   '/_authenticated/reverify': typeof AuthenticatedReverifyRoute
   '/_authenticated/send': typeof AuthenticatedSendRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
-  '/_authenticated/shop': typeof AuthenticatedShopRoute
-  '/_authenticated/social': typeof AuthenticatedSocialRouteWithChildren
-  '/_authenticated/studio': typeof AuthenticatedStudioRoute
-  '/_authenticated/videos': typeof AuthenticatedVideosRoute
   '/_authenticated/wallet': typeof AuthenticatedWalletRoute
   '/_authenticated/withdraw': typeof AuthenticatedWithdrawRoute
   '/admin/announcements': typeof AdminAnnouncementsRoute
@@ -823,18 +692,12 @@ export interface FileRoutesById {
   '/admin/users': typeof AdminUsersRoute
   '/admin/wallets': typeof AdminWalletsRoute
   '/admin/withdrawals': typeof AdminWithdrawalsRoute
-  '/api/tiktok-feed': typeof ApiTiktokFeedRoute
-  '/api/youtube-search': typeof ApiYoutubeSearchRoute
-  '/api/youtube-shorts': typeof ApiYoutubeShortsRoute
   '/auth/native-callback': typeof AuthNativeCallbackRoute
   '/card/$uid': typeof CardUidRoute
   '/admin/': typeof AdminIndexRoute
-  '/_authenticated/channel/$userId': typeof AuthenticatedChannelUserIdRoute
   '/_authenticated/chat/$peerId': typeof AuthenticatedChatPeerIdRoute
-  '/_authenticated/social/messenger': typeof AuthenticatedSocialMessengerRoute
   '/_authenticated/task/$slot': typeof AuthenticatedTaskSlotRoute
   '/_authenticated/user/$userId': typeof AuthenticatedUserUserIdRoute
-  '/_authenticated/watch/$postId': typeof AuthenticatedWatchPostIdRoute
   '/admin/user/$userId': typeof AdminUserUserIdRoute
   '/api/public/callcenter-tts': typeof ApiPublicCallcenterTtsRoute
   '/api/public/daily-claim-warning': typeof ApiPublicDailyClaimWarningRoute
@@ -845,7 +708,6 @@ export interface FileRoutesById {
   '/api/public/whitelist-recheck': typeof ApiPublicWhitelistRecheckRoute
   '/lovable/email/events': typeof LovableEmailEventsRoute
   '/_authenticated/chat/': typeof AuthenticatedChatIndexRoute
-  '/_authenticated/social/': typeof AuthenticatedSocialIndexRoute
   '/_authenticated/chat/group/$groupId': typeof AuthenticatedChatGroupGroupIdRoute
   '/api/public/app/download': typeof ApiPublicAppDownloadRoute
   '/api/public/auto-engage/run': typeof ApiPublicAutoEngageRunRoute
@@ -879,10 +741,7 @@ export interface FileRouteTypes {
     | '/rules'
     | '/terms'
     | '/calls'
-    | '/coins'
     | '/earnings'
-    | '/feed'
-    | '/friends'
     | '/history'
     | '/home'
     | '/kyc'
@@ -890,15 +749,10 @@ export interface FileRouteTypes {
     | '/offers'
     | '/profile'
     | '/recharge'
-    | '/reels'
     | '/referral'
     | '/reverify'
     | '/send'
     | '/settings'
-    | '/shop'
-    | '/social'
-    | '/studio'
-    | '/videos'
     | '/wallet'
     | '/withdraw'
     | '/admin/announcements'
@@ -919,18 +773,12 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/admin/wallets'
     | '/admin/withdrawals'
-    | '/api/tiktok-feed'
-    | '/api/youtube-search'
-    | '/api/youtube-shorts'
     | '/auth/native-callback'
     | '/card/$uid'
     | '/admin/'
-    | '/channel/$userId'
     | '/chat/$peerId'
-    | '/social/messenger'
     | '/task/$slot'
     | '/user/$userId'
-    | '/watch/$postId'
     | '/admin/user/$userId'
     | '/api/public/callcenter-tts'
     | '/api/public/daily-claim-warning'
@@ -941,7 +789,6 @@ export interface FileRouteTypes {
     | '/api/public/whitelist-recheck'
     | '/lovable/email/events'
     | '/chat/'
-    | '/social/'
     | '/chat/group/$groupId'
     | '/api/public/app/download'
     | '/api/public/auto-engage/run'
@@ -972,10 +819,7 @@ export interface FileRouteTypes {
     | '/rules'
     | '/terms'
     | '/calls'
-    | '/coins'
     | '/earnings'
-    | '/feed'
-    | '/friends'
     | '/history'
     | '/home'
     | '/kyc'
@@ -983,14 +827,10 @@ export interface FileRouteTypes {
     | '/offers'
     | '/profile'
     | '/recharge'
-    | '/reels'
     | '/referral'
     | '/reverify'
     | '/send'
     | '/settings'
-    | '/shop'
-    | '/studio'
-    | '/videos'
     | '/wallet'
     | '/withdraw'
     | '/admin/announcements'
@@ -1011,18 +851,12 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/admin/wallets'
     | '/admin/withdrawals'
-    | '/api/tiktok-feed'
-    | '/api/youtube-search'
-    | '/api/youtube-shorts'
     | '/auth/native-callback'
     | '/card/$uid'
     | '/admin'
-    | '/channel/$userId'
     | '/chat/$peerId'
-    | '/social/messenger'
     | '/task/$slot'
     | '/user/$userId'
-    | '/watch/$postId'
     | '/admin/user/$userId'
     | '/api/public/callcenter-tts'
     | '/api/public/daily-claim-warning'
@@ -1033,7 +867,6 @@ export interface FileRouteTypes {
     | '/api/public/whitelist-recheck'
     | '/lovable/email/events'
     | '/chat'
-    | '/social'
     | '/chat/group/$groupId'
     | '/api/public/app/download'
     | '/api/public/auto-engage/run'
@@ -1066,10 +899,7 @@ export interface FileRouteTypes {
     | '/rules'
     | '/terms'
     | '/_authenticated/calls'
-    | '/_authenticated/coins'
     | '/_authenticated/earnings'
-    | '/_authenticated/feed'
-    | '/_authenticated/friends'
     | '/_authenticated/history'
     | '/_authenticated/home'
     | '/_authenticated/kyc'
@@ -1077,15 +907,10 @@ export interface FileRouteTypes {
     | '/_authenticated/offers'
     | '/_authenticated/profile'
     | '/_authenticated/recharge'
-    | '/_authenticated/reels'
     | '/_authenticated/referral'
     | '/_authenticated/reverify'
     | '/_authenticated/send'
     | '/_authenticated/settings'
-    | '/_authenticated/shop'
-    | '/_authenticated/social'
-    | '/_authenticated/studio'
-    | '/_authenticated/videos'
     | '/_authenticated/wallet'
     | '/_authenticated/withdraw'
     | '/admin/announcements'
@@ -1106,18 +931,12 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/admin/wallets'
     | '/admin/withdrawals'
-    | '/api/tiktok-feed'
-    | '/api/youtube-search'
-    | '/api/youtube-shorts'
     | '/auth/native-callback'
     | '/card/$uid'
     | '/admin/'
-    | '/_authenticated/channel/$userId'
     | '/_authenticated/chat/$peerId'
-    | '/_authenticated/social/messenger'
     | '/_authenticated/task/$slot'
     | '/_authenticated/user/$userId'
-    | '/_authenticated/watch/$postId'
     | '/admin/user/$userId'
     | '/api/public/callcenter-tts'
     | '/api/public/daily-claim-warning'
@@ -1128,7 +947,6 @@ export interface FileRouteTypes {
     | '/api/public/whitelist-recheck'
     | '/lovable/email/events'
     | '/_authenticated/chat/'
-    | '/_authenticated/social/'
     | '/_authenticated/chat/group/$groupId'
     | '/api/public/app/download'
     | '/api/public/auto-engage/run'
@@ -1161,9 +979,6 @@ export interface RootRouteChildren {
   RatesRoute: typeof RatesRoute
   RulesRoute: typeof RulesRoute
   TermsRoute: typeof TermsRoute
-  ApiTiktokFeedRoute: typeof ApiTiktokFeedRoute
-  ApiYoutubeSearchRoute: typeof ApiYoutubeSearchRoute
-  ApiYoutubeShortsRoute: typeof ApiYoutubeShortsRoute
   CardUidRoute: typeof CardUidRoute
   ApiPublicCallcenterTtsRoute: typeof ApiPublicCallcenterTtsRoute
   ApiPublicDailyClaimWarningRoute: typeof ApiPublicDailyClaimWarningRoute
@@ -1316,27 +1131,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthNativeCallbackRouteImport
       parentRoute: typeof AuthRoute
     }
-    '/api/youtube-shorts': {
-      id: '/api/youtube-shorts'
-      path: '/api/youtube-shorts'
-      fullPath: '/api/youtube-shorts'
-      preLoaderRoute: typeof ApiYoutubeShortsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/youtube-search': {
-      id: '/api/youtube-search'
-      path: '/api/youtube-search'
-      fullPath: '/api/youtube-search'
-      preLoaderRoute: typeof ApiYoutubeSearchRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/tiktok-feed': {
-      id: '/api/tiktok-feed'
-      path: '/api/tiktok-feed'
-      fullPath: '/api/tiktok-feed'
-      preLoaderRoute: typeof ApiTiktokFeedRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/admin/withdrawals': {
       id: '/admin/withdrawals'
       path: '/withdrawals'
@@ -1477,34 +1271,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWalletRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/videos': {
-      id: '/_authenticated/videos'
-      path: '/videos'
-      fullPath: '/videos'
-      preLoaderRoute: typeof AuthenticatedVideosRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/studio': {
-      id: '/_authenticated/studio'
-      path: '/studio'
-      fullPath: '/studio'
-      preLoaderRoute: typeof AuthenticatedStudioRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/social': {
-      id: '/_authenticated/social'
-      path: '/social'
-      fullPath: '/social'
-      preLoaderRoute: typeof AuthenticatedSocialRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/shop': {
-      id: '/_authenticated/shop'
-      path: '/shop'
-      fullPath: '/shop'
-      preLoaderRoute: typeof AuthenticatedShopRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/settings': {
       id: '/_authenticated/settings'
       path: '/settings'
@@ -1531,13 +1297,6 @@ declare module '@tanstack/react-router' {
       path: '/referral'
       fullPath: '/referral'
       preLoaderRoute: typeof AuthenticatedReferralRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/reels': {
-      id: '/_authenticated/reels'
-      path: '/reels'
-      fullPath: '/reels'
-      preLoaderRoute: typeof AuthenticatedReelsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/recharge': {
@@ -1589,32 +1348,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedHistoryRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/friends': {
-      id: '/_authenticated/friends'
-      path: '/friends'
-      fullPath: '/friends'
-      preLoaderRoute: typeof AuthenticatedFriendsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/feed': {
-      id: '/_authenticated/feed'
-      path: '/feed'
-      fullPath: '/feed'
-      preLoaderRoute: typeof AuthenticatedFeedRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/earnings': {
       id: '/_authenticated/earnings'
       path: '/earnings'
       fullPath: '/earnings'
       preLoaderRoute: typeof AuthenticatedEarningsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/coins': {
-      id: '/_authenticated/coins'
-      path: '/coins'
-      fullPath: '/coins'
-      preLoaderRoute: typeof AuthenticatedCoinsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/calls': {
@@ -1623,13 +1361,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/calls'
       preLoaderRoute: typeof AuthenticatedCallsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/social/': {
-      id: '/_authenticated/social/'
-      path: '/'
-      fullPath: '/social/'
-      preLoaderRoute: typeof AuthenticatedSocialIndexRouteImport
-      parentRoute: typeof AuthenticatedSocialRoute
     }
     '/_authenticated/chat/': {
       id: '/_authenticated/chat/'
@@ -1701,13 +1432,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminUserUserIdRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/_authenticated/watch/$postId': {
-      id: '/_authenticated/watch/$postId'
-      path: '/watch/$postId'
-      fullPath: '/watch/$postId'
-      preLoaderRoute: typeof AuthenticatedWatchPostIdRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/user/$userId': {
       id: '/_authenticated/user/$userId'
       path: '/user/$userId'
@@ -1722,25 +1446,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTaskSlotRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/social/messenger': {
-      id: '/_authenticated/social/messenger'
-      path: '/messenger'
-      fullPath: '/social/messenger'
-      preLoaderRoute: typeof AuthenticatedSocialMessengerRouteImport
-      parentRoute: typeof AuthenticatedSocialRoute
-    }
     '/_authenticated/chat/$peerId': {
       id: '/_authenticated/chat/$peerId'
       path: '/chat/$peerId'
       fullPath: '/chat/$peerId'
       preLoaderRoute: typeof AuthenticatedChatPeerIdRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/channel/$userId': {
-      id: '/_authenticated/channel/$userId'
-      path: '/channel/$userId'
-      fullPath: '/channel/$userId'
-      preLoaderRoute: typeof AuthenticatedChannelUserIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/lovable/email/transactional/preview': {
@@ -1844,25 +1554,9 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface AuthenticatedSocialRouteChildren {
-  AuthenticatedSocialMessengerRoute: typeof AuthenticatedSocialMessengerRoute
-  AuthenticatedSocialIndexRoute: typeof AuthenticatedSocialIndexRoute
-}
-
-const AuthenticatedSocialRouteChildren: AuthenticatedSocialRouteChildren = {
-  AuthenticatedSocialMessengerRoute: AuthenticatedSocialMessengerRoute,
-  AuthenticatedSocialIndexRoute: AuthenticatedSocialIndexRoute,
-}
-
-const AuthenticatedSocialRouteWithChildren =
-  AuthenticatedSocialRoute._addFileChildren(AuthenticatedSocialRouteChildren)
-
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedCallsRoute: typeof AuthenticatedCallsRoute
-  AuthenticatedCoinsRoute: typeof AuthenticatedCoinsRoute
   AuthenticatedEarningsRoute: typeof AuthenticatedEarningsRoute
-  AuthenticatedFeedRoute: typeof AuthenticatedFeedRoute
-  AuthenticatedFriendsRoute: typeof AuthenticatedFriendsRoute
   AuthenticatedHistoryRoute: typeof AuthenticatedHistoryRoute
   AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
   AuthenticatedKycRoute: typeof AuthenticatedKycRoute
@@ -1870,32 +1564,22 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedOffersRoute: typeof AuthenticatedOffersRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedRechargeRoute: typeof AuthenticatedRechargeRoute
-  AuthenticatedReelsRoute: typeof AuthenticatedReelsRoute
   AuthenticatedReferralRoute: typeof AuthenticatedReferralRoute
   AuthenticatedReverifyRoute: typeof AuthenticatedReverifyRoute
   AuthenticatedSendRoute: typeof AuthenticatedSendRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
-  AuthenticatedShopRoute: typeof AuthenticatedShopRoute
-  AuthenticatedSocialRoute: typeof AuthenticatedSocialRouteWithChildren
-  AuthenticatedStudioRoute: typeof AuthenticatedStudioRoute
-  AuthenticatedVideosRoute: typeof AuthenticatedVideosRoute
   AuthenticatedWalletRoute: typeof AuthenticatedWalletRoute
   AuthenticatedWithdrawRoute: typeof AuthenticatedWithdrawRoute
-  AuthenticatedChannelUserIdRoute: typeof AuthenticatedChannelUserIdRoute
   AuthenticatedChatPeerIdRoute: typeof AuthenticatedChatPeerIdRoute
   AuthenticatedTaskSlotRoute: typeof AuthenticatedTaskSlotRoute
   AuthenticatedUserUserIdRoute: typeof AuthenticatedUserUserIdRoute
-  AuthenticatedWatchPostIdRoute: typeof AuthenticatedWatchPostIdRoute
   AuthenticatedChatIndexRoute: typeof AuthenticatedChatIndexRoute
   AuthenticatedChatGroupGroupIdRoute: typeof AuthenticatedChatGroupGroupIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCallsRoute: AuthenticatedCallsRoute,
-  AuthenticatedCoinsRoute: AuthenticatedCoinsRoute,
   AuthenticatedEarningsRoute: AuthenticatedEarningsRoute,
-  AuthenticatedFeedRoute: AuthenticatedFeedRoute,
-  AuthenticatedFriendsRoute: AuthenticatedFriendsRoute,
   AuthenticatedHistoryRoute: AuthenticatedHistoryRoute,
   AuthenticatedHomeRoute: AuthenticatedHomeRoute,
   AuthenticatedKycRoute: AuthenticatedKycRoute,
@@ -1903,22 +1587,15 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedOffersRoute: AuthenticatedOffersRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedRechargeRoute: AuthenticatedRechargeRoute,
-  AuthenticatedReelsRoute: AuthenticatedReelsRoute,
   AuthenticatedReferralRoute: AuthenticatedReferralRoute,
   AuthenticatedReverifyRoute: AuthenticatedReverifyRoute,
   AuthenticatedSendRoute: AuthenticatedSendRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
-  AuthenticatedShopRoute: AuthenticatedShopRoute,
-  AuthenticatedSocialRoute: AuthenticatedSocialRouteWithChildren,
-  AuthenticatedStudioRoute: AuthenticatedStudioRoute,
-  AuthenticatedVideosRoute: AuthenticatedVideosRoute,
   AuthenticatedWalletRoute: AuthenticatedWalletRoute,
   AuthenticatedWithdrawRoute: AuthenticatedWithdrawRoute,
-  AuthenticatedChannelUserIdRoute: AuthenticatedChannelUserIdRoute,
   AuthenticatedChatPeerIdRoute: AuthenticatedChatPeerIdRoute,
   AuthenticatedTaskSlotRoute: AuthenticatedTaskSlotRoute,
   AuthenticatedUserUserIdRoute: AuthenticatedUserUserIdRoute,
-  AuthenticatedWatchPostIdRoute: AuthenticatedWatchPostIdRoute,
   AuthenticatedChatIndexRoute: AuthenticatedChatIndexRoute,
   AuthenticatedChatGroupGroupIdRoute: AuthenticatedChatGroupGroupIdRoute,
 }
@@ -2000,9 +1677,6 @@ const rootRouteChildren: RootRouteChildren = {
   RatesRoute: RatesRoute,
   RulesRoute: RulesRoute,
   TermsRoute: TermsRoute,
-  ApiTiktokFeedRoute: ApiTiktokFeedRoute,
-  ApiYoutubeSearchRoute: ApiYoutubeSearchRoute,
-  ApiYoutubeShortsRoute: ApiYoutubeShortsRoute,
   CardUidRoute: CardUidRoute,
   ApiPublicCallcenterTtsRoute: ApiPublicCallcenterTtsRoute,
   ApiPublicDailyClaimWarningRoute: ApiPublicDailyClaimWarningRoute,

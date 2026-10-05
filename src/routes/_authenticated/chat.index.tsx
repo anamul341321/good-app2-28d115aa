@@ -305,7 +305,6 @@ export function ChatListPage() {
       <nav className="fixed bottom-0 inset-x-0 z-40 border-t border-border/50 bg-background/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_-20px_var(--color-foreground)] backdrop-blur-md">
         <div className="mx-auto grid max-w-lg grid-cols-3 px-6 py-2">
           <MessengerTab to="/chat" icon={<MessageCircle className="h-6 w-6" />} label="Chats" active badge={data?.unreadTotal ?? 0} />
-          <MessengerTab to="/friends" icon={<Users className="h-6 w-6" />} label="People" />
           <MessengerTab to="/home" icon={<Home className="h-6 w-6" />} label="Dashboard" highlight />
         </div>
       </nav>
