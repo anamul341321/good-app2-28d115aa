@@ -236,6 +236,15 @@ export function AuthPage() {
   }, []);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  // আলাদা "GoodApp Call" অ্যাপে লগইন সহজ রাখি — শুধু ফোন+পাসওয়ার্ড, Google নয়।
+  const isCallsApp = (() => {
+    try {
+      return (
+        localStorage.getItem("goodapp_calls_app") === "1" ||
+        new URLSearchParams(window.location.search).get("app") === "calls"
+      );
+    } catch { return false; }
+  })();
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [scanOpen, setScanOpen] = useState(false);
   const [faceMode, setFaceMode] = useState<null | "signup" | "login">(null);
@@ -971,6 +980,8 @@ export function AuthPage() {
               {mode === "login" ? t("লগইন করুন", "Log in") : t("পরবর্তী ধাপ", "Next step")}
             </button>
 
+            {!isCallsApp && (
+            <>
             <div className="flex items-center gap-2 py-1">
               <span className="h-px flex-1 bg-border" />
               <span className="text-[10px] font-black text-muted-foreground">{t("অথবা", "or")}</span>
@@ -979,6 +990,7 @@ export function AuthPage() {
             <button
               type="button"
               onClick={doGoogle}
+
               disabled={loading || googleLoading}
               className="w-full py-3 rounded-xl font-black text-sm flex items-center justify-center gap-2 bg-white border-2 border-border text-navy btn-press disabled:opacity-60"
             >
@@ -1011,6 +1023,9 @@ export function AuthPage() {
                 </>
               )}
             </button>
+            </>
+            )}
+
 
             {mode === "login" && (
               <>
