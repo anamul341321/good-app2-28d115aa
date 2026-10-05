@@ -1,5 +1,8 @@
 # Roadmap
 
+- [ ] Remove USDT/crypto from every Play Store surface and action
+- [ ] Align Privacy, Terms, Data Safety, Rules, and Play listing with the finance-focused Store app
+- [ ] Verify Store-mode mobile UI and scan for prohibited visible wording
 - [ ] Audit every Lite-visible screen and shared text for financial/reward claims
 - [ ] Remove or replace all Lite financial UI while preserving the full website
 - [ ] Verify Lite rendering on mobile and scan built output for prohibited wording

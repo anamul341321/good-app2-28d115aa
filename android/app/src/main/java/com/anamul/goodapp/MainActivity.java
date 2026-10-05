@@ -529,6 +529,12 @@ public class MainActivity extends BridgeActivity {
             if (ua == null || !ua.contains("GoodAppCall")) {
                 appWebView.getSettings().setUserAgentString((ua == null ? "" : ua) + " GoodAppCall");
             }
+        } else if (BuildConfig.STORE_BUILD) {
+            // Permanent Play-build marker that survives every live-site navigation.
+            String ua = appWebView.getSettings().getUserAgentString();
+            if (ua == null || !ua.contains("GoodAppStore")) {
+                appWebView.getSettings().setUserAgentString((ua == null ? "" : ua) + " GoodAppStore");
+            }
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
             && ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)

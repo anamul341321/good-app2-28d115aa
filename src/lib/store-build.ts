@@ -18,6 +18,7 @@ export const isStoreBuild = (): boolean => {
 
   if (typeof window !== "undefined") {
     try {
+      if (/GoodAppStore/.test(window.navigator.userAgent || "")) return true;
       const nativeBridge = (window as any).GoodAppDownloader;
       if (nativeBridge?.isStoreBuild?.() === true) return true;
     } catch {
