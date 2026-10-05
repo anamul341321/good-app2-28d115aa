@@ -291,6 +291,7 @@ export const BUILTIN_FAQS: BuiltinFaq[] = [
 
   {
     topic: "GoodApp Call (শুধু কলিং অ্যাপ) ডাউনলোড",
+    screenshot: ["GoodApp Call", "কলিং অ্যাপ", "GoodApp-Call"],
     keywords: [
       "calling app",
       "call app",
