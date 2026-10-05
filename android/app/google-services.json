@@ -23,6 +23,24 @@
           "other_platform_oauth_client": []
         }
       }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:657595444765:android:602e94f9141d907cb320f4",
+        "android_client_info": {
+          "package_name": "com.goodapp.calls"
+        }
+      },
+      "api_key": [
+        {
+          "current_key": "AIzaSyARRcN7ihaq3XnliR_uOZrGs1D-LFX6N-M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
     }
   ],
   "configuration_version": "1"

@@ -6,6 +6,8 @@ def releaseKeyAlias = System.getenv('ANDROID_KEY_ALIAS')
 def releaseKeyPassword = System.getenv('ANDROID_KEY_PASSWORD')
 def hasReleaseSigning = releaseKeystorePath && releaseKeystorePassword && releaseKeyAlias && releaseKeyPassword
 def isLiteBuild = System.getenv('ANDROID_BUILD_MODE') == 'lite'
+// 'calls' = separate lightweight GoodApp Call APK (installs beside Good-App).
+def isCallsBuild = System.getenv('ANDROID_BUILD_MODE') == 'calls'
 
 android {
     namespace = "com.anamul.goodapp"
@@ -13,12 +15,14 @@ android {
     defaultConfig {
         // Permanent identity used by the originally installed Good-App builds.
         // Never change this: Android would install a second app instead of updating.
-        applicationId "com.goodapp.mobile"
+        applicationId isCallsBuild ? "com.goodapp.calls" : "com.goodapp.mobile"
+        manifestPlaceholders = [appLabel: isCallsBuild ? "GoodApp Call" : "Good-App"]
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 36
         versionName "1.36"
         buildConfigField "boolean", "LITE_BUILD", isLiteBuild.toString()
+        buildConfigField "boolean", "CALLS_BUILD", isCallsBuild.toString()
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
