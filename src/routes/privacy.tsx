@@ -291,11 +291,11 @@ function PolicyLangBar({ kind }: { kind: "privacy" | "terms" }) {
             )
           : t(
               liteText(
-                "সহজ কথায়: এক ব্যক্তি এক একাউন্ট, মাইনিং প্রতিদিন ক্লেইম করতে হবে, উইথড্র মাসের ১–৩ তারিখে এবং সব লেনদেন Main Balance থেকে হয়।",
+                "সহজ কথায়: এক ব্যক্তি এক একাউন্ট, রিওয়ার্ড প্রতিদিন ক্লেইম করতে হবে, উইথড্র মাসের ১–৩ তারিখে এবং সব লেনদেন Main Balance থেকে হয়।",
                 "সহজ কথায়: এক ব্যক্তি এক একাউন্ট, নিজের আসল তথ্য দিন, ফেস ভেরিফিকেশন শুধু আপনি প্রকৃত মানুষ কি না বোঝার জন্য, আর অন্যকে হ্যারাস করা বা ফেক কনটেন্ট দেওয়া নিষিদ্ধ।",
               ),
               liteText(
-                "In short: one person one account, claim mining daily, withdraw on the 1st-3rd of the month, and all payouts come from Main Balance.",
+                "In short: one person one account, claim rewards daily, withdraw on the 1st-3rd of the month, and all payouts come from Main Balance.",
                 "In short: one person one account, use your real details, face check only proves you are a real person, and harassment or fake content is not allowed.",
               )
             )}
