@@ -92,7 +92,7 @@ function AuthedLayout() {
   useEffect(() => {
     if (typeof window === "undefined" || detectCallsApp()) return;
     // Play Store মূল অ্যাপ: ফিড, রিলস, মেসেঞ্জার, কল, ভিডিও, বন্ধু, কয়েন শপ — কিছুই খুলবে না
-    if (/^\/(chat|calls|social|feed|reels|videos|studio|watch|channel|friends|user|coins|shop)(\/|$)/.test(pathname)) router.navigate({ to: "/home", replace: true });
+    if (/^\/(chat|calls|social|feed|reels|videos|studio|watch|channel|friends|coins|shop)(\/|$)/.test(pathname)) router.navigate({ to: "/home", replace: true });
   }, [pathname, router]);
   const [authState, setAuthState] = useState<"checking" | "authenticated" | "unauthenticated">(() => {
     if (typeof window === "undefined") return "checking";
