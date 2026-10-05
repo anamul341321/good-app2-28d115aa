@@ -100,6 +100,30 @@ function CallsApp() {
         </div>
       </div>
 
+      <button
+        type="button"
+        onClick={() => {
+          if (!callsApkVersion) {
+            toast.error("কল অ্যাপের নতুন ভার্সন এখনো আসেনি — একটু পরে আবার চেষ্টা করুন।");
+            return;
+          }
+          setApkBusy(true);
+          toast.success("GoodApp Call ডাউনলোড শুরু হচ্ছে…");
+          window.location.href = "/api/public/app/download?calls=1";
+          setTimeout(() => setApkBusy(false), 4000);
+        }}
+        className="gradient-cyan mt-4 flex w-full items-center justify-center gap-2 rounded-2xl p-4 text-sm font-black disabled:opacity-60"
+        disabled={apkBusy}
+      >
+        <Smartphone className="h-5 w-5" />
+        {callsApkVersion
+          ? `GoodApp Call অ্যাপ ডাউনলোড করুন (v${callsApkVersion})`
+          : "GoodApp Call অ্যাপ ডাউনলোড করুন"}
+      </button>
+      <p className="mt-2 text-center text-[11px] text-muted-foreground">
+        আলাদা কল অ্যাপ — এতে শুধু ডায়াল প্যাড, মেসেজ আর কল থাকে, তাই খুব দ্রুত খোলে।
+      </p>
+
       {installEvt && (
         <button
           type="button"
