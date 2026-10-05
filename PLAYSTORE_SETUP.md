@@ -9,7 +9,7 @@
 - Capacitor সেটআপ (web app → Android app)
 - App নাম **Good-App**, package `com.goodapp.mobile`
 - আপনার লোগো দিয়ে সব সাইজের **app icon** বসানো
-- App খুললেই সরাসরি live site `https://good-app2.lovable.app` লোড হয় — তাই সব ফিচার (mining, withdraw, KYC) কাজ করে
+- Store build live site লোড করলেও নিজস্ব স্থায়ী Store পরিচয় বহন করে; তাই শুধু ভেরিফিকেশন, রিওয়ার্ড, সেন্ড, রিচার্জ ও স্থানীয় উইথড্র সুবিধা দেখায়
 - **Privacy Policy** পেজ: `https://goodapp2.live/privacy` ← Play Store-এ এই লিংকটাই দিতে হবে
 - **Terms** পেজ: `https://goodapp2.live/terms`
 - **Child Safety Standards** পেজ: `https://goodapp2.live/child-safety` ← social/UGC অ্যাপের জন্য বাধ্যতামূলক

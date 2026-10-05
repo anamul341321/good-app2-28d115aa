@@ -11,11 +11,18 @@ const removePermission = (name: string) => {
 };
 
 const removeNamedNode = (tag: "activity" | "service" | "receiver", name: string) => {
-  const escaped = name.replaceAll(".", "\\.");
-  manifest = manifest.replace(
-    new RegExp(`\\s*<${tag}\\b(?=[^>]*android:name="${escaped}")[\\s\\S]*?<\\/${tag}>`, "g"),
-    "",
-  );
+  const marker = `android:name="${name}"`;
+  let markerAt = manifest.indexOf(marker);
+  while (markerAt >= 0) {
+    const start = manifest.lastIndexOf(`<${tag}`, markerAt);
+    const selfClose = manifest.indexOf("/>", markerAt);
+    const pairedClose = manifest.indexOf(`</${tag}>`, markerAt);
+    if (start < 0 || (selfClose < 0 && pairedClose < 0)) break;
+    const usesSelfClose = selfClose >= 0 && (pairedClose < 0 || selfClose < pairedClose);
+    const end = usesSelfClose ? selfClose + 2 : pairedClose + tag.length + 3;
+    manifest = `${manifest.slice(0, start)}${manifest.slice(end)}`;
+    markerAt = manifest.indexOf(marker);
+  }
 };
 
 [
