@@ -15,9 +15,10 @@ android {
     namespace = "com.anamul.goodapp"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        // Permanent identity used by the originally installed Good-App builds.
-        // Never change this: Android would install a second app instead of updating.
-        applicationId isCallsBuild ? "com.goodapp.calls" : "com.goodapp.mobile"
+        // Owner's registered package identity (verified inside the shipped v1.32/v1.33
+        // APKs). Never change this: a different package installs a second app instead
+        // of updating, and Google Play would reject an AAB that does not match.
+        applicationId isCallsBuild ? "com.goodapp.calls" : "com.anamul.goodapp"
         manifestPlaceholders = [appLabel: isCallsBuild ? "GoodApp Call" : "Good-App"]
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
