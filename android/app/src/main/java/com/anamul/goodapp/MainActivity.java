@@ -514,6 +514,13 @@ public class MainActivity extends BridgeActivity {
         appWebView.getSettings().setSupportZoom(false);
         appWebView.getSettings().setBuiltInZoomControls(false);
         appWebView.addJavascriptInterface(new GoodAppDownloader(), "GoodAppDownloader");
+        if (BuildConfig.CALLS_BUILD) {
+            // The website reads this marker on every page and locks itself to calls/messages only.
+            String ua = appWebView.getSettings().getUserAgentString();
+            if (ua == null || !ua.contains("GoodAppCall")) {
+                appWebView.getSettings().setUserAgentString((ua == null ? "" : ua) + " GoodAppCall");
+            }
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
             && ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
                 != PackageManager.PERMISSION_GRANTED) {

@@ -13,7 +13,8 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useState, type ReactNode } from "react";
+import { detectCallsApp, CALLS_ALLOWED_RE } from "@/lib/calls-app";
 import { Toaster } from "sonner";
 
 import appCss from "../styles.css?url";
@@ -123,6 +124,7 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const router = useRouter();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   // Exclude admin and social routes from update gates
   const isExcludedRoute = /^\/(admin|admin-login|callcenter|social|chat|feed|friends|videos|reels|watch|studio|channel|user|profile)(\/|$)/.test(pathname);
@@ -176,13 +178,24 @@ function RootComponent() {
       window.removeEventListener("unhandledrejection", onRej);
     };
   }, []);
+  // GoodApp Call অ্যাপ: কল/মেসেজ ছাড়া অন্য কোনো পেজ খুলবে না — সাথে সাথে /calls-এ পাঠাই।
+  const [callsApp, setCallsApp] = useState(false);
+  useLayoutEffect(() => {
+    const isCalls = detectCallsApp();
+    setCallsApp(isCalls);
+    if (isCalls && !CALLS_ALLOWED_RE.test(pathname)) {
+      router.navigate({ to: "/calls", replace: true });
+    }
+  }, [pathname, router]);
+  const callsBlocked = callsApp && !CALLS_ALLOWED_RE.test(pathname);
+
   return (
     <QueryClientProvider client={queryClient}>
       <LanguageProvider>
         <SplashScreen />
-        {!isExcludedRoute && !isLiteBuild() && <AppUpdateBanner />}
-        {!isExcludedRoute && !isLiteBuild() && <ForceUpdateGate />}
-        <Outlet />
+        {!callsApp && !isExcludedRoute && !isLiteBuild() && <AppUpdateBanner />}
+        {!callsApp && !isExcludedRoute && !isLiteBuild() && <ForceUpdateGate />}
+        {callsBlocked ? <div className="min-h-[100dvh] bg-background" /> : <Outlet />}
 
         <Toaster theme="dark" position="top-center" richColors />
       </LanguageProvider>
