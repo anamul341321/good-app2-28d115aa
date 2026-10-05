@@ -21,7 +21,7 @@ export const Route = createFileRoute("/rules")({
 });
 
 function RulesPage() {
-  const { t, region } = useLang();
+  const { t } = useLang();
   const store = isStoreBuild();
 
   const sections = [
