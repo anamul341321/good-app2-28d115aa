@@ -21,7 +21,6 @@ import { useEffect, useState } from "react";
 import logo from "@/assets/goodapp-logo.png";
 import { GuidedTour } from "@/components/GuidedTour";
 import { LanguageToggle } from "@/components/LanguageToggle";
-import { RegionBadge } from "@/components/RegionBadge";
 import { LanguagePicker } from "@/components/LanguagePicker";
 import { useLang } from "@/lib/i18n";
 import { isLiteBuild } from "@/lib/lite-build";
@@ -266,7 +265,6 @@ function AuthedLayout() {
           </div>
           <div className="flex shrink-0 items-center gap-1 sm:gap-2">
             <NotificationBell />
-            <RegionBadge />
             <LanguageToggle />
             <DropdownMenu modal={false}>
               <DropdownMenuTrigger

@@ -21,7 +21,7 @@ export const Route = createFileRoute("/rules")({
 });
 
 function RulesPage() {
-  const { t, region } = useLang();
+  const { t } = useLang();
   const store = isStoreBuild();
 
   const sections = [
@@ -51,10 +51,6 @@ function RulesPage() {
         t(store ? "সেন্ড মানি, রিচার্জ ও উইথড্র শুধু Main Balance থেকে হয়। আগে যোগ্য রিওয়ার্ড ক্লেইম করুন।" : "সেন্ড মানি, রিচার্জ, কার্ড কেনা ও উইথড্র — সব শুধু Main Balance থেকে হয়। আগে মাইনিং ক্লেইম করুন।", store ? "Send money, recharge and withdraw use Main Balance only. Claim eligible rewards first." : "Send money, recharge, card purchase and withdraw all come from Main Balance only. Claim mining first."),
         t("মেইন/বোনাস ব্যালান্স যেকোনো দিন তোলা যায়; যোগ্য পেন্ডিং রিওয়ার্ড ঢাকা সময়ে মাসের ১–৩ তারিখ রাত ১০টার মধ্যে মেইন ব্যালান্সে আসে।", "Main/bonus funds can be withdrawn any day; eligible pending rewards move to Main Balance from the 1st through 10 PM on the 3rd, Dhaka time."),
         t("রিচার্জ ও সেন্ড মানিতে সার্ভিস ফি কাটা হয় — কনফার্ম করার আগেই স্ক্রিনে দেখানো হয়।", "Recharge and send money have a service fee — it is shown on screen before you confirm."),
-        !store && t(
-          `আপনার দেশ ${region.nameEn} — লোকাল পেমেন্ট না থাকলে USDT (Celo) ওয়ালেটে পেমেন্ট নেওয়া যায়।`,
-          `Your country is ${region.nameEn} — where local payment is unavailable, you can be paid in USDT (Celo) to your wallet.`
-        ),
       ].filter((point): point is string => Boolean(point)),
     },
     {
@@ -96,8 +92,8 @@ function RulesPage() {
           <h1 className="mt-3 text-xl font-black">{t("অ্যাপের নিয়ম — সহজ ভাষায়", "App rules — in simple words")}</h1>
           <p className="mt-1 text-xs text-muted-foreground">
             {t(
-              "উপরে দেশ বদলালেই আপনার দেশের ভাষায় সব লেখা দেখাবে। চাইলে English-ও রাখতে পারবেন।",
-              "Change your country above and the app speaks your language. You can also keep English."
+              "এই অ্যাপ শুধু বাংলাদেশের জন্য। চাইলে উপরের ভাষা বাটন থেকে English রাখতে পারবেন।",
+              "This app is for Bangladesh only. You can switch to English from the language button."
             )}
           </p>
         </div>

@@ -37,10 +37,11 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     try {
       const saved = localStorage.getItem(STORAGE_KEY) as Lang | null;
       const savedCountry = localStorage.getItem(COUNTRY_KEY);
-      if (savedCountry) setCountryState(savedCountry.toUpperCase());
+      // Bangladesh-only app: ignore any saved foreign country
+      try { localStorage.setItem(COUNTRY_KEY, "BD"); } catch {}
       if (saved && LANGS.includes(saved)) {
         setLangState(saved);
-      } else if (savedCountry) {
+      } else if (false && savedCountry) {
         // ভাষা নিজে বাছাই না করলে দেশ অনুযায়ী ডিফল্ট — বাংলাদেশ ছাড়া সব দেশে English
         setLangState(getRegion(savedCountry).lang);
       }
@@ -54,7 +55,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   };
 
   const setCountry = (code: string, opts?: { syncLang?: boolean }) => {
-    const region = getRegion(code);
+    void code; const region = getRegion("BD");
     setCountryState(region.code);
     try { localStorage.setItem(COUNTRY_KEY, region.code); } catch {}
     if (opts?.syncLang !== false) setLang(region.lang);

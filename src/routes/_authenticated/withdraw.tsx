@@ -630,11 +630,10 @@ function RegionPayoutNote() {
   return (
     <div className="glass rounded-2xl border border-gold/25 p-3">
       <p className="text-[12px] font-black">
-        <span className="mr-1 text-base leading-none">{region.flag}</span>
-        {t("আপনার দেশ", "Your country")}: {region.nameLocal} ({countryCode}) · {region.currency} {region.symbol}
+        🇧🇩 {t("বাংলাদেশ · BDT ৳", "Bangladesh · BDT ৳")}
       </p>
       <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
-        {countryCode === "BD" || store
+        {true
           ? t(
               "বিকাশ বা নগদে টাকা পাঠানো হয়। রিওয়ার্ড ব্যালান্স নির্ধারিত সময়ে এবং মেইন ব্যালান্স নিয়ম অনুযায়ী তোলা যায়।",
               "Payouts are sent to bKash or Nagad according to the displayed balance and schedule."

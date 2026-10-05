@@ -15,8 +15,6 @@ import { getAppStatus } from "@/lib/app-status.functions";
 import { GmailSecurityBanner } from "@/components/GmailSecurityBanner";
 import { NoticeBoard } from "@/components/NoticeBoard";
 import { ChannelJoinBanner } from "@/components/ChannelJoinBanner";
-import { ReferBonusBanner, RatesEntryCard } from "@/components/ReferBonusBanner";
-import { ForeignCurrencyCard } from "@/components/ForeignCurrencyCard";
 import { ComplianceDisclaimer } from "@/components/ComplianceDisclaimer";
 import { DashSection } from "@/components/DashSection";
 import { SlotClaimButton, type SlotClaim } from "@/components/SlotClaimButton";
@@ -299,16 +297,7 @@ function HomePage() {
             />
           </div>
 
-          {/* বিদেশি ইউজারদের জন্য USDT + নিজের দেশের মুদ্রায় ব্যালেন্স — Play অ্যাপে শোনায় না */}
-          {!store && (
-          <ForeignCurrencyCard
-            main={Number((data as any)?.balanceBreakdown?.bonus_part ?? 0)}
-            mining={Number((data as any)?.balanceBreakdown?.mining_available ?? data.mining?.accrued_amount ?? 0)}
-          />
-          )}
-
           {/* দেশভিত্তিক রেট + রেফার বোনাস এন্ট্রি */}
-          <RatesEntryCard />
 
           {/* ফুল-স্ক্রিন রেফার বোনাস ব্যানার (দিনে একবার) */}
 

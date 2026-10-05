@@ -41,22 +41,6 @@ export function LanguagePicker() {
           <br />যেকোনো সময় উপরে থেকে পরিবর্তন করা যাবে।
         </p>
 
-        <div className="mt-4">
-          <label className="text-[10px] font-black uppercase tracking-wider opacity-90">Your country / আপনার দেশ</label>
-          <select
-            value={countryCode}
-            onChange={(e) => setCountry(e.target.value)}
-            className="mt-1 w-full rounded-2xl bg-white px-3 py-3 text-sm font-black text-navy outline-none"
-          >
-            {REGIONS.map((r) => (
-              <option key={r.code} value={r.code}>{r.flag} {r.nameLocal} ({r.nameEn})</option>
-            ))}
-          </select>
-          <p className="mt-1 text-[10px] opacity-85">
-            Choosing a country sets that country's language automatically.
-          </p>
-        </div>
-
         <div className="mt-4 space-y-2.5">
           <button onClick={() => choose("bn")}
             className="btn-press w-full rounded-2xl bg-white text-navy px-4 py-3.5 flex items-center justify-between font-black shadow-lg">
