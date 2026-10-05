@@ -37,7 +37,7 @@ export const Route = createFileRoute("/api/public/push/feed-notification")({
         const res = await sendPushToUser((notice as any).user_id, {
           title: titles[type] ?? "Good-App নোটিফিকেশন",
           body: String((notice as any).content ?? "").slice(0, 300),
-          url: (notice as any).reference_id ? `/feed?post=${(notice as any).reference_id}` : "/feed",
+          url: (notice as any).reference_id ? "/home" : "/home",
           collapseKey: `${type}-${(notice as any).reference_id ?? id}`,
           data: {
             type: "social_notification",

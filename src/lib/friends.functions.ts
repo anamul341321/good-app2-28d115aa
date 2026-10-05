@@ -129,7 +129,7 @@ export const sendFriendRequest = createServerFn({ method: "POST" })
       await sendPushToUser(data.userId, {
         title: "নতুন ফ্রেন্ড রিকুয়েস্ট",
         body: `${senderName} আপনাকে বন্ধু হতে চায়`,
-        url: "/feed",
+        url: "/chat",
         data: { type: "friend_request", from_user_id: context.userId },
         collapseKey: `friend-${context.userId}`,
       });
@@ -178,7 +178,7 @@ export const respondFriendRequest = createServerFn({ method: "POST" })
         await sendPushToUser((link as any).requester_id, {
           title: "ফ্রেন্ড রিকুয়েস্ট গ্রহণ হয়েছে",
           body: `${accepterName} এখন আপনার বন্ধু`,
-          url: "/feed",
+          url: "/chat",
           data: { type: "friend_accept", from_user_id: context.userId },
           collapseKey: `friend-accept-${context.userId}`,
         });
@@ -255,7 +255,7 @@ export const notifyIncomingCall = createServerFn({ method: "POST" })
     await sendPushToUser(data.peerId, {
       title: data.video ? "📹 ভিডিও কল আসছে" : "📞 কল আসছে",
       body: `${name} আপনাকে কল করছে — ট্যাপ করে রিসিভ করুন`,
-      url: "/friends",
+      url: "/chat",
     });
     return { ok: true };
   });
