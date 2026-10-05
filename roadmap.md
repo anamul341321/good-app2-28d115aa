@@ -1,5 +1,6 @@
 # Roadmap
 
+- [x] Restore the owner's registered package `com.anamul.goodapp` across Android build, Firebase config, download links, admin upload checks, and Play Store docs
 - [x] Complete Store-build Play policy audit across UI, Android package, declarations, deletion, and reviewer access
 - [ ] Create and verify the separate Play reviewer account (blocked: owner must supply it in Play Console)
 - [ ] Install and inspect the generated Store AAB/APK on a physical phone (blocked: requires the built artifact and device)

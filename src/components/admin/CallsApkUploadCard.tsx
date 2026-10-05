@@ -48,7 +48,7 @@ export function CallsApkUploadCard() {
           const metadata = JSON.parse(new TextDecoder().decode(files[metadataName]));
           artifactVersion = normalizeAndroidVersion(String(metadata.versionName ?? ""));
           const appId = String(metadata.applicationId ?? "");
-          if (appId && appId !== CALLS_APPLICATION_ID && appId !== "com.goodapp.mobile") {
+          if (appId && appId !== CALLS_APPLICATION_ID && appId !== "com.anamul.goodapp") {
             throw new Error("এই ZIP কলিং অ্যাপের বিল্ড নয়—Build mode: calls দিয়ে বানানো ZIP দিন");
           }
         } catch (e: any) {
