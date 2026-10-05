@@ -87,6 +87,10 @@ jobs:
       - name: Sync Capacitor
         run: CAP_BUILD_MODE=${{ github.event.inputs.build_mode }} bun run cap:sync
 
+      - name: Remove non-Store Android capabilities
+        if: github.event.inputs.build_mode == 'store'
+        run: bun scripts/sanitize-store-android.ts
+
       - name: Read Android version
         id: android_version
         shell: bash

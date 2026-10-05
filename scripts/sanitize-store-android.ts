@@ -1,0 +1,42 @@
+import { readFileSync, writeFileSync } from "node:fs";
+
+const manifestPath = "android/app/src/main/AndroidManifest.xml";
+let manifest = readFileSync(manifestPath, "utf8");
+
+const removePermission = (name: string) => {
+  manifest = manifest.replace(
+    new RegExp(`\\s*<uses-permission android:name="${name.replaceAll(".", "\\.")}" \\/>`, "g"),
+    "",
+  );
+};
+
+const removeNamedNode = (tag: "activity" | "service" | "receiver", name: string) => {
+  const escaped = name.replaceAll(".", "\\.");
+  manifest = manifest.replace(
+    new RegExp(`\\s*<${tag}\\b(?=[^>]*android:name="${escaped}")[\\s\\S]*?<\\/${tag}>`, "g"),
+    "",
+  );
+};
+
+[
+  "com.google.android.gms.permission.AD_ID",
+  "android.permission.RECORD_AUDIO",
+  "android.permission.MODIFY_AUDIO_SETTINGS",
+  "android.permission.USE_FULL_SCREEN_INTENT",
+  "android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION",
+  "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
+].forEach(removePermission);
+
+removeNamedNode("activity", ".BubbleChatActivity");
+removeNamedNode("activity", ".IncomingCallActivity");
+removeNamedNode("service", ".MediaPlaybackService");
+removeNamedNode("service", ".ScreenShareService");
+removeNamedNode("receiver", ".NotificationReplyReceiver");
+
+manifest = manifest.replace(
+  /\s*<!-- AdMob App ID[\s\S]*?<meta-data\s+android:name="com\.google\.android\.gms\.ads\.APPLICATION_ID"[\s\S]*?\/>/g,
+  "",
+);
+
+writeFileSync(manifestPath, manifest);
+console.log("Store Android manifest sanitized: ads, calls, microphone, screen sharing, and external-app surfaces removed.");
