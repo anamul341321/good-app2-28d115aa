@@ -4,6 +4,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Phone, PhoneOff, Headset, Volume2, VolumeX, Grid3x3, ArrowLeft, Delete, UserRoundSearch } from "lucide-react";
 import greetingA from "@/assets/callcenter/greeting.mp3.asset.json";
 import menuA from "@/assets/callcenter/menu.mp3.asset.json";
+import transferA from "@/assets/callcenter/transfer.mp3.asset.json";
+import longwaitA from "@/assets/callcenter/longwait.mp3.asset.json";
+import nobalanceA from "@/assets/callcenter/nobalance.mp3.asset.json";
+import holdA from "@/assets/callcenter/hold.mp3.asset.json";
+import channelsA from "@/assets/callcenter/channels.mp3.asset.json";
+import menuextraA from "@/assets/callcenter/menuextra.mp3.asset.json";
+import passwordA from "@/assets/callcenter/password.mp3.asset.json";
+import slotrateA from "@/assets/callcenter/slotrate.mp3.asset.json";
 import withdrawA from "@/assets/callcenter/withdraw.mp3.asset.json";
 import miningA from "@/assets/callcenter/mining.mp3.asset.json";
 import reverifyA from "@/assets/callcenter/reverify.mp3.asset.json";
@@ -59,15 +67,15 @@ const AUDIO: Record<string, string> = {
   bye: byeA.url,
   invalid: invalidA.url,
   agentcharge: agentchargeA.url,
-  // নিচেরগুলো সার্ভার থেকে একই কণ্ঠে তৈরি হয়ে আসে
-  transfer: "/api/public/callcenter-tts?key=transfer",
-  longwait: "/api/public/callcenter-tts?key=longwait",
-  nobalance: "/api/public/callcenter-tts?key=nobalance",
-  hold: "/api/public/callcenter-tts?key=hold",
-  channels: "/api/public/callcenter-tts?key=channels",
-  menuextra: "/api/public/callcenter-tts?key=menuextra",
-  password: "/api/public/callcenter-tts?key=password",
-  slotrate: "/api/public/callcenter-tts?key=slotrate",
+  // আগে থেকে রেকর্ড করা — সার্ভারের উপর নির্ভর করে না, তাই ৬–০ সবসময় বলবে
+  transfer: transferA.url,
+  longwait: longwaitA.url,
+  nobalance: nobalanceA.url,
+  hold: holdA.url,
+  channels: channelsA.url,
+  menuextra: menuextraA.url,
+  password: passwordA.url,
+  slotrate: slotrateA.url,
 };
 const SPOKEN_FALLBACK: Record<string, string> = {
   transfer: "আপনার কলটি একজন কাস্টমার কেয়ার প্রতিনিধির কাছে ট্রান্সফার করা হচ্ছে। দয়া করে অপেক্ষা করুন।",
