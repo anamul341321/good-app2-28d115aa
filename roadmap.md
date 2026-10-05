@@ -26,4 +26,4 @@
 - [x] Reduce Reels media/network load and prevent low-memory phone crashes
 - [x] Verify dashboard and Reels at representative phone sizes
 
-- [ ] Track every slot balance independently for monthly release and reset deductions
+- [x] Track every slot balance independently for monthly release and reset deductions
