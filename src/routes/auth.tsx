@@ -237,14 +237,11 @@ export function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   // আলাদা "GoodApp Call" অ্যাপে লগইন সহজ রাখি — শুধু ফোন+পাসওয়ার্ড, Google নয়।
-  const isCallsApp = (() => {
-    try {
-      if (new URLSearchParams(window.location.search).get("app") === "calls" || Boolean((window as any).GoodAppDownloader?.isCallsBuild?.())) {
-        localStorage.setItem("goodapp_calls_app", "1");
-      }
-      return localStorage.getItem("goodapp_calls_app") === "1";
-    } catch { return false; }
-  })();
+  // পেজ লোডের পরে পড়ি, যাতে সার্ভার ও ফোনের স্ক্রিন মিলে যায় (নইলে বোতাম কাজ না-ও করতে পারে)।
+  const [isCallsApp, setIsCallsApp] = useState(false);
+  useEffect(() => {
+    setIsCallsApp(detectCallsApp());
+  }, []);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [scanOpen, setScanOpen] = useState(false);
   const [faceMode, setFaceMode] = useState<null | "signup" | "login">(null);
@@ -735,7 +732,13 @@ export function AuthPage() {
             <div className="inline-flex items-center justify-center w-18 h-18 rounded-2xl mb-3 float-anim shadow-lg glow-gold">
               <img src={logo} alt="good-app logo" className="w-16 h-16 rounded-xl" />
             </div>
-            <h1 className="text-3xl font-black text-navy tracking-tight">গুড অ্যাপ</h1>
+            <h1 className="text-3xl font-black text-navy tracking-tight">{isCallsApp ? "GoodApp Call" : "গুড অ্যাপ"}</h1>
+            {isCallsApp ? (
+              <p className="text-xs text-muted-foreground mt-1.5 font-bold">
+                {t("একই একাউন্ট দিয়ে লগইন করুন — কল ও মেসেজ", "Log in with the same account — calls & messages")}
+              </p>
+            ) : (
+            <>
             <p className="text-xs text-muted-foreground mt-1.5 font-bold">
               <span className="text-cyan">১০টি টাস্ক</span>
               <span className="mx-1.5 text-muted-foreground">{!isLiteBuild() && "→"}</span>
@@ -754,6 +757,8 @@ export function AuthPage() {
             <div className="mt-3 text-left">
               {!isLiteBuild() && <ApkDownloadCard />}
             </div>
+            </>
+            )}
           </div>
 
           <div className="flex bg-surface-2 rounded-xl p-1 mb-5 border border-border">
@@ -1246,7 +1251,9 @@ export function AuthPage() {
 
         {forgotOpen && <ForgotPasswordDialog onClose={() => setForgotOpen(false)} />}
 
-        {/* Mission banner */}
+        {/* Mission banner + FAQ — কল অ্যাপে দেখাই না */}
+        {!isCallsApp && (
+        <>
         <div className="rounded-3xl p-5 bg-linear-to-br from-emerald/15 via-cyan/10 to-violet/15 border border-border pop-in">
           <div className="flex items-start gap-3">
             <div className="shrink-0 w-12 h-12 rounded-2xl gradient-emerald flex items-center justify-center float-anim">
@@ -1311,6 +1318,8 @@ export function AuthPage() {
             })}
           </div>
         </div>
+        </>
+        )}
 
         {/* Footer */}
         <p className="text-center text-[10px] text-muted-foreground pb-4">
