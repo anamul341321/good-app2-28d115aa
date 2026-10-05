@@ -1,15 +1,18 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
+// CAP_BUILD_MODE=calls builds the separate lightweight "GoodApp Call" APK.
+const isCalls = process.env.CAP_BUILD_MODE === 'calls';
+
 const config: CapacitorConfig = {
-  appId: 'com.goodapp.mobile',
-  appName: 'Good-App',
+  appId: isCalls ? 'com.goodapp.calls' : 'com.goodapp.mobile',
+  appName: isCalls ? 'GoodApp Call' : 'Good-App',
   webDir: 'dist/client',
   // Primary mode: load the live deployed app so all server functions work.
   // To bundle locally (offline), comment out server.url and run `bun run cap:build`.
   server: {
     // Must be the FINAL domain (lovable.app 302-redirects here). A cross-host
     // redirect makes the WebView hand the URL to Chrome instead of staying in-app.
-    url: 'https://www.goodapp2.live',
+    url: isCalls ? 'https://www.goodapp2.live/calls?app=calls' : 'https://www.goodapp2.live',
     androidScheme: 'https',
     cleartext: false,
     allowNavigation: [
@@ -39,11 +42,11 @@ const config: CapacitorConfig = {
       logLevel: 1,
     },
     SplashScreen: {
-      launchShowDuration: 2500,
+      launchShowDuration: isCalls ? 0 : 2500,
       launchAutoHide: true,
       backgroundColor: '#ffffff',
       androidSplashResourceName: 'splash',
-      showSpinner: true,
+      showSpinner: !isCalls,
       androidSpinnerStyle: 'large',
       spinnerColor: '#0ea5a4',
     },

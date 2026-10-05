@@ -14,3 +14,4 @@
 - Direct UID calling resolves the target server-side and reuses the authenticated call-session flow, so callers cannot spoof another identity.
 - Ordinary authenticated pages use the shared `app-shell` width and responsive navigation so controls remain consistent across phone sizes.
 - Mining balances are attributed per task slot: monthly release, re-verification release, and reset deductions may only affect that slot's recorded amounts.
+- The separate "GoodApp Call" APK is the same Capacitor project built with build_mode/ANDROID_BUILD_MODE/CAP_BUILD_MODE=calls (own applicationId, opens /calls?app=calls, no splash), because one codebase keeps calls and accounts identical across both apps.

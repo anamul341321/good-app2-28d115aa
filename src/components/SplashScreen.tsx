@@ -23,7 +23,15 @@ export function SplashScreen() {
     // সাথে সাথেই চ্যাট/কল স্ক্রিন দেখা যাবে (Messenger-এর মতো)।
     try {
       const sp = new URLSearchParams(window.location.search);
+      // আলাদা "GoodApp Call" অ্যাপ থেকে খুললে কোনো অ্যানিমেশন নয়।
+      if (sp.get("app") === "calls") {
+        localStorage.setItem("goodapp_calls_app", "1");
+        localStorage.setItem("goodapp_call_only_mode", "1");
+      }
       const instant =
+        localStorage.getItem("goodapp_calls_app") === "1" ||
+        window.location.pathname.startsWith("/calls") ||
+        window.location.pathname.startsWith("/callcenter") ||
         window.location.pathname.startsWith("/admin") ||
         Boolean((window as any).GoodAppBubble) ||
         sp.has("bubble") ||
