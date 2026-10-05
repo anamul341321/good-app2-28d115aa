@@ -91,7 +91,8 @@ function AuthedLayout() {
   useEffect(() => { setCallsMode(detectCallsApp()); }, []);
   useEffect(() => {
     if (typeof window === "undefined" || detectCallsApp()) return;
-    if (/^\/(chat|calls|social\/messenger)(\/|$)/.test(pathname)) router.navigate({ to: "/home", replace: true });
+    // Play Store মূল অ্যাপ: ফিড, রিলস, মেসেঞ্জার, কল, ভিডিও, বন্ধু, কয়েন শপ — কিছুই খুলবে না
+    if (/^\/(chat|calls|social|feed|reels|videos|studio|watch|channel|friends|coins|shop)(\/|$)/.test(pathname)) router.navigate({ to: "/home", replace: true });
   }, [pathname, router]);
   const [authState, setAuthState] = useState<"checking" | "authenticated" | "unauthenticated">(() => {
     if (typeof window === "undefined") return "checking";
@@ -284,12 +285,11 @@ function AuthedLayout() {
                 <div className="grid grid-cols-2 gap-2 py-2">
                   <BigMenuLink to="/settings" icon={<Settings className="h-6 w-6" />} label={t("সেটিংস", "Settings")} tone="text-gold" />
                   <BigMenuLink to="/profile" icon={<User className="h-6 w-6" />} label={t("প্রোফাইল", "Profile")} tone="text-cyan" />
-                  <BigMenuLink to="/feed" icon={<ScrollText className="h-6 w-6" />} label={t("নিউজ ফিড", "News Feed")} tone="text-blue-500" />
                   {!lite && <BigMenuLink to="/earnings" icon={<FileText className="h-6 w-6" />} label={t("আয়ের হিসাব", "Earnings")} tone="text-emerald-400" />}
                   <BigMenuLink to="/kyc" icon={<ShieldCheck className="h-6 w-6" />} label={t("কেওয়াইসি", "KYC")} tone="text-violet-400" />
                   <BigMenuLink to="/reverify" search={{ taskId: undefined }} icon={<RefreshCcw className="h-6 w-6" />} label={lite ? t("নিরাপত্তা আপডেট", "Security update") : t("রি-ভেরিফাই", "Re-verify")} tone="text-violet-400" />
                   <BigMenuLink to="/rules" icon={<ScrollText className="h-6 w-6" />} label={t("নিয়মকানুন", "Rules")} tone="text-gold" />
-                  <BigMenuLink to="/shop" icon={<ShoppingBag className="h-6 w-6" />} label={t("কয়েন শপ", "Coin shop")} tone="text-amber-400" />
+                  <BigMenuLink to="/history" icon={<ShoppingBag className="h-6 w-6" />} label={t("সব ইতিহাস", "History")} tone="text-amber-400" />
                   <BigMenuLink to="/menu" icon={<LayoutGrid className="h-6 w-6" />} label={t("সব অপশন", "All options")} tone="text-amber-400" />
                 </div>
 
