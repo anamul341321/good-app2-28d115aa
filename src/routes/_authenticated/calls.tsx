@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { MessageCircle, Phone, Download, Home, Headphones } from "lucide-react";
+import { toast } from "sonner";
+import { MessageCircle, Phone, Download, Home, Headphones, Smartphone } from "lucide-react";
 import logo from "@/assets/goodapp-logo.png";
 
 export const CALL_MODE_KEY = "goodapp_call_only_mode";
