@@ -46,6 +46,12 @@ public class GoodAppMessagingService extends FirebaseMessagingService {
     @Override
     public void onMessageReceived(@NonNull RemoteMessage message) {
         Map<String, String> data = message.getData();
+        // Store binary has no call/chat/social screens; ignore those pushes.
+        if (BuildConfig.STORE_BUILD) {
+            String t = data.get("type");
+            if ("cancel_call".equals(t) || "incoming_call".equals(t)
+                || "chat_message".equals(t) || "social_notification".equals(t)) return;
+        }
         if ("cancel_call".equals(data.get("type"))) {
             String callId = value(data, "call_id", "call");
             getSharedPreferences("goodapp_calls", Context.MODE_PRIVATE)
