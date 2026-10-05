@@ -17,3 +17,8 @@
 - [x] Harden session checks against temporary network and token-refresh races
 - [x] Prepare relay before calls and tune video for clearer 720p delivery
 - [x] Play GoodApp feature announcements while a caller waits, stopping instantly when an agent answers
+
+- [ ] Make all call screens fit every phone without hiding controls
+- [ ] Add direct UID audio/video calling from the call-center dial pad
+- [ ] Make agent-requested screen sharing obvious and permission-based
+- [ ] Make support-call hangup close reliably on both sides
