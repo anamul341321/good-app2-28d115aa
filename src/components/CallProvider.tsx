@@ -456,7 +456,15 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
          });
       } catch (e) {
         makingOffer.current = false;
-        toast.error("মাইক/ক্যামেরার অনুমতি দিন");
+        const err = e as { name?: string; message?: string } | null;
+        console.error("[call] start failed", err?.name, err?.message);
+        if (err?.name === "NotAllowedError" || err?.name === "SecurityError") {
+          toast.error("মাইকের অনুমতি বন্ধ আছে — ব্রাউজার সেটিংস থেকে এই সাইটের জন্য মাইক চালু করুন");
+        } else if (err?.name === "NotFoundError" || err?.name === "OverconstrainedError") {
+          toast.error("এই ফোনে মাইক/ক্যামেরা পাওয়া যায়নি");
+        } else {
+          toast.error(`কল শুরু হয়নি — ${err?.message ?? "আবার চেষ্টা করুন"}`);
+        }
         if (currentCallId.current) {
           await updateCall({
             data: { callId: currentCallId.current, status: "failed", reason: "media_error" },
@@ -495,8 +503,14 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
           data: { callId: currentCallId.current, status: "accepted", answer: finalAnswer },
         });
       }
-    } catch {
-      toast.error("মাইক/ক্যামেরার অনুমতি দিন");
+    } catch (e) {
+      const err = e as { name?: string; message?: string } | null;
+      console.error("[call] accept failed", err?.name, err?.message);
+      if (err?.name === "NotAllowedError" || err?.name === "SecurityError") {
+        toast.error("মাইকের অনুমতি বন্ধ আছে — ব্রাউজার সেটিংস থেকে মাইক চালু করুন");
+      } else {
+        toast.error(`কল রিসিভ হয়নি — ${err?.message ?? "আবার চেষ্টা করুন"}`);
+      }
       hangUp();
     }
   }, [buildPeer, flushPendingIce, hangUp, myId, peer, sendTo, withVideo, waitForIce]);
