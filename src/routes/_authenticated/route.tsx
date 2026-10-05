@@ -21,7 +21,6 @@ import { useEffect, useState } from "react";
 import logo from "@/assets/goodapp-logo.png";
 import { GuidedTour } from "@/components/GuidedTour";
 import { LanguageToggle } from "@/components/LanguageToggle";
-import { RegionBadge } from "@/components/RegionBadge";
 import { LanguagePicker } from "@/components/LanguagePicker";
 import { useLang } from "@/lib/i18n";
 import { isLiteBuild } from "@/lib/lite-build";
