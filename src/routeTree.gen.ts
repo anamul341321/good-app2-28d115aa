@@ -70,7 +70,6 @@ import { Route as ApiPublicHisabCardRouteImport } from './routes/api/public/hisa
 import { Route as ApiPublicDailyClaimWarningRouteImport } from './routes/api/public/daily-claim-warning'
 import { Route as ApiPublicCallcenterTtsRouteImport } from './routes/api/public/callcenter-tts'
 import { Route as AdminUserUserIdRouteImport } from './routes/admin/user.$userId'
-import { Route as AuthenticatedUserUserIdRouteImport } from './routes/_authenticated/user.$userId'
 import { Route as AuthenticatedTaskSlotRouteImport } from './routes/_authenticated/task.$slot'
 import { Route as AuthenticatedChatPeerIdRouteImport } from './routes/_authenticated/chat.$peerId'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
@@ -395,11 +394,6 @@ const AdminUserUserIdRoute = AdminUserUserIdRouteImport.update({
   path: '/user/$userId',
   getParentRoute: () => AdminRoute,
 } as any)
-const AuthenticatedUserUserIdRoute = AuthenticatedUserUserIdRouteImport.update({
-  id: '/user/$userId',
-  path: '/user/$userId',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedTaskSlotRoute = AuthenticatedTaskSlotRouteImport.update({
   id: '/task/$slot',
   path: '/task/$slot',
@@ -538,7 +532,6 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/chat/$peerId': typeof AuthenticatedChatPeerIdRoute
   '/task/$slot': typeof AuthenticatedTaskSlotRoute
-  '/user/$userId': typeof AuthenticatedUserUserIdRoute
   '/admin/user/$userId': typeof AdminUserUserIdRoute
   '/api/public/callcenter-tts': typeof ApiPublicCallcenterTtsRoute
   '/api/public/daily-claim-warning': typeof ApiPublicDailyClaimWarningRoute
@@ -616,7 +609,6 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/chat/$peerId': typeof AuthenticatedChatPeerIdRoute
   '/task/$slot': typeof AuthenticatedTaskSlotRoute
-  '/user/$userId': typeof AuthenticatedUserUserIdRoute
   '/admin/user/$userId': typeof AdminUserUserIdRoute
   '/api/public/callcenter-tts': typeof ApiPublicCallcenterTtsRoute
   '/api/public/daily-claim-warning': typeof ApiPublicDailyClaimWarningRoute
@@ -697,7 +689,6 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/_authenticated/chat/$peerId': typeof AuthenticatedChatPeerIdRoute
   '/_authenticated/task/$slot': typeof AuthenticatedTaskSlotRoute
-  '/_authenticated/user/$userId': typeof AuthenticatedUserUserIdRoute
   '/admin/user/$userId': typeof AdminUserUserIdRoute
   '/api/public/callcenter-tts': typeof ApiPublicCallcenterTtsRoute
   '/api/public/daily-claim-warning': typeof ApiPublicDailyClaimWarningRoute
@@ -778,7 +769,6 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/chat/$peerId'
     | '/task/$slot'
-    | '/user/$userId'
     | '/admin/user/$userId'
     | '/api/public/callcenter-tts'
     | '/api/public/daily-claim-warning'
@@ -856,7 +846,6 @@ export interface FileRouteTypes {
     | '/admin'
     | '/chat/$peerId'
     | '/task/$slot'
-    | '/user/$userId'
     | '/admin/user/$userId'
     | '/api/public/callcenter-tts'
     | '/api/public/daily-claim-warning'
@@ -936,7 +925,6 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/_authenticated/chat/$peerId'
     | '/_authenticated/task/$slot'
-    | '/_authenticated/user/$userId'
     | '/admin/user/$userId'
     | '/api/public/callcenter-tts'
     | '/api/public/daily-claim-warning'
@@ -1432,13 +1420,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminUserUserIdRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/_authenticated/user/$userId': {
-      id: '/_authenticated/user/$userId'
-      path: '/user/$userId'
-      fullPath: '/user/$userId'
-      preLoaderRoute: typeof AuthenticatedUserUserIdRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/task/$slot': {
       id: '/_authenticated/task/$slot'
       path: '/task/$slot'
@@ -1572,7 +1553,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedWithdrawRoute: typeof AuthenticatedWithdrawRoute
   AuthenticatedChatPeerIdRoute: typeof AuthenticatedChatPeerIdRoute
   AuthenticatedTaskSlotRoute: typeof AuthenticatedTaskSlotRoute
-  AuthenticatedUserUserIdRoute: typeof AuthenticatedUserUserIdRoute
   AuthenticatedChatIndexRoute: typeof AuthenticatedChatIndexRoute
   AuthenticatedChatGroupGroupIdRoute: typeof AuthenticatedChatGroupGroupIdRoute
 }
@@ -1595,7 +1575,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedWithdrawRoute: AuthenticatedWithdrawRoute,
   AuthenticatedChatPeerIdRoute: AuthenticatedChatPeerIdRoute,
   AuthenticatedTaskSlotRoute: AuthenticatedTaskSlotRoute,
-  AuthenticatedUserUserIdRoute: AuthenticatedUserUserIdRoute,
   AuthenticatedChatIndexRoute: AuthenticatedChatIndexRoute,
   AuthenticatedChatGroupGroupIdRoute: AuthenticatedChatGroupGroupIdRoute,
 }

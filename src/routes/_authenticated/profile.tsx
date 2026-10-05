@@ -12,7 +12,7 @@ import { QrCode } from "@/components/QrCode";
 import { useAuth } from "@/hooks/useAuth";
 import { PageBackHeader } from "@/components/PageBackHeader";
 
-export const Route = createFileRoute("/_authenticated/profile")({ component: OwnSocialProfileRedirect });
+export const Route = createFileRoute("/_authenticated/profile")({ component: ProfilePage });
 
 function OwnSocialProfileRedirect() {
   const { user, loading } = useAuth();
