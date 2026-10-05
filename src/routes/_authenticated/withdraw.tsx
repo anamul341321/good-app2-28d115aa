@@ -16,6 +16,7 @@ import { WithdrawClosedBanner } from "@/components/WithdrawClosedBanner";
 import { WithdrawCountdown } from "@/components/WithdrawCountdown";
 import { WithdrawRejectDetails } from "@/components/WithdrawRejectDetails";
 import { isLiteBuild } from "@/lib/lite-build";
+import { isStoreBuild } from "@/lib/store-build";
 import { LiteFeatureBlock } from "@/components/LiteFeatureBlock";
 import { Button } from "@/components/ui/button";
 
@@ -58,6 +59,8 @@ function WithdrawPage() {
   useEffect(() => { if (!provider && initial) setProvider(initial); }, [initial, provider]);
 
   const [mode, setMode] = useState<"bdt" | "usdt">("bdt");
+  // Play Store builds never show the crypto (USDT) payout path.
+  const store = isStoreBuild();
   const [usdtAddress, setUsdtAddress] = useState<string>("");
   const [historyTab, setHistoryTab] = useState<"bdt" | "usdt">("bdt");
   const usdtRate = Number((data as any)?.payoutSettings?.usdtRateBdt ?? 130);
@@ -250,7 +253,7 @@ function WithdrawPage() {
 
 
       {/* Mode toggle: BDT vs USDT */}
-      <div className="grid grid-cols-2 gap-2" translate="no">
+      <div className={`grid ${store ? "grid-cols-1" : "grid-cols-2"} gap-2`} translate="no">
           <Button
             variant="outline"
           type="button"
@@ -271,6 +274,7 @@ function WithdrawPage() {
             </div>
           </div>
           </Button>
+          {!store && (
           <Button
             variant="outline"
           type="button"
@@ -288,6 +292,7 @@ function WithdrawPage() {
             </div>
           </div>
           </Button>
+          )}
       </div>
 
       {mode === "bdt" ? (
@@ -409,10 +414,12 @@ function WithdrawPage() {
               className={`px-3 py-1 rounded-full text-[10px] font-black transition ${historyTab === "bdt" ? "bg-rose text-white shadow" : "text-muted-foreground"}`}>
               BDT
             </button>
+            {!store && (
             <button type="button" onClick={() => setHistoryTab("usdt")}
               className={`px-3 py-1 rounded-full text-[10px] font-black transition ${historyTab === "usdt" ? "bg-emerald text-white shadow" : "text-muted-foreground"}`}>
               USDT
             </button>
+            )}
           </div>
         </div>
         <div className="space-y-2">
