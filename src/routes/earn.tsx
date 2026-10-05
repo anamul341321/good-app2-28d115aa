@@ -5,17 +5,17 @@ import { isStoreBuild } from "@/lib/store-build";
 export const Route = createFileRoute("/earn")({
   head: () => ({
     meta: [
-      { title: "Earn Money Online with Good-App — Mining, Reels & USDT Payouts" },
+      { title: "Good-App — Slot Verification & Task Rewards in Bangladesh" },
       {
         name: "description",
         content:
-          "Good-App lets you earn online every day: daily mining rewards, referral bonuses and instant USDT (Celo) or mobile-wallet payouts. Free to join.",
+          "Good-App for Bangladesh: slot verification, daily task reward claims, referral bonuses and bKash/Nagad withdrawals. Free to join.",
       },
       { property: "og:title", content: "Earn Money Online with Good-App" },
       {
         property: "og:description",
         content:
-          "Daily mining rewards, referral bonuses and fast USDT payouts. Join Good-App free and start earning today.",
+          "Daily task reward claims, referral bonuses and bKash/Nagad withdrawals for users in Bangladesh.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -30,13 +30,8 @@ export const Route = createFileRoute("/earn")({
 const FEATURES = [
   {
     icon: "⛏️",
-    title: "Daily mining rewards",
-    body: "Stay active in the app for one hour a day and claim your mining balance. No hardware, no fees, no hidden steps.",
-  },
-  {
-    icon: "🎬",
-    title: "Reels & Messenger",
-    body: "Watch short videos, chat with friends and build your network — the same app you use for fun pays you back.",
+    title: "Daily task rewards",
+    body: "Claim your daily task reward balance from verified slots. No hardware, no fees, no hidden steps.",
   },
   {
     icon: "👥",
@@ -45,16 +40,16 @@ const FEATURES = [
   },
   {
     icon: "💵",
-    title: "USDT (Celo) payouts",
-    body: "Withdraw straight to your USDT wallet on the Celo network, or to a local mobile wallet if you prefer.",
+    title: "bKash / Nagad payouts",
+    body: "Withdraw your balance in BDT to bKash or Nagad. Available in Bangladesh only.",
   },
 ];
 
 const STEPS = [
   "Create a free account with your email.",
   "Verify your identity once — it takes a couple of minutes.",
-  "Use the app daily: mining, reels, messenger, referrals.",
-  "Request a payout in USDT or your local wallet.",
+  "Claim your daily task rewards and invite friends.",
+  "Request a payout to bKash or Nagad.",
 ];
 
 function EarnLanding() {
@@ -63,11 +58,11 @@ function EarnLanding() {
       <section className="mx-auto max-w-3xl px-5 pt-16 pb-10 text-center">
         <p className="text-xs font-black uppercase tracking-[0.3em] text-cyan">Good-App</p>
         <h1 className="mt-4 text-4xl sm:text-5xl font-black leading-tight">
-          Earn money online — every single day
+          Task rewards for Bangladesh
         </h1>
         <p className="mt-4 text-sm sm:text-base text-muted-foreground">
-          Good-App combines daily mining rewards, reels, messenger and referral bonuses in one lightweight
-          app. Withdraw your earnings in USDT on the Celo network or to a local mobile wallet.
+          Good-App combines slot verification, daily task rewards and referral bonuses in one lightweight
+          app for Bangladesh. Withdraw to bKash or Nagad.
         </p>
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
           <Link
@@ -126,7 +121,7 @@ function EarnLanding() {
           <div className="glass rounded-xl p-3">
             <h3 className="font-black text-xs">Is Good-App free?</h3>
             <p className="mt-1 text-xs text-muted-foreground">
-              Yes. Creating an account, mining and withdrawing are all free — a small platform fee applies to
+              Yes. Creating an account, claiming rewards and withdrawing are all free — a small platform fee applies to
               payouts only.
             </p>
           </div>
@@ -140,7 +135,7 @@ function EarnLanding() {
           <div className="glass rounded-xl p-3">
             <h3 className="font-black text-xs">Which countries are supported?</h3>
             <p className="mt-1 text-xs text-muted-foreground">
-              Anyone can join and withdraw in USDT. Local mobile-wallet payouts are limited to Bangladesh.
+              Good-App is available in Bangladesh only. Payouts go to bKash or Nagad in BDT.
             </p>
           </div>
         </div>
