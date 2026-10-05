@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { PhoneIncoming, PhoneOutgoing, PhoneMissed, Phone, Video, Trash2, Star } from "lucide-react";
+import { PhoneIncoming, PhoneOutgoing, PhoneMissed, Phone, Trash2, Star } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { listRecentCalls } from "@/lib/calls.functions";
