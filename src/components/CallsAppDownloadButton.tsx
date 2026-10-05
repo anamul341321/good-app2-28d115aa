@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Smartphone } from "lucide-react";
 import { toast } from "sonner";
 import { detectNativeCallsApp } from "@/lib/calls-app";
+import { isStoreBuild } from "@/lib/store-build";
 
 const ENDPOINT = "https://www.goodapp2.live/api/public/app/download?calls=1";
 
@@ -22,7 +23,8 @@ export function CallsAppDownloadButton({ className = "" }: { className?: string 
       .catch(() => {});
   }, []);
 
-  if (hidden) return null;
+  // Play Store builds may never point users at an APK hosted outside the store.
+  if (hidden || isStoreBuild()) return null;
 
   const start = () => {
     const link = `${ENDPOINT}&download=${Date.now()}`;
