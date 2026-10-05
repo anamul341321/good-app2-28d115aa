@@ -358,6 +358,8 @@ export type Database = {
           ads_rewarded_enabled: boolean
           ads_rewarded_unit: string | null
           ads_test_mode: boolean | null
+          apk_calls_url: string | null
+          apk_calls_version: string | null
           apk_lite_url: string | null
           apk_lite_version: string | null
           apk_url: string | null
@@ -418,6 +420,8 @@ export type Database = {
           ads_rewarded_enabled?: boolean
           ads_rewarded_unit?: string | null
           ads_test_mode?: boolean | null
+          apk_calls_url?: string | null
+          apk_calls_version?: string | null
           apk_lite_url?: string | null
           apk_lite_version?: string | null
           apk_url?: string | null
@@ -478,6 +482,8 @@ export type Database = {
           ads_rewarded_enabled?: boolean
           ads_rewarded_unit?: string | null
           ads_test_mode?: boolean | null
+          apk_calls_url?: string | null
+          apk_calls_version?: string | null
           apk_lite_url?: string | null
           apk_lite_version?: string | null
           apk_url?: string | null
