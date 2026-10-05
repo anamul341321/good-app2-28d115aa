@@ -1191,13 +1191,16 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
                 </CallCtl>
               )}
 
+            </div>
+            <div className="mt-4 flex flex-col items-center gap-1">
               <button
                 onClick={hangUp}
-                className="btn-press grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[#ff3b30] text-white shadow-[0_10px_24px_-10px_rgba(255,59,48,0.95)]"
-                aria-label="কেটে দিন"
+                className="btn-press grid h-[70px] w-[70px] place-items-center rounded-full bg-[#ff3b30] text-white shadow-[0_10px_24px_-10px_rgba(255,59,48,0.95)]"
+                aria-label="কল কেটে দিন"
               >
-                <PhoneOff className="h-5 w-5" />
+                <PhoneOff className="h-8 w-8" />
               </button>
+              <span className="text-[12px] font-bold text-white/80">কল কাটুন</span>
             </div>
           </div>
         </div>
