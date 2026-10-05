@@ -10,9 +10,9 @@ export const Route = createFileRoute("/rules")({
   head: () => ({
     meta: [
       { title: "App Rules & How It Works | Good-App" },
-      { name: "description", content: liteText("Simple rules of Good-App: face verification, mining, referral, withdraw window and account safety — in your own language.", "Simple rules of Good-App: face verification, messenger, content rules and account safety — in your own language.") },
+      { name: "description", content: liteText("Simple rules of Good-App: face verification, task rewards, referral, withdraw window and account safety — in your own language.", "Simple rules of Good-App: face verification, messenger, content rules and account safety — in your own language.") },
       { property: "og:title", content: "App Rules & How It Works | Good-App" },
-      { property: "og:description", content: liteText("Read Good-App rules in simple words: verification, mining, withdraw and safety.", "Read Good-App rules in simple words: verification, messenger, content and safety.") },
+      { property: "og:description", content: liteText("Read Good-App rules in simple words: verification, rewards, withdraw and safety.", "Read Good-App rules in simple words: verification, messenger, content and safety.") },
       { property: "og:type", content: "article" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -48,7 +48,7 @@ function RulesPage() {
       icon: Wallet,
       title: t("৩. ব্যালান্স ও উইথড্র", "3. Balance & withdraw"),
       points: [
-        t("সেন্ড মানি, রিচার্জ, কার্ড কেনা ও উইথড্র — সব শুধু Main Balance থেকে হয়। আগে মাইনিং ক্লেইম করুন।", "Send money, recharge, card purchase and withdraw all come from Main Balance only. Claim mining first."),
+        t(store ? "সেন্ড মানি, রিচার্জ ও উইথড্র শুধু Main Balance থেকে হয়। আগে যোগ্য রিওয়ার্ড ক্লেইম করুন।" : "সেন্ড মানি, রিচার্জ, কার্ড কেনা ও উইথড্র — সব শুধু Main Balance থেকে হয়। আগে মাইনিং ক্লেইম করুন।", store ? "Send money, recharge and withdraw use Main Balance only. Claim eligible rewards first." : "Send money, recharge, card purchase and withdraw all come from Main Balance only. Claim mining first."),
         t("প্রতি মাসের ১–৩ তারিখে উইথড্র উইন্ডো খোলা থাকে।", "The withdraw window is open on the 1st–3rd of every month."),
         t("রিচার্জ ও সেন্ড মানিতে সার্ভিস ফি কাটা হয় — কনফার্ম করার আগেই স্ক্রিনে দেখানো হয়।", "Recharge and send money have a service fee — it is shown on screen before you confirm."),
         !store && t(
