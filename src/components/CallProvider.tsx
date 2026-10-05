@@ -423,25 +423,40 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   );
 
   const startCall = useCallback(
-    async (peerId: string, peerName: string, video: boolean) => {
+    async (peerId: string, peerName: string, video: boolean, opts?: StartOpts) => {
       if (!myId) return;
       if (state !== "idle") {
         toast.error("একটি কল ইতিমধ্যেই চলছে");
         return;
       }
+      const attempt = attemptRef.current;
+      // কল চালু হওয়ার মাঝপথে কেটে দিলে বাকি ধাপ আর চলবে না।
+      const cancelled = () => attemptRef.current !== attempt;
+      const abandon = async (callId?: string) => {
+        cleanup();
+        await Promise.allSettled([
+          sendTo(peerId, { kind: "end", from: myId }),
+          callId ? updateCall({ data: { callId, status: "cancelled" } }) : Promise.resolve(),
+        ]);
+      };
       try {
         setPeer({ id: peerId, name: peerName });
+        setCallStyle(opts?.style ?? "messenger");
+        setDialedUid(opts?.uid != null ? String(opts.uid) : "");
         isCaller.current = true;
         peerIdRef.current = peerId;
         setWithVideo(video);
         setState("calling");
         const pc = await buildPeer(peerId, video);
+        if (cancelled()) { cleanup(); return; }
         makingOffer.current = true;
         const offer = await pc.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: video });
         await pc.setLocalDescription(offer);
         makingOffer.current = false;
+        if (cancelled()) { cleanup(); return; }
         const finalOffer = pc.localDescription?.toJSON() ?? offer;
         const created = await createCall({ data: { peerId, video, offer: finalOffer } });
+        if (cancelled()) { await abandon(created.callId); return; }
         currentCallId.current = created.callId;
         setCallSessionId(created.callId);
         await sendTo(peerId, {
@@ -452,12 +467,14 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
           sdp: finalOffer,
           callId: created.callId,
         });
+        if (cancelled()) { await abandon(created.callId); return; }
          // Realtime starts the call immediately; FCM independently wakes the native
          // Android full-screen receiver when the app is backgrounded or closed.
          void ringCall({ data: { callId: created.callId } }).catch(() => {});
          // Do not delay ringing for ICE gathering. Persist the completed SDP in the
          // background so a cold-started native receiver still gets every candidate.
          void waitForIce(pc).then(() => {
+           if (cancelled()) return;
            const gatheredOffer = pc.localDescription?.toJSON();
            if (gatheredOffer) {
              void saveCallOffer({ data: { callId: created.callId, offer: gatheredOffer } }).catch(() => {});
@@ -465,6 +482,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
          });
       } catch (e) {
         makingOffer.current = false;
+        if (cancelled()) { cleanup(); return; }
         const err = e as { name?: string; message?: string } | null;
         console.error("[call] start failed", err?.name, err?.message);
         if (err?.name === "NotAllowedError" || err?.name === "SecurityError") {
