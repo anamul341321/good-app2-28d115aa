@@ -163,6 +163,12 @@ export function ChatListPage() {
             </div>
           </div>
           <div className="flex items-center gap-2.5">
+            <Button asChild size="sm" className="h-10 rounded-full px-3 font-black" aria-label="কল">
+              <Link to="/callcenter">
+                <Phone className="h-4 w-4" />
+                কল
+              </Link>
+            </Button>
             <Button asChild variant="secondary" size="sm" className="gradient-amber h-10 rounded-full px-3 font-black" aria-label="ড্যাশবোর্ডে ফিরুন">
               <Link to="/home">
                 <Home className="h-4 w-4" />
