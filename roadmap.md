@@ -1,6 +1,7 @@
 # Roadmap
 
 - [x] Restore the owner's registered package `com.anamul.goodapp` across Android build, Firebase config, download links, admin upload checks, and Play Store docs
+- [x] Rename the store package to `com.goodanamul.goodapp` (new Firebase app registered, applicationId/manifest/docs updated); Java namespace stays `com.anamul.goodapp`
 - [x] Complete Store-build Play policy audit across UI, Android package, declarations, deletion, and reviewer access
 - [ ] Create and verify the separate Play reviewer account (blocked: owner must supply it in Play Console)
 - [ ] Install and inspect the generated Store AAB/APK on a physical phone (blocked: requires the built artifact and device)
