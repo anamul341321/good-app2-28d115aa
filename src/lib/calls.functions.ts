@@ -11,6 +11,22 @@ export const createCall = createServerFn({ method: "POST" })
   }))
   .handler(({ data, context }) => createCallSession(context, data));
 
+export const resolveCallUid = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { uid: number }) => ({ uid: Math.floor(Number(input?.uid ?? 0)) }))
+  .handler(async ({ data, context }) => {
+    if (!Number.isFinite(data.uid) || data.uid < 1) throw new Error("সঠিক UID লিখুন");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: profile } = await supabaseAdmin
+      .from("profiles")
+      .select("id, display_name, uid_seq")
+      .eq("uid_seq", data.uid)
+      .maybeSingle();
+    if (!profile) throw new Error("এই UID-তে কোনো ইউজার নেই");
+    if (profile.id === context.userId) throw new Error("নিজেকে কল করা যাবে না");
+    return { userId: profile.id, name: profile.display_name ?? `UID ${data.uid}`, uid: profile.uid_seq };
+  });
+
 export const getCall = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { callId: string }) => ({ callId: String(input?.callId ?? "") }))

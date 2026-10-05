@@ -1,6 +1,7 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Phone, PhoneOff, Headset, Volume2, VolumeX, Grid3x3, ArrowLeft } from "lucide-react";
+import { Phone, PhoneOff, Headset, Volume2, VolumeX, Grid3x3, ArrowLeft, Video, Delete, UserRoundSearch } from "lucide-react";
 import greetingA from "@/assets/callcenter/greeting.mp3.asset.json";
 import menuA from "@/assets/callcenter/menu.mp3.asset.json";
 import withdrawA from "@/assets/callcenter/withdraw.mp3.asset.json";
@@ -16,6 +17,9 @@ import invalidA from "@/assets/callcenter/invalid.mp3.asset.json";
 import agentchargeA from "@/assets/callcenter/agentcharge.mp3.asset.json";
 import { SupportLiveCall, type SupportPhase } from "@/components/SupportLiveCall";
 import { checkSupportCallBalance } from "@/lib/support-call.functions";
+import { resolveCallUid } from "@/lib/calls.functions";
+import { CallProvider, useCalls } from "@/components/CallProvider";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/callcenter")({
   head: () => ({
@@ -28,8 +32,12 @@ export const Route = createFileRoute("/callcenter")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: CallCenterPage,
+  component: CallCenterRoute,
 });
+
+function CallCenterRoute() {
+  return <CallProvider><CallCenterPage /></CallProvider>;
+}
 
 const TELEGRAM_SUPPORT_URL = "https://t.me/GoodAppOwner";
 
@@ -87,6 +95,12 @@ function CallCenterPage() {
   const [speaker, setSpeaker] = useState(true);
   const [showAgent, setShowAgent] = useState(false);
   const [showAi, setShowAi] = useState(false);
+  const [uidDial, setUidDial] = useState("");
+  const [uidMode, setUidMode] = useState(false);
+  const [uidMessage, setUidMessage] = useState("");
+  const [uidLoading, setUidLoading] = useState(false);
+  const resolveUid = useServerFn(resolveCallUid);
+  const { startCall: startDirectCall, state: directCallState } = useCalls();
   const silence = useRef(0);
   const waitTimer = useRef<number | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -312,6 +326,10 @@ function CallCenterPage() {
   const press = (d: string) => {
     if (state !== "connected") return;
     if (navigator.vibrate) navigator.vibrate(30);
+    if (uidMode) {
+      if (/^[০-৯]$/.test(d) && uidDial.length < 10) setUidDial((value) => value + d);
+      return;
+    }
     silence.current = 0;
     holdingForAgent.current = false;
     stopVoice();
@@ -342,11 +360,27 @@ function CallCenterPage() {
     say(m.key, m.label, () => say("more", "আর কোনো সাহায্য", () => menu("menu")));
   };
 
+  const callUid = async (video: boolean) => {
+    const numeric = Number(uidDial.replace(/[০-৯]/g, (digit) => String(BN.indexOf(digit))));
+    if (!numeric || uidLoading || directCallState !== "idle") return;
+    setUidLoading(true);
+    setUidMessage("UID যাচাই হচ্ছে…");
+    try {
+      const person = await resolveUid({ data: { uid: numeric } });
+      setUidMessage(`${person.name}-কে কল করা হচ্ছে`);
+      startDirectCall(person.userId, person.name, video);
+    } catch (error) {
+      setUidMessage(error instanceof Error ? error.message : "কল করা যায়নি। লগইন করে আবার চেষ্টা করুন।");
+    } finally {
+      setUidLoading(false);
+    }
+  };
+
   const close = () => { hangUp(); router.history.back(); };
 
   return (
-    <div className="fixed inset-0 z-[200] flex flex-col bg-gradient-to-b from-primary/90 via-background to-background text-foreground overflow-y-auto">
-      <div className="flex items-center justify-between px-4 pt-[max(env(safe-area-inset-top),1rem)]">
+    <div className="call-center-shell fixed inset-0 z-[200] flex h-dvh min-h-0 flex-col overflow-hidden bg-gradient-to-b from-primary/90 via-background to-background text-foreground">
+      <div className="flex shrink-0 items-center justify-between px-4 pt-[max(env(safe-area-inset-top),0.5rem)]">
         <button onClick={close} aria-label="ফিরে যান" className="flex h-10 w-10 items-center justify-center rounded-full bg-background/30 backdrop-blur">
           <ArrowLeft className="h-5 w-5" />
         </button>
@@ -354,14 +388,14 @@ function CallCenterPage() {
         <span className="w-10" />
       </div>
 
-      <div className="flex flex-col items-center pt-8 pb-4">
+      <div className="call-center-heading flex shrink-0 flex-col items-center pb-2 pt-4">
         <div className="relative">
           {state !== "idle" && <span className="absolute inset-0 rounded-full bg-primary/40 animate-ping" />}
-          <div className="relative flex h-28 w-28 items-center justify-center rounded-full bg-card shadow-2xl ring-4 ring-background/40">
-            <Headset className="h-14 w-14 text-primary" />
+          <div className="call-center-avatar relative flex items-center justify-center rounded-full bg-card shadow-2xl ring-4 ring-background/40">
+            <Headset className="h-1/2 w-1/2 text-primary" />
           </div>
         </div>
-        <p className="mt-5 text-2xl font-black">কল সেন্টার</p>
+        <p className="mt-3 text-xl font-black">কল সেন্টার</p>
         <p className="mt-1 text-sm font-semibold opacity-80">
           {state === "idle" && "কল করতে নিচের সবুজ বোতামে চাপ দিন"}
           {state === "ringing" && "রিং হচ্ছে…"}
@@ -373,10 +407,10 @@ function CallCenterPage() {
       </div>
 
       {state === "connected" && showPad && (
-        <div className="mx-auto grid w-full max-w-xs grid-cols-3 gap-3 px-4 animate-fade-in">
+        <div className="mx-auto grid min-h-0 w-full max-w-xs flex-1 grid-cols-3 gap-2 px-4 animate-fade-in">
           {PAD.map((d) => (
             <button key={d} onClick={() => press(d)}
-              className="h-16 rounded-full bg-card/90 text-2xl font-black shadow active:scale-90 active:bg-primary/30 transition">
+              className="call-key rounded-full bg-card/90 text-xl font-black shadow transition active:scale-90 active:bg-primary/30">
               {d}
             </button>
           ))}
@@ -384,8 +418,29 @@ function CallCenterPage() {
       )}
 
       {state === "connected" && (
-        <div className="mx-auto mt-3 w-full max-w-xs px-4 text-[11px] leading-5 text-muted-foreground text-center">
-          ১ উইথড্র · ২ মাইনিং · ৩ রি-ভেরিফাই · ৪ ব্যালেন্স · ৫ রেফার · ৯ মূল মেনু · ০ প্রতিনিধি (প্রতি মিনিট ০.৪৳)
+        <div className="mx-auto mt-2 w-full max-w-xs shrink-0 px-4 text-center text-[10px] leading-4 text-muted-foreground">
+          {uidMode ? "ডায়াল প্যাডে ইউজারের UID লিখুন" : "১ উইথড্র · ২ মাইনিং · ৩ রি-ভেরিফাই · ৪ ব্যালেন্স · ৫ রেফার · ৯ মেনু · ০ প্রতিনিধি"}
+        </div>
+      )}
+
+      {state === "connected" && !showAgent && (
+        <div className="mx-auto mt-2 w-full max-w-xs shrink-0 px-4">
+          {!uidMode ? (
+            <Button type="button" variant="secondary" className="h-10 w-full rounded-full font-black" onClick={() => { stopVoice(); setUidMode(true); setUidMessage(""); }}>
+              <UserRoundSearch className="h-4 w-4" /> UID দিয়ে সরাসরি কল করুন
+            </Button>
+          ) : (
+            <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 rounded-2xl border bg-card/90 p-2 shadow-lg">
+              <div className="min-w-0">
+                <p className="truncate text-lg font-black">UID: {uidDial || "—"}</p>
+                <p className="truncate text-[10px] text-muted-foreground">{uidMessage || "নম্বর লিখে কলের ধরন বাছুন"}</p>
+              </div>
+              <Button type="button" size="icon" variant="secondary" aria-label="শেষ সংখ্যা মুছুন" onClick={() => setUidDial((value) => value.slice(0, -1))}><Delete /></Button>
+              <Button type="button" size="icon" variant="ghost" aria-label="UID কল বন্ধ করুন" onClick={() => { setUidMode(false); setUidDial(""); setUidMessage(""); menu("menu"); }}><PhoneOff /></Button>
+              <Button type="button" className="col-span-2 h-10 rounded-xl font-black" disabled={!uidDial || uidLoading} onClick={() => void callUid(false)}><Phone /> অডিও কল</Button>
+              <Button type="button" className="h-10 rounded-xl font-black" disabled={!uidDial || uidLoading} onClick={() => void callUid(true)}><Video /> ভিডিও</Button>
+            </div>
+          )}
         </div>
       )}
 
@@ -396,7 +451,7 @@ function CallCenterPage() {
       )}
 
       {showAgent && (
-        <div className="mx-auto mt-4 flex w-full max-w-xs flex-col gap-2.5 px-4 animate-fade-in">
+        <div className="mx-auto mt-2 flex min-h-0 w-full max-w-xs flex-1 flex-col gap-2 px-4 animate-fade-in">
           <SupportLiveCall autoStart onPhaseChange={handleAgentPhase} />
           <a href={TELEGRAM_SUPPORT_URL} target="_blank" rel="noreferrer"
             className="flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-xs font-bold text-primary-foreground shadow-lg active:scale-95 transition">
@@ -405,7 +460,7 @@ function CallCenterPage() {
         </div>
       )}
 
-      <div className="mt-auto flex items-center justify-center gap-8 pb-[max(env(safe-area-inset-bottom),2rem)] pt-6">
+      <div className="mt-auto flex shrink-0 items-center justify-center gap-8 pb-[max(env(safe-area-inset-bottom),0.75rem)] pt-3">
         {state === "connected" && (
           <button onClick={() => setSpeaker((s) => !s)} aria-label="স্পিকার"
             className="flex h-14 w-14 items-center justify-center rounded-full bg-card shadow">
@@ -414,12 +469,12 @@ function CallCenterPage() {
         )}
         {state === "idle" ? (
           <button onClick={startCall} aria-label="কল করুন"
-            className="flex h-20 w-20 items-center justify-center rounded-full bg-green-600 text-white shadow-2xl animate-pulse active:scale-90 transition">
+            className="call-main-button flex items-center justify-center rounded-full bg-emerald text-primary-foreground shadow-2xl animate-pulse active:scale-90 transition">
             <Phone className="h-9 w-9" />
           </button>
         ) : (
           <button onClick={hangUp} aria-label="কল কাটুন"
-            className="flex h-20 w-20 items-center justify-center rounded-full bg-destructive text-destructive-foreground shadow-2xl active:scale-90 transition">
+            className="call-main-button flex items-center justify-center rounded-full bg-destructive text-destructive-foreground shadow-2xl active:scale-90 transition">
             <PhoneOff className="h-9 w-9" />
           </button>
         )}

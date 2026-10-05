@@ -379,6 +379,40 @@
   }
 }
 
+@utility call-center-shell {
+  min-height: 100dvh;
+  max-height: 100dvh;
+}
+
+@utility call-center-avatar {
+  width: clamp(4.75rem, 12vh, 7rem);
+  height: clamp(4.75rem, 12vh, 7rem);
+}
+
+@utility call-key {
+  min-height: 2.65rem;
+  height: min(8vh, 4rem);
+}
+
+@utility call-main-button {
+  width: clamp(3.75rem, 9vh, 5rem);
+  height: clamp(3.75rem, 9vh, 5rem);
+}
+
+@utility call-screen-shell {
+  min-height: 100dvh;
+  max-height: 100dvh;
+  padding-top: max(env(safe-area-inset-top), 1rem);
+  padding-bottom: max(env(safe-area-inset-bottom), 1rem);
+}
+
+@media (max-height: 700px) {
+  .call-center-heading { padding-top: 0.25rem; }
+  .call-center-heading > p:first-of-type { margin-top: 0.35rem; }
+  .call-screen-shell { padding-top: max(env(safe-area-inset-top), 0.5rem); padding-bottom: max(env(safe-area-inset-bottom), 0.5rem); }
+  .call-screen-shell .animate-ping { animation: none; }
+}
+
 @keyframes aurora-shift {
   0%   { background-position: 0% 50%; }
   50%  { background-position: 100% 50%; }

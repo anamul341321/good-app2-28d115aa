@@ -88,8 +88,11 @@ export function SupportLiveCall({ onPhaseChange, autoStart }: { onPhaseChange?: 
     if (c.ch) {
       const ch = c.ch;
       if (notify) {
-        void ch.send({ type: "broadcast", event: "hangup", payload: {} })
-          .finally(() => supabase.removeChannel(ch));
+        void (async () => {
+          await ch.send({ type: "broadcast", event: "hangup", payload: { at: Date.now() } }).catch(() => {});
+          window.setTimeout(() => void ch.send({ type: "broadcast", event: "hangup", payload: { at: Date.now() } }).catch(() => {}), 250);
+          window.setTimeout(() => void supabase.removeChannel(ch), 700);
+        })();
       } else {
         void supabase.removeChannel(ch);
       }
@@ -237,17 +240,20 @@ export function SupportLiveCall({ onPhaseChange, autoStart }: { onPhaseChange?: 
             </div>
           )}
           {sharing && <p className="text-[11px] font-bold text-primary">🔴 আপনার স্ক্রিন প্রতিনিধি দেখছেন</p>}
-          <div className="flex gap-6">
+          <div className="grid w-full grid-cols-3 gap-3">
             {s === "talking" && (
-              <button onClick={sharing ? stopShare : startShare} aria-label="স্ক্রিন শেয়ার" className={`flex h-12 w-12 items-center justify-center rounded-full ${sharing ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
+              <button onClick={sharing ? stopShare : startShare} aria-label={sharing ? "স্ক্রিন শেয়ার বন্ধ করুন" : "স্ক্রিন শেয়ার করুন"} className={`flex min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-2 py-2 text-[10px] font-black ${sharing ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
                 {sharing ? <MonitorX className="h-5 w-5" /> : <MonitorUp className="h-5 w-5" />}
+                <span>{sharing ? "শেয়ার বন্ধ" : "স্ক্রিন শেয়ার"}</span>
               </button>
             )}
-            <button onClick={toggleMute} aria-label="মিউট" className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+            <button onClick={toggleMute} aria-label="মিউট" className="flex min-w-0 flex-col items-center justify-center gap-1 rounded-xl bg-muted px-2 py-2 text-[10px] font-black">
               {muted ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+              <span>{muted ? "মাইক চালু" : "মিউট"}</span>
             </button>
-            <button onClick={hang} aria-label="কল কাটুন" className="flex h-12 w-12 items-center justify-center rounded-full bg-destructive text-destructive-foreground">
+            <button onClick={hang} aria-label="কল কাটুন" className="flex min-w-0 flex-col items-center justify-center gap-1 rounded-xl bg-destructive px-2 py-2 text-[10px] font-black text-destructive-foreground">
               <PhoneOff className="h-5 w-5" />
+              <span>কল কাটুন</span>
             </button>
           </div>
         </div>
