@@ -751,6 +751,27 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     void updateCall({ data: { callId, status: "declined" } });
   }, [myId, state]);
 
+  // ফোনের রিং স্ক্রিন থেকে "ধরুন/কাটুন" চাপলে অ্যাপ আবার লোড না করে সাথে সাথে কাজ করে।
+  const nativeRef = useRef({ state, acceptCall, myId });
+  nativeRef.current = { state, acceptCall, myId };
+  useEffect(() => {
+    const w = window as any;
+    w.__gaNativeCall = (callId: string, action: string) => {
+      const cur = nativeRef.current;
+      if (!cur.myId) return false;
+      if (action === "decline") {
+        void updateCall({ data: { callId, status: "declined" } });
+        return true;
+      }
+      if (action === "accept" && cur.state === "ringing" && currentCallId.current === callId) {
+        void cur.acceptCall();
+        return true;
+      }
+      return false;
+    };
+    return () => { if (w.__gaNativeCall) delete w.__gaNativeCall; };
+  }, []);
+
   // Database call state is durable: realtime signal হারালেও answer/end দুই ফোনেই পৌঁছায়।
   useEffect(() => {
     if (state === "idle" || !callSessionId) return;
