@@ -80,6 +80,8 @@ function AuthedLayout() {
     if (pathname === "/calls") sessionStorage.removeItem("goodapp_full_app");
   }, [pathname, router]);
   const lite = isLiteBuild();
+  // GoodApp Call অ্যাপ — শুধু কল/মেসেজ, হেডার-মেনু লুকানো
+  const callsApp = typeof window !== "undefined" && (() => { try { return localStorage.getItem("goodapp_calls_app") === "1"; } catch { return false; } })();
   const [authState, setAuthState] = useState<"checking" | "authenticated" | "unauthenticated">(() => {
     if (typeof window === "undefined") return "checking";
     // Quick synchronous check of localStorage to avoid splash screen flash
