@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
-import { Phone, PhoneOff, PhoneIncoming, Mic, MicOff, Volume2, Pause, Play } from "lucide-react";
+import { Phone, PhoneOff, PhoneIncoming, Mic, MicOff, Volume2, Pause, Play, MonitorUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { adminListPushTargets, adminAddPushTarget, adminRemovePushTarget } from "@/lib/admin.functions";
 import { adminAcceptSupportCall, adminEndSupportCall, adminSetSupportHold, adminListSupportCalls, getSupportCallStatus } from "@/lib/support-call.functions";
@@ -27,6 +27,8 @@ function AdminCalls() {
   const [soundOn, setSoundOn] = useState(false);
   const ctx = useRef<AudioContext | null>(null);
   const remote = useRef<HTMLAudioElement | null>(null);
+  const screenRef = useRef<HTMLVideoElement | null>(null);
+  const [screenOn, setScreenOn] = useState(false);
   const takenRef = useRef<Set<string>>(new Set());
   const lobbyRef = useRef<any>(null);
   const rtc = useRef<{ pc?: RTCPeerConnection; stream?: MediaStream; ch?: any; statusTimer?: number }>({});
@@ -86,13 +88,17 @@ function AdminCalls() {
     if (c.statusTimer) clearInterval(c.statusTimer);
     if (c.ch) {
       const ch = c.ch;
-      if (notify) void ch.send({ type: "broadcast", event: "hangup", payload: {} }).finally(() => supabase.removeChannel(ch));
+      if (notify) void (async () => {
+        await ch.send({ type: "broadcast", event: "hangup", payload: { at: Date.now() } }).catch(() => {});
+        window.setTimeout(() => void ch.send({ type: "broadcast", event: "hangup", payload: { at: Date.now() } }).catch(() => {}), 250);
+        window.setTimeout(() => void supabase.removeChannel(ch), 700);
+      })();
       else void supabase.removeChannel(ch);
     }
     c.pc?.close(); c.stream?.getTracks().forEach((t) => t.stop());
     if (remote.current) { remote.current.pause(); remote.current.srcObject = null; }
     rtc.current = {};
-    setActive(null); setTalking(false); setSec(0); setMuted(false);
+    setActive(null); setTalking(false); setSec(0); setMuted(false); setScreenOn(false);
     void qc.invalidateQueries({ queryKey: ["support-calls"] });
   };
 
@@ -117,7 +123,16 @@ function AdminCalls() {
     setActive(r);
     const pc = new RTCPeerConnection(await icePromise);
     stream.getTracks().forEach((t) => pc.addTrack(t, stream));
-    pc.ontrack = (e) => { if (remote.current) { remote.current.srcObject = e.streams[0]; void remote.current.play().catch(() => {}); } };
+    pc.ontrack = (e) => {
+      if (e.track.kind === "video") {
+        setScreenOn(true);
+        const media = e.streams[0] ?? new MediaStream([e.track]);
+        window.setTimeout(() => { if (screenRef.current) { screenRef.current.srcObject = media; void screenRef.current.play().catch(() => {}); } }, 50);
+        e.track.onended = () => setScreenOn(false);
+        return;
+      }
+      if (remote.current) { remote.current.srcObject = e.streams[0]; void remote.current.play().catch(() => {}); }
+    };
     const ch = supabase.channel(supportChannel(r.id), { config: { broadcast: { self: false } } });
     rtc.current = { pc, stream, ch };
     rtc.current.statusTimer = window.setInterval(() => {
@@ -137,6 +152,7 @@ function AdminCalls() {
         if (payload.from === "caller") { try { await pc.addIceCandidate(payload.c); } catch { /* ignore */ } }
       })
       .on("broadcast", { event: "hangup" }, () => teardown(false))
+      .on("broadcast", { event: "share" }, ({ payload }: any) => setScreenOn(!!payload?.on))
       .subscribe((st) => { if (st === "SUBSCRIBED") void ch.send({ type: "broadcast", event: "accept", payload: {} }); });
   };
 
@@ -156,7 +172,7 @@ function AdminCalls() {
     await adminSetSupportHold({ data: { id: active.id, hold: h } }).catch(() => {});
   };
 
-  const hang = async () => { setHeld(false); const id = active?.id; teardown(true); if (id) await adminEndSupportCall({ data: { id } }).catch(() => {}); };
+  const hang = async () => { setHeld(false); const id = active?.id; if (id) await adminEndSupportCall({ data: { id } }).catch(() => {}); teardown(true); };
 
   const who = (r: { name: string | null; uid: number | null }) => `${r.name ?? "অতিথি"}${r.uid ? ` · UID ${r.uid}` : " · লগইন নেই"}`;
 
@@ -179,7 +195,10 @@ function AdminCalls() {
         <div className="rounded-2xl border border-primary bg-card p-4 space-y-3">
           <p className="font-black">{talking ? "🟢 কথা চলছে" : "সংযোগ হচ্ছে…"} — {who(active)}</p>
           {talking && <p className="text-2xl font-black">{String(Math.floor(sec / 60)).padStart(2, "0")}:{String(sec % 60).padStart(2, "0")}</p>}
+          {screenOn && <video ref={screenRef} autoPlay playsInline muted className="max-h-[55dvh] w-full rounded-xl bg-muted object-contain" />}
           <div className="flex gap-3">
+            {talking && !screenOn && <button onClick={() => void rtc.current.ch?.send({ type: "broadcast", event: "askshare", payload: {} })}
+              className="flex h-12 items-center justify-center gap-1 rounded-full bg-primary/10 px-3 text-xs font-black text-primary"><MonitorUp className="h-4 w-4" /> স্ক্রিন শেয়ার চাইুন</button>}
             <button onClick={() => { const m = !muted; setMuted(m); rtc.current.stream?.getAudioTracks().forEach((t) => (t.enabled = !m)); }}
               className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">{muted ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}</button>
             <button onClick={toggleHold}

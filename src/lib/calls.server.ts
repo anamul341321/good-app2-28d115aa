@@ -11,15 +11,12 @@ export async function createCallSession(
 ) {
   if (!input.peerId || input.peerId === context.userId) throw new Error("ভুল কল");
 
-  const { data: link } = await context.supabase
-    .from("friend_links")
+  const { data: callee } = await context.supabase
+    .from("profiles")
     .select("id")
-    .eq("status", "accepted")
-    .or(
-      `and(requester_id.eq.${context.userId},addressee_id.eq.${input.peerId}),and(requester_id.eq.${input.peerId},addressee_id.eq.${context.userId})`,
-    )
+    .eq("id", input.peerId)
     .maybeSingle();
-  if (!link) throw new Error("শুধু বন্ধুকে কল করা যাবে");
+  if (!callee) throw new Error("ইউজার পাওয়া যায়নি");
 
   const [{ data: profile }, { data: call, error }] = await Promise.all([
     context.supabase.from("profiles").select("display_name").eq("id", context.userId).maybeSingle(),

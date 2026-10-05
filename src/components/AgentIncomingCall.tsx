@@ -81,7 +81,11 @@ function AgentCallInner() {
     if (c.statusTimer) clearInterval(c.statusTimer);
     if (c.ch) {
       const ch = c.ch;
-      if (notify) void ch.send({ type: "broadcast", event: "hangup", payload: {} }).finally(() => supabase.removeChannel(ch));
+      if (notify) void (async () => {
+        await ch.send({ type: "broadcast", event: "hangup", payload: { at: Date.now() } }).catch(() => {});
+        window.setTimeout(() => void ch.send({ type: "broadcast", event: "hangup", payload: { at: Date.now() } }).catch(() => {}), 250);
+        window.setTimeout(() => void supabase.removeChannel(ch), 700);
+      })();
       else void supabase.removeChannel(ch);
     }
     c.pc?.close(); c.stream?.getTracks().forEach((t) => t.stop());
@@ -158,13 +162,13 @@ function AgentCallInner() {
     void rtc.current.ch?.send({ type: "broadcast", event: "hold", payload: { on: h } });
     await agentSetSupportHold({ data: { id: active.id, hold: h } }).catch(() => {});
   };
-  const hang = async () => { const id = active?.id; teardown(true); if (id) await agentEndSupportCall({ data: { id } }).catch(() => {}); };
+  const hang = async () => { const id = active?.id; if (id) await agentEndSupportCall({ data: { id } }).catch(() => {}); teardown(true); };
   const who = (r: RingPayload) => `${r.name ?? "অতিথি"}${r.uid ? ` · UID ${r.uid}` : " · লগইন নেই"}`;
 
   if (!active && !first) return <audio ref={remote} autoPlay playsInline className="hidden" />;
 
   return (
-    <div className="fixed inset-0 z-[300] flex flex-col items-center justify-between bg-gradient-to-b from-primary/90 via-background to-background px-6 py-14 text-foreground">
+    <div className="call-screen-shell fixed inset-0 z-[300] flex h-dvh min-h-0 flex-col items-center justify-between overflow-hidden bg-gradient-to-b from-primary/90 via-background to-background px-4 text-foreground">
       <audio ref={remote} autoPlay playsInline className="hidden" />
       <div className="flex flex-col items-center">
         <div className="relative">
@@ -172,7 +176,7 @@ function AgentCallInner() {
           <div className="relative flex h-28 w-28 items-center justify-center rounded-full bg-card shadow-2xl"><Headset className="h-14 w-14 text-primary" /></div>
         </div>
         <p className="mt-5 text-sm font-bold opacity-80">কাস্টমার কেয়ার কল</p>
-        <p className="mt-1 text-2xl font-black text-center">{who((active ?? first)!)}</p>
+        <p className="mt-1 max-w-full truncate text-center text-xl font-black">{who((active ?? first)!)}</p>
         <p className="mt-2 text-sm font-semibold opacity-80">
           {active ? (talking ? (held ? "⏸ হোল্ডে আছে · " : "") + `${String(Math.floor(sec / 60)).padStart(2, "0")}:${String(sec % 60).padStart(2, "0")}` : "সংযোগ হচ্ছে…") : "কল আসছে…"}
         </p>
@@ -181,16 +185,16 @@ function AgentCallInner() {
         <video ref={screenRef} autoPlay playsInline muted className="my-3 max-h-[55vh] w-full flex-1 rounded-2xl bg-card object-contain shadow-2xl" />
       )}
       {active ? (
-        <div className="flex items-center gap-6">
+        <div className="grid w-full max-w-sm grid-cols-4 items-end gap-2">
           {talking && !screenOn && (
             <button aria-label="স্ক্রিন শেয়ার চাইুন" onClick={() => void rtc.current.ch?.send({ type: "broadcast", event: "askshare", payload: {} })}
-              className="flex h-14 w-14 items-center justify-center rounded-full bg-card shadow"><MonitorUp className="h-6 w-6" /></button>
+              className="flex min-w-0 flex-col items-center justify-center gap-1 rounded-xl bg-card px-1 py-2 text-[10px] font-black shadow"><MonitorUp className="h-5 w-5" /><span>স্ক্রিন চাইুন</span></button>
           )}
           <button aria-label="মাইক" onClick={() => { const m = !muted; setMuted(m); rtc.current.stream?.getAudioTracks().forEach((t) => (t.enabled = !m)); }}
             className="flex h-14 w-14 items-center justify-center rounded-full bg-card shadow">{muted ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}</button>
           <button aria-label="হোল্ড" onClick={toggleHold}
             className={`flex h-14 w-14 flex-col items-center justify-center rounded-full shadow ${held ? "bg-primary text-primary-foreground" : "bg-card"}`}>{held ? <Play className="h-6 w-6" /> : <Pause className="h-6 w-6" />}</button>
-          <button aria-label="কল কাটুন" onClick={hang} className="flex h-20 w-20 items-center justify-center rounded-full bg-destructive text-destructive-foreground shadow-2xl"><PhoneOff className="h-9 w-9" /></button>
+          <button aria-label="কল কাটুন" onClick={hang} className="flex min-w-0 flex-col items-center justify-center gap-1 rounded-xl bg-destructive px-1 py-2 text-[10px] font-black text-destructive-foreground shadow-2xl"><PhoneOff className="h-6 w-6" /><span>কল কাটুন</span></button>
         </div>
       ) : (
         <div className="flex items-center gap-16">
