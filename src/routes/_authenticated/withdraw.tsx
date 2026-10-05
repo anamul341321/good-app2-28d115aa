@@ -172,7 +172,7 @@ function WithdrawPage() {
         </div>
       )}
 
-      <div className={`mining-card mining-card-morph rounded-2xl p-5 text-center relative overflow-hidden ${mode === "usdt" ? "ring-2 ring-emerald/40" : "ring-2 ring-primary/30"}`}>
+      <div className="mining-card mining-card-morph rounded-2xl p-5 text-center relative overflow-hidden ring-2 ring-primary/30">
         {monthlyWindow.isOpen && !adminWithdrawOff ? (
           <div className="mx-auto mb-2 flex w-fit items-center gap-1.5 rounded-full border border-emerald/40 bg-emerald/15 px-2.5 py-1 text-[9px] font-black text-emerald">
             <Sparkles className="h-3 w-3" /> {t("🟢 উইথড্র খোলা — এখন তোলা যাবে", "🟢 Withdraw open — you can withdraw now")}
@@ -183,12 +183,10 @@ function WithdrawPage() {
           </div>
         )}
         <p className="text-[10px] font-black text-white/70">
-          {mode === "usdt"
-            ? t("USDT ক্লেইমযোগ্য ব্যালেন্স", "USDT claimable balance")
-            : debtTotal > 0 ? t("বর্তমান BDT ব্যালেন্স", "Current BDT balance") : t("BDT ক্লেইমযোগ্য ব্যালেন্স", "BDT claimable balance")}
+          {debtTotal > 0 ? t("বর্তমান BDT ব্যালেন্স", "Current BDT balance") : t("BDT ক্লেইমযোগ্য ব্যালেন্স", "BDT claimable balance")}
         </p>
         <p className={`mono-num text-4xl font-black mt-1 drop-shadow ${claimable < 0 ? "text-amber" : "text-white"}`} translate="no">
-          {mode === "usdt" ? (claimable / usdtRate).toFixed(2) : claimable} <span className="text-2xl">{mode === "usdt" ? "USDT" : "৳"}</span>
+          {claimable} <span className="text-2xl">৳</span>
         </p>
         <div className="mt-3 grid grid-cols-2 gap-2 text-left">
           <div className="rounded-xl border border-white/15 bg-white/10 p-2.5">
@@ -203,9 +201,7 @@ function WithdrawPage() {
         {debtTotal === 0 && claimable >= 50 && (
           <Button type="button" variant="secondary" onClick={() => setAmount(String(claimable))}
             className="mt-3 h-auto rounded-xl px-5 py-2.5 font-black text-sm btn-press shine">
-            💰 {mode === "usdt"
-              ? t(`সম্পূর্ণ ${(claimable / usdtRate).toFixed(2)} USDT নিন`, `Withdraw all ${(claimable / usdtRate).toFixed(2)} USDT`)
-              : t(`সম্পূর্ণ ${claimable}৳ লিখুন`, `Enter full ${claimable}৳`)}
+            💰 {t(`সম্পূর্ণ ${claimable}৳ লিখুন`, `Enter full ${claimable}৳`)}
           </Button>
         )}
       </div>
@@ -270,8 +266,7 @@ function WithdrawPage() {
           </div>
       </div>
 
-      {mode === "bdt" ? (
-        <>
+      <>
           {/* Provider chooser */}
           {(!walletBkash && !walletNagad) ? (
             <Link to="/wallet" className="block rounded-2xl border border-amber/40 bg-amber/10 p-4 text-center">
@@ -363,22 +358,6 @@ function WithdrawPage() {
             </form>
           ) : null}
         </>
-      ) : !store ? (
-        <UsdtWithdrawCard
-          claimable={claimable}
-          amount={amount} setAmount={setAmount}
-          usdtAddress={usdtAddress}
-          usdtRate={usdtRate}
-          usdtEnabled={usdtEnabled}
-          usdtOffMsg={usdtOffMsg}
-          onSubmit={() => mut.mutate()}
-          submitting={mut.isPending}
-          closed={withdrawClosed}
-          monthlyWindow={monthlyWindow}
-          adminWithdrawOff={adminWithdrawOff}
-          t={t}
-        />
-      ) : null}
 
 
       <div>
