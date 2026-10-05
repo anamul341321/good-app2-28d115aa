@@ -15,11 +15,12 @@ const removeNamedNode = (tag: "activity" | "service" | "receiver", name: string)
   let markerAt = manifest.indexOf(marker);
   while (markerAt >= 0) {
     const start = manifest.lastIndexOf(`<${tag}`, markerAt);
-    const selfClose = manifest.indexOf("/>", markerAt);
+    const openingEnd = manifest.indexOf(">", markerAt);
     const pairedClose = manifest.indexOf(`</${tag}>`, markerAt);
-    if (start < 0 || (selfClose < 0 && pairedClose < 0)) break;
-    const usesSelfClose = selfClose >= 0 && (pairedClose < 0 || selfClose < pairedClose);
-    const end = usesSelfClose ? selfClose + 2 : pairedClose + tag.length + 3;
+    if (start < 0 || openingEnd < 0) break;
+    const usesSelfClose = manifest.slice(start, openingEnd + 1).trimEnd().endsWith("/>");
+    if (!usesSelfClose && pairedClose < 0) break;
+    const end = usesSelfClose ? openingEnd + 1 : pairedClose + tag.length + 3;
     manifest = `${manifest.slice(0, start)}${manifest.slice(end)}`;
     markerAt = manifest.indexOf(marker);
   }
