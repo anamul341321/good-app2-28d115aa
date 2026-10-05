@@ -1,17 +1,20 @@
 import { useEffect, useState } from "react";
 import { Smartphone } from "lucide-react";
 import { toast } from "sonner";
-import { detectCallsApp } from "@/lib/calls-app";
+import { detectNativeCallsApp } from "@/lib/calls-app";
 
 const ENDPOINT = "https://www.goodapp2.live/api/public/app/download?calls=1";
 
 /** মূল অ্যাপ থেকে আলাদা "GoodApp Call" APK নামানোর বাটন। কল অ্যাপে দেখায় না। */
 export function CallsAppDownloadButton({ className = "" }: { className?: string }) {
   const [version, setVersion] = useState<string | null>(null);
-  const [hidden, setHidden] = useState(true);
+  const [hidden, setHidden] = useState(() => detectNativeCallsApp());
 
   useEffect(() => {
-    if (detectCallsApp()) return;
+    if (detectNativeCallsApp()) {
+      setHidden(true);
+      return;
+    }
     setHidden(false);
     fetch(`/api/public/app/download?calls=1&resolve=1&t=${Date.now()}`, { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
