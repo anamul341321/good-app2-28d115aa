@@ -131,15 +131,7 @@ jobs:
         run: |
           set -euo pipefail
           KS="${{ github.workspace }}/android/app/my-release-key.jks"
-          # The keystore committed in the repository is the single source of
-          # truth, so every build is signed with the exact same certificate.
-          if [ -s "${{ github.workspace }}/android/keystore/goodapp-release.keystore.b64" ]; then
-            tr -d '\n' < "${{ github.workspace }}/android/keystore/goodapp-release.keystore.b64" | base64 --decode > "$KS"
-            export ANDROID_KEYSTORE_PASSWORD="goodapp2026"
-            export ANDROID_KEY_ALIAS="goodapp"
-            export ANDROID_KEY_PASSWORD="goodapp2026"
-            echo "Using permanent keystore from repository."
-          elif [ -n "${KEYSTORE_BASE64:-}" ]; then
+          if [ -n "${KEYSTORE_BASE64:-}" ]; then
             printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$KS"
             echo "Using keystore from repository secrets."
           else
@@ -203,15 +195,7 @@ jobs:
         run: |
           set -euo pipefail
           KS="${{ github.workspace }}/android/app/my-release-key.jks"
-          # The keystore committed in the repository is the single source of
-          # truth, so every build is signed with the exact same certificate.
-          if [ -s "${{ github.workspace }}/android/keystore/goodapp-release.keystore.b64" ]; then
-            tr -d '\n' < "${{ github.workspace }}/android/keystore/goodapp-release.keystore.b64" | base64 --decode > "$KS"
-            export ANDROID_KEYSTORE_PASSWORD="goodapp2026"
-            export ANDROID_KEY_ALIAS="goodapp"
-            export ANDROID_KEY_PASSWORD="goodapp2026"
-            echo "Using permanent keystore from repository."
-          elif [ -n "${KEYSTORE_BASE64:-}" ]; then
+          if [ -n "${KEYSTORE_BASE64:-}" ]; then
             printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$KS"
             echo "Using keystore from repository secrets."
           else

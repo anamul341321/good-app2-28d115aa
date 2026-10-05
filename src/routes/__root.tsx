@@ -14,7 +14,7 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 import { useEffect, useLayoutEffect, useState, type ReactNode } from "react";
-import { detectCallsApp, CALLS_ALLOWED_RE } from "@/lib/calls-app";
+import { detectCallsApp, CALLS_ALLOWED_RE, CALLS_APP_KEY } from "@/lib/calls-app";
 import { Toaster } from "sonner";
 
 import appCss from "../styles.css?url";
@@ -194,6 +194,12 @@ function RootComponent() {
   // GoodApp Call অ্যাপ: কল/মেসেজ ছাড়া অন্য কোনো পেজ খুলবে না — সাথে সাথে /calls-এ পাঠাই।
   const [callsApp, setCallsApp] = useState(false);
   useLayoutEffect(() => {
+    if (isStoreBuild()) {
+      localStorage.removeItem(CALLS_APP_KEY);
+      localStorage.removeItem("goodapp_call_only_mode");
+      setCallsApp(false);
+      return;
+    }
     const isCalls = detectCallsApp();
     setCallsApp(isCalls);
     if (isCalls && !CALLS_ALLOWED_RE.test(pathname)) {
