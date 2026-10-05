@@ -3,7 +3,7 @@ import { litePolicySections, liteText } from "@/lib/lite-policy";
 import { useLang } from "@/lib/i18n";
 import { RegionBadge } from "@/components/RegionBadge";
 import { LanguageToggle } from "@/components/LanguageToggle";
-import { ShieldCheck, Database, Eye, Trash2, Lock, Mail, ArrowLeft, Baby, Share2, Clock, UserCheck, ScanFace, Coins, Megaphone } from "lucide-react";
+import { ShieldCheck, Database, Eye, Trash2, Lock, Mail, ArrowLeft, Baby, Share2, Clock, UserCheck, ScanFace, Megaphone } from "lucide-react";
 
 export const Route = createFileRoute("/privacy")({
   head: () => ({
