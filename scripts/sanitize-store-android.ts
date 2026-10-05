@@ -50,6 +50,14 @@ manifest = manifest.replace(
 
 writeFileSync(manifestPath, manifest);
 
+// The store manifest drops the AdMob APPLICATION_ID meta-data, so the AdMob SDK
+// must leave the store binary too — otherwise it crashes on launch ("app
+// installs, but doesn't load").
+const capacitorBuildPath = "android/app/capacitor.build.gradle";
+let capacitorBuild = readFileSync(capacitorBuildPath, "utf8");
+capacitorBuild = capacitorBuild.replace(/^\s*implementation project\(':capacitor-community-admob'\)\s*$/m, "");
+writeFileSync(capacitorBuildPath, capacitorBuild);
+
 let mainActivity = readFileSync(mainActivityPath, "utf8");
 mainActivity = mainActivity.replace(/^\s*registerPlugin\(UnityAdsPlugin\.class\);\s*$/m, "");
 writeFileSync(mainActivityPath, mainActivity);
