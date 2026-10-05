@@ -33,7 +33,7 @@ import { getMyCallIdentity } from "@/lib/friends.functions";
 import { createCall, getCall, ringCall, saveCallOffer, updateCall } from "@/lib/calls.functions";
 
 type Signal =
-  | { kind: "offer"; from: string; fromName: string; video: boolean; sdp: any; callId?: string }
+  | { kind: "offer"; from: string; fromName: string; video: boolean; sdp: any; callId?: string; style?: "messenger" | "phone"; uid?: string }
   | { kind: "reoffer"; from: string; sdp: any }
   | { kind: "answer"; from: string; sdp: any }
   | { kind: "ice"; from: string; candidate: any }
@@ -473,6 +473,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         setCallSessionId(created.callId);
         await sendTo(peerId, {
           kind: "offer",
+          style: opts?.style ?? "messenger",
           from: myId,
           fromName: myName,
           video,
