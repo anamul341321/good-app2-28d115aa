@@ -59,7 +59,7 @@ export function CallBook({ onDial }: { onDial: (uid: number, video: boolean) => 
                 </p>
               </div>
               {c.uid && <button aria-label="সেভ" onClick={() => void save(c.uid!, c.name)} className="p-1.5"><Star className="h-4 w-4" /></button>}
-              {c.uid && <button aria-label="কল" onClick={() => onDial(c.uid!, c.video)} className="rounded-full bg-emerald p-2 text-primary-foreground">{c.video ? <Video className="h-4 w-4" /> : <Phone className="h-4 w-4" />}</button>}
+              {c.uid && <button aria-label="কল" onClick={() => onDial(c.uid!, false)} className="rounded-full bg-emerald p-2 text-primary-foreground"><Phone className="h-4 w-4" /></button>}
             </div>
           );
         }) : <p className="py-6 text-center text-xs text-muted-foreground">{recent.isLoading ? "লোড হচ্ছে…" : "এখনো কোনো কল নেই"}</p>)}
@@ -70,7 +70,6 @@ export function CallBook({ onDial }: { onDial: (uid: number, video: boolean) => 
               <p className="text-[11px] text-muted-foreground">UID {s.peer_uid}</p>
             </div>
             <button aria-label="মুছুন" onClick={() => void remove(s.id)} className="p-1.5"><Trash2 className="h-4 w-4" /></button>
-            <button aria-label="ভিডিও কল" onClick={() => onDial(s.peer_uid, true)} className="rounded-full bg-secondary p-2"><Video className="h-4 w-4" /></button>
             <button aria-label="কল" onClick={() => onDial(s.peer_uid, false)} className="rounded-full bg-emerald p-2 text-primary-foreground"><Phone className="h-4 w-4" /></button>
           </div>
         )) : <p className="py-6 text-center text-xs text-muted-foreground">রিসেন্ট থেকে ⭐ চেপে নম্বর সেভ করুন</p>)}

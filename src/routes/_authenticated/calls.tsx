@@ -23,10 +23,12 @@ type InstallEvent = Event & { prompt: () => Promise<void> };
 
 function CallsApp() {
   const [callOnly, setCallOnly] = useState(false);
+  const [callsApp, setCallsApp] = useState(false);
   const [installEvt, setInstallEvt] = useState<InstallEvent | null>(null);
 
   useEffect(() => {
     setCallOnly(localStorage.getItem(CALL_MODE_KEY) === "1");
+    setCallsApp(localStorage.getItem("goodapp_calls_app") === "1");
     const link = document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
     const prev = link?.href;
     if (link) link.href = "/calls.webmanifest";
@@ -58,7 +60,7 @@ function CallsApp() {
         <Link to="/chat" className="glass btn-press flex flex-col items-center gap-2 rounded-3xl p-6 active:scale-95">
           <MessageCircle className="h-10 w-10 text-primary" />
           <span className="text-base font-black">মেসেজ</span>
-          <span className="text-[11px] text-muted-foreground">চ্যাট ও কল</span>
+          <span className="text-[11px] text-muted-foreground">চ্যাট ও অডিও কল</span>
         </Link>
         <Link to="/callcenter" className="glass btn-press flex flex-col items-center gap-2 rounded-3xl p-6 active:scale-95">
           <Phone className="h-10 w-10 text-emerald-400" />
@@ -71,6 +73,7 @@ function CallsApp() {
         </Link>
       </div>
 
+      {!callsApp && (<>
       <div className="glass mt-6 rounded-3xl p-4">
         <div className="flex items-center justify-between gap-3">
           <div>
@@ -102,6 +105,7 @@ function CallsApp() {
       <Link to="/home" onClick={() => sessionStorage.setItem("goodapp_full_app", "1")} className="mt-6 flex items-center justify-center gap-2 text-xs font-bold text-muted-foreground">
         <Home className="h-4 w-4" /> পুরো GoodApp খুলুন
       </Link>
+      </>)}
     </div>
   );
 }
