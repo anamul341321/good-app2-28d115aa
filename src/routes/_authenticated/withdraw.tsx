@@ -640,8 +640,8 @@ function RegionPayoutNote() {
               "Payouts are sent to bKash or Nagad according to the displayed balance and schedule."
             )
           : t(
-              "আপনার দেশে লোকাল পেমেন্ট না থাকলে USDT (Celo) ওয়ালেটে পেমেন্ট নিতে পারবেন — ব্যালান্স ৳-এ দেখানো হয়, পাঠানোর সময় USDT-তে রূপান্তর হয়।",
-              "If local payout is not available in your country, you can be paid in USDT (Celo) — balance is shown in ৳ and converted to USDT when paid."
+              "আপনার দেশে লোকাল পেমেন্ট চালু হলে এখানে দেখানো হবে। রিওয়ার্ড ব্যালান্স নির্ধারিত সময়ে তোলা যায়।",
+              "Local payout options for your country will appear here when available. Rewards can be withdrawn on the scheduled days."
             )}
       </p>
       <p className="mt-1 text-[11px] font-black text-gold">
