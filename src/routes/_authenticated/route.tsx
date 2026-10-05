@@ -1,4 +1,5 @@
 import { createFileRoute, Outlet, Link, useRouter, useRouterState } from "@tanstack/react-router";
+import { detectCallsApp } from "@/lib/calls-app";
 import { OverlayUnstick } from "@/components/OverlayUnstick";
 import { useCosmetics } from "@/hooks/useCosmetics";
 import { supabase } from "@/integrations/supabase/client";
