@@ -60,8 +60,15 @@ function AuthedLayout() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const isSocialRoute = /^\/(social|chat|feed|friends|videos|reels|watch|studio|channel|user|profile|calls)(\/|$)/.test(pathname);
   useEffect(() => {
+    if (typeof window === "undefined") return;
+    // GoodApp Call অ্যাপ /calls?app=calls দিয়ে খোলে — ফ্ল্যাগ স্থায়ী করে রাখি
+    try {
+      if (new URLSearchParams(window.location.search).get("app") === "calls") {
+        localStorage.setItem("goodapp_calls_app", "1");
+      }
+    } catch {}
     // GoodApp Call অ্যাপ: শুধু কল ও মেসেজ — অন্য কোনো পেজ লোড হবে না
-    if (typeof window !== "undefined" && localStorage.getItem("goodapp_calls_app") === "1") {
+    if (localStorage.getItem("goodapp_calls_app") === "1") {
       if (!/^\/(calls|chat)(\/|$)/.test(pathname)) {
         router.navigate({ to: "/calls", replace: true });
         return;
@@ -73,6 +80,8 @@ function AuthedLayout() {
     if (pathname === "/calls") sessionStorage.removeItem("goodapp_full_app");
   }, [pathname, router]);
   const lite = isLiteBuild();
+  // GoodApp Call অ্যাপ — শুধু কল/মেসেজ, হেডার-মেনু লুকানো
+  const callsApp = typeof window !== "undefined" && (() => { try { return localStorage.getItem("goodapp_calls_app") === "1"; } catch { return false; } })();
   const [authState, setAuthState] = useState<"checking" | "authenticated" | "unauthenticated">(() => {
     if (typeof window === "undefined") return "checking";
     // Quick synchronous check of localStorage to avoid splash screen flash
@@ -207,7 +216,7 @@ function AuthedLayout() {
     <CallProvider>
     <AgentIncomingCall />
     <div className={isSocialRoute ? "min-h-[100dvh]" : "min-h-[100dvh] overflow-x-clip pb-[calc(5.75rem+env(safe-area-inset-bottom))]"}>
-      {!isSocialRoute && (
+      {!isSocialRoute && !callsApp && (
         appStatus?.faceVerifyEnabled === false ? (
           <SlotPausedModal message={appStatus?.faceVerifyMessage} />
         ) : (
@@ -215,7 +224,7 @@ function AuthedLayout() {
         )
       )}
 
-      {!isSocialRoute && (
+      {!isSocialRoute && !callsApp && (
         <header className="sticky top-0 z-30 glass safe-top">
         <div className="app-shell grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-3 pb-3 pt-3">
           <div className="flex min-w-0 items-center gap-2">
@@ -290,14 +299,14 @@ function AuthedLayout() {
       </header>
       )}
 
-      {!isSocialRoute && <DailyFaceVerificationWarning />}
+      {!isSocialRoute && !callsApp && <DailyFaceVerificationWarning />}
 
 
       <main className={isSocialRoute ? "" : "app-shell px-3 pt-3 sm:px-4 sm:pt-4"}>
         <Outlet />
       </main>
 
-      {!isSocialRoute && (
+      {!isSocialRoute && !callsApp && (
       <nav className="fixed bottom-0 inset-x-0 z-30 glass border-t border-violet/20">
         <div className={`app-shell grid gap-0.5 px-1 py-1.5 ${lite ? "grid-cols-4" : "grid-cols-6"}`}>
           <NavItem to="/home" icon={<Home className="w-5 h-5" />} label={t("হোম", "Home")} tint="cyan" voice="home.welcome" />
@@ -313,13 +322,13 @@ function AuthedLayout() {
 
       <OverlayUnstick />
 
-      {!isSocialRoute && <GuidedTour />}
+      {!isSocialRoute && !callsApp && <GuidedTour />}
 
-      {!isSocialRoute && <LanguagePicker />}
-      {!isSocialRoute && <SlotResetApproval />}
+      {!isSocialRoute && !callsApp && <LanguagePicker />}
+      {!isSocialRoute && !callsApp && <SlotResetApproval />}
 
-      {!isSocialRoute && <ProfileCompleteGate />}
-      {!isSocialRoute && <EmailVerifyGate />}
+      {!isSocialRoute && !callsApp && <ProfileCompleteGate />}
+      {!isSocialRoute && !callsApp && <EmailVerifyGate />}
       <ChatNotifier />
 
 

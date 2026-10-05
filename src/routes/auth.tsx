@@ -239,10 +239,10 @@ export function AuthPage() {
   // আলাদা "GoodApp Call" অ্যাপে লগইন সহজ রাখি — শুধু ফোন+পাসওয়ার্ড, Google নয়।
   const isCallsApp = (() => {
     try {
-      return (
-        localStorage.getItem("goodapp_calls_app") === "1" ||
-        new URLSearchParams(window.location.search).get("app") === "calls"
-      );
+      if (new URLSearchParams(window.location.search).get("app") === "calls") {
+        localStorage.setItem("goodapp_calls_app", "1");
+      }
+      return localStorage.getItem("goodapp_calls_app") === "1";
     } catch { return false; }
   })();
   const [openFaq, setOpenFaq] = useState<number | null>(0);
