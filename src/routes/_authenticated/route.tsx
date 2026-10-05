@@ -1,3 +1,4 @@
+import type React from "react";
 import { createFileRoute, Outlet, Link, useRouter, useRouterState } from "@tanstack/react-router";
 import { detectCallsApp } from "@/lib/calls-app";
 import { OverlayUnstick } from "@/components/OverlayUnstick";
@@ -85,6 +86,13 @@ function AuthedLayout() {
   const lite = isLiteBuild();
   // GoodApp Call অ্যাপ — শুধু কল/মেসেজ, হেডার-মেনু লুকানো
   const callsApp = detectCallsApp();
+  // কল ও মেসেঞ্জার শুধু GoodApp Call অ্যাপে — মূল অ্যাপে কল/মেসেজ আসবে না
+  const [callsMode, setCallsMode] = useState(false);
+  useEffect(() => { setCallsMode(detectCallsApp()); }, []);
+  useEffect(() => {
+    if (typeof window === "undefined" || detectCallsApp()) return;
+    if (/^\/(chat|calls|social\/messenger)(\/|$)/.test(pathname)) router.navigate({ to: "/home", replace: true });
+  }, [pathname, router]);
   const [authState, setAuthState] = useState<"checking" | "authenticated" | "unauthenticated">(() => {
     if (typeof window === "undefined") return "checking";
     // Quick synchronous check of localStorage to avoid splash screen flash
@@ -216,7 +224,7 @@ function AuthedLayout() {
   if (!isSocialRoute && appStatus?.maintenance) return <MaintenanceScreen message={appStatus.message} />;
 
   return (
-    <CallProvider>
+    <CallsWrap enabled={callsMode}>
     <AgentIncomingCall />
     <div className={isSocialRoute ? "min-h-[100dvh]" : "min-h-[100dvh] overflow-x-clip pb-[calc(5.75rem+env(safe-area-inset-bottom))]"}>
       {!isSocialRoute && !callsApp && (
@@ -277,8 +285,6 @@ function AuthedLayout() {
                   <BigMenuLink to="/settings" icon={<Settings className="h-6 w-6" />} label={t("সেটিংস", "Settings")} tone="text-gold" />
                   <BigMenuLink to="/profile" icon={<User className="h-6 w-6" />} label={t("প্রোফাইল", "Profile")} tone="text-cyan" />
                   <BigMenuLink to="/feed" icon={<ScrollText className="h-6 w-6" />} label={t("নিউজ ফিড", "News Feed")} tone="text-blue-500" />
-                  <BigMenuLink to="/chat" icon={<PhoneCall className="h-6 w-6" />} label={t("মেসেজ ও কল", "Chat & calls")} tone="text-emerald-400" />
-                  <BigMenuLink to="/calls" icon={<PhoneCall className="h-6 w-6" />} label={t("কল অ্যাপ", "Call app")} tone="text-cyan" />
                   {!lite && <BigMenuLink to="/earnings" icon={<FileText className="h-6 w-6" />} label={t("আয়ের হিসাব", "Earnings")} tone="text-emerald-400" />}
                   <BigMenuLink to="/kyc" icon={<ShieldCheck className="h-6 w-6" />} label={t("কেওয়াইসি", "KYC")} tone="text-violet-400" />
                   <BigMenuLink to="/reverify" search={{ taskId: undefined }} icon={<RefreshCcw className="h-6 w-6" />} label={lite ? t("নিরাপত্তা আপডেট", "Security update") : t("রি-ভেরিফাই", "Re-verify")} tone="text-violet-400" />
@@ -332,11 +338,11 @@ function AuthedLayout() {
 
       {!isSocialRoute && !callsApp && <ProfileCompleteGate />}
       {!isSocialRoute && !callsApp && <EmailVerifyGate />}
-      <ChatNotifier />
+      {callsMode && <ChatNotifier />}
 
 
     </div>
-    </CallProvider>
+    </CallsWrap>
   );
 }
 
@@ -387,4 +393,8 @@ function NavItem({ to, icon, label, tint, voice, search }: { to: string; icon: R
       <span className="w-full truncate text-center">{label}</span>
     </Link>
   );
+}
+
+function CallsWrap({ enabled, children }: { enabled: boolean; children: React.ReactNode }) {
+  return enabled ? <CallProvider>{children}</CallProvider> : <>{children}</>;
 }

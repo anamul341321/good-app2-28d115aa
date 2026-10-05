@@ -26,6 +26,7 @@ import agentchargeA from "@/assets/callcenter/agentcharge.mp3.asset.json";
 import { SupportLiveCall, type SupportPhase } from "@/components/SupportLiveCall";
 import { checkSupportCallBalance } from "@/lib/support-call.functions";
 import { resolveCallUid } from "@/lib/calls.functions";
+import { detectCallsApp } from "@/lib/calls-app";
 import { CallProvider, useCalls } from "@/components/CallProvider";
 import { Button } from "@/components/ui/button";
 import { CallBook } from "@/components/CallBook";
@@ -115,6 +116,8 @@ function CallCenterPage() {
   const [showAi, setShowAi] = useState(false);
   const [uidDial, setUidDial] = useState("");
   const [uidMode, setUidMode] = useState(false);
+  const [isCallsApp, setIsCallsApp] = useState(false);
+  useEffect(() => { setIsCallsApp(detectCallsApp()); }, []);
   const [uidMessage, setUidMessage] = useState("");
   const [uidLoading, setUidLoading] = useState(false);
   const resolveUid = useServerFn(resolveCallUid);
@@ -518,7 +521,7 @@ function CallCenterPage() {
         </div>
       )}
 
-      {state === "connected" && !showAgent && (
+      {isCallsApp && state === "connected" && !showAgent && (
         <div className="mx-auto mt-2 w-full max-w-xs shrink-0 px-4">
           {!uidMode ? (
             <Button type="button" variant="secondary" className="h-10 w-full rounded-full font-black" onClick={() => { stopVoice(); setUidMode(true); setUidMessage(""); }}>
