@@ -563,7 +563,16 @@ public class MainActivity extends BridgeActivity {
         // and eventually show the "Add Gmail" screen again. We only need to handle the
         // APK download endpoint ourselves; everything else should follow Capacitor's normal
         // navigation rules so OAuth redirects and third-party cookie handling work correctly.
+        final LocalShellCache shellCache = new LocalShellCache(getApplicationContext());
         appWebView.setWebViewClient(new BridgeWebViewClient(bridge) {
+            @Override
+            public android.webkit.WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+                // কল/চ্যাট পাতা ফোনে রাখা কপি থেকে সাথে সাথে খোলে।
+                android.webkit.WebResourceResponse local = shellCache.intercept(request);
+                if (local != null) return local;
+                return super.shouldInterceptRequest(view, request);
+            }
+
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 if (request.isForMainFrame() && openApkDownload(request.getUrl())) return true;
