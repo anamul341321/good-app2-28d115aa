@@ -181,7 +181,7 @@ function DownloadPage() {
           {busy ? "ডাউনলোড শুরু হচ্ছে…" : "APK ডাউনলোড করুন"}
         </button>
 
-        {!isCallsApp && callsVersion && (
+        {false && !isCallsApp && callsVersion && (
           <button
             onClick={handleCallsDownload}
             disabled={callsBusy}

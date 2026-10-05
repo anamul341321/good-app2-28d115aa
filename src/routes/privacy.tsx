@@ -3,7 +3,7 @@ import { litePolicySections, liteText } from "@/lib/lite-policy";
 import { useLang } from "@/lib/i18n";
 import { RegionBadge } from "@/components/RegionBadge";
 import { LanguageToggle } from "@/components/LanguageToggle";
-import { ShieldCheck, Database, Eye, Trash2, Lock, Mail, ArrowLeft, Baby, Share2, Clock, UserCheck, ScanFace, Coins, Megaphone } from "lucide-react";
+import { ShieldCheck, Database, Eye, Trash2, Lock, Mail, ArrowLeft, Baby, Share2, Clock, UserCheck, ScanFace, Megaphone } from "lucide-react";
 
 export const Route = createFileRoute("/privacy")({
   head: () => ({
@@ -170,16 +170,6 @@ const SECTIONS: { icon: React.ElementType; title: string; points: string[] }[] =
     ],
   },
   {
-    icon: Coins,
-    title: "Good Coin (ইন-অ্যাপ পয়েন্ট)",
-    points: [
-      "Good Coin একটি সম্পূর্ণ ইন-অ্যাপ ভার্চুয়াল পয়েন্ট — এটি কোনো ক্রিপ্টোকারেন্সি, সিকিউরিটি, লটারি বা বাস্তব মুদ্রা নয়।",
-      "কয়েন কেনা যায় না; শুধু অ্যাপে স্বাভাবিক ব্যবহারে পাওয়া যায় এবং কয়েন পেতে কোনো টাকা দিতে হয় না।",
-      "ভিডিও দেখার সময় শুধু সময়টুকু গণনা করা হয়; কোনো ভিডিও বা স্ক্রিন রেকর্ড করা হয় না।",
-      "কয়েন হস্তান্তরযোগ্য নয় এবং একাউন্ট বন্ধ হলে জমা কয়েনও বাতিল হয়ে যায়।",
-    ],
-  },
-  {
     icon: Megaphone,
     title: "বিজ্ঞাপন",
     points: [
@@ -291,11 +281,11 @@ function PolicyLangBar({ kind }: { kind: "privacy" | "terms" }) {
             )
           : t(
               liteText(
-                "সহজ কথায়: এক ব্যক্তি এক একাউন্ট, মাইনিং প্রতিদিন ক্লেইম করতে হবে, উইথড্র মাসের ১–৩ তারিখে এবং সব লেনদেন Main Balance থেকে হয়।",
+                "সহজ কথায়: এক ব্যক্তি এক একাউন্ট, রিওয়ার্ড প্রতিদিন ক্লেইম করতে হবে, উইথড্র মাসের ১–৩ তারিখে এবং সব লেনদেন Main Balance থেকে হয়।",
                 "সহজ কথায়: এক ব্যক্তি এক একাউন্ট, নিজের আসল তথ্য দিন, ফেস ভেরিফিকেশন শুধু আপনি প্রকৃত মানুষ কি না বোঝার জন্য, আর অন্যকে হ্যারাস করা বা ফেক কনটেন্ট দেওয়া নিষিদ্ধ।",
               ),
               liteText(
-                "In short: one person one account, claim mining daily, withdraw on the 1st-3rd of the month, and all payouts come from Main Balance.",
+                "In short: one person one account, claim rewards daily, withdraw on the 1st-3rd of the month, and all payouts come from Main Balance.",
                 "In short: one person one account, use your real details, face check only proves you are a real person, and harassment or fake content is not allowed.",
               )
             )}
