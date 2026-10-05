@@ -1023,6 +1023,9 @@ export function AuthPage() {
                 </>
               )}
             </button>
+            </>
+            )}
+
 
             {mode === "login" && (
               <>
