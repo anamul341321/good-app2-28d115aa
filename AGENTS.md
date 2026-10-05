@@ -12,3 +12,4 @@
 - Withdrawal availability is source-aware: bonus/main funds are withdrawable any day, while claimed mining/pending funds are withdrawable only from Dhaka-local day 1 through day 3 at 10 PM, because the two balances follow different business rules.
 - Call relay credentials stay in the runtime secrets CLOUDFLARE_TURN_KEY_ID and CLOUDFLARE_TURN_API_TOKEN, read only inside the server function that mints them, because embedding them in the app would expose account keys.
 - Direct UID calling resolves the target server-side and reuses the authenticated call-session flow, so callers cannot spoof another identity.
+- Ordinary authenticated pages use the shared `app-shell` width and responsive navigation so controls remain consistent across phone sizes.
