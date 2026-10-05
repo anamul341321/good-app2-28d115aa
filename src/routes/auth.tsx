@@ -26,6 +26,7 @@ import logo from "@/assets/goodapp-logo.png";
 import { PageVoice } from "@/components/PageVoice";
 import { VideoTutorialButton } from "@/components/VideoTutorialButton";
 import { ApkDownloadCard } from "@/components/ApkDownloadCard";
+import { detectCallsApp } from "@/lib/calls-app";
 import { QrScanner } from "@/components/QrScanner";
 import { FaceAuthFlow } from "@/components/FaceAuthFlow";
 import { ForgotPasswordDialog } from "@/components/ForgotPasswordDialog";
