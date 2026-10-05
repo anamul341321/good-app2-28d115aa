@@ -2767,7 +2767,16 @@ export const adminSetApkRelease = createServerFn({ method: "POST" })
     lite: z.boolean().optional().default(false),
     calls: z.boolean().optional().default(false),
   }).parse(i))
-...
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await gate();
+    const cleanVersion = data.version;
+    const { data: uploaded, error: uploadedError } = await supabaseAdmin.storage
+      .from("app-releases")
+      .list("", { search: data.path, limit: 2 });
+    const uploadedFile = uploaded?.find((file) => file.name === data.path);
+    if (uploadedError || !uploadedFile || Number(uploadedFile.metadata?.size ?? 0) < 1_000_000) {
+      throw new Error("APK ফাইলটি সম্পূর্ণ আপলোড হয়নি—আবার আপলোড করুন");
+    }
     const patch: any = {
       id: "default",
       updated_at: new Date().toISOString(),
