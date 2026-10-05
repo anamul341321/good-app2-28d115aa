@@ -7,7 +7,7 @@
 ## ✅ আমি যা করে দিয়েছি (আপনার কিছু করতে হবে না)
 
 - Capacitor সেটআপ (web app → Android app)
-- App নাম **Good-App**, package `com.anamul.goodapp`
+- App নাম **Good-App**, package `com.goodanamul.goodapp`
 - আপনার লোগো দিয়ে সব সাইজের **app icon** বসানো
 - Store build live site লোড করলেও নিজস্ব স্থায়ী Store পরিচয় বহন করে; তাই শুধু ভেরিফিকেশন, রিওয়ার্ড, সেন্ড, রিচার্জ ও স্থানীয় উইথড্র সুবিধা দেখায়
 - **Privacy Policy** পেজ: `https://goodapp2.live/privacy` ← Play Store-এ এই লিংকটাই দিতে হবে

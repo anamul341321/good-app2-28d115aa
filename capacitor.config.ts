@@ -4,7 +4,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 const isCalls = process.env.CAP_BUILD_MODE === 'calls';
 
 const config: CapacitorConfig = {
-  appId: isCalls ? 'com.goodapp.calls' : 'com.anamul.goodapp',
+  appId: isCalls ? 'com.goodapp.calls' : 'com.goodanamul.goodapp',
   appName: isCalls ? 'GoodApp Call' : 'Good-App',
   webDir: 'dist/client',
   // Primary mode: load the live deployed app so all server functions work.

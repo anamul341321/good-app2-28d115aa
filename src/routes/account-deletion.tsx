@@ -85,7 +85,7 @@ function AccountDeletionPage() {
         </div>
         <h1 className="text-2xl font-black">একাউন্ট ও ডেটা ডিলিট</h1>
         <p className="text-xs text-muted-foreground">
-          Good-App (com.anamul.goodapp) — ডেটা মুছে ফেলার অনুরোধের নিয়ম
+          Good-App (com.goodanamul.goodapp) — ডেটা মুছে ফেলার অনুরোধের নিয়ম
         </p>
       </header>
 
