@@ -46,8 +46,12 @@ type Signal =
 
 type CallState = "idle" | "calling" | "ringing" | "connecting" | "active";
 
+/** "phone" = ডায়াল প্যাড থেকে UID দিয়ে কল (ফোনের মতো স্ক্রিন), "messenger" = মেসেঞ্জার থেকে কল */
+export type CallStyle = "messenger" | "phone";
+type StartOpts = { style?: CallStyle; uid?: number | string };
+
 type Ctx = {
-  startCall: (peerId: string, peerName: string, video: boolean) => void;
+  startCall: (peerId: string, peerName: string, video: boolean, opts?: StartOpts) => void;
   state: CallState;
 };
 
@@ -95,6 +99,10 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   const stateRef = useRef<CallState>("idle");
   const [peer, setPeer] = useState<{ id: string; name: string } | null>(null);
   const [withVideo, setWithVideo] = useState(false);
+  const [callStyle, setCallStyle] = useState<CallStyle>("messenger");
+  const [dialedUid, setDialedUid] = useState<string>("");
+  // কল কাটলে এটা বাড়ে — শুরু হতে থাকা কল তখনই থেমে যায়, অন্যজনের ফোনে আর রিং যায় না।
+  const attemptRef = useRef(0);
   const [muted, setMuted] = useState(false);
   const [camOff, setCamOff] = useState(false);
   const [sharing, setSharing] = useState(false);
@@ -161,6 +169,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const cleanup = useCallback(() => {
+    attemptRef.current += 1;
     if (reconnectTimer.current) {
       window.clearTimeout(reconnectTimer.current);
       reconnectTimer.current = null;
@@ -414,25 +423,40 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   );
 
   const startCall = useCallback(
-    async (peerId: string, peerName: string, video: boolean) => {
+    async (peerId: string, peerName: string, video: boolean, opts?: StartOpts) => {
       if (!myId) return;
       if (state !== "idle") {
         toast.error("একটি কল ইতিমধ্যেই চলছে");
         return;
       }
+      const attempt = attemptRef.current;
+      // কল চালু হওয়ার মাঝপথে কেটে দিলে বাকি ধাপ আর চলবে না।
+      const cancelled = () => attemptRef.current !== attempt;
+      const abandon = async (callId?: string) => {
+        cleanup();
+        await Promise.allSettled([
+          sendTo(peerId, { kind: "end", from: myId }),
+          callId ? updateCall({ data: { callId, status: "cancelled" } }) : Promise.resolve(),
+        ]);
+      };
       try {
         setPeer({ id: peerId, name: peerName });
+        setCallStyle(opts?.style ?? "messenger");
+        setDialedUid(opts?.uid != null ? String(opts.uid) : "");
         isCaller.current = true;
         peerIdRef.current = peerId;
         setWithVideo(video);
         setState("calling");
         const pc = await buildPeer(peerId, video);
+        if (cancelled()) { cleanup(); return; }
         makingOffer.current = true;
         const offer = await pc.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: video });
         await pc.setLocalDescription(offer);
         makingOffer.current = false;
+        if (cancelled()) { cleanup(); return; }
         const finalOffer = pc.localDescription?.toJSON() ?? offer;
         const created = await createCall({ data: { peerId, video, offer: finalOffer } });
+        if (cancelled()) { await abandon(created.callId); return; }
         currentCallId.current = created.callId;
         setCallSessionId(created.callId);
         await sendTo(peerId, {
@@ -443,12 +467,14 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
           sdp: finalOffer,
           callId: created.callId,
         });
+        if (cancelled()) { await abandon(created.callId); return; }
          // Realtime starts the call immediately; FCM independently wakes the native
          // Android full-screen receiver when the app is backgrounded or closed.
          void ringCall({ data: { callId: created.callId } }).catch(() => {});
          // Do not delay ringing for ICE gathering. Persist the completed SDP in the
          // background so a cold-started native receiver still gets every candidate.
          void waitForIce(pc).then(() => {
+           if (cancelled()) return;
            const gatheredOffer = pc.localDescription?.toJSON();
            if (gatheredOffer) {
              void saveCallOffer({ data: { callId: created.callId, offer: gatheredOffer } }).catch(() => {});
@@ -456,6 +482,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
          });
       } catch (e) {
         makingOffer.current = false;
+        if (cancelled()) { cleanup(); return; }
         const err = e as { name?: string; message?: string } | null;
         console.error("[call] start failed", err?.name, err?.message);
         if (err?.name === "NotAllowedError" || err?.name === "SecurityError") {
@@ -990,7 +1017,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   const clock = `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
 
   const value = useMemo<Ctx>(
-    () => ({ startCall: (a, b, c) => void startCall(a, b, c), state }),
+    () => ({ startCall: (a, b, c, d) => void startCall(a, b, c, d), state }),
     [startCall, state],
   );
 
@@ -1046,8 +1073,62 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         </div>
       )}
 
+      {/* ডায়াল প্যাড থেকে UID দিয়ে কল — সাধারণ ফোন কলের মতো স্ক্রিন */}
+      {(state === "calling" || state === "connecting" || state === "active") && peer && callStyle === "phone" && !withVideo && (
+        <div
+          className="fixed inset-0 z-[400] flex flex-col items-center justify-between bg-background px-6 text-foreground"
+          style={{
+            paddingTop: "calc(env(safe-area-inset-top,0px) + 48px)",
+            paddingBottom: "calc(env(safe-area-inset-bottom,0px) + 36px)",
+          }}
+        >
+          <video ref={remoteVideo} autoPlay playsInline className="pointer-events-none absolute h-px w-px opacity-0" />
+          <div className="flex flex-col items-center text-center">
+            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">GoodApp কল</p>
+            <div className="mt-8 grid h-24 w-24 place-items-center rounded-full bg-muted text-4xl font-black text-primary">
+              {peer.name.slice(0, 1)}
+            </div>
+            <p className="mt-5 text-3xl font-black tracking-tight">{peer.name}</p>
+            {dialedUid && (
+              <p className="mt-1 text-base font-bold text-muted-foreground">
+                UID {dialedUid.replace(/\d/g, (d) => "০১২৩৪৫৬৭৮৯"[+d])}
+              </p>
+            )}
+            <p className="mt-3 text-sm font-semibold text-primary">
+              {state === "active"
+                ? (quality === "poor" ? "সংযোগ দুর্বল…" : quality === "reconnecting" ? "পুনরায় সংযোগ…" : clock)
+                : state === "calling" ? "কল করা হচ্ছে…" : "সংযোগ হচ্ছে…"}
+            </p>
+          </div>
+
+          <div className="w-full max-w-xs">
+            <div className="grid grid-cols-3 gap-y-6">
+              <PhoneKey active={muted} onClick={toggleMute} label={muted ? "আনমিউট" : "মিউট"}>
+                {muted ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
+              </PhoneKey>
+              <PhoneKey active={speakerOn} onClick={toggleSpeaker} label="স্পিকার">
+                {speakerOn ? <Volume2 className="h-6 w-6" /> : <VolumeX className="h-6 w-6" />}
+              </PhoneKey>
+              <PhoneKey active={false} onClick={() => bumpVolume(true)} label="সাউন্ড বেশি">
+                <Volume2 className="h-6 w-6" />
+              </PhoneKey>
+            </div>
+            <div className="mt-10 flex flex-col items-center gap-2">
+              <button
+                onClick={hangUp}
+                className="btn-press grid h-[76px] w-[76px] place-items-center rounded-full bg-destructive text-destructive-foreground shadow-lg active:scale-95"
+                aria-label="কল কেটে দিন"
+              >
+                <PhoneOff className="h-9 w-9" />
+              </button>
+              <span className="text-sm font-black text-destructive">কল কাটুন</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* চলমান কল — Messenger স্টাইল */}
-      {(state === "calling" || state === "connecting" || state === "active") && peer && (
+      {(state === "calling" || state === "connecting" || state === "active") && peer && !(callStyle === "phone" && !withVideo) && (
         <div className="fixed inset-0 z-[400] bg-[#05060f]">
           <video
             ref={remoteVideo}
@@ -1254,6 +1335,29 @@ function CallCtl({
       aria-label={label}
     >
       {children}
+    </button>
+  );
+}
+
+function PhoneKey({
+  active,
+  onClick,
+  label,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <button type="button" onClick={onClick} aria-label={label} className="btn-press flex flex-col items-center gap-2">
+      <span
+        className={`grid h-16 w-16 place-items-center rounded-full ${active ? "bg-foreground text-background" : "bg-muted text-foreground"}`}
+      >
+        {children}
+      </span>
+      <span className="text-xs font-bold text-muted-foreground">{label}</span>
     </button>
   );
 }
