@@ -311,7 +311,6 @@ function HomePage() {
           <RatesEntryCard />
 
           {/* ফুল-স্ক্রিন রেফার বোনাস ব্যানার (দিনে একবার) */}
-          <ReferBonusBanner />
 
         </>
       )}
@@ -319,7 +318,6 @@ function HomePage() {
       {lite && <LiteHomeNotice />}
 
       {/* অ্যাডমিন নোটিশ — সহজে পড়া যায় এমন কার্ড (TV-স্টাইল স্ক্রলিং নয়) */}
-      <ChannelJoinBanner />
 
       <NoticeBoard />
 
@@ -583,7 +581,7 @@ function HomePage() {
         </div>
       )}
 
-      {!lite && showWelcome && (() => {
+      {false && showWelcome && (() => {
         const b = (data as any).bonus;
         if (!b) return null;
         return (
