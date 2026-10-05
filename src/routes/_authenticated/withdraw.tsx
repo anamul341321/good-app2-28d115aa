@@ -9,7 +9,6 @@ import { toast } from "sonner";
 import { PageVoice } from "@/components/PageVoice";
 import bkashLogo from "@/assets/bkash-logo.png";
 import nagadLogo from "@/assets/nagad-logo.png";
-import usdtLogo from "@/assets/usdt-logo.png";
 import { useLang } from "@/lib/i18n";
 import { withdrawCountdownInfo } from "@/lib/withdraw-window";
 import { WithdrawClosedBanner } from "@/components/WithdrawClosedBanner";
@@ -61,12 +60,6 @@ function WithdrawPage() {
   // USDT (crypto) payouts are removed from the withdraw UI everywhere —
   // Play policy penalises crypto payouts, and the same UI serves the website.
   const store = isStoreBuild();
-  const mode = "bdt" as const;
-  const historyTab = "bdt" as const;
-  const usdtAddress = "";
-  const usdtRate = Number((data as any)?.payoutSettings?.usdtRateBdt ?? 130);
-  const usdtEnabled = false;
-  const usdtOffMsg = (data as any)?.payoutSettings?.usdtOffMessage;
 
   const [amount, setAmount] = useState<string>("");
   const [now, setNow] = useState(Date.now());
@@ -376,34 +369,24 @@ function WithdrawPage() {
               return <p className="text-center text-xs text-muted-foreground py-6">{t("কোনো উইথড্র রিকোয়েস্ট নেই", "No withdraw requests yet")}</p>;
             }
             return filteredHistory.map((w: any) => {
-              const isUsdt = w.provider === "usdt";
-              const usdAmt = isUsdt ? (Number(w.amount) / usdtRate).toFixed(2) : null;
               return (
-                <div key={w.id} className={`glass rounded-xl p-3 flex items-start justify-between gap-2 ${isUsdt ? "border border-emerald/30" : ""}`}>
+                <div key={w.id} className="glass rounded-xl p-3 flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1 pr-2">
-                    {isUsdt ? (
-                      <p className="mono-num font-black text-emerald" translate="no">≈ {usdAmt} USDT <span className="text-[10px] text-muted-foreground font-bold">({Math.floor(Number(w.amount))}৳)</span></p>
-                    ) : (
-                      <p className="mono-num font-black" translate="no">{Math.floor(Number(w.amount))} ৳</p>
-                    )}
+                    <p className="mono-num font-black" translate="no">{Math.floor(Number(w.amount))} ৳</p>
                     <p className="text-[10px] text-muted-foreground flex items-center gap-1" translate="no">
                       <span>{new Date(w.created_at).toLocaleString()}</span>
                       <span>•</span>
-                      {isUsdt ? (
-                        <><img src={usdtLogo} alt="USDT" width={12} height={12} className="h-3 w-3 object-contain inline-block" loading="lazy" /> <span className="font-bold">Celo</span></>
-                      ) : (
-                        <img
-                          src={w.provider === "bkash" ? bkashLogo : nagadLogo}
-                          alt={w.provider === "bkash" ? "bKash" : "Nagad"}
-                          className="h-3 w-auto object-contain inline-block"
-                          loading="lazy"
-                        />
-                      )}
+                      <img
+                        src={w.provider === "bkash" ? bkashLogo : nagadLogo}
+                        alt={w.provider === "bkash" ? "bKash" : "Nagad"}
+                        className="h-3 w-auto object-contain inline-block"
+                        loading="lazy"
+                      />
                     </p>
                     <button
                       type="button"
-                      onClick={() => { navigator.clipboard.writeText(w.wallet_number); toast.success(t(isUsdt ? "Address কপি হয়েছে" : "নম্বর কপি হয়েছে", isUsdt ? "Address copied" : "Number copied")); }}
-                      className={`mt-1 inline-flex items-center gap-1 text-[10px] mono-num hover:underline break-all text-left ${isUsdt ? "text-emerald" : "text-cyan"}`}
+                      onClick={() => { navigator.clipboard.writeText(w.wallet_number); toast.success(t("নম্বর কপি হয়েছে", "Number copied")); }}
+                      className="mt-1 inline-flex items-center gap-1 text-[10px] mono-num hover:underline break-all text-left text-cyan"
                       translate="no">
                       <span className="break-all">{w.wallet_number}</span> <Copy className="w-2.5 h-2.5 shrink-0" />
                     </button>
