@@ -194,6 +194,12 @@ function RootComponent() {
   // GoodApp Call অ্যাপ: কল/মেসেজ ছাড়া অন্য কোনো পেজ খুলবে না — সাথে সাথে /calls-এ পাঠাই।
   const [callsApp, setCallsApp] = useState(false);
   useLayoutEffect(() => {
+    if (isStoreBuild()) {
+      localStorage.removeItem(CALLS_APP_KEY);
+      localStorage.removeItem("goodapp_call_only_mode");
+      setCallsApp(false);
+      return;
+    }
     const isCalls = detectCallsApp();
     setCallsApp(isCalls);
     if (isCalls && !CALLS_ALLOWED_RE.test(pathname)) {

@@ -94,7 +94,7 @@ Repository → **Settings** → **Secrets and variables** → **Actions** → **
 - Ads: No ads
 - Content rating: প্রশ্নপত্র পূরণ করুন
 - Target audience: 18+
-- Financial features: সেন্ড মানি, রিচার্জ, স্থানীয় উইথড্র ও রিওয়ার্ড যা বাস্তবে আছে, সেগুলো সত্যভাবে ঘোষণা করুন; crypto/mining/loan/investment নেই
+- Financial features: সেন্ড মানি, রিচার্জ, স্থানীয় উইথড্র ও রিওয়ার্ড যা বাস্তবে আছে, সেগুলো সত্যভাবে ঘোষণা করুন; Store অ্যাপে crypto wallet/exchange/on-device mining/loan/investment নেই। GoodDollar/GoodID-কে বাহ্যিক identity-verification processor হিসেবে Data safety-তে ঘোষণা করুন
 - App access: আলাদা ১৮+ pre-verified reviewer account-এর মোবাইল নম্বর ও password দিন; OTP/face বাধা যেন review আটকে না দেয়
 - Account deletion URL: `https://goodapp2.live/account-deletion`
 - Data collection-এ face image, device ID/log, payment number, transaction history এবং external verification identifier সত্যভাবে ঘোষণা করুন

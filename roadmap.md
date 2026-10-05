@@ -1,6 +1,8 @@
 # Roadmap
 
 - [x] Complete Store-build Play policy audit across UI, Android package, declarations, deletion, and reviewer access
+- [ ] Create and verify the separate Play reviewer account (blocked: owner must supply it in Play Console)
+- [ ] Install and inspect the generated Store AAB/APK on a physical phone (blocked: requires the built artifact and device)
 
 - [x] Remove USDT/crypto from every Play Store surface and action
 - [x] Align Privacy, Terms, Data Safety, Rules, and Play listing with the finance-focused Store app

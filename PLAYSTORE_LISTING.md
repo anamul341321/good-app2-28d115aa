@@ -36,7 +36,7 @@ Good-App একটি একাউন্ট, স্লট যাচাই ও �
 • মোবাইল রিচার্জ
 • রেফারেল ও চালু অফারের রিওয়ার্ড
 • লেনদেনের ইতিহাস ও একাউন্ট নিরাপত্তা
-• ঐচ্ছিক ফেস ভেরিফিকেশন ও বাধ্যতামূলক পাসওয়ার্ড
+• পরিচয় যাচাই ও বাধ্যতামূলক পাসওয়ার্ড
 
 গুরুত্বপূর্ণ
 Good-App কোনো ব্যাংক, ঋণ, বিনিয়োগ, সঞ্চয় বা ক্রিপ্টোকারেন্সি সেবা নয়। কোনো নির্দিষ্ট বা গ্যারান্টিড আয়ের প্রতিশ্রুতি দেওয়া হয় না। রিওয়ার্ডের যোগ্যতা, হার ও সময় অ্যাপে দেখানো নিয়ম এবং চালু অফারের উপর নির্ভর করে। Play Store সংস্করণে শুধু বিকাশ ও নগদ পেমেন্ট ব্যবহৃত হয়।
@@ -48,7 +48,7 @@ Good-App কোনো ব্যাংক, ঋণ, বিনিয়োগ, স�
 |---|---|
 | App category | **Finance** |
 | Financial features | অ্যাপে যেগুলো বাস্তবে দেখায় সেগুলো সত্যভাবে ঘোষণা করুন: **Mobile payments / money transfer** এবং **Rewards**-এর উপযুক্ত অপশন |
-| Cryptocurrency wallet / exchange / mining | **No** |
+| Cryptocurrency wallet / exchange / on-device mining | **No** — Store অ্যাপে এগুলো নেই; GoodDollar/GoodID শুধু বাহ্যিক পরিচয় যাচাই সেবা হিসেবে ব্যবহৃত হয় |
 | Loans / credit / investment / insurance / banking | **No** |
 | Gambling / real-money games | **No** |
 | Ads | **No** |
@@ -66,7 +66,7 @@ Good-App কোনো ব্যাংক, ঋণ, বিনিয়োগ, স�
 | Name | Yes | No | Account management | Yes |
 | Phone number | Yes | No | Login, account management, fraud prevention | Yes |
 | Email | Yes | No | Security code and recovery | Optional |
-| User IDs | Yes | No | Account and transaction functionality | Yes |
+| User IDs | Yes | Yes, with verification processor | Account, transaction and slot verification functionality | Yes |
 | Face photo / biometric-like verification image | Yes | No | Fraud prevention and account security | Required for signup/verification flow |
 | Pseudonymous external verification/wallet identifier | Yes | Yes, with verification processor | Fraud prevention and slot identity verification | Required when verifying a slot |
 | Profile photo, gender, country | Yes | No | Profile and regional settings | Optional |
@@ -76,7 +76,7 @@ Good-App কোনো ব্যাংক, ঋণ, বিনিয়োগ, স�
 
 - Data encrypted in transit: **Yes**
 - Users can request deletion: **Yes**
-- Do not declare contacts, SMS, call logs, precise location, crypto wallet address, messages, posts, reels or advertising ID; Store build does not use them.
+- Contacts, SMS, call logs, precise location, messages, posts, reels ও advertising ID Store build ব্যবহার করে না। বাহ্যিক verification identifier-টি **User IDs** হিসেবে অবশ্যই ঘোষণা করুন।
 
 ## App access for reviewer
 
