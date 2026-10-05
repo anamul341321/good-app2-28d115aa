@@ -25,6 +25,8 @@ function CallsApp() {
   const [callOnly, setCallOnly] = useState(false);
   const [callsApp, setCallsApp] = useState(false);
   const [installEvt, setInstallEvt] = useState<InstallEvent | null>(null);
+  const [callsApkVersion, setCallsApkVersion] = useState<string | null>(null);
+  const [apkBusy, setApkBusy] = useState(false);
 
   useEffect(() => {
     setCallOnly(localStorage.getItem(CALL_MODE_KEY) === "1");
@@ -34,6 +36,11 @@ function CallsApp() {
     if (link) link.href = "/calls.webmanifest";
     const onPrompt = (e: Event) => { e.preventDefault(); setInstallEvt(e as InstallEvent); };
     window.addEventListener("beforeinstallprompt", onPrompt);
+    // মূল অ্যাপ থেকে কল অ্যাপের APK আছে কিনা জেনে নিই
+    fetch("/api/public/app/download?calls=1&resolve=1")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => d?.version && setCallsApkVersion(String(d.version)))
+      .catch(() => {});
     return () => {
       window.removeEventListener("beforeinstallprompt", onPrompt);
       if (link && prev) link.href = prev;
