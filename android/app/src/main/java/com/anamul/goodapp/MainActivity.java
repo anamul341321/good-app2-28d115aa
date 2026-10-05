@@ -243,6 +243,12 @@ public class MainActivity extends BridgeActivity {
             return BuildConfig.LITE_BUILD;
         }
 
+        /** True only inside the separate "GoodApp Call" APK. */
+        @JavascriptInterface
+        public boolean isCallsBuild() {
+            return BuildConfig.CALLS_BUILD;
+        }
+
         @JavascriptInterface
         public void openExternal(String url) {
             runOnUiThread(() -> openApkDownload(Uri.parse(url)));
@@ -597,10 +603,19 @@ public class MainActivity extends BridgeActivity {
         Uri launchUri = launchIntent != null ? launchIntent.getData() : null;
         if (launchUri != null && isAppDomain(launchUri)) {
             allowOverLockScreen(launchUri);
-            appWebView.loadUrl(launchUri.toString());
+            appWebView.loadUrl(withCallsFlag(launchUri.toString()));
+        } else if (BuildConfig.CALLS_BUILD) {
+            // আলাদা "GoodApp Call" অ্যাপ — সরাসরি শুধু কল স্ক্রিন খোলে, পুরো অ্যাপ নয়।
+            appWebView.loadUrl(APP_URL + "/calls?app=calls");
         } else {
             appWebView.loadUrl(APP_URL);
         }
+    }
+
+    /** In the calls APK every page we open must carry ?app=calls so the web locks to calls/chat. */
+    private String withCallsFlag(String url) {
+        if (!BuildConfig.CALLS_BUILD || url == null || url.contains("app=calls")) return url;
+        return url + (url.contains("?") ? "&" : "?") + "app=calls";
     }
 
     private boolean isAppDomain(Uri uri) {
@@ -620,7 +635,7 @@ public class MainActivity extends BridgeActivity {
         Uri uri = intent != null ? intent.getData() : null;
         if (uri != null && isAppDomain(uri) && bridge != null) {
             allowOverLockScreen(uri);
-            bridge.getWebView().loadUrl(uri.toString());
+            bridge.getWebView().loadUrl(withCallsFlag(uri.toString()));
         }
     }
 

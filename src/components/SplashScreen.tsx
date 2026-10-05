@@ -24,7 +24,7 @@ export function SplashScreen() {
     try {
       const sp = new URLSearchParams(window.location.search);
       // আলাদা "GoodApp Call" অ্যাপ থেকে খুললে কোনো অ্যানিমেশন নয়।
-      if (sp.get("app") === "calls") {
+      if (sp.get("app") === "calls" || Boolean((window as any).GoodAppDownloader?.isCallsBuild?.())) {
         localStorage.setItem("goodapp_calls_app", "1");
         localStorage.setItem("goodapp_call_only_mode", "1");
       }
