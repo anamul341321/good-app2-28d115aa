@@ -60,6 +60,13 @@ function AuthedLayout() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const isSocialRoute = /^\/(social|chat|feed|friends|videos|reels|watch|studio|channel|user|profile|calls)(\/|$)/.test(pathname);
   useEffect(() => {
+    // GoodApp Call অ্যাপ: শুধু কল ও মেসেজ — অন্য কোনো পেজ লোড হবে না
+    if (typeof window !== "undefined" && localStorage.getItem("goodapp_calls_app") === "1") {
+      if (!/^\/(calls|chat)(\/|$)/.test(pathname)) {
+        router.navigate({ to: "/calls", replace: true });
+        return;
+      }
+    }
     if (pathname === "/home" && typeof window !== "undefined" && localStorage.getItem("goodapp_call_only_mode") === "1" && !sessionStorage.getItem("goodapp_full_app")) {
       router.navigate({ to: "/calls", replace: true });
     }
