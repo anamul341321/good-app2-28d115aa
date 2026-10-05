@@ -80,8 +80,7 @@ function WithdrawPage() {
       data: {
         amount: Math.floor(Number(amount) || 0),
         storeBuild: store,
-        provider: !store && mode === "usdt" ? "usdt" : (provider ?? undefined),
-        usdtAddress: !store && mode === "usdt" ? usdtAddress.trim() : undefined,
+        provider: provider ?? undefined,
       },
     }),
     onSuccess: () => {
