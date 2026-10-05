@@ -144,31 +144,9 @@ function HomePage() {
     // ড্যাশবোর্ডে স্ক্রল করলেও মেসেঞ্জার ও ফিড বাটন উপরে ভেসে থাকবে
     <div className="sticky safe-top-nav z-30 -mx-4 grid grid-cols-2 gap-3 border-b border-border/40 bg-background/85 px-4 pb-3 pt-1 backdrop-blur-xl">
 
-      <Link to="/chat" preload="intent"
-        className={`rounded-3xl p-4 relative overflow-hidden btn-press shadow-xl flex flex-col justify-between h-32 ring-1 ${
-          unreadMsgs > 0
-            ? "border border-rose-300/60 bg-gradient-to-br from-rose-500 to-rose-700 ring-rose-300/40 animate-pulse"
-            : "border border-cyan/35 gradient-navy ring-cyan/20"
-        }`}>
-        <div className="absolute inset-x-0 bottom-0 h-16 bg-cyan/10" />
-        <div className="relative w-11 h-11 rounded-2xl bg-white/25 backdrop-blur border border-white/40 flex items-center justify-center text-white">
-          <MessageCircle className="w-6 h-6" />
-        </div>
-        {unreadMsgs > 0 && (
-          <span className="absolute top-3 right-3 min-w-[22px] h-[22px] px-1.5 rounded-full bg-white text-rose-600 text-[11px] font-black grid place-items-center shadow-lg">
-            {unreadMsgs > 9 ? "9+" : unreadMsgs}
-          </span>
-        )}
-        <div className="relative text-white">
-          <p className="text-[9px] tracking-[0.2em] font-black text-white/85">মেসেঞ্জার</p>
-          <p className="text-sm font-black leading-tight mt-0.5 sm:text-base">
-            {unreadMsgs > 0 ? t("নতুন মেসেজ", "New message") : t("মেসেঞ্জার", "Messenger")}
-          </p>
-        </div>
-      </Link>
 
       <Link to="/feed" preload="intent"
-        className="rounded-3xl p-4 relative overflow-hidden btn-press border border-gold/35 gradient-cta shadow-xl flex flex-col justify-between h-32 ring-1 ring-gold/20">
+        className="col-span-2 rounded-3xl p-4 relative overflow-hidden btn-press border border-gold/35 gradient-cta shadow-xl flex flex-col justify-between h-32 ring-1 ring-gold/20">
         <div className="absolute inset-x-0 bottom-0 h-16 bg-gold/10" />
         <div className="relative w-11 h-11 rounded-2xl bg-white/25 backdrop-blur border border-white/40 flex items-center justify-center text-white">
           <Newspaper className="w-6 h-6" />
