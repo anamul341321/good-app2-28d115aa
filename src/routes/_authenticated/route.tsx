@@ -63,7 +63,8 @@ function AuthedLayout() {
     if (typeof window === "undefined") return;
     // GoodApp Call অ্যাপ /calls?app=calls দিয়ে খোলে — ফ্ল্যাগ স্থায়ী করে রাখি
     try {
-      if (new URLSearchParams(window.location.search).get("app") === "calls") {
+      const nativeCalls = Boolean((window as any).GoodAppDownloader?.isCallsBuild?.());
+      if (nativeCalls || new URLSearchParams(window.location.search).get("app") === "calls") {
         localStorage.setItem("goodapp_calls_app", "1");
       }
     } catch {}
