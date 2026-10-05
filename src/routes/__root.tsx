@@ -14,7 +14,7 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 import { useEffect, useLayoutEffect, useState, type ReactNode } from "react";
-import { detectCallsApp, CALLS_ALLOWED_RE } from "@/lib/calls-app";
+import { detectCallsApp, CALLS_ALLOWED_RE, CALLS_APP_KEY } from "@/lib/calls-app";
 import { Toaster } from "sonner";
 
 import appCss from "../styles.css?url";
