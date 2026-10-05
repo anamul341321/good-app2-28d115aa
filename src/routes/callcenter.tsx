@@ -440,6 +440,12 @@ function CallCenterPage() {
     } finally { setUidLoading(false); }
   };
 
+  const openLink = (url: string) => {
+    const w = window as any;
+    if (w.GoodAppDownloader?.openExternal) { try { w.GoodAppDownloader.openExternal(url); return; } catch {} }
+    window.open(url, "_blank", "noopener");
+  };
+
   const close = () => { hangUp(); router.history.back(); };
 
   return (
@@ -461,7 +467,7 @@ function CallCenterPage() {
         </div>
         <p className="mt-3 text-xl font-black">কল সেন্টার</p>
         <p className="mt-1 text-sm font-semibold opacity-80">
-          {state === "idle" && "UID লিখে কল দিন, অথবা সাপোর্টে কল করুন"}
+          {state === "idle" && (isCallsApp ? "UID লিখে কল দিন, অথবা সাপোর্টে কল করুন" : "সমস্যা হলে সাপোর্টে কল করুন")}
           {state === "ringing" && "রিং হচ্ছে…"}
           {state === "connected" && `${bn(Math.floor(seconds / 60))}:${bn(seconds % 60)}`}
         </p>
@@ -476,6 +482,7 @@ function CallCenterPage() {
             className="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-3 text-sm font-black text-primary-foreground shadow-lg active:scale-95 transition">
             <Headset className="h-5 w-5" /> কল সাপোর্ট (কাস্টমার কেয়ার)
           </button>
+          {isCallsApp && (<>
           <div className="flex items-center gap-2 rounded-2xl bg-card/90 px-3 py-2 shadow">
             <div className="min-w-0 flex-1 text-center">
               <p className="truncate text-2xl font-black tracking-widest">{dial || <span className="text-base font-semibold text-muted-foreground">UID লিখুন</span>}</p>
@@ -500,6 +507,27 @@ function CallCenterPage() {
               </button>
             ))}
           </div>
+          )}
+          </>)}
+          {!isCallsApp && (
+            <div className="rounded-2xl bg-card/90 p-3 text-center text-xs font-semibold leading-5 shadow">
+              সাপোর্টে কল দিয়ে মেনু শুনুন:<br />১ উইথড্র · ২ মাইনিং · ৩ রি-ভেরিফাই · ৪ ব্যালেন্স · ৫ রেফার · ৬ পাসওয়ার্ড · ৭ স্লট আয় · ৮ বোনাস · ০ প্রতিনিধি
+              <p className="mt-2 text-[11px] text-muted-foreground">অন্য কাউকে UID দিয়ে কল দিতে GoodApp Call অ্যাপ ব্যবহার করুন।</p>
+            </div>
+          )}
+          {isCallsApp && (
+            <div className="grid shrink-0 grid-cols-3 gap-2 pb-1">
+              {[
+                { href: "https://t.me/goodappofficials", label: "টেলিগ্রাম সাপোর্ট", icon: "✈️" },
+                { href: "https://youtube.com/@cryptocourse34?si=FBiehWSY0sU-yxRq", label: "ইউটিউব সাবস্ক্রাইব", icon: "▶️" },
+                { href: "https://goodapp2.live/api/public/app/download", label: "Good-App ডাউনলোড", icon: "⬇️" },
+              ].map((l) => (
+                <button key={l.href} type="button" onClick={() => openLink(l.href)}
+                  className="flex flex-col items-center gap-1 rounded-2xl bg-card/90 px-1 py-2 text-[10px] font-black shadow active:scale-95">
+                  <span className="text-lg">{l.icon}</span>{l.label}
+                </button>
+              ))}
+            </div>
           )}
         </div>
       )}
