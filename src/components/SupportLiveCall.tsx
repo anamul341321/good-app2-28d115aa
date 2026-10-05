@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Phone, PhoneOff, Mic, MicOff } from "lucide-react";
+import { Phone, PhoneOff, Mic, MicOff, MonitorUp, MonitorX } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { startSupportCall, endSupportCall, getSupportCallStatus, chargeSupportMinute } from "@/lib/support-call.functions";
 import { SUPPORT_LOBBY, getSupportIce, supportChannel } from "@/lib/support-rtc";
@@ -20,6 +20,66 @@ export function SupportLiveCall({ onPhaseChange, autoStart }: { onPhaseChange?: 
   const readStatus = useServerFn(getSupportCallStatus);
   const charge = useServerFn(chargeSupportMinute);
   const [held, setHeld] = useState(false);
+  const [sharing, setSharing] = useState(false);
+  const [askShare, setAskShare] = useState(false);
+  const share = useRef<{ stream?: MediaStream; sender?: RTCRtpSender; canvas?: HTMLCanvasElement }>({});
+
+  // স্ক্রিন ট্র্যাক কলে যোগ করে নতুন করে সংযোগ মিলিয়ে নেয়
+  const attachShare = async (track: MediaStreamTrack, stream: MediaStream) => {
+    const pc = r.current.pc; const ch = r.current.ch;
+    if (!pc || !ch) return;
+    share.current.stream = stream;
+    share.current.sender = pc.addTrack(track, stream);
+    track.onended = () => stopShare();
+    setSharing(true); setAskShare(false);
+    void ch.send({ type: "broadcast", event: "share", payload: { on: true } });
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    void ch.send({ type: "broadcast", event: "offer", payload: { sdp: offer } });
+  };
+  const stopShare = () => {
+    const sh = share.current;
+    try { (window as any).GoodAppDownloader?.stopScreenShare?.(); } catch { /* ignore */ }
+    sh.stream?.getTracks().forEach((t) => t.stop());
+    const pc = r.current.pc;
+    if (pc && sh.sender) { try { pc.removeTrack(sh.sender); } catch { /* ignore */ } }
+    share.current = {};
+    setSharing(false);
+    void r.current.ch?.send({ type: "broadcast", event: "share", payload: { on: false } });
+  };
+  const startShare = async () => {
+    const native = (window as any).GoodAppDownloader?.startScreenShare;
+    if (native) { try { native.call((window as any).GoodAppDownloader); } catch { /* ignore */ } return; }
+    try {
+      const ds: MediaStream = await (navigator.mediaDevices as any).getDisplayMedia({ video: { frameRate: 15 }, audio: false });
+      await attachShare(ds.getVideoTracks()[0], ds);
+    } catch { alert("স্ক্রিন শেয়ার চালু করা যায়নি। আবার চেষ্টা করুন।"); }
+  };
+  // অ্যান্ড্রয়েড অ্যাপ: ফোনের স্ক্রিনের ছবি এসে canvas থেকে ভিডিও বানায়
+  useEffect(() => {
+    const onFrame = async (ev: Event) => {
+      const d = (ev as CustomEvent).detail as { data: string; width: number; height: number };
+      if (!d?.data || !r.current.pc || s !== "talking") return;
+      let cv = share.current.canvas;
+      if (!cv) { cv = document.createElement("canvas"); share.current.canvas = cv; }
+      if (cv.width !== d.width || cv.height !== d.height) { cv.width = d.width; cv.height = d.height; }
+      const img = new Image(); img.src = `data:image/jpeg;base64,${d.data}`;
+      try { await img.decode(); } catch { return; }
+      cv.getContext("2d")?.drawImage(img, 0, 0, cv.width, cv.height);
+      if (!share.current.sender) {
+        const st = (cv as any).captureStream(15) as MediaStream;
+        share.current.sender = {} as RTCRtpSender; // দ্বিতীয়বার যোগ হওয়া আটকাতে
+        await attachShare(st.getVideoTracks()[0], st);
+      }
+    };
+    const onStop = () => { if (share.current.stream) stopShare(); };
+    window.addEventListener("goodapp-screen-frame", onFrame as EventListener);
+    window.addEventListener("goodapp-screen-share-stopped", onStop);
+    return () => {
+      window.removeEventListener("goodapp-screen-frame", onFrame as EventListener);
+      window.removeEventListener("goodapp-screen-share-stopped", onStop);
+    };
+  }, [s]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const cleanup = (missed: boolean, notify = true) => {
     const c = r.current;
@@ -35,6 +95,8 @@ export function SupportLiveCall({ onPhaseChange, autoStart }: { onPhaseChange?: 
       }
     }
     if (c.lobby) supabase.removeChannel(c.lobby);
+    if (share.current.stream) { try { (window as any).GoodAppDownloader?.stopScreenShare?.(); } catch { /* ignore */ } share.current.stream.getTracks().forEach((t) => t.stop()); }
+    share.current = {}; setSharing(false); setAskShare(false);
     c.pc?.close();
     c.stream?.getTracks().forEach((t) => t.stop());
     if (remote.current) { remote.current.pause(); remote.current.srcObject = null; }
@@ -103,6 +165,7 @@ export function SupportLiveCall({ onPhaseChange, autoStart }: { onPhaseChange?: 
           if (remote.current) remote.current.muted = on;
           onPhaseChange?.(on ? "hold" : "unhold");
         })
+        .on("broadcast", { event: "askshare" }, () => setAskShare(true))
         .on("broadcast", { event: "decline" }, () => { cleanup(true, false); setS("busy"); })
         .subscribe();
       const lobby = supabase.channel(SUPPORT_LOBBY);
@@ -164,7 +227,22 @@ export function SupportLiveCall({ onPhaseChange, autoStart }: { onPhaseChange?: 
           <p className="text-sm font-black text-center">
             {s === "calling" ? "প্রতিনিধির সাথে সংযোগ করা হচ্ছে… লাইনে থাকুন" : (held ? "⏸ আপনার কল হোল্ডে আছে (চার্জ কাটছে না) · " : "প্রতিনিধির সাথে কথা হচ্ছে · ") + `${bn(Math.floor(sec / 60))}:${bn(sec % 60)}`}
           </p>
+          {s === "talking" && askShare && !sharing && (
+            <div className="w-full rounded-xl bg-primary/15 p-3 text-center">
+              <p className="text-xs font-bold">প্রতিনিধি আপনার স্ক্রিন দেখতে চাইছেন, যাতে সমস্যাটা দেখিয়ে দিতে পারেন।</p>
+              <div className="mt-2 flex justify-center gap-2">
+                <button onClick={startShare} className="rounded-full bg-primary px-4 py-2 text-xs font-black text-primary-foreground">অনুমতি দিন</button>
+                <button onClick={() => setAskShare(false)} className="rounded-full bg-muted px-4 py-2 text-xs font-bold">না</button>
+              </div>
+            </div>
+          )}
+          {sharing && <p className="text-[11px] font-bold text-primary">🔴 আপনার স্ক্রিন প্রতিনিধি দেখছেন</p>}
           <div className="flex gap-6">
+            {s === "talking" && (
+              <button onClick={sharing ? stopShare : startShare} aria-label="স্ক্রিন শেয়ার" className={`flex h-12 w-12 items-center justify-center rounded-full ${sharing ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
+                {sharing ? <MonitorX className="h-5 w-5" /> : <MonitorUp className="h-5 w-5" />}
+              </button>
+            )}
             <button onClick={toggleMute} aria-label="মিউট" className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
               {muted ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
             </button>

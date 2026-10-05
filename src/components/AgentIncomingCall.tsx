@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Phone, PhoneOff, Mic, MicOff, Headset, Pause, Play } from "lucide-react";
+import { Phone, PhoneOff, Mic, MicOff, Headset, Pause, Play, MonitorUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { agentAcceptSupportCall, agentEndSupportCall, agentSetSupportHold, amICallAgent, getSupportCallStatus } from "@/lib/support-call.functions";
 import { SUPPORT_LOBBY, getSupportIce, supportChannel, type RingPayload } from "@/lib/support-rtc";
@@ -23,6 +23,8 @@ function AgentCallInner() {
   const [sec, setSec] = useState(0);
   const [muted, setMuted] = useState(false);
   const [held, setHeld] = useState(false);
+  const [screenOn, setScreenOn] = useState(false);
+  const screenRef = useRef<HTMLVideoElement | null>(null);
   const ctx = useRef<AudioContext | null>(null);
   const remote = useRef<HTMLAudioElement | null>(null);
   const taken = useRef<Set<string>>(new Set());
@@ -85,7 +87,7 @@ function AgentCallInner() {
     c.pc?.close(); c.stream?.getTracks().forEach((t) => t.stop());
     if (remote.current) { remote.current.pause(); remote.current.srcObject = null; }
     rtc.current = {};
-    setActive(null); setTalking(false); setSec(0); setMuted(false); setHeld(false);
+    setActive(null); setTalking(false); setSec(0); setMuted(false); setHeld(false); setScreenOn(false);
   };
 
   const drop = (id: string) => setRinging((m) => { const n = { ...m }; delete n[id]; return n; });
@@ -103,7 +105,16 @@ function AgentCallInner() {
     setActive({ ...r, name: r.name ?? (ok as any).name ?? null, uid: r.uid ?? (ok as any).uid ?? null });
     const pc = new RTCPeerConnection(await icePromise);
     stream.getTracks().forEach((t) => pc.addTrack(t, stream));
-    pc.ontrack = (e) => { if (remote.current) { remote.current.srcObject = e.streams[0]; void remote.current.play().catch(() => {}); } };
+    pc.ontrack = (e) => {
+      if (e.track.kind === "video") {
+        setScreenOn(true);
+        const ms = e.streams[0] ?? new MediaStream([e.track]);
+        window.setTimeout(() => { if (screenRef.current) { screenRef.current.srcObject = ms; void screenRef.current.play().catch(() => {}); } }, 50);
+        e.track.onended = () => setScreenOn(false);
+        return;
+      }
+      if (remote.current) { remote.current.srcObject = e.streams[0]; void remote.current.play().catch(() => {}); }
+    };
     const ch = supabase.channel(supportChannel(r.id), { config: { broadcast: { self: false } } });
     rtc.current = { pc, stream, ch };
     rtc.current.statusTimer = window.setInterval(() => {
@@ -122,6 +133,7 @@ function AgentCallInner() {
       .on("broadcast", { event: "ice" }, async ({ payload }: any) => {
         if (payload.from === "caller") { try { await pc.addIceCandidate(payload.c); } catch { /* ignore */ } }
       })
+      .on("broadcast", { event: "share" }, ({ payload }: any) => setScreenOn(!!payload?.on))
       .on("broadcast", { event: "hangup" }, () => teardown(false))
       .subscribe((st) => { if (st === "SUBSCRIBED") void ch.send({ type: "broadcast", event: "accept", payload: {} }); });
   };
@@ -165,8 +177,15 @@ function AgentCallInner() {
           {active ? (talking ? (held ? "⏸ হোল্ডে আছে · " : "") + `${String(Math.floor(sec / 60)).padStart(2, "0")}:${String(sec % 60).padStart(2, "0")}` : "সংযোগ হচ্ছে…") : "কল আসছে…"}
         </p>
       </div>
+      {active && screenOn && (
+        <video ref={screenRef} autoPlay playsInline muted className="my-3 max-h-[55vh] w-full flex-1 rounded-2xl bg-card object-contain shadow-2xl" />
+      )}
       {active ? (
-        <div className="flex items-center gap-8">
+        <div className="flex items-center gap-6">
+          {talking && !screenOn && (
+            <button aria-label="স্ক্রিন শেয়ার চাইুন" onClick={() => void rtc.current.ch?.send({ type: "broadcast", event: "askshare", payload: {} })}
+              className="flex h-14 w-14 items-center justify-center rounded-full bg-card shadow"><MonitorUp className="h-6 w-6" /></button>
+          )}
           <button aria-label="মাইক" onClick={() => { const m = !muted; setMuted(m); rtc.current.stream?.getAudioTracks().forEach((t) => (t.enabled = !m)); }}
             className="flex h-14 w-14 items-center justify-center rounded-full bg-card shadow">{muted ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}</button>
           <button aria-label="হোল্ড" onClick={toggleHold}
