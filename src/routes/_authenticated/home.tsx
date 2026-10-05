@@ -1,4 +1,3 @@
-import { CallsAppDownloadButton } from "@/components/CallsAppDownloadButton";
 import { DailyClaimCard } from "@/components/DailyClaimCard";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -189,7 +188,6 @@ function HomePage() {
       <NowProvider>
         <div className="space-y-4 pt-1 pb-6 relative">
           {socialEntryCards}
-          {!lite && <CallsAppDownloadButton />}
           <div className="py-16 text-center space-y-3">
             <RefreshCcw className="mx-auto h-7 w-7 text-amber" />
             <p className="text-sm font-black">{t("তথ্য লোড হয়নি", "Data could not be loaded")}</p>
@@ -207,7 +205,6 @@ function HomePage() {
       <NowProvider>
         <div className="space-y-4 pt-1 pb-6 relative">
           {socialEntryCards}
-          {!lite && <CallsAppDownloadButton />}
           <div className="py-16 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-cyan" /></div>
         </div>
       </NowProvider>
@@ -280,7 +277,6 @@ function HomePage() {
       {/* দুইটি প্রধান বাটন — মেসেঞ্জার ও নিউজ ফিড */}
       {socialEntryCards}
 
-      {!lite && <CallsAppDownloadButton />}
 
       {!lite && (
         <>

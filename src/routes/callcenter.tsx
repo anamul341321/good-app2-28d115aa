@@ -512,7 +512,7 @@ function CallCenterPage() {
           {!isCallsApp && (
             <div className="rounded-2xl bg-card/90 p-3 text-center text-xs font-semibold leading-5 shadow">
               সাপোর্টে কল দিয়ে মেনু শুনুন:<br />১ উইথড্র · ২ মাইনিং · ৩ রি-ভেরিফাই · ৪ ব্যালেন্স · ৫ রেফার · ৬ পাসওয়ার্ড · ৭ স্লট আয় · ৮ বোনাস · ০ প্রতিনিধি
-              <p className="mt-2 text-[11px] text-muted-foreground">অন্য কাউকে UID দিয়ে কল দিতে GoodApp Call অ্যাপ ব্যবহার করুন।</p>
+              
             </div>
           )}
           {isCallsApp && (
