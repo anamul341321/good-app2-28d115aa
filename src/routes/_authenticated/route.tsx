@@ -266,7 +266,6 @@ function AuthedLayout() {
           </div>
           <div className="flex shrink-0 items-center gap-1 sm:gap-2">
             <NotificationBell />
-            <RegionBadge />
             <LanguageToggle />
             <DropdownMenu modal={false}>
               <DropdownMenuTrigger

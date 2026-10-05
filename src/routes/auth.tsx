@@ -849,28 +849,7 @@ export function AuthPage() {
               </div>
             ) : (
               <div data-voice="auth.phone">
-                <label className="text-[11px] font-black text-amber uppercase tracking-wider">
-                  {t("আপনার দেশ", "Your country")}
-                </label>
-                <select
-                  value={countryCode}
-                  onChange={(e) => setCountry(e.target.value)}
-                  className="w-full mt-1 px-4 py-3 bg-white border-2 border-border rounded-xl text-sm font-black outline-none focus:border-amber text-navy transition"
-                >
-                  {REGIONS.map((r) => (
-                    <option key={r.code} value={r.code}>
-                      {r.flag} {r.nameLocal} ({r.nameEn}) {r.dial ? `+${r.dial}` : ""}
-                    </option>
-                  ))}
-                </select>
-                <p className="text-[10px] text-muted-foreground mt-1">
-                  {t(
-                    "দেশ সিলেক্ট করলেই অ্যাপ সেই দেশের ভাষায় দেখাবে — চাইলে উপরের ভাষা বাটন থেকে English রাখতে পারবেন।",
-                    "Pick your country and the app switches to that language — you can always keep English from the language button above."
-                  )}
-                </p>
-
-                <label className="mt-3 block text-[11px] font-black text-cyan uppercase tracking-wider">
+                <label className="block text-[11px] font-black text-cyan uppercase tracking-wider">
                   {t("মোবাইল নম্বর", "Mobile number")} {region.dial ? `(+${region.dial})` : ""}
                 </label>
                 <input

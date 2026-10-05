@@ -299,16 +299,7 @@ function HomePage() {
             />
           </div>
 
-          {/* বিদেশি ইউজারদের জন্য USDT + নিজের দেশের মুদ্রায় ব্যালেন্স — Play অ্যাপে শোনায় না */}
-          {!store && (
-          <ForeignCurrencyCard
-            main={Number((data as any)?.balanceBreakdown?.bonus_part ?? 0)}
-            mining={Number((data as any)?.balanceBreakdown?.mining_available ?? data.mining?.accrued_amount ?? 0)}
-          />
-          )}
-
           {/* দেশভিত্তিক রেট + রেফার বোনাস এন্ট্রি */}
-          <RatesEntryCard />
 
           {/* ফুল-স্ক্রিন রেফার বোনাস ব্যানার (দিনে একবার) */}
 
