@@ -33,7 +33,7 @@ import { getMyCallIdentity } from "@/lib/friends.functions";
 import { createCall, getCall, ringCall, saveCallOffer, updateCall } from "@/lib/calls.functions";
 
 type Signal =
-  | { kind: "offer"; from: string; fromName: string; video: boolean; sdp: any; callId?: string }
+  | { kind: "offer"; from: string; fromName: string; video: boolean; sdp: any; callId?: string; style?: "messenger" | "phone"; uid?: string }
   | { kind: "reoffer"; from: string; sdp: any }
   | { kind: "answer"; from: string; sdp: any }
   | { kind: "ice"; from: string; candidate: any }
@@ -223,15 +223,27 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
 
   const hangUp = useCallback(async () => {
     const callId = currentCallId.current;
-    const peerId = peer?.id;
+    const peerId = peer?.id ?? peerIdRef.current;
     const finalStatus = state === "ringing" ? "declined" : state === "calling" ? "cancelled" : "ended";
-    // Close locally first, then notify through both realtime and the durable database.
-    // A slow network path must never leave the ringtone or call screen hanging locally.
+    // Keep the already-open signal channel so the "end" message leaves instantly
+    // instead of waiting for a brand-new channel to connect after cleanup.
+    const openCh = outRef.current && outRef.current.__peerId === peerId ? outRef.current : null;
+    outRef.current = null;
+    const endMsg = { kind: "end", from: myId ?? "" } as Signal;
+    const sendEnd = peerId
+      ? openCh
+        ? openCh.send({ type: "broadcast", event: "signal", payload: endMsg })
+        : sendTo(peerId, endMsg)
+      : Promise.resolve();
+    const dbEnd = callId ? updateCall({ data: { callId, status: finalStatus } }) : Promise.resolve();
     cleanup();
-    await Promise.allSettled([
-      peerId ? sendTo(peerId, { kind: "end", from: myId ?? "" }) : Promise.resolve(),
-      callId ? updateCall({ data: { callId, status: finalStatus } }) : Promise.resolve(),
-    ]);
+    await Promise.allSettled([sendEnd, dbEnd]);
+    if (openCh) window.setTimeout(() => void supabase.removeChannel(openCh), 1500);
+    if (outRef.current && !openCh) {
+      const c = outRef.current;
+      outRef.current = null;
+      window.setTimeout(() => void supabase.removeChannel(c), 1500);
+    }
   }, [peer, myId, sendTo, cleanup, state]);
 
   const waitForIce = useCallback((pc: RTCPeerConnection) => {
@@ -461,6 +473,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         setCallSessionId(created.callId);
         await sendTo(peerId, {
           kind: "offer",
+          style: opts?.style ?? "messenger",
           from: myId,
           fromName: myName,
           video,
@@ -863,6 +876,8 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
           setCallSessionId(sig.callId ?? null);
           setPeer({ id: sig.from, name: sig.fromName });
           setWithVideo(sig.video);
+          setCallStyle(sig.style === "phone" ? "phone" : "messenger");
+          setDialedUid("");
           setState("ringing");
           return;
         }

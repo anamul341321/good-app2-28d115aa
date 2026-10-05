@@ -1,3 +1,4 @@
+import { CallsAppDownloadButton } from "@/components/CallsAppDownloadButton";
 import { DailyClaimCard } from "@/components/DailyClaimCard";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -339,6 +340,8 @@ function HomePage() {
       <ChannelJoinBanner />
 
       <NoticeBoard />
+
+      {!lite && <CallsAppDownloadButton className="mt-3" />}
 
       {!lite && <VoucherPopup vouchers={(data as any).vouchers ?? []} onClaimed={() => refetch()} />}
 
