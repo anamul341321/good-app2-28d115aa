@@ -92,6 +92,7 @@ public class IncomingCallActivity extends Activity {
             declineCall();
             return;
         }
+        preloadApp();
 
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
@@ -177,6 +178,29 @@ public class IncomingCallActivity extends Activity {
         String action = intent.getStringExtra("call_action");
         if ("answer".equals(action)) openCall();
         else if ("decline".equals(action)) declineCall();
+    }
+
+    /**
+     * রিং বাজার সময়েই পেছনে অ্যাপ লোড করে রাখি, যাতে "রিসিভ" চাপলে লোডিং ছাড়াই কথা শুরু হয়।
+     * অ্যাপ আগে থেকে চালু থাকলে কিছু করি না (তখন সরাসরি কল ধরা যায়)।
+     */
+    private void preloadApp() {
+        if (MainActivity.alive || callId == null) return;
+        try {
+            String url = "https://www.goodapp2.live/chat/" + Uri.encode(callerId == null ? "" : callerId)
+                + "?call=" + Uri.encode(callId) + "&preload=1";
+            Intent app = new Intent(this, MainActivity.class);
+            app.setAction(Intent.ACTION_VIEW);
+            app.setData(Uri.parse(url));
+            app.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NO_ANIMATION);
+            startActivity(app);
+            // রিং স্ক্রিন আবার সামনে আনি
+            Intent self = new Intent(this, IncomingCallActivity.class);
+            self.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_NO_ANIMATION);
+            new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                if (!isFinishing()) startActivity(self);
+            }, 150);
+        } catch (Exception ignored) {}
     }
 
     private void openCall() {
