@@ -66,3 +66,17 @@ writeFileSync(mainActivityPath, mainActivity);
 if (existsSync(unityPluginPath)) rmSync(unityPluginPath);
 
 console.log("Store Android package sanitized: ads, calls, microphone, screen sharing, and external-app surfaces removed.");
+// Drop AdMob from Capacitor's runtime plugin list so nothing tries to load it.
+const pluginsJsonPath = "android/app/src/main/assets/capacitor.plugins.json";
+if (existsSync(pluginsJsonPath)) {
+  const plugins = JSON.parse(readFileSync(pluginsJsonPath, "utf8")) as Array<{ pkg?: string; classpath?: string }>;
+  const kept = plugins.filter((p) => !/admob/i.test(`${p.pkg ?? ""} ${p.classpath ?? ""}`));
+  writeFileSync(pluginsJsonPath, JSON.stringify(kept, null, "\t"));
+}
+const settingsGradlePath = "android/capacitor.settings.gradle";
+if (existsSync(settingsGradlePath)) {
+  writeFileSync(
+    settingsGradlePath,
+    readFileSync(settingsGradlePath, "utf8").replace(/^.*capacitor-community-admob.*$/gm, ""),
+  );
+}
