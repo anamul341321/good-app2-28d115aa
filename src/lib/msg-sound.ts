@@ -13,6 +13,19 @@ function audio(): AudioContext | null {
   return ctx;
 }
 
+// ফোন প্রথম ছোঁয়ার আগে শব্দ বন্ধ রাখে — প্রথম ছোঁয়াতেই শব্দ চালু করে রাখি।
+if (typeof window !== "undefined") {
+  const unlock = () => {
+    const ac = audio();
+    if (ac && ac.state === "running") {
+      window.removeEventListener("pointerdown", unlock, true);
+      window.removeEventListener("keydown", unlock, true);
+    }
+  };
+  window.addEventListener("pointerdown", unlock, true);
+  window.addEventListener("keydown", unlock, true);
+}
+
 function blip(at: number, freq: number, dur = 0.14, gain = 0.16) {
   const ac = audio();
   if (!ac) return;
