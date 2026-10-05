@@ -58,13 +58,14 @@ function WithdrawPage() {
   const [provider, setProvider] = useState<"bkash" | "nagad" | null>(initial);
   useEffect(() => { if (!provider && initial) setProvider(initial); }, [initial, provider]);
 
-  const [mode, setMode] = useState<"bdt" | "usdt">("bdt");
-  // Play Store builds never show the crypto (USDT) payout path.
+  // USDT (crypto) payouts are removed from the withdraw UI everywhere —
+  // Play policy penalises crypto payouts, and the same UI serves the website.
   const store = isStoreBuild();
-  const [usdtAddress, setUsdtAddress] = useState<string>("");
-  const [historyTab, setHistoryTab] = useState<"bdt" | "usdt">("bdt");
+  const mode = "bdt" as const;
+  const historyTab = "bdt" as const;
+  const usdtAddress = "";
   const usdtRate = Number((data as any)?.payoutSettings?.usdtRateBdt ?? 130);
-  const usdtEnabled = (data as any)?.payoutSettings?.usdtEnabled !== false;
+  const usdtEnabled = false;
   const usdtOffMsg = (data as any)?.payoutSettings?.usdtOffMessage;
 
   const [amount, setAmount] = useState<string>("");
@@ -73,12 +74,6 @@ function WithdrawPage() {
     const id = setInterval(() => setNow(Date.now()), 500);
     return () => clearInterval(id);
   }, []);
-  useEffect(() => {
-    if (!store) return;
-    setMode("bdt");
-    setHistoryTab("bdt");
-    setUsdtAddress("");
-  }, [store]);
 
   const mut = useMutation({
     mutationFn: () => requestWithdraw({
