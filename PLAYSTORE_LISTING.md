@@ -68,6 +68,7 @@ Good-App কোনো ব্যাংক, ঋণ, বিনিয়োগ, স�
 | Email | Yes | No | Security code and recovery | Optional |
 | User IDs | Yes | No | Account and transaction functionality | Yes |
 | Face photo / biometric-like verification image | Yes | No | Fraud prevention and account security | Required for signup/verification flow |
+| Pseudonymous external verification/wallet identifier | Yes | Yes, with verification processor | Fraud prevention and slot identity verification | Required when verifying a slot |
 | Profile photo, gender, country | Yes | No | Profile and regional settings | Optional |
 | Payment information (bKash/Nagad number) | Yes | No | Withdrawal processing | Optional until withdrawal |
 | Transaction history | Yes | No | App functionality, fraud prevention, accounting | Yes when used |
@@ -84,6 +85,14 @@ Login: (reviewer test mobile number)
 Password: (reviewer test password)
 Instructions: Sign in with the supplied pre-verified account. The account must contain enough sample data to review slot status, balance, history, send money, recharge and withdrawal screens without making a real payment.
 ```
+
+### Reviewer account প্রস্তুতি
+
+1. আলাদা একটি ১৮+ টেস্ট একাউন্ট তৈরি করুন; ব্যক্তিগত/অ্যাডমিন একাউন্ট দেবেন না।
+2. একাউন্টে অন্তত একটি verified slot, নমুনা balance এবং history রাখুন।
+3. Review চলাকালীন password, account বা access rule বদলাবেন না।
+4. Play Console-এর **App access** ঘরে উপরের Login ও Password বসিয়ে লিখুন: `No OTP is required for this reviewer account.`
+5. যদি প্রথম লগইনে Gmail code বা face check চায়, আগে থেকেই trusted/pre-verified test account বানিয়ে সেটি নিজে নতুন Store APK-তে পরীক্ষা করুন।
 
 ## Screenshots
 
