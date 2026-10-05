@@ -58,7 +58,13 @@ function AuthedLayout() {
   const router = useRouter();
   const clearOtpTrust = useServerFn(clearCurrentDeviceOtpTrust);
   const pathname = useRouterState({ select: (state) => state.location.pathname });
-  const isSocialRoute = /^\/(social|chat|feed|friends|videos|reels|watch|studio|channel|user|profile)(\/|$)/.test(pathname);
+  const isSocialRoute = /^\/(social|chat|feed|friends|videos|reels|watch|studio|channel|user|profile|calls)(\/|$)/.test(pathname);
+  useEffect(() => {
+    if (pathname === "/home" && typeof window !== "undefined" && localStorage.getItem("goodapp_call_only_mode") === "1" && !sessionStorage.getItem("goodapp_full_app")) {
+      router.navigate({ to: "/calls", replace: true });
+    }
+    if (pathname === "/calls") sessionStorage.removeItem("goodapp_full_app");
+  }, [pathname, router]);
   const lite = isLiteBuild();
   const [authState, setAuthState] = useState<"checking" | "authenticated" | "unauthenticated">(() => {
     if (typeof window === "undefined") return "checking";
