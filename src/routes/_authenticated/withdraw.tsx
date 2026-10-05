@@ -85,7 +85,7 @@ function WithdrawPage() {
     }),
     onSuccess: () => {
       toast.success(t("উইথড্র রিকোয়েস্ট পাঠানো হয়েছে! অ্যাডমিন শীঘ্রই প্রসেস করবেন।", "Withdraw request submitted! The admin will process it soon."));
-      setAmount(""); setUsdtAddress("");
+      setAmount("");
       refetch(); refetchHistory();
     },
     onError: (e: any) => toast.error(e.message),
@@ -253,47 +253,21 @@ function WithdrawPage() {
       )}
 
 
-      {/* Mode toggle: BDT vs USDT */}
-      <div className={`grid ${store ? "grid-cols-1" : "grid-cols-2"} gap-2`} translate="no">
-          <Button
-            variant="outline"
-          type="button"
-          onClick={() => setMode("bdt")}
-            className={`h-auto justify-start relative overflow-hidden rounded-2xl p-3.5 border-2 text-left transition ${
-            mode === "bdt"
-              ? "border-rose bg-rose/10 shadow-lg"
-              : "border-border bg-surface-2 opacity-80"
-          }`}>
+      {/* Payout method: bKash / Nagad (BDT) only */}
+      <div className="grid grid-cols-1 gap-2" translate="no">
+          <div
+            className="h-auto justify-start relative overflow-hidden rounded-2xl p-3.5 border-2 text-left border-rose bg-rose/10 shadow-lg">
           <div className="flex items-center gap-2">
             <div className="flex -space-x-1.5">
               <img src={bkashLogo} alt="bKash" className="h-7 w-7 rounded-full object-contain bg-white border border-white shadow" loading="lazy" />
               <img src={nagadLogo} alt="Nagad" className="h-7 w-7 rounded-full object-contain bg-white border border-white shadow" loading="lazy" />
             </div>
             <div>
-              <p className={`text-sm font-black ${mode === "bdt" ? "text-rose" : "text-muted-foreground"}`}>BDT</p>
+              <p className="text-sm font-black text-rose">BDT</p>
               <p className="text-[9px] text-muted-foreground">{t("বিকাশ / নগদ", "bKash / Nagad")}</p>
             </div>
           </div>
-          </Button>
-          {!store && (
-          <Button
-            variant="outline"
-          type="button"
-          onClick={() => setMode("usdt")}
-            className={`h-auto justify-start relative overflow-hidden rounded-2xl p-3.5 border-2 text-left transition ${
-            mode === "usdt"
-              ? "border-emerald bg-emerald/10 shadow-lg"
-              : "border-border bg-surface-2 opacity-80"
-          }`}>
-          <div className="flex items-center gap-2">
-            <img src={usdtLogo} alt="USDT" width={32} height={32} className="h-8 w-8 rounded-full object-contain bg-white shadow" loading="lazy" />
-            <div>
-              <p className={`text-sm font-black ${mode === "usdt" ? "text-emerald" : "text-muted-foreground"}`} translate="no">USDT</p>
-              <p className={`text-[9px] font-bold ${usdtEnabled ? "text-muted-foreground" : "text-rose"}`} translate="no">{usdtEnabled ? "Celo Network" : t("সাময়িক বন্ধ", "Temporarily off")}</p>
-            </div>
           </div>
-          </Button>
-          )}
       </div>
 
       {mode === "bdt" ? (
@@ -393,7 +367,7 @@ function WithdrawPage() {
         <UsdtWithdrawCard
           claimable={claimable}
           amount={amount} setAmount={setAmount}
-          usdtAddress={usdtAddress} setUsdtAddress={setUsdtAddress}
+          usdtAddress={usdtAddress}
           usdtRate={usdtRate}
           usdtEnabled={usdtEnabled}
           usdtOffMsg={usdtOffMsg}
@@ -411,23 +385,14 @@ function WithdrawPage() {
         <div className="flex items-center justify-between px-1 mb-2">
           <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">{t("ইতিহাস", "History")}</p>
           <div className="flex gap-1 rounded-full bg-surface-2 p-0.5" translate="no">
-            <button type="button" onClick={() => setHistoryTab("bdt")}
-              className={`px-3 py-1 rounded-full text-[10px] font-black transition ${historyTab === "bdt" ? "bg-rose text-white shadow" : "text-muted-foreground"}`}>
+            <span className="px-3 py-1 rounded-full text-[10px] font-black bg-rose text-white shadow">
               BDT
-            </button>
-            {!store && (
-            <button type="button" onClick={() => setHistoryTab("usdt")}
-              className={`px-3 py-1 rounded-full text-[10px] font-black transition ${historyTab === "usdt" ? "bg-emerald text-white shadow" : "text-muted-foreground"}`}>
-              USDT
-            </button>
-            )}
+            </span>
           </div>
         </div>
         <div className="space-y-2">
           {(() => {
-            const filteredHistory = (history ?? []).filter((w: any) =>
-              store ? w.provider !== "usdt" : historyTab === "usdt" ? w.provider === "usdt" : w.provider !== "usdt"
-            );
+            const filteredHistory = (history ?? []).filter((w: any) => w.provider !== "usdt");
             if (filteredHistory.length === 0) {
               return <p className="text-center text-xs text-muted-foreground py-6">{t("কোনো উইথড্র রিকোয়েস্ট নেই", "No withdraw requests yet")}</p>;
             }
