@@ -125,7 +125,7 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   // Exclude admin and social routes from update gates
-  const isExcludedRoute = /^\/(admin|admin-login|social|chat|feed|friends|videos|reels|watch|studio|channel|user|profile)(\/|$)/.test(pathname);
+  const isExcludedRoute = /^\/(admin|admin-login|callcenter|social|chat|feed|friends|videos|reels|watch|studio|channel|user|profile)(\/|$)/.test(pathname);
 
   useNativeApp();
 
