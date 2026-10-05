@@ -37,7 +37,7 @@
 
     <application
         android:name=".GoodAppApplication"
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:usesCleartextTraffic="false"
         android:largeHeap="true"
         android:hardwareAccelerated="true"

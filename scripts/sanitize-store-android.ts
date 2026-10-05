@@ -1,6 +1,8 @@
-import { readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 
 const manifestPath = "android/app/src/main/AndroidManifest.xml";
+const mainActivityPath = "android/app/src/main/java/com/anamul/goodapp/MainActivity.java";
+const unityPluginPath = "android/app/src/main/java/com/anamul/goodapp/UnityAdsPlugin.java";
 let manifest = readFileSync(manifestPath, "utf8");
 
 const removePermission = (name: string) => {
@@ -47,4 +49,10 @@ manifest = manifest.replace(
 );
 
 writeFileSync(manifestPath, manifest);
-console.log("Store Android manifest sanitized: ads, calls, microphone, screen sharing, and external-app surfaces removed.");
+
+let mainActivity = readFileSync(mainActivityPath, "utf8");
+mainActivity = mainActivity.replace(/^\s*registerPlugin\(UnityAdsPlugin\.class\);\s*$/m, "");
+writeFileSync(mainActivityPath, mainActivity);
+if (existsSync(unityPluginPath)) rmSync(unityPluginPath);
+
+console.log("Store Android package sanitized: ads, calls, microphone, screen sharing, and external-app surfaces removed.");

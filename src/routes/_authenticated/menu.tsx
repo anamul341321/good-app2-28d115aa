@@ -15,6 +15,7 @@ import { VideoTutorialButton } from "@/components/VideoTutorialButton";
 import { TourReplayButton } from "@/components/GuidedTour";
 import { useLang } from "@/lib/i18n";
 import { isLiteBuild } from "@/lib/lite-build";
+import { isStoreBuild } from "@/lib/store-build";
 
 export const Route = createFileRoute("/_authenticated/menu")({
   component: MenuPage,
@@ -33,6 +34,7 @@ export const Route = createFileRoute("/_authenticated/menu")({
 function MenuPage() {
   const { t } = useLang();
   const lite = isLiteBuild();
+  const store = isStoreBuild();
   const { data } = useQuery({
     queryKey: ["dashboard"],
     queryFn: () => getDashboard(),
@@ -190,27 +192,27 @@ function MenuPage() {
         title={t("তথ্য, সাপোর্ট ও অ্যাপ", "Info, Support & App")}
         subtitle={t("সাহায্য · টিউটোরিয়াল · নিয়ম-কানুন", "Help · Tutorial · Policies")}
       >
-        <a href="https://t.me/goodappbuy" target="_blank" rel="noopener noreferrer"
+        {!store && <a href="https://t.me/goodappbuy" target="_blank" rel="noopener noreferrer"
            className="block rounded-2xl p-3.5 text-center shadow-md btn-press"
            style={{ background: "linear-gradient(120deg,#0088cc,#06b6d4)" }}>
           <p className="text-sm font-black text-white flex items-center justify-center gap-1.5">
             <MessageCircle className="w-4 h-4" /> {t("টেলিগ্রাম সাপোর্ট", "Telegram Support")}
           </p>
           <p className="text-[11px] text-white/90 mt-0.5">{t("গ্রুপে মেসেজ দিন — দ্রুত সাহায্য পাবেন", "Message the group — quick help")}</p>
-        </a>
-        <Link to="/callcenter"
+        </a>}
+        {!store && <Link to="/callcenter"
            className="block rounded-2xl p-3.5 text-center shadow-md btn-press mt-2"
            style={{ background: "linear-gradient(120deg,#16a34a,#22c55e)" }}>
           <p className="text-sm font-black text-white flex items-center justify-center gap-1.5">
             <Phone className="w-4 h-4" /> {t("কল সেন্টার", "Call Center")}
           </p>
           <p className="text-[11px] text-white/90 mt-0.5">{t("ভয়েসে শুনুন — উইথড্র, মাইনিং, ব্যালেন্সের তথ্য", "Listen by voice — withdraw, mining, balance info")}</p>
-        </Link>
-        <BotStartButton />
+        </Link>}
+        {!store && <BotStartButton />}
         {!lite && <ApkDownloadCard />}
 
         <div className="text-center py-1 space-y-3">
-          <VideoTutorialButton />
+          {!store && <VideoTutorialButton />}
           <p className="text-[11px] text-muted-foreground italic">
             🌸 "হাজার জনের সহযোগিতা, একজনের হাসি" 🌸
           </p>
