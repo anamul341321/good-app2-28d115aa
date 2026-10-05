@@ -20,6 +20,7 @@ import { checkSupportCallBalance } from "@/lib/support-call.functions";
 import { resolveCallUid } from "@/lib/calls.functions";
 import { CallProvider, useCalls } from "@/components/CallProvider";
 import { Button } from "@/components/ui/button";
+import { CallBook } from "@/components/CallBook";
 import { CALL_CENTER_SCRIPTS } from "@/lib/callcenter-scripts";
 
 const SUPPORT_NUMBER = "112233";
@@ -406,6 +407,19 @@ function CallCenterPage() {
     }
   };
 
+  const [showBook, setShowBook] = useState(false);
+  const dialUid = async (uid: number, video: boolean) => {
+    if (uidLoading || directCallState !== "idle") return;
+    setUidLoading(true);
+    try {
+      const person = await resolveUid({ data: { uid } });
+      setUidMessage(`${person.name}-কে কল করা হচ্ছে`);
+      startDirectCall(person.userId, person.name, video);
+    } catch (error) {
+      setUidMessage(error instanceof Error ? error.message : "কল করা যায়নি");
+    } finally { setUidLoading(false); }
+  };
+
   const close = () => { hangUp(); router.history.back(); };
 
   return (
@@ -452,6 +466,11 @@ function CallCenterPage() {
                 className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary"><Delete className="h-5 w-5" /></button>
             )}
           </div>
+          <div className="grid grid-cols-2 gap-1 rounded-full bg-card/70 p-1 text-xs font-black">
+            <button type="button" onClick={() => setShowBook(false)} className={`rounded-full py-1.5 ${!showBook ? "bg-primary text-primary-foreground" : ""}`}>ডায়াল প্যাড</button>
+            <button type="button" onClick={() => setShowBook(true)} className={`rounded-full py-1.5 ${showBook ? "bg-primary text-primary-foreground" : ""}`}>রিসেন্ট ও সেভ</button>
+          </div>
+          {showBook ? <CallBook onDial={(uid, video) => void dialUid(uid, video)} /> : (
           <div className="grid min-h-0 flex-1 grid-cols-3 gap-2">
             {PAD.map((d) => (
               <button key={d} type="button" disabled={!/^[০-৯]$/.test(d)}
@@ -461,6 +480,7 @@ function CallCenterPage() {
               </button>
             ))}
           </div>
+          )}
         </div>
       )}
 

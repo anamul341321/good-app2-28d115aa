@@ -346,7 +346,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
             reconnectTimer.current = null;
           }
           reconnecting.current = false;
-          setState("active");
+          setState("active"); try { navigator.vibrate?.([60, 40, 60]); } catch {}
           return;
         }
         // নেটওয়ার্ক একটু কেটে গেলে সাথে সাথে কল বন্ধ না করে ৩০ সেকেন্ড পর্যন্ত
@@ -1001,7 +1001,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       {/* ইনকামিং কল — মেসেঞ্জারের মতো ফুল স্ক্রিন */}
       {state === "ringing" && peer && !isNativeApp && (
         <div
-          className="fixed inset-0 z-[95] flex flex-col items-center justify-between px-6 text-white"
+          className="fixed inset-0 z-[400] flex flex-col items-center justify-between px-6 text-white"
           style={{
             background: "linear-gradient(180deg,#0a1533 0%,#0a1024 45%,#05060f 100%)",
             paddingTop: "calc(env(safe-area-inset-top,0px) + 64px)",
@@ -1048,7 +1048,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
 
       {/* চলমান কল — Messenger স্টাইল */}
       {(state === "calling" || state === "connecting" || state === "active") && peer && (
-        <div className="fixed inset-0 z-[95] bg-[#05060f]">
+        <div className="fixed inset-0 z-[400] bg-[#05060f]">
           <video
             ref={remoteVideo}
             autoPlay

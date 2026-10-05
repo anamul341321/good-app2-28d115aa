@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useMemo, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Search, Users, Check, MessageCircle, Home, Loader2 } from "lucide-react";
+import { Search, Users, Check, MessageCircle, Home, Loader2, Phone } from "lucide-react";
 import { createGroup, listChats, deleteAllMessages } from "@/lib/chat.functions";
 import { listFriends } from "@/lib/friends.functions";
 import { getPublicProfile } from "@/lib/social-users.functions";
@@ -163,6 +163,12 @@ export function ChatListPage() {
             </div>
           </div>
           <div className="flex items-center gap-2.5">
+            <Button asChild size="sm" className="h-10 rounded-full px-3 font-black" aria-label="কল">
+              <Link to="/callcenter">
+                <Phone className="h-4 w-4" />
+                কল
+              </Link>
+            </Button>
             <Button asChild variant="secondary" size="sm" className="gradient-amber h-10 rounded-full px-3 font-black" aria-label="ড্যাশবোর্ডে ফিরুন">
               <Link to="/home">
                 <Home className="h-4 w-4" />
