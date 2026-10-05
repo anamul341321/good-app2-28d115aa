@@ -11,13 +11,17 @@ export const Route = createFileRoute("/api/public/app/download")({
         const url = new URL(request.url);
         const testMode = url.searchParams.get("test") === "1";
         const liteMode = url.searchParams.get("lite") === "1";
+        const callsMode = url.searchParams.get("calls") === "1";
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-        
-        let query = supabaseAdmin.from("bonus_settings").select("apk_url, apk_version, test_apk_url, test_apk_version, apk_lite_url, apk_lite_version, test_apk_lite_url, test_apk_lite_version");
+
+        let query = supabaseAdmin.from("bonus_settings").select("apk_url, apk_version, test_apk_url, test_apk_version, apk_lite_url, apk_lite_version, test_apk_lite_url, test_apk_lite_version, apk_calls_url, apk_calls_version");
         const { data: settings } = await query.eq("id", "default").maybeSingle();
         let path: string | null | undefined;
         let version: string;
-        if (liteMode) {
+        if (callsMode) {
+          path = (settings as any)?.apk_calls_url;
+          version = (settings as any)?.apk_calls_version ?? "calls-latest";
+        } else if (liteMode) {
           path = testMode ? ((settings as any)?.test_apk_lite_url || (settings as any)?.apk_lite_url) : (settings as any)?.apk_lite_url;
           version = testMode ? ((settings as any)?.test_apk_lite_version || (settings as any)?.apk_lite_version || "lite-test") : ((settings as any)?.apk_lite_version ?? "lite-latest");
         } else {
@@ -32,7 +36,11 @@ export const Route = createFileRoute("/api/public/app/download")({
         const requestedUrl = new URL(request.url);
         void requestedUrl.searchParams.get("file");
 
-        const fileName = liteMode ? `Good-App-Lite-v${version}.apk` : `Good-App-v${version}.apk`;
+        const fileName = callsMode
+          ? `GoodApp-Call-v${version}.apk`
+          : liteMode
+            ? `Good-App-Lite-v${version}.apk`
+            : `Good-App-v${version}.apk`;
 
         // Full URL saved by admin (e.g. Play Store link) → just redirect.
         if (/^https?:\/\//i.test(path)) {
