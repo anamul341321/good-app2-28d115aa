@@ -223,15 +223,27 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
 
   const hangUp = useCallback(async () => {
     const callId = currentCallId.current;
-    const peerId = peer?.id;
+    const peerId = peer?.id ?? peerIdRef.current;
     const finalStatus = state === "ringing" ? "declined" : state === "calling" ? "cancelled" : "ended";
-    // Close locally first, then notify through both realtime and the durable database.
-    // A slow network path must never leave the ringtone or call screen hanging locally.
+    // Keep the already-open signal channel so the "end" message leaves instantly
+    // instead of waiting for a brand-new channel to connect after cleanup.
+    const openCh = outRef.current && outRef.current.__peerId === peerId ? outRef.current : null;
+    outRef.current = null;
+    const endMsg = { kind: "end", from: myId ?? "" } as Signal;
+    const sendEnd = peerId
+      ? openCh
+        ? openCh.send({ type: "broadcast", event: "signal", payload: endMsg })
+        : sendTo(peerId, endMsg)
+      : Promise.resolve();
+    const dbEnd = callId ? updateCall({ data: { callId, status: finalStatus } }) : Promise.resolve();
     cleanup();
-    await Promise.allSettled([
-      peerId ? sendTo(peerId, { kind: "end", from: myId ?? "" }) : Promise.resolve(),
-      callId ? updateCall({ data: { callId, status: finalStatus } }) : Promise.resolve(),
-    ]);
+    await Promise.allSettled([sendEnd, dbEnd]);
+    if (openCh) window.setTimeout(() => void supabase.removeChannel(openCh), 1500);
+    if (outRef.current && !openCh) {
+      const c = outRef.current;
+      outRef.current = null;
+      window.setTimeout(() => void supabase.removeChannel(c), 1500);
+    }
   }, [peer, myId, sendTo, cleanup, state]);
 
   const waitForIce = useCallback((pc: RTCPeerConnection) => {
