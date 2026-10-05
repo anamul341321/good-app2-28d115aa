@@ -21,6 +21,8 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { LanguageProvider } from "@/lib/i18n";
 import { useNativeApp } from "@/hooks/useNativeApp";
+import { isStoreBuild } from "@/lib/store-build";
+import { startStoreWording } from "@/lib/store-wording";
 
 function NotFoundComponent() {
   return (
@@ -146,6 +148,11 @@ function RootComponent() {
 
 
   useEffect(() => {
+    // Google Play builds read "ইয ়া র্ন" wherever the website says "মাইনিং".
+    startStoreWording();
+  }, []);
+
+  useEffect(() => {
     // Native Android WebView draws under the status bar; give it a slightly
     // larger top offset. Browsers keep the compact gap so pages look full-screen.
     const cap = (window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor;
@@ -193,8 +200,8 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <LanguageProvider>
         <SplashScreen />
-        {!callsApp && !isExcludedRoute && !isLiteBuild() && <AppUpdateBanner />}
-        {!callsApp && !isExcludedRoute && !isLiteBuild() && <ForceUpdateGate />}
+        {!callsApp && !isExcludedRoute && !isLiteBuild() && !isStoreBuild() && <AppUpdateBanner />}
+        {!callsApp && !isExcludedRoute && !isLiteBuild() && !isStoreBuild() && <ForceUpdateGate />}
         {callsBlocked ? <div className="min-h-[100dvh] bg-background" /> : <Outlet />}
 
         <Toaster theme="dark" position="top-center" richColors />

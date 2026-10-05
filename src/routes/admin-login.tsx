@@ -1,6 +1,7 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { isStoreBuild } from "@/lib/store-build";
 import { adminLogin } from "@/lib/admin-auth.functions";
 import { Shield, Loader2 } from "lucide-react";
 import logo from "@/assets/goodapp-logo.png";
@@ -16,6 +17,11 @@ function AdminLoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    // The admin panel must never be reachable from the Google Play binary.
+    if (isStoreBuild()) window.location.replace("/home");
+  }, []);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
