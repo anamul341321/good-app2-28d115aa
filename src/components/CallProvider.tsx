@@ -1015,7 +1015,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
                 {peer.name.slice(0, 1)}
               </div>
             </div>
-            <p className="mt-7 text-[26px] font-black tracking-tight">{peer.name}</p>
+            <p className="mt-7 text-[32px] font-black tracking-tight">{peer.name}</p>
             <p className="mt-1.5 text-sm font-semibold text-white/60">
               {withVideo ? "ভিডিও কল" : "অডিও কল"}
             </p>
@@ -1115,7 +1115,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
                     {peer.name.slice(0, 1)}
                   </div>
                 </div>
-                <p className="mt-6 text-[24px] font-black tracking-tight">{peer.name}</p>
+                <p className="mt-6 text-[30px] font-black tracking-tight">{peer.name}</p>
                 <p className="mt-1.5 inline-flex items-center gap-1.5 text-sm font-semibold text-white/60">
                   <Volume2 className="h-4 w-4" />
                   {state === "active"
@@ -1145,7 +1145,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
               className="absolute left-0 right-0 top-0 flex flex-col items-center gap-1 bg-gradient-to-b from-black/55 to-transparent px-5 pb-8 text-white"
               style={{ paddingTop: "calc(env(safe-area-inset-top,0px) + 14px)" }}
             >
-              <p className="text-[15px] font-bold drop-shadow">{peer.name}</p>
+              <p className="text-[19px] font-bold drop-shadow">{peer.name}</p>
               <p className="text-[12px] font-semibold text-white/70">
                 {state === "active" 
                   ? (quality === "poor" ? "সংযোগ দুর্বল…" : quality === "reconnecting" ? "পুনরায় সংযোগ…" : clock)

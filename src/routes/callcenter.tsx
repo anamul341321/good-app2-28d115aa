@@ -445,7 +445,7 @@ function CallCenterPage() {
           <div className="flex items-center gap-2 rounded-2xl bg-card/90 px-3 py-2 shadow">
             <div className="min-w-0 flex-1 text-center">
               <p className="truncate text-2xl font-black tracking-widest">{dial || <span className="text-base font-semibold text-muted-foreground">UID লিখুন</span>}</p>
-              <p className="truncate text-[10px] text-muted-foreground">{uidMessage || `সাপোর্ট নম্বর ${toBn(SUPPORT_NUMBER)}`}</p>
+              <p className={uidMessage ? "truncate text-base font-black text-primary" : "truncate text-[10px] text-muted-foreground"}>{uidMessage || `সাপোর্ট নম্বর ${toBn(SUPPORT_NUMBER)}`}</p>
             </div>
             {dial && (
               <button type="button" aria-label="শেষ সংখ্যা মুছুন" onClick={() => setDial((v) => v.slice(0, -1))}
@@ -491,7 +491,7 @@ function CallCenterPage() {
             <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 rounded-2xl border bg-card/90 p-2 shadow-lg">
               <div className="min-w-0">
                 <p className="truncate text-lg font-black">UID: {uidDial || "—"}</p>
-                <p className="truncate text-[10px] text-muted-foreground">{uidMessage || "নম্বর লিখে কলের ধরন বাছুন"}</p>
+                <p className={uidMessage ? "truncate text-base font-black text-primary" : "truncate text-[10px] text-muted-foreground"}>{uidMessage || "নম্বর লিখে কলের ধরন বাছুন"}</p>
               </div>
               <Button type="button" size="icon" variant="secondary" aria-label="শেষ সংখ্যা মুছুন" onClick={() => setUidDial((value) => value.slice(0, -1))}><Delete /></Button>
               <Button type="button" size="icon" variant="ghost" aria-label="UID কল বন্ধ করুন" onClick={() => { setUidMode(false); setUidDial(""); setUidMessage(""); menu("menu"); }}><PhoneOff /></Button>
