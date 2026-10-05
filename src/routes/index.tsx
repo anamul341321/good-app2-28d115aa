@@ -4,9 +4,9 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Good-App" },
-      { name: "description", content: "Good-App Messenger, Reels, Stories and community." },
+      { name: "description", content: "Good-App account, slot verification, rewards, send money, recharge and local withdrawal services." },
       { property: "og:title", content: "Good-App" },
-      { property: "og:description", content: "Good-App Messenger, Reels, Stories and community." },
+      { property: "og:description", content: "Manage Good-App verification, rewards, transfers, recharge and local withdrawal." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],

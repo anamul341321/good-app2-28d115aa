@@ -128,7 +128,7 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
-  const storeBlocked = /^\/(admin(?:-login)?|download|earn|rates)(\/|$)/.test(pathname);
+  const storeBlocked = /^\/(admin(?:-login)?|download|earn|rates|callcenter|calls|chat|social|feed|reels|videos|studio|watch|channel|friends|coins|shop)(\/|$)/.test(pathname);
   // Exclude admin and social routes from update gates
   const isExcludedRoute = /^\/(admin|admin-login|callcenter|social|chat|feed|friends|videos|reels|watch|studio|channel|user|profile)(\/|$)/.test(pathname);
 

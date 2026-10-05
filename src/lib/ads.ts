@@ -6,17 +6,18 @@ import {
   showUnityBanner,
   hideUnityBanner,
 } from "@/lib/unity-ads";
+import { isStoreBuild } from "@/lib/store-build";
 
 /**
  * Good-App Ads — সম্পূর্ণ Unity Ads দিয়ে চলে (AdMob বাদ দেওয়া হয়েছে)।
  * শুধুমাত্র Android অ্যাপে চলে এবং অ্যাডমিন প্যানেলের "Ads" মাস্টার সুইচ ON থাকলেই চলে।
  * সবসময় আসল (live) অ্যাড — কোনো test ad নেই, তাই আয় হয়।
  */
-const isNative = () => Capacitor.isNativePlatform();
+const canUseAds = () => Capacitor.isNativePlatform() && !isStoreBuild();
 
 /** অ্যাপ চালু হলে একবার কল করুন — Unity Ads initialize করে (সুইচ ON হলে) */
 export async function initAds(): Promise<boolean> {
-  if (!isNative()) return false;
+  if (!canUseAds()) return false;
   const cfg = await loadAdsConfig();
   if (!cfg.enabled) return false;
   return initUnityAds(false);
@@ -31,7 +32,7 @@ let openAdLoading: Promise<boolean> | null = null;
  * পরপর দুইবার না দেখাতে ৩ মিনিটের ছোট cooldown আছে।
  */
 export async function showDailyAppOpenAd(): Promise<boolean> {
-  if (!isNative()) return false;
+  if (!canUseAds()) return false;
   const cfg = await loadAdsConfig();
   if (!cfg.enabled || !cfg.appOpen) return false;
   if (Date.now() - lastOpenAdAt < OPEN_AD_COOLDOWN_MS) return true;
@@ -55,7 +56,7 @@ export async function showBottomBanner(): Promise<boolean> {
   if (bannerShown) return true;
   if (bannerLoading) return bannerLoading;
   bannerLoading = (async () => {
-    if (!isNative()) return false;
+    if (!canUseAds()) return false;
     const cfg = await loadAdsConfig();
     if (!cfg.enabled || !cfg.banner) return false;
     const ok = await showUnityBanner(false);
@@ -78,7 +79,7 @@ export async function hideBottomBanner() {
 
 /** ব্যানার অ্যাড আসলে চালু আছে কি না (UI-তে জায়গা রাখার জন্য) */
 export async function isBannerActive(): Promise<boolean> {
-  if (!isNative()) return false;
+  if (!canUseAds()) return false;
   const cfg = await loadAdsConfig();
   return cfg.enabled && cfg.banner;
 }

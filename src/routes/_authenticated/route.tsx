@@ -1,6 +1,7 @@
 import type React from "react";
 import { createFileRoute, Outlet, Link, useRouter, useRouterState } from "@tanstack/react-router";
 import { detectCallsApp } from "@/lib/calls-app";
+import { isStoreBuild } from "@/lib/store-build";
 import { OverlayUnstick } from "@/components/OverlayUnstick";
 import { useCosmetics } from "@/hooks/useCosmetics";
 import { supabase } from "@/integrations/supabase/client";
@@ -84,6 +85,7 @@ function AuthedLayout() {
     if (pathname === "/calls") sessionStorage.removeItem("goodapp_full_app");
   }, [pathname, router]);
   const lite = isLiteBuild();
+  const store = isStoreBuild();
   // GoodApp Call অ্যাপ — শুধু কল/মেসেজ, হেডার-মেনু লুকানো
   const callsApp = detectCallsApp();
   // কল ও মেসেঞ্জার শুধু GoodApp Call অ্যাপে — মূল অ্যাপে কল/মেসেজ আসবে না
@@ -92,7 +94,7 @@ function AuthedLayout() {
   useEffect(() => {
     if (typeof window === "undefined" || detectCallsApp()) return;
     // Play Store মূল অ্যাপ: ফিড, রিলস, মেসেঞ্জার, কল, ভিডিও, বন্ধু, কয়েন শপ — কিছুই খুলবে না
-    if (/^\/(chat|calls|social|feed|reels|videos|studio|watch|channel|friends|coins|shop)(\/|$)/.test(pathname)) router.navigate({ to: "/home", replace: true });
+    if (/^\/(chat|calls|social|feed|reels|videos|studio|watch|channel|friends|coins|shop)(\/|$)/.test(pathname) || (isStoreBuild() && /^\/callcenter(\/|$)/.test(pathname))) router.navigate({ to: "/home", replace: true });
   }, [pathname, router]);
   const [authState, setAuthState] = useState<"checking" | "authenticated" | "unauthenticated">(() => {
     if (typeof window === "undefined") return "checking";
@@ -226,7 +228,7 @@ function AuthedLayout() {
 
   return (
     <CallsWrap enabled={callsMode}>
-    <AgentIncomingCall />
+    {!store && <AgentIncomingCall />}
     <div className={isSocialRoute ? "min-h-[100dvh]" : "min-h-[100dvh] overflow-x-clip pb-[calc(5.75rem+env(safe-area-inset-bottom))]"}>
       {!isSocialRoute && !callsApp && (
         appStatus?.faceVerifyEnabled === false ? (

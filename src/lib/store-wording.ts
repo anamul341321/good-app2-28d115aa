@@ -4,8 +4,8 @@ import { isStoreBuild } from "./store-build";
  * Play Store builds must not read as a crypto-mining product.
  *
  * Nothing about the money changes — same slots, same balances, same payouts.
- * Only the words the user sees change: "মাইনিং" is shown as "ইয ়া র্ন" and
- * "Mining" as "Earn". The map is applied to rendered text nodes so it also
+ * Only the words the user sees change: legacy mining wording is shown as task rewards.
+ * The map is applied to rendered text nodes so it also
  * covers server-driven notices and labels that no single component owns,
  * while the website and the GoodApp Call APK keep their original wording.
  */

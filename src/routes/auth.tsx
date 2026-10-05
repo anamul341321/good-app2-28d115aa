@@ -146,9 +146,9 @@ const FAQS: {
 }[] = [
   {
     q: "Face Verification করলে কোনো সমস্যা হবে কি?",
-    a: "Good-App এমন একটি প্ল্যাটফর্ম, যেখানে একজন ব্যবহারকারী প্রকৃত (Real) মানুষ কি না তা নিশ্চিত করতে Face Verification করা হয়। সফল যাচাইয়ের পর প্ল্যাটফর্ম থেকে ফ্রি reward/bonus দেওয়া হয়। এর উদ্দেশ্য একজন ব্যক্তি যেন একাধিক account খুলে অন্যায় সুবিধা নিতে না পারেন। এখানে NID, OTP, bank PIN বা কোনো password নেওয়া হয় না। এটি সম্পূর্ণ ঐচ্ছিক—আপনি চাইলে করবেন, না চাইলে করবেন না; কাউকে বাধ্য করা হয় না।",
+    a: "Good-App-এ একাউন্ট তৈরি ও স্লট সুবিধার জন্য Face Verification প্রয়োজন। এর উদ্দেশ্য একজন ব্যক্তি যেন একাধিক account খুলে অন্যায় সুবিধা নিতে না পারেন। এখানে NID বা bank PIN নেওয়া হয় না; password ও security code শুধু নিরাপদ login ব্যবস্থায় ব্যবহার হয়।",
     qEn: "Is face verification risky?",
-    aEn: "Good-App uses face verification only to confirm a user is a real person. After a successful check the platform gives a free reward/bonus. The goal is to stop one person opening many accounts. No NID, OTP, bank PIN or password is collected. It is fully optional — nobody is forced.",
+    aEn: "Good-App requires face verification to create an account and use verified slot features. Its purpose is to prevent one person from opening multiple accounts. No national ID or bank PIN is collected; passwords and security codes are used only by the secure login flow.",
     icon: ShieldCheck,
     tone: "emerald",
   },
@@ -672,7 +672,7 @@ export function AuthPage() {
               className="text-[12px] text-navy font-bold leading-snug"
               onClick={() => setAgreed((v) => !v)}
             >
-              আমি উপরের সকল নিয়মাবলি পড়েছি এবং মেনে চলতে রাজি আছি।
+              আমার বয়স ১৮ বছর বা বেশি। আমি গোপনীয়তা নীতি ও উপরের সকল নিয়ম পড়েছি এবং মেনে চলতে রাজি আছি।
             </span>
           </label>
 

@@ -31,7 +31,7 @@ function RulesPage() {
       points: [
         t("এক ব্যক্তি = এক একাউন্ট। নিজের আসল নাম ও নিজের নম্বর ব্যবহার করুন।", "One person = one account. Use your real name and your own number."),
         t("আপনি সত্যিকারের মানুষ কি না — শুধু সেটা বুঝতেই ফেস ভেরিফাই নেওয়া হয়।", "Face verification only proves that you are a real person."),
-        t("NID, OTP, ব্যাংক PIN বা পাসওয়ার্ড কখনো চাওয়া হয় না।", "We never ask for national ID, OTP, bank PIN or your password."),
+        t("NID বা ব্যাংক PIN কখনো চাওয়া হয় না; পাসওয়ার্ড ও নিরাপত্তা কোড শুধু নিরাপদ লগইনে ব্যবহার হয়।", "We never ask for national ID or bank PIN; passwords and security codes are used only for secure login."),
         t("অন্যের ছবি বা ফেক ফেস দিলে একাউন্ট স্থায়ীভাবে বন্ধ হবে।", "Using someone else's photo or a fake face closes the account permanently."),
       ],
     },

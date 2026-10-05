@@ -1,5 +1,7 @@
 # Roadmap
 
+- [x] Complete Store-build Play policy audit across UI, Android package, declarations, deletion, and reviewer access
+
 - [x] Remove USDT/crypto from every Play Store surface and action
 - [x] Align Privacy, Terms, Data Safety, Rules, and Play listing with the finance-focused Store app
 - [x] Verify Store-mode mobile UI and scan for prohibited visible wording

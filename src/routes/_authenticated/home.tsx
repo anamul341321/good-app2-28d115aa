@@ -169,7 +169,7 @@ function HomePage() {
         </span>
       </Link>
 
-      <Link to="/callcenter" preload="intent"
+      {!store && <Link to="/callcenter" preload="intent"
         className="rounded-2xl px-3 py-3 relative overflow-hidden btn-press border border-cyan/40 gradient-navy shadow-lg flex items-center gap-2">
         <span className="w-9 h-9 shrink-0 rounded-xl bg-white/25 backdrop-blur border border-white/40 flex items-center justify-center text-white">
           <Headset className="w-5 h-5" />
@@ -179,7 +179,7 @@ function HomePage() {
           <span className="block text-sm font-black leading-tight">কল সেন্টার</span>
         </span>
         <ChevronRight className="h-4 w-4 shrink-0 text-white/80" />
-      </Link>
+      </Link>}
     </div>
   );
 

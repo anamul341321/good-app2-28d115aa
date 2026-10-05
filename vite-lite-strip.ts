@@ -170,9 +170,14 @@ const STORE_REPLACEMENTS: Array<[RegExp, string]> = [
   [/\bguaranteed\s+income\b/gi, "fixed rewards"],
 ];
 
+const isCodeReferenceLiteral = (value: string) =>
+  /^(?:@\/|\.\.?\/)|\.(?:tsx?|jsx?|css|json|png|jpe?g|svg|webp|mp3|mp4)(?:\?|$)/i.test(value) ||
+  /^[A-Za-z0-9_./@:$-]+$/.test(value);
+
 const scrubStoreSource = (code: string) =>
   code.replace(LITERALS, (match: string, quote?: string, dq?: string, tpl?: string) => {
     const replace = (value: string) => {
+      if (isCodeReferenceLiteral(value)) return value;
       let out = value;
       for (const [re, to] of STORE_REPLACEMENTS) out = out.replace(re, to);
       return out;
