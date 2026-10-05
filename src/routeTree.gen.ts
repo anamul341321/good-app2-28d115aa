@@ -70,6 +70,7 @@ import { Route as AuthenticatedFriendsRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedFeedRouteImport } from './routes/_authenticated/feed'
 import { Route as AuthenticatedEarningsRouteImport } from './routes/_authenticated/earnings'
 import { Route as AuthenticatedCoinsRouteImport } from './routes/_authenticated/coins'
+import { Route as AuthenticatedCallsRouteImport } from './routes/_authenticated/calls'
 import { Route as AuthenticatedSocialIndexRouteImport } from './routes/_authenticated/social/index'
 import { Route as AuthenticatedChatIndexRouteImport } from './routes/_authenticated/chat.index'
 import { Route as LovableEmailEventsRouteImport } from './routes/lovable/email/events'
@@ -406,6 +407,11 @@ const AuthenticatedCoinsRoute = AuthenticatedCoinsRouteImport.update({
   path: '/coins',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCallsRoute = AuthenticatedCallsRouteImport.update({
+  id: '/calls',
+  path: '/calls',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedSocialIndexRoute =
   AuthenticatedSocialIndexRouteImport.update({
     id: '/',
@@ -588,6 +594,7 @@ export interface FileRoutesByFullPath {
   '/rates': typeof RatesRoute
   '/rules': typeof RulesRoute
   '/terms': typeof TermsRoute
+  '/calls': typeof AuthenticatedCallsRoute
   '/coins': typeof AuthenticatedCoinsRoute
   '/earnings': typeof AuthenticatedEarningsRoute
   '/feed': typeof AuthenticatedFeedRoute
@@ -680,6 +687,7 @@ export interface FileRoutesByTo {
   '/rates': typeof RatesRoute
   '/rules': typeof RulesRoute
   '/terms': typeof TermsRoute
+  '/calls': typeof AuthenticatedCallsRoute
   '/coins': typeof AuthenticatedCoinsRoute
   '/earnings': typeof AuthenticatedEarningsRoute
   '/feed': typeof AuthenticatedFeedRoute
@@ -774,6 +782,7 @@ export interface FileRoutesById {
   '/rates': typeof RatesRoute
   '/rules': typeof RulesRoute
   '/terms': typeof TermsRoute
+  '/_authenticated/calls': typeof AuthenticatedCallsRoute
   '/_authenticated/coins': typeof AuthenticatedCoinsRoute
   '/_authenticated/earnings': typeof AuthenticatedEarningsRoute
   '/_authenticated/feed': typeof AuthenticatedFeedRoute
@@ -869,6 +878,7 @@ export interface FileRouteTypes {
     | '/rates'
     | '/rules'
     | '/terms'
+    | '/calls'
     | '/coins'
     | '/earnings'
     | '/feed'
@@ -961,6 +971,7 @@ export interface FileRouteTypes {
     | '/rates'
     | '/rules'
     | '/terms'
+    | '/calls'
     | '/coins'
     | '/earnings'
     | '/feed'
@@ -1054,6 +1065,7 @@ export interface FileRouteTypes {
     | '/rates'
     | '/rules'
     | '/terms'
+    | '/_authenticated/calls'
     | '/_authenticated/coins'
     | '/_authenticated/earnings'
     | '/_authenticated/feed'
@@ -1605,6 +1617,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCoinsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/calls': {
+      id: '/_authenticated/calls'
+      path: '/calls'
+      fullPath: '/calls'
+      preLoaderRoute: typeof AuthenticatedCallsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/social/': {
       id: '/_authenticated/social/'
       path: '/'
@@ -1839,6 +1858,7 @@ const AuthenticatedSocialRouteWithChildren =
   AuthenticatedSocialRoute._addFileChildren(AuthenticatedSocialRouteChildren)
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedCallsRoute: typeof AuthenticatedCallsRoute
   AuthenticatedCoinsRoute: typeof AuthenticatedCoinsRoute
   AuthenticatedEarningsRoute: typeof AuthenticatedEarningsRoute
   AuthenticatedFeedRoute: typeof AuthenticatedFeedRoute
@@ -1871,6 +1891,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedCallsRoute: AuthenticatedCallsRoute,
   AuthenticatedCoinsRoute: AuthenticatedCoinsRoute,
   AuthenticatedEarningsRoute: AuthenticatedEarningsRoute,
   AuthenticatedFeedRoute: AuthenticatedFeedRoute,

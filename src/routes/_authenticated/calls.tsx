@@ -99,7 +99,7 @@ function CallsApp() {
         </button>
       )}
 
-      <Link to="/home" className="mt-6 flex items-center justify-center gap-2 text-xs font-bold text-muted-foreground">
+      <Link to="/home" onClick={() => sessionStorage.setItem("goodapp_full_app", "1")} className="mt-6 flex items-center justify-center gap-2 text-xs font-bold text-muted-foreground">
         <Home className="h-4 w-4" /> পুরো GoodApp খুলুন
       </Link>
     </div>
