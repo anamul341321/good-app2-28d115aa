@@ -160,7 +160,7 @@ function HomePage() {
         )}
         <div className="relative text-white">
           <p className="text-[9px] tracking-[0.2em] font-black text-white/85">মেসেঞ্জার</p>
-          <p className="text-base font-black leading-tight mt-0.5">
+          <p className="text-sm font-black leading-tight mt-0.5 sm:text-base">
             {unreadMsgs > 0 ? t("নতুন মেসেজ", "New message") : t("মেসেঞ্জার", "Messenger")}
           </p>
         </div>
@@ -174,7 +174,7 @@ function HomePage() {
         </div>
         <div className="relative text-white">
           <p className="text-[9px] tracking-[0.2em] font-black text-white/85">ফিড</p>
-          <p className="text-base font-black leading-tight mt-0.5">{t("নিউজ ফিড", "News Feed")}</p>
+          <p className="text-sm font-black leading-tight mt-0.5 sm:text-base">{t("নিউজ ফিড", "News Feed")}</p>
         </div>
       </Link>
 

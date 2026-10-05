@@ -131,6 +131,14 @@
 @media (max-width: 359px) {
   html, body { font-size: 14.5px; }
   .nav-icon svg { width: 1.125rem; height: 1.125rem; }
+  .profile-uid { display: none; }
+}
+
+@media (max-width: 480px) {
+  .mc-orb-a,
+  .mc-orb-b { display: none; }
+  .gradient-cta,
+  .gradient-aurora { animation: none; }
 }
 
 @media (min-width: 768px) {

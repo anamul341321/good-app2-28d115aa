@@ -51,7 +51,7 @@ function AnimatedMoney({ value, live }: { value: number; live: boolean }) {
   return (
     <div className="flex items-baseline justify-center gap-1 flex-nowrap whitespace-nowrap">
       <span key={bump}
-        className={`mono-num text-[2.7rem] leading-none font-black mc-num mc-roll ${live ? "mc-num-live" : ""}`}>
+        className={`mono-num text-[2rem] leading-none font-black mc-num mc-roll min-[360px]:text-[2.35rem] sm:text-[2.7rem] ${live ? "mc-num-live" : ""}`}>
         {intPart}
       </span>
       <span className="mono-num text-base leading-none font-black text-white/60 mc-dec">.{decPart}</span>

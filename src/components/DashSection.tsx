@@ -37,9 +37,9 @@ export function DashSection({
           {icon}
         </span>
         <div className="min-w-0 flex-1">
-          <h2 className="text-[13px] font-black text-navy leading-tight truncate">{title}</h2>
+          <h2 className="line-clamp-2 text-[13px] font-black leading-tight text-navy">{title}</h2>
           {subtitle && (
-            <p className="text-[10px] text-muted-foreground font-bold leading-tight truncate">{subtitle}</p>
+            <p className="line-clamp-2 text-[10px] font-bold leading-tight text-muted-foreground">{subtitle}</p>
           )}
         </div>
         {action}

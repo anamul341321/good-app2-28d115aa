@@ -344,7 +344,7 @@ function ProfileButton() {
           : <User className="w-5 h-5 text-gold" />}
       </span>
       {/* প্রোফাইলে না ঢুকেই UID দেখা যাবে */}
-      <span className="text-[9px] font-black leading-none text-gold mono-num" translate="no">
+      <span className="profile-uid text-[9px] font-black leading-none text-gold mono-num" translate="no">
         UID {uid ?? "—"}
       </span>
     </Link>

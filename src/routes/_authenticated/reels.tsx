@@ -3,7 +3,7 @@ import { markWatching, awardCoins } from "@/lib/coins";
 import { WatchCoinBar } from "@/components/social/CoinWallet";
 import { playUiSound } from "@/lib/ui-sounds";
 import { useAuth } from "@/hooks/useAuth";
-import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -46,8 +46,6 @@ import {
 import {
   useFeedMedia,
   prefetchFeedMedia,
-  peekFeedMedia,
-  resolveFeedMedia,
 } from "@/lib/feed-media";
 
 import { attachBackgroundAudio } from "@/lib/background-audio";
@@ -981,8 +979,9 @@ function ExternalReel({
   const embedSrc = `${video.video_url}${video.video_url.includes("?") ? "&" : "?"}autoplay=${isActive ? 1 : 0}&mute=${muted ? 1 : 0}&playsinline=1&enablejsapi=1&controls=0&modestbranding=1&rel=0`;
 
   useEffect(() => {
+    if (!isActive) return;
     trackVideoPreference({ title: video.title, category: video.category });
-  }, [video.id]);
+  }, [isActive, video.category, video.id, video.title]);
 
   useEffect(() => {
     if (isDirectVideo) {
