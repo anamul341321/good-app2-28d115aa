@@ -20,6 +20,9 @@ import { checkSupportCallBalance } from "@/lib/support-call.functions";
 import { resolveCallUid } from "@/lib/calls.functions";
 import { CallProvider, useCalls } from "@/components/CallProvider";
 import { Button } from "@/components/ui/button";
+import { CALL_CENTER_SCRIPTS } from "@/lib/callcenter-scripts";
+
+const SUPPORT_NUMBER = "112233";
 
 export const Route = createFileRoute("/callcenter")({
   head: () => ({
@@ -61,6 +64,9 @@ const AUDIO: Record<string, string> = {
   nobalance: "/api/public/callcenter-tts?key=nobalance",
   hold: "/api/public/callcenter-tts?key=hold",
   channels: "/api/public/callcenter-tts?key=channels",
+  menuextra: "/api/public/callcenter-tts?key=menuextra",
+  password: "/api/public/callcenter-tts?key=password",
+  slotrate: "/api/public/callcenter-tts?key=slotrate",
 };
 const SPOKEN_FALLBACK: Record<string, string> = {
   transfer: "আপনার কলটি একজন কাস্টমার কেয়ার প্রতিনিধির কাছে ট্রান্সফার করা হচ্ছে। দয়া করে অপেক্ষা করুন।",
@@ -76,6 +82,9 @@ const MENU: Record<string, { key: string; label: string }> = {
   "৩": { key: "reverify", label: "রি ভেরিফাই" },
   "৪": { key: "balance", label: "ব্যালেন্স" },
   "৫": { key: "refer", label: "রেফার বোনাস" },
+  "৬": { key: "password", label: "পাসওয়ার্ড ভুলে গেলে" },
+  "৭": { key: "slotrate", label: "স্লট অনুযায়ী মাসিক আয়" },
+  "৮": { key: "channels", label: "বোনাস ও চ্যানেল" },
   "৯": { key: "menu", label: "মূল মেনু" },
   "০": { key: "agentcharge", label: "কাস্টমার কেয়ার" },
 };
@@ -144,7 +153,7 @@ function CallCenterPage() {
     a.currentTime = 0;
     a.onended = () => next?.();
     a.onerror = () => {
-      const t = SPOKEN_FALLBACK[key];
+      const t = SPOKEN_FALLBACK[key] ?? CALL_CENTER_SCRIPTS.find((x) => x.key === key)?.text;
       if (!t || !("speechSynthesis" in window)) { next?.(); return; }
       const u = new SpeechSynthesisUtterance(t); u.lang = "bn-BD"; u.onend = () => next?.();
       window.speechSynthesis.cancel(); window.speechSynthesis.speak(u);
@@ -245,14 +254,14 @@ function CallCenterPage() {
 
   // মেনু বলা শেষে ৮ সেকেন্ড অপেক্ষা; কিছু না চাপলে প্রথমবার মেনুতে ফেরে, দ্বিতীয়বার কল কাটে
   const menu = useCallback((key: "greeting" | "menu" = "menu") => {
-    say(key, key === "greeting" ? "স্বাগতম" : "মূল মেনু", () => {
+    say(key, key === "greeting" ? "স্বাগতম" : "মূল মেনু", () => say("menuextra", "আরও অপশন", () => {
       setLabel("অনুগ্রহ করে একটি নম্বর চাপুন");
       waitTimer.current = window.setTimeout(() => {
         silence.current += 1;
         if (silence.current >= 2) say("bye", "কল শেষ", () => hangUpRef.current());
         else say("nopress", "কোনো বোতাম চাপা হয়নি", () => menu("menu"));
       }, 8000);
-    });
+    }));
   }, [say]);
   const hangUpRef = useRef<() => void>(() => {});
 
@@ -376,6 +385,27 @@ function CallCenterPage() {
     }
   };
 
+  const [dial, setDial] = useState("");
+  const toAscii = (v: string) => v.replace(/[০-৯]/g, (d) => String(BN.indexOf(d)));
+  const toBn = (v: string) => v.replace(/\d/g, (d) => BN[+d]);
+  const dialCall = async (video: boolean) => {
+    const num = toAscii(dial);
+    if (!num) return;
+    if (num === SUPPORT_NUMBER) { setDial(""); startCall(); return; }
+    if (uidLoading || directCallState !== "idle") return;
+    setUidLoading(true);
+    setUidMessage("UID যাচাই হচ্ছে…");
+    try {
+      const person = await resolveUid({ data: { uid: Number(num) } });
+      setUidMessage(`${person.name}-কে কল করা হচ্ছে`);
+      startDirectCall(person.userId, person.name, video);
+    } catch (error) {
+      setUidMessage(error instanceof Error ? error.message : "কল করা যায়নি। লগইন করে আবার চেষ্টা করুন।");
+    } finally {
+      setUidLoading(false);
+    }
+  };
+
   const close = () => { hangUp(); router.history.back(); };
 
   return (
@@ -397,7 +427,7 @@ function CallCenterPage() {
         </div>
         <p className="mt-3 text-xl font-black">কল সেন্টার</p>
         <p className="mt-1 text-sm font-semibold opacity-80">
-          {state === "idle" && "কল করতে নিচের সবুজ বোতামে চাপ দিন"}
+          {state === "idle" && "UID লিখে কল দিন, অথবা সাপোর্টে কল করুন"}
           {state === "ringing" && "রিং হচ্ছে…"}
           {state === "connected" && `${bn(Math.floor(seconds / 60))}:${bn(seconds % 60)}`}
         </p>
@@ -405,6 +435,34 @@ function CallCenterPage() {
           <p className="mt-3 rounded-full bg-card/80 px-4 py-1.5 text-xs font-bold shadow">🔊 {label}</p>
         )}
       </div>
+
+      {state === "idle" && (
+        <div className="mx-auto flex min-h-0 w-full max-w-xs flex-1 flex-col gap-2 px-4 animate-fade-in">
+          <button type="button" onClick={startCall}
+            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-3 text-sm font-black text-primary-foreground shadow-lg active:scale-95 transition">
+            <Headset className="h-5 w-5" /> কল সাপোর্ট (কাস্টমার কেয়ার)
+          </button>
+          <div className="flex items-center gap-2 rounded-2xl bg-card/90 px-3 py-2 shadow">
+            <div className="min-w-0 flex-1 text-center">
+              <p className="truncate text-2xl font-black tracking-widest">{dial || <span className="text-base font-semibold text-muted-foreground">UID লিখুন</span>}</p>
+              <p className="truncate text-[10px] text-muted-foreground">{uidMessage || `সাপোর্ট নম্বর ${toBn(SUPPORT_NUMBER)}`}</p>
+            </div>
+            {dial && (
+              <button type="button" aria-label="শেষ সংখ্যা মুছুন" onClick={() => setDial((v) => v.slice(0, -1))}
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary"><Delete className="h-5 w-5" /></button>
+            )}
+          </div>
+          <div className="grid min-h-0 flex-1 grid-cols-3 gap-2">
+            {PAD.map((d) => (
+              <button key={d} type="button" disabled={!/^[০-৯]$/.test(d)}
+                onClick={() => { if (navigator.vibrate) navigator.vibrate(20); setUidMessage(""); setDial((v) => (v.length < 10 ? v + d : v)); }}
+                className="call-key rounded-full bg-card/90 text-xl font-black shadow transition active:scale-90 active:bg-primary/30 disabled:opacity-40">
+                {d}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {state === "connected" && showPad && (
         <div className="mx-auto grid min-h-0 w-full max-w-xs flex-1 grid-cols-3 gap-2 px-4 animate-fade-in">
@@ -419,7 +477,7 @@ function CallCenterPage() {
 
       {state === "connected" && (
         <div className="mx-auto mt-2 w-full max-w-xs shrink-0 px-4 text-center text-[10px] leading-4 text-muted-foreground">
-          {uidMode ? "ডায়াল প্যাডে ইউজারের UID লিখুন" : "১ উইথড্র · ২ মাইনিং · ৩ রি-ভেরিফাই · ৪ ব্যালেন্স · ৫ রেফার · ৯ মেনু · ০ প্রতিনিধি"}
+          {uidMode ? "ডায়াল প্যাডে ইউজারের UID লিখুন" : "১ উইথড্র · ২ মাইনিং · ৩ রি-ভেরিফাই · ৪ ব্যালেন্স · ৫ রেফার · ৬ পাসওয়ার্ড · ৭ স্লট আয় · ৮ বোনাস · ৯ মেনু · ০ প্রতিনিধি"}
         </div>
       )}
 
@@ -467,8 +525,14 @@ function CallCenterPage() {
             {speaker ? <Volume2 className="h-6 w-6" /> : <VolumeX className="h-6 w-6" />}
           </button>
         )}
+        {state === "idle" && dial && (
+          <button onClick={() => void dialCall(true)} aria-label="ভিডিও কল" disabled={uidLoading || toAscii(dial) === SUPPORT_NUMBER}
+            className="flex h-14 w-14 items-center justify-center rounded-full bg-card shadow disabled:opacity-40">
+            <Video className="h-6 w-6" />
+          </button>
+        )}
         {state === "idle" ? (
-          <button onClick={startCall} aria-label="কল করুন"
+          <button onClick={() => (dial ? void dialCall(false) : startCall())} aria-label="কল করুন"
             className="call-main-button flex items-center justify-center rounded-full bg-emerald text-primary-foreground shadow-2xl animate-pulse active:scale-90 transition">
             <Phone className="h-9 w-9" />
           </button>
