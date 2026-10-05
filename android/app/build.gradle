@@ -23,8 +23,8 @@ android {
         manifestPlaceholders = [appLabel: isCallsBuild ? "GoodApp Call" : "Good-App"]
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 36
-        versionName "1.36"
+        versionCode 37
+        versionName "1.37"
         buildConfigField "boolean", "LITE_BUILD", isLiteBuild.toString()
         buildConfigField "boolean", "CALLS_BUILD", isCallsBuild.toString()
         buildConfigField "boolean", "STORE_BUILD", isStoreBuild.toString()
