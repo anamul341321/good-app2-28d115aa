@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { MessageCircle, Phone, Download, Home, Headphones } from "lucide-react";
+import { toast } from "sonner";
+import { MessageCircle, Phone, Download, Home, Headphones, Smartphone } from "lucide-react";
 import logo from "@/assets/goodapp-logo.png";
 
 export const CALL_MODE_KEY = "goodapp_call_only_mode";
@@ -25,6 +26,8 @@ function CallsApp() {
   const [callOnly, setCallOnly] = useState(false);
   const [callsApp, setCallsApp] = useState(false);
   const [installEvt, setInstallEvt] = useState<InstallEvent | null>(null);
+  const [callsApkVersion, setCallsApkVersion] = useState<string | null>(null);
+  const [apkBusy, setApkBusy] = useState(false);
 
   useEffect(() => {
     setCallOnly(localStorage.getItem(CALL_MODE_KEY) === "1");
@@ -34,6 +37,11 @@ function CallsApp() {
     if (link) link.href = "/calls.webmanifest";
     const onPrompt = (e: Event) => { e.preventDefault(); setInstallEvt(e as InstallEvent); };
     window.addEventListener("beforeinstallprompt", onPrompt);
+    // মূল অ্যাপ থেকে কল অ্যাপের APK আছে কিনা জেনে নিই
+    fetch("/api/public/app/download?calls=1&resolve=1")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => d?.version && setCallsApkVersion(String(d.version)))
+      .catch(() => {});
     return () => {
       window.removeEventListener("beforeinstallprompt", onPrompt);
       if (link && prev) link.href = prev;
@@ -91,6 +99,30 @@ function CallsApp() {
           </button>
         </div>
       </div>
+
+      <button
+        type="button"
+        onClick={() => {
+          if (!callsApkVersion) {
+            toast.error("কল অ্যাপের নতুন ভার্সন এখনো আসেনি — একটু পরে আবার চেষ্টা করুন।");
+            return;
+          }
+          setApkBusy(true);
+          toast.success("GoodApp Call ডাউনলোড শুরু হচ্ছে…");
+          window.location.href = "/api/public/app/download?calls=1";
+          setTimeout(() => setApkBusy(false), 4000);
+        }}
+        className="gradient-cyan mt-4 flex w-full items-center justify-center gap-2 rounded-2xl p-4 text-sm font-black disabled:opacity-60"
+        disabled={apkBusy}
+      >
+        <Smartphone className="h-5 w-5" />
+        {callsApkVersion
+          ? `GoodApp Call অ্যাপ ডাউনলোড করুন (v${callsApkVersion})`
+          : "GoodApp Call অ্যাপ ডাউনলোড করুন"}
+      </button>
+      <p className="mt-2 text-center text-[11px] text-muted-foreground">
+        আলাদা কল অ্যাপ — এতে শুধু ডায়াল প্যাড, মেসেজ আর কল থাকে, তাই খুব দ্রুত খোলে।
+      </p>
 
       {installEvt && (
         <button
