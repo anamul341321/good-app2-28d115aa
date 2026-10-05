@@ -27,3 +27,4 @@
 - [x] Verify dashboard and Reels at representative phone sizes
 
 - [x] Track every slot balance independently for monthly release and reset deductions
+- [x] Add a separate GoodApp Call APK build option that opens straight to calls with no animation
