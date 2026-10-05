@@ -10,7 +10,7 @@ import { isStoreBuild } from "@/lib/store-build";
 
 export const Route = createFileRoute("/rates")({
   beforeLoad: () => {
-    if (isLiteBuild() || isStoreBuild()) throw redirect({ to: "/home" });
+    throw redirect({ to: "/home" });
   },
   head: () => ({
     meta: [
