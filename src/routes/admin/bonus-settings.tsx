@@ -14,6 +14,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ApkUploadCard } from "@/components/admin/ApkUploadCard";
 import { TestApkUploadCard } from "@/components/admin/TestApkUploadCard";
+import { CallsApkUploadCard } from "@/components/admin/CallsApkUploadCard";
 import { AppLinksCard } from "@/components/admin/AppLinksCard";
 import { AdsSettingsCard } from "@/components/admin/AdsSettingsCard";
 
@@ -299,6 +300,7 @@ function BonusSettings() {
       <AppLinksCard />
       <TestApkUploadCard />
       <ApkUploadCard />
+      <CallsApkUploadCard />
 
       {/* Force update (বাধ্যতামূলক আপডেট) */}
       <div className="rounded-2xl p-4 border-2 border-border bg-surface-2 space-y-3">

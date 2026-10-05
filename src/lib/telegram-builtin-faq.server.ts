@@ -290,6 +290,37 @@ export const BUILTIN_FAQS: BuiltinFaq[] = [
   },
 
   {
+    topic: "GoodApp Call (শুধু কলিং অ্যাপ) ডাউনলোড",
+    screenshot: ["GoodApp Call", "কলিং অ্যাপ", "GoodApp-Call"],
+    keywords: [
+      "calling app",
+      "call app",
+      "কলিং অ্যাপ",
+      "কলিং apps",
+      "কল অ্যাপ",
+      "কলের অ্যাপ",
+      "goodapp call",
+      "good app call",
+      "call apk",
+      "calling apk",
+      "কলিং ডাউনলোড",
+      "calling download",
+      "সুদু কলিং",
+      "shudhu calling",
+      "শুধু কলিং",
+      "কল করার অ্যাপ",
+    ],
+    answer:
+      `📞 <b>GoodApp Call — শুধু কলিংয়ের আলাদা অ্যাপ</b> 👇\n\n` +
+      `🔗 <b>সরাসরি ডাউনলোড লিংক:</b> https://goodapp2.live/api/public/app/download?calls=1\n\n` +
+      `এই অ্যাপে <b>শুধু কলিং সিস্টেম</b> আছে — হালকা, দ্রুত খোলে, কল এলে সঙ্গে সঙ্গে রিসিভ করা যায়।\n` +
+      `<b>১️⃣</b> উপরের লিংকে ট্যাপ করুন — APK ডাউনলোড হবে।\n` +
+      `<b>২️⃣</b> ডাউনলোড শেষে ফাইলে ট্যাপ করে ইনস্টল করুন ("অজানা সোর্স" অনুমতি চাইলে দিন)।\n` +
+      `<b>৩️⃣</b> আপনার Good-App-এর মোবাইল নম্বর ও পাসওয়ার্ড দিয়েই লগইন — নতুন অ্যাকাউন্ট লাগবে না ✅\n\n` +
+      `📌 মূল Good-App আর GoodApp Call — দুটোই একই অ্যাকাউন্টে চলে, যেকোনো একটা বা দুটোই রাখতে পারেন।`,
+  },
+
+  {
     topic: "Play Protect / harmful app warning দেখাচ্ছে (স্ক্রিনশট)",
     screenshot: [
       "Play Protect",
