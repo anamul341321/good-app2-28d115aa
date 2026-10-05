@@ -174,7 +174,7 @@ function ThreadPage() {
         
         <div className="flex flex-1 items-center gap-2 min-w-0">
           {data?.peer ? (
-            <Link to="/user/$userId" params={{ userId: data.peer.userId }} className="btn-press rounded-full" aria-label={`${data.peer.name} profile`}>
+            <Link to="/chat" className="btn-press rounded-full" aria-label={`${data.peer.name} profile`}>
               <MessengerAvatar
                 name={data.peer.name ?? "User"}
                 src={(data.peer as any)?.avatarUrl ?? null}
