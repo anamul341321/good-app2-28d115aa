@@ -146,9 +146,9 @@ const FAQS: {
 }[] = [
   {
     q: "Face Verification করলে কোনো সমস্যা হবে কি?",
-    a: "Good-App-এ একাউন্ট তৈরি ও স্লট সুবিধার জন্য Face Verification প্রয়োজন। এর উদ্দেশ্য একজন ব্যক্তি যেন একাধিক account খুলে অন্যায় সুবিধা নিতে না পারেন। এখানে NID, OTP, bank PIN বা কোনো password নেওয়া হয় না।",
+    a: "Good-App-এ একাউন্ট তৈরি ও স্লট সুবিধার জন্য Face Verification প্রয়োজন। এর উদ্দেশ্য একজন ব্যক্তি যেন একাধিক account খুলে অন্যায় সুবিধা নিতে না পারেন। এখানে NID বা bank PIN নেওয়া হয় না; password ও security code শুধু নিরাপদ login ব্যবস্থায় ব্যবহার হয়।",
     qEn: "Is face verification risky?",
-    aEn: "Good-App requires face verification to create an account and use verified slot features. Its purpose is to prevent one person from opening multiple accounts. No national ID, OTP, bank PIN or password is collected during the face check.",
+    aEn: "Good-App requires face verification to create an account and use verified slot features. Its purpose is to prevent one person from opening multiple accounts. No national ID or bank PIN is collected; passwords and security codes are used only by the secure login flow.",
     icon: ShieldCheck,
     tone: "emerald",
   },
