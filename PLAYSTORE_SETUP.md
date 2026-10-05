@@ -12,7 +12,7 @@
 - Store build live site লোড করলেও নিজস্ব স্থায়ী Store পরিচয় বহন করে; তাই শুধু ভেরিফিকেশন, রিওয়ার্ড, সেন্ড, রিচার্জ ও স্থানীয় উইথড্র সুবিধা দেখায়
 - **Privacy Policy** পেজ: `https://goodapp2.live/privacy` ← Play Store-এ এই লিংকটাই দিতে হবে
 - **Terms** পেজ: `https://goodapp2.live/terms`
-- **Child Safety Standards** পেজ: `https://goodapp2.live/child-safety` ← social/UGC অ্যাপের জন্য বাধ্যতামূলক
+- **Child Safety Standards** পেজ: `https://goodapp2.live/child-safety` (Play Console চাইলে দিন)
 - Play Store-এর গ্রাফিক্স তৈরি: `app-icon-512.png` (512×512) আর `feature-graphic-1024x500.jpg` (1024×500) — Files প্যানেল থেকে ডাউনলোড করুন
 - GitHub Actions cloud build workflow (PC/Android Studio লাগবে না)
 
@@ -57,7 +57,7 @@ Repository → **Settings** → **Secrets and variables** → **Actions** → **
 1. Repository → **Actions** ট্যাব
 2. বাম দিকে **Build Android APK/AAB** সিলেক্ট করুন
 3. **Run workflow** → build type: **`aab-release`** → build mode: **`store`** → **Run workflow**
-4. ৫–১০ মিনিট অপেক্ষা করুন, সবুজ ✅ হলে ওই run-এ ঢুকে **Artifacts → release-aab** ডাউনলোড করুন
+4. ৫–১০ মিনিট অপেক্ষা করুন, সবুজ ✅ হলে ওই run-এ ঢুকে **Artifacts → release-aab-store** ডাউনলোড করুন
 5. ভেতরে থাকবে `app-release.aab` — এটাই আপলোড করবেন
 
 > আগে নিজে ফোনে টেস্ট করতে চাইলে একবার **`apk-debug`** দিয়ে run করুন, `app-debug.apk` ডাউনলোড করে ফোনে ইনস্টল করে দেখুন।
@@ -66,8 +66,8 @@ Repository → **Settings** → **Secrets and variables** → **Actions** → **
 
 1. https://play.google.com/console খুলুন, Gmail দিয়ে সাইন ইন
 2. **$25 (এককালীন)** ফি কার্ড দিয়ে দিন
-3. Identity verification: NID/পাসপোর্ট ও ঠিকানা দিন (২–৪৮ ঘণ্টায় approve হয়)
-4. একাউন্ট টাইপ **Personal** নিলে সহজ
+3. Identity verification-এ Play Console যে পরিচয়/প্রতিষ্ঠানের কাগজ চাইবে, সঠিক তথ্য দিন
+4. আপনার বর্তমান **Organization** account-ই ব্যবহার করুন; developer profile ও support তথ্য পূর্ণ রাখুন
 
 ## ধাপ ৫ — App তৈরি ও তথ্য দেওয়া
 
@@ -95,6 +95,9 @@ Repository → **Settings** → **Secrets and variables** → **Actions** → **
 - Content rating: প্রশ্নপত্র পূরণ করুন
 - Target audience: 18+
 - Financial features: সেন্ড মানি, রিচার্জ, স্থানীয় উইথড্র ও রিওয়ার্ড যা বাস্তবে আছে, সেগুলো সত্যভাবে ঘোষণা করুন; crypto/mining/loan/investment নেই
+- App access: আলাদা ১৮+ pre-verified reviewer account-এর মোবাইল নম্বর ও password দিন; OTP/face বাধা যেন review আটকে না দেয়
+- Account deletion URL: `https://goodapp2.live/account-deletion`
+- Data collection-এ face image, device ID/log, payment number, transaction history এবং external verification identifier সত্যভাবে ঘোষণা করুন
 
 ## ধাপ ৬ — আপলোড ও রিলিজ
 
