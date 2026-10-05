@@ -12,18 +12,8 @@ import { QrCode } from "@/components/QrCode";
 import { useAuth } from "@/hooks/useAuth";
 import { PageBackHeader } from "@/components/PageBackHeader";
 
-export const Route = createFileRoute("/_authenticated/profile")({ component: OwnSocialProfileRedirect });
+export const Route = createFileRoute("/_authenticated/profile")({ component: ProfilePage });
 
-function OwnSocialProfileRedirect() {
-  const { user, loading } = useAuth();
-  if (loading) {
-    return <div className="py-24 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
-  }
-  if (!user) {
-    return <Navigate to="/auth" />;
-  }
-  return <Navigate to="/user/$userId" params={{ userId: user.id }} />;
-}
 
 type DetailsForm = {
   nid_number: string;

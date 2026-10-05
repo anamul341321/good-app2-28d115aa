@@ -76,8 +76,7 @@ export function ChatRow({
       >
         {!isGroup ? (
           <Link
-            to="/user/$userId"
-            params={{ userId: id }}
+            to="/chat"
             onClick={(event) => event.stopPropagation()}
             className="btn-press rounded-full"
             aria-label={`${name} profile`}

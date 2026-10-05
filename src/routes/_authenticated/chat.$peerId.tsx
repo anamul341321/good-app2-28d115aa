@@ -4,7 +4,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ChevronLeft, Info, Check, X, UserPlus, Loader2, Maximize2, MoreVertical, Trash2, Ban } from "lucide-react";
 import { deleteMessage, deleteAllMessages, getThread, markChatRead, reactToMessage, sendMessage } from "@/lib/chat.functions";
-import { awardCoins } from "@/lib/coins";
 import { respondFriendRequest, sendFriendRequest } from "@/lib/friends.functions";
 import { CallButtons } from "@/components/CallProvider";
 import { playSentTone } from "@/lib/msg-sound";
@@ -91,7 +90,7 @@ function ThreadPage() {
     onSuccess: () => {
       playSentTone();
       refresh();
-      void awardCoins("message");
+      
     },
     onError: (e: any) => toast.error(e?.message ?? "Failed to send"),
   });
@@ -175,7 +174,7 @@ function ThreadPage() {
         
         <div className="flex flex-1 items-center gap-2 min-w-0">
           {data?.peer ? (
-            <Link to="/user/$userId" params={{ userId: data.peer.userId }} className="btn-press rounded-full" aria-label={`${data.peer.name} profile`}>
+            <Link to="/chat" className="btn-press rounded-full" aria-label={`${data.peer.name} profile`}>
               <MessengerAvatar
                 name={data.peer.name ?? "User"}
                 src={(data.peer as any)?.avatarUrl ?? null}
