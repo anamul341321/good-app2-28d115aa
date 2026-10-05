@@ -236,6 +236,15 @@ export function AuthPage() {
   }, []);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  // আলাদা "GoodApp Call" অ্যাপে লগইন সহজ রাখি — শুধু ফোন+পাসওয়ার্ড, Google নয়।
+  const isCallsApp = (() => {
+    try {
+      return (
+        localStorage.getItem("goodapp_calls_app") === "1" ||
+        new URLSearchParams(window.location.search).get("app") === "calls"
+      );
+    } catch { return false; }
+  })();
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [scanOpen, setScanOpen] = useState(false);
   const [faceMode, setFaceMode] = useState<null | "signup" | "login">(null);
