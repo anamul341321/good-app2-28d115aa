@@ -346,7 +346,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
             reconnectTimer.current = null;
           }
           reconnecting.current = false;
-          setState("active");
+          setState("active"); try { navigator.vibrate?.([60, 40, 60]); } catch {}
           return;
         }
         // নেটওয়ার্ক একটু কেটে গেলে সাথে সাথে কল বন্ধ না করে ৩০ সেকেন্ড পর্যন্ত

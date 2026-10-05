@@ -649,6 +649,30 @@ export type Database = {
           },
         ]
       }
+      call_contacts: {
+        Row: {
+          created_at: string
+          id: string
+          label: string
+          owner_id: string
+          peer_uid: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label: string
+          owner_id: string
+          peer_uid: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string
+          owner_id?: string
+          peer_uid?: number
+        }
+        Relationships: []
+      }
       call_sessions: {
         Row: {
           accepted_at: string | null
