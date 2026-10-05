@@ -8,6 +8,8 @@ def hasReleaseSigning = releaseKeystorePath && releaseKeystorePassword && releas
 def isLiteBuild = System.getenv('ANDROID_BUILD_MODE') == 'lite'
 // 'calls' = separate lightweight GoodApp Call APK (installs beside Good-App).
 def isCallsBuild = System.getenv('ANDROID_BUILD_MODE') == 'calls'
+// 'store' = the Good-App binary uploaded to Google Play (no external APK links, no crypto payout UI).
+def isStoreBuild = System.getenv('ANDROID_BUILD_MODE') == 'store'
 
 android {
     namespace = "com.anamul.goodapp"
@@ -23,6 +25,7 @@ android {
         versionName "1.36"
         buildConfigField "boolean", "LITE_BUILD", isLiteBuild.toString()
         buildConfigField "boolean", "CALLS_BUILD", isCallsBuild.toString()
+        buildConfigField "boolean", "STORE_BUILD", isStoreBuild.toString()
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {

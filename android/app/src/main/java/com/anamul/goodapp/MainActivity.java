@@ -251,6 +251,12 @@ public class MainActivity extends BridgeActivity {
             return BuildConfig.CALLS_BUILD;
         }
 
+        /** True only inside the Google Play build: no external APK links, no crypto payout UI. */
+        @JavascriptInterface
+        public boolean isStoreBuild() {
+            return BuildConfig.STORE_BUILD;
+        }
+
         @JavascriptInterface
         public void openExternal(String url) {
             runOnUiThread(() -> openApkDownload(Uri.parse(url)));
