@@ -26,7 +26,7 @@ export const Route = createFileRoute("/_authenticated/withdraw")({
   head: () => ({
     meta: [
       { title: "উইথড্র | GoodApp" },
-      { name: "description", content: "GoodApp ব্যালান্স থেকে বিকাশ, নগদ বা USDT-তে উইথড্র করুন।" },
+      { name: "description", content: "GoodApp ব্যালান্স থেকে বিকাশ বা নগদে উইথড্র করুন।" },
       { property: "og:title", content: "উইথড্র | GoodApp" },
       { property: "og:description", content: "ব্যালান্স, সময় ও পেমেন্ট মাধ্যম দেখে সহজে উইথড্র করুন।" },
       { property: "og:type", content: "website" },
@@ -73,13 +73,19 @@ function WithdrawPage() {
     const id = setInterval(() => setNow(Date.now()), 500);
     return () => clearInterval(id);
   }, []);
+  useEffect(() => {
+    if (!store) return;
+    setMode("bdt");
+    setHistoryTab("bdt");
+    setUsdtAddress("");
+  }, [store]);
 
   const mut = useMutation({
     mutationFn: () => requestWithdraw({
       data: {
         amount: Math.floor(Number(amount) || 0),
-        provider: mode === "usdt" ? "usdt" : (provider ?? undefined),
-        usdtAddress: mode === "usdt" ? usdtAddress.trim() : undefined,
+        provider: !store && mode === "usdt" ? "usdt" : (provider ?? undefined),
+        usdtAddress: !store && mode === "usdt" ? usdtAddress.trim() : undefined,
       },
     }),
     onSuccess: () => {
@@ -388,7 +394,7 @@ function WithdrawPage() {
             </form>
           ) : null}
         </>
-      ) : (
+      ) : !store ? (
         <UsdtWithdrawCard
           claimable={claimable}
           amount={amount} setAmount={setAmount}
@@ -403,7 +409,7 @@ function WithdrawPage() {
           adminWithdrawOff={adminWithdrawOff}
           t={t}
         />
-      )}
+      ) : null}
 
 
       <div>
@@ -425,7 +431,7 @@ function WithdrawPage() {
         <div className="space-y-2">
           {(() => {
             const filteredHistory = (history ?? []).filter((w: any) =>
-              historyTab === "usdt" ? w.provider === "usdt" : w.provider !== "usdt"
+              store ? w.provider !== "usdt" : historyTab === "usdt" ? w.provider === "usdt" : w.provider !== "usdt"
             );
             if (filteredHistory.length === 0) {
               return <p className="text-center text-xs text-muted-foreground py-6">{t("কোনো উইথড্র রিকোয়েস্ট নেই", "No withdraw requests yet")}</p>;
@@ -865,6 +871,7 @@ function UsdtWithdrawCard(props: {
 /** দেশভিত্তিক পেমেন্ট নোট — বাংলাদেশের বাইরের ইউজার সহজে বুঝবে কীভাবে টাকা পাবে */
 function RegionPayoutNote() {
   const { t, region, countryCode } = useLang();
+  const store = isStoreBuild();
   return (
     <div className="glass rounded-2xl border border-gold/25 p-3">
       <p className="text-[12px] font-black">
@@ -872,10 +879,10 @@ function RegionPayoutNote() {
         {t("আপনার দেশ", "Your country")}: {region.nameLocal} ({countryCode}) · {region.currency} {region.symbol}
       </p>
       <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
-        {countryCode === "BD"
+        {countryCode === "BD" || store
           ? t(
-              "বাংলাদেশে বিকাশ বা নগদে টাকা পাঠানো হয়। মাইনিং টাকা ১–৩ তারিখে, বোনাস টাকা থাকলে যেকোনো দিন তুলতে পারবেন।",
-              "In Bangladesh payouts go to local wallets. Mining is available on days 1–3; bonus funds can be withdrawn any day."
+              "বিকাশ বা নগদে টাকা পাঠানো হয়। রিওয়ার্ড ব্যালান্স নির্ধারিত সময়ে এবং মেইন ব্যালান্স নিয়ম অনুযায়ী তোলা যায়।",
+              "Payouts are sent to bKash or Nagad according to the displayed balance and schedule."
             )
           : t(
               "আপনার দেশে লোকাল পেমেন্ট না থাকলে USDT (Celo) ওয়ালেটে পেমেন্ট নিতে পারবেন — ব্যালান্স ৳-এ দেখানো হয়, পাঠানোর সময় USDT-তে রূপান্তর হয়।",
