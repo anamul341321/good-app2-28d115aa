@@ -22,6 +22,6 @@
 - [x] Add direct UID audio/video calling from the call-center dial pad
 - [x] Make agent-requested screen sharing obvious and permission-based
 - [x] Make support-call hangup close reliably on both sides
-- [ ] Normalize the full app layout across small phones, large phones, and tablets
-- [ ] Reduce Reels media/network load and prevent low-memory phone crashes
-- [ ] Verify dashboard and Reels at representative phone sizes
+- [x] Normalize the full app layout across small phones, large phones, and tablets
+- [x] Reduce Reels media/network load and prevent low-memory phone crashes
+- [x] Verify dashboard and Reels at representative phone sizes
