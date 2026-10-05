@@ -10,10 +10,12 @@ import { isStoreBuild } from "./store-build";
  * while the website and the GoodApp Call APK keep their original wording.
  */
 const TERMS: Array<[RegExp, string]> = [
-  [/মাইন[্]?ি?ং/g, "ইয ়া র্ন"],
-  [/Mining/g, "Earn"],
-  [/mining/g, "earn"],
-  [/আজীবন/g, "অফার থাক াকালীন"],
+  [/মাইন[্]?ি?ং/gi, "টাস্ক রিওয়ার্ড"],
+  [/Mining/gi, "Task rewards"],
+  [/আজীবন/g, "অফার চলাকালীন"],
+  [/USDT/gi, ""],
+  [/Celo/gi, ""],
+  [/ক্রিপ্টো/gi, ""],
 ];
 
 const SKIP = "script,style,textarea,input,select,code,pre";

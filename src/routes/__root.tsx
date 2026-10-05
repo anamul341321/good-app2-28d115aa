@@ -73,7 +73,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
       { title: "Good-App" },
-      { name: "description", content: "Good-App — মেসেঞ্জার, রিলস, স্টোরি ও নিরাপদ কমিউনিটি" },
+      { name: "description", content: "Good-App — স্লট ভেরিফিকেশন, রিওয়ার্ড, উইথড্র, সেন্ড মানি ও মোবাইল রিচার্জ" },
       { name: "theme-color", content: "#0ea5a4" },
       { name: "google", content: "notranslate" },
       { httpEquiv: "Content-Language", content: "bn" },
@@ -83,8 +83,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "mobile-web-app-capable", content: "yes" },
       { property: "og:title", content: "Good-App" },
       { name: "twitter:title", content: "Good-App" },
-      { property: "og:description", content: "Good-App — মেসেঞ্জার, রিলস, স্টোরি ও নিরাপদ কমিউনিটি" },
-      { name: "twitter:description", content: "Good-App — মেসেঞ্জার, রিলস, স্টোরি ও নিরাপদ কমিউনিটি" },
+      { property: "og:description", content: "Good-App — স্লট ভেরিফিকেশন, রিওয়ার্ড, উইথড্র, সেন্ড মানি ও মোবাইল রিচার্জ" },
+      { name: "twitter:description", content: "Good-App — স্লট ভেরিফিকেশন, রিওয়ার্ড, উইথড্র, সেন্ড মানি ও মোবাইল রিচার্জ" },
       { name: "twitter:card", content: "summary_large_image" },
       { property: "og:type", content: "website" },
     ],
@@ -128,6 +128,7 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const storeBlocked = /^\/(admin(?:-login)?|download|earn|rates)(\/|$)/.test(pathname);
   // Exclude admin and social routes from update gates
   const isExcludedRoute = /^\/(admin|admin-login|callcenter|social|chat|feed|friends|videos|reels|watch|studio|channel|user|profile)(\/|$)/.test(pathname);
 
@@ -141,6 +142,11 @@ function RootComponent() {
       )
       .forEach((node) => node.remove());
   }, [pathname]);
+
+  useLayoutEffect(() => {
+    if (!isStoreBuild() || !storeBlocked) return;
+    router.navigate({ to: "/home", replace: true });
+  }, [router, storeBlocked]);
 
 
 
@@ -202,7 +208,7 @@ function RootComponent() {
         <SplashScreen />
         {!callsApp && !isExcludedRoute && !isLiteBuild() && !isStoreBuild() && <AppUpdateBanner />}
         {!callsApp && !isExcludedRoute && !isLiteBuild() && !isStoreBuild() && <ForceUpdateGate />}
-        {callsBlocked ? <div className="min-h-[100dvh] bg-background" /> : <Outlet />}
+        {callsBlocked || (isStoreBuild() && storeBlocked) ? <div className="min-h-[100dvh] bg-background" /> : <Outlet />}
 
         <Toaster theme="dark" position="top-center" richColors />
       </LanguageProvider>

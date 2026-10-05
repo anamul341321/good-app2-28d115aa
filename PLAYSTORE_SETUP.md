@@ -9,7 +9,7 @@
 - Capacitor সেটআপ (web app → Android app)
 - App নাম **Good-App**, package `com.goodapp.mobile`
 - আপনার লোগো দিয়ে সব সাইজের **app icon** বসানো
-- App খুললেই সরাসরি live site `https://good-app2.lovable.app` লোড হয় — তাই সব ফিচার (mining, withdraw, KYC) কাজ করে
+- Store build live site লোড করলেও নিজস্ব স্থায়ী Store পরিচয় বহন করে; তাই শুধু ভেরিফিকেশন, রিওয়ার্ড, সেন্ড, রিচার্জ ও স্থানীয় উইথড্র সুবিধা দেখায়
 - **Privacy Policy** পেজ: `https://goodapp2.live/privacy` ← Play Store-এ এই লিংকটাই দিতে হবে
 - **Terms** পেজ: `https://goodapp2.live/terms`
 - **Child Safety Standards** পেজ: `https://goodapp2.live/child-safety` ← social/UGC অ্যাপের জন্য বাধ্যতামূলক
@@ -56,7 +56,7 @@ Repository → **Settings** → **Secrets and variables** → **Actions** → **
 
 1. Repository → **Actions** ট্যাব
 2. বাম দিকে **Build Android APK/AAB** সিলেক্ট করুন
-3. **Run workflow** → build type: **`aab-release`** → **Run workflow**
+3. **Run workflow** → build type: **`aab-release`** → build mode: **`store`** → **Run workflow**
 4. ৫–১০ মিনিট অপেক্ষা করুন, সবুজ ✅ হলে ওই run-এ ঢুকে **Artifacts → release-aab** ডাউনলোড করুন
 5. ভেতরে থাকবে `app-release.aab` — এটাই আপলোড করবেন
 
@@ -81,21 +81,20 @@ Repository → **Settings** → **Secrets and variables** → **Actions** → **
 এরপর বাঁ দিকের চেকলিস্ট ধরে ধরে পূরণ করুন:
 
 **Store listing**
-- Short description (৮০ অক্ষর): `ফেস ভেরিফাই করে মাইনিং, বোনাস ও সহজ উইথড্র — সবকিছু এক অ্যাপে।`
-- Full description: অ্যাপের কাজ, ভেরিফিকেশন, বোনাস, রেফার ও উইথড্র নিয়ম লিখুন
+- Short description ও Full description: `PLAYSTORE_LISTING.md` থেকে হুবহু নিন
 - App icon: `app-icon-512.png`
 - Feature graphic: `feature-graphic-1024x500.jpg`
-- Phone screenshots: **কমপক্ষে ২টি** — ফোনে অ্যাপ খুলে হোম, wallet, withdraw, refer পেজের স্ক্রিনশট নিন
+- Phone screenshots: নতুন **store APK** থেকে নিন; USDT/Celo/crypto, GoodApp Call, admin, messenger/call/feed বা “মাইনিং” লেখা থাকা screenshot ব্যবহার করবেন না
 
 **App content** (এগুলো না দিলে রিভিউতে আটকাবে)
 - Privacy policy URL: `https://goodapp2.live/privacy`
 - Terms URL: `https://goodapp2.live/terms`
-- Child safety standards URL: `https://goodapp2.live/child-safety`
-- Data safety: ফর্মে সত্যি করে বলুন — নাম, ফোন নম্বর, ইমেইল, ছবি (ফেস) সংগ্রহ করা হয়; এনক্রিপ্টেড ট্রান্সফার; ব্যবহারকারী ডেটা মুছতে অনুরোধ করতে পারেন
+- Child safety standards URL: Store build-এ public UGC নেই; Play Console চাইলে `https://goodapp2.live/child-safety` দিন
+- Data safety: `PLAYSTORE_LISTING.md`-এর তালিকার সঙ্গে হুবহু মিলিয়ে সত্য তথ্য দিন
 - Ads: No ads
 - Content rating: প্রশ্নপত্র পূরণ করুন
 - Target audience: 18+
-- Government apps / Financial features: **টাকা তোলার সুবিধা আছে** — এই প্রশ্নে সত্যি উত্তর দিন
+- Financial features: সেন্ড মানি, রিচার্জ, স্থানীয় উইথড্র ও রিওয়ার্ড যা বাস্তবে আছে, সেগুলো সত্যভাবে ঘোষণা করুন; crypto/mining/loan/investment নেই
 
 ## ধাপ ৬ — আপলোড ও রিলিজ
 

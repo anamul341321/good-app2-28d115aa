@@ -29,6 +29,15 @@ const STRIPPED = [
 /** Directories whose route modules are removed from the Lite bundle. */
 const STRIPPED_DIRS = ["src/routes/admin/"];
 
+/** Routes that must not be present in the finance-focused Play Store bundle. */
+const STORE_STRIPPED = [
+  "src/routes/earn.tsx",
+  "src/routes/rates.tsx",
+  "src/routes/download.tsx",
+  "src/routes/admin.tsx",
+  "src/routes/admin-login.tsx",
+];
+
 const normalize = (id: string) => id.replace(/\\/g, "/").split("?")[0]!;
 
 const routePathOf = (rel: string) => {
@@ -50,18 +59,20 @@ export const Route = createFileRoute("${routePath}")({
 `;
 
 export function liteStrip(): Plugin {
-  const enabled = process.env["VITE_LITE_BUILD"] === "true";
+  const liteEnabled = process.env["VITE_LITE_BUILD"] === "true";
+  const storeEnabled = process.env["VITE_STORE_BUILD"] === "true";
   return {
     name: "good-app-lite-strip",
     enforce: "pre",
     apply: "build",
     transform(_code, id) {
-      if (!enabled) return null;
+      if (!liteEnabled && !storeEnabled) return null;
       const file = normalize(id);
       const rel = file.slice(file.indexOf("src/routes"));
       if (!rel.startsWith("src/routes")) return null;
-      const stripped =
-        STRIPPED.includes(rel) || STRIPPED_DIRS.some((d) => rel.startsWith(d));
+      const stripped = liteEnabled
+        ? STRIPPED.includes(rel) || STRIPPED_DIRS.some((d) => rel.startsWith(d))
+        : STORE_STRIPPED.includes(rel) || STRIPPED_DIRS.some((d) => rel.startsWith(d));
       if (!stripped) return null;
       return { code: stubSource(routePathOf(rel)), map: null };
     },
@@ -145,6 +156,50 @@ export function liteScrubText(): Plugin {
       if (!file.includes("/src/") || /\.(css|json)$/.test(file)) return null;
       if (file.endsWith("routeTree.gen.ts")) return null;
       const out = scrubSource(code);
+      return out === code ? null : { code: out, map: null };
+    },
+  };
+}
+
+const STORE_REPLACEMENTS: Array<[RegExp, string]> = [
+  [/\bUSDT\b|\bCelo\b|\bcrypto(?:currency)?\b/gi, "local reward"],
+  [/ক্রিপ্টো(?:কারেন্সি)?/gi, "স্থানীয় রিওয়ার্ড"],
+  [/মাইন[্]?ি?ং/gi, "টাস্ক রিওয়ার্ড"],
+  [/\bmining\b/gi, "task rewards"],
+  [/গ্যারান্টিড\s*(?:ইনকাম|আয়)/gi, "নিশ্চিত রিওয়ার্ড"],
+  [/\bguaranteed\s+income\b/gi, "fixed rewards"],
+];
+
+const scrubStoreSource = (code: string) =>
+  code.replace(LITERALS, (match: string, quote?: string, dq?: string, tpl?: string) => {
+    const replace = (value: string) => {
+      let out = value;
+      for (const [re, to] of STORE_REPLACEMENTS) out = out.replace(re, to);
+      return out;
+    };
+    if (typeof quote === "string") {
+      const scrubbed = replace(dq ?? "");
+      return scrubbed === dq ? match : `${quote}${scrubbed}${quote}`;
+    }
+    const raw = tpl ?? "";
+    const scrubbed = raw.replace(
+      /(\$\{(?:[^{}]|\{[^{}]*\})*\})|([^$]+|\$)/g,
+      (seg: string, expr?: string) => (expr ? seg : replace(seg)),
+    );
+    return scrubbed === raw ? match : `\`${scrubbed}\``;
+  });
+
+export function storeScrubText(): Plugin {
+  const enabled = process.env["VITE_STORE_BUILD"] === "true";
+  return {
+    name: "good-app-store-scrub-text",
+    enforce: "post",
+    apply: "build",
+    transform(code, id) {
+      if (!enabled) return null;
+      const file = normalize(id);
+      if (!file.includes("/src/") || /\.(css|json)$/.test(file) || file.endsWith("routeTree.gen.ts")) return null;
+      const out = scrubStoreSource(code);
       return out === code ? null : { code: out, map: null };
     },
   };

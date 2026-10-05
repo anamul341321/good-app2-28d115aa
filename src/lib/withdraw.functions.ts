@@ -9,6 +9,7 @@ const CELO_ADDR_RE = /^0x[a-fA-F0-9]{40}$/;
 
 const WithdrawInput = z.object({
   amount: z.number().positive(),
+  storeBuild: z.boolean().optional(),
   provider: z.enum(["bkash", "nagad", "usdt"]).optional(),
   usdtAddress: z.string().trim().optional(),
 });
@@ -108,6 +109,9 @@ export const requestWithdraw = createServerFn({ method: "POST" })
     const walletNagad = (userWallets ?? []).find((w: any) => w.provider === "nagad") ?? null;
 
     let chosen = data.provider ?? null;
+    if (data.storeBuild && chosen === "usdt") {
+      throw new Error("Play Store অ্যাপে এই পেমেন্ট মাধ্যমটি পাওয়া যায় না");
+    }
     if (!chosen) {
       if (bkashEnabled && walletBkash) chosen = "bkash";
       else if (nagadEnabled && walletNagad) chosen = "nagad";
