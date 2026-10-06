@@ -227,7 +227,7 @@ function AuthedLayout() {
 
   return (
     <CallsWrap enabled={callsMode}>
-    {!store && <AgentIncomingCall />}
+    {!store && callsApp && <AgentIncomingCall />}
     <div className={isSocialRoute ? "min-h-[100dvh]" : "min-h-[100dvh] overflow-x-clip pb-[calc(5.75rem+env(safe-area-inset-bottom))]"}>
       {!isSocialRoute && !callsApp && (
         appStatus?.faceVerifyEnabled === false ? (
