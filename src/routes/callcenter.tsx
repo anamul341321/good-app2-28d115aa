@@ -30,7 +30,6 @@ import { detectCallsApp } from "@/lib/calls-app";
 import { CallProvider, useCalls } from "@/components/CallProvider";
 import { Button } from "@/components/ui/button";
 import { CallBook } from "@/components/CallBook";
-import { CALL_CENTER_SCRIPTS } from "@/lib/callcenter-scripts";
 
 const SUPPORT_NUMBER = "112233";
 
