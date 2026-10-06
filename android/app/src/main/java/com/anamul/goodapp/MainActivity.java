@@ -800,5 +800,41 @@ public class MainActivity extends BridgeActivity {
                 || getPackageManager().canRequestPackageInstalls())) {
             openDownloadedApk();
         }
+        if (BuildConfig.CALLS_BUILD && !callScreenPromptScheduled) {
+            callScreenPromptScheduled = true;
+            getWindow().getDecorView().postDelayed(this::askCallScreenPermissions, 3500);
+        }
+    }
+
+    private boolean callScreenPromptScheduled = false;
+
+    /**
+     * Calls APK only: incoming calls must open the big ring screen straight away,
+     * not as a small notification. Android needs "full-screen alerts" (Android 14+)
+     * and "display over other apps" for that. Ask each once, never during cold start.
+     */
+    private void askCallScreenPermissions() {
+        try {
+            android.content.SharedPreferences p = getSharedPreferences("goodapp_calls", Context.MODE_PRIVATE);
+            if (Build.VERSION.SDK_INT >= 34 && !p.getBoolean("asked_fsi", false)) {
+                NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+                if (nm != null && !nm.canUseFullScreenIntent()) {
+                    p.edit().putBoolean("asked_fsi", true).apply();
+                    Toast.makeText(this, "কল এলে বড় স্ক্রিনে দেখাতে এটি চালু করুন", Toast.LENGTH_LONG).show();
+                    startActivity(new Intent("android.settings.MANAGE_APP_USE_FULL_SCREEN_INTENT",
+                        Uri.parse("package:" + getPackageName())));
+                    return;
+                }
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !p.getBoolean("asked_overlay", false)
+                && !Settings.canDrawOverlays(this)) {
+                p.edit().putBoolean("asked_overlay", true).apply();
+                Toast.makeText(this, "কল এলে সাথে সাথে বড় স্ক্রিন আসতে \"অন্য অ্যাপের উপরে দেখান\" চালু করুন", Toast.LENGTH_LONG).show();
+                startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                    Uri.parse("package:" + getPackageName())));
+            }
+        } catch (Exception ignored) {
+            // Some phones lack these settings pages; ringing still works via notification.
+        }
     }
 }

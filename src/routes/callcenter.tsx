@@ -2,8 +2,8 @@ import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Phone, PhoneOff, Headset, Volume2, VolumeX, Grid3x3, ArrowLeft, Delete, UserRoundSearch } from "lucide-react";
-import greetingA from "@/assets/callcenter/greeting.mp3.asset.json";
-import menuA from "@/assets/callcenter/menu.mp3.asset.json";
+import greetingA from "@/assets/callcenter/greetingfull.mp3.asset.json";
+import menuA from "@/assets/callcenter/menufull.mp3.asset.json";
 import transferA from "@/assets/callcenter/transfer.mp3.asset.json";
 import longwaitA from "@/assets/callcenter/longwait.mp3.asset.json";
 import nobalanceA from "@/assets/callcenter/nobalance.mp3.asset.json";
@@ -30,7 +30,6 @@ import { detectCallsApp } from "@/lib/calls-app";
 import { CallProvider, useCalls } from "@/components/CallProvider";
 import { Button } from "@/components/ui/button";
 import { CallBook } from "@/components/CallBook";
-import { CALL_CENTER_SCRIPTS } from "@/lib/callcenter-scripts";
 
 const SUPPORT_NUMBER = "112233";
 
@@ -172,11 +171,11 @@ function CallCenterPage() {
     a.src = AUDIO[key];
     a.currentTime = 0;
     a.onended = () => next?.();
+    // রোবট-কণ্ঠ আর নয়: ফাইল লোড না হলে একবার আবার চেষ্টা, তারপর পরের ধাপে যাই
+    let retried = false;
     a.onerror = () => {
-      const t = SPOKEN_FALLBACK[key] ?? CALL_CENTER_SCRIPTS.find((x) => x.key === key)?.text;
-      if (!t || !("speechSynthesis" in window)) { next?.(); return; }
-      const u = new SpeechSynthesisUtterance(t); u.lang = "bn-BD"; u.onend = () => next?.();
-      window.speechSynthesis.cancel(); window.speechSynthesis.speak(u);
+      if (!retried) { retried = true; a.src = AUDIO[key] + (AUDIO[key].includes("?") ? "&" : "?") + "r=1"; void a.play().catch(() => next?.()); return; }
+      next?.();
     };
     setLabel(title);
     void a.play().catch(() => setLabel("ভয়েস চালু করতে স্ক্রিনে একবার চাপ দিন"));
@@ -274,7 +273,8 @@ function CallCenterPage() {
 
   // মেনু বলা শেষে ৮ সেকেন্ড অপেক্ষা; কিছু না চাপলে প্রথমবার মেনুতে ফেরে, দ্বিতীয়বার কল কাটে
   const menu = useCallback((key: "greeting" | "menu" = "menu") => {
-    const after = (fn: () => void) => say("menuextra", "আরও অপশন", fn);
+    // মেনুর রেকর্ডিংয়েই ১–৯ ও ০ সব অপশন আছে, আলাদা ফাইল লাগে না
+    const after = (fn: () => void) => fn();
     say(key, key === "greeting" ? "স্বাগতম" : "মূল মেনু", () => after(() => {
       setLabel("অনুগ্রহ করে একটি নম্বর চাপুন");
       waitTimer.current = window.setTimeout(() => {
