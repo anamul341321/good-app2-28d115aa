@@ -37,6 +37,7 @@ const removeNamedNode = (tag: "activity" | "service" | "receiver", name: string)
   "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
   "android.permission.FOREGROUND_SERVICE",
   "android.permission.WAKE_LOCK",
+  "android.permission.SYSTEM_ALERT_WINDOW",
 ].forEach(removePermission);
 
 removeNamedNode("activity", ".BubbleChatActivity");
