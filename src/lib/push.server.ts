@@ -171,7 +171,12 @@ export async function sendIncomingCallPush(
 ) {
   if (!process.env.FIREBASE_SERVICE_ACCOUNT_JSON) return { sent: 0, failed: 0 };
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data } = await supabaseAdmin.from("push_tokens").select("token").eq("user_id", userId);
+  // কল শুধু GoodApp Call অ্যাপে বাজবে — ফুল অ্যাপের ফোন-টোকেনে কলের push যাবে না
+  const { data } = await supabaseAdmin
+    .from("push_tokens")
+    .select("token")
+    .eq("user_id", userId)
+    .eq("platform", "android-calls");
   const tokens = [...new Set((data ?? []).map((row: any) => row.token as string))];
   return sendPushToTokens(tokens, {
     title: call.video ? "ভিডিও কল আসছে" : "কল আসছে",
