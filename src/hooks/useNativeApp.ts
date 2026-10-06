@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { savePushToken } from "@/lib/push.functions";
+import { detectNativeCallsApp } from "@/lib/calls-app";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -13,7 +14,9 @@ async function persistPushToken() {
   if (!latestPushToken) return;
   const { data } = await supabase.auth.getSession();
   if (!data.session) return;
-  await savePushToken({ data: { token: latestPushToken, platform: "android" } });
+  // কলিং অ্যাপের টোকেন আলাদা চিহ্ন পায়, যাতে কল শুধু সেখানেই বাজে
+  const platform = detectNativeCallsApp() ? "android-calls" : "android";
+  await savePushToken({ data: { token: latestPushToken, platform } });
 }
 
 /**
