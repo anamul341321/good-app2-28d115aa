@@ -68,6 +68,9 @@ public class GoodAppMessagingService extends FirebaseMessagingService {
             sendBroadcast(cancel);
             return;
         }
+        // Customer-care calls ring only in the separate GoodApp Call APK.
+        if (!BuildConfig.CALLS_BUILD && "incoming_call".equals(data.get("type"))
+            && "support".equals(data.get("caller_id"))) return;
         if ("incoming_call".equals(data.get("type"))) {
             showIncomingCall(data);
             return;
