@@ -175,6 +175,17 @@ public class GoodAppMessagingService extends FirebaseMessagingService {
         notification.flags |= Notification.FLAG_INSISTENT;
         NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         manager.notify(callId.hashCode(), notification);
+        // While the phone is unlocked Android only shows a small banner for
+        // full-screen intents. With "display over other apps" granted we may open
+        // the big ring screen ourselves, so the call appears instantly.
+        if (BuildConfig.CALLS_BUILD) {
+            try {
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M
+                    || android.provider.Settings.canDrawOverlays(this)) {
+                    startActivity(fullScreen);
+                }
+            } catch (Exception ignored) { /* notification still rings */ }
+        }
         // Do not release immediately: notify() queues the full-screen intent asynchronously.
         // The timed lock releases itself and keeps cold-start calls reliable in deep sleep.
     }
