@@ -57,14 +57,12 @@ export const startSupportCall = createServerFn({ method: "POST" })
       .select("id")
       .single();
     if (error) throw new Error("কল শুরু করা যায়নি");
-    // অ্যাপ বন্ধ থাকলেও সব অ্যাডমিনের ফোনে নোটিফিকেশন + টেলিগ্রাম
+    // রিং শুধু GoodApp Call অ্যাপে (বড় কল স্ক্রিন) + টেলিগ্রাম; ফুল অ্যাপে আলাদা নোটিফিকেশন নয়
     try {
       const who = `${name ?? "অতিথি"}${uid ? ` · UID ${uid}` : " · লগইন নেই"}`;
-      const { sendPushToAdmins } = await import("@/lib/push.server");
       const { alertOwnerPrivate } = await import("@/lib/withdraw-fastpay.server");
       await Promise.allSettled([
         ringAgents(row.id as string, who),
-        sendPushToAdmins({ title: "📞 কাস্টমার কেয়ারে কল আসছে", body: `${who} — এখনই ধরুন`, url: "/home" }),
         alertOwnerPrivate(`📞 <b>কাস্টমার কেয়ারে কল আসছে</b>\n👤 ${who}\n👉 অ্যাডমিন প্যানেল → ইনকামিং কল থেকে ধরুন`),
       ]);
     } catch { /* নোটিফিকেশন না গেলেও কল চলবে */ }

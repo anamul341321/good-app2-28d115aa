@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { savePushToken } from "@/lib/push.functions";
-import { detectNativeCallsApp } from "@/lib/calls-app";
+import { detectCallsApp } from "@/lib/calls-app";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -15,7 +15,9 @@ async function persistPushToken() {
   const { data } = await supabase.auth.getSession();
   if (!data.session) return;
   // কলিং অ্যাপের টোকেন আলাদা চিহ্ন পায়, যাতে কল শুধু সেখানেই বাজে
-  const platform = detectNativeCallsApp() ? "android-calls" : "android";
+  // detectCallsApp also remembers calls mode, so the token is marked even after
+  // the ?app=calls flag is lost on later page loads inside the calling app.
+  const platform = detectCallsApp() ? "android-calls" : "android";
   await savePushToken({ data: { token: latestPushToken, platform } });
 }
 
